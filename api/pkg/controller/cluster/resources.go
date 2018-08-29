@@ -21,6 +21,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
+
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/policy/v1beta1"
@@ -69,13 +71,13 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 		return err
 	}
 
-	// check that all secrets are available
-	if err := cc.ensureSecrets(cluster); err != nil {
+	// check that all secrets are available // New way of handling secrets
+	if err := cc.ensureSecretsV2(cluster); err != nil {
 		return err
 	}
 
-	// check that all secrets are available // New way of handling secrets
-	if err := cc.ensureSecretsV2(cluster); err != nil {
+	// check that all secrets are available
+	if err := cc.ensureSecrets(cluster); err != nil {
 		return err
 	}
 
@@ -183,10 +185,6 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		gen  func(*kubermaticv1.Cluster, *corev1.Secret) (*corev1.Secret, string, error)
 	}
 	ops := []secretOp{
-		{resources.CASecretName, cc.getRootCACertSecret},
-		{resources.FrontProxyCASecretName, cc.getFrontProxyCACertSecret},
-		{resources.ApiserverTLSSecretName, cc.getApiserverServingCertificatesSecret},
-		{resources.KubeletClientCertificatesSecretName, cc.getKubeletClientCertificatesSecret},
 		{resources.AdminKubeconfigSecretName, cc.getAdminKubeconfigSecret},
 		{resources.SchedulerKubeconfigSecretName, cc.getSchedulerKubeconfigSecret},
 		{resources.KubeletDnatControllerKubeconfigSecretName, cc.getKubeletDnatControllerKubeconfigSecret},
@@ -194,8 +192,6 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		{resources.ControllerManagerKubeconfigSecretName, cc.getControllerManagerKubeconfigSecret},
 		{resources.KubeStateMetricsKubeconfigSecretName, cc.getKubeStateMetricsKubeconfigSecret},
 		{resources.TokensSecretName, cc.getTokenUsersSecret},
-		{resources.OpenVPNServerCertificatesSecretName, cc.getOpenVPNServerCertificates},
-		{resources.OpenVPNClientCertificatesSecretName, cc.getOpenVPNInternalClientCertificates},
 	}
 
 	if len(c.Spec.MachineNetworks) > 0 {
@@ -568,35 +564,48 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-// GetSecretCreators returns all SecretCreators that are currently in use
-func GetSecretCreators(dockerPullConfigJSON []byte) map[string]resources.SecretCreator {
-	return map[string]resources.SecretCreator{
-		resources.ImagePullSecretName:                            resources.ImagePullSecretCreator(resources.ImagePullSecretName, dockerPullConfigJSON),
-		resources.EtcdTLSCertificateSecretName:                   etcd.TLSCertificate,
-		resources.ApiserverEtcdClientCertificateSecretName:       apiserver.EtcdClientCertificate,
-		resources.ServiceAccountKeySecretName:                    apiserver.ServiceAccountKey,
-		resources.ApiserverFrontProxyClientCertificateSecretName: apiserver.FrontProxyClientCertificate,
+// SecretOperation returns a wrapper struct to utilize a sorted slice instead of an unsorted map
+type SecretOperation struct {
+	name   string
+	create resources.SecretCreator
+}
+
+// GetSecretCreatorOperations returns all SecretCreators that are currently in use
+func GetSecretCreatorOperations(dockerPullConfigJSON []byte) []SecretOperation {
+	return []SecretOperation{
+		{resources.CASecretName, certificates.RootCA},
+		{resources.FrontProxyCASecretName, certificates.FrontProxyCA},
+		{resources.ImagePullSecretName, resources.ImagePullSecretCreator(resources.ImagePullSecretName, dockerPullConfigJSON)},
+		{resources.ApiserverFrontProxyClientCertificateSecretName, apiserver.FrontProxyClientCertificate},
+		{resources.EtcdTLSCertificateSecretName, etcd.TLSCertificate},
+		{resources.ApiserverEtcdClientCertificateSecretName, apiserver.EtcdClientCertificate},
+		{resources.ApiserverTLSSecretName, apiserver.TLSServingCertificate},
+		{resources.KubeletClientCertificatesSecretName, apiserver.KubeletClientCertificate},
+		{resources.ServiceAccountKeySecretName, apiserver.ServiceAccountKey},
+		{resources.OpenVPNServerCertificatesSecretName, openvpn.TLSServingCertificate},
+		{resources.OpenVPNClientCertificatesSecretName, openvpn.InternalClientCertificate},
 	}
 }
 
 func (cc *Controller) ensureSecretsV2(c *kubermaticv1.Cluster) error {
-	creators := GetSecretCreators(cc.dockerPullConfigJSON)
+	creators := GetSecretCreatorOperations(cc.dockerPullConfigJSON)
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
 		return err
 	}
 
-	for name, create := range creators {
+	for _, op := range creators {
+
 		var existing *corev1.Secret
-		if existing, err = cc.secretLister.Secrets(c.Status.NamespaceName).Get(name); err != nil {
+		if existing, err = cc.secretLister.Secrets(c.Status.NamespaceName).Get(op.name); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
 
-			se, err := create(data, nil)
+			se, err := op.create(data, nil)
 			if err != nil {
-				return fmt.Errorf("failed to build Secret: %v", err)
+				return fmt.Errorf("failed to build Secret %s: %v", op.name, err)
 			}
 			if se.Annotations == nil {
 				se.Annotations = map[string]string{}
@@ -609,7 +618,7 @@ func (cc *Controller) ensureSecretsV2(c *kubermaticv1.Cluster) error {
 			continue
 		}
 
-		se, err := create(data, existing.DeepCopy())
+		se, err := op.create(data, existing.DeepCopy())
 		if err != nil {
 			return fmt.Errorf("failed to build Secret: %v", err)
 		}

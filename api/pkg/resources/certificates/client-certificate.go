@@ -11,14 +11,15 @@ import (
 	"k8s.io/client-go/util/cert/triple"
 )
 
-type clientCertificateTemplateData interface {
-	GetCA(name string) (*triple.KeyPair, error)
+type templateDataProvider interface {
 	GetClusterRef() metav1.OwnerReference
 }
 
+type caGetter func() (*triple.KeyPair, error)
+
 // GetClientCertificateCreator is a generic function to return a secret generator to create a client certificate signed by the cluster CA
-func GetClientCertificateCreator(caName, name, commonName string, organizations []string, dataCertKey, dataKeyKey string) func(data clientCertificateTemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
-	return func(data clientCertificateTemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
+func GetClientCertificateCreator(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA caGetter) func(data templateDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
+	return func(data templateDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
 		var se *corev1.Secret
 		if existing != nil {
 			se = existing
@@ -29,7 +30,7 @@ func GetClientCertificateCreator(caName, name, commonName string, organizations 
 		se.Name = name
 		se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 
-		ca, err := data.GetCA(caName)
+		ca, err := getCA()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 		}
@@ -37,7 +38,7 @@ func GetClientCertificateCreator(caName, name, commonName string, organizations 
 		if b, exists := se.Data[dataCertKey]; exists {
 			certs, err := certutil.ParseCertsPEM(b)
 			if err != nil {
-				return nil, fmt.Errorf("failed to certificate (key=%s) from existing secret %s: %v", name, dataCertKey, err)
+				return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret %s: %v", name, dataCertKey, err)
 			}
 
 			if resources.IsClientCertificateValidForAllOf(certs[0], commonName, organizations) {
