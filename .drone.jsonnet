@@ -6,7 +6,7 @@ local drone = import 'drone/drone.libsonnet';
   workspace: drone.workspace.new('/go', 'src/github.com/kubermatic/kubermatic'),
   pipeline: {
 
-    local goImage = 'quay.io/kubermatic/build:v0.0.2',
+    local goImage = 'quay.io/kubermatic/build:v0.0.3',
     local dockerSecrets = ['docker_username', 'docker_password'],
     local whenBranchMaster = { when: { branch: 'master' } },
     local whenEventTag = { when: { event: ['tag'] } },

@@ -18,4 +18,4 @@ RUN apt update && apt -y install git
 RUN mkdir -p /go/src/github.com/kubermatic/kubermatic/api
 
 WORKDIR /go/src/github.com/kubermatic/kubermatic/api
-ENTRYPOINT ["/bin/bash", "-exc"]
+#ENTRYPOINT ["/bin/bash", "-exc"]
