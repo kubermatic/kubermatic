@@ -382,30 +382,30 @@ func getDefaultNetwork(client *gophercloud.ProviderClient, region string) (*osne
 	}
 	if len(networks) == 1 {
 		return &networks[0], nil
-	} else {
-		// Networks without subnets can't be used, try finding a default by excluding them
-		// However the network object itself still contains the subnet, the only difference
-		// is that the subnet can not be retrieved by itself
-		var candidates []osnetworks.Network
-	NetworkLoop:
-		for _, network := range networks {
-			for _, subnet := range network.Subnets {
-				_, err := getSubnet(client, region, subnet)
-				if err == errNotFound {
-					continue
-				} else if err != nil {
-					return nil, err
-				}
-				candidates = append(candidates, network)
-				continue NetworkLoop
-			}
-		}
-		if len(candidates) == 1 {
-			return &candidates[0], nil
-		}
 	}
 
-	return nil, nil
+	// Networks without subnets can't be used, try finding a default by excluding them
+	// However the network object itself still contains the subnet, the only difference
+	// is that the subnet can not be retrieved by itself
+	var candidates []osnetworks.Network
+NetworkLoop:
+	for _, network := range networks {
+		for _, subnet := range network.Subnets {
+			_, err := getSubnet(client, region, subnet)
+			if err == errNotFound {
+				continue
+			} else if err != nil {
+				return nil, err
+			}
+			candidates = append(candidates, network)
+			continue NetworkLoop
+		}
+	}
+	if len(candidates) == 1 {
+		return &candidates[0], nil
+	}
+
+	return nil, fmt.Errorf("%d candidate networks found", len(candidates))
 }
 
 func getDefaultSubnet(client *gophercloud.ProviderClient, network *osnetworks.Network, region string) (*string, error) {
