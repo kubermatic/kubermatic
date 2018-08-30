@@ -2,10 +2,16 @@ package cluster
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+)
+
+const (
+	reachableCheckPeriod = 5 * time.Second
 )
 
 func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
@@ -42,8 +48,25 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 
 	if cluster.Status.Health.Apiserver {
 		// Controlling of user-cluster resources
-		if cluster, err = cc.ensureClusterReachable(cluster); err != nil {
+		reachable, err := cc.clusterIsReachable(cluster)
+		if err != nil {
 			return nil, err
+		}
+
+		if !reachable {
+			cc.enqueueAfter(cluster, reachableCheckPeriod)
+			return cluster, nil
+		}
+
+		// Only add the node deletion finalizer when the cluster is actually running
+		// Otherwise we fail to delete the nodes and are stuck in a loop
+		if !kuberneteshelper.HasFinalizer(cluster, nodeDeletionFinalizer) {
+			cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+				c.Finalizers = append(c.Finalizers, nodeDeletionFinalizer)
+			})
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		if err := cc.launchingCreateClusterInfoConfigMap(cluster); err != nil {
