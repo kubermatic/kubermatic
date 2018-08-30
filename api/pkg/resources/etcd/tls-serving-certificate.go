@@ -24,7 +24,7 @@ func TLSCertificate(data *resources.TemplateData, existing *corev1.Secret) (*cor
 	se.Name = resources.EtcdTLSCertificateSecretName
 	se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 
-	ca, err := data.GetClusterCA()
+	ca, err := data.GetRootCA()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 	}
