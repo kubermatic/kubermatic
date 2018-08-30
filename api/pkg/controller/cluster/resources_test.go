@@ -109,6 +109,7 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 	cluster := &kubermaticv1.Cluster{}
 	cluster.Status.NamespaceName = "test-ns"
 	cluster.Address.IP = "1.2.3.4"
+	cluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
 	dc := &provider.DatacenterMeta{}
 
 	keyPair, err := triple.NewCA("test-ca")

@@ -1,8 +1,6 @@
 package cluster
 
 import (
-	"bytes"
-	"encoding/csv"
 	"encoding/json"
 	"fmt"
 
@@ -79,32 +77,6 @@ func (cc *Controller) getAdminKubeconfigSecret(c *kubermaticv1.Cluster, existing
 	data, err := cc.createAdminKubeconfigSecret(c)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to create a admin kubeconfig: %v", err)
-	}
-	return cc.secretWithJSON(cc.secretWithData(data, c))
-}
-
-func (cc *Controller) createTokenUsersSecret(c *kubermaticv1.Cluster) (map[string][]byte, error) {
-	buffer := &bytes.Buffer{}
-	writer := csv.NewWriter(buffer)
-
-	if err := writer.Write([]string{c.Address.AdminToken, "admin", "10000", "system:masters"}); err != nil {
-		return nil, err
-	}
-	writer.Flush()
-	if err := writer.Error(); err != nil {
-		return nil, err
-	}
-
-	return map[string][]byte{
-		resources.TokensSecretKey: buffer.Bytes(),
-	}, nil
-}
-
-func (cc *Controller) getTokenUsersSecret(c *kubermaticv1.Cluster, existingSecret *corev1.Secret) (*corev1.Secret, string, error) {
-	//Its save to always generate it.
-	data, err := cc.createTokenUsersSecret(c)
-	if err != nil {
-		return nil, "", fmt.Errorf("unable to create a token users secret: %v", err)
 	}
 	return cc.secretWithJSON(cc.secretWithData(data, c))
 }
