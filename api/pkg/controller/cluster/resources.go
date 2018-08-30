@@ -8,9 +8,11 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
@@ -22,7 +24,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 
-	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/policy/v1beta1"
@@ -191,7 +192,6 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 		{resources.MachineControllerKubeconfigSecretName, cc.getMachineControllerKubeconfigSecret},
 		{resources.ControllerManagerKubeconfigSecretName, cc.getControllerManagerKubeconfigSecret},
 		{resources.KubeStateMetricsKubeconfigSecretName, cc.getKubeStateMetricsKubeconfigSecret},
-		{resources.TokensSecretName, cc.getTokenUsersSecret},
 	}
 
 	if len(c.Spec.MachineNetworks) > 0 {
@@ -584,6 +584,7 @@ func GetSecretCreatorOperations(dockerPullConfigJSON []byte) []SecretOperation {
 		{resources.ServiceAccountKeySecretName, apiserver.ServiceAccountKey},
 		{resources.OpenVPNServerCertificatesSecretName, openvpn.TLSServingCertificate},
 		{resources.OpenVPNClientCertificatesSecretName, openvpn.InternalClientCertificate},
+		{resources.TokensSecretName, apiserver.TokenUsers},
 	}
 }
 
