@@ -68,7 +68,27 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Spec.Template.Spec.Volumes = volumes
 
-	resourceRequirements := defaultResourceRequirements
+	// get clusterIP of apiserver
+	apiAddress, err := data.InClusterApiserverAddress()
+	if err != nil {
+		return nil, err
+	}
+
+	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
+		{
+			Name:            "apiserver-running",
+			Image:           data.ImageRegistry(resources.RegistryDocker) + "/busybox",
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			Command: []string{
+				"/bin/sh",
+				"-ec",
+				fmt.Sprintf("until wget -T 1 https://%s/healthz; do echo waiting for apiserver; sleep 2; done;", apiAddress),
+			},
+			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+		},
+	}
+
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:            name,
@@ -89,7 +109,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 					ReadOnly:  true,
 				},
 			},
-			Resources: resourceRequirements,
+			Resources: defaultResourceRequirements,
 			ReadinessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
