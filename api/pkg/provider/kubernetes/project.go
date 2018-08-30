@@ -131,7 +131,7 @@ func (p *ProjectProvider) Get(user *kubermaticapiv1.User, projectInternalName st
 		return nil, err
 	}
 	if !options.IncludeUninitialized && project.Status.Phase != kubermaticapiv1.ProjectActive {
-		return nil, kerrors.NewServiceUnavailable("Project components are not ready yet")
+		return nil, kerrors.NewServiceUnavailable("Project is not initialized yet")
 	}
 	return project, nil
 }
