@@ -3,6 +3,8 @@ package controllermanager
 import (
 	"fmt"
 
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
+
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
@@ -79,12 +81,6 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	// get clusterIP of apiserver
-	apiAddress, err := data.InClusterApiserverAddress()
-	if err != nil {
-		return nil, err
-	}
-
 	// Configure user cluster DNS resolver for this pod.
 	dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 	if err != nil {
@@ -93,20 +89,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	kcDir := "/etc/kubernetes/controllermanager"
 	dep.Spec.Template.Spec.Volumes = volumes
-	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
-		{
-			Name:            "apiserver-running",
-			Image:           data.ImageRegistry(resources.RegistryDocker) + "/busybox",
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command: []string{
-				"/bin/sh",
-				"-ec",
-				fmt.Sprintf("until wget -T 1 https://%s/healthz; do echo waiting for apiserver; sleep 2; done;", apiAddress),
-			},
-			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-		},
+
+	apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
+	if err != nil {
+		return nil, err
 	}
+	dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
 
 	openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
 	if err != nil {

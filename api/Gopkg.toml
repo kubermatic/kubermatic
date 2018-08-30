@@ -109,7 +109,7 @@ required = [
 
 [[constraint]]
   name = "github.com/kubermatic/machine-controller"
-  version = "v0.7.18"
+  version = "v0.7.19"
 
 [[constraint]]
   name = "github.com/prometheus/client_golang"

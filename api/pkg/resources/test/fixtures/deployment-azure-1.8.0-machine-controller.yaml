@@ -45,7 +45,7 @@ spec:
         - 0.0.0.0:8085
         command:
         - /usr/local/bin/machine-controller
-        image: docker.io/kubermatic/machine-controller:v0.7.18
+        image: docker.io/kubermatic/machine-controller:v0.7.19
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 8
@@ -77,7 +77,7 @@ spec:
         - /bin/sh
         - -ec
         - until wget -T 1 https://192.0.2.10:30000/healthz; do echo waiting for apiserver;
-          sleep 2; done
+          sleep 2; done;
         image: docker.io/busybox
         imagePullPolicy: IfNotPresent
         name: apiserver-running
