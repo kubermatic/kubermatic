@@ -328,6 +328,22 @@ func UserClusterDNSResolverIP(cluster *kubermaticv1.Cluster) (string, error) {
 	return ip.String(), nil
 }
 
+// InClusterApiserverIP returns the first usable IP of the service cidr.
+// Its the in cluster IP for the apiserver
+func InClusterApiserverIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
+	if len(cluster.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
+		return nil, errors.New("no service cidr defined")
+	}
+
+	block := cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0]
+	ip, _, err := net.ParseCIDR(block)
+	if err != nil {
+		return nil, fmt.Errorf("invalid service cidr %s", block)
+	}
+	ip[len(ip)-1] = ip[len(ip)-1] + 1
+	return &ip, nil
+}
+
 // UserClusterDNSPolicyAndConfig returns a DNSPolicy and DNSConfig to configure Pods to use user cluster DNS
 func UserClusterDNSPolicyAndConfig(d *TemplateData) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
 	// DNSNone indicates that the pod should use empty DNS settings. DNS

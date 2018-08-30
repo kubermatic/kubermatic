@@ -46,6 +46,11 @@ func TLSServingCertificate(data *resources.TemplateData, existing *corev1.Secret
 		return nil, fmt.Errorf("failed to get external IP for cluster: %v", err)
 	}
 
+	inClusterIP, err := resources.InClusterApiserverIP(data.Cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the in-cluster ClusterIP for the apiserver: %v", err)
+	}
+
 	altNames := certutil.AltNames{
 		DNSNames: []string{
 			// ExternalName
@@ -70,6 +75,7 @@ func TLSServingCertificate(data *resources.TemplateData, existing *corev1.Secret
 			*apiserverExternalIP,
 			*apiserverInternalIP,
 			*externalIP,
+			*inClusterIP,
 		},
 	}
 
