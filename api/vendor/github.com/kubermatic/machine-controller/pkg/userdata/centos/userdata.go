@@ -146,6 +146,7 @@ func (p Provider) UserData(
 		ClusterDNSIPs     []net.IP
 		KubeadmCACertHash string
 		ServerAddr        string
+		JournaldMaxSize   string
 	}{
 		MachineSpec:       spec,
 		ProviderConfig:    pconfig,
@@ -158,6 +159,7 @@ func (p Provider) UserData(
 		ClusterDNSIPs:     clusterDNSIPs,
 		KubeadmCACertHash: kubeadmCACertHash,
 		ServerAddr:        serverAddr,
+		JournaldMaxSize:   userdatahelper.JournaldMaxUse,
 	}
 	b := &bytes.Buffer{}
 	err = tmpl.Execute(b, data)
@@ -185,6 +187,11 @@ ssh_authorized_keys:
 {{- end }}
 
 write_files:
+- path: "/etc/systemd/journald.conf.d/max_disk_use.conf"
+  content: |
+    [Journal]
+    SystemMaxUse={{ .JournaldMaxSize }}
+
 - path: "/etc/sysctl.d/k8s.conf"
   content: |
     net.bridge.bridge-nf-call-ip6tables = 1

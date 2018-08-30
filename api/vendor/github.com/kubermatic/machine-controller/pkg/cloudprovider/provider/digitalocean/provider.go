@@ -25,8 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-const privateRSAKeyBitSize = 4096
-
 type provider struct {
 	configVarResolver *providerconfig.ConfigVarResolver
 }
@@ -78,7 +76,7 @@ func (t *TokenSource) Token() (*oauth2.Token, error) {
 func getSlugForOS(os providerconfig.OperatingSystem) (string, error) {
 	switch os {
 	case providerconfig.OperatingSystemUbuntu:
-		return "ubuntu-16-04-x64", nil
+		return "ubuntu-18-04-x64", nil
 	case providerconfig.OperatingSystemCoreos:
 		return "coreos-stable", nil
 	case providerconfig.OperatingSystemCentOS:
@@ -231,7 +229,7 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 // digital ocean because it is not possible to create a droplet without ssh key assigned
 // this method returns an error if the key already exists
 func uploadRandomSSHPublicKey(ctx context.Context, service godo.KeysService) (string, error) {
-	sshkey, err := ssh.NewSSHKey()
+	sshkey, err := ssh.NewKey()
 	if err != nil {
 		return "", fmt.Errorf("failed to generate ssh key: %v", err)
 	}
@@ -383,6 +381,18 @@ func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 
 func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, name string, err error) {
 	return "", "", nil
+}
+
+func (p *provider) MachineMetricsLabels(machine *v1alpha1.Machine) (map[string]string, error) {
+	labels := make(map[string]string)
+
+	c, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	if err == nil {
+		labels["size"] = c.Size
+		labels["region"] = c.Region
+	}
+
+	return labels, err
 }
 
 type doInstance struct {
