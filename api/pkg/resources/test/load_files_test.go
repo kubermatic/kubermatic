@@ -444,12 +444,21 @@ func TestLoadFiles(t *testing.T) {
 				}()
 
 				tmpFile, err := ioutil.TempFile("", "kubermatic")
-				tmpFilePath := tmpFile.Name()
-				tmpFile.WriteString("some test")
 				if err != nil {
 					t.Fatalf("couldnt create temp file, see: %v", err)
 				}
-				defer os.Remove(tmpFilePath)
+
+				tmpFilePath := tmpFile.Name()
+				_, err = tmpFile.WriteString("some test")
+				if err != nil {
+					t.Fatalf("couldnt write to temp file, see: %v", err)
+				}
+				defer (func() {
+					err = os.Remove(tmpFilePath)
+					if err != nil {
+						t.Fatalf("couldn't delete temp file, see: %v", err)
+					}
+				})()
 
 				kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, 10*time.Millisecond)
 				data := resources.NewTemplateData(
