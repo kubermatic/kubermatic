@@ -66,16 +66,9 @@ func (p *RBACCompliantClusterProvider) New(project *kubermaticapiv1.Project, use
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
 				kubermaticapiv1.WorkerNameLabelKey: p.workerName,
+				kubermaticapiv1.ProjectIDLabelKey:  project.Name,
 			},
 			Name: name,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticapiv1.ProjectKindName,
-					UID:        project.GetUID(),
-					Name:       project.Name,
-				},
-			},
 		},
 		Spec: *spec,
 		Status: kubermaticapiv1.ClusterStatus{
@@ -115,11 +108,8 @@ func (p *RBACCompliantClusterProvider) List(project *kubermaticapiv1.Project, op
 
 	projectClusters := []*kubermaticapiv1.Cluster{}
 	for _, cluster := range clusters {
-		owners := cluster.GetOwnerReferences()
-		for _, owner := range owners {
-			if owner.APIVersion == kubermaticapiv1.SchemeGroupVersion.String() && owner.Kind == kubermaticapiv1.ProjectKindName && owner.Name == project.Name {
-				projectClusters = append(projectClusters, cluster)
-			}
+		if clusterProject := cluster.GetLabels()[kubermaticapiv1.ProjectIDLabelKey]; clusterProject == project.Name {
+			projectClusters = append(projectClusters, cluster)
 		}
 	}
 
@@ -148,12 +138,27 @@ func (p *RBACCompliantClusterProvider) List(project *kubermaticapiv1.Project, op
 }
 
 // Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to
-func (p *RBACCompliantClusterProvider) Get(user *kubermaticapiv1.User, project *kubermaticapiv1.Project, clusterName string) (*kubermaticapiv1.Cluster, error) {
+func (p *RBACCompliantClusterProvider) Get(user *kubermaticapiv1.User, project *kubermaticapiv1.Project, clusterName string, options *provider.ClusterGetOptions) (*kubermaticapiv1.Cluster, error) {
 	seedImpersonatedClient, err := p.createSeedImpersonationClientWrapper(user, project)
 	if err != nil {
 		return nil, err
 	}
-	return seedImpersonatedClient.Clusters().Get(clusterName, metav1.GetOptions{})
+
+	cluster, err := seedImpersonatedClient.Clusters().Get(clusterName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if options.CheckInitStatus {
+		isHealthy := cluster.Status.Health.Apiserver &&
+			cluster.Status.Health.Scheduler &&
+			cluster.Status.Health.Controller &&
+			cluster.Status.Health.MachineController &&
+			cluster.Status.Health.Etcd
+		if !isHealthy {
+			return nil, kerrors.NewServiceUnavailable("Cluster components are not ready yet")
+		}
+	}
+	return cluster, nil
 }
 
 // Delete deletes the given cluster

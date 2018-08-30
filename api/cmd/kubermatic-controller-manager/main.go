@@ -63,6 +63,7 @@ type controllerRunOptions struct {
 	inClusterPrometheusDisableDefaultRules           bool
 	inClusterPrometheusDisableDefaultScrapingConfigs bool
 	inClusterPrometheusScrapingConfigsFile           string
+	dockerPullConfigJSONFile                         string
 }
 
 type controllerContext struct {
@@ -103,6 +104,7 @@ func main() {
 	flag.StringVar(&runOp.etcdDiskSize, "etcd-disk-size", "5Gi", "Size for the etcd PV's. Only applies to new clusters.")
 	flag.StringVar(&runOp.inClusterPrometheusRulesFile, "in-cluster-prometheus-rules-file", "", "The file containing the custom alerting rules for the prometheus running in the cluster-foo namespaces.")
 	flag.BoolVar(&runOp.inClusterPrometheusDisableDefaultRules, "in-cluster-prometheus-disable-default-rules", false, "A flag indicating whether the default rules for the prometheus running in the cluster-foo namespaces should be deployed.")
+	flag.StringVar(&runOp.dockerPullConfigJSONFile, "docker-pull-config-json-file", "config.json", "The file containing the docker auth config.")
 	flag.BoolVar(&runOp.inClusterPrometheusDisableDefaultScrapingConfigs, "in-cluster-prometheus-disable-default-scraping-configs", false, "A flag indicating whether the default scraping configs for the prometheus running in the cluster-foo namespaces should be deployed.")
 	flag.StringVar(&runOp.inClusterPrometheusScrapingConfigsFile, "in-cluster-prometheus-scraping-configs-file", "", "The file containing the custom scraping configs for the prometheus running in the cluster-foo namespaces.")
 	flag.Parse()
@@ -121,6 +123,10 @@ func main() {
 
 	if runOp.backupContainerFile == "" {
 		glog.Fatal("backup-container is undefined")
+	}
+
+	if runOp.dockerPullConfigJSONFile == "" {
+		glog.Fatal("docker-pull-config-json-file is undefined")
 	}
 
 	// Validate etcd disk size

@@ -87,6 +87,11 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		return nil, err
 	}
 
+	dockerPullConfigJSON, err := ioutil.ReadFile(ctrlCtx.runOptions.dockerPullConfigJSONFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load ImagePullSecret from %s: %v", ctrlCtx.runOptions.dockerPullConfigJSONFile, err)
+	}
+
 	cps := cloud.Providers(dcs)
 
 	return cluster.NewController(
@@ -106,6 +111,7 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultRules,
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultScrapingConfigs,
 		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
+		dockerPullConfigJSON,
 
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Namespaces(),

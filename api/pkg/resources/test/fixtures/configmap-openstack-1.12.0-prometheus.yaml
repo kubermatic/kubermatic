@@ -9,6 +9,7 @@ data:
     rule_files:
     - "/etc/prometheus/config/rules*.yaml"
     scrape_configs:
+    some test
     - job_name: etcd
       scheme: https
       metrics_path: '/metrics'
@@ -96,6 +97,7 @@ data:
           - 'alertmanager-kubermatic.monitoring.svc.cluster.local'
           type: A
           port: 9093
+  rules-custom.yaml: some test
   rules.yaml: |2
 
     groups:
@@ -113,6 +115,13 @@ data:
 
       - record: job:process_open_fds:clone
         expr: process_open_fds
+        labels:
+          kubermatic: federate
+
+    - name: kubermatic.machine_controller
+      rules:
+      - record: job:machine_controller_errors_total:rate5m
+        expr: rate(machine_controller_errors_total[5m])
         labels:
           kubermatic: federate
 

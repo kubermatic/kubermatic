@@ -479,6 +479,17 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 				},
 			},
 			ExistingCluster: &kubermaticv1.Cluster{
+				Status: kubermaticv1.ClusterStatus{
+					Health: kubermaticv1.ClusterHealth{
+						ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
+							Apiserver:         true,
+							Scheduler:         true,
+							Controller:        true,
+							MachineController: true,
+							Etcd:              true,
+						},
+					},
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "abcd",
 					OwnerReferences: []metav1.OwnerReference{
@@ -590,6 +601,17 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 				},
 			},
 			ExistingCluster: &kubermaticv1.Cluster{
+				Status: kubermaticv1.ClusterStatus{
+					Health: kubermaticv1.ClusterHealth{
+						ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
+							Apiserver:         true,
+							Scheduler:         true,
+							Controller:        true,
+							MachineController: true,
+							Etcd:              true,
+						},
+					},
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "abcd",
 					OwnerReferences: []metav1.OwnerReference{
@@ -654,6 +676,17 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 				},
 			},
 			ExistingCluster: &kubermaticv1.Cluster{
+				Status: kubermaticv1.ClusterStatus{
+					Health: kubermaticv1.ClusterHealth{
+						ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
+							Apiserver:         true,
+							Scheduler:         true,
+							Controller:        true,
+							MachineController: true,
+							Etcd:              true,
+						},
+					},
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "abcd",
 					OwnerReferences: []metav1.OwnerReference{
@@ -1345,15 +1378,8 @@ func TestListClusters(t *testing.T) {
 			ExistingClusters: []*kubermaticv1.Cluster{
 				&kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "InternalNameOfTheObject",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8s.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       "myProjectInternalName",
-							},
-						},
+						Name:   "InternalNameOfTheObject",
+						Labels: map[string]string{"project-id": "myProjectInternalName"},
 						CreationTimestamp: func() metav1.Time {
 							const longForm = "Jan 2, 2006 at 3:04pm (MST)"
 							creationTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")
@@ -1375,15 +1401,8 @@ func TestListClusters(t *testing.T) {
 				},
 				&kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "InternalNameOfTheObject_Second",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.k8s.io/v1",
-								Kind:       "Project",
-								UID:        "",
-								Name:       "myProjectInternalName",
-							},
-						},
+						Name:   "InternalNameOfTheObject_Second",
+						Labels: map[string]string{"project-id": "myProjectInternalName"},
 						CreationTimestamp: func() metav1.Time {
 							const longForm = "Jan 2, 2006 at 3:04pm (MST)"
 							creationTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")

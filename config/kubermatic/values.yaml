@@ -1,10 +1,6 @@
 kubermatic:
-  docker:
-    # the base64 encoded docker authentication token
-    secret: ""
-  quay:
-    # the base64 encoded quay.io authentication token
-    secret: ""
+  # the base64 encoded docker/quay authentication json file
+  imagePullSecretData: ""
   auth:
     # the full path to the openid connect token issuer. For example 'https://dev.kubermatic.io/dex'
     tokenIssuer: ""
@@ -31,7 +27,7 @@ kubermatic:
     addons:
       image:
         repository: "quay.io/kubermatic/addons"
-        tag: "v0.1.8"
+        tag: "v0.1.9"
         pullPolicy: "IfNotPresent"
       # list of Addons to install into every user-cluster. All need to exist in the addons image
       defaultAddons:
@@ -134,4 +130,3 @@ kubermatic:
 #          labels:
 #            severity: warning
   clusterNamespacePrometheus: {}
-  
