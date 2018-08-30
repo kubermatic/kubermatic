@@ -75,6 +75,8 @@ const (
 	SchedulerKubeconfigSecretName = "scheduler-kubeconfig"
 	//KubeletDnatControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the kubeletdnatcontroller
 	KubeletDnatControllerKubeconfigSecretName = "kubeletdnatcontroller-kubeconfig"
+	//UserClusterControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the kubeletdnatcontroller
+	UserClusterControllerManagerKubeconfigSecretName = "uccm-kubeconfig"
 	//KubeStateMetricsKubeconfigSecretName is the name for the secret containing the kubeconfig used by kube-state-metrics
 	KubeStateMetricsKubeconfigSecretName = "kube-state-metrics-kubeconfig"
 	//ControllerManagerKubeconfigSecretName is the name of the secret containing the kubeconfig used by controller manager
@@ -136,6 +138,8 @@ const (
 	ControllerManagerCertUsername = "system:kube-controller-manager"
 	//SchedulerCertUsername is the name of the user coming from kubeconfig cert
 	SchedulerCertUsername = "system:kube-scheduler"
+	//UserClusterControllerManagerCertUsername is the name of the user coming from kubeconfig cert
+	UserClusterControllerManagerCertUsername = "kubermatic:user-cluster-controller-manager"
 	//KubeletDnatControllerCertUsername is the name of the user coming from kubeconfig cert
 	KubeletDnatControllerCertUsername = "kubermatic:kubeletdnat-controller"
 	//IPAMControllerCertUsername is the name of the user coming from kubeconfig cert
@@ -178,6 +182,8 @@ const (
 	ControllerManagerRoleBindingName = "kubermatic:controller-manager"
 	//ControllerManagerClusterRoleBindingName is the name of the controller-manager's clusterrolebindings
 	ControllerManagerClusterRoleBindingName = "kubermatic:controller-manager"
+	//UserClusterControllerManagerClusterRoleBindingName is the name of the user-cluster-controller-manager's clusterrolebindings
+	UserClusterControllerManagerClusterRoleBindingName = "kubermatic:user-cluster-controller-manager"
 
 	// EtcdPodDisruptionBudgetName is the name of the PDB for the etcd statefulset
 	EtcdPodDisruptionBudgetName = "etcd"

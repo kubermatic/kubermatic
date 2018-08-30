@@ -17,6 +17,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/userclustercontrollermanager"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -231,6 +232,7 @@ func GetDeploymentCreators(c *kubermaticv1.Cluster) []resources.DeploymentCreato
 		controllermanager.Deployment,
 		dns.Deployment,
 		kubestatemetrics.Deployment,
+		userclustercontrollermanager.Deployment,
 	}
 
 	if c != nil && len(c.Spec.MachineNetworks) > 0 {
@@ -281,6 +283,7 @@ func GetSecretCreatorOperations(dockerPullConfigJSON []byte) []SecretOperation {
 		{resources.AdminKubeconfigSecretName, resources.AdminKubeconfig},
 		{resources.SchedulerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil)},
 		{resources.KubeletDnatControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil)},
+		{resources.UserClusterControllerManagerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.UserClusterControllerManagerKubeconfigSecretName, resources.UserClusterControllerManagerCertUsername, nil)},
 		{resources.MachineControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername, nil)},
 		{resources.ControllerManagerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername, nil)},
 		{resources.KubeStateMetricsKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil)},

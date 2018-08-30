@@ -332,6 +332,13 @@ func TestLoadFiles(t *testing.T) {
 					&v1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
+							Name:            resources.UserClusterControllerManagerKubeconfigSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
 							Name:            resources.FrontProxyCASecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},

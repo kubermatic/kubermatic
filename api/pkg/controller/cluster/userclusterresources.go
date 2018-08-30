@@ -12,6 +12,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/userclustercontrollermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
@@ -252,6 +253,7 @@ func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.Clus
 		machinecontroller.NodeBootstrapperClusterRoleBinding,
 		machinecontroller.NodeSignerClusterRoleBinding,
 		controllermanager.AdminClusterRoleBinding,
+		userclustercontrollermanager.AdminClusterRoleBinding,
 		kubestatemetrics.ClusterRoleBinding,
 		vpnsidecar.DnatControllerClusterRoleBinding,
 	}
