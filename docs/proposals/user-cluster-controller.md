@@ -32,6 +32,47 @@ Some of those resources are strictly required (as opposed to "addons") and shoul
 The envisioned improvement is started by establishing a user-cluster-controller-manager created by the (seed's) cluster-controller. The manager will create a user-cluster-controller inside the cluster-namespace.
 Resources of the user-cluster which are not considered "addons" or should not be controlled by the (seed's) cluster-controller will be moved into the control of the user-cluster-controller.
 
+[editorial comments in rectangular brackets]
+
+### Unconditionally Created Resources
+
+[cluster/launching.go]
+* namespaces: default, kube-public, kube-system
+* kube-public:cm/cluster-info
+	* user-cluster root-ca (CN: root-ca.<clustername>.<datacenter>) [from cluster-controller]
+	* user-cluster api address [from cluster object]
+* role kube-public:cluster-info
+* rolebinding kube-public:cluster-info
+
+* kube-system:secret/openvpn-client-certificates
+	* [needs ca from cluster-controller]
+
+* InitializerConfiguration
+
+* userClusterEnsureXXX
+
+### Handled Events
+
+Currently the creation of resources is triggered from the cluster-controller syncCluster.
+Within the proposed user-cluster-controller the sync will be triggered by specific events
+which still need to be decided upon. Options are:
+  * watch any resource
+  * watch a global owner (which does not exist yet)
+
+TO-BE-DISCUSSED:
+Because a user-cluster is expected to be used by some users there should be a clear distinction
+about which resources will be controlled and which not. Resources created by the controller must
+be controlled and resources created by the user must not be controlled. This distinction can be
+made based on ownerReference (owner tbd).
+
+It would also be possible to make the distinction about control on a namespace level.
+
+NB:
+Currently Machine events (InstanceFound) arrive in the user-cluster.
+
+
+### Required Data (e.g. from seed)
+
 ## Task & effort:
 
 * create user-cluster-controller-manager
