@@ -4,6 +4,7 @@ prometheus:
   version: 'v2.2.1'
   host: ""
   storageSize: 100Gi
+  backups: true
 
   # Specify additional external labels which will be added to all
   # alerts sent by Prometheus.
