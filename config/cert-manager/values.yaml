@@ -1,21 +1,5 @@
-# Default values for cert-manager.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
 certManager:
-  replicaCount: 1
-
   image:
     repository: quay.io/jetstack/cert-manager-controller
     tag: v0.4.1
     pullPolicy: Always
-
-  createCustomResource: true
-
-  rbac:
-    # Specifies whether RBAC resources should be created
-    create: true
-
-  resources: {}
-    # requests:
-    #   cpu: 10m
-    #   memory: 32Mi

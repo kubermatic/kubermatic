@@ -1,20 +1,20 @@
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
-  name: {{ template "cert-manager.fullname" . }}
+  name: cert-manager
 spec:
-  replicas: {{ .Values.certManager.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
-      app: {{ template "cert-manager.name" . }}
+      app: cert-manager
   template:
     metadata:
       labels:
-        app: {{ template "cert-manager.name" . }}
+        app: cert-manager
     spec:
-      serviceAccountName: {{ template "cert-manager.fullname" . }}
+      serviceAccountName: cert-manager
       containers:
-        - name: {{ .Chart.Name }}
+        - name: cert-manager
           image: "{{ .Values.certManager.image.repository }}:{{ .Values.certManager.image.tag }}"
           imagePullPolicy: {{ .Values.certManager.image.pullPolicy }}
           args:
@@ -25,5 +25,3 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
-          resources:
-{{ toYaml .Values.certManager.resources | indent 12 }}
