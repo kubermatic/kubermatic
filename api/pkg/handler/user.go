@@ -48,7 +48,7 @@ func addUserToProject(projectProvider provider.ProjectProvider, userProvider pro
 		} else if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		project, err := projectProvider.Get(authenticatedUser, projectFromRequest.ID)
+		project, err := projectProvider.Get(authenticatedUser, projectFromRequest.ID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
