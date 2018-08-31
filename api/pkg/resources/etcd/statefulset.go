@@ -348,6 +348,7 @@ exec /usr/local/bin/etcd \
     --trusted-ca-file /etc/etcd/pki/ca/ca.crt \
     --client-cert-auth \
     --cert-file /etc/etcd/pki/tls/etcd-tls.crt \
-    --key-file /etc/etcd/pki/tls/etcd-tls.key
+    --key-file /etc/etcd/pki/tls/etcd-tls.key \
+    --auto-compaction-retention=8
 `
 )
