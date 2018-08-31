@@ -12,7 +12,7 @@ spec:
       labels:
         app: {{ template "cert-manager.name" . }}
     spec:
-      serviceAccountName: {{ template "cert-manager.serviceAccountName" . }}
+      serviceAccountName: {{ template "cert-manager.fullname" . }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.certManager.image.repository }}:{{ .Values.certManager.image.tag }}"

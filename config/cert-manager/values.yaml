@@ -19,8 +19,3 @@ certManager:
     # requests:
     #   cpu: 10m
     #   memory: 32Mi
-
-  # This is used by the static manifest generator in order to create a static
-  # namespace manifest for the namespace that cert-manager is being installed
-  # within. It should **not** be used if you are using Helm for deployment.
-  createNamespaceResource: false
