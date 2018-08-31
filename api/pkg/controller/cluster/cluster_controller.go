@@ -54,13 +54,15 @@ type Controller struct {
 	queue      workqueue.RateLimitingInterface
 	workerName string
 
-	overwriteRegistry                      string
-	nodePortRange                          string
-	nodeAccessNetwork                      string
-	etcdDiskSize                           resource.Quantity
-	inClusterPrometheusRulesFile           string
-	inClusterPrometheusDisableDefaultRules bool
-	dockerPullConfigJSON                   []byte
+	overwriteRegistry                                string
+	nodePortRange                                    string
+	nodeAccessNetwork                                string
+	etcdDiskSize                                     resource.Quantity
+	inClusterPrometheusRulesFile                     string
+	inClusterPrometheusDisableDefaultRules           bool
+	inClusterPrometheusDisableDefaultScrapingConfigs bool
+	inClusterPrometheusScrapingConfigsFile           string
+	dockerPullConfigJSON                             []byte
 
 	clusterLister             kubermaticv1lister.ClusterLister
 	namespaceLister           corev1lister.NamespaceLister
@@ -94,6 +96,8 @@ func NewController(
 	etcdDiskSize string,
 	inClusterPrometheusRulesFile string,
 	inClusterPrometheusDisableDefaultRules bool,
+	inClusterPrometheusDisableDefaultScrapingConfigs bool,
+	inClusterPrometheusScrapingConfigsFile string,
 	dockerPullConfigJSON []byte,
 
 	clusterInformer kubermaticv1informers.ClusterInformer,
@@ -117,13 +121,15 @@ func NewController(
 
 		queue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster"),
 
-		overwriteRegistry:                      overwriteRegistry,
-		nodePortRange:                          nodePortRange,
-		nodeAccessNetwork:                      nodeAccessNetwork,
-		etcdDiskSize:                           resource.MustParse(etcdDiskSize),
-		inClusterPrometheusRulesFile:           inClusterPrometheusRulesFile,
-		inClusterPrometheusDisableDefaultRules: inClusterPrometheusDisableDefaultRules,
-		dockerPullConfigJSON:                   dockerPullConfigJSON,
+		overwriteRegistry:                                overwriteRegistry,
+		nodePortRange:                                    nodePortRange,
+		nodeAccessNetwork:                                nodeAccessNetwork,
+		etcdDiskSize:                                     resource.MustParse(etcdDiskSize),
+		inClusterPrometheusRulesFile:                     inClusterPrometheusRulesFile,
+		inClusterPrometheusDisableDefaultRules:           inClusterPrometheusDisableDefaultRules,
+		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
+		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
+		dockerPullConfigJSON:                             dockerPullConfigJSON,
 
 		externalURL: externalURL,
 		workerName:  workerName,
