@@ -6,27 +6,34 @@ TLS certificates from various issuing sources.
 It will ensure certificates are valid and up to date periodically, and attempt
 to renew certificates at an appropriate time before expiry.
 
-## TL;DR;
-
-```console
-$ helm install .
-```
-
-## Introduction
-
-This chart creates a cert-manager deployment on a Kubernetes cluster using the Helm package manager.
-
 ## Prerequisites
 
-- Kubernetes cluster with support for CustomResourceDefinition or ThirdPartyResource
+- Kubernetes 1.7+
 
 ## Installing the Chart
+
+Full installation instructions, including details on how to configure extra
+functionality in cert-manager can be found in the [getting started docs](https://cert-manager.readthedocs.io/en/latest/getting-started/).
 
 To install the chart with the release name `my-release`:
 
 ```console
-$ helm install --name my-release .
+$ helm install --name my-release stable/cert-manager
 ```
+
+In order to begin issuing certificates, you will need to set up a ClusterIssuer
+or Issuer resource (for example, by creating a 'letsencrypt-staging' issuer).
+
+More information on the different types of issuers and how to configure them
+can be found in our documentation:
+
+https://cert-manager.readthedocs.io/en/latest/reference/issuers.html
+
+For information on how to configure cert-manager to automatically provision
+Certificates for Ingress resources, take a look at the `ingress-shim`
+documentation:
+
+https://cert-manager.readthedocs.io/en/latest/reference/ingress-shim.html
 
 > **Tip**: List all releases using `helm list`
 
@@ -42,17 +49,13 @@ The command removes all the Kubernetes components associated with the chart and 
 
 ## Configuration
 
-The following tables lists the configurable parameters of the Drupal chart and their default values.
+The following table lists the configurable parameters of the cert-manager chart and their default values.
 
-| Parameter              | Description                             | Default                                        |
-| ---------------------- | --------------------------------------- | ---------------------------------------------- |
-| `image.repository`     | Image repository                        | `jetstackexperimental/cert-manager-controller` |
-| `image.tag`            | Image tag                               | `canary`                                       |
-| `image.pullPolicy`     | Image pull policy                       | `Always`                                       |
-| `replicaCount`         | Number of cert-manager replicas         | `1`                                            |
-| `createCustomResource` | Create CRD/TPR with this release        | `true`                                         |
-| `rbac.enabled`         | Create RBAC resources with this release | `true`                                         |
-| `resources`            | CPU/Memory resource requests/limits     | `None`                                         |
+| Parameter | Description | Default |
+| --------- | ----------- | ------- |
+| `image.repository` | Image repository | `quay.io/jetstack/cert-manager-controller` |
+| `image.tag` | Image tag | `v0.4.1` |
+| `image.pullPolicy` | Image pull policy | `Always` |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`.
 
@@ -62,3 +65,7 @@ Alternatively, a YAML file that specifies the values for the above parameters ca
 $ helm install --name my-release -f values.yaml .
 ```
 > **Tip**: You can use the default [values.yaml](values.yaml)
+
+## Contributing
+
+This chart is maintained at [github.com/jetstack/cert-manager](https://github.com/jetstack/cert-manager/tree/master/contrib/charts/cert-manager).
