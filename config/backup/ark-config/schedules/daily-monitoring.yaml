@@ -1,0 +1,10 @@
+apiVersion: ark.heptio.com/v1
+kind: Schedule
+metadata:
+  name: daily-monitoring
+spec:
+  schedule: "0 1 * * *"
+  template:
+    includedNamespaces:
+    - monitoring
+    ttl: 168h # 7 days

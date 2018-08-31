@@ -1,0 +1,44 @@
+ark:
+  # the Docker image for Ark;
+  # if you are using restic, make sure to use an official image
+  # that also contains the restic binary
+  image:
+    repository: gcr.io/heptio-images/ark
+    tag: v0.9.1
+    pullPolicy: IfNotPresent
+
+  # The value itself is not important for this chart, but it needs
+  # to know whether or not to enable the restic daemonset. Make sure
+  # to use a single values.yaml shared with the ark-config chart to
+  # not let this drift apart.
+  #configuration:
+  #  backupStorageProvider:
+  #    resticLocation: resticbackups
+
+  # configure the credentials used to make snapshots (when using
+  # persistentVolumeProvider) and to store backups; you can enable
+  # multiple credentials, if for some reason you run on GCP and
+  # still want to make restic snapshots to be stored in AWS S3.
+  credentials:
+    #aws:
+    #  accessKey: ...
+    #  secretKey: ...
+    #gcp:
+    #  serviceKey: '{...}'
+    #azure:
+    #  AZURE_SUBSCRIPTION_ID: ...
+    #  AZURE_TENANT_ID: ...
+    #  AZURE_RESOURCE_GROUP: ...
+    #  AZURE_CLIENT_ID: ...
+    #  AZURE_CLIENT_SECRET: ...
+    #  AZURE_STORAGE_ACCOUNT_ID: ...
+    #  AZURE_STORAGE_KEY: ...
+    #restic:
+    #  password: averysecurepassword
+
+  # Only kube2iam: change the AWS_ACCOUNT_ID and HEPTIO_ARK_ROLE_NAME
+  podAnnotations: {}
+  # iam.amazonaws.com/role: arn:aws:iam::<AWS_ACCOUNT_ID>:role/<HEPTIO_ARK_ROLE_NAME>
+
+  tolerations: []
+  nodeSelector: {}
