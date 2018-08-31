@@ -19,12 +19,7 @@ spec:
         {{- if .Values.prometheus.backups }}
         backup.ark.heptio.com/backup-volumes: prometheus-backup
         pre.hook.backup.ark.heptio.com/container: backup
-        pre.hook.backup.ark.heptio.com/command: >-
-          /bin/sh
-          -c
-          "rm -rf /prometheus/snapshots/* &&
-          curl -XPOST http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot &&
-          rsync -r --owner --delete /prometheus/snapshots/*/ /backup"
+        pre.hook.backup.ark.heptio.com/command: '["/bin/sh", "-c", "rm -rf /prometheus/snapshots/* && curl -XPOST http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot && rsync -r --owner --delete /prometheus/snapshots/*/ /backup"]'
         {{- end }}
     spec:
       containers:
