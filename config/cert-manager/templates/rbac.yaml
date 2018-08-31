@@ -23,6 +23,6 @@ roleRef:
   kind: ClusterRole
   name: {{ template "cert-manager.fullname" . }}
 subjects:
-  - name: {{ template "cert-manager.serviceAccountName" . }}
+  - name: {{ template "cert-manager.fullname" . }}
     kind: ServiceAccount
 {{- end -}}
