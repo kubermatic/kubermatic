@@ -24,7 +24,7 @@ func getClusterUpgrades(updateManager UpdateManager, projectProvider provider.Pr
 			return nil, errors.NewWrongRequest(request, GetClusterReq{})
 		}
 
-		project, err := projectProvider.Get(user, req.ProjectID)
+		project, err := projectProvider.Get(user, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
