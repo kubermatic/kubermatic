@@ -1,0 +1,5 @@
+apiVersion: ark.heptio.com/v1
+kind: Config
+metadata:
+  name: default
+{{ .Values.ark.configuration | toYaml }}
