@@ -17,6 +17,24 @@ import (
 	clienttesting "k8s.io/client-go/testing"
 )
 
+var plan9 = &kubermaticapiv1.Project{
+	ObjectMeta: metav1.ObjectMeta{
+		Name: "plan9",
+		OwnerReferences: []metav1.OwnerReference{
+			{
+				APIVersion: "kubermatic.io/v1",
+				Kind:       "User",
+				UID:        "",
+				Name:       "John",
+			},
+		},
+	},
+	Spec: kubermaticapiv1.ProjectSpec{Name: "my-second-project"},
+	Status: kubermaticapiv1.ProjectStatus{
+		Phase: kubermaticapiv1.ProjectActive,
+	},
+}
+
 func TestAddUserToProject(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
@@ -37,50 +55,9 @@ func TestAddUserToProject(t *testing.T) {
 			HTTPStatus:    http.StatusCreated,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "myProjectInternalName",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "my-first-project",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-first-project"},
-				},
-
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "plan9",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "John",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-second-project"},
-				},
-
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "myThirdProjectInternalName",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "my-third-project",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-third-project"},
-				},
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				plan9,
 			},
 			ExistingKubermaticUsers: []*kubermaticapiv1.User{
 				&kubermaticapiv1.User{
@@ -97,8 +74,8 @@ func TestAddUserToProject(t *testing.T) {
 								Name:  "plan9",
 							},
 							{
-								Group: "editors-myThirdProjectInternalName",
-								Name:  "myThirdProjectInternalName",
+								Group: "editors-my-third-projectInternalName",
+								Name:  "my-third-projectInternalName",
 							},
 						},
 					},
@@ -154,50 +131,9 @@ func TestAddUserToProject(t *testing.T) {
 			HTTPStatus:    http.StatusForbidden,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "myProjectInternalName",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "Joe",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-first-project"},
-				},
-
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "plan9",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "John",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-second-project"},
-				},
-
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "myThirdProjectInternalName",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "my-third-project",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-third-project"},
-				},
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				plan9,
 			},
 			ExistingKubermaticUsers: []*kubermaticapiv1.User{
 				&kubermaticapiv1.User{
@@ -214,8 +150,8 @@ func TestAddUserToProject(t *testing.T) {
 								Name:  "plan9",
 							},
 							{
-								Group: "editors-myThirdProjectInternalName",
-								Name:  "myThirdProjectInternalName",
+								Group: "editors-my-third-projectInternalName",
+								Name:  "my-third-projectInternalName",
 							},
 						},
 					},
@@ -252,50 +188,9 @@ func TestAddUserToProject(t *testing.T) {
 			HTTPStatus:    http.StatusForbidden,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "moby",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "Joe",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-first-project"},
-				},
-
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "plan9",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "John",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-second-project"},
-				},
-
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "myThirdProjectInternalName",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "my-third-project",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-third-project"},
-				},
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				plan9,
 			},
 			ExistingKubermaticUsers: []*kubermaticapiv1.User{
 				&kubermaticapiv1.User{
@@ -312,8 +207,8 @@ func TestAddUserToProject(t *testing.T) {
 								Name:  "plan9",
 							},
 							{
-								Group: "editors-myThirdProjectInternalName",
-								Name:  "myThirdProjectInternalName",
+								Group: "editors-my-third-projectInternalName",
+								Name:  "my-third-projectInternalName",
 							},
 						},
 					},
@@ -350,50 +245,9 @@ func TestAddUserToProject(t *testing.T) {
 			HTTPStatus:    http.StatusForbidden,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "moby",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "Joe",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-first-project"},
-				},
-
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "plan9",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "John",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-second-project"},
-				},
-
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "myThirdProjectInternalName",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "my-third-project",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-third-project"},
-				},
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				plan9,
 			},
 			ExistingKubermaticUsers: []*kubermaticapiv1.User{
 				&kubermaticapiv1.User{
@@ -410,8 +264,8 @@ func TestAddUserToProject(t *testing.T) {
 								Name:  "plan9",
 							},
 							{
-								Group: "editors-myThirdProjectInternalName",
-								Name:  "myThirdProjectInternalName",
+								Group: "editors-my-third-projectInternalName",
+								Name:  "my-third-projectInternalName",
 							},
 						},
 					},
@@ -448,50 +302,9 @@ func TestAddUserToProject(t *testing.T) {
 			HTTPStatus:    http.StatusForbidden,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "myProjectInternalName",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "my-first-project",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-first-project"},
-				},
-
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "plan9",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "John",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-second-project"},
-				},
-
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "myThirdProjectInternalName",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "my-third-project",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-third-project"},
-				},
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				plan9,
 			},
 			ExistingKubermaticUsers: []*kubermaticapiv1.User{
 				&kubermaticapiv1.User{
@@ -508,8 +321,8 @@ func TestAddUserToProject(t *testing.T) {
 								Name:  "plan9",
 							},
 							{
-								Group: "editors-myThirdProjectInternalName",
-								Name:  "myThirdProjectInternalName",
+								Group: "editors-my-third-projectInternalName",
+								Name:  "my-third-projectInternalName",
 							},
 						},
 					},
@@ -546,50 +359,9 @@ func TestAddUserToProject(t *testing.T) {
 			HTTPStatus:    http.StatusBadRequest,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "myProjectInternalName",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "my-first-project",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-first-project"},
-				},
-
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "plan9",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "John",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-second-project"},
-				},
-
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "myThirdProjectInternalName",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "my-third-project",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-third-project"},
-				},
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				plan9,
 			},
 			ExistingKubermaticUsers: []*kubermaticapiv1.User{
 				&kubermaticapiv1.User{
@@ -606,8 +378,8 @@ func TestAddUserToProject(t *testing.T) {
 								Name:  "plan9",
 							},
 							{
-								Group: "editors-myThirdProjectInternalName",
-								Name:  "myThirdProjectInternalName",
+								Group: "editors-my-third-projectInternalName",
+								Name:  "my-third-projectInternalName",
 							},
 						},
 					},

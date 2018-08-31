@@ -53,7 +53,7 @@ func listProjectsEndpoint(projectProvider provider.ProjectProvider) endpoint.End
 
 		projects := []*apiv1.Project{}
 		for _, pg := range user.Spec.Projects {
-			projectInternal, err := projectProvider.Get(user, pg.Name)
+			projectInternal, err := projectProvider.Get(user, pg.Name, &provider.ProjectGetOptions{})
 			if err != nil {
 				return nil, kubernetesErrorToHTTPError(err)
 			}
@@ -99,7 +99,7 @@ func getProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpo
 		}
 
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
-		kubermaticProject, err := projectProvider.Get(user, req.Name)
+		kubermaticProject, err := projectProvider.Get(user, req.Name, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}

@@ -41,20 +41,7 @@ func TestListSSHKeys(t *testing.T) {
 			Body:             ``,
 			ExpectedResponse: `[{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"yafn","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"fingerprint":"","publicKey":""}},{"id":"key-abc-yafn","name":"abcd","creationTimestamp":"2013-02-03T19:55:00Z","spec":{"fingerprint":"","publicKey":""}}]`,
 			HTTPStatus:       http.StatusOK,
-			ExistingProject: &kubermaticv1.Project{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "myProjectInternalName",
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: "kubermatic.io/v1",
-							Kind:       "User",
-							UID:        "",
-							Name:       "John",
-						},
-					},
-				},
-				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
-			},
+			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
@@ -62,8 +49,8 @@ func TestListSSHKeys(t *testing.T) {
 					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
-							Group: "owners-myProjectInternalName",
-							Name:  "myProjectInternalName",
+							Group: "owners-" + testingProjectName,
+							Name:  testingProjectName,
 						},
 					},
 				},
@@ -81,7 +68,7 @@ func TestListSSHKeys(t *testing.T) {
 								APIVersion: "kubermatic.k8s.io/v1",
 								Kind:       "Project",
 								UID:        "",
-								Name:       "myProjectInternalName",
+								Name:       testingProjectName,
 							},
 						},
 						CreationTimestamp: metav1.NewTime(creationTime),
@@ -99,7 +86,7 @@ func TestListSSHKeys(t *testing.T) {
 								APIVersion: "kubermatic.k8s.io/v1",
 								Kind:       "Project",
 								UID:        "",
-								Name:       "myProjectInternalName",
+								Name:       testingProjectName,
 							},
 						},
 						CreationTimestamp: metav1.NewTime(creationTime.Add(time.Minute)),
@@ -118,7 +105,7 @@ func TestListSSHKeys(t *testing.T) {
 							APIVersion: "kubermatic.k8s.io/v1",
 							Kind:       "Project",
 							UID:        "",
-							Name:       "myProjectInternalName",
+							Name:       testingProjectName,
 						},
 					},
 				},
@@ -128,7 +115,7 @@ func TestListSSHKeys(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v1/projects/myProjectInternalName/sshkeys", strings.NewReader(tc.Body))
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/sshkeys", testingProjectName), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			if tc.ExistingProject != nil {
@@ -176,20 +163,7 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 			Body:             `{"name":"my-second-ssh-key","spec":{"publicKey":"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8LlXSRW4HUYAjzx1+r5JzpjXIDDyFkWZzBQ8aU14J8LdMyQsU6/ZKuO5IKoWWVoPi0e63qSjkXPTjnUAwpE62hDm6uLaPgIlc3ND+8d9xbItS+gyXk9TSkC3emrsCWpS76W3KjLwyz5euIfnMCQZSASM7F5CrNg6XSppOgRWlyY09VEKi9PmvEDKCy5JNt6afcUzB3rAOK3SYZ0BYDyrVjuqTcMZwRodryxKb/jxDS+qQNplBNuUBqUzqjuKyI5oAk+aVTYIfTwgBTQyZT7So/u70gSDbRp9uHI05PkH60IftAHdYu4TJTmCwJxLW/suOEx3PPvIsUP14XQUZgmDJEuIuWDlsvfOo9DXZNnl832SGvTyhclBpsauWJ1OwOllT+hlM7u8dwcb70GD/OzCG7RSEatVoiNtg4XdeUf4kiqqzKZEqpopHQqwVKMhlhPKKulY0vrtetJxaLokEwPOYyycxlXsNBK2ei/IbGan+uI39v0s30ySWKzr+M9z0QlLAG7rjgCSWFSmy+Ez2fxU5HQQTNCep8+VjNeI79uO9VDJ8qvV/y6fDtrwgl67hUgDcHyv80TzVROTGFBMCP7hyswArT0GxpL9q7PjPU92D43UEDY5YNOZN2A976O5jd4bPrWp0mKsye1BhLrct16Xdn9x68D8nS2T1uSSWovFhkQ== lukasz@loodse.com "}}`,
 			ExpectedResponse: `{"id":"%s","name":"my-second-ssh-key","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"fingerprint":"c0:8a:a5:c7:ab:f3:45:04:f1:85:52:84:64:85:26:7d","publicKey":"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8LlXSRW4HUYAjzx1+r5JzpjXIDDyFkWZzBQ8aU14J8LdMyQsU6/ZKuO5IKoWWVoPi0e63qSjkXPTjnUAwpE62hDm6uLaPgIlc3ND+8d9xbItS+gyXk9TSkC3emrsCWpS76W3KjLwyz5euIfnMCQZSASM7F5CrNg6XSppOgRWlyY09VEKi9PmvEDKCy5JNt6afcUzB3rAOK3SYZ0BYDyrVjuqTcMZwRodryxKb/jxDS+qQNplBNuUBqUzqjuKyI5oAk+aVTYIfTwgBTQyZT7So/u70gSDbRp9uHI05PkH60IftAHdYu4TJTmCwJxLW/suOEx3PPvIsUP14XQUZgmDJEuIuWDlsvfOo9DXZNnl832SGvTyhclBpsauWJ1OwOllT+hlM7u8dwcb70GD/OzCG7RSEatVoiNtg4XdeUf4kiqqzKZEqpopHQqwVKMhlhPKKulY0vrtetJxaLokEwPOYyycxlXsNBK2ei/IbGan+uI39v0s30ySWKzr+M9z0QlLAG7rjgCSWFSmy+Ez2fxU5HQQTNCep8+VjNeI79uO9VDJ8qvV/y6fDtrwgl67hUgDcHyv80TzVROTGFBMCP7hyswArT0GxpL9q7PjPU92D43UEDY5YNOZN2A976O5jd4bPrWp0mKsye1BhLrct16Xdn9x68D8nS2T1uSSWovFhkQ== lukasz@loodse.com "}}`,
 			HTTPStatus:       http.StatusCreated,
-			ExistingProject: &kubermaticv1.Project{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "myProjectInternalName",
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: "kubermatic.io/v1",
-							Kind:       "User",
-							UID:        "",
-							Name:       "my-first-project",
-						},
-					},
-				},
-				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
-			},
+			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
@@ -197,8 +171,8 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
-							Group: "owners-myProjectInternalName",
-							Name:  "myProjectInternalName",
+							Group: "owners-" + testingProjectName,
+							Name:  testingProjectName,
 						},
 					},
 				},
@@ -212,7 +186,7 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("POST", "/api/v1/projects/myProjectInternalName/sshkeys", strings.NewReader(tc.Body))
+			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/sshkeys", testingProjectName), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			if tc.ExistingProject != nil {
