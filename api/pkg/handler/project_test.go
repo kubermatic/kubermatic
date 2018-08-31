@@ -17,6 +17,28 @@ import (
 	"k8s.io/apimachinery/pkg/util/diff"
 )
 
+const testingProjectName = "my-first-projectInternalName"
+
+func createTestProject(name, phase string) *kubermaticapiv1.Project {
+	return &kubermaticapiv1.Project{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name + "InternalName",
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: "kubermatic.io/v1",
+					Kind:       "User",
+					UID:        "",
+					Name:       "John",
+				},
+			},
+		},
+		Spec: kubermaticapiv1.ProjectSpec{Name: name},
+		Status: kubermaticapiv1.ProjectStatus{
+			Phase: phase,
+		},
+	}
+}
+
 func TestListProjectEndpoint(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
@@ -33,50 +55,9 @@ func TestListProjectEndpoint(t *testing.T) {
 			Body:       ``,
 			HTTPStatus: http.StatusOK,
 			ExistingProjects: []*kubermaticapiv1.Project{
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "myProjectInternalName",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "my-first-project",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-first-project"},
-				},
-
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "mySecondProjectInternalName",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "my-second-project",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-second-project"},
-				},
-
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "myThirdProjectInternalName",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "my-third-project",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-third-project"},
-				},
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-second-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
 			},
 			ExistingKubermaticUser: &kubermaticapiv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
@@ -86,11 +67,11 @@ func TestListProjectEndpoint(t *testing.T) {
 					Projects: []kubermaticapiv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
-							Name:  "myProjectInternalName",
+							Name:  "my-first-projectInternalName",
 						},
 						{
 							Group: "editors-myThirdProjectInternalName",
-							Name:  "myThirdProjectInternalName",
+							Name:  "my-third-projectInternalName",
 						},
 					},
 				},
@@ -101,15 +82,16 @@ func TestListProjectEndpoint(t *testing.T) {
 			},
 			ExpectedResponse: []apiv1.Project{
 				apiv1.Project{
+					Status: "Active",
 					NewObjectMeta: apiv1.NewObjectMeta{
-						ID:   "myProjectInternalName",
+						ID:   "my-first-projectInternalName",
 						Name: "my-first-project",
 					},
 				},
-
 				apiv1.Project{
+					Status: "Active",
 					NewObjectMeta: apiv1.NewObjectMeta{
-						ID:   "myThirdProjectInternalName",
+						ID:   "my-third-projectInternalName",
 						Name: "my-third-project",
 					},
 				},
@@ -189,23 +171,10 @@ func TestGetProjectEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 1: get an existing project assigned to the given user",
 			Body:             ``,
-			ProjectToSync:    `myProjectInternalName`,
-			ExpectedResponse: `{"id":"myProjectInternalName","name":"my-first-project","creationTimestamp":"0001-01-01T00:00:00Z","status":""}`,
+			ProjectToSync:    testingProjectName,
+			ExpectedResponse: `{"id":"my-first-projectInternalName","name":"my-first-project","creationTimestamp":"0001-01-01T00:00:00Z","status":"Active"}`,
 			HTTPStatus:       http.StatusOK,
-			ExistingProject: &kubermaticapiv1.Project{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "myProjectInternalName",
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: "kubermatic.io/v1",
-							Kind:       "User",
-							UID:        "",
-							Name:       "my-first-project",
-						},
-					},
-				},
-				Spec: kubermaticapiv1.ProjectSpec{Name: "my-first-project"},
-			},
+			ExistingProject:  createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
 			ExistingKubermaticUser: &kubermaticapiv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticapiv1.UserSpec{
@@ -214,7 +183,7 @@ func TestGetProjectEndpoint(t *testing.T) {
 					Projects: []kubermaticapiv1.ProjectGroup{
 						{
 							Group: "owners-myProjectInternalName",
-							Name:  "myProjectInternalName",
+							Name:  testingProjectName,
 						},
 					},
 				},

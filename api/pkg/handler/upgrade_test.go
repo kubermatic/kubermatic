@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -135,28 +136,15 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 				},
 				Spec: kubermaticv1.ClusterSpec{Version: "1.6.0"},
 			},
-			project: &kubermaticv1.Project{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "myProjectInternalName",
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: "kubermatic.io/v1",
-							Kind:       "User",
-							UID:        "",
-							Name:       "my-first-project",
-						},
-					},
-				},
-				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
-			},
+			project: createTestProject("my-first-project", kubermaticv1.ProjectActive),
 			user: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "George",
 					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
-							Group: "owners-myProjectInternalName",
-							Name:  "myProjectInternalName",
+							Group: "owners-" + testingProjectName,
+							Name:  testingProjectName,
 						},
 					},
 				},
@@ -209,28 +197,15 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 				},
 				Spec: kubermaticv1.ClusterSpec{Version: "1.6.0"},
 			},
-			project: &kubermaticv1.Project{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "myProjectInternalName",
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: "kubermatic.io/v1",
-							Kind:       "User",
-							UID:        "",
-							Name:       "my-first-project",
-						},
-					},
-				},
-				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
-			},
+			project: createTestProject("my-first-project", kubermaticv1.ProjectActive),
 			user: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
 					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
-							Group: "owners-myProjectInternalName",
-							Name:  "myProjectInternalName",
+							Group: "owners-" + testingProjectName,
+							Name:  testingProjectName,
 						},
 					},
 				},
@@ -253,7 +228,7 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/foo/upgrades", nil)
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/foo/upgrades", testingProjectName), nil)
 			res := httptest.NewRecorder()
 
 			kubermaticObj := []runtime.Object{test.cluster}
