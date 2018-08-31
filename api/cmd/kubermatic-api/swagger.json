@@ -17,29 +17,6 @@
   },
   "host": "cloud.kubermatic.io",
   "paths": {
-    "/api/v1/azure/sizes": {
-      "get": {
-        "description": "Lists available VM sizes in an Azure region",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "azure"
-        ],
-        "operationId": "listAzureSizes",
-        "responses": {
-          "200": {
-            "description": "AzureSizeList",
-            "schema": {
-              "$ref": "#/definitions/AzureSizeList"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
     "/api/v1/dc": {
       "get": {
         "produces": [
@@ -85,29 +62,6 @@
             "description": "Datacenter",
             "schema": {
               "$ref": "#/definitions/Datacenter"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/digitalocean/sizes": {
-      "get": {
-        "description": "Lists sizes from digitalocean",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "digitalocean"
-        ],
-        "operationId": "listDigitaloceanSizes",
-        "responses": {
-          "200": {
-            "description": "DigitaloceanSizeList",
-            "schema": {
-              "$ref": "#/definitions/DigitaloceanSizeList"
             }
           },
           "default": {
@@ -1632,6 +1586,240 @@
         }
       }
     },
+    "/api/v1/providers/azure/sizes": {
+      "get": {
+        "description": "Lists available VM sizes in an Azure region",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "azure"
+        ],
+        "operationId": "listAzureSizes",
+        "responses": {
+          "200": {
+            "description": "AzureSizeList",
+            "schema": {
+              "$ref": "#/definitions/AzureSizeList"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/digitalocean/sizes": {
+      "get": {
+        "description": "Lists sizes from digitalocean",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "digitalocean"
+        ],
+        "operationId": "listDigitaloceanSizes",
+        "responses": {
+          "200": {
+            "description": "DigitaloceanSizeList",
+            "schema": {
+              "$ref": "#/definitions/DigitaloceanSizeList"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/openstack/networks": {
+      "get": {
+        "description": "Lists networks from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackNetworks",
+        "responses": {
+          "200": {
+            "description": "OpenstackNetwork",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackNetwork"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/openstack/securitygroups": {
+      "get": {
+        "description": "Lists security groups from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackSecurityGroups",
+        "responses": {
+          "200": {
+            "description": "OpenstackSecurityGroup",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackSecurityGroup"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/openstack/sizes": {
+      "get": {
+        "description": "Lists sizes from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackSizes",
+        "responses": {
+          "200": {
+            "description": "OpenstackSize",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackSize"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/openstack/subnets": {
+      "get": {
+        "description": "Lists subnets from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackSubnets",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "Domain",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "Tenant",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "NetworkID",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OpenstackSubnet",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackSubnet"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/openstack/tenants": {
+      "get": {
+        "description": "Lists tenants from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackTenants",
+        "responses": {
+          "200": {
+            "description": "OpenstackTenant",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackTenant"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/vsphere/networks": {
+      "get": {
+        "description": "Lists networks from vsphere datacenter",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "vsphere"
+        ],
+        "operationId": "listVSphereNetworks",
+        "responses": {
+          "200": {
+            "description": "VSphereNetwork",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/VSphereNetwork"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/ssh-keys": {
       "get": {
         "description": "Lists SSH keys from the user",
@@ -1727,32 +1915,6 @@
               "type": "array",
               "items": {
                 "$ref": "#/definitions/MasterVersion"
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/vsphere/networks": {
-      "get": {
-        "description": "Lists networks from vsphere datacenter",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "vsphere"
-        ],
-        "operationId": "listVSphereNetworks",
-        "responses": {
-          "200": {
-            "description": "VSphereNetwork",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/VSphereNetwork"
               }
             }
           },
