@@ -24,4 +24,5 @@ roleRef:
   name: cert-manager
 subjects:
   - name: cert-manager
+    namespace: cert-manager
     kind: ServiceAccount
