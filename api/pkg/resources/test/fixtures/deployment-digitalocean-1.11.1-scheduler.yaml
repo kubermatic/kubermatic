@@ -34,6 +34,16 @@ spec:
         openvpn-client-certificates-secret-revision: "123456"
         scheduler-kubeconfig-secret-revision: "123456"
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: scheduler
+                  cluster: de-test-01
+              topologyKey: kubernetes.io/hostname
+            weight: 100
       containers:
       - args:
         - --client
@@ -151,8 +161,8 @@ spec:
       - command:
         - /bin/sh
         - -ec
-        - until wget -O - -T 1 https://192.0.2.10:30000/healthz; do echo waiting for
-          apiserver; sleep 2; done
+        - until wget -T 1 https://192.0.2.10:30000/healthz; do echo waiting for apiserver;
+          sleep 2; done;
         image: docker.io/busybox
         imagePullPolicy: IfNotPresent
         name: apiserver-running

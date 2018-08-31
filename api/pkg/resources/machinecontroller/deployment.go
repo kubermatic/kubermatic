@@ -3,6 +3,8 @@ package machinecontroller
 import (
 	"fmt"
 
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
+
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -14,7 +16,7 @@ import (
 const (
 	name = "machine-controller"
 
-	tag = "v0.7.18"
+	tag = "v0.7.19"
 )
 
 // Deployment returns the machine-controller Deployment
@@ -48,7 +50,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	volumes := getVolumes()
-	podLabels, err := data.GetPodTemplateLabels(name, data.Cluster.Name, volumes, nil)
+	podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pod labels: %v", err)
 	}
@@ -62,28 +64,15 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	// get clusterIP of apiserver
-	apiAddress, err := data.InClusterApiserverAddress()
+	kcDir := "/etc/kubernetes/machinecontroller"
+	dep.Spec.Template.Spec.Volumes = volumes
+
+	apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
 	if err != nil {
 		return nil, err
 	}
+	dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
 
-	kcDir := "/etc/kubernetes/machinecontroller"
-	dep.Spec.Template.Spec.Volumes = volumes
-	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
-		{
-			Name:            "apiserver-running",
-			Image:           data.ImageRegistry(resources.RegistryDocker) + "/busybox",
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command: []string{
-				"/bin/sh",
-				"-ec",
-				fmt.Sprintf("until wget -T 1 https://%s/healthz; do echo waiting for apiserver; sleep 2; done", apiAddress),
-			},
-			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-		},
-	}
 	clusterDNSIP, err := resources.UserClusterDNSResolverIP(data.Cluster)
 	if err != nil {
 		return nil, err

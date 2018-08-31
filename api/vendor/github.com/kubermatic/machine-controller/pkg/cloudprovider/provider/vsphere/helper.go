@@ -33,7 +33,7 @@ const (
 
 var errSnapshotNotFound = errors.New("no snapshot with given name found")
 
-func createLinkClonedVm(vmName, vmImage, datacenter, clusterName, folder string, cpus int32, memoryMB int64, client *govmomi.Client, containerLinuxUserdata string) error {
+func createLinkClonedVM(vmName, vmImage, datacenter, clusterName, folder string, cpus int32, memoryMB int64, client *govmomi.Client, containerLinuxUserdata string) error {
 	f := find.NewFinder(client.Client, true)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -44,12 +44,12 @@ func createLinkClonedVm(vmName, vmImage, datacenter, clusterName, folder string,
 	}
 	f.SetDatacenter(dc)
 
-	templateVm, err := f.VirtualMachine(ctx, vmImage)
+	templateVM, err := f.VirtualMachine(ctx, vmImage)
 	if err != nil {
 		return err
 	}
 
-	glog.V(3).Infof("Template VM ref is %+v", templateVm)
+	glog.V(3).Infof("Template VM ref is %+v", templateVM)
 	datacenterFolders, err := dc.Folders(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get datacenter folders: %v", err)
@@ -72,12 +72,12 @@ func createLinkClonedVm(vmName, vmImage, datacenter, clusterName, folder string,
 	}
 
 	// Create snapshot of the template VM if not already snapshotted.
-	snapshot, err := findSnapshot(templateVm, ctx, snapshotName)
+	snapshot, err := findSnapshot(ctx, templateVM, snapshotName)
 	if err != nil {
 		if err != errSnapshotNotFound {
 			return fmt.Errorf("failed to find snapshot: %v", err)
 		}
-		snapshot, err = createSnapshot(ctx, templateVm, snapshotName, snapshotDesc)
+		snapshot, err = createSnapshot(ctx, templateVM, snapshotName, snapshotDesc)
 		if err != nil {
 			return fmt.Errorf("failed to create snapshot: %v", err)
 		}
@@ -110,7 +110,7 @@ func createLinkClonedVm(vmName, vmImage, datacenter, clusterName, folder string,
 		// In order to overwrite them, we need to specify their numeric Key values,
 		// which we'll extract from that template.
 		var mvm mo.VirtualMachine
-		err = templateVm.Properties(ctx, templateVm.Reference(), []string{"config", "config.vAppConfig", "config.vAppConfig.property"}, &mvm)
+		err = templateVM.Properties(ctx, templateVM.Reference(), []string{"config", "config.vAppConfig", "config.vAppConfig.property"}, &mvm)
 		if err != nil {
 			return err
 		}
@@ -133,7 +133,6 @@ func createLinkClonedVm(vmName, vmImage, datacenter, clusterName, folder string,
 						Value: userdataBase64,
 					},
 				})
-				break
 			case "guestinfo.coreos.config.data.encoding":
 				propertySpecs = append(propertySpecs, types.VAppPropertySpec{
 					ArrayUpdateSpec: types.ArrayUpdateSpec{
@@ -145,18 +144,17 @@ func createLinkClonedVm(vmName, vmImage, datacenter, clusterName, folder string,
 						Value: "base64",
 					},
 				})
-				break
 			}
 		}
 
 		vAppAconfig = &types.VmConfigSpec{Property: propertySpecs}
 	}
 
-	diskUuidEnabled := true
+	diskUUIDEnabled := true
 	cloneSpec := &types.VirtualMachineCloneSpec{
 		Config: &types.VirtualMachineConfigSpec{
 			Flags: &types.VirtualMachineFlagInfo{
-				DiskUuidEnabled: &diskUuidEnabled,
+				DiskUuidEnabled: &diskUUIDEnabled,
 			},
 			NumCPUs:    cpus,
 			MemoryMB:   memoryMB,
@@ -171,12 +169,12 @@ func createLinkClonedVm(vmName, vmImage, datacenter, clusterName, folder string,
 	}
 
 	// Create a link cloned VM from the template VM's snapshot
-	clonedVmTask, err := templateVm.Clone(ctx, datacenterFolders.VmFolder, vmName, *cloneSpec)
+	clonedVMTask, err := templateVM.Clone(ctx, datacenterFolders.VmFolder, vmName, *cloneSpec)
 	if err != nil {
 		return err
 	}
 
-	_, err = clonedVmTask.WaitForResult(ctx, nil)
+	_, err = clonedVMTask.WaitForResult(ctx, nil)
 	return err
 }
 
@@ -201,12 +199,7 @@ func updateNetworkForVM(ctx context.Context, vm *object.VirtualMachine, currentN
 	currentBacking.DeviceName = newNetName
 	currentBacking.Network = newNet
 
-	err = vm.EditDevice(ctx, *netDev)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return vm.EditDevice(ctx, *netDev)
 }
 
 func getNetworkDevicesAndBackingsFromVM(ctx context.Context, vm *object.VirtualMachine, netNameFilter string) ([]netDeviceAndBackingInfo, error) {
@@ -269,7 +262,7 @@ func createSnapshot(ctx context.Context, vm *object.VirtualMachine, snapshotName
 	return taskInfo.Result.(object.Reference), nil
 }
 
-func findSnapshot(vm *object.VirtualMachine, ctx context.Context, name string) (object.Reference, error) {
+func findSnapshot(ctx context.Context, vm *object.VirtualMachine, name string) (object.Reference, error) {
 	var moVirtualMachine mo.VirtualMachine
 
 	err := vm.Properties(ctx, vm.Reference(), []string{"snapshot"}, &moVirtualMachine)
@@ -350,7 +343,7 @@ func getDatacenterFinder(datacenter string, client *govmomi.Client) (*find.Finde
 	return finder, nil
 }
 
-func generateLocalUserdataIso(userdata, name string) (string, error) {
+func generateLocalUserdataISO(userdata, name string) (string, error) {
 	// We must create a directory, because the iso-generation commands
 	// take a directory as input
 	userdataDir, err := ioutil.TempDir(localTempDir, name)
@@ -405,7 +398,7 @@ func generateLocalUserdataIso(userdata, name string) (string, error) {
 		command = "mkisofs"
 		args = []string{"-o", isoFilePath, "-V", "cidata", "-J", "-R", userdataDir}
 	} else {
-		return "", errors.New("system is missing genisoimage or mkisofs, can't generate userdata iso without it.")
+		return "", errors.New("system is missing genisoimage or mkisofs, can't generate userdata iso without it")
 	}
 
 	cmd := exec.Command(command, args...)

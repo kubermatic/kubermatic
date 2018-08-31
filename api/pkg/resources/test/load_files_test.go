@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -324,6 +325,13 @@ func TestLoadFiles(t *testing.T) {
 					&v1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
+							Name:            resources.KubeletDnatControllerKubeconfigSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
 							Name:            resources.FrontProxyCASecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
@@ -435,6 +443,23 @@ func TestLoadFiles(t *testing.T) {
 					close(stopCh)
 				}()
 
+				tmpFile, err := ioutil.TempFile("", "kubermatic")
+				if err != nil {
+					t.Fatalf("couldnt create temp file, see: %v", err)
+				}
+
+				tmpFilePath := tmpFile.Name()
+				_, err = tmpFile.WriteString("some test")
+				if err != nil {
+					t.Fatalf("couldnt write to temp file, see: %v", err)
+				}
+				defer (func() {
+					err = os.Remove(tmpFilePath)
+					if err != nil {
+						t.Fatalf("couldn't delete temp file, see: %v", err)
+					}
+				})()
+
 				kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, 10*time.Millisecond)
 				data := resources.NewTemplateData(
 					cluster,
@@ -447,8 +472,11 @@ func TestLoadFiles(t *testing.T) {
 					"",
 					"192.0.2.0/24",
 					resource.MustParse("5Gi"),
-					"",
+					tmpFilePath,
 					false,
+					false,
+					tmpFilePath,
+					nil,
 				)
 				kubeInformerFactory.Start(wait.NeverStop)
 				kubeInformerFactory.WaitForCacheSync(wait.NeverStop)

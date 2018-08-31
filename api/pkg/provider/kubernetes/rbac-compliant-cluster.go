@@ -138,12 +138,27 @@ func (p *RBACCompliantClusterProvider) List(project *kubermaticapiv1.Project, op
 }
 
 // Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to
-func (p *RBACCompliantClusterProvider) Get(user *kubermaticapiv1.User, project *kubermaticapiv1.Project, clusterName string) (*kubermaticapiv1.Cluster, error) {
+func (p *RBACCompliantClusterProvider) Get(user *kubermaticapiv1.User, project *kubermaticapiv1.Project, clusterName string, options *provider.ClusterGetOptions) (*kubermaticapiv1.Cluster, error) {
 	seedImpersonatedClient, err := p.createSeedImpersonationClientWrapper(user, project)
 	if err != nil {
 		return nil, err
 	}
-	return seedImpersonatedClient.Clusters().Get(clusterName, metav1.GetOptions{})
+
+	cluster, err := seedImpersonatedClient.Clusters().Get(clusterName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if options.CheckInitStatus {
+		isHealthy := cluster.Status.Health.Apiserver &&
+			cluster.Status.Health.Scheduler &&
+			cluster.Status.Health.Controller &&
+			cluster.Status.Health.MachineController &&
+			cluster.Status.Health.Etcd
+		if !isHealthy {
+			return nil, kerrors.NewServiceUnavailable("Cluster components are not ready yet")
+		}
+	}
+	return cluster, nil
 }
 
 // Delete deletes the given cluster

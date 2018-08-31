@@ -649,6 +649,84 @@ func TestCreateNodeForCluster(t *testing.T) {
 				Email: testUserEmail,
 			},
 			ExistingCluster: &kubermaticv1.Cluster{
+				Status: kubermaticv1.ClusterStatus{
+					Health: kubermaticv1.ClusterHealth{
+						ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
+							Apiserver:         true,
+							Scheduler:         true,
+							Controller:        true,
+							MachineController: true,
+							Etcd:              true,
+						},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "abcd",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: "kubermatic.k8s.io/v1",
+							Kind:       "Project",
+							UID:        "",
+							Name:       "myProjectInternalName",
+						},
+					},
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					Cloud: kubermaticv1.CloudSpec{
+						DatacenterName: "us-central1",
+					},
+				},
+			},
+		},
+		// scenario 2
+		{
+			Name:                               "scenario 2: cluster components are not ready",
+			Body:                               `{"spec":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"containerRuntime":{"name":"docker"}}}}`,
+			ExpectedResponse:                   `{"error":{"code":503,"message":"Cluster components are not ready yet"}}`,
+			HTTPStatus:                         http.StatusServiceUnavailable,
+			RewriteClusterNameAndNamespaceName: true,
+			ExistingProject: &kubermaticv1.Project{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "myProjectInternalName",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: "kubermatic.io/v1",
+							Kind:       "User",
+							UID:        "",
+							Name:       "John",
+						},
+					},
+				},
+				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
+			},
+			ExistingKubermaticUser: &kubermaticv1.User{
+				Spec: kubermaticv1.UserSpec{
+					Name:  "John",
+					Email: testUserEmail,
+					Projects: []kubermaticv1.ProjectGroup{
+						{
+							Group: "owners-myProjectInternalName",
+							Name:  "myProjectInternalName",
+						},
+					},
+				},
+			},
+			ExistingAPIUser: &apiv1.User{
+				ID:    testUserName,
+				Email: testUserEmail,
+			},
+			ExistingCluster: &kubermaticv1.Cluster{
+				Status: kubermaticv1.ClusterStatus{
+					Health: kubermaticv1.ClusterHealth{
+						ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
+							Apiserver:         true,
+							Scheduler:         true,
+							Controller:        false,
+							MachineController: true,
+							Etcd:              true,
+						},
+					},
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "abcd",
 					OwnerReferences: []metav1.OwnerReference{
@@ -703,7 +781,11 @@ func TestCreateNodeForCluster(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				expectedResponse = fmt.Sprintf(tc.ExpectedResponse, actualNode.ID, actualNode.Name, actualNode.Status.MachineName)
+				if tc.HTTPStatus > 399 {
+					expectedResponse = tc.ExpectedResponse
+				} else {
+					expectedResponse = fmt.Sprintf(tc.ExpectedResponse, actualNode.ID, actualNode.Name, actualNode.Status.MachineName)
+				}
 			}
 			compareWithResult(t, res, expectedResponse)
 		})

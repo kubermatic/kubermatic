@@ -57,7 +57,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	}
 
 	volumes := getVolumes()
-	podLabels, err := data.GetPodTemplateLabels(resources.EtcdStatefulSetName, data.Cluster.Name, volumes, baseLabels)
+	podLabels, err := data.GetPodTemplateLabels(resources.EtcdStatefulSetName, volumes, baseLabels)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pod labels: %v", err)
 	}
@@ -170,21 +170,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 		},
 	}
 
-	set.Spec.Template.Spec.Affinity = &corev1.Affinity{
-		PodAntiAffinity: &corev1.PodAntiAffinity{
-			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
-				{
-					Weight: 100,
-					PodAffinityTerm: corev1.PodAffinityTerm{
-						LabelSelector: &metav1.LabelSelector{
-							MatchLabels: baseLabels,
-						},
-						TopologyKey: "kubernetes.io/hostname",
-					},
-				},
-			},
-		},
-	}
+	set.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(baseLabels)
 
 	set.Spec.Template.Spec.Volumes = volumes
 

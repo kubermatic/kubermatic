@@ -109,6 +109,8 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.etcdDiskSize,
 		ctrlCtx.runOptions.inClusterPrometheusRulesFile,
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultRules,
+		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultScrapingConfigs,
+		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
 		dockerPullConfigJSON,
 
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),

@@ -1,0 +1,9 @@
+{{- if .Values.kubermatic.clusterNamespacePrometheus.scrapingConfigs }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clusterns-prometheus-scraping-configs
+data:
+  _custom-scraping-configs.yaml: |
+{{ toYaml .Values.kubermatic.clusterNamespacePrometheus.scrapingConfigs | indent 4 }}
+{{- end}}
