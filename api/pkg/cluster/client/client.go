@@ -30,7 +30,7 @@ func (p *Provider) GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	d := s.Data[resources.AdminKubeconfigSecretKey]
+	d := s.Data[resources.KubeconfigSecretKey]
 	if len(d) == 0 {
 		return nil, fmt.Errorf("no kubeconfig found")
 	}
@@ -51,7 +51,7 @@ func (p *Provider) GetClientConfig(c *kubermaticv1.Cluster) (*restclient.Config,
 
 	iconfig := clientcmd.NewNonInteractiveClientConfig(
 		*cfg,
-		c.Name,
+		resources.KubeconfigDefaultContextKey,
 		&clientcmd.ConfigOverrides{},
 		nil,
 	)

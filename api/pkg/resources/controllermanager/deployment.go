@@ -87,7 +87,6 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		return nil, err
 	}
 
-	kcDir := "/etc/kubernetes/controllermanager"
 	dep.Spec.Template.Spec.Volumes = volumes
 
 	apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
@@ -119,7 +118,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 		{
 			Name:      resources.ControllerManagerKubeconfigSecretName,
-			MountPath: kcDir,
+			MountPath: "/etc/kubernetes/kubeconfig",
 			ReadOnly:  true,
 		},
 	}
@@ -141,12 +140,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
 		{
-			Name:                     name,
-			Image:                    data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
-			ImagePullPolicy:          corev1.PullIfNotPresent,
-			Command:                  []string{"/hyperkube", "controller-manager"},
-			Args:                     getFlags(data, kcDir),
-			Env:                      getEnvVars(data),
+			Name:            name,
+			Image:           data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			Command:         []string{"/hyperkube", "controller-manager"},
+			Args:            getFlags(data),
+			Env:             getEnvVars(data),
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			Resources:                resourceRequirements,
@@ -184,9 +183,9 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	return dep, nil
 }
 
-func getFlags(data *resources.TemplateData, kcDir string) []string {
+func getFlags(data *resources.TemplateData) []string {
 	flags := []string{
-		"--kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.ControllerManagerKubeconfigSecretName),
+		"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"--service-account-private-key-file", "/etc/kubernetes/service-account-key/sa.key",
 		"--root-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--cluster-signing-cert-file", "/etc/kubernetes/pki/ca/ca.crt",

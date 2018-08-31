@@ -92,7 +92,6 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		return nil, err
 	}
 
-	kcDir := "/etc/kubernetes/scheduler"
 	dep.Spec.Template.Spec.Volumes = volumes
 
 	apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
@@ -113,7 +112,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "scheduler"},
 			Args: []string{
-				"--kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.SchedulerKubeconfigSecretName),
+				"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 				"--v", "4",
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
@@ -121,7 +120,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      resources.SchedulerKubeconfigSecretName,
-					MountPath: kcDir,
+					MountPath: "/etc/kubernetes/kubeconfig",
 					ReadOnly:  true,
 				},
 			},

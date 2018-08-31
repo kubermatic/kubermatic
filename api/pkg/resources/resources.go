@@ -8,6 +8,10 @@ import (
 	"net"
 	"time"
 
+	"github.com/golang/glog"
+
+	"github.com/go-test/deep"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -218,8 +222,8 @@ const (
 	KubeletClientCertSecretKey = "kubelet-client.crt" // FIXME confusing naming: s/CertSecretKey/CertSecretName/
 	// ServiceAccountKeySecretKey sa.key
 	ServiceAccountKeySecretKey = "sa.key"
-	// AdminKubeconfigSecretKey admin-kubeconfig
-	AdminKubeconfigSecretKey = "admin-kubeconfig"
+	// KubeconfigSecretKey kubeconfig
+	KubeconfigSecretKey = "kubeconfig"
 	// TokensSecretKey tokens.csv
 	TokensSecretKey = "tokens.csv"
 	// OpenVPNServerKeySecretKey server.key
@@ -234,6 +238,9 @@ const (
 	EtcdTLSCertSecretKey = "etcd-tls.crt"
 	// EtcdTLSKeySecretKey etcd-tls.key
 	EtcdTLSKeySecretKey = "etcd-tls.key"
+
+	// KubeconfigDefaultContextKey is the context key used for all kubeconfigs
+	KubeconfigDefaultContextKey = "default"
 
 	// ApiserverEtcdClientCertificateCertSecretKey apiserver-etcd-client.crt
 	ApiserverEtcdClientCertificateCertSecretKey = "apiserver-etcd-client.crt"
@@ -500,4 +507,16 @@ func ClusterIPForService(name, namespace string, serviceLister corev1lister.Serv
 	}
 
 	return &ip, nil
+}
+
+// DeepEqual compares both objects for equality
+func DeepEqual(a, b metav1.Object) bool {
+	//TODO: Check why equality.Semantic.DeepEqual returns a different result than deep.Equal
+	diff := deep.Equal(a, b)
+	if diff == nil {
+		return true
+	}
+
+	glog.V(8).Infof("Object %T %s/%s differs from the one, generated: %v", a, a.GetNamespace(), a.GetName(), diff)
+	return false
 }

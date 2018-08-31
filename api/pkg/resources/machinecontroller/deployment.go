@@ -64,7 +64,6 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	kcDir := "/etc/kubernetes/machinecontroller"
 	dep.Spec.Template.Spec.Volumes = volumes
 
 	apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
@@ -84,7 +83,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/local/bin/machine-controller"},
 			Args: []string{
-				"-kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.MachineControllerKubeconfigSecretName),
+				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 				"-logtostderr",
 				"-v", "4",
 				"-cluster-dns", clusterDNSIP,
@@ -121,7 +120,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      resources.MachineControllerKubeconfigSecretName,
-					MountPath: kcDir,
+					MountPath: "/etc/kubernetes/kubeconfig",
 					ReadOnly:  true,
 				},
 			},
