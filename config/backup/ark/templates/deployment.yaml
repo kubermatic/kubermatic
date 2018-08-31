@@ -12,7 +12,11 @@ spec:
       labels:
         name: ark-server
       annotations:
-{{ toYaml .Values.ark.podAnnotations | indent 8 }}
+        kubermatic/scrape: "true"
+        kubermatic/scrape_port: "8085"
+{{- with .Values.ark.podAnnotations }}
+{{ toYaml . | indent 8 }}
+{{- end }}
     spec:
       restartPolicy: Always
       containers:
@@ -48,6 +52,10 @@ spec:
             - name: gcp-credentials
               mountPath: /credentials/gcp
           {{- end }}
+          ports:
+            - name: metrics
+              containerPort: 8085
+              protocol: TCP
       volumes:
         - name: plugins
           emptyDir: {}
