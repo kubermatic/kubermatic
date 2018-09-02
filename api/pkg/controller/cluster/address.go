@@ -31,7 +31,7 @@ func getExternalIPv4(hostname string) (string, error) {
 
 	//Just one ipv4
 	if len(ips) > 1 {
-		glog.V(6).Infof("lookup of %s returned multiple ipv4 addresses (%v). Picking the first one after sorting: %s", ips, ips[0])
+		glog.V(6).Infof("lookup of %s returned multiple ipv4 addresses (%v). Picking the first one after sorting: %s", hostname, ips, ips[0])
 	}
 	return ips[0], nil
 }
