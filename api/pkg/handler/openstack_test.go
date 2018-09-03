@@ -155,14 +155,14 @@ func TestOpenstackEndpoints(t *testing.T) {
 	}{
 		{
 			Name: "test tenants endpoint",
-			URL:  "/api/v1/openstack/securitygroups",
+			URL:  "/api/v1/providers/openstack/securitygroups",
 			ExpectedResponse: `[
 				{"id": "85cc3048-abc3-43cc-89b3-377341426ac5", "name": "default"}
 			]`,
 		},
 		{
 			Name: "test tenants endpoint",
-			URL:  "/api/v1/openstack/tenants",
+			URL:  "/api/v1/providers/openstack/tenants",
 			ExpectedResponse: `[
 				{"id":"456788", "name": "a project name"},
 				{"id":"456789", "name": "another domain"}
@@ -170,7 +170,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 		},
 		{
 			Name:        "test subnets endpoint",
-			URL:         "/api/v1/openstack/subnets",
+			URL:         "/api/v1/providers/openstack/subnets",
 			QueryParams: map[string]string{"network_id": "foo"},
 			ExpectedResponse: `[
 				{"id": "08eae331-0402-425a-923c-34f7cfe39c1b", "name": "private-subnet"},
@@ -179,7 +179,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 		},
 		{
 			Name: "test networks endpoint",
-			URL:  "/api/v1/openstack/networks",
+			URL:  "/api/v1/providers/openstack/networks",
 			ExpectedResponse: `[
 				{"id": "396f12f8-521e-4b91-8e21-2e003500433a", "name": "net3"},
 				{"id": "71c1e68c-171a-4aa2-aca5-50ea153a3718", "name": "net2"}
@@ -187,7 +187,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 		},
 		{
 			Name: "test sizes endpoint",
-			URL:  "/api/v1/openstack/sizes",
+			URL:  "/api/v1/providers/openstack/sizes",
 			ExpectedResponse: `[
 				{
 					"disk":40, "isPublic":true, "memory":4096, "region":"RegionOne", "slug":"m1.medium", "swap":0, "vcpus":2
