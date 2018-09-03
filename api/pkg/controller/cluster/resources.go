@@ -25,6 +25,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -82,22 +83,27 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 		return err
 	}
 
-	// check that all ServerClientConfigsConfigMap's are available
+	// check that all ConfigMaps are available
 	if err := cc.ensureConfigMaps(cluster); err != nil {
 		return err
 	}
 
-	// check that all deployments are available
+	// check that all Deployments are available
 	if err := cc.ensureDeployments(cluster); err != nil {
 		return err
 	}
 
-	// check that all StatefulSet's are created
+	// check that all StatefulSets are created
 	if err := cc.ensureStatefulSets(cluster); err != nil {
 		return err
 	}
 
-	// check that all PodDisruptionBudget's are created
+	// check that all CronJobs are created
+	if err := cc.ensureCronJobs(cluster); err != nil {
+		return err
+	}
+
+	// check that all PodDisruptionBudgets are created
 	if err := cc.ensurePodDisruptionBudgets(cluster); err != nil {
 		return err
 	}
@@ -846,6 +852,64 @@ func (cc *Controller) ensurePodDisruptionBudgets(c *kubermaticv1.Cluster) error 
 		}
 
 		countSeedResourceUpdate(c, "poddisruptionbudget", pdb.Name)
+	}
+
+	return nil
+}
+
+// GetCronJobCreators returns all CronJobCreators that are currently in use
+func GetCronJobCreators() []resources.CronJobCreator {
+	return []resources.CronJobCreator{
+		etcd.CronJob,
+	}
+}
+
+func (cc *Controller) ensureCronJobs(c *kubermaticv1.Cluster) error {
+	creators := GetCronJobCreators()
+
+	data, err := cc.getClusterTemplateData(c)
+	if err != nil {
+		return err
+	}
+
+	for _, create := range creators {
+		var existing *batchv1beta1.CronJob
+		job, err := create(data, nil)
+		if err != nil {
+			return fmt.Errorf("failed to build CronJob: %v", err)
+		}
+
+		if existing, err = cc.cronJobLister.CronJobs(c.Status.NamespaceName).Get(job.Name); err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+
+			if _, err = cc.kubeClient.BatchV1beta1().CronJobs(c.Status.NamespaceName).Create(job); err != nil {
+				return fmt.Errorf("failed to create CronJob %s: %v", job.Name, err)
+			}
+			continue
+		}
+
+		job, err = create(data, existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build CronJob: %v", err)
+		}
+
+		if equality.Semantic.DeepEqual(job, existing) {
+			continue
+		}
+
+		// In case we update something immutable we need to delete&recreate. Creation happens on next sync
+		if !equality.Semantic.DeepEqual(job.Spec.JobTemplate.Spec.Selector.MatchLabels, existing.Spec.JobTemplate.Spec.Selector.MatchLabels) {
+			propagation := metav1.DeletePropagationForeground
+			return cc.kubeClient.BatchV1beta1().CronJobs(c.Status.NamespaceName).Delete(job.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation})
+		}
+
+		if _, err = cc.kubeClient.BatchV1beta1().CronJobs(c.Status.NamespaceName).Update(job); err != nil {
+			return fmt.Errorf("failed to update CronJob %s: %v", job.Name, err)
+		}
+
+		countSeedResourceUpdate(c, "cronjob", job.Name)
 	}
 
 	return nil

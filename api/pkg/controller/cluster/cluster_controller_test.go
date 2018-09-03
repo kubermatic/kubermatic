@@ -59,6 +59,7 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 		kubeInformerFactory.Core().V1().ServiceAccounts(),
 		kubeInformerFactory.Apps().V1().Deployments(),
 		kubeInformerFactory.Apps().V1().StatefulSets(),
+		kubeInformerFactory.Batch().V1beta1().CronJobs(),
 		kubeInformerFactory.Extensions().V1beta1().Ingresses(),
 		kubeInformerFactory.Rbac().V1().Roles(),
 		kubeInformerFactory.Rbac().V1().RoleBindings(),
