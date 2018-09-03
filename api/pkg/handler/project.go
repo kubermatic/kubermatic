@@ -88,24 +88,31 @@ func updateProjectEndpoint() endpoint.Endpoint {
 
 func getProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(GetProjectRq)
-
-		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
-		}
-
-		if len(req.Name) == 0 {
-			return nil, errors.NewBadRequest("the name of the project cannot be empty")
-		}
-
-		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
-		kubermaticProject, err := projectProvider.Get(user, req.Name, &provider.ProjectGetOptions{})
+		kubermaticProject, err := getKubermaticProject(ctx, projectProvider, request)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-
 		return convertInternalProjectToExternal(kubermaticProject), nil
 	}
+}
+
+func getKubermaticProject(ctx context.Context, projectProvider provider.ProjectProvider, request interface{}) (*kubermaticapiv1.Project, error) {
+	req, ok := request.(GetProjectRq)
+
+	if !ok {
+		return nil, errors.NewBadRequest("invalid request")
+	}
+
+	if len(req.Name) == 0 {
+		return nil, errors.NewBadRequest("the name of the project cannot be empty")
+	}
+
+	user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+	kubermaticProject, err := projectProvider.Get(user, req.Name, &provider.ProjectGetOptions{})
+	if err != nil {
+		return nil, kubernetesErrorToHTTPError(err)
+	}
+	return kubermaticProject, nil
 }
 
 func convertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project) *apiv1.Project {
