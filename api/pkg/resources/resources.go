@@ -11,6 +11,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -61,6 +62,8 @@ const (
 	EtcdServiceName = "etcd"
 	//EtcdClientServiceName is the name for the etcd service for clients (ClusterIP)
 	EtcdClientServiceName = "etcd-client"
+	//EtcdDefragCronJobName is the name for the defrag cronjob deployment
+	EtcdDefragCronJobName = "etcd-defragger"
 	//OpenVPNServerServiceName is the name for the openvpn server service
 	OpenVPNServerServiceName = "openvpn-server"
 
@@ -282,8 +285,11 @@ type DeploymentCreator = func(data *TemplateData, existing *appsv1.Deployment) (
 // InitializerConfigurationCreator defines an interface to create/update InitializerConfigurations
 type InitializerConfigurationCreator = func(data *TemplateData, existing *admissionv1alpha1.InitializerConfiguration) (*admissionv1alpha1.InitializerConfiguration, error)
 
-// PodDisruptionBudgetCreator defines an interface to create/update PodDisruptionBudgets's
+// PodDisruptionBudgetCreator defines an interface to create/update PodDisruptionBudgets
 type PodDisruptionBudgetCreator = func(data *TemplateData, existing *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error)
+
+// CronJobCreator defines an interface to create/update CronJobs
+type CronJobCreator = func(data *TemplateData, existing *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error)
 
 // GetClusterRef returns a metav1.OwnerReference for the given Cluster
 func GetClusterRef(cluster *kubermaticv1.Cluster) metav1.OwnerReference {

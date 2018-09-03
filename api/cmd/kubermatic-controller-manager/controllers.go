@@ -122,6 +122,7 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.kubeInformerFactory.Core().V1().ServiceAccounts(),
 		ctrlCtx.kubeInformerFactory.Apps().V1().Deployments(),
 		ctrlCtx.kubeInformerFactory.Apps().V1().StatefulSets(),
+		ctrlCtx.kubeInformerFactory.Batch().V1beta1().CronJobs(),
 		ctrlCtx.kubeInformerFactory.Extensions().V1beta1().Ingresses(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().Roles(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().RoleBindings(),
