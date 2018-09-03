@@ -13,16 +13,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/kubermatic/kubermatic/api/pkg/collectors"
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 
 	"k8s.io/api/core/v1"
-	kuberinformers "k8s.io/client-go/informers"
+	k8sinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -44,12 +41,10 @@ type controllerRunOptions struct {
 }
 
 type controllerContext struct {
-	runOptions                controllerRunOptions
-	stopCh                    <-chan struct{}
-	kubeClient                kubernetes.Interface
-	kubermaticClient          kubermaticclientset.Interface
-	kubermaticInformerFactory externalversions.SharedInformerFactory
-	kubeInformerFactory       kuberinformers.SharedInformerFactory
+	runOptions          controllerRunOptions
+	stopCh              <-chan struct{}
+	kubeClient          kubernetes.Interface
+	kubeInformerFactory k8sinformers.SharedInformerFactory
 }
 
 const (
@@ -79,7 +74,6 @@ func main() {
 	var g run.Group
 
 	kubeClient := kubernetes.NewForConfigOrDie(config)
-	kubermaticClient := kubermaticclientset.NewForConfigOrDie(config)
 	recorder, err := getEventRecorder(kubeClient)
 	if err != nil {
 		glog.Fatalf("failed to get event recorder: %v", err)
@@ -92,16 +86,11 @@ func main() {
 	ctx, ctxDone := context.WithCancel(context.Background())
 
 	// Create Context
-	ctrlCtx := newUserClusterControllerContext(runOp, ctx.Done(), kubeClient, kubermaticClient)
+	ctrlCtx := newUserClusterControllerContext(runOp, ctx.Done(), kubeClient)
 
 	controllers, err := createAllUserClusterControllers(ctrlCtx)
 	if err != nil {
 		glog.Fatalf("could not create all controllers: %v", err)
-	}
-
-	for name, register := range collectors.AvailableCollectors {
-		glog.V(6).Infof("Starting %s collector", name)
-		register(prometheus.DefaultRegisterer, ctrlCtx.kubeInformerFactory, ctrlCtx.kubermaticInformerFactory)
 	}
 
 	// Start context (Informers)
@@ -211,21 +200,19 @@ func getEventRecorder(masterKubeClient *kubernetes.Clientset) (record.EventRecor
 	return recorder, nil
 }
 
-func newUserClusterControllerContext(runOp controllerRunOptions, done <-chan struct{}, kubeClient kubernetes.Interface, kubermaticClient kubermaticclientset.Interface) *controllerContext {
+func newUserClusterControllerContext(runOp controllerRunOptions, done <-chan struct{}, kubeClient kubernetes.Interface) *controllerContext {
 	ctrlCtx := &controllerContext{
-		runOptions:       runOp,
-		stopCh:           done,
-		kubeClient:       kubeClient,
-		kubermaticClient: kubermaticClient,
+		runOptions: runOp,
+		stopCh:     done,
+		kubeClient: kubeClient,
 	}
 
-	ctrlCtx.kubermaticInformerFactory = externalversions.NewSharedInformerFactory(ctrlCtx.kubermaticClient, time.Minute*5)
-	ctrlCtx.kubeInformerFactory = kuberinformers.NewSharedInformerFactory(ctrlCtx.kubeClient, time.Minute*5)
+	ctrlCtx.kubeInformerFactory = k8sinformers.NewSharedInformerFactory(ctrlCtx.kubeClient, time.Minute*5)
 
 	return ctrlCtx
 }
 
 func (ctx *controllerContext) Start() {
-	ctx.kubermaticInformerFactory.WaitForCacheSync(ctx.stopCh)
+	ctx.kubeInformerFactory.Start(ctx.stopCh)
 	ctx.kubeInformerFactory.WaitForCacheSync(ctx.stopCh)
 }

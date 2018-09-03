@@ -8,8 +8,6 @@ import (
 	"github.com/oklog/run"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster"
-	// corev1 "k8s.io/api/core/v1"
-	// "k8s.io/apimachinery/pkg/util/yaml"
 )
 
 // allUserClusterControllers stores the list of all controllers to be
@@ -70,6 +68,5 @@ func createUserClusterController(ctrlCtx *controllerContext) (runner, error) {
 
 	return usercluster.NewController(
 		ctrlCtx.kubeClient,
-		ctrlCtx.kubeInformerFactory.Core().V1().ConfigMaps(),
-	)
+		ctrlCtx.kubeInformerFactory.Core().V1().ConfigMaps())
 }

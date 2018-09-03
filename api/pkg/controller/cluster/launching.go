@@ -53,7 +53,7 @@ func (cc *Controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluste
 			config := clientcmdapi.Config{}
 			config.Clusters = map[string]*clientcmdapi.Cluster{
 				"": {
-					Server:                   c.Address.URL,
+					Server: c.Address.URL,
 					CertificateAuthorityData: cert.EncodeCertPEM(caKp.Cert),
 				},
 			}

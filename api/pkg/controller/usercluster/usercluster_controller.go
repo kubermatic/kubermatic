@@ -6,6 +6,9 @@ import (
 
 	"github.com/golang/glog"
 
+	// kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	// "github.com/kubermatic/kubermatic/api/pkg/resources"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/labels"
@@ -34,42 +37,42 @@ type Controller struct {
 func NewController(client kubernetes.Interface,
 	configMapInformer k8sinformersV1.ConfigMapInformer) (*Controller, error) {
 
-	ctrl := &Controller{
+	ucc := &Controller{
 		client:          client,
 		configMapLister: configMapInformer.Lister(),
 		queue:           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "configmaps"),
 	}
 
 	configMapInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    func(_ interface{}) { ctrl.queue.Add(queueKey) },
-		DeleteFunc: func(_ interface{}) { ctrl.queue.Add(queueKey) },
+		AddFunc:    func(_ interface{}) { ucc.queue.Add(queueKey) },
+		DeleteFunc: func(_ interface{}) { ucc.queue.Add(queueKey) },
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			oldConfigMap := oldObj.(*corev1.ConfigMap)
 			newConfigMap := newObj.(*corev1.ConfigMap)
 			if equality.Semantic.DeepEqual(oldConfigMap, newConfigMap) {
 				return
 			}
-			ctrl.queue.Add(queueKey)
+			ucc.queue.Add(queueKey)
 		},
 	})
-	return ctrl, nil
+	return ucc, nil
 }
 
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed.
-func (ctrl *Controller) Run(_ int, stopCh <-chan struct{}) {
+func (ucc *Controller) Run(_ int, stopCh <-chan struct{}) {
 	defer runtime.HandleCrash()
-	go wait.Until(func() { ctrl.queue.Add(queueKey) }, time.Second*30, stopCh)
-	go wait.Until(ctrl.runWorker, time.Second, stopCh)
+	go wait.Until(func() { ucc.queue.Add(queueKey) }, time.Second*30, stopCh)
+	go wait.Until(ucc.runWorker, time.Second, stopCh)
 	<-stopCh
 }
 
 // handleErr checks if an error happened and makes sure we will retry later.
-func (ctrl *Controller) handleErr(err error, key interface{}) {
+func (ucc *Controller) handleErr(err error, key interface{}) {
 	if err == nil {
 		// Forget about the #AddRateLimited history of the key on every successful synchronization.
 		// This ensures that future processing of updates for this key is not delayed because of
 		// an outdated error history.
-		ctrl.queue.Forget(key)
+		ucc.queue.Forget(key)
 		return
 	}
 
@@ -77,31 +80,32 @@ func (ctrl *Controller) handleErr(err error, key interface{}) {
 
 	// Re-enqueue the key rate limited. Based on the rate limiter on the
 	// queue and the re-enqueue history, the key will be processed later again.
-	ctrl.queue.AddRateLimited(key)
+	ucc.queue.AddRateLimited(key)
 }
 
-func (ctrl *Controller) runWorker() {
-	for ctrl.processNextItem() {
+func (ucc *Controller) runWorker() {
+	for ucc.processNextItem() {
 	}
 }
-func (ctrl *Controller) processNextItem() bool {
-	key, quit := ctrl.queue.Get()
+
+func (ucc *Controller) processNextItem() bool {
+	key, quit := ucc.queue.Get()
 	if quit {
 		return false
 	}
 
-	defer ctrl.queue.Done(key)
-	err := ctrl.syncUserCluster()
-	ctrl.handleErr(err, key)
+	defer ucc.queue.Done(key)
+	err := ucc.syncUserCluster()
+	ucc.handleErr(err, key)
 	return true
 }
 
 // syncUserCluster will reconcile the user-cluster
-func (ctrl *Controller) syncUserCluster() error {
+func (ucc *Controller) syncUserCluster() error {
 	glog.V(6).Infof("Syncing user-cluster")
 
 	// Get confimaps from lister, make a copy.
-	cachedConfigMaps, err := ctrl.configMapLister.List(labels.Everything())
+	cachedConfigMaps, err := ucc.configMapLister.List(labels.Everything())
 	if err != nil {
 		return fmt.Errorf("failed to receive configMaps from lister: %v", err)
 	}
@@ -109,6 +113,11 @@ func (ctrl *Controller) syncUserCluster() error {
 	for i := range cachedConfigMaps {
 		configMaps[i] = cachedConfigMaps[i].DeepCopy()
 	}
+
+	if err := ucc.userClusterEnsureClusterRoles(); err != nil {
+		return err
+	}
+	glog.V(6).Infof("Done syncing user-cluster %s", ucc.seedData.ClusterName)
 
 	return nil
 }
