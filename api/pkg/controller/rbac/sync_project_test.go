@@ -1673,7 +1673,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			name: "Scenario 1: Proper set of RBAC Roles for project's resources are created on \"master\" and seed clusters",
+			name:                     "Scenario 1: Proper set of RBAC Roles for project's resources are created on \"master\" and seed clusters",
 			expectedActionsForMaster: []string{"create", "create", "create", "create"},
 			expectedActionsForSeeds:  []string{"create", "create"},
 			seedClusters:             2,
