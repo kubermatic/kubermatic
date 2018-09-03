@@ -83,7 +83,7 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 		return err
 	}
 
-	// check that all ServerClientConfigsConfigMaps are available
+	// check that all ConfigMaps are available
 	if err := cc.ensureConfigMaps(cluster); err != nil {
 		return err
 	}
