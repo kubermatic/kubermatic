@@ -45,7 +45,7 @@ func (cc *Controller) createAdminKubeconfigSecret(c *kubermaticv1.Cluster) (map[
 		CurrentContext: c.Name,
 		Clusters: map[string]*clientcmdapi.Cluster{
 			c.Name: {
-				Server: c.Address.URL,
+				Server:                   c.Address.URL,
 				CertificateAuthorityData: certutil.EncodeCertPEM(caKp.Cert),
 			},
 		},
@@ -138,7 +138,7 @@ func createLimitedKubeconfig(address string, ca *triple.KeyPair, commonName stri
 		Clusters: map[string]*clientcmdapi.Cluster{
 			"default": {
 				CertificateAuthorityData: certutil.EncodeCertPEM(ca.Cert),
-				Server: address,
+				Server:                   address,
 			},
 		},
 		CurrentContext: "default",

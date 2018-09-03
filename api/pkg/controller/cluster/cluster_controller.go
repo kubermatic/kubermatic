@@ -121,12 +121,12 @@ func NewController(
 
 		queue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster"),
 
-		overwriteRegistry:                                overwriteRegistry,
-		nodePortRange:                                    nodePortRange,
-		nodeAccessNetwork:                                nodeAccessNetwork,
-		etcdDiskSize:                                     resource.MustParse(etcdDiskSize),
-		inClusterPrometheusRulesFile:                     inClusterPrometheusRulesFile,
-		inClusterPrometheusDisableDefaultRules:           inClusterPrometheusDisableDefaultRules,
+		overwriteRegistry:                      overwriteRegistry,
+		nodePortRange:                          nodePortRange,
+		nodeAccessNetwork:                      nodeAccessNetwork,
+		etcdDiskSize:                           resource.MustParse(etcdDiskSize),
+		inClusterPrometheusRulesFile:           inClusterPrometheusRulesFile,
+		inClusterPrometheusDisableDefaultRules: inClusterPrometheusDisableDefaultRules,
 		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
 		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
 		dockerPullConfigJSON:                             dockerPullConfigJSON,
