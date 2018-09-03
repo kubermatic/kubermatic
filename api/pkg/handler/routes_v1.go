@@ -845,7 +845,7 @@ func (r Routing) newGetClusterKubeconfig() http.Handler {
 }
 
 // Delete the cluster
-// swagger:route DELETE /api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_id} project newDeleteCluster
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id} project newDeleteCluster
 //
 //     Deletes the specified cluster
 //
@@ -870,7 +870,7 @@ func (r Routing) newDeleteCluster() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_id}/health project newGetClusterHealth
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/health project newGetClusterHealth
 //
 //     Returns the cluster's component health status
 //
