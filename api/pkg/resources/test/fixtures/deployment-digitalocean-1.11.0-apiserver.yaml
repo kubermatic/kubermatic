@@ -115,7 +115,7 @@ spec:
           readOnly: true
       - args:
         - --kubeconfig
-        - /etc/kubernetes/dnat-controller-kubeconfig/kubeletdnatcontroller-kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
         - --node-access-network
         - 192.0.2.0/24
         - -v
@@ -140,7 +140,7 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
-        - mountPath: /etc/kubernetes/dnat-controller-kubeconfig
+        - mountPath: /etc/kubernetes/kubeconfig
           name: kubeletdnatcontroller-kubeconfig
           readOnly: true
       - args:

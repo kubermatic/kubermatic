@@ -1,8 +1,6 @@
 package vpnsidecar
 
 import (
-	"fmt"
-
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -24,14 +22,13 @@ var (
 
 // DnatControllerContainer returns a sidecar container for running the dnat controller.
 func DnatControllerContainer(data *resources.TemplateData, name string) (*corev1.Container, error) {
-	kcDir := "/etc/kubernetes/dnat-controller-kubeconfig"
 	return &corev1.Container{
 		Name:            name,
 		Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/vpnsidecar-dnat-controller:v0.2.0",
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command:         []string{"/usr/local/bin/kubeletdnat-controller"},
 		Args: []string{
-			"--kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.KubeletDnatControllerKubeconfigSecretName),
+			"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 			"--node-access-network", data.NodeAccessNetwork,
 			"-v", "4",
 			"-logtostderr",
@@ -46,7 +43,7 @@ func DnatControllerContainer(data *resources.TemplateData, name string) (*corev1
 		Resources:                defaultResourceRequirements,
 		VolumeMounts: []corev1.VolumeMount{
 			{
-				MountPath: kcDir,
+				MountPath: "/etc/kubernetes/kubeconfig",
 				Name:      resources.KubeletDnatControllerKubeconfigSecretName,
 				ReadOnly:  true,
 			},
