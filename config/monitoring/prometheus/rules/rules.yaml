@@ -296,6 +296,23 @@
          irate(node_network_transmit_drop{app="node-exporter",device=~"eth[0-9]+"}[1m]))
       )
     "record": "instance:node_net_saturation:sum_irate"
+- "name": "ark"
+  "rules":
+  - "alert": "ArkBackupTakesTooLong"
+    "annotations":
+      "message": "Backup schedule {{ $labels.schedule }} has been taking more than 60min already."
+      "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-arkbackuptakestoolong"
+    "expr": "(ark_backup_attempt_total - ark_backup_success_total) > 0"
+    "for": "60m"
+    "labels":
+      "severity": "warning"
+  - "alert": "ArkNoRecentBackup"
+    "annotations":
+      "message": "There has not been a successful backup for schedule {{ $labels.schedule }} in the last 24 hours."
+      "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-arknorecentbackup"
+    "expr": "changes(ark_backup_success_total[25h]) < 1"
+    "labels":
+      "severity": "warning"
 - "name": "kubermatic"
   "rules":
   - "alert": "KubermaticTooManyUnhandledErrors"
@@ -312,6 +329,25 @@
       "message": "Cluster {{ $labels.cluster }} is stuck in deletion for more than 30min."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubermaticclusterdeletiontakestoolong"
     "expr": "(time() - kubermatic_cluster_deleted) > 30*60"
+    "for": "0m"
+    "labels":
+      "severity": "warning"
+- "name": "machine-controller"
+  "rules":
+  - "alert": "MachineControllerTooManyErrors"
+    "annotations":
+      "message": "Machine Controller in {{ $labels.namespace }} has too many errors in its loop."
+      "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-machinecontrollertoomanyerrors"
+    "expr": |
+      sum(rate(machine_controller_errors_total[5m])) by (namespace) > 0.01
+    "for": "10m"
+    "labels":
+      "severity": "warning"
+  - "alert": "MachineControllerMachineDeletionTakesTooLong"
+    "annotations":
+      "message": "Machine {{ $labels.machine }} of cluster {{ $labels.cluster }} is stuck in deletion for more than 30min."
+      "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-machinecontrollermachinedeletiontakestoolong"
+    "expr": "(time() - machine_controller_machine_deleted) > 30*60"
     "for": "0m"
     "labels":
       "severity": "warning"
