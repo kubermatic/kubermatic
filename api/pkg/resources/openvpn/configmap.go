@@ -68,7 +68,7 @@ func ServerClientConfigsConfigMap(data *resources.TemplateData, existing *corev1
 	return cm, nil
 }
 
-// ClientConfigConfigMap returns a ConfigMap containing the ClientConfig for the OpenVPN server. It lives inside the seed-cluster
+// ClientConfigConfigMap returns a ConfigMap containing the config for the OpenVPN client. It lives inside the user-cluster
 func ClientConfigConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 	var cm *corev1.ConfigMap
 	if existing != nil {
@@ -82,7 +82,6 @@ func ClientConfigConfigMap(data *resources.TemplateData, existing *corev1.Config
 
 	cm.Name = resources.OpenVPNClientConfigConfigMapName
 	cm.Namespace = metav1.NamespaceSystem
-	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	cm.Labels = resources.BaseAppLabel(name, nil)
 
 	openvpnSvc, err := data.ServiceLister.Services(data.Cluster.Status.NamespaceName).Get(resources.OpenVPNServerServiceName)
