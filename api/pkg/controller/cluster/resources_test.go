@@ -141,6 +141,12 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 	apiserverExternalService.Name = resources.ApiserverExternalServiceName
 	apiserverExternalService.Namespace = "test-ns"
 	apiserverExternalService.Spec.ClusterIP = "1.2.3.4"
+	apiserverExternalService.Spec.Ports = []corev1.ServicePort{
+		{
+			Name:     "external",
+			NodePort: 30443,
+		},
+	}
 
 	apiserverService := &corev1.Service{}
 	apiserverService.Name = resources.ApiserverInternalServiceName

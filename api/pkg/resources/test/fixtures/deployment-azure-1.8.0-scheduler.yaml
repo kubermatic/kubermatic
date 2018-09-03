@@ -107,7 +107,7 @@ spec:
           readOnly: true
       - args:
         - --kubeconfig
-        - /etc/kubernetes/scheduler/scheduler-kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
         - --v
         - "4"
         command:
@@ -143,7 +143,7 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
-        - mountPath: /etc/kubernetes/scheduler
+        - mountPath: /etc/kubernetes/kubeconfig
           name: scheduler-kubeconfig
           readOnly: true
       dnsConfig:
