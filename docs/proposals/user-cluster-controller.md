@@ -47,10 +47,10 @@ Resources of the user-cluster which are not considered "addons" or should not be
 * kube-system:secret/openvpn-client-certificates
 	* [needs ca from cluster-controller]
 
-* userClusterEnsureInitializerConfiguration
+* userClusterEnsureInitializerConfiguration [TemplateData not used]
     * ipamcontroller.MachineIPAMInitializerConfiguration
 
-* userClusterEnsureClusterRoleBindings
+* userClusterEnsureClusterRoleBindings [TemplateData not used]
     * machinecontroller.ClusterRoleBinding
     * machinecontroller.NodeBootstrapperClusterRoleBinding
     * machinecontroller.NodeSignerClusterRoleBinding
@@ -58,22 +58,22 @@ Resources of the user-cluster which are not considered "addons" or should not be
     * kubestatemetrics.ClusterRoleBinding
     * vpnsidecar.DnatControllerClusterRoleBinding
 
-* userClusterEnsureClusterRoles
+* userClusterEnsureClusterRoles [TemplateData not used]
     * machinecontroller.ClusterRole
     * kubestatemetrics.ClusterRole
     * vpnsidecar.DnatControllerClusterRole
 
-* userClusterEnsureRoleBindings (calling without TemplateData)
+* userClusterEnsureRoleBindings [TemplateData not used]
     * machinecontroller.DefaultRoleBinding
     * machinecontroller.KubeSystemRoleBinding
     * machinecontroller.KubePublicRoleBinding
     * controllermanager.SystemBootstrapSignerRoleBinding
     * controllermanager.PublicBootstrapSignerRoleBinding
 
-* userClusterEnsureConfigMaps
-    * openvpn.ClientConfigConfigMap
+* userClusterEnsureConfigMaps [TemplateData used]
+    * openvpn.ClientConfigConfigMap [needs vpn-server endpoint (Externalname + openVpnSvc...NodePort)]
 
-* userClusterEnsureRoles
+* userClusterEnsureRoles [TemplateData not used]
     * machinecontroller.Role
     * machinecontroller.KubeSystemRole
     * machinecontroller.KubePublicRole
