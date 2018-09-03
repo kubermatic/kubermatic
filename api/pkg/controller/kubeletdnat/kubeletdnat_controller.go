@@ -61,9 +61,9 @@ func NewController(
 	vpnInterface string) *Controller {
 
 	ctrl := &Controller{
-		client:     client,
-		nodeLister: nodeInformer.Lister(),
-		queue:      workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "nodes"),
+		client:                   client,
+		nodeLister:               nodeInformer.Lister(),
+		queue:                    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "nodes"),
 		nodeTranslationChainName: nodeTranslationChainName,
 		nodeAccessNetwork:        nodeAccessNetwork,
 		vpnInterface:             vpnInterface,
