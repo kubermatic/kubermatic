@@ -10,13 +10,13 @@ pipeline:
     commands:
     - cd api
     - make gofmt
-    image: golang:1.11
+    image: golang:1.11.0
     pull: true
   2-verify-codegen:
     commands:
     - cd api
     - ./hack/verify-codegen.sh
-    image: golang:1.11
+    image: golang:1.11.0
     pull: true
   3-license-validation:
     commands:
@@ -45,21 +45,21 @@ pipeline:
     - cd api
     - ./hack/verify-swagger.sh
     group: lint
-    image: golang:1.11
+    image: golang:1.11.0
     pull: true
   4-build:
     commands:
     - cd api
     - make build
     group: build
-    image: golang:1.11
+    image: golang:1.11.0
     pull: true
   4-test:
     commands:
     - cd api
     - make test
     group: build
-    image: golang:1.11
+    image: golang:1.11.0
     pull: true
   4-write-version:
     commands:
