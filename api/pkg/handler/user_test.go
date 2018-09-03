@@ -35,6 +35,174 @@ var plan9 = &kubermaticapiv1.Project{
 	},
 }
 
+func TestGetUsersForProject(t *testing.T) {
+	testcases := []struct {
+		Name                        string
+		ExpectedResponse            string
+		ExpectedActions             int
+		ExpectedUserAfterInvitation *kubermaticapiv1.User
+		ProjectToGet                string
+		HTTPStatus                  int
+		ExistingProjects            []*kubermaticapiv1.Project
+		ExistingKubermaticUsers     []*kubermaticapiv1.User
+		ExistingAPIUser             apiv1.User
+	}{
+		{
+			Name:         "scenario 1: get a list of user for a project 'foo'",
+			HTTPStatus:   http.StatusOK,
+			ProjectToGet: "fooInternalName",
+			ExistingProjects: []*kubermaticapiv1.Project{
+				createTestProject("foo", kubermaticapiv1.ProjectActive),
+				createTestProject("bar", kubermaticapiv1.ProjectActive),
+				createTestProject("zorg", kubermaticapiv1.ProjectActive),
+			},
+			ExistingKubermaticUsers: []*kubermaticapiv1.User{
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "john",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  "john",
+						ID:    "12345",
+						Email: testUserEmail,
+						Projects: []kubermaticapiv1.ProjectGroup{
+							{
+								Group: "owners-foo",
+								Name:  "fooInternalName",
+							},
+							{
+								Group: "editors-bar",
+								Name:  "barInternalName",
+							},
+						},
+					},
+				},
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "alice",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  "Alice",
+						Email: "alice@acme.com",
+						Projects: []kubermaticapiv1.ProjectGroup{
+							{
+								Group: "viewers-foo",
+								Name:  "fooInternalName",
+							},
+						},
+					},
+				},
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bob",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  "Bob",
+						Email: "bob@acme.com",
+						Projects: []kubermaticapiv1.ProjectGroup{
+							{
+								Group: "editors-zorg",
+								Name:  "zorgInternalName",
+							},
+							{
+								Group: "editors-foo",
+								Name:  "fooInternalName",
+							},
+							{
+								Group: "editors-bar",
+								Name:  "barInternalName",
+							},
+						},
+					},
+				},
+			},
+			ExistingAPIUser: apiv1.User{
+				ID:    "12345",
+				Name:  "john",
+				Email: testUserEmail,
+			},
+			ExpectedResponse: `[{"id":"john","name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","projects":[{"id":"fooInternalName","group":"owners-foo"}]},{"id":"alice","name":"Alice","creationTimestamp":"0001-01-01T00:00:00Z","email":"alice@acme.com","projects":[{"id":"fooInternalName","group":"viewers-foo"}]},{"id":"bob","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"fooInternalName","group":"editors-foo"}]}]`,
+		},
+		{
+			Name:         "scenario 2: get a list of user for a project 'foo' for external user",
+			HTTPStatus:   http.StatusForbidden,
+			ProjectToGet: "foo2InternalName",
+			ExistingProjects: []*kubermaticapiv1.Project{
+				createTestProject("foo2", kubermaticapiv1.ProjectActive),
+				createTestProject("bar2", kubermaticapiv1.ProjectActive),
+			},
+			ExistingKubermaticUsers: []*kubermaticapiv1.User{
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "alice2",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  "Alice2",
+						Email: "alice2@acme.com",
+						Projects: []kubermaticapiv1.ProjectGroup{
+							{
+								Group: "viewers-bar",
+								Name:  "barInternalName",
+							},
+						},
+					},
+				},
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bob",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  "Bob",
+						Email: "bob@acme.com",
+						Projects: []kubermaticapiv1.ProjectGroup{
+							{
+								Group: "editors-foo2",
+								Name:  "foo2InternalName",
+							},
+							{
+								Group: "editors-bar2",
+								Name:  "bar2InternalName",
+							},
+						},
+					},
+				},
+			},
+			ExistingAPIUser: apiv1.User{
+				Name:  "alice2",
+				Email: "alice2@acme.com",
+			},
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: The user \"Alice2\" doesn't belong to the given project = foo2InternalName"}}`,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/users", tc.ProjectToGet), nil)
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			for _, existingProject := range tc.ExistingProjects {
+				kubermaticObj = append(kubermaticObj, existingProject)
+			}
+			for _, existingUser := range tc.ExistingKubermaticUsers {
+				kubermaticObj = append(kubermaticObj, runtime.Object(existingUser))
+			}
+
+			ep, _, err := createTestEndpointAndGetClients(tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+			compareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+
+}
+
 func TestAddUserToProject(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
