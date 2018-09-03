@@ -789,7 +789,7 @@ func (cc *Controller) ensureCronJobs(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build CronJob: %v", err)
 		}
 
-		if equality.Semantic.DeepEqual(job, existing) {
+		if resources.DeepEqual(job, existing) {
 			continue
 		}
 

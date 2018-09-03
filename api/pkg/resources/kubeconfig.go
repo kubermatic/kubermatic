@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,7 +52,7 @@ func AdminKubeconfig(data *TemplateData, existing *corev1.Secret) (*corev1.Secre
 	return se, nil
 }
 
-// GetInternalKubeconfigCreator is a generic function to return a secret generator to create a client certificate signed by the cluster CA
+// GetInternalKubeconfigCreator is a generic function to return a secret generator to create a kubeconfig which must only be used within the seed-cluster as it uses the ClusterIP of the apiserver.
 func GetInternalKubeconfigCreator(name, commonName string, organizations []string) func(data *TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
 	return func(data *TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
 		var se *corev1.Secret
@@ -81,24 +80,14 @@ func GetInternalKubeconfigCreator(name, commonName string, organizations []strin
 		}
 
 		b := se.Data[KubeconfigSecretKey]
-		if len(b) == 0 {
-			se.Data[KubeconfigSecretKey], err = buildNewKubeconfigAsByte(ca, url.String(), commonName, organizations)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create new kubeconfig: %v", err)
-			}
-			return se, nil
-		}
-
 		valid, err := isValidKubeconfig(b, ca.Cert, url.String(), commonName)
-		if err != nil {
-			glog.V(2).Info("failed to validate existing kubeconfig from %s/%s %v", se.Namespace, se.Name, err)
-			se.Data[KubeconfigSecretKey], err = buildNewKubeconfigAsByte(ca, url.String(), commonName, organizations)
+		if err != nil || !valid {
 			if err != nil {
-				return nil, fmt.Errorf("failed to create new kubeconfig: %v", err)
+				glog.V(2).Infof("failed to validate existing kubeconfig from %s/%s %v. Regenerating it...", se.Namespace, se.Name, err)
+			} else {
+				glog.V(2).Infof("invalid/outdated kubeconfig found in %s/%s. Regenerating it...", se.Namespace, se.Name)
 			}
-			return se, nil
-		}
-		if !valid {
+
 			se.Data[KubeconfigSecretKey], err = buildNewKubeconfigAsByte(ca, url.String(), commonName, organizations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create new kubeconfig: %v", err)
@@ -142,7 +131,7 @@ func getBaseKubeconfig(caCert *x509.Certificate, server string) *clientcmdapi.Co
 		Clusters: map[string]*clientcmdapi.Cluster{
 			KubeconfigDefaultContextKey: {
 				CertificateAuthorityData: certutil.EncodeCertPEM(caCert),
-				Server: server,
+				Server:                   server,
 			},
 		},
 		CurrentContext: KubeconfigDefaultContextKey,
@@ -156,6 +145,10 @@ func getBaseKubeconfig(caCert *x509.Certificate, server string) *clientcmdapi.Co
 }
 
 func isValidKubeconfig(kubeconfigBytes []byte, caCert *x509.Certificate, server, commonName string) (bool, error) {
+	if len(kubeconfigBytes) == 0 {
+		return false, nil
+	}
+
 	existingKubeconfig, err := clientcmd.Load(kubeconfigBytes)
 	if err != nil {
 		return false, err
