@@ -16,6 +16,12 @@ spec:
       annotations:
         kubermatic/scrape: 'true'
         kubermatic/scrape_port: '9090'
+        {{- if .Values.prometheus.backups }}
+        backup.ark.heptio.com/backup-volumes: prometheus-backup
+        pre.hook.backup.ark.heptio.com/container: backup
+        pre.hook.backup.ark.heptio.com/timeout: 30m
+        pre.hook.backup.ark.heptio.com/command: '["/bin/sh", "-c", "rm -rf /prometheus/snapshots/* && curl -XPOST http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot && rsync -r --owner --delete /prometheus/snapshots/*/ /backup"]'
+        {{- end }}
     spec:
       containers:
       - args:
@@ -26,6 +32,9 @@ spec:
         - --web.enable-lifecycle
         - --web.external-url=https://{{ .Values.prometheus.host | trim }}
         - --web.route-prefix=/
+        {{- if .Values.prometheus.backups }}
+        - --web.enable-admin-api
+        {{- end }}
         image: quay.io/prometheus/prometheus:v2.3.2
         livenessProbe:
           failureThreshold: 6
@@ -91,6 +100,25 @@ spec:
           readOnly: true
         {{- end }}
         {{- end }}
+      {{- if .Values.prometheus.backups }}
+      - name: backup
+        image: alpine:3.7
+        args:
+        - /bin/sh
+        - -c
+        - apk add --no-cache curl rsync && while true; do sleep 1h; done
+        volumeMounts:
+        - mountPath: /prometheus
+          name: prometheus-kubermatic-db
+          readOnly: false
+          subPath: prometheus-db
+        - mountPath: /backup
+          name: prometheus-backup
+          readOnly: false
+        securityContext:
+          runAsNonRoot: false
+          runAsUser: 0
+      {{- end }}
       serviceAccountName: prometheus-kubermatic
       securityContext:
         fsGroup: 2000
@@ -114,6 +142,10 @@ spec:
           secretName: {{ .secretName }}
         {{- end }}
       {{- end }}
+      {{- end }}
+      {{- if .Values.prometheus.backups }}
+      - name: prometheus-backup
+        emptyDir: {}
       {{- end }}
   volumeClaimTemplates:
   - metadata:
