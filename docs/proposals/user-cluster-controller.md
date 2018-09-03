@@ -47,9 +47,38 @@ Resources of the user-cluster which are not considered "addons" or should not be
 * kube-system:secret/openvpn-client-certificates
 	* [needs ca from cluster-controller]
 
-* InitializerConfiguration
+* userClusterEnsureInitializerConfiguration
+    * ipamcontroller.MachineIPAMInitializerConfiguration
 
-* userClusterEnsureXXX
+* userClusterEnsureClusterRoleBindings
+    * machinecontroller.ClusterRoleBinding
+    * machinecontroller.NodeBootstrapperClusterRoleBinding
+    * machinecontroller.NodeSignerClusterRoleBinding
+    * controllermanager.AdminClusterRoleBinding
+    * kubestatemetrics.ClusterRoleBinding
+    * vpnsidecar.DnatControllerClusterRoleBinding
+
+* userClusterEnsureClusterRoles
+    * machinecontroller.ClusterRole
+    * kubestatemetrics.ClusterRole
+    * vpnsidecar.DnatControllerClusterRole
+
+* userClusterEnsureRoleBindings (calling without TemplateData)
+    * machinecontroller.DefaultRoleBinding
+    * machinecontroller.KubeSystemRoleBinding
+    * machinecontroller.KubePublicRoleBinding
+    * controllermanager.SystemBootstrapSignerRoleBinding
+    * controllermanager.PublicBootstrapSignerRoleBinding
+
+* userClusterEnsureConfigMaps
+    * openvpn.ClientConfigConfigMap
+
+* userClusterEnsureRoles
+    * machinecontroller.Role
+    * machinecontroller.KubeSystemRole
+    * machinecontroller.KubePublicRole
+
+
 
 ### Handled Events
 
