@@ -9,6 +9,7 @@ local drone = import 'drone/drone.libsonnet';
     local goImage = 'golang:1.11.0',
     local dockerSecrets = ['docker_username', 'docker_password'],
     local whenBranchMaster = { when: { branch: 'master' } },
+    local whenBranchRelease = { when: { branch: 'release/v2.7.*' } },
     local whenEventTag = { when: { event: ['tag'] } },
     local charts = [
       { namespace: 'kubermatic', name: 'kubermatic', path: 'config/kubermatic/' },
@@ -159,6 +160,17 @@ local drone = import 'drone/drone.libsonnet';
       charts: charts + chartsMaster,
       values: ['values'],
     } + whenBranchMaster,
+
+    // deploy run
+    '9-deploy-run': drone.step.new('kubeciio/helm') + {
+      helm: 'upgrade --install --wait --timeout 300' + tillerNamespace + versionsValues,
+      secrets: [
+        { source: 'kubeconfig_run', target: 'kubeconfig' },
+        { source: 'values_run', target: 'values' },
+      ],
+      charts: charts + chartsMaster,
+      values: ['values'],
+    } + whenBranchRelease,
 
     // deploy cloud
     '9-deploy-cloud-europe': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
