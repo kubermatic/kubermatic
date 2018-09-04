@@ -1,0 +1,70 @@
+iap:
+  deployments:
+    # alertmanager:
+    #   name: alertmanager
+    #   client_id: alertmanager
+    #   client_secret: xxx
+    #   encryption_key: xxx
+    #   config: ## see https://github.com/gambol99/keycloak-proxy#configuration
+    #   ## example configuration allowing access only to the mygroup from mygithuborg organization
+    #     scopes:
+    #     - "groups"
+    #     resources:
+    #     - uri: "/*"
+    #       groups:
+    #       - "mygithuborg:mygroup"
+    #   upstream_service: alertmanager-kubermatic.monitoring.svc.cluster.local
+    #   upstream_port: 9093
+    #   ingress:
+    #     host: "alertmanager.kubermatic.tld"
+    #     annotations: {}
+    # grafana:
+    #   name: grafana
+    #   client_id: grafana
+    #   client_secret: xxx
+    #   encryption_key: xxx
+    #   config: {} ## see https://github.com/gambol99/keycloak-proxy#configuration
+    #   upstream_service: grafana.monitoring.svc.cluster.local
+    #   upstream_port: 3000
+    #   ingress:
+    #     host: "grafana.kubermatic.tld"
+    #     annotations: {}
+    # kibana:
+    #   name: kibana
+    #   client_id: kibana
+    #   client_secret: xxx
+    #   encryption_key: xxx
+    #   config: {} ## see https://github.com/gambol99/keycloak-proxy#configuration
+    #   upstream_service: kibana.logging.svc.cluster.local
+    #   upstream_port: 5601
+    #   ingress:
+    #     host: "kibana.kubermatic.tld"
+    #     annotations: {}
+    # prometheus:
+    #   name: prometheus
+    #   client_id: prometheus
+    #   client_secret: xxx
+    #   encryption_key: xxx
+    #   config: {} ## see https://github.com/gambol99/keycloak-proxy#configuration
+    #   upstream_service: prometheus-kubermatic.monitoring.svc.cluster.local
+    #   upstream_port: 9090
+    #   ingress:
+    #     host: "prometheus.kubermatic.tld"
+    #     annotations:
+    #       ingress.kubernetes.io/upstream-hash-by: "ip_hash" ## needed for prometheus federations
+
+  discovery_url: https://kubermatic.tld/dex/.well-known/openid-configuration
+  port: 3000
+
+  image:
+    repository: quay.io/gambol99/keycloak-proxy
+    tag: v2.3.0
+    pullPolicy: IfNotPresent
+
+  resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 10m
+    #   memory: 64Mi
