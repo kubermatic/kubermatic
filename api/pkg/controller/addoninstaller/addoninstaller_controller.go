@@ -63,7 +63,7 @@ func New(
 	clusterInformer kubermaticv1informers.ClusterInformer) (*Controller, error) {
 
 	c := &Controller{
-		queue:            workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute), "cluster"),
+		queue:            workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute), "addon_installer_cluster"),
 		metrics:          metrics,
 		workerName:       workerName,
 		defaultAddonList: defaultAddonList,
