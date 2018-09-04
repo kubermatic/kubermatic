@@ -160,6 +160,9 @@ pipeline:
     - name: certs
       namespace: default
       path: config/certs/
+    - name: iap
+      namespace: iap
+      path: config/iap/
     - name: node-exporter
       namespace: monitoring
       path: config/monitoring/node-exporter/
@@ -239,6 +242,9 @@ pipeline:
     - name: certs
       namespace: default
       path: config/certs/
+    - name: iap
+      namespace: iap
+      path: config/iap/
     - name: node-exporter
       namespace: monitoring
       path: config/monitoring/node-exporter/
