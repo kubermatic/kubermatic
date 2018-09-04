@@ -1,0 +1,30 @@
+{{- range .Values.iap.deployments }}
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ .name }}-iap
+  labels:
+    app: iap
+    target: {{ .name }}
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+{{- if .ingress.annotations }}
+{{ toYaml .ingress.annotations | indent 4 }}
+{{- end }}
+spec:
+  tls:
+  - hosts:
+    - {{ .ingress.host | trim }}
+  backend:
+    serviceName: {{ .name }}-iap
+    servicePort: {{ $.Values.iap.port }}
+  rules:
+  - host: {{ .ingress.host | trim }}
+    http:
+      paths:
+      - path: "/"
+        backend:
+          serviceName: {{ .name }}-iap
+          servicePort: {{ $.Values.iap.port }}
+{{- end -}}
