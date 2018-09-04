@@ -94,8 +94,8 @@ func New(
 	rbacClusterRoleBindingMasterInformer rbacinformer.ClusterRoleBindingInformer,
 	seedClusterProviders []*ClusterProvider) (*Controller, error) {
 	c := &Controller{
-		projectQueue:           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "RBACGeneratorProject"),
-		projectResourcesQueue:  workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "RBACGeneratorProjectResources"),
+		projectQueue:           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_project"),
+		projectResourcesQueue:  workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_project_resources"),
 		metrics:                metrics,
 		workerName:             workerName,
 		kubermaticMasterClient: kubermaticMasterClient,

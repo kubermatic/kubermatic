@@ -143,7 +143,7 @@ func New(
 		backupContainerImage = DefaultBackupContainerImage
 	}
 	c := &Controller{
-		queue:                workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Backup"),
+		queue:                workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "backup_cluster"),
 		kubermaticClient:     kubermaticClient,
 		kubernetesClient:     kubernetesClient,
 		backupScheduleString: backupScheduleString,
