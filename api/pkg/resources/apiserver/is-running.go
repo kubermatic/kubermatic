@@ -11,7 +11,7 @@ import (
 // IsRunningInitContainer returns a init container which will wait until the apiserver is reachable via its ClusterIP
 func IsRunningInitContainer(data *resources.TemplateData) (*corev1.Container, error) {
 	// get clusterIP of apiserver
-	address, err := data.InClusterApiserverAddress()
+	url, err := data.InClusterApiserverURL()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the ClusterIP of the apiserver: %v", err)
 	}
@@ -23,7 +23,7 @@ func IsRunningInitContainer(data *resources.TemplateData) (*corev1.Container, er
 		Command: []string{
 			"/bin/sh",
 			"-ec",
-			fmt.Sprintf("until wget -T 1 https://%s/healthz; do echo waiting for apiserver; sleep 2; done;", address),
+			fmt.Sprintf("until wget -T 1 %s/healthz; do echo waiting for apiserver; sleep 2; done;", url),
 		},
 		TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 		TerminationMessagePolicy: corev1.TerminationMessageReadFile,

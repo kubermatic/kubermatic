@@ -34,7 +34,7 @@ spec:
       containers:
       - args:
         - --kubeconfig
-        - /etc/kubernetes/kubeconfig/kube-state-metrics-kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
         - --port
         - "8080"
         - --telemetry-port

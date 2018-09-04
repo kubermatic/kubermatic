@@ -232,14 +232,6 @@
   revision = "02af3965c54e8cacf948b97fef38925c4120652c"
 
 [[projects]]
-  branch = "master"
-  digest = "1:e8ffe2fb7368f65afaaf39769207bee2a7aeddf694e94f5bc05cffd750d4d98d"
-  name = "github.com/evanphx/json-patch"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "944e07253867aacae43c04b2e6a239005443f33a"
-
-[[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
   name = "github.com/fsnotify/fsnotify"
   packages = ["."]
@@ -1193,7 +1185,7 @@
 
 [[projects]]
   branch = "release-1.10"
-  digest = "1:77ead159dd31d230f6b72649f69371d2688b281827738d58f37705a6a5246889"
+  digest = "1:cf1e88f3192e70eeb1600267ecc52fa2aac11a7e0ec38aa6bdb21f98bc186366"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/equality",
@@ -1227,7 +1219,6 @@
     "pkg/util/framer",
     "pkg/util/intstr",
     "pkg/util/json",
-    "pkg/util/jsonmergepatch",
     "pkg/util/mergepatch",
     "pkg/util/net",
     "pkg/util/rand",
@@ -1572,7 +1563,6 @@
     "k8s.io/apimachinery/pkg/util/diff",
     "k8s.io/apimachinery/pkg/util/intstr",
     "k8s.io/apimachinery/pkg/util/json",
-    "k8s.io/apimachinery/pkg/util/jsonmergepatch",
     "k8s.io/apimachinery/pkg/util/net",
     "k8s.io/apimachinery/pkg/util/rand",
     "k8s.io/apimachinery/pkg/util/runtime",

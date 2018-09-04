@@ -48,7 +48,7 @@ func TestVsphereNetworksEndpoint(t *testing.T) {
 
 	defer mock.tearDown()
 
-	req := httptest.NewRequest("GET", "/api/v1/vsphere/networks", nil)
+	req := httptest.NewRequest("GET", "/api/v1/providers/vsphere/networks", nil)
 	req.Header.Add("DatacenterName", vSphereDatacenterName)
 	req.Header.Add("Username", "user")
 	req.Header.Add("Password", "pass")

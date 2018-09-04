@@ -1,8 +1,10 @@
 package resources
 
 import (
+	"errors"
 	"fmt"
 	"net"
+	"net/url"
 
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -119,18 +121,27 @@ func (d *TemplateData) GetApiserverExternalNodePort() (int32, error) {
 	return s.Spec.Ports[0].NodePort, nil
 }
 
-// InClusterApiserverAddress takes the ClusterIP and node-port of the external/secure apiserver service
+// InClusterApiserverURL takes the ClusterIP and node-port of the external/secure apiserver service
 // and returns them joined by a `:`.
 // Service lookup happens within `Cluster.Status.NamespaceName`.
-func (d *TemplateData) InClusterApiserverAddress() (string, error) {
+func (d *TemplateData) InClusterApiserverURL() (*url.URL, error) {
 	service, err := d.ServiceLister.Services(d.Cluster.Status.NamespaceName).Get(ApiserverExternalServiceName)
 	if err != nil {
-		return "", fmt.Errorf("could not get service %s from lister for cluster %s: %v", ApiserverExternalServiceName, d.Cluster.Name, err)
+		return nil, fmt.Errorf("could not get service %s from lister for cluster %s: %v", ApiserverExternalServiceName, d.Cluster.Name, err)
 	}
 	if net.ParseIP(service.Spec.ClusterIP) == nil {
-		return "", fmt.Errorf("service %s in cluster %s has no valid cluster ip (\"%s\"): %v", ApiserverExternalServiceName, d.Cluster.Name, service.Spec.ClusterIP, err)
+		return nil, fmt.Errorf("service %s in cluster %s has no valid cluster ip (\"%s\"): %v", ApiserverExternalServiceName, d.Cluster.Name, service.Spec.ClusterIP, err)
 	}
-	return fmt.Sprintf("%s:%d", service.Spec.ClusterIP, service.Spec.Ports[0].NodePort), nil
+
+	if len(service.Spec.Ports) != 1 {
+		return nil, errors.New("apiserver service does not have exactly one port")
+	}
+
+	if service.Spec.ClusterIP == "" {
+		return nil, errors.New("apiserver service has no ClusterIP")
+	}
+
+	return url.Parse(fmt.Sprintf("https://%s:%d", service.Spec.ClusterIP, service.Spec.Ports[0].NodePort))
 }
 
 // ImageRegistry returns the image registry to use or the passed in default if no override is specified

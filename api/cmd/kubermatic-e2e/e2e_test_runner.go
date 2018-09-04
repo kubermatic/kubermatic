@@ -320,7 +320,7 @@ func (ctl *e2eTestRunner) kubeConfig(cluster *kubermaticv1.Cluster) ([]byte, err
 		return nil, err
 	}
 
-	adminKubeConfig, ok := secret.Data[resources.AdminKubeconfigSecretKey]
+	adminKubeConfig, ok := secret.Data[resources.KubeconfigSecretKey]
 	if !ok {
 		return nil, errors.New("admin-kubeconfig not found")
 	}

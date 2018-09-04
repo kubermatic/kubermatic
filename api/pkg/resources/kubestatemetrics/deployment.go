@@ -83,7 +83,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/kube-state-metrics"},
 			Args: []string{
-				"--kubeconfig", "/etc/kubernetes/kubeconfig/kube-state-metrics-kubeconfig",
+				"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 				"--port", "8080",
 				"--telemetry-port", "8081",
 			},
