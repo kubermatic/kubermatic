@@ -1,0 +1,20 @@
+{{- range .Values.iap.deployments }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name }}-iap
+  labels:
+    app: iap
+    target: {{ .name }}
+spec:
+  type: ClusterIP
+  ports:
+  - port: {{ $.Values.iap.port }}
+    name: http
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: iap
+    target: {{ .name }}
+{{- end }}

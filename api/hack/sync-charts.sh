@@ -14,7 +14,7 @@ EOF
   exit 0
 fi
 
-export CHARTS='kubermatic cert-manager certs nginx-ingress-controller nodeport-proxy oauth minio'
+export CHARTS='kubermatic cert-manager certs nginx-ingress-controller nodeport-proxy oauth minio iap'
 export MONITORING_CHARTS='alertmanager grafana kube-state-metrics node-exporter prometheus'
 export INSTALLER_BRANCH=$1
 export CHARTS_DIR=$2
