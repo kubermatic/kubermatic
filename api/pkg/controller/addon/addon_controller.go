@@ -98,7 +98,7 @@ func New(
 	clusterInformer kubermaticv1informers.ClusterInformer) (*Controller, error) {
 
 	c := &Controller{
-		queue:              workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute), "Addon"),
+		queue:              workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute), "addon"),
 		metrics:            metrics,
 		addonVariables:     addonCtxVariables,
 		workerName:         workerName,

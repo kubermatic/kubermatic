@@ -57,7 +57,7 @@ func NewController(client machineclientset.Interface, machineInformer machineinf
 		cidrRange:     networks,
 		client:        client,
 		machineLister: machineInformer.Lister(),
-		queue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "MachineQueue"),
+		queue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "ipam_machine"),
 	}
 
 	machineInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{

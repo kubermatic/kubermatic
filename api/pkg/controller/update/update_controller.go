@@ -66,7 +66,7 @@ func New(
 	kubermaticClient kubermaticclientset.Interface,
 	clusterInformer kubermaticv1informers.ClusterInformer) (*Controller, error) {
 	c := &Controller{
-		queue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Update"),
+		queue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "update_cluster"),
 		metrics:          metrics,
 		workerName:       workerName,
 		kubermaticClient: kubermaticClient,
