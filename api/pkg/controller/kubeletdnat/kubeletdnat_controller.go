@@ -63,7 +63,7 @@ func NewController(
 	ctrl := &Controller{
 		client:                   client,
 		nodeLister:               nodeInformer.Lister(),
-		queue:                    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "nodes"),
+		queue:                    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "kubetlet_dnat_node"),
 		nodeTranslationChainName: nodeTranslationChainName,
 		nodeAccessNetwork:        nodeAccessNetwork,
 		vpnInterface:             vpnInterface,
