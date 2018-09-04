@@ -257,7 +257,9 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 	}
 
 	for _, create := range creators {
-		resources.EnsureRole(data, create, cc.roleLister.Roles(c.Status.NamespaceName), cc.kubeClient.RbacV1().Roles(c.Status.NamespaceName))
+		if err := resources.EnsureRole(data, create, cc.roleLister.Roles(c.Status.NamespaceName), cc.kubeClient.RbacV1().Roles(c.Status.NamespaceName)); err != nil {
+			return fmt.Errorf("failed to ensure that the role exists: %v", err)
+		}
 	}
 
 	return nil
