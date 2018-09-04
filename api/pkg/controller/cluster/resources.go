@@ -257,35 +257,7 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 	}
 
 	for _, create := range creators {
-		var existing *rbacv1.Role
-		role, err := create(data, nil)
-		if err != nil {
-			return fmt.Errorf("failed to build Role: %v", err)
-		}
-
-		if existing, err = cc.roleLister.Roles(c.Status.NamespaceName).Get(role.Name); err != nil {
-			if !errors.IsNotFound(err) {
-				return err
-			}
-
-			if _, err = cc.kubeClient.RbacV1().Roles(c.Status.NamespaceName).Create(role); err != nil {
-				return fmt.Errorf("failed to create Role %s: %v", role.Name, err)
-			}
-			continue
-		}
-
-		role, err = create(data, existing.DeepCopy())
-		if err != nil {
-			return fmt.Errorf("failed to build Role: %v", err)
-		}
-
-		if resources.DeepEqual(role, existing) {
-			continue
-		}
-
-		if _, err = cc.kubeClient.RbacV1().Roles(c.Status.NamespaceName).Update(role); err != nil {
-			return fmt.Errorf("failed to update Role %s: %v", role.Name, err)
-		}
+		resources.EnsureRole(data, create, cc.roleLister.Roles(c.Status.NamespaceName), cc.kubeClient.RbacV1().Roles(c.Status.NamespaceName))
 	}
 
 	return nil
