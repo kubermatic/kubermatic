@@ -39,7 +39,6 @@ var (
 )
 
 func main() {
-
 	flag.StringVar(&versionsFile, "versions", "../config/kubermatic/static/master/versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&requestedVersion, "version", "", "")
 	flag.StringVar(&registryName, "registry-name", "registry.corp.local", "Name of the registry to push to")
@@ -86,7 +85,7 @@ func main() {
 		for _, image := range images {
 			glog.Infoln(image)
 		}
-		glog.Infoln("Existing gracefully, because -printOnly was specified...")
+		glog.Infoln("Exiting gracefully because -print-only was specified...")
 		os.Exit(0)
 	}
 
@@ -158,6 +157,7 @@ func getImagesForVersion(versions []*version.MasterVersion, requestedVersion str
 func getImagesFromCreators(templateData *resources.TemplateData) (images []string, err error) {
 	statefulsetCreators := cluster.GetStatefulSetCreators()
 	deploymentCreators := cluster.GetDeploymentCreators(nil)
+	cronjobCreators := cluster.GetCronJobCreators()
 
 	for _, createFunc := range statefulsetCreators {
 		statefulset, err := createFunc(templateData, nil)
@@ -174,6 +174,15 @@ func getImagesFromCreators(templateData *resources.TemplateData) (images []strin
 		}
 		images = append(images, getImagesFromPodTemplateSpec(deployment.Spec.Template)...)
 	}
+
+	for _, createFunc := range cronjobCreators {
+		cronJob, err := createFunc(templateData, nil)
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, getImagesFromPodTemplateSpec(cronJob.Spec.JobTemplate.Spec.Template)...)
+	}
+
 	return images, nil
 }
 
@@ -311,6 +320,7 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		resources.OpenVPNServerCertificatesSecretName,
 		resources.OpenVPNClientCertificatesSecretName,
 		resources.FrontProxyCASecretName,
+		resources.KubeletDnatControllerKubeconfigSecretName,
 	})
 	objects := []runtime.Object{configMapList, secretList, serviceList}
 	client := kubefake.NewSimpleClientset(objects...)

@@ -108,6 +108,8 @@ func TestConfigMapCreatorsKeepAdditionalData(t *testing.T) {
 func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 	cluster := &kubermaticv1.Cluster{}
 	cluster.Status.NamespaceName = "test-ns"
+	cluster.Address.IP = "1.2.3.4"
+	cluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
 	dc := &provider.DatacenterMeta{}
 
 	keyPair, err := triple.NewCA("test-ca")
@@ -135,6 +137,22 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 	etcdClientService.Namespace = "test-ns"
 	etcdClientService.Spec.ClusterIP = "1.2.3.4"
 
+	apiserverExternalService := &corev1.Service{}
+	apiserverExternalService.Name = resources.ApiserverExternalServiceName
+	apiserverExternalService.Namespace = "test-ns"
+	apiserverExternalService.Spec.ClusterIP = "1.2.3.4"
+	apiserverExternalService.Spec.Ports = []corev1.ServicePort{
+		{
+			Name:     "external",
+			NodePort: 30443,
+		},
+	}
+
+	apiserverService := &corev1.Service{}
+	apiserverService.Name = resources.ApiserverInternalServiceName
+	apiserverService.Namespace = "test-ns"
+	apiserverService.Spec.ClusterIP = "1.2.3.4"
+
 	secretIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 	if err := secretIndexer.Add(caSecret); err != nil {
 		t.Fatalf("Error adding secret to indexer: %v", err)
@@ -146,7 +164,13 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 
 	serviceIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 	if err := serviceIndexer.Add(etcdClientService); err != nil {
-		t.Fatalf("Error adding service to idnexer: %v", err)
+		t.Fatalf("Error adding service to indexer: %v", err)
+	}
+	if err := serviceIndexer.Add(apiserverExternalService); err != nil {
+		t.Fatalf("Error adding service to indexer: %v", err)
+	}
+	if err := serviceIndexer.Add(apiserverService); err != nil {
+		t.Fatalf("Error adding service to indexer: %v", err)
 	}
 	serviceLister := listerscorev1.NewServiceLister(serviceIndexer)
 
@@ -157,13 +181,13 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 		ServiceLister: serviceLister,
 	}
 
-	for name, create := range GetSecretCreators() {
+	for _, op := range GetSecretCreatorOperations([]byte{}) {
 		existing := &corev1.Secret{
 			Data: map[string][]byte{"Test": []byte("Data")},
 		}
-		new, err := create(templateData, existing)
+		new, err := op.create(templateData, existing)
 		if err != nil {
-			t.Fatalf("Error executing secet creator %s: %v", name, err)
+			t.Fatalf("Error executing secet creator %s: %v", op.name, err)
 		}
 
 		if val, exists := new.Data["Test"]; !exists || string(val) != "Data" {

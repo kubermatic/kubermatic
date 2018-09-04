@@ -1,7 +1,6 @@
 grafana:
   user: YWRtaW4= # admin
   password: bG9vZHNlMTIz # loodse123
-  host: ""
   image:
     repository: grafana/grafana
     tag: 5.2.1
@@ -58,3 +57,11 @@ grafana:
     transparentPanels: true
     refresh: 30s
     defaultRange: now-1h
+
+    # Filter the namespaces shown in the Kubernetes/Volume
+    # dashboard, e.g. to not show customer clusters by setting
+    #
+    #     namespace!~'cluster-.*'
+    #
+    # Do not use double quotes inside this value.
+    volumeDashboardNamespaceFilter: ""

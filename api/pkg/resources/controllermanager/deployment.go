@@ -3,8 +3,11 @@ package controllermanager
 import (
 	"fmt"
 
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
+
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -78,36 +81,21 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	// get clusterIP of apiserver
-	apiAddress, err := data.InClusterApiserverAddress()
-	if err != nil {
-		return nil, err
-	}
-
 	// Configure user cluster DNS resolver for this pod.
 	dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 	if err != nil {
 		return nil, err
 	}
 
-	kcDir := "/etc/kubernetes/controllermanager"
 	dep.Spec.Template.Spec.Volumes = volumes
-	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
-		{
-			Name:            "apiserver-running",
-			Image:           data.ImageRegistry(resources.RegistryDocker) + "/busybox",
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command: []string{
-				"/bin/sh",
-				"-ec",
-				fmt.Sprintf("until wget -T 1 https://%s/healthz; do echo waiting for apiserver; sleep 2; done;", apiAddress),
-			},
-			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-		},
-	}
 
-	openvpnSidecar, err := resources.OpenVPNSidecarContainer(data, "openvpn-client")
+	apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
+	if err != nil {
+		return nil, err
+	}
+	dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
+
+	openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
 	}
@@ -130,7 +118,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 		{
 			Name:      resources.ControllerManagerKubeconfigSecretName,
-			MountPath: kcDir,
+			MountPath: "/etc/kubernetes/kubeconfig",
 			ReadOnly:  true,
 		},
 	}
@@ -152,12 +140,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
 		{
-			Name:            name,
-			Image:           data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command:         []string{"/hyperkube", "controller-manager"},
-			Args:            getFlags(data, kcDir),
-			Env:             getEnvVars(data),
+			Name:                     name,
+			Image:                    data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
+			ImagePullPolicy:          corev1.PullIfNotPresent,
+			Command:                  []string{"/hyperkube", "controller-manager"},
+			Args:                     getFlags(data),
+			Env:                      getEnvVars(data),
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			Resources:                resourceRequirements,
@@ -190,12 +178,14 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
+	dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(name, data.Cluster.Name, nil))
+
 	return dep, nil
 }
 
-func getFlags(data *resources.TemplateData, kcDir string) []string {
+func getFlags(data *resources.TemplateData) []string {
 	flags := []string{
-		"--kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.ControllerManagerKubeconfigSecretName),
+		"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"--service-account-private-key-file", "/etc/kubernetes/service-account-key/sa.key",
 		"--root-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--cluster-signing-cert-file", "/etc/kubernetes/pki/ca/ca.crt",

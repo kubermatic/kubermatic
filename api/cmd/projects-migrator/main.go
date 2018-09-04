@@ -68,10 +68,6 @@ func main() {
 			if err != nil {
 				glog.Fatal(err)
 			}
-			if cfg.Host == ctx.config.Host && cfg.Username == ctx.config.Username && cfg.Password == ctx.config.Password {
-				glog.V(2).Infof("Skipping adding %s as a seed cluster. It is exactly the same as existing kubernetes master client", ctxName)
-				continue
-			}
 
 			glog.V(2).Infof("Adding %s as seed cluster", ctxName)
 			kubeClient := kubernetes.NewForConfigOrDie(cfg)
@@ -87,7 +83,7 @@ func main() {
 	// special case
 	// if this flag was set then remove duplicates for users and exit the app
 	if removeDupUsers {
-		err := removeOrDetectDuplicatedUsers(ctx, "0", false)
+		err := removeOrDetectDuplicatedUsers(ctx, "-1", false)
 		if err != nil {
 			glog.Fatalf("failed to remove duplicates for users, due to = %v", err)
 		}
@@ -95,23 +91,18 @@ func main() {
 		return
 	}
 
-	// phase -1: stop when duplicated users
+	// phase 0: stop when duplicated users
 	//
 	//           all duplicates were removed manually,
 	//           that means our API server allowed to create a duplicate for a users
 	//           please provide a fix, then remove duplicated users and then rerun the app
-	err = removeOrDetectDuplicatedUsers(ctx, "-1", true)
-	if err != nil {
-		glog.Fatalf(`PHASE -1 failed: due to = %v, please provide a fix to our API server, then remove duplicates for users (set rm-dup-users flag to true), and then rerun the app`, err)
-	}
-
-	// phase 0: remove duplicated users
 	//
-	//          duplicated users have the same Spec.ID, Spec.Email, Spec.Name
-	//          for example on dev environment: user-lknc7, user-n45j9, user-z9s20j
-	err = removeOrDetectDuplicatedUsers(ctx, "0", false)
+	//           note:
+	//           duplicated users have the same Spec.ID, Spec.Email, Spec.Name
+	//           for example on dev environment: user-lknc7, user-n45j9, user-z9s20j
+	err = removeOrDetectDuplicatedUsers(ctx, "0", true)
 	if err != nil {
-		glog.Fatalf("PHASE 0 failed due to = %v", err)
+		glog.Fatalf(`PHASE 0 failed: due to = %v, please provide a fix to our API server, then remove duplicates for users (set rm-dup-users flag to true), and then rerun the app`, err)
 	}
 
 	// phase 1: migrate existing cluster resources along with ssh keys they use to projects
@@ -146,6 +137,53 @@ func main() {
 	if err != nil {
 		glog.Errorf("PHASE 4 failed due to %v", err)
 	}
+
+	// phase 5: find clusters that are assigned to a project
+	//          and replace OwnerReferences with a label
+	err = remigrate(ctx)
+	if err != nil {
+		glog.Errorf("PHASE 5 failed due to %v", err)
+	}
+}
+
+// remigrate essentially removes existing OwnerReferences and replaces them with a label
+// see also: https://github.com/kubermatic/kubermatic/pull/1839
+func remigrate(ctx migrationContext) error {
+	glog.Info("\n")
+	glog.Info("Running PHASE 5 ...")
+	//
+	// step 1: get clusters that already belong to a project,
+	//         clusters like that have OwnerReferences set for a project
+	//
+	//         note that this step will get clusters resources that belong to
+	//         seed clusters (physical location)
+	glog.Info("STEP 1: getting the list of clusters that were migrated")
+	_, alreadyAdoptedClusters, err := getAllClusters(ctx)
+	if err != nil {
+		return err
+	}
+
+	glog.Info("STEP 2: remigrating the cluster resources (if any)")
+	for _, providerClustersTuple := range alreadyAdoptedClusters {
+		provider := providerClustersTuple.provider
+		for _, cluster := range providerClustersTuple.clusters {
+			projectName := isOwnedByProject(cluster.GetOwnerReferences(), nil)
+			if len(projectName) > 0 {
+				cluster.OwnerReferences = removeOwnerReferencesForProject(cluster.GetOwnerReferences(), projectName)
+				cluster.Labels[kubermaticv1.ProjectIDLabelKey] = projectName
+				if !ctx.dryRun {
+					_, err := provider.kubermaticClient.KubermaticV1().Clusters().Update(&cluster)
+					if err != nil {
+						return err
+					}
+					glog.Infof("the cluster ID = %s, Name = %s, project = %s, physical location %s was remigrated", cluster.Name, cluster.Spec.HumanReadableName, projectName, provider.name)
+				} else {
+					glog.Infof("the cluster ID = %s, Name = %s, project = %s, physical location %s, was not remigrated because dry-run option was requested", cluster.Name, cluster.Spec.HumanReadableName, projectName, provider.name)
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func removeKeysWithoutOwner(ctx migrationContext) error {
@@ -206,7 +244,7 @@ func migrateRemainingSSHKeys(ctx migrationContext) error {
 			userName := isOwnedByUser(project.OwnerReferences)
 			if len(userName) > 0 {
 				if user, err := ctx.masterKubermaticClient.KubermaticV1().Users().Get(userName, metav1.GetOptions{}); err == nil {
-					projectOwnersTuple[userName] = projectOwnerTuple{project: project, owner: *user}
+					projectOwnersTuple[user.Spec.ID] = projectOwnerTuple{project: project, owner: *user}
 				}
 			} else {
 				return fmt.Errorf("project ID = %s, Name = %s doesn't have an owner", project.Name, project.Spec.Name)
@@ -230,6 +268,10 @@ func migrateRemainingSSHKeys(ctx migrationContext) error {
 		for _, key := range allKeys.Items {
 			if len(key.Spec.Owner) == 0 {
 				glog.Warningf("the key ID = %s, Name = %s doesn't have an owner", key.Name, key.Spec.Name)
+				continue
+			}
+			if projectName := isOwnedByProject(key.GetOwnerReferences(), nil); len(projectName) > 0 {
+				glog.V(2).Infof("skipping the key ID = %s, Name = %s, already belongs to the project %s", key.Name, key.Spec.Name, projectName)
 				continue
 			}
 			if projectOwner, ok := projectOwnersTuple[key.Spec.Owner]; ok {
@@ -356,9 +398,9 @@ func migrateToProject(ctx migrationContext) error {
 	//         clusters like that don't have OwnerReferences set for a project
 	//
 	//         note that this step will get clusters resources that belong to
-	//         master and seed clusters (physical location)
+	//         seed clusters (physical location)
 	glog.Info("STEP 1: getting the list of clusters that needs to be migrated")
-	clustersToAdoptByUserID, err := getAllClusters(ctx)
+	clustersToAdoptByUserID, _, err := getAllClusters(ctx)
 	if err != nil {
 		return err
 	}
@@ -467,7 +509,7 @@ func migrateToProject(ctx migrationContext) error {
 			if !ctx.dryRun {
 				_, err := ctx.masterKubermaticClient.KubermaticV1().Users().Update(&user)
 				if err != nil {
-					glog.Errorf("failed to update user (ID = %s) object, however we can continue because the user object will be updated by the \"rbac-controller\" anyway, err = %v", user.Spec.ID, err)
+					return fmt.Errorf("failed to update user (ID = %s) object, err = %v", user.Spec.ID, err)
 				}
 			} else {
 				glog.Infof("a project (ID = %s, Name = %s) for userID = %s was NOT added to the \"Spec.Projects\" field because dry-run option was requested", project.Name, project.Spec.Name, user.Spec.ID)
@@ -497,7 +539,7 @@ func migrateToProject(ctx migrationContext) error {
 				continue
 			}
 
-			projectName := isOwnedByProject(sshKey.OwnerReferences)
+			projectName := isOwnedByProject(sshKey.OwnerReferences, nil)
 			if len(projectName) > 0 {
 				glog.V(3).Infof("skipping the following ssh keys (ID = %s, Name = %s) as it already belongs to project = %s", sshKey.Name, sshKey.Spec.Name, projectName)
 				continue
@@ -524,18 +566,12 @@ func migrateToProject(ctx migrationContext) error {
 		for userID, clustersMap := range clustersToAdoptByUserID {
 			for clusterName, clusterResourcesProviderTuple := range clustersMap {
 				project, projectExists := ownersOfClusterWithProject[userID]
-				ownerRef := metav1.OwnerReference{
-					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.ProjectKindName,
-					UID:        project.GetUID(),
-					Name:       project.Name,
-				}
 				for _, clusterResource := range clusterResourcesProviderTuple.clusters {
 					if !projectExists {
 						glog.Warningf("skipping cluster resource = %s (physical location %s), there is no project for a user with ID = %s (the user doesn't exist ?)", clusterResource.Name, clusterName, userID)
 						continue
 					}
-					clusterResource.OwnerReferences = append(clusterResource.OwnerReferences, ownerRef)
+					clusterResource.Labels[kubermaticv1.ProjectIDLabelKey] = project.Name
 					if !ctx.dryRun {
 						kubermaticClient := clusterResourcesProviderTuple.provider.kubermaticClient
 						_, err := kubermaticClient.KubermaticV1().Clusters().Update(&clusterResource)
@@ -587,9 +623,10 @@ type clustersProviderTuple struct {
 }
 
 // getAllClusters gets all clusters resources in the system and groups them by user and cluster (physical location)
-func getAllClusters(ctx migrationContext) (map[string]map[string]*clustersProviderTuple, error) {
+func getAllClusters(ctx migrationContext) (map[string]map[string]*clustersProviderTuple, []*clustersProviderTuple, error) {
 	// clustersToAdoptByUserID structure that groups cluster resources by user and physical location
 	clustersToAdoptByUserID := map[string]map[string]*clustersProviderTuple{}
+	alreadyAdoptedClusters := []*clustersProviderTuple{}
 
 	// helper is a helper method that adds the given cluster to the list of clusters
 	// grouped by the user's ID and physical location
@@ -615,49 +652,42 @@ func getAllClusters(ctx migrationContext) (map[string]map[string]*clustersProvid
 		clustersToAdoptByUserID[cluster.Labels["user"]] = userClustersMap
 	}
 
-	// get cluster resources that are located in master cluster
-	{
-		masterClusters, err := ctx.masterKubermaticClient.KubermaticV1().Clusters().List(metav1.ListOptions{})
-		if err != nil {
-			return nil, err
-		}
-
-		for _, cluster := range masterClusters.Items {
-			projectName := isOwnedByProject(cluster.GetOwnerReferences())
-			if len(projectName) == 0 {
-				helper(cluster, &clusterProvider{"master", ctx.masterKubeClient, ctx.masterKubermaticClient})
-			}
-		}
-	}
-
 	// get cluster resources that are located in seed clusters
 	{
 		for _, seedClusterProvider := range ctx.seedClusterProviders {
 
 			seedClusters, err := seedClusterProvider.kubermaticClient.KubermaticV1().Clusters().List(metav1.ListOptions{})
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 
+			alreadyAdoptedOnSeed := []kubermaticv1.Cluster{}
+
 			for _, cluster := range seedClusters.Items {
-				projectName := isOwnedByProject(cluster.GetOwnerReferences())
+				projectName := isOwnedByProject(cluster.GetOwnerReferences(), cluster.Labels)
 				if len(projectName) == 0 {
 					helper(cluster, seedClusterProvider)
+				} else {
+					alreadyAdoptedOnSeed = append(alreadyAdoptedOnSeed, cluster)
 				}
 			}
+			alreadyAdoptedClusters = append(alreadyAdoptedClusters, &clustersProviderTuple{clusters: alreadyAdoptedOnSeed, provider: seedClusterProvider})
 		}
 	}
 
-	return clustersToAdoptByUserID, nil
+	return clustersToAdoptByUserID, alreadyAdoptedClusters, nil
 }
 
 // isOwnedByProject is a helper function that extract projectName from the given OwnerReferences
-func isOwnedByProject(owners []metav1.OwnerReference) string {
+func isOwnedByProject(owners []metav1.OwnerReference, labels map[string]string) string {
 	for _, owner := range owners {
 		if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName &&
 			len(owner.Name) > 0 && len(owner.UID) > 0 {
 			return owner.Name
 		}
+	}
+	if projectName := labels[kubermaticv1.ProjectIDLabelKey]; len(projectName) > 0 {
+		return projectName
 	}
 	return ""
 }
@@ -670,6 +700,19 @@ func isOwnedByUser(owners []metav1.OwnerReference) string {
 		}
 	}
 	return ""
+}
+
+func removeOwnerReferencesForProject(owners []metav1.OwnerReference, projectName string) []metav1.OwnerReference {
+	newOwners := []metav1.OwnerReference{}
+	for _, owner := range owners {
+		if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName &&
+			owner.Name == projectName {
+			continue
+		}
+		newOwners = append(newOwners, owner)
+	}
+
+	return newOwners
 }
 
 // printClusterToAdopt prints cluster resources to stdout

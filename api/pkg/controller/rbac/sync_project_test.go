@@ -596,6 +596,230 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 	}
 }
 
+// TestEnsureClusterResourcesCleanup test if cluster resources for the given
+// project were removed from all physical locations
+func TestEnsureClusterResourcesCleanup(t *testing.T) {
+	tests := []struct {
+		name               string
+		projectToSync      *kubermaticv1.Project
+		existingClustersOn map[string][]*kubermaticv1.Cluster
+		deletedClustersOn  map[string][]string
+	}{
+		// scenario 1
+		{
+			name:          "scenario 1: when a project is removed all cluster resources from all clusters (physical location) are also removed",
+			projectToSync: createProject("plan9", createUser("bob")),
+			existingClustersOn: map[string][]*kubermaticv1.Cluster{
+
+				// cluster resources that are on "a" physical location
+				"a": []*kubermaticv1.Cluster{
+
+					// cluster "abcd" that belongs to "thunderball" project
+					&kubermaticv1.Cluster{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "abcd",
+							UID:  types.UID("abcdID"),
+							Labels: map[string]string{
+								kubermaticv1.ProjectIDLabelKey: "thunderball",
+							},
+						},
+						Spec:    kubermaticv1.ClusterSpec{},
+						Address: kubermaticv1.ClusterAddress{},
+						Status: kubermaticv1.ClusterStatus{
+							NamespaceName: "cluster-abcd",
+						},
+					},
+
+					// cluster "ab" that belongs to "plan9" project
+					&kubermaticv1.Cluster{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "ab",
+							UID:  types.UID("abID"),
+							Labels: map[string]string{
+								kubermaticv1.ProjectIDLabelKey: "plan9",
+							},
+						},
+						Spec:    kubermaticv1.ClusterSpec{},
+						Address: kubermaticv1.ClusterAddress{},
+						Status: kubermaticv1.ClusterStatus{
+							NamespaceName: "cluster-ab",
+						},
+					},
+				},
+
+				// cluster resources that are on "b" physical location
+				"b": []*kubermaticv1.Cluster{
+
+					// cluster "xyz" that belongs to "plan9" project
+					&kubermaticv1.Cluster{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "xyz",
+							UID:  types.UID("xyzID"),
+							Labels: map[string]string{
+								kubermaticv1.ProjectIDLabelKey: "plan9",
+							},
+						},
+						Spec:    kubermaticv1.ClusterSpec{},
+						Address: kubermaticv1.ClusterAddress{},
+						Status: kubermaticv1.ClusterStatus{
+							NamespaceName: "cluster-xyz",
+						},
+					},
+
+					// cluster "zzz" that belongs to "plan9" project
+					&kubermaticv1.Cluster{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "zzz",
+							UID:  types.UID("zzzID"),
+							Labels: map[string]string{
+								kubermaticv1.ProjectIDLabelKey: "plan9",
+							},
+						},
+						Spec:    kubermaticv1.ClusterSpec{},
+						Address: kubermaticv1.ClusterAddress{},
+						Status: kubermaticv1.ClusterStatus{
+							NamespaceName: "cluster-zzz",
+						},
+					},
+				},
+
+				// cluster resources that are on "c" physical location
+				"c": []*kubermaticv1.Cluster{
+
+					// cluster "cat" that belongs to "acme" project
+					&kubermaticv1.Cluster{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "cat",
+							UID:  types.UID("catID"),
+							Labels: map[string]string{
+								kubermaticv1.ProjectIDLabelKey: "acme",
+							},
+						},
+						Spec:    kubermaticv1.ClusterSpec{},
+						Address: kubermaticv1.ClusterAddress{},
+						Status: kubermaticv1.ClusterStatus{
+							NamespaceName: "cluster-cat",
+						},
+					},
+
+					// cluster "bat" that belongs to "acme" project
+					&kubermaticv1.Cluster{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "bat",
+							UID:  types.UID("batID"),
+							Labels: map[string]string{
+								kubermaticv1.ProjectIDLabelKey: "acme",
+							},
+						},
+						Spec:    kubermaticv1.ClusterSpec{},
+						Address: kubermaticv1.ClusterAddress{},
+						Status: kubermaticv1.ClusterStatus{
+							NamespaceName: "cluster-bat",
+						},
+					},
+				},
+			},
+			deletedClustersOn: map[string][]string{
+				"a": []string{"ab"},
+				"b": []string{"xyz", "zzz"},
+				"c": []string{},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+
+			// prepare test data
+			getClusterProviderByName := func(name string, providers []*ClusterProvider) (*ClusterProvider, error) {
+				for _, provider := range providers {
+					if provider.providerName == name {
+						return provider, nil
+					}
+				}
+				return nil, fmt.Errorf("provider %s not found", name)
+			}
+			allClusterProviders := make([]*ClusterProvider, len(test.existingClustersOn))
+			{
+				index := 0
+				for providerName, clusterResources := range test.existingClustersOn {
+					kubermaticObjs := []runtime.Object{}
+					kubeObjs := []runtime.Object{}
+					clusterResourcesIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+					for _, clusterResource := range clusterResources {
+						err := clusterResourcesIndexer.Add(clusterResource)
+						if err != nil {
+							t.Fatal(err)
+						}
+						kubermaticObjs = append(kubermaticObjs, clusterResource)
+					}
+
+					fakeKubeClient := fake.NewSimpleClientset(kubeObjs...)
+					fakeKubeInformerFactory := kuberinformers.NewSharedInformerFactory(fakeKubeClient, time.Minute*5)
+					fakeKubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjs...)
+					fakeProvider := NewClusterProvider(providerName, fakeKubeClient, fakeKubeInformerFactory, fakeKubermaticClient, nil)
+					fakeProvider.AddIndexerFor(clusterResourcesIndexer, schema.GroupVersionResource{Resource: kubermaticv1.ClusterResourceName})
+					allClusterProviders[index] = fakeProvider
+					index = index + 1
+				}
+			}
+			userIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+			userLister := kubermaticv1lister.NewUserLister(userIndexer)
+			fakeKubermaticMasterClient := kubermaticfakeclientset.NewSimpleClientset(test.projectToSync)
+
+			// act
+			target := Controller{}
+			target.allClusterProviders = allClusterProviders
+			target.userLister = userLister
+			target.kubermaticMasterClient = fakeKubermaticMasterClient
+			err := target.ensureProjectCleanup(test.projectToSync)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// validate
+			if len(test.deletedClustersOn) != len(test.existingClustersOn) {
+				t.Fatalf("deletedClustersOn field is different than existingClusterOn in length, did you forget to update deletedClusterOn ?")
+			}
+			for providerName, deletedClusterResources := range test.deletedClustersOn {
+				provider, err := getClusterProviderByName(providerName, allClusterProviders)
+				if err != nil {
+					t.Fatalf("unable to validate deleted cluster resources because didn't find the provider %s", providerName)
+				}
+				fakeKubermaticClient, ok := provider.kubermaticClient.(*kubermaticfakeclientset.Clientset)
+				if !ok {
+					t.Fatalf("cannot cast kubermaticClient for provider %s", providerName)
+				}
+
+				if len(fakeKubermaticClient.Actions()) != len(deletedClusterResources) {
+					t.Fatalf("unexpected number of clusters were deleted, expected only %d, but got %d, for provider %s", len(deletedClusterResources), len(fakeKubermaticClient.Actions()), providerName)
+				}
+
+				for _, action := range fakeKubermaticClient.Actions() {
+					if !action.Matches("delete", "clusters") {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					deleteAction, ok := action.(clienttesting.DeleteAction)
+					if !ok {
+						t.Fatalf("unexpected action %#v", action)
+					}
+
+					foundDeletedResourceOnTheList := false
+					for _, deletedClusterResource := range deletedClusterResources {
+						if deleteAction.GetName() == deletedClusterResource {
+							foundDeletedResourceOnTheList = true
+							break
+						}
+
+					}
+					if !foundDeletedResourceOnTheList {
+						t.Fatalf("wrong cluster has been deleted %s, the cluster is not on the list  %v", deleteAction.GetName(), deletedClusterResources)
+					}
+				}
+			}
+		})
+	}
+}
+
 // TestEnsureUserProjectCleanup extends TestEnsureProjectCleanup in a way
 // that also checks if the project being removed is removed from "Spec.Project" array for all users that belong the the project
 func TestEnsureUsersProjectCleanup(t *testing.T) {
@@ -1449,7 +1673,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			name: "Scenario 1: Proper set of RBAC Roles for project's resources are created on \"master\" and seed clusters",
+			name:                     "Scenario 1: Proper set of RBAC Roles for project's resources are created on \"master\" and seed clusters",
 			expectedActionsForMaster: []string{"create", "create", "create", "create"},
 			expectedActionsForSeeds:  []string{"create", "create"},
 			seedClusters:             2,

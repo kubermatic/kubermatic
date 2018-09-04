@@ -19,12 +19,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	appsv1informer "k8s.io/client-go/informers/apps/v1"
+	batchv1beta1informer "k8s.io/client-go/informers/batch/v1beta1"
 	corev1informers "k8s.io/client-go/informers/core/v1"
 	extensionsv1beta1informers "k8s.io/client-go/informers/extensions/v1beta1"
 	policyv1beta1informers "k8s.io/client-go/informers/policy/v1beta1"
 	rbacv1informer "k8s.io/client-go/informers/rbac/v1"
 	"k8s.io/client-go/kubernetes"
 	appsv1lister "k8s.io/client-go/listers/apps/v1"
+	batchv1beta1lister "k8s.io/client-go/listers/batch/v1beta1"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	extensionsv1beta1lister "k8s.io/client-go/listers/extensions/v1beta1"
 	policyv1beta1lister "k8s.io/client-go/listers/policy/v1beta1"
@@ -54,12 +56,15 @@ type Controller struct {
 	queue      workqueue.RateLimitingInterface
 	workerName string
 
-	overwriteRegistry                      string
-	nodePortRange                          string
-	nodeAccessNetwork                      string
-	etcdDiskSize                           resource.Quantity
-	inClusterPrometheusRulesFile           string
-	inClusterPrometheusDisableDefaultRules bool
+	overwriteRegistry                                string
+	nodePortRange                                    string
+	nodeAccessNetwork                                string
+	etcdDiskSize                                     resource.Quantity
+	inClusterPrometheusRulesFile                     string
+	inClusterPrometheusDisableDefaultRules           bool
+	inClusterPrometheusDisableDefaultScrapingConfigs bool
+	inClusterPrometheusScrapingConfigsFile           string
+	dockerPullConfigJSON                             []byte
 
 	clusterLister             kubermaticv1lister.ClusterLister
 	namespaceLister           corev1lister.NamespaceLister
@@ -70,6 +75,7 @@ type Controller struct {
 	serviceAccountLister      corev1lister.ServiceAccountLister
 	deploymentLister          appsv1lister.DeploymentLister
 	statefulSetLister         appsv1lister.StatefulSetLister
+	cronJobLister             batchv1beta1lister.CronJobLister
 	ingressLister             extensionsv1beta1lister.IngressLister
 	roleLister                rbacb1lister.RoleLister
 	roleBindingLister         rbacb1lister.RoleBindingLister
@@ -93,6 +99,9 @@ func NewController(
 	etcdDiskSize string,
 	inClusterPrometheusRulesFile string,
 	inClusterPrometheusDisableDefaultRules bool,
+	inClusterPrometheusDisableDefaultScrapingConfigs bool,
+	inClusterPrometheusScrapingConfigsFile string,
+	dockerPullConfigJSON []byte,
 
 	clusterInformer kubermaticv1informers.ClusterInformer,
 	namespaceInformer corev1informers.NamespaceInformer,
@@ -103,6 +112,7 @@ func NewController(
 	serviceAccountInformer corev1informers.ServiceAccountInformer,
 	deploymentInformer appsv1informer.DeploymentInformer,
 	statefulSetInformer appsv1informer.StatefulSetInformer,
+	cronJobInformer batchv1beta1informer.CronJobInformer,
 	ingressInformer extensionsv1beta1informers.IngressInformer,
 	roleInformer rbacv1informer.RoleInformer,
 	roleBindingInformer rbacv1informer.RoleBindingInformer,
@@ -121,6 +131,9 @@ func NewController(
 		etcdDiskSize:                           resource.MustParse(etcdDiskSize),
 		inClusterPrometheusRulesFile:           inClusterPrometheusRulesFile,
 		inClusterPrometheusDisableDefaultRules: inClusterPrometheusDisableDefaultRules,
+		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
+		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
+		dockerPullConfigJSON:                             dockerPullConfigJSON,
 
 		externalURL: externalURL,
 		workerName:  workerName,
@@ -215,6 +228,11 @@ func NewController(
 		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
 		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
 	})
+	cronJobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    func(obj interface{}) { cc.handleChildObject(obj) },
+		UpdateFunc: func(old, cur interface{}) { cc.handleChildObject(cur) },
+		DeleteFunc: func(obj interface{}) { cc.handleChildObject(obj) },
+	})
 
 	cc.clusterLister = clusterInformer.Lister()
 	cc.namespaceLister = namespaceInformer.Lister()
@@ -225,6 +243,7 @@ func NewController(
 	cc.serviceAccountLister = serviceAccountInformer.Lister()
 	cc.deploymentLister = deploymentInformer.Lister()
 	cc.statefulSetLister = statefulSetInformer.Lister()
+	cc.cronJobLister = cronJobInformer.Lister()
 	cc.ingressLister = ingressInformer.Lister()
 	cc.roleLister = roleInformer.Lister()
 	cc.roleBindingLister = roleBindingInformer.Lister()

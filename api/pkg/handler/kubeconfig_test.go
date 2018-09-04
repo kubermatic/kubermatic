@@ -63,7 +63,7 @@ func TestKubeConfigEndpoint(t *testing.T) {
 			Namespace: "cluster-foo",
 		},
 		Data: map[string][]byte{
-			resources.AdminKubeconfigSecretKey: []byte(config),
+			resources.KubeconfigSecretKey: []byte(config),
 		},
 	}
 

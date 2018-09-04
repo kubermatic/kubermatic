@@ -35,7 +35,7 @@ func newCreateSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProv
 			return nil, errors.NewBadRequest("invalid request")
 		}
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
-		project, err := projectProvider.Get(user, req.ProjectID)
+		project, err := projectProvider.Get(user, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -67,7 +67,7 @@ func newDeleteSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProv
 			return nil, errors.NewBadRequest("invalid request")
 		}
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
-		project, err := projectProvider.Get(user, req.ProjectID)
+		project, err := projectProvider.Get(user, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -115,7 +115,7 @@ func newListSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProvid
 		}
 
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
-		project, err := projectProvider.Get(user, req.ProjectID)
+		project, err := projectProvider.Get(user, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}

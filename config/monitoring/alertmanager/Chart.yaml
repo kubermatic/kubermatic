@@ -2,10 +2,11 @@ name: alertmanager
 version: 0.1.0
 description: Alertmanager for Kubermatic
 keywords:
-  - k8s
-  - kubermatic
-  - prometheus
-  - alertmanager
+- k8s
+- kubermatic
+- prometheus
+- alertmanager
+- oidc
 home: http://www.kubermatic.io/
 sources:
   - https://github.com/kubermatic/kubermatic/config

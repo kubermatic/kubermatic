@@ -1,0 +1,68 @@
+{{- range .Values.iap.deployments }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iap-{{ .name }}
+  labels:
+    app: iap
+    target: {{ .name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: iap
+      target: {{ .name }}
+  template:
+    metadata:
+      labels:
+        app: iap
+        target: {{ .name }}
+    spec:
+      containers:
+      - name: keycloak-proxy
+        image: "{{ $.Values.iap.image.repository }}:{{ $.Values.iap.image.tag }}"
+        imagePullPolicy: {{ $.Values.iap.image.pullPolicy }}
+        args:
+        - --discovery-url={{ $.Values.iap.discovery_url }}
+        - --listen=0.0.0.0:{{ $.Values.iap.port }}
+        - --upstream-url=http://{{ .upstream_service }}:{{ .upstream_port }}
+        - --config=/config/config.yaml
+        envFrom:
+        - secretRef:
+            name: iap-{{ .name }}-secret
+        ports:
+        - name: http
+          containerPort: {{ $.Values.iap.port }}
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /oauth/health
+            port: http
+          initialDelaySeconds: 3
+          timeoutSeconds: 2
+        readinessProbe:
+          httpGet:
+            path: /oauth/health
+            port: http
+          initialDelaySeconds: 3
+          timeoutSeconds: 2
+{{- if $.Values.iap.resources }}
+        resources:
+{{ toYaml $.Values.iap.resources | indent 10 }}
+{{- end }}
+        volumeMounts:
+        - name: config
+          mountPath: /config
+      volumes:
+      - name: config
+        configMap:
+          name: iap-{{ .name }}-configmap
+          items:
+          - key: config.yaml
+            path: config.yaml
+      securityContext:
+        fsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+{{- end }}

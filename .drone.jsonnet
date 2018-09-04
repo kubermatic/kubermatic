@@ -6,7 +6,7 @@ local drone = import 'drone/drone.libsonnet';
   workspace: drone.workspace.new('/go', 'src/github.com/kubermatic/kubermatic'),
   pipeline: {
 
-    local goImage = 'golang:1.10.3',
+    local goImage = 'golang:1.11.0',
     local dockerSecrets = ['docker_username', 'docker_password'],
     local whenBranchMaster = { when: { branch: 'master' } },
     local whenBranchRelease = { when: { branch: 'release/v2.7.*' } },
@@ -22,6 +22,7 @@ local drone = import 'drone/drone.libsonnet';
       { namespace: 'oauth', name: 'oauth', path: 'config/oauth/' },
       { namespace: 'cert-manager', name: 'cert-manager', path: 'config/cert-manager/' },
       { namespace: 'default', name: 'certs', path: 'config/certs/' },
+      { namespace: 'iap', name: 'iap', path: 'config/iap/' },
       { namespace: 'monitoring', name: 'node-exporter', path: 'config/monitoring/node-exporter/' },
       { namespace: 'monitoring', name: 'kube-state-metrics', path: 'config/monitoring/kube-state-metrics/' },
       { namespace: 'monitoring', name: 'grafana', path: 'config/monitoring/grafana/' },

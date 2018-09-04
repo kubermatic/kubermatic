@@ -17,29 +17,6 @@
   },
   "host": "cloud.kubermatic.io",
   "paths": {
-    "/api/v1/azure/sizes": {
-      "get": {
-        "description": "Lists available VM sizes in an Azure region",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "azure"
-        ],
-        "operationId": "listAzureSizes",
-        "responses": {
-          "200": {
-            "description": "AzureSizeList",
-            "schema": {
-              "$ref": "#/definitions/AzureSizeList"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
     "/api/v1/dc": {
       "get": {
         "produces": [
@@ -93,29 +70,6 @@
         }
       }
     },
-    "/api/v1/digitalocean/sizes": {
-      "get": {
-        "description": "Lists sizes from digitalocean",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "digitalocean"
-        ],
-        "operationId": "listDigitaloceanSizes",
-        "responses": {
-          "200": {
-            "description": "DigitaloceanSizeList",
-            "schema": {
-              "$ref": "#/definitions/DigitaloceanSizeList"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
     "/api/v1/healthz": {
       "get": {
         "description": "Health endpoint",
@@ -145,269 +99,6 @@
             }
           },
           "401": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/openstack/networks": {
-      "get": {
-        "description": "Lists networks from openstack",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "openstack"
-        ],
-        "operationId": "listOpenstackNetworks",
-        "responses": {
-          "200": {
-            "description": "OpenstackNetwork",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/OpenstackNetwork"
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/openstack/securitygroups": {
-      "get": {
-        "description": "Lists security groups from openstack",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "openstack"
-        ],
-        "operationId": "listOpenstackSecurityGroups",
-        "responses": {
-          "200": {
-            "description": "OpenstackSecurityGroup",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/OpenstackSecurityGroup"
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/openstack/sizes": {
-      "get": {
-        "description": "Lists sizes from openstack",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "openstack"
-        ],
-        "operationId": "listOpenstackSizes",
-        "responses": {
-          "200": {
-            "description": "OpenstackSize",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/OpenstackSize"
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/openstack/subnets": {
-      "get": {
-        "description": "Lists subnets from openstack",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "openstack"
-        ],
-        "operationId": "listOpenstackSubnets",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "Username",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "Password",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "Domain",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "Tenant",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "DatacenterName",
-            "in": "query"
-          },
-          {
-            "type": "string",
-            "name": "NetworkID",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OpenstackSubnet",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/OpenstackSubnet"
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/openstack/tenants": {
-      "get": {
-        "description": "Lists tenants from openstack",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "openstack"
-        ],
-        "operationId": "listOpenstackTenants",
-        "responses": {
-          "200": {
-            "description": "OpenstackTenant",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/OpenstackTenant"
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_id}": {
-      "delete": {
-        "description": "Deletes the specified cluster",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "project"
-        ],
-        "operationId": "newDeleteCluster",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterID",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/responses/empty"
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_id}/health": {
-      "get": {
-        "description": "Returns the cluster's component health status",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "project"
-        ],
-        "operationId": "newGetClusterHealth",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterID",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ClusterHealth",
-            "schema": {
-              "$ref": "#/definitions/ClusterHealth"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
             "$ref": "#/responses/empty"
           },
           "default": {
@@ -770,6 +461,105 @@
             "description": "Cluster",
             "schema": {
               "$ref": "#/definitions/Cluster"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes the specified cluster",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "newDeleteCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/health": {
+      "get": {
+        "description": "Returns the cluster's component health status",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "newGetClusterHealth",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterHealth",
+            "schema": {
+              "$ref": "#/definitions/ClusterHealth"
             }
           },
           "401": {
@@ -1634,6 +1424,240 @@
         }
       }
     },
+    "/api/v1/providers/azure/sizes": {
+      "get": {
+        "description": "Lists available VM sizes in an Azure region",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "azure"
+        ],
+        "operationId": "listAzureSizes",
+        "responses": {
+          "200": {
+            "description": "AzureSizeList",
+            "schema": {
+              "$ref": "#/definitions/AzureSizeList"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/digitalocean/sizes": {
+      "get": {
+        "description": "Lists sizes from digitalocean",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "digitalocean"
+        ],
+        "operationId": "listDigitaloceanSizes",
+        "responses": {
+          "200": {
+            "description": "DigitaloceanSizeList",
+            "schema": {
+              "$ref": "#/definitions/DigitaloceanSizeList"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/openstack/networks": {
+      "get": {
+        "description": "Lists networks from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackNetworks",
+        "responses": {
+          "200": {
+            "description": "OpenstackNetwork",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackNetwork"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/openstack/securitygroups": {
+      "get": {
+        "description": "Lists security groups from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackSecurityGroups",
+        "responses": {
+          "200": {
+            "description": "OpenstackSecurityGroup",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackSecurityGroup"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/openstack/sizes": {
+      "get": {
+        "description": "Lists sizes from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackSizes",
+        "responses": {
+          "200": {
+            "description": "OpenstackSize",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackSize"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/openstack/subnets": {
+      "get": {
+        "description": "Lists subnets from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackSubnets",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "Domain",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "Tenant",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "NetworkID",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OpenstackSubnet",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackSubnet"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/openstack/tenants": {
+      "get": {
+        "description": "Lists tenants from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackTenants",
+        "responses": {
+          "200": {
+            "description": "OpenstackTenant",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackTenant"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/vsphere/networks": {
+      "get": {
+        "description": "Lists networks from vsphere datacenter",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "vsphere"
+        ],
+        "operationId": "listVSphereNetworks",
+        "responses": {
+          "200": {
+            "description": "VSphereNetwork",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/VSphereNetwork"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/ssh-keys": {
       "get": {
         "description": "Lists SSH keys from the user",
@@ -1729,32 +1753,6 @@
               "type": "array",
               "items": {
                 "$ref": "#/definitions/MasterVersion"
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/vsphere/networks": {
-      "get": {
-        "description": "Lists networks from vsphere datacenter",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "vsphere"
-        ],
-        "operationId": "listVSphereNetworks",
-        "responses": {
-          "200": {
-            "description": "VSphereNetwork",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/VSphereNetwork"
               }
             }
           },

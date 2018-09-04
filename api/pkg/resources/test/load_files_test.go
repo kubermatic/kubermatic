@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -324,6 +325,13 @@ func TestLoadFiles(t *testing.T) {
 					&v1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
+							Name:            resources.KubeletDnatControllerKubeconfigSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
 							Name:            resources.FrontProxyCASecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
@@ -435,6 +443,23 @@ func TestLoadFiles(t *testing.T) {
 					close(stopCh)
 				}()
 
+				tmpFile, err := ioutil.TempFile("", "kubermatic")
+				if err != nil {
+					t.Fatalf("couldnt create temp file, see: %v", err)
+				}
+
+				tmpFilePath := tmpFile.Name()
+				_, err = tmpFile.WriteString("some test")
+				if err != nil {
+					t.Fatalf("couldnt write to temp file, see: %v", err)
+				}
+				defer (func() {
+					err = os.Remove(tmpFilePath)
+					if err != nil {
+						t.Fatalf("couldn't delete temp file, see: %v", err)
+					}
+				})()
+
 				kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, 10*time.Millisecond)
 				data := resources.NewTemplateData(
 					cluster,
@@ -447,8 +472,11 @@ func TestLoadFiles(t *testing.T) {
 					"",
 					"192.0.2.0/24",
 					resource.MustParse("5Gi"),
-					"",
+					tmpFilePath,
 					false,
+					false,
+					tmpFilePath,
+					nil,
 				)
 				kubeInformerFactory.Start(wait.NeverStop)
 				kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
@@ -516,6 +544,20 @@ func TestLoadFiles(t *testing.T) {
 					fixturePath := fmt.Sprintf("poddisruptionbudget-%s-%s-%s", prov, ver.Version.String(), res.Name)
 					if err != nil {
 						t.Fatalf("failed to create PodDisruptionBudget for %s: %v", fixturePath, err)
+					}
+
+					checkTestResult(t, fixturePath, res)
+				}
+
+				for _, create := range clustercontroller.GetCronJobCreators() {
+					res, err := create(data, nil)
+					if err != nil {
+						t.Fatalf("failed to create CronJob: %v", err)
+					}
+
+					fixturePath := fmt.Sprintf("cronjob-%s-%s-%s", prov, ver.Version.String(), res.Name)
+					if err != nil {
+						t.Fatalf("failed to create CronJob for %s: %v", fixturePath, err)
 					}
 
 					checkTestResult(t, fixturePath, res)

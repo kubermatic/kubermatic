@@ -12,6 +12,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
@@ -184,6 +185,7 @@ func GetUserClusterRoleCreators(c *kubermaticv1.Cluster) []resources.ClusterRole
 	creators := []resources.ClusterRoleCreator{
 		machinecontroller.ClusterRole,
 		kubestatemetrics.ClusterRole,
+		vpnsidecar.DnatControllerClusterRole,
 	}
 
 	if len(c.Spec.MachineNetworks) > 0 {
@@ -251,6 +253,7 @@ func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.Clus
 		machinecontroller.NodeSignerClusterRoleBinding,
 		controllermanager.AdminClusterRoleBinding,
 		kubestatemetrics.ClusterRoleBinding,
+		vpnsidecar.DnatControllerClusterRoleBinding,
 	}
 
 	if len(c.Spec.MachineNetworks) > 0 {

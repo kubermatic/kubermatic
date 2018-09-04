@@ -48,9 +48,15 @@ func addUserToProject(projectProvider provider.ProjectProvider, userProvider pro
 		} else if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		project, err := projectProvider.Get(authenticatedUser, projectFromRequest.ID)
+		project, err := projectProvider.Get(authenticatedUser, projectFromRequest.ID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		for _, project := range userToInvite.Spec.Projects {
+			if project.Name == req.ProjectID {
+				return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("cannot add the user = %s to the project %s because user is already in the project", req.Body.Email, req.ProjectID))
+			}
 		}
 
 		authUserGroupName, err := authenticatedUser.GroupForProject(project.Name)

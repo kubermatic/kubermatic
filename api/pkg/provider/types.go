@@ -101,6 +101,20 @@ type ClusterListOptions struct {
 	SortBy string
 }
 
+// ClusterGetOptions allows to check the status of the cluster
+type ClusterGetOptions struct {
+	// CheckInitStatus if set to true will check if cluster is initialized. The call will return error if
+	// not all cluster components are running
+	CheckInitStatus bool
+}
+
+// ProjectGetOptions allows to check the status of the Project
+type ProjectGetOptions struct {
+	// IncludeUninitialized if set to true will skip the check if project is initialized. By default the call will return
+	// an  error if not all project components are active
+	IncludeUninitialized bool
+}
+
 // NewClusterProvider declares the set of methods for interacting with clusters
 // This provider is Project and RBAC compliant
 type NewClusterProvider interface {
@@ -116,7 +130,7 @@ type NewClusterProvider interface {
 	List(project *kubermaticv1.Project, options *ClusterListOptions) ([]*kubermaticv1.Cluster, error)
 
 	// Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to
-	Get(user *kubermaticv1.User, project *kubermaticv1.Project, clusterName string) (*kubermaticv1.Cluster, error)
+	Get(user *kubermaticv1.User, project *kubermaticv1.Project, clusterName string, options *ClusterGetOptions) (*kubermaticv1.Cluster, error)
 
 	// Update updates a cluster
 	Update(user *kubermaticv1.User, project *kubermaticv1.Project, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
@@ -191,7 +205,7 @@ type ProjectProvider interface {
 	Delete(user *kubermaticv1.User, projectInternalName string) error
 
 	// Get returns the project with the given name
-	Get(user *kubermaticv1.User, projectInternalName string) (*kubermaticv1.Project, error)
+	Get(user *kubermaticv1.User, projectInternalName string, options *ProjectGetOptions) (*kubermaticv1.Project, error)
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.

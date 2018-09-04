@@ -232,14 +232,6 @@
   revision = "02af3965c54e8cacf948b97fef38925c4120652c"
 
 [[projects]]
-  branch = "master"
-  digest = "1:e8ffe2fb7368f65afaaf39769207bee2a7aeddf694e94f5bc05cffd750d4d98d"
-  name = "github.com/evanphx/json-patch"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "944e07253867aacae43c04b2e6a239005443f33a"
-
-[[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
   name = "github.com/fsnotify/fsnotify"
   packages = ["."]
@@ -662,7 +654,7 @@
   revision = "7cafcd837844e784b526369c9bce262804aebc60"
 
 [[projects]]
-  digest = "1:a9df415b82688898337aa6f2deaeb0334a08815ee506b3850770793985821a39"
+  digest = "1:789715b763918c380d0a9c76fcd04e0d355c0cbe364a909aaec47149298d6485"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/client/clientset/versioned",
@@ -698,8 +690,8 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "5c11b45346a6e22b6a3a0538a3d568c48da342bc"
-  version = "v0.7.18"
+  revision = "3d36061083caf0d166ec6dc2625dbfd48b58a13a"
+  version = "v0.7.19"
 
 [[projects]]
   digest = "1:35e5598ba3bc950039e13d91958ce37f675264735907cada569d11b243e5cacb"
@@ -994,7 +986,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e444d860fba00b1b9adb8c1156460e5700ce90063f5d315719689298a88d361b"
+  digest = "1:c047d31979d8813b89680e00f526ea9e83fbf3eb763b57b45c74b739f463f487"
   name = "golang.org/x/crypto"
   packages = [
     "argon2",
@@ -1003,6 +995,7 @@
     "ed25519",
     "ed25519/internal/edwards25519",
     "internal/chacha20",
+    "internal/subtle",
     "pbkdf2",
     "pkcs12",
     "pkcs12/internal/rc2",
@@ -1012,7 +1005,7 @@
     "ssh/terminal",
   ]
   pruneopts = "NUT"
-  revision = "650f4a345ab4e5b245a3034b110ebc7299e68186"
+  revision = "614d502a4dac94afa3a6ce146bd1736da82514c6"
 
 [[projects]]
   branch = "master"
@@ -1042,14 +1035,15 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4301a4973691694236c322c1ed32273b7d42dbff3cd2d0bbb7b06f233edfbd8e"
+  digest = "1:34b342f01d30359fc6559e23964437be7d2c3a82873ae7f82c22b8f0a7741643"
   name = "golang.org/x/sys"
   packages = [
+    "cpu",
     "unix",
     "windows",
   ]
   pruneopts = "NUT"
-  revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
+  revision = "4910a1d54f876d7b22162a85f4d066d3ee649450"
 
 [[projects]]
   branch = "master"
@@ -1191,7 +1185,7 @@
 
 [[projects]]
   branch = "release-1.10"
-  digest = "1:77ead159dd31d230f6b72649f69371d2688b281827738d58f37705a6a5246889"
+  digest = "1:cf1e88f3192e70eeb1600267ecc52fa2aac11a7e0ec38aa6bdb21f98bc186366"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/equality",
@@ -1225,7 +1219,6 @@
     "pkg/util/framer",
     "pkg/util/intstr",
     "pkg/util/json",
-    "pkg/util/jsonmergepatch",
     "pkg/util/mergepatch",
     "pkg/util/net",
     "pkg/util/rand",
@@ -1570,7 +1563,6 @@
     "k8s.io/apimachinery/pkg/util/diff",
     "k8s.io/apimachinery/pkg/util/intstr",
     "k8s.io/apimachinery/pkg/util/json",
-    "k8s.io/apimachinery/pkg/util/jsonmergepatch",
     "k8s.io/apimachinery/pkg/util/net",
     "k8s.io/apimachinery/pkg/util/rand",
     "k8s.io/apimachinery/pkg/util/runtime",
@@ -1607,6 +1599,7 @@
     "k8s.io/client-go/tools/clientcmd/api/v1",
     "k8s.io/client-go/tools/leaderelection",
     "k8s.io/client-go/tools/leaderelection/resourcelock",
+    "k8s.io/client-go/tools/metrics",
     "k8s.io/client-go/tools/record",
     "k8s.io/client-go/util/cert",
     "k8s.io/client-go/util/cert/triple",

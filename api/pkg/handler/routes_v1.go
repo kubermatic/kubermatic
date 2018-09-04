@@ -41,32 +41,53 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.deleteSSHKey())
 
 	mux.Methods(http.MethodGet).
-		Path("/digitalocean/sizes").
+		Path("/providers/digitalocean/sizes").
 		Handler(r.listDigitaloceanSizes())
+	mux.Methods(http.MethodGet).
+		Path("/digitalocean/sizes").
+		Handler(r.redirectTo("/api/v1/providers/digitalocean/sizes"))
 
+	mux.Methods(http.MethodGet).
+		Path("/providers/azure/sizes").
+		Handler(r.listAzureSizes())
 	mux.Methods(http.MethodGet).
 		Path("/azure/sizes").
-		Handler(r.listAzureSizes())
+		Handler(r.redirectTo("/api/v1/providers/azure/sizes"))
 
+	mux.Methods(http.MethodGet).
+		Path("/providers/openstack/sizes").
+		Handler(r.listOpenstackSizes())
 	mux.Methods(http.MethodGet).
 		Path("/openstack/sizes").
-		Handler(r.listOpenstackSizes())
+		Handler(r.redirectTo("/api/v1/providers/openstack/sizes"))
 
+	mux.Methods(http.MethodGet).
+		Path("/providers/openstack/tenants").
+		Handler(r.listOpenstackTenants())
 	mux.Methods(http.MethodGet).
 		Path("/openstack/tenants").
-		Handler(r.listOpenstackTenants())
+		Handler(r.redirectTo("/api/v1/providers/openstack/tenants"))
 
+	mux.Methods(http.MethodGet).
+		Path("/providers/openstack/networks").
+		Handler(r.listOpenstackNetworks())
 	mux.Methods(http.MethodGet).
 		Path("/openstack/networks").
-		Handler(r.listOpenstackNetworks())
+		Handler(r.redirectTo("/api/v1/providers/openstack/networks"))
 
+	mux.Methods(http.MethodGet).
+		Path("/providers/openstack/securitygroups").
+		Handler(r.listOpenstackSecurityGroups())
 	mux.Methods(http.MethodGet).
 		Path("/openstack/securitygroups").
-		Handler(r.listOpenstackSecurityGroups())
+		Handler(r.redirectTo("/api/v1/providers/openstack/securitygroups"))
 
 	mux.Methods(http.MethodGet).
-		Path("/openstack/subnets").
+		Path("/providers/openstack/subnets").
 		Handler(r.listOpenstackSubnets())
+	mux.Methods(http.MethodGet).
+		Path("/openstack/subnets").
+		Handler(r.redirectTo("/api/v1/providers/openstack/subnets"))
 
 	mux.Methods(http.MethodGet).
 		Path("/versions").
@@ -75,8 +96,11 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	//
 	// VSphere related endpoints
 	mux.Methods(http.MethodGet).
-		Path("/vsphere/networks").
+		Path("/providers/vsphere/networks").
 		Handler(r.listVSphereNetworks())
+	mux.Methods(http.MethodGet).
+		Path("/vsphere/networks").
+		Handler(r.redirectTo("/api/v1/providers/vsphere/networks"))
 
 	//
 	// Defines a set of HTTP endpoints for project resource
@@ -205,6 +229,12 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	mux.Methods(http.MethodGet).
 		Path("/me").
 		Handler(r.getCurrentUser())
+}
+
+func (r Routing) redirectTo(path string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, path, http.StatusMovedPermanently)
+	})
 }
 
 // swagger:route GET /api/v1/ssh-keys ssh-keys listSSHKeys
@@ -352,7 +382,7 @@ func (r Routing) newDeleteSSHKey() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/digitalocean/sizes digitalocean listDigitaloceanSizes
+// swagger:route GET /api/v1/providers/digitalocean/sizes digitalocean listDigitaloceanSizes
 //
 // Lists sizes from digitalocean
 //
@@ -374,7 +404,7 @@ func (r Routing) listDigitaloceanSizes() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/azure/sizes azure listAzureSizes
+// swagger:route GET /api/v1/providers/azure/sizes azure listAzureSizes
 //
 // Lists available VM sizes in an Azure region
 //
@@ -396,7 +426,7 @@ func (r Routing) listAzureSizes() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/openstack/sizes openstack listOpenstackSizes
+// swagger:route GET /api/v1/providers/openstack/sizes openstack listOpenstackSizes
 //
 // Lists sizes from openstack
 //
@@ -418,7 +448,7 @@ func (r Routing) listOpenstackSizes() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/vsphere/networks vsphere listVSphereNetworks
+// swagger:route GET /api/v1/providers/vsphere/networks vsphere listVSphereNetworks
 //
 // Lists networks from vsphere datacenter
 //
@@ -440,7 +470,7 @@ func (r Routing) listVSphereNetworks() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/openstack/tenants openstack listOpenstackTenants
+// swagger:route GET /api/v1/providers/openstack/tenants openstack listOpenstackTenants
 //
 // Lists tenants from openstack
 //
@@ -462,7 +492,7 @@ func (r Routing) listOpenstackTenants() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/openstack/networks openstack listOpenstackNetworks
+// swagger:route GET /api/v1/providers/openstack/networks openstack listOpenstackNetworks
 //
 // Lists networks from openstack
 //
@@ -484,7 +514,7 @@ func (r Routing) listOpenstackNetworks() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/openstack/subnets openstack listOpenstackSubnets
+// swagger:route GET /api/v1/providers/openstack/subnets openstack listOpenstackSubnets
 //
 // Lists subnets from openstack
 //
@@ -506,7 +536,7 @@ func (r Routing) listOpenstackSubnets() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/openstack/securitygroups openstack listOpenstackSecurityGroups
+// swagger:route GET /api/v1/providers/openstack/securitygroups openstack listOpenstackSecurityGroups
 //
 // Lists security groups from openstack
 //
@@ -845,7 +875,7 @@ func (r Routing) newGetClusterKubeconfig() http.Handler {
 }
 
 // Delete the cluster
-// swagger:route DELETE /api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_id} project newDeleteCluster
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id} project newDeleteCluster
 //
 //     Deletes the specified cluster
 //
@@ -870,7 +900,7 @@ func (r Routing) newDeleteCluster() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_id}/health project newGetClusterHealth
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/health project newGetClusterHealth
 //
 //     Returns the cluster's component health status
 //

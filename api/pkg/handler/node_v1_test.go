@@ -40,32 +40,19 @@ func TestDeleteNodeForCluster(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			Name:           "scenario 1: delete the node that belong to the given cluster",
-			Body:           ``,
-			HTTPStatus:     http.StatusOK,
-			NodeIDToDelete: "venus",
-			ExistingProject: &kubermaticv1.Project{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "myProjectInternalName",
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: "kubermatic.io/v1",
-							Kind:       "User",
-							UID:        "",
-							Name:       "John",
-						},
-					},
-				},
-				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
-			},
+			Name:            "scenario 1: delete the node that belong to the given cluster",
+			Body:            ``,
+			HTTPStatus:      http.StatusOK,
+			NodeIDToDelete:  "venus",
+			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
 					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
-							Group: "owners-myProjectInternalName",
-							Name:  "myProjectInternalName",
+							Group: "owners-" + testingProjectName,
+							Name:  testingProjectName,
 						},
 					},
 				},
@@ -132,7 +119,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 							APIVersion: "kubermatic.k8s.io/v1",
 							Kind:       "Project",
 							UID:        "",
-							Name:       "myProjectInternalName",
+							Name:       testingProjectName,
 						},
 					},
 				},
@@ -148,7 +135,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/abcd/nodes/%s", tc.NodeIDToDelete), strings.NewReader(tc.Body))
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/abcd/nodes/%s", testingProjectName, tc.NodeIDToDelete), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			machineObj := []runtime.Object{}
@@ -202,7 +189,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 			}
 
 			//
-			req = httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/abcd/nodes/%s", tc.NodeIDToDelete), strings.NewReader(""))
+			req = httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/abcd/nodes/%s", testingProjectName, tc.NodeIDToDelete), strings.NewReader(""))
 			res = httptest.NewRecorder()
 			ep.ServeHTTP(res, req)
 			if res.Code != tc.ExpectedHTTPStatusOnGet {
@@ -230,31 +217,18 @@ func TestListNodesForCluster(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			Name:       "scenario 1: list nodes that belong to the given cluster",
-			Body:       ``,
-			HTTPStatus: http.StatusOK,
-			ExistingProject: &kubermaticv1.Project{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "myProjectInternalName",
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: "kubermatic.io/v1",
-							Kind:       "User",
-							UID:        "",
-							Name:       "John",
-						},
-					},
-				},
-				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
-			},
+			Name:            "scenario 1: list nodes that belong to the given cluster",
+			Body:            ``,
+			HTTPStatus:      http.StatusOK,
+			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
 					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
-							Group: "owners-myProjectInternalName",
-							Name:  "myProjectInternalName",
+							Group: "owners-" + testingProjectName,
+							Name:  testingProjectName,
 						},
 					},
 				},
@@ -321,7 +295,7 @@ func TestListNodesForCluster(t *testing.T) {
 							APIVersion: "kubermatic.k8s.io/v1",
 							Kind:       "Project",
 							UID:        "",
-							Name:       "myProjectInternalName",
+							Name:       testingProjectName,
 						},
 					},
 				},
@@ -407,7 +381,7 @@ func TestListNodesForCluster(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/abcd/nodes", strings.NewReader(tc.Body))
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/abcd/nodes", testingProjectName), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			machineObj := []runtime.Object{}
@@ -496,28 +470,15 @@ func TestGetNodeForCluster(t *testing.T) {
 			ExpectedResponse: `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":null}},"operatingSystem":{},"versions":{"kubelet":"","containerRuntime":{"name":"","version":""}}},"status":{"machineName":"venus","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
 			HTTPStatus:       http.StatusOK,
 			NodeIDToSync:     "venus",
-			ExistingProject: &kubermaticv1.Project{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "myProjectInternalName",
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: "kubermatic.io/v1",
-							Kind:       "User",
-							UID:        "",
-							Name:       "John",
-						},
-					},
-				},
-				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
-			},
+			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
 					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
-							Group: "owners-myProjectInternalName",
-							Name:  "myProjectInternalName",
+							Group: "owners-" + testingProjectName,
+							Name:  testingProjectName,
 						},
 					},
 				},
@@ -553,7 +514,7 @@ func TestGetNodeForCluster(t *testing.T) {
 							APIVersion: "kubermatic.k8s.io/v1",
 							Kind:       "Project",
 							UID:        "",
-							Name:       "myProjectInternalName",
+							Name:       testingProjectName,
 						},
 					},
 				},
@@ -563,7 +524,7 @@ func TestGetNodeForCluster(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/abcd/nodes/%s", tc.NodeIDToSync), strings.NewReader(tc.Body))
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/abcd/nodes/%s", testingProjectName, tc.NodeIDToSync), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			machineObj := []runtime.Object{}
@@ -618,28 +579,15 @@ func TestCreateNodeForCluster(t *testing.T) {
 			ExpectedResponse:                   `{"id":"%s","name":"%s","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-abcd"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"","containerRuntime":{"name":"docker","version":""}}},"status":{"machineName":"%s","capacity":{"cpu":"","memory":""},"allocatable":{"cpu":"","memory":""},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
 			HTTPStatus:                         http.StatusCreated,
 			RewriteClusterNameAndNamespaceName: true,
-			ExistingProject: &kubermaticv1.Project{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "myProjectInternalName",
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: "kubermatic.io/v1",
-							Kind:       "User",
-							UID:        "",
-							Name:       "John",
-						},
-					},
-				},
-				Spec: kubermaticv1.ProjectSpec{Name: "my-first-project"},
-			},
+			ExistingProject:                    createTestProject("my-first-project", kubermaticv1.ProjectActive),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
 					Email: testUserEmail,
 					Projects: []kubermaticv1.ProjectGroup{
 						{
-							Group: "owners-myProjectInternalName",
-							Name:  "myProjectInternalName",
+							Group: "owners-" + testingProjectName,
+							Name:  testingProjectName,
 						},
 					},
 				},
@@ -649,6 +597,17 @@ func TestCreateNodeForCluster(t *testing.T) {
 				Email: testUserEmail,
 			},
 			ExistingCluster: &kubermaticv1.Cluster{
+				Status: kubermaticv1.ClusterStatus{
+					Health: kubermaticv1.ClusterHealth{
+						ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
+							Apiserver:         true,
+							Scheduler:         true,
+							Controller:        true,
+							MachineController: true,
+							Etcd:              true,
+						},
+					},
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "abcd",
 					OwnerReferences: []metav1.OwnerReference{
@@ -656,7 +615,61 @@ func TestCreateNodeForCluster(t *testing.T) {
 							APIVersion: "kubermatic.k8s.io/v1",
 							Kind:       "Project",
 							UID:        "",
-							Name:       "myProjectInternalName",
+							Name:       testingProjectName,
+						},
+					},
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					Cloud: kubermaticv1.CloudSpec{
+						DatacenterName: "us-central1",
+					},
+				},
+			},
+		},
+		// scenario 2
+		{
+			Name:                               "scenario 2: cluster components are not ready",
+			Body:                               `{"spec":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"containerRuntime":{"name":"docker"}}}}`,
+			ExpectedResponse:                   `{"error":{"code":503,"message":"Cluster components are not ready yet"}}`,
+			HTTPStatus:                         http.StatusServiceUnavailable,
+			RewriteClusterNameAndNamespaceName: true,
+			ExistingProject:                    createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingKubermaticUser: &kubermaticv1.User{
+				Spec: kubermaticv1.UserSpec{
+					Name:  "John",
+					Email: testUserEmail,
+					Projects: []kubermaticv1.ProjectGroup{
+						{
+							Group: "owners-" + testingProjectName,
+							Name:  testingProjectName,
+						},
+					},
+				},
+			},
+			ExistingAPIUser: &apiv1.User{
+				ID:    testUserName,
+				Email: testUserEmail,
+			},
+			ExistingCluster: &kubermaticv1.Cluster{
+				Status: kubermaticv1.ClusterStatus{
+					Health: kubermaticv1.ClusterHealth{
+						ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
+							Apiserver:         true,
+							Scheduler:         true,
+							Controller:        false,
+							MachineController: true,
+							Etcd:              true,
+						},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "abcd",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: "kubermatic.k8s.io/v1",
+							Kind:       "Project",
+							UID:        "",
+							Name:       testingProjectName,
 						},
 					},
 				},
@@ -671,7 +684,7 @@ func TestCreateNodeForCluster(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("POST", "/api/v1/projects/myProjectInternalName/dc/us-central1/clusters/abcd/nodes", strings.NewReader(tc.Body))
+			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/abcd/nodes", testingProjectName), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 
@@ -703,7 +716,11 @@ func TestCreateNodeForCluster(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				expectedResponse = fmt.Sprintf(tc.ExpectedResponse, actualNode.ID, actualNode.Name, actualNode.Status.MachineName)
+				if tc.HTTPStatus > 399 {
+					expectedResponse = tc.ExpectedResponse
+				} else {
+					expectedResponse = fmt.Sprintf(tc.ExpectedResponse, actualNode.ID, actualNode.Name, actualNode.Status.MachineName)
+				}
 			}
 			compareWithResult(t, res, expectedResponse)
 		})
