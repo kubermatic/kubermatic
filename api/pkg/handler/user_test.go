@@ -123,6 +123,56 @@ func TestGetUsersForProject(t *testing.T) {
 			},
 			ExpectedResponse: `[{"id":"john","name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","projects":[{"id":"fooInternalName","group":"owners-foo"}]},{"id":"alice","name":"Alice","creationTimestamp":"0001-01-01T00:00:00Z","email":"alice@acme.com","projects":[{"id":"fooInternalName","group":"viewers-foo"}]},{"id":"bob","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"fooInternalName","group":"editors-foo"}]}]`,
 		},
+		{
+			Name:         "scenario 2: get a list of user for a project 'foo' for external user",
+			HTTPStatus:   http.StatusForbidden,
+			ProjectToGet: "foo2InternalName",
+			ExistingProjects: []*kubermaticapiv1.Project{
+				createTestProject("foo2", kubermaticapiv1.ProjectActive),
+				createTestProject("bar2", kubermaticapiv1.ProjectActive),
+			},
+			ExistingKubermaticUsers: []*kubermaticapiv1.User{
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "alice2",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  "Alice2",
+						Email: "alice2@acme.com",
+						Projects: []kubermaticapiv1.ProjectGroup{
+							{
+								Group: "viewers-bar",
+								Name:  "barInternalName",
+							},
+						},
+					},
+				},
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bob",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  "Bob",
+						Email: "bob@acme.com",
+						Projects: []kubermaticapiv1.ProjectGroup{
+							{
+								Group: "editors-foo2",
+								Name:  "foo2InternalName",
+							},
+							{
+								Group: "editors-bar2",
+								Name:  "bar2InternalName",
+							},
+						},
+					},
+				},
+			},
+			ExistingAPIUser: apiv1.User{
+				Name:  "alice2",
+				Email: "alice2@acme.com",
+			},
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: The user \"Alice2\" doesn't belong to the given project = foo2InternalName"}}`,
+		},
 	}
 
 	for _, tc := range testcases {
