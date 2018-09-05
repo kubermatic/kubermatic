@@ -32,20 +32,22 @@ Some of those resources are strictly required (as opposed to "addons") and shoul
 The envisioned improvement is started by establishing a user-cluster-controller-manager created by the (seed's) cluster-controller. The manager will create a user-cluster-controller inside the cluster-namespace.
 Resources of the user-cluster which are not considered "addons" or should not be controlled by the (seed's) cluster-controller will be moved into the control of the user-cluster-controller.
 
-[editorial comments in rectangular brackets]
-
 ### Unconditionally Created Resources
 
 [cluster/launching.go]
-* namespaces: default, kube-public, kube-system
-* kube-public:cm/cluster-info
-	* user-cluster root-ca (CN: root-ca.<clustername>.<datacenter>) [from cluster-controller]
-	* user-cluster api address [from cluster object]
-* role kube-public:cluster-info
-* rolebinding kube-public:cluster-info
+* Resources created from the cluster-controller (bootstrapping):
+	* namespaces: default, kube-public, kube-system
+	* kube-public:cm/cluster-info
+		* user-cluster root-ca (CN: root-ca.<clustername>.<datacenter>)
+		* user-cluster api address
+	* role kube-public:cluster-info
+	* rolebinding kube-public:cluster-info
+	[The bullets above are for clarification of the demarcation between user-cluster-control and seed-side control]
 
 * kube-system:secret/openvpn-client-certificates
 	* [needs ca from cluster-controller]
+	* [option A: can be created from cluster-controller]
+	* [option B: can be requested (CSR) from user-cluster via api call]
 
 * userClusterEnsureInitializerConfiguration [TemplateData not used]
     * ipamcontroller.MachineIPAMInitializerConfiguration
