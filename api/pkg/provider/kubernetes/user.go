@@ -30,7 +30,7 @@ type UserProvider struct {
 	userLister kubermaticv1lister.UserLister
 }
 
-// ListByProject ...
+// ListByProject returns a list of users by the given project name
 func (p *UserProvider) ListByProject(projectName string) ([]*kubermaticv1.User, error) {
 	userList, err := p.userLister.List(labels.Everything())
 	if err != nil {
