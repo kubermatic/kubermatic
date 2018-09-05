@@ -63,7 +63,19 @@ func (cc *Controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluste
 			if err != nil {
 				return fmt.Errorf("failed to encode kubeconfig: %v", err)
 			}
-			cm.Data = map[string]string{"kubeconfig": string(bconfig)}
+			cm.Data = map[string]string{
+				"kubeconfig":  string(bconfig),
+				"clusterName": c.Name,
+			}
+			var (
+				vpnAddress string
+				errVpnAddr error
+			)
+			if vpnAddress, errVpnAddr = cc.getOpenVpnAddress(c); errVpnAddr != nil {
+				return fmt.Errorf("failed to determine master vpn address: %v", err)
+			}
+			cm.Data["masterVpnAddress"] = vpnAddress
+
 			_, err = client.CoreV1().ConfigMaps(metav1.NamespacePublic).Create(&cm)
 			if err != nil {
 				return fmt.Errorf("failed to create cluster-info configmap in client cluster: %v", err)
@@ -126,6 +138,17 @@ func (cc *Controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluste
 	}
 
 	return nil
+}
+
+func (cc *Controller) getOpenVpnAddress(c *kubermaticv1.Cluster) (string, error) {
+	s, err := cc.serviceLister.Services(c.Status.NamespaceName).Get(resources.OpenVPNServerServiceName)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			glog.V(2).Infof("NotFound in getOpenVpnAddress is unexpected: %v", err)
+		}
+		return "", err
+	}
+	return fmt.Sprintf("%s:%d", c.Address.ExternalName, s.Spec.Ports[0].NodePort), nil
 }
 
 func (cc *Controller) launchingCreateOpenVPNClientCertificates(c *kubermaticv1.Cluster) error {
