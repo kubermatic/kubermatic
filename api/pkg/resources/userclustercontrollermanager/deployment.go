@@ -74,7 +74,6 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	kcDir := "/etc/kubernetes/uccm"
 	dep.Spec.Template.Spec.Volumes = volumes
 
 	dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
@@ -96,11 +95,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:            name,
-			Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/user-cluster-controller-manager:v0.1.0-dev1",
+			Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/user-cluster-controller-manager:v0.1.0-dev10",
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/local/bin/user-cluster-controller-manager"},
 			Args: []string{
-				"--kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.UserClusterControllerManagerKubeconfigSecretName),
+				"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 				"--logtostderr", "--v", "6",
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
@@ -108,7 +107,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      resources.UserClusterControllerManagerKubeconfigSecretName,
-					MountPath: kcDir,
+					MountPath: "/etc/kubernetes/kubeconfig",
 					ReadOnly:  true,
 				},
 			},
