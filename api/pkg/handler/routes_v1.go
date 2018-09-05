@@ -1248,9 +1248,9 @@ func (r Routing) addUserToProject() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/users users XXX
+// swagger:route GET /api/v1/projects/{project_id}/users users getUsersForProject
 //
-//     Adds the given user to the given project
+//     Get list of users for the given project
 //
 //     Consumes:
 //     - application/json
@@ -1260,7 +1260,7 @@ func (r Routing) addUserToProject() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: User
+//       200: []User
 //       401: empty
 //       403: empty
 func (r Routing) getUsersForProject() http.Handler {

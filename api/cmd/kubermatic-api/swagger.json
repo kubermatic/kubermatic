@@ -1378,7 +1378,7 @@
     },
     "/api/v1/projects/{project_id}/users": {
       "get": {
-        "description": "Adds the given user to the given project",
+        "description": "Get list of users for the given project",
         "consumes": [
           "application/json"
         ],
@@ -1388,12 +1388,15 @@
         "tags": [
           "users"
         ],
-        "operationId": "XXX",
+        "operationId": "getUsersForProject",
         "responses": {
           "200": {
             "description": "User",
             "schema": {
-              "$ref": "#/definitions/User"
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/User"
+              }
             }
           },
           "401": {
