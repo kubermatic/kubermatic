@@ -35,7 +35,7 @@ func AdminKubeconfig(data *TemplateData, existing *corev1.Secret) (*corev1.Secre
 		return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 	}
 
-	config := getBaseKubeconfig(ca.Cert, data.Cluster.Address.URL)
+	config := getBaseKubeconfig(ca.Cert, data.Cluster.Address.URL, data.Cluster.Name)
 	config.AuthInfos = map[string]*clientcmdapi.AuthInfo{
 		KubeconfigDefaultContextKey: {
 			Token: data.Cluster.Address.AdminToken,
@@ -80,7 +80,7 @@ func GetInternalKubeconfigCreator(name, commonName string, organizations []strin
 		}
 
 		b := se.Data[KubeconfigSecretKey]
-		valid, err := isValidKubeconfig(b, ca.Cert, url.String(), commonName)
+		valid, err := isValidKubeconfig(b, ca.Cert, url.String(), commonName, data.Cluster.Name)
 		if err != nil || !valid {
 			if err != nil {
 				glog.V(2).Infof("failed to validate existing kubeconfig from %s/%s %v. Regenerating it...", se.Namespace, se.Name, err)
@@ -88,7 +88,7 @@ func GetInternalKubeconfigCreator(name, commonName string, organizations []strin
 				glog.V(2).Infof("invalid/outdated kubeconfig found in %s/%s. Regenerating it...", se.Namespace, se.Name)
 			}
 
-			se.Data[KubeconfigSecretKey], err = buildNewKubeconfigAsByte(ca, url.String(), commonName, organizations)
+			se.Data[KubeconfigSecretKey], err = buildNewKubeconfigAsByte(ca, url.String(), commonName, organizations, data.Cluster.Name)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create new kubeconfig: %v", err)
 			}
@@ -99,8 +99,8 @@ func GetInternalKubeconfigCreator(name, commonName string, organizations []strin
 	}
 }
 
-func buildNewKubeconfigAsByte(ca *triple.KeyPair, server, commonName string, organizations []string) ([]byte, error) {
-	kubeconfig, err := buildNewKubeconfig(ca, server, commonName, organizations)
+func buildNewKubeconfigAsByte(ca *triple.KeyPair, server, commonName string, organizations []string, clusterName string) ([]byte, error) {
+	kubeconfig, err := buildNewKubeconfig(ca, server, commonName, organizations, clusterName)
 	if err != nil {
 		return nil, err
 	}
@@ -108,8 +108,8 @@ func buildNewKubeconfigAsByte(ca *triple.KeyPair, server, commonName string, org
 	return clientcmd.Write(*kubeconfig)
 }
 
-func buildNewKubeconfig(ca *triple.KeyPair, server, commonName string, organizations []string) (*clientcmdapi.Config, error) {
-	baseKubconfig := getBaseKubeconfig(ca.Cert, server)
+func buildNewKubeconfig(ca *triple.KeyPair, server, commonName string, organizations []string, clusterName string) (*clientcmdapi.Config, error) {
+	baseKubconfig := getBaseKubeconfig(ca.Cert, server, clusterName)
 
 	kp, err := triple.NewClientKeyPair(ca, commonName, organizations)
 	if err != nil {
@@ -126,25 +126,27 @@ func buildNewKubeconfig(ca *triple.KeyPair, server, commonName string, organizat
 	return baseKubconfig, nil
 }
 
-func getBaseKubeconfig(caCert *x509.Certificate, server string) *clientcmdapi.Config {
+func getBaseKubeconfig(caCert *x509.Certificate, server, clusterName string) *clientcmdapi.Config {
 	return &clientcmdapi.Config{
 		Clusters: map[string]*clientcmdapi.Cluster{
-			KubeconfigDefaultContextKey: {
+			// We use the actual cluster name here. It is later used in encodeKubeconfig()
+			// to set the filename of the kubeconfig downloaded from API to `kubeconfig-clusterName`.
+			clusterName: {
 				CertificateAuthorityData: certutil.EncodeCertPEM(caCert),
-				Server:                   server,
+				Server: server,
 			},
 		},
 		CurrentContext: KubeconfigDefaultContextKey,
 		Contexts: map[string]*clientcmdapi.Context{
 			KubeconfigDefaultContextKey: {
-				Cluster:  KubeconfigDefaultContextKey,
+				Cluster:  clusterName,
 				AuthInfo: KubeconfigDefaultContextKey,
 			},
 		},
 	}
 }
 
-func isValidKubeconfig(kubeconfigBytes []byte, caCert *x509.Certificate, server, commonName string) (bool, error) {
+func isValidKubeconfig(kubeconfigBytes []byte, caCert *x509.Certificate, server, commonName, clusterName string) (bool, error) {
 	if len(kubeconfigBytes) == 0 {
 		return false, nil
 	}
@@ -154,7 +156,7 @@ func isValidKubeconfig(kubeconfigBytes []byte, caCert *x509.Certificate, server,
 		return false, err
 	}
 
-	baseKubeconfig := getBaseKubeconfig(caCert, server)
+	baseKubeconfig := getBaseKubeconfig(caCert, server, clusterName)
 
 	authInfo := existingKubeconfig.AuthInfos[KubeconfigDefaultContextKey]
 	if authInfo == nil {
