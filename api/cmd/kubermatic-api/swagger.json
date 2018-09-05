@@ -1389,6 +1389,15 @@
           "users"
         ],
         "operationId": "getUsersForProject",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "User",

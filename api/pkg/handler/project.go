@@ -133,7 +133,7 @@ func convertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project
 }
 
 // GetProjectRq defines HTTP request for getProject endpoint
-// swagger:parameters getProject
+// swagger:parameters getProject getUsersForProject
 type GetProjectRq struct {
 	// in: path
 	Name string `json:"project_id"`
