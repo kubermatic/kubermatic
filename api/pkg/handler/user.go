@@ -38,6 +38,12 @@ func listUsersFromProject(projectProvider provider.ProjectProvider, userProvider
 	}
 }
 
+func deleteUserFromProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		return nil, nil
+	}
+}
+
 func addUserToProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AddUserToProjectReq)
@@ -209,6 +215,34 @@ func decodeAddUserToProject(c context.Context, r *http.Request) (interface{}, er
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// DelUserFromProjectRq defines HTTP request for deleteUserFromProject endpoint
+// swagger:parameters deleteUserFromProject
+type DelUserFromProjectRq struct {
+	// in: path
+	ProjectName string `json:"project_id"`
+	// in: path
+	UserName string `json:"user_id"`
+}
+
+func decodeDelUserFromProjectRq(c context.Context, r *http.Request) (interface{}, error) {
+	var req DelUserFromProjectRq
+
+	projectID, ok := mux.Vars(r)["project_id"]
+	if !ok {
+		return nil, fmt.Errorf("'project_id' parameter is required but was not provided")
+	}
+
+	userID, ok := mux.Vars(r)["user_id"]
+	if !ok {
+		return nil, fmt.Errorf("'user_id' parameter is required but was not provided")
+	}
+
+	req.ProjectName = projectID
+	req.UserName = userID
 
 	return req, nil
 }
