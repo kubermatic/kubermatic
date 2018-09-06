@@ -909,6 +909,14 @@
   revision = "aafc9e6bc7b7bb53ddaa75a5ef49a17d6e654be5"
 
 [[projects]]
+  digest = "1:bacb8b590716ab7c33f2277240972c9582d389593ee8d66fc10074e0508b8126"
+  name = "github.com/stretchr/testify"
+  packages = ["assert"]
+  pruneopts = "NUT"
+  revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
+  version = "v1.2.2"
+
+[[projects]]
   branch = "master"
   digest = "1:a0aee89faaf795424d978b6b4bcee4af3dc71f5680e5e1b30bd1528639e61a9a"
   name = "github.com/tent/http-link-go"
@@ -1531,6 +1539,7 @@
     "github.com/prometheus/client_golang/prometheus/promhttp",
     "github.com/prometheus/common/model",
     "github.com/robfig/cron",
+    "github.com/stretchr/testify/assert",
     "github.com/ugorji/go/codec/codecgen",
     "github.com/urfave/cli",
     "github.com/vmware/govmomi",
