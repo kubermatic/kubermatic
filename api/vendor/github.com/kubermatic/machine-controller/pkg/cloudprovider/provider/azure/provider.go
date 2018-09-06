@@ -335,7 +335,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 	}
 
 	// We genete a random SSH key, since Azure won't let us create a VM without an SSH key or a password
-	key, err := ssh.NewKey()
+	key, err := ssh.NewSSHKey()
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate ssh key: %v", err)
 	}
@@ -382,7 +382,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 			NetworkProfile: &compute.NetworkProfile{
 				NetworkInterfaces: &[]compute.NetworkInterfaceReference{
 					{
-						ID: iface.ID,
+						ID:                                  iface.ID,
 						NetworkInterfaceReferenceProperties: &compute.NetworkInterfaceReferenceProperties{Primary: to.BoolPtr(true)},
 					},
 				},
@@ -533,9 +533,7 @@ func getVMByUID(ctx context.Context, c *config, uid types.UID) (*compute.Virtual
 
 	for list.NotDone() {
 		allServers = append(allServers, list.Values()...)
-		if err = list.Next(); err != nil {
-			return nil, fmt.Errorf("failed to iterate the result list: %s", err)
-		}
+		list.Next()
 	}
 
 	for _, vm := range allServers {
@@ -715,17 +713,9 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 	}
 
 	_, err = getOSImageReference(providerCfg.OperatingSystem)
-	return nil
-}
-
-func (p *provider) MachineMetricsLabels(machine *v1alpha1.Machine) (map[string]string, error) {
-	labels := make(map[string]string)
-
-	c, _, err := p.getConfig(machine.Spec.ProviderConfig)
-	if err == nil {
-		labels["size"] = c.VMSize
-		labels["location"] = c.Location
+	if err != nil {
+		return err
 	}
 
-	return labels, err
+	return nil
 }
