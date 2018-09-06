@@ -31,12 +31,6 @@ type Provider interface {
 	// This will always be called on machine deletion, the implemention must check if there is actually
 	// something to delete and just do nothing if there isn't
 	Delete(machine *v1alpha1.Machine, update MachineUpdater) error
-
-	// MachineMetricsLabels returns labels used for the Prometheus metrics
-	// about created machines, e.g. instance type, instance size, region
-	// or whatever the provider deems interesting. Should always return
-	// a "size" label.
-	MachineMetricsLabels(machine *v1alpha1.Machine) (map[string]string, error)
 }
 
 // MachineUpdater defines a function to persist an update to a machine

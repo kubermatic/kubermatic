@@ -29,9 +29,7 @@ func deleteInterfacesByMachineUID(ctx context.Context, c *config, machineUID typ
 
 	for list.NotDone() {
 		allInterfaces = append(allInterfaces, list.Values()...)
-		if err = list.Next(); err != nil {
-			return fmt.Errorf("failed to iterate the result list: %s", err)
-		}
+		list.Next()
 	}
 
 	for _, iface := range allInterfaces {
@@ -68,9 +66,7 @@ func deleteIPAddressesByMachineUID(ctx context.Context, c *config, machineUID ty
 
 	for list.NotDone() {
 		allIPs = append(allIPs, list.Values()...)
-		if err = list.Next(); err != nil {
-			return fmt.Errorf("failed to iterate the result list: %s", err)
-		}
+		list.Next()
 	}
 
 	for _, ip := range allIPs {
@@ -104,9 +100,7 @@ func deleteVMsByMachineUID(ctx context.Context, c *config, machineUID types.UID)
 
 	for list.NotDone() {
 		allServers = append(allServers, list.Values()...)
-		if err = list.Next(); err != nil {
-			return fmt.Errorf("failed to iterate the result list: %s", err)
-		}
+		list.Next()
 	}
 
 	for _, vm := range allServers {
@@ -140,9 +134,7 @@ func deleteDisksByMachineUID(ctx context.Context, c *config, machineUID types.UI
 
 	for list.NotDone() {
 		allDisks = append(allDisks, list.Values()...)
-		if err = list.Next(); err != nil {
-			return fmt.Errorf("failed to iterate the result list: %s", err)
-		}
+		list.Next()
 	}
 
 	for _, disk := range allDisks {

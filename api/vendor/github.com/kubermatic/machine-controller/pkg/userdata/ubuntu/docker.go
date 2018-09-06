@@ -75,5 +75,5 @@ func getDockerInstallCandidate(desiredVersion string) (pkg string, version strin
 		}
 	}
 
-	return "", "", errNoInstallCandidateAvailable
+	return "", "", NoInstallCandidateAvailableErr
 }
