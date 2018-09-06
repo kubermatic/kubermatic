@@ -224,6 +224,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}/users").
 		Handler(r.addUserToProject())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/users").
+		Handler(r.getUsersForProject())
+
 	//
 	// Defines an endpoint to retrieve information about the current token owner
 	mux.Methods(http.MethodGet).
@@ -1240,6 +1244,33 @@ func (r Routing) addUserToProject() http.Handler {
 		)(addUserToProject(r.projectProvider, r.userProvider)),
 		decodeAddUserToProject,
 		setStatusCreatedHeader(encodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/users users getUsersForProject
+//
+//     Get list of users for the given project
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []User
+//       401: empty
+//       403: empty
+func (r Routing) getUsersForProject() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(listUsersFromProject(r.projectProvider, r.userProvider)),
+		decodeGetProject,
+		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }

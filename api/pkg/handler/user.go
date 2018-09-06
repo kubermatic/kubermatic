@@ -17,6 +17,34 @@ import (
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
+func listUsersFromProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		kubermaticProject, err := getKubermaticProject(ctx, projectProvider, request)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		users, err := userProvider.ListByProject(kubermaticProject.Name)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		externalUsers := []*apiv1.NewUser{}
+		for _, user := range users {
+			externalUser := convertInternalUserToExternal(user)
+			for _, pg := range externalUser.Projects {
+				if pg.ID == kubermaticProject.Name {
+					externalUser.Projects = []apiv1.ProjectGroup{pg}
+					break
+				}
+			}
+			externalUsers = append(externalUsers, externalUser)
+		}
+
+		return externalUsers, nil
+	}
+}
+
 func addUserToProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AddUserToProjectReq)

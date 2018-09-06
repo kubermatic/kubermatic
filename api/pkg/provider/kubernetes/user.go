@@ -30,6 +30,26 @@ type UserProvider struct {
 	userLister kubermaticv1lister.UserLister
 }
 
+// ListByProject returns a list of users by the given project name
+func (p *UserProvider) ListByProject(projectName string) ([]*kubermaticv1.User, error) {
+	userList, err := p.userLister.List(labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	projectUsers := []*kubermaticv1.User{}
+	for _, user := range userList {
+		for _, project := range user.Spec.Projects {
+			if project.Name == projectName {
+				projectUsers = append(projectUsers, user.DeepCopy())
+				break
+			}
+		}
+	}
+
+	return projectUsers, nil
+}
+
 // UserByEmail returns a user by the given email
 func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
 	users, err := p.userLister.List(labels.Everything())
