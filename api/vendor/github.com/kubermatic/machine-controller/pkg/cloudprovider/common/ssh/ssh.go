@@ -12,17 +12,17 @@ import (
 
 const privateRSAKeyBitSize = 4096
 
-// Pubkey is only used to create temporary keypairs, thus we
+// We only use this to create temporary keypairs, thus we
 // do not need the Private key
 // The reason for not hardcoding a random public key is that
 // it would look like a backdoor
-type Pubkey struct {
+type SSHPubkey struct {
 	Name           string
 	PublicKey      string
 	FingerprintMD5 string
 }
 
-func NewKey() (*Pubkey, error) {
+func NewSSHKey() (*SSHPubkey, error) {
 	tmpRSAKeyPair, err := rsa.GenerateKey(rand.Reader, privateRSAKeyBitSize)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create private RSA key: %v", err)
@@ -37,7 +37,7 @@ func NewKey() (*Pubkey, error) {
 		return nil, fmt.Errorf("failed to generate ssh public key: %v", err)
 	}
 
-	return &Pubkey{
+	return &SSHPubkey{
 		Name:           uuid.New(),
 		PublicKey:      string(ssh.MarshalAuthorizedKey(pubKey)),
 		FingerprintMD5: ssh.FingerprintLegacyMD5(pubKey),

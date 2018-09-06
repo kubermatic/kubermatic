@@ -118,7 +118,6 @@ func (p Provider) UserData(
 		HyperkubeImageTag string
 		ClusterDNSIPs     []net.IP
 		KubernetesCACert  string
-		JournaldMaxSize   string
 	}{
 		MachineSpec:       spec,
 		ProviderConfig:    pconfig,
@@ -129,7 +128,6 @@ func (p Provider) UserData(
 		HyperkubeImageTag: fmt.Sprintf("v%s", kubeletVersion.String()),
 		ClusterDNSIPs:     clusterDNSIPs,
 		KubernetesCACert:  kubernetesCACert,
-		JournaldMaxSize:   userdatahelper.JournaldMaxUse,
 	}
 	b := &bytes.Buffer{}
 	err = tmpl.Execute(b, data)
@@ -264,14 +262,6 @@ systemd:
 
 storage:
   files:
-    - path: "/etc/systemd/journald.conf.d/max_disk_use.conf"
-      filesystem: root
-      mode: 0644
-      contents:
-        inline: |
-          [Journal]
-          SystemMaxUse={{ .JournaldMaxSize }}
-
     - path: /etc/sysctl.d/k8s.conf
       filesystem: root
       mode: 0644
