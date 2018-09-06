@@ -1377,6 +1377,48 @@
       }
     },
     "/api/v1/projects/{project_id}/users": {
+      "get": {
+        "description": "Get list of users for the given project",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "users"
+        ],
+        "operationId": "getUsersForProject",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/User"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
       "post": {
         "description": "Adds the given user to the given project",
         "consumes": [
