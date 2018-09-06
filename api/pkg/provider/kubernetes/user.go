@@ -41,8 +41,6 @@ func (p *UserProvider) ListByProject(projectName string) ([]*kubermaticv1.User, 
 	for _, user := range userList {
 		for _, project := range user.Spec.Projects {
 			if project.Name == projectName {
-				// remove all other projects from the list
-				user.Spec.Projects = []kubermaticv1.ProjectGroup{project}
 				projectUsers = append(projectUsers, user.DeepCopy())
 				break
 			}

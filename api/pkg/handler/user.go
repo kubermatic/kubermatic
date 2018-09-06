@@ -31,7 +31,14 @@ func listUsersFromProject(projectProvider provider.ProjectProvider, userProvider
 
 		externalUsers := []*apiv1.NewUser{}
 		for _, user := range users {
-			externalUsers = append(externalUsers, convertInternalUserToExternal(user))
+			externalUser := convertInternalUserToExternal(user)
+			for _, pg := range externalUser.Projects {
+				if pg.ID == kubermaticProject.Name {
+					externalUser.Projects = []apiv1.ProjectGroup{pg}
+					break
+				}
+			}
+			externalUsers = append(externalUsers, externalUser)
 		}
 
 		return externalUsers, nil
