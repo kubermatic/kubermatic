@@ -199,11 +199,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
-			Name:                     name,
-			Image:                    data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/openvpn:v0.4",
-			ImagePullPolicy:          corev1.PullIfNotPresent,
-			Command:                  []string{"/usr/sbin/openvpn"},
-			Args:                     vpnArgs,
+			Name:            name,
+			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/openvpn:v0.4",
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			Command:         []string{"/usr/sbin/openvpn"},
+			Args:            vpnArgs,
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			Ports: []corev1.ContainerPort{

@@ -132,12 +132,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
 		{
-			Name:                     name,
-			Image:                    data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
-			ImagePullPolicy:          corev1.PullIfNotPresent,
-			Command:                  []string{"/hyperkube", "apiserver"},
-			Env:                      getEnvVars(data),
-			Args:                     getApiserverFlags(data, externalNodePort, etcd),
+			Name:            name,
+			Image:           data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			Command:         []string{"/hyperkube", "apiserver"},
+			Env:             getEnvVars(data),
+			Args:            getApiserverFlags(data, externalNodePort, etcd),
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			Resources:                resourceRequirements,
