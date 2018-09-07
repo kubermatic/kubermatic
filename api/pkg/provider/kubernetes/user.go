@@ -52,11 +52,6 @@ func (p *UserProvider) ListByProject(projectName string) ([]*kubermaticv1.User, 
 	return projectUsers, nil
 }
 
-// DeleteUserFromProject ...
-func (p *UserProvider) DeleteUserFromProject(projectID, userID string) error {
-	return nil
-}
-
 // UserByEmail returns a user by the given email
 func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
 	users, err := p.userLister.List(labels.Everything())

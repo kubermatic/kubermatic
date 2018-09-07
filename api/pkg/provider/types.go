@@ -192,7 +192,6 @@ type UserProvider interface {
 	CreateUser(id, name, email string) (*kubermaticv1.User, error)
 	Update(*kubermaticv1.User) (*kubermaticv1.User, error)
 	ListByProject(projectName string) ([]*kubermaticv1.User, error)
-	DeleteUserFromProject(projectID, userID string) error
 }
 
 // ProjectProvider declares the set of method for interacting with kubermatic's project
