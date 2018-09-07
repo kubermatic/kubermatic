@@ -52,6 +52,11 @@ func (p *UserProvider) ListByProject(projectName string) ([]*kubermaticv1.User, 
 	return projectUsers, nil
 }
 
+// DeleteUserFromProject ...
+func (p *UserProvider) DeleteUserFromProject(projectID, userID string) error {
+	return nil
+}
+
 // UserByEmail returns a user by the given email
 func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
 	users, err := p.userLister.List(labels.Everything())
@@ -75,6 +80,35 @@ func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
 	}
 	for _, user := range userList.Items {
 		if user.Spec.Email == email {
+			return user.DeepCopy(), nil
+		}
+	}
+
+	return nil, provider.ErrNotFound
+}
+
+// UserByID returns a user by the given user id
+func (p *UserProvider) UserByID(id string) (*kubermaticv1.User, error) {
+	users, err := p.userLister.List(labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	for _, user := range users {
+		if user.Spec.ID == id {
+			return user.DeepCopy(), nil
+		}
+	}
+
+	// In case we could not find the user from the lister, we get all users from the API
+	// This ensures we don't run into issues with an outdated cache & create the same user twice
+	// This part will be called when a new user does the first request & the user does not exist yet as resource.
+	userList, err := p.client.KubermaticV1().Users().List(v1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, user := range userList.Items {
+		if user.Spec.ID == id {
 			return user.DeepCopy(), nil
 		}
 	}
