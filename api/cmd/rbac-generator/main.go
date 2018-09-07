@@ -49,10 +49,15 @@ func main() {
 		glog.Fatal(err)
 	}
 
+	selector, err := workerlabel.LabelSelector(ctrlCtx.runOptions.workerName)
+	if err != nil {
+		glog.Fatal(err)
+	}
+
 	ctrlCtx.stopCh = signals.SetupSignalHandler()
 	ctrlCtx.kubeMasterClient = kubernetes.NewForConfigOrDie(config)
 	ctrlCtx.kubermaticMasterClient = kubermaticclientset.NewForConfigOrDie(config)
-	ctrlCtx.kubermaticMasterInformerFactory = externalversions.NewSharedInformerFactory(ctrlCtx.kubermaticMasterClient, time.Minute*5)
+	ctrlCtx.kubermaticMasterInformerFactory = externalversions.NewFilteredSharedInformerFactory(ctrlCtx.kubermaticMasterClient, time.Minute*5, metav1.NamespaceAll, selector)
 	ctrlCtx.kubeMasterInformerFactory = kuberinformers.NewSharedInformerFactory(ctrlCtx.kubeMasterClient, time.Minute*5)
 	ctrlCtx.seedClusterProviders = []*rbaccontroller.ClusterProvider{}
 	{
@@ -79,11 +84,6 @@ func main() {
 
 			glog.V(2).Infof("Adding %s as seed cluster", ctxName)
 			kubeClient, err := kubernetes.NewForConfig(cfg)
-			if err != nil {
-				glog.Fatal(err)
-			}
-
-			selector, err := workerlabel.LabelSelector(ctrlCtx.runOptions.workerName)
 			if err != nil {
 				glog.Fatal(err)
 			}
