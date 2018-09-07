@@ -2,7 +2,6 @@ package handler
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -38,9 +37,7 @@ var plan9 = &kubermaticapiv1.Project{
 
 func TestDeleteUserFromProject(t *testing.T) {
 	testcases := []struct {
-		Name string
-		// ExpectedUserAfterInvitation *kubermaticapiv1.User
-		ExpectedResponse        string
+		Name                    string
 		Project                 string
 		UserToRemove            string
 		HTTPStatus              int
@@ -49,11 +46,10 @@ func TestDeleteUserFromProject(t *testing.T) {
 		ExistingAPIUser         apiv1.User
 	}{
 		{
-			Name:             "scenario 1: project owner removes a member from the project",
-			HTTPStatus:       http.StatusOK,
-			ExpectedResponse: `[{"id":"john","name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","projects":[{"id":"fooInternalName","group":"owners-fooInternalName"}]}]`,
-			Project:          "fooInternalName",
-			UserToRemove:     "2",
+			Name:         "scenario 1: project owner removes a member from the project",
+			HTTPStatus:   http.StatusOK,
+			Project:      "fooInternalName",
+			UserToRemove: "2",
 			ExistingProjects: []*kubermaticapiv1.Project{
 				createTestProject("foo", kubermaticapiv1.ProjectActive),
 			},
@@ -99,11 +95,10 @@ func TestDeleteUserFromProject(t *testing.T) {
 		},
 
 		{
-			Name:             "scenario 2: project editor removes a member from the project",
-			HTTPStatus:       http.StatusForbidden,
-			Project:          "fooInternalName",
-			ExpectedResponse: `[{"id":"john","name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","projects":[{"id":"fooInternalName","group":"owners-fooInternalName"}]}]`,
-			UserToRemove:     "1",
+			Name:         "scenario 2: project editor removes a member from the project",
+			HTTPStatus:   http.StatusForbidden,
+			Project:      "fooInternalName",
+			UserToRemove: "1",
 			ExistingProjects: []*kubermaticapiv1.Project{
 				createTestProject("foo", kubermaticapiv1.ProjectActive),
 			},
@@ -149,11 +144,10 @@ func TestDeleteUserFromProject(t *testing.T) {
 		},
 
 		{
-			Name:             "scenario 3: project owner removes a non exsisting member from the project",
-			HTTPStatus:       http.StatusNotFound,
-			Project:          "fooInternalName",
-			UserToRemove:     "2",
-			ExpectedResponse: `[{"id":"john","name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","projects":[{"id":"fooInternalName","group":"owners-fooInternalName"}]}]`,
+			Name:         "scenario 3: project owner removes a non exsisting member from the project",
+			HTTPStatus:   http.StatusNotFound,
+			Project:      "fooInternalName",
+			UserToRemove: "2",
 			ExistingProjects: []*kubermaticapiv1.Project{
 				createTestProject("bar", kubermaticapiv1.ProjectActive),
 				createTestProject("foo", kubermaticapiv1.ProjectActive),
@@ -199,18 +193,136 @@ func TestDeleteUserFromProject(t *testing.T) {
 			},
 		},
 
-		// {
-		// 	Name:             "scenario 4: project viewer removes a member from the project",
-		// 	HTTPStatus:       http.StatusForbidden,
-		// 	Project:          "plan9",
-		// 	ExistingProjects: []*kubermaticapiv1.Project{plan9},
-		// },
-		// {
-		// 	Name:             "scenario 5: non project member removes a member from the project",
-		// 	HTTPStatus:       http.StatusForbidden,
-		// 	Project:          "plan9",
-		// 	ExistingProjects: []*kubermaticapiv1.Project{plan9},
-		// },
+		{
+			Name:         "scenario 4: project viewer removes a member from the project",
+			HTTPStatus:   http.StatusForbidden,
+			Project:      "fooInternalName",
+			UserToRemove: "3",
+			ExistingProjects: []*kubermaticapiv1.Project{
+				createTestProject("foo", kubermaticapiv1.ProjectActive),
+			},
+			ExistingKubermaticUsers: []*kubermaticapiv1.User{
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "john",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  "john",
+						ID:    "1",
+						Email: testUserEmail,
+						Projects: []kubermaticapiv1.ProjectGroup{
+							{
+								Group: "owners-fooInternalName",
+								Name:  "fooInternalName",
+							},
+						},
+					},
+				},
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "alice",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  "Alice",
+						ID:    "2",
+						Email: "alice@acme.com",
+						Projects: []kubermaticapiv1.ProjectGroup{
+							{
+								Group: "viewers-fooInternalName",
+								Name:  "fooInternalName",
+							},
+						},
+					},
+				},
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bob",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  "Bob",
+						ID:    "3",
+						Email: "bob@acme.com",
+						Projects: []kubermaticapiv1.ProjectGroup{
+							{
+								Group: "viewers-fooInternalName",
+								Name:  "fooInternalName",
+							},
+						},
+					},
+				},
+			},
+			ExistingAPIUser: apiv1.User{
+				ID:    "2",
+				Name:  "alice",
+				Email: "alice@acme.com",
+			},
+		},
+
+		{
+			Name:         "scenario 5: non project member removes a member from the project",
+			HTTPStatus:   http.StatusForbidden,
+			Project:      "fooInternalName",
+			UserToRemove: "2",
+			ExistingProjects: []*kubermaticapiv1.Project{
+				createTestProject("bar", kubermaticapiv1.ProjectActive),
+				createTestProject("foo", kubermaticapiv1.ProjectActive),
+			},
+			ExistingKubermaticUsers: []*kubermaticapiv1.User{
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "john",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  "john",
+						ID:    "1",
+						Email: testUserEmail,
+						Projects: []kubermaticapiv1.ProjectGroup{
+							{
+								Group: "owners-fooInternalName",
+								Name:  "fooInternalName",
+							},
+						},
+					},
+				},
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bob",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  "bob",
+						ID:    "2",
+						Email: "bob@acme.com",
+						Projects: []kubermaticapiv1.ProjectGroup{
+							{
+								Group: "editors-fooInternalName",
+								Name:  "fooInternalName",
+							},
+						},
+					},
+				},
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "alice",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  "Alice",
+						ID:    "3",
+						Email: "alice@acme.com",
+						Projects: []kubermaticapiv1.ProjectGroup{
+							{
+								Group: "owners-barInternalName",
+								Name:  "barInternalName",
+							},
+						},
+					},
+				},
+			},
+			ExistingAPIUser: apiv1.User{
+				ID:    "3",
+				Name:  "alice",
+				Email: "alice@acme.com",
+			},
+		},
 	}
 
 	for _, tc := range testcases {
@@ -235,11 +347,6 @@ func TestDeleteUserFromProject(t *testing.T) {
 			if res.Code != tc.HTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d", tc.HTTPStatus, res.Code)
 			}
-
-			req = httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/users", tc.Project), nil)
-			res = httptest.NewRecorder()
-			ep.ServeHTTP(res, req)
-			log.Printf(">>> %s\n", res.Body)
 		})
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -52,6 +53,7 @@ func deleteUserFromProject(projectProvider provider.ProjectProvider, userProvide
 
 		newProjects := []kubermaticapiv1.ProjectGroup{}
 		for _, pg := range userToDelete.Spec.Projects {
+			log.Printf(">>> name=%s == internalName=%s\n", pg.Name, kubermaticProject.ObjectMeta.Name)
 			if pg.Name != kubermaticProject.ObjectMeta.Name {
 				newProjects = append(newProjects, pg)
 			}
