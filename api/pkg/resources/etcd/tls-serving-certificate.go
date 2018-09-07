@@ -31,10 +31,11 @@ func TLSCertificate(data *resources.TemplateData, existing *corev1.Secret) (*cor
 
 	altNames := certutil.AltNames{
 		DNSNames: []string{
-			"127.0.0.1",
 			"localhost",
 		},
-		IPs: []net.IP{},
+		IPs: []net.IP{
+			net.ParseIP("127.0.0.1"),
+		},
 	}
 
 	for i := 0; i < 3; i++ {
