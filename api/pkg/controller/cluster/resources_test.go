@@ -132,11 +132,6 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 		resources.CAKeySecretKey:  certutil.EncodePrivateKeyPEM(keyPair.Key),
 	}
 
-	etcdClientService := &corev1.Service{}
-	etcdClientService.Name = resources.EtcdClientServiceName
-	etcdClientService.Namespace = "test-ns"
-	etcdClientService.Spec.ClusterIP = "1.2.3.4"
-
 	apiserverExternalService := &corev1.Service{}
 	apiserverExternalService.Name = resources.ApiserverExternalServiceName
 	apiserverExternalService.Namespace = "test-ns"
@@ -163,9 +158,6 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 	secretLister := listerscorev1.NewSecretLister(secretIndexer)
 
 	serviceIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
-	if err := serviceIndexer.Add(etcdClientService); err != nil {
-		t.Fatalf("Error adding service to indexer: %v", err)
-	}
 	if err := serviceIndexer.Add(apiserverExternalService); err != nil {
 		t.Fatalf("Error adding service to indexer: %v", err)
 	}

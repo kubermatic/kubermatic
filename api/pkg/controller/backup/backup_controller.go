@@ -2,7 +2,10 @@ package backup
 
 import (
 	"fmt"
+	"strings"
 	"time"
+
+	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
@@ -547,7 +550,8 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJ
 	cronJob.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
 	cronJob.Spec.Suspend = boolPtr(false)
 	cronJob.Spec.SuccessfulJobsHistoryLimit = int32Ptr(int32(0))
-	etcdServiceAddr := fmt.Sprintf("https://%s.%s.svc.cluster.local.:2379", resources.EtcdClientServiceName, cluster.Status.NamespaceName)
+
+	endpoints := etcd.GetClientEndpoints(cluster.Status.NamespaceName)
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:  "backup-creator",
@@ -560,7 +564,7 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJ
 			},
 			Command: []string{
 				"/usr/local/bin/etcdctl",
-				"--endpoints", etcdServiceAddr,
+				"--endpoints", strings.Join(endpoints, ","),
 				"--cacert", "/etc/etcd/client/ca.crt",
 				"--cert", "/etc/etcd/client/backup-etcd-client.crt",
 				"--key", "/etc/etcd/client/backup-etcd-client.key",

@@ -30,6 +30,16 @@ spec:
         dns-resolver-configmap-revision: "123456"
         openvpn-client-certificates-secret-revision: "123456"
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: dns-resolver
+                  cluster: de-test-01
+              topologyKey: kubernetes.io/hostname
+            weight: 100
       containers:
       - args:
         - --client
@@ -39,7 +49,7 @@ spec:
         - tun
         - --auth-nocache
         - --remote
-        - 192.0.2.13
+        - openvpn-server.cluster-de-test-01.svc.cluster.local
         - "1194"
         - --nobind
         - --connect-timeout

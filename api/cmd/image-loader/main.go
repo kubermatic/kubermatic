@@ -265,16 +265,6 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 			ClusterIP: "192.0.2.11",
 		},
 	}
-	etcdclientService := corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.EtcdClientServiceName,
-			Namespace: mockNamespaceName,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports:     []corev1.ServicePort{{NodePort: 97}},
-			ClusterIP: "192.0.2.1",
-		},
-	}
 	openvpnserverService := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.OpenVPNServerServiceName,
@@ -299,7 +289,6 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		Items: []corev1.Service{
 			apiServerExternalService,
 			apiserverService,
-			etcdclientService,
 			openvpnserverService,
 			dnsService,
 		},
