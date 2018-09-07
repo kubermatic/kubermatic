@@ -17,6 +17,41 @@ import (
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
+func deleteUserFromProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(DelUserFromProjectRq)
+		if !ok {
+			return nil, k8cerrors.NewBadRequest("invalid request")
+		}
+		if len(req.ProjectID) == 0 {
+			return nil, k8cerrors.NewBadRequest("the name of the project cannot be empty")
+		}
+		if len(req.UserID) == 0 {
+			return nil, k8cerrors.NewBadRequest("the name of the user cannot be empty")
+		}
+		apiUser := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		kubermaticProject, err := projectProvider.Get(apiUser, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		userToDelete, err := userProvider.UserByID(req.UserID)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		newProjects := []kubermaticapiv1.ProjectGroup{}
+		for _, pg := range userToDelete.Spec.Projects {
+			if pg.Name != kubermaticProject.Spec.Name {
+				newProjects = append(newProjects, pg)
+			}
+		}
+		userToDelete.Spec.Projects = newProjects
+		if _, err = userProvider.Update(userToDelete); err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		return nil, nil
+	}
+}
+
 func listUsersFromProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		kubermaticProject, err := getKubermaticProject(ctx, projectProvider, request)
@@ -217,5 +252,29 @@ func decodeAddUserToProject(c context.Context, r *http.Request) (interface{}, er
 		return nil, err
 	}
 
+	return req, nil
+}
+
+// DelUserFromProjectRq defines HTTP request for deleteUserFromProject endpoint
+// swagger:parameters deleteUserFromProject
+type DelUserFromProjectRq struct {
+	// in: path
+	ProjectID string `json:"project_id"`
+	// in: path
+	UserID string `json:"user_id"`
+}
+
+func decodeDelUserFromProjectRq(c context.Context, r *http.Request) (interface{}, error) {
+	var req DelUserFromProjectRq
+	projectID, ok := mux.Vars(r)["project_id"]
+	if !ok {
+		return nil, fmt.Errorf("'project_id' parameter is required but was not provided")
+	}
+	userID, ok := mux.Vars(r)["user_id"]
+	if !ok {
+		return nil, fmt.Errorf("'user_id' parameter is required but was not provided")
+	}
+	req.ProjectID = projectID
+	req.UserID = userID
 	return req, nil
 }
