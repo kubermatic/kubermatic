@@ -158,8 +158,7 @@ func GetServiceCreators() []resources.ServiceCreator {
 		apiserver.ExternalService,
 		prometheus.Service,
 		openvpn.Service,
-		etcd.DiscoveryService,
-		etcd.ClientService,
+		etcd.Service,
 		dns.Service,
 	}
 }

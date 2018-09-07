@@ -35,7 +35,7 @@ func CronJob(data *resources.TemplateData, existing *batchv1beta1.CronJob) (*bat
 	job.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:                     "defragger",
-			Image:                    data.ImageRegistry(resources.RegistryQuay) + "/coreos/etcd:" + tag,
+			Image:                    data.ImageRegistry(resources.RegistryQuay) + "/coreos/etcd:" + ImageTag,
 			ImagePullPolicy:          corev1.PullIfNotPresent,
 			Command:                  command,
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,

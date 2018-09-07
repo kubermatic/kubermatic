@@ -64,8 +64,6 @@ const (
 	PrometheusServiceName = "prometheus"
 	//EtcdServiceName is the name for the etcd service
 	EtcdServiceName = "etcd"
-	//EtcdClientServiceName is the name for the etcd service for clients (ClusterIP)
-	EtcdClientServiceName = "etcd-client"
 	//EtcdDefragCronJobName is the name for the defrag cronjob deployment
 	EtcdDefragCronJobName = "etcd-defragger"
 	//OpenVPNServerServiceName is the name for the openvpn server service
