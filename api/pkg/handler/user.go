@@ -29,11 +29,22 @@ func deleteUserFromProject(projectProvider provider.ProjectProvider, userProvide
 		if len(req.UserID) == 0 {
 			return nil, k8cerrors.NewBadRequest("the name of the user cannot be empty")
 		}
+
 		apiUser := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		kubermaticProject, err := projectProvider.Get(apiUser, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
+
+		apiUserGroupName, err := apiUser.GroupForProject(kubermaticProject.Name)
+		if err != nil {
+			return nil, k8cerrors.New(http.StatusForbidden, err.Error())
+		}
+		apiUserGroupPrefix := rbac.ExtractGroupPrefix(apiUserGroupName)
+		if apiUserGroupPrefix != rbac.OwnerGroupNamePrefix {
+			return nil, k8cerrors.New(http.StatusForbidden, "only the owner of the project can remove the other users")
+		}
+
 		userToDelete, err := userProvider.UserByID(req.UserID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)

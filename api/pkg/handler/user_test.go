@@ -35,6 +35,47 @@ var plan9 = &kubermaticapiv1.Project{
 	},
 }
 
+func TestDeleteUserFromProject(t *testing.T) {
+	testcases := []struct {
+		Name                        string
+		ExpectedResponse            string
+		ExpectedActions             int
+		ExpectedUserAfterInvitation *kubermaticapiv1.User
+		ProjectToGet                string
+		HTTPStatus                  int
+		ExistingProjects            []*kubermaticapiv1.Project
+		ExistingKubermaticUsers     []*kubermaticapiv1.User
+		ExistingAPIUser             apiv1.User
+	}{
+		{
+			Name:       "scenario 1: project owner removes a member from the project",
+			HTTPStatus: http.StatusOK,
+		},
+		{
+			Name:       "scenario 2: project owner removes a non existing member from the project",
+			HTTPStatus: http.StatusNotFound,
+		},
+		{
+			Name:       "scenario 3: project editor removes a member from the project",
+			HTTPStatus: http.StatusForbidden,
+		},
+		{
+			Name:       "scenario 4: project viewer removes a member from the project",
+			HTTPStatus: http.StatusForbidden,
+		},
+		{
+			Name:       "scenario 5: non project member removes a member from the project",
+			HTTPStatus: http.StatusForbidden,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			// ...
+		})
+	}
+}
+
 func TestGetUsersForProject(t *testing.T) {
 	testcases := []struct {
 		Name                        string
