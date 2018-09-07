@@ -269,6 +269,10 @@ const (
 // ConfigMapCreator defines an interface to create/update ConfigMap's
 type ConfigMapCreator = func(data ConfigMapDataProvider, existing *corev1.ConfigMap) (*corev1.ConfigMap, error)
 
+// UserConfigMapCreator is the same as ConfigMapCreator but with a UserClusterData input.
+// The two should definitely be harmonized (interface perhaps).
+type UserConfigMapCreator = func(data *UserClusterData, existing *corev1.ConfigMap) (*corev1.ConfigMap, error)
+
 // SecretCreator defines an interface to create/update Secret's
 type SecretCreator = func(data SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error)
 

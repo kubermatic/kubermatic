@@ -439,3 +439,43 @@ func (d *UserClusterData) InClusterPrometheusDisableDefaultScrapingConfigs() boo
 func (d *UserClusterData) Cluster() *kubermaticv1.Cluster {
 	panic("Cluster not implemented for UserClusterData")
 }
+
+// GetMasterVpnAddress returns host and port of the VPN service running in seed cluster.
+func (d *UserClusterData) GetMasterVpnAddress() (string, string, error) {
+	cm, err := d.ConfigMapLister.ConfigMaps(metav1.NamespacePublic).Get(clusterInfoName)
+	if err != nil {
+		return "", "", fmt.Errorf("could not get configmap %s: %v", clusterInfoName, err)
+	}
+
+	var vpnHost, vpnPort string
+	if idx := strings.LastIndex(cm.Data["masterVpnAddress"], ":"); idx > -1 {
+		vpnHost = cm.Data["masterVpnAddress"][:idx]
+		vpnPort = cm.Data["masterVpnAddress"][idx+1:]
+	}
+	return vpnHost, vpnPort, nil
+}
+
+// GetClusterName returns the name of the user-cluster
+func (d *UserClusterData) GetClusterName() (string, error) {
+	cm, err := d.ConfigMapLister.ConfigMaps(metav1.NamespacePublic).Get(clusterInfoName)
+	if err != nil {
+		return "", fmt.Errorf("could not get configmap %s: %v", clusterInfoName, err)
+	}
+
+	return cm.Data["clusterName"], nil
+}
+
+// ClusterNameOrEmpty returns the name of the cluster or empty string in case of error
+func (d *UserClusterData) ClusterNameOrEmpty() string {
+	n, e := d.GetClusterName()
+	if e != nil {
+		return ""
+	}
+	return n
+}
+
+// IpamEnabled returns true iff ipam shall happen
+func (d *UserClusterData) IpamEnabled() bool {
+	// this should be evaluated by checking for len(Spec.MachineNetworks)>0
+	return false
+}

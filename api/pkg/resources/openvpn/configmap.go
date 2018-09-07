@@ -80,17 +80,22 @@ func ClientConfigConfigMap(data resources.ConfigMapDataProvider, existing *corev
 	cm.Namespace = metav1.NamespaceSystem
 	cm.Labels = resources.BaseAppLabel(name, nil)
 
-	openvpnSvc, err := data.ServiceLister().Services(data.Cluster().Status.NamespaceName).Get(resources.OpenVPNServerServiceName)
+	vpnHost, vpnPort, err := data.GetMasterVpnAddress()
 	if err != nil {
 		return nil, err
 	}
+	cm.Data["config"] = getOpenVPNConfig(vpnHost, vpnPort)
 
-	config := fmt.Sprintf(`client
+	return cm, nil
+}
+
+func getOpenVPNConfig(remoteHost, remotePort string) string {
+	return fmt.Sprintf(`client
 proto tcp
 dev kube
 dev-type tun
 auth-nocache
-remote %s %d
+remote %s %s
 nobind
 ca '/etc/openvpn/certs/ca.crt'
 cert '/etc/openvpn/certs/client.crt'
@@ -104,9 +109,5 @@ keysize 256
 status /run/openvpn-status
 up '/bin/sh -c "/sbin/iptables -t nat -I POSTROUTING -s 10.20.0.0/24 -j MASQUERADE"'
 log /dev/stdout
-`, data.Cluster().Address.ExternalName, openvpnSvc.Spec.Ports[0].NodePort)
-
-	cm.Data["config"] = config
-
-	return cm, nil
+`, remoteHost, remotePort)
 }

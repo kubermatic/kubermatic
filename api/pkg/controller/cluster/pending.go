@@ -87,10 +87,6 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 			return nil, err
 		}
 
-		if err = cc.userClusterEnsureConfigMaps(cluster); err != nil {
-			return nil, err
-		}
-
 		if err = cc.userClusterEnsureRoleBindings(cluster); err != nil {
 			return nil, err
 		}

@@ -114,10 +114,17 @@ func (ucc *Controller) syncUserCluster() error {
 		configMaps[i] = cachedConfigMaps[i].DeepCopy()
 	}
 
+	if err := ucc.userClusterEnsureClusterData(); err != nil {
+		return err
+	}
+
 	if err := ucc.userClusterEnsureClusterRoles(); err != nil {
 		return err
 	}
-	glog.V(6).Infof("Done syncing user-cluster %s", ucc.seedData.ClusterName)
+
+	if err := ucc.userClusterEnsureConfigMaps(); err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -15,9 +15,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/userclustercontrollermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
-	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -245,58 +243,6 @@ func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Clust
 			return fmt.Errorf("failed to update ClusterRoleBinding %s: %v", crb.Name, err)
 		}
 		glog.V(4).Infof("Updated ClusterRoleBinding %s inside user-cluster %s", crb.Name, c.Name)
-	}
-
-	return nil
-}
-
-func (cc *Controller) userClusterEnsureConfigMaps(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
-	creators := []resources.ConfigMapCreator{
-		openvpn.ClientConfigConfigMap,
-	}
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
-
-	for _, create := range creators {
-		var existing *corev1.ConfigMap
-		cm, err := create(data, nil)
-		if err != nil {
-			return fmt.Errorf("failed to build ConfigMap: %v", err)
-		}
-
-		if existing, err = client.CoreV1().ConfigMaps(cm.Namespace).Get(cm.Name, metav1.GetOptions{}); err != nil {
-			if !errors.IsNotFound(err) {
-				return err
-			}
-
-			if _, err = client.CoreV1().ConfigMaps(cm.Namespace).Create(cm); err != nil {
-				return fmt.Errorf("failed to create ConfigMap %s: %v", cm.Name, err)
-			}
-			glog.V(4).Infof("Created ConfigMap %s inside user-cluster %s", cm.Name, c.Name)
-			continue
-		}
-
-		cm, err = create(data, existing.DeepCopy())
-		if err != nil {
-			return fmt.Errorf("failed to build ConfigMap: %v", err)
-		}
-
-		if equality.Semantic.DeepEqual(cm, existing) {
-			continue
-		}
-
-		if _, err = client.CoreV1().ConfigMaps(cm.Namespace).Update(cm); err != nil {
-			return fmt.Errorf("failed to update ConfigMap %s: %v", cm.Name, err)
-		}
-		glog.V(4).Infof("Updated ConfigMap %s inside user-cluster %s", cm.Name, c.Name)
 	}
 
 	return nil
