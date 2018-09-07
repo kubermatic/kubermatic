@@ -2,8 +2,10 @@ package apiserver
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	"github.com/Masterminds/semver"
@@ -87,11 +89,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	etcdClientServiceIP, err := data.ClusterIPByServiceName(resources.EtcdClientServiceName)
-	if err != nil {
-		return nil, err
-	}
-	etcd := fmt.Sprintf("https://%s:2379", etcdClientServiceIP)
+	etcdEndpoints := etcd.GetClientEndpoints(data.Cluster.Status.NamespaceName)
 
 	dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 		{
@@ -108,12 +106,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "etcd-running",
-			Image:           data.ImageRegistry(resources.RegistryQuay) + "/coreos/etcd:v3.2.7",
+			Image:           data.ImageRegistry(resources.RegistryQuay) + "/coreos/etcd:" + etcd.ImageTag,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/pki/client/ca.crt --cert=/etc/etcd/pki/client/apiserver-etcd-client.crt --key=/etc/etcd/pki/client/apiserver-etcd-client.key --dial-timeout=2s --endpoints=[%s] get foo; do echo waiting for etcd; sleep 2; done;", etcd),
+				fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/pki/client/ca.crt --cert=/etc/etcd/pki/client/apiserver-etcd-client.crt --key=/etc/etcd/pki/client/apiserver-etcd-client.key --dial-timeout=2s --endpoints=[%s] get foo; do echo waiting for etcd; sleep 2; done;", strings.Join(etcdEndpoints, ",")),
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -137,7 +135,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
 	}
 
-	flags, err := getApiserverFlags(data, externalNodePort, etcd)
+	flags, err := getApiserverFlags(data, externalNodePort, etcdEndpoints)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +248,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	return dep, nil
 }
 
-func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etcd string) ([]string, error) {
+func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etcdEndpoints []string) ([]string, error) {
 	nodePortRange := data.NodePortRange
 	if nodePortRange == "" {
 		nodePortRange = defaultNodePortRange
@@ -269,7 +267,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--kubernetes-service-node-port", fmt.Sprintf("%d", externalNodePort),
 		"--insecure-bind-address", "0.0.0.0",
 		"--insecure-port", "8080",
-		"--etcd-servers", etcd,
+		"--etcd-servers", strings.Join(etcdEndpoints, ","),
 		"--etcd-cafile", "/etc/etcd/pki/client/ca.crt",
 		"--etcd-certfile", "/etc/etcd/pki/client/apiserver-etcd-client.crt",
 		"--etcd-keyfile", "/etc/etcd/pki/client/apiserver-etcd-client.key",

@@ -29,23 +29,12 @@ func TLSCertificate(data *resources.TemplateData, existing *corev1.Secret) (*cor
 		return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 	}
 
-	clientIP, err := data.ServiceClusterIP(resources.EtcdClientServiceName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get ClientIP of etcd client service '%s': %v", resources.EtcdClientServiceName, err)
-	}
-
 	altNames := certutil.AltNames{
 		DNSNames: []string{
-			"127.0.0.1",
 			"localhost",
-
-			resources.EtcdClientServiceName,
-			fmt.Sprintf("%s.%s", resources.EtcdClientServiceName, data.Cluster.Status.NamespaceName),
-			fmt.Sprintf("%s.%s.svc", resources.EtcdClientServiceName, data.Cluster.Status.NamespaceName),
-			fmt.Sprintf("%s.%s.svc.cluster.local", resources.EtcdClientServiceName, data.Cluster.Status.NamespaceName),
 		},
 		IPs: []net.IP{
-			*clientIP,
+			net.ParseIP("127.0.0.1"),
 		},
 	}
 
