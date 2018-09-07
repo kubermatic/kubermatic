@@ -49,12 +49,17 @@ func deleteUserFromProject(projectProvider provider.ProjectProvider, userProvide
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
+
 		newProjects := []kubermaticapiv1.ProjectGroup{}
 		for _, pg := range userToDelete.Spec.Projects {
-			if pg.Name != kubermaticProject.Spec.Name {
+			if pg.Name != kubermaticProject.ObjectMeta.Name {
 				newProjects = append(newProjects, pg)
 			}
 		}
+		if len(newProjects) == len(userToDelete.Spec.Projects) {
+			return nil, k8cerrors.NewNotFound("user", userToDelete.Name)
+		}
+
 		userToDelete.Spec.Projects = newProjects
 		if _, err = userProvider.Update(userToDelete); err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
