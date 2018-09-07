@@ -18,10 +18,6 @@ import (
 	"k8s.io/client-go/util/cert/triple"
 )
 
-const (
-	clusterInfoName = "cluster-info" // TODO move to were it belongs
-)
-
 // TemplateData is a group of data required for template generation
 type TemplateData struct {
 	cluster                                          *kubermaticv1.Cluster
@@ -442,9 +438,9 @@ func (d *UserClusterData) Cluster() *kubermaticv1.Cluster {
 
 // GetMasterVpnAddress returns host and port of the VPN service running in seed cluster.
 func (d *UserClusterData) GetMasterVpnAddress() (string, string, error) {
-	cm, err := d.ConfigMapLister.ConfigMaps(metav1.NamespacePublic).Get(clusterInfoName)
+	cm, err := d.ConfigMapLister.ConfigMaps(metav1.NamespacePublic).Get(ClusterSeedConfigMapName)
 	if err != nil {
-		return "", "", fmt.Errorf("could not get configmap %s: %v", clusterInfoName, err)
+		return "", "", fmt.Errorf("could not get configmap %s: %v", ClusterSeedConfigMapName, err)
 	}
 
 	var vpnHost, vpnPort string
@@ -457,9 +453,9 @@ func (d *UserClusterData) GetMasterVpnAddress() (string, string, error) {
 
 // GetClusterName returns the name of the user-cluster
 func (d *UserClusterData) GetClusterName() (string, error) {
-	cm, err := d.ConfigMapLister.ConfigMaps(metav1.NamespacePublic).Get(clusterInfoName)
+	cm, err := d.ConfigMapLister.ConfigMaps(metav1.NamespacePublic).Get(ClusterSeedConfigMapName)
 	if err != nil {
-		return "", fmt.Errorf("could not get configmap %s: %v", clusterInfoName, err)
+		return "", fmt.Errorf("could not get configmap %s: %v", ClusterSeedConfigMapName, err)
 	}
 
 	return cm.Data["clusterName"], nil

@@ -73,6 +73,10 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 			return nil, err
 		}
 
+		if err := cc.launchingCreateClusterSeedConfigMap(cluster); err != nil {
+			return nil, err
+		}
+
 		if err = cc.launchingCreateOpenVPNClientCertificates(cluster); err != nil {
 			return nil, err
 		}

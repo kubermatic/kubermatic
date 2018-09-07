@@ -28,7 +28,7 @@ func (ucc *Controller) userClusterEnsureClusterData() error {
 		return err
 	}
 
-	// get some initial information from cluster-info
+	// get initial data from seed
 	name, err := data.GetClusterName()
 	if err != nil {
 		return fmt.Errorf("failed to get user-cluster name: %v", err)

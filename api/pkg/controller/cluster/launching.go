@@ -33,6 +33,43 @@ func (cc *Controller) clusterIsReachable(c *kubermaticv1.Cluster) (bool, error) 
 	return true, nil
 }
 
+// Creates seed ConfigMap in user-cluster
+func (cc *Controller) launchingCreateClusterSeedConfigMap(c *kubermaticv1.Cluster) error {
+	client, err := cc.userClusterConnProvider.GetClient(c)
+	if err != nil {
+		return err
+	}
+
+	name := resources.ClusterSeedConfigMapName
+	_, err = client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(name, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			cm := v1.ConfigMap{}
+			cm.Name = name
+			cm.Data = map[string]string{
+				"clusterName": c.Name,
+			}
+			var (
+				vpnAddress string
+				errVpnAddr error
+			)
+			if vpnAddress, errVpnAddr = cc.getOpenVpnAddress(c); errVpnAddr != nil {
+				return fmt.Errorf("failed to determine master vpn address: %v", err)
+			}
+			cm.Data["masterVpnAddress"] = vpnAddress
+
+			_, err = client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Create(&cm)
+			if err != nil {
+				return fmt.Errorf("failed to create seed configmap %s in client cluster: %v", name, err)
+			}
+		} else {
+			return fmt.Errorf("failed to get seed configmap %s from client cluster: %v", name, err)
+		}
+	}
+
+	return nil
+}
+
 // Creates cluster-info ConfigMap in customer cluster
 //see https://kubernetes.io/docs/admin/bootstrap-tokens/
 func (cc *Controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluster) error {
@@ -64,17 +101,8 @@ func (cc *Controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluste
 				return fmt.Errorf("failed to encode kubeconfig: %v", err)
 			}
 			cm.Data = map[string]string{
-				"kubeconfig":  string(bconfig),
-				"clusterName": c.Name,
+				"kubeconfig": string(bconfig),
 			}
-			var (
-				vpnAddress string
-				errVpnAddr error
-			)
-			if vpnAddress, errVpnAddr = cc.getOpenVpnAddress(c); errVpnAddr != nil {
-				return fmt.Errorf("failed to determine master vpn address: %v", err)
-			}
-			cm.Data["masterVpnAddress"] = vpnAddress
 
 			_, err = client.CoreV1().ConfigMaps(metav1.NamespacePublic).Create(&cm)
 			if err != nil {

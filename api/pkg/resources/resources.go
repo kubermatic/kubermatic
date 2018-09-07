@@ -120,6 +120,8 @@ const (
 	OpenVPNClientConfigConfigMapName = "openvpn-client-config"
 	//PrometheusConfigConfigMapName is the name for the configmap containing the prometheus config
 	PrometheusConfigConfigMapName = "prometheus"
+	//ClusterSeedConfigMapName is the data seed placed into user-cluster from cluster-controller
+	ClusterSeedConfigMapName = "cluster-seed"
 
 	//PrometheusServiceAccountName is the name for the Prometheus serviceaccount
 	PrometheusServiceAccountName = "prometheus"
