@@ -744,12 +744,6 @@ func (cc *Controller) ensureCronJobs(c *kubermaticv1.Cluster) error {
 			continue
 		}
 
-		// In case we update something immutable we need to delete&recreate. Creation happens on next sync
-		if !equality.Semantic.DeepEqual(job.Spec.JobTemplate.Spec.Selector.MatchLabels, existing.Spec.JobTemplate.Spec.Selector.MatchLabels) {
-			propagation := metav1.DeletePropagationForeground
-			return cc.kubeClient.BatchV1beta1().CronJobs(c.Status.NamespaceName).Delete(job.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation})
-		}
-
 		if _, err = cc.kubeClient.BatchV1beta1().CronJobs(c.Status.NamespaceName).Update(job); err != nil {
 			return fmt.Errorf("failed to update CronJob %s: %v", job.Name, err)
 		}
