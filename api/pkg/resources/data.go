@@ -36,6 +36,15 @@ type TemplateData struct {
 	DockerPullConfigJSON                             []byte
 }
 
+// UserClusterData groups data required for resource creation in user-cluster
+type UserClusterData struct {
+}
+
+// RoleDataProvider provides data about roles
+type RoleDataProvider interface {
+	GetClusterRef() metav1.OwnerReference
+}
+
 // NewTemplateData returns an instance of TemplateData
 func NewTemplateData(
 	cluster *kubermaticv1.Cluster,
@@ -196,4 +205,9 @@ func (d *TemplateData) GetPodTemplateLabels(appName string, volumes []corev1.Vol
 	}
 
 	return podLabels, nil
+}
+
+// GetClusterRef returns a instance of a OwnerReference for the Cluster in the TemplateData
+func (d *UserClusterData) GetClusterRef() metav1.OwnerReference {
+	panic("GetClusterRef not implemented for UserClusterData")
 }

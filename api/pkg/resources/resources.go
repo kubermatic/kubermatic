@@ -273,7 +273,7 @@ type StatefulSetCreator = func(data *TemplateData, existing *appsv1.StatefulSet)
 type ServiceCreator = func(data *TemplateData, existing *corev1.Service) (*corev1.Service, error)
 
 // RoleCreator defines an interface to create/update RBAC Roles
-type RoleCreator = func(data *TemplateData, existing *rbacv1.Role) (*rbacv1.Role, error)
+type RoleCreator = func(data RoleDataProvider, existing *rbacv1.Role) (*rbacv1.Role, error)
 
 // RoleBindingCreator defines an interface to create/update RBAC RoleBinding's
 type RoleBindingCreator = func(data *TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error)
