@@ -1,9 +1,12 @@
 package main
 
 import (
+	"errors"
 	"flag"
+	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/golang/glog"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
@@ -16,6 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -53,6 +57,13 @@ func main() {
 	ctx.kubeClient = kubernetes.NewForConfigOrDie(ctx.config)
 	ctx.kubermaticClient = kubermaticclientset.NewForConfigOrDie(ctx.config)
 
+	// The worker labels used to be assigned to every cluster, even if they were empty.
+	// We remove these empty labels first, since the label selector below expects
+	// them to be absent for empty worker label.
+	if err = purgeEmptyWorkerLabels(ctx.kubermaticClient); err != nil {
+		glog.Fatalf("failed to remove empty worker labels: %v", err)
+	}
+
 	selector, err := workerlabel.LabelSelector(workerName)
 	if err != nil {
 		glog.Fatal(err)
@@ -76,6 +87,48 @@ func main() {
 	}
 
 	w.Wait()
+}
+
+func purgeEmptyWorkerLabels(kubermaticClient kubermaticclientset.Interface) error {
+	// find empty, but present label
+	req, err := labels.NewRequirement(kubermaticv1.WorkerNameLabelKey, selection.Equals, []string{""})
+	if err != nil {
+		return fmt.Errorf("failed to build label selector: %v", err)
+	}
+
+	options := metav1.ListOptions{LabelSelector: req.String()}
+	clusters, err := kubermaticClient.KubermaticV1().Clusters().List(options)
+	if err != nil {
+		return err
+	}
+
+	var failed uint32
+	wg := sync.WaitGroup{}
+	wg.Add(len(clusters.Items))
+
+	for i := range clusters.Items {
+		go func(c *kubermaticv1.Cluster) {
+			defer wg.Done()
+			if err := removeWorkerLabelFromCluster(c, kubermaticClient); err != nil {
+				atomic.StoreUint32(&failed, 1)
+				glog.Error(err)
+			}
+		}(&clusters.Items[i])
+	}
+	wg.Wait()
+
+	if failed == 1 {
+		return errors.New("some updates failed")
+	}
+
+	return nil
+}
+
+func removeWorkerLabelFromCluster(cluster *kubermaticv1.Cluster, kubermaticClient kubermaticclientset.Interface) error {
+	delete(cluster.Labels, kubermaticv1.WorkerNameLabelKey)
+
+	_, err := kubermaticClient.KubermaticV1().Clusters().Update(cluster)
+	return err
 }
 
 func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
