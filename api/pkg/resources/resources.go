@@ -194,8 +194,8 @@ const (
 	// EtcdClusterSize defines the size of the etcd to use
 	EtcdClusterSize = 3
 
-	// RegistryKubernetesGCR defines the kubernetes docker registry at google
-	RegistryKubernetesGCR = "gcr.io"
+	// RegistryGCR defines the kubernetes docker registry at google
+	RegistryGCR = "gcr.io"
 	// RegistryDocker defines the default docker.io registry
 	RegistryDocker = "docker.io"
 	// RegistryQuay defines the image registry from coreos/redhat - quay
