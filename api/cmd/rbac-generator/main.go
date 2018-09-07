@@ -9,9 +9,9 @@ import (
 	rbaccontroller "github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -84,9 +84,15 @@ func main() {
 			if err != nil {
 				glog.Fatal(err)
 			}
+
+			selector, err := labelSelector(ctrlCtx.runOptions.workerName)
+			if err != nil {
+				glog.Fatal(err)
+			}
+
 			kubeInformerFactory := kuberinformers.NewSharedInformerFactory(kubeClient, time.Minute*5)
 			kubermaticClient := kubermaticclientset.NewForConfigOrDie(cfg)
-			kubermaticInformerFactory := externalversions.NewFilteredSharedInformerFactory(kubermaticClient, time.Minute*5, metav1.NamespaceAll, labelSelector(ctrlCtx.runOptions.workerName))
+			kubermaticInformerFactory := externalversions.NewFilteredSharedInformerFactory(kubermaticClient, time.Minute*5, metav1.NamespaceAll, selector)
 			ctrlCtx.seedClusterProviders = append(ctrlCtx.seedClusterProviders, rbaccontroller.NewClusterProvider(fmt.Sprintf("seed/%s", ctxName), kubeClient, kubeInformerFactory, kubermaticClient, kubermaticInformerFactory))
 		}
 	}
@@ -122,13 +128,20 @@ func main() {
 }
 
 // return label selector to only process clusters with a matching machine.k8s.io/controller label
-func labelSelector(workerName string) func(*metav1.ListOptions) {
-	return func(options *metav1.ListOptions) {
-		req, err := labels.NewRequirement(kubermaticv1.WorkerNameLabelKey, selection.Equals, []string{workerName})
-		if err != nil {
-			glog.Fatalf("failed to build label selector: %v", err)
-		}
-
-		options.LabelSelector = req.String()
+func labelSelector(workerName string) (func(*metav1.ListOptions), error) {
+	var req *labels.Requirement
+	var err error
+	if workerName == "" {
+		req, err = labels.NewRequirement(kubermaticv1.WorkerNameLabelKey, selection.DoesNotExist, nil)
+	} else {
+		req, err = labels.NewRequirement(kubermaticv1.WorkerNameLabelKey, selection.Equals, []string{workerName})
 	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to build label selector: %v", err)
+	}
+
+	return func(options *metav1.ListOptions) {
+		options.LabelSelector = req.String()
+	}, nil
 }

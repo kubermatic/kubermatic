@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -33,6 +34,23 @@ type cleanupContext struct {
 // In case of an error, the correspondent error will be returned, else nil.
 type Task func(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error
 
+// return label selector to only process clusters with a matching machine.k8s.io/controller label
+func labelSelector(workerName string) (metav1.ListOptions, error) {
+	var req *labels.Requirement
+	var err error
+	if workerName == "" {
+		req, err = labels.NewRequirement(kubermaticv1.WorkerNameLabelKey, selection.DoesNotExist, nil)
+	} else {
+		req, err = labels.NewRequirement(kubermaticv1.WorkerNameLabelKey, selection.Equals, []string{workerName})
+	}
+
+	if err != nil {
+		return metav1.ListOptions{}, fmt.Errorf("failed to build label selector: %v", err)
+	}
+
+	return metav1.ListOptions{LabelSelector: req.String()}, nil
+}
+
 func main() {
 	var kubeconfig, masterURL, workerName string
 
@@ -53,12 +71,12 @@ func main() {
 	ctx.kubeClient = kubernetes.NewForConfigOrDie(ctx.config)
 	ctx.kubermaticClient = kubermaticclientset.NewForConfigOrDie(ctx.config)
 
-	labelSelector, err := labels.NewRequirement(kubermaticv1.WorkerNameLabelKey, selection.Equals, []string{workerName})
+	selector, err := labelSelector(workerName)
 	if err != nil {
-		glog.Fatalf("failed to build label selector: %v", err)
+		glog.Fatal(err)
 	}
 
-	clusters, err := ctx.kubermaticClient.KubermaticV1().Clusters().List(metav1.ListOptions{LabelSelector: labelSelector.String()})
+	clusters, err := ctx.kubermaticClient.KubermaticV1().Clusters().List(selector)
 	if err != nil {
 		glog.Fatal(err)
 	}
