@@ -91,7 +91,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		*openvpnSidecar,
 		{
 			Name:            resources.DNSResolverDeploymentName,
-			Image:           data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/coredns:1.1.3",
+			Image:           data.ImageRegistry(resources.RegistryGCR) + "/google_containers/coredns:1.1.3",
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Args:            []string{"-conf", "/etc/coredns/Corefile"},
 			Resources: corev1.ResourceRequirements{
