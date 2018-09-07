@@ -106,12 +106,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
 			Name:            "etcd-running",
-			Image:           data.ImageRegistry(resources.RegistryQuay) + "/coreos/etcd:" + etcd.ImageTag,
+			Image:           data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + etcd.ImageTag,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command: []string{
 				"/bin/sh",
 				"-ec",
-				fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/pki/client/ca.crt --cert=/etc/etcd/pki/client/apiserver-etcd-client.crt --key=/etc/etcd/pki/client/apiserver-etcd-client.key --dial-timeout=2s --endpoints=[%s] get foo; do echo waiting for etcd; sleep 2; done;", strings.Join(etcdEndpoints, ",")),
+				fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/pki/client/ca.crt --cert=/etc/etcd/pki/client/apiserver-etcd-client.crt --key=/etc/etcd/pki/client/apiserver-etcd-client.key --dial-timeout=2s --endpoints='%s' endpoint health; do echo waiting for etcd; sleep 2; done;", strings.Join(etcdEndpoints, ",")),
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -150,7 +150,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		*dnatControllerSidecar,
 		{
 			Name:                     name,
-			Image:                    data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
+			Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
 			ImagePullPolicy:          corev1.PullIfNotPresent,
 			Command:                  []string{"/hyperkube", "apiserver"},
 			Env:                      getEnvVars(data),

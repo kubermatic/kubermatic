@@ -80,7 +80,7 @@ spec:
               fieldPath: status.podIP
         - name: ETCDCTL_API
           value: "3"
-        image: quay.io/coreos/etcd:v3.2.24
+        image: gcr.io/etcd-development/etcd:v3.3.9
         imagePullPolicy: IfNotPresent
         name: etcd
         ports:
@@ -101,7 +101,7 @@ spec:
             - --key
             - /etc/etcd/pki/client/apiserver-etcd-client.key
             - --endpoints
-            - https://localhost:2379
+            - https://127.0.0.1:2379
             - endpoint
             - health
           failureThreshold: 3

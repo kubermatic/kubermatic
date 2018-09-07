@@ -32,7 +32,7 @@ const (
 	name    = "etcd"
 	dataDir = "/var/run/etcd/pod_${POD_NAME}/"
 	// ImageTag defines the image tag to use for the etcd image
-	ImageTag = "v3.2.24"
+	ImageTag = "v3.3.9"
 )
 
 // StatefulSet returns the etcd StatefulSet
@@ -90,7 +90,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	set.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:                     name,
-			Image:                    data.ImageRegistry(resources.RegistryQuay) + "/coreos/etcd:" + ImageTag,
+			Image:                    data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag,
 			ImagePullPolicy:          corev1.PullIfNotPresent,
 			Command:                  etcdStartCmd,
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
@@ -144,7 +144,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 							"--cacert", "/etc/etcd/pki/ca/ca.crt",
 							"--cert", "/etc/etcd/pki/client/apiserver-etcd-client.crt",
 							"--key", "/etc/etcd/pki/client/apiserver-etcd-client.key",
-							"--endpoints", "https://localhost:2379", "endpoint", "health",
+							"--endpoints", "https://127.0.0.1:2379", "endpoint", "health",
 						},
 					},
 				},
