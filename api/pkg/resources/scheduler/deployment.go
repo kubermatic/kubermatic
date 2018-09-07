@@ -108,7 +108,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		*openvpnSidecar,
 		{
 			Name:            name,
-			Image:           data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
+			Image:           data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "scheduler"},
 			Args: []string{
