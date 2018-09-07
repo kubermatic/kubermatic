@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"strings"
 	"sync"
 
@@ -10,13 +9,13 @@ import (
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -33,23 +32,6 @@ type cleanupContext struct {
 // Task represents a cleanup action, taking the current cluster for which the cleanup should be executed and the current context.
 // In case of an error, the correspondent error will be returned, else nil.
 type Task func(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error
-
-// return label selector to only process clusters with a matching machine.k8s.io/controller label
-func labelSelector(workerName string) (metav1.ListOptions, error) {
-	var req *labels.Requirement
-	var err error
-	if workerName == "" {
-		req, err = labels.NewRequirement(kubermaticv1.WorkerNameLabelKey, selection.DoesNotExist, nil)
-	} else {
-		req, err = labels.NewRequirement(kubermaticv1.WorkerNameLabelKey, selection.Equals, []string{workerName})
-	}
-
-	if err != nil {
-		return metav1.ListOptions{}, fmt.Errorf("failed to build label selector: %v", err)
-	}
-
-	return metav1.ListOptions{LabelSelector: req.String()}, nil
-}
 
 func main() {
 	var kubeconfig, masterURL, workerName string
@@ -71,12 +53,13 @@ func main() {
 	ctx.kubeClient = kubernetes.NewForConfigOrDie(ctx.config)
 	ctx.kubermaticClient = kubermaticclientset.NewForConfigOrDie(ctx.config)
 
-	selector, err := labelSelector(workerName)
+	selector, err := workerlabel.LabelSelector(workerName)
 	if err != nil {
 		glog.Fatal(err)
 	}
-
-	clusters, err := ctx.kubermaticClient.KubermaticV1().Clusters().List(selector)
+	options := metav1.ListOptions{}
+	selector(&options)
+	clusters, err := ctx.kubermaticClient.KubermaticV1().Clusters().List(options)
 	if err != nil {
 		glog.Fatal(err)
 	}

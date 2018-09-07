@@ -22,12 +22,11 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
+	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/net"
 	kuberinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -296,7 +295,7 @@ func newControllerContext(runOp controllerRunOptions, done <-chan struct{}, kube
 		kubermaticClient: kubermaticClient,
 	}
 
-	selector, err := labelSelector(runOp.workerName)
+	selector, err := workerlabel.LabelSelector(runOp.workerName)
 	if err != nil {
 		return nil, err
 	}
@@ -313,23 +312,4 @@ func (ctx *controllerContext) Start() {
 
 	ctx.kubermaticInformerFactory.WaitForCacheSync(ctx.stopCh)
 	ctx.kubeInformerFactory.WaitForCacheSync(ctx.stopCh)
-}
-
-// return label selector to only process clusters with a matching machine.k8s.io/controller label
-func labelSelector(workerName string) (func(*metav1.ListOptions), error) {
-	var req *labels.Requirement
-	var err error
-	if workerName == "" {
-		req, err = labels.NewRequirement(kubermaticv1.WorkerNameLabelKey, selection.DoesNotExist, nil)
-	} else {
-		req, err = labels.NewRequirement(kubermaticv1.WorkerNameLabelKey, selection.Equals, []string{workerName})
-	}
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to build label selector: %v", err)
-	}
-
-	return func(options *metav1.ListOptions) {
-		options.LabelSelector = req.String()
-	}, nil
 }
