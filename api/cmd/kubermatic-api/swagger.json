@@ -1482,14 +1482,14 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "ProjectName",
+            "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
             "required": true
           },
           {
             "type": "string",
-            "x-go-name": "UserName",
+            "x-go-name": "UserID",
             "name": "user_id",
             "in": "path",
             "required": true
