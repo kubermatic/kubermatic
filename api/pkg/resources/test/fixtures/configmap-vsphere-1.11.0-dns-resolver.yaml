@@ -1,6 +1,10 @@
 data:
   Corefile: |2
 
+    cluster-de-test-01.svc.cluster.local. {
+        forward . /etc/resolv.conf
+        errors
+    }
     cluster.local {
         forward . 10.10.10.10
         errors
