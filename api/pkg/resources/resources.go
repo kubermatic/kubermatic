@@ -271,10 +271,6 @@ const (
 // ConfigMapCreator defines an interface to create/update ConfigMap's
 type ConfigMapCreator = func(data ConfigMapDataProvider, existing *corev1.ConfigMap) (*corev1.ConfigMap, error)
 
-// UserConfigMapCreator is the same as ConfigMapCreator but with a UserClusterData input.
-// The two should definitely be harmonized (interface perhaps).
-type UserConfigMapCreator = func(data *UserClusterData, existing *corev1.ConfigMap) (*corev1.ConfigMap, error)
-
 // SecretCreator defines an interface to create/update Secret's
 type SecretCreator = func(data SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error)
 
@@ -295,9 +291,6 @@ type RoleBindingCreator = func(data RoleBindingDataProvider, existing *rbacv1.Ro
 
 // ClusterRoleCreator defines an interface to create/update RBAC ClusterRoles
 type ClusterRoleCreator = func(data ClusterRoleDataProvider, existing *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error)
-
-// UserClusterRoleCreator defines an interface to create/update RBAC ClusterRoles
-type UserClusterRoleCreator = func(data *UserClusterData, existing *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error)
 
 // ClusterRoleBindingCreator defines an interface to create/update RBAC ClusterRoleBinding's
 type ClusterRoleBindingCreator = func(data ClusterRoleBindingDataProvider, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error)

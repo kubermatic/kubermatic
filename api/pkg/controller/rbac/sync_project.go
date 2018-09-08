@@ -211,7 +211,7 @@ func ensureClusterRBACRoleForResource(kubeClient kubernetes.Interface, groupName
 		return err
 	}
 
-	_, err = kubeClient.RbacV1().ClusterRoles().Create(generatedClusterRole)
+	_, err = kubeClient.RbacV1().ClusterRoles().Create(generatedClusterRole) // ownerref missing FIXME
 	return err
 }
 

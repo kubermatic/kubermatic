@@ -42,8 +42,8 @@ func (ucc *Controller) userClusterEnsureClusterData() error {
 }
 
 // GetUserClusterRoleCreators returns a list of GetUserClusterRoleCreators
-func GetUserClusterRoleCreators(data *resources.UserClusterData) []resources.UserClusterRoleCreator {
-	creators := []resources.UserClusterRoleCreator{
+func GetUserClusterRoleCreators(data *resources.UserClusterData) []resources.ClusterRoleCreator {
+	creators := []resources.ClusterRoleCreator{
 		machinecontroller.ClusterRole,
 		kubestatemetrics.ClusterRole,
 		vpnsidecar.DnatControllerClusterRole,
@@ -103,7 +103,7 @@ func (ucc *Controller) userClusterEnsureClusterRoles() error {
 }
 
 func (ucc *Controller) userClusterEnsureConfigMaps() error {
-	creators := []resources.UserConfigMapCreator{
+	creators := []resources.ConfigMapCreator{
 		openvpn.ClientConfigConfigMap,
 	}
 
@@ -150,5 +150,7 @@ func (ucc *Controller) userClusterEnsureConfigMaps() error {
 }
 
 func (ucc *Controller) getUserClusterData() (*resources.UserClusterData, error) {
-	return resources.NewUserClusterData(ucc.configMapLister), nil
+	return resources.NewUserClusterData(
+		ucc.configMapLister,
+		ucc.serviceLister), nil
 }

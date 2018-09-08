@@ -30,16 +30,19 @@ const (
 type Controller struct {
 	client          kubernetes.Interface
 	configMapLister k8slistersV1.ConfigMapLister
+	serviceLister   k8slistersV1.ServiceLister
 	queue           workqueue.RateLimitingInterface
 }
 
 // NewController creates a new controller for the specified data.
 func NewController(client kubernetes.Interface,
-	configMapInformer k8sinformersV1.ConfigMapInformer) (*Controller, error) {
+	configMapInformer k8sinformersV1.ConfigMapInformer,
+	serviceInformer k8sinformersV1.ServiceInformer) (*Controller, error) {
 
 	ucc := &Controller{
 		client:          client,
 		configMapLister: configMapInformer.Lister(),
+		serviceLister:   serviceInformer.Lister(),
 		queue:           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "configmaps"),
 	}
 

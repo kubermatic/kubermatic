@@ -85,6 +85,7 @@ type ConfigMapDataProvider interface {
 	InClusterPrometheusScrapingConfigsFile() string
 	InClusterPrometheusDisableDefaultRules() bool
 	InClusterPrometheusDisableDefaultScrapingConfigs() bool
+	GetMasterVpnAddress() (string, string, error)
 }
 
 // SecretDataProvider provides data
@@ -213,6 +214,11 @@ func (d *TemplateData) NodeAccessNetwork() string {
 // NodePortRange returns the node access network
 func (d *TemplateData) NodePortRange() string {
 	return d.nodePortRange
+}
+
+// GetMasterVpnAddress panics
+func (d *TemplateData) GetMasterVpnAddress() (string, string, error) {
+	panic("GetMasterVpnAddress not implemented for TemplateData")
 }
 
 // NewUserClusterData returns an instance of UserClusterData
@@ -438,7 +444,7 @@ func (d *UserClusterData) Cluster() *kubermaticv1.Cluster {
 
 // GetMasterVpnAddress returns host and port of the VPN service running in seed cluster.
 func (d *UserClusterData) GetMasterVpnAddress() (string, string, error) {
-	cm, err := d.ConfigMapLister.ConfigMaps(metav1.NamespacePublic).Get(ClusterSeedConfigMapName)
+	cm, err := d.ConfigMapLister().ConfigMaps(metav1.NamespacePublic).Get(ClusterSeedConfigMapName)
 	if err != nil {
 		return "", "", fmt.Errorf("could not get configmap %s: %v", ClusterSeedConfigMapName, err)
 	}
@@ -453,7 +459,7 @@ func (d *UserClusterData) GetMasterVpnAddress() (string, string, error) {
 
 // GetClusterName returns the name of the user-cluster
 func (d *UserClusterData) GetClusterName() (string, error) {
-	cm, err := d.ConfigMapLister.ConfigMaps(metav1.NamespacePublic).Get(ClusterSeedConfigMapName)
+	cm, err := d.ConfigMapLister().ConfigMaps(metav1.NamespacePublic).Get(ClusterSeedConfigMapName)
 	if err != nil {
 		return "", fmt.Errorf("could not get configmap %s: %v", ClusterSeedConfigMapName, err)
 	}

@@ -31,7 +31,7 @@ const (
 )
 
 // Deployment returns the kubernetes Controller-Manager Deployment
-func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
+func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
 	var dep *appsv1.Deployment
 	if existing != nil {
 		dep = existing
@@ -89,8 +89,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
 
 	resourceRequirements := defaultResourceRequirements
-	if data.Cluster.Spec.ComponentsOverride.Scheduler.Resources != nil {
-		resourceRequirements = *data.Cluster.Spec.ComponentsOverride.Scheduler.Resources
+	if data.Cluster().Spec.ComponentsOverride.Scheduler.Resources != nil {
+		resourceRequirements = *data.Cluster().Spec.ComponentsOverride.Scheduler.Resources
 	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
@@ -115,7 +115,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(name, data.Cluster.Name, nil))
+	dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(name, data.Cluster().Name, nil))
 
 	return dep, nil
 }

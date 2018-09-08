@@ -68,5 +68,6 @@ func createUserClusterController(ctrlCtx *controllerContext) (runner, error) {
 
 	return usercluster.NewController(
 		ctrlCtx.kubeClient,
-		ctrlCtx.kubeInformerFactory.Core().V1().ConfigMaps())
+		ctrlCtx.kubeInformerFactory.Core().V1().ConfigMaps(),
+		ctrlCtx.kubeInformerFactory.Core().V1().Services())
 }
