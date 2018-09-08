@@ -24,6 +24,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/userdata/coreos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
 
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -70,7 +71,7 @@ func Machine(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.DatacenterMe
 		// We use OverwriteCloudConfig for Vsphere to ensure we always
 		// use the credentials passed in via frontend for the cloud-provider
 		// functionality
-		templateData := &resources.TemplateData{Cluster: c, DC: &dc}
+		templateData := resources.NewTemplateData(c, &dc, "", nil, nil, nil, "", "", "", resource.Quantity{}, "", false, false, "", nil)
 		overwriteCloudConfig, err := cloudconfig.CloudConfig(templateData)
 		if err != nil {
 			return nil, err
