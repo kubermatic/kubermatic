@@ -605,7 +605,7 @@ func TestAddUserToProject(t *testing.T) {
 			if res.Code != tc.HTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
-			compareWithResult(t, res, tc.ExpectedResponse)
+			compareJSON(t, res, tc.ExpectedResponse)
 
 			kubermaticFakeClient := clients.fakeKubermaticClient
 			{
@@ -771,7 +771,7 @@ func TestNewUser(t *testing.T) {
 	if res.Code != http.StatusOK {
 		t.Fatalf("Expected HTTP status code %d, got %d: %s", http.StatusOK, res.Code, res.Body.String())
 	}
-	compareWithResult(t, res, expectedResponse)
+	compareJSON(t, res, expectedResponse)
 
 	actions := clientSet.fakeKubermaticClient.Actions()
 	if len(actions) != 10 {

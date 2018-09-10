@@ -175,7 +175,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 	if res.Code != testcase.HTTPStatus {
 		t.Fatalf("Expected HTTP status code %d, got %d: %s", testcase.HTTPStatus, res.Code, res.Body.String())
 	}
-	compareWithResult(t, res, testcase.ExpectedResponse)
+	compareJSON(t, res, testcase.ExpectedResponse)
 
 	// validate if clusters were detached from the ssh keys
 	if len(kubermaticClient.Actions()) != testcase.ExpectedActions {
@@ -337,7 +337,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 				if res.Code != tc.ExpectedDeleteHTTPStatus {
 					t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedDeleteHTTPStatus, res.Code, res.Body.String())
 				}
-				compareWithResult(t, res, tc.ExpectedDeleteResponse)
+				compareJSON(t, res, tc.ExpectedDeleteResponse)
 			}
 
 			// GET request list the keys from the cache, thus we wait 1 s before firing the request . . . I know :)
@@ -352,7 +352,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 				if res.Code != tc.ExpectedGetHTTPStatus {
 					t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedGetHTTPStatus, res.Code, res.Body.String())
 				}
-				compareWithResult(t, res, tc.ExpectedResponseOnGetAfterDelte)
+				compareJSON(t, res, tc.ExpectedResponseOnGetAfterDelte)
 			}
 		})
 	}
@@ -493,7 +493,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 			if res.Code != tc.HTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
-			compareWithResult(t, res, tc.ExpectedResponse)
+			compareJSON(t, res, tc.ExpectedResponse)
 		})
 	}
 }
@@ -665,7 +665,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			compareWithResult(t, res, tc.ExpectedResponse)
+			compareJSON(t, res, tc.ExpectedResponse)
 		})
 	}
 }
@@ -843,7 +843,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 				expectedResponse = fmt.Sprintf(tc.ExpectedResponse, actualCluster.ID)
 			}
 
-			compareWithResult(t, res, expectedResponse)
+			compareJSON(t, res, expectedResponse)
 		})
 	}
 }
@@ -972,7 +972,7 @@ func TestGetClusterHealth(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			compareWithResult(t, res, tc.ExpectedResponse)
+			compareJSON(t, res, tc.ExpectedResponse)
 		})
 	}
 }
@@ -1090,7 +1090,7 @@ func TestUpdateCluster(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			compareWithResult(t, res, tc.ExpectedResponse)
+			compareJSON(t, res, tc.ExpectedResponse)
 		})
 	}
 }
@@ -1205,7 +1205,7 @@ func TestGetCluster(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			compareWithResult(t, res, tc.ExpectedResponse)
+			compareJSON(t, res, tc.ExpectedResponse)
 		})
 	}
 }
@@ -1322,7 +1322,7 @@ func TestListClusters(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			compareWithResult(t, res, tc.ExpectedResponse)
+			compareJSON(t, res, tc.ExpectedResponse)
 		})
 	}
 }
@@ -1781,7 +1781,7 @@ func TestGetClusterAdminTokenEndpoint(t *testing.T) {
 
 	// check assertions
 	checkStatusCode(http.StatusOK, res, t)
-	compareWithResult(t, res, expectedResponse)
+	compareJSON(t, res, expectedResponse)
 }
 
 func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {

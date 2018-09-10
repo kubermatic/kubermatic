@@ -195,8 +195,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 			if res.Code != tc.ExpectedHTTPStatusOnGet {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedHTTPStatusOnGet, res.Code, res.Body.String())
 			}
-			compareWithResult(t, res, tc.ExpectedResponseOnGet)
-
+			compareJSON(t, res, tc.ExpectedResponseOnGet)
 		})
 	}
 }
@@ -554,7 +553,7 @@ func TestGetNodeForCluster(t *testing.T) {
 			if res.Code != tc.HTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
-			compareWithResult(t, res, tc.ExpectedResponse)
+			compareJSON(t, res, tc.ExpectedResponse)
 		})
 	}
 }
@@ -722,7 +721,7 @@ func TestCreateNodeForCluster(t *testing.T) {
 					expectedResponse = fmt.Sprintf(tc.ExpectedResponse, actualNode.ID, actualNode.Name, actualNode.Status.MachineName)
 				}
 			}
-			compareWithResult(t, res, expectedResponse)
+			compareJSON(t, res, expectedResponse)
 		})
 	}
 }

@@ -66,7 +66,7 @@ func TestVsphereNetworksEndpoint(t *testing.T) {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
 	}
 
-	compareWithResult(t, res, `[{"name":"VM Network"}]`)
+	compareJSON(t, res, `[{"name":"VM Network"}]`)
 }
 
 func (v *vSphereMock) buildVSphereDatacenterMeta() map[string]provider.DatacenterMeta {

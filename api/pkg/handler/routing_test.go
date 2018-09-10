@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -156,21 +155,6 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 				},
 			},
 		},
-	}
-}
-
-func compareWithResult(t *testing.T, res *httptest.ResponseRecorder, response string) {
-	t.Helper()
-	bBytes, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Fatal("Unable to read response body")
-	}
-
-	r := strings.TrimSpace(response)
-	b := strings.TrimSpace(string(bBytes))
-
-	if r != b {
-		t.Fatalf("Expected response body to be \n%s \ngot \n%s", r, b)
 	}
 }
 
