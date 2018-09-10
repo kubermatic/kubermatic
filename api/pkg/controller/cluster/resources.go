@@ -296,7 +296,7 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Service: %v", err)
 		}
 
-		if equality.Semantic.DeepEqual(service, existing) {
+		if resources.DeepEqual(service, existing) {
 			continue
 		}
 
@@ -338,7 +338,7 @@ func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error 
 
 		// We update the existing SA
 		sa = resources.ServiceAccount(name, &ref, existing.DeepCopy())
-		if equality.Semantic.DeepEqual(sa, existing) {
+		if resources.DeepEqual(sa, existing) {
 			continue
 		}
 		if _, err = cc.kubeClient.CoreV1().ServiceAccounts(c.Status.NamespaceName).Update(sa); err != nil {
@@ -384,7 +384,7 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Role: %v", err)
 		}
 
-		if equality.Semantic.DeepEqual(role, existing) {
+		if resources.DeepEqual(role, existing) {
 			continue
 		}
 
@@ -431,7 +431,7 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build RoleBinding: %v", err)
 		}
 
-		if equality.Semantic.DeepEqual(rb, existing) {
+		if resources.DeepEqual(rb, existing) {
 			continue
 		}
 
@@ -476,7 +476,7 @@ func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build ClusterRoleBinding: %v", err)
 		}
 
-		if equality.Semantic.DeepEqual(crb, existing) {
+		if resources.DeepEqual(crb, existing) {
 			continue
 		}
 
@@ -534,7 +534,7 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Deployment: %v", err)
 		}
 
-		if equality.Semantic.DeepEqual(dep, existing) {
+		if resources.DeepEqual(dep, existing) {
 			continue
 		}
 
@@ -751,7 +751,7 @@ func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build StatefulSet: %v", err)
 		}
 
-		if equality.Semantic.DeepEqual(set, existing) {
+		if resources.DeepEqual(set, existing) {
 			continue
 		}
 
@@ -809,7 +809,7 @@ func (cc *Controller) ensurePodDisruptionBudgets(c *kubermaticv1.Cluster) error 
 			return fmt.Errorf("failed to build PodDisruptionBudget: %v", err)
 		}
 
-		if equality.Semantic.DeepEqual(pdb, existing) {
+		if resources.DeepEqual(pdb, existing) {
 			continue
 		}
 

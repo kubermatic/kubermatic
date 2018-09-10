@@ -7,6 +7,8 @@ import (
 	"net"
 	"time"
 
+	"github.com/go-test/deep"
+
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -573,4 +575,18 @@ func GetClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lister c
 		Cert: certs[0],
 		Key:  key.(*rsa.PrivateKey),
 	}, nil
+}
+
+// DeepEqual compares both objects for equality
+func DeepEqual(a, b metav1.Object) bool {
+	//TODO: Check why equality.Semantic.DeepEqual returns a different result than deep.Equal
+	// Reproducible by changing the code to use equality.Semantic.DeepEqual & create a cluster.
+	// The ensureDeployments & ensureStatefulSets function in the cluster controller will update the resources on each sync
+	diff := deep.Equal(a, b)
+	if diff == nil {
+		return true
+	}
+
+	glog.V(8).Infof("Object %T %s/%s differs from the one, generated: %v", a, a.GetNamespace(), a.GetName(), diff)
+	return false
 }
