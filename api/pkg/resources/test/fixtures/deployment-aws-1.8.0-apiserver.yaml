@@ -61,7 +61,7 @@ spec:
         - tun
         - --auth-nocache
         - --remote
-        - 192.0.2.13
+        - openvpn-server.cluster-de-test-01.svc.cluster.local
         - "1194"
         - --nobind
         - --connect-timeout
@@ -155,7 +155,7 @@ spec:
         - --insecure-port
         - "8080"
         - --etcd-servers
-        - https://192.0.2.12:2379
+        - https://etcd-0.etcd.cluster-de-test-01.svc.cluster.local:2379,https://etcd-1.etcd.cluster-de-test-01.svc.cluster.local:2379,https://etcd-2.etcd.cluster-de-test-01.svc.cluster.local:2379
         - --etcd-cafile
         - /etc/etcd/pki/client/ca.crt
         - --etcd-certfile
@@ -314,9 +314,9 @@ spec:
         - -ec
         - until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/pki/client/ca.crt
           --cert=/etc/etcd/pki/client/apiserver-etcd-client.crt --key=/etc/etcd/pki/client/apiserver-etcd-client.key
-          --dial-timeout=2s --endpoints=[https://192.0.2.12:2379] get foo; do echo
-          waiting for etcd; sleep 2; done;
-        image: quay.io/coreos/etcd:v3.2.7
+          --dial-timeout=2s --endpoints='https://etcd-0.etcd.cluster-de-test-01.svc.cluster.local:2379,https://etcd-1.etcd.cluster-de-test-01.svc.cluster.local:2379,https://etcd-2.etcd.cluster-de-test-01.svc.cluster.local:2379'
+          endpoint health; do echo waiting for etcd; sleep 2; done;
+        image: gcr.io/etcd-development/etcd:v3.3.9
         imagePullPolicy: IfNotPresent
         name: etcd-running
         resources: {}

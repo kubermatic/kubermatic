@@ -158,8 +158,7 @@ func GetServiceCreators() []resources.ServiceCreator {
 		apiserver.ExternalService,
 		prometheus.Service,
 		openvpn.Service,
-		etcd.DiscoveryService,
-		etcd.ClientService,
+		etcd.Service,
 		dns.Service,
 	}
 }
@@ -743,12 +742,6 @@ func (cc *Controller) ensureCronJobs(c *kubermaticv1.Cluster) error {
 
 		if resources.DeepEqual(job, existing) {
 			continue
-		}
-
-		// In case we update something immutable we need to delete&recreate. Creation happens on next sync
-		if !equality.Semantic.DeepEqual(job.Spec.JobTemplate.Spec.Selector.MatchLabels, existing.Spec.JobTemplate.Spec.Selector.MatchLabels) {
-			propagation := metav1.DeletePropagationForeground
-			return cc.kubeClient.BatchV1beta1().CronJobs(c.Status.NamespaceName).Delete(job.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation})
 		}
 
 		if _, err = cc.kubeClient.BatchV1beta1().CronJobs(c.Status.NamespaceName).Update(job); err != nil {

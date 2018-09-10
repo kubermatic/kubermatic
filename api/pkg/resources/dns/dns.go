@@ -91,7 +91,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		*openvpnSidecar,
 		{
 			Name:            resources.DNSResolverDeploymentName,
-			Image:           data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/coredns:1.1.3",
+			Image:           data.ImageRegistry(resources.RegistryGCR) + "/google_containers/coredns:1.1.3",
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Args:            []string{"-conf", "/etc/coredns/Corefile"},
 			Resources: corev1.ResourceRequirements{
@@ -130,6 +130,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	dep.Spec.Template.Spec.Volumes = volumes
+
+	dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(resources.DNSResolverDeploymentName, data.Cluster.Name, nil))
 
 	return dep, nil
 }
@@ -191,7 +193,12 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	}
 	cm.Name = resources.DNSResolverConfigMapName
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+	seedClusterNamespaceDNS := fmt.Sprintf("%s.svc.cluster.local.", data.Cluster.Status.NamespaceName)
 	cm.Data["Corefile"] = fmt.Sprintf(`
+%s {
+    forward . /etc/resolv.conf
+    errors
+}
 %s {
     forward . %s
     errors
@@ -201,7 +208,7 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
   errors
   health
 }
-`, data.Cluster.Spec.ClusterNetwork.DNSDomain, dnsIP)
+`, seedClusterNamespaceDNS, data.Cluster.Spec.ClusterNetwork.DNSDomain, dnsIP)
 
 	return cm, nil
 }

@@ -33,14 +33,6 @@ func TLSServingCertificate(data *resources.TemplateData, existing *corev1.Secret
 		return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 	}
 
-	apiserverExternalIP, err := data.ServiceClusterIP(resources.ApiserverExternalServiceName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get ClusterIP of service %s: %v", resources.ApiserverExternalServiceName, err)
-	}
-	apiserverInternalIP, err := data.ServiceClusterIP(resources.ApiserverInternalServiceName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get ClusterIP of service %s: %v", resources.ApiserverInternalServiceName, err)
-	}
 	externalIP, err := data.ExternalIP()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get external IP for cluster: %v", err)
@@ -72,8 +64,6 @@ func TLSServingCertificate(data *resources.TemplateData, existing *corev1.Secret
 			fmt.Sprintf("%s.%s.svc.cluster.local", resources.ApiserverInternalServiceName, data.Cluster.Status.NamespaceName),
 		},
 		IPs: []net.IP{
-			*apiserverExternalIP,
-			*apiserverInternalIP,
 			*externalIP,
 			*inClusterIP,
 		},

@@ -64,8 +64,6 @@ const (
 	PrometheusServiceName = "prometheus"
 	//EtcdServiceName is the name for the etcd service
 	EtcdServiceName = "etcd"
-	//EtcdClientServiceName is the name for the etcd service for clients (ClusterIP)
-	EtcdClientServiceName = "etcd-client"
 	//EtcdDefragCronJobName is the name for the defrag cronjob deployment
 	EtcdDefragCronJobName = "etcd-defragger"
 	//OpenVPNServerServiceName is the name for the openvpn server service
@@ -196,8 +194,8 @@ const (
 	// EtcdClusterSize defines the size of the etcd to use
 	EtcdClusterSize = 3
 
-	// RegistryKubernetesGCR defines the kubernetes docker registry at google
-	RegistryKubernetesGCR = "gcr.io"
+	// RegistryGCR defines the kubernetes docker registry at google
+	RegistryGCR = "gcr.io"
 	// RegistryDocker defines the default docker.io registry
 	RegistryDocker = "docker.io"
 	// RegistryQuay defines the image registry from coreos/redhat - quay

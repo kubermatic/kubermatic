@@ -35,7 +35,7 @@ func CronJob(data *resources.TemplateData, existing *batchv1beta1.CronJob) (*bat
 	job.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:                     "defragger",
-			Image:                    data.ImageRegistry(resources.RegistryQuay) + "/coreos/etcd:" + tag,
+			Image:                    data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag,
 			ImagePullPolicy:          corev1.PullIfNotPresent,
 			Command:                  command,
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
@@ -103,9 +103,9 @@ const (
 	defraggerCommandTpl = `etcdctl() {
 ETCDCTL_API=3 /usr/local/bin/etcdctl \
   --endpoints https://$1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local.:2379 \
-  --cacert /etc/etcd/client/{{ .CACertFile }} \
-  --cert /etc/etcd/client/{{ .CertFile }} \
-  --key /etc/etcd/client/{{ .KeyFile }} \
+  --cacert /etc/etcd/pki/client/{{ .CACertFile }} \
+  --cert /etc/etcd/pki/client/{{ .CertFile }} \
+  --key /etc/etcd/pki/client/{{ .KeyFile }} \
   $2
 }
 

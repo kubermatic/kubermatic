@@ -394,20 +394,6 @@ func TestLoadFiles(t *testing.T) {
 					},
 					&v1.Service{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      resources.EtcdClientServiceName,
-							Namespace: cluster.Status.NamespaceName,
-						},
-						Spec: v1.ServiceSpec{
-							Ports: []v1.ServicePort{
-								{
-									NodePort: 30002,
-								},
-							},
-							ClusterIP: "192.0.2.12",
-						},
-					},
-					&v1.Service{
-						ObjectMeta: metav1.ObjectMeta{
 							Name:      resources.OpenVPNServerServiceName,
 							Namespace: cluster.Status.NamespaceName,
 						},
