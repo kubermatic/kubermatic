@@ -13,6 +13,7 @@ type KubermaticV1Interface interface {
 	ClustersGetter
 	ProjectsGetter
 	UsersGetter
+	UserProjectBindingsGetter
 	UserSSHKeiesGetter
 }
 
@@ -35,6 +36,10 @@ func (c *KubermaticV1Client) Projects() ProjectInterface {
 
 func (c *KubermaticV1Client) Users() UserInterface {
 	return newUsers(c)
+}
+
+func (c *KubermaticV1Client) UserProjectBindings() UserProjectBindingInterface {
+	return newUserProjectBindings(c)
 }
 
 func (c *KubermaticV1Client) UserSSHKeies() UserSSHKeyInterface {
