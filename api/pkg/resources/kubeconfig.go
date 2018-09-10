@@ -133,7 +133,7 @@ func getBaseKubeconfig(caCert *x509.Certificate, server, clusterName string) *cl
 			// to set the filename of the kubeconfig downloaded from API to `kubeconfig-clusterName`.
 			clusterName: {
 				CertificateAuthorityData: certutil.EncodeCertPEM(caCert),
-				Server:                   server,
+				Server: server,
 			},
 		},
 		CurrentContext: KubeconfigDefaultContextKey,

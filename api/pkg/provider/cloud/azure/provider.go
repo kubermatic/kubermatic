@@ -349,8 +349,8 @@ func ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 						SourcePortRange:          to.StringPtr("*"),
 						DestinationPortRange:     to.StringPtr("*"),
 						DestinationAddressPrefix: to.StringPtr("*"),
-						Access:                   network.SecurityRuleAccessDeny,
-						Priority:                 to.Int32Ptr(800),
+						Access:   network.SecurityRuleAccessDeny,
+						Priority: to.Int32Ptr(800),
 					},
 				},
 				// outbound
