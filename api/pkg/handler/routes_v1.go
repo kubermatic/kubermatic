@@ -131,7 +131,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.newCreateSSHKey())
 
 	mux.Methods(http.MethodDelete).
-		Path("/projects/{project_id}/sshkeys/{key_name}").
+		Path("/projects/{project_id}/sshkeys/{key_id}").
 		Handler(r.newDeleteSSHKey())
 
 	mux.Methods(http.MethodGet).
@@ -372,7 +372,7 @@ func (r Routing) deleteSSHKey() http.Handler {
 	)
 }
 
-// swagger:route DELETE /api/v1/projects/{project_id}/sshkeys/{key_name} project newDeleteSSHKey
+// swagger:route DELETE /api/v1/projects/{project_id}/sshkeys/{key_id} project newDeleteSSHKey
 //
 //     Removes the given SSH Key from the system.
 //

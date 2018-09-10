@@ -11,10 +11,162 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	clienttesting "k8s.io/client-go/testing"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 )
+
+func TestDeleteSSHKey(t *testing.T) {
+	t.Parallel()
+	const longForm = "Jan 2, 2006 at 3:04pm (MST)"
+	creationTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testcases := []struct {
+		Name                   string
+		HTTPStatus             int
+		SSHKeyToDelete         string
+		ExistingProject        *kubermaticv1.Project
+		ExistingKubermaticUser *kubermaticv1.User
+		ExistingAPIUser        *apiv1.User
+		ExistingCluster        *kubermaticv1.Cluster
+		ExistingSSHKeys        []*kubermaticv1.UserSSHKey
+	}{
+		// scenario 1
+		{
+			Name:            "scenario 1: delete a ssh-keyfrom from a specific project",
+			HTTPStatus:      http.StatusOK,
+			SSHKeyToDelete:  "key-abc-yafn",
+			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingKubermaticUser: &kubermaticv1.User{
+				ObjectMeta: metav1.ObjectMeta{},
+				Spec: kubermaticv1.UserSpec{
+					Name:  "John",
+					Email: testUserEmail,
+					Projects: []kubermaticv1.ProjectGroup{
+						{
+							Group: "owners-" + testingProjectName,
+							Name:  testingProjectName,
+						},
+					},
+				},
+			},
+			ExistingAPIUser: &apiv1.User{
+				ID:    testUserName,
+				Email: testUserEmail,
+			},
+			ExistingSSHKeys: []*kubermaticv1.UserSSHKey{
+				&kubermaticv1.UserSSHKey{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.k8s.io/v1",
+								Kind:       "Project",
+								UID:        "",
+								Name:       testingProjectName,
+							},
+						},
+						CreationTimestamp: metav1.NewTime(creationTime),
+					},
+					Spec: kubermaticv1.SSHKeySpec{
+						Name:     "yafn",
+						Clusters: []string{"abcd"},
+					},
+				},
+				&kubermaticv1.UserSSHKey{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "key-abc-yafn",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.k8s.io/v1",
+								Kind:       "Project",
+								UID:        "",
+								Name:       testingProjectName,
+							},
+						},
+						CreationTimestamp: metav1.NewTime(creationTime.Add(time.Minute)),
+					},
+					Spec: kubermaticv1.SSHKeySpec{
+						Name:     "abcd",
+						Clusters: []string{"abcd"},
+					},
+				},
+			},
+			ExistingCluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "abcd",
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: "kubermatic.k8s.io/v1",
+							Kind:       "Project",
+							UID:        "",
+							Name:       testingProjectName,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			sshKeyID := tc.SSHKeyToDelete
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/sshkeys/%s", testingProjectName, sshKeyID), nil)
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			if tc.ExistingProject != nil {
+				kubermaticObj = append(kubermaticObj, tc.ExistingProject)
+			}
+			if tc.ExistingCluster != nil {
+				kubermaticObj = append(kubermaticObj, tc.ExistingCluster)
+			}
+			if tc.ExistingKubermaticUser != nil {
+				kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticUser)
+			}
+			for _, existingKey := range tc.ExistingSSHKeys {
+				kubermaticObj = append(kubermaticObj, existingKey)
+			}
+			ep, clients, err := createTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			kubermaticFakeClient := clients.fakeKubermaticClient
+			{
+				// check only if ssh key was delteted
+				if tc.HTTPStatus == http.StatusOK {
+					actionWasValidated := false
+					for _, action := range kubermaticFakeClient.Actions() {
+						if action.Matches("delete", "usersshkeies") {
+							deleteAction, ok := action.(clienttesting.DeleteAction)
+							if !ok {
+								t.Fatalf("unexpected action %#v", action)
+							}
+							if deleteAction.GetName() != tc.SSHKeyToDelete {
+								t.Fatalf("wrong ssh-key removed, wanted = %s, actual = %s", tc.SSHKeyToDelete, deleteAction.GetName())
+							}
+							actionWasValidated = true
+							break
+						}
+					}
+					if !actionWasValidated {
+						t.Fatal("create action was not validated, a binding for a user was not updated ?")
+					}
+				}
+			}
+		})
+	}
+}
 
 func TestListSSHKeys(t *testing.T) {
 	t.Parallel()
