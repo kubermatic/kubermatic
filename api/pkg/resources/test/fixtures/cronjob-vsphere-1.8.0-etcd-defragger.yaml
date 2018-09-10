@@ -26,9 +26,9 @@ spec:
               etcdctl() {
               ETCDCTL_API=3 /usr/local/bin/etcdctl \
                 --endpoints https://$1.etcd.cluster-de-test-01.svc.cluster.local.:2379 \
-                --cacert /etc/etcd/client/ca.crt \
-                --cert /etc/etcd/client/apiserver-etcd-client.crt \
-                --key /etc/etcd/client/apiserver-etcd-client.key \
+                --cacert /etc/etcd/pki/client/ca.crt \
+                --cert /etc/etcd/pki/client/apiserver-etcd-client.crt \
+                --key /etc/etcd/pki/client/apiserver-etcd-client.key \
                 $2
               }
 
