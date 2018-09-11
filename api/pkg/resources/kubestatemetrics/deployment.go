@@ -33,7 +33,7 @@ const (
 )
 
 // Deployment returns the kube-state-metrics Deployment
-func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
+func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
 	var dep *appsv1.Deployment
 	if existing != nil {
 		dep = existing

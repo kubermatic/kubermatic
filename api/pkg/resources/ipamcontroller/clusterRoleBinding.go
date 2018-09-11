@@ -10,7 +10,7 @@ import (
 
 // ClusterRoleBinding returns a ClusterRoleBinding for the ipam-controller.
 // It has to be put into the user-cluster.
-func ClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+func ClusterRoleBinding(_ resources.ClusterRoleBindingDataProvider, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 	return createClusterRoleBinding(existing, "controller",
 		resources.IPAMControllerClusterRoleName, rbacv1.Subject{
 			Kind:     "User",

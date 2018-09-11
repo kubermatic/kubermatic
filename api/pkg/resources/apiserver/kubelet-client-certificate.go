@@ -8,7 +8,7 @@ import (
 )
 
 // KubeletClientCertificate returns a secret with the client certificate for the apiserver -> kubelet connection.
-func KubeletClientCertificate(data *resources.TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
+func KubeletClientCertificate(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
 	return certificates.GetClientCertificateCreator(
 		resources.KubeletClientCertificatesSecretName,
 		"kube-apiserver-kubelet-client",

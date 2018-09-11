@@ -19,6 +19,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubeinformers "k8s.io/client-go/informers"
@@ -334,13 +335,22 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 	kubeInformerFactory.Start(stopChannel)
 	kubeInformerFactory.WaitForCacheSync(stopChannel)
 
-	return &resources.TemplateData{
-		DC:                &provider.DatacenterMeta{},
-		SecretLister:      secretLister,
-		ServiceLister:     serviceLister,
-		ConfigMapLister:   configMapLister,
-		NodeAccessNetwork: "192.0.2.0/24",
-		Cluster:           fakeCluster}, nil
+	return resources.NewTemplateData(
+		fakeCluster,
+		&provider.DatacenterMeta{},
+		"",
+		secretLister,
+		configMapLister,
+		serviceLister,
+		"",
+		"",
+		"192.0.2.0/24",
+		resource.Quantity{},
+		"",
+		false,
+		false,
+		"",
+		nil), nil
 }
 
 func createNamedSecrets(secretNames []string) *corev1.SecretList {

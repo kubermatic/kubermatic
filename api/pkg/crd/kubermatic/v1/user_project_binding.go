@@ -15,10 +15,10 @@ const (
 
 //+genclient
 //+genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // UserProjectBinding specifies a binding between a user and a project
 // This resource is used by the user management to manipulate members of the given project
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type UserProjectBinding struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -33,8 +33,9 @@ type UserProjectBindingSpec struct {
 	Group     string `json:"group"`
 }
 
-// UserList is a list of users
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// UserProjectBindingList is a list of users
 type UserProjectBindingList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
