@@ -33,11 +33,9 @@ const (
 )
 
 // Deployment returns the kubernetes Controller-Manager Deployment
-func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
-	var dep *appsv1.Deployment
-	if existing != nil {
-		dep = existing
-	} else {
+func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
+	dep := existing
+	if dep == nil {
 		dep = &appsv1.Deployment{}
 	}
 
@@ -46,8 +44,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Labels = resources.BaseAppLabel(name, nil)
 
 	dep.Spec.Replicas = resources.Int32(1)
-	if data.Cluster.Spec.ComponentsOverride.Scheduler.Replicas != nil {
-		dep.Spec.Replicas = data.Cluster.Spec.ComponentsOverride.Scheduler.Replicas
+	if data.Cluster().Spec.ComponentsOverride.Scheduler.Replicas != nil {
+		dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.Scheduler.Replicas
 	}
 
 	dep.Spec.Selector = &metav1.LabelSelector{
@@ -101,14 +99,14 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
 
 	resourceRequirements := defaultResourceRequirements
-	if data.Cluster.Spec.ComponentsOverride.Scheduler.Resources != nil {
-		resourceRequirements = *data.Cluster.Spec.ComponentsOverride.Scheduler.Resources
+	if data.Cluster().Spec.ComponentsOverride.Scheduler.Resources != nil {
+		resourceRequirements = *data.Cluster().Spec.ComponentsOverride.Scheduler.Resources
 	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
 		{
 			Name:            name,
-			Image:           data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
+			Image:           data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "scheduler"},
 			Args: []string{
@@ -153,7 +151,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(name, data.Cluster.Name, nil))
+	dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(name, data.Cluster().Name, nil))
 
 	return dep, nil
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
@@ -84,11 +85,7 @@ func TestConfigMapCreatorsKeepAdditionalData(t *testing.T) {
 	cluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"10.10.0.0/8"}
 	cluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.11.0.0/8"}
 	dc := &provider.DatacenterMeta{}
-	templateData := &resources.TemplateData{
-		Cluster:           cluster,
-		DC:                dc,
-		NodeAccessNetwork: "10.12.0.0/8",
-	}
+	templateData := resources.NewTemplateData(cluster, dc, "", nil, nil, nil, "", "", "10.12.0.0/8", resource.Quantity{}, "", false, false, "", nil)
 
 	for _, create := range GetConfigMapCreators() {
 		existing := &corev1.ConfigMap{
@@ -166,12 +163,7 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 	}
 	serviceLister := listerscorev1.NewServiceLister(serviceIndexer)
 
-	templateData := &resources.TemplateData{
-		Cluster:       cluster,
-		DC:            dc,
-		SecretLister:  secretLister,
-		ServiceLister: serviceLister,
-	}
+	templateData := resources.NewTemplateData(cluster, dc, "", secretLister, nil, serviceLister, "", "", "", resource.Quantity{}, "", false, false, "", nil)
 
 	for _, op := range GetSecretCreatorOperations([]byte{}) {
 		existing := &corev1.Secret{

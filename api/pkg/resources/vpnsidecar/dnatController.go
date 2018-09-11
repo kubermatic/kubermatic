@@ -21,7 +21,7 @@ var (
 )
 
 // DnatControllerContainer returns a sidecar container for running the dnat controller.
-func DnatControllerContainer(data *resources.TemplateData, name string) (*corev1.Container, error) {
+func DnatControllerContainer(data resources.DeploymentDataProvider, name string) (*corev1.Container, error) {
 	return &corev1.Container{
 		Name:            name,
 		Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/vpnsidecar-dnat-controller:v0.2.0",
@@ -29,7 +29,7 @@ func DnatControllerContainer(data *resources.TemplateData, name string) (*corev1
 		Command:         []string{"/usr/local/bin/kubeletdnat-controller"},
 		Args: []string{
 			"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-			"--node-access-network", data.NodeAccessNetwork,
+			"--node-access-network", data.NodeAccessNetwork(),
 			"-v", "4",
 			"-logtostderr",
 		},

@@ -12,7 +12,7 @@ import (
 )
 
 // TLSServingCertificate returns a secret with the openvpn server tls certificate
-func TLSServingCertificate(data *resources.TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
+func TLSServingCertificate(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
 	var se *corev1.Secret
 	if existing != nil {
 		se = existing

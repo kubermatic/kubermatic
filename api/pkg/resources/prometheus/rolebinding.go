@@ -8,7 +8,7 @@ import (
 )
 
 // RoleBinding returns the RoleBinding for the prometheus
-func RoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+func RoleBinding(data resources.RoleBindingDataProvider, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 	var rb *rbacv1.RoleBinding
 	if existing != nil {
 		rb = existing
@@ -29,7 +29,7 @@ func RoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*r
 		{
 			Kind:      "ServiceAccount",
 			Name:      resources.PrometheusServiceAccountName,
-			Namespace: data.Cluster.Status.NamespaceName,
+			Namespace: data.Cluster().Status.NamespaceName,
 		},
 	}
 	return rb, nil

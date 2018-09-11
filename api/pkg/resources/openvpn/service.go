@@ -8,12 +8,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// Service returns a service for the prometheus
-func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
-	var se *corev1.Service
-	if existing != nil {
-		se = existing
-	} else {
+// Service returns the service of the openvpn server
+func Service(data resources.ServiceDataProvider, existing *corev1.Service) (*corev1.Service, error) {
+	se := existing
+	if se == nil {
 		se = &corev1.Service{}
 	}
 
