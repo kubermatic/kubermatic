@@ -234,6 +234,8 @@ type Cluster struct {
 // OpenstackSize is the object representing openstack's sizes.
 // swagger:model OpenstackSize
 type OpenstackSize struct {
+	// Id uniquely identifies the size
+	ID string `json:"id"`
 	// Slug holds  the name of the size
 	Slug string `json:"slug"`
 	// Memory is the amount of memory, measured in MB
