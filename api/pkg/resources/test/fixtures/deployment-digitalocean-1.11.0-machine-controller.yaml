@@ -47,7 +47,7 @@ spec:
         env:
         - name: DO_TOKEN
           value: do-token
-        image: docker.io/kubermatic/machine-controller:v0.7.18
+        image: docker.io/kubermatic/machine-controller:v0.7.21
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 8
