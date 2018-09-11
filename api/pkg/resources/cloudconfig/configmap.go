@@ -17,7 +17,7 @@ const (
 )
 
 // ConfigMap returns a ConfigMap containing the cloud-config for the supplied data
-func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+func ConfigMap(data resources.ConfigMapDataProvider, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 	var cm *corev1.ConfigMap
 	if existing != nil {
 		cm = existing
@@ -43,7 +43,7 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 }
 
 // CloudConfig returns the cloud-config for the supplied data
-func CloudConfig(data *resources.TemplateData) (string, error) {
+func CloudConfig(data resources.ConfigMapDataProvider) (string, error) {
 	configBuffer := bytes.Buffer{}
 	configTpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(config)
 	if err != nil {

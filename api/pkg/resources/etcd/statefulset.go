@@ -6,6 +6,7 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -36,11 +37,9 @@ const (
 )
 
 // StatefulSet returns the etcd StatefulSet
-func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
-	var set *appsv1.StatefulSet
-	if existing != nil {
-		set = existing
-	} else {
+func StatefulSet(data resources.StatefulSetDataProvider, existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+	set := existing
+	if set == nil {
 		set = &appsv1.StatefulSet{}
 	}
 
@@ -52,7 +51,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	set.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
 	set.Spec.ServiceName = resources.EtcdServiceName
 
-	baseLabels := getBasePodLabels(data)
+	baseLabels := getBasePodLabels(data.Cluster())
 	set.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: baseLabels,
 	}
@@ -71,7 +70,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 	// For migration purpose.
 	// We switched from the etcd-operator to a simple etcd-StatefulSet. Therefore we need to migrate the data.
 	var migrate bool
-	if _, err := data.ServiceLister.Services(data.Cluster.Status.NamespaceName).Get("etcd-cluster-client"); err != nil {
+	if _, err := data.ServiceLister().Services(data.Cluster().Status.NamespaceName).Get("etcd-cluster-client"); err != nil {
 		if !errors.IsNotFound(err) {
 			return nil, err
 		}
@@ -79,13 +78,13 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 		migrate = true
 	}
 
-	etcdStartCmd, err := getEtcdCommand(data.Cluster.Name, data.Cluster.Status.NamespaceName, migrate)
+	etcdStartCmd, err := getEtcdCommand(data.Cluster().Name, data.Cluster().Status.NamespaceName, migrate)
 	if err != nil {
 		return nil, err
 	}
 	resourceRequirements := defaultResourceRequirements
-	if data.Cluster.Spec.ComponentsOverride.Etcd.Resources != nil {
-		resourceRequirements = *data.Cluster.Spec.ComponentsOverride.Etcd.Resources
+	if data.Cluster().Spec.ComponentsOverride.Etcd.Resources != nil {
+		resourceRequirements = *data.Cluster().Spec.ComponentsOverride.Etcd.Resources
 	}
 	set.Spec.Template.Spec.Containers = []corev1.Container{
 		{
@@ -177,7 +176,7 @@ func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*a
 
 	// Make sure, we don't change size of existing pvc's
 	// Phase needs to be taken from an existing
-	diskSize := data.EtcdDiskSize
+	diskSize := data.EtcdDiskSize()
 	if len(set.Spec.VolumeClaimTemplates) == 0 {
 		set.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 			{
@@ -237,9 +236,9 @@ func getVolumes() []corev1.Volume {
 	}
 }
 
-func getBasePodLabels(data *resources.TemplateData) map[string]string {
+func getBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
 	additionalLabels := map[string]string{
-		"cluster": data.Cluster.Name,
+		"cluster": cluster.Name,
 	}
 	return resources.BaseAppLabel(resources.EtcdStatefulSetName, additionalLabels)
 }

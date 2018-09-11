@@ -81,7 +81,7 @@ func defraggerCommand(data *resources.TemplateData) ([]string, error) {
 
 	tplData := defraggerCommandTplData{
 		ServiceName: resources.EtcdServiceName,
-		Namespace:   data.Cluster.Status.NamespaceName,
+		Namespace:   data.Cluster().Status.NamespaceName,
 		CACertFile:  resources.CACertSecretKey,
 		CertFile:    resources.ApiserverEtcdClientCertificateCertSecretKey,
 		KeyFile:     resources.ApiserverEtcdClientCertificateKeySecretKey,
