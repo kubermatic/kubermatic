@@ -9,11 +9,9 @@ import (
 )
 
 // Service returns the internal service for the apiserver
-func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
-	var se *corev1.Service
-	if existing != nil {
-		se = existing
-	} else {
+func Service(data resources.ServiceDataProvider, existing *corev1.Service) (*corev1.Service, error) {
+	se := existing
+	if se == nil {
 		se = &corev1.Service{}
 	}
 
@@ -38,7 +36,7 @@ func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Se
 }
 
 // ExternalService returns the internal service for the apiserver
-func ExternalService(data *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
+func ExternalService(data resources.ServiceDataProvider, existing *corev1.Service) (*corev1.Service, error) {
 	var se *corev1.Service
 	if existing != nil {
 		se = existing

@@ -9,13 +9,13 @@ import (
 
 // SystemBootstrapSignerRoleBinding returns the RoleBinding for the bootstrapping in controller-manager.
 // It has to be put into the user-cluster.
-func SystemBootstrapSignerRoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+func SystemBootstrapSignerRoleBinding(_ resources.RoleBindingDataProvider, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 	return createRoleBinding(existing, metav1.NamespaceSystem, "system:controller:bootstrap-signer")
 }
 
 // PublicBootstrapSignerRoleBinding returns the RoleBinding for the bootstrapping reader in controller-manager.
 // It has to be put into the user-cluster.
-func PublicBootstrapSignerRoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+func PublicBootstrapSignerRoleBinding(_ resources.RoleBindingDataProvider, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 	return createRoleBinding(existing, metav1.NamespacePublic, "system:controller:bootstrap-signer")
 }
 

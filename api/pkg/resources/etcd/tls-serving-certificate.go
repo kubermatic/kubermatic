@@ -13,7 +13,7 @@ import (
 )
 
 // TLSCertificate returns a secret with the etcd tls certificate
-func TLSCertificate(data *resources.TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
+func TLSCertificate(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
 	var se *corev1.Secret
 	if existing != nil {
 		se = existing
@@ -44,7 +44,7 @@ func TLSCertificate(data *resources.TemplateData, existing *corev1.Secret) (*cor
 		altNames.DNSNames = append(altNames.DNSNames, podName)
 
 		// Pod DNS name
-		absolutePodDNSName := fmt.Sprintf("etcd-%d.%s.%s.svc.cluster.local", i, resources.EtcdServiceName, data.Cluster.Status.NamespaceName)
+		absolutePodDNSName := fmt.Sprintf("etcd-%d.%s.%s.svc.cluster.local", i, resources.EtcdServiceName, data.Cluster().Status.NamespaceName)
 		altNames.DNSNames = append(altNames.DNSNames, absolutePodDNSName)
 	}
 

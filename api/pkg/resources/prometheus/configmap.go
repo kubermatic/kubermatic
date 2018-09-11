@@ -14,12 +14,12 @@ import (
 )
 
 type promTplModel struct {
-	*resources.TemplateData
+	TemplateData                       interface{}
 	InClusterPrometheusScrapingConfigs string
 }
 
 // ConfigMap returns a ConfigMap containing the prometheus config for the supplied data
-func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+func ConfigMap(data resources.ConfigMapDataProvider, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 	var cm *corev1.ConfigMap
 	if existing != nil {
 		cm = existing
@@ -30,14 +30,15 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 		cm.Data = map[string]string{}
 	}
 
-	model := &promTplModel{TemplateData: data}
-	if data.InClusterPrometheusScrapingConfigsFile != "" {
-		customScrapingConfigs, err := ioutil.ReadFile(data.InClusterPrometheusScrapingConfigsFile)
+	model := &promTplModel{TemplateData: data.TemplateData()}
+	scrapingConfigsFile := data.InClusterPrometheusScrapingConfigsFile()
+	if scrapingConfigsFile != "" {
+		scrapingConfigs, err := ioutil.ReadFile(scrapingConfigsFile)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't read custom scraping configs file, see: %v", err)
 		}
 
-		model.InClusterPrometheusScrapingConfigs = string(customScrapingConfigs)
+		model.InClusterPrometheusScrapingConfigs = string(scrapingConfigs)
 	}
 
 	configBuffer := bytes.Buffer{}
@@ -54,16 +55,17 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
 	cm.Labels = resources.BaseAppLabel(name, nil)
 	cm.Data["prometheus.yaml"] = configBuffer.String()
 
-	if data.InClusterPrometheusDisableDefaultRules {
+	if data.InClusterPrometheusDisableDefaultRules() {
 		delete(cm.Data, "rules.yaml")
 	} else {
 		cm.Data["rules.yaml"] = prometheusRules
 	}
 
-	if data.InClusterPrometheusRulesFile == "" {
+	rulesFile := data.InClusterPrometheusRulesFile()
+	if rulesFile == "" {
 		delete(cm.Data, "rules-custom.yaml")
 	} else {
-		customRules, err := ioutil.ReadFile(data.InClusterPrometheusRulesFile)
+		customRules, err := ioutil.ReadFile(rulesFile)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't read custom rules file, see: %v", err)
 		}
@@ -86,7 +88,7 @@ scrape_configs:
 {{- if .InClusterPrometheusScrapingConfigs }}
 {{ .InClusterPrometheusScrapingConfigs }}
 {{- end }}
-{{- if not .InClusterPrometheusDisableDefaultScrapingConfigs }}
+{{- if not .TemplateData.InClusterPrometheusDisableDefaultScrapingConfigs }}
 - job_name: etcd
   scheme: https
   metrics_path: '/metrics'

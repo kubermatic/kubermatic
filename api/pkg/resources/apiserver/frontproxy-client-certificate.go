@@ -8,7 +8,7 @@ import (
 )
 
 // FrontProxyClientCertificate returns a secret with the client certificate for authenticating against extension apiserver
-func FrontProxyClientCertificate(data *resources.TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
+func FrontProxyClientCertificate(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
 	return certificates.GetClientCertificateCreator(
 		resources.ApiserverFrontProxyClientCertificateSecretName,
 		"apiserver-aggregator",
