@@ -2,12 +2,12 @@ data:
   config: |2
 
     [global]
-    zone=aws-availability-zone
-    VPC=aws-vpn-id
-    KubernetesClusterID=de-test-01
+    zone="aws-availability-zone"
+    VPC="aws-vpn-id"
+    KubernetesClusterID="de-test-01"
     disablesecuritygroupingress=false
-    SubnetID=aws-subnet-id
-    RouteTableID=aws-route-table-id
+    SubnetID="aws-subnet-id"
+    RouteTableID="aws-route-table-id"
     disablestrictzonecheck=true
   fakeVmwareUUID: VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00
 metadata:

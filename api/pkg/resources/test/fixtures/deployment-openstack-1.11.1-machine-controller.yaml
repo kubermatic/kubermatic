@@ -50,7 +50,7 @@ spec:
         - name: OS_USER_NAME
           value: openstack-username
         - name: OS_PASSWORD
-          value: openstack-password
+          value: openstack-"password
         - name: OS_DOMAIN_NAME
           value: openstack-domain
         - name: OS_TENANT_NAME

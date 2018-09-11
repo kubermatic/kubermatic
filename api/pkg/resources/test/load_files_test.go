@@ -150,7 +150,7 @@ func TestLoadFiles(t *testing.T) {
 				Domain:         "openstack-domain",
 				FloatingIPPool: "openstack-floating-ip-pool",
 				Network:        "openstack-network",
-				Password:       "openstack-password",
+				Password:       "openstack-\"password",
 				RouterID:       "openstack-router-id",
 				SecurityGroups: "openstack-security-group1,openstack-security-group2",
 			},

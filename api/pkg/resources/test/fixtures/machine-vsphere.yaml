@@ -31,8 +31,8 @@ spec:
               user = "vsphere-username"
               password = "vsphere-password"
               server = "http://vsphere.local"
-              port = "443"
-              insecure-flag = "1"
+              port = 443
+              insecure-flag = 1
               datacenter = "vsphere-datacenter"
               datastore = "vsphere-datastore"
               working-dir = "vsphere-1a2b3c4d5e"
