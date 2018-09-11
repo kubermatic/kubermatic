@@ -60,6 +60,7 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	sshKeyProvider := kubernetes.NewSSHKeyProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeies().Lister(), IsAdmin)
 	newSSHKeyProvider := kubernetes.NewRBACCompliantSSHKeyProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeies().Lister())
 	userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister())
+	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister())
 	projectProvider, err := kubernetes.NewProjectProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Projects().Lister())
 	if err != nil {
 		return nil, nil, err
@@ -107,6 +108,7 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		authenticator,
 		updateManager,
 		prometheusClient,
+		projectMemberProvider,
 	)
 	mainRouter := mux.NewRouter()
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()

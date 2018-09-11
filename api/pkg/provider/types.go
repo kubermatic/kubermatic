@@ -209,6 +209,35 @@ type ProjectProvider interface {
 	Get(user *kubermaticv1.User, projectInternalName string, options *ProjectGetOptions) (*kubermaticv1.Project, error)
 }
 
+// UserInfo represent authenticated user
+type UserInfo struct {
+	Email string
+	Group string
+}
+
+// ProjectMemberListOptions allows to set filters that will be applied to filter the result.
+type ProjectMemberListOptions struct {
+	// MemberEmail set the email address of a member for the given project
+	MemberEmail string
+}
+
+// ProjectMemberProvider binds users with projects
+type ProjectMemberProvider interface {
+	// Create creates a binding for the given member and the given project
+	Create(userInfo *UserInfo, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)
+
+	// List gets all members of the given project
+	List(userInfo *UserInfo, project *kubermaticv1.Project, options *ProjectMemberListOptions) ([]*kubermaticv1.UserProjectBinding, error)
+
+	// Delete simply deletes the given binding
+	// Note:
+	// Use List to get binding for the specific member of the given project
+	Delete(userInfo *UserInfo, bindinName string) error
+
+	// Update simply updates the given binding
+	Update(userInfo *UserInfo, binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error)
+}
+
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.
 func ClusterCloudProviderName(spec kubermaticv1.CloudSpec) (string, error) {
 	var clouds []string
