@@ -221,7 +221,7 @@ type ProjectMemberListOptions struct {
 	MemberEmail string
 }
 
-// ProjectMembersProvider binds users with projects
+// ProjectMemberProvider binds users with projects
 type ProjectMemberProvider interface {
 	// Create creates a binding for the given member and the given project
 	Create(userInfo *UserInfo, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)

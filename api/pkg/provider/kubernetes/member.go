@@ -19,7 +19,7 @@ func NewProjectMemberProvider(createMasterImpersonatedClient kubermaticImpersona
 
 var _ provider.ProjectMemberProvider = &ProjectMemberProvider{}
 
-// ProjectMembersProvider binds users with projects
+// ProjectMemberProvider binds users with projects
 type ProjectMemberProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
 	createMasterImpersonatedClient kubermaticImpersonationClient
