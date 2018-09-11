@@ -48,7 +48,7 @@ func (c *Controller) sync(key string) error {
 	if err = c.ensureClusterRBACRoleForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.kubeMasterClient, c.rbacClusterRoleMasterLister); err != nil {
 		return err
 	}
-	if err = c.ensureClusterRBACRoleBindingForNamedResource(project.Name, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.kubeMasterClient, c.rbacClusterRoleBindingMasterLister); err != nil {
+	if err = c.ensureClusterRBACRoleBindingForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.kubeMasterClient, c.rbacClusterRoleBindingMasterLister); err != nil {
 		return err
 	}
 	if err = c.ensureClusterRBACRoleForResources(); err != nil {
@@ -116,7 +116,7 @@ func (c *Controller) ensureProjectOwner(project *kubermaticv1.Project) error {
 func (c *Controller) ensureClusterRBACRoleForResources() error {
 	for _, projectResource := range c.projectResources {
 		for _, groupPrefix := range AllGroupsPrefixes {
-			err := ensureClusterRBACRoleForResource(c.kubeMasterClient, groupPrefix, projectResource.gvr.Resource, c.rbacClusterRoleMasterLister)
+			err := ensureClusterRBACRoleForResource(c.kubeMasterClient, groupPrefix, projectResource.gvr.Resource, projectResource.kind, c.rbacClusterRoleMasterLister)
 			if err != nil {
 				return err
 			}
@@ -124,7 +124,7 @@ func (c *Controller) ensureClusterRBACRoleForResources() error {
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterProvider := range c.seedClusterProviders {
 					seedClusterRESTClient := seedClusterProvider.kubeClient
-					err := ensureClusterRBACRoleForResource(seedClusterRESTClient, groupPrefix, projectResource.gvr.Resource, seedClusterProvider.rbacClusterRoleLister)
+					err := ensureClusterRBACRoleForResource(seedClusterRESTClient, groupPrefix, projectResource.gvr.Resource, projectResource.kind, seedClusterProvider.rbacClusterRoleLister)
 					if err != nil {
 						return err
 					}
@@ -140,7 +140,7 @@ func (c *Controller) ensureClusterRBACRoleBindingForResources(projectName string
 		for _, groupPrefix := range AllGroupsPrefixes {
 			groupName := GenerateActualGroupNameFor(projectName, groupPrefix)
 
-			if skip, err := shouldSkipRBACRoleBindingFor(groupName, projectResource.gvr.Resource, kubermaticv1.SchemeGroupVersion.Group, projectName); skip {
+			if skip, err := shouldSkipRBACRoleBindingFor(groupName, projectResource.gvr.Resource, kubermaticv1.SchemeGroupVersion.Group, projectName, projectResource.kind); skip {
 				continue
 			} else if err != nil {
 				return err
@@ -165,13 +165,13 @@ func (c *Controller) ensureClusterRBACRoleBindingForResources(projectName string
 	return nil
 }
 
-func ensureClusterRBACRoleForResource(kubeClient kubernetes.Interface, groupName, resource string, rbacLister rbaclister.ClusterRoleLister) error {
-	generatedClusterRole, err := generateClusterRBACRoleForResource(groupName, resource, kubermaticv1.SchemeGroupVersion.Group)
+func ensureClusterRBACRoleForResource(kubeClient kubernetes.Interface, groupName, resource, kind string, rbacLister rbaclister.ClusterRoleLister) error {
+	generatedClusterRole, err := generateClusterRBACRoleForResource(groupName, resource, kubermaticv1.SchemeGroupVersion.Group, kind)
 	if err != nil {
 		return err
 	}
 	if generatedClusterRole == nil {
-		glog.V(5).Infof("skipping ClusterRole generation because ClusterRole for group \"%s\" and resource \"%s\" will not be created", groupName, resource)
+		glog.V(5).Infof("skipping ClusterRole generation because the resource for group \"%s\" and resource \"%s\" will not be created", groupName, resource)
 		return nil
 	}
 	sharedExistingClusterRole, err := rbacLister.Get(generatedClusterRole.Name)
@@ -290,7 +290,7 @@ func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
 	for _, projectResource := range c.projectResources {
 		for _, groupPrefix := range AllGroupsPrefixes {
 			groupName := GenerateActualGroupNameFor(project.Name, groupPrefix)
-			if skip, err := shouldSkipRBACRoleBindingFor(groupName, projectResource.gvr.Resource, kubermaticv1.SchemeGroupVersion.Group, project.Name); skip {
+			if skip, err := shouldSkipRBACRoleBindingFor(groupName, projectResource.gvr.Resource, kubermaticv1.SchemeGroupVersion.Group, project.Name, projectResource.kind); skip {
 				continue
 			} else if err != nil {
 				return err
@@ -358,8 +358,8 @@ func (c *Controller) shouldDeleteProject(project *kubermaticv1.Project) bool {
 // thus before doing something with ClusterRoleBinding check if the role was generated for the given resource and the group
 //
 // note: this method will add status to the log file
-func shouldSkipRBACRoleBindingFor(groupName, policyResource, policyAPIGroups, projectName string) (bool, error) {
-	generatedClusterRole, err := generateClusterRBACRoleForResource(groupName, policyResource, policyAPIGroups)
+func shouldSkipRBACRoleBindingFor(groupName, policyResource, policyAPIGroups, projectName, kind string) (bool, error) {
+	generatedClusterRole, err := generateClusterRBACRoleForResource(groupName, policyResource, policyAPIGroups, kind)
 	if err != nil {
 		return false, err
 	}
