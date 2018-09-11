@@ -6,8 +6,8 @@ import (
 )
 
 // ImagePullSecretCreator returns a creator function to create a ImagePullSecret
-func ImagePullSecretCreator(name string, dockerPullConfigJSON []byte) func(data *TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
-	return func(data *TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
+func ImagePullSecretCreator(name string, dockerPullConfigJSON []byte) func(data SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
+	return func(data SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
 		var secret *corev1.Secret
 		if existing != nil {
 			secret = existing

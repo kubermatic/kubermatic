@@ -8,7 +8,7 @@ import (
 )
 
 // Role returns a role for the prometheus
-func Role(data *resources.TemplateData, existing *rbacv1.Role) (*rbacv1.Role, error) {
+func Role(data resources.RoleDataProvider, existing *rbacv1.Role) (*rbacv1.Role, error) {
 	var r *rbacv1.Role
 	if existing != nil {
 		r = existing

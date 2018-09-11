@@ -11,7 +11,7 @@ import (
 )
 
 // TokenUsers returns a secret containing the tokens csv
-func TokenUsers(data *resources.TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
+func TokenUsers(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
 	var se *corev1.Secret
 	if existing != nil {
 		se = existing
@@ -29,7 +29,7 @@ func TokenUsers(data *resources.TemplateData, existing *corev1.Secret) (*corev1.
 	buffer := &bytes.Buffer{}
 	writer := csv.NewWriter(buffer)
 
-	if err := writer.Write([]string{data.Cluster.Address.AdminToken, "admin", "10000", "system:masters"}); err != nil {
+	if err := writer.Write([]string{data.Cluster().Address.AdminToken, "admin", "10000", "system:masters"}); err != nil {
 		return nil, err
 	}
 	writer.Flush()

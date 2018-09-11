@@ -11,7 +11,7 @@ import (
 
 // EnsureRole will create the role with the passed create function & create or update it if necessary.
 // To check if its necessary it will do a lookup of the resource at the lister & compare the existing Role with the created one
-func EnsureRole(data *TemplateData, create RoleCreator, roleLister rbacv1lister.RoleNamespaceLister, roleClient rbacv1client.RoleInterface) error {
+func EnsureRole(data RoleDataProvider, create RoleCreator, roleLister rbacv1lister.RoleNamespaceLister, roleClient rbacv1client.RoleInterface) error {
 	var existing *rbacv1.Role
 	role, err := create(data, nil)
 	if err != nil {

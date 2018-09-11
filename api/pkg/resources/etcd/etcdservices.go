@@ -11,11 +11,9 @@ import (
 )
 
 // Service returns a service for the etcd StatefulSet
-func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
-	var se *corev1.Service
-	if existing != nil {
-		se = existing
-	} else {
+func Service(data resources.ServiceDataProvider, existing *corev1.Service) (*corev1.Service, error) {
+	se := existing
+	if se == nil {
 		se = &corev1.Service{}
 	}
 
@@ -27,7 +25,7 @@ func Service(data *resources.TemplateData, existing *corev1.Service) (*corev1.Se
 	se.Spec.ClusterIP = "None"
 	se.Spec.Selector = map[string]string{
 		resources.AppLabelKey: name,
-		"cluster":             data.Cluster.Name,
+		"cluster":             data.Cluster().Name,
 	}
 	se.Spec.Ports = []corev1.ServicePort{
 		{

@@ -261,31 +261,31 @@ const (
 )
 
 // ConfigMapCreator defines an interface to create/update ConfigMap's
-type ConfigMapCreator = func(data *TemplateData, existing *corev1.ConfigMap) (*corev1.ConfigMap, error)
+type ConfigMapCreator = func(data ConfigMapDataProvider, existing *corev1.ConfigMap) (*corev1.ConfigMap, error)
 
 // SecretCreator defines an interface to create/update Secret's
-type SecretCreator = func(data *TemplateData, existing *corev1.Secret) (*corev1.Secret, error)
+type SecretCreator = func(data SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error)
 
 // StatefulSetCreator defines an interface to create/update StatefulSet
-type StatefulSetCreator = func(data *TemplateData, existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error)
+type StatefulSetCreator = func(data StatefulSetDataProvider, existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error)
 
 // ServiceCreator defines an interface to create/update Services
-type ServiceCreator = func(data *TemplateData, existing *corev1.Service) (*corev1.Service, error)
+type ServiceCreator = func(data ServiceDataProvider, existing *corev1.Service) (*corev1.Service, error)
 
 // RoleCreator defines an interface to create/update RBAC Roles
-type RoleCreator = func(data *TemplateData, existing *rbacv1.Role) (*rbacv1.Role, error)
+type RoleCreator = func(data RoleDataProvider, existing *rbacv1.Role) (*rbacv1.Role, error)
 
 // RoleBindingCreator defines an interface to create/update RBAC RoleBinding's
-type RoleBindingCreator = func(data *TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error)
+type RoleBindingCreator = func(data RoleBindingDataProvider, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error)
 
 // ClusterRoleCreator defines an interface to create/update RBAC ClusterRoles
-type ClusterRoleCreator = func(data *TemplateData, existing *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error)
+type ClusterRoleCreator = func(data ClusterRoleDataProvider, existing *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error)
 
 // ClusterRoleBindingCreator defines an interface to create/update RBAC ClusterRoleBinding's
-type ClusterRoleBindingCreator = func(data *TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error)
+type ClusterRoleBindingCreator = func(data ClusterRoleBindingDataProvider, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error)
 
 // DeploymentCreator defines an interface to create/update Deployment's
-type DeploymentCreator = func(data *TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error)
+type DeploymentCreator = func(data DeploymentDataProvider, existing *appsv1.Deployment) (*appsv1.Deployment, error)
 
 // InitializerConfigurationCreator defines an interface to create/update InitializerConfigurations
 type InitializerConfigurationCreator = func(data *TemplateData, existing *admissionv1alpha1.InitializerConfiguration) (*admissionv1alpha1.InitializerConfiguration, error)
@@ -356,7 +356,7 @@ func InClusterApiserverIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
 }
 
 // UserClusterDNSPolicyAndConfig returns a DNSPolicy and DNSConfig to configure Pods to use user cluster DNS
-func UserClusterDNSPolicyAndConfig(d *TemplateData) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
+func UserClusterDNSPolicyAndConfig(d DeploymentDataProvider) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
 	// DNSNone indicates that the pod should use empty DNS settings. DNS
 	// parameters such as nameservers and search paths should be defined via
 	// DNSConfig.
@@ -365,15 +365,15 @@ func UserClusterDNSPolicyAndConfig(d *TemplateData) (corev1.DNSPolicy, *corev1.P
 	if err != nil {
 		return corev1.DNSNone, nil, err
 	}
-	if len(d.Cluster.Spec.ClusterNetwork.DNSDomain) == 0 {
-		return corev1.DNSNone, nil, fmt.Errorf("invalid (empty) DNSDomain in ClusterNetwork spec for cluster %s", d.Cluster.Name)
+	if len(d.Cluster().Spec.ClusterNetwork.DNSDomain) == 0 {
+		return corev1.DNSNone, nil, fmt.Errorf("invalid (empty) DNSDomain in ClusterNetwork spec for cluster %s", d.Cluster().Name)
 	}
 	return corev1.DNSNone, &corev1.PodDNSConfig{
 		Nameservers: []string{dnsConfigResolverIP},
 		Searches: []string{
-			fmt.Sprintf("kube-system.svc.%s", d.Cluster.Spec.ClusterNetwork.DNSDomain),
-			fmt.Sprintf("svc.%s", d.Cluster.Spec.ClusterNetwork.DNSDomain),
-			d.Cluster.Spec.ClusterNetwork.DNSDomain,
+			fmt.Sprintf("kube-system.svc.%s", d.Cluster().Spec.ClusterNetwork.DNSDomain),
+			fmt.Sprintf("svc.%s", d.Cluster().Spec.ClusterNetwork.DNSDomain),
+			d.Cluster().Spec.ClusterNetwork.DNSDomain,
 		},
 		Options: []corev1.PodDNSConfigOption{
 			{

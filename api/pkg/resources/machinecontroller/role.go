@@ -9,7 +9,7 @@ import (
 
 // KubeSystemRole returns a role for the machine controller. This
 // role has to be put in the user-cluster and carries a namespace.
-func KubeSystemRole(data *resources.TemplateData, existing *rbacv1.Role) (*rbacv1.Role, error) {
+func KubeSystemRole(data resources.RoleDataProvider, existing *rbacv1.Role) (*rbacv1.Role, error) {
 	var r *rbacv1.Role
 	if existing != nil {
 		r = existing
@@ -54,7 +54,7 @@ func KubeSystemRole(data *resources.TemplateData, existing *rbacv1.Role) (*rbacv
 
 // KubePublicRole returns a role for the machine controller. This
 // role has to be put in the user-cluster and carries a namespace.
-func KubePublicRole(data *resources.TemplateData, existing *rbacv1.Role) (*rbacv1.Role, error) {
+func KubePublicRole(data resources.RoleDataProvider, existing *rbacv1.Role) (*rbacv1.Role, error) {
 	var r *rbacv1.Role
 	if existing != nil {
 		r = existing
@@ -82,7 +82,7 @@ func KubePublicRole(data *resources.TemplateData, existing *rbacv1.Role) (*rbacv
 
 // Role returns a role for the machine controller. This
 // role has to be put in the user-cluster and carries a namespace.
-func Role(data *resources.TemplateData, existing *rbacv1.Role) (*rbacv1.Role, error) {
+func Role(data resources.RoleDataProvider, existing *rbacv1.Role) (*rbacv1.Role, error) {
 	var r *rbacv1.Role
 	if existing != nil {
 		r = existing

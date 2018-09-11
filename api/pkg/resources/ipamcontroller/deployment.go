@@ -13,7 +13,7 @@ import (
 )
 
 // Deployment returns the ipamcontroller deployment
-func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
+func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
 	var dep *appsv1.Deployment
 	if existing != nil {
 		dep = existing
@@ -97,11 +97,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	return dep, nil
 }
 
-func getNetworkArgs(data *resources.TemplateData) []string {
-	networkFlags := make([]string, len(data.Cluster.Spec.MachineNetworks)*2)
+func getNetworkArgs(data resources.DeploymentDataProvider) []string {
+	networkFlags := make([]string, len(data.Cluster().Spec.MachineNetworks)*2)
 	i := 0
 
-	for _, n := range data.Cluster.Spec.MachineNetworks {
+	for _, n := range data.Cluster().Spec.MachineNetworks {
 		networkFlags[i] = "--network"
 		i++
 		networkFlags[i] = fmt.Sprintf("%s,%s,%s", n.CIDR, n.Gateway, strings.Join(n.DNSServers, ","))

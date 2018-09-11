@@ -7,11 +7,9 @@ import (
 )
 
 // ClusterRole returns a cluster role for kube-state-metrics
-func ClusterRole(_ *resources.TemplateData, existing *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
-	var r *rbacv1.ClusterRole
-	if existing != nil {
-		r = existing
-	} else {
+func ClusterRole(_ resources.ClusterRoleDataProvider, existing *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
+	r := existing
+	if r == nil {
 		r = &rbacv1.ClusterRole{}
 	}
 
