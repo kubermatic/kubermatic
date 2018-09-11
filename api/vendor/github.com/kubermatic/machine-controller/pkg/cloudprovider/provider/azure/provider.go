@@ -335,7 +335,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 	}
 
 	// We genete a random SSH key, since Azure won't let us create a VM without an SSH key or a password
-	key, err := ssh.NewSSHKey()
+	key, err := ssh.NewKey()
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate ssh key: %v", err)
 	}
@@ -382,7 +382,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 			NetworkProfile: &compute.NetworkProfile{
 				NetworkInterfaces: &[]compute.NetworkInterfaceReference{
 					{
-						ID:                                  iface.ID,
+						ID: iface.ID,
 						NetworkInterfaceReferenceProperties: &compute.NetworkInterfaceReferenceProperties{Primary: to.BoolPtr(true)},
 					},
 				},
@@ -533,7 +533,9 @@ func getVMByUID(ctx context.Context, c *config, uid types.UID) (*compute.Virtual
 
 	for list.NotDone() {
 		allServers = append(allServers, list.Values()...)
-		list.Next()
+		if err = list.Next(); err != nil {
+			return nil, fmt.Errorf("failed to iterate the result list: %s", err)
+		}
 	}
 
 	for _, vm := range allServers {
@@ -637,17 +639,17 @@ func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, nam
 	config = fmt.Sprintf(`
 {
   "cloud": "AZUREPUBLICCLOUD",
-  "tenantId": "%s",
-  "subscriptionId": "%s",
-  "aadClientId": "%s",
-  "aadClientSecret": "%s",
+  "tenantId": %q,
+  "subscriptionId": %q,
+  "aadClientId": %q,
+  "aadClientSecret": %q,
 
-  "resourceGroup": "%s",
-  "location": "%s",
-  "vnetName": "%s",
-  "vnetResourceGroup": "%s",
-  "subnetName": "%s",
-  "routeTableName": "%s",
+  "resourceGroup": %q,
+  "location": %q,
+  "vnetName": %q,
+  "vnetResourceGroup": %q,
+  "subnetName": %q,
+  "routeTableName": %q,
 
   "useInstanceMetadata": true
 }`, c.TenantID, c.SubscriptionID, c.ClientID, c.ClientSecret,
@@ -713,9 +715,17 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 	}
 
 	_, err = getOSImageReference(providerCfg.OperatingSystem)
-	if err != nil {
-		return err
+	return nil
+}
+
+func (p *provider) MachineMetricsLabels(machine *v1alpha1.Machine) (map[string]string, error) {
+	labels := make(map[string]string)
+
+	c, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	if err == nil {
+		labels["size"] = c.VMSize
+		labels["location"] = c.Location
 	}
 
-	return nil
+	return labels, err
 }

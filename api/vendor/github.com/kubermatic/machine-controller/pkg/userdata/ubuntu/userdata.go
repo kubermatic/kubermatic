@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	NoInstallCandidateAvailableErr = errors.New("no install candidate available for the desired version")
+	errNoInstallCandidateAvailable = errors.New("no install candidate available for the desired version")
 )
 
 func getConfig(r runtime.RawExtension) (*Config, error) {

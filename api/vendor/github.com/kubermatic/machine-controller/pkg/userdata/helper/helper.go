@@ -13,30 +13,30 @@ import (
 
 func GetServerAddressFromKubeconfig(kubeconfig *clientcmdapi.Config) (string, error) {
 	if len(kubeconfig.Clusters) != 1 {
-		return "", fmt.Errorf("kubeconfig does not contain exactly one cluster, can not extract server address...")
+		return "", fmt.Errorf("kubeconfig does not contain exactly one cluster, can not extract server address")
 	}
 	// Clusters is a map so we have to use range here
 	for _, clusterConfig := range kubeconfig.Clusters {
 		return strings.Replace(clusterConfig.Server, "https://", "", -1), nil
 	}
 
-	return "", fmt.Errorf("no server address found!")
+	return "", fmt.Errorf("no server address found")
 
 }
 
 func GetCACert(kubeconfig *clientcmdapi.Config) (string, error) {
 	if len(kubeconfig.Clusters) != 1 {
-		return "", fmt.Errorf("kubeconfig does not contain exactly one cluster, can not extract server address...")
+		return "", fmt.Errorf("kubeconfig does not contain exactly one cluster, can not extract server address")
 	}
 	// Clusters is a map so we have to use range here
 	for _, clusterConfig := range kubeconfig.Clusters {
 		return string(clusterConfig.CertificateAuthorityData), nil
 	}
 
-	return "", fmt.Errorf("no CACert found!")
+	return "", fmt.Errorf("no CACert found")
 }
 
-// Returns a sha256sum of the Certificates RawSubjectPublicKeyInfo
+// GetKubeadmCACertHash returns a sha256sum of the Certificates RawSubjectPublicKeyInfo
 func GetKubeadmCACertHash(kubeconfig *clientcmdapi.Config) (string, error) {
 	cacert, err := GetCACert(kubeconfig)
 	if err != nil {
@@ -57,7 +57,7 @@ func GetKubeadmCACertHash(kubeconfig *clientcmdapi.Config) (string, error) {
 
 func GetTokenFromKubeconfig(kubeconfig *clientcmdapi.Config) (string, error) {
 	if len(kubeconfig.AuthInfos) != 1 {
-		return "", fmt.Errorf("kubeconfig does not contain exactly one token, can not extract token...")
+		return "", fmt.Errorf("kubeconfig does not contain exactly one token, can not extract token")
 	}
 
 	for _, authInfo := range kubeconfig.AuthInfos {
@@ -67,6 +67,7 @@ func GetTokenFromKubeconfig(kubeconfig *clientcmdapi.Config) (string, error) {
 	return "", fmt.Errorf("no token found in kubeconfig")
 }
 
+// StringifyKubeconfig marshals a kubeconfig to its text form
 func StringifyKubeconfig(kubeconfig *clientcmdapi.Config) (string, error) {
 	kubeconfigBytes, err := clientcmd.Write(*kubeconfig)
 	if err != nil {
