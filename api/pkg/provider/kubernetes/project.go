@@ -100,7 +100,7 @@ func (p *ProjectProvider) Delete(user *kubermaticapiv1.User, projectInternalName
 	if user == nil {
 		return errors.New("a user is missing but required")
 	}
-	masterImpersonatedClient, err := p.createMasterImpersonationClientWrapper(user, projectInternalName)
+	masterImpersonatedClient, err := createImpersonationClientWrapper(user, projectInternalName, p.createMasterImpersonatedClient)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func (p *ProjectProvider) Get(user *kubermaticapiv1.User, projectInternalName st
 	if user == nil {
 		return nil, errors.New("a user is missing but required")
 	}
-	masterImpersonatedClient, err := p.createMasterImpersonationClientWrapper(user, projectInternalName)
+	masterImpersonatedClient, err := createImpersonationClientWrapper(user, projectInternalName, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
@@ -134,22 +134,6 @@ func (p *ProjectProvider) Get(user *kubermaticapiv1.User, projectInternalName st
 		return nil, kerrors.NewServiceUnavailable("Project is not initialized yet")
 	}
 	return project, nil
-}
-
-// createMasterImpersonationClientWrapper is a helper method that spits back kubermatic client that uses user impersonation
-func (p *ProjectProvider) createMasterImpersonationClientWrapper(user *kubermaticapiv1.User, projectInternalName string) (kubermaticclientv1.KubermaticV1Interface, error) {
-	if user == nil || len(projectInternalName) == 0 {
-		return nil, errors.New("a project and/or a user is missing but required")
-	}
-	groupName, err := user.GroupForProject(projectInternalName)
-	if err != nil {
-		return nil, kerrors.NewForbidden(schema.GroupResource{}, projectInternalName, err)
-	}
-	impersonationCfg := restclient.ImpersonationConfig{
-		UserName: user.Spec.Email,
-		Groups:   []string{groupName},
-	}
-	return p.createMasterImpersonatedClient(impersonationCfg)
 }
 
 // NewKubermaticImpersonationClient creates a new default impersonation client

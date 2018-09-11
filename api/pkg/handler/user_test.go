@@ -209,7 +209,6 @@ func TestAddUserToProject(t *testing.T) {
 		Name                        string
 		Body                        string
 		ExpectedResponse            string
-		ExpectedActions             int
 		ExpectedUserAfterInvitation *kubermaticapiv1.User
 		ProjectToSync               string
 		HTTPStatus                  int
@@ -271,7 +270,6 @@ func TestAddUserToProject(t *testing.T) {
 				Email: testUserEmail,
 			},
 			ExpectedResponse: `{"id":"bob","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"placeX","group":"editors-placeX"},{"id":"plan9","group":"editors-plan9"}]}`,
-			ExpectedActions:  10,
 			ExpectedUserAfterInvitation: &kubermaticapiv1.User{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "bob",
@@ -347,7 +345,6 @@ func TestAddUserToProject(t *testing.T) {
 				Email: testUserEmail,
 			},
 			ExpectedResponse: `{"error":{"code":403,"message":"only the owner of the project can invite the other users"}}`,
-			ExpectedActions:  9,
 		},
 
 		{
@@ -404,7 +401,6 @@ func TestAddUserToProject(t *testing.T) {
 				Email: testUserEmail,
 			},
 			ExpectedResponse: `{"error":{"code":403,"message":"you can only assign the user to plan9 project"}}`,
-			ExpectedActions:  8,
 		},
 
 		{
@@ -461,7 +457,6 @@ func TestAddUserToProject(t *testing.T) {
 				Email: testUserEmail,
 			},
 			ExpectedResponse: `{"error":{"code":403,"message":"you cannot assign yourself to a different group"}}`,
-			ExpectedActions:  8,
 		},
 
 		{
@@ -518,7 +513,6 @@ func TestAddUserToProject(t *testing.T) {
 				Email: testUserEmail,
 			},
 			ExpectedResponse: `{"error":{"code":403,"message":"the given user cannot be assigned to owners group"}}`,
-			ExpectedActions:  8,
 		},
 
 		{
@@ -579,7 +573,6 @@ func TestAddUserToProject(t *testing.T) {
 				Email: testUserEmail,
 			},
 			ExpectedResponse: `{"error":{"code":400,"message":"cannot add the user = bob@acme.com to the project plan9 because user is already in the project"}}`,
-			ExpectedActions:  9,
 		},
 	}
 
@@ -609,19 +602,24 @@ func TestAddUserToProject(t *testing.T) {
 
 			kubermaticFakeClient := clients.fakeKubermaticClient
 			{
-				actions := kubermaticFakeClient.Actions()
-				if len(actions) != tc.ExpectedActions {
-					t.Fatalf("expected to get %d actions but got %d from fake kubermatic client, actions = %v", tc.ExpectedActions, len(actions), actions)
-				}
-
 				if tc.ExpectedUserAfterInvitation != nil {
-					updateAction, ok := actions[len(actions)-1].(clienttesting.CreateAction)
-					if !ok {
-
+					actionWasValidated := false
+					for _, action := range kubermaticFakeClient.Actions() {
+						if action.Matches("update", "users") {
+							updateAction, ok := action.(clienttesting.CreateAction)
+							if !ok {
+								t.Fatalf("unexpected action %#v", action)
+							}
+							updatedUser := updateAction.GetObject().(*kubermaticapiv1.User)
+							if !equality.Semantic.DeepEqual(updatedUser, tc.ExpectedUserAfterInvitation) {
+								t.Fatalf("%v", diff.ObjectDiff(updatedUser, tc.ExpectedUserAfterInvitation))
+							}
+							actionWasValidated = true
+							break
+						}
 					}
-					updatedUser := updateAction.GetObject().(*kubermaticapiv1.User)
-					if !equality.Semantic.DeepEqual(updatedUser, tc.ExpectedUserAfterInvitation) {
-						t.Fatalf("%v", diff.ObjectDiff(updatedUser, tc.ExpectedUserAfterInvitation))
+					if !actionWasValidated {
+						t.Fatal("update action was not validated, user resource was not updated ?")
 					}
 				}
 			}
@@ -774,11 +772,11 @@ func TestNewUser(t *testing.T) {
 	compareWithResult(t, res, expectedResponse)
 
 	actions := clientSet.fakeKubermaticClient.Actions()
-	if len(actions) != 10 {
+	if len(actions) != 12 {
 		t.Fatalf("expected to get exactly 10 action but got %d, actions = %v", len(actions), actions)
 	}
 
-	action := actions[9]
+	action := actions[11]
 	if !action.Matches("create", "users") {
 		t.Fatalf("unexpected action %#v", action)
 	}
