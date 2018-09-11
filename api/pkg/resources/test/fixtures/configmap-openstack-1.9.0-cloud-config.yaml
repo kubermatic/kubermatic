@@ -4,7 +4,7 @@ data:
     [Global]
     auth-url = "https://example.com:8000/v3"
     username = "openstack-username"
-    password = "openstack-password"
+    password = "openstack-\"password"
     domain-name= "openstack-domain"
     tenant-name = "openstack-tenant"
     region = "cbk"
