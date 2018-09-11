@@ -80,7 +80,7 @@ func (ucc *Controller) userClusterEnsureClusterRoles() error {
 			if _, err = ucc.client.RbacV1().ClusterRoles().Create(cRole); err != nil {
 				return fmt.Errorf("failed to create ClusterRole %s: %v", cRole.Name, err)
 			}
-			glog.V(4).Infof("Created ClusterRole %s inside user-cluster %s", cRole.Name, data.ClusterNameOrEmpty())
+			glog.V(4).Infof("Created ClusterRole %s", cRole.Name)
 			continue
 		}
 
@@ -96,7 +96,7 @@ func (ucc *Controller) userClusterEnsureClusterRoles() error {
 		if _, err = ucc.client.RbacV1().ClusterRoles().Update(cRole); err != nil {
 			return fmt.Errorf("failed to update ClusterRole %s: %v", cRole.Name, err)
 		}
-		glog.V(4).Infof("Updated ClusterRole %s inside user-cluster %s", cRole.Name, data.ClusterNameOrEmpty())
+		glog.V(4).Infof("Updated ClusterRole %s", cRole.Name)
 	}
 
 	return nil
@@ -127,7 +127,7 @@ func (ucc *Controller) userClusterEnsureConfigMaps() error {
 			if _, err = ucc.client.CoreV1().ConfigMaps(cm.Namespace).Create(cm); err != nil {
 				return fmt.Errorf("failed to create ConfigMap %s: %v", cm.Name, err)
 			}
-			glog.V(4).Infof("Created ConfigMap %s inside user-cluster %s", cm.Name, data.ClusterNameOrEmpty())
+			glog.V(4).Infof("Created ConfigMap %s in namespace %s", cm.Name, cm.Namespace)
 			continue
 		}
 
@@ -143,7 +143,7 @@ func (ucc *Controller) userClusterEnsureConfigMaps() error {
 		if _, err = ucc.client.CoreV1().ConfigMaps(cm.Namespace).Update(cm); err != nil {
 			return fmt.Errorf("failed to update ConfigMap %s: %v", cm.Name, err)
 		}
-		glog.V(4).Infof("Updated ConfigMap %s inside user-cluster %s", cm.Name, data.ClusterNameOrEmpty())
+		glog.V(4).Infof("Updated ConfigMap %s in namespace %s", cm.Name, cm.Namespace)
 	}
 
 	return nil

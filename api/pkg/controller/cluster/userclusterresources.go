@@ -52,7 +52,7 @@ func (cc *Controller) userClusterEnsureInitializerConfiguration(c *kubermaticv1.
 			if _, err = client.AdmissionregistrationV1alpha1().InitializerConfigurations().Create(initializerConfiguration); err != nil {
 				return fmt.Errorf("failed to create InitializerConfiguration %s %v", initializerConfiguration.Name, err)
 			}
-			glog.V(4).Infof("Created InitializerConfiguration %s inside user-cluster %s", initializerConfiguration.Name, c.Name)
+			glog.V(4).Infof("Created InitializerConfiguration %s", initializerConfiguration.Name)
 			continue
 		}
 
@@ -68,7 +68,7 @@ func (cc *Controller) userClusterEnsureInitializerConfiguration(c *kubermaticv1.
 		if _, err = client.AdmissionregistrationV1alpha1().InitializerConfigurations().Update(initializerConfiguration); err != nil {
 			return fmt.Errorf("failed to update InitializerConfiguration %s: %v", initializerConfiguration.Name, err)
 		}
-		glog.V(4).Infof("Updated InitializerConfiguration %s inside user-cluster %s", initializerConfiguration.Name, c.Name)
+		glog.V(4).Infof("Updated InitializerConfiguration %s", initializerConfiguration.Name)
 	}
 
 	return nil
@@ -106,7 +106,7 @@ func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster) error {
 			if _, err = client.RbacV1().Roles(role.Namespace).Create(role); err != nil {
 				return fmt.Errorf("failed to create Role %s in namespace %s: %v", role.Name, role.Namespace, err)
 			}
-			glog.V(4).Infof("Created Role %s inside user-cluster %s", role.Name, c.Name)
+			glog.V(4).Infof("Created Role %s in namespace %s", role.Name, role.Namespace)
 			continue
 		}
 
@@ -122,7 +122,7 @@ func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster) error {
 		if _, err = client.RbacV1().Roles(role.Namespace).Update(role); err != nil {
 			return fmt.Errorf("failed to update Role %s in namespace %s: %v", role.Name, role.Namespace, err)
 		}
-		glog.V(4).Infof("Updated Role %s inside user-cluster %s", role.Name, c.Name)
+		glog.V(4).Infof("Updated Role %s in namespace %s", role.Name, role.Namespace)
 	}
 
 	return nil
@@ -157,7 +157,7 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster) err
 			if _, err = client.RbacV1().RoleBindings(rb.Namespace).Create(rb); err != nil {
 				return fmt.Errorf("failed to create RoleBinding %s in namespace %s: %v", rb.Name, rb.Namespace, err)
 			}
-			glog.V(4).Infof("Created RoleBinding %s inside user-cluster %s", rb.Name, c.Name)
+			glog.V(4).Infof("Created RoleBinding %s in namespace %s", rb.Name, rb.Namespace)
 			continue
 		}
 
@@ -173,7 +173,7 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster) err
 		if _, err = client.RbacV1().RoleBindings(rb.Namespace).Update(rb); err != nil {
 			return fmt.Errorf("failed to update RoleBinding %s in namespace %s: %v", rb.Name, rb.Namespace, err)
 		}
-		glog.V(4).Infof("Updated RoleBinding %s inside user-cluster %s", rb.Name, c.Name)
+		glog.V(4).Infof("Updated RoleBinding %s in namespace %s", rb.Name, rb.Namespace)
 	}
 
 	return nil
@@ -226,7 +226,7 @@ func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Clust
 			if _, err = client.RbacV1().ClusterRoleBindings().Create(crb); err != nil {
 				return fmt.Errorf("failed to create ClusterRoleBinding %s: %v", crb.Name, err)
 			}
-			glog.V(4).Infof("Created ClusterRoleBinding %s inside user-cluster %s", crb.Name, c.Name)
+			glog.V(4).Infof("Created ClusterRoleBinding %s", crb.Name)
 			continue
 		}
 
@@ -242,7 +242,7 @@ func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Clust
 		if _, err = client.RbacV1().ClusterRoleBindings().Update(crb); err != nil {
 			return fmt.Errorf("failed to update ClusterRoleBinding %s: %v", crb.Name, err)
 		}
-		glog.V(4).Infof("Updated ClusterRoleBinding %s inside user-cluster %s", crb.Name, c.Name)
+		glog.V(4).Infof("Updated ClusterRoleBinding %s", crb.Name)
 	}
 
 	return nil
