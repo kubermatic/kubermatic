@@ -22,6 +22,7 @@ const (
 	rawToken                     ContextKey = "raw-auth-token"
 	apiUserContextKey            ContextKey = "api-user"
 	userCRContextKey             ContextKey = "user-cr"
+	userInfoContextKey           ContextKey = "user-info"
 	datacenterContextKey         ContextKey = "datacenter"
 	clusterProviderContextKey    ContextKey = "cluster-provider"
 	newClusterProviderContextKey ContextKey = "new-cluster-provider"
@@ -51,6 +52,7 @@ type Routing struct {
 	updateManager         UpdateManager
 	prometheusClient      prometheusapi.Client
 	projectMemberProvider provider.ProjectMemberProvider
+	userProjectMapper     provider.UserProjectMapper
 }
 
 // NewRouting creates a new Routing.
@@ -67,6 +69,7 @@ func NewRouting(
 	updateManager UpdateManager,
 	prometheusClient prometheusapi.Client,
 	projectMemberProvider provider.ProjectMemberProvider,
+	userProjectMapper provider.UserProjectMapper,
 ) Routing {
 	return Routing{
 		datacenters:           datacenters,
@@ -82,6 +85,7 @@ func NewRouting(
 		updateManager:         updateManager,
 		prometheusClient:      prometheusClient,
 		projectMemberProvider: projectMemberProvider,
+		userProjectMapper:     userProjectMapper,
 	}
 }
 
