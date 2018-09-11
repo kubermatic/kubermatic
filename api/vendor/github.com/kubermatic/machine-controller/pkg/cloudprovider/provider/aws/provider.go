@@ -715,6 +715,20 @@ func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, nam
 	return "", "aws", nil
 }
 
+func (p *provider) MachineMetricsLabels(machine *v1alpha1.Machine) (map[string]string, error) {
+	labels := make(map[string]string)
+
+	c, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	if err == nil {
+		labels["size"] = c.InstanceType
+		labels["region"] = c.Region
+		labels["az"] = c.AvailabilityZone
+		labels["ami"] = c.AMI
+	}
+
+	return labels, err
+}
+
 type awsInstance struct {
 	instance *ec2.Instance
 }
