@@ -207,15 +207,16 @@ func TestGetUsersForProject(t *testing.T) {
 func TestAddUserToProject(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
-		Name                        string
-		Body                        string
-		ExpectedResponse            string
-		ExpectedUserAfterInvitation *kubermaticapiv1.User
-		ProjectToSync               string
-		HTTPStatus                  int
-		ExistingProjects            []*kubermaticapiv1.Project
-		ExistingKubermaticUsers     []*kubermaticapiv1.User
-		ExistingAPIUser             apiv1.User
+		Name                           string
+		Body                           string
+		ExpectedResponse               string
+		ExpectedBindingAfterInvitation *kubermaticapiv1.UserProjectBinding
+		ProjectToSync                  string
+		HTTPStatus                     int
+		ExistingProjects               []*kubermaticapiv1.Project
+		ExistingKubermaticUsers        []*kubermaticapiv1.User
+		ExistingAPIUser                apiv1.User
+		ExistingMembers                []*kubermaticapiv1.UserProjectBinding
 	}{
 		{
 			Name:          "scenario 1: john the owner of the plan9 project invites bob to the project as an editor",
@@ -271,85 +272,26 @@ func TestAddUserToProject(t *testing.T) {
 				Email: testUserEmail,
 			},
 			ExpectedResponse: `{"id":"bob","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"placeX","group":"editors-placeX"},{"id":"plan9","group":"editors-plan9"}]}`,
-			ExpectedUserAfterInvitation: &kubermaticapiv1.User{
+			ExpectedBindingAfterInvitation: &kubermaticapiv1.UserProjectBinding{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "bob",
-				},
-				Spec: kubermaticapiv1.UserSpec{
-					Name:  "Bob",
-					Email: "bob@acme.com",
-					Projects: []kubermaticapiv1.ProjectGroup{
+					OwnerReferences: []metav1.OwnerReference{
 						{
-							Group: "editors-placeX",
-							Name:  "placeX",
-						},
-						{
-							Group: "editors-plan9",
-							Name:  "plan9",
+							APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+							Kind:       kubermaticapiv1.ProjectKindName,
+							Name:       "plan9",
 						},
 					},
+				},
+				Spec: kubermaticapiv1.UserProjectBindingSpec{
+					UserEmail: "bob@acme.com",
+					Group:     "editors-plan9",
+					ProjectID: "plan9",
 				},
 			},
 		},
 
 		{
-			Name:          "scenario 2: john the editor of the plan9 project tries to invite bob to the project",
-			Body:          `{"email":"bob@acme.com", "projects":[{"id":"plan9", "group":"editors"}]}`,
-			HTTPStatus:    http.StatusForbidden,
-			ProjectToSync: "plan9",
-			ExistingProjects: []*kubermaticapiv1.Project{
-				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
-				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
-				plan9,
-			},
-			ExistingKubermaticUsers: []*kubermaticapiv1.User{
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "john",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUserName,
-						ID:    testUserID,
-						Email: testUserEmail,
-						Projects: []kubermaticapiv1.ProjectGroup{
-							{
-								Group: "editors-plan9",
-								Name:  "plan9",
-							},
-							{
-								Group: "editors-my-third-projectInternalName",
-								Name:  "my-third-projectInternalName",
-							},
-						},
-					},
-				},
-
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bob",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  "Bob",
-						Email: "bob@acme.com",
-						Projects: []kubermaticapiv1.ProjectGroup{
-							{
-								Group: "editors-placeX",
-								Name:  "placeX",
-							},
-						},
-					},
-				},
-			},
-			ExistingAPIUser: apiv1.User{
-				Name:  testUserName,
-				ID:    testUserID,
-				Email: testUserEmail,
-			},
-			ExpectedResponse: `{"error":{"code":403,"message":"only the owner of the project can invite the other users"}}`,
-		},
-
-		{
-			Name:          "scenario 3: john the owner of the plan9 project tries to invite bob to another project",
+			Name:          "scenario 2: john the owner of the plan9 project tries to invite bob to another project",
 			Body:          `{"email":"bob@acme.com", "projects":[{"id":"moby", "group":"editors"}]}`,
 			HTTPStatus:    http.StatusForbidden,
 			ProjectToSync: "plan9",
@@ -405,7 +347,7 @@ func TestAddUserToProject(t *testing.T) {
 		},
 
 		{
-			Name:          "scenario 4: john the owner of the plan9 project tries to invite  himself to another group",
+			Name:          "scenario 3: john the owner of the plan9 project tries to invite  himself to another group",
 			Body:          fmt.Sprintf(`{"email":"%s", "projects":[{"id":"plan9", "group":"editors"}]}`, testUserEmail),
 			HTTPStatus:    http.StatusForbidden,
 			ProjectToSync: "plan9",
@@ -461,7 +403,7 @@ func TestAddUserToProject(t *testing.T) {
 		},
 
 		{
-			Name:          "scenario 5: john the owner of the plan9 project tries to invite bob to the project as an owner",
+			Name:          "scenario 4: john the owner of the plan9 project tries to invite bob to the project as an owner",
 			Body:          `{"email":"bob@acme.com", "projects":[{"id":"plan9", "group":"owners"}]}`,
 			HTTPStatus:    http.StatusForbidden,
 			ProjectToSync: "plan9",
@@ -517,7 +459,7 @@ func TestAddUserToProject(t *testing.T) {
 		},
 
 		{
-			Name:          "scenario 6: john the owner of the plan9 project invites bob to the project second time",
+			Name:          "scenario 5: john the owner of the plan9 project invites bob to the project second time",
 			Body:          `{"email":"bob@acme.com", "projects":[{"id":"plan9", "group":"editors"}]}`,
 			HTTPStatus:    http.StatusBadRequest,
 			ProjectToSync: "plan9",
@@ -557,10 +499,6 @@ func TestAddUserToProject(t *testing.T) {
 						Email: "bob@acme.com",
 						Projects: []kubermaticapiv1.ProjectGroup{
 							{
-								Group: "readers-plan9",
-								Name:  "plan9",
-							},
-							{
 								Group: "editors-placeX",
 								Name:  "placeX",
 							},
@@ -572,6 +510,24 @@ func TestAddUserToProject(t *testing.T) {
 				ID:    testUserID,
 				Name:  testUserName,
 				Email: testUserEmail,
+			},
+			ExistingMembers: []*kubermaticapiv1.UserProjectBinding{
+				&kubermaticapiv1.UserProjectBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticapiv1.ProjectKindName,
+								Name:       "plan9",
+							},
+						},
+					},
+					Spec: kubermaticapiv1.UserProjectBindingSpec{
+						UserEmail: "bob@acme.com",
+						ProjectID: "plan9",
+						Group:     "editors-plan9",
+					},
+				},
 			},
 			ExpectedResponse: `{"error":{"code":400,"message":"cannot add the user = bob@acme.com to the project plan9 because user is already in the project"}}`,
 		},
@@ -588,6 +544,9 @@ func TestAddUserToProject(t *testing.T) {
 			for _, existingUser := range tc.ExistingKubermaticUsers {
 				kubermaticObj = append(kubermaticObj, runtime.Object(existingUser))
 			}
+			for _, existingMember := range tc.ExistingMembers {
+				kubermaticObj = append(kubermaticObj, existingMember)
+			}
 
 			ep, clients, err := createTestEndpointAndGetClients(tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil)
 			if err != nil {
@@ -603,24 +562,26 @@ func TestAddUserToProject(t *testing.T) {
 
 			kubermaticFakeClient := clients.fakeKubermaticClient
 			{
-				if tc.ExpectedUserAfterInvitation != nil {
+				if tc.ExpectedBindingAfterInvitation != nil {
 					actionWasValidated := false
 					for _, action := range kubermaticFakeClient.Actions() {
-						if action.Matches("update", "users") {
+						if action.Matches("create", "userprojectbindings") {
 							updateAction, ok := action.(clienttesting.CreateAction)
 							if !ok {
 								t.Fatalf("unexpected action %#v", action)
 							}
-							updatedUser := updateAction.GetObject().(*kubermaticapiv1.User)
-							if !equality.Semantic.DeepEqual(updatedUser, tc.ExpectedUserAfterInvitation) {
-								t.Fatalf("%v", diff.ObjectDiff(updatedUser, tc.ExpectedUserAfterInvitation))
+							createdBinding := updateAction.GetObject().(*kubermaticapiv1.UserProjectBinding)
+							// Name was generated by the test framework, just rewrite it
+							tc.ExpectedBindingAfterInvitation.Name = createdBinding.Name
+							if !equality.Semantic.DeepEqual(createdBinding, tc.ExpectedBindingAfterInvitation) {
+								t.Fatalf("%v", diff.ObjectDiff(createdBinding, tc.ExpectedBindingAfterInvitation))
 							}
 							actionWasValidated = true
 							break
 						}
 					}
 					if !actionWasValidated {
-						t.Fatal("update action was not validated, user resource was not updated ?")
+						t.Fatal("create action was not validated, a binding for a user was not created ?")
 					}
 				}
 			}

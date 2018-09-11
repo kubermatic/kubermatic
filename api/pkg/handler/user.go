@@ -15,23 +15,65 @@ import (
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func listUsersFromProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider) endpoint.Endpoint {
+// TODO: change to listMembers
+func listUsersFromProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		kubermaticProject, err := getKubermaticProject(ctx, projectProvider, request)
+		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		req, ok := request.(GetProjectRq)
+		if !ok {
+			return nil, k8cerrors.NewBadRequest("invalid request")
+		}
+
+		if len(req.ProjectID) == 0 {
+			return nil, k8cerrors.NewBadRequest("the name of the project cannot be empty")
+		}
+
+		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		users, err := userProvider.ListByProject(kubermaticProject.Name)
+		membersOfProject, err := memberProvider.List(userInfo, project, nil)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
 		externalUsers := []*apiv1.NewUser{}
+		for _, memberOfProject := range membersOfProject {
+			user, err := userProvider.UserByEmail(memberOfProject.Spec.UserEmail)
+			if err != nil {
+				return nil, kubernetesErrorToHTTPError(err)
+			}
+			userMappings, err := memberMapper.MappingsFor(user.Spec.Email)
+			if err != nil {
+
+				return nil, kubernetesErrorToHTTPError(err)
+			}
+			externalUser := convertInternalUserToExternal(user, userMappings)
+			externalUsers = append(externalUsers, externalUser)
+		}
+
+		// old approach, read project member from user resources
+		users, err := userProvider.ListByProject(project.Name)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		isAlreadyOnTheList := func(apiUser *apiv1.NewUser) bool {
+			for _, existingAPIUser := range externalUsers {
+				if existingAPIUser.ID == apiUser.ID {
+					return true
+				}
+			}
+			return false
+		}
+
 		for _, user := range users {
-			externalUser := convertInternalUserToExternal(user)
+			externalUser := convertInternalUserToExternal(user, nil)
+			if isAlreadyOnTheList(externalUser) {
+				continue
+			}
 			for _, pg := range externalUser.Projects {
-				if pg.ID == kubermaticProject.Name {
+				if pg.ID == project.Name {
 					externalUser.Projects = []apiv1.ProjectGroup{pg}
 					break
 				}
@@ -43,7 +85,8 @@ func listUsersFromProject(projectProvider provider.ProjectProvider, userProvider
 	}
 }
 
-func addUserToProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider) endpoint.Endpoint {
+// TODO: change to addMember
+func addUserToProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AddUserToProjectReq)
 		authenticatedUser := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
@@ -80,20 +123,14 @@ func addUserToProject(projectProvider provider.ProjectProvider, userProvider pro
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		for _, project := range userToInvite.Spec.Projects {
-			if project.Name == req.ProjectID {
-				return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("cannot add the user = %s to the project %s because user is already in the project", req.Body.Email, req.ProjectID))
-			}
+		memberList, err := memberProvider.List(userInfo, project, &provider.ProjectMemberListOptions{userToInvite.Spec.Email})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		if len(memberList) > 0 {
+			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("cannot add the user = %s to the project %s because user is already in the project", req.Body.Email, req.ProjectID))
 		}
 
-		authUserGroupName, err := authenticatedUser.GroupForProject(project.Name)
-		if err != nil {
-			return nil, k8cerrors.New(http.StatusForbidden, err.Error())
-		}
-		authUserGroupPrefix := rbac.ExtractGroupPrefix(authUserGroupName)
-		if authUserGroupPrefix != rbac.OwnerGroupNamePrefix {
-			return nil, k8cerrors.New(http.StatusForbidden, "only the owner of the project can invite the other users")
-		}
 		isRequestedGroupPrefixValid := false
 		for _, existingGroupPrefix := range rbac.AllGroupsPrefixes {
 			if existingGroupPrefix == projectFromRequest.GroupPrefix {
@@ -104,37 +141,36 @@ func addUserToProject(projectProvider provider.ProjectProvider, userProvider pro
 		if !isRequestedGroupPrefixValid {
 			return nil, k8cerrors.NewBadRequest("invalid group name %s", projectFromRequest.GroupPrefix)
 		}
-		updatedProjectGroups := []kubermaticapiv1.ProjectGroup{}
-		for _, existingProjectGroup := range userToInvite.Spec.Projects {
-			if existingProjectGroup.Name != projectFromRequest.ID {
-				updatedProjectGroups = append(updatedProjectGroups, existingProjectGroup)
-			}
-		}
-		generatedGroupName := rbac.GenerateActualGroupNameFor(project.Name, projectFromRequest.GroupPrefix)
 
-		// Note:
-		// since the users are not resources that belong to the project,
-		// we use a privileged account to update the user.
-		// Even if they were part of the project, that might be not practical
-		// since a user might want to invite any user to the project.
-		// Thus we would have to generate and maintain roles for N project and N users.
-		userToInvite.Spec.Projects = append(updatedProjectGroups, kubermaticapiv1.ProjectGroup{Name: project.Name, Group: generatedGroupName})
-		if _, err = userProvider.Update(userToInvite); err != nil {
+		generatedGroupName := rbac.GenerateActualGroupNameFor(project.Name, projectFromRequest.GroupPrefix)
+		invitedUserBindings, err := memberMapper.MappingsFor(userToInvite.Spec.Email)
+		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		return convertInternalUserToExternal(userToInvite), nil
+		generatedBinding, err := memberProvider.Create(userInfo, project, userToInvite.Spec.Email, generatedGroupName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		invitedUserBindings = append(invitedUserBindings, generatedBinding)
+
+		return convertInternalUserToExternal(userToInvite, invitedUserBindings), nil
 	}
 }
 
-func getCurrentUserEndpoint(users provider.UserProvider) endpoint.Endpoint {
+func getCurrentUserEndpoint(users provider.UserProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		authenticatedUser := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 
-		return convertInternalUserToExternal(authenticatedUser), nil
+		bindings, err := memberMapper.MappingsFor(authenticatedUser.Spec.Email)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalUserToExternal(authenticatedUser, bindings), nil
 	}
 }
 
-func convertInternalUserToExternal(internalUser *kubermaticapiv1.User) *apiv1.NewUser {
+func convertInternalUserToExternal(internalUser *kubermaticapiv1.User, bindings []*kubermaticapiv1.UserProjectBinding) *apiv1.NewUser {
 	apiUser := &apiv1.NewUser{
 		NewObjectMeta: apiv1.NewObjectMeta{
 			ID:                internalUser.Name,
@@ -145,6 +181,19 @@ func convertInternalUserToExternal(internalUser *kubermaticapiv1.User) *apiv1.Ne
 	}
 	for _, pg := range internalUser.Spec.Projects {
 		apiUser.Projects = append(apiUser.Projects, apiv1.ProjectGroup{ID: pg.Name, GroupPrefix: pg.Group})
+	}
+
+	for _, binding := range bindings {
+		bindingAlreadyExists := false
+		for _, pg := range apiUser.Projects {
+			if pg.ID == binding.Spec.ProjectID && pg.GroupPrefix == binding.Spec.Group {
+				bindingAlreadyExists = true
+				break
+			}
+		}
+		if !bindingAlreadyExists {
+			apiUser.Projects = append(apiUser.Projects, apiv1.ProjectGroup{ID: binding.Spec.ProjectID, GroupPrefix: binding.Spec.Group})
+		}
 	}
 	return apiUser
 }
