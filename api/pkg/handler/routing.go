@@ -38,18 +38,19 @@ type UpdateManager interface {
 
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {
-	datacenters         map[string]provider.DatacenterMeta
-	cloudProviders      provider.CloudRegistry
-	sshKeyProvider      provider.SSHKeyProvider
-	newSSHKeyProvider   provider.NewSSHKeyProvider
-	userProvider        provider.UserProvider
-	projectProvider     provider.ProjectProvider
-	logger              log.Logger
-	authenticator       Authenticator
-	clusterProviders    map[string]provider.ClusterProvider
-	newClusterProviders map[string]provider.NewClusterProvider
-	updateManager       UpdateManager
-	prometheusClient    prometheusapi.Client
+	datacenters           map[string]provider.DatacenterMeta
+	cloudProviders        provider.CloudRegistry
+	sshKeyProvider        provider.SSHKeyProvider
+	newSSHKeyProvider     provider.NewSSHKeyProvider
+	userProvider          provider.UserProvider
+	projectProvider       provider.ProjectProvider
+	logger                log.Logger
+	authenticator         Authenticator
+	clusterProviders      map[string]provider.ClusterProvider
+	newClusterProviders   map[string]provider.NewClusterProvider
+	updateManager         UpdateManager
+	prometheusClient      prometheusapi.Client
+	projectMemberProvider provider.ProjectMemberProvider
 }
 
 // NewRouting creates a new Routing.
@@ -65,20 +66,22 @@ func NewRouting(
 	authenticator Authenticator,
 	updateManager UpdateManager,
 	prometheusClient prometheusapi.Client,
+	projectMemberProvider provider.ProjectMemberProvider,
 ) Routing {
 	return Routing{
-		datacenters:         datacenters,
-		clusterProviders:    clusterProviders,
-		newClusterProviders: newClusterProviders,
-		sshKeyProvider:      sshKeyProvider,
-		newSSHKeyProvider:   newSSHKeyProvider,
-		userProvider:        userProvider,
-		projectProvider:     projectProvider,
-		cloudProviders:      cloudProviders,
-		logger:              log.NewLogfmtLogger(os.Stderr),
-		authenticator:       authenticator,
-		updateManager:       updateManager,
-		prometheusClient:    prometheusClient,
+		datacenters:           datacenters,
+		clusterProviders:      clusterProviders,
+		newClusterProviders:   newClusterProviders,
+		sshKeyProvider:        sshKeyProvider,
+		newSSHKeyProvider:     newSSHKeyProvider,
+		userProvider:          userProvider,
+		projectProvider:       projectProvider,
+		cloudProviders:        cloudProviders,
+		logger:                log.NewLogfmtLogger(os.Stderr),
+		authenticator:         authenticator,
+		updateManager:         updateManager,
+		prometheusClient:      prometheusClient,
+		projectMemberProvider: projectMemberProvider,
 	}
 }
 
