@@ -1,7 +1,6 @@
 package usercluster
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/golang/glog"
@@ -11,7 +10,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	k8sinformersV1 "k8s.io/client-go/informers/core/v1"
@@ -106,16 +104,6 @@ func (ucc *Controller) processNextItem() bool {
 // syncUserCluster will reconcile the user-cluster
 func (ucc *Controller) syncUserCluster() error {
 	glog.V(6).Infof("Syncing user-cluster")
-
-	// Get confimaps from lister, make a copy.
-	cachedConfigMaps, err := ucc.configMapLister.List(labels.Everything())
-	if err != nil {
-		return fmt.Errorf("failed to receive configMaps from lister: %v", err)
-	}
-	configMaps := make([]*corev1.ConfigMap, len(cachedConfigMaps))
-	for i := range cachedConfigMaps {
-		configMaps[i] = cachedConfigMaps[i].DeepCopy()
-	}
 
 	if err := ucc.userClusterEnsureClusterData(); err != nil {
 		return err
