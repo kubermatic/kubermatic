@@ -85,9 +85,6 @@ func listProjectsEndpoint(projectProvider provider.ProjectProvider, memberMapper
 			projects = append(projects, convertInternalProjectToExternal(projectInternal))
 		}
 
-		// TODO: implement new approach
-		// TODO: remove old apprach when we migrate to the new one
-
 		return projects, nil
 	}
 }
