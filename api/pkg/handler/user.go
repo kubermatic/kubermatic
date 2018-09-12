@@ -123,7 +123,7 @@ func addUserToProject(projectProvider provider.ProjectProvider, userProvider pro
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		memberList, err := memberProvider.List(userInfo, project, &provider.ProjectMemberListOptions{userToInvite.Spec.Email})
+		memberList, err := memberProvider.List(userInfo, project, &provider.ProjectMemberListOptions{MemberEmail: userToInvite.Spec.Email})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
