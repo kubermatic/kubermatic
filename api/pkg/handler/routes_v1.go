@@ -228,6 +228,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}/users").
 		Handler(r.getUsersForProject())
 
+	mux.Methods(http.MethodPut).
+		Path("/projects/{project_id}/users/{user_id}").
+		Handler(r.editUserInProject())
+
 	//
 	// Defines an endpoint to retrieve information about the current token owner
 	mux.Methods(http.MethodGet).
@@ -1266,7 +1270,7 @@ func (r Routing) addUserToProject() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.userInfoMiddleware(),
-		)(addUserToProject(r.projectProvider, r.userProvider, r.projectMemberProvider, r.userProjectMapper)),
+		)(addUserToProject(r.projectProvider, r.userProvider, r.projectMemberProvider)),
 		decodeAddUserToProject,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
@@ -1294,8 +1298,36 @@ func (r Routing) getUsersForProject() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.userInfoMiddleware(),
-		)(listUsersFromProject(r.projectProvider, r.userProvider, r.projectMemberProvider, r.userProjectMapper)),
+		)(listUsersFromProject(r.projectProvider, r.userProvider, r.projectMemberProvider)),
 		decodeGetProject,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/v1/projects/{project_id}/users/{user_id} users editUserInProject
+//
+//     Changes membership of the given user for the given project
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: User
+//       401: empty
+//       403: empty
+func (r Routing) editUserInProject() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.userInfoMiddleware(),
+		)(editMemberOfProject(r.projectProvider, r.userProvider, r.projectMemberProvider)),
+		decodeEditUserToProject,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
