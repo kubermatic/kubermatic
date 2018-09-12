@@ -477,7 +477,13 @@ func (d *UserClusterData) ClusterNameOrEmpty() string {
 }
 
 // IpamEnabled returns true iff ipam shall happen
-func (d *UserClusterData) IpamEnabled() bool {
-	// this should be evaluated by checking for len(Spec.MachineNetworks)>0
-	return false
+func (d *UserClusterData) IpamEnabled() (bool, error) {
+	cm, err := d.ConfigMapLister().ConfigMaps(metav1.NamespacePublic).Get(ClusterSeedConfigMapName)
+	if err != nil {
+		return false, fmt.Errorf("could not get configmap %s: %v", ClusterSeedConfigMapName, err)
+	}
+	if enabled, exists := cm.Data["ipamEnabled"]; exists {
+		return enabled == "true", nil
+	}
+	return false, nil
 }

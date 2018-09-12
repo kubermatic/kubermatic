@@ -3,6 +3,7 @@ package cluster
 import (
 	"crypto/x509"
 	"fmt"
+	"strconv"
 
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -48,6 +49,7 @@ func (cc *Controller) launchingCreateClusterSeedConfigMap(c *kubermaticv1.Cluste
 			cm.Name = name
 			cm.Data = map[string]string{
 				"clusterName": c.Name,
+				"ipamEnabled": strconv.FormatBool(len(c.Spec.MachineNetworks) > 0),
 			}
 			var (
 				vpnAddress string

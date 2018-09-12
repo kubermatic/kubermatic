@@ -42,18 +42,20 @@ func (ucc *Controller) userClusterEnsureClusterData() error {
 }
 
 // GetUserClusterRoleCreators returns a list of GetUserClusterRoleCreators
-func GetUserClusterRoleCreators(data *resources.UserClusterData) []resources.ClusterRoleCreator {
+func GetUserClusterRoleCreators(data *resources.UserClusterData) ([]resources.ClusterRoleCreator, error) {
 	creators := []resources.ClusterRoleCreator{
 		machinecontroller.ClusterRole,
 		kubestatemetrics.ClusterRole,
 		vpnsidecar.DnatControllerClusterRole,
 	}
 
-	if data.IpamEnabled() {
+	if enabled, err := data.IpamEnabled(); err != nil {
+		return nil, err
+	} else if enabled {
 		creators = append(creators, ipamcontroller.ClusterRole)
 	}
 
-	return creators
+	return creators, nil
 }
 
 func (ucc *Controller) userClusterEnsureClusterRoles() error {
@@ -63,7 +65,10 @@ func (ucc *Controller) userClusterEnsureClusterRoles() error {
 		return err
 	}
 
-	creators := GetUserClusterRoleCreators(data)
+	creators, err := GetUserClusterRoleCreators(data)
+	if err != nil {
+		return err
+	}
 
 	for _, create := range creators {
 		var existing *rbacv1.ClusterRole
