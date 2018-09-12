@@ -109,6 +109,7 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		updateManager,
 		prometheusClient,
 		projectMemberProvider,
+		projectMemberProvider, /*satisfies also a different interface*/
 	)
 	mainRouter := mux.NewRouter()
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()

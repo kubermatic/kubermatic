@@ -172,7 +172,7 @@ func TestGetUsersForProject(t *testing.T) {
 				Name:  "alice2",
 				Email: "alice2@acme.com",
 			},
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: The user \"Alice2\" doesn't belong to the given project = foo2InternalName"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: The user \"alice2@acme.com\" doesn't belong to the given project = foo2InternalName"}}`,
 		},
 	}
 

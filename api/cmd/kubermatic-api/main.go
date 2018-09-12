@@ -204,6 +204,7 @@ func main() {
 		updateManager,
 		prometheusClient,
 		projectMemberProvider,
+		projectMemberProvider, /*satisfies also a different interface*/
 	)
 
 	mainRouter := mux.NewRouter()
