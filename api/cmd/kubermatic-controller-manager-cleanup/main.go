@@ -1,12 +1,10 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"strings"
 	"sync"
-	"sync/atomic"
 
 	"github.com/golang/glog"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
@@ -102,23 +100,10 @@ func purgeEmptyWorkerLabels(kubermaticClient kubermaticclientset.Interface) erro
 		return err
 	}
 
-	var failed uint32
-	wg := sync.WaitGroup{}
-	wg.Add(len(clusters.Items))
-
-	for i := range clusters.Items {
-		go func(c *kubermaticv1.Cluster) {
-			defer wg.Done()
-			if err := removeWorkerLabelFromCluster(c, kubermaticClient); err != nil {
-				atomic.StoreUint32(&failed, 1)
-				glog.Error(err)
-			}
-		}(&clusters.Items[i])
-	}
-	wg.Wait()
-
-	if failed == 1 {
-		return errors.New("some updates failed")
+	for _, c := range clusters.Items {
+		if err = removeWorkerLabelFromCluster(&c, kubermaticClient); err != nil {
+			return fmt.Errorf("failed to remove empty worker label from cluster %s: %v", c.Name, err)
+		}
 	}
 
 	return nil
