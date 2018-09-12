@@ -30,7 +30,7 @@ type UserProvider struct {
 	userLister kubermaticv1lister.UserLister
 }
 
-// UserByEmail returns a user by the given email
+// UserByID returns a user by the given ID
 func (p *UserProvider) UserByID(id string) (*kubermaticv1.User, error) {
 	return p.client.KubermaticV1().Users().Get(id, v1.GetOptions{})
 }
