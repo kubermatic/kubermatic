@@ -228,6 +228,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}/users").
 		Handler(r.getUsersForProject())
 
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/users/{user_id}").
+		Handler(r.deleteUserFromProject())
+
 	//
 	// Defines an endpoint to retrieve information about the current token owner
 	mux.Methods(http.MethodGet).
@@ -1296,6 +1300,33 @@ func (r Routing) getUsersForProject() http.Handler {
 			r.userInfoMiddleware(),
 		)(listUsersFromProject(r.projectProvider, r.userProvider)),
 		decodeGetProject,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/projects/{project_id}/users/{user_id} users deleteUserFromProject
+//
+//     Delete user from a given project
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteUserFromProject() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+		)(deleteUserFromProject(r.projectProvider, r.userProvider)),
+		decodeDelUserFromProjectRq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

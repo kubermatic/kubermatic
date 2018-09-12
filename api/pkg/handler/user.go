@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -14,6 +15,58 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
+
+func deleteUserFromProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(DelUserFromProjectRq)
+		if !ok {
+			return nil, k8cerrors.NewBadRequest("invalid request")
+		}
+		if len(req.ProjectID) == 0 {
+			return nil, k8cerrors.NewBadRequest("the name of the project cannot be empty")
+		}
+		if len(req.UserID) == 0 {
+			return nil, k8cerrors.NewBadRequest("the name of the user cannot be empty")
+		}
+
+		apiUser := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		kubermaticProject, err := projectProvider.Get(apiUser, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		apiUserGroupName, err := apiUser.GroupForProject(kubermaticProject.Name)
+		if err != nil {
+			return nil, k8cerrors.New(http.StatusForbidden, err.Error())
+		}
+		apiUserGroupPrefix := rbac.ExtractGroupPrefix(apiUserGroupName)
+		if apiUserGroupPrefix != rbac.OwnerGroupNamePrefix {
+			return nil, k8cerrors.New(http.StatusForbidden, "only the owner of the project can remove the other users")
+		}
+
+		userToDelete, err := userProvider.UserByID(req.UserID)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		newProjects := []kubermaticapiv1.ProjectGroup{}
+		for _, pg := range userToDelete.Spec.Projects {
+			log.Printf(">>> name=%s == internalName=%s\n", pg.Name, kubermaticProject.ObjectMeta.Name)
+			if pg.Name != kubermaticProject.ObjectMeta.Name {
+				newProjects = append(newProjects, pg)
+			}
+		}
+		if len(newProjects) == len(userToDelete.Spec.Projects) {
+			return nil, k8cerrors.NewNotFound("user", userToDelete.Name)
+		}
+
+		userToDelete.Spec.Projects = newProjects
+		if _, err = userProvider.Update(userToDelete); err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		return nil, nil
+	}
+}
 
 func listUsersFromProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -254,5 +307,29 @@ func decodeAddUserToProject(c context.Context, r *http.Request) (interface{}, er
 		return nil, err
 	}
 
+	return req, nil
+}
+
+// DelUserFromProjectRq defines HTTP request for deleteUserFromProject endpoint
+// swagger:parameters deleteUserFromProject
+type DelUserFromProjectRq struct {
+	// in: path
+	ProjectID string `json:"project_id"`
+	// in: path
+	UserID string `json:"user_id"`
+}
+
+func decodeDelUserFromProjectRq(c context.Context, r *http.Request) (interface{}, error) {
+	var req DelUserFromProjectRq
+	projectID, ok := mux.Vars(r)["project_id"]
+	if !ok {
+		return nil, fmt.Errorf("'project_id' parameter is required but was not provided")
+	}
+	userID, ok := mux.Vars(r)["user_id"]
+	if !ok {
+		return nil, fmt.Errorf("'user_id' parameter is required but was not provided")
+	}
+	req.ProjectID = projectID
+	req.UserID = userID
 	return req, nil
 }
