@@ -1,4 +1,24 @@
 
+### [v2.7.1]()
+
+
+**Bugfix:**
+
+- fixed DNS/scheduler/controller-manager alerts in Prometheus [#1908](https://github.com/kubermatic/kubermatic/issues/1908) ([xrstf](https://github.com/xrstf))
+- fix bad rules.yaml format for Prometheus [#1924](https://github.com/kubermatic/kubermatic/issues/1924) ([xrstf](https://github.com/xrstf))
+- Add missing RoleBinding for bootstrap tokens created with `kubeadm token create` [#1943](https://github.com/kubermatic/kubermatic/issues/1943) ([mrIncompetent](https://github.com/mrIncompetent))
+- Fix bug with endless resource updates being triggered due to a wrong comparison [#1964](https://github.com/kubermatic/kubermatic/issues/1964) ([mrIncompetent](https://github.com/mrIncompetent))
+- Fix escaping of special characters in the cloud-config [#1976](https://github.com/kubermatic/kubermatic/issues/1976) ([mrIncompetent](https://github.com/mrIncompetent))
+
+
+**Misc:**
+
+- Update kubernetes-dashboard addon to `1.10.0` [#1874](https://github.com/kubermatic/kubermatic/issues/1874) ([bashofmann](https://github.com/bashofmann))
+- Update machine-controller to `v0.7.21` [#1975](https://github.com/kubermatic/kubermatic/issues/1975) ([mrIncompetent](https://github.com/mrIncompetent))
+
+
+
+
 ### [v2.7.0]()
 
 
