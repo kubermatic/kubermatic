@@ -20,7 +20,7 @@ const (
 )
 
 // Deployment returns the machine-controller Deployment
-func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
+func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
 	var dep *appsv1.Deployment
 	if existing != nil {
 		dep = existing
@@ -72,7 +72,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
 
-	clusterDNSIP, err := resources.UserClusterDNSResolverIP(data.Cluster)
+	clusterDNSIP, err := resources.UserClusterDNSResolverIP(data.Cluster())
 	if err != nil {
 		return nil, err
 	}
@@ -146,29 +146,29 @@ func getVolumes() []corev1.Volume {
 	}
 }
 
-func getEnvVars(data *resources.TemplateData) []corev1.EnvVar {
+func getEnvVars(data resources.DeploymentDataProvider) []corev1.EnvVar {
 	var vars []corev1.EnvVar
-	if data.Cluster.Spec.Cloud.AWS != nil {
-		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: data.Cluster.Spec.Cloud.AWS.AccessKeyID})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: data.Cluster.Spec.Cloud.AWS.SecretAccessKey})
+	if data.Cluster().Spec.Cloud.AWS != nil {
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: data.Cluster().Spec.Cloud.AWS.AccessKeyID})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: data.Cluster().Spec.Cloud.AWS.SecretAccessKey})
 	}
-	if data.Cluster.Spec.Cloud.Openstack != nil {
-		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: data.DC.Spec.Openstack.AuthURL})
-		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", Value: data.Cluster.Spec.Cloud.Openstack.Username})
-		vars = append(vars, corev1.EnvVar{Name: "OS_PASSWORD", Value: data.Cluster.Spec.Cloud.Openstack.Password})
-		vars = append(vars, corev1.EnvVar{Name: "OS_DOMAIN_NAME", Value: data.Cluster.Spec.Cloud.Openstack.Domain})
-		vars = append(vars, corev1.EnvVar{Name: "OS_TENANT_NAME", Value: data.Cluster.Spec.Cloud.Openstack.Tenant})
+	if data.Cluster().Spec.Cloud.Openstack != nil {
+		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: data.DC().Spec.Openstack.AuthURL})
+		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", Value: data.Cluster().Spec.Cloud.Openstack.Username})
+		vars = append(vars, corev1.EnvVar{Name: "OS_PASSWORD", Value: data.Cluster().Spec.Cloud.Openstack.Password})
+		vars = append(vars, corev1.EnvVar{Name: "OS_DOMAIN_NAME", Value: data.Cluster().Spec.Cloud.Openstack.Domain})
+		vars = append(vars, corev1.EnvVar{Name: "OS_TENANT_NAME", Value: data.Cluster().Spec.Cloud.Openstack.Tenant})
 	}
-	if data.Cluster.Spec.Cloud.Hetzner != nil {
-		vars = append(vars, corev1.EnvVar{Name: "HZ_TOKEN", Value: data.Cluster.Spec.Cloud.Hetzner.Token})
+	if data.Cluster().Spec.Cloud.Hetzner != nil {
+		vars = append(vars, corev1.EnvVar{Name: "HZ_TOKEN", Value: data.Cluster().Spec.Cloud.Hetzner.Token})
 	}
-	if data.Cluster.Spec.Cloud.Digitalocean != nil {
-		vars = append(vars, corev1.EnvVar{Name: "DO_TOKEN", Value: data.Cluster.Spec.Cloud.Digitalocean.Token})
+	if data.Cluster().Spec.Cloud.Digitalocean != nil {
+		vars = append(vars, corev1.EnvVar{Name: "DO_TOKEN", Value: data.Cluster().Spec.Cloud.Digitalocean.Token})
 	}
-	if data.Cluster.Spec.Cloud.VSphere != nil {
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: data.DC.Spec.VSphere.Endpoint})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", Value: data.Cluster.Spec.Cloud.VSphere.InfraManagementUser.Username})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", Value: data.Cluster.Spec.Cloud.VSphere.InfraManagementUser.Password})
+	if data.Cluster().Spec.Cloud.VSphere != nil {
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: data.DC().Spec.VSphere.Endpoint})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", Value: data.Cluster().Spec.Cloud.VSphere.InfraManagementUser.Username})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", Value: data.Cluster().Spec.Cloud.VSphere.InfraManagementUser.Password})
 	}
 	return vars
 }

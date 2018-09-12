@@ -156,6 +156,15 @@ func New(
 			},
 			kind: kubermaticv1.SSHKeyKind,
 		},
+
+		{
+			gvr: schema.GroupVersionResource{
+				Group:    kubermaticv1.GroupName,
+				Version:  kubermaticv1.GroupVersion,
+				Resource: kubermaticv1.UserProjectBindingResourceName,
+			},
+			kind: kubermaticv1.UserProjectBindingKind,
+		},
 	}
 
 	allClusterProviders := seedClusterProviders

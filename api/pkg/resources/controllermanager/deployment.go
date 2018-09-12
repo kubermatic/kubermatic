@@ -5,6 +5,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
@@ -34,7 +35,7 @@ const (
 )
 
 // Deployment returns the kubernetes Controller-Manager Deployment
-func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
+func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
 	var dep *appsv1.Deployment
 	if existing != nil {
 		dep = existing
@@ -47,8 +48,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Labels = resources.BaseAppLabel(name, nil)
 
 	dep.Spec.Replicas = resources.Int32(1)
-	if data.Cluster.Spec.ComponentsOverride.ControllerManager.Replicas != nil {
-		dep.Spec.Replicas = data.Cluster.Spec.ComponentsOverride.ControllerManager.Replicas
+	if data.Cluster().Spec.ComponentsOverride.ControllerManager.Replicas != nil {
+		dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.ControllerManager.Replicas
 	}
 
 	dep.Spec.Selector = &metav1.LabelSelector{
@@ -122,7 +123,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			ReadOnly:  true,
 		},
 	}
-	if data.Cluster.Spec.Cloud.VSphere != nil {
+	if data.Cluster().Spec.Cloud.VSphere != nil {
 		fakeVMWareUUIDMount := corev1.VolumeMount{
 			Name:      resources.CloudConfigConfigMapName,
 			SubPath:   cloudconfig.FakeVMWareUUIDKeyName,
@@ -134,18 +135,18 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	resourceRequirements := defaultResourceRequirements
-	if data.Cluster.Spec.ComponentsOverride.ControllerManager.Resources != nil {
-		resourceRequirements = *data.Cluster.Spec.ComponentsOverride.ControllerManager.Resources
+	if data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources != nil {
+		resourceRequirements = *data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources
 	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
 		{
 			Name:                     name,
-			Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
+			Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version,
 			ImagePullPolicy:          corev1.PullIfNotPresent,
 			Command:                  []string{"/hyperkube", "controller-manager"},
-			Args:                     getFlags(data),
-			Env:                      getEnvVars(data),
+			Args:                     getFlags(data.Cluster()),
+			Env:                      getEnvVars(data.Cluster()),
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			Resources:                resourceRequirements,
@@ -178,38 +179,38 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(name, data.Cluster.Name, nil))
+	dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(name, data.Cluster().Name, nil))
 
 	return dep, nil
 }
 
-func getFlags(data *resources.TemplateData) []string {
+func getFlags(cluster *kubermaticv1.Cluster) []string {
 	flags := []string{
 		"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"--service-account-private-key-file", "/etc/kubernetes/service-account-key/sa.key",
 		"--root-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--cluster-signing-cert-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--cluster-signing-key-file", "/etc/kubernetes/pki/ca/ca.key",
-		"--cluster-cidr", data.Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
+		"--cluster-cidr", cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
 		"--configure-cloud-routes=false",
 		"--allocate-node-cidrs=true",
 		"--controllers", "*,bootstrapsigner,tokencleaner",
 		"--feature-gates", "RotateKubeletClientCertificate=true,RotateKubeletServerCertificate=true",
 		"--v", "4",
 	}
-	if data.Cluster.Spec.Cloud.AWS != nil {
+	if cluster.Spec.Cloud.AWS != nil {
 		flags = append(flags, "--cloud-provider", "aws")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
-	if data.Cluster.Spec.Cloud.Openstack != nil {
+	if cluster.Spec.Cloud.Openstack != nil {
 		flags = append(flags, "--cloud-provider", "openstack")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
-	if data.Cluster.Spec.Cloud.VSphere != nil {
+	if cluster.Spec.Cloud.VSphere != nil {
 		flags = append(flags, "--cloud-provider", "vsphere")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
-	if data.Cluster.Spec.Cloud.Azure != nil {
+	if cluster.Spec.Cloud.Azure != nil {
 		flags = append(flags, "--cloud-provider", "azure")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
@@ -268,13 +269,13 @@ func getVolumes() []corev1.Volume {
 	}
 }
 
-func getEnvVars(data *resources.TemplateData) []corev1.EnvVar {
+func getEnvVars(cluster *kubermaticv1.Cluster) []corev1.EnvVar {
 	var vars []corev1.EnvVar
-	if data.Cluster.Spec.Cloud.AWS != nil {
-		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: data.Cluster.Spec.Cloud.AWS.AccessKeyID})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: data.Cluster.Spec.Cloud.AWS.SecretAccessKey})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: data.Cluster.Spec.Cloud.AWS.VPCID})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_AVAILABILITY_ZONE", Value: data.Cluster.Spec.Cloud.AWS.AvailabilityZone})
+	if cluster.Spec.Cloud.AWS != nil {
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: cluster.Spec.Cloud.AWS.AccessKeyID})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: cluster.Spec.Cloud.AWS.SecretAccessKey})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_AVAILABILITY_ZONE", Value: cluster.Spec.Cloud.AWS.AvailabilityZone})
 	}
 	return vars
 }

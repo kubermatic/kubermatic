@@ -10,7 +10,7 @@ import (
 
 // ClusterRoleBinding returns a ClusterRoleBinding for the machine-controller.
 // It has to be put into the user-cluster.
-func ClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+func ClusterRoleBinding(_ resources.ClusterRoleBindingDataProvider, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 	// TemplateData actually not needed, no ownerrefs set in user-cluster
 	return createClusterRoleBinding(existing, "controller",
 		resources.MachineControllerClusterRoleName, rbacv1.Subject{
@@ -22,7 +22,7 @@ func ClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRo
 
 // NodeBootstrapperClusterRoleBinding returns a ClusterRoleBinding for the machine-controller.
 // It has to be put into the user-cluster.
-func NodeBootstrapperClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+func NodeBootstrapperClusterRoleBinding(_ resources.ClusterRoleBindingDataProvider, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 	return createClusterRoleBinding(existing, "kubelet-bootstrap",
 		"system:node-bootstrapper", rbacv1.Subject{
 			Kind:     "Group",
@@ -33,7 +33,7 @@ func NodeBootstrapperClusterRoleBinding(data *resources.TemplateData, existing *
 
 // NodeSignerClusterRoleBinding returns a ClusterRoleBinding for the machine-controller.
 // It has to be put into the user-cluster.
-func NodeSignerClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+func NodeSignerClusterRoleBinding(_ resources.ClusterRoleBindingDataProvider, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 	return createClusterRoleBinding(existing, "node-signer",
 		"system:certificates.k8s.io:certificatesigningrequests:nodeclient", rbacv1.Subject{
 			Kind:     "Group",
@@ -43,10 +43,8 @@ func NodeSignerClusterRoleBinding(data *resources.TemplateData, existing *rbacv1
 }
 
 func createClusterRoleBinding(existing *rbacv1.ClusterRoleBinding, crbSuffix, cRoleRef string, subj rbacv1.Subject) (*rbacv1.ClusterRoleBinding, error) {
-	var crb *rbacv1.ClusterRoleBinding
-	if existing != nil {
-		crb = existing
-	} else {
+	crb := existing
+	if crb == nil {
 		crb = &rbacv1.ClusterRoleBinding{}
 	}
 

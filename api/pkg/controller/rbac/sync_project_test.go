@@ -1628,7 +1628,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 
 			// act
 			target := Controller{}
-			err := target.ensureClusterRBACRoleBindingForNamedResource(test.projectToSync.Name, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta(), fakeKubeClient, clusterRoleBindingLister)
+			err := target.ensureClusterRBACRoleBindingForNamedResource(test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta(), fakeKubeClient, clusterRoleBindingLister)
 
 			// validate
 			if err != nil {
@@ -1794,6 +1794,38 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 		},
 
 		// scenario 2
+		{
+			name:                     "Scenario 2: Proper set of RBAC Roles for UserProjectBinding resource are created on \"master\" and seed clusters",
+			expectedActionsForMaster: []string{"create"},
+			// UserProjectBinding is a resource that is only on master cluster
+			expectedActionsForSeeds: []string{},
+			seedClusters:            2,
+			projectResourcesToSync: []projectResource{
+				{
+					gvr: schema.GroupVersionResource{
+						Group:    kubermaticv1.GroupName,
+						Version:  kubermaticv1.GroupVersion,
+						Resource: kubermaticv1.UserProjectBindingResourceName,
+					},
+					kind: kubermaticv1.UserProjectBindingKind,
+				},
+			},
+
+			expectedClusterRolesForMaster: []*rbacv1.ClusterRole{
+				&rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:userprojectbindings:owners",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{"userprojectbindings"},
+							Verbs:     []string{"create"},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -1872,7 +1904,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 				}
 
 				if len(seedKubeClient.Actions()) != len(test.expectedActionsForSeeds) {
-					t.Fatalf("unexpected number of actions, expected to get %d, but got %d, actions %v", len(seedKubeClient.Actions()), len(test.expectedActionsForSeeds), seedKubeClient.Actions())
+					t.Fatalf("unexpected number of actions, got %d, but expected to get %d, actions %v", len(seedKubeClient.Actions()), len(test.expectedActionsForSeeds), seedKubeClient.Actions())
 				}
 
 				createActionIndex := 0

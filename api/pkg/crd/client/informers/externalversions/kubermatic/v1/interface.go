@@ -14,6 +14,8 @@ type Interface interface {
 	Projects() ProjectInformer
 	// Users returns a UserInformer.
 	Users() UserInformer
+	// UserProjectBindings returns a UserProjectBindingInformer.
+	UserProjectBindings() UserProjectBindingInformer
 	// UserSSHKeies returns a UserSSHKeyInformer.
 	UserSSHKeies() UserSSHKeyInformer
 }
@@ -47,6 +49,11 @@ func (v *version) Projects() ProjectInformer {
 // Users returns a UserInformer.
 func (v *version) Users() UserInformer {
 	return &userInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// UserProjectBindings returns a UserProjectBindingInformer.
+func (v *version) UserProjectBindings() UserProjectBindingInformer {
+	return &userProjectBindingInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // UserSSHKeies returns a UserSSHKeyInformer.

@@ -15,7 +15,7 @@ import (
 )
 
 // AdminKubeconfig returns a secret with the AdminKubeconfig key
-func AdminKubeconfig(data *TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
+func AdminKubeconfig(data SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
 	var se *corev1.Secret
 	if existing != nil {
 		se = existing
@@ -35,10 +35,10 @@ func AdminKubeconfig(data *TemplateData, existing *corev1.Secret) (*corev1.Secre
 		return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 	}
 
-	config := getBaseKubeconfig(ca.Cert, data.Cluster.Address.URL, data.Cluster.Name)
+	config := getBaseKubeconfig(ca.Cert, data.Cluster().Address.URL, data.Cluster().Name)
 	config.AuthInfos = map[string]*clientcmdapi.AuthInfo{
 		KubeconfigDefaultContextKey: {
-			Token: data.Cluster.Address.AdminToken,
+			Token: data.Cluster().Address.AdminToken,
 		},
 	}
 
@@ -53,8 +53,8 @@ func AdminKubeconfig(data *TemplateData, existing *corev1.Secret) (*corev1.Secre
 }
 
 // GetInternalKubeconfigCreator is a generic function to return a secret generator to create a kubeconfig which must only be used within the seed-cluster as it uses the ClusterIP of the apiserver.
-func GetInternalKubeconfigCreator(name, commonName string, organizations []string) func(data *TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
-	return func(data *TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
+func GetInternalKubeconfigCreator(name, commonName string, organizations []string) func(data SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
+	return func(data SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
 		var se *corev1.Secret
 		if existing != nil {
 			se = existing
@@ -80,7 +80,7 @@ func GetInternalKubeconfigCreator(name, commonName string, organizations []strin
 		}
 
 		b := se.Data[KubeconfigSecretKey]
-		valid, err := isValidKubeconfig(b, ca.Cert, url.String(), commonName, data.Cluster.Name)
+		valid, err := isValidKubeconfig(b, ca.Cert, url.String(), commonName, data.Cluster().Name)
 		if err != nil || !valid {
 			if err != nil {
 				glog.V(2).Infof("failed to validate existing kubeconfig from %s/%s %v. Regenerating it...", se.Namespace, se.Name, err)
@@ -88,7 +88,7 @@ func GetInternalKubeconfigCreator(name, commonName string, organizations []strin
 				glog.V(2).Infof("invalid/outdated kubeconfig found in %s/%s. Regenerating it...", se.Namespace, se.Name)
 			}
 
-			se.Data[KubeconfigSecretKey], err = buildNewKubeconfigAsByte(ca, url.String(), commonName, organizations, data.Cluster.Name)
+			se.Data[KubeconfigSecretKey], err = buildNewKubeconfigAsByte(ca, url.String(), commonName, organizations, data.Cluster().Name)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create new kubeconfig: %v", err)
 			}

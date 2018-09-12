@@ -9,20 +9,20 @@ import (
 
 // DefaultRoleBinding returns the RoleBinding for the machine-controller.
 // It has to be put into the user-cluster.
-func DefaultRoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-	// TemplateData actually not needed, no ownerrefs set in user-cluster
+func DefaultRoleBinding(_ resources.RoleBindingDataProvider, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+	// RoleBindingDataProvider actually not needed, no ownerrefs set in user-cluster
 	return createRoleBinding(existing, metav1.NamespaceDefault)
 }
 
 // KubeSystemRoleBinding returns the RoleBinding for the machine-controller in kube-system ns.
 // It has to be put into the user-cluster.
-func KubeSystemRoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+func KubeSystemRoleBinding(_ resources.RoleBindingDataProvider, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 	return createRoleBinding(existing, metav1.NamespaceSystem)
 }
 
 // KubePublicRoleBinding returns the RoleBinding for the machine-controller in kube-public ns.
 // It has to be put into the user-cluster.
-func KubePublicRoleBinding(data *resources.TemplateData, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+func KubePublicRoleBinding(_ resources.RoleBindingDataProvider, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 	return createRoleBinding(existing, metav1.NamespacePublic)
 }
 

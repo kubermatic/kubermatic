@@ -36,12 +36,10 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 		ExistingCluster        *kubermaticv1.Cluster
 		ExistingSSHKeys        []*kubermaticv1.UserSSHKey
 		ExpectedSSHKeys        []*kubermaticv1.UserSSHKey
-		ExpectedActions        int
 
 		ExpectedListClusterKeysStatus int
 	}{
 		Name:             "scenario 1: tests deletion of a cluster and its dependant resources",
-		ExpectedActions:  12,
 		Body:             ``,
 		ExpectedResponse: `{}`,
 		HTTPStatus:       http.StatusOK,
@@ -176,11 +174,6 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 		t.Fatalf("Expected HTTP status code %d, got %d: %s", testcase.HTTPStatus, res.Code, res.Body.String())
 	}
 	compareWithResult(t, res, testcase.ExpectedResponse)
-
-	// validate if clusters were detached from the ssh keys
-	if len(kubermaticClient.Actions()) != testcase.ExpectedActions {
-		t.Fatalf("unexpected actions expected to get %d, but got %d, actions = %#v", testcase.ExpectedActions, len(kubermaticClient.Actions()), kubermaticClient.Actions())
-	}
 
 	validatedActions := 0
 	for _, action := range kubermaticClient.Actions() {
@@ -755,7 +748,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 3: unable to create a cluster when the user doesn't belong to the project",
 			Body:             `{"cluster":{"humanReadableName":"keen-snyder","version":"1.9.7","pause":false,"cloud":{"digitalocean":{"token":"dummy_token"},"dc":"do-fra1"}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: The user \"user1\" doesn't belong to the given project = my-first-projectInternalName"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: The user \"john@acme.com\" doesn't belong to the given project = my-first-projectInternalName"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
 			ExistingKubermaticUser: &kubermaticv1.User{

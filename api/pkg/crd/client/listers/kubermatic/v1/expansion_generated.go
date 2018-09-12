@@ -20,6 +20,10 @@ type ProjectListerExpansion interface{}
 // UserLister.
 type UserListerExpansion interface{}
 
+// UserProjectBindingListerExpansion allows custom methods to be added to
+// UserProjectBindingLister.
+type UserProjectBindingListerExpansion interface{}
+
 // UserSSHKeyListerExpansion allows custom methods to be added to
 // UserSSHKeyLister.
 type UserSSHKeyListerExpansion interface{}

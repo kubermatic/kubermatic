@@ -21,7 +21,7 @@ var (
 // to user cluster networks.
 // Also required but not provided by this func:
 // * volumes: resources.OpenVPNClientCertificatesSecretName, resources.CACertSecretName
-func OpenVPNSidecarContainer(data *resources.TemplateData, name string) (*corev1.Container, error) {
+func OpenVPNSidecarContainer(data resources.DeploymentDataProvider, name string) (*corev1.Container, error) {
 	return &corev1.Container{
 		Name:            name,
 		Image:           data.ImageRegistry("docker.io") + "/kubermatic/openvpn:v0.4",
@@ -32,7 +32,7 @@ func OpenVPNSidecarContainer(data *resources.TemplateData, name string) (*corev1
 			"--proto", "tcp",
 			"--dev", "tun",
 			"--auth-nocache",
-			"--remote", fmt.Sprintf("%s.%s.svc.cluster.local", resources.OpenVPNServerServiceName, data.Cluster.Status.NamespaceName), "1194",
+			"--remote", fmt.Sprintf("%s.%s.svc.cluster.local", resources.OpenVPNServerServiceName, data.Cluster().Status.NamespaceName), "1194",
 			"--nobind",
 			"--connect-timeout", "5",
 			"--connect-retry", "1",

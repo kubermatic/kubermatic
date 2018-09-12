@@ -7,7 +7,7 @@ import (
 )
 
 // ClusterRoleBinding returns the ClusterRoleBinding required for Kube-State-Metrics
-func ClusterRoleBinding(_ *resources.TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+func ClusterRoleBinding(_ resources.ClusterRoleBindingDataProvider, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 	var crb *rbacv1.ClusterRoleBinding
 	if existing != nil {
 		crb = existing

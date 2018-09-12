@@ -8,7 +8,7 @@ import (
 )
 
 // EtcdClientCertificate returns a secret with the client certificate for authenticating against etcd
-func EtcdClientCertificate(data *resources.TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
+func EtcdClientCertificate(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
 	return certificates.GetClientCertificateCreator(
 		resources.ApiserverEtcdClientCertificateSecretName,
 		"apiserver",
