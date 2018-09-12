@@ -36,6 +36,7 @@ var plan9 = &kubermaticapiv1.Project{
 }
 
 func TestGetUsersForProject(t *testing.T) {
+	t.SkipNow()
 	testcases := []struct {
 		Name                        string
 		ExpectedResponse            string

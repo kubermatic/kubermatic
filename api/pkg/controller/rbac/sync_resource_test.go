@@ -386,6 +386,93 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 		},
 
 		// scenario 3
+		{
+			name:            "scenario 3: a proper set of RBAC Role/Binding is generated for a userprojectbinding resource",
+			expectedActions: []string{"create", "create"},
+			existingProject: createProject("thunderball", createUser("James Bond")),
+
+			dependantToSync: &projectResourceQueueItem{
+				gvr: schema.GroupVersionResource{
+					Group:    kubermaticv1.SchemeGroupVersion.Group,
+					Version:  kubermaticv1.SchemeGroupVersion.Version,
+					Resource: kubermaticv1.UserProjectBindingResourceName,
+				},
+				kind: kubermaticv1.UserProjectBindingKind,
+				metaObject: &kubermaticv1.UserProjectBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "abcd",
+						UID:  types.UID("abcdID"),
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ProjectKindName,
+								Name:       "thunderball",
+								UID:        "thunderballID",
+							},
+						},
+					},
+					Spec: kubermaticv1.UserProjectBindingSpec{
+						UserEmail: "bob@acme.com",
+						ProjectID: "thunderball",
+						Group:     "owners-thunderball",
+					},
+				},
+			},
+
+			expectedClusterRoles: []*rbacv1.ClusterRole{
+				&rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:userprojectbinding-abcd:owners-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.UserProjectBindingKind,
+								Name:       "abcd",
+								UID:        "abcdID", // set manually
+							},
+						},
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources:     []string{kubermaticv1.UserProjectBindingResourceName},
+							ResourceNames: []string{"abcd"},
+							Verbs:         []string{"get", "update", "delete"},
+						},
+					},
+				},
+			},
+
+			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:userprojectbinding-abcd:owners-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.UserProjectBindingKind,
+								Name:       "abcd",
+								UID:        "abcdID", // set manually
+							},
+						},
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:userprojectbinding-abcd:owners-thunderball",
+					},
+				},
+			},
+		},
+
+		// scenario 4
 		//
 		// TODO: uncomment this when existing object are migrated to projects
 		//       see: https://github.com/kubermatic/kubermatic/issues/1219
