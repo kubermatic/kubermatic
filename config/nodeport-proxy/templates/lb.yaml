@@ -4,6 +4,7 @@ metadata:
   name: nodeport-lb
   annotations:
     "helm.sh/resource-policy": keep
+    "service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout": "600"
 spec:
   selector:
     app: nodeport-proxy
