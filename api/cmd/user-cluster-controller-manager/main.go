@@ -80,9 +80,9 @@ func main() {
 	ctx, ctxDone := context.WithCancel(context.Background())
 
 	// Create Context
-	ctrlCtx := newUserClusterControllerContext(runOp, ctx.Done(), kubeClient)
+	ctrlCtx := newControllerContext(runOp, ctx.Done(), kubeClient)
 
-	controllers, err := createAllUserClusterControllers(ctrlCtx)
+	controllers, err := createAllControllers(ctrlCtx)
 	if err != nil {
 		glog.Fatalf("could not create all controllers: %v", err)
 	}
@@ -194,7 +194,7 @@ func getEventRecorder(masterKubeClient *kubernetes.Clientset) (record.EventRecor
 	return recorder, nil
 }
 
-func newUserClusterControllerContext(runOp controllerRunOptions, done <-chan struct{}, kubeClient kubernetes.Interface) *controllerContext {
+func newControllerContext(runOp controllerRunOptions, done <-chan struct{}, kubeClient kubernetes.Interface) *controllerContext {
 	ctrlCtx := &controllerContext{
 		runOptions: runOp,
 		stopCh:     done,
