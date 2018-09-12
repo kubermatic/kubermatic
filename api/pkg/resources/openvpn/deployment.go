@@ -30,7 +30,7 @@ const (
 )
 
 // Deployment returns the kubernetes Controller-Manager Deployment
-func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
+func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
 	var dep *appsv1.Deployment
 	if existing != nil {
 		dep = existing
@@ -70,12 +70,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		Labels: podLabels,
 	}
 
-	_, podNet, err := net.ParseCIDR(data.Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0])
+	_, podNet, err := net.ParseCIDR(data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0])
 	if err != nil {
 		return nil, err
 	}
 
-	_, serviceNet, err := net.ParseCIDR(data.Cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0])
+	_, serviceNet, err := net.ParseCIDR(data.Cluster().Spec.ClusterNetwork.Services.CIDRBlocks[0])
 	if err != nil {
 		return nil, err
 	}
@@ -89,9 +89,9 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	// node access network route
-	_, nodeAccessNetwork, err := net.ParseCIDR(data.NodeAccessNetwork)
+	_, nodeAccessNetwork, err := net.ParseCIDR(data.NodeAccessNetwork())
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse node access network %s: %v", data.NodeAccessNetwork, err)
+		return nil, fmt.Errorf("failed to parse node access network %s: %v", data.NodeAccessNetwork(), err)
 	}
 	pushRoutes = append(pushRoutes, []string{
 		"--push", fmt.Sprintf("route %s %s", nodeAccessNetwork.IP.String(), net.IP(nodeAccessNetwork.Mask).String()),

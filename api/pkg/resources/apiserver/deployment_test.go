@@ -5,6 +5,8 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestGetAdmissionControlFlags(t *testing.T) {
@@ -35,11 +37,10 @@ func TestGetAdmissionControlFlags(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		templateData := resources.TemplateData{}
-		templateData.Cluster = &kubermaticv1.Cluster{}
-		templateData.Cluster.Spec.Version = test.kubernetesVersion
+		templateData := resources.NewTemplateData(&kubermaticv1.Cluster{}, nil, "", nil, nil, nil, "", "", "", resource.Quantity{}, "", false, false, "", nil)
+		templateData.Cluster().Spec.Version = test.kubernetesVersion
 
-		admissionControlFlagName, admissionControlFlagValue := getAdmissionControlFlags(&templateData)
+		admissionControlFlagName, admissionControlFlagValue := getAdmissionControlFlags(templateData)
 		if admissionControlFlagName != test.expectedAdmissionControlFlagName {
 			t.Errorf("Expected admission control flag name to be %s but was %s", test.expectedAdmissionControlFlagName, admissionControlFlagName)
 		}

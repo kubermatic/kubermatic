@@ -13,11 +13,9 @@ import (
 )
 
 // ServiceAccountKey returns a secret with the ServiceAccount key
-func ServiceAccountKey(data *resources.TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
-	var se *corev1.Secret
-	if existing != nil {
-		se = existing
-	} else {
+func ServiceAccountKey(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
+	se := existing
+	if se == nil {
 		se = &corev1.Secret{}
 	}
 

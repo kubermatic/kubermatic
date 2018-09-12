@@ -13,7 +13,7 @@ import (
 )
 
 // TLSServingCertificate returns a secret with the apiserver tls certificate used to serve https
-func TLSServingCertificate(data *resources.TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
+func TLSServingCertificate(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
 	var se *corev1.Secret
 	if existing != nil {
 		se = existing
@@ -38,7 +38,7 @@ func TLSServingCertificate(data *resources.TemplateData, existing *corev1.Secret
 		return nil, fmt.Errorf("failed to get external IP for cluster: %v", err)
 	}
 
-	inClusterIP, err := resources.InClusterApiserverIP(data.Cluster)
+	inClusterIP, err := resources.InClusterApiserverIP(data.Cluster())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the in-cluster ClusterIP for the apiserver: %v", err)
 	}
@@ -46,22 +46,22 @@ func TLSServingCertificate(data *resources.TemplateData, existing *corev1.Secret
 	altNames := certutil.AltNames{
 		DNSNames: []string{
 			// ExternalName
-			data.Cluster.Address.ExternalName,
+			data.Cluster().Address.ExternalName,
 			// User facing
 			"kubernetes",
 			"kubernetes.default",
 			"kubernetes.default.svc",
-			fmt.Sprintf("kubernetes.default.svc.%s", data.Cluster.Spec.ClusterNetwork.DNSDomain),
+			fmt.Sprintf("kubernetes.default.svc.%s", data.Cluster().Spec.ClusterNetwork.DNSDomain),
 			// Internal - apiserver-external
 			resources.ApiserverExternalServiceName,
-			fmt.Sprintf("%s.%s", resources.ApiserverExternalServiceName, data.Cluster.Status.NamespaceName),
-			fmt.Sprintf("%s.%s.svc", resources.ApiserverExternalServiceName, data.Cluster.Status.NamespaceName),
-			fmt.Sprintf("%s.%s.svc.cluster.local", resources.ApiserverExternalServiceName, data.Cluster.Status.NamespaceName),
+			fmt.Sprintf("%s.%s", resources.ApiserverExternalServiceName, data.Cluster().Status.NamespaceName),
+			fmt.Sprintf("%s.%s.svc", resources.ApiserverExternalServiceName, data.Cluster().Status.NamespaceName),
+			fmt.Sprintf("%s.%s.svc.cluster.local", resources.ApiserverExternalServiceName, data.Cluster().Status.NamespaceName),
 			// Internal - apiserver
 			resources.ApiserverInternalServiceName,
-			fmt.Sprintf("%s.%s", resources.ApiserverInternalServiceName, data.Cluster.Status.NamespaceName),
-			fmt.Sprintf("%s.%s.svc", resources.ApiserverInternalServiceName, data.Cluster.Status.NamespaceName),
-			fmt.Sprintf("%s.%s.svc.cluster.local", resources.ApiserverInternalServiceName, data.Cluster.Status.NamespaceName),
+			fmt.Sprintf("%s.%s", resources.ApiserverInternalServiceName, data.Cluster().Status.NamespaceName),
+			fmt.Sprintf("%s.%s.svc", resources.ApiserverInternalServiceName, data.Cluster().Status.NamespaceName),
+			fmt.Sprintf("%s.%s.svc.cluster.local", resources.ApiserverInternalServiceName, data.Cluster().Status.NamespaceName),
 		},
 		IPs: []net.IP{
 			*externalIP,

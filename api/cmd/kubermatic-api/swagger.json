@@ -183,7 +183,7 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Name",
+            "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
             "required": true
@@ -219,7 +219,7 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Name",
+            "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
             "required": true
@@ -1392,7 +1392,7 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "Name",
+            "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
             "required": true
