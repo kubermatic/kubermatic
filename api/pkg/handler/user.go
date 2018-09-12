@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"sort"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
@@ -41,11 +40,6 @@ func listUsersFromProject(projectProvider provider.ProjectProvider, userProvider
 			}
 			externalUsers = append(externalUsers, externalUser)
 		}
-
-		// We sort the users here by email, mainly to provide stability for tests.
-		sort.Slice(externalUsers, func(i int, j int) bool {
-			return externalUsers[i].Email < externalUsers[j].Email
-		})
 
 		return externalUsers, nil
 	}
