@@ -8,8 +8,6 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/gorilla/mux"
-
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -49,6 +47,7 @@ func addUserToProject(projectProvider provider.ProjectProvider, userProvider pro
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AddUserToProjectReq)
 		authenticatedUser := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
 		apiUserFromRequest := req.Body
 		if len(apiUserFromRequest.Email) == 0 {
 			return nil, k8cerrors.NewBadRequest("the email address cannot be empty")
@@ -76,7 +75,7 @@ func addUserToProject(projectProvider provider.ProjectProvider, userProvider pro
 		} else if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		project, err := projectProvider.Get(authenticatedUser, projectFromRequest.ID, &provider.ProjectGetOptions{})
+		project, err := projectProvider.Get(userInfo, projectFromRequest.ID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -189,6 +188,44 @@ func (r Routing) userSaverMiddleware() endpoint.Middleware {
 	}
 }
 
+func (r Routing) userInfoMiddleware() endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			user, ok := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+			if !ok {
+				return nil, k8cerrors.New(http.StatusInternalServerError, "unable to get authenticated user object")
+			}
+			prjIDGetter, ok := request.(ProjectIDGetter)
+			if !ok {
+				return nil, k8cerrors.NewBadRequest("you can only use userInfoMiddleware for endpoints that interact with project")
+			}
+			projectID := prjIDGetter.GetProjectID()
+
+			// read group info
+			var group string
+			{
+				// old approach, group was stored in user resource
+				group, err = user.GroupForProject(projectID)
+				if err != nil {
+					// new approach read group info from the mapper
+					group, err = r.userProjectMapper.MapUserToGroup(user.Spec.Email, projectID)
+					if err != nil {
+						// wrapping in k8s error to stay consisted with error messages returned from providers
+						return nil, kubernetesErrorToHTTPError(err)
+					}
+				}
+			}
+
+			uInfo := &provider.UserInfo{
+				Email: user.Spec.Email,
+				Group: group,
+			}
+
+			return next(context.WithValue(ctx, userInfoContextKey, uInfo), request)
+		}
+	}
+}
+
 // IsAdmin tells if the user has the admin role
 func IsAdmin(u apiv1.User) bool {
 	_, ok := u.Roles[AdminRoleKey]
@@ -198,8 +235,7 @@ func IsAdmin(u apiv1.User) bool {
 // AddUserToProjectReq defines HTTP request for addUserToProject
 // swagger:parameters addUserToProject
 type AddUserToProjectReq struct {
-	// in: path
-	ProjectID string `json:"project_id"`
+	ProjectReq
 	// in: body
 	Body apiv1.NewUser
 }
@@ -207,12 +243,13 @@ type AddUserToProjectReq struct {
 func decodeAddUserToProject(c context.Context, r *http.Request) (interface{}, error) {
 	var req AddUserToProjectReq
 
-	projectName := mux.Vars(r)["project_id"]
-	if projectName == "" {
-		return "", fmt.Errorf("'project_id' parameter is required but was not provided")
-	}
+	prjReq, err := decodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
 
-	req.ProjectID = projectName
+	}
+	req.ProjectReq = prjReq.(ProjectReq)
+
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
 	}

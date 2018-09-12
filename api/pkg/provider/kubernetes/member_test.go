@@ -40,7 +40,7 @@ func TestCreateBinding(t *testing.T) {
 		t.Fatal(err)
 	}
 	if result == nil {
-
+		t.Fatal("received an empty response")
 	}
 	if result.Spec.Group != groupName {
 		t.Fatalf("unexpected result returned, expected %s, got %s", groupName, result.Spec.Group)

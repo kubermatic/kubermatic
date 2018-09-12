@@ -96,11 +96,11 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*
 //
 // Note:
 // Before deletion project's status.phase is set to ProjectTerminating
-func (p *ProjectProvider) Delete(user *kubermaticapiv1.User, projectInternalName string) error {
-	if user == nil {
+func (p *ProjectProvider) Delete(userInfo *provider.UserInfo, projectInternalName string) error {
+	if userInfo == nil {
 		return errors.New("a user is missing but required")
 	}
-	masterImpersonatedClient, err := createImpersonationClientWrapper(user, projectInternalName, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return err
 	}
@@ -118,11 +118,11 @@ func (p *ProjectProvider) Delete(user *kubermaticapiv1.User, projectInternalName
 }
 
 // Get returns the project with the given name
-func (p *ProjectProvider) Get(user *kubermaticapiv1.User, projectInternalName string, options *provider.ProjectGetOptions) (*kubermaticapiv1.Project, error) {
-	if user == nil {
+func (p *ProjectProvider) Get(userInfo *provider.UserInfo, projectInternalName string, options *provider.ProjectGetOptions) (*kubermaticapiv1.Project, error) {
+	if userInfo == nil {
 		return nil, errors.New("a user is missing but required")
 	}
-	masterImpersonatedClient, err := createImpersonationClientWrapper(user, projectInternalName, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
