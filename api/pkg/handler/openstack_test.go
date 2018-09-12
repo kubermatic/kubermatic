@@ -190,13 +190,13 @@ func TestOpenstackEndpoints(t *testing.T) {
 			URL:  "/api/v1/providers/openstack/sizes",
 			ExpectedResponse: `[
 				{
-					"id": "3", "disk":40, "isPublic":true, "memory":4096, "region":"RegionOne", "slug":"m1.medium", "swap":0, "vcpus":2
+					"disk":40, "isPublic":true, "memory":4096, "region":"RegionOne", "slug":"m1.medium", "swap":0, "vcpus":2
 				},
 				{
-					"id": "4",  "disk":80, "isPublic":true, "memory":8192, "region":"RegionOne", "slug":"m1.large", "swap":0, "vcpus":4
+					"disk":80, "isPublic":true, "memory":8192, "region":"RegionOne", "slug":"m1.large", "swap":0, "vcpus":4
 				},
 				{
-					"id": "6",  "disk":1, "isPublic":true, "memory":512, "region":"RegionOne", "slug":"m1.tiny.specs", "swap":0, "vcpus":1
+					"disk":1, "isPublic":true, "memory":512, "region":"RegionOne", "slug":"m1.tiny.specs", "swap":0, "vcpus":1
 				}
 			]`,
 		},
@@ -231,7 +231,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 			}
 
 			router.ServeHTTP(res, req)
-			compareJSON(t, res, tc.ExpectedResponse)
+			compareUnorderedJSON(t, res, tc.ExpectedResponse)
 		})
 	}
 }

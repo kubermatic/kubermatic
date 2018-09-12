@@ -197,7 +197,7 @@ func TestGetUsersForProject(t *testing.T) {
 			if res.Code != tc.HTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
-			compareJSON(t, res, tc.ExpectedResponse)
+			compareUnorderedJSON(t, res, tc.ExpectedResponse)
 		})
 	}
 
@@ -605,7 +605,7 @@ func TestAddUserToProject(t *testing.T) {
 			if res.Code != tc.HTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
-			compareJSON(t, res, tc.ExpectedResponse)
+			compareUnorderedJSON(t, res, tc.ExpectedResponse)
 
 			kubermaticFakeClient := clients.fakeKubermaticClient
 			{
@@ -745,7 +745,7 @@ func TestGetCurrentUser(t *testing.T) {
 			if res.Code != tc.ExpectedStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedStatus, res.Code, res.Body.String())
 			}
-			compareJSON(t, res, tc.ExpectedResponse)
+			compareUnorderedJSON(t, res, tc.ExpectedResponse)
 		})
 	}
 }

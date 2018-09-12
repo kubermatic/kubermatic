@@ -26,17 +26,15 @@ import (
 	fakemachineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned/fake"
 
 	prometheusapi "github.com/prometheus/client_golang/api"
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	kubernetesclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	restclient "k8s.io/client-go/rest"
-
-	. "github.com/Benjamintf1/unmarshalledmatchers"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *clientsSets, error) {
@@ -160,21 +158,87 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 	}
 }
 
-func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseString string) {
-	t.Helper()
+func deepEqualUnorderedList(a []interface{}, b []interface{}) bool {
 
+	if len(a) != len(b) {
+		return false
+	}
+
+	matched := make([]bool, len(b))
+
+	for _, v1 := range a {
+		foundMatch := false
+		for j, v2 := range b {
+			if matched[j] {
+				continue
+			}
+			if equality.Semantic.DeepEqual(v1, v2) {
+				foundMatch = true
+				matched[j] = true
+				break
+			}
+		}
+		if !foundMatch {
+			return false
+		}
+	}
+
+	return true
+}
+
+// use this function if the order in the JSON list doesn't matter: `{[ "Foo", "Bar" ]}` == `{[ "Bar", "Foo" ]}`
+func compareUnorderedJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseString string) {
+	t.Helper()
+	var actualResponse interface{}
+	var expectedResponse interface{}
+
+	// var err error
 	bBytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		t.Fatal("Unable to read response body")
 	}
+	err = json.Unmarshal(bBytes, &actualResponse)
+	if err != nil {
+		t.Fatalf("Error marshaling string 1 :: %s", err.Error())
+	}
+	err = json.Unmarshal([]byte(expectedResponseString), &expectedResponse)
+	if err != nil {
+		t.Fatalf("Error marshaling string 2 :: %s", err.Error())
+	}
 
-	Describe("MatchUnorderedJSONMatcher", func() {
-		Context("When passed stringifiables", func() {
-			It("should succeed if the JSON matches", func() {
-				Ω(bBytes).Should(MatchUnorderedJSON(expectedResponseString))
-			})
-		})
-	})
+	switch actualResponse.(type) {
+	case []interface{}:
+		if !deepEqualUnorderedList(actualResponse.([]interface{}), expectedResponse.([]interface{})) {
+			t.Fatalf("Objects are different: %v", diff.ObjectDiff(actualResponse, expectedResponse))
+		}
+	default:
+		if !equality.Semantic.DeepEqual(actualResponse, expectedResponse) {
+			t.Fatalf("Objects are different: %v", diff.ObjectDiff(actualResponse, expectedResponse))
+		}
+	}
+}
+
+func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseString string) {
+	t.Helper()
+	var actualResponse interface{}
+	var expectedResponse interface{}
+
+	// var err error
+	bBytes, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		t.Fatal("Unable to read response body")
+	}
+	err = json.Unmarshal(bBytes, &actualResponse)
+	if err != nil {
+		t.Fatalf("Error marshaling string 1 :: %s", err.Error())
+	}
+	err = json.Unmarshal([]byte(expectedResponseString), &expectedResponse)
+	if err != nil {
+		t.Fatalf("Error marshaling string 2 :: %s", err.Error())
+	}
+	if !equality.Semantic.DeepEqual(actualResponse, expectedResponse) {
+		t.Fatalf("Objects are different: %v", diff.ObjectDiff(actualResponse, expectedResponse))
+	}
 }
 
 // areEqualOrDie checks if binary representation of actual and expected is equal.

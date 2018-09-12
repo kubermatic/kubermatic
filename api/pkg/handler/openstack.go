@@ -45,7 +45,6 @@ func openstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 		apiSizes := []apiv1.OpenstackSize{}
 		for _, flavor := range flavors {
 			apiSize := apiv1.OpenstackSize{
-				ID:       flavor.ID,
 				Slug:     flavor.Name,
 				Memory:   flavor.RAM,
 				VCPUs:    flavor.VCPUs,
