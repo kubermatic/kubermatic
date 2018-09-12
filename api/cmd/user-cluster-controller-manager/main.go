@@ -34,10 +34,9 @@ type controllerRunOptions struct {
 	masterURL    string
 	internalAddr string
 
-	workerName               string
-	workerCount              int
-	overwriteRegistry        string
-	dockerPullConfigJSONFile string
+	workerName        string
+	workerCount       int
+	overwriteRegistry string
 }
 
 type controllerContext struct {
@@ -59,12 +58,7 @@ func main() {
 	flag.StringVar(&runOp.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.IntVar(&runOp.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&runOp.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
-	flag.StringVar(&runOp.dockerPullConfigJSONFile, "docker-pull-config-json-file", "config.json", "The file containing the docker auth config.")
 	flag.Parse()
-
-	if runOp.dockerPullConfigJSONFile == "" {
-		glog.Fatal("docker-pull-config-json-file is undefined")
-	}
 
 	config, err := clientcmd.BuildConfigFromFlags(runOp.masterURL, runOp.kubeconfig)
 	if err != nil {
