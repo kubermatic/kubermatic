@@ -36,7 +36,7 @@ func deleteMemberFromProject(projectProvider provider.ProjectProvider, userProvi
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		memberList, err := memberProvider.List(userInfo, project, &provider.ProjectMemberListOptions{MemberEmail:user.Spec.Email})
+		memberList, err := memberProvider.List(userInfo, project, &provider.ProjectMemberListOptions{MemberEmail: user.Spec.Email})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
