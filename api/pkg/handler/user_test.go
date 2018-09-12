@@ -204,6 +204,251 @@ func TestGetUsersForProject(t *testing.T) {
 
 }
 
+func TestDeleteUserFromProject(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                         string
+		Body                         string
+		ExpectedResponse             string
+		ExpectedBindingIDAfterDelete string
+		ProjectToSync                string
+		UserIDToDelete               string
+		HTTPStatus                   int
+		ExistingProjects             []*kubermaticapiv1.Project
+		ExistingKubermaticUsers      []*kubermaticapiv1.User
+		ExistingAPIUser              apiv1.User
+		ExistingMembersBindings      []*kubermaticapiv1.UserProjectBinding
+	}{
+		// scenario 1
+		{
+			Name:          "scenario 1: john the owner of the plan9 project removes bob from the project",
+			Body:          `{"id":"bobID", "email":"bob@acme.com", "projects":[{"id":"plan9", "group":"editors"}]}`,
+			HTTPStatus:    http.StatusOK,
+			ProjectToSync: "plan9",
+			ExistingProjects: []*kubermaticapiv1.Project{
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				plan9,
+			},
+			UserIDToDelete: "bobID",
+			ExistingKubermaticUsers: []*kubermaticapiv1.User{
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "johnID",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  testUserName,
+						ID:    testUserID,
+						Email: testUserEmail,
+					},
+				},
+
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bobID",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  "Bob",
+						Email: "bob@acme.com",
+					},
+				},
+			},
+			ExistingAPIUser: apiv1.User{
+				ID:    testUserID,
+				Name:  testUserName,
+				Email: testUserEmail,
+			},
+			ExpectedResponse: `{}`,
+			ExistingMembersBindings: []*kubermaticapiv1.UserProjectBinding{
+				&kubermaticapiv1.UserProjectBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bobBindings",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticapiv1.ProjectKindName,
+								Name:       "plan9",
+							},
+						},
+					},
+					Spec: kubermaticapiv1.UserProjectBindingSpec{
+						UserEmail: "bob@acme.com",
+						Group:     "viewers-plan9",
+						ProjectID: "plan9",
+					},
+				},
+
+				&kubermaticapiv1.UserProjectBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bobPlanXBindings",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticapiv1.ProjectKindName,
+								Name:       "planX",
+							},
+						},
+					},
+					Spec: kubermaticapiv1.UserProjectBindingSpec{
+						UserEmail: "bob@acme.com",
+						Group:     "viewers-planX",
+						ProjectID: "planX",
+					},
+				},
+
+				&kubermaticapiv1.UserProjectBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "johnBidning",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticapiv1.ProjectKindName,
+								Name:       "plan9",
+							},
+						},
+					},
+					Spec: kubermaticapiv1.UserProjectBindingSpec{
+						UserEmail: testUserEmail,
+						Group:     "owners-plan9",
+						ProjectID: "plan9",
+					},
+				},
+			},
+			ExpectedBindingIDAfterDelete: "bobBindings",
+		},
+
+		// scenario 2
+		{
+			Name:          "scenario 2: john the owner of the plan9 project removes bob, but bob is not a member of the project",
+			Body:          `{"id":"bobID", "email":"bob@acme.com", "projects":[{"id":"plan9", "group":"editors"}]}`,
+			HTTPStatus:    http.StatusBadRequest,
+			ProjectToSync: "plan9",
+			ExistingProjects: []*kubermaticapiv1.Project{
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				plan9,
+			},
+			UserIDToDelete: "bobID",
+			ExistingKubermaticUsers: []*kubermaticapiv1.User{
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "johnID",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  testUserName,
+						ID:    testUserID,
+						Email: testUserEmail,
+					},
+				},
+
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bobID",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  "Bob",
+						Email: "bob@acme.com",
+					},
+				},
+			},
+			ExistingAPIUser: apiv1.User{
+				ID:    testUserID,
+				Name:  testUserName,
+				Email: testUserEmail,
+			},
+			ExpectedResponse: `{"error":{"code":400,"message":"cannot delete the user = bob@acme.com from the project plan9 because the user is not a member of the project"}}`,
+			ExistingMembersBindings: []*kubermaticapiv1.UserProjectBinding{
+				&kubermaticapiv1.UserProjectBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bobPlanXBindings",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticapiv1.ProjectKindName,
+								Name:       "planX",
+							},
+						},
+					},
+					Spec: kubermaticapiv1.UserProjectBindingSpec{
+						UserEmail: "bob@acme.com",
+						Group:     "viewers-planX",
+						ProjectID: "planX",
+					},
+				},
+
+				&kubermaticapiv1.UserProjectBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "johnBidning",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticapiv1.ProjectKindName,
+								Name:       "plan9",
+							},
+						},
+					},
+					Spec: kubermaticapiv1.UserProjectBindingSpec{
+						UserEmail: testUserEmail,
+						Group:     "owners-plan9",
+						ProjectID: "plan9",
+					},
+				},
+			},
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/users/%s", tc.ProjectToSync, tc.UserIDToDelete), strings.NewReader(tc.Body))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			for _, existingProject := range tc.ExistingProjects {
+				kubermaticObj = append(kubermaticObj, existingProject)
+			}
+			for _, existingUser := range tc.ExistingKubermaticUsers {
+				kubermaticObj = append(kubermaticObj, runtime.Object(existingUser))
+			}
+			for _, existingMember := range tc.ExistingMembersBindings {
+				kubermaticObj = append(kubermaticObj, existingMember)
+			}
+
+			ep, clients, err := createTestEndpointAndGetClients(tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+			compareWithResult(t, res, tc.ExpectedResponse)
+
+			kubermaticFakeClient := clients.fakeKubermaticClient
+			{
+				if len(tc.ExpectedBindingIDAfterDelete) > 0 {
+					actionWasValidated := false
+					for _, action := range kubermaticFakeClient.Actions() {
+						if action.Matches("delete", "userprojectbindings") {
+							deleteAction, ok := action.(clienttesting.DeleteAction)
+							if !ok {
+								t.Fatalf("unexpected action %#v", action)
+							}
+							if deleteAction.GetName() != tc.ExpectedBindingIDAfterDelete {
+								t.Fatalf("wrong binding removed, wanted = %s, actual = %s", tc.ExpectedBindingIDAfterDelete, deleteAction.GetName())
+							}
+							actionWasValidated = true
+							break
+						}
+					}
+					if !actionWasValidated {
+						t.Fatal("create action was not validated, a binding for a user was not updated ?")
+					}
+				}
+			}
+		})
+	}
+}
+
 func TestEditUserInProject(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {

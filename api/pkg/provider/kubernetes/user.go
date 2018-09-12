@@ -30,6 +30,11 @@ type UserProvider struct {
 	userLister kubermaticv1lister.UserLister
 }
 
+// UserByEmail returns a user by the given email
+func (p *UserProvider) UserByID(id string) (*kubermaticv1.User, error) {
+	return p.client.KubermaticV1().Users().Get(id, v1.GetOptions{})
+}
+
 // ListByProject returns a list of users by the given project name
 func (p *UserProvider) ListByProject(projectName string) ([]*kubermaticv1.User, error) {
 	userList, err := p.userLister.List(labels.Everything())

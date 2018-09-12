@@ -17,6 +17,45 @@ import (
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
+func deleteMemberFromProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		req, ok := request.(DeleteUserFromProjectReq)
+		if !ok {
+			return nil, k8cerrors.NewBadRequest("invalid request")
+		}
+		if len(req.UserID) == 0 {
+			return nil, k8cerrors.NewBadRequest("the user ID cannot be empty")
+		}
+
+		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		user, err := userProvider.UserByID(req.UserID)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		memberList, err := memberProvider.List(userInfo, project, &provider.ProjectMemberListOptions{user.Spec.Email})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		if len(memberList) == 0 {
+			return nil, k8cerrors.New(http.StatusBadRequest, fmt.Sprintf("cannot delete the user = %s from the project %s because the user is not a member of the project", user.Spec.Email, req.ProjectID))
+		}
+		if len(memberList) != 1 {
+			return nil, k8cerrors.New(http.StatusInternalServerError, fmt.Sprintf("cannot delete the user user %s from the project, inconsistent state in database", user.Spec.Email))
+		}
+
+		err = memberProvider.Delete(userInfo, memberList[0].Name)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		return nil, nil
+	}
+}
+
 func editMemberOfProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
@@ -371,12 +410,29 @@ func decodeAddUserToProject(c context.Context, r *http.Request) (interface{}, er
 	return req, nil
 }
 
+// UserIDReq represents a request that contains userID in the path
+type UserIDReq struct {
+	// in: path
+	UserID string `json:"user_id"`
+}
+
+func decodeUserIDReq(c context.Context, r *http.Request) (UserIDReq, error) {
+	var req UserIDReq
+
+	userID, ok := mux.Vars(r)["user_id"]
+	if !ok {
+		return req, fmt.Errorf("'user_id' parameter is required")
+	}
+	req.UserID = userID
+
+	return req, nil
+}
+
 // EditUserInProjectReq defines HTTP request for editUserInProject
 // swagger:parameters editUserInProject
 type EditUserInProjectReq struct {
 	AddUserToProjectReq
-	// in: path
-	UserID string `json:"user_id"`
+	UserIDReq
 }
 
 // Validate validates EditUserToProject request
@@ -405,11 +461,36 @@ func decodeEditUserToProject(c context.Context, r *http.Request) (interface{}, e
 		return nil, err
 	}
 
-	userID, ok := mux.Vars(r)["user_id"]
-	if !ok {
-		return nil, fmt.Errorf("'user_id' parameter is required")
+	userIDReq, err := decodeUserIDReq(c, r)
+	if err != nil {
+		return nil, err
 	}
-	req.UserID = userID
+	req.UserID = userIDReq.UserID
+
+	return req, nil
+}
+
+// DeleteUserFromProjectReq defines HTTP request for deleteUserFromProject
+// swagger:parameters deleteUserFromProject
+type DeleteUserFromProjectReq struct {
+	ProjectReq
+	UserIDReq
+}
+
+func decodeDeleteUserFromProject(c context.Context, r *http.Request) (interface{}, error) {
+	var req DeleteUserFromProjectReq
+
+	prjReq, err := decodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = prjReq.(ProjectReq)
+
+	userIDReq, err := decodeUserIDReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.UserID = userIDReq.UserID
 
 	return req, nil
 }
