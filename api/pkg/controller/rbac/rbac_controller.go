@@ -57,9 +57,10 @@ type Controller struct {
 	projectQueue workqueue.RateLimitingInterface
 	metrics      *Metrics
 
-	kubermaticMasterClient kubermaticclientset.Interface
-	projectLister          kubermaticv1lister.ProjectLister
-	userLister             kubermaticv1lister.UserLister
+	kubermaticMasterClient   kubermaticclientset.Interface
+	projectLister            kubermaticv1lister.ProjectLister
+	userLister               kubermaticv1lister.UserLister
+	userProjectBindingLister kubermaticv1lister.UserProjectBindingLister
 
 	kubeMasterClient                   kubernetes.Interface
 	rbacClusterRoleMasterLister        rbaclister.ClusterRoleLister
@@ -132,8 +133,9 @@ func New(
 	userInformer := kubermaticMasterInformerFactory.Kubermatic().V1().Users()
 	c.userLister = userInformer.Lister()
 
-	c.rbacClusterRoleBindingMasterLister = rbacClusterRoleBindingMasterInformer.Lister()
+	c.userProjectBindingLister = kubermaticMasterInformerFactory.Kubermatic().V1().UserProjectBindings().Lister()
 
+	c.rbacClusterRoleBindingMasterLister = rbacClusterRoleBindingMasterInformer.Lister()
 	c.rbacClusterRoleMasterLister = rbacClusterRoleMasterInformer.Lister()
 
 	// a list of dependent resources that we would like to watch/monitor

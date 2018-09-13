@@ -12,6 +12,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	rbaclister "k8s.io/client-go/listers/rbac/v1"
@@ -99,13 +100,35 @@ func (c *Controller) ensureProjectOwner(project *kubermaticv1.Project) error {
 	}
 	owner := sharedOwner.DeepCopy()
 
-	for _, pg := range owner.Spec.Projects {
-		if pg.Name == project.Name && pg.Group == GenerateActualGroupNameFor(project.Name, OwnerGroupNamePrefix) {
+	bindings, err := c.userProjectBindingLister.List(labels.Everything())
+	if err != nil {
+		return err
+	}
+	for _, binding := range bindings {
+		if binding.Spec.ProjectID == project.Name && binding.Spec.UserEmail == owner.Spec.Email && binding.Spec.Group == GenerateActualGroupNameFor(project.Name, OwnerGroupNamePrefix) {
 			return nil
 		}
 	}
-	owner.Spec.Projects = append(owner.Spec.Projects, kubermaticv1.ProjectGroup{Name: project.Name, Group: GenerateActualGroupNameFor(project.Name, OwnerGroupNamePrefix)})
-	_, err := c.kubermaticMasterClient.KubermaticV1().Users().Update(owner)
+	ownerBinding := &kubermaticv1.UserProjectBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticv1.ProjectKindName,
+					UID:        project.GetUID(),
+					Name:       project.Name,
+				},
+			},
+			Name: rand.String(10),
+		},
+		Spec: kubermaticv1.UserProjectBindingSpec{
+			UserEmail: owner.Spec.Email,
+			ProjectID: project.Name,
+			Group:     GenerateActualGroupNameFor(project.Name, OwnerGroupNamePrefix),
+		},
+	}
+
+	_, err = c.kubermaticMasterClient.KubermaticV1().UserProjectBindings().Create(ownerBinding)
 	return err
 }
 
