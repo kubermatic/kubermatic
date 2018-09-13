@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+
 	"github.com/golang/glog"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
@@ -153,7 +154,6 @@ func main() {
 	}
 }
 
-
 // moveBindings moves bindings to projects users belong to
 // bindings are no longer stored under user.Projects field
 // instead they are stored in a dedicated resource
@@ -175,7 +175,7 @@ func moveBindings(ctx migrationContext) error {
 	bindingForProjectExists := func(userEmail string, pg kubermaticv1.ProjectGroup) bool {
 		for _, binding := range allBindings.Items {
 			if binding.Spec.ProjectID == pg.Name && binding.Spec.Group == pg.Group && binding.Spec.UserEmail == userEmail {
-				glog.V(3).Infof("the binding Name = %s, UserEmail = %s, ProjectID = %s, Group = %s already exists",binding.Name, binding.Spec.UserEmail, binding.Spec.ProjectID, binding.Spec.Group)
+				glog.V(3).Infof("the binding Name = %s, UserEmail = %s, ProjectID = %s, Group = %s already exists", binding.Name, binding.Spec.UserEmail, binding.Spec.ProjectID, binding.Spec.Group)
 				return true
 			}
 		}
@@ -207,7 +207,7 @@ func moveBindings(ctx migrationContext) error {
 					},
 					Spec: kubermaticv1.UserProjectBindingSpec{
 						UserEmail: user.Spec.Email,
-						Group: pg.Group,
+						Group:     pg.Group,
 						ProjectID: pg.Name,
 					},
 				}
@@ -217,9 +217,9 @@ func moveBindings(ctx migrationContext) error {
 					if err != nil {
 						return err
 					}
-					glog.Infof("the binding Name = %s, UserEmail = %s, ProjectID = %s, Group = %s was created",binding.Name, binding.Spec.UserEmail, binding.Spec.ProjectID, binding.Spec.Group)
+					glog.Infof("the binding Name = %s, UserEmail = %s, ProjectID = %s, Group = %s was created", binding.Name, binding.Spec.UserEmail, binding.Spec.ProjectID, binding.Spec.Group)
 				} else {
-					glog.Infof("the binding Name = %s, UserEmail = %s, ProjectID = %s, Group = %s was not created because dry-run option was requested",binding.Name, binding.Spec.UserEmail, binding.Spec.ProjectID, binding.Spec.Group)
+					glog.Infof("the binding Name = %s, UserEmail = %s, ProjectID = %s, Group = %s was not created because dry-run option was requested", binding.Name, binding.Spec.UserEmail, binding.Spec.ProjectID, binding.Spec.Group)
 				}
 			}
 		}
