@@ -55,8 +55,8 @@ func encodeKubeconfig(c context.Context, w http.ResponseWriter, response interfa
 
 	filename := "kubeconfig"
 
-	if len(cfg.Clusters) > 0 {
-		filename = fmt.Sprintf("%s-%s", filename, cfg.CurrentContext)
+	if len(cfg.Contexts) > 0 {
+		filename = fmt.Sprintf("%s-%s", filename, cfg.Contexts[cfg.CurrentContext].Cluster)
 	}
 
 	w.Header().Set("Content-Type", "application/yaml")
