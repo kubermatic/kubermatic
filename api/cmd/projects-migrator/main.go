@@ -144,6 +144,101 @@ func main() {
 	if err != nil {
 		glog.Errorf("PHASE 5 failed due to %v", err)
 	}
+
+	// phase 6: move bindings to projects users belong to
+	//          bindings are no longer stored under user.Projects field
+	//          instead they are stored in a dedicated resource
+	err = moveBindings(ctx)
+	if err != nil {
+		glog.Errorf("PHASE 6 failed due to %v", err)
+	}
+}
+
+// moveBindings moves bindings to projects users belong to
+// bindings are no longer stored under user.Projects field
+// instead they are stored in a dedicated resource
+func moveBindings(ctx migrationContext) error {
+	glog.Info("\n")
+	glog.Info("Running PHASE 6 ...")
+
+	glog.Info("STEP 1: getting the list of users in the system")
+	allUsers, err := ctx.masterKubermaticClient.KubermaticV1().Users().List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	glog.Info("STEP 2: getting the list of existing bindings")
+	allBindings, err := ctx.masterKubermaticClient.KubermaticV1().UserProjectBindings().List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	bindingForProjectExists := func(userEmail string, pg kubermaticv1.ProjectGroup) bool {
+		for _, binding := range allBindings.Items {
+			if binding.Spec.ProjectID == pg.Name && binding.Spec.Group == pg.Group && binding.Spec.UserEmail == userEmail {
+				glog.V(3).Infof("the binding Name = %s, UserEmail = %s, ProjectID = %s, Group = %s already exists", binding.Name, binding.Spec.UserEmail, binding.Spec.ProjectID, binding.Spec.Group)
+				return true
+			}
+		}
+		return false
+	}
+
+	glog.Info("STEP 2: migrating bindings (if any)")
+	for _, user := range allUsers.Items {
+		for _, pg := range user.Spec.Projects {
+			if !bindingForProjectExists(user.Spec.Email, pg) {
+				// get the project
+				project, err := ctx.masterKubermaticClient.KubermaticV1().Projects().Get(pg.Name, metav1.GetOptions{})
+				if err != nil {
+					return err
+				}
+
+				// create binding
+				binding := &kubermaticv1.UserProjectBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ProjectKindName,
+								UID:        project.GetUID(),
+								Name:       project.Name,
+							},
+						},
+						Name: rand.String(10),
+					},
+					Spec: kubermaticv1.UserProjectBindingSpec{
+						UserEmail: user.Spec.Email,
+						Group:     pg.Group,
+						ProjectID: pg.Name,
+					},
+				}
+
+				if !ctx.dryRun {
+					_, err := ctx.masterKubermaticClient.KubermaticV1().UserProjectBindings().Create(binding)
+					if err != nil {
+						return err
+					}
+					glog.Infof("the binding Name = %s, UserEmail = %s, ProjectID = %s, Group = %s was created", binding.Name, binding.Spec.UserEmail, binding.Spec.ProjectID, binding.Spec.Group)
+				} else {
+					glog.Infof("the binding Name = %s, UserEmail = %s, ProjectID = %s, Group = %s was not created because dry-run option was requested", binding.Name, binding.Spec.UserEmail, binding.Spec.ProjectID, binding.Spec.Group)
+				}
+			}
+		}
+
+		// all bindings were created, clear Projects field
+		if len(user.Spec.Projects) > 0 {
+			user.Spec.Projects = []kubermaticv1.ProjectGroup{}
+			if !ctx.dryRun {
+				_, err := ctx.masterKubermaticClient.KubermaticV1().Users().Update(&user)
+				if err != nil {
+					return err
+				}
+				glog.Infof("the user ID = %s, Email = %s resource was updated", user.Name, user.Spec.Email)
+			} else {
+				glog.Infof("the user ID = %s, Email = %s, resource was not updated because dry-run option was requested", user.Name, user.Spec.Email)
+			}
+		}
+	}
+	return nil
 }
 
 // remigrate essentially removes existing OwnerReferences and replaces them with a label
@@ -199,9 +294,10 @@ func removeKeysWithoutOwner(ctx migrationContext) error {
 		}
 
 		for _, key := range allKeys.Items {
-			if len(key.Spec.Owner) == 0 {
-				keysWithoutOwner = append(keysWithoutOwner, key)
+			if shouldSkipSSHKeyWithLog(key) {
+				continue
 			}
+			keysWithoutOwner = append(keysWithoutOwner, key)
 		}
 	}
 
@@ -266,18 +362,13 @@ func migrateRemainingSSHKeys(ctx migrationContext) error {
 		}
 
 		for _, key := range allKeys.Items {
-			if len(key.Spec.Owner) == 0 {
-				glog.Warningf("the key ID = %s, Name = %s doesn't have an owner", key.Name, key.Spec.Name)
-				continue
-			}
-			if projectName := isOwnedByProject(key.GetOwnerReferences(), nil); len(projectName) > 0 {
-				glog.V(2).Infof("skipping the key ID = %s, Name = %s, already belongs to the project %s", key.Name, key.Spec.Name, projectName)
+			if shouldSkipSSHKeyWithLog(key) {
 				continue
 			}
 			if projectOwner, ok := projectOwnersTuple[key.Spec.Owner]; ok {
 				keysProjectTuple = append(keysProjectTuple, keyProjectTuple{key: key, project: projectOwner.project})
 			} else {
-				glog.V(3).Infof("the owner = %s of the key ID = %s, Name = %s doesn't have a project", key.Spec.Owner, key.Name, key.Spec.Name)
+				glog.V(2).Infof("the owner = %s of the key ID = %s, Name = %s doesn't have a project", key.Spec.Owner, key.Name, key.Spec.Name)
 			}
 		}
 
@@ -534,14 +625,7 @@ func migrateToProject(ctx migrationContext) error {
 		}
 
 		for _, sshKey := range sshKeys.Items {
-			if len(sshKey.Spec.Owner) == 0 {
-				glog.Warningf("cannot migrate the following ssh key (ID = %s, Name = %s), because it doesn't have an owner", sshKey.Name, sshKey.Spec.Name)
-				continue
-			}
-
-			projectName := isOwnedByProject(sshKey.OwnerReferences, nil)
-			if len(projectName) > 0 {
-				glog.V(3).Infof("skipping the following ssh keys (ID = %s, Name = %s) as it already belongs to project = %s", sshKey.Name, sshKey.Spec.Name, projectName)
+			if shouldSkipSSHKeyWithLog(sshKey) {
 				continue
 			}
 
@@ -768,4 +852,20 @@ func createOwnerReferenceForProject(project kubermaticv1.Project) metav1.OwnerRe
 		UID:        project.GetUID(),
 		Name:       project.Name,
 	}
+}
+
+func shouldSkipSSHKeyWithLog(sshKey kubermaticv1.UserSSHKey) bool {
+	projectName := isOwnedByProject(sshKey.OwnerReferences, nil)
+	if len(projectName) > 0 {
+		glog.V(3).Infof("skipping the following ssh keys (ID = %s, Name = %s) as it already belongs to project = %s", sshKey.Name, sshKey.Spec.Name, projectName)
+		return true
+	}
+
+	if len(sshKey.Spec.Owner) > 0 {
+		return true
+	}
+
+	// the key doesn't belong to a project and doesn't have an owner assign to it
+	glog.Warningf("cannot migrate the following ssh key (ID = %s, Name = %s), because it doesn't have an owner", sshKey.Name, sshKey.Spec.Name)
+	return false
 }
