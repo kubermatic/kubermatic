@@ -283,7 +283,10 @@ func GetSecretCreatorOperations(dockerPullConfigJSON []byte) []SecretOperation {
 		{resources.AdminKubeconfigSecretName, resources.AdminKubeconfig},
 		{resources.SchedulerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil)},
 		{resources.KubeletDnatControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil)},
-		{resources.UserClusterControllerManagerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.UserClusterControllerManagerKubeconfigSecretName, resources.UserClusterControllerManagerCertUsername, nil)},
+		{resources.UserClusterControllerManagerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(
+			resources.UserClusterControllerManagerKubeconfigSecretName,
+			resources.UserClusterControllerManagerCertUsername,
+			[]string{"system:masters"})},
 		{resources.MachineControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername, nil)},
 		{resources.ControllerManagerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername, nil)},
 		{resources.KubeStateMetricsKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil)},
