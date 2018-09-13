@@ -11,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 // NewProjectMemberProvider returns a project members provider
@@ -44,6 +45,7 @@ func (p *ProjectMemberProvider) Create(userInfo *provider.UserInfo, project *kub
 					Name:       project.Name,
 				},
 			},
+			Name: rand.String(10),
 		},
 		Spec: kubermaticapiv1.UserProjectBindingSpec{
 			ProjectID: project.Name,
@@ -140,4 +142,22 @@ func (p *ProjectMemberProvider) MapUserToGroup(userEmail string, projectID strin
 	}
 
 	return "", kerrors.NewForbidden(schema.GroupResource{}, projectID, fmt.Errorf("The user %q doesn't belong to the given project = %s", userEmail, projectID))
+}
+
+// MappingsFor returns the list of projects (bindings) for the given user
+// This function is unsafe in a sense that it uses privileged account to list all members in the system
+func (p *ProjectMemberProvider) MappingsFor(userEmail string) ([]*kubermaticapiv1.UserProjectBinding, error) {
+	allMemberMappings, err := p.membersLister.List(labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	memberMappings := []*kubermaticapiv1.UserProjectBinding{}
+	for _, memberMapping := range allMemberMappings {
+		if memberMapping.Spec.UserEmail == userEmail {
+			memberMappings = append(memberMappings, memberMapping)
+		}
+	}
+
+	return memberMappings, nil
 }
