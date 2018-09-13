@@ -72,7 +72,7 @@ func newDeleteSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProv
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		err = keyProvider.Delete(userInfo, req.SSHKeyName)
+		err = keyProvider.Delete(userInfo, req.SSHKeyID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -168,24 +168,24 @@ func newDecodeListSSHKeyReq(c context.Context, r *http.Request) (interface{}, er
 type NewDeleteSSHKeyReq struct {
 	ProjectReq
 	// in: path
-	SSHKeyName string `json:"key_name"`
+	SSHKeyID string `json:"key_id"`
 }
 
 func newDecodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NewDeleteSSHKeyReq
 
-	dcr, err := decodeLegacyDcReq(c, r)
+	dcr, err := decodeProjectRequest(c, r)
 	if err != nil {
 		return nil, err
 	}
 
 	req.ProjectReq = dcr.(ProjectReq)
-	sshKeyName, ok := mux.Vars(r)["key_name"]
+	SSHKeyID, ok := mux.Vars(r)["key_id"]
 	if !ok {
-		return nil, fmt.Errorf("'key_name' parameter is required in order to delete ssh key")
+		return nil, fmt.Errorf("'key_id' parameter is required in order to delete ssh key")
 	}
 
-	req.SSHKeyName = sshKeyName
+	req.SSHKeyID = SSHKeyID
 	return req, nil
 }
 

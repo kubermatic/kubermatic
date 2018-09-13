@@ -448,17 +448,17 @@ func detachSSHKeyFromCluster(sshKeyProvider provider.NewSSHKeyProvider, projectP
 
 			found := false
 			for _, projectSSHKey := range projectSSHKeys {
-				if projectSSHKey.Name == req.KeyName {
+				if projectSSHKey.Name == req.KeyID {
 					found = true
 					break
 				}
 			}
 			if !found {
-				return nil, errors.NewNotFound("sshkey", req.KeyName)
+				return nil, errors.NewNotFound("sshkey", req.KeyID)
 			}
 		}
 
-		clusterSSHKey, err := sshKeyProvider.Get(userInfo, req.KeyName)
+		clusterSSHKey, err := sshKeyProvider.Get(userInfo, req.KeyID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -646,7 +646,7 @@ type ListSSHKeysAssignedToClusterReq struct {
 type DetachSSHKeysFromClusterReq struct {
 	DCReq
 	// in: path
-	KeyName string `json:"key_name"`
+	KeyID string `json:"key_id"`
 	// in: path
 	ClusterID string `json:"cluster_id"`
 }
@@ -810,11 +810,11 @@ func decodeDetachSSHKeysFromCluster(c context.Context, r *http.Request) (interfa
 	}
 	req.DCReq = dcr.(DCReq)
 
-	sshKeyName, ok := mux.Vars(r)["key_name"]
+	sshKeyID, ok := mux.Vars(r)["key_id"]
 	if !ok {
-		return nil, fmt.Errorf("'key_name' parameter is required in order to delete ssh key")
+		return nil, fmt.Errorf("'key_id' parameter is required in order to delete ssh key")
 	}
-	req.KeyName = sshKeyName
+	req.KeyID = sshKeyID
 
 	return req, nil
 }

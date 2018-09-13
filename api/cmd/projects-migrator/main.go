@@ -294,10 +294,12 @@ func removeKeysWithoutOwner(ctx migrationContext) error {
 		}
 
 		for _, key := range allKeys.Items {
-			if shouldSkipSSHKeyWithLog(key) {
+			if sshAlreadyMigratedWithLog(key) {
 				continue
 			}
-			keysWithoutOwner = append(keysWithoutOwner, key)
+			if len(key.Spec.Owner) == 0 {
+				keysWithoutOwner = append(keysWithoutOwner, key)
+			}
 		}
 	}
 
@@ -362,7 +364,11 @@ func migrateRemainingSSHKeys(ctx migrationContext) error {
 		}
 
 		for _, key := range allKeys.Items {
-			if shouldSkipSSHKeyWithLog(key) {
+			if sshAlreadyMigratedWithLog(key) {
+				continue
+			}
+			if len(key.Spec.Owner) == 0 {
+				glog.Warningf("the key ID = %s, Name = %s doesn't have an owner", key.Name, key.Spec.Name)
 				continue
 			}
 			if projectOwner, ok := projectOwnersTuple[key.Spec.Owner]; ok {
@@ -625,7 +631,11 @@ func migrateToProject(ctx migrationContext) error {
 		}
 
 		for _, sshKey := range sshKeys.Items {
-			if shouldSkipSSHKeyWithLog(sshKey) {
+			if sshAlreadyMigratedWithLog(sshKey) {
+				continue
+			}
+			if len(sshKey.Spec.Owner) == 0 {
+				glog.Warningf("cannot migrate the following ssh key (ID = %s, Name = %s), because it doesn't have an owner", sshKey.Name, sshKey.Spec.Name)
 				continue
 			}
 
@@ -854,18 +864,12 @@ func createOwnerReferenceForProject(project kubermaticv1.Project) metav1.OwnerRe
 	}
 }
 
-func shouldSkipSSHKeyWithLog(sshKey kubermaticv1.UserSSHKey) bool {
+func sshAlreadyMigratedWithLog(sshKey kubermaticv1.UserSSHKey) bool {
 	projectName := isOwnedByProject(sshKey.OwnerReferences, nil)
 	if len(projectName) > 0 {
 		glog.V(3).Infof("skipping the following ssh keys (ID = %s, Name = %s) as it already belongs to project = %s", sshKey.Name, sshKey.Spec.Name, projectName)
 		return true
 	}
 
-	if len(sshKey.Spec.Owner) > 0 {
-		return true
-	}
-
-	// the key doesn't belong to a project and doesn't have an owner assign to it
-	glog.Warningf("cannot migrate the following ssh key (ID = %s, Name = %s), because it doesn't have an owner", sshKey.Name, sshKey.Spec.Name)
 	return false
 }
