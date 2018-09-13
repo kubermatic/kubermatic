@@ -1037,7 +1037,7 @@
         }
       }
     },
-    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_name}": {
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}": {
       "delete": {
         "description": "Unassignes an ssh key from the given cluster",
         "consumes": [
@@ -1067,8 +1067,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "KeyName",
-            "name": "key_name",
+            "x-go-name": "KeyID",
+            "name": "key_id",
             "in": "path",
             "required": true
           },
@@ -1334,7 +1334,7 @@
         }
       }
     },
-    "/api/v1/projects/{project_id}/sshkeys/{key_name}": {
+    "/api/v1/projects/{project_id}/sshkeys/{key_id}": {
       "delete": {
         "produces": [
           "application/json"
@@ -1354,8 +1354,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "SSHKeyName",
-            "name": "key_name",
+            "x-go-name": "SSHKeyID",
+            "name": "key_id",
             "in": "path",
             "required": true
           }
