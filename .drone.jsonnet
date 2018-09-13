@@ -125,13 +125,23 @@ local drone = import 'drone/drone.libsonnet';
     } + whenEventTag,
 
     // e2e
-    '6-kubermatic-e2e-docker-push': drone.step.docker.new('quay.io/kubermatic/e2e') + {
+    '6-kubermatic-e2e-docker-push-on-master': drone.step.docker.new('quay.io/kubermatic/e2e') + {
       secrets: [
         { source: 'docker_quay_username', target: 'docker_username' },
         { source: 'docker_quay_password', target: 'docker_password' },
       ],
       dockerfile: 'api/Dockerfile.e2e',
-      tags: ['${DRONE_TAG}', 'latest'],
+      tags: ['latest'],
+      context: 'api',
+    } + whenBranchMaster,
+
+    '6-kubermatic-e2e-docker-push-on-tag': drone.step.docker.new('quay.io/kubermatic/e2e') + {
+      secrets: [
+        { source: 'docker_quay_username', target: 'docker_username' },
+        { source: 'docker_quay_password', target: 'docker_password' },
+      ],
+      dockerfile: 'api/Dockerfile.e2e',
+      tags: ['${DRONE_TAG}'],
       context: 'api',
     } + whenEventTag,
 
