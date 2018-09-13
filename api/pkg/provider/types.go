@@ -191,6 +191,7 @@ type UserProvider interface {
 	CreateUser(id, name, email string) (*kubermaticv1.User, error)
 	Update(*kubermaticv1.User) (*kubermaticv1.User, error)
 	ListByProject(projectName string) ([]*kubermaticv1.User, error)
+	UserByID(id string) (*kubermaticv1.User, error)
 }
 
 // ProjectProvider declares the set of method for interacting with kubermatic's project
@@ -238,12 +239,16 @@ type ProjectMemberProvider interface {
 	Update(userInfo *UserInfo, binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error)
 }
 
-// UserProjectMapper exposes method that knows how to map
+// ProjectMemberMapper exposes method that knows how to map
 // a user to a group for a project
-type UserProjectMapper interface {
+type ProjectMemberMapper interface {
 	// MapUserToGroup maps the given user to a specific group of the given project
 	// This function is unsafe in a sense that it uses privileged account to list all members in the system
 	MapUserToGroup(userEmail string, projectID string) (string, error)
+
+	// MappingsFor returns the list of projects (bindings) for the given user
+	// This function is unsafe in a sense that it uses privileged account to list all members in the system
+	MappingsFor(userEmail string) ([]*kubermaticv1.UserProjectBinding, error)
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.

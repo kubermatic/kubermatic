@@ -228,6 +228,14 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}/users").
 		Handler(r.getUsersForProject())
 
+	mux.Methods(http.MethodPut).
+		Path("/projects/{project_id}/users/{user_id}").
+		Handler(r.editUserInProject())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/users/{user_id}").
+		Handler(r.deleteUserFromProject())
+
 	//
 	// Defines an endpoint to retrieve information about the current token owner
 	mux.Methods(http.MethodGet).
@@ -645,7 +653,7 @@ func (r Routing) listProjects() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(listProjectsEndpoint(r.projectProvider)),
+		)(listProjectsEndpoint(r.projectProvider, r.userProjectMapper)),
 		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1266,7 +1274,7 @@ func (r Routing) addUserToProject() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.userInfoMiddleware(),
-		)(addUserToProject(r.projectProvider, r.userProvider)),
+		)(addUserToProject(r.projectProvider, r.userProvider, r.projectMemberProvider)),
 		decodeAddUserToProject,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
@@ -1294,8 +1302,64 @@ func (r Routing) getUsersForProject() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.userInfoMiddleware(),
-		)(listUsersFromProject(r.projectProvider, r.userProvider)),
+		)(listUsersFromProject(r.projectProvider, r.userProvider, r.projectMemberProvider)),
 		decodeGetProject,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/v1/projects/{project_id}/users/{user_id} users editUserInProject
+//
+//     Changes membership of the given user for the given project
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: User
+//       401: empty
+//       403: empty
+func (r Routing) editUserInProject() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.userInfoMiddleware(),
+		)(editMemberOfProject(r.projectProvider, r.userProvider, r.projectMemberProvider)),
+		decodeEditUserToProject,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/projects/{project_id}/users/{user_id} users deleteUserFromProject
+//
+//     Removes the given member from the project
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: User
+//       401: empty
+//       403: empty
+func (r Routing) deleteUserFromProject() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.userInfoMiddleware(),
+		)(deleteMemberFromProject(r.projectProvider, r.userProvider, r.projectMemberProvider)),
+		decodeDeleteUserFromProject,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1317,7 +1381,7 @@ func (r Routing) getCurrentUser() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(getCurrentUserEndpoint(r.userProvider)),
+		)(getCurrentUserEndpoint(r.userProvider, r.userProjectMapper)),
 		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
