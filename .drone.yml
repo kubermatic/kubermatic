@@ -370,14 +370,14 @@ pipeline:
     - values
     when:
       branch: release/v2.7.*
-  10-e2e:
+  10-e2e-on-master:
     commands:
     - echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig
     - echo "$CLUSTER_YAML" > /tmp/cluster.yaml
     - echo "$NODE_YAML" > /tmp/node.yaml
     - /kubermatic-e2e -kubeconfig=/tmp/kubeconfig -kubermatic-cluster=/tmp/cluster.yaml
       -kubermatic-node=/tmp/node.yaml
-    image: quay.io/kubermatic/e2e
+    image: quay.io/kubermatic/e2e:latest
     pull: true
     secrets:
     - source: kubeconfig_dev
@@ -388,6 +388,25 @@ pipeline:
       target: node_yaml
     when:
       branch: master
+  10-e2e-on-tag:
+    commands:
+    - echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig
+    - echo "$CLUSTER_YAML" > /tmp/cluster.yaml
+    - echo "$NODE_YAML" > /tmp/node.yaml
+    - /kubermatic-e2e -kubeconfig=/tmp/kubeconfig -kubermatic-cluster=/tmp/cluster.yaml
+      -kubermatic-node=/tmp/node.yaml
+    image: quay.io/kubermatic/e2e:${DRONE_TAG}
+    pull: true
+    secrets:
+    - source: kubeconfig_dev
+      target: kubeconfig
+    - source: aws_1.10.5_cluster_yaml
+      target: cluster_yaml
+    - source: aws_1.10.5_node_yaml
+      target: node_yaml
+    when:
+      event:
+      - tag
   11-slack:
     channel: dev
     group: slack
