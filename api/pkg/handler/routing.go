@@ -52,7 +52,7 @@ type Routing struct {
 	updateManager         UpdateManager
 	prometheusClient      prometheusapi.Client
 	projectMemberProvider provider.ProjectMemberProvider
-	userProjectMapper     provider.UserProjectMapper
+	userProjectMapper     provider.ProjectMemberMapper
 }
 
 // NewRouting creates a new Routing.
@@ -69,7 +69,7 @@ func NewRouting(
 	updateManager UpdateManager,
 	prometheusClient prometheusapi.Client,
 	projectMemberProvider provider.ProjectMemberProvider,
-	userProjectMapper provider.UserProjectMapper,
+	userProjectMapper provider.ProjectMemberMapper,
 ) Routing {
 	return Routing{
 		datacenters:           datacenters,
