@@ -187,7 +187,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.newListSSHKeysAssignedToCluster())
 
 	mux.Methods(http.MethodDelete).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_name}").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}").
 		Handler(r.newDetachSSHKeyFromCluster())
 
 	//
@@ -1009,7 +1009,7 @@ func (r Routing) newListSSHKeysAssignedToCluster() http.Handler {
 	)
 }
 
-// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_name} project newDetachSSHKeyFromCluster
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id} project newDetachSSHKeyFromCluster
 //
 //     Unassignes an ssh key from the given cluster
 //
