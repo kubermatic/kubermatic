@@ -4,6 +4,7 @@ metadata:
   name: nodeport-lb
   annotations:
     "helm.sh/resource-policy": keep
+    "service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout": "3600"  # On AWS default timeout is 60s, which means: kubectl logs -f will recieve EOF after 60s.
 spec:
   selector:
     app: nodeport-proxy
