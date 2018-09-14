@@ -74,17 +74,17 @@ func TestGetInternalKubeconfigCreatorWithOrgs(t *testing.T) {
 	checkKubeConfigRegeneration(t, []string{"org1", "org2"})
 }
 
-// FakeDataProvider provides just enough for testing kubeconfig creation.
-type FakeDataProvider struct {
+// fakeDataProvider provides just enough for testing kubeconfig creation.
+type fakeDataProvider struct {
 	caPair *triple.KeyPair
 }
 
-func (fake *FakeDataProvider) Cluster() *kubermaticv1.Cluster            { return &kubermaticv1.Cluster{} }
-func (fake *FakeDataProvider) ExternalIP() (*net.IP, error)              { return nil, nil }
-func (fake *FakeDataProvider) GetClusterRef() metav1.OwnerReference      { return metav1.OwnerReference{} }
-func (fake *FakeDataProvider) GetFrontProxyCA() (*triple.KeyPair, error) { return nil, nil }
-func (fake *FakeDataProvider) GetRootCA() (*triple.KeyPair, error)       { return fake.caPair, nil }
-func (fake *FakeDataProvider) InClusterApiserverURL() (*url.URL, error)  { return &url.URL{}, nil }
+func (fake *fakeDataProvider) Cluster() *kubermaticv1.Cluster            { return &kubermaticv1.Cluster{} }
+func (fake *fakeDataProvider) ExternalIP() (*net.IP, error)              { return nil, nil }
+func (fake *fakeDataProvider) GetClusterRef() metav1.OwnerReference      { return metav1.OwnerReference{} }
+func (fake *fakeDataProvider) GetFrontProxyCA() (*triple.KeyPair, error) { return nil, nil }
+func (fake *fakeDataProvider) GetRootCA() (*triple.KeyPair, error)       { return fake.caPair, nil }
+func (fake *fakeDataProvider) InClusterApiserverURL() (*url.URL, error)  { return &url.URL{}, nil }
 
 func checkKubeConfigRegeneration(t *testing.T, orgs []string) {
 	// get a ca for testing and setup fake data
@@ -92,7 +92,7 @@ func checkKubeConfigRegeneration(t *testing.T, orgs []string) {
 	if err != nil {
 		t.Fatalf("Failed to generate test root ca: %v", err)
 	}
-	data := &FakeDataProvider{caPair: ca}
+	data := &fakeDataProvider{caPair: ca}
 	assert.NotNil(t, data)
 
 	create := GetInternalKubeconfigCreator("test-creator", "test-creator-cn", orgs)
