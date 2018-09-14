@@ -473,13 +473,8 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 		},
 
 		// scenario 4
-		//
-		// TODO: uncomment this when existing object are migrated to projects
-		//       see: https://github.com/kubermatic/kubermatic/issues/1219
-		//
-		//
-		/*{
-			name:            "scenario 2 no-op for a cluster that doesn't belong to a project",
+		{
+			name:            "scenario 4 an error is returned when syncing a cluster that doesn't belong to a project",
 			expectError:     true,
 			existingProject: createProject("thunderball", createUser("James Bond")),
 			dependantToSync: &projectResourceQueueItem{
@@ -495,16 +490,13 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 						UID:  types.UID("abcdID"),
 					},
 					Spec:    kubermaticv1.ClusterSpec{},
-					Address: &kubermaticv1.ClusterAddress{},
+					Address: kubermaticv1.ClusterAddress{},
 					Status: kubermaticv1.ClusterStatus{
 						NamespaceName: "cluster-abcd",
 					},
 				},
 			},
-		},*/
-		//
-		//  END of TODO
-		//
+		},
 	}
 
 	for _, test := range tests {
