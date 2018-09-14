@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -162,18 +161,63 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 	}
 }
 
-func compareWithResult(t *testing.T, res *httptest.ResponseRecorder, response string) {
+func deepEqualUnorderedList(a []interface{}, b []interface{}) bool {
+
+	if len(a) != len(b) {
+		return false
+	}
+
+	matched := make([]bool, len(b))
+
+	for _, v1 := range a {
+		foundMatch := false
+		for j, v2 := range b {
+			if matched[j] {
+				continue
+			}
+			if equality.Semantic.DeepEqual(v1, v2) {
+				foundMatch = true
+				matched[j] = true
+				break
+			}
+		}
+		if !foundMatch {
+			return false
+		}
+	}
+
+	return true
+}
+
+// use this function if the order in the JSON list doesn't matter: `{[ "Foo", "Bar" ]}` == `{[ "Bar", "Foo" ]}`
+func compareUnorderedJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseString string) {
 	t.Helper()
+	var actualResponse interface{}
+	var expectedResponse interface{}
+
+	// var err error
 	bBytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		t.Fatal("Unable to read response body")
 	}
+	err = json.Unmarshal(bBytes, &actualResponse)
+	if err != nil {
+		t.Fatalf("Error marshaling string 1 :: %s", err.Error())
+	}
+	err = json.Unmarshal([]byte(expectedResponseString), &expectedResponse)
+	if err != nil {
+		t.Fatalf("Error marshaling string 2 :: %s", err.Error())
+	}
 
-	r := strings.TrimSpace(response)
-	b := strings.TrimSpace(string(bBytes))
-
-	if r != b {
-		t.Fatalf("Expected response body to be \n%s \ngot \n%s", r, b)
+	switch actualResponse.(type) {
+	case []interface{}:
+		if !deepEqualUnorderedList(actualResponse.([]interface{}), expectedResponse.([]interface{})) {
+			t.Fatalf("Objects are different: %v", diff.ObjectDiff(actualResponse, expectedResponse))
+		}
+	default:
+		if !equality.Semantic.DeepEqual(actualResponse, expectedResponse) {
+			t.Fatalf("Objects are different: %v", diff.ObjectDiff(actualResponse, expectedResponse))
+		}
 	}
 }
 

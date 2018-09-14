@@ -198,7 +198,7 @@ func TestGetUsersForProject(t *testing.T) {
 			if res.Code != tc.HTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
-			compareWithResult(t, res, tc.ExpectedResponse)
+			compareUnorderedJSON(t, res, tc.ExpectedResponse)
 		})
 	}
 
@@ -1338,7 +1338,7 @@ func TestAddUserToProject(t *testing.T) {
 			if res.Code != tc.HTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
-			compareWithResult(t, res, tc.ExpectedResponse)
+			compareUnorderedJSON(t, res, tc.ExpectedResponse)
 
 			kubermaticFakeClient := clients.fakeKubermaticClient
 			{
@@ -1485,7 +1485,7 @@ func TestGetCurrentUser(t *testing.T) {
 			if res.Code != tc.ExpectedStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedStatus, res.Code, res.Body.String())
 			}
-			compareWithResult(t, res, tc.ExpectedResponse)
+			compareUnorderedJSON(t, res, tc.ExpectedResponse)
 		})
 	}
 }
@@ -1511,7 +1511,7 @@ func TestNewUser(t *testing.T) {
 	if res.Code != http.StatusOK {
 		t.Fatalf("Expected HTTP status code %d, got %d: %s", http.StatusOK, res.Code, res.Body.String())
 	}
-	compareWithResult(t, res, expectedResponse)
+	compareJSON(t, res, expectedResponse)
 
 	actions := clientSet.fakeKubermaticClient.Actions()
 	if len(actions) != 12 {
@@ -1547,5 +1547,5 @@ func TestCreateUserWithoutEmail(t *testing.T) {
 	if res.Code != http.StatusBadRequest {
 		t.Fatalf("Expected HTTP status code %d, got %d: %s", http.StatusBadRequest, res.Code, res.Body.String())
 	}
-	compareWithResult(t, res, expectedResponse)
+	compareJSON(t, res, expectedResponse)
 }

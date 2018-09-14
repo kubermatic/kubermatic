@@ -292,7 +292,7 @@ func TestListSSHKeys(t *testing.T) {
 			if res.Code != tc.HTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
-			compareWithResult(t, res, tc.ExpectedResponse)
+			compareJSON(t, res, tc.ExpectedResponse)
 		})
 	}
 }
@@ -365,7 +365,7 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 			}
 			expectedResponse := fmt.Sprintf(tc.ExpectedResponse, actualSSHKey.ID)
 
-			compareWithResult(t, res, expectedResponse)
+			compareJSON(t, res, expectedResponse)
 		})
 	}
 }

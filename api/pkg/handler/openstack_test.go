@@ -231,7 +231,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 			}
 
 			router.ServeHTTP(res, req)
-			compareJSON(t, res, tc.ExpectedResponse)
+			compareUnorderedJSON(t, res, tc.ExpectedResponse)
 		})
 	}
 }
