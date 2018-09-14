@@ -503,6 +503,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 		ExistingAPIUser        *apiv1.User
 		ExistingCluster        *kubermaticv1.Cluster
 		ExistingSSHKey         *kubermaticv1.UserSSHKey
+		ExpectedSSHKeys        []*kubermaticv1.UserSSHKey
 	}{
 		// scenario 1
 		{
@@ -527,6 +528,24 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 			ExistingAPIUser: &apiv1.User{
 				ID:    testUserName,
 				Email: testUserEmail,
+			},
+			ExpectedSSHKeys: []*kubermaticv1.UserSSHKey{
+				&kubermaticv1.UserSSHKey{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.k8s.io/v1",
+								Kind:       "Project",
+								UID:        "",
+								Name:       testingProjectName,
+							},
+						},
+					},
+					Spec: kubermaticv1.SSHKeySpec{
+						Clusters: []string{"abcd"},
+					},
+				},
 			},
 			ExistingSSHKey: &kubermaticv1.UserSSHKey{
 				ObjectMeta: metav1.ObjectMeta{
@@ -590,6 +609,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 				ID:    testUserName,
 				Email: testUserEmail,
 			},
+			ExpectedSSHKeys: []*kubermaticv1.UserSSHKey{},
 			ExistingSSHKey: &kubermaticv1.UserSSHKey{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
@@ -647,7 +667,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 			if tc.ExistingSSHKey != nil {
 				kubermaticObj = append(kubermaticObj, tc.ExistingSSHKey)
 			}
-			ep, err := createTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil)
+			ep, clientsSets, err := createTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -659,6 +679,32 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 			}
 
 			compareWithResult(t, res, tc.ExpectedResponse)
+
+			kubermaticClient := clientsSets.fakeKubermaticClient
+			validatedActions := 0
+			if tc.HTTPStatus == http.StatusCreated {
+				for _, action := range kubermaticClient.Actions() {
+					fmt.Printf("%s %s\n", action.GetResource(), action.GetVerb())
+					if action.Matches("update", "usersshkeies") {
+						updateAction, ok := action.(clienttesting.CreateAction)
+						if !ok {
+							t.Fatalf("unexpected action %#v", action)
+						}
+						for _, expectedSSHKey := range tc.ExpectedSSHKeys {
+							sshKeyFromAction := updateAction.GetObject().(*kubermaticv1.UserSSHKey)
+							if sshKeyFromAction.Name == expectedSSHKey.Name {
+								if !equality.Semantic.DeepEqual(updateAction.GetObject().(*kubermaticv1.UserSSHKey), expectedSSHKey) {
+									t.Fatalf("%v", diff.ObjectDiff(expectedSSHKey, updateAction.GetObject().(*kubermaticv1.UserSSHKey)))
+								}
+							}
+						}
+						validatedActions = validatedActions + 1
+					}
+				}
+				if validatedActions != len(tc.ExpectedSSHKeys) {
+					t.Fatalf("not all update actions were validated, expected to validate %d but validated only %d", len(tc.ExpectedSSHKeys), validatedActions)
+				}
+			}
 		})
 	}
 }
