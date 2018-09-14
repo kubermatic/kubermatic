@@ -10,7 +10,9 @@ import (
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
+	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kuberinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -47,10 +49,15 @@ func main() {
 		glog.Fatal(err)
 	}
 
+	selector, err := workerlabel.LabelSelector(ctrlCtx.runOptions.workerName)
+	if err != nil {
+		glog.Fatal(err)
+	}
+
 	ctrlCtx.stopCh = signals.SetupSignalHandler()
 	ctrlCtx.kubeMasterClient = kubernetes.NewForConfigOrDie(config)
 	ctrlCtx.kubermaticMasterClient = kubermaticclientset.NewForConfigOrDie(config)
-	ctrlCtx.kubermaticMasterInformerFactory = externalversions.NewSharedInformerFactory(ctrlCtx.kubermaticMasterClient, time.Minute*5)
+	ctrlCtx.kubermaticMasterInformerFactory = externalversions.NewFilteredSharedInformerFactory(ctrlCtx.kubermaticMasterClient, time.Minute*5, metav1.NamespaceAll, selector)
 	ctrlCtx.kubeMasterInformerFactory = kuberinformers.NewSharedInformerFactory(ctrlCtx.kubeMasterClient, time.Minute*5)
 	ctrlCtx.seedClusterProviders = []*rbaccontroller.ClusterProvider{}
 	{
@@ -80,16 +87,16 @@ func main() {
 			if err != nil {
 				glog.Fatal(err)
 			}
+
 			kubeInformerFactory := kuberinformers.NewSharedInformerFactory(kubeClient, time.Minute*5)
 			kubermaticClient := kubermaticclientset.NewForConfigOrDie(cfg)
-			kubermaticInformerFactory := externalversions.NewSharedInformerFactory(kubermaticClient, time.Minute*5)
+			kubermaticInformerFactory := externalversions.NewFilteredSharedInformerFactory(kubermaticClient, time.Minute*5, metav1.NamespaceAll, selector)
 			ctrlCtx.seedClusterProviders = append(ctrlCtx.seedClusterProviders, rbaccontroller.NewClusterProvider(fmt.Sprintf("seed/%s", ctxName), kubeClient, kubeInformerFactory, kubermaticClient, kubermaticInformerFactory))
 		}
 	}
 
 	ctrl, err := rbaccontroller.New(
 		rbaccontroller.NewMetrics(),
-		ctrlCtx.runOptions.workerName,
 		ctrlCtx.kubermaticMasterClient,
 		ctrlCtx.kubermaticMasterInformerFactory,
 		ctrlCtx.kubeMasterClient,

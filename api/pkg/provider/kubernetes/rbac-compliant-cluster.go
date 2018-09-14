@@ -58,14 +58,18 @@ func (p *RBACCompliantClusterProvider) New(project *kubermaticapiv1.Project, use
 	}
 	spec.HumanReadableName = strings.TrimSpace(spec.HumanReadableName)
 
+	labels := map[string]string{
+		kubermaticapiv1.ProjectIDLabelKey: project.Name,
+	}
+	if len(p.workerName) > 0 {
+		labels[kubermaticapiv1.WorkerNameLabelKey] = p.workerName
+	}
+
 	name := rand.String(10)
 	cluster := &kubermaticapiv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{
-				kubermaticapiv1.WorkerNameLabelKey: p.workerName,
-				kubermaticapiv1.ProjectIDLabelKey:  project.Name,
-			},
-			Name: name,
+			Labels: labels,
+			Name:   name,
 		},
 		Spec: *spec,
 		Status: kubermaticapiv1.ClusterStatus{
