@@ -239,7 +239,8 @@ func convertInternalUserToExternal(internalUser *kubermaticapiv1.User, bindings 
 		Email: internalUser.Spec.Email,
 	}
 	for _, pg := range internalUser.Spec.Projects {
-		apiUser.Projects = append(apiUser.Projects, apiv1.ProjectGroup{ID: pg.Name, GroupPrefix: pg.Group})
+		groupPrefix := rbac.ExtractGroupPrefix(pg.Group)
+		apiUser.Projects = append(apiUser.Projects, apiv1.ProjectGroup{ID: pg.Name, GroupPrefix: groupPrefix})
 	}
 
 	for _, binding := range bindings {
@@ -251,9 +252,11 @@ func convertInternalUserToExternal(internalUser *kubermaticapiv1.User, bindings 
 			}
 		}
 		if !bindingAlreadyExists {
-			apiUser.Projects = append(apiUser.Projects, apiv1.ProjectGroup{ID: binding.Spec.ProjectID, GroupPrefix: binding.Spec.Group})
+			groupPrefix := rbac.ExtractGroupPrefix(binding.Spec.Group)
+			apiUser.Projects = append(apiUser.Projects, apiv1.ProjectGroup{ID: binding.Spec.ProjectID, GroupPrefix: groupPrefix})
 		}
 	}
+
 	return apiUser
 }
 

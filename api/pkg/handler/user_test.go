@@ -122,7 +122,7 @@ func TestGetUsersForProject(t *testing.T) {
 				Name:  "john",
 				Email: testUserEmail,
 			},
-			ExpectedResponse: `[{"id":"john","name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","projects":[{"id":"fooInternalName","group":"owners-foo"}]},{"id":"alice","name":"Alice","creationTimestamp":"0001-01-01T00:00:00Z","email":"alice@acme.com","projects":[{"id":"fooInternalName","group":"viewers-foo"}]},{"id":"bob","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"fooInternalName","group":"editors-foo"}]}]`,
+			ExpectedResponse: `[{"id":"john","name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","projects":[{"id":"fooInternalName","group":"owners"}]},{"id":"alice","name":"Alice","creationTimestamp":"0001-01-01T00:00:00Z","email":"alice@acme.com","projects":[{"id":"fooInternalName","group":"viewers"}]},{"id":"bob","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"fooInternalName","group":"editors"}]}]`,
 		},
 		{
 			Name:         "scenario 2: get a list of user for a project 'foo' for external user",
@@ -582,7 +582,7 @@ func TestEditUserInProject(t *testing.T) {
 				Name:  testUserName,
 				Email: testUserEmail,
 			},
-			ExpectedResponse: `{"id":"bobID","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9","group":"editors-plan9"}]}`,
+			ExpectedResponse: `{"id":"bobID","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9","group":"editors"}]}`,
 			ExistingMembersBindings: []*kubermaticapiv1.UserProjectBinding{
 				&kubermaticapiv1.UserProjectBinding{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1051,7 +1051,7 @@ func TestAddUserToProject(t *testing.T) {
 				Name:  testUserName,
 				Email: testUserEmail,
 			},
-			ExpectedResponse: `{"id":"bob","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9","group":"editors-plan9"}]}`,
+			ExpectedResponse: `{"id":"bob","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9","group":"editors"}]}`,
 			ExpectedBindingAfterInvitation: &kubermaticapiv1.UserProjectBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					OwnerReferences: []metav1.OwnerReference{
@@ -1459,7 +1459,7 @@ func TestGetCurrentUser(t *testing.T) {
 			},
 			ExistingAPIUser:  tester,
 			ExpectedStatus:   http.StatusOK,
-			ExpectedResponse: `{"id":"john","name":"user1","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","projects":[{"id":"plan9","group":"owners-plan9"},{"id":"myThirdProjectInternalName","group":"editors-myThirdProjectInternalName"}]}`,
+			ExpectedResponse: `{"id":"john","name":"user1","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","projects":[{"id":"plan9","group":"owners"},{"id":"myThirdProjectInternalName","group":"editors"}]}`,
 		},
 	}
 
