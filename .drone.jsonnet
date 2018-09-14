@@ -31,6 +31,19 @@ local drone = import 'drone/drone.libsonnet';
     ],
     local versionsValues = ' --values config/versions-values.yaml',
     local tillerNamespace = ' --tiller-namespace=kubermatic-installer',
+    local e2eStep = {
+      secrets: [
+        { source: 'kubeconfig_dev', target: 'kubeconfig' },
+        { source: 'aws_1.10.5_cluster_yaml', target: 'cluster_yaml' },
+        { source: 'aws_1.10.5_node_yaml', target: 'node_yaml' },
+      ],
+      commands: [
+        'echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig',
+        'echo "$CLUSTER_YAML" > /tmp/cluster.yaml',
+        'echo "$NODE_YAML" > /tmp/node.yaml',
+        '/kubermatic-e2e -kubeconfig=/tmp/kubeconfig -kubermatic-cluster=/tmp/cluster.yaml -kubermatic-node=/tmp/node.yaml',
+      ],
+    },
 
 
     '0-dep': drone.step.new('metalmatze/dep:0.5.0') + {
@@ -125,13 +138,23 @@ local drone = import 'drone/drone.libsonnet';
     } + whenEventTag,
 
     // e2e
-    '6-kubermatic-e2e-docker-push': drone.step.docker.new('quay.io/kubermatic/e2e') + {
+    '6-kubermatic-e2e-docker-push-on-master': drone.step.docker.new('quay.io/kubermatic/e2e') + {
       secrets: [
         { source: 'docker_quay_username', target: 'docker_username' },
         { source: 'docker_quay_password', target: 'docker_password' },
       ],
       dockerfile: 'api/Dockerfile.e2e',
-      tags: ['${DRONE_TAG}', 'latest'],
+      tags: ['latest'],
+      context: 'api',
+    } + whenBranchMaster,
+
+    '6-kubermatic-e2e-docker-push-on-tag': drone.step.docker.new('quay.io/kubermatic/e2e') + {
+      secrets: [
+        { source: 'docker_quay_username', target: 'docker_username' },
+        { source: 'docker_quay_password', target: 'docker_password' },
+      ],
+      dockerfile: 'api/Dockerfile.e2e',
+      tags: ['${DRONE_TAG}'],
       context: 'api',
     } + whenEventTag,
 
@@ -204,19 +227,9 @@ local drone = import 'drone/drone.libsonnet';
     } + whenBranchMaster,
 
     // run e2e tests
-    '10-e2e': drone.step.new('quay.io/kubermatic/e2e') + {
-      secrets: [
-        { source: 'kubeconfig_dev', target: 'kubeconfig' },
-        { source: 'aws_1.10.5_cluster_yaml', target: 'cluster_yaml' },
-        { source: 'aws_1.10.5_node_yaml', target: 'node_yaml' },
-      ],
-      commands: [
-        'echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig',
-        'echo "$CLUSTER_YAML" > /tmp/cluster.yaml',
-        'echo "$NODE_YAML" > /tmp/node.yaml',
-        '/kubermatic-e2e -kubeconfig=/tmp/kubeconfig -kubermatic-cluster=/tmp/cluster.yaml -kubermatic-node=/tmp/node.yaml',
-      ],
-    } + whenBranchMaster,
+    '10-e2e-on-master': drone.step.new('quay.io/kubermatic/e2e:latest') + e2eStep + whenBranchMaster,
+    // the default value 'no_such_tag' will prevent YAML parsing error on non-tag builds
+    '10-e2e-on-tag': drone.step.new('quay.io/kubermatic/e2e:${DRONE_TAG=no_such_tag}') + e2eStep + whenEventTag,
 
     // Slack
     '11-slack': drone.step.new('kubermaticbot/drone-slack', group='slack') + {
