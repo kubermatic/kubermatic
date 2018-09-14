@@ -14,7 +14,7 @@ import (
 const (
 	name = "machine-controller"
 
-	tag = "v0.7.21"
+	tag = "v0.7.22"
 )
 
 // Deployment returns the machine-controller Deployment
@@ -101,7 +101,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 				"-cluster-dns", clusterDNSIP,
 				"-internal-listen-address", "0.0.0.0:8085",
 			},
-			Env: getEnvVars(data),
+			Env:                      getEnvVars(data),
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			ReadinessProbe: &corev1.Probe{
