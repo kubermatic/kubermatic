@@ -1,11 +1,14 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -36,10 +39,11 @@ var plan9 = &kubermaticapiv1.Project{
 }
 
 func TestGetUsersForProject(t *testing.T) {
-	t.SkipNow()
+	const longForm = "Jan 2, 2006 at 3:04pm (MST)"
 	testcases := []struct {
 		Name                        string
-		ExpectedResponse            string
+		ExpectedResponse            []apiv1.NewUser
+		ExpectedResponseString      string
 		ExpectedActions             int
 		ExpectedUserAfterInvitation *kubermaticapiv1.User
 		ProjectToGet                string
@@ -122,7 +126,70 @@ func TestGetUsersForProject(t *testing.T) {
 				Name:  "john",
 				Email: testUserEmail,
 			},
-			ExpectedResponse: `[{"id":"john","name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","projects":[{"id":"fooInternalName","group":"owners"}]},{"id":"alice","name":"Alice","creationTimestamp":"0001-01-01T00:00:00Z","email":"alice@acme.com","projects":[{"id":"fooInternalName","group":"viewers"}]},{"id":"bob","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"fooInternalName","group":"editors"}]}]`,
+			ExpectedResponse: []apiv1.NewUser{
+				apiv1.NewUser{
+					NewObjectMeta: apiv1.NewObjectMeta{
+						ID:   "john",
+						Name: "john",
+						CreationTimestamp: func() time.Time {
+							creationTime, err := time.Parse(longForm, "Jan 1, 0001 at 0:00am (PST)")
+							if err != nil {
+								t.Fatal(err)
+							}
+							return creationTime
+						}(),
+					},
+					Email: "john@acme.com",
+					Projects: []apiv1.ProjectGroup{
+						apiv1.ProjectGroup{
+							GroupPrefix: "owners",
+							ID:          "fooInternalName",
+						},
+					},
+				},
+
+				apiv1.NewUser{
+					NewObjectMeta: apiv1.NewObjectMeta{
+						ID:   "alice",
+						Name: "Alice",
+						CreationTimestamp: func() time.Time {
+							creationTime, err := time.Parse(longForm, "Jan 1, 0001 at 0:00am (PST)")
+							if err != nil {
+								t.Fatal(err)
+							}
+							return creationTime
+						}(),
+					},
+					Email: "alice@acme.com",
+					Projects: []apiv1.ProjectGroup{
+						apiv1.ProjectGroup{
+							GroupPrefix: "viewers",
+							ID:          "fooInternalName",
+						},
+					},
+				},
+
+				apiv1.NewUser{
+					NewObjectMeta: apiv1.NewObjectMeta{
+						ID:   "bob",
+						Name: "Bob",
+						CreationTimestamp: func() time.Time {
+							creationTime, err := time.Parse(longForm, "Jan 1, 0001 at 0:00am (PST)")
+							if err != nil {
+								t.Fatal(err)
+							}
+							return creationTime
+						}(),
+					},
+					Email: "bob@acme.com",
+					Projects: []apiv1.ProjectGroup{
+						apiv1.ProjectGroup{
+							GroupPrefix: "editors",
+							ID:          "fooInternalName",
+						},
+					},
+				},
+			},
 		},
 		{
 			Name:         "scenario 2: get a list of user for a project 'foo' for external user",
@@ -172,7 +239,7 @@ func TestGetUsersForProject(t *testing.T) {
 				Name:  "alice2",
 				Email: "alice2@acme.com",
 			},
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: The user \"alice2@acme.com\" doesn't belong to the given project = foo2InternalName"}}`,
+			ExpectedResponseString: `{"error":{"code":403,"message":"forbidden: The user \"alice2@acme.com\" doesn't belong to the given project = foo2InternalName"}}`,
 		},
 	}
 
@@ -198,7 +265,40 @@ func TestGetUsersForProject(t *testing.T) {
 			if res.Code != tc.HTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
-			compareWithResult(t, res, tc.ExpectedResponse)
+
+			if len(tc.ExpectedResponse) > 0 {
+				usersFromResponse := []apiv1.NewUser{}
+				rawBody, err := ioutil.ReadAll(res.Body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				err = json.Unmarshal(rawBody, &usersFromResponse)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(usersFromResponse) != len(tc.ExpectedResponse) {
+					t.Fatalf("expected to get %d keys but got %d", len(tc.ExpectedResponse), len(usersFromResponse))
+				}
+
+				for _, expectedUser := range tc.ExpectedResponse {
+					found := false
+					for _, actualUser := range usersFromResponse {
+						if actualUser.ID == expectedUser.ID {
+							if !areEqualOrDie(t, actualUser, expectedUser) {
+								t.Fatalf("actual user != expected user, diff = %v", diff.ObjectDiff(actualUser, expectedUser))
+							}
+							found = true
+						}
+					}
+					if !found {
+						t.Fatalf("the user with the name = %s was not found in the returned output", expectedUser.Name)
+					}
+				}
+			}
+
+			if len(tc.ExpectedResponseString) > 0 {
+				compareWithResult(t, res, tc.ExpectedResponseString)
+			}
 		})
 	}
 
