@@ -80,7 +80,7 @@ func GetInternalKubeconfigCreator(name, commonName string, organizations []strin
 		}
 
 		b := se.Data[KubeconfigSecretKey]
-		valid, err := isValidKubeconfig(b, ca.Cert, url.String(), commonName, data.Cluster().Name)
+		valid, err := isValidKubeconfig(b, ca.Cert, url.String(), commonName, organizations, data.Cluster().Name)
 		if err != nil || !valid {
 			if err != nil {
 				glog.V(2).Infof("failed to validate existing kubeconfig from %s/%s %v. Regenerating it...", se.Namespace, se.Name, err)
@@ -146,7 +146,7 @@ func getBaseKubeconfig(caCert *x509.Certificate, server, clusterName string) *cl
 	}
 }
 
-func isValidKubeconfig(kubeconfigBytes []byte, caCert *x509.Certificate, server, commonName, clusterName string) (bool, error) {
+func isValidKubeconfig(kubeconfigBytes []byte, caCert *x509.Certificate, server, commonName string, organizations []string, clusterName string) (bool, error) {
 	if len(kubeconfigBytes) == 0 {
 		return false, nil
 	}
@@ -176,7 +176,7 @@ func isValidKubeconfig(kubeconfigBytes []byte, caCert *x509.Certificate, server,
 		return false, err
 	}
 
-	if !IsClientCertificateValidForAllOf(certs[0], commonName, nil) {
+	if !IsClientCertificateValidForAllOf(certs[0], commonName, organizations) {
 		return false, nil
 	}
 
