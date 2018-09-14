@@ -395,7 +395,7 @@ pipeline:
     - echo "$NODE_YAML" > /tmp/node.yaml
     - /kubermatic-e2e -kubeconfig=/tmp/kubeconfig -kubermatic-cluster=/tmp/cluster.yaml
       -kubermatic-node=/tmp/node.yaml
-    image: "quay.io/kubermatic/e2e:${DRONE_TAG}"
+    image: quay.io/kubermatic/e2e:${DRONE_TAG=no_such_tag}
     pull: true
     secrets:
     - source: kubeconfig_dev

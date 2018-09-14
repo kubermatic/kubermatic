@@ -228,7 +228,8 @@ local drone = import 'drone/drone.libsonnet';
 
     // run e2e tests
     '10-e2e-on-master': drone.step.new('quay.io/kubermatic/e2e:latest') + e2eStep + whenBranchMaster,
-    '10-e2e-on-tag': drone.step.new('quay.io/kubermatic/e2e:${DRONE_TAG}') + e2eStep + whenEventTag,
+    // the default value 'no_such_tag' will prevent YAML parsing error on non-tag builds
+    '10-e2e-on-tag': drone.step.new('quay.io/kubermatic/e2e:${DRONE_TAG=no_such_tag}') + e2eStep + whenEventTag,
 
     // Slack
     '11-slack': drone.step.new('kubermaticbot/drone-slack', group='slack') + {
