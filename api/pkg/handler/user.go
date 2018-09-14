@@ -47,7 +47,12 @@ func deleteMemberFromProject(projectProvider provider.ProjectProvider, userProvi
 			return nil, k8cerrors.New(http.StatusInternalServerError, fmt.Sprintf("cannot delete the user user %s from the project, inconsistent state in database", user.Spec.Email))
 		}
 
-		err = memberProvider.Delete(userInfo, memberList[0].Name)
+		bindingForRequestedMember := memberList[0]
+		if bindingForRequestedMember.Spec.UserEmail == userInfo.Email {
+			return nil, k8cerrors.New(http.StatusForbidden, "you cannot delete yourself from the project")
+		}
+
+		err = memberProvider.Delete(userInfo, bindingForRequestedMember.Name)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
