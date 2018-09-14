@@ -107,6 +107,7 @@ pipeline:
     dockerfile: api/Dockerfile.e2e
     image: plugins/docker
     pull: true
+    registry: quay.io
     repo: quay.io/kubermatic/e2e
     secrets:
     - source: docker_quay_username
@@ -122,6 +123,7 @@ pipeline:
     dockerfile: api/Dockerfile.e2e
     image: plugins/docker
     pull: true
+    registry: quay.io
     repo: quay.io/kubermatic/e2e
     secrets:
     - source: docker_quay_username
