@@ -668,7 +668,7 @@ func (cc *Controller) ensurePodDisruptionBudgets(c *kubermaticv1.Cluster) error 
 
 	for _, create := range creators {
 		if err := resources.EnsurePodDisruptionBudget(data, create, cc.podDisruptionBudgetLister.PodDisruptionBudgets(c.Status.NamespaceName), cc.kubeClient.PolicyV1beta1().PodDisruptionBudgets(c.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the role exists: %v", err)
+			return fmt.Errorf("failed to ensure that the PodDisruptionBudget exists: %v", err)
 		}
 	}
 

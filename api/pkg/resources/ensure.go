@@ -13,7 +13,7 @@ import (
 )
 
 // EnsureRole will create the role with the passed create function & create or update it if necessary.
-// To check if its necessary it will do a lookup of the resource at the lister & compare the existing Role with the created one
+// To check if it's necessary it will do a lookup of the resource at the lister & compare the existing Role with the created one
 func EnsureRole(data RoleDataProvider, create RoleCreator, roleLister rbacv1lister.RoleNamespaceLister, roleClient rbacv1client.RoleInterface) error {
 	var existing *rbacv1.Role
 	role, err := create(data, nil)
@@ -50,7 +50,7 @@ func EnsureRole(data RoleDataProvider, create RoleCreator, roleLister rbacv1list
 }
 
 // EnsurePodDisruptionBudget will create the PodDisruptionBudget with the passed create function & create or update it if necessary.
-// To check if its necessary it will do a lookup of the resource at the lister & compare the existing PodDisruptionBudget with the created one
+// To check if it's necessary it will do a lookup of the resource at the lister & compare the existing PodDisruptionBudget with the created one
 func EnsurePodDisruptionBudget(data *TemplateData, create PodDisruptionBudgetCreator, pdbLister policyv1beta1lister.PodDisruptionBudgetNamespaceLister, pdbClient policyv1beta1client.PodDisruptionBudgetInterface) error {
 	var existing *v1beta1.PodDisruptionBudget
 	pdb, err := create(data, nil)
