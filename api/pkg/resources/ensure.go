@@ -33,7 +33,7 @@ func EnsureRole(data RoleDataProvider, create RoleCreator, roleLister rbacv1list
 	}
 	existing = existing.DeepCopy()
 
-	role, err = create(data, existing)
+	role, err = create(data, existing.DeepCopy())
 	if err != nil {
 		return fmt.Errorf("failed to build Role: %v", err)
 	}
@@ -70,7 +70,7 @@ func EnsurePodDisruptionBudget(data *TemplateData, create PodDisruptionBudgetCre
 	}
 	existing = existing.DeepCopy()
 
-	pdb, err = create(data, existing)
+	pdb, err = create(data, existing.DeepCopy())
 	if err != nil {
 		return fmt.Errorf("failed to build PodDisruptionBudget: %v", err)
 	}
