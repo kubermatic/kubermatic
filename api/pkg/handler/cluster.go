@@ -315,7 +315,7 @@ func assignSSHKeyToCluster(sshKeyProvider provider.NewSSHKeyProvider, projectPro
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AssignSSHKeysToClusterReq)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
-		if len(req.KeyName) == 0 {
+		if len(req.KeyID) == 0 {
 			return nil, errors.NewBadRequest("please provide an SSH key")
 		}
 
@@ -325,7 +325,7 @@ func assignSSHKeyToCluster(sshKeyProvider provider.NewSSHKeyProvider, projectPro
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		_, err = clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		_, err = clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: false})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -337,20 +337,19 @@ func assignSSHKeyToCluster(sshKeyProvider provider.NewSSHKeyProvider, projectPro
 			if err != nil {
 				return nil, kubernetesErrorToHTTPError(err)
 			}
-
 			found := false
 			for _, projectSSHKey := range projectSSHKeys {
-				if projectSSHKey.Name == req.KeyName {
+				if projectSSHKey.Name == req.KeyID {
 					found = true
 					break
 				}
 			}
 			if !found {
-				return nil, fmt.Errorf("the given ssh key %s does not belong to the given project %s (%s)", req.KeyName, project.Spec.Name, project.Name)
+				return nil, fmt.Errorf("the given ssh key %s does not belong to the given project %s (%s)", req.KeyID, project.Spec.Name, project.Name)
 			}
 		}
 
-		sshKey, err := sshKeyProvider.Get(userInfo, req.KeyName)
+		sshKey, err := sshKeyProvider.Get(userInfo, req.KeyID)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -624,13 +623,10 @@ func prometheusQueryRange(ctx context.Context, api prometheusv1.API, query strin
 // swagger:parameters newAssignSSHKeyToCluster
 type AssignSSHKeysToClusterReq struct {
 	DCReq
-	assignSSHKeysToClusterBodyReq
 	// in: path
 	ClusterID string `json:"cluster_id"`
-}
-
-type assignSSHKeysToClusterBodyReq struct {
-	KeyName string `json:"KeyName"`
+	// in: path
+	KeyID string `json:"key_id"`
 }
 
 // ListSSHKeysAssignedToClusterReq defines HTTP request data for newListSSHKeysAssignedToCluster endpoint
@@ -728,6 +724,15 @@ func decodeClusterID(c context.Context, r *http.Request) (string, error) {
 	return clusterID, nil
 }
 
+func decodeSSHKeyID(c context.Context, r *http.Request) (string, error) {
+	keyID := mux.Vars(r)["key_id"]
+	if keyID == "" {
+		return "", fmt.Errorf("'key_id' parameter is required but was not provided")
+	}
+
+	return keyID, nil
+}
+
 // NewUpdateClusterReq defines HTTP request for newUpdateCluster endpoint
 // swagger:parameters newUpdateCluster
 type NewUpdateClusterReq struct {
@@ -771,9 +776,11 @@ func decodeAssignSSHKeyToClusterReq(c context.Context, r *http.Request) (interfa
 	}
 	req.DCReq = dcr.(DCReq)
 
-	if err := json.NewDecoder(r.Body).Decode(&req.assignSSHKeysToClusterBodyReq); err != nil {
+	keyID, err := decodeSSHKeyID(c, r)
+	if err != nil {
 		return nil, err
 	}
+	req.KeyID = keyID
 
 	return req, nil
 }
