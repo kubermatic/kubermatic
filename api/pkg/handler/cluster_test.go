@@ -684,7 +684,6 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 			validatedActions := 0
 			if tc.HTTPStatus == http.StatusCreated {
 				for _, action := range kubermaticClient.Actions() {
-					fmt.Printf("%s %s\n", action.GetResource(), action.GetVerb())
 					if action.Matches("update", "usersshkeies") {
 						updateAction, ok := action.(clienttesting.CreateAction)
 						if !ok {
@@ -693,12 +692,12 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 						for _, expectedSSHKey := range tc.ExpectedSSHKeys {
 							sshKeyFromAction := updateAction.GetObject().(*kubermaticv1.UserSSHKey)
 							if sshKeyFromAction.Name == expectedSSHKey.Name {
+								validatedActions = validatedActions + 1
 								if !equality.Semantic.DeepEqual(updateAction.GetObject().(*kubermaticv1.UserSSHKey), expectedSSHKey) {
 									t.Fatalf("%v", diff.ObjectDiff(expectedSSHKey, updateAction.GetObject().(*kubermaticv1.UserSSHKey)))
 								}
 							}
 						}
-						validatedActions = validatedActions + 1
 					}
 				}
 				if validatedActions != len(tc.ExpectedSSHKeys) {

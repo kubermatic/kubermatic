@@ -629,19 +629,6 @@ type AssignSSHKeysToClusterReq struct {
 	KeyID string `json:"key_id"`
 }
 
-// AssignSSHKeysToClusterReq defines HTTP request data for newAssignSSHKeyToCluster  endpoint
-// swagger:parameters newAssignSSHKeyToCluster
-// type AssignSSHKeysToClusterReq struct {
-// 	DCReq
-// 	assignSSHKeysToClusterBodyReq
-// 	// in: path
-// 	ClusterID string `json:"cluster_id"`
-// }
-
-// type assignSSHKeysToClusterBodyReq struct {
-// 	KeyID string `json:"key_id"`
-// }
-
 // ListSSHKeysAssignedToClusterReq defines HTTP request data for newListSSHKeysAssignedToCluster endpoint
 // swagger:parameters newListSSHKeysAssignedToCluster
 type ListSSHKeysAssignedToClusterReq struct {
