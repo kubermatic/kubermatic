@@ -178,8 +178,9 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 
 	//
 	// Defines set of HTTP endpoints for SSH Keys that belong to a cluster
-	mux.Methods(http.MethodPost).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys").
+
+	mux.Methods(http.MethodPut).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}").
 		Handler(r.newAssignSSHKeyToCluster())
 
 	mux.Methods(http.MethodGet).
@@ -950,7 +951,7 @@ func (r Routing) newGetClusterHealth() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys project newAssignSSHKeyToCluster
+// swagger:route PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id} project newAssignSSHKeyToCluster
 //
 //     Assigns an existing ssh key to the given cluster
 //
@@ -962,7 +963,7 @@ func (r Routing) newGetClusterHealth() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: empty
+//       201: empty
 //       401: empty
 //       403: empty
 func (r Routing) newAssignSSHKeyToCluster() http.Handler {

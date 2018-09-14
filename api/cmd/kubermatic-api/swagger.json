@@ -980,8 +980,10 @@
             "$ref": "#/responses/errorResponse"
           }
         }
-      },
-      "post": {
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}": {
+      "put": {
         "description": "Assigns an existing ssh key to the given cluster",
         "consumes": [
           "application/json"
@@ -1010,19 +1012,21 @@
           },
           {
             "type": "string",
-            "name": "KeyName",
-            "in": "query"
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
           },
           {
             "type": "string",
-            "x-go-name": "ClusterID",
-            "name": "cluster_id",
+            "x-go-name": "KeyID",
+            "name": "key_id",
             "in": "path",
             "required": true
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "$ref": "#/responses/empty"
           },
           "401": {
@@ -1035,9 +1039,7 @@
             "$ref": "#/responses/errorResponse"
           }
         }
-      }
-    },
-    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}": {
+      },
       "delete": {
         "description": "Unassignes an ssh key from the given cluster",
         "consumes": [
