@@ -495,7 +495,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		Name                   string
-		Body                   string
+		SSHKeyID               string
 		ExpectedResponse       string
 		HTTPStatus             int
 		ExistingProject        *kubermaticv1.Project
@@ -507,7 +507,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 		// scenario 1
 		{
 			Name:             "scenario 1: an ssh key that belongs to the given project is assigned to the cluster",
-			Body:             `{"keyName":"key-c08aa5c7abf34504f18552846485267d-yafn"}`,
+			SSHKeyID:         "key-c08aa5c7abf34504f18552846485267d-yafn",
 			ExpectedResponse: `{}`,
 			HTTPStatus:       http.StatusCreated,
 			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
@@ -569,7 +569,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 		// scenario 2
 		{
 			Name:             "scenario 2: an ssh key that does not belong to the given project cannot be assigned to the cluster",
-			Body:             `{"keyName":"key-c08aa5c7abf34504f18552846485267d-yafn"}`,
+			SSHKeyID:         "key-c08aa5c7abf34504f18552846485267d-yafn",
 			ExpectedResponse: `{"error":{"code":500,"message":"the given ssh key key-c08aa5c7abf34504f18552846485267d-yafn does not belong to the given project my-first-project (my-first-projectInternalName)"}}`,
 			HTTPStatus:       http.StatusInternalServerError,
 			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
@@ -632,7 +632,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/abcd/sshkeys", testingProjectName), strings.NewReader(tc.Body))
+			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/abcd/sshkeys/%s", testingProjectName, tc.SSHKeyID), nil)
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			if tc.ExistingProject != nil {
