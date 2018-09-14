@@ -24,7 +24,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -668,34 +667,8 @@ func (cc *Controller) ensurePodDisruptionBudgets(c *kubermaticv1.Cluster) error 
 	}
 
 	for _, create := range creators {
-		var existing *v1beta1.PodDisruptionBudget
-		pdb, err := create(data, nil)
-		if err != nil {
-			return fmt.Errorf("failed to build PodDisruptionBudget: %v", err)
-		}
-
-		if existing, err = cc.podDisruptionBudgetLister.PodDisruptionBudgets(c.Status.NamespaceName).Get(pdb.Name); err != nil {
-			if !errors.IsNotFound(err) {
-				return err
-			}
-
-			if _, err = cc.kubeClient.PolicyV1beta1().PodDisruptionBudgets(c.Status.NamespaceName).Create(pdb); err != nil {
-				return fmt.Errorf("failed to create PodDisruptionBudget %s: %v", pdb.Name, err)
-			}
-			continue
-		}
-
-		pdb, err = create(data, existing.DeepCopy())
-		if err != nil {
-			return fmt.Errorf("failed to build PodDisruptionBudget: %v", err)
-		}
-
-		if resources.DeepEqual(pdb, existing) {
-			continue
-		}
-
-		if _, err = cc.kubeClient.PolicyV1beta1().PodDisruptionBudgets(c.Status.NamespaceName).Update(pdb); err != nil {
-			return fmt.Errorf("failed to update PodDisruptionBudget %s: %v", pdb.Name, err)
+		if err := resources.EnsurePodDisruptionBudget(data, create, cc.podDisruptionBudgetLister.PodDisruptionBudgets(c.Status.NamespaceName), cc.kubeClient.PolicyV1beta1().PodDisruptionBudgets(c.Status.NamespaceName)); err != nil {
+			return fmt.Errorf("failed to ensure that the role exists: %v", err)
 		}
 	}
 
