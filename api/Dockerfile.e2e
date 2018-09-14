@@ -4,9 +4,9 @@ LABEL maintainer "artiom@loodse.com"
 
 ENV KUBE_VERSION=v1.10.7
 ENV KUBE_TEST_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBE_VERSION}/kubernetes-test.tar.gz
-ENV KUBE_TEST_CHECKSUM=7b2d0d8bf474c35ed30d89b00f601f2ccfa49ad3
+ENV KUBE_TEST_CHECKSUM=a76614ed64c7490bca7d916f1ed98cb69cf93678
 ENV KUBECTL_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBE_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_CHECKSUM=dbe431b2684f8ff4188335b3b3cea185d5a9ec44
+ENV KUBECTL_CHECKSUM=ab40b93f01b02657ed455b94bb9e6a73b0784501
 
 RUN apk add --no-cache curl
 RUN mkdir -p /_cache

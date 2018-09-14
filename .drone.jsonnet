@@ -146,6 +146,7 @@ local drone = import 'drone/drone.libsonnet';
       dockerfile: 'api/Dockerfile.e2e',
       tags: ['latest'],
       context: 'api',
+      registry: 'quay.io',
     } + whenBranchMaster,
 
     '6-kubermatic-e2e-docker-push-on-tag': drone.step.docker.new('quay.io/kubermatic/e2e') + {
@@ -156,6 +157,7 @@ local drone = import 'drone/drone.libsonnet';
       dockerfile: 'api/Dockerfile.e2e',
       tags: ['${DRONE_TAG}'],
       context: 'api',
+      registry: 'quay.io',
     } + whenEventTag,
 
     '7-sync-charts': drone.step.new('alpine:3.7') + {
