@@ -96,6 +96,33 @@ func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
+// LegacyGetPrometheusProxyReq represents a request to the Prometheus proxy route
+type LegacyGetPrometheusProxyReq struct {
+	LegacyGetClusterReq
+	PrometheusQueryPath string `json:"prometheus_query_path"`
+	PrometheusRawQuery  string `json:"prometheus_raw_query"`
+	RequestHeaders      http.Header
+}
+
+func decodeLegacyPrometheusProxyReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req LegacyGetPrometheusProxyReq
+
+	cr, err := decodeLegacyClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.LegacyGetClusterReq = cr.(LegacyGetClusterReq)
+	req.PrometheusQueryPath = mux.Vars(r)["query_path"]
+	if req.PrometheusQueryPath != "query" && req.PrometheusQueryPath != "query_range" {
+		return nil, errors.New(http.StatusBadRequest, "invalid Prometheus query path")
+	}
+
+	req.PrometheusRawQuery = r.URL.RawQuery
+	req.RequestHeaders = r.Header
+
+	return req, nil
+}
+
 // CreateClusterReqBody represents the request body for a create cluster request
 type CreateClusterReqBody struct {
 	Cluster *kubermaticv1.Cluster `json:"cluster"`

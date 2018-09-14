@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"reflect"
 
+	goerrors "errors"
+
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
@@ -34,6 +36,12 @@ type ErrorDetails struct {
 	//
 	// Required: true
 	ErrorMessage string `json:"message"`
+}
+
+// RawResponse is the default representation of a raw (proxied) HTTP response
+type RawResponse struct {
+	Header http.Header
+	Body   []byte
 }
 
 func errorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
@@ -97,4 +105,17 @@ func encodeJSON(c context.Context, w http.ResponseWriter, response interface{}) 
 	}
 
 	return json.NewEncoder(w).Encode(response)
+}
+
+func encodeRawResponse(c context.Context, w http.ResponseWriter, response interface{}) error {
+	if resp, ok := response.(RawResponse); ok {
+		for field, values := range resp.Header {
+			for _, value := range values {
+				w.Header().Set(field, value)
+			}
+		}
+		_, err := w.Write(resp.Body)
+		return err
+	}
+	return goerrors.New("internal error (unexpected raw response object)")
 }

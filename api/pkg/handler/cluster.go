@@ -619,6 +619,51 @@ func prometheusQueryRange(ctx context.Context, api prometheusv1.API, query strin
 	return vals, nil
 }
 
+func getPrometheusProxyEndpoint() endpoint.Endpoint {
+
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+		req := request.(LegacyGetPrometheusProxyReq)
+		c, err := clusterProvider.Cluster(user, req.ClusterName)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
+
+		var prometheusClient prometheusapi.Client
+		if prometheusClient, err = prometheusapi.NewClient(prometheusapi.Config{
+			Address: fmt.Sprintf(`http://prometheus.cluster-%s.svc.cluster.local:9090`, c.Name),
+		}); err != nil {
+			return nil, err
+		}
+
+		promURL := prometheusClient.URL("/api/v1/"+req.PrometheusQueryPath, map[string]string{})
+		promURL.RawQuery = req.PrometheusRawQuery
+
+		promReq, err := http.NewRequest(http.MethodGet, promURL.String(), nil)
+		if err != nil {
+			return nil, err
+		}
+
+		promResp, body, err := prometheusClient.Do(ctx, promReq)
+		if err != nil {
+			return nil, err
+		}
+
+		resp := RawResponse{
+			Header: http.Header{
+				"Content-Type": []string{promResp.Header.Get("Content-Type")},
+			},
+			Body: body,
+		}
+
+		return resp, nil
+	}
+}
+
 // AssignSSHKeysToClusterReq defines HTTP request data for newAssignSSHKeyToCluster  endpoint
 // swagger:parameters newAssignSSHKeyToCluster
 type AssignSSHKeysToClusterReq struct {
