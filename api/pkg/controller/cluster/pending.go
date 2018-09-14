@@ -22,7 +22,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 	}
 
 	// Setup required infrastructure at cloud provider
-	if err := cc.ensureCloudProviderIsInitialized(cluster); err != nil {
+	if err = cc.ensureCloudProviderIsInitialized(cluster); err != nil {
 		return nil, err
 	}
 
@@ -37,7 +37,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 	}
 
 	// Deploy & Update master components
-	if err := cc.ensureResourcesAreDeployed(cluster); err != nil {
+	if err = cc.ensureResourcesAreDeployed(cluster); err != nil {
 		return nil, err
 	}
 
@@ -69,37 +69,37 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 			}
 		}
 
-		if err := cc.launchingCreateClusterInfoConfigMap(cluster); err != nil {
+		if err = cc.launchingCreateClusterInfoConfigMap(cluster); err != nil {
 			return nil, err
 		}
 
-		if err := cc.launchingCreateOpenVPNClientCertificates(cluster); err != nil {
+		if err = cc.launchingCreateOpenVPNClientCertificates(cluster); err != nil {
 			return nil, err
 		}
 
 		if len(cluster.Spec.MachineNetworks) > 0 {
-			if err := cc.userClusterEnsureInitializerConfiguration(cluster); err != nil {
+			if err = cc.userClusterEnsureInitializerConfiguration(cluster); err != nil {
 				return nil, err
 			}
 		}
 
-		if err := cc.userClusterEnsureRoles(cluster); err != nil {
+		if err = cc.userClusterEnsureRoles(cluster); err != nil {
 			return nil, err
 		}
 
-		if err := cc.userClusterEnsureConfigMaps(cluster); err != nil {
+		if err = cc.userClusterEnsureConfigMaps(cluster); err != nil {
 			return nil, err
 		}
 
-		if err := cc.userClusterEnsureRoleBindings(cluster); err != nil {
+		if err = cc.userClusterEnsureRoleBindings(cluster); err != nil {
 			return nil, err
 		}
 
-		if err := cc.userClusterEnsureClusterRoles(cluster); err != nil {
+		if err = cc.userClusterEnsureClusterRoles(cluster); err != nil {
 			return nil, err
 		}
 
-		if err := cc.userClusterEnsureClusterRoleBindings(cluster); err != nil {
+		if err = cc.userClusterEnsureClusterRoleBindings(cluster); err != nil {
 			return nil, err
 		}
 	}
@@ -130,7 +130,7 @@ func (cc *Controller) ensureCloudProviderIsInitialized(cluster *kubermaticv1.Clu
 		return fmt.Errorf("no valid provider specified")
 	}
 
-	if cluster, err = prov.InitializeCloudProvider(cluster, cc.updateCluster); err != nil {
+	if _, err = prov.InitializeCloudProvider(cluster, cc.updateCluster); err != nil {
 		return err
 	}
 

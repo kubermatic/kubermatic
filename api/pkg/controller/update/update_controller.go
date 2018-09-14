@@ -46,7 +46,6 @@ type Controller struct {
 	queue         workqueue.RateLimitingInterface
 	metrics       *Metrics
 	updateManager Manager
-	workerName    string
 
 	kubermaticClient kubermaticclientset.Interface
 	clusterLister    kubermaticv1lister.ClusterLister
@@ -62,13 +61,11 @@ type Manager interface {
 func New(
 	metrics *Metrics,
 	updateManager Manager,
-	workerName string,
 	kubermaticClient kubermaticclientset.Interface,
 	clusterInformer kubermaticv1informers.ClusterInformer) (*Controller, error) {
 	c := &Controller{
 		queue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "update_cluster"),
 		metrics:          metrics,
-		workerName:       workerName,
 		kubermaticClient: kubermaticClient,
 		updateManager:    updateManager,
 	}
@@ -181,11 +178,6 @@ func (c *Controller) sync(key string) error {
 	}
 
 	cluster := clusterFromCache.DeepCopy()
-
-	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != c.workerName {
-		glog.V(8).Infof("skipping cluster %s due to different worker assigned to it", key)
-		return nil
-	}
 
 	if !cluster.Status.Health.AllHealthy() {
 		// Cluster not healthy yet. Nothing to do.
