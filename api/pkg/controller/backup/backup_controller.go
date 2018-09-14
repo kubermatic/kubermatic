@@ -106,9 +106,8 @@ type Controller struct {
 	// backupContainerImage holds the image used for creating the etcd backup
 	// It must be configurable to cover offline use cases
 	backupContainerImage string
-	// workerName holds the name of this worker, only clusters with matching `.Spec.WorkerName` will be worked on
-	workerName string
-	metrics    *Metrics
+
+	metrics *Metrics
 
 	queue            workqueue.RateLimitingInterface
 	kubermaticClient kubermaticclientset.Interface
@@ -126,7 +125,6 @@ func New(
 	cleanupContainer corev1.Container,
 	backupSchedule time.Duration,
 	backupContainerImage string,
-	workerName string,
 	metrics *Metrics,
 	kubermaticClient kubermaticclientset.Interface,
 	kubernetesClient kubernetes.Interface,
@@ -153,7 +151,6 @@ func New(
 		storeContainer:       storeContainer,
 		cleanupContainer:     cleanupContainer,
 		backupContainerImage: backupContainerImage,
-		workerName:           workerName,
 		metrics:              metrics,
 	}
 
@@ -344,11 +341,6 @@ func (c *Controller) sync(key string) error {
 
 	if clusterFromCache.Spec.Pause {
 		glog.V(6).Infof("skipping cluster %s due to it was set to paused", key)
-		return nil
-	}
-
-	if clusterFromCache.Labels[kubermaticv1.WorkerNameLabelKey] != c.workerName {
-		glog.V(8).Infof("skipping cluster %s due to different worker assigned to it", key)
 		return nil
 	}
 
