@@ -2,7 +2,7 @@ FROM alpine:3.7 AS builder
 
 LABEL maintainer "artiom@loodse.com"
 
-ENV KUBE_VERSION=v1.10.5
+ENV KUBE_VERSION=v1.10.7
 ENV KUBE_TEST_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBE_VERSION}/kubernetes-test.tar.gz
 ENV KUBE_TEST_CHECKSUM=7b2d0d8bf474c35ed30d89b00f601f2ccfa49ad3
 ENV KUBECTL_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBE_VERSION}/bin/linux/amd64/kubectl
