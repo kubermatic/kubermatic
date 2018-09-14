@@ -395,6 +395,85 @@ func TestDeleteUserFromProject(t *testing.T) {
 				},
 			},
 		},
+
+		// scenario 3
+		{
+			Name:          "scenario 3: john the owner of the plan9 project removes himself from the projec",
+			Body:          fmt.Sprintf(`{"id":"%s", "email":"%s", "projects":[{"id":"plan9", "group":"owners"}]}`, testUserID, testUserEmail),
+			HTTPStatus:    http.StatusForbidden,
+			ProjectToSync: "plan9",
+			ExistingProjects: []*kubermaticapiv1.Project{
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				plan9,
+			},
+			UserIDToDelete: testUserID,
+			ExistingKubermaticUsers: []*kubermaticapiv1.User{
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: testUserID,
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  testUserName,
+						ID:    testUserID,
+						Email: testUserEmail,
+					},
+				},
+
+				&kubermaticapiv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bobID",
+					},
+					Spec: kubermaticapiv1.UserSpec{
+						Name:  "Bob",
+						Email: "bob@acme.com",
+					},
+				},
+			},
+			ExistingAPIUser: apiv1.User{
+				ID:    testUserID,
+				Name:  testUserName,
+				Email: testUserEmail,
+			},
+			ExpectedResponse: `{"error":{"code":403,"message":"you cannot delete yourself from the project"}}`,
+			ExistingMembersBindings: []*kubermaticapiv1.UserProjectBinding{
+				&kubermaticapiv1.UserProjectBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "bobPlanXBindings",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticapiv1.ProjectKindName,
+								Name:       "planX",
+							},
+						},
+					},
+					Spec: kubermaticapiv1.UserProjectBindingSpec{
+						UserEmail: "bob@acme.com",
+						Group:     "viewers-planX",
+						ProjectID: "planX",
+					},
+				},
+
+				&kubermaticapiv1.UserProjectBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "johnBidning",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticapiv1.ProjectKindName,
+								Name:       "plan9",
+							},
+						},
+					},
+					Spec: kubermaticapiv1.UserProjectBindingSpec{
+						UserEmail: testUserEmail,
+						Group:     "owners-plan9",
+						ProjectID: "plan9",
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
