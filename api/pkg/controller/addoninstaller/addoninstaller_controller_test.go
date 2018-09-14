@@ -128,7 +128,6 @@ func TestCreateAddon(t *testing.T) {
 
 			controller := Controller{}
 			controller.client = kubermaticClient
-			controller.workerName = "worker"
 			controller.defaultAddonList = addons
 			controller.clusterLister = kubermaticv1lister.NewClusterLister(clusterIndexer)
 			controller.addonLister = kubermaticv1lister.NewAddonLister(addonIndexer)
