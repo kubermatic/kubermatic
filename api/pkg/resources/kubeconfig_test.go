@@ -3,9 +3,16 @@ package resources
 import (
 	"crypto/x509"
 	"encoding/pem"
+	"net"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/cert/triple"
 )
 
 func TestGetBaseKubeconfig(t *testing.T) {
@@ -57,4 +64,49 @@ Y1OSU+4JRXF62VQY
 	assert.Len(t, c.Clusters, 1)
 	assert.Contains(t, c.Clusters, clusterName)
 	assert.Equal(t, []byte(caString), c.Clusters[clusterName].CertificateAuthorityData)
+}
+
+func TestGetInternalKubeconfigCreator(t *testing.T) {
+	checkKubeConfigRegeneration(t, nil)
+}
+
+func TestGetInternalKubeconfigCreatorWithOrgs(t *testing.T) {
+	checkKubeConfigRegeneration(t, []string{"org1", "org2"})
+}
+
+// FakeDataProvider provides just enough for testing kubeconfig creation.
+type FakeDataProvider struct {
+	caPair *triple.KeyPair
+}
+
+func (fake *FakeDataProvider) Cluster() *kubermaticv1.Cluster            { return &kubermaticv1.Cluster{} }
+func (fake *FakeDataProvider) ExternalIP() (*net.IP, error)              { return nil, nil }
+func (fake *FakeDataProvider) GetClusterRef() metav1.OwnerReference      { return metav1.OwnerReference{} }
+func (fake *FakeDataProvider) GetFrontProxyCA() (*triple.KeyPair, error) { return nil, nil }
+func (fake *FakeDataProvider) GetRootCA() (*triple.KeyPair, error)       { return fake.caPair, nil }
+func (fake *FakeDataProvider) InClusterApiserverURL() (*url.URL, error)  { return &url.URL{}, nil }
+
+func checkKubeConfigRegeneration(t *testing.T, orgs []string) {
+	// get a ca for testing and setup fake data
+	ca, err := triple.NewCA("test-ca")
+	if err != nil {
+		t.Fatalf("Failed to generate test root ca: %v", err)
+	}
+	data := &FakeDataProvider{caPair: ca}
+	assert.NotNil(t, data)
+
+	create := GetInternalKubeconfigCreator("test-creator", "test-creator-cn", orgs)
+	secret, err := create(data, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.NotNil(t, secret)
+
+	secret2, err := create(data, secret.DeepCopy())
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.NotNil(t, secret2)
+	// kubeconfig should be unmodified
+	assert.Equal(t, string(secret.Data[KubeconfigSecretKey]), string(secret2.Data[KubeconfigSecretKey]))
 }
