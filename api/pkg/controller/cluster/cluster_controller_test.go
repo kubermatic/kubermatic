@@ -35,7 +35,6 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 		kubeClient,
 		kubermaticClient,
 		TestExternalURL,
-		"",
 		TestDC,
 		dcs,
 		cps,
