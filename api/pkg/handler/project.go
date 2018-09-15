@@ -3,13 +3,10 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/gorilla/mux"
-
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -47,13 +44,41 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 	}
 }
 
-func listProjectsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func listProjectsEndpoint(projectProvider provider.ProjectProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 
+		// old approach were we stored info about bindings in the user resource object
 		projects := []*apiv1.Project{}
 		for _, pg := range user.Spec.Projects {
-			projectInternal, err := projectProvider.Get(user, pg.Name)
+			userInfo := &provider.UserInfo{Email: user.Spec.Email, Group: pg.Group}
+			projectInternal, err := projectProvider.Get(userInfo, pg.Name, &provider.ProjectGetOptions{})
+			if err != nil {
+				return nil, kubernetesErrorToHTTPError(err)
+			}
+			projects = append(projects, convertInternalProjectToExternal(projectInternal))
+		}
+
+		// TODO: remove old apprach when we migrate to the new one
+		// new approach bindings are provided by the mapper
+		isProjectAlreadyOnTheList := func(projectID string) bool {
+			for _, project := range projects {
+				if project.ID == projectID {
+					return true
+				}
+			}
+			return false
+		}
+		userMappings, err := memberMapper.MappingsFor(user.Spec.Email)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		for _, mapping := range userMappings {
+			if isProjectAlreadyOnTheList(mapping.Spec.ProjectID) {
+				continue
+			}
+			userInfo := &provider.UserInfo{Email: mapping.Spec.UserEmail, Group: mapping.Spec.Group}
+			projectInternal, err := projectProvider.Get(userInfo, mapping.Spec.ProjectID, &provider.ProjectGetOptions{})
 			if err != nil {
 				return nil, kubernetesErrorToHTTPError(err)
 			}
@@ -74,8 +99,8 @@ func deleteProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 			return nil, errors.NewBadRequest("the name of the project cannot be empty")
 		}
 
-		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
-		err := projectProvider.Delete(user, req.ProjectID)
+		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		err := projectProvider.Delete(userInfo, req.ProjectID)
 		return nil, kubernetesErrorToHTTPError(err)
 	}
 }
@@ -88,24 +113,31 @@ func updateProjectEndpoint() endpoint.Endpoint {
 
 func getProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(GetProjectRq)
-
-		if !ok {
-			return nil, errors.NewBadRequest("invalid request")
-		}
-
-		if len(req.Name) == 0 {
-			return nil, errors.NewBadRequest("the name of the project cannot be empty")
-		}
-
-		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
-		kubermaticProject, err := projectProvider.Get(user, req.Name)
+		kubermaticProject, err := getKubermaticProject(ctx, projectProvider, request)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-
 		return convertInternalProjectToExternal(kubermaticProject), nil
 	}
+}
+
+func getKubermaticProject(ctx context.Context, projectProvider provider.ProjectProvider, request interface{}) (*kubermaticapiv1.Project, error) {
+	req, ok := request.(GetProjectRq)
+
+	if !ok {
+		return nil, errors.NewBadRequest("invalid request")
+	}
+
+	if len(req.ProjectID) == 0 {
+		return nil, errors.NewBadRequest("the name of the project cannot be empty")
+	}
+
+	userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+	kubermaticProject, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+	if err != nil {
+		return nil, kubernetesErrorToHTTPError(err)
+	}
+	return kubermaticProject, nil
 }
 
 func convertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project) *apiv1.Project {
@@ -126,34 +158,28 @@ func convertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project
 }
 
 // GetProjectRq defines HTTP request for getProject endpoint
-// swagger:parameters getProject
+// swagger:parameters getProject getUsersForProject
 type GetProjectRq struct {
-	// in: path
-	Name string `json:"project_id"`
+	ProjectReq
 }
 
 func decodeGetProject(c context.Context, r *http.Request) (interface{}, error) {
-	var req GetProjectRq
-
-	projectID, ok := mux.Vars(r)["project_id"]
-	if !ok {
-		return nil, fmt.Errorf("'project_id' parameter is required but was not provided")
+	projectReq, err := decodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
 	}
-
-	req.Name = projectID
-	return req, nil
+	return GetProjectRq{projectReq.(ProjectReq)}, nil
 }
 
-// UpdateProjectRq defines HTTP request for updateProject endpoint
+// UpdateProjectRq defines HTTP request for updateProject
 // swagger:parameters updateProject
 type UpdateProjectRq struct {
-	// in: path
-	Name string `json:"project_id"`
+	ProjectReq
 }
 
 func decodeUpdateProject(c context.Context, r *http.Request) (interface{}, error) {
-	var req UpdateProjectRq
-	return req, errors.NewNotImplemented()
+	var rq UpdateProjectRq
+	return rq, errors.NewNotImplemented()
 }
 
 type projectReq struct {

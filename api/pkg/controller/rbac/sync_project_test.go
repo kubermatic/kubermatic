@@ -1628,7 +1628,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 
 			// act
 			target := Controller{}
-			err := target.ensureClusterRBACRoleBindingForNamedResource(test.projectToSync.Name, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta(), fakeKubeClient, clusterRoleBindingLister)
+			err := target.ensureClusterRBACRoleBindingForNamedResource(test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta(), fakeKubeClient, clusterRoleBindingLister)
 
 			// validate
 			if err != nil {
@@ -1673,7 +1673,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			name: "Scenario 1: Proper set of RBAC Roles for project's resources are created on \"master\" and seed clusters",
+			name:                     "Scenario 1: Proper set of RBAC Roles for project's resources are created on \"master\" and seed clusters",
 			expectedActionsForMaster: []string{"create", "create", "create", "create"},
 			expectedActionsForSeeds:  []string{"create", "create"},
 			seedClusters:             2,
@@ -1794,6 +1794,38 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 		},
 
 		// scenario 2
+		{
+			name:                     "Scenario 2: Proper set of RBAC Roles for UserProjectBinding resource are created on \"master\" and seed clusters",
+			expectedActionsForMaster: []string{"create"},
+			// UserProjectBinding is a resource that is only on master cluster
+			expectedActionsForSeeds: []string{},
+			seedClusters:            2,
+			projectResourcesToSync: []projectResource{
+				{
+					gvr: schema.GroupVersionResource{
+						Group:    kubermaticv1.GroupName,
+						Version:  kubermaticv1.GroupVersion,
+						Resource: kubermaticv1.UserProjectBindingResourceName,
+					},
+					kind: kubermaticv1.UserProjectBindingKind,
+				},
+			},
+
+			expectedClusterRolesForMaster: []*rbacv1.ClusterRole{
+				&rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:userprojectbindings:owners",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{"userprojectbindings"},
+							Verbs:     []string{"create"},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -1872,7 +1904,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 				}
 
 				if len(seedKubeClient.Actions()) != len(test.expectedActionsForSeeds) {
-					t.Fatalf("unexpected number of actions, expected to get %d, but got %d, actions %v", len(seedKubeClient.Actions()), len(test.expectedActionsForSeeds), seedKubeClient.Actions())
+					t.Fatalf("unexpected number of actions, got %d, but expected to get %d, actions %v", len(seedKubeClient.Actions()), len(test.expectedActionsForSeeds), seedKubeClient.Actions())
 				}
 
 				createActionIndex := 0
@@ -2202,21 +2234,23 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 
 func TestEnsureProjectOwner(t *testing.T) {
 	tests := []struct {
-		name          string
-		projectToSync *kubermaticv1.Project
-		existingUser  *kubermaticv1.User
-		expectedUser  *kubermaticv1.User
+		name            string
+		projectToSync   *kubermaticv1.Project
+		existingUser    *kubermaticv1.User
+		expectedBinding *kubermaticv1.UserProjectBinding
+		existingBinding *kubermaticv1.UserProjectBinding
 	}{
 		{
-			name:          "scenario 1: make sure, that the owner of the newly created project is set properly.",
-			projectToSync: createProject("thunderball", createUser("James Bond")),
-			existingUser:  createUser("James Bond"),
-			expectedUser:  createExpectedOwnerUser("James Bond", "thunderball"),
+			name:            "scenario 1: make sure, that the owner of the newly created project is set properly.",
+			projectToSync:   createProject("thunderball", createUser("James Bond")),
+			existingUser:    createUser("James Bond"),
+			expectedBinding: createExpectedOwnerBinding("James Bond", createProject("thunderball", createUser("James Bond"))),
 		},
 		{
-			name:          "scenario 2: no op when the owner of the project was set.",
-			projectToSync: createProject("thunderball", createUser("James Bond")),
-			existingUser:  createExpectedOwnerUser("James Bond", "thunderball"),
+			name:            "scenario 2: no op when the owner of the project was set.",
+			projectToSync:   createProject("thunderball", createUser("James Bond")),
+			existingUser:    createUser("James Bond"),
+			existingBinding: createExpectedOwnerBinding("James Bond", createProject("thunderball", createUser("James Bond"))),
 		},
 	}
 	for _, test := range tests {
@@ -2224,25 +2258,37 @@ func TestEnsureProjectOwner(t *testing.T) {
 			// setup the test scenario
 			objs := []runtime.Object{}
 			userIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
-			err := userIndexer.Add(test.existingUser)
-			if err != nil {
-				t.Fatal(err)
+			if test.existingUser != nil {
+				err := userIndexer.Add(test.existingUser)
+				if err != nil {
+					t.Fatal(err)
+				}
+				objs = append(objs, test.existingUser)
 			}
-			objs = append(objs, test.existingUser)
+			bindingIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+			if test.existingBinding != nil {
+				err := bindingIndexer.Add(test.existingBinding)
+				if err != nil {
+					t.Fatal(err)
+				}
+				objs = append(objs, test.existingBinding)
+			}
 			kubermaticFakeClient := kubermaticfakeclientset.NewSimpleClientset(objs...)
 			userLister := kubermaticv1lister.NewUserLister(userIndexer)
+			bindingLister := kubermaticv1lister.NewUserProjectBindingLister(bindingIndexer)
 
 			// act
 			target := Controller{}
 			target.kubermaticMasterClient = kubermaticFakeClient
 			target.userLister = userLister
-			err = target.ensureProjectOwner(test.projectToSync)
+			target.userProjectBindingLister = bindingLister
+			err := target.ensureProjectOwner(test.projectToSync)
 
 			// validate
 			if err != nil {
 				t.Fatal(err)
 			}
-			if test.expectedUser == nil {
+			if test.expectedBinding == nil {
 				if len(kubermaticFakeClient.Actions()) != 0 {
 					t.Fatalf("unexpected actions %#v", kubermaticFakeClient.Actions())
 				}
@@ -2253,15 +2299,18 @@ func TestEnsureProjectOwner(t *testing.T) {
 			}
 
 			action := kubermaticFakeClient.Actions()[0]
-			if !action.Matches("update", "users") {
+			if !action.Matches("create", "userprojectbindings") {
 				t.Fatalf("unexpected action %#v", action)
 			}
-			updateAction, ok := action.(clienttesting.UpdateAction)
+			createAction, ok := action.(clienttesting.CreateAction)
 			if !ok {
 				t.Fatalf("unexpected action %#v", action)
 			}
-			if !equality.Semantic.DeepEqual(updateAction.GetObject().(*kubermaticv1.User), test.expectedUser) {
-				t.Fatalf("%v", diff.ObjectDiff(test.expectedUser, updateAction.GetObject().(*kubermaticv1.User)))
+			createdBinding := createAction.GetObject().(*kubermaticv1.UserProjectBinding)
+			// name was generated by the test framework just update it
+			test.expectedBinding.Name = createdBinding.Name
+			if !equality.Semantic.DeepEqual(createdBinding, test.expectedBinding) {
+				t.Fatalf("%v", diff.ObjectDiff(test.expectedBinding, createdBinding))
 			}
 		})
 	}
@@ -2300,14 +2349,29 @@ func createUser(name string) *kubermaticv1.User {
 			UID:  "",
 			Name: name,
 		},
-		Spec: kubermaticv1.UserSpec{},
+		Spec: kubermaticv1.UserSpec{
+			Email: fmt.Sprintf("%s@acme.com", name),
+		},
 	}
 }
 
-func createExpectedOwnerUser(userName, projectName string) *kubermaticv1.User {
+func createExpectedOwnerBinding(userName string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
 	user := createUser(userName)
-	user.Spec.Projects = []kubermaticv1.ProjectGroup{
-		{Name: projectName, Group: fmt.Sprintf("owners-%s", projectName)},
+	return &kubermaticv1.UserProjectBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticv1.ProjectKindName,
+					UID:        project.GetUID(),
+					Name:       project.Name,
+				},
+			},
+		},
+		Spec: kubermaticv1.UserProjectBindingSpec{
+			UserEmail: user.Spec.Email,
+			ProjectID: project.Name,
+			Group:     fmt.Sprintf("owners-%s", project.Name),
+		},
 	}
-	return user
 }

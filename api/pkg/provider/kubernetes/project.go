@@ -6,6 +6,7 @@ import (
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -95,11 +96,11 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*
 //
 // Note:
 // Before deletion project's status.phase is set to ProjectTerminating
-func (p *ProjectProvider) Delete(user *kubermaticapiv1.User, projectInternalName string) error {
-	if user == nil {
+func (p *ProjectProvider) Delete(userInfo *provider.UserInfo, projectInternalName string) error {
+	if userInfo == nil {
 		return errors.New("a user is missing but required")
 	}
-	masterImpersonatedClient, err := p.createMasterImpersonationClientWrapper(user, projectInternalName)
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return err
 	}
@@ -117,31 +118,22 @@ func (p *ProjectProvider) Delete(user *kubermaticapiv1.User, projectInternalName
 }
 
 // Get returns the project with the given name
-func (p *ProjectProvider) Get(user *kubermaticapiv1.User, projectInternalName string) (*kubermaticapiv1.Project, error) {
-	if user == nil {
+func (p *ProjectProvider) Get(userInfo *provider.UserInfo, projectInternalName string, options *provider.ProjectGetOptions) (*kubermaticapiv1.Project, error) {
+	if userInfo == nil {
 		return nil, errors.New("a user is missing but required")
 	}
-	masterImpersonatedClient, err := p.createMasterImpersonationClientWrapper(user, projectInternalName)
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
-	return masterImpersonatedClient.Projects().Get(projectInternalName, metav1.GetOptions{})
-}
-
-// createMasterImpersonationClientWrapper is a helper method that spits back kubermatic client that uses user impersonation
-func (p *ProjectProvider) createMasterImpersonationClientWrapper(user *kubermaticapiv1.User, projectInternalName string) (kubermaticclientv1.KubermaticV1Interface, error) {
-	if user == nil || len(projectInternalName) == 0 {
-		return nil, errors.New("a project and/or a user is missing but required")
-	}
-	groupName, err := user.GroupForProject(projectInternalName)
+	project, err := masterImpersonatedClient.Projects().Get(projectInternalName, metav1.GetOptions{})
 	if err != nil {
-		return nil, kerrors.NewForbidden(schema.GroupResource{}, projectInternalName, err)
+		return nil, err
 	}
-	impersonationCfg := restclient.ImpersonationConfig{
-		UserName: user.Spec.Email,
-		Groups:   []string{groupName},
+	if !options.IncludeUninitialized && project.Status.Phase != kubermaticapiv1.ProjectActive {
+		return nil, kerrors.NewServiceUnavailable("Project is not initialized yet")
 	}
-	return p.createMasterImpersonatedClient(impersonationCfg)
+	return project, nil
 }
 
 // NewKubermaticImpersonationClient creates a new default impersonation client

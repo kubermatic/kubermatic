@@ -1,4 +1,6 @@
+(import './alerts/ark.libsonnet') +
 (import './alerts/kubermatic.libsonnet') +
+(import './alerts/machine-controller.libsonnet') +
 (import 'kubernetes-mixin/mixin.libsonnet') +
 (import 'prometheus/mixin.libsonnet') +
 (import 'node_exporter/mixin.libsonnet') +
@@ -11,9 +13,9 @@
     kubeletSelector: 'job="kubelet"',
     kubeStateMetricsSelector: 'job="kube-state-metrics"',
     nodeExporterSelector: 'app="node-exporter"',
-    notKubeDnsSelector: 'job!="kube-dns"',
-    kubeSchedulerSelector: 'job="kube-scheduler"',
-    kubeControllerManagerSelector: 'job="kube-controller-manager"',
+    notKubeDnsSelector: 'job!="dns"',
+    kubeSchedulerSelector: 'job="scheduler"',
+    kubeControllerManagerSelector: 'job="controller-manager"',
     kubeApiserverSelector: 'job="apiserver"',
     machineControllerSelector: 'job="machine-controller"',
 

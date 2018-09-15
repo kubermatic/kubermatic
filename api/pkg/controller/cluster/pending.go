@@ -2,10 +2,16 @@ package cluster
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+)
+
+const (
+	reachableCheckPeriod = 5 * time.Second
 )
 
 func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
@@ -16,7 +22,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 	}
 
 	// Setup required infrastructure at cloud provider
-	if err := cc.ensureCloudProviderIsInitialized(cluster); err != nil {
+	if err = cc.ensureCloudProviderIsInitialized(cluster); err != nil {
 		return nil, err
 	}
 
@@ -31,7 +37,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 	}
 
 	// Deploy & Update master components
-	if err := cc.ensureResourcesAreDeployed(cluster); err != nil {
+	if err = cc.ensureResourcesAreDeployed(cluster); err != nil {
 		return nil, err
 	}
 
@@ -42,41 +48,58 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 
 	if cluster.Status.Health.Apiserver {
 		// Controlling of user-cluster resources
-		if cluster, err = cc.ensureClusterReachable(cluster); err != nil {
+		reachable, err := cc.clusterIsReachable(cluster)
+		if err != nil {
 			return nil, err
 		}
 
-		if err := cc.launchingCreateClusterInfoConfigMap(cluster); err != nil {
-			return nil, err
+		if !reachable {
+			cc.enqueueAfter(cluster, reachableCheckPeriod)
+			return cluster, nil
 		}
 
-		if err := cc.launchingCreateOpenVPNClientCertificates(cluster); err != nil {
-			return nil, err
-		}
-
-		if len(cluster.Spec.MachineNetworks) > 0 {
-			if err := cc.userClusterEnsureInitializerConfiguration(cluster); err != nil {
+		// Only add the node deletion finalizer when the cluster is actually running
+		// Otherwise we fail to delete the nodes and are stuck in a loop
+		if !kuberneteshelper.HasFinalizer(cluster, nodeDeletionFinalizer) {
+			cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+				c.Finalizers = append(c.Finalizers, nodeDeletionFinalizer)
+			})
+			if err != nil {
 				return nil, err
 			}
 		}
 
-		if err := cc.userClusterEnsureRoles(cluster); err != nil {
+		if err = cc.launchingCreateClusterInfoConfigMap(cluster); err != nil {
 			return nil, err
 		}
 
-		if err := cc.userClusterEnsureConfigMaps(cluster); err != nil {
+		if err = cc.launchingCreateOpenVPNClientCertificates(cluster); err != nil {
 			return nil, err
 		}
 
-		if err := cc.userClusterEnsureRoleBindings(cluster); err != nil {
+		if len(cluster.Spec.MachineNetworks) > 0 {
+			if err = cc.userClusterEnsureInitializerConfiguration(cluster); err != nil {
+				return nil, err
+			}
+		}
+
+		if err = cc.userClusterEnsureRoles(cluster); err != nil {
 			return nil, err
 		}
 
-		if err := cc.userClusterEnsureClusterRoles(cluster); err != nil {
+		if err = cc.userClusterEnsureConfigMaps(cluster); err != nil {
 			return nil, err
 		}
 
-		if err := cc.userClusterEnsureClusterRoleBindings(cluster); err != nil {
+		if err = cc.userClusterEnsureRoleBindings(cluster); err != nil {
+			return nil, err
+		}
+
+		if err = cc.userClusterEnsureClusterRoles(cluster); err != nil {
+			return nil, err
+		}
+
+		if err = cc.userClusterEnsureClusterRoleBindings(cluster); err != nil {
 			return nil, err
 		}
 	}
@@ -107,7 +130,7 @@ func (cc *Controller) ensureCloudProviderIsInitialized(cluster *kubermaticv1.Clu
 		return fmt.Errorf("no valid provider specified")
 	}
 
-	if cluster, err = prov.InitializeCloudProvider(cluster, cc.updateCluster); err != nil {
+	if _, err = prov.InitializeCloudProvider(cluster, cc.updateCluster); err != nil {
 		return err
 	}
 

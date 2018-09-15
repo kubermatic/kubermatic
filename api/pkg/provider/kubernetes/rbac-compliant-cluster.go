@@ -4,7 +4,6 @@ import (
 	"errors"
 	"strings"
 
-	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -14,11 +13,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
@@ -55,31 +52,34 @@ type RBACCompliantClusterProvider struct {
 }
 
 // New creates a brand new cluster that is bound to the given project
-func (p *RBACCompliantClusterProvider) New(project *kubermaticapiv1.Project, user *kubermaticapiv1.User, spec *kubermaticapiv1.ClusterSpec) (*kubermaticapiv1.Cluster, error) {
-	if project == nil || user == nil || spec == nil {
-		return nil, errors.New("project and/or user and/or spec is missing but required")
+func (p *RBACCompliantClusterProvider) New(project *kubermaticapiv1.Project, userInfo *provider.UserInfo, spec *kubermaticapiv1.ClusterSpec) (*kubermaticapiv1.Cluster, error) {
+	if project == nil || userInfo == nil || spec == nil {
+		return nil, errors.New("project and/or userInfo and/or spec is missing but required")
 	}
 	spec.HumanReadableName = strings.TrimSpace(spec.HumanReadableName)
+
+	labels := map[string]string{
+		kubermaticapiv1.ProjectIDLabelKey: project.Name,
+	}
+	if len(p.workerName) > 0 {
+		labels[kubermaticapiv1.WorkerNameLabelKey] = p.workerName
+	}
 
 	name := rand.String(10)
 	cluster := &kubermaticapiv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{
-				kubermaticapiv1.WorkerNameLabelKey: p.workerName,
-				kubermaticapiv1.ProjectIDLabelKey:  project.Name,
-			},
-			Name: name,
+			Labels: labels,
+			Name:   name,
 		},
 		Spec: *spec,
 		Status: kubermaticapiv1.ClusterStatus{
-			UserEmail:     user.Spec.Email,
-			UserName:      user.Name,
+			UserEmail:     userInfo.Email,
 			NamespaceName: NamespaceName(name),
 		},
 		Address: kubermaticapiv1.ClusterAddress{},
 	}
 
-	seedImpersonatedClient, err := p.createSeedImpersonationClientWrapper(user, project)
+	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
@@ -138,8 +138,8 @@ func (p *RBACCompliantClusterProvider) List(project *kubermaticapiv1.Project, op
 }
 
 // Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to
-func (p *RBACCompliantClusterProvider) Get(user *kubermaticapiv1.User, project *kubermaticapiv1.Project, clusterName string, options *provider.ClusterGetOptions) (*kubermaticapiv1.Cluster, error) {
-	seedImpersonatedClient, err := p.createSeedImpersonationClientWrapper(user, project)
+func (p *RBACCompliantClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, options *provider.ClusterGetOptions) (*kubermaticapiv1.Cluster, error) {
+	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
@@ -162,8 +162,8 @@ func (p *RBACCompliantClusterProvider) Get(user *kubermaticapiv1.User, project *
 }
 
 // Delete deletes the given cluster
-func (p *RBACCompliantClusterProvider) Delete(user *kubermaticapiv1.User, project *kubermaticapiv1.Project, clusterName string) error {
-	seedImpersonatedClient, err := p.createSeedImpersonationClientWrapper(user, project)
+func (p *RBACCompliantClusterProvider) Delete(userInfo *provider.UserInfo, clusterName string) error {
+	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return err
 	}
@@ -172,8 +172,8 @@ func (p *RBACCompliantClusterProvider) Delete(user *kubermaticapiv1.User, projec
 }
 
 // Update updates a cluster
-func (p *RBACCompliantClusterProvider) Update(user *kubermaticapiv1.User, project *kubermaticapiv1.Project, newCluster *kubermaticapiv1.Cluster) (*kubermaticapiv1.Cluster, error) {
-	seedImpersonatedClient, err := p.createSeedImpersonationClientWrapper(user, project)
+func (p *RBACCompliantClusterProvider) Update(userInfo *provider.UserInfo, newCluster *kubermaticapiv1.Cluster) (*kubermaticapiv1.Cluster, error) {
+	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
@@ -203,22 +203,6 @@ func (p *RBACCompliantClusterProvider) GetMachineClientForCustomerCluster(c *kub
 // Note that the client you will get has admin privileges
 func (p *RBACCompliantClusterProvider) GetKubernetesClientForCustomerCluster(c *kubermaticapiv1.Cluster) (kubernetes.Interface, error) {
 	return p.userClusterConnProvider.GetClient(c)
-}
-
-// createSeedImpersonationClientWrapper is a helper method that spits back kubermatic client that uses user impersonation
-func (p *RBACCompliantClusterProvider) createSeedImpersonationClientWrapper(user *kubermaticapiv1.User, project *kubermaticapiv1.Project) (kubermaticclientv1.KubermaticV1Interface, error) {
-	if user == nil || project == nil {
-		return nil, errors.New("user and/or project is missing but required")
-	}
-	groupName, err := user.GroupForProject(project.Name)
-	if err != nil {
-		return nil, kerrors.NewForbidden(schema.GroupResource{}, project.Name, err)
-	}
-	impersonationCfg := restclient.ImpersonationConfig{
-		UserName: user.Spec.Email,
-		Groups:   []string{groupName},
-	}
-	return p.createSeedImpersonatedClient(impersonationCfg)
 }
 
 // sortBy sort the given clusters by the specified field name (sortBy param)

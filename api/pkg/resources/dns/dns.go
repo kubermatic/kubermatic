@@ -14,14 +14,14 @@ import (
 )
 
 // Service returns the service for the dns resolver
-func Service(_ *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
-	var svc *corev1.Service
-	if existing != nil {
-		svc = existing
-	} else {
+func Service(data resources.ServiceDataProvider, existing *corev1.Service) (*corev1.Service, error) {
+	svc := existing
+	if svc == nil {
 		svc = &corev1.Service{}
 	}
+
 	svc.Name = resources.DNSResolverServiceName
+	svc.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	svc.Spec.Selector = map[string]string{
 		resources.AppLabelKey: resources.DNSResolverDeploymentName,
 	}
@@ -38,11 +38,9 @@ func Service(_ *resources.TemplateData, existing *corev1.Service) (*corev1.Servi
 }
 
 // Deployment returns the deployment for the dns resolver
-func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
-	var dep *appsv1.Deployment
-	if existing != nil {
-		dep = existing
-	} else {
+func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
+	dep := existing
+	if dep == nil {
 		dep = &appsv1.Deployment{}
 	}
 
@@ -91,7 +89,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		*openvpnSidecar,
 		{
 			Name:            resources.DNSResolverDeploymentName,
-			Image:           data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/coredns:1.1.3",
+			Image:           data.ImageRegistry(resources.RegistryGCR) + "/google_containers/coredns:1.1.3",
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Args:            []string{"-conf", "/etc/coredns/Corefile"},
 			Resources: corev1.ResourceRequirements{
@@ -130,6 +128,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 
 	dep.Spec.Template.Spec.Volumes = volumes
+
+	dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(resources.DNSResolverDeploymentName, data.Cluster().Name, nil))
 
 	return dep, nil
 }
@@ -174,24 +174,27 @@ func getVolumes() []corev1.Volume {
 }
 
 // ConfigMap returns a ConfigMap containing the cloud-config for the supplied data
-func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-	var cm *corev1.ConfigMap
-	if existing != nil {
-		cm = existing
-	} else {
+func ConfigMap(data resources.ConfigMapDataProvider, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+	cm := existing
+	if cm == nil {
 		cm = &corev1.ConfigMap{}
 	}
 	if cm.Data == nil {
 		cm.Data = map[string]string{}
 	}
 
-	dnsIP, err := resources.UserClusterDNSResolverIP(data.Cluster)
+	dnsIP, err := resources.UserClusterDNSResolverIP(data.Cluster())
 	if err != nil {
 		return nil, err
 	}
 	cm.Name = resources.DNSResolverConfigMapName
 	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+	seedClusterNamespaceDNS := fmt.Sprintf("%s.svc.cluster.local.", data.Cluster().Status.NamespaceName)
 	cm.Data["Corefile"] = fmt.Sprintf(`
+%s {
+    forward . /etc/resolv.conf
+    errors
+}
 %s {
     forward . %s
     errors
@@ -201,7 +204,7 @@ func ConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev
   errors
   health
 }
-`, data.Cluster.Spec.ClusterNetwork.DNSDomain, dnsIP)
+`, seedClusterNamespaceDNS, data.Cluster().Spec.ClusterNetwork.DNSDomain, dnsIP)
 
 	return cm, nil
 }

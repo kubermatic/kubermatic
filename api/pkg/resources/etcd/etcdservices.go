@@ -1,6 +1,8 @@
 package etcd
 
 import (
+	"fmt"
+
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -8,12 +10,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DiscoveryService returns a service for the etcd peers to find each other?
-func DiscoveryService(data *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
-	var se *corev1.Service
-	if existing != nil {
-		se = existing
-	} else {
+// Service returns a service for the etcd StatefulSet
+func Service(data resources.ServiceDataProvider, existing *corev1.Service) (*corev1.Service, error) {
+	se := existing
+	if se == nil {
 		se = &corev1.Service{}
 	}
 
@@ -25,7 +25,7 @@ func DiscoveryService(data *resources.TemplateData, existing *corev1.Service) (*
 	se.Spec.ClusterIP = "None"
 	se.Spec.Selector = map[string]string{
 		resources.AppLabelKey: name,
-		"cluster":             data.Cluster.Name,
+		"cluster":             data.Cluster().Name,
 	}
 	se.Spec.Ports = []corev1.ServicePort{
 		{
@@ -45,29 +45,13 @@ func DiscoveryService(data *resources.TemplateData, existing *corev1.Service) (*
 	return se, nil
 }
 
-// ClientService returns a service for access by clients (ClusterIP)
-func ClientService(data *resources.TemplateData, existing *corev1.Service) (*corev1.Service, error) {
-	var se *corev1.Service
-	if existing != nil {
-		se = existing
-	} else {
-		se = &corev1.Service{}
+// GetClientEndpoints returns the slice with the etcd endpoints for client communication
+func GetClientEndpoints(namespace string) []string {
+	var endpoints []string
+	for i := 0; i < 3; i++ {
+		// Pod DNS name
+		absolutePodDNSName := fmt.Sprintf("https://etcd-%d.%s.%s.svc.cluster.local:2379", i, resources.EtcdServiceName, namespace)
+		endpoints = append(endpoints, absolutePodDNSName)
 	}
-
-	se.Name = resources.EtcdClientServiceName
-	se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	se.Spec.Selector = map[string]string{
-		resources.AppLabelKey: name,
-		"cluster":             data.Cluster.Name,
-	}
-	se.Spec.Ports = []corev1.ServicePort{
-		{
-			Name:       "client",
-			Port:       2379,
-			TargetPort: intstr.FromInt(2379),
-			Protocol:   corev1.ProtocolTCP,
-		},
-	}
-
-	return se, nil
+	return endpoints
 }

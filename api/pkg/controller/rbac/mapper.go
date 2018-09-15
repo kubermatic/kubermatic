@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -64,10 +66,15 @@ func generateRBACRoleNameForResources(resourceName, groupName string) string {
 //   resources: ["configmaps"]
 //   resourceNames: ["my-config"]
 //   verbs: ["get"]
+//
+// Note that for some kinds we don't want to generate ClusterRole in that case a nil cluster resource will be returned without an error
 func generateClusterRBACRoleNamedResource(kind, groupName, policyResource, policyAPIGroups, policyResourceName string, oRef metav1.OwnerReference) (*rbacv1.ClusterRole, error) {
 	verbs, err := generateVerbsForNamedResource(groupName, kind)
 	if err != nil {
 		return nil, err
+	}
+	if len(verbs) == 0 {
+		return nil, nil
 	}
 	role := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
@@ -112,8 +119,8 @@ func generateClusterRBACRoleBindingNamedResource(kind, resourceName, groupName s
 
 // generateClusterRBACRoleForResource generates ClusterRole for the given resource
 // Note that for some groups we don't want to generate ClusterRole in that case a nil will be returned
-func generateClusterRBACRoleForResource(groupName, policyResource, policyAPIGroups string) (*rbacv1.ClusterRole, error) {
-	verbs, err := generateVerbsForResource(groupName)
+func generateClusterRBACRoleForResource(groupName, policyResource, policyAPIGroups, kind string) (*rbacv1.ClusterRole, error) {
+	verbs, err := generateVerbsForResource(groupName, kind)
 	if err != nil {
 		return nil, err
 	}
@@ -170,8 +177,12 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 	//
 	// editors of a project
 	// special case - editors are not allowed to delete a project
-	if strings.HasPrefix(groupName, editorGroupNamePrefix) && resourceKind == "Project" {
+	if strings.HasPrefix(groupName, editorGroupNamePrefix) && resourceKind == kubermaticv1.ProjectKindName {
 		return []string{"get", "update"}, nil
+	}
+	// special case - editors are not allowed to interact with members of a project (UserProjectBinding)
+	if strings.HasPrefix(groupName, editorGroupNamePrefix) && resourceKind == kubermaticv1.UserProjectBindingKind {
+		return []string{}, nil
 	}
 
 	// editors of a named resource
@@ -182,6 +193,11 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 	// verbs for editors
 	//
 	// viewers of a named resource
+	// special case - viewers are not allowed to interact with members of a project (UserProjectBinding)
+	if strings.HasPrefix(groupName, viewerGroupNamePrefix) && resourceKind == kubermaticv1.UserProjectBindingKind {
+		return []string{}, nil
+
+	}
 	if strings.HasPrefix(groupName, viewerGroupNamePrefix) {
 		return []string{"get"}, nil
 	}
@@ -192,7 +208,15 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 
 // generateVerbsForResource generates verbs for a resource for example "cluster"
 // to make it even more concrete, if there is "create" verb returned for owners group, that means that the owners can create "cluster" resources.
-func generateVerbsForResource(groupName string) ([]string, error) {
+func generateVerbsForResource(groupName, resourceKind string) ([]string, error) {
+	// special case - only the owners of a project can manipulate members
+	//
+	if strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == kubermaticv1.UserProjectBindingKind {
+		return []string{"create"}, nil
+	} else if resourceKind == kubermaticv1.UserProjectBindingKind {
+		return []string{}, nil
+	}
+
 	// verbs for owners and editors
 	//
 	// owners and editors can create resources

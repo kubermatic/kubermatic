@@ -7,7 +7,7 @@ import (
 )
 
 // AdminClusterRoleBinding allows just everything.
-func AdminClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+func AdminClusterRoleBinding(_ resources.ClusterRoleBindingDataProvider, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 	var crb *rbacv1.ClusterRoleBinding
 	if existing != nil {
 		crb = existing

@@ -9,6 +9,13 @@ spec:
     metadata:
       labels:
         app: minio
+      {{- if .Values.minio.backups }}
+      annotations:
+        backup.ark.heptio.com/backup-volumes: minio-backup
+        pre.hook.backup.ark.heptio.com/container: backup
+        pre.hook.backup.ark.heptio.com/timeout: 60m
+        pre.hook.backup.ark.heptio.com/command: '["/mc", "mirror", "--remove", "--quiet", "src", "/backup"]'
+      {{- end }}
     spec:
       containers:
       - name: minio
@@ -32,7 +39,37 @@ spec:
         volumeMounts:
         - name: storage
           mountPath: "/storage"
+      {{- if .Values.minio.backups }}
+      - name: backup
+        image: alpine:3.7
+        args:
+        - /bin/sh
+        - -c
+        - wget https://dl.minio.io/client/mc/release/linux-amd64/mc && chmod +x mc && /mc config host add src http://127.0.0.1:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && while true; do sleep 1h; done
+        env:
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio
+              key: accessKey
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio
+              key: secretKey
+        volumeMounts:
+        - mountPath: /backup
+          name: minio-backup
+          readOnly: false
+        securityContext:
+          runAsNonRoot: false
+          runAsUser: 0
+      {{- end }}
       volumes:
       - name: storage
         persistentVolumeClaim:
           claimName: minio-data
+      {{- if .Values.minio.backups }}
+      - name: minio-backup
+        emptyDir: {}
+      {{- end }}

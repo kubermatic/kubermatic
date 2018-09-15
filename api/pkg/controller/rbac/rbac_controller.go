@@ -56,11 +56,11 @@ func NewMetrics() *Metrics {
 type Controller struct {
 	projectQueue workqueue.RateLimitingInterface
 	metrics      *Metrics
-	workerName   string
 
-	kubermaticMasterClient kubermaticclientset.Interface
-	projectLister          kubermaticv1lister.ProjectLister
-	userLister             kubermaticv1lister.UserLister
+	kubermaticMasterClient   kubermaticclientset.Interface
+	projectLister            kubermaticv1lister.ProjectLister
+	userLister               kubermaticv1lister.UserLister
+	userProjectBindingLister kubermaticv1lister.UserProjectBindingLister
 
 	kubeMasterClient                   kubernetes.Interface
 	rbacClusterRoleMasterLister        rbaclister.ClusterRoleLister
@@ -86,7 +86,6 @@ type projectResource struct {
 // so that whenever a project is deleted dependants object will be garbage collected.
 func New(
 	metrics *Metrics,
-	workerName string,
 	kubermaticMasterClient kubermaticclientset.Interface,
 	kubermaticMasterInformerFactory kubermaticsharedinformer.SharedInformerFactory,
 	kubeMasterClient kubernetes.Interface,
@@ -94,10 +93,9 @@ func New(
 	rbacClusterRoleBindingMasterInformer rbacinformer.ClusterRoleBindingInformer,
 	seedClusterProviders []*ClusterProvider) (*Controller, error) {
 	c := &Controller{
-		projectQueue:           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "RBACGeneratorProject"),
-		projectResourcesQueue:  workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "RBACGeneratorProjectResources"),
+		projectQueue:           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_project"),
+		projectResourcesQueue:  workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_project_resources"),
 		metrics:                metrics,
-		workerName:             workerName,
 		kubermaticMasterClient: kubermaticMasterClient,
 		kubeMasterClient:       kubeMasterClient,
 		seedClusterProviders:   seedClusterProviders,
@@ -135,8 +133,9 @@ func New(
 	userInformer := kubermaticMasterInformerFactory.Kubermatic().V1().Users()
 	c.userLister = userInformer.Lister()
 
-	c.rbacClusterRoleBindingMasterLister = rbacClusterRoleBindingMasterInformer.Lister()
+	c.userProjectBindingLister = kubermaticMasterInformerFactory.Kubermatic().V1().UserProjectBindings().Lister()
 
+	c.rbacClusterRoleBindingMasterLister = rbacClusterRoleBindingMasterInformer.Lister()
 	c.rbacClusterRoleMasterLister = rbacClusterRoleMasterInformer.Lister()
 
 	// a list of dependent resources that we would like to watch/monitor
@@ -158,6 +157,15 @@ func New(
 				Resource: kubermaticv1.SSHKeyResourceName,
 			},
 			kind: kubermaticv1.SSHKeyKind,
+		},
+
+		{
+			gvr: schema.GroupVersionResource{
+				Group:    kubermaticv1.GroupName,
+				Version:  kubermaticv1.GroupVersion,
+				Resource: kubermaticv1.UserProjectBindingResourceName,
+			},
+			kind: kubermaticv1.UserProjectBindingKind,
 		},
 	}
 

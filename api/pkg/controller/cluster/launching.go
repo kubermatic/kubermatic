@@ -6,7 +6,6 @@ import (
 
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/rbac/v1beta1"
@@ -18,37 +17,26 @@ import (
 	certutil "k8s.io/client-go/util/cert"
 )
 
-// ensureClusterReachable checks if the cluster is reachable via its external name
-func (cc *Controller) ensureClusterReachable(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+// clusterIsReachable checks if the cluster is reachable via its external name
+func (cc *Controller) clusterIsReachable(c *kubermaticv1.Cluster) (bool, error) {
 	client, err := cc.userClusterConnProvider.GetClient(c)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
+
 	_, err = client.CoreV1().Namespaces().List(metav1.ListOptions{})
 	if err != nil {
 		glog.V(5).Infof("Cluster %q not yet reachable: %v", c.Name, err)
-		return c, nil
+		return false, nil
 	}
 
-	// Only add the node deletion finalizer when the cluster is actually running
-	// Otherwise we fail to delete the nodes and are stuck in a loop
-	if !kuberneteshelper.HasFinalizer(c, nodeDeletionFinalizer) {
-		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
-			c.Finalizers = append(c.Finalizers, nodeDeletionFinalizer)
-		})
-		if err != nil {
-			return nil, err
-		}
-
-	}
-
-	return c, nil
+	return true, nil
 }
 
 // Creates cluster-info ConfigMap in customer cluster
 //see https://kubernetes.io/docs/admin/bootstrap-tokens/
 func (cc *Controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluster) error {
-	caKp, err := cc.getFullCAFromLister(resources.CASecretName, c)
+	caKp, err := resources.GetClusterRootCA(c, cc.secretLister)
 	if err != nil {
 		return err
 	}
@@ -65,7 +53,7 @@ func (cc *Controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluste
 			config := clientcmdapi.Config{}
 			config.Clusters = map[string]*clientcmdapi.Cluster{
 				"": {
-					Server: c.Address.URL,
+					Server:                   c.Address.URL,
 					CertificateAuthorityData: cert.EncodeCertPEM(caKp.Cert),
 				},
 			}
@@ -150,7 +138,7 @@ func (cc *Controller) launchingCreateOpenVPNClientCertificates(c *kubermaticv1.C
 	_, err = client.CoreV1().Secrets(metav1.NamespaceSystem).Get(name, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			caKp, err := cc.getFullCAFromLister(resources.CASecretName, c)
+			caKp, err := resources.GetClusterRootCA(c, cc.secretLister)
 			if err != nil {
 				return err
 			}

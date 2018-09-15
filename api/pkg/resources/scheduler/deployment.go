@@ -3,6 +3,8 @@ package scheduler
 import (
 	"fmt"
 
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
+
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
@@ -31,11 +33,9 @@ const (
 )
 
 // Deployment returns the kubernetes Controller-Manager Deployment
-func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
-	var dep *appsv1.Deployment
-	if existing != nil {
-		dep = existing
-	} else {
+func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
+	dep := existing
+	if dep == nil {
 		dep = &appsv1.Deployment{}
 	}
 
@@ -44,8 +44,8 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	dep.Labels = resources.BaseAppLabel(name, nil)
 
 	dep.Spec.Replicas = resources.Int32(1)
-	if data.Cluster.Spec.ComponentsOverride.Scheduler.Replicas != nil {
-		dep.Spec.Replicas = data.Cluster.Spec.ComponentsOverride.Scheduler.Replicas
+	if data.Cluster().Spec.ComponentsOverride.Scheduler.Replicas != nil {
+		dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.Scheduler.Replicas
 	}
 
 	dep.Spec.Selector = &metav1.LabelSelector{
@@ -79,11 +79,6 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	// get openvpn sidecar container and apiserverServiceIP
-	apiAddress, err := data.InClusterApiserverAddress()
-	if err != nil {
-		return nil, err
-	}
 	openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
@@ -95,44 +90,27 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		return nil, err
 	}
 
-	kcDir := "/etc/kubernetes/scheduler"
 	dep.Spec.Template.Spec.Volumes = volumes
-	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
-		{
-			Name:            "apiserver-running",
-			Image:           data.ImageRegistry(resources.RegistryDocker) + "/busybox",
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command: []string{
-				"/bin/sh",
-				"-ec",
-				fmt.Sprintf("until wget -O - -T 1 https://%s/healthz; do echo waiting for apiserver; sleep 2; done", apiAddress),
-				// * unfortunately no curl in busybox image
-				// * "fortunately" busybox wget does not care about TLS verification (neither peername, nor ca)
-				// * might still be enough for only waiting for `apiserver-running`
-				//
-				// curl could do a nice trick with --resolve, which eases handing in the peername
-				// but still connect to a different ip:
-				// curl --resolve kubernetes:31834:10.47.248.241 --cacert /ca.crt --cert /1.crt --key /1.key  -i https://kubernetes:31834/healthz
-				// (but busybox image has no curl by default)
-			},
-			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-		},
+
+	apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
+	if err != nil {
+		return nil, err
 	}
+	dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
 
 	resourceRequirements := defaultResourceRequirements
-	if data.Cluster.Spec.ComponentsOverride.Scheduler.Resources != nil {
-		resourceRequirements = *data.Cluster.Spec.ComponentsOverride.Scheduler.Resources
+	if data.Cluster().Spec.ComponentsOverride.Scheduler.Resources != nil {
+		resourceRequirements = *data.Cluster().Spec.ComponentsOverride.Scheduler.Resources
 	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
 		{
 			Name:            name,
-			Image:           data.ImageRegistry(resources.RegistryKubernetesGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
+			Image:           data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/hyperkube", "scheduler"},
 			Args: []string{
-				"--kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.SchedulerKubeconfigSecretName),
+				"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 				"--v", "4",
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
@@ -140,7 +118,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      resources.SchedulerKubeconfigSecretName,
-					MountPath: kcDir,
+					MountPath: "/etc/kubernetes/kubeconfig",
 					ReadOnly:  true,
 				},
 			},
@@ -173,7 +151,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(name, data.Cluster.Name, nil))
+	dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(name, data.Cluster().Name, nil))
 
 	return dep, nil
 }

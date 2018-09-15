@@ -45,7 +45,6 @@ func NewMetrics() *Metrics {
 type Controller struct {
 	queue            workqueue.RateLimitingInterface
 	metrics          *Metrics
-	workerName       string
 	defaultAddonList []string
 	client           kubermaticclientset.Interface
 	clusterLister    kubermaticv1lister.ClusterLister
@@ -56,16 +55,14 @@ type Controller struct {
 // installing in-cluster addons
 func New(
 	metrics *Metrics,
-	workerName string,
 	defaultAddonList []string,
 	client kubermaticclientset.Interface,
 	addonInformer kubermaticv1informers.AddonInformer,
 	clusterInformer kubermaticv1informers.ClusterInformer) (*Controller, error) {
 
 	c := &Controller{
-		queue:            workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute), "cluster"),
+		queue:            workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute), "addon_installer_cluster"),
 		metrics:          metrics,
-		workerName:       workerName,
 		defaultAddonList: defaultAddonList,
 		client:           client,
 	}
@@ -210,10 +207,6 @@ func (c *Controller) sync(key string) error {
 	}
 
 	cluster := clusterFromCache.DeepCopy()
-	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != c.workerName {
-		glog.V(8).Infof("skipping cluster %s due to different worker assigned to it", key)
-		return nil
-	}
 
 	// Reconciling
 	if cluster.Status.NamespaceName == "" {

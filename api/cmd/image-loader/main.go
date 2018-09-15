@@ -19,6 +19,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubeinformers "k8s.io/client-go/informers"
@@ -39,7 +40,6 @@ var (
 )
 
 func main() {
-
 	flag.StringVar(&versionsFile, "versions", "../config/kubermatic/static/master/versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&requestedVersion, "version", "", "")
 	flag.StringVar(&registryName, "registry-name", "registry.corp.local", "Name of the registry to push to")
@@ -86,7 +86,7 @@ func main() {
 		for _, image := range images {
 			glog.Infoln(image)
 		}
-		glog.Infoln("Existing gracefully, because -printOnly was specified...")
+		glog.Infoln("Exiting gracefully because -print-only was specified...")
 		os.Exit(0)
 	}
 
@@ -158,6 +158,7 @@ func getImagesForVersion(versions []*version.MasterVersion, requestedVersion str
 func getImagesFromCreators(templateData *resources.TemplateData) (images []string, err error) {
 	statefulsetCreators := cluster.GetStatefulSetCreators()
 	deploymentCreators := cluster.GetDeploymentCreators(nil)
+	cronjobCreators := cluster.GetCronJobCreators()
 
 	for _, createFunc := range statefulsetCreators {
 		statefulset, err := createFunc(templateData, nil)
@@ -174,6 +175,15 @@ func getImagesFromCreators(templateData *resources.TemplateData) (images []strin
 		}
 		images = append(images, getImagesFromPodTemplateSpec(deployment.Spec.Template)...)
 	}
+
+	for _, createFunc := range cronjobCreators {
+		cronJob, err := createFunc(templateData, nil)
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, getImagesFromPodTemplateSpec(cronJob.Spec.JobTemplate.Spec.Template)...)
+	}
+
 	return images, nil
 }
 
@@ -256,16 +266,6 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 			ClusterIP: "192.0.2.11",
 		},
 	}
-	etcdclientService := corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.EtcdClientServiceName,
-			Namespace: mockNamespaceName,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports:     []corev1.ServicePort{{NodePort: 97}},
-			ClusterIP: "192.0.2.1",
-		},
-	}
 	openvpnserverService := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.OpenVPNServerServiceName,
@@ -290,7 +290,6 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		Items: []corev1.Service{
 			apiServerExternalService,
 			apiserverService,
-			etcdclientService,
 			openvpnserverService,
 			dnsService,
 		},
@@ -336,13 +335,22 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 	kubeInformerFactory.Start(stopChannel)
 	kubeInformerFactory.WaitForCacheSync(stopChannel)
 
-	return &resources.TemplateData{
-		DC:                &provider.DatacenterMeta{},
-		SecretLister:      secretLister,
-		ServiceLister:     serviceLister,
-		ConfigMapLister:   configMapLister,
-		NodeAccessNetwork: "192.0.2.0/24",
-		Cluster:           fakeCluster}, nil
+	return resources.NewTemplateData(
+		fakeCluster,
+		&provider.DatacenterMeta{},
+		"",
+		secretLister,
+		configMapLister,
+		serviceLister,
+		"",
+		"",
+		"192.0.2.0/24",
+		resource.Quantity{},
+		"",
+		false,
+		false,
+		"",
+		nil), nil
 }
 
 func createNamedSecrets(secretNames []string) *corev1.SecretList {

@@ -7,7 +7,6 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
@@ -16,19 +15,19 @@ import (
 
 func getClusterUpgrades(updateManager UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
 		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
 
 		req, ok := request.(GetClusterReq)
 		if !ok {
 			return nil, errors.NewWrongRequest(request, GetClusterReq{})
 		}
 
-		project, err := projectProvider.Get(user, req.ProjectID)
+		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		cluster, err := clusterProvider.Get(user, project, req.ClusterID, &provider.ClusterGetOptions{})
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}

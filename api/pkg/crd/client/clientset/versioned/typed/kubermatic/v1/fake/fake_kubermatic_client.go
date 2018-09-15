@@ -26,6 +26,10 @@ func (c *FakeKubermaticV1) Users() v1.UserInterface {
 	return &FakeUsers{c}
 }
 
+func (c *FakeKubermaticV1) UserProjectBindings() v1.UserProjectBindingInterface {
+	return &FakeUserProjectBindings{c}
+}
+
 func (c *FakeKubermaticV1) UserSSHKeies() v1.UserSSHKeyInterface {
 	return &FakeUserSSHKeies{c}
 }

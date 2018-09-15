@@ -3,6 +3,8 @@ package machinecontroller
 import (
 	"fmt"
 
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
+
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -14,11 +16,11 @@ import (
 const (
 	name = "machine-controller"
 
-	tag = "v0.7.18"
+	tag = "v0.8.0"
 )
 
 // Deployment returns the machine-controller Deployment
-func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
+func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
 	var dep *appsv1.Deployment
 	if existing != nil {
 		dep = existing
@@ -62,29 +64,15 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		},
 	}
 
-	// get clusterIP of apiserver
-	apiAddress, err := data.InClusterApiserverAddress()
+	dep.Spec.Template.Spec.Volumes = volumes
+
+	apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
 	if err != nil {
 		return nil, err
 	}
+	dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
 
-	kcDir := "/etc/kubernetes/machinecontroller"
-	dep.Spec.Template.Spec.Volumes = volumes
-	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
-		{
-			Name:            "apiserver-running",
-			Image:           data.ImageRegistry(resources.RegistryDocker) + "/busybox",
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command: []string{
-				"/bin/sh",
-				"-ec",
-				fmt.Sprintf("until wget -T 1 https://%s/healthz; do echo waiting for apiserver; sleep 2; done", apiAddress),
-			},
-			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-		},
-	}
-	clusterDNSIP, err := resources.UserClusterDNSResolverIP(data.Cluster)
+	clusterDNSIP, err := resources.UserClusterDNSResolverIP(data.Cluster())
 	if err != nil {
 		return nil, err
 	}
@@ -95,13 +83,13 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/local/bin/machine-controller"},
 			Args: []string{
-				"-kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.MachineControllerKubeconfigSecretName),
+				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 				"-logtostderr",
 				"-v", "4",
 				"-cluster-dns", clusterDNSIP,
 				"-internal-listen-address", "0.0.0.0:8085",
 			},
-			Env: getEnvVars(data),
+			Env:                      getEnvVars(data),
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			ReadinessProbe: &corev1.Probe{
@@ -132,7 +120,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      resources.MachineControllerKubeconfigSecretName,
-					MountPath: kcDir,
+					MountPath: "/etc/kubernetes/kubeconfig",
 					ReadOnly:  true,
 				},
 			},
@@ -158,29 +146,29 @@ func getVolumes() []corev1.Volume {
 	}
 }
 
-func getEnvVars(data *resources.TemplateData) []corev1.EnvVar {
+func getEnvVars(data resources.DeploymentDataProvider) []corev1.EnvVar {
 	var vars []corev1.EnvVar
-	if data.Cluster.Spec.Cloud.AWS != nil {
-		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: data.Cluster.Spec.Cloud.AWS.AccessKeyID})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: data.Cluster.Spec.Cloud.AWS.SecretAccessKey})
+	if data.Cluster().Spec.Cloud.AWS != nil {
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: data.Cluster().Spec.Cloud.AWS.AccessKeyID})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: data.Cluster().Spec.Cloud.AWS.SecretAccessKey})
 	}
-	if data.Cluster.Spec.Cloud.Openstack != nil {
-		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: data.DC.Spec.Openstack.AuthURL})
-		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", Value: data.Cluster.Spec.Cloud.Openstack.Username})
-		vars = append(vars, corev1.EnvVar{Name: "OS_PASSWORD", Value: data.Cluster.Spec.Cloud.Openstack.Password})
-		vars = append(vars, corev1.EnvVar{Name: "OS_DOMAIN_NAME", Value: data.Cluster.Spec.Cloud.Openstack.Domain})
-		vars = append(vars, corev1.EnvVar{Name: "OS_TENANT_NAME", Value: data.Cluster.Spec.Cloud.Openstack.Tenant})
+	if data.Cluster().Spec.Cloud.Openstack != nil {
+		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: data.DC().Spec.Openstack.AuthURL})
+		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", Value: data.Cluster().Spec.Cloud.Openstack.Username})
+		vars = append(vars, corev1.EnvVar{Name: "OS_PASSWORD", Value: data.Cluster().Spec.Cloud.Openstack.Password})
+		vars = append(vars, corev1.EnvVar{Name: "OS_DOMAIN_NAME", Value: data.Cluster().Spec.Cloud.Openstack.Domain})
+		vars = append(vars, corev1.EnvVar{Name: "OS_TENANT_NAME", Value: data.Cluster().Spec.Cloud.Openstack.Tenant})
 	}
-	if data.Cluster.Spec.Cloud.Hetzner != nil {
-		vars = append(vars, corev1.EnvVar{Name: "HZ_TOKEN", Value: data.Cluster.Spec.Cloud.Hetzner.Token})
+	if data.Cluster().Spec.Cloud.Hetzner != nil {
+		vars = append(vars, corev1.EnvVar{Name: "HZ_TOKEN", Value: data.Cluster().Spec.Cloud.Hetzner.Token})
 	}
-	if data.Cluster.Spec.Cloud.Digitalocean != nil {
-		vars = append(vars, corev1.EnvVar{Name: "DO_TOKEN", Value: data.Cluster.Spec.Cloud.Digitalocean.Token})
+	if data.Cluster().Spec.Cloud.Digitalocean != nil {
+		vars = append(vars, corev1.EnvVar{Name: "DO_TOKEN", Value: data.Cluster().Spec.Cloud.Digitalocean.Token})
 	}
-	if data.Cluster.Spec.Cloud.VSphere != nil {
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: data.DC.Spec.VSphere.Endpoint})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", Value: data.Cluster.Spec.Cloud.VSphere.InfraManagementUser.Username})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", Value: data.Cluster.Spec.Cloud.VSphere.InfraManagementUser.Password})
+	if data.Cluster().Spec.Cloud.VSphere != nil {
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: data.DC().Spec.VSphere.Endpoint})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", Value: data.Cluster().Spec.Cloud.VSphere.InfraManagementUser.Username})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", Value: data.Cluster().Spec.Cloud.VSphere.InfraManagementUser.Password})
 	}
 	return vars
 }

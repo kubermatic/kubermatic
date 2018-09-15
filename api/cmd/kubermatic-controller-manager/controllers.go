@@ -98,7 +98,6 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.kubeClient,
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.runOptions.externalURL,
-		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.dc,
 		dcs,
 		cps,
@@ -109,6 +108,8 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.etcdDiskSize,
 		ctrlCtx.runOptions.inClusterPrometheusRulesFile,
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultRules,
+		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultScrapingConfigs,
+		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
 		dockerPullConfigJSON,
 
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
@@ -120,6 +121,7 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.kubeInformerFactory.Core().V1().ServiceAccounts(),
 		ctrlCtx.kubeInformerFactory.Apps().V1().Deployments(),
 		ctrlCtx.kubeInformerFactory.Apps().V1().StatefulSets(),
+		ctrlCtx.kubeInformerFactory.Batch().V1beta1().CronJobs(),
 		ctrlCtx.kubeInformerFactory.Extensions().V1beta1().Ingresses(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().Roles(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().RoleBindings(),
@@ -146,7 +148,6 @@ func createBackupController(ctrlCtx *controllerContext) (runner, error) {
 		*cleanupContainer,
 		backupInterval,
 		ctrlCtx.runOptions.backupContainerImage,
-		ctrlCtx.runOptions.workerName,
 		backupcontroller.NewMetrics(),
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubeClient,
@@ -190,7 +191,6 @@ func createUpdateController(ctrlCtx *controllerContext) (runner, error) {
 	return updatecontroller.New(
 		updatecontroller.NewMetrics(),
 		updateManager,
-		ctrlCtx.runOptions.workerName,
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 	)
@@ -204,7 +204,6 @@ func createAddonController(ctrlCtx *controllerContext) (runner, error) {
 				"NodeAccessNetwork": ctrlCtx.runOptions.nodeAccessNetwork,
 			},
 		},
-		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.addonsPath,
 		ctrlCtx.runOptions.overwriteRegistry,
 		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
@@ -223,7 +222,6 @@ func createAddonInstallerController(ctrlCtx *controllerContext) (runner, error) 
 
 	return addoninstaller.New(
 		addoninstaller.NewMetrics(),
-		ctrlCtx.runOptions.workerName,
 		defaultAddonsList,
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Addons(),

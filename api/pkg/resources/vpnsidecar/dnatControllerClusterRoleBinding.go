@@ -8,9 +8,9 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// DnatControllerClusterRoleBinding returns a ClusterRoleBinding for the kubeletdnat-controller.
+// DnatControllerClusterRoleBinding returns a ClusterRoleBinding for the vpnsidecar-dnat-controller.
 // It has to be put into the user-cluster.
-func DnatControllerClusterRoleBinding(data *resources.TemplateData, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+func DnatControllerClusterRoleBinding(_ resources.ClusterRoleBindingDataProvider, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 	return createClusterRoleBinding(existing, "controller",
 		resources.KubeletDnatControllerClusterRoleName, rbacv1.Subject{
 			Kind:     "User",
@@ -20,10 +20,8 @@ func DnatControllerClusterRoleBinding(data *resources.TemplateData, existing *rb
 }
 
 func createClusterRoleBinding(existing *rbacv1.ClusterRoleBinding, crbSuffix, cRoleRef string, subj rbacv1.Subject) (*rbacv1.ClusterRoleBinding, error) {
-	var crb *rbacv1.ClusterRoleBinding
-	if existing != nil {
-		crb = existing
-	} else {
+	crb := existing
+	if crb == nil {
 		crb = &rbacv1.ClusterRoleBinding{}
 	}
 

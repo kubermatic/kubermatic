@@ -168,6 +168,11 @@ type DCGetter interface {
 	GetDC() string
 }
 
+// ProjectIDGetter knows how to get project ID from the request
+type ProjectIDGetter interface {
+	GetProjectID() string
+}
+
 // DCReq represent a request for datacenter specific data in a given project
 type DCReq struct {
 	ProjectReq

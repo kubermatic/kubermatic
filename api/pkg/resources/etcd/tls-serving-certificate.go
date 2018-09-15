@@ -13,7 +13,7 @@ import (
 )
 
 // TLSCertificate returns a secret with the etcd tls certificate
-func TLSCertificate(data *resources.TemplateData, existing *corev1.Secret) (*corev1.Secret, error) {
+func TLSCertificate(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
 	var se *corev1.Secret
 	if existing != nil {
 		se = existing
@@ -24,28 +24,17 @@ func TLSCertificate(data *resources.TemplateData, existing *corev1.Secret) (*cor
 	se.Name = resources.EtcdTLSCertificateSecretName
 	se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 
-	ca, err := data.GetClusterCA()
+	ca, err := data.GetRootCA()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 	}
 
-	clientIP, err := data.ServiceClusterIP(resources.EtcdClientServiceName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get ClientIP of etcd client service '%s': %v", resources.EtcdClientServiceName, err)
-	}
-
 	altNames := certutil.AltNames{
 		DNSNames: []string{
-			"127.0.0.1",
 			"localhost",
-
-			resources.EtcdClientServiceName,
-			fmt.Sprintf("%s.%s", resources.EtcdClientServiceName, data.Cluster.Status.NamespaceName),
-			fmt.Sprintf("%s.%s.svc", resources.EtcdClientServiceName, data.Cluster.Status.NamespaceName),
-			fmt.Sprintf("%s.%s.svc.cluster.local", resources.EtcdClientServiceName, data.Cluster.Status.NamespaceName),
 		},
 		IPs: []net.IP{
-			*clientIP,
+			net.ParseIP("127.0.0.1"),
 		},
 	}
 
@@ -55,7 +44,7 @@ func TLSCertificate(data *resources.TemplateData, existing *corev1.Secret) (*cor
 		altNames.DNSNames = append(altNames.DNSNames, podName)
 
 		// Pod DNS name
-		absolutePodDNSName := fmt.Sprintf("etcd-%d.%s.%s.svc.cluster.local", i, resources.EtcdServiceName, data.Cluster.Status.NamespaceName)
+		absolutePodDNSName := fmt.Sprintf("etcd-%d.%s.%s.svc.cluster.local", i, resources.EtcdServiceName, data.Cluster().Status.NamespaceName)
 		altNames.DNSNames = append(altNames.DNSNames, absolutePodDNSName)
 	}
 

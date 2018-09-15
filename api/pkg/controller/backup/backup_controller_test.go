@@ -71,7 +71,6 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		testCleanupContainer,
 		20*time.Minute,
 		DefaultBackupContainerImage,
-		"",
 		NewMetrics(),
 		fakeKubermaticClient,
 		fakeKubeClient,

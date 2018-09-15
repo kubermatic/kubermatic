@@ -14,9 +14,9 @@ func TestRuleGeneration(t *testing.T) {
 		t.Fatal(err)
 	}
 	ctrl := &Controller{
-		client:     nil,
-		nodeLister: nil,
-		queue:      nil,
+		client:                   nil,
+		nodeLister:               nil,
+		queue:                    nil,
 		nodeTranslationChainName: "test-chain",
 		nodeAccessNetwork:        nodeAccessNetwork,
 	}

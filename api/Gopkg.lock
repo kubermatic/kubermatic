@@ -232,14 +232,6 @@
   revision = "02af3965c54e8cacf948b97fef38925c4120652c"
 
 [[projects]]
-  branch = "master"
-  digest = "1:e8ffe2fb7368f65afaaf39769207bee2a7aeddf694e94f5bc05cffd750d4d98d"
-  name = "github.com/evanphx/json-patch"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "944e07253867aacae43c04b2e6a239005443f33a"
-
-[[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
   name = "github.com/fsnotify/fsnotify"
   packages = ["."]
@@ -917,6 +909,14 @@
   revision = "aafc9e6bc7b7bb53ddaa75a5ef49a17d6e654be5"
 
 [[projects]]
+  digest = "1:bacb8b590716ab7c33f2277240972c9582d389593ee8d66fc10074e0508b8126"
+  name = "github.com/stretchr/testify"
+  packages = ["assert"]
+  pruneopts = "NUT"
+  revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
+  version = "v1.2.2"
+
+[[projects]]
   branch = "master"
   digest = "1:a0aee89faaf795424d978b6b4bcee4af3dc71f5680e5e1b30bd1528639e61a9a"
   name = "github.com/tent/http-link-go"
@@ -1193,7 +1193,7 @@
 
 [[projects]]
   branch = "release-1.10"
-  digest = "1:77ead159dd31d230f6b72649f69371d2688b281827738d58f37705a6a5246889"
+  digest = "1:cf1e88f3192e70eeb1600267ecc52fa2aac11a7e0ec38aa6bdb21f98bc186366"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/equality",
@@ -1227,7 +1227,6 @@
     "pkg/util/framer",
     "pkg/util/intstr",
     "pkg/util/json",
-    "pkg/util/jsonmergepatch",
     "pkg/util/mergepatch",
     "pkg/util/net",
     "pkg/util/rand",
@@ -1540,6 +1539,7 @@
     "github.com/prometheus/client_golang/prometheus/promhttp",
     "github.com/prometheus/common/model",
     "github.com/robfig/cron",
+    "github.com/stretchr/testify/assert",
     "github.com/ugorji/go/codec/codecgen",
     "github.com/urfave/cli",
     "github.com/vmware/govmomi",
@@ -1568,11 +1568,11 @@
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/runtime/schema",
     "k8s.io/apimachinery/pkg/runtime/serializer",
+    "k8s.io/apimachinery/pkg/selection",
     "k8s.io/apimachinery/pkg/types",
     "k8s.io/apimachinery/pkg/util/diff",
     "k8s.io/apimachinery/pkg/util/intstr",
     "k8s.io/apimachinery/pkg/util/json",
-    "k8s.io/apimachinery/pkg/util/jsonmergepatch",
     "k8s.io/apimachinery/pkg/util/net",
     "k8s.io/apimachinery/pkg/util/rand",
     "k8s.io/apimachinery/pkg/util/runtime",
@@ -1593,7 +1593,10 @@
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/fake",
     "k8s.io/client-go/kubernetes/scheme",
+    "k8s.io/client-go/kubernetes/typed/batch/v1beta1",
     "k8s.io/client-go/kubernetes/typed/core/v1",
+    "k8s.io/client-go/kubernetes/typed/policy/v1beta1",
+    "k8s.io/client-go/kubernetes/typed/rbac/v1",
     "k8s.io/client-go/listers/apps/v1",
     "k8s.io/client-go/listers/batch/v1",
     "k8s.io/client-go/listers/batch/v1beta1",
@@ -1609,6 +1612,7 @@
     "k8s.io/client-go/tools/clientcmd/api/v1",
     "k8s.io/client-go/tools/leaderelection",
     "k8s.io/client-go/tools/leaderelection/resourcelock",
+    "k8s.io/client-go/tools/metrics",
     "k8s.io/client-go/tools/record",
     "k8s.io/client-go/util/cert",
     "k8s.io/client-go/util/cert/triple",

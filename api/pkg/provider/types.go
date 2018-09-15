@@ -108,11 +108,18 @@ type ClusterGetOptions struct {
 	CheckInitStatus bool
 }
 
+// ProjectGetOptions allows to check the status of the Project
+type ProjectGetOptions struct {
+	// IncludeUninitialized if set to true will skip the check if project is initialized. By default the call will return
+	// an  error if not all project components are active
+	IncludeUninitialized bool
+}
+
 // NewClusterProvider declares the set of methods for interacting with clusters
 // This provider is Project and RBAC compliant
 type NewClusterProvider interface {
 	// New creates a brand new cluster that is bound to the given project
-	New(project *kubermaticv1.Project, user *kubermaticv1.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error)
+	New(project *kubermaticv1.Project, userInfo *UserInfo, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error)
 
 	// List gets all clusters that belong to the given project
 	// If you want to filter the result please take a look at ClusterListOptions
@@ -123,13 +130,13 @@ type NewClusterProvider interface {
 	List(project *kubermaticv1.Project, options *ClusterListOptions) ([]*kubermaticv1.Cluster, error)
 
 	// Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to
-	Get(user *kubermaticv1.User, project *kubermaticv1.Project, clusterName string, options *ClusterGetOptions) (*kubermaticv1.Cluster, error)
+	Get(userInfo *UserInfo, clusterName string, options *ClusterGetOptions) (*kubermaticv1.Cluster, error)
 
 	// Update updates a cluster
-	Update(user *kubermaticv1.User, project *kubermaticv1.Project, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
+	Update(userInfo *UserInfo, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
 
 	// Delete deletes the given cluster
-	Delete(user *kubermaticv1.User, project *kubermaticv1.Project, clusterName string) error
+	Delete(userInfo *UserInfo, clusterName string) error
 
 	// GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster
 	GetAdminKubeconfigForCustomerCluster(cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
@@ -163,19 +170,19 @@ type NewSSHKeyProvider interface {
 	//
 	// Note:
 	// After we get the list of the keys we could try to get each individually using unprivileged account to see if the user have read access,
-	List(user *kubermaticv1.User, project *kubermaticv1.Project, options *SSHKeyListOptions) ([]*kubermaticv1.UserSSHKey, error)
+	List(project *kubermaticv1.Project, options *SSHKeyListOptions) ([]*kubermaticv1.UserSSHKey, error)
 
 	// Create creates a ssh key that belongs to the given project
-	Create(user *kubermaticv1.User, project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error)
+	Create(userInfo *UserInfo, project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error)
 
 	// Delete deletes the given ssh key
-	Delete(user *kubermaticv1.User, project *kubermaticv1.Project, keyName string) error
+	Delete(userInfo *UserInfo, keyName string) error
 
 	// Get returns a key with the given name
-	Get(user *kubermaticv1.User, project *kubermaticv1.Project, keyName string) (*kubermaticv1.UserSSHKey, error)
+	Get(userInfo *UserInfo, keyName string) (*kubermaticv1.UserSSHKey, error)
 
 	// Update simply updates the given key
-	Update(user *kubermaticv1.User, project *kubermaticv1.Project, newKey *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error)
+	Update(userInfo *UserInfo, newKey *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error)
 }
 
 // UserProvider declares the set of methods for interacting with kubermatic users
@@ -183,6 +190,8 @@ type UserProvider interface {
 	UserByEmail(email string) (*kubermaticv1.User, error)
 	CreateUser(id, name, email string) (*kubermaticv1.User, error)
 	Update(*kubermaticv1.User) (*kubermaticv1.User, error)
+	ListByProject(projectName string) ([]*kubermaticv1.User, error)
+	UserByID(id string) (*kubermaticv1.User, error)
 }
 
 // ProjectProvider declares the set of method for interacting with kubermatic's project
@@ -195,10 +204,51 @@ type ProjectProvider interface {
 	//
 	// Note:
 	// Before deletion project's status.phase is set to ProjectTerminating
-	Delete(user *kubermaticv1.User, projectInternalName string) error
+	Delete(userInfo *UserInfo, projectInternalName string) error
 
 	// Get returns the project with the given name
-	Get(user *kubermaticv1.User, projectInternalName string) (*kubermaticv1.Project, error)
+	Get(userInfo *UserInfo, projectInternalName string, options *ProjectGetOptions) (*kubermaticv1.Project, error)
+}
+
+// UserInfo represent authenticated user
+type UserInfo struct {
+	Email string
+	Group string
+}
+
+// ProjectMemberListOptions allows to set filters that will be applied to filter the result.
+type ProjectMemberListOptions struct {
+	// MemberEmail set the email address of a member for the given project
+	MemberEmail string
+}
+
+// ProjectMemberProvider binds users with projects
+type ProjectMemberProvider interface {
+	// Create creates a binding for the given member and the given project
+	Create(userInfo *UserInfo, project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)
+
+	// List gets all members of the given project
+	List(userInfo *UserInfo, project *kubermaticv1.Project, options *ProjectMemberListOptions) ([]*kubermaticv1.UserProjectBinding, error)
+
+	// Delete simply deletes the given binding
+	// Note:
+	// Use List to get binding for the specific member of the given project
+	Delete(userInfo *UserInfo, bindinName string) error
+
+	// Update simply updates the given binding
+	Update(userInfo *UserInfo, binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error)
+}
+
+// ProjectMemberMapper exposes method that knows how to map
+// a user to a group for a project
+type ProjectMemberMapper interface {
+	// MapUserToGroup maps the given user to a specific group of the given project
+	// This function is unsafe in a sense that it uses privileged account to list all members in the system
+	MapUserToGroup(userEmail string, projectID string) (string, error)
+
+	// MappingsFor returns the list of projects (bindings) for the given user
+	// This function is unsafe in a sense that it uses privileged account to list all members in the system
+	MappingsFor(userEmail string) ([]*kubermaticv1.UserProjectBinding, error)
 }
 
 // ClusterCloudProviderName returns the provider name for the given CloudSpec.

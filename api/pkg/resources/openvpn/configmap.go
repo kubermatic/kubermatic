@@ -12,11 +12,9 @@ import (
 )
 
 // ServerClientConfigsConfigMap returns a ConfigMap containing the ClientConfig for the OpenVPN server. It lives inside the seed-cluster
-func ServerClientConfigsConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-	var cm *corev1.ConfigMap
-	if existing != nil {
-		cm = existing
-	} else {
+func ServerClientConfigsConfigMap(data resources.ConfigMapDataProvider, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+	cm := existing
+	if cm == nil {
 		cm = &corev1.ConfigMap{}
 	}
 	if cm.Data == nil {
@@ -30,10 +28,10 @@ func ServerClientConfigsConfigMap(data *resources.TemplateData, existing *corev1
 	var iroutes []string
 
 	// iroute for pod network
-	if len(data.Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks) < 1 {
+	if len(data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks) < 1 {
 		return nil, fmt.Errorf("cluster.Spec.ClusterNetwork.Pods.CIDRBlocks must contain at least one entry")
 	}
-	_, podNet, err := net.ParseCIDR(data.Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0])
+	_, podNet, err := net.ParseCIDR(data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0])
 	if err != nil {
 		return nil, err
 	}
@@ -42,10 +40,10 @@ func ServerClientConfigsConfigMap(data *resources.TemplateData, existing *corev1
 		net.IP(podNet.Mask).String()))
 
 	// iroute for service network
-	if len(data.Cluster.Spec.ClusterNetwork.Services.CIDRBlocks) < 1 {
+	if len(data.Cluster().Spec.ClusterNetwork.Services.CIDRBlocks) < 1 {
 		return nil, fmt.Errorf("cluster.Spec.ClusterNetwork.Services.CIDRBlocks must contain at least one entry")
 	}
-	_, serviceNet, err := net.ParseCIDR(data.Cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0])
+	_, serviceNet, err := net.ParseCIDR(data.Cluster().Spec.ClusterNetwork.Services.CIDRBlocks[0])
 	if err != nil {
 		return nil, err
 	}
@@ -53,9 +51,9 @@ func ServerClientConfigsConfigMap(data *resources.TemplateData, existing *corev1
 		serviceNet.IP.String(),
 		net.IP(serviceNet.Mask).String()))
 
-	_, nodeAccessNetwork, err := net.ParseCIDR(data.NodeAccessNetwork)
+	_, nodeAccessNetwork, err := net.ParseCIDR(data.NodeAccessNetwork())
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse node access network %s: %v", data.NodeAccessNetwork, err)
+		return nil, fmt.Errorf("failed to parse node access network %s: %v", data.NodeAccessNetwork(), err)
 	}
 	iroutes = append(iroutes, fmt.Sprintf("iroute %s %s",
 		nodeAccessNetwork.IP.String(),
@@ -68,12 +66,10 @@ func ServerClientConfigsConfigMap(data *resources.TemplateData, existing *corev1
 	return cm, nil
 }
 
-// ClientConfigConfigMap returns a ConfigMap containing the ClientConfig for the OpenVPN server. It lives inside the seed-cluster
-func ClientConfigConfigMap(data *resources.TemplateData, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-	var cm *corev1.ConfigMap
-	if existing != nil {
-		cm = existing
-	} else {
+// ClientConfigConfigMap returns a ConfigMap containing the config for the OpenVPN client. It lives inside the user-cluster
+func ClientConfigConfigMap(data resources.ConfigMapDataProvider, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+	cm := existing
+	if cm == nil {
 		cm = &corev1.ConfigMap{}
 	}
 	if cm.Data == nil {
@@ -82,10 +78,9 @@ func ClientConfigConfigMap(data *resources.TemplateData, existing *corev1.Config
 
 	cm.Name = resources.OpenVPNClientConfigConfigMapName
 	cm.Namespace = metav1.NamespaceSystem
-	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	cm.Labels = resources.BaseAppLabel(name, nil)
 
-	openvpnSvc, err := data.ServiceLister.Services(data.Cluster.Status.NamespaceName).Get(resources.OpenVPNServerServiceName)
+	openvpnSvc, err := data.ServiceLister().Services(data.Cluster().Status.NamespaceName).Get(resources.OpenVPNServerServiceName)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +104,7 @@ keysize 256
 status /run/openvpn-status
 up '/bin/sh -c "/sbin/iptables -t nat -I POSTROUTING -s 10.20.0.0/24 -j MASQUERADE"'
 log /dev/stdout
-`, data.Cluster.Address.ExternalName, openvpnSvc.Spec.Ports[0].NodePort)
+`, data.Cluster().Address.ExternalName, openvpnSvc.Spec.Ports[0].NodePort)
 
 	cm.Data["config"] = config
 

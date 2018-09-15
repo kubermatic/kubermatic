@@ -10,13 +10,13 @@ pipeline:
     commands:
     - cd api
     - make gofmt
-    image: golang:1.10.3
+    image: golang:1.11.0
     pull: true
   2-verify-codegen:
     commands:
     - cd api
     - ./hack/verify-codegen.sh
-    image: golang:1.10.3
+    image: golang:1.11.0
     pull: true
   3-license-validation:
     commands:
@@ -45,21 +45,21 @@ pipeline:
     - cd api
     - ./hack/verify-swagger.sh
     group: lint
-    image: golang:1.10.3
+    image: golang:1.11.0
     pull: true
   4-build:
     commands:
     - cd api
     - make build
     group: build
-    image: golang:1.10.3
+    image: golang:1.11.0
     pull: true
   4-test:
     commands:
     - cd api
     - make test
     group: build
-    image: golang:1.10.3
+    image: golang:1.11.0
     pull: true
   4-write-version:
     commands:
@@ -102,11 +102,28 @@ pipeline:
     when:
       event:
       - tag
-  6-kubermatic-e2e-docker-push:
+  6-kubermatic-e2e-docker-push-on-master:
     context: api
     dockerfile: api/Dockerfile.e2e
     image: plugins/docker
     pull: true
+    registry: quay.io
+    repo: quay.io/kubermatic/e2e
+    secrets:
+    - source: docker_quay_username
+      target: docker_username
+    - source: docker_quay_password
+      target: docker_password
+    tags:
+    - latest
+    when:
+      branch: master
+  6-kubermatic-e2e-docker-push-on-tag:
+    context: api
+    dockerfile: api/Dockerfile.e2e
+    image: plugins/docker
+    pull: true
+    registry: quay.io
     repo: quay.io/kubermatic/e2e
     secrets:
     - source: docker_quay_username
@@ -115,7 +132,6 @@ pipeline:
       target: docker_password
     tags:
     - ${DRONE_TAG}
-    - latest
     when:
       event:
       - tag
@@ -160,6 +176,9 @@ pipeline:
     - name: certs
       namespace: default
       path: config/certs/
+    - name: iap
+      namespace: iap
+      path: config/iap/
     - name: node-exporter
       namespace: monitoring
       path: config/monitoring/node-exporter/
@@ -239,6 +258,9 @@ pipeline:
     - name: certs
       namespace: default
       path: config/certs/
+    - name: iap
+      namespace: iap
+      path: config/iap/
     - name: node-exporter
       namespace: monitoring
       path: config/monitoring/node-exporter/
@@ -293,14 +315,71 @@ pipeline:
     - values
     when:
       branch: master
-  10-e2e:
+  9-deploy-run:
+    charts:
+    - name: kubermatic
+      namespace: kubermatic
+      path: config/kubermatic/
+    - name: nodeport-proxy
+      namespace: nodeport-proxy
+      path: config/nodeport-proxy/
+    - name: minio
+      namespace: minio
+      path: config/minio/
+    - name: kubermatic-master
+      namespace: kubermatic
+      path: config/kubermatic/master
+    - name: nginx
+      namespace: ingress-nginx
+      path: config/nginx-ingress-controller/
+    - name: oauth
+      namespace: oauth
+      path: config/oauth/
+    - name: cert-manager
+      namespace: cert-manager
+      path: config/cert-manager/
+    - name: certs
+      namespace: default
+      path: config/certs/
+    - name: iap
+      namespace: iap
+      path: config/iap/
+    - name: node-exporter
+      namespace: monitoring
+      path: config/monitoring/node-exporter/
+    - name: kube-state-metrics
+      namespace: monitoring
+      path: config/monitoring/kube-state-metrics/
+    - name: grafana
+      namespace: monitoring
+      path: config/monitoring/grafana/
+    - name: alertmanager
+      namespace: monitoring
+      path: config/monitoring/alertmanager/
+    - name: prometheus
+      namespace: monitoring
+      path: config/monitoring/prometheus/
+    helm: upgrade --install --wait --timeout 300 --tiller-namespace=kubermatic-installer
+      --values config/versions-values.yaml
+    image: kubeciio/helm
+    pull: true
+    secrets:
+    - source: kubeconfig_run
+      target: kubeconfig
+    - source: values_run
+      target: values
+    values:
+    - values
+    when:
+      branch: release/v2.7.*
+  10-e2e-on-master:
     commands:
     - echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig
     - echo "$CLUSTER_YAML" > /tmp/cluster.yaml
     - echo "$NODE_YAML" > /tmp/node.yaml
     - /kubermatic-e2e -kubeconfig=/tmp/kubeconfig -kubermatic-cluster=/tmp/cluster.yaml
       -kubermatic-node=/tmp/node.yaml
-    image: quay.io/kubermatic/e2e
+    image: quay.io/kubermatic/e2e:latest
     pull: true
     secrets:
     - source: kubeconfig_dev
@@ -311,6 +390,25 @@ pipeline:
       target: node_yaml
     when:
       branch: master
+  10-e2e-on-tag:
+    commands:
+    - echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig
+    - echo "$CLUSTER_YAML" > /tmp/cluster.yaml
+    - echo "$NODE_YAML" > /tmp/node.yaml
+    - /kubermatic-e2e -kubeconfig=/tmp/kubeconfig -kubermatic-cluster=/tmp/cluster.yaml
+      -kubermatic-node=/tmp/node.yaml
+    image: quay.io/kubermatic/e2e:${DRONE_TAG=no_such_tag}
+    pull: true
+    secrets:
+    - source: kubeconfig_dev
+      target: kubeconfig
+    - source: aws_1.10.5_cluster_yaml
+      target: cluster_yaml
+    - source: aws_1.10.5_node_yaml
+      target: node_yaml
+    when:
+      event:
+      - tag
   11-slack:
     channel: dev
     group: slack

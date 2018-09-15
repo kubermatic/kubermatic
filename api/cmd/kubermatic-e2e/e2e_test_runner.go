@@ -111,7 +111,7 @@ func (ctl *e2eTestRunner) run(ctx context.Context) error {
 		return err
 	}
 
-	clusterAdminRestConfig, err := ctl.clusterRestConfig(clusterKubeConfig, cluster.Name)
+	clusterAdminRestConfig, err := ctl.clusterRestConfig(clusterKubeConfig)
 	if err != nil {
 		return err
 	}
@@ -296,7 +296,7 @@ func (ctl *e2eTestRunner) createMachines(restConfig *rest.Config, dc provider.Da
 	return nil
 }
 
-func (ctl *e2eTestRunner) clusterRestConfig(cfg []byte, contextName string) (*rest.Config, error) {
+func (ctl *e2eTestRunner) clusterRestConfig(cfg []byte) (*rest.Config, error) {
 	clusterClientCfg, err := clientcmd.Load(cfg)
 	if err != nil {
 		return nil, err
@@ -304,7 +304,7 @@ func (ctl *e2eTestRunner) clusterRestConfig(cfg []byte, contextName string) (*re
 
 	return clientcmd.NewNonInteractiveClientConfig(
 		*clusterClientCfg,
-		contextName,
+		resources.KubeconfigDefaultContextKey,
 		&clientcmd.ConfigOverrides{},
 		nil,
 	).ClientConfig()
@@ -320,7 +320,7 @@ func (ctl *e2eTestRunner) kubeConfig(cluster *kubermaticv1.Cluster) ([]byte, err
 		return nil, err
 	}
 
-	adminKubeConfig, ok := secret.Data[resources.AdminKubeconfigSecretKey]
+	adminKubeConfig, ok := secret.Data[resources.KubeconfigSecretKey]
 	if !ok {
 		return nil, errors.New("admin-kubeconfig not found")
 	}

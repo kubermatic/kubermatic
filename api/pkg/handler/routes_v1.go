@@ -41,32 +41,53 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.deleteSSHKey())
 
 	mux.Methods(http.MethodGet).
-		Path("/digitalocean/sizes").
+		Path("/providers/digitalocean/sizes").
 		Handler(r.listDigitaloceanSizes())
+	mux.Methods(http.MethodGet).
+		Path("/digitalocean/sizes").
+		Handler(r.redirectTo("/api/v1/providers/digitalocean/sizes"))
 
+	mux.Methods(http.MethodGet).
+		Path("/providers/azure/sizes").
+		Handler(r.listAzureSizes())
 	mux.Methods(http.MethodGet).
 		Path("/azure/sizes").
-		Handler(r.listAzureSizes())
+		Handler(r.redirectTo("/api/v1/providers/azure/sizes"))
 
+	mux.Methods(http.MethodGet).
+		Path("/providers/openstack/sizes").
+		Handler(r.listOpenstackSizes())
 	mux.Methods(http.MethodGet).
 		Path("/openstack/sizes").
-		Handler(r.listOpenstackSizes())
+		Handler(r.redirectTo("/api/v1/providers/openstack/sizes"))
 
+	mux.Methods(http.MethodGet).
+		Path("/providers/openstack/tenants").
+		Handler(r.listOpenstackTenants())
 	mux.Methods(http.MethodGet).
 		Path("/openstack/tenants").
-		Handler(r.listOpenstackTenants())
+		Handler(r.redirectTo("/api/v1/providers/openstack/tenants"))
 
+	mux.Methods(http.MethodGet).
+		Path("/providers/openstack/networks").
+		Handler(r.listOpenstackNetworks())
 	mux.Methods(http.MethodGet).
 		Path("/openstack/networks").
-		Handler(r.listOpenstackNetworks())
+		Handler(r.redirectTo("/api/v1/providers/openstack/networks"))
 
+	mux.Methods(http.MethodGet).
+		Path("/providers/openstack/securitygroups").
+		Handler(r.listOpenstackSecurityGroups())
 	mux.Methods(http.MethodGet).
 		Path("/openstack/securitygroups").
-		Handler(r.listOpenstackSecurityGroups())
+		Handler(r.redirectTo("/api/v1/providers/openstack/securitygroups"))
 
 	mux.Methods(http.MethodGet).
-		Path("/openstack/subnets").
+		Path("/providers/openstack/subnets").
 		Handler(r.listOpenstackSubnets())
+	mux.Methods(http.MethodGet).
+		Path("/openstack/subnets").
+		Handler(r.redirectTo("/api/v1/providers/openstack/subnets"))
 
 	mux.Methods(http.MethodGet).
 		Path("/versions").
@@ -75,8 +96,11 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	//
 	// VSphere related endpoints
 	mux.Methods(http.MethodGet).
-		Path("/vsphere/networks").
+		Path("/providers/vsphere/networks").
 		Handler(r.listVSphereNetworks())
+	mux.Methods(http.MethodGet).
+		Path("/vsphere/networks").
+		Handler(r.redirectTo("/api/v1/providers/vsphere/networks"))
 
 	//
 	// Defines a set of HTTP endpoints for project resource
@@ -107,7 +131,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.newCreateSSHKey())
 
 	mux.Methods(http.MethodDelete).
-		Path("/projects/{project_id}/sshkeys/{key_name}").
+		Path("/projects/{project_id}/sshkeys/{key_id}").
 		Handler(r.newDeleteSSHKey())
 
 	mux.Methods(http.MethodGet).
@@ -154,8 +178,9 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 
 	//
 	// Defines set of HTTP endpoints for SSH Keys that belong to a cluster
-	mux.Methods(http.MethodPost).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys").
+
+	mux.Methods(http.MethodPut).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}").
 		Handler(r.newAssignSSHKeyToCluster())
 
 	mux.Methods(http.MethodGet).
@@ -163,7 +188,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.newListSSHKeysAssignedToCluster())
 
 	mux.Methods(http.MethodDelete).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_name}").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}").
 		Handler(r.newDetachSSHKeyFromCluster())
 
 	//
@@ -200,11 +225,29 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}/users").
 		Handler(r.addUserToProject())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/users").
+		Handler(r.getUsersForProject())
+
+	mux.Methods(http.MethodPut).
+		Path("/projects/{project_id}/users/{user_id}").
+		Handler(r.editUserInProject())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/users/{user_id}").
+		Handler(r.deleteUserFromProject())
+
 	//
 	// Defines an endpoint to retrieve information about the current token owner
 	mux.Methods(http.MethodGet).
 		Path("/me").
 		Handler(r.getCurrentUser())
+}
+
+func (r Routing) redirectTo(path string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, path, http.StatusMovedPermanently)
+	})
 }
 
 // swagger:route GET /api/v1/ssh-keys ssh-keys listSSHKeys
@@ -247,6 +290,7 @@ func (r Routing) newListSSHKeys() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
+			r.userInfoMiddleware(),
 		)(newListSSHKeyEndpoint(r.newSSHKeyProvider, r.projectProvider)),
 		newDecodeListSSHKeyReq,
 		encodeJSON,
@@ -299,6 +343,7 @@ func (r Routing) newCreateSSHKey() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
+			r.userInfoMiddleware(),
 		)(newCreateSSHKeyEndpoint(r.newSSHKeyProvider, r.projectProvider)),
 		newDecodeCreateSSHKeyReq,
 		setStatusCreatedHeader(encodeJSON),
@@ -328,7 +373,7 @@ func (r Routing) deleteSSHKey() http.Handler {
 	)
 }
 
-// swagger:route DELETE /api/v1/projects/{project_id}/sshkeys/{key_name} project newDeleteSSHKey
+// swagger:route DELETE /api/v1/projects/{project_id}/sshkeys/{key_id} project newDeleteSSHKey
 //
 //     Removes the given SSH Key from the system.
 //
@@ -345,6 +390,7 @@ func (r Routing) newDeleteSSHKey() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
+			r.userInfoMiddleware(),
 		)(newDeleteSSHKeyEndpoint(r.newSSHKeyProvider, r.projectProvider)),
 		newDecodeDeleteSSHKeyReq,
 		encodeJSON,
@@ -352,7 +398,7 @@ func (r Routing) newDeleteSSHKey() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/digitalocean/sizes digitalocean listDigitaloceanSizes
+// swagger:route GET /api/v1/providers/digitalocean/sizes digitalocean listDigitaloceanSizes
 //
 // Lists sizes from digitalocean
 //
@@ -374,7 +420,7 @@ func (r Routing) listDigitaloceanSizes() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/azure/sizes azure listAzureSizes
+// swagger:route GET /api/v1/providers/azure/sizes azure listAzureSizes
 //
 // Lists available VM sizes in an Azure region
 //
@@ -396,7 +442,7 @@ func (r Routing) listAzureSizes() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/openstack/sizes openstack listOpenstackSizes
+// swagger:route GET /api/v1/providers/openstack/sizes openstack listOpenstackSizes
 //
 // Lists sizes from openstack
 //
@@ -418,7 +464,7 @@ func (r Routing) listOpenstackSizes() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/vsphere/networks vsphere listVSphereNetworks
+// swagger:route GET /api/v1/providers/vsphere/networks vsphere listVSphereNetworks
 //
 // Lists networks from vsphere datacenter
 //
@@ -440,7 +486,7 @@ func (r Routing) listVSphereNetworks() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/openstack/tenants openstack listOpenstackTenants
+// swagger:route GET /api/v1/providers/openstack/tenants openstack listOpenstackTenants
 //
 // Lists tenants from openstack
 //
@@ -462,7 +508,7 @@ func (r Routing) listOpenstackTenants() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/openstack/networks openstack listOpenstackNetworks
+// swagger:route GET /api/v1/providers/openstack/networks openstack listOpenstackNetworks
 //
 // Lists networks from openstack
 //
@@ -484,7 +530,7 @@ func (r Routing) listOpenstackNetworks() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/openstack/subnets openstack listOpenstackSubnets
+// swagger:route GET /api/v1/providers/openstack/subnets openstack listOpenstackSubnets
 //
 // Lists subnets from openstack
 //
@@ -506,7 +552,7 @@ func (r Routing) listOpenstackSubnets() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/openstack/securitygroups openstack listOpenstackSecurityGroups
+// swagger:route GET /api/v1/providers/openstack/securitygroups openstack listOpenstackSecurityGroups
 //
 // Lists security groups from openstack
 //
@@ -608,7 +654,7 @@ func (r Routing) listProjects() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(listProjectsEndpoint(r.projectProvider)),
+		)(listProjectsEndpoint(r.projectProvider, r.userProjectMapper)),
 		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -632,6 +678,7 @@ func (r Routing) getProject() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
+			r.userInfoMiddleware(),
 		)(getProjectEndpoint(r.projectProvider)),
 		decodeGetProject,
 		encodeJSON,
@@ -683,6 +730,7 @@ func (r Routing) updateProject() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
+			r.userInfoMiddleware(),
 		)(updateProjectEndpoint()),
 		decodeUpdateProject,
 		encodeJSON,
@@ -708,6 +756,7 @@ func (r Routing) deleteProject() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
+			r.userInfoMiddleware(),
 		)(deleteProjectEndpoint(r.projectProvider)),
 		decodeDeleteProject,
 		encodeJSON,
@@ -736,6 +785,7 @@ func (r Routing) newCreateCluster() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
 		)(newCreateClusterEndpoint(r.newSSHKeyProvider, r.cloudProviders, r.projectProvider)),
 		newDecodeCreateClusterReq,
 		setStatusCreatedHeader(encodeJSON),
@@ -761,6 +811,7 @@ func (r Routing) newListClusters() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
 		)(newListClusters(r.projectProvider)),
 		newDecodeListClustersReq,
 		encodeJSON,
@@ -786,6 +837,7 @@ func (r Routing) newGetCluster() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
 		)(newGetCluster(r.projectProvider)),
 		newDecodeGetClusterReq,
 		encodeJSON,
@@ -811,6 +863,7 @@ func (r Routing) newUpdateCluster() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
 		)(newUpdateCluster(r.cloudProviders, r.projectProvider)),
 		newDecodeUpdateClusterReq,
 		encodeJSON,
@@ -837,6 +890,7 @@ func (r Routing) newGetClusterKubeconfig() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
 		)(newGetClusterKubeconfig(r.projectProvider)),
 		newDecodeGetClusterKubeconfig,
 		encodeKubeconfig,
@@ -845,7 +899,7 @@ func (r Routing) newGetClusterKubeconfig() http.Handler {
 }
 
 // Delete the cluster
-// swagger:route DELETE /api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_id} project newDeleteCluster
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id} project newDeleteCluster
 //
 //     Deletes the specified cluster
 //
@@ -863,6 +917,7 @@ func (r Routing) newDeleteCluster() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
 		)(newDeleteCluster(r.newSSHKeyProvider, r.projectProvider)),
 		newDecodeGetClusterReq,
 		encodeJSON,
@@ -870,7 +925,7 @@ func (r Routing) newDeleteCluster() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/project/{project_id}/dc/{dc}/clusters/{cluster_id}/health project newGetClusterHealth
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/health project newGetClusterHealth
 //
 //     Returns the cluster's component health status
 //
@@ -888,6 +943,7 @@ func (r Routing) newGetClusterHealth() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
 		)(getClusterHealth(r.projectProvider)),
 		newDecodeGetClusterReq,
 		encodeJSON,
@@ -895,7 +951,7 @@ func (r Routing) newGetClusterHealth() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys project newAssignSSHKeyToCluster
+// swagger:route PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id} project newAssignSSHKeyToCluster
 //
 //     Assigns an existing ssh key to the given cluster
 //
@@ -907,7 +963,7 @@ func (r Routing) newGetClusterHealth() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: empty
+//       201: empty
 //       401: empty
 //       403: empty
 func (r Routing) newAssignSSHKeyToCluster() http.Handler {
@@ -916,6 +972,7 @@ func (r Routing) newAssignSSHKeyToCluster() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
 		)(assignSSHKeyToCluster(r.newSSHKeyProvider, r.projectProvider)),
 		decodeAssignSSHKeyToClusterReq,
 		setStatusCreatedHeader(encodeJSON),
@@ -945,6 +1002,7 @@ func (r Routing) newListSSHKeysAssignedToCluster() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
 		)(listSSHKeysAssingedToCluster(r.newSSHKeyProvider, r.projectProvider)),
 		decodeListSSHKeysAssignedToCluster,
 		encodeJSON,
@@ -952,7 +1010,7 @@ func (r Routing) newListSSHKeysAssignedToCluster() http.Handler {
 	)
 }
 
-// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_name} project newDetachSSHKeyFromCluster
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id} project newDetachSSHKeyFromCluster
 //
 //     Unassignes an ssh key from the given cluster
 //
@@ -973,6 +1031,7 @@ func (r Routing) newDetachSSHKeyFromCluster() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
 		)(detachSSHKeyFromCluster(r.newSSHKeyProvider, r.projectProvider)),
 		decodeDetachSSHKeysFromCluster,
 		encodeJSON,
@@ -998,6 +1057,7 @@ func (r Routing) getClusterAdminToken() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
 		)(getClusterAdminToken(r.projectProvider)),
 		decodeClusterAdminTokenReq,
 		encodeJSON,
@@ -1023,6 +1083,7 @@ func (r Routing) revokeClusterAdminToken() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
 		)(revokeClusterAdminToken(r.projectProvider)),
 		decodeClusterAdminTokenReq,
 		encodeJSON,
@@ -1051,6 +1112,7 @@ func (r Routing) newGetNodeForCluster() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
 		)(newGetNodeForCluster(r.projectProvider)),
 		decodeGetNodeForCluster,
 		encodeJSON,
@@ -1079,6 +1141,7 @@ func (r Routing) newCreateNodeForCluster() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
 		)(newCreateNodeForCluster(r.newSSHKeyProvider, r.projectProvider, r.datacenters)),
 		decodeCreateNodeForCluster,
 		setStatusCreatedHeader(encodeJSON),
@@ -1105,6 +1168,7 @@ func (r Routing) newListNodesForCluster() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
 		)(newListNodesForCluster(r.projectProvider)),
 		decodeListNodesForCluster,
 		encodeJSON,
@@ -1130,6 +1194,7 @@ func (r Routing) newDeleteNodeForCluster() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
 		)(newDeleteNodeForCluster(r.projectProvider)),
 		decodeDeleteNodeForCluster,
 		encodeJSON,
@@ -1155,6 +1220,7 @@ func (r Routing) getClusterUpgrades() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
 		)(getClusterUpgrades(r.updateManager, r.projectProvider)),
 		decodeClusterReq,
 		encodeJSON,
@@ -1180,6 +1246,7 @@ func (r Routing) clusterMetricsHandler() http.Handler {
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
 		)(getClusterMetricsEndpoint(r.projectProvider, r.prometheusClient)),
 		decodeClusterReq,
 		encodeJSON,
@@ -1207,9 +1274,94 @@ func (r Routing) addUserToProject() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(addUserToProject(r.projectProvider, r.userProvider)),
+			r.userInfoMiddleware(),
+		)(addUserToProject(r.projectProvider, r.userProvider, r.projectMemberProvider)),
 		decodeAddUserToProject,
 		setStatusCreatedHeader(encodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/users users getUsersForProject
+//
+//     Get list of users for the given project
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []User
+//       401: empty
+//       403: empty
+func (r Routing) getUsersForProject() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.userInfoMiddleware(),
+		)(listUsersFromProject(r.projectProvider, r.userProvider, r.projectMemberProvider)),
+		decodeGetProject,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/v1/projects/{project_id}/users/{user_id} users editUserInProject
+//
+//     Changes membership of the given user for the given project
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: User
+//       401: empty
+//       403: empty
+func (r Routing) editUserInProject() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.userInfoMiddleware(),
+		)(editMemberOfProject(r.projectProvider, r.userProvider, r.projectMemberProvider)),
+		decodeEditUserToProject,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/projects/{project_id}/users/{user_id} users deleteUserFromProject
+//
+//     Removes the given member from the project
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: User
+//       401: empty
+//       403: empty
+func (r Routing) deleteUserFromProject() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.userInfoMiddleware(),
+		)(deleteMemberFromProject(r.projectProvider, r.userProvider, r.projectMemberProvider)),
+		decodeDeleteUserFromProject,
+		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1230,7 +1382,7 @@ func (r Routing) getCurrentUser() http.Handler {
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(getCurrentUserEndpoint(r.userProvider)),
+		)(getCurrentUserEndpoint(r.userProvider, r.userProjectMapper)),
 		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,

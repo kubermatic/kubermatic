@@ -44,47 +44,47 @@
 - "name": "kube-scheduler.rules"
   "rules":
   - "expr": |
-      histogram_quantile(0.99, sum(rate(scheduler_e2e_scheduling_latency_microseconds_bucket{job="kube-scheduler"}[5m])) without(instance, pod)) / 1e+06
+      histogram_quantile(0.99, sum(rate(scheduler_e2e_scheduling_latency_microseconds_bucket{job="scheduler"}[5m])) without(instance, pod)) / 1e+06
     "labels":
       "quantile": "0.99"
     "record": "cluster_quantile:scheduler_e2e_scheduling_latency:histogram_quantile"
   - "expr": |
-      histogram_quantile(0.99, sum(rate(scheduler_scheduling_algorithm_latency_microseconds_bucket{job="kube-scheduler"}[5m])) without(instance, pod)) / 1e+06
+      histogram_quantile(0.99, sum(rate(scheduler_scheduling_algorithm_latency_microseconds_bucket{job="scheduler"}[5m])) without(instance, pod)) / 1e+06
     "labels":
       "quantile": "0.99"
     "record": "cluster_quantile:scheduler_scheduling_algorithm_latency:histogram_quantile"
   - "expr": |
-      histogram_quantile(0.99, sum(rate(scheduler_binding_latency_microseconds_bucket{job="kube-scheduler"}[5m])) without(instance, pod)) / 1e+06
+      histogram_quantile(0.99, sum(rate(scheduler_binding_latency_microseconds_bucket{job="scheduler"}[5m])) without(instance, pod)) / 1e+06
     "labels":
       "quantile": "0.99"
     "record": "cluster_quantile:scheduler_binding_latency:histogram_quantile"
   - "expr": |
-      histogram_quantile(0.9, sum(rate(scheduler_e2e_scheduling_latency_microseconds_bucket{job="kube-scheduler"}[5m])) without(instance, pod)) / 1e+06
+      histogram_quantile(0.9, sum(rate(scheduler_e2e_scheduling_latency_microseconds_bucket{job="scheduler"}[5m])) without(instance, pod)) / 1e+06
     "labels":
       "quantile": "0.9"
     "record": "cluster_quantile:scheduler_e2e_scheduling_latency:histogram_quantile"
   - "expr": |
-      histogram_quantile(0.9, sum(rate(scheduler_scheduling_algorithm_latency_microseconds_bucket{job="kube-scheduler"}[5m])) without(instance, pod)) / 1e+06
+      histogram_quantile(0.9, sum(rate(scheduler_scheduling_algorithm_latency_microseconds_bucket{job="scheduler"}[5m])) without(instance, pod)) / 1e+06
     "labels":
       "quantile": "0.9"
     "record": "cluster_quantile:scheduler_scheduling_algorithm_latency:histogram_quantile"
   - "expr": |
-      histogram_quantile(0.9, sum(rate(scheduler_binding_latency_microseconds_bucket{job="kube-scheduler"}[5m])) without(instance, pod)) / 1e+06
+      histogram_quantile(0.9, sum(rate(scheduler_binding_latency_microseconds_bucket{job="scheduler"}[5m])) without(instance, pod)) / 1e+06
     "labels":
       "quantile": "0.9"
     "record": "cluster_quantile:scheduler_binding_latency:histogram_quantile"
   - "expr": |
-      histogram_quantile(0.5, sum(rate(scheduler_e2e_scheduling_latency_microseconds_bucket{job="kube-scheduler"}[5m])) without(instance, pod)) / 1e+06
+      histogram_quantile(0.5, sum(rate(scheduler_e2e_scheduling_latency_microseconds_bucket{job="scheduler"}[5m])) without(instance, pod)) / 1e+06
     "labels":
       "quantile": "0.5"
     "record": "cluster_quantile:scheduler_e2e_scheduling_latency:histogram_quantile"
   - "expr": |
-      histogram_quantile(0.5, sum(rate(scheduler_scheduling_algorithm_latency_microseconds_bucket{job="kube-scheduler"}[5m])) without(instance, pod)) / 1e+06
+      histogram_quantile(0.5, sum(rate(scheduler_scheduling_algorithm_latency_microseconds_bucket{job="scheduler"}[5m])) without(instance, pod)) / 1e+06
     "labels":
       "quantile": "0.5"
     "record": "cluster_quantile:scheduler_scheduling_algorithm_latency:histogram_quantile"
   - "expr": |
-      histogram_quantile(0.5, sum(rate(scheduler_binding_latency_microseconds_bucket{job="kube-scheduler"}[5m])) without(instance, pod)) / 1e+06
+      histogram_quantile(0.5, sum(rate(scheduler_binding_latency_microseconds_bucket{job="scheduler"}[5m])) without(instance, pod)) / 1e+06
     "labels":
       "quantile": "0.5"
     "record": "cluster_quantile:scheduler_binding_latency:histogram_quantile"
@@ -315,6 +315,23 @@
          irate(node_network_transmit_drop{app="node-exporter",device=~"eth[0-9]+"}[1m]))
       )
     "record": "instance:node_net_saturation:sum_irate"
+- "name": "ark"
+  "rules":
+  - "alert": "ArkBackupTakesTooLong"
+    "annotations":
+      "message": "Backup schedule {{ $labels.schedule }} has been taking more than 60min already."
+      "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-arkbackuptakestoolong"
+    "expr": "(ark_backup_attempt_total - ark_backup_success_total) > 0"
+    "for": "60m"
+    "labels":
+      "severity": "warning"
+  - "alert": "ArkNoRecentBackup"
+    "annotations":
+      "message": "There has not been a successful backup for schedule {{ $labels.schedule }} in the last 24 hours."
+      "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-arknorecentbackup"
+    "expr": "changes(ark_backup_success_total[25h]) < 1"
+    "labels":
+      "severity": "warning"
 - "name": "kubermatic"
   "rules":
   - "alert": "KubermaticTooManyUnhandledErrors"
@@ -331,6 +348,25 @@
       "message": "Cluster {{ $labels.cluster }} is stuck in deletion for more than 30min."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubermaticclusterdeletiontakestoolong"
     "expr": "(time() - kubermatic_cluster_deleted) > 30*60"
+    "for": "0m"
+    "labels":
+      "severity": "warning"
+- "name": "machine-controller"
+  "rules":
+  - "alert": "MachineControllerTooManyErrors"
+    "annotations":
+      "message": "Machine Controller in {{ $labels.namespace }} has too many errors in its loop."
+      "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-machinecontrollertoomanyerrors"
+    "expr": |
+      sum(rate(machine_controller_errors_total[5m])) by (namespace) > 0.01
+    "for": "10m"
+    "labels":
+      "severity": "warning"
+  - "alert": "MachineControllerMachineDeletionTakesTooLong"
+    "annotations":
+      "message": "Machine {{ $labels.machine }} of cluster {{ $labels.cluster }} is stuck in deletion for more than 30min."
+      "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-machinecontrollermachinedeletiontakestoolong"
+    "expr": "(time() - machine_controller_machine_deleted) > 30*60"
     "for": "0m"
     "labels":
       "severity": "warning"
@@ -359,7 +395,7 @@
       "message": "KubeControllerManager has disappeared from Prometheus target discovery."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubecontrollermanagerdown"
     "expr": |
-      absent(up{job="kube-controller-manager"} == 1)
+      absent(up{job="controller-manager"} == 1)
     "for": "15m"
     "labels":
       "severity": "critical"
@@ -368,7 +404,7 @@
       "message": "KubeScheduler has disappeared from Prometheus target discovery."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubeschedulerdown"
     "expr": |
-      absent(up{job="kube-scheduler"} == 1)
+      absent(up{job="scheduler"} == 1)
     "for": "15m"
     "labels":
       "severity": "critical"
@@ -644,7 +680,7 @@
       "message": "There are {{ $value }} different versions of Kubernetes components running."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubeversionmismatch"
     "expr": |
-      count(count(kubernetes_build_info{job!="kube-dns"}) by (gitVersion)) > 1
+      count(count(kubernetes_build_info{job!="dns"}) by (gitVersion)) > 1
     "for": "1h"
     "labels":
       "severity": "warning"
