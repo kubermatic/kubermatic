@@ -12,59 +12,24 @@ type installCandidate struct {
 
 var dockerInstallCandidates = []installCandidate{
 	{
-		versions:   []string{"1.10", "1.10.3"},
+		versions:   []string{"17.12", "17.12.1"},
 		pkg:        "docker.io",
-		pkgVersion: "1.10.3-0ubuntu6",
+		pkgVersion: "17.12.1-0ubuntu1",
 	},
 	{
-		versions:   []string{"1.13", "1.13.1"},
-		pkg:        "docker.io",
-		pkgVersion: "1.13.1-0ubuntu1~16.04.2",
-	},
-	{
-		versions:   []string{"17.03.0"},
+		versions:   []string{"18.03", "18.03.1"},
 		pkg:        "docker-ce",
-		pkgVersion: "17.03.0~ce-0~ubuntu-xenial",
+		pkgVersion: "18.03.1~ce~3-0~ubuntu",
 	},
 	{
-		versions:   []string{"17.03.1"},
+		versions:   []string{"18.06.0"},
 		pkg:        "docker-ce",
-		pkgVersion: "17.03.1~ce-0~ubuntu-xenial",
+		pkgVersion: "18.06.0~ce~3-0~ubuntu",
 	},
 	{
-		versions:   []string{"17.03", "17.03.2"},
+		versions:   []string{"18.06", "18.06.1"},
 		pkg:        "docker-ce",
-		pkgVersion: "17.03.2~ce-0~ubuntu-xenial",
-	},
-	{
-		versions:   []string{"17.06.0"},
-		pkg:        "docker-ce",
-		pkgVersion: "17.06.0~ce-0~ubuntu",
-	},
-	{
-		versions:   []string{"17.06.1"},
-		pkg:        "docker-ce",
-		pkgVersion: "17.06.1~ce-0~ubuntu",
-	},
-	{
-		versions:   []string{"17.06", "17.06.2"},
-		pkg:        "docker-ce",
-		pkgVersion: "17.06.2~ce-0~ubuntu",
-	},
-	{
-		versions:   []string{"17.09.0"},
-		pkg:        "docker-ce",
-		pkgVersion: "17.09.0~ce-0~ubuntu",
-	},
-	{
-		versions:   []string{"17.09", "17.09.1"},
-		pkg:        "docker-ce",
-		pkgVersion: "17.09.1~ce-0~ubuntu",
-	},
-	{
-		versions:   []string{"17.12", "17.12.0"},
-		pkg:        "docker-ce",
-		pkgVersion: "17.12.0~ce-0~ubuntu",
+		pkgVersion: "18.06.1~ce~3-0~ubuntu",
 	},
 }
 
@@ -75,5 +40,5 @@ func getDockerInstallCandidate(desiredVersion string) (pkg string, version strin
 		}
 	}
 
-	return "", "", NoInstallCandidateAvailableErr
+	return "", "", errNoInstallCandidateAvailable
 }
