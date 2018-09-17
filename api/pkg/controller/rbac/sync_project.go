@@ -261,32 +261,10 @@ func ensureClusterRBACRoleBindingForResource(kubeClient kubernetes.Interface, gr
 // ensureProjectCleanup ensures proper clean up of dependent resources upon deletion
 //
 // In particular:
-// - removes project/group reference from users object
 // - removes no longer needed Subject from RBAC Binding for project's resources
 // - removes cluster resources on master and seed because for them we use Labels not OwnerReferences
 // - removes cleanupFinalizer
 func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
-	sharedUsers, err := c.userLister.List(labels.Everything())
-	if err != nil {
-		return err
-	}
-	for _, sharedUser := range sharedUsers {
-		updatedProjectGroup := []kubermaticv1.ProjectGroup{}
-		for _, pg := range sharedUser.Spec.Projects {
-			if pg.Name == project.Name {
-				continue
-			}
-			updatedProjectGroup = append(updatedProjectGroup, pg)
-		}
-		if len(updatedProjectGroup) != len(sharedUser.Spec.Projects) {
-			user := sharedUser.DeepCopy()
-			user.Spec.Projects = updatedProjectGroup
-			if _, err = c.kubermaticMasterClient.KubermaticV1().Users().Update(user); err != nil {
-				return err
-			}
-		}
-	}
-
 	// cluster resources don't have OwnerReferences set thus we need to manually remove them
 	for _, clusterProvider := range c.seedClusterProviders {
 		if clusterProvider.clusterResourceLister == nil {
@@ -315,10 +293,6 @@ func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
 			} else if err != nil {
 				return err
 			}
-			err = cleanUpRBACRoleBindingFor(c.kubeMasterClient, groupName, projectResource.gvr.Resource)
-			if err != nil {
-				return err
-			}
 
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterProvider := range c.seedClusterProviders {
@@ -328,6 +302,11 @@ func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
 						return err
 					}
 				}
+			} else {
+				err := cleanUpRBACRoleBindingFor(c.kubeMasterClient, groupName, projectResource.gvr.Resource)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -335,7 +314,7 @@ func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
 	finalizers := sets.NewString(project.Finalizers...)
 	finalizers.Delete(cleanupFinalizerName)
 	project.Finalizers = finalizers.List()
-	_, err = c.kubermaticMasterClient.KubermaticV1().Projects().Update(project)
+	_, err := c.kubermaticMasterClient.KubermaticV1().Projects().Update(project)
 	return err
 }
 
