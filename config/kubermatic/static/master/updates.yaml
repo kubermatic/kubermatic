@@ -1,13 +1,9 @@
 updates:
 # ======= 1.8 =======
-# Allow to change to any patch version
-- from: 1.8.*
-  to: 1.8.*
-  automatic: false
 # Allow to next minor release
 - from: 1.8.*
   to: 1.9.0
-  automatic: false
+  automatic: true
 
 # ======= 1.9 =======
 # Allow to change to any patch version
