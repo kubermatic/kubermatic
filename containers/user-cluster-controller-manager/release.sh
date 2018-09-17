@@ -2,7 +2,7 @@
 
 name=user-cluster-controller-manager
 
-ver=v0.1.0-dev10
+ver=v0.1.0-dev
 image=quay.io/kubermatic/$name
 
 if ! grep -q "user-cluster-controller-manager:$ver" ../../api/pkg/resources/userclustercontrollermanager/deployment.go; then

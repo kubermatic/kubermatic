@@ -95,8 +95,8 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:            name,
-			Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/user-cluster-controller-manager:v0.1.0-dev10",
-			ImagePullPolicy: corev1.PullIfNotPresent,
+			Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/user-cluster-controller-manager:v0.1.0-dev",
+			ImagePullPolicy: corev1.PullAlways,
 			Command:         []string{"/usr/local/bin/user-cluster-controller-manager"},
 			Args: []string{
 				"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
