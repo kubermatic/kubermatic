@@ -439,7 +439,8 @@ func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 	return wantDNSNames.Equal(certDNSNames)
 }
 
-// IsClientCertificateValidForAllOf validates if the given data is present in the given client certificate
+// IsClientCertificateValidForAllOf validates if the given data matches exactly the given client certificate
+// (It also returns true if all given data is in the cert, but the cert has more organizations)
 func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string, organizations []string) bool {
 	if CertWillExpireSoon(cert) {
 		return false

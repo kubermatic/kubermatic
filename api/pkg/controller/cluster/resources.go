@@ -22,7 +22,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 
 	appsv1 "k8s.io/api/apps/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -611,40 +610,8 @@ func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 	}
 
 	for _, create := range creators {
-		var existing *appsv1.StatefulSet
-		set, err := create(data, nil)
-		if err != nil {
-			return fmt.Errorf("failed to build StatefulSet: %v", err)
-		}
-
-		if existing, err = cc.statefulSetLister.StatefulSets(c.Status.NamespaceName).Get(set.Name); err != nil {
-			if !errors.IsNotFound(err) {
-				return err
-			}
-
-			if _, err = cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName).Create(set); err != nil {
-				return fmt.Errorf("failed to create StatefulSet %s: %v", set.Name, err)
-			}
-			continue
-		}
-
-		set, err = create(data, existing.DeepCopy())
-		if err != nil {
-			return fmt.Errorf("failed to build StatefulSet: %v", err)
-		}
-
-		if resources.DeepEqual(set, existing) {
-			continue
-		}
-
-		// In case we update something immutable we need to delete&recreate. Creation happens on next sync
-		if !equality.Semantic.DeepEqual(set.Spec.Selector.MatchLabels, existing.Spec.Selector.MatchLabels) {
-			propagation := metav1.DeletePropagationForeground
-			return cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName).Delete(set.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation})
-		}
-
-		if _, err = cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName).Update(set); err != nil {
-			return fmt.Errorf("failed to update StatefulSet %s: %v", set.Name, err)
+		if err := resources.EnsureStatefulSet(data, create, cc.statefulSetLister.StatefulSets(c.Status.NamespaceName), cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName)); err != nil {
+			return fmt.Errorf("failed to ensure that the StatefulSet exists: %v", err)
 		}
 	}
 
@@ -691,34 +658,8 @@ func (cc *Controller) ensureCronJobs(c *kubermaticv1.Cluster) error {
 	}
 
 	for _, create := range creators {
-		var existing *batchv1beta1.CronJob
-		job, err := create(data, nil)
-		if err != nil {
-			return fmt.Errorf("failed to build CronJob: %v", err)
-		}
-
-		if existing, err = cc.cronJobLister.CronJobs(c.Status.NamespaceName).Get(job.Name); err != nil {
-			if !errors.IsNotFound(err) {
-				return err
-			}
-
-			if _, err = cc.kubeClient.BatchV1beta1().CronJobs(c.Status.NamespaceName).Create(job); err != nil {
-				return fmt.Errorf("failed to create CronJob %s: %v", job.Name, err)
-			}
-			continue
-		}
-
-		job, err = create(data, existing.DeepCopy())
-		if err != nil {
-			return fmt.Errorf("failed to build CronJob: %v", err)
-		}
-
-		if resources.DeepEqual(job, existing) {
-			continue
-		}
-
-		if _, err = cc.kubeClient.BatchV1beta1().CronJobs(c.Status.NamespaceName).Update(job); err != nil {
-			return fmt.Errorf("failed to update CronJob %s: %v", job.Name, err)
+		if err := resources.EnsureCronJob(data, create, cc.cronJobLister.CronJobs(c.Status.NamespaceName), cc.kubeClient.BatchV1beta1().CronJobs(c.Status.NamespaceName)); err != nil {
+			return fmt.Errorf("failed to ensure that the CronJob exists: %v", err)
 		}
 	}
 
