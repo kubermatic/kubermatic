@@ -68,6 +68,11 @@ type ClusterRoleBindingDataProvider interface {
 	GetClusterRef() metav1.OwnerReference
 }
 
+// ServiceAccountDataProvider provides data
+type ServiceAccountDataProvider interface {
+	GetClusterRef() metav1.OwnerReference
+}
+
 // ConfigMapDataProvider provides data
 type ConfigMapDataProvider interface {
 	GetClusterRef() metav1.OwnerReference

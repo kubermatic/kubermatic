@@ -213,3 +213,40 @@ func EnsureService(data ServiceDataProvider, create ServiceCreator, lister corev
 
 	return nil
 }
+
+// EnsureServiceAccount will create the ServiceAccount with the passed create function & create or update it if necessary.
+// To check if it's necessary it will do a lookup of the resource at the lister & compare the existing ServiceAccount with the created one
+func EnsureServiceAccount(data ServiceAccountDataProvider, create ServiceAccountCreator, lister corev1lister.ServiceAccountNamespaceLister, client corev1client.ServiceAccountInterface) error {
+	var existing *corev1.ServiceAccount
+	service, err := create(data, nil)
+	if err != nil {
+		return fmt.Errorf("failed to build ServiceAccount: %v", err)
+	}
+
+	if existing, err = lister.Get(service.Name); err != nil {
+		if !kubeerrors.IsNotFound(err) {
+			return err
+		}
+
+		if _, err = client.Create(service); err != nil {
+			return fmt.Errorf("failed to create ServiceAccount %s: %v", service.Name, err)
+		}
+		return nil
+	}
+	existing = existing.DeepCopy()
+
+	service, err = create(data, existing.DeepCopy())
+	if err != nil {
+		return fmt.Errorf("failed to build ServiceAccount: %v", err)
+	}
+
+	if DeepEqual(service, existing) {
+		return nil
+	}
+
+	if _, err = client.Update(service); err != nil {
+		return fmt.Errorf("failed to update ServiceAccount %s: %v", service.Name, err)
+	}
+
+	return nil
+}
