@@ -1201,6 +1201,17 @@
 
 [[projects]]
   branch = "release-1.10"
+  digest = "1:8b905d757a64fa3a1a7f063587741f4f40a42cde59bd34a4b948fdfd96ec729b"
+  name = "k8s.io/apiextensions-apiserver"
+  packages = [
+    "pkg/apis/apiextensions",
+    "pkg/apis/apiextensions/v1beta1",
+  ]
+  pruneopts = "NUT"
+  revision = "f584b16eb23bd2a3fd292a027d698d95db427c5d"
+
+[[projects]]
+  branch = "release-1.10"
   digest = "1:cf1e88f3192e70eeb1600267ecc52fa2aac11a7e0ec38aa6bdb21f98bc186366"
   name = "k8s.io/apimachinery"
   packages = [
@@ -1565,6 +1576,7 @@
     "k8s.io/api/policy/v1beta1",
     "k8s.io/api/rbac/v1",
     "k8s.io/api/rbac/v1beta1",
+    "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
     "k8s.io/apimachinery/pkg/api/equality",
     "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/api/meta",

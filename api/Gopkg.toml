@@ -96,6 +96,11 @@ required = [
   branch = "release-1.10"
 
 [[constraint]]
+  name = "k8s.io/apiextensions-apiserver"
+  branch = "release-1.10"
+
+
+[[constraint]]
   name = "k8s.io/api"
   branch = "release-1.10"
 

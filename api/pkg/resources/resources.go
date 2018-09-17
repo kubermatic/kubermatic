@@ -203,6 +203,15 @@ const (
 
 	// TopologyKeyHostname defines the topology key for the node hostname
 	TopologyKeyHostname = "kubernetes.io/hostname"
+
+	// MachineCRDName defines the CRD name for machine objects
+	MachineCRDName = "machines.cluster.k8s.io"
+	// MachineSetCRDName defines the CRD name for machineset objects
+	MachineSetCRDName = "machinesets.cluster.k8s.io"
+	// MachineDeploymentCRDName defines the CRD name for machinedeployment objects
+	MachineDeploymentCRDName = "machinedeployments.cluster.k8s.io"
+	// ClusterCRDName defines the CRD name for cluster objects
+	ClusterCRDName = "clusters.cluster.k8s.io"
 )
 
 const (
