@@ -272,6 +272,9 @@ type StatefulSetCreator = func(data StatefulSetDataProvider, existing *appsv1.St
 // ServiceCreator defines an interface to create/update Services
 type ServiceCreator = func(data ServiceDataProvider, existing *corev1.Service) (*corev1.Service, error)
 
+// ServiceAccountCreator defines an interface to create/update ServiceAccounts
+type ServiceAccountCreator = func(data ServiceAccountDataProvider, existing *corev1.ServiceAccount) (*corev1.ServiceAccount, error)
+
 // RoleCreator defines an interface to create/update RBAC Roles
 type RoleCreator = func(data RoleDataProvider, existing *rbacv1.Role) (*rbacv1.Role, error)
 
