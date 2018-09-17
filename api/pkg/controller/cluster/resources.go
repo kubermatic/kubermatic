@@ -170,34 +170,8 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 	}
 
 	for _, create := range creators {
-		var existing *corev1.Service
-		service, err := create(data, nil)
-		if err != nil {
-			return fmt.Errorf("failed to build Service: %v", err)
-		}
-
-		if existing, err = cc.serviceLister.Services(c.Status.NamespaceName).Get(service.Name); err != nil {
-			if !errors.IsNotFound(err) {
-				return err
-			}
-
-			if _, err = cc.kubeClient.CoreV1().Services(c.Status.NamespaceName).Create(service); err != nil {
-				return fmt.Errorf("failed to create Service %s: %v", service.Name, err)
-			}
-			continue
-		}
-
-		service, err = create(data, existing.DeepCopy())
-		if err != nil {
-			return fmt.Errorf("failed to build Service: %v", err)
-		}
-
-		if resources.DeepEqual(service, existing) {
-			continue
-		}
-
-		if _, err = cc.kubeClient.CoreV1().Services(c.Status.NamespaceName).Update(service); err != nil {
-			return fmt.Errorf("failed to patch Service %s: %v", service.Name, err)
+		if err := resources.EnsureService(data, create, cc.serviceLister.Services(c.Status.NamespaceName), cc.kubeClient.CoreV1().Services(c.Status.NamespaceName)); err != nil {
+			return fmt.Errorf("failed to ensure that the service exists: %v", err)
 		}
 	}
 
