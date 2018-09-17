@@ -179,38 +179,18 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
 }
 
 func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error {
-	names := []string{
-		resources.PrometheusServiceAccountName,
+	creators := []resources.ServiceAccountCreator{
+		prometheus.ServiceAccount,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
 		return err
 	}
-	ref := data.GetClusterRef()
 
-	for _, name := range names {
-		var existing *corev1.ServiceAccount
-		sa := resources.ServiceAccount(name, &ref, nil)
-
-		if existing, err = cc.serviceAccountLister.ServiceAccounts(c.Status.NamespaceName).Get(sa.Name); err != nil {
-			if !errors.IsNotFound(err) {
-				return err
-			}
-
-			if _, err = cc.kubeClient.CoreV1().ServiceAccounts(c.Status.NamespaceName).Create(sa); err != nil {
-				return fmt.Errorf("failed to create ServiceAccount %s: %v", sa.Name, err)
-			}
-			continue
-		}
-
-		// We update the existing SA
-		sa = resources.ServiceAccount(name, &ref, existing.DeepCopy())
-		if resources.DeepEqual(sa, existing) {
-			continue
-		}
-		if _, err = cc.kubeClient.CoreV1().ServiceAccounts(c.Status.NamespaceName).Update(sa); err != nil {
-			return fmt.Errorf("failed to patch ServiceAccount %s: %v", sa.Name, err)
+	for _, create := range creators {
+		if err := resources.EnsureServiceAccount(data, create, cc.serviceAccountLister.ServiceAccounts(c.Status.NamespaceName), cc.kubeClient.CoreV1().ServiceAccounts(c.Status.NamespaceName)); err != nil {
+			return fmt.Errorf("failed to ensure that the ServiceAccount exists: %v", err)
 		}
 	}
 
