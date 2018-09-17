@@ -5,6 +5,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -12,10 +13,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	appsv1client "k8s.io/client-go/kubernetes/typed/apps/v1"
 	batchv1beta1client "k8s.io/client-go/kubernetes/typed/batch/v1beta1"
+	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	policyv1beta1client "k8s.io/client-go/kubernetes/typed/policy/v1beta1"
 	rbacv1client "k8s.io/client-go/kubernetes/typed/rbac/v1"
 	appsv1lister "k8s.io/client-go/listers/apps/v1"
 	batchv1beta1lister "k8s.io/client-go/listers/batch/v1beta1"
+	corev1lister "k8s.io/client-go/listers/core/v1"
 	policyv1beta1lister "k8s.io/client-go/listers/policy/v1beta1"
 	rbacv1lister "k8s.io/client-go/listers/rbac/v1"
 )
@@ -169,6 +172,43 @@ func EnsureStatefulSet(data StatefulSetDataProvider, create StatefulSetCreator, 
 
 	if _, err = client.Update(statefulSet); err != nil {
 		return fmt.Errorf("failed to update StatefulSet %s: %v", statefulSet.Name, err)
+	}
+
+	return nil
+}
+
+// EnsureService will create the Service with the passed create function & create or update it if necessary.
+// To check if it's necessary it will do a lookup of the resource at the lister & compare the existing Service with the created one
+func EnsureService(data ServiceDataProvider, create ServiceCreator, lister corev1lister.ServiceNamespaceLister, client corev1client.ServiceInterface) error {
+	var existing *corev1.Service
+	service, err := create(data, nil)
+	if err != nil {
+		return fmt.Errorf("failed to build Service: %v", err)
+	}
+
+	if existing, err = lister.Get(service.Name); err != nil {
+		if !kubeerrors.IsNotFound(err) {
+			return err
+		}
+
+		if _, err = client.Create(service); err != nil {
+			return fmt.Errorf("failed to create Service %s: %v", service.Name, err)
+		}
+		return nil
+	}
+	existing = existing.DeepCopy()
+
+	service, err = create(data, existing.DeepCopy())
+	if err != nil {
+		return fmt.Errorf("failed to build Service: %v", err)
+	}
+
+	if DeepEqual(service, existing) {
+		return nil
+	}
+
+	if _, err = client.Update(service); err != nil {
+		return fmt.Errorf("failed to update Service %s: %v", service.Name, err)
 	}
 
 	return nil
