@@ -444,9 +444,9 @@ func (d *UserClusterData) Cluster() *kubermaticv1.Cluster {
 
 // GetMasterVpnAddress returns host and port of the VPN service running in seed cluster.
 func (d *UserClusterData) GetMasterVpnAddress() (string, string, error) {
-	cm, err := d.ConfigMapLister().ConfigMaps(metav1.NamespacePublic).Get(ClusterSeedConfigMapName)
+	cm, err := d.getClusterInfoExtraCM()
 	if err != nil {
-		return "", "", fmt.Errorf("could not get configmap %s: %v", ClusterSeedConfigMapName, err)
+		return "", "", err
 	}
 
 	var vpnHost, vpnPort string
@@ -459,31 +459,35 @@ func (d *UserClusterData) GetMasterVpnAddress() (string, string, error) {
 
 // GetClusterName returns the name of the user-cluster
 func (d *UserClusterData) GetClusterName() (string, error) {
-	cm, err := d.ConfigMapLister().ConfigMaps(metav1.NamespacePublic).Get(ClusterSeedConfigMapName)
+	cm, err := d.getClusterInfoExtraCM()
 	if err != nil {
-		return "", fmt.Errorf("could not get configmap %s: %v", ClusterSeedConfigMapName, err)
+		return "", err
 	}
 
-	return cm.Data["clusterName"], nil
-}
-
-// ClusterNameOrEmpty returns the name of the cluster or empty string in case of error
-func (d *UserClusterData) ClusterNameOrEmpty() string {
-	n, e := d.GetClusterName()
-	if e != nil {
-		return ""
+	name := cm.Data["clusterName"]
+	if len(name) == 0 {
+		return "", fmt.Errorf("empty user-cluster name")
 	}
-	return n
+
+	return name, nil
 }
 
 // IpamEnabled returns true iff ipam shall happen
 func (d *UserClusterData) IpamEnabled() (bool, error) {
-	cm, err := d.ConfigMapLister().ConfigMaps(metav1.NamespacePublic).Get(ClusterSeedConfigMapName)
+	cm, err := d.getClusterInfoExtraCM()
 	if err != nil {
-		return false, fmt.Errorf("could not get configmap %s: %v", ClusterSeedConfigMapName, err)
+		return false, err
 	}
 	if enabled, exists := cm.Data["ipamEnabled"]; exists {
 		return enabled == "true", nil
 	}
 	return false, nil
+}
+
+func (d *UserClusterData) getClusterInfoExtraCM() (*corev1.ConfigMap, error) {
+	cm, err := d.ConfigMapLister().ConfigMaps(metav1.NamespaceSystem).Get(ClusterSeedConfigMapName)
+	if err != nil {
+		return nil, fmt.Errorf("could not get configmap %s: %v", ClusterSeedConfigMapName, err)
+	}
+	return cm, err
 }

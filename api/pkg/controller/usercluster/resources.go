@@ -29,13 +29,9 @@ func (ucc *Controller) userClusterEnsureClusterData() error {
 	}
 
 	// get initial data from seed - this verifies the availability of seed data
-	name, err := data.GetClusterName()
+	_, err = data.GetClusterName()
 	if err != nil {
 		return fmt.Errorf("failed to get user-cluster name: %v", err)
-	}
-
-	if len(name) == 0 {
-		return fmt.Errorf("empty user-cluster name")
 	}
 
 	return nil
@@ -88,6 +84,8 @@ func (ucc *Controller) userClusterEnsureClusterRoles() error {
 			glog.V(4).Infof("Created ClusterRole %s", cRole.Name)
 			continue
 		}
+
+		existing = existing.DeepCopy()
 
 		cRole, err = create(data, existing.DeepCopy())
 		if err != nil {
