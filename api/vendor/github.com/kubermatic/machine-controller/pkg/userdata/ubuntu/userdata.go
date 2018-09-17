@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	NoInstallCandidateAvailableErr = errors.New("no install candidate available for the desired version")
+	errNoInstallCandidateAvailable = errors.New("no install candidate available for the desired version")
 )
 
 func getConfig(r runtime.RawExtension) (*Config, error) {
@@ -141,6 +141,7 @@ func (p Provider) UserData(
 		ClusterDNSIPs         []net.IP
 		KubeadmCACertHash     string
 		ServerAddr            string
+		JournaldMaxSize       string
 	}{
 		MachineSpec:           spec,
 		ProviderConfig:        pconfig,
@@ -155,6 +156,7 @@ func (p Provider) UserData(
 		ClusterDNSIPs:         clusterDNSIPs,
 		KubeadmCACertHash:     kubeadmCACertHash,
 		ServerAddr:            serverAddr,
+		JournaldMaxSize:       userdatahelper.JournaldMaxUse,
 	}
 	b := &bytes.Buffer{}
 	err = tmpl.Execute(b, data)
@@ -176,6 +178,11 @@ ssh_authorized_keys:
 {{- end }}
 
 write_files:
+- path: "/etc/systemd/journald.conf.d/max_disk_use.conf"
+  content: |
+    [Journal]
+    SystemMaxUse={{ .JournaldMaxSize }}
+
 - path: "/etc/sysctl.d/k8s.conf"
   content: |
     net.bridge.bridge-nf-call-ip6tables = 1
@@ -190,7 +197,7 @@ write_files:
 
 - path: "/etc/apt/sources.list.d/docker.list"
   permissions: "0644"
-  content: deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable
+  content: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
 
 - path: "/etc/apt/sources.list.d/kubernetes.list"
   permissions: "0644"
@@ -207,6 +214,10 @@ write_files:
     apt-key add /opt/docker.asc
     apt-key add /opt/kubernetes.asc
     apt-get update
+
+    # Hetzner's Ubuntu Bionic comes with swap pre-configured, so we force it off.
+    systemctl mask swap.target
+    swapoff -a
 
     # If something failed during package installation but one of docker/kubeadm/kubelet was already installed
     # an apt-mark hold after the install won't do it, which is why we test here if the binaries exist and if
@@ -231,12 +242,12 @@ write_files:
     fi
 
     export CR_PKG=''
-{{ if .CRAptPackage }}
-  {{ if ne .CRAptPackageVersion "" }}
+{{- if .CRAptPackage }}
+{{- if ne .CRAptPackageVersion "" }}
     export CR_PKG='{{ .CRAptPackage }}={{ .CRAptPackageVersion }}'
-  {{ else }}
+{{- else }}
     export CR_PKG='{{ .CRAptPackage }}'
-  {{ end }}
+{{ end }}
 {{ end }}
 
     # There is a dependency issue in the rpm repo for 1.8, if the cni package is not explicitly
@@ -392,6 +403,9 @@ write_files:
       --hostname-override={{ .MachineSpec.Name }} \
       --read-only-port=0 \
       --protect-kernel-defaults=true \
+      {{- if semverCompare "<1.11.0" .KubernetesVersion }}
+      --resolv-conf=/run/systemd/resolve/resolv.conf \
+      {{- end }}
       --cluster-dns={{ ipSliceToCommaSeparatedString .ClusterDNSIPs }} \
       --cluster-domain=cluster.local
 {{ if semverCompare "<1.11.0" .KubernetesVersion }}

@@ -67,7 +67,8 @@ type Config struct {
 	OverwriteCloudConfig *string `json:"overwriteCloudConfig,omitempty"`
 }
 
-// We can not use v1.SecretKeySelector because it is not cross namespace
+// GlobaObjectKeySelector is needed as we can not use v1.SecretKeySelector
+// because it is not cross namespace
 type GlobaObjectKeySelector struct {
 	v1.ObjectReference `json:",inline"`
 	Key                string `json:"key"`
@@ -87,6 +88,7 @@ type ConfigVarString struct {
 // causing a recursion
 type configVarStringWithoutUnmarshaller ConfigVarString
 
+// MarshalJSON converts a configVarString to its JSON form, ompitting empty strings.
 // This is done to not have the json object cluttered with empty strings
 // This will eventually hopefully be resolved within golang itself
 // https://github.com/golang/go/issues/11939
@@ -165,6 +167,7 @@ type ConfigVarBool struct {
 
 type configVarBoolWithoutUnmarshaller ConfigVarBool
 
+// MarshalJSON encodes the configVarBool, omitting empty strings
 // This is done to not have the json object cluttered with empty strings
 // This will eventually hopefully be resolved within golang itself
 // https://github.com/golang/go/issues/11939
@@ -247,7 +250,7 @@ func (configVarResolver *ConfigVarResolver) GetConfigVarStringValue(configVar Co
 		if val, ok := secret.Data[configVar.SecretKeyRef.Key]; ok {
 			return string(val), nil
 		}
-		return "", fmt.Errorf("secret '%s' in namespace '%s' has no key '%s'!", configVar.SecretKeyRef.Name, configVar.SecretKeyRef.Namespace, configVar.SecretKeyRef.Key)
+		return "", fmt.Errorf("secret '%s' in namespace '%s' has no key '%s'", configVar.SecretKeyRef.Name, configVar.SecretKeyRef.Namespace, configVar.SecretKeyRef.Key)
 	}
 
 	// We need all three of these to fetch and use a configmap
@@ -259,13 +262,13 @@ func (configVarResolver *ConfigVarResolver) GetConfigVarStringValue(configVar Co
 		if val, ok := configMap.Data[configVar.ConfigMapKeyRef.Key]; ok {
 			return string(val), nil
 		}
-		return "", fmt.Errorf("configmap '%s' in namespace '%s' has no key '%s'!", configVar.ConfigMapKeyRef.Name, configVar.ConfigMapKeyRef.Namespace, configVar.ConfigMapKeyRef.Key)
+		return "", fmt.Errorf("configmap '%s' in namespace '%s' has no key '%s'", configVar.ConfigMapKeyRef.Name, configVar.ConfigMapKeyRef.Namespace, configVar.ConfigMapKeyRef.Key)
 	}
 
 	return configVar.Value, nil
 }
 
-// GetConfigVarStringValueOrEvn tries to get the value from ConfigVarString, when it fails, it falls back to
+// GetConfigVarStringValueOrEnv tries to get the value from ConfigVarString, when it fails, it falls back to
 // getting the value from an environment variable specified by envVarName parameter
 func (configVarResolver *ConfigVarResolver) GetConfigVarStringValueOrEnv(configVar ConfigVarString, envVarName string) (string, error) {
 	cfgVar, err := configVarResolver.GetConfigVarStringValue(configVar)
