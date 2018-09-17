@@ -209,7 +209,7 @@ func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
 
 	for _, create := range creators {
 		if err := resources.EnsureRole(data, create, cc.roleLister.Roles(c.Status.NamespaceName), cc.kubeClient.RbacV1().Roles(c.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the role exists: %v", err)
+			return fmt.Errorf("failed to ensure that the Role exists: %v", err)
 		}
 	}
 
@@ -227,34 +227,8 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 	}
 
 	for _, create := range creators {
-		var existing *rbacv1.RoleBinding
-		rb, err := create(data, nil)
-		if err != nil {
-			return fmt.Errorf("failed to build RoleBinding: %v", err)
-		}
-
-		if existing, err = cc.roleBindingLister.RoleBindings(c.Status.NamespaceName).Get(rb.Name); err != nil {
-			if !errors.IsNotFound(err) {
-				return err
-			}
-
-			if _, err = cc.kubeClient.RbacV1().RoleBindings(c.Status.NamespaceName).Create(rb); err != nil {
-				return fmt.Errorf("failed to create RoleBinding %s: %v", rb.Name, err)
-			}
-			continue
-		}
-
-		rb, err = create(data, existing.DeepCopy())
-		if err != nil {
-			return fmt.Errorf("failed to build RoleBinding: %v", err)
-		}
-
-		if resources.DeepEqual(rb, existing) {
-			continue
-		}
-
-		if _, err = cc.kubeClient.RbacV1().RoleBindings(c.Status.NamespaceName).Update(rb); err != nil {
-			return fmt.Errorf("failed to update RoleBinding %s: %v", rb.Name, err)
+		if err := resources.EnsureRoleBinding(data, create, cc.roleBindingLister.RoleBindings(c.Status.NamespaceName), cc.kubeClient.RbacV1().RoleBindings(c.Status.NamespaceName)); err != nil {
+			return fmt.Errorf("failed to ensure that the RoleBinding exists: %v", err)
 		}
 	}
 
