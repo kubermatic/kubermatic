@@ -251,6 +251,49 @@ func EnsureStatefulSet(data StatefulSetDataProvider, create StatefulSetCreator, 
 	return nil
 }
 
+// EnsureDeployment will create the Deployment with the passed create function & create or update it if necessary.
+// To check if it's necessary it will do a lookup of the resource at the lister & compare the existing Deployment with the created one
+func EnsureDeployment(data DeploymentDataProvider, create DeploymentCreator, lister appsv1lister.DeploymentNamespaceLister, client appsv1client.DeploymentInterface) error {
+	var existing *appsv1.Deployment
+	dep, err := create(data, nil)
+	if err != nil {
+		return fmt.Errorf("failed to build Deployment: %v", err)
+	}
+
+	if existing, err = lister.Get(dep.Name); err != nil {
+		if !kubeerrors.IsNotFound(err) {
+			return err
+		}
+
+		if _, err = client.Create(dep); err != nil {
+			return fmt.Errorf("failed to create Deployment %s: %v", dep.Name, err)
+		}
+		return nil
+	}
+	existing = existing.DeepCopy()
+
+	dep, err = create(data, existing.DeepCopy())
+	if err != nil {
+		return fmt.Errorf("failed to build Deployment: %v", err)
+	}
+
+	if DeepEqual(dep, existing) {
+		return nil
+	}
+
+	// In case we update something immutable we need to delete&recreate. Creation happens on next sync
+	if !equality.Semantic.DeepEqual(dep.Spec.Selector.MatchLabels, existing.Spec.Selector.MatchLabels) {
+		propagation := metav1.DeletePropagationForeground
+		return client.Delete(dep.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation})
+	}
+
+	if _, err = client.Update(dep); err != nil {
+		return fmt.Errorf("failed to update Deployment %s: %v", dep.Name, err)
+	}
+
+	return nil
+}
+
 // EnsureService will create the Service with the passed create function & create or update it if necessary.
 // To check if it's necessary it will do a lookup of the resource at the lister & compare the existing Service with the created one
 func EnsureService(data ServiceDataProvider, create ServiceCreator, lister corev1lister.ServiceNamespaceLister, client corev1client.ServiceInterface) error {
