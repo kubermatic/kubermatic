@@ -23,7 +23,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,11 +48,6 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 
 	// check that all role bindings are created
 	if err := cc.ensureRoleBindings(cluster); err != nil {
-		return err
-	}
-
-	// check that all cluster role bindings are created
-	if err := cc.ensureClusterRoleBindings(cluster); err != nil {
 		return err
 	}
 
@@ -229,49 +223,6 @@ func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
 	for _, create := range creators {
 		if err := resources.EnsureRoleBinding(data, create, cc.roleBindingLister.RoleBindings(c.Status.NamespaceName), cc.kubeClient.RbacV1().RoleBindings(c.Status.NamespaceName)); err != nil {
 			return fmt.Errorf("failed to ensure that the RoleBinding exists: %v", err)
-		}
-	}
-
-	return nil
-}
-
-func (cc *Controller) ensureClusterRoleBindings(c *kubermaticv1.Cluster) error {
-	creators := []resources.ClusterRoleBindingCreator{}
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
-
-	for _, create := range creators {
-		var existing *rbacv1.ClusterRoleBinding
-		crb, err := create(data, nil)
-		if err != nil {
-			return fmt.Errorf("failed to build ClusterRoleBinding: %v", err)
-		}
-
-		if existing, err = cc.clusterRoleBindingLister.Get(crb.Name); err != nil {
-			if !errors.IsNotFound(err) {
-				return err
-			}
-
-			if _, err = cc.kubeClient.RbacV1().ClusterRoleBindings().Create(crb); err != nil {
-				return fmt.Errorf("failed to create ClusterRoleBinding %s: %v", crb.Name, err)
-			}
-			continue
-		}
-
-		crb, err = create(data, existing.DeepCopy())
-		if err != nil {
-			return fmt.Errorf("failed to build ClusterRoleBinding: %v", err)
-		}
-
-		if resources.DeepEqual(crb, existing) {
-			continue
-		}
-
-		if _, err = cc.kubeClient.RbacV1().ClusterRoleBindings().Update(crb); err != nil {
-			return fmt.Errorf("failed to update ClusterRoleBinding %s: %v", crb.Name, err)
 		}
 	}
 

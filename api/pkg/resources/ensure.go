@@ -97,6 +97,43 @@ func EnsureRoleBinding(data RoleBindingDataProvider, create RoleBindingCreator, 
 	return nil
 }
 
+// EnsureClusterRoleBinding will create the RoleBinding with the passed create function & create or update it if necessary.
+// To check if it's necessary it will do a lookup of the resource at the lister & compare the existing RoleBinding with the created one
+func EnsureClusterRoleBinding(data ClusterRoleBindingDataProvider, create ClusterRoleBindingCreator, lister rbacv1lister.ClusterRoleBindingLister, client rbacv1client.ClusterRoleBindingInterface) error {
+	var existing *rbacv1.ClusterRoleBinding
+	crb, err := create(data, nil)
+	if err != nil {
+		return fmt.Errorf("failed to build ClusterRoleBinding: %v", err)
+	}
+
+	if existing, err = lister.Get(crb.Name); err != nil {
+		if !kubeerrors.IsNotFound(err) {
+			return err
+		}
+
+		if _, err = client.Create(crb); err != nil {
+			return fmt.Errorf("failed to create ClusterRoleBinding %s: %v", crb.Name, err)
+		}
+		return nil
+	}
+	existing = existing.DeepCopy()
+
+	crb, err = create(data, existing.DeepCopy())
+	if err != nil {
+		return fmt.Errorf("failed to build ClusterRoleBinding: %v", err)
+	}
+
+	if DeepEqual(crb, existing) {
+		return nil
+	}
+
+	if _, err = client.Update(crb); err != nil {
+		return fmt.Errorf("failed to update ClusterRoleBinding %s: %v", crb.Name, err)
+	}
+
+	return nil
+}
+
 // EnsurePodDisruptionBudget will create the PodDisruptionBudget with the passed create function & create or update it if necessary.
 // To check if it's necessary it will do a lookup of the resource at the lister & compare the existing PodDisruptionBudget with the created one
 func EnsurePodDisruptionBudget(data *TemplateData, create PodDisruptionBudgetCreator, pdbLister policyv1beta1lister.PodDisruptionBudgetNamespaceLister, pdbClient policyv1beta1client.PodDisruptionBudgetInterface) error {
