@@ -21,9 +21,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -257,40 +255,8 @@ func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
 	}
 
 	for _, create := range creators {
-		var existing *appsv1.Deployment
-		dep, err := create(data, nil)
-		if err != nil {
-			return fmt.Errorf("failed to build Deployment: %v", err)
-		}
-
-		if existing, err = cc.deploymentLister.Deployments(c.Status.NamespaceName).Get(dep.Name); err != nil {
-			if !errors.IsNotFound(err) {
-				return err
-			}
-
-			if _, err = cc.kubeClient.AppsV1().Deployments(c.Status.NamespaceName).Create(dep); err != nil {
-				return fmt.Errorf("failed to create Deployment %s: %v", dep.Name, err)
-			}
-			continue
-		}
-
-		dep, err = create(data, existing.DeepCopy())
-		if err != nil {
-			return fmt.Errorf("failed to build Deployment: %v", err)
-		}
-
-		if resources.DeepEqual(dep, existing) {
-			continue
-		}
-
-		// In case we update something immutable we need to delete&recreate. Creation happens on next sync
-		if !equality.Semantic.DeepEqual(dep.Spec.Selector.MatchLabels, existing.Spec.Selector.MatchLabels) {
-			propagation := metav1.DeletePropagationForeground
-			return cc.kubeClient.AppsV1().Deployments(c.Status.NamespaceName).Delete(dep.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation})
-		}
-
-		if _, err = cc.kubeClient.AppsV1().Deployments(c.Status.NamespaceName).Update(dep); err != nil {
-			return fmt.Errorf("failed to update Deployment %s: %v", dep.Name, err)
+		if err := resources.EnsureDeployment(data, create, cc.deploymentLister.Deployments(c.Status.NamespaceName), cc.kubeClient.AppsV1().Deployments(c.Status.NamespaceName)); err != nil {
+			return fmt.Errorf("failed to ensure that the Deployment exists: %v", err)
 		}
 	}
 
