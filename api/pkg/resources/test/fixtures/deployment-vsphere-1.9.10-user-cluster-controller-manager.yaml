@@ -52,8 +52,8 @@ spec:
         - "6"
         command:
         - /usr/local/bin/user-cluster-controller-manager
-        image: quay.io/kubermatic/user-cluster-controller-manager:v0.1.0-dev10
-        imagePullPolicy: IfNotPresent
+        image: quay.io/kubermatic/user-cluster-controller-manager:v0.1.0-dev
+        imagePullPolicy: Always
         name: user-cluster-controller-manager
         resources:
           limits:
