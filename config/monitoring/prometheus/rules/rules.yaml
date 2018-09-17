@@ -3,21 +3,26 @@
 - "name": "k8s.rules"
   "rules":
   - "expr": |
-      sum(rate(container_cpu_usage_seconds_total{job="cadvisor", image!=""}[5m])) by (namespace)
+      sum(rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container_name!=""}[5m])) by (namespace)
     "record": "namespace:container_cpu_usage_seconds_total:sum_rate"
   - "expr": |
-      sum(container_memory_usage_bytes{job="cadvisor", image!=""}) by (namespace)
+      sum by (namespace, pod_name, container_name) (
+        rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container_name!=""}[5m])
+      )
+    "record": "namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate"
+  - "expr": |
+      sum(container_memory_usage_bytes{job="cadvisor", image!="", container_name!=""}) by (namespace)
     "record": "namespace:container_memory_usage_bytes:sum"
   - "expr": |
       sum by (namespace, label_name) (
-         sum(rate(container_cpu_usage_seconds_total{job="cadvisor", image!=""}[5m])) by (namespace, pod_name)
+         sum(rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container_name!=""}[5m])) by (namespace, pod_name)
        * on (namespace, pod_name) group_left(label_name)
          label_replace(kube_pod_labels{job="kube-state-metrics"}, "pod_name", "$1", "pod", "(.*)")
       )
     "record": "namespace_name:container_cpu_usage_seconds_total:sum_rate"
   - "expr": |
       sum by (namespace, label_name) (
-        sum(container_memory_usage_bytes{job="cadvisor",image!=""}) by (pod_name, namespace)
+        sum(container_memory_usage_bytes{job="cadvisor",image!="", container_name!=""}) by (pod_name, namespace)
       * on (namespace, pod_name) group_left(label_name)
         label_replace(kube_pod_labels{job="kube-state-metrics"}, "pod_name", "$1", "pod", "(.*)")
       )
@@ -144,6 +149,12 @@
       sum(node_memory_MemTotal{app="node-exporter"})
     "record": ":node_memory_utilisation:"
   - "expr": |
+      sum(node_memory_MemFree{app="node-exporter"} + node_memory_Cached{app="node-exporter"} + node_memory_Buffers{app="node-exporter"})
+    "record": ":node_memory_MemFreeCachedBuffers:sum"
+  - "expr": |
+      sum(node_memory_MemTotal{app="node-exporter"})
+    "record": ":node_memory_MemTotal:sum"
+  - "expr": |
       sum by (node) (
         (node_memory_MemFree{app="node-exporter"} + node_memory_Cached{app="node-exporter"} + node_memory_Buffers{app="node-exporter"})
         * on (namespace, pod) group_left(node)
@@ -213,6 +224,14 @@
         node_namespace_pod:kube_pod_info:
       )
     "record": "node:node_disk_saturation:avg_irate"
+  - "expr": |
+      max by (namespace, pod, device) ((node_filesystem_size{fstype=~"ext[234]|btrfs|xfs|zfs"}
+      - node_filesystem_avail{fstype=~"ext[234]|btrfs|xfs|zfs"})
+      / node_filesystem_size{fstype=~"ext[234]|btrfs|xfs|zfs"})
+    "record": "node:node_filesystem_usage:"
+  - "expr": |
+      max by (namespace, pod, device) (node_filesystem_avail{fstype=~"ext[234]|btrfs|xfs|zfs"} / node_filesystem_size{fstype=~"ext[234]|btrfs|xfs|zfs"})
+    "record": "node:node_filesystem_avail:"
   - "expr": |
       sum(irate(node_network_receive_bytes{app="node-exporter",device="eth0"}[1m])) +
       sum(irate(node_network_transmit_bytes{app="node-exporter",device="eth0"}[1m]))
@@ -414,7 +433,7 @@
       "message": "{{ $labels.namespace }}/{{ $labels.pod }} is not ready."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubepodnotready"
     "expr": |
-      sum by (namespace, pod) (kube_pod_status_phase{job="kube-state-metrics", phase!~"Running|Succeeded"}) > 0
+      sum by (namespace, pod) (kube_pod_status_phase{job="kube-state-metrics", phase=~"Pending|Unknown"}) > 0
     "for": "1h"
     "labels":
       "severity": "critical"
@@ -453,7 +472,7 @@
       "severity": "critical"
   - "alert": "KubeStatefulSetGenerationMismatch"
     "annotations":
-      "message": "StatefulSet {{ $labels.namespace }}/{{ labels.statefulset }} generation mismatch"
+      "message": "StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} generation mismatch"
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubestatefulsetgenerationmismatch"
     "expr": |
       kube_statefulset_status_observed_generation{job="kube-state-metrics"}
@@ -602,10 +621,10 @@
       "severity": "critical"
   - "alert": "KubePersistentVolumeFullInFourDays"
     "annotations":
-      "message": "Based on recent sampling, the persistent volume claimed by {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} is expected to fill up within four days."
+      "message": "Based on recent sampling, the persistent volume claimed by {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} is expected to fill up within four days. Currently {{ $value }} bytes are available."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubepersistentvolumefullinfourdays"
     "expr": |
-      predict_linear(kubelet_volume_stats_available_bytes{job="kubelet"}[1h], 4 * 24 * 3600) < 0
+      kubelet_volume_stats_available_bytes{job="kubelet"} and predict_linear(kubelet_volume_stats_available_bytes{job="kubelet"}[6h], 4 * 24 * 3600) < 0
     "for": "5m"
     "labels":
       "severity": "critical"
@@ -634,10 +653,10 @@
       "message": "Kubernetes API server client '{{ $labels.job }}/{{ $labels.instance }}' is experiencing {{ printf \"%0.0f\" $value }}% errors.'"
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclienterrors"
     "expr": |
-      sum(rate(rest_client_requests_total{code!~"2.."}[5m])) by (instance, job) * 100
+      (sum(rate(rest_client_requests_total{code!~"2..|404"}[5m])) by (instance, job)
         /
-      sum(rate(rest_client_requests_total[5m])) by (instance, job)
-        > 1
+      sum(rate(rest_client_requests_total[5m])) by (instance, job))
+      * 100 > 1
     "for": "15m"
     "labels":
       "severity": "warning"
@@ -655,7 +674,7 @@
       "message": "Kubelet {{$labels.instance}} is running {{$value}} pods, close to the limit of 110."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubelettoomanypods"
     "expr": |
-      kubelet_running_pod_count{job="kubelet"} > 100
+      kubelet_running_pod_count{job="kubelet"} > 110 * 0.9
     "for": "15m"
     "labels":
       "severity": "warning"
@@ -664,7 +683,7 @@
       "message": "The API server has a 99th percentile latency of {{ $value }} seconds for {{$labels.verb}} {{$labels.resource}}."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubeapilatencyhigh"
     "expr": |
-      cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:WATCH|WATCHLIST|PROXY|CONNECT)$"} > 1
+      cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 1
     "for": "10m"
     "labels":
       "severity": "warning"
@@ -673,7 +692,7 @@
       "message": "The API server has a 99th percentile latency of {{ $value }} seconds for {{$labels.verb}} {{$labels.resource}}."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubeapilatencyhigh"
     "expr": |
-      cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:WATCH|WATCHLIST|PROXY|CONNECT)$"} > 4
+      cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 4
     "for": "10m"
     "labels":
       "severity": "critical"
