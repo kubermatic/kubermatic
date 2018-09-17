@@ -37,15 +37,7 @@ func (c *Controller) syncProjectResource(item *projectResourceQueueItem) error {
 	}
 
 	if len(projectName) == 0 {
-		return nil
-		//
-		// TODO: uncomment this when existing object are migrated to projects
-		//       see: https://github.com/kubermatic/kubermatic/issues/1219
-		//
-		//return fmt.Errorf("unable to find owing project for the object name = %s, gvr = %s", item.metaObject.GetName(), item.gvr.String())
-		//
-		//  END of TODO
-		//
+		return fmt.Errorf("unable to find owing project for the object name = %s, gvr = %s", item.metaObject.GetName(), item.gvr.String())
 	}
 
 	if err := c.ensureClusterRBACRoleForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.rbacClusterRoleLister); err != nil {
