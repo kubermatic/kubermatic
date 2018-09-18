@@ -18,7 +18,8 @@ import (
 )
 
 const (
-	masterProviderName = "master"
+	MasterProviderPrefix = "master"
+	SeedProviderPrefix   = "seed"
 )
 
 // ClusterProvider holds set of clients that allow for communication with the cluster and
