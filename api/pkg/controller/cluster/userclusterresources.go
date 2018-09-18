@@ -317,18 +317,18 @@ func (cc *Controller) userClusterEnsureConfigMaps(c *kubermaticv1.Cluster) error
 		return err
 	}
 
-	creators := []resources.ConfigMapCreator{
-		openvpn.ClientConfigConfigMap,
-	}
-
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
 		return err
 	}
 
+	creators := []resources.ConfigMapCreator{
+		openvpn.ClientConfigConfigMapCreator(data),
+	}
+
 	for _, create := range creators {
 		var existing *corev1.ConfigMap
-		cm, err := create(data, nil)
+		cm, err := create(nil)
 		if err != nil {
 			return fmt.Errorf("failed to build ConfigMap: %v", err)
 		}
@@ -345,7 +345,7 @@ func (cc *Controller) userClusterEnsureConfigMaps(c *kubermaticv1.Cluster) error
 			continue
 		}
 
-		cm, err = create(data, existing.DeepCopy())
+		cm, err = create(existing.DeepCopy())
 		if err != nil {
 			return fmt.Errorf("failed to build ConfigMap: %v", err)
 		}

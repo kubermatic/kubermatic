@@ -426,9 +426,9 @@ func EnsureSecret(name string, data SecretDataProvider, create SecretCreator, li
 
 // EnsureConfigMap will create the ConfigMap with the passed create function & create or update it if necessary.
 // To check if it's necessary it will do a lookup of the resource at the lister & compare the existing ConfigMap with the created one
-func EnsureConfigMap(data ConfigMapDataProvider, create ConfigMapCreator, lister corev1lister.ConfigMapNamespaceLister, client corev1client.ConfigMapInterface) error {
+func EnsureConfigMap(create ConfigMapCreator, lister corev1lister.ConfigMapNamespaceLister, client corev1client.ConfigMapInterface) error {
 	var existing *corev1.ConfigMap
-	cm, err := create(data, nil)
+	cm, err := create(nil)
 	if err != nil {
 		return fmt.Errorf("failed to build ConfigMap: %v", err)
 	}
@@ -449,7 +449,7 @@ func EnsureConfigMap(data ConfigMapDataProvider, create ConfigMapCreator, lister
 	}
 	existing = existing.DeepCopy()
 
-	cm, err = create(data, existing.DeepCopy())
+	cm, err = create(existing.DeepCopy())
 	if err != nil {
 		return fmt.Errorf("failed to build ConfigMap: %v", err)
 	}
