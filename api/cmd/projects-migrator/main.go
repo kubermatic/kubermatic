@@ -457,7 +457,11 @@ func removeOrDetectDuplicatedUsers(ctx migrationContext, phase string, stopOnDup
 				seenUserWithProjects := false
 				for i := 0; i < len(userList)-1; i++ {
 					user := userList[i]
-					if len(user.Spec.Projects) > 0 {
+					projectName, err := doesUserOwnProjectAs(user, ctx, "")
+					if err != nil {
+						return err
+					}
+					if len(projectName) > 0 {
 						if seenUserWithProjects {
 							return errors.New("there is more that one user that belongs to some projects fot the given key, please manually remove one of them and rerun the app")
 						}
@@ -551,13 +555,9 @@ func migrateToProject(ctx migrationContext) error {
 	{
 		defaultProjectName := "default"
 		for _, user := range ownersOfClustersToAdopt {
-			projectName := ""
-			// if the users owns more than one project take the first one
-			for _, projectGroup := range user.Spec.Projects {
-				if rbac.ExtractGroupPrefix(projectGroup.Group) == rbac.OwnerGroupNamePrefix {
-					projectName = projectGroup.Name
-					break
-				}
+			projectName, err := doesUserOwnProjectAs(user, ctx, rbac.OwnerGroupNamePrefix)
+			if err != nil {
+				return err
 			}
 			if len(projectName) > 0 {
 				project, err := ctx.masterKubermaticClient.KubermaticV1().Projects().Get(projectName, metav1.GetOptions{})
@@ -598,7 +598,7 @@ func migrateToProject(ctx migrationContext) error {
 					return err
 				}
 			} else {
-				glog.Infof("a project (ID = %s, Name = %s) for userID = %s was NOT created because dry-run option was requested", project.Name, project.Spec.Name, user.Spec.ID)
+				glog.Infof("a project (ID = %s, Name = %s) for user Spec.ID = %s, ID = %s was NOT created because dry-run option was requested", project.Name, project.Spec.Name, user.Spec.ID, user.Name)
 				createdProject = project
 			}
 
@@ -609,7 +609,7 @@ func migrateToProject(ctx migrationContext) error {
 					return fmt.Errorf("failed to update user (ID = %s) object, err = %v", user.Spec.ID, err)
 				}
 			} else {
-				glog.Infof("a project (ID = %s, Name = %s) for userID = %s was NOT added to the \"Spec.Projects\" field because dry-run option was requested", project.Name, project.Spec.Name, user.Spec.ID)
+				glog.Infof("a project (ID = %s, Name = %s) for user Spec.ID = %s, ID = %s was NOT added to the \"Spec.Projects\" field because dry-run option was requested", project.Name, project.Spec.Name, user.Spec.ID, user.Name)
 			}
 			ownersOfClusterWithProject[user.Spec.ID] = *project
 		}
@@ -872,4 +872,35 @@ func sshAlreadyMigratedWithLog(sshKey kubermaticv1.UserSSHKey) bool {
 	}
 
 	return false
+}
+
+// doesUserOwnProjectAs check if the given user owns a project and belongs to group specified by groupPrefix argument
+// if the argument is an empty string they this method returns any project the user belongs to
+func doesUserOwnProjectAs(user kubermaticv1.User, ctx migrationContext, groupPrefix string) (string, error) {
+	// if the users owns more than one project take the first one
+	for _, projectGroup := range user.Spec.Projects {
+		if rbac.ExtractGroupPrefix(projectGroup.Group) == groupPrefix {
+			return projectGroup.Name, nil
+		} else if groupPrefix == "" {
+			return projectGroup.Name, nil
+		}
+	}
+
+	// if the project id was not found in Spec.Projects field then check the bindings
+	allBindings, err := ctx.masterKubermaticClient.KubermaticV1().UserProjectBindings().List(metav1.ListOptions{})
+	if err != nil {
+		return "", err
+	}
+	for _, binding := range allBindings.Items {
+		if binding.Spec.UserEmail == user.Spec.Email {
+			if rbac.ExtractGroupPrefix(binding.Spec.Group) == rbac.OwnerGroupNamePrefix {
+				return binding.Spec.ProjectID, nil
+			} else if groupPrefix == "" {
+				return binding.Spec.ProjectID, nil
+			}
+		}
+	}
+
+	// the user doesn't have a project
+	return "", nil
 }
