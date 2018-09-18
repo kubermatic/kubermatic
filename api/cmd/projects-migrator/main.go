@@ -886,7 +886,7 @@ func doesUserOwnProjectAs(user kubermaticv1.User, ctx migrationContext, groupPre
 		}
 	}
 
-	// if the project id was not found in Projects fiend then check the bindings
+	// if the project id was not found in Spec.Projects field then check the bindings
 	allBindings, err := ctx.masterKubermaticClient.KubermaticV1().UserProjectBindings().List(metav1.ListOptions{})
 	if err != nil {
 		return "", err
