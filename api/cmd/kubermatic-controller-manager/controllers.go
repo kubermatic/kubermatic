@@ -221,6 +221,7 @@ func createAddonInstallerController(ctrlCtx *controllerContext) (runner, error) 
 	}
 
 	return addoninstaller.New(
+		ctrlCtx.runOptions.workerName,
 		addoninstaller.NewMetrics(),
 		defaultAddonsList,
 		ctrlCtx.kubermaticClient,

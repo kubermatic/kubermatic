@@ -43,6 +43,7 @@ func NewMetrics() *Metrics {
 
 // Controller stores necessary components that are required to install in-cluster Add-On's
 type Controller struct {
+	workerName       string
 	queue            workqueue.RateLimitingInterface
 	metrics          *Metrics
 	defaultAddonList []string
@@ -54,6 +55,7 @@ type Controller struct {
 // New creates a new Addon-Installer controller that is responsible for
 // installing in-cluster addons
 func New(
+	workerName string,
 	metrics *Metrics,
 	defaultAddonList []string,
 	client kubermaticclientset.Interface,
@@ -61,6 +63,7 @@ func New(
 	clusterInformer kubermaticv1informers.ClusterInformer) (*Controller, error) {
 
 	c := &Controller{
+		workerName:       workerName,
 		queue:            workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute), "addon_installer_cluster"),
 		metrics:          metrics,
 		defaultAddonList: defaultAddonList,
@@ -118,11 +121,12 @@ func (c *Controller) createDefaultAddon(addon string, cluster *kubermaticv1.Clus
 	gv := kubermaticv1.SchemeGroupVersion
 	glog.V(8).Infof("Create addon %s for the cluster %s\n", addon, cluster.Name)
 
-	_, err := c.client.KubermaticV1().Addons(cluster.Status.NamespaceName).Create(&kubermaticv1.Addon{
+	a := &kubermaticv1.Addon{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            addon,
 			Namespace:       cluster.Status.NamespaceName,
 			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))},
+			Labels:          map[string]string{},
 		},
 		Spec: kubermaticv1.AddonSpec{
 			Name: addon,
@@ -134,7 +138,13 @@ func (c *Controller) createDefaultAddon(addon string, cluster *kubermaticv1.Clus
 				Kind:       "Cluster",
 			},
 		},
-	})
+	}
+
+	if c.workerName != "" {
+		a.Labels[kubermaticv1.WorkerNameLabelKey] = c.workerName
+	}
+
+	_, err := c.client.KubermaticV1().Addons(cluster.Status.NamespaceName).Create(a)
 
 	return err
 }
