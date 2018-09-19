@@ -7,7 +7,6 @@ import (
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,6 +17,8 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+
+	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 )
 
 // NewRBACCompliantClusterProvider returns a new cluster provider that respects RBAC policies
@@ -194,7 +195,7 @@ func (p *RBACCompliantClusterProvider) GetAdminKubeconfigForCustomerCluster(c *k
 // GetMachineClientForCustomerCluster returns a client to interact with machine resources in the given cluster
 //
 // Note that the client you will get has admin privileges
-func (p *RBACCompliantClusterProvider) GetMachineClientForCustomerCluster(c *kubermaticapiv1.Cluster) (machineclientset.Interface, error) {
+func (p *RBACCompliantClusterProvider) GetMachineClientForCustomerCluster(c *kubermaticapiv1.Cluster) (clusterv1alpha1clientset.Interface, error) {
 	return p.userClusterConnProvider.GetMachineClient(c)
 }
 

@@ -19,15 +19,16 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 	"github.com/kubermatic/machine-controller/pkg/containerruntime"
-	"github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
+
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 )
 
 const (
@@ -118,7 +119,7 @@ func apiNodeStatus(status apiv2.NodeStatus, inputNode *corev1.Node, hideInitialN
 	return status
 }
 
-func outputMachine(machine *v1alpha1.Machine, node *corev1.Node, hideInitialNodeConditions bool) (*apiv2.Node, error) {
+func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInitialNodeConditions bool) (*apiv2.Node, error) {
 	displayName := machine.Spec.Name
 	labels := map[string]string{}
 	annotations := map[string]string{}
@@ -144,20 +145,20 @@ func outputMachine(machine *v1alpha1.Machine, node *corev1.Node, hideInitialNode
 		return nil, fmt.Errorf("failed to get node cloud spec from machine: %v", err)
 	}
 
-	if machine.Status.Versions != nil {
-		nodeStatus.NodeInfo.ContainerRuntime = machine.Status.Versions.ContainerRuntime.Name
-		nodeStatus.NodeInfo.ContainerRuntimeVersion = machine.Status.Versions.ContainerRuntime.Version
-	}
-
+	var containerRuntimeName, containerRuntimeVersion string
 	if node != nil {
 		if node.Name != machine.Spec.Name {
 			displayName = node.Name
 		}
 
+		//TODO: Clarify what to do about nodeStatus.NodeInfo.ContainerRuntime - Maybe just hardcode Docker into it?
+		containerRuntimeVersion = node.Status.NodeInfo.ContainerRuntimeVersion
+
 		labels = node.Labels
 		annotations = node.Annotations
 		nodeStatus = apiNodeStatus(nodeStatus, node, hideInitialNodeConditions)
 	}
+	nodeStatus.NodeInfo.ContainerRuntimeVersion = containerRuntimeVersion
 
 	nodeStatus.ErrorReason = strings.TrimSuffix(nodeStatus.ErrorReason, errGlue)
 	nodeStatus.ErrorMessage = strings.TrimSuffix(nodeStatus.ErrorMessage, errGlue)
@@ -175,8 +176,8 @@ func outputMachine(machine *v1alpha1.Machine, node *corev1.Node, hideInitialNode
 			Versions: apiv2.NodeVersionInfo{
 				Kubelet: machine.Spec.Versions.Kubelet,
 				ContainerRuntime: apiv2.NodeContainerRuntimeInfo{
-					Name:    machine.Spec.Versions.ContainerRuntime.Name,
-					Version: machine.Spec.Versions.ContainerRuntime.Version,
+					Name:    containerRuntimeName,
+					Version: containerRuntimeVersion,
 				},
 			},
 			OperatingSystem: *operatingSystemSpec,
@@ -279,7 +280,7 @@ func createNodeEndpointV3(dcs map[string]provider.DatacenterMeta, dp provider.SS
 		}
 
 		// Send machine resource to k8s
-		machine, err = client.MachineV1alpha1().Machines().Create(machine)
+		machine, err = client.ClusterV1alpha1().Machines(machine.Namespace).Create(machine)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create machine: %v", err)
 		}
@@ -288,7 +289,7 @@ func createNodeEndpointV3(dcs map[string]provider.DatacenterMeta, dp provider.SS
 	}
 }
 
-func getNodeForMachine(machine *v1alpha1.Machine, nodes []corev1.Node) *corev1.Node {
+func getNodeForMachine(machine *clusterv1alpha1.Machine, nodes []corev1.Node) *corev1.Node {
 	for _, node := range nodes {
 		if (machine.Status.NodeRef != nil && node.UID == machine.Status.NodeRef.UID) || node.Name == machine.Name {
 			return &node
@@ -297,7 +298,7 @@ func getNodeForMachine(machine *v1alpha1.Machine, nodes []corev1.Node) *corev1.N
 	return nil
 }
 
-func getMachineForNode(node *corev1.Node, machines []v1alpha1.Machine) *v1alpha1.Machine {
+func getMachineForNode(node *corev1.Node, machines []clusterv1alpha1.Machine) *clusterv1alpha1.Machine {
 	ref := metav1.GetControllerOf(node)
 	if ref == nil {
 		return nil
@@ -331,7 +332,7 @@ func getNodesEndpointV3() endpoint.Endpoint {
 			return nil, fmt.Errorf("failed to create a kubernetes client: %v", err)
 		}
 
-		machineList, err := machineClient.MachineV1alpha1().Machines().List(metav1.ListOptions{})
+		machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("failed to load machines from cluster: %v", err)
 		}
@@ -368,8 +369,8 @@ func getNodesEndpointV3() endpoint.Endpoint {
 	}
 }
 
-func tryToFindMachineAndNode(name string, machineClient machineclientset.Interface, kubeClient kubernetes.Interface) (*v1alpha1.Machine, *corev1.Node, error) {
-	machineList, err := machineClient.MachineV1alpha1().Machines().List(metav1.ListOptions{})
+func tryToFindMachineAndNode(name string, machineClient clusterv1alpha1clientset.Interface, kubeClient kubernetes.Interface) (*clusterv1alpha1.Machine, *corev1.Node, error) {
+	machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to load machines from cluster: %v", err)
 	}
@@ -380,7 +381,7 @@ func tryToFindMachineAndNode(name string, machineClient machineclientset.Interfa
 	}
 
 	var node *corev1.Node
-	var machine *v1alpha1.Machine
+	var machine *clusterv1alpha1.Machine
 
 	for i, n := range nodeList.Items {
 		if n.Name == name {
@@ -482,7 +483,7 @@ func deleteNodeEndpointV3() endpoint.Endpoint {
 		}
 
 		if machine != nil {
-			if err := machineClient.MachineV1alpha1().Machines().Delete(machine.Name, nil); err != nil {
+			if err := machineClient.ClusterV1alpha1().Machines(machine.Namespace).Delete(machine.Name, nil); err != nil {
 			}
 		} else if node != nil {
 			return nil, kubeClient.CoreV1().Nodes().Delete(node.Name, nil)

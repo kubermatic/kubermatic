@@ -11,7 +11,6 @@ import (
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -35,12 +34,14 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
+
+	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 )
 
 // UserClusterConnectionProvider offers functions to retrieve clients for the given user clusters
 type UserClusterConnectionProvider interface {
 	GetClient(*kubermaticv1.Cluster) (kubernetes.Interface, error)
-	GetMachineClient(*kubermaticv1.Cluster) (machineclientset.Interface, error)
+	GetMachineClient(*kubermaticv1.Cluster) (clusterv1alpha1clientset.Interface, error)
 	GetApiextensionsClient(*kubermaticv1.Cluster) (apiextensionsclientset.Interface, error)
 }
 

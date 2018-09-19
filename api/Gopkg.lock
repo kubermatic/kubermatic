@@ -1720,12 +1720,15 @@
   version = "v1.10.5"
 
 [[projects]]
-  digest = "1:4581fd825e2536917645cf7f18bb8d85f7e34e6edd68dc92be85b8e209a8464d"
+  digest = "1:81cffd0827c79bb19b9350dfc696d028fab2af7a3040f1c8b39edb02a1fffcb9"
   name = "sigs.k8s.io/cluster-api"
   packages = [
     "pkg/apis/cluster",
     "pkg/apis/cluster/common",
     "pkg/apis/cluster/v1alpha1",
+    "pkg/client/clientset_generated/clientset",
+    "pkg/client/clientset_generated/clientset/scheme",
+    "pkg/client/clientset_generated/clientset/typed/cluster/v1alpha1",
   ]
   pruneopts = "NUT"
   revision = "e1903be683739379be57f78a4095cd51726495fd"
@@ -1898,6 +1901,7 @@
     "k8s.io/gengo/examples/defaulter-gen/generators",
     "k8s.io/kubernetes/pkg/printers",
     "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1",
+    "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset",
     "vbom.ml/util/sortorder",
   ]
   solver-name = "gps-cdcl"
