@@ -18,8 +18,10 @@ import (
 )
 
 const (
+	// MasterProviderPrefix denotes prefix a master cluster has in its name
 	MasterProviderPrefix = "master"
-	SeedProviderPrefix   = "seed"
+	// SeedProviderPrefix denotes prefix a seed cluster has in its name
+	SeedProviderPrefix = "seed"
 )
 
 // ClusterProvider holds set of clients that allow for communication with the cluster and

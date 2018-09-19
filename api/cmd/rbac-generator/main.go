@@ -102,7 +102,7 @@ func main() {
 			// special case the current context/master is also a seed cluster
 			// we keep cluster resources also on master
 			if ctxName == clientcmdConfig.CurrentContext {
-				glog.V(2).Infof("Specail case adding %s (current context) also as seed cluster", ctxName)
+				glog.V(2).Infof("Special case adding %s (current context) also as seed cluster", ctxName)
 				clusterPrefix = rbaccontroller.SeedProviderPrefix
 				ctrlCtx.allClusterProviders = append(ctrlCtx.allClusterProviders, rbaccontroller.NewClusterProvider(fmt.Sprintf("%s/%s", clusterPrefix, ctxName), kubeClient, kubeInformerFactory, kubermaticClient, kubermaticInformerFactory))
 			}
