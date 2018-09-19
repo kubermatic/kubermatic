@@ -26,7 +26,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"time"
+
+	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 
 	"github.com/golang/glog"
 	"github.com/gorilla/handlers"
@@ -65,10 +66,6 @@ var (
 	tokenIssuerSkipTLSVerify bool
 )
 
-const (
-	informerResyncPeriod = 5 * time.Minute
-)
-
 func main() {
 	flag.StringVar(&listenAddress, "address", ":8080", "The address to listen on")
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to the kubeconfig.")
@@ -96,7 +93,7 @@ func main() {
 	}
 
 	kubermaticMasterClient := kubermaticclientset.NewForConfigOrDie(config)
-	kubermaticMasterInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticMasterClient, informerResyncPeriod)
+	kubermaticMasterInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticMasterClient, informer.DefaultInformerResyncPeriod)
 
 	defaultImpersonationClient := kubernetesprovider.NewKubermaticImpersonationClient(config)
 
@@ -132,10 +129,10 @@ func main() {
 		glog.V(2).Infof("adding %s as seed", ctx)
 
 		kubeClient := kubernetes.NewForConfigOrDie(cfg)
-		kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, informerResyncPeriod)
+		kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, informer.DefaultInformerResyncPeriod)
 
 		kubermaticSeedClient := kubermaticclientset.NewForConfigOrDie(cfg)
-		kubermaticSeedInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticSeedClient, informerResyncPeriod)
+		kubermaticSeedInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticSeedClient, informer.DefaultInformerResyncPeriod)
 
 		defaultImpersonationClientForSeed := kubernetesprovider.NewKubermaticImpersonationClient(cfg)
 

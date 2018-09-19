@@ -7,7 +7,8 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
+
+	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 
 	"github.com/golang/glog"
 	"github.com/oklog/run"
@@ -42,7 +43,7 @@ func main() {
 		glog.Fatal(err)
 	}
 
-	kubeInformerFactory := coreinformers.NewSharedInformerFactory(client, time.Minute*5)
+	kubeInformerFactory := coreinformers.NewSharedInformerFactory(client, informer.DefaultInformerResyncPeriod)
 
 	ctrl := kubeletdnat.NewController(
 		client,
