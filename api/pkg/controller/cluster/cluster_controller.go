@@ -121,7 +121,7 @@ func NewController(
 		kubeClient:              kubeClient,
 		userClusterConnProvider: userClusterConnProvider,
 
-		queue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "cluster"),
+		queue: workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute), "cluster"),
 
 		overwriteRegistry:                      overwriteRegistry,
 		nodePortRange:                          nodePortRange,
