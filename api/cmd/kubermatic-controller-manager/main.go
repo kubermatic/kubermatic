@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
+
 	"github.com/golang/glog"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
@@ -300,8 +302,8 @@ func newControllerContext(runOp controllerRunOptions, done <-chan struct{}, kube
 		return nil, err
 	}
 
-	ctrlCtx.kubermaticInformerFactory = kubermaticinformers.NewFilteredSharedInformerFactory(ctrlCtx.kubermaticClient, time.Minute*5, metav1.NamespaceAll, selector)
-	ctrlCtx.kubeInformerFactory = kubeinformers.NewSharedInformerFactory(ctrlCtx.kubeClient, time.Minute*5)
+	ctrlCtx.kubermaticInformerFactory = kubermaticinformers.NewFilteredSharedInformerFactory(ctrlCtx.kubermaticClient, informer.DefaultInformerResyncPeriod, metav1.NamespaceAll, selector)
+	ctrlCtx.kubeInformerFactory = kubeinformers.NewSharedInformerFactory(ctrlCtx.kubeClient, informer.DefaultInformerResyncPeriod)
 
 	return ctrlCtx, nil
 }
