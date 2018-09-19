@@ -24,6 +24,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
 
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -35,7 +36,7 @@ import (
 func Machine(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.Machine, error) {
 	m := clusterv1alpha1.Machine{}
 	m.Name = fmt.Sprintf("machine-%s", node.Metadata.Name)
-	m.Namespace = "kube-system"
+	m.Namespace = metav1.NamespaceSystem
 	m.Spec.Name = node.Metadata.Name
 
 	m.Spec.Versions.Kubelet = node.Spec.Versions.Kubelet
