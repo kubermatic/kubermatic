@@ -1,7 +1,10 @@
 package resources
 
 import (
+	"bytes"
 	"fmt"
+	"hash/crc32"
+	"sort"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -21,6 +24,11 @@ import (
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	policyv1beta1lister "k8s.io/client-go/listers/policy/v1beta1"
 	rbacv1lister "k8s.io/client-go/listers/rbac/v1"
+)
+
+const (
+	annotationPrefix   = "kubermatic.io/"
+	checksumAnnotation = annotationPrefix + "checksum"
 )
 
 // EnsureRole will create the role with the passed create function & create or update it if necessary.
@@ -366,4 +374,128 @@ func EnsureServiceAccount(data ServiceAccountDataProvider, create ServiceAccount
 	}
 
 	return nil
+}
+
+// EnsureSecret will create the Secret with the passed create function & create or update it if necessary.
+// To check if it's necessary it will do a lookup of the resource at the lister & compare the existing Secret with the created one
+func EnsureSecret(name string, data SecretDataProvider, create SecretCreator, lister corev1lister.SecretNamespaceLister, client corev1client.SecretInterface) error {
+	existing, err := lister.Get(name)
+	if err != nil {
+		if !kubeerrors.IsNotFound(err) {
+			return err
+		}
+
+		// Secret does not exist -> Create it
+		secret, err := create(data, nil)
+		if err != nil {
+			return fmt.Errorf("failed to build Secret %s: %v", name, err)
+		}
+		if secret.Annotations == nil {
+			secret.Annotations = map[string]string{}
+		}
+		secret.Annotations[checksumAnnotation] = getChecksumForMapStringByteSlice(secret.Data)
+
+		if _, err = client.Create(secret); err != nil {
+			return fmt.Errorf("failed to create Secret %s: %v", secret.Name, err)
+		}
+		return nil
+	}
+	existing = existing.DeepCopy()
+
+	// Secret already exists, see if we need to update it
+	secret, err := create(data, existing.DeepCopy())
+	if err != nil {
+		return fmt.Errorf("failed to build Secret: %v", err)
+	}
+	if secret.Annotations == nil {
+		secret.Annotations = map[string]string{}
+	}
+	secret.Annotations[checksumAnnotation] = getChecksumForMapStringByteSlice(secret.Data)
+
+	annotationVal, annotationExists := existing.Annotations[checksumAnnotation]
+	if annotationExists && annotationVal == secret.Annotations[checksumAnnotation] {
+		// Nothing to do
+		return nil
+	}
+
+	if _, err = client.Update(secret); err != nil {
+		return fmt.Errorf("failed to update Secret %s: %v", secret.Name, err)
+	}
+	return nil
+}
+
+// EnsureConfigMap will create the ConfigMap with the passed create function & create or update it if necessary.
+// To check if it's necessary it will do a lookup of the resource at the lister & compare the existing ConfigMap with the created one
+func EnsureConfigMap(data ConfigMapDataProvider, create ConfigMapCreator, lister corev1lister.ConfigMapNamespaceLister, client corev1client.ConfigMapInterface) error {
+	var existing *corev1.ConfigMap
+	cm, err := create(data, nil)
+	if err != nil {
+		return fmt.Errorf("failed to build ConfigMap: %v", err)
+	}
+	if cm.Annotations == nil {
+		cm.Annotations = map[string]string{}
+	}
+	cm.Annotations[checksumAnnotation] = getChecksumForMapStringString(cm.Data)
+
+	if existing, err = lister.Get(cm.Name); err != nil {
+		if !kubeerrors.IsNotFound(err) {
+			return err
+		}
+
+		if _, err = client.Create(cm); err != nil {
+			return fmt.Errorf("failed to create ConfigMap %s: %v", cm.Name, err)
+		}
+		return nil
+	}
+	existing = existing.DeepCopy()
+
+	cm, err = create(data, existing.DeepCopy())
+	if err != nil {
+		return fmt.Errorf("failed to build ConfigMap: %v", err)
+	}
+	if cm.Annotations == nil {
+		cm.Annotations = map[string]string{}
+	}
+	cm.Annotations[checksumAnnotation] = getChecksumForMapStringString(cm.Data)
+
+	if existing.Annotations == nil {
+		existing.Annotations = map[string]string{}
+	}
+	annotationVal, annotationExists := existing.Annotations[checksumAnnotation]
+	if annotationExists && annotationVal == cm.Annotations[checksumAnnotation] {
+		// Nothing to do
+		return nil
+	}
+
+	if _, err = client.Update(cm); err != nil {
+		return fmt.Errorf("failed to update ConfigMap %s: %v", cm.Name, err)
+	}
+	return nil
+}
+
+func getChecksumForMapStringByteSlice(data map[string][]byte) string {
+	// Maps are unordered so we have to sort it first
+	var keyVals []string
+	for k := range data {
+		keyVals = append(keyVals, fmt.Sprintf("%s:%s", k, string(data[k])))
+	}
+	return getChecksumForStringSlice(keyVals)
+}
+
+func getChecksumForMapStringString(data map[string]string) string {
+	// Maps are unordered so we have to sort it first
+	var keyVals []string
+	for k := range data {
+		keyVals = append(keyVals, fmt.Sprintf("%s:%s", k, data[k]))
+	}
+	return getChecksumForStringSlice(keyVals)
+}
+
+func getChecksumForStringSlice(stringSlice []string) string {
+	sort.Strings(stringSlice)
+	buffer := bytes.NewBuffer(nil)
+	for _, item := range stringSlice {
+		buffer.WriteString(item)
+	}
+	return fmt.Sprintf("%v", crc32.ChecksumIEEE(buffer.Bytes()))
 }
