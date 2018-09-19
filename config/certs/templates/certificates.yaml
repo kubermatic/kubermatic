@@ -10,6 +10,7 @@ spec:
   # The Issuer to use for this certificate
   issuerRef:
     name: letsencrypt-prod
+    kind: Issuer
   # A list of domains to include on the TLS certificate
   dnsNames:
   {{- range $key, $val := .Values.certificates.domains }}
