@@ -8,10 +8,6 @@ import (
 
 	"github.com/golang/glog"
 
-	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
-	machineinformersv1alpha1 "github.com/kubermatic/machine-controller/pkg/client/informers/externalversions/machines/v1alpha1"
-	machinelistersv1alpha1 "github.com/kubermatic/machine-controller/pkg/client/listers/machines/v1alpha1"
-	machinev1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,6 +17,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
+
+	clusterv1alpha1common "sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
+	clusterv1alpha1informers "sigs.k8s.io/cluster-api/pkg/client/informers_generated/externalversions/cluster/v1alpha1"
+	clusterlistersv1alpha1 "sigs.k8s.io/cluster-api/pkg/client/listers_generated/cluster/v1alpha1"
 )
 
 const (
@@ -47,12 +49,12 @@ type Controller struct {
 	queue     workqueue.RateLimitingInterface
 	cidrRange []Network
 
-	client        machineclientset.Interface
-	machineLister machinelistersv1alpha1.MachineLister
+	client        clusterv1alpha1clientset.Interface
+	machineLister clusterlistersv1alpha1.MachineLister
 }
 
 // NewController creates a new controller for the specified data.
-func NewController(client machineclientset.Interface, machineInformer machineinformersv1alpha1.MachineInformer, networks []Network) *Controller {
+func NewController(client clusterv1alpha1clientset.Interface, machineInformer clusterv1alpha1informers.MachineInformer, networks []Network) *Controller {
 	controller := &Controller{
 		cidrRange:     networks,
 		client:        client,
@@ -62,20 +64,20 @@ func NewController(client machineclientset.Interface, machineInformer machineinf
 
 	machineInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			controller.enqueueMachine(obj.(*machinev1alpha1.Machine))
+			controller.enqueueMachine(obj.(*clusterv1alpha1.Machine))
 		},
 		UpdateFunc: func(_, cur interface{}) {
-			controller.enqueueMachine(cur.(*machinev1alpha1.Machine))
+			controller.enqueueMachine(cur.(*clusterv1alpha1.Machine))
 		},
 		DeleteFunc: func(obj interface{}) {
-			m, ok := obj.(*machinev1alpha1.Machine)
+			m, ok := obj.(*clusterv1alpha1.Machine)
 			if !ok {
 				tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
 				if !ok {
 					glog.Errorf("couldn't get object from tombstone %#v", obj)
 					return
 				}
-				m, ok = tombstone.Obj.(*machinev1alpha1.Machine)
+				m, ok = tombstone.Obj.(*clusterv1alpha1.Machine)
 				if !ok {
 					glog.Errorf("tombstone contained object that is not a machine %#v", obj)
 					return
@@ -125,8 +127,11 @@ func (c *Controller) processNextWorkItem() bool {
 }
 
 func (c *Controller) syncHandler(key string) error {
-	listerMachine, err := c.machineLister.Get(key)
-
+	namespace, name, err := cache.SplitMetaNamespaceKey(key)
+	if err != nil {
+		return err
+	}
+	listerMachine, err := c.machineLister.Machines(namespace).Get(name)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
 			glog.V(2).Infof("machine '%s' in work queue no longer exists", key)
@@ -138,7 +143,7 @@ func (c *Controller) syncHandler(key string) error {
 	return c.syncMachine(listerMachine)
 }
 
-func (c *Controller) syncMachine(mo *machinev1alpha1.Machine) error {
+func (c *Controller) syncMachine(mo *clusterv1alpha1.Machine) error {
 	m := mo.DeepCopy()
 
 	if m.DeletionTimestamp != nil {
@@ -158,12 +163,12 @@ func (c *Controller) enqueueMachine(obj interface{}) {
 	c.queue.AddRateLimited(key)
 }
 
-func (c *Controller) writeErrorToMachine(m *machinev1alpha1.Machine, reason machinev1alpha1.MachineStatusError, errToWrite error) error {
+func (c *Controller) writeErrorToMachine(m *clusterv1alpha1.Machine, reason clusterv1alpha1common.MachineStatusError, errToWrite error) error {
 	message := errToWrite.Error()
 	m.Status.ErrorMessage = &message
 	m.Status.ErrorReason = &reason
 
-	_, err := c.client.MachineV1alpha1().Machines().Update(m)
+	_, err := c.client.ClusterV1alpha1().Machines(m.Namespace).Update(m)
 	return err
 }
 
@@ -203,7 +208,7 @@ func (c *Controller) getUsedIPs() ([]net.IP, error) {
 	return ips, nil
 }
 
-func (c *Controller) initMachineIfNeeded(machine *machinev1alpha1.Machine) error {
+func (c *Controller) initMachineIfNeeded(machine *clusterv1alpha1.Machine) error {
 	if !c.testIfInitIsNeeded(machine) {
 		glog.V(6).Infof("Skipping machine %s because no initialization is needed (yet)", machine.Name)
 		return nil
@@ -217,7 +222,7 @@ func (c *Controller) initMachineIfNeeded(machine *machinev1alpha1.Machine) error
 	ip, network, err := c.getNextFreeIP()
 	if _, isCidrExhausted := err.(cidrExhaustedError); isCidrExhausted {
 		err = fmt.Errorf("couldn't set ip for %s because no more ips can be allocated from the specified cidrs", machine.Name)
-		subErr := c.writeErrorToMachine(machine, machinev1alpha1.InsufficientResourcesMachineError, err)
+		subErr := c.writeErrorToMachine(machine, clusterv1alpha1common.InsufficientResourcesMachineError, err)
 		if subErr != nil {
 			glog.Errorf("couldn't update error state for machine %s, see: %v", machine.Name, subErr)
 		}
@@ -242,7 +247,7 @@ func (c *Controller) initMachineIfNeeded(machine *machinev1alpha1.Machine) error
 	}
 
 	machine.Finalizers = append(machine.Finalizers, finalizerName)
-	machine.Spec.ProviderConfig = runtime.RawExtension{Raw: cfgSerialized}
+	machine.Spec.ProviderConfig.Value = &runtime.RawExtension{Raw: cfgSerialized}
 	pendingInitializers := machine.ObjectMeta.GetInitializers().Pending
 
 	// Remove self from the list of pending Initializers while preserving ordering.
@@ -252,7 +257,7 @@ func (c *Controller) initMachineIfNeeded(machine *machinev1alpha1.Machine) error
 		machine.ObjectMeta.Initializers.Pending = append(pendingInitializers[:0], pendingInitializers[1:]...)
 	}
 
-	_, err = c.client.MachineV1alpha1().Machines().Update(machine)
+	_, err = c.client.ClusterV1alpha1().Machines(machine.Namespace).Update(machine)
 	if err != nil {
 		return fmt.Errorf("Couldn't update machine %s, see: %v", machine.Name, err)
 	}
@@ -260,16 +265,21 @@ func (c *Controller) initMachineIfNeeded(machine *machinev1alpha1.Machine) error
 	return c.awaitIPSync(machine, cidr)
 }
 
-func (c *Controller) awaitIPSync(machine *machinev1alpha1.Machine, cidr string) error {
+func (c *Controller) awaitIPSync(machine *clusterv1alpha1.Machine, cidr string) error {
 	return wait.Poll(10*time.Millisecond, 60*time.Second, func() (bool, error) {
 		key, err := cache.MetaNamespaceKeyFunc(machine)
 		if err != nil {
 			return false, fmt.Errorf("something terrible happened - meta for machine %s got erased", machine.Name)
 		}
 
-		m2, err := c.machineLister.Get(key)
+		namespace, name, err := cache.SplitMetaNamespaceKey(key)
 		if err != nil {
-			return false, fmt.Errorf("error while retrieving machine %s from lister, see: %v", m2.Name, err)
+			return false, fmt.Errorf("failed to split key %s for namespace/name: %v", key, err)
+		}
+
+		m2, err := c.machineLister.Machines(namespace).Get(name)
+		if err != nil {
+			return false, fmt.Errorf("error while retrieving machine %s from lister, see: %v", name, err)
 		}
 
 		cfg2, err := providerconfig.GetConfig(m2.Spec.ProviderConfig)
@@ -291,7 +301,7 @@ func (c *Controller) ipsToStrs(ips []net.IP) []string {
 	return strs
 }
 
-func (c *Controller) testIfInitIsNeeded(m *machinev1alpha1.Machine) bool {
+func (c *Controller) testIfInitIsNeeded(m *clusterv1alpha1.Machine) bool {
 	if m.ObjectMeta.GetInitializers() == nil {
 		return false
 	}

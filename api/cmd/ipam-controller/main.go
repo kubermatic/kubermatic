@@ -13,9 +13,6 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/ipam"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
-	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
-	machineinformers "github.com/kubermatic/machine-controller/pkg/client/informers/externalversions"
-	machinev1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,6 +23,10 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/record"
+
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
+	clusterv1alpha1informers "sigs.k8s.io/cluster-api/pkg/client/informers_generated/externalversions"
 )
 
 const controllerName = "ipam-controller"
@@ -113,15 +114,15 @@ func main() {
 	}
 
 	config = restclient.AddUserAgent(config, controllerName)
-	client := machineclientset.NewForConfigOrDie(config)
+	client := clusterv1alpha1clientset.NewForConfigOrDie(config)
 
 	err = leaderElectionLoop(config, func(stopCh <-chan struct{}) {
 		tweakFunc := func(options *metav1.ListOptions) {
 			options.IncludeUninitialized = true
 		}
 
-		factory := machineinformers.NewFilteredSharedInformerFactory(client, informer.DefaultInformerResyncPeriod, metav1.NamespaceAll, tweakFunc)
-		machineInformer := factory.Machine().V1alpha1().Machines()
+		factory := clusterv1alpha1informers.NewFilteredSharedInformerFactory(client, informer.DefaultInformerResyncPeriod, metav1.NamespaceAll, tweakFunc)
+		machineInformer := factory.Cluster().V1alpha1().Machines()
 
 		controller := ipam.NewController(client, machineInformer, networks)
 
@@ -142,7 +143,7 @@ func main() {
 }
 
 func getEventRecorder(masterKubeClient *kubernetes.Clientset, name string) (record.EventRecorder, error) {
-	if err := machinev1alpha1.AddToScheme(scheme.Scheme); err != nil {
+	if err := clusterv1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		return nil, err
 	}
 	glog.V(4).Info("Creating event broadcaster")
