@@ -10,16 +10,18 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
-	"github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/coreos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
+
 	"k8s.io/apimachinery/pkg/util/json"
+
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 // GetAPIV2OperatingSystemSpec returns the api compatible OperatingSystemSpec for the given machine
-func GetAPIV2OperatingSystemSpec(machine *v1alpha1.Machine) (*apiv2.OperatingSystemSpec, error) {
+func GetAPIV2OperatingSystemSpec(machine *clusterv1alpha1.Machine) (*apiv2.OperatingSystemSpec, error) {
 	decodedProviderConfig, err := providerconfig.GetConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get machine providerConfig: %v", err)
@@ -57,7 +59,7 @@ func GetAPIV2OperatingSystemSpec(machine *v1alpha1.Machine) (*apiv2.OperatingSys
 }
 
 // GetAPIV2NodeCloudSpec returns the api compatible NodeCloudSpec for the given machine
-func GetAPIV2NodeCloudSpec(machine *v1alpha1.Machine) (*apiv2.NodeCloudSpec, error) {
+func GetAPIV2NodeCloudSpec(machine *clusterv1alpha1.Machine) (*apiv2.NodeCloudSpec, error) {
 	decodedProviderConfig, err := providerconfig.GetConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get machine providerConfig: %v", err)

@@ -24,8 +24,10 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/cloud"
 	cloudprovidererrors "github.com/kubermatic/machine-controller/pkg/cloudprovider/errors"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
-	"github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+
+	common "sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
+	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 type provider struct {
@@ -103,7 +105,7 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 	cfg, _, rawCfg, err := p.getConfig(spec.ProviderConfig)
 	if err != nil {
 		return spec, changed, cloudprovidererrors.TerminalError{
-			Reason:  v1alpha1.InvalidConfigurationMachineError,
+			Reason:  common.InvalidConfigurationMachineError,
 			Message: fmt.Sprintf("Failed to parse MachineSpec, due to %v", err),
 		}
 	}
@@ -147,7 +149,7 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 		}
 	}
 
-	spec.ProviderConfig, err = setProviderConfig(*rawCfg, spec.ProviderConfig)
+	spec.ProviderConfig.Value, err = setProviderConfig(*rawCfg, spec.ProviderConfig)
 	if err != nil {
 		return spec, changed, fmt.Errorf("error marshaling providerconfig: %s", err)
 	}
@@ -155,25 +157,25 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 	return spec, changed, nil
 }
 
-func setProviderConfig(rawConfig RawConfig, s runtime.RawExtension) (runtime.RawExtension, error) {
+func setProviderConfig(rawConfig RawConfig, s v1alpha1.ProviderConfig) (*runtime.RawExtension, error) {
 	pconfig := providerconfig.Config{}
-	err := json.Unmarshal(s.Raw, &pconfig)
+	err := json.Unmarshal(s.Value.Raw, &pconfig)
 	if err != nil {
-		return s, err
+		return nil, err
 	}
 
 	rawCloudProviderSpec, err := json.Marshal(rawConfig)
 	if err != nil {
-		return s, err
+		return nil, err
 	}
 
 	pconfig.CloudProviderSpec = runtime.RawExtension{Raw: rawCloudProviderSpec}
 	rawPconfig, err := json.Marshal(pconfig)
 	if err != nil {
-		return s, err
+		return nil, err
 	}
 
-	return runtime.RawExtension{Raw: rawPconfig}, nil
+	return &runtime.RawExtension{Raw: rawPconfig}, nil
 }
 
 func getClient(username, password, address string, allowInsecure bool) (*govmomi.Client, error) {
@@ -186,9 +188,12 @@ func getClient(username, password, address string, allowInsecure bool) (*govmomi
 	return govmomi.NewClient(context.TODO(), clientURL, allowInsecure)
 }
 
-func (p *provider) getConfig(s runtime.RawExtension) (*Config, *providerconfig.Config, *RawConfig, error) {
+func (p *provider) getConfig(s v1alpha1.ProviderConfig) (*Config, *providerconfig.Config, *RawConfig, error) {
+	if s.Value == nil {
+		return nil, nil, nil, fmt.Errorf("machine.spec.providerconfig.value is nil")
+	}
 	pconfig := providerconfig.Config{}
-	err := json.Unmarshal(s.Raw, &pconfig)
+	err := json.Unmarshal(s.Value.Raw, &pconfig)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -297,7 +302,7 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 
 func machineInvalidConfigurationTerminalError(err error) error {
 	return cloudprovidererrors.TerminalError{
-		Reason:  v1alpha1.InvalidConfigurationMachineError,
+		Reason:  common.InvalidConfigurationMachineError,
 		Message: err.Error(),
 	}
 }

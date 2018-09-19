@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
+	"sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
 )
 
 var (
@@ -14,7 +14,7 @@ var (
 
 // TerminalError is a helper struct that holds errors of type "terminal"
 type TerminalError struct {
-	Reason  v1alpha1.MachineStatusError
+	Reason  common.MachineStatusError
 	Message string
 }
 
@@ -23,7 +23,7 @@ func (te TerminalError) Error() string {
 }
 
 // IsTerminalError is a helper function that helps to determine if a given error is terminal
-func IsTerminalError(err error) (bool, v1alpha1.MachineStatusError, string) {
+func IsTerminalError(err error) (bool, common.MachineStatusError, string) {
 	tError, ok := err.(TerminalError)
 	if !ok {
 		return false, "", ""

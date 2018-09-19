@@ -18,6 +18,8 @@ import (
 	machinetemplate "github.com/kubermatic/machine-controller/pkg/template"
 	"github.com/kubermatic/machine-controller/pkg/userdata/cloud"
 	userdatahelper "github.com/kubermatic/machine-controller/pkg/userdata/helper"
+
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 type packageCompatibilityMatrix struct {
@@ -74,7 +76,7 @@ func (p Provider) SupportedContainerRuntimes() (runtimes []machinesv1alpha1.Cont
 
 // UserData renders user-data template
 func (p Provider) UserData(
-	spec machinesv1alpha1.MachineSpec,
+	spec clusterv1alpha1.MachineSpec,
 	kubeconfig *clientcmdapi.Config,
 	ccProvider cloud.ConfigProvider,
 	clusterDNSIPs []net.IP,
@@ -91,11 +93,6 @@ func (p Provider) UserData(
 	}
 	kubeletVersion := semverKubeletVersion.String()
 
-	dockerPackageName, err := getDockerPackageName(spec.Versions.ContainerRuntime.Version)
-	if err != nil {
-		return "", fmt.Errorf("error getting Docker package name: '%v'", err)
-	}
-
 	cpConfig, cpName, err := ccProvider.GetCloudConfig(spec)
 	if err != nil {
 		return "", fmt.Errorf("failed to get cloud config: %v", err)
@@ -104,6 +101,11 @@ func (p Provider) UserData(
 	pconfig, err := providerconfig.GetConfig(spec.ProviderConfig)
 	if err != nil {
 		return "", fmt.Errorf("failed to get provider config: %v", err)
+	}
+
+	dockerPackageName, err := getDockerPackageName(pconfig.ContainerRuntimeInfo.Version)
+	if err != nil {
+		return "", fmt.Errorf("error getting Docker package name: '%v'", err)
 	}
 
 	if pconfig.OverwriteCloudConfig != nil {
@@ -135,7 +137,7 @@ func (p Provider) UserData(
 	}
 
 	data := struct {
-		MachineSpec       machinesv1alpha1.MachineSpec
+		MachineSpec       clusterv1alpha1.MachineSpec
 		ProviderConfig    *providerconfig.Config
 		OSConfig          *Config
 		BoostrapToken     string
