@@ -654,7 +654,7 @@
   revision = "7cafcd837844e784b526369c9bce262804aebc60"
 
 [[projects]]
-  digest = "1:a9df415b82688898337aa6f2deaeb0334a08815ee506b3850770793985821a39"
+  digest = "1:0aa24b2c74e038cf7393e8b5c75d26e462ddf6e55f9c3ca07146c7efe29ba319"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/client/clientset/versioned",
@@ -690,8 +690,8 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "5c11b45346a6e22b6a3a0538a3d568c48da342bc"
-  version = "v0.7.18"
+  revision = "3a5b090f096cd083477e60e735891dc35c9d3a29"
+  version = "v0.8.0"
 
 [[projects]]
   digest = "1:35e5598ba3bc950039e13d91958ce37f675264735907cada569d11b243e5cacb"
@@ -1122,6 +1122,14 @@
   pruneopts = "NUT"
   revision = "3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4"
   version = "v0.9.0"
+
+[[projects]]
+  digest = "1:74d9b0a7b4107b41e0ade759fac64502876f82d29fb23d77b3dd24b194ee3dd5"
+  name = "gopkg.in/ini.v1"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "5cf292cae48347c2490ac1a58fe36735fb78df7e"
+  version = "v1.38.2"
 
 [[projects]]
   branch = "v2"

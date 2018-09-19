@@ -16,7 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/collectors"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
+	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/net"
-	kuberinformers "k8s.io/client-go/informers"
+	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -73,8 +73,8 @@ type controllerContext struct {
 	stopCh                    <-chan struct{}
 	kubeClient                kubernetes.Interface
 	kubermaticClient          kubermaticclientset.Interface
-	kubermaticInformerFactory externalversions.SharedInformerFactory
-	kubeInformerFactory       kuberinformers.SharedInformerFactory
+	kubermaticInformerFactory kubermaticinformers.SharedInformerFactory
+	kubeInformerFactory       kubeinformers.SharedInformerFactory
 }
 
 const (
@@ -300,8 +300,8 @@ func newControllerContext(runOp controllerRunOptions, done <-chan struct{}, kube
 		return nil, err
 	}
 
-	ctrlCtx.kubermaticInformerFactory = externalversions.NewFilteredSharedInformerFactory(ctrlCtx.kubermaticClient, time.Minute*5, metav1.NamespaceAll, selector)
-	ctrlCtx.kubeInformerFactory = kuberinformers.NewSharedInformerFactory(ctrlCtx.kubeClient, time.Minute*5)
+	ctrlCtx.kubermaticInformerFactory = kubermaticinformers.NewFilteredSharedInformerFactory(ctrlCtx.kubermaticClient, time.Minute*5, metav1.NamespaceAll, selector)
+	ctrlCtx.kubeInformerFactory = kubeinformers.NewSharedInformerFactory(ctrlCtx.kubeClient, time.Minute*5)
 
 	return ctrlCtx, nil
 }
