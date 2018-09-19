@@ -1,4 +1,7 @@
 certificates:
   domains:
-  - "www.example.com"
-  - "www.example2.com"
+  - "kubermatic.example.com"
+  - "grafana.kubermatic.example.com"
+  - "prometheus.kubermatic.example.com"
+  - "alertmanager.kubermatic.example.com"
+  - "kibana.kubermatic.example.com"

@@ -1,10 +1,7 @@
 package cluster
 
 import (
-	"bytes"
 	"fmt"
-	"hash/crc32"
-	"sort"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -28,9 +25,6 @@ import (
 
 const (
 	nodeDeletionFinalizer = "kubermatic.io/delete-nodes"
-
-	annotationPrefix   = "kubermatic.io/"
-	checksumAnnotation = annotationPrefix + "checksum"
 )
 
 func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) error {
@@ -294,52 +288,16 @@ func GetSecretCreatorOperations(dockerPullConfigJSON []byte) []SecretOperation {
 }
 
 func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
-	creators := GetSecretCreatorOperations(cc.dockerPullConfigJSON)
+	operations := GetSecretCreatorOperations(cc.dockerPullConfigJSON)
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
 		return err
 	}
 
-	for _, op := range creators {
-
-		var existing *corev1.Secret
-		if existing, err = cc.secretLister.Secrets(c.Status.NamespaceName).Get(op.name); err != nil {
-			if !errors.IsNotFound(err) {
-				return err
-			}
-
-			se, err := op.create(data, nil)
-			if err != nil {
-				return fmt.Errorf("failed to build Secret %s: %v", op.name, err)
-			}
-			if se.Annotations == nil {
-				se.Annotations = map[string]string{}
-			}
-			se.Annotations[checksumAnnotation] = getChecksumForMapStringByteSlice(se.Data)
-
-			if _, err = cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName).Create(se); err != nil {
-				return fmt.Errorf("failed to create Secret %s: %v", se.Name, err)
-			}
-			continue
-		}
-
-		se, err := op.create(data, existing.DeepCopy())
-		if err != nil {
-			return fmt.Errorf("failed to build Secret: %v", err)
-		}
-		if se.Annotations == nil {
-			se.Annotations = map[string]string{}
-		}
-		se.Annotations[checksumAnnotation] = getChecksumForMapStringByteSlice(se.Data)
-
-		annotationVal, annotationExists := existing.Annotations[checksumAnnotation]
-		if annotationExists && annotationVal == se.Annotations[checksumAnnotation] {
-			continue
-		}
-
-		if _, err = cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName).Update(se); err != nil {
-			return fmt.Errorf("failed to update Secret %s: %v", se.Name, err)
+	for _, op := range operations {
+		if err := resources.EnsureSecret(op.name, data, op.create, cc.secretLister.Secrets(c.Status.NamespaceName), cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName)); err != nil {
+			return fmt.Errorf("failed to ensure that the Secret exists: %v", err)
 		}
 	}
 
@@ -365,77 +323,12 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 	}
 
 	for _, create := range creators {
-		var existing *corev1.ConfigMap
-		cm, err := create(data, nil)
-		if err != nil {
-			return fmt.Errorf("failed to build ConfigMap: %v", err)
-		}
-		if cm.Annotations == nil {
-			cm.Annotations = map[string]string{}
-		}
-		cm.Annotations[checksumAnnotation] = getChecksumForMapStringString(cm.Data)
-
-		if existing, err = cc.configMapLister.ConfigMaps(c.Status.NamespaceName).Get(cm.Name); err != nil {
-			if !errors.IsNotFound(err) {
-				return err
-			}
-
-			if _, err = cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName).Create(cm); err != nil {
-				return fmt.Errorf("failed to create ConfigMap %s: %v", cm.Name, err)
-			}
-			continue
-		}
-
-		cm, err = create(data, existing.DeepCopy())
-		if err != nil {
-			return fmt.Errorf("failed to build ConfigMap: %v", err)
-		}
-		if cm.Annotations == nil {
-			cm.Annotations = map[string]string{}
-		}
-		cm.Annotations[checksumAnnotation] = getChecksumForMapStringString(cm.Data)
-
-		if existing.Annotations == nil {
-			existing.Annotations = map[string]string{}
-		}
-		annotationVal, annotationExists := existing.Annotations[checksumAnnotation]
-		if annotationExists && annotationVal == cm.Annotations[checksumAnnotation] {
-			continue
-		}
-
-		if _, err = cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName).Update(cm); err != nil {
-			return fmt.Errorf("failed to update ConfigMap %s: %v", cm.Name, err)
+		if err := resources.EnsureConfigMap(data, create, cc.configMapLister.ConfigMaps(c.Status.NamespaceName), cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName)); err != nil {
+			return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)
 		}
 	}
 
 	return nil
-}
-
-func getChecksumForMapStringByteSlice(data map[string][]byte) string {
-	// Maps are unordered so we have to sort it first
-	var keyVals []string
-	for k := range data {
-		keyVals = append(keyVals, fmt.Sprintf("%s:%s", k, string(data[k])))
-	}
-	return getChecksumForStringSlice(keyVals)
-}
-
-func getChecksumForMapStringString(data map[string]string) string {
-	// Maps are unordered so we have to sort it first
-	var keyVals []string
-	for k := range data {
-		keyVals = append(keyVals, fmt.Sprintf("%s:%s", k, data[k]))
-	}
-	return getChecksumForStringSlice(keyVals)
-}
-
-func getChecksumForStringSlice(stringSlice []string) string {
-	sort.Strings(stringSlice)
-	buffer := bytes.NewBuffer(nil)
-	for _, item := range stringSlice {
-		buffer.WriteString(item)
-	}
-	return fmt.Sprintf("%v", crc32.ChecksumIEEE(buffer.Bytes()))
 }
 
 // GetStatefulSetCreators returns all StatefulSetCreators that are currently in use
