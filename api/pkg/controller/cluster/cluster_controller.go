@@ -13,6 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 
+	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,6 +41,7 @@ import (
 type UserClusterConnectionProvider interface {
 	GetClient(*kubermaticv1.Cluster) (kubernetes.Interface, error)
 	GetMachineClient(*kubermaticv1.Cluster) (machineclientset.Interface, error)
+	GetApiextensionsClient(*kubermaticv1.Cluster) (apiextensionsclientset.Interface, error)
 }
 
 // Controller is a controller which is responsible for managing clusters

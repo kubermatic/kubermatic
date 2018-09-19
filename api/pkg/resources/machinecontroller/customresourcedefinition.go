@@ -7,7 +7,7 @@ import (
 )
 
 // MachineCRD returns the machine CRD definition
-func MachineCRD(_ resources.ClusterRoleDataProvider, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
+func MachineCRD(existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
 	if existing == nil {
 		existing = &apiextensionsv1beta1.CustomResourceDefinition{}
 	}
@@ -19,7 +19,7 @@ func MachineCRD(_ resources.ClusterRoleDataProvider, existing *apiextensionsv1be
 }
 
 // MachineSetCRD returns the machineset CRD definition
-func MachineSetCRD(_ resources.ClusterRoleDataProvider, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
+func MachineSetCRD(existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
 	if existing == nil {
 		existing = &apiextensionsv1beta1.CustomResourceDefinition{}
 	}
@@ -32,7 +32,7 @@ func MachineSetCRD(_ resources.ClusterRoleDataProvider, existing *apiextensionsv
 }
 
 // MachineDeploymentCRD returns the machinedeployments CRD definition
-func MachineDeploymentCRD(_ resources.ClusterRoleDataProvider, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
+func MachineDeploymentCRD(existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
 	if existing == nil {
 		existing = &apiextensionsv1beta1.CustomResourceDefinition{}
 	}
@@ -45,7 +45,7 @@ func MachineDeploymentCRD(_ resources.ClusterRoleDataProvider, existing *apiexte
 }
 
 // ClusterCRD returns the cluster crd definition
-func ClusterCRD(_ resources.ClusterRoleDataProvider, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
+func ClusterCRD(existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
 	if existing == nil {
 		existing = &apiextensionsv1beta1.CustomResourceDefinition{}
 	}
