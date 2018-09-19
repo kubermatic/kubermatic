@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"net"
 	"strings"
-	"time"
+
+	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 
 	"github.com/golang/glog"
 
@@ -60,7 +61,7 @@ func (nf *networkFlags) Set(value string) error {
 	splitted := strings.Split(value, ",")
 
 	if len(splitted) < 3 {
-		return fmt.Errorf("Expected cidr,gateway,dns1,dns2,... but got: %s", value)
+		return fmt.Errorf("expected cidr,gateway,dns1,dns2,... but got: %s", value)
 	}
 
 	cidrStr := splitted[0]
@@ -119,10 +120,10 @@ func main() {
 			options.IncludeUninitialized = true
 		}
 
-		factory := machineinformers.NewFilteredSharedInformerFactory(client, 20*time.Second, metav1.NamespaceAll, tweakFunc)
-		informer := factory.Machine().V1alpha1().Machines()
+		factory := machineinformers.NewFilteredSharedInformerFactory(client, informer.DefaultInformerResyncPeriod, metav1.NamespaceAll, tweakFunc)
+		machineInformer := factory.Machine().V1alpha1().Machines()
 
-		controller := ipam.NewController(client, informer, networks)
+		controller := ipam.NewController(client, machineInformer, networks)
 
 		factory.Start(stopCh)
 		factory.WaitForCacheSync(stopCh)
