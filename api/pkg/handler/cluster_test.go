@@ -486,7 +486,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 			if res.Code != tc.HTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
-			compareWithResult(t, res, tc.ExpectedResponse)
+			compareJSON(t, res, tc.ExpectedResponse)
 		})
 	}
 }
@@ -1360,7 +1360,7 @@ func TestListClusters(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			compareWithResult(t, res, tc.ExpectedResponse)
+			compareJSON(t, res, tc.ExpectedResponse)
 		})
 	}
 }
@@ -1890,7 +1890,7 @@ func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 		t.Errorf("revocation response does not contain updated admin token, but '%s'", response.Token)
 	}
 
-	if err := validation.ValidateKubernetesToken(response.Token); err != nil {
+	if err = validation.ValidateKubernetesToken(response.Token); err != nil {
 		t.Errorf("generated token '%s' is malformed: %v", response.Token, err)
 	}
 
