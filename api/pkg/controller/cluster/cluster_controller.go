@@ -426,20 +426,12 @@ func (cc *Controller) handleErr(err error, key interface{}) {
 		return
 	}
 
-	// This controller retries 5 times if something goes wrong. After that, it stops trying.
-	if cc.queue.NumRequeues(key) < 5 {
-		glog.V(0).Infof("Error syncing cluster %v: %v", key, err)
+	glog.V(0).Infof("Error syncing cluster %v: %v", key, err)
 
-		// Re-enqueue the key rate limited. Based on the rate limiter on the
-		// queue and the re-enqueue history, the key will be processed later again.
-		cc.queue.AddRateLimited(key)
-		return
-	}
-
-	cc.queue.Forget(key)
-	// Report to an external entity that, even after several retries, we could not successfully process this key
+	// Re-enqueue the key rate limited. Based on the rate limiter on the
+	// queue and the re-enqueue history, the key will be processed later again.
+	cc.queue.AddRateLimited(key)
 	runtime.HandleError(err)
-	glog.V(0).Infof("Dropping cluster %q out of the queue: %v", key, err)
 }
 
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
