@@ -27,3 +27,9 @@ updates:
 - from: 1.11.*
   to: 1.11.*
   automatic: false
+
+# ======= 1.12 =======
+# Allow to change to any patch version
+- from: 1.12.*
+  to: 1.12.*
+  automatic: false
