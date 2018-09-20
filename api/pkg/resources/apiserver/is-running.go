@@ -23,10 +23,16 @@ func IsRunningInitContainer(data resources.DeploymentDataProvider) (*corev1.Cont
 		Command:         []string{"/bin/sh"},
 		Args: []string{
 			"-c",
-			fmt.Sprintf(`while ! curl --insecure --show-error --max-time 3 %s/healthz; do
+			fmt.Sprintf(`
+			name=%s
+			port=%s
+			# manual re-resolving enables use of trailing dot with curl
+			ip=$(getent hosts $name | cut -d" " -f1)
+			while ! curl --resolve $name:$port:$ip --insecure --silent --show-error --max-time 3 %s/healthz; do
 				[ $(( timeout++ )) -gt 100 ] && exit 1
 				sleep 2
-			done`, url),
+				ip=$(getent hosts $name | cut -d" " -f1)
+			done`, url.Hostname(), url.Port(), url),
 		},
 		TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 		TerminationMessagePolicy: corev1.TerminationMessageReadFile,
