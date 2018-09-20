@@ -47,10 +47,13 @@ func TestEnsureProjectIsInActivePhase(t *testing.T) {
 			objs := []runtime.Object{}
 			objs = append(objs, test.expectedProject)
 			kubermaticFakeClient := kubermaticfakeclientset.NewSimpleClientset(objs...)
+			fakeMasterClusterProvider := &ClusterProvider{
+				kubermaticClient: kubermaticFakeClient,
+			}
 
 			// act
 			target := Controller{}
-			target.kubermaticMasterClient = kubermaticFakeClient
+			target.masterClusterProvider = fakeMasterClusterProvider
 			err := target.ensureProjectIsInActivePhase(test.projectToSync)
 
 			// validate
@@ -105,10 +108,13 @@ func TestEnsureProjectInitialized(t *testing.T) {
 			objs := []runtime.Object{}
 			objs = append(objs, test.expectedProject)
 			kubermaticFakeClient := kubermaticfakeclientset.NewSimpleClientset(objs...)
+			fakeMasterClusterProvider := &ClusterProvider{
+				kubermaticClient: kubermaticFakeClient,
+			}
 
 			// act
 			target := Controller{}
-			target.kubermaticMasterClient = kubermaticFakeClient
+			target.masterClusterProvider = fakeMasterClusterProvider
 			err := target.ensureProjectInitialized(test.projectToSync)
 
 			// validate
@@ -462,6 +468,10 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 			}
 			fakeKubeClient := fake.NewSimpleClientset(objs...)
 			roleBindingsLister := rbaclister.NewClusterRoleBindingLister(roleBindingsIndexer)
+			fakeMasterClusterProvider := &ClusterProvider{
+				kubeClient:                   fakeKubeClient,
+				rbacClusterRoleBindingLister: roleBindingsLister,
+			}
 
 			seedClusterProviders := make([]*ClusterProvider, test.seedClusters)
 			for i := 0; i < test.seedClusters; i++ {
@@ -486,9 +496,8 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 
 			// act
 			target := Controller{}
-			target.kubeMasterClient = fakeKubeClient
+			target.masterClusterProvider = fakeMasterClusterProvider
 			target.projectResources = test.projectResourcesToSync
-			target.rbacClusterRoleBindingMasterLister = roleBindingsLister
 			target.seedClusterProviders = seedClusterProviders
 			err := target.ensureClusterRBACRoleBindingForResources(test.projectToSync)
 
@@ -739,12 +748,15 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 			userIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			userLister := kubermaticv1lister.NewUserLister(userIndexer)
 			fakeKubermaticMasterClient := kubermaticfakeclientset.NewSimpleClientset(test.projectToSync)
+			fakeMasterClusterProvider := &ClusterProvider{
+				kubermaticClient: fakeKubermaticMasterClient,
+			}
 
 			// act
 			target := Controller{}
 			target.seedClusterProviders = seedClusterProviders
 			target.userLister = userLister
-			target.kubermaticMasterClient = fakeKubermaticMasterClient
+			target.masterClusterProvider = fakeMasterClusterProvider
 			err := target.ensureProjectCleanup(test.projectToSync)
 			if err != nil {
 				t.Fatal(err)
@@ -986,8 +998,12 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				objs = append(objs, existingClusterRoleBinding)
 			}
 
-			fakeKubeClient := fake.NewSimpleClientset(objs...)
-			fakeKubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjs...)
+			fakeMasterKubeClient := fake.NewSimpleClientset(objs...)
+			fakeMasterKubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjs...)
+			fakeMasterClusterProvider := &ClusterProvider{
+				kubeClient:       fakeMasterKubeClient,
+				kubermaticClient: fakeMasterKubermaticClient,
+			}
 			seedClusterProviders := make([]*ClusterProvider, test.seedClusters)
 			for i := 0; i < test.seedClusters; i++ {
 				objs := []runtime.Object{}
@@ -1004,8 +1020,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 
 			// act
 			target := Controller{}
-			target.kubeMasterClient = fakeKubeClient
-			target.kubermaticMasterClient = fakeKubermaticClient
+			target.masterClusterProvider = fakeMasterClusterProvider
 			target.projectResources = test.projectResourcesToSync
 			target.seedClusterProviders = seedClusterProviders
 			target.projectLister = projectLister
@@ -1016,6 +1031,11 @@ func TestEnsureProjectCleanup(t *testing.T) {
 			{
 				if err != nil {
 					t.Fatal(err)
+				}
+
+				fakeKubeClient, ok := fakeMasterClusterProvider.kubeClient.(*fake.Clientset)
+				if !ok {
+					t.Fatal("unable to cast fakeMasterClusterProvider.kubeCLient to *fake.Clientset")
 				}
 
 				if len(test.expectedClusterRoleBindingsForMaster) == 0 {
@@ -1064,7 +1084,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				}
 
 				if len(seedKubeClient.Actions()) != len(test.expectedActionsForSeeds) {
-					t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+					t.Fatalf("unexpected actions %#v", seedKubeClient.Actions())
 				}
 
 				createActionIndex := 0
@@ -1599,6 +1619,10 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			fakeKubeClient := fake.NewSimpleClientset(objs...)
 			roleIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			roleLister := rbaclister.NewClusterRoleLister(roleIndexer)
+			fakeMasterClusterProvider := &ClusterProvider{
+				kubeClient:            fakeKubeClient,
+				rbacClusterRoleLister: roleLister,
+			}
 
 			seedClusterProviders := make([]*ClusterProvider, test.seedClusters)
 			for i := 0; i < test.seedClusters; i++ {
@@ -1611,9 +1635,8 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 
 			// act
 			target := Controller{}
-			target.kubeMasterClient = fakeKubeClient
+			target.masterClusterProvider = fakeMasterClusterProvider
 			target.projectResources = test.projectResourcesToSync
-			target.rbacClusterRoleMasterLister = roleLister
 			target.seedClusterProviders = seedClusterProviders
 			err := target.ensureClusterRBACRoleForResources()
 
@@ -2039,12 +2062,15 @@ func TestEnsureProjectOwner(t *testing.T) {
 				objs = append(objs, test.existingBinding)
 			}
 			kubermaticFakeClient := kubermaticfakeclientset.NewSimpleClientset(objs...)
+			fakeMasterClusterProvider := &ClusterProvider{
+				kubermaticClient: kubermaticFakeClient,
+			}
 			userLister := kubermaticv1lister.NewUserLister(userIndexer)
 			bindingLister := kubermaticv1lister.NewUserProjectBindingLister(bindingIndexer)
 
 			// act
 			target := Controller{}
-			target.kubermaticMasterClient = kubermaticFakeClient
+			target.masterClusterProvider = fakeMasterClusterProvider
 			target.userLister = userLister
 			target.userProjectBindingLister = bindingLister
 			err := target.ensureProjectOwner(test.projectToSync)
