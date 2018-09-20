@@ -191,8 +191,9 @@ spec:
           manual re-resolving enables use of trailing dot with curl\n\t\t\tip=$(getent
           hosts $name | cut -d\" \" -f1)\n\t\t\twhile ! curl --resolve $name:$port:$ip
           --insecure --silent --show-error --max-time 3 https://apiserver-external.cluster-de-test-01.svc.cluster.local:30000/healthz;
-          do\n\t\t\t\t[ $(( timeout++ )) -gt 100 ] && exit 1\n\t\t\t\tsleep 2\n\t\t\t\tip=$(getent
-          hosts $name | cut -d\" \" -f1)\n\t\t\tdone"
+          do\n\t\t\t\tif [ $(( timeout++ )) -gt 100 ]; then\n\t\t\t\t\techo \"Giving
+          up after 100 tries.\"\n\t\t\t\t\texit 1\n\t\t\t\tfi\n\t\t\t\tsleep 2\n\t\t\t\techo
+          \"Retry $timeout/3\"\n\t\t\t\tip=$(getent hosts $name | cut -d\" \" -f1)\n\t\t\tdone"
         command:
         - /bin/sh
         image: quay.io/kubermatic/curl:v0.1
