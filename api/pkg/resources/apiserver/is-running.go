@@ -34,7 +34,7 @@ func IsRunningInitContainer(data resources.DeploymentDataProvider) (*corev1.Cont
 					exit 1
 				fi
 				sleep 2
-				echo "Retry $timeout/3"
+				echo "Retry $timeout/100"
 				ip=$(getent hosts $name | cut -d" " -f1)
 			done`, url.Hostname(), url.Port(), url),
 		},
