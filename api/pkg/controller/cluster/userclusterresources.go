@@ -366,6 +366,7 @@ func (cc *Controller) userClusterEnsureConfigMaps(c *kubermaticv1.Cluster) error
 	return nil
 }
 
+// GetCRDCreators reuturns a list of CRDCreateors
 func GetCRDCreators() []resources.CRDCreateor {
 	return []resources.CRDCreateor{
 		machinecontroller.MachineCRD,

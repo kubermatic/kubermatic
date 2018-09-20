@@ -731,7 +731,7 @@
   revision = "7cafcd837844e784b526369c9bce262804aebc60"
 
 [[projects]]
-  digest = "1:3f29a94f26ec58bf8476c3ee03cda71de4c8bff3de8513287cba9711afdab92f"
+  digest = "1:23375c9669d1374b66acf7fb4f27d62a37ec3c8f59de2c2437800de8841aff82"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/apis/cluster/v1alpha1/conversions",
@@ -740,11 +740,6 @@
     "pkg/client/clientset/versioned/scheme",
     "pkg/client/clientset/versioned/typed/machines/v1alpha1",
     "pkg/client/clientset/versioned/typed/machines/v1alpha1/fake",
-    "pkg/client/informers/externalversions",
-    "pkg/client/informers/externalversions/internalinterfaces",
-    "pkg/client/informers/externalversions/machines",
-    "pkg/client/informers/externalversions/machines/v1alpha1",
-    "pkg/client/listers/machines/v1alpha1",
     "pkg/cloudprovider/cloud",
     "pkg/cloudprovider/common/ssh",
     "pkg/cloudprovider/errors",
@@ -1720,15 +1715,17 @@
   version = "v1.10.5"
 
 [[projects]]
-  digest = "1:549b51380913a07f542a9c24438735b1894d56eaa1ab7c99588b9bb5c6883879"
+  digest = "1:841d5841a6667835a5e95e04aa25787dcb6d60fe39caa7409db4802fc9e708e9"
   name = "sigs.k8s.io/cluster-api"
   packages = [
     "pkg/apis/cluster",
     "pkg/apis/cluster/common",
     "pkg/apis/cluster/v1alpha1",
     "pkg/client/clientset_generated/clientset",
+    "pkg/client/clientset_generated/clientset/fake",
     "pkg/client/clientset_generated/clientset/scheme",
     "pkg/client/clientset_generated/clientset/typed/cluster/v1alpha1",
+    "pkg/client/clientset_generated/clientset/typed/cluster/v1alpha1/fake",
     "pkg/client/informers_generated/externalversions",
     "pkg/client/informers_generated/externalversions/cluster",
     "pkg/client/informers_generated/externalversions/cluster/v1alpha1",
@@ -1792,7 +1789,6 @@
     "github.com/hetznercloud/hcloud-go/hcloud",
     "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned",
     "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned/fake",
-    "github.com/kubermatic/machine-controller/pkg/client/informers/externalversions",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean",
@@ -1903,9 +1899,12 @@
     "k8s.io/code-generator/cmd/deepcopy-gen",
     "k8s.io/gengo/examples/defaulter-gen/generators",
     "k8s.io/kubernetes/pkg/printers",
+    "sigs.k8s.io/cluster-api/pkg/apis/cluster/common",
     "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1",
     "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset",
+    "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset/fake",
     "sigs.k8s.io/cluster-api/pkg/client/informers_generated/externalversions",
+    "sigs.k8s.io/cluster-api/pkg/client/informers_generated/externalversions/cluster/v1alpha1",
     "sigs.k8s.io/cluster-api/pkg/client/listers_generated/cluster/v1alpha1",
     "vbom.ml/util/sortorder",
   ]

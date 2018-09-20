@@ -6,21 +6,22 @@ import (
 	"testing"
 	"time"
 
-	machinefake "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned/fake"
-	machineinformers "github.com/kubermatic/machine-controller/pkg/client/informers/externalversions"
-	machinev1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1fakeclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset/fake"
+	clusterinformers "sigs.k8s.io/cluster-api/pkg/client/informers_generated/externalversions"
 )
 
 type machineTestData struct {
 	ip      string
 	gw      string
-	machine *machinev1alpha1.Machine
+	machine *clusterv1alpha1.Machine
 }
 
 func TestSingleCIDRAllocation(t *testing.T) {
@@ -35,7 +36,7 @@ func TestSingleCIDRAllocation(t *testing.T) {
 		t.Errorf("error in machineAdded handler: %v", err)
 	}
 
-	m2, err := ctrl.client.MachineV1alpha1().Machines().Get("susi", metav1.GetOptions{})
+	m2, err := ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Get("susi", metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
@@ -69,7 +70,7 @@ func TestMultipleCIDRAllocation(t *testing.T) {
 			t.Errorf("error in machineAdded handler: %v", err)
 		}
 
-		m2, err := ctrl.client.MachineV1alpha1().Machines().Get(tuple.machine.Name, metav1.GetOptions{})
+		m2, err := ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Get(tuple.machine.Name, metav1.GetOptions{})
 		if err != nil {
 			t.Errorf("couldn't retrieve updated machine, see: %v", err)
 		}
@@ -92,19 +93,19 @@ func TestReuseReleasedIP(t *testing.T) {
 		t.Errorf("error in machineAdded handler: %v", err)
 	}
 
-	mSusi2, err := ctrl.client.MachineV1alpha1().Machines().Get("susi", metav1.GetOptions{})
+	mSusi2, err := ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Get("susi", metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
 
 	assertNetworkEquals(t, mSusi2, "192.168.0.2/16", "192.168.0.1", "8.8.8.8")
 
-	err = ctrl.client.MachineV1alpha1().Machines().Delete("susi", &metav1.DeleteOptions{})
+	err = ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceAll).Delete("susi", &metav1.DeleteOptions{})
 	if err != nil {
 		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
 	err = wait.Poll(5*time.Millisecond, 5*time.Second, func() (bool, error) {
-		_, err = ctrl.machineLister.Get("susi")
+		_, err = ctrl.machineLister.Machines(metav1.NamespaceSystem).Get("susi")
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
 				return true, nil
@@ -122,7 +123,7 @@ func TestReuseReleasedIP(t *testing.T) {
 		t.Errorf("error in machineAdded handler: %v", err)
 	}
 
-	mBabsi2, err := ctrl.client.MachineV1alpha1().Machines().Get("babsi", metav1.GetOptions{})
+	mBabsi2, err := ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Get("babsi", metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
@@ -156,16 +157,19 @@ func TestFailWhenCIDRIsExhausted(t *testing.T) {
 	}
 }
 
-func createMachine(name string) *machinev1alpha1.Machine {
-	machine := &machinev1alpha1.Machine{
+func createMachine(name string) *clusterv1alpha1.Machine {
+	machine := &clusterv1alpha1.Machine{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:      name,
+			Namespace: metav1.NamespaceSystem,
 			Initializers: &metav1.Initializers{
 				Pending: []metav1.Initializer{{Name: initializerName}},
 			},
 		},
-		Spec: machinev1alpha1.MachineSpec{
-			ProviderConfig: runtime.RawExtension{Raw: []byte{'{', '}'}},
+		Spec: clusterv1alpha1.MachineSpec{
+			ProviderConfig: clusterv1alpha1.ProviderConfig{
+				Value: &runtime.RawExtension{Raw: []byte{'{', '}'}},
+			},
 		},
 	}
 
@@ -177,10 +181,10 @@ func newTestController(networks []Network, objects ...runtime.Object) (*Controll
 		options.IncludeUninitialized = true
 	}
 
-	client := machinefake.NewSimpleClientset(objects...)
-	factory := machineinformers.NewFilteredSharedInformerFactory(client, 1*time.Second, metav1.NamespaceAll, tweakFunc)
+	client := clusterv1alpha1fakeclientset.NewSimpleClientset(objects...)
+	factory := clusterinformers.NewFilteredSharedInformerFactory(client, 1*time.Second, metav1.NamespaceAll, tweakFunc)
 
-	controller := NewController(client, factory.Machine().V1alpha1().Machines(), networks)
+	controller := NewController(client, factory.Cluster().V1alpha1().Machines(), networks)
 	stopCh := make(chan struct{})
 
 	factory.Start(stopCh)
@@ -208,7 +212,7 @@ func buildNet(t *testing.T, cidr string, gw string, dnsServers ...string) Networ
 	}
 }
 
-func assertNetworkEquals(t *testing.T, m *machinev1alpha1.Machine, ip string, gw string, dns ...string) {
+func assertNetworkEquals(t *testing.T, m *clusterv1alpha1.Machine, ip string, gw string, dns ...string) {
 	network, err := getNetworkForMachine(m)
 	if err != nil {
 		t.Errorf("couldn't get network for machine %s, see: %v", m.Name, err)
@@ -230,7 +234,7 @@ func assertNetworkEquals(t *testing.T, m *machinev1alpha1.Machine, ip string, gw
 	}
 }
 
-func getNetworkForMachine(m *machinev1alpha1.Machine) (*providerconfig.NetworkConfig, error) {
+func getNetworkForMachine(m *clusterv1alpha1.Machine) (*providerconfig.NetworkConfig, error) {
 	cfg, err := providerconfig.GetConfig(m.Spec.ProviderConfig)
 	if err != nil {
 		return nil, err
