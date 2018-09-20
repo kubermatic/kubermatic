@@ -1,42 +1,44 @@
 metadata:
   creationTimestamp: null
   name: machine-openstackcluster-1a2b3c4d5e-te5s7
+  namespace: kube-system
 spec:
   metadata:
     creationTimestamp: null
     name: openstackcluster-1a2b3c4d5e-te5s7
   providerConfig:
-    cloudProvider: openstack
-    cloudProviderSpec:
-      availabilityZone: os-availability-zone
-      domainName: ""
-      flavor: os-flavor
-      floatingIpPool: os-floating-ip-pool
-      identityEndpoint: os-auth-url
-      image: os-image
-      network: os-network
-      password: ""
-      region: os-region
-      securityGroups:
-      - os-security-groups
-      subnet: os-subnet-id
-      tags:
-        foo: bar
-        kubermatic-cluster: openstackcluster-1a2b3c4d5e
-      tenantName: ""
-      tokenId: ""
-      username: ""
-    operatingSystem: ubuntu
-    operatingSystemSpec:
-      distUpgradeOnBoot: false
-    sshPublicKeys:
-    - ssh-rsa TEST123test
-  roles:
-  - Node
+    ValueFrom: null
+    value:
+      cloudProvider: openstack
+      cloudProviderSpec:
+        availabilityZone: os-availability-zone
+        domainName: ""
+        flavor: os-flavor
+        floatingIpPool: os-floating-ip-pool
+        identityEndpoint: os-auth-url
+        image: os-image
+        network: os-network
+        password: ""
+        region: os-region
+        securityGroups:
+        - os-security-groups
+        subnet: os-subnet-id
+        tags:
+          foo: bar
+          kubermatic-cluster: openstackcluster-1a2b3c4d5e
+        tenantName: ""
+        tokenId: ""
+        username: ""
+      containerRuntimeInfo:
+        name: docker
+        version: ""
+      operatingSystem: ubuntu
+      operatingSystemSpec:
+        distUpgradeOnBoot: false
+      sshPublicKeys:
+      - ssh-rsa TEST123test
   versions:
-    containerRuntime:
-      name: ""
-      version: ""
     kubelet: v1.9.6
 status:
   lastUpdated: null
+  providerStatus: null

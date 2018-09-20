@@ -1,36 +1,38 @@
 metadata:
   creationTimestamp: null
   name: machine-docluster-1a2b3c4d5e-te5s7
+  namespace: kube-system
 spec:
   metadata:
     creationTimestamp: null
     name: docluster-1a2b3c4d5e-te5s7
   providerConfig:
-    cloudProvider: digitalocean
-    cloudProviderSpec:
-      backups: false
-      ipv6: false
-      monitoring: true
-      private_networking: true
-      region: fra1
-      size: s-1vcpu-1gb
-      tags:
-      - digitalocean-example-tag-1
-      - digitalocean-example-tag-2
-      - kubermatic
-      - kubermatic-cluster-docluster-1a2b3c4d5e
-      token: ""
-    operatingSystem: ubuntu
-    operatingSystemSpec:
-      distUpgradeOnBoot: false
-    sshPublicKeys:
-    - ssh-rsa TEST123test
-  roles:
-  - Node
+    ValueFrom: null
+    value:
+      cloudProvider: digitalocean
+      cloudProviderSpec:
+        backups: false
+        ipv6: false
+        monitoring: true
+        private_networking: true
+        region: fra1
+        size: s-1vcpu-1gb
+        tags:
+        - digitalocean-example-tag-1
+        - digitalocean-example-tag-2
+        - kubermatic
+        - kubermatic-cluster-docluster-1a2b3c4d5e
+        token: ""
+      containerRuntimeInfo:
+        name: docker
+        version: ""
+      operatingSystem: ubuntu
+      operatingSystemSpec:
+        distUpgradeOnBoot: false
+      sshPublicKeys:
+      - ssh-rsa TEST123test
   versions:
-    containerRuntime:
-      name: ""
-      version: ""
     kubelet: v1.9.6
 status:
   lastUpdated: null
+  providerStatus: null

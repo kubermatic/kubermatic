@@ -1,28 +1,30 @@
 metadata:
   creationTimestamp: null
   name: machine-hetznercluster-1a2b3c4d5e-te5s7
+  namespace: kube-system
 spec:
   metadata:
     creationTimestamp: null
     name: hetznercluster-1a2b3c4d5e-te5s7
   providerConfig:
-    cloudProvider: hetzner
-    cloudProviderSpec:
-      datacenter: hetzner-datacenter
-      location: hetzner-location
-      serverType: hetzner-type
-      token: ""
-    operatingSystem: ubuntu
-    operatingSystemSpec:
-      distUpgradeOnBoot: false
-    sshPublicKeys:
-    - ssh-rsa TEST123test
-  roles:
-  - Node
+    ValueFrom: null
+    value:
+      cloudProvider: hetzner
+      cloudProviderSpec:
+        datacenter: hetzner-datacenter
+        location: hetzner-location
+        serverType: hetzner-type
+        token: ""
+      containerRuntimeInfo:
+        name: docker
+        version: ""
+      operatingSystem: ubuntu
+      operatingSystemSpec:
+        distUpgradeOnBoot: false
+      sshPublicKeys:
+      - ssh-rsa TEST123test
   versions:
-    containerRuntime:
-      name: ""
-      version: ""
     kubelet: v1.9.6
 status:
   lastUpdated: null
+  providerStatus: null

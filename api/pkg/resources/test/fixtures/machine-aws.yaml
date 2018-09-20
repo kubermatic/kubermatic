@@ -1,42 +1,44 @@
 metadata:
   creationTimestamp: null
   name: machine-awscluster-1a2b3c4d5e-te5s7
+  namespace: kube-system
 spec:
   metadata:
     creationTimestamp: null
     name: awscluster-1a2b3c4d5e-te5s7
   providerConfig:
-    cloudProvider: aws
-    cloudProviderSpec:
-      accessKeyId: ""
-      ami: aws-ami
-      availabilityZone: fra1aws-zone-character
-      diskSize: 25
-      diskType: standard
-      instanceProfile: aws-instance-profile-name
-      instanceType: t2.micro
-      region: fra1
-      secretAccessKey: ""
-      securityGroupIDs:
-      - aws-security-group-id
-      subnetId: aws-subnet-id
-      tags:
-        AWSExampleTagKey1: AWSExampleTagValue1
-        AWSExampleTagKey2: AWSExampleTagValue2
-        kubernetes.io/cluster/awscluster-1a2b3c4d5e: ""
-      vpcId: aws-vpc-ic
-    operatingSystem: ubuntu
-    operatingSystemSpec:
-      distUpgradeOnBoot: false
-    sshPublicKeys:
-    - ssh-rsa TEST123test
-    - ssh-rsa TEST456test
-  roles:
-  - Node
+    ValueFrom: null
+    value:
+      cloudProvider: aws
+      cloudProviderSpec:
+        accessKeyId: ""
+        ami: aws-ami
+        availabilityZone: fra1aws-zone-character
+        diskSize: 25
+        diskType: standard
+        instanceProfile: aws-instance-profile-name
+        instanceType: t2.micro
+        region: fra1
+        secretAccessKey: ""
+        securityGroupIDs:
+        - aws-security-group-id
+        subnetId: aws-subnet-id
+        tags:
+          AWSExampleTagKey1: AWSExampleTagValue1
+          AWSExampleTagKey2: AWSExampleTagValue2
+          kubernetes.io/cluster/awscluster-1a2b3c4d5e: ""
+        vpcId: aws-vpc-ic
+      containerRuntimeInfo:
+        name: docker
+        version: ""
+      operatingSystem: ubuntu
+      operatingSystemSpec:
+        distUpgradeOnBoot: false
+      sshPublicKeys:
+      - ssh-rsa TEST123test
+      - ssh-rsa TEST456test
   versions:
-    containerRuntime:
-      name: ""
-      version: ""
     kubelet: v1.9.6
 status:
   lastUpdated: null
+  providerStatus: null
