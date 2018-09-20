@@ -20,14 +20,13 @@ func IsRunningInitContainer(data resources.DeploymentDataProvider) (*corev1.Cont
 		Name:            "apiserver-running",
 		Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/curl:v0.1",
 		ImagePullPolicy: corev1.PullIfNotPresent,
-		Command:         []string{"/usr/bin/curl"},
+		Command:         []string{"/bin/sh"},
 		Args: []string{
-			"--retry", "100",
-			"--retry-delay", "2",
-			"--insecure",
-			"--silent",
-			"--show-error",
-			fmt.Sprintf("%s/healthz", url),
+			"-c",
+			fmt.Sprintf(`while ! curl --insecure --show-error --max-time 3 %s/healthz; do
+				[ $(( timeout++ )) -gt 100 ] && exit 1
+				sleep 2
+			done`, url),
 		},
 		TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 		TerminationMessagePolicy: corev1.TerminationMessageReadFile,
