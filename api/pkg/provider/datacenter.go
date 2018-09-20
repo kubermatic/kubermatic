@@ -37,9 +37,9 @@ type OpenstackSpec struct {
 	AuthURL          string `yaml:"auth_url"`
 	AvailabilityZone string `yaml:"availability_zone"`
 	Region           string `yaml:"region"`
-	IgnoreVolumeAZ   bool   `yaml:"ignore_volume_az"`
+	IgnoreVolumeAZ   bool   `yaml:"ignore_volume_az,omitempty"`
 	// Used for automatic network creation
-	DNSServers []string  `yaml:"dns_servers"`
+	DNSServers []string  `yaml:"dns_servers,omitempty"`
 	Images     ImageList `yaml:"images"`
 }
 
@@ -58,7 +58,7 @@ type VSphereCredentials struct {
 // VSphereSpec describes a vsphere datacenter
 type VSphereSpec struct {
 	Endpoint      string `yaml:"endpoint"`
-	AllowInsecure bool   `yaml:"allow_insecure"`
+	AllowInsecure bool   `yaml:"allow_insecure,omitempty"`
 
 	Datastore  string    `yaml:"datastore"`
 	Datacenter string    `yaml:"datacenter"`
@@ -85,23 +85,23 @@ type BringYourOwnSpec struct {
 
 // DatacenterSpec describes mutually points to provider datacenter spec
 type DatacenterSpec struct {
-	Digitalocean *DigitaloceanSpec `yaml:"digitalocean"`
-	BringYourOwn *BringYourOwnSpec `yaml:"bringyourown"`
-	AWS          *AWSSpec          `yaml:"aws"`
-	Azure        *AzureSpec        `yaml:"azure"`
-	Openstack    *OpenstackSpec    `yaml:"openstack"`
-	Hetzner      *HetznerSpec      `yaml:"hetzner"`
-	VSphere      *VSphereSpec      `yaml:"vsphere"`
+	Digitalocean *DigitaloceanSpec `yaml:"digitalocean,omitempty"`
+	BringYourOwn *BringYourOwnSpec `yaml:"bringyourown,omitempty"`
+	AWS          *AWSSpec          `yaml:"aws,omitempty"`
+	Azure        *AzureSpec        `yaml:"azure,omitempty"`
+	Openstack    *OpenstackSpec    `yaml:"openstack,omitempty"`
+	Hetzner      *HetznerSpec      `yaml:"hetzner,omitempty"`
+	VSphere      *VSphereSpec      `yaml:"vsphere,omitempty"`
 }
 
 // DatacenterMeta describes a Kubermatic datacenter.
 type DatacenterMeta struct {
-	Location         string         `yaml:"location"`
-	Seed             string         `yaml:"seed"`
-	Country          string         `yaml:"country"`
+	Location         string         `yaml:"location,omitempty"`
+	Seed             string         `yaml:"seed,omitempty"`
+	Country          string         `yaml:"country,omitempty"`
 	Spec             DatacenterSpec `yaml:"spec"`
-	Private          bool           `yaml:"private"`
-	IsSeed           bool           `yaml:"is_seed"`
+	Private          bool           `yaml:"private,omitempty"`
+	IsSeed           bool           `yaml:"is_seed,omitempty"`
 	SeedDNSOverwrite *string        `yaml:"seed_dns_overwrite,omitempty"`
 }
 
