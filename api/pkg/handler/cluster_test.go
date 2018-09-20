@@ -1283,7 +1283,7 @@ func TestListClusters(t *testing.T) {
 	testcases := []struct {
 		Name                   string
 		Body                   string
-		ExpectedResponse       string
+		ExpectedClusters       []apiv1.NewCluster
 		HTTPStatus             int
 		ExistingProject        *kubermaticv1.Project
 		ExistingKubermaticUser *kubermaticv1.User
@@ -1292,11 +1292,52 @@ func TestListClusters(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			Name:             "scenario 1: list clusters that belong to the given project",
-			Body:             ``,
-			ExpectedResponse: `[{"id":"InternalNameOfTheObject","name":"cluster-abc","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"MyPowerfulDatacenter","fake":{"token":"SecretToken"}},"version":"9.9.9"},"status":{"version":"9.9.9","url":""}},{"id":"InternalNameOfTheObject_Second","name":"cluster-dcf","creationTimestamp":"2013-02-04T01:54:00Z","spec":{"cloud":{"dc":"DatacenterInEurope","fake":{"token":"SecretToken"}},"version":"6.6.6"},"status":{"version":"6.6.6","url":""}}]`,
-			HTTPStatus:       http.StatusOK,
-			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			Name: "scenario 1: list clusters that belong to the given project",
+			Body: ``,
+			ExpectedClusters: []apiv1.NewCluster{
+				apiv1.NewCluster{
+					NewObjectMeta: apiv1.NewObjectMeta{
+						ID:                "InternalNameOfTheObject",
+						Name:              "cluster-abc",
+						CreationTimestamp: time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
+					},
+					Spec: apiv1.NewClusterSpec{
+						Cloud: kubermaticv1.CloudSpec{
+							DatacenterName: "MyPowerfulDatacenter",
+							Fake: &kubermaticv1.FakeCloudSpec{
+								Token: "SecretToken",
+							},
+						},
+						Version: "9.9.9",
+					},
+					Status: apiv1.NewClusterStatus{
+						Version: "9.9.9",
+						URL:     "",
+					},
+				},
+				apiv1.NewCluster{
+					NewObjectMeta: apiv1.NewObjectMeta{
+						ID:                "InternalNameOfTheObject_Second",
+						Name:              "cluster-dcf",
+						CreationTimestamp: time.Date(2013, 02, 04, 01, 54, 0, 0, time.UTC),
+					},
+					Spec: apiv1.NewClusterSpec{
+						Cloud: kubermaticv1.CloudSpec{
+							DatacenterName: "DatacenterInEurope",
+							Fake: &kubermaticv1.FakeCloudSpec{
+								Token: "SecretToken",
+							},
+						},
+						Version: "6.6.6",
+					},
+					Status: apiv1.NewClusterStatus{
+						Version: "6.6.6",
+						URL:     "",
+					},
+				},
+			},
+			HTTPStatus:      http.StatusOK,
+			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
@@ -1390,7 +1431,19 @@ func TestListClusters(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			compareWithResult(t, res, tc.ExpectedResponse)
+			var receivedClusters []apiv1.NewCluster
+			dec := json.NewDecoder(res.Body)
+			err = dec.Decode(&receivedClusters)
+			assert.NoError(t, err)
+
+			// sort the slices before comparison because the unstable order would make the test flaky otherwise
+			sort.Slice(receivedClusters, func(i int, j int) bool {
+				return receivedClusters[i].CreationTimestamp.Before(receivedClusters[j].CreationTimestamp)
+			})
+			sort.Slice(tc.ExpectedClusters, func(i int, j int) bool {
+				return tc.ExpectedClusters[i].CreationTimestamp.Before(tc.ExpectedClusters[j].CreationTimestamp)
+			})
+			assert.Equal(t, receivedClusters, tc.ExpectedClusters)
 		})
 	}
 }
