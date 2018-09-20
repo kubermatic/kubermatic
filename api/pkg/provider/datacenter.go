@@ -48,6 +48,8 @@ type AzureSpec struct {
 	Location string `yaml:"location"`
 }
 
+// VSphereCredentials describes the credentials used
+// as the infra management user
 type VSphereCredentials struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
