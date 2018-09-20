@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -362,7 +363,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 	testcases := []struct {
 		Name                   string
 		Body                   string
-		ExpectedResponse       string
+		ExpectedSSHKeys        []*apiv1.NewSSHKey
 		HTTPStatus             int
 		ExistingProject        *kubermaticv1.Project
 		ExistingKubermaticUser *kubermaticv1.User
@@ -372,11 +373,40 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			Name:             "scenario 1: gets a list of ssh keys assigned to cluster",
-			Body:             ``,
-			ExpectedResponse: `[{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"yafn","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"fingerprint":"","publicKey":""}},{"id":"key-abc-yafn","name":"abcd","creationTimestamp":"2013-02-03T19:55:00Z","spec":{"fingerprint":"","publicKey":""}}]`,
-			HTTPStatus:       http.StatusOK,
-			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			Name:            "scenario 1: gets a list of ssh keys assigned to cluster",
+			Body:            ``,
+			HTTPStatus:      http.StatusOK,
+			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExpectedSSHKeys: []*apiv1.NewSSHKey{
+				&apiv1.NewSSHKey{
+					NewObjectMeta: apiv1.NewObjectMeta{
+						ID:   "key-c08aa5c7abf34504f18552846485267d-yafn",
+						Name: "yafn",
+						CreationTimestamp: func() time.Time {
+							const longForm = "Jan 2, 2006 at 3:04pm (MST)"
+							creationTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")
+							if err != nil {
+								t.Fatal(err)
+							}
+							return creationTime
+						}(),
+					},
+				},
+				&apiv1.NewSSHKey{
+					NewObjectMeta: apiv1.NewObjectMeta{
+						ID:   "key-abc-yafn",
+						Name: "abcd",
+						CreationTimestamp: func() time.Time {
+							const longForm = "Jan 2, 2006 at 3:04pm (MST)"
+							creationTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:55pm (PST)")
+							if err != nil {
+								t.Fatal(err)
+							}
+							return creationTime
+						}(),
+					},
+				},
+			},
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
@@ -486,7 +516,37 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 			if res.Code != tc.HTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
-			compareWithResult(t, res, tc.ExpectedResponse)
+
+			keysFromResponse := []apiv1.NewSSHKey{}
+			rawBody, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = json.Unmarshal(rawBody, &keysFromResponse)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(keysFromResponse) != len(tc.ExpectedSSHKeys) {
+				t.Fatalf("expected to get %d keys but got %d", len(tc.ExpectedSSHKeys), len(keysFromResponse))
+			}
+
+			for _, expectedKey := range tc.ExpectedSSHKeys {
+				found := false
+				for _, actualKey := range keysFromResponse {
+					if actualKey.ID == expectedKey.ID {
+						if !areEqualOrDie(t, actualKey, expectedKey) {
+							t.Fatalf("actual key != expected key, diff = %v", diff.ObjectDiff(actualKey, expectedKey))
+						}
+						found = true
+					}
+				}
+				if !found {
+					t.Fatalf("the ssh key with the name = %s was not found in the returned output", expectedKey.Name)
+				}
+			}
+
 		})
 	}
 }
