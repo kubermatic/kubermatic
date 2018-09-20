@@ -42,10 +42,10 @@ func (c *Controller) sync(key string) error {
 	if err = c.ensureProjectOwner(project); err != nil {
 		return err
 	}
-	if err = c.ensureClusterRBACRoleForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.kubeMasterClient, c.rbacClusterRoleMasterLister); err != nil {
+	if err = c.ensureClusterRBACRoleForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.masterClusterProvider.kubeClient, c.masterClusterProvider.rbacClusterRoleLister); err != nil {
 		return err
 	}
-	if err = c.ensureClusterRBACRoleBindingForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.kubeMasterClient, c.rbacClusterRoleBindingMasterLister); err != nil {
+	if err = c.ensureClusterRBACRoleBindingForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.masterClusterProvider.kubeClient, c.masterClusterProvider.rbacClusterRoleBindingLister); err != nil {
 		return err
 	}
 	if err = c.ensureClusterRBACRoleForResources(); err != nil {
@@ -64,7 +64,7 @@ func (c *Controller) ensureProjectInitialized(project *kubermaticv1.Project) err
 		finalizers := sets.NewString(project.Finalizers...)
 		finalizers.Insert(cleanupFinalizerName)
 		project.Finalizers = finalizers.List()
-		project, err = c.kubermaticMasterClient.KubermaticV1().Projects().Update(project)
+		project, err = c.masterClusterProvider.kubermaticClient.KubermaticV1().Projects().Update(project)
 		if err != nil {
 			return err
 		}
@@ -76,7 +76,7 @@ func (c *Controller) ensureProjectIsInActivePhase(project *kubermaticv1.Project)
 	var err error
 	if project.Status.Phase != kubermaticv1.ProjectActive {
 		project.Status.Phase = kubermaticv1.ProjectActive
-		project, err = c.kubermaticMasterClient.KubermaticV1().Projects().Update(project)
+		project, err = c.masterClusterProvider.kubermaticClient.KubermaticV1().Projects().Update(project)
 		if err != nil {
 			return err
 		}
@@ -128,7 +128,7 @@ func (c *Controller) ensureProjectOwner(project *kubermaticv1.Project) error {
 		},
 	}
 
-	_, err = c.kubermaticMasterClient.KubermaticV1().UserProjectBindings().Create(ownerBinding)
+	_, err = c.masterClusterProvider.kubermaticClient.KubermaticV1().UserProjectBindings().Create(ownerBinding)
 	return err
 }
 
@@ -145,7 +145,7 @@ func (c *Controller) ensureClusterRBACRoleForResources() error {
 					}
 				}
 			} else {
-				err := ensureClusterRBACRoleForResource(c.kubeMasterClient, groupPrefix, projectResource.gvr.Resource, projectResource.kind, c.rbacClusterRoleMasterLister)
+				err := ensureClusterRBACRoleForResource(c.masterClusterProvider.kubeClient, groupPrefix, projectResource.gvr.Resource, projectResource.kind, c.masterClusterProvider.rbacClusterRoleLister)
 				if err != nil {
 					return err
 				}
@@ -175,7 +175,7 @@ func (c *Controller) ensureClusterRBACRoleBindingForResources(projectName string
 					}
 				}
 			} else {
-				err := ensureClusterRBACRoleBindingForResource(c.kubeMasterClient, groupName, projectResource.gvr.Resource, c.rbacClusterRoleBindingMasterLister)
+				err := ensureClusterRBACRoleBindingForResource(c.masterClusterProvider.kubeClient, groupName, projectResource.gvr.Resource, c.masterClusterProvider.rbacClusterRoleBindingLister)
 				if err != nil {
 					return err
 				}
@@ -303,7 +303,7 @@ func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
 					}
 				}
 			} else {
-				err := cleanUpRBACRoleBindingFor(c.kubeMasterClient, groupName, projectResource.gvr.Resource)
+				err := cleanUpRBACRoleBindingFor(c.masterClusterProvider.kubeClient, groupName, projectResource.gvr.Resource)
 				if err != nil {
 					return err
 				}
@@ -314,7 +314,7 @@ func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
 	finalizers := sets.NewString(project.Finalizers...)
 	finalizers.Delete(cleanupFinalizerName)
 	project.Finalizers = finalizers.List()
-	_, err := c.kubermaticMasterClient.KubermaticV1().Projects().Update(project)
+	_, err := c.masterClusterProvider.kubermaticClient.KubermaticV1().Projects().Update(project)
 	return err
 }
 

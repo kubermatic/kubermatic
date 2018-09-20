@@ -9,7 +9,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticsharedinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -19,8 +18,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
-	rbaclister "k8s.io/client-go/listers/rbac/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -57,20 +54,17 @@ type Controller struct {
 	projectQueue workqueue.RateLimitingInterface
 	metrics      *Metrics
 
-	kubermaticMasterClient   kubermaticclientset.Interface
 	projectLister            kubermaticv1lister.ProjectLister
 	userLister               kubermaticv1lister.UserLister
 	userProjectBindingLister kubermaticv1lister.UserProjectBindingLister
 
-	kubeMasterClient                   kubernetes.Interface
-	rbacClusterRoleMasterLister        rbaclister.ClusterRoleLister
-	rbacClusterRoleBindingMasterLister rbaclister.ClusterRoleBindingLister
-
 	projectResourcesInformers []cache.Controller
 	projectResourcesQueue     workqueue.RateLimitingInterface
 
-	seedClusterProviders []*ClusterProvider
-	projectResources     []projectResource
+	seedClusterProviders  []*ClusterProvider
+	masterClusterProvider *ClusterProvider
+
+	projectResources []projectResource
 }
 
 type projectResource struct {
@@ -90,18 +84,17 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider) (*Controller,
 		metrics:               metrics,
 	}
 
-	var masterClusterProvider *ClusterProvider
 	for _, clusterProvider := range allClusterProviders {
 		if strings.HasPrefix(clusterProvider.providerName, MasterProviderPrefix) {
-			masterClusterProvider = clusterProvider
+			c.masterClusterProvider = clusterProvider
 			break
 		}
 	}
-	if masterClusterProvider == nil {
+	if c.masterClusterProvider == nil {
 		return nil, errors.New("cannot create controller because master cluster provider has not been found")
 	}
 
-	projectInformer := masterClusterProvider.kubermaticInformerFactory.Kubermatic().V1().Projects()
+	projectInformer := c.masterClusterProvider.kubermaticInformerFactory.Kubermatic().V1().Projects()
 	prometheus.MustRegister(metrics.Workers)
 
 	projectInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -128,18 +121,11 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider) (*Controller,
 			c.enqueueProject(project)
 		},
 	})
+
 	c.projectLister = projectInformer.Lister()
-
-	userInformer := masterClusterProvider.kubermaticInformerFactory.Kubermatic().V1().Users()
+	userInformer := c.masterClusterProvider.kubermaticInformerFactory.Kubermatic().V1().Users()
 	c.userLister = userInformer.Lister()
-
-	c.userProjectBindingLister = masterClusterProvider.kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister()
-
-	c.rbacClusterRoleBindingMasterLister = masterClusterProvider.rbacClusterRoleBindingLister
-	c.rbacClusterRoleMasterLister = masterClusterProvider.rbacClusterRoleLister
-
-	c.kubeMasterClient = masterClusterProvider.kubeClient
-	c.kubermaticMasterClient = masterClusterProvider.kubermaticClient
+	c.userProjectBindingLister = c.masterClusterProvider.kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister()
 
 	// a list of dependent resources that we would like to watch/monitor
 	c.projectResources = []projectResource{
