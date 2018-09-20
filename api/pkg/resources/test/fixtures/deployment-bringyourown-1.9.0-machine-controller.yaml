@@ -74,16 +74,15 @@ spec:
           readOnly: true
       initContainers:
       - args:
-        - --retry
-        - "100"
-        - --retry-delay
-        - "2"
-        - --insecure
-        - --silent
-        - --show-error
-        - https://apiserver-external.cluster-de-test-01.svc.cluster.local:30000/healthz
+        - -c
+        - "\n\t\t\tname=apiserver-external.cluster-de-test-01.svc.cluster.local\n\t\t\tport=30000\n\t\t\t#
+          manual re-resolving enables use of trailing dot with curl\n\t\t\tip=$(getent
+          hosts $name | cut -d\" \" -f1)\n\t\t\twhile ! curl --resolve $name:$port:$ip
+          --insecure --silent --show-error --max-time 3 https://apiserver-external.cluster-de-test-01.svc.cluster.local:30000/healthz;
+          do\n\t\t\t\t[ $(( timeout++ )) -gt 100 ] && exit 1\n\t\t\t\tsleep 2\n\t\t\t\tip=$(getent
+          hosts $name | cut -d\" \" -f1)\n\t\t\tdone"
         command:
-        - /usr/bin/curl
+        - /bin/sh
         image: quay.io/kubermatic/curl:v0.1
         imagePullPolicy: IfNotPresent
         name: apiserver-running
