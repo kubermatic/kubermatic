@@ -11,6 +11,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -220,13 +221,15 @@ func (c *Controller) initMachineIfNeeded(machine *clusterv1alpha1.Machine) error
 	}
 
 	ip, network, err := c.getNextFreeIP()
-	if _, isCidrExhausted := err.(cidrExhaustedError); isCidrExhausted {
-		err = fmt.Errorf("couldn't set ip for %s because no more ips can be allocated from the specified cidrs", machine.Name)
-		subErr := c.writeErrorToMachine(machine, clusterv1alpha1common.InsufficientResourcesMachineError, err)
-		if subErr != nil {
-			glog.Errorf("couldn't update error state for machine %s, see: %v", machine.Name, subErr)
-		}
+	if err != nil {
+		if _, isCidrExhausted := err.(cidrExhaustedError); isCidrExhausted {
+			err = fmt.Errorf("couldn't set ip for %s because no more ips can be allocated from the specified cidrs", machine.Name)
+			subErr := c.writeErrorToMachine(machine, clusterv1alpha1common.InsufficientResourcesMachineError, err)
+			if subErr != nil {
+				glog.Errorf("couldn't update error state for machine %s, see: %v", machine.Name, subErr)
+			}
 
+		}
 		return err
 	}
 
@@ -267,19 +270,12 @@ func (c *Controller) initMachineIfNeeded(machine *clusterv1alpha1.Machine) error
 
 func (c *Controller) awaitIPSync(machine *clusterv1alpha1.Machine, cidr string) error {
 	return wait.Poll(10*time.Millisecond, 60*time.Second, func() (bool, error) {
-		key, err := cache.MetaNamespaceKeyFunc(machine)
+		// TODO (@alvaroaleman): Since switching to machines.cluster.k8s.io types this stopped
+		// working with the lister and only works with the client - Why?
+		//m2, err := c.machineLister.Machines(machine.Namespace).Get(machine.Name)
+		m2, err := c.client.ClusterV1alpha1().Machines(machine.Namespace).Get(machine.Name, metav1.GetOptions{})
 		if err != nil {
-			return false, fmt.Errorf("something terrible happened - meta for machine %s got erased", machine.Name)
-		}
-
-		namespace, name, err := cache.SplitMetaNamespaceKey(key)
-		if err != nil {
-			return false, fmt.Errorf("failed to split key %s for namespace/name: %v", key, err)
-		}
-
-		m2, err := c.machineLister.Machines(namespace).Get(name)
-		if err != nil {
-			return false, fmt.Errorf("error while retrieving machine %s from lister, see: %v", name, err)
+			return false, fmt.Errorf("error while retrieving machine %s from lister, see: %v", machine.Name, err)
 		}
 
 		cfg2, err := providerconfig.GetConfig(m2.Spec.ProviderConfig)

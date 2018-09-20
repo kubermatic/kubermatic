@@ -36,7 +36,7 @@ func TestSingleCIDRAllocation(t *testing.T) {
 		t.Errorf("error in machineAdded handler: %v", err)
 	}
 
-	m2, err := ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Get("susi", metav1.GetOptions{})
+	m2, err := ctrl.client.ClusterV1alpha1().Machines(m.Namespace).Get("susi", metav1.GetOptions{})
 	if err != nil {
 		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
@@ -70,7 +70,7 @@ func TestMultipleCIDRAllocation(t *testing.T) {
 			t.Errorf("error in machineAdded handler: %v", err)
 		}
 
-		m2, err := ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Get(tuple.machine.Name, metav1.GetOptions{})
+		m2, err := ctrl.client.ClusterV1alpha1().Machines(tuple.machine.Namespace).Get(tuple.machine.Name, metav1.GetOptions{})
 		if err != nil {
 			t.Errorf("couldn't retrieve updated machine, see: %v", err)
 		}
@@ -100,12 +100,12 @@ func TestReuseReleasedIP(t *testing.T) {
 
 	assertNetworkEquals(t, mSusi2, "192.168.0.2/16", "192.168.0.1", "8.8.8.8")
 
-	err = ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceAll).Delete("susi", &metav1.DeleteOptions{})
+	err = ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Delete("susi", &metav1.DeleteOptions{})
 	if err != nil {
 		t.Errorf("couldn't retrieve updated machine, see: %v", err)
 	}
 	err = wait.Poll(5*time.Millisecond, 5*time.Second, func() (bool, error) {
-		_, err = ctrl.machineLister.Machines(metav1.NamespaceSystem).Get("susi")
+		_, err = ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Get("susi", metav1.GetOptions{})
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
 				return true, nil
@@ -168,7 +168,7 @@ func createMachine(name string) *clusterv1alpha1.Machine {
 		},
 		Spec: clusterv1alpha1.MachineSpec{
 			ProviderConfig: clusterv1alpha1.ProviderConfig{
-				Value: &runtime.RawExtension{Raw: []byte{'{', '}'}},
+				Value: &runtime.RawExtension{Raw: []byte(`{}`)},
 			},
 		},
 	}
