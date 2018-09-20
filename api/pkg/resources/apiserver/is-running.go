@@ -29,8 +29,12 @@ func IsRunningInitContainer(data resources.DeploymentDataProvider) (*corev1.Cont
 			# manual re-resolving enables use of trailing dot with curl
 			ip=$(getent hosts $name | cut -d" " -f1)
 			while ! curl --resolve $name:$port:$ip --insecure --silent --show-error --max-time 3 %s/healthz; do
-				[ $(( timeout++ )) -gt 100 ] && exit 1
+				if [ $(( timeout++ )) -gt 100 ]; then
+					echo "Giving up after 100 tries."
+					exit 1
+				fi
 				sleep 2
+				echo "Retry $timeout/3"
 				ip=$(getent hosts $name | cut -d" " -f1)
 			done`, url.Hostname(), url.Port(), url),
 		},
