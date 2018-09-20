@@ -55,7 +55,7 @@ spec:
         - tun
         - --auth-nocache
         - --remote
-        - openvpn-server.cluster-de-test-01.svc.cluster.local
+        - openvpn-server.cluster-de-test-01.svc.cluster.local.
         - "1194"
         - --nobind
         - --connect-timeout
@@ -189,18 +189,19 @@ spec:
         - cluster.local
       dnsPolicy: None
       initContainers:
-      - args:
-        - --retry
-        - "100"
-        - --retry-delay
-        - "2"
-        - --insecure
-        - --silent
-        - --show-error
-        - https://apiserver-external.cluster-de-test-01.svc.cluster.local:30000/healthz
-        command:
-        - /usr/bin/curl
-        image: quay.io/kubermatic/curl:v0.1
+      - command:
+        - /bin/bash
+        - -ecx
+        - |2
+
+          for (( i=1; i<=100; i++ ))
+          do
+              echo "[${i}] Probing apiserver..."
+              wget --tries=1 --timeout=1 --no-dns-cache --no-check-certificate https://apiserver-external.cluster-de-test-01.svc.cluster.local.:30000/healthz && break
+              sleep 2
+          done
+          exit 1
+        image: quay.io/kubermatic/curl:v0.2-dev-2
         imagePullPolicy: IfNotPresent
         name: apiserver-running
         resources: {}
