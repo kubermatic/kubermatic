@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/go-test/deep"
+	"github.com/stretchr/testify/assert"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -362,7 +364,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 	testcases := []struct {
 		Name                   string
 		Body                   string
-		ExpectedResponse       string
+		ExpectedKeys           []apiv1.NewSSHKey
 		HTTPStatus             int
 		ExistingProject        *kubermaticv1.Project
 		ExistingKubermaticUser *kubermaticv1.User
@@ -372,11 +374,26 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			Name:             "scenario 1: gets a list of ssh keys assigned to cluster",
-			Body:             ``,
-			ExpectedResponse: `[{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"yafn","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"fingerprint":"","publicKey":""}},{"id":"key-abc-yafn","name":"abcd","creationTimestamp":"2013-02-03T19:55:00Z","spec":{"fingerprint":"","publicKey":""}}]`,
-			HTTPStatus:       http.StatusOK,
-			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			Name: "scenario 1: gets a list of ssh keys assigned to cluster",
+			Body: ``,
+			ExpectedKeys: []apiv1.NewSSHKey{
+				apiv1.NewSSHKey{
+					NewObjectMeta: apiv1.NewObjectMeta{
+						ID:                "key-c08aa5c7abf34504f18552846485267d-yafn",
+						Name:              "yafn",
+						CreationTimestamp: time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
+					},
+				},
+				apiv1.NewSSHKey{
+					NewObjectMeta: apiv1.NewObjectMeta{
+						ID:                "key-abc-yafn",
+						Name:              "abcd",
+						CreationTimestamp: time.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC),
+					},
+				},
+			},
+			HTTPStatus:      http.StatusOK,
+			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
@@ -486,7 +503,20 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 			if res.Code != tc.HTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
-			compareWithResult(t, res, tc.ExpectedResponse)
+
+			var receivedKeys []apiv1.NewSSHKey
+			dec := json.NewDecoder(res.Body)
+			err = dec.Decode(&receivedKeys)
+			assert.NoError(t, err)
+
+			// sort the slices before comparison because the unstable order would make the test flaky otherwise
+			sort.Slice(receivedKeys, func(i int, j int) bool {
+				return receivedKeys[i].CreationTimestamp.Before(receivedKeys[j].CreationTimestamp)
+			})
+			sort.Slice(tc.ExpectedKeys, func(i int, j int) bool {
+				return tc.ExpectedKeys[i].CreationTimestamp.Before(tc.ExpectedKeys[j].CreationTimestamp)
+			})
+			assert.Equal(t, receivedKeys, tc.ExpectedKeys)
 		})
 	}
 }
