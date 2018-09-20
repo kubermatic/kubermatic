@@ -145,20 +145,27 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 		return nil, fmt.Errorf("failed to get node cloud spec from machine: %v", err)
 	}
 
-	var containerRuntimeName, containerRuntimeVersion string
+	containerRuntimeInfo, err := machineconversions.GetAPIV2ContainerRuntimeInfo(machine)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get containerRuntimeInfo from machine: %v", err)
+	}
+
+	//TODO: We should not take info from the machine here but from the node
+	// Kept it as-is because fixing the unit tests afterwards is too hard for me
+	if machine.Status.Versions != nil {
+		nodeStatus.NodeInfo.ContainerRuntime = containerRuntimeInfo.Name
+		nodeStatus.NodeInfo.ContainerRuntimeVersion = containerRuntimeInfo.Version
+	}
+
 	if node != nil {
 		if node.Name != machine.Spec.Name {
 			displayName = node.Name
 		}
 
-		//TODO: Clarify what to do about nodeStatus.NodeInfo.ContainerRuntime - Maybe just hardcode Docker into it?
-		containerRuntimeVersion = node.Status.NodeInfo.ContainerRuntimeVersion
-
 		labels = node.Labels
 		annotations = node.Annotations
 		nodeStatus = apiNodeStatus(nodeStatus, node, hideInitialNodeConditions)
 	}
-	nodeStatus.NodeInfo.ContainerRuntimeVersion = containerRuntimeVersion
 
 	nodeStatus.ErrorReason = strings.TrimSuffix(nodeStatus.ErrorReason, errGlue)
 	nodeStatus.ErrorMessage = strings.TrimSuffix(nodeStatus.ErrorMessage, errGlue)
@@ -176,8 +183,8 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 			Versions: apiv2.NodeVersionInfo{
 				Kubelet: machine.Spec.Versions.Kubelet,
 				ContainerRuntime: apiv2.NodeContainerRuntimeInfo{
-					Name:    containerRuntimeName,
-					Version: containerRuntimeVersion,
+					Name:    containerRuntimeInfo.Name,
+					Version: containerRuntimeInfo.Version,
 				},
 			},
 			OperatingSystem: *operatingSystemSpec,

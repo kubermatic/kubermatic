@@ -23,8 +23,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
-	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
-	fakemachineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned/fake"
 
 	prometheusapi "github.com/prometheus/client_golang/api"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -36,6 +34,9 @@ import (
 	kubernetesclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	restclient "k8s.io/client-go/rest"
+
+	clusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
+	fakeclusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset/fake"
 )
 
 func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *clientsSets, error) {
@@ -74,7 +75,7 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		IsAdmin,
 	)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
-	fakeMachineClient := fakemachineclientset.NewSimpleClientset(machineObjects...)
+	fakeMachineClient := fakeclusterclientset.NewSimpleClientset(machineObjects...)
 	fUserClusterConnection := &fakeUserClusterConnection{fakeMachineClient, kubeClient}
 
 	newClusterProvider := kubernetes.NewRBACCompliantClusterProvider(
@@ -272,7 +273,7 @@ func TestUpRoute(t *testing.T) {
 }
 
 type fakeUserClusterConnection struct {
-	fakeMachineClient    machineclientset.Interface
+	fakeMachineClient    clusterclientset.Interface
 	fakeKubernetesClient kubernetesclient.Interface
 }
 
@@ -280,7 +281,7 @@ func (f *fakeUserClusterConnection) GetAdminKubeconfig(c *kubermaticapiv1.Cluste
 	return []byte{}, errors.New("not yet implemented")
 }
 
-func (f *fakeUserClusterConnection) GetMachineClient(c *kubermaticapiv1.Cluster) (machineclientset.Interface, error) {
+func (f *fakeUserClusterConnection) GetMachineClient(c *kubermaticapiv1.Cluster) (clusterclientset.Interface, error) {
 	return f.fakeMachineClient, nil
 }
 
@@ -290,5 +291,5 @@ func (f *fakeUserClusterConnection) GetClient(c *kubermaticapiv1.Cluster) (kuber
 
 type clientsSets struct {
 	fakeKubermaticClient *kubermaticfakeclentset.Clientset
-	fakeMachineClient    *fakemachineclientset.Clientset
+	fakeMachineClient    *fakeclusterclientset.Clientset
 }

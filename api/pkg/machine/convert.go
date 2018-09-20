@@ -10,6 +10,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
+	machinesv1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/coreos"
@@ -56,6 +57,15 @@ func GetAPIV2OperatingSystemSpec(machine *clusterv1alpha1.Machine) (*apiv2.Opera
 	}
 
 	return operatingSystemSpec, nil
+}
+
+// GetAPIV2ContainerRuntimeInfo returns the ContainerRuntimeInfo for a machine
+func GetAPIV2ContainerRuntimeInfo(machine *clusterv1alpha1.Machine) (*machinesv1alpha1.ContainerRuntimeInfo, error) {
+	decodedProviderConfig, err := providerconfig.GetConfig(machine.Spec.ProviderConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get machine providerConfig: %v", err)
+	}
+	return &decodedProviderConfig.ContainerRuntimeInfo, nil
 }
 
 // GetAPIV2NodeCloudSpec returns the api compatible NodeCloudSpec for the given machine
