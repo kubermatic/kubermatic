@@ -37,9 +37,9 @@ type OpenstackSpec struct {
 	AuthURL          string `yaml:"auth_url"`
 	AvailabilityZone string `yaml:"availability_zone"`
 	Region           string `yaml:"region"`
-	IgnoreVolumeAZ   bool   `yaml:"ignore_volume_az,omitempty"`
+	IgnoreVolumeAZ   bool   `yaml:"ignore_volume_az"`
 	// Used for automatic network creation
-	DNSServers []string  `yaml:"dns_servers,omitempty"`
+	DNSServers []string  `yaml:"dns_servers"`
 	Images     ImageList `yaml:"images"`
 }
 
@@ -58,7 +58,7 @@ type VSphereCredentials struct {
 // VSphereSpec describes a vsphere datacenter
 type VSphereSpec struct {
 	Endpoint      string `yaml:"endpoint"`
-	AllowInsecure bool   `yaml:"allow_insecure,omitempty"`
+	AllowInsecure bool   `yaml:"allow_insecure"`
 
 	Datastore  string    `yaml:"datastore"`
 	Datacenter string    `yaml:"datacenter"`
@@ -96,12 +96,12 @@ type DatacenterSpec struct {
 
 // DatacenterMeta describes a Kubermatic datacenter.
 type DatacenterMeta struct {
-	Location         string         `yaml:"location,omitempty"`
-	Seed             string         `yaml:"seed,omitempty"`
-	Country          string         `yaml:"country,omitempty"`
+	Location         string         `yaml:"location"`
+	Seed             string         `yaml:"seed"`
+	Country          string         `yaml:"country"`
 	Spec             DatacenterSpec `yaml:"spec"`
-	Private          bool           `yaml:"private,omitempty"`
-	IsSeed           bool           `yaml:"is_seed,omitempty"`
+	Private          bool           `yaml:"private"`
+	IsSeed           bool           `yaml:"is_seed"`
 	SeedDNSOverwrite *string        `yaml:"seed_dns_overwrite,omitempty"`
 }
 
