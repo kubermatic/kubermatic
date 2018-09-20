@@ -286,7 +286,7 @@ func (d *TemplateData) InClusterApiserverURL() (*url.URL, error) {
 		return nil, errors.New("apiserver service does not have exactly one port")
 	}
 
-	return url.Parse(fmt.Sprintf("https://%s.%s.svc.cluster.local.:%d", ApiserverExternalServiceName, d.Cluster().Status.NamespaceName, service.Spec.Ports[0].NodePort))
+	return url.Parse(fmt.Sprintf("https://%s.%s.svc.cluster.local:%d", ApiserverExternalServiceName, d.Cluster().Status.NamespaceName, service.Spec.Ports[0].NodePort))
 }
 
 // ImageRegistry returns the image registry to use or the passed in default if no override is specified
