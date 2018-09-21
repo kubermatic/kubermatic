@@ -172,10 +172,6 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/upgrades").
 		Handler(r.getClusterUpgrades())
 
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics").
-		Handler(r.clusterMetricsHandler())
-
 	//
 	// Defines set of HTTP endpoints for SSH Keys that belong to a cluster
 
@@ -1222,32 +1218,6 @@ func (r Routing) getClusterUpgrades() http.Handler {
 			r.newDatacenterMiddleware(),
 			r.userInfoMiddleware(),
 		)(getClusterUpgrades(r.updateManager, r.projectProvider)),
-		decodeClusterReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics project clusterMetricsHandler
-//
-//    Gets cluster metrics
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: []ClusterMetric
-//       401: empty
-//       403: empty
-func (r Routing) clusterMetricsHandler() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-			r.newDatacenterMiddleware(),
-			r.userInfoMiddleware(),
-		)(getClusterMetricsEndpoint(r.projectProvider, r.prometheusClient)),
 		decodeClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,

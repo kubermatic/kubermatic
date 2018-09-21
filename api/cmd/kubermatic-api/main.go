@@ -206,8 +206,10 @@ func main() {
 
 	mainRouter := mux.NewRouter()
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
+	v1AlphaRouter := mainRouter.PathPrefix("/api/v1alpha").Subrouter()
 	v3Router := mainRouter.PathPrefix("/api/v3").Subrouter()
 	r.RegisterV1(v1Router)
+	r.RegisterV1Alpha(v1AlphaRouter)
 	r.RegisterV3(v3Router)
 
 	metrics.RegisterHTTPVecs()
