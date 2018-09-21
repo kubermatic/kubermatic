@@ -55,7 +55,7 @@ spec:
         - tun
         - --auth-nocache
         - --remote
-        - openvpn-server.cluster-de-test-01.svc.cluster.local.
+        - openvpn-server.cluster-de-test-01.svc.cluster.local
         - "1194"
         - --nobind
         - --connect-timeout
@@ -189,12 +189,26 @@ spec:
         - cluster.local
       dnsPolicy: None
       initContainers:
-      - command:
+      - args:
+        - -c
+        - |2-
+
+          name=apiserver-external.cluster-de-test-01.svc.cluster.local
+          port=30000
+          # manual re-resolving enables use of trailing dot with curl
+          ip=$(getent hosts $name | cut -d" " -f1)
+          while ! curl --resolve $name:$port:$ip --insecure --silent --show-error --max-time 3 https://apiserver-external.cluster-de-test-01.svc.cluster.local:30000/healthz; do
+              if [ $(( timeout+=1 )) -gt 100 ]; then
+                  echo "Giving up after 100 tries."
+                  exit 1
+              fi
+              sleep 2
+              echo "Retry $timeout/100"
+              ip=$(getent hosts $name | cut -d" " -f1)
+          done
+        command:
         - /bin/sh
-        - -ec
-        - until wget -T 1 https://apiserver-external.cluster-de-test-01.svc.cluster.local.:30000/healthz;
-          do echo waiting for apiserver; sleep 2; done;
-        image: docker.io/busybox
+        image: quay.io/kubermatic/curl:v0.1
         imagePullPolicy: IfNotPresent
         name: apiserver-running
         resources: {}

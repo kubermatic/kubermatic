@@ -95,10 +95,6 @@ type SSHKeyProvider interface {
 type ClusterListOptions struct {
 	// ClusterSpecName gets the clusters with the given name in the spec
 	ClusterSpecName string
-
-	// SortBy sorts the result by the given key name,
-	// for example setting "metadata.creationTimestamp" will sort the result by creation timestamp
-	SortBy string
 }
 
 // ClusterGetOptions allows to check the status of the cluster
@@ -156,10 +152,6 @@ type NewClusterProvider interface {
 type SSHKeyListOptions struct {
 	// ClusterName gets the keys that are being used by the given cluster name
 	ClusterName string
-
-	// SortBy sorts the result by the given key name,
-	// for example setting "metadata.creationTimestamp" will sort the result by creation timestamp
-	SortBy string
 }
 
 // NewSSHKeyProvider declares the set of methods for interacting with ssh keys

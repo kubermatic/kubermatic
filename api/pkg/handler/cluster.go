@@ -226,7 +226,7 @@ func newListClusters(projectProvider provider.ProjectProvider) endpoint.Endpoint
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		clusters, err := clusterProvider.List(project, &provider.ClusterListOptions{SortBy: "metadata.creationTimestamp"})
+		clusters, err := clusterProvider.List(project, nil)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -380,7 +380,7 @@ func listSSHKeysAssingedToCluster(sshKeyProvider provider.NewSSHKeyProvider, pro
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: req.ClusterID, SortBy: "metadata.creationTimestamp"})
+		keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: req.ClusterID})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
