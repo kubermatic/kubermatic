@@ -1478,7 +1478,6 @@
     "github.com/aws/aws-sdk-go/service/ec2",
     "github.com/aws/aws-sdk-go/service/iam",
     "github.com/coreos/go-oidc",
-    "github.com/davecgh/go-spew/spew",
     "github.com/digitalocean/godo",
     "github.com/ghodss/yaml",
     "github.com/go-kit/kit/endpoint",
