@@ -55,7 +55,7 @@ spec:
         - tun
         - --auth-nocache
         - --remote
-        - openvpn-server.cluster-de-test-01.svc.cluster.local
+        - openvpn-server.cluster-de-test-01.svc.cluster.local.
         - "1194"
         - --nobind
         - --connect-timeout
@@ -191,7 +191,7 @@ spec:
       initContainers:
       - args:
         - -endpoint
-        - https://apiserver-external.cluster-de-test-01.svc.cluster.local:30000/healthz
+        - https://apiserver-external.cluster-de-test-01.svc.cluster.local.:30000/healthz
         - -insecure
         - -retries
         - "100"
