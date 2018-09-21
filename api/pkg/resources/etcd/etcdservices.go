@@ -50,7 +50,8 @@ func GetClientEndpoints(namespace string) []string {
 	var endpoints []string
 	for i := 0; i < 3; i++ {
 		// Pod DNS name
-		absolutePodDNSName := fmt.Sprintf("https://etcd-%d.%s.%s.svc.cluster.local:2379", i, resources.EtcdServiceName, namespace)
+		serviceDNSName := resources.GetAbsoluteServiceDNSName(resources.EtcdServiceName, namespace)
+		absolutePodDNSName := fmt.Sprintf("https://etcd-%d.%s:2379", i, serviceDNSName)
 		endpoints = append(endpoints, absolutePodDNSName)
 	}
 	return endpoints
