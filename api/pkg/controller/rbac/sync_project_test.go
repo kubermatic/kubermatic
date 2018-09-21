@@ -47,10 +47,13 @@ func TestEnsureProjectIsInActivePhase(t *testing.T) {
 			objs := []runtime.Object{}
 			objs = append(objs, test.expectedProject)
 			kubermaticFakeClient := kubermaticfakeclientset.NewSimpleClientset(objs...)
+			fakeMasterClusterProvider := &ClusterProvider{
+				kubermaticClient: kubermaticFakeClient,
+			}
 
 			// act
 			target := Controller{}
-			target.kubermaticMasterClient = kubermaticFakeClient
+			target.masterClusterProvider = fakeMasterClusterProvider
 			err := target.ensureProjectIsInActivePhase(test.projectToSync)
 
 			// validate
@@ -105,10 +108,13 @@ func TestEnsureProjectInitialized(t *testing.T) {
 			objs := []runtime.Object{}
 			objs = append(objs, test.expectedProject)
 			kubermaticFakeClient := kubermaticfakeclientset.NewSimpleClientset(objs...)
+			fakeMasterClusterProvider := &ClusterProvider{
+				kubermaticClient: kubermaticFakeClient,
+			}
 
 			// act
 			target := Controller{}
-			target.kubermaticMasterClient = kubermaticFakeClient
+			target.masterClusterProvider = fakeMasterClusterProvider
 			err := target.ensureProjectInitialized(test.projectToSync)
 
 			// validate
@@ -155,9 +161,9 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			name:                     "Scenario 1: Proper set of RBAC Bindings for project's resources are created on \"master\" and seed clusters",
+			name:                     "Scenario 1: Proper set of RBAC Bindings for project's resources are created on master and seed clusters",
 			projectToSync:            "thunderball",
-			expectedActionsForMaster: []string{"create", "create", "create", "create"},
+			expectedActionsForMaster: []string{"create", "create"},
 			projectResourcesToSync: []projectResource{
 				{
 					gvr: schema.GroupVersionResource{
@@ -179,40 +185,6 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				},
 			},
 			expectedClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:owners",
-					},
-					Subjects: []rbacv1.Subject{
-						{
-							APIGroup: rbacv1.GroupName,
-							Kind:     "Group",
-							Name:     "owners-thunderball",
-						},
-					},
-					RoleRef: rbacv1.RoleRef{
-						APIGroup: rbacv1.GroupName,
-						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:owners",
-					},
-				},
-				&rbacv1.ClusterRoleBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:editors",
-					},
-					Subjects: []rbacv1.Subject{
-						{
-							APIGroup: rbacv1.GroupName,
-							Kind:     "Group",
-							Name:     "editors-thunderball",
-						},
-					},
-					RoleRef: rbacv1.RoleRef{
-						APIGroup: rbacv1.GroupName,
-						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:editors",
-					},
-				},
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkeies:owners",
@@ -303,11 +275,19 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					kind:        kubermaticv1.ClusterKindName,
 					destination: destinationSeed,
 				},
+				{
+					gvr: schema.GroupVersionResource{
+						Group:    kubermaticv1.GroupName,
+						Version:  kubermaticv1.GroupVersion,
+						Resource: kubermaticv1.SSHKeyResourceName,
+					},
+					kind: kubermaticv1.SSHKeyKind,
+				},
 			},
 			existingClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:owners",
+						Name: "kubermatic:usersshkeies:owners",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -319,12 +299,12 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:owners",
+						Name:     "kubermatic:usersshkeies:owners",
 					},
 				},
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:editors",
+						Name: "kubermatic:usersshkeies:editors",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -336,14 +316,14 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:editors",
+						Name:     "kubermatic:usersshkeies:editors",
 					},
 				},
 			},
 			expectedClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:owners",
+						Name: "kubermatic:usersshkeies:owners",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -361,12 +341,12 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:owners",
+						Name:     "kubermatic:usersshkeies:owners",
 					},
 				},
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:editors",
+						Name: "kubermatic:usersshkeies:editors",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -384,7 +364,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:editors",
+						Name:     "kubermatic:usersshkeies:editors",
 					},
 				},
 			},
@@ -488,6 +468,10 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 			}
 			fakeKubeClient := fake.NewSimpleClientset(objs...)
 			roleBindingsLister := rbaclister.NewClusterRoleBindingLister(roleBindingsIndexer)
+			fakeMasterClusterProvider := &ClusterProvider{
+				kubeClient:                   fakeKubeClient,
+				rbacClusterRoleBindingLister: roleBindingsLister,
+			}
 
 			seedClusterProviders := make([]*ClusterProvider, test.seedClusters)
 			for i := 0; i < test.seedClusters; i++ {
@@ -512,9 +496,8 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 
 			// act
 			target := Controller{}
-			target.kubeMasterClient = fakeKubeClient
+			target.masterClusterProvider = fakeMasterClusterProvider
 			target.projectResources = test.projectResourcesToSync
-			target.rbacClusterRoleBindingMasterLister = roleBindingsLister
 			target.seedClusterProviders = seedClusterProviders
 			err := target.ensureClusterRBACRoleBindingForResources(test.projectToSync)
 
@@ -738,7 +721,7 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 				}
 				return nil, fmt.Errorf("provider %s not found", name)
 			}
-			allClusterProviders := make([]*ClusterProvider, len(test.existingClustersOn))
+			seedClusterProviders := make([]*ClusterProvider, len(test.existingClustersOn))
 			{
 				index := 0
 				for providerName, clusterResources := range test.existingClustersOn {
@@ -758,19 +741,22 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 					fakeKubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjs...)
 					fakeProvider := NewClusterProvider(providerName, fakeKubeClient, fakeKubeInformerFactory, fakeKubermaticClient, nil)
 					fakeProvider.AddIndexerFor(clusterResourcesIndexer, schema.GroupVersionResource{Resource: kubermaticv1.ClusterResourceName})
-					allClusterProviders[index] = fakeProvider
+					seedClusterProviders[index] = fakeProvider
 					index = index + 1
 				}
 			}
 			userIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			userLister := kubermaticv1lister.NewUserLister(userIndexer)
 			fakeKubermaticMasterClient := kubermaticfakeclientset.NewSimpleClientset(test.projectToSync)
+			fakeMasterClusterProvider := &ClusterProvider{
+				kubermaticClient: fakeKubermaticMasterClient,
+			}
 
 			// act
 			target := Controller{}
-			target.allClusterProviders = allClusterProviders
+			target.seedClusterProviders = seedClusterProviders
 			target.userLister = userLister
-			target.kubermaticMasterClient = fakeKubermaticMasterClient
+			target.masterClusterProvider = fakeMasterClusterProvider
 			err := target.ensureProjectCleanup(test.projectToSync)
 			if err != nil {
 				t.Fatal(err)
@@ -781,7 +767,7 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 				t.Fatalf("deletedClustersOn field is different than existingClusterOn in length, did you forget to update deletedClusterOn ?")
 			}
 			for providerName, deletedClusterResources := range test.deletedClustersOn {
-				provider, err := getClusterProviderByName(providerName, allClusterProviders)
+				provider, err := getClusterProviderByName(providerName, seedClusterProviders)
 				if err != nil {
 					t.Fatalf("unable to validate deleted cluster resources because didn't find the provider %s", providerName)
 				}
@@ -820,200 +806,6 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 	}
 }
 
-// TestEnsureUserProjectCleanup extends TestEnsureProjectCleanup in a way
-// that also checks if the project being removed is removed from "Spec.Project" array for all users that belong the the project
-func TestEnsureUsersProjectCleanup(t *testing.T) {
-	tests := []struct {
-		name            string
-		projectToSync   *kubermaticv1.Project
-		existingUsers   []*kubermaticv1.User
-		expectedActions []string
-		expectedUsers   []*kubermaticv1.User
-	}{
-		// scenario 1
-		{
-			name:          "Scenario 1: bob's projects entries are updated when the project he belongs to is removed",
-			projectToSync: createProject("plan9", createUser("bob")),
-			existingUsers: []*kubermaticv1.User{
-				&kubermaticv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bob",
-					},
-					Spec: kubermaticv1.UserSpec{
-						Name:  "bob",
-						Email: "bob@acme.com",
-						Projects: []kubermaticv1.ProjectGroup{
-							{
-								Group: "editors-myFirstProjectName",
-								Name:  "myFirstProjectName",
-							},
-							{
-								Group: "owners-plan9",
-								Name:  "plan9",
-							},
-							{
-								Group: "editors-myThirdProjectInternalName",
-								Name:  "myThirdProjectInternalName",
-							},
-						},
-					},
-				},
-			},
-			expectedActions: []string{"update", "update"},
-			expectedUsers: []*kubermaticv1.User{
-				&kubermaticv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bob",
-					},
-					Spec: kubermaticv1.UserSpec{
-						Name:  "bob",
-						Email: "bob@acme.com",
-						Projects: []kubermaticv1.ProjectGroup{
-							{
-								Group: "editors-myFirstProjectName",
-								Name:  "myFirstProjectName",
-							},
-							{
-								Group: "editors-myThirdProjectInternalName",
-								Name:  "myThirdProjectInternalName",
-							},
-						},
-					},
-				},
-			},
-		},
-
-		// scenario 2
-		{
-			name:          "Scenario 2: only bob's projects entries are updated when the project he belongs to is removed",
-			projectToSync: createProject("plan9", createUser("bob")),
-			existingUsers: []*kubermaticv1.User{
-				&kubermaticv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bob",
-					},
-					Spec: kubermaticv1.UserSpec{
-						Name:  "bob",
-						Email: "bob@acme.com",
-						Projects: []kubermaticv1.ProjectGroup{
-							{
-								Group: "editors-plan9",
-								Name:  "plan9",
-							},
-						},
-					},
-				},
-
-				&kubermaticv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "alice",
-					},
-					Spec: kubermaticv1.UserSpec{
-						Name:  "alice",
-						Email: "alice@acme.com",
-						Projects: []kubermaticv1.ProjectGroup{
-							{
-								Group: "editors-placeX",
-								Name:  "placeX",
-							},
-						},
-					},
-				},
-			},
-			expectedActions: []string{"update", "update"},
-			expectedUsers: []*kubermaticv1.User{
-				&kubermaticv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bob",
-					},
-					Spec: kubermaticv1.UserSpec{
-						Name:     "bob",
-						Email:    "bob@acme.com",
-						Projects: []kubermaticv1.ProjectGroup{},
-					},
-				},
-				&kubermaticv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "alice",
-					},
-					Spec: kubermaticv1.UserSpec{
-						Name:  "alice",
-						Email: "alice@acme.com",
-						Projects: []kubermaticv1.ProjectGroup{
-							{
-								Group: "editors-placeX",
-								Name:  "placeX",
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			// setup the test scenario
-			kubermaticObjs := []runtime.Object{}
-			projectIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
-			if test.projectToSync != nil {
-				err := projectIndexer.Add(test.projectToSync)
-				if err != nil {
-					t.Fatal(err)
-				}
-				kubermaticObjs = append(kubermaticObjs, test.projectToSync)
-			}
-			projectLister := kubermaticv1lister.NewProjectLister(projectIndexer)
-
-			userIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
-			for _, existingUser := range test.existingUsers {
-				err := userIndexer.Add(existingUser)
-				if err != nil {
-					t.Fatal(err)
-				}
-				kubermaticObjs = append(kubermaticObjs, existingUser)
-			}
-			userLister := kubermaticv1lister.NewUserLister(userIndexer)
-			fakeKubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjs...)
-
-			// act
-			target := Controller{}
-			target.kubermaticMasterClient = fakeKubermaticClient
-			target.projectLister = projectLister
-			target.userLister = userLister
-			err := target.ensureProjectCleanup(test.projectToSync)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			// validate
-			actualActions := fakeKubermaticClient.Actions()
-			if len(test.expectedActions) != len(actualActions) {
-				t.Fatalf("expected to get exactly %d actions but got %d, actions = %v", len(test.expectedActions), len(actualActions), actualActions)
-			}
-
-			// verifiedActions is equal to one because the last update action is updating the project
-			// not the users and this is something we don't want to validate
-			verifiedActions := 1
-			for index, actualAction := range actualActions {
-				if actualAction.Matches(test.expectedActions[index], "users") {
-					updateAction, ok := actualAction.(clienttesting.CreateAction)
-					if !ok {
-						t.Fatalf("cannot cast actualAction to CreateActon")
-					}
-					updatedUser := updateAction.GetObject().(*kubermaticv1.User)
-					if !equality.Semantic.DeepEqual(updatedUser, test.expectedUsers[index]) {
-						t.Fatalf("%v", diff.ObjectDiff(updatedUser, test.expectedUsers[index]))
-					}
-					verifiedActions = verifiedActions + 1
-				}
-			}
-			if verifiedActions != len(test.expectedActions) {
-				t.Fatalf("expected to verify %d actions but only %d were verified", verifiedActions, len(test.expectedActions))
-			}
-		})
-	}
-}
-
 func TestEnsureProjectCleanup(t *testing.T) {
 	tests := []struct {
 		name                                 string
@@ -1043,36 +835,44 @@ func TestEnsureProjectCleanup(t *testing.T) {
 					kind:        kubermaticv1.ClusterKindName,
 					destination: destinationSeed,
 				},
+				{
+					gvr: schema.GroupVersionResource{
+						Group:    kubermaticv1.GroupName,
+						Version:  kubermaticv1.GroupVersion,
+						Resource: kubermaticv1.SSHKeyResourceName,
+					},
+					kind: kubermaticv1.SSHKeyKind,
+				},
 			},
 			expectedActionsForMaster: []string{"get", "update", "get", "update"},
 			expectedClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:owners",
+						Name: "kubermatic:usersshkeies:owners",
 					},
 					Subjects: []rbacv1.Subject{},
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:owners",
+						Name:     "kubermatic:usersshkeies:owners",
 					},
 				},
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:editors",
+						Name: "kubermatic:usersshkeies:editors",
 					},
 					Subjects: []rbacv1.Subject{},
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:editors",
+						Name:     "kubermatic:usersshkeies:editors",
 					},
 				},
 			},
 			existingClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:owners",
+						Name: "kubermatic:usersshkeies:owners",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -1084,12 +884,12 @@ func TestEnsureProjectCleanup(t *testing.T) {
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:owners",
+						Name:     "kubermatic:usersshkeies:owners",
 					},
 				},
 				&rbacv1.ClusterRoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:editors",
+						Name: "kubermatic:usersshkeies:editors",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -1101,7 +901,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:clusters:editors",
+						Name:     "kubermatic:usersshkeies:editors",
 					},
 				},
 			},
@@ -1198,24 +998,29 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				objs = append(objs, existingClusterRoleBinding)
 			}
 
-			fakeKubeClient := fake.NewSimpleClientset(objs...)
-			fakeKubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjs...)
+			fakeMasterKubeClient := fake.NewSimpleClientset(objs...)
+			fakeMasterKubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjs...)
+			fakeMasterClusterProvider := &ClusterProvider{
+				kubeClient:       fakeMasterKubeClient,
+				kubermaticClient: fakeMasterKubermaticClient,
+			}
 			seedClusterProviders := make([]*ClusterProvider, test.seedClusters)
 			for i := 0; i < test.seedClusters; i++ {
 				objs := []runtime.Object{}
 				for _, existingClusterRoleBinding := range test.existingClusterRoleBindingsForSeeds {
 					objs = append(objs, existingClusterRoleBinding)
 				}
+				clusterResourcesIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 				fakeSeedKubeClient := fake.NewSimpleClientset(objs...)
 				fakeKubeInformerFactory := kuberinformers.NewSharedInformerFactory(fakeSeedKubeClient, time.Minute*5)
 				fakeProvider := NewClusterProvider(strconv.Itoa(i), fakeSeedKubeClient, fakeKubeInformerFactory, nil, nil)
+				fakeProvider.AddIndexerFor(clusterResourcesIndexer, schema.GroupVersionResource{Resource: kubermaticv1.ClusterResourceName})
 				seedClusterProviders[i] = fakeProvider
 			}
 
 			// act
 			target := Controller{}
-			target.kubeMasterClient = fakeKubeClient
-			target.kubermaticMasterClient = fakeKubermaticClient
+			target.masterClusterProvider = fakeMasterClusterProvider
 			target.projectResources = test.projectResourcesToSync
 			target.seedClusterProviders = seedClusterProviders
 			target.projectLister = projectLister
@@ -1226,6 +1031,11 @@ func TestEnsureProjectCleanup(t *testing.T) {
 			{
 				if err != nil {
 					t.Fatal(err)
+				}
+
+				fakeKubeClient, ok := fakeMasterClusterProvider.kubeClient.(*fake.Clientset)
+				if !ok {
+					t.Fatal("unable to cast fakeMasterClusterProvider.kubeCLient to *fake.Clientset")
 				}
 
 				if len(test.expectedClusterRoleBindingsForMaster) == 0 {
@@ -1274,7 +1084,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				}
 
 				if len(seedKubeClient.Actions()) != len(test.expectedActionsForSeeds) {
-					t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+					t.Fatalf("unexpected actions %#v", seedKubeClient.Actions())
 				}
 
 				createActionIndex := 0
@@ -1661,6 +1471,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 		})
 	}
 }
+
 func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 	tests := []struct {
 		name                          string
@@ -1674,7 +1485,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 		// scenario 1
 		{
 			name:                     "Scenario 1: Proper set of RBAC Roles for project's resources are created on \"master\" and seed clusters",
-			expectedActionsForMaster: []string{"create", "create", "create", "create"},
+			expectedActionsForMaster: []string{"create", "create"},
 			expectedActionsForSeeds:  []string{"create", "create"},
 			seedClusters:             2,
 			projectResourcesToSync: []projectResource{
@@ -1739,32 +1550,6 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			},
 
 			expectedClusterRolesForMaster: []*rbacv1.ClusterRole{
-				&rbacv1.ClusterRole{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:owners",
-					},
-					Rules: []rbacv1.PolicyRule{
-						{
-							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources: []string{"clusters"},
-							Verbs:     []string{"create"},
-						},
-					},
-				},
-
-				&rbacv1.ClusterRole{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:editors",
-					},
-					Rules: []rbacv1.PolicyRule{
-						{
-							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources: []string{"clusters"},
-							Verbs:     []string{"create"},
-						},
-					},
-				},
-
 				&rbacv1.ClusterRole{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkeies:owners",
@@ -1834,6 +1619,10 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			fakeKubeClient := fake.NewSimpleClientset(objs...)
 			roleIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			roleLister := rbaclister.NewClusterRoleLister(roleIndexer)
+			fakeMasterClusterProvider := &ClusterProvider{
+				kubeClient:            fakeKubeClient,
+				rbacClusterRoleLister: roleLister,
+			}
 
 			seedClusterProviders := make([]*ClusterProvider, test.seedClusters)
 			for i := 0; i < test.seedClusters; i++ {
@@ -1846,9 +1635,8 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 
 			// act
 			target := Controller{}
-			target.kubeMasterClient = fakeKubeClient
+			target.masterClusterProvider = fakeMasterClusterProvider
 			target.projectResources = test.projectResourcesToSync
-			target.rbacClusterRoleMasterLister = roleLister
 			target.seedClusterProviders = seedClusterProviders
 			err := target.ensureClusterRBACRoleForResources()
 
@@ -2274,12 +2062,15 @@ func TestEnsureProjectOwner(t *testing.T) {
 				objs = append(objs, test.existingBinding)
 			}
 			kubermaticFakeClient := kubermaticfakeclientset.NewSimpleClientset(objs...)
+			fakeMasterClusterProvider := &ClusterProvider{
+				kubermaticClient: kubermaticFakeClient,
+			}
 			userLister := kubermaticv1lister.NewUserLister(userIndexer)
 			bindingLister := kubermaticv1lister.NewUserProjectBindingLister(bindingIndexer)
 
 			// act
 			target := Controller{}
-			target.kubermaticMasterClient = kubermaticFakeClient
+			target.masterClusterProvider = fakeMasterClusterProvider
 			target.userLister = userLister
 			target.userProjectBindingLister = bindingLister
 			err := target.ensureProjectOwner(test.projectToSync)

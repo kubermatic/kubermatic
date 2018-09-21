@@ -301,6 +301,7 @@ type ClusterHealthStatus struct {
 	Controller        bool `json:"controller"`
 	MachineController bool `json:"machineController"`
 	Etcd              bool `json:"etcd"`
+	OpenVPN           bool `json:"openvpn"`
 }
 
 // AllHealthy returns if all components are healthy
