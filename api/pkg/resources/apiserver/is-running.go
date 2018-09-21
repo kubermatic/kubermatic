@@ -18,25 +18,15 @@ func IsRunningInitContainer(data resources.DeploymentDataProvider) (*corev1.Cont
 
 	return &corev1.Container{
 		Name:            "apiserver-running",
-		Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/curl:v0.1",
+		Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/http-prober:v0.1",
 		ImagePullPolicy: corev1.PullIfNotPresent,
-		Command:         []string{"/bin/sh"},
+		Command:         []string{"/usr/local/bin/http-prober"},
 		Args: []string{
-			"-c",
-			fmt.Sprintf(`
-name=%s
-port=%s
-# manual re-resolving enables use of trailing dot with curl
-ip=$(getent hosts $name | cut -d" " -f1)
-while ! curl --resolve $name:$port:$ip --insecure --silent --show-error --max-time 3 %s/healthz; do
-    if [ $(( timeout+=1 )) -gt 100 ]; then
-        echo "Giving up after 100 tries."
-        exit 1
-    fi
-    sleep 2
-    echo "Retry $timeout/100"
-    ip=$(getent hosts $name | cut -d" " -f1)
-done`, url.Hostname(), url.Port(), url),
+			"-endpoint", fmt.Sprintf("%s/healthz", url.String()),
+			"-insecure",
+			"-retries", "100",
+			"-retry-wait", "2",
+			"-timeout", "1",
 		},
 		TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 		TerminationMessagePolicy: corev1.TerminationMessageReadFile,
