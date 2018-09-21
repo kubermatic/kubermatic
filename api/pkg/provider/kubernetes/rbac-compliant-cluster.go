@@ -11,10 +11,8 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
@@ -117,13 +115,6 @@ func (p *RBACCompliantClusterProvider) List(project *kubermaticapiv1.Project, op
 	if options == nil {
 		return projectClusters, nil
 	}
-	if len(options.SortBy) > 0 {
-		var err error
-		projectClusters, err = p.sortBy(projectClusters, options.SortBy)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if len(options.ClusterSpecName) == 0 {
 		return projectClusters, nil
 	}
@@ -204,25 +195,4 @@ func (p *RBACCompliantClusterProvider) GetMachineClientForCustomerCluster(c *kub
 // Note that the client you will get has admin privileges
 func (p *RBACCompliantClusterProvider) GetKubernetesClientForCustomerCluster(c *kubermaticapiv1.Cluster) (kubernetes.Interface, error) {
 	return p.userClusterConnProvider.GetClient(c)
-}
-
-// sortBy sort the given clusters by the specified field name (sortBy param)
-func (p *RBACCompliantClusterProvider) sortBy(clusters []*kubermaticapiv1.Cluster, sortBy string) ([]*kubermaticapiv1.Cluster, error) {
-	if len(clusters) == 0 {
-		return clusters, nil
-	}
-	rawKeys := []runtime.Object{}
-	for index := range clusters {
-		rawKeys = append(rawKeys, clusters[index])
-	}
-	sorter, err := sortObjects(scheme.Codecs.UniversalDecoder(), rawKeys, sortBy)
-	if err != nil {
-		return nil, err
-	}
-
-	sortedClusters := make([]*kubermaticapiv1.Cluster, len(clusters))
-	for index := range clusters {
-		sortedClusters[index] = clusters[sorter.originalPosition(index)]
-	}
-	return sortedClusters, nil
 }

@@ -14,8 +14,6 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 // NewRBACCompliantSSHKeyProvider returns a new ssh key provider that respects RBAC policies
@@ -109,13 +107,6 @@ func (p *RBACCompliantSSHKeyProvider) List(project *kubermaticapiv1.Project, opt
 	if options == nil {
 		return projectKeys, nil
 	}
-	if len(options.SortBy) > 0 {
-		var err error
-		projectKeys, err = p.sortBy(projectKeys, options.SortBy)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if len(options.ClusterName) == 0 {
 		return projectKeys, nil
 	}
@@ -161,25 +152,4 @@ func (p *RBACCompliantSSHKeyProvider) Update(userInfo *provider.UserInfo, newKey
 		return nil, err
 	}
 	return masterImpersonatedClient.UserSSHKeies().Update(newKey)
-}
-
-// sortBy sort the given keys by the specified field name (sortBy param)
-func (p *RBACCompliantSSHKeyProvider) sortBy(keys []*kubermaticapiv1.UserSSHKey, sortBy string) ([]*kubermaticapiv1.UserSSHKey, error) {
-	if len(keys) == 0 {
-		return keys, nil
-	}
-	rawKeys := []runtime.Object{}
-	for index := range keys {
-		rawKeys = append(rawKeys, keys[index])
-	}
-	sorter, err := sortObjects(scheme.Codecs.UniversalDecoder(), rawKeys, sortBy)
-	if err != nil {
-		return nil, err
-	}
-
-	sortedKeys := make([]*kubermaticapiv1.UserSSHKey, len(keys))
-	for index := range keys {
-		sortedKeys[index] = keys[sorter.originalPosition(index)]
-	}
-	return sortedKeys, nil
 }

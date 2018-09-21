@@ -1,14 +1,14 @@
 package rbac
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	kubermaticsharedinformer "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticsharedinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -18,9 +18,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	rbacinformer "k8s.io/client-go/informers/rbac/v1"
-	"k8s.io/client-go/kubernetes"
-	rbaclister "k8s.io/client-go/listers/rbac/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -57,21 +54,17 @@ type Controller struct {
 	projectQueue workqueue.RateLimitingInterface
 	metrics      *Metrics
 
-	kubermaticMasterClient   kubermaticclientset.Interface
 	projectLister            kubermaticv1lister.ProjectLister
 	userLister               kubermaticv1lister.UserLister
 	userProjectBindingLister kubermaticv1lister.UserProjectBindingLister
 
-	kubeMasterClient                   kubernetes.Interface
-	rbacClusterRoleMasterLister        rbaclister.ClusterRoleLister
-	rbacClusterRoleBindingMasterLister rbaclister.ClusterRoleBindingLister
-
 	projectResourcesInformers []cache.Controller
 	projectResourcesQueue     workqueue.RateLimitingInterface
 
-	allClusterProviders  []*ClusterProvider
-	seedClusterProviders []*ClusterProvider
-	projectResources     []projectResource
+	seedClusterProviders  []*ClusterProvider
+	masterClusterProvider *ClusterProvider
+
+	projectResources []projectResource
 }
 
 type projectResource struct {
@@ -84,24 +77,24 @@ type projectResource struct {
 // managing RBAC roles for project's resources
 // The controller will also set proper ownership chain through OwnerReferences
 // so that whenever a project is deleted dependants object will be garbage collected.
-func New(
-	metrics *Metrics,
-	kubermaticMasterClient kubermaticclientset.Interface,
-	kubermaticMasterInformerFactory kubermaticsharedinformer.SharedInformerFactory,
-	kubeMasterClient kubernetes.Interface,
-	rbacClusterRoleMasterInformer rbacinformer.ClusterRoleInformer,
-	rbacClusterRoleBindingMasterInformer rbacinformer.ClusterRoleBindingInformer,
-	seedClusterProviders []*ClusterProvider) (*Controller, error) {
+func New(metrics *Metrics, allClusterProviders []*ClusterProvider) (*Controller, error) {
 	c := &Controller{
-		projectQueue:           workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_project"),
-		projectResourcesQueue:  workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_project_resources"),
-		metrics:                metrics,
-		kubermaticMasterClient: kubermaticMasterClient,
-		kubeMasterClient:       kubeMasterClient,
-		seedClusterProviders:   seedClusterProviders,
+		projectQueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_project"),
+		projectResourcesQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_project_resources"),
+		metrics:               metrics,
 	}
 
-	projectInformer := kubermaticMasterInformerFactory.Kubermatic().V1().Projects()
+	for _, clusterProvider := range allClusterProviders {
+		if strings.HasPrefix(clusterProvider.providerName, MasterProviderPrefix) {
+			c.masterClusterProvider = clusterProvider
+			break
+		}
+	}
+	if c.masterClusterProvider == nil {
+		return nil, errors.New("cannot create controller because master cluster provider has not been found")
+	}
+
+	projectInformer := c.masterClusterProvider.kubermaticInformerFactory.Kubermatic().V1().Projects()
 	prometheus.MustRegister(metrics.Workers)
 
 	projectInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -128,15 +121,11 @@ func New(
 			c.enqueueProject(project)
 		},
 	})
+
 	c.projectLister = projectInformer.Lister()
-
-	userInformer := kubermaticMasterInformerFactory.Kubermatic().V1().Users()
+	userInformer := c.masterClusterProvider.kubermaticInformerFactory.Kubermatic().V1().Users()
 	c.userLister = userInformer.Lister()
-
-	c.userProjectBindingLister = kubermaticMasterInformerFactory.Kubermatic().V1().UserProjectBindings().Lister()
-
-	c.rbacClusterRoleBindingMasterLister = rbacClusterRoleBindingMasterInformer.Lister()
-	c.rbacClusterRoleMasterLister = rbacClusterRoleMasterInformer.Lister()
+	c.userProjectBindingLister = c.masterClusterProvider.kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister()
 
 	// a list of dependent resources that we would like to watch/monitor
 	c.projectResources = []projectResource{
@@ -169,21 +158,15 @@ func New(
 		},
 	}
 
-	allClusterProviders := seedClusterProviders
-	allClusterProviders = append(allClusterProviders, &ClusterProvider{
-		providerName:                 masterProviderName,
-		kubeClient:                   kubeMasterClient,
-		kubermaticClient:             kubermaticMasterClient,
-		kubermaticInformerFactory:    kubermaticMasterInformerFactory,
-		rbacClusterRoleLister:        c.rbacClusterRoleMasterLister,
-		rbacClusterRoleBindingLister: c.rbacClusterRoleBindingMasterLister,
-	})
-	c.allClusterProviders = allClusterProviders
-
 	for _, clusterProvider := range allClusterProviders {
+		glog.V(6).Infof("considering %s provider for resources", clusterProvider.providerName)
 		for _, resource := range c.projectResources {
-			if len(resource.destination) == 0 && clusterProvider.providerName != masterProviderName {
+			if len(resource.destination) == 0 && !strings.HasPrefix(clusterProvider.providerName, MasterProviderPrefix) {
 				glog.V(6).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the master cluster provider", resource.gvr.String(), clusterProvider.providerName)
+				continue
+			}
+			if resource.destination == destinationSeed && !strings.HasPrefix(clusterProvider.providerName, SeedProviderPrefix) {
+				glog.V(6).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the seed cluster provider", resource.gvr.String(), clusterProvider.providerName)
 				continue
 			}
 			informer, indexer, err := c.informerIndexerFor(clusterProvider.kubermaticInformerFactory, resource.gvr, resource.kind, clusterProvider)
@@ -192,6 +175,12 @@ func New(
 			}
 			clusterProvider.AddIndexerFor(indexer, resource.gvr)
 			c.projectResourcesInformers = append(c.projectResourcesInformers, informer)
+		}
+	}
+
+	for _, clusterProvider := range allClusterProviders {
+		if strings.HasPrefix(clusterProvider.providerName, SeedProviderPrefix) {
+			c.seedClusterProviders = append(c.seedClusterProviders, clusterProvider)
 		}
 	}
 

@@ -82,8 +82,7 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				kubermaticv1.WorkerNameLabelKey: p.workerName,
-				userLabelKey:                    user.ID,
+				userLabelKey: user.ID,
 			},
 			Name: name,
 		},
@@ -94,6 +93,10 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 			NamespaceName: NamespaceName(name),
 		},
 		Address: kubermaticv1.ClusterAddress{},
+	}
+
+	if p.workerName != "" {
+		cluster.Labels[kubermaticv1.WorkerNameLabelKey] = p.workerName
 	}
 
 	cluster, err = p.client.KubermaticV1().Clusters().Create(cluster)
