@@ -65,7 +65,7 @@ func main() {
 			log.Println()
 		}
 
-		log.Printf("[%d] Probing '%s'...\n", i, req.URL.String())
+		log.Printf("[%d/%d] Probing '%s'...\n", i, retries, req.URL.String())
 		resp, err := client.Do(req)
 		if err != nil {
 			log.Printf(padding+"Failed executing request: %v", err)
