@@ -837,6 +837,19 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:947d49e87af88a8fe52844d3394b94f25eeb98d8008c3bf53569b74fc8d696a1"
+  name = "github.com/onsi/ginkgo"
+  packages = [
+    "config",
+    "reporters",
+    "reporters/stenographer",
+    "types",
+  ]
+  pruneopts = "NUT"
+  revision = "3774a09d95489ccaa16032e0770d08ea77ba6184"
+  version = "v1.6.0"
+
+[[projects]]
   digest = "1:cce3a18fb0b96b5015cd8ca03a57d20a662679de03c4dc4b6ff5f17ea2050fa6"
   name = "github.com/pborman/uuid"
   packages = ["."]
@@ -1778,6 +1791,7 @@
     "github.com/kubermatic/machine-controller/pkg/userdata/ubuntu",
     "github.com/minio/minio-go",
     "github.com/oklog/run",
+    "github.com/onsi/ginkgo/reporters",
     "github.com/pmezard/go-difflib/difflib",
     "github.com/prometheus/client_golang/api",
     "github.com/prometheus/client_golang/api/prometheus/v1",
