@@ -524,3 +524,8 @@ func DeepEqual(a, b metav1.Object) bool {
 	glog.V(8).Infof("Object %T %s/%s differs from the one, generated: %v", a, a.GetNamespace(), a.GetName(), diff)
 	return false
 }
+
+// GetAbsoluteServiceDNSName returns the absolute DNS name for the given service and the given cluster. Absolute means a trailing dot will be appended to the DNS name
+func GetAbsoluteServiceDNSName(service, namespace string) string {
+	return fmt.Sprintf("%s.%s.svc.cluster.local.", service, namespace)
+}

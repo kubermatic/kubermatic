@@ -120,7 +120,7 @@ func newListSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProvid
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		keys, err := keyProvider.List(project, &provider.SSHKeyListOptions{SortBy: "metadata.creationTimestamp"})
+		keys, err := keyProvider.List(project, nil)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}

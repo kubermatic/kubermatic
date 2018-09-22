@@ -18,12 +18,15 @@ func IsRunningInitContainer(data resources.DeploymentDataProvider) (*corev1.Cont
 
 	return &corev1.Container{
 		Name:            "apiserver-running",
-		Image:           data.ImageRegistry(resources.RegistryDocker) + "/busybox",
+		Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/http-prober:v0.1",
 		ImagePullPolicy: corev1.PullIfNotPresent,
-		Command: []string{
-			"/bin/sh",
-			"-ec",
-			fmt.Sprintf("until wget -T 1 %s/healthz; do echo waiting for apiserver; sleep 2; done;", url),
+		Command:         []string{"/usr/local/bin/http-prober"},
+		Args: []string{
+			"-endpoint", fmt.Sprintf("%s/healthz", url.String()),
+			"-insecure",
+			"-retries", "100",
+			"-retry-wait", "2",
+			"-timeout", "1",
 		},
 		TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 		TerminationMessagePolicy: corev1.TerminationMessageReadFile,

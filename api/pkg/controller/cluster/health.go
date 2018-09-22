@@ -25,6 +25,7 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (*kubermaticv1.Clus
 		resources.ControllerManagerDeploymentName: {healthy: &health.Controller},
 		resources.SchedulerDeploymentName:         {healthy: &health.Scheduler},
 		resources.MachineControllerDeploymentName: {healthy: &health.MachineController},
+		resources.OpenVPNServerDeploymentName:     {healthy: &health.OpenVPN},
 	}
 
 	for name := range healthMapping {

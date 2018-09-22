@@ -106,6 +106,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 
 	if !cluster.Status.Health.AllHealthy() {
 		glog.V(5).Infof("Cluster %q not yet healthy: %+v", cluster.Name, cluster.Status.Health)
+		cc.enqueueAfter(cluster, reachableCheckPeriod)
 		return cluster, nil
 	}
 
