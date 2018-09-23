@@ -85,25 +85,18 @@ spec:
           readOnly: true
       initContainers:
       - args:
-        - -c
-        - |2-
-
-          name=apiserver-external.cluster-de-test-01.svc.cluster.local
-          port=30000
-          # manual re-resolving enables use of trailing dot with curl
-          ip=$(getent hosts $name | cut -d" " -f1)
-          while ! curl --resolve $name:$port:$ip --insecure --silent --show-error --max-time 3 https://apiserver-external.cluster-de-test-01.svc.cluster.local:30000/healthz; do
-              if [ $(( timeout+=1 )) -gt 100 ]; then
-                  echo "Giving up after 100 tries."
-                  exit 1
-              fi
-              sleep 2
-              echo "Retry $timeout/100"
-              ip=$(getent hosts $name | cut -d" " -f1)
-          done
+        - -endpoint
+        - https://apiserver-external.cluster-de-test-01.svc.cluster.local.:30000/healthz
+        - -insecure
+        - -retries
+        - "100"
+        - -retry-wait
+        - "2"
+        - -timeout
+        - "1"
         command:
-        - /bin/sh
-        image: quay.io/kubermatic/curl:v0.1
+        - /usr/local/bin/http-prober
+        image: quay.io/kubermatic/http-prober:v0.1
         imagePullPolicy: IfNotPresent
         name: apiserver-running
         resources: {}
