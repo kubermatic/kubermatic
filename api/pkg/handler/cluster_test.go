@@ -6,14 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"sort"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/go-test/deep"
-	"github.com/stretchr/testify/assert"
-
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
@@ -45,7 +42,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 		Body:             ``,
 		ExpectedResponse: `{}`,
 		HTTPStatus:       http.StatusOK,
-		ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
+		ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 		ExistingKubermaticUser: &kubermaticv1.User{
 			ObjectMeta: metav1.ObjectMeta{},
 			Spec: kubermaticv1.UserSpec{
@@ -233,7 +230,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 			ExpectedDeleteHTTPStatus:        http.StatusOK,
 			ExpectedGetHTTPStatus:           http.StatusOK,
 			ExpectedResponseOnGetAfterDelte: `[{"id":"key-abc-yafn","name":"key-display-name","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"fingerprint":"","publicKey":""}}]`,
-			ExistingProject:                 createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingProject:                 createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
@@ -393,7 +390,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 				},
 			},
 			HTTPStatus:      http.StatusOK,
-			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
@@ -504,19 +501,13 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			var receivedKeys []apiv1.NewSSHKey
-			dec := json.NewDecoder(res.Body)
-			err = dec.Decode(&receivedKeys)
-			assert.NoError(t, err)
+			actualKeys := newSSHKeyV1SliceWrapper{}
+			actualKeys.DecodeOrDie(res.Body, t).Sort()
 
-			// sort the slices before comparison because the unstable order would make the test flaky otherwise
-			sort.Slice(receivedKeys, func(i int, j int) bool {
-				return receivedKeys[i].CreationTimestamp.Before(receivedKeys[j].CreationTimestamp)
-			})
-			sort.Slice(tc.ExpectedKeys, func(i int, j int) bool {
-				return tc.ExpectedKeys[i].CreationTimestamp.Before(tc.ExpectedKeys[j].CreationTimestamp)
-			})
-			assert.Equal(t, receivedKeys, tc.ExpectedKeys)
+			wrappedExpectedKeys := newSSHKeyV1SliceWrapper(tc.ExpectedKeys)
+			wrappedExpectedKeys.Sort()
+
+			actualKeys.EqualOrDie(wrappedExpectedKeys, t)
 		})
 	}
 }
@@ -541,7 +532,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 			SSHKeyID:         "key-c08aa5c7abf34504f18552846485267d-yafn",
 			ExpectedResponse: `{}`,
 			HTTPStatus:       http.StatusCreated,
-			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
@@ -621,7 +612,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 			SSHKeyID:         "key-c08aa5c7abf34504f18552846485267d-yafn",
 			ExpectedResponse: `{"error":{"code":500,"message":"the given ssh key key-c08aa5c7abf34504f18552846485267d-yafn does not belong to the given project my-first-project (my-first-projectInternalName)"}}`,
 			HTTPStatus:       http.StatusInternalServerError,
-			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
@@ -757,7 +748,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			Body:             `{"name":"keen-snyder","spec":{"cloud":{"digitalocean":{"token":"dummy_token"},"dc":"do-fra1"}, "version":""}}`,
 			ExpectedResponse: `{"error":{"code":400,"message":"invalid cluster: invalid cloud spec \"Version\" is required but was not specified"}}`,
 			HTTPStatus:       http.StatusBadRequest,
-			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
@@ -785,7 +776,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"dc":"do-fra1","fake":{"token":"dummy_token"}},"version":"1.9.7"},"status":{"version":"1.9.7","url":""}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
-			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
@@ -825,7 +816,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			Body:             `{"cluster":{"humanReadableName":"keen-snyder","version":"1.9.7","pause":false,"cloud":{"digitalocean":{"token":"dummy_token"},"dc":"do-fra1"}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
 			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: The user \"john@acme.com\" doesn't belong to the given project = my-first-projectInternalName"}}`,
 			HTTPStatus:       http.StatusForbidden,
-			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
@@ -852,7 +843,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			Body:             `{"cluster":{"humanReadableName":"keen-snyder","version":"1.9.7","pause":false,"cloud":{"digitalocean":{"token":"dummy_token"},"dc":"do-fra1"}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
 			ExpectedResponse: `{"error":{"code":503,"message":"Project is not initialized yet"}}`,
 			HTTPStatus:       http.StatusServiceUnavailable,
-			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectInactive),
+			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectInactive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
@@ -936,7 +927,7 @@ func TestGetClusterHealth(t *testing.T) {
 			ExpectedResponse: `{"apiserver":true,"scheduler":false,"controller":true,"machineController":false,"etcd":true}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
-			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
@@ -1065,7 +1056,7 @@ func TestUpdateCluster(t *testing.T) {
 			ExpectedResponse: `{"id":"keen-snyder","name":"cluster-abc","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"dc":"do-fra1","fake":{"token":"dummy_token"}},"version":"0.0.1"},"status":{"version":"0.0.1","url":""}}`,
 			ClusterToUpdate:  "keen-snyder",
 			HTTPStatus:       http.StatusOK,
-			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
@@ -1183,7 +1174,7 @@ func TestGetCluster(t *testing.T) {
 			ExpectedResponse: `{"id":"InternalNameOfTheObject","name":"cluster-abc","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"dc":"MyPowerfulDatacenter","fake":{"token":"SecretToken"}},"version":"9.9.9"},"status":{"version":"9.9.9","url":""}}`,
 			ClusterToGet:     "InternalNameOfTheObject",
 			HTTPStatus:       http.StatusOK,
-			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
@@ -1337,7 +1328,7 @@ func TestListClusters(t *testing.T) {
 				},
 			},
 			HTTPStatus:      http.StatusOK,
-			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
@@ -1431,19 +1422,13 @@ func TestListClusters(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			var receivedClusters []apiv1.NewCluster
-			dec := json.NewDecoder(res.Body)
-			err = dec.Decode(&receivedClusters)
-			assert.NoError(t, err)
+			actualClusters := newClusterV1SliceWrapper{}
+			actualClusters.DecodeOrDie(res.Body, t).Sort()
 
-			// sort the slices before comparison because the unstable order would make the test flaky otherwise
-			sort.Slice(receivedClusters, func(i int, j int) bool {
-				return receivedClusters[i].CreationTimestamp.Before(receivedClusters[j].CreationTimestamp)
-			})
-			sort.Slice(tc.ExpectedClusters, func(i int, j int) bool {
-				return tc.ExpectedClusters[i].CreationTimestamp.Before(tc.ExpectedClusters[j].CreationTimestamp)
-			})
-			assert.Equal(t, receivedClusters, tc.ExpectedClusters)
+			wrappedExpectedClusters := newClusterV1SliceWrapper(tc.ExpectedClusters)
+			wrappedExpectedClusters.Sort()
+
+			actualClusters.EqualOrDie(wrappedExpectedClusters, t)
 		})
 	}
 }
@@ -1844,6 +1829,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 }
 
 func TestGetClusterAdminTokenEndpoint(t *testing.T) {
+	t.Parallel()
 	tester := apiv1.User{
 		ID:    testUserName,
 		Email: testUserEmail,
@@ -1863,7 +1849,7 @@ func TestGetClusterAdminTokenEndpoint(t *testing.T) {
 		},
 	}
 
-	project := createTestProject("my-first-project", kubermaticv1.ProjectActive)
+	project := createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp())
 
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1906,6 +1892,7 @@ func TestGetClusterAdminTokenEndpoint(t *testing.T) {
 }
 
 func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
+	t.Parallel()
 	tester := apiv1.User{
 		ID:    testUserName,
 		Email: testUserEmail,
@@ -1925,7 +1912,7 @@ func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 		},
 	}
 
-	project := createTestProject("my-first-project", kubermaticv1.ProjectActive)
+	project := createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp())
 
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{

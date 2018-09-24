@@ -1,9 +1,7 @@
 package handler
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -39,7 +37,13 @@ var plan9 = &kubermaticapiv1.Project{
 }
 
 func TestGetUsersForProject(t *testing.T) {
+	t.Parallel()
 	const longForm = "Jan 2, 2006 at 3:04pm (MST)"
+	creationTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	testcases := []struct {
 		Name                        string
 		ExpectedResponse            []apiv1.NewUser
@@ -57,14 +61,15 @@ func TestGetUsersForProject(t *testing.T) {
 			HTTPStatus:   http.StatusOK,
 			ProjectToGet: "fooInternalName",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				createTestProject("foo", kubermaticapiv1.ProjectActive),
-				createTestProject("bar", kubermaticapiv1.ProjectActive),
-				createTestProject("zorg", kubermaticapiv1.ProjectActive),
+				createTestProject("foo", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				createTestProject("bar", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				createTestProject("zorg", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 			},
 			ExistingKubermaticUsers: []*kubermaticapiv1.User{
 				&kubermaticapiv1.User{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "john",
+						Name:              "john",
+						CreationTimestamp: metav1.NewTime(creationTime),
 					},
 					Spec: kubermaticapiv1.UserSpec{
 						Name:  "john",
@@ -84,7 +89,8 @@ func TestGetUsersForProject(t *testing.T) {
 				},
 				&kubermaticapiv1.User{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "alice",
+						Name:              "alice",
+						CreationTimestamp: metav1.NewTime(creationTime.Add(time.Minute)),
 					},
 					Spec: kubermaticapiv1.UserSpec{
 						Name:  "Alice",
@@ -99,7 +105,8 @@ func TestGetUsersForProject(t *testing.T) {
 				},
 				&kubermaticapiv1.User{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "bob",
+						Name:              "bob",
+						CreationTimestamp: metav1.NewTime(creationTime.Add(2 * time.Minute)),
 					},
 					Spec: kubermaticapiv1.UserSpec{
 						Name:  "Bob",
@@ -129,15 +136,9 @@ func TestGetUsersForProject(t *testing.T) {
 			ExpectedResponse: []apiv1.NewUser{
 				apiv1.NewUser{
 					NewObjectMeta: apiv1.NewObjectMeta{
-						ID:   "john",
-						Name: "john",
-						CreationTimestamp: func() time.Time {
-							creationTime, err := time.Parse(longForm, "Jan 1, 0001 at 0:00am (PST)")
-							if err != nil {
-								t.Fatal(err)
-							}
-							return creationTime
-						}(),
+						ID:                "john",
+						Name:              "john",
+						CreationTimestamp: time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
 					},
 					Email: "john@acme.com",
 					Projects: []apiv1.ProjectGroup{
@@ -150,15 +151,9 @@ func TestGetUsersForProject(t *testing.T) {
 
 				apiv1.NewUser{
 					NewObjectMeta: apiv1.NewObjectMeta{
-						ID:   "alice",
-						Name: "Alice",
-						CreationTimestamp: func() time.Time {
-							creationTime, err := time.Parse(longForm, "Jan 1, 0001 at 0:00am (PST)")
-							if err != nil {
-								t.Fatal(err)
-							}
-							return creationTime
-						}(),
+						ID:                "alice",
+						Name:              "Alice",
+						CreationTimestamp: time.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC),
 					},
 					Email: "alice@acme.com",
 					Projects: []apiv1.ProjectGroup{
@@ -171,15 +166,9 @@ func TestGetUsersForProject(t *testing.T) {
 
 				apiv1.NewUser{
 					NewObjectMeta: apiv1.NewObjectMeta{
-						ID:   "bob",
-						Name: "Bob",
-						CreationTimestamp: func() time.Time {
-							creationTime, err := time.Parse(longForm, "Jan 1, 0001 at 0:00am (PST)")
-							if err != nil {
-								t.Fatal(err)
-							}
-							return creationTime
-						}(),
+						ID:                "bob",
+						Name:              "Bob",
+						CreationTimestamp: time.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC),
 					},
 					Email: "bob@acme.com",
 					Projects: []apiv1.ProjectGroup{
@@ -196,8 +185,8 @@ func TestGetUsersForProject(t *testing.T) {
 			HTTPStatus:   http.StatusForbidden,
 			ProjectToGet: "foo2InternalName",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				createTestProject("foo2", kubermaticapiv1.ProjectActive),
-				createTestProject("bar2", kubermaticapiv1.ProjectActive),
+				createTestProject("foo2", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				createTestProject("bar2", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 			},
 			ExistingKubermaticUsers: []*kubermaticapiv1.User{
 				&kubermaticapiv1.User{
@@ -267,33 +256,13 @@ func TestGetUsersForProject(t *testing.T) {
 			}
 
 			if len(tc.ExpectedResponse) > 0 {
-				usersFromResponse := []apiv1.NewUser{}
-				rawBody, err := ioutil.ReadAll(res.Body)
-				if err != nil {
-					t.Fatal(err)
-				}
-				err = json.Unmarshal(rawBody, &usersFromResponse)
-				if err != nil {
-					t.Fatal(err)
-				}
-				if len(usersFromResponse) != len(tc.ExpectedResponse) {
-					t.Fatalf("expected to get %d keys but got %d", len(tc.ExpectedResponse), len(usersFromResponse))
-				}
+				actualUsers := newUserV1SliceWrapper{}
+				actualUsers.DecodeOrDie(res.Body, t).Sort()
 
-				for _, expectedUser := range tc.ExpectedResponse {
-					found := false
-					for _, actualUser := range usersFromResponse {
-						if actualUser.ID == expectedUser.ID {
-							if !areEqualOrDie(t, actualUser, expectedUser) {
-								t.Fatalf("actual user != expected user, diff = %v", diff.ObjectDiff(actualUser, expectedUser))
-							}
-							found = true
-						}
-					}
-					if !found {
-						t.Fatalf("the user with the name = %s was not found in the returned output", expectedUser.Name)
-					}
-				}
+				wrappedExpectedUsers := newUserV1SliceWrapper(tc.ExpectedResponse)
+				wrappedExpectedUsers.Sort()
+
+				actualUsers.EqualOrDie(wrappedExpectedUsers, t)
 			}
 
 			if len(tc.ExpectedResponseString) > 0 {
@@ -326,8 +295,8 @@ func TestDeleteUserFromProject(t *testing.T) {
 			HTTPStatus:    http.StatusOK,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
-				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				plan9,
 			},
 			UserIDToDelete: "bobID",
@@ -424,8 +393,8 @@ func TestDeleteUserFromProject(t *testing.T) {
 			HTTPStatus:    http.StatusBadRequest,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
-				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				plan9,
 			},
 			UserIDToDelete: "bobID",
@@ -503,8 +472,8 @@ func TestDeleteUserFromProject(t *testing.T) {
 			HTTPStatus:    http.StatusForbidden,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
-				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				plan9,
 			},
 			UserIDToDelete: testUserID,
@@ -650,8 +619,8 @@ func TestEditUserInProject(t *testing.T) {
 			HTTPStatus:    http.StatusOK,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
-				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				plan9,
 			},
 			UserIDToUpdate: "bobID",
@@ -764,8 +733,8 @@ func TestEditUserInProject(t *testing.T) {
 			HTTPStatus:    http.StatusBadRequest,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
-				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				plan9,
 			},
 			UserIDToUpdate: "bobID",
@@ -843,8 +812,8 @@ func TestEditUserInProject(t *testing.T) {
 			HTTPStatus:    http.StatusForbidden,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
-				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				plan9,
 			},
 			UserIDToUpdate: "bobID",
@@ -940,8 +909,8 @@ func TestEditUserInProject(t *testing.T) {
 			HTTPStatus:    http.StatusBadRequest,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
-				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				plan9,
 			},
 			UserIDToUpdate: "bobID",
@@ -1104,8 +1073,8 @@ func TestAddUserToProject(t *testing.T) {
 			HTTPStatus:    http.StatusCreated,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
-				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				plan9,
 			},
 			ExistingKubermaticUsers: []*kubermaticapiv1.User{
@@ -1176,8 +1145,8 @@ func TestAddUserToProject(t *testing.T) {
 			HTTPStatus:    http.StatusForbidden,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
-				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				plan9,
 			},
 			ExistingKubermaticUsers: []*kubermaticapiv1.User{
@@ -1232,8 +1201,8 @@ func TestAddUserToProject(t *testing.T) {
 			HTTPStatus:    http.StatusForbidden,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
-				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				plan9,
 			},
 			ExistingKubermaticUsers: []*kubermaticapiv1.User{
@@ -1288,8 +1257,8 @@ func TestAddUserToProject(t *testing.T) {
 			HTTPStatus:    http.StatusForbidden,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
-				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				plan9,
 			},
 			ExistingKubermaticUsers: []*kubermaticapiv1.User{
@@ -1344,8 +1313,8 @@ func TestAddUserToProject(t *testing.T) {
 			HTTPStatus:    http.StatusBadRequest,
 			ProjectToSync: "plan9",
 			ExistingProjects: []*kubermaticapiv1.Project{
-				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
-				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				plan9,
 			},
 			ExistingKubermaticUsers: []*kubermaticapiv1.User{

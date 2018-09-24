@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -17,7 +16,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/diff"
 	clienttesting "k8s.io/client-go/testing"
 )
 
@@ -44,7 +42,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 			Body:            ``,
 			HTTPStatus:      http.StatusOK,
 			NodeIDToDelete:  "venus",
-			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
@@ -220,7 +218,7 @@ func TestListNodesForCluster(t *testing.T) {
 			Name:            "scenario 1: list nodes that belong to the given cluster",
 			Body:            ``,
 			HTTPStatus:      http.StatusOK,
-			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
@@ -412,38 +410,13 @@ func TestListNodesForCluster(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			{
-				nodesFromResponse := []apiv1.Node{}
-				rawBody, err := ioutil.ReadAll(res.Body)
-				if err != nil {
-					t.Fatal(err)
-				}
+			actualNodes := nodeV1SliceWrapper{}
+			actualNodes.DecodeOrDie(res.Body, t).Sort()
 
-				err = json.Unmarshal(rawBody, &nodesFromResponse)
-				if err != nil {
-					t.Fatal(err)
-				}
+			wrappedExpectedNodes := nodeV1SliceWrapper(tc.ExpectedResponse)
+			wrappedExpectedNodes.Sort()
 
-				if len(nodesFromResponse) != len(tc.ExpectedResponse) {
-					t.Fatalf("expected to get %d keys but got %d", len(tc.ExpectedResponse), len(nodesFromResponse))
-				}
-
-				for _, expectedNode := range tc.ExpectedResponse {
-					found := false
-					for _, actualNode := range nodesFromResponse {
-						if actualNode.ID == expectedNode.ID {
-							if !areEqualOrDie(t, actualNode, expectedNode) {
-								t.Fatalf("actual node != expected node, diff = %v", diff.ObjectDiff(actualNode, expectedNode))
-							}
-							found = true
-						}
-					}
-					if !found {
-						t.Fatalf("the node with the name = %s was not found in the returned output", expectedNode.Name)
-					}
-				}
-
-			}
+			actualNodes.EqualOrDie(wrappedExpectedNodes, t)
 		})
 	}
 }
@@ -470,7 +443,7 @@ func TestGetNodeForCluster(t *testing.T) {
 			ExpectedResponse: `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":null}},"operatingSystem":{},"versions":{"kubelet":"","containerRuntime":{"name":"","version":""}}},"status":{"machineName":"venus","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
 			HTTPStatus:       http.StatusOK,
 			NodeIDToSync:     "venus",
-			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
@@ -579,7 +552,7 @@ func TestCreateNodeForCluster(t *testing.T) {
 			ExpectedResponse:                   `{"id":"%s","name":"%s","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-abcd"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"","containerRuntime":{"name":"docker","version":""}}},"status":{"machineName":"%s","capacity":{"cpu":"","memory":""},"allocatable":{"cpu":"","memory":""},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
 			HTTPStatus:                         http.StatusCreated,
 			RewriteClusterNameAndNamespaceName: true,
-			ExistingProject:                    createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingProject:                    createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
@@ -633,7 +606,7 @@ func TestCreateNodeForCluster(t *testing.T) {
 			ExpectedResponse:                   `{"error":{"code":503,"message":"Cluster components are not ready yet"}}`,
 			HTTPStatus:                         http.StatusServiceUnavailable,
 			RewriteClusterNameAndNamespaceName: true,
-			ExistingProject:                    createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingProject:                    createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
