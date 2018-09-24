@@ -1,12 +1,14 @@
 package handler
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/go-test/deep"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -201,24 +203,6 @@ func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseS
 	}
 }
 
-// areEqualOrDie checks if binary representation of actual and expected is equal.
-//
-// note that:
-// this function fails when conversion is not possible
-func areEqualOrDie(t *testing.T, actual, expected interface{}) bool {
-	t.Helper()
-	actualBytes, err := json.Marshal(actual)
-	if err != nil {
-		t.Fatalf("failed to marshal actual: %v", err)
-	}
-
-	expectedBytes, err := json.Marshal(expected)
-	if err != nil {
-		t.Fatalf("failed to marshal expected: %v", err)
-	}
-	return bytes.Equal(actualBytes, expectedBytes)
-}
-
 const (
 	testUserID    = "1233"
 	testUserName  = "user1"
@@ -292,4 +276,154 @@ func (f *fakeUserClusterConnection) GetClient(c *kubermaticapiv1.Cluster) (kuber
 type clientsSets struct {
 	fakeKubermaticClient *kubermaticfakeclentset.Clientset
 	fakeMachineClient    *fakeclusterclientset.Clientset
+}
+
+// new>SSHKeyV1SliceWrapper wraps []apiv1.NewSSHKey
+// to provide convenient methods for tests
+type newSSHKeyV1SliceWrapper []apiv1.NewSSHKey
+
+// Sort sorts the collection by CreationTimestamp
+func (k newSSHKeyV1SliceWrapper) Sort() {
+	sort.Slice(k, func(i, j int) bool {
+		return k[i].CreationTimestamp.Before(k[j].CreationTimestamp)
+	})
+}
+
+// DecodeOrDie reads and decodes json data from the reader
+func (k *newSSHKeyV1SliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *newSSHKeyV1SliceWrapper {
+	t.Helper()
+	dec := json.NewDecoder(r)
+	err := dec.Decode(k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return k
+}
+
+// EqualOrDie compares whether expected collection is equal to the actual one
+func (k newSSHKeyV1SliceWrapper) EqualOrDie(expected newSSHKeyV1SliceWrapper, t *testing.T) {
+	t.Helper()
+	if diff := deep.Equal(k, expected); diff != nil {
+		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+	}
+}
+
+// newClusterV1SliceWrapper wraps []apiv1.NewCluster
+// to provide convenient methods for tests
+type newClusterV1SliceWrapper []apiv1.NewCluster
+
+// Sort sorts the collection by CreationTimestamp
+func (k newClusterV1SliceWrapper) Sort() {
+	sort.Slice(k, func(i, j int) bool {
+		return k[i].CreationTimestamp.Before(k[j].CreationTimestamp)
+	})
+}
+
+// DecodeOrDie reads and decodes json data from the reader
+func (k *newClusterV1SliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *newClusterV1SliceWrapper {
+	t.Helper()
+	dec := json.NewDecoder(r)
+	err := dec.Decode(k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return k
+}
+
+// EqualOrDie compares whether expected collection is equal to the actual one
+func (k newClusterV1SliceWrapper) EqualOrDie(expected newClusterV1SliceWrapper, t *testing.T) {
+	t.Helper()
+	if diff := deep.Equal(k, expected); diff != nil {
+		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+	}
+}
+
+// nodeV1SliceWrapper wraps []apiv1.Node
+// to provide convenient methods for tests
+type nodeV1SliceWrapper []apiv1.Node
+
+// Sort sorts the collection by CreationTimestamp
+func (k nodeV1SliceWrapper) Sort() {
+	sort.Slice(k, func(i, j int) bool {
+		return k[i].CreationTimestamp.Before(k[j].CreationTimestamp)
+	})
+}
+
+// DecodeOrDie reads and decodes json data from the reader
+func (k *nodeV1SliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *nodeV1SliceWrapper {
+	t.Helper()
+	dec := json.NewDecoder(r)
+	err := dec.Decode(k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return k
+}
+
+// EqualOrDie compares whether expected collection is equal to the actual one
+func (k nodeV1SliceWrapper) EqualOrDie(expected nodeV1SliceWrapper, t *testing.T) {
+	t.Helper()
+	if diff := deep.Equal(k, expected); diff != nil {
+		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+	}
+}
+
+// projectV1SliceWrapper wraps []apiv1.Project
+// to provide convenient methods for tests
+type projectV1SliceWrapper []apiv1.Project
+
+// Sort sorts the collection by CreationTimestamp
+func (k projectV1SliceWrapper) Sort() {
+	sort.Slice(k, func(i, j int) bool {
+		return k[i].CreationTimestamp.Before(k[j].CreationTimestamp)
+	})
+}
+
+// DecodeOrDie reads and decodes json data from the reader
+func (k *projectV1SliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *projectV1SliceWrapper {
+	t.Helper()
+	dec := json.NewDecoder(r)
+	err := dec.Decode(k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return k
+}
+
+// EqualOrDie compares whether expected collection is equal to the actual one
+func (k projectV1SliceWrapper) EqualOrDie(expected projectV1SliceWrapper, t *testing.T) {
+	t.Helper()
+	if diff := deep.Equal(k, expected); diff != nil {
+		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+	}
+}
+
+// newUserV1SliceWrapper wraps []apiv1.NewUser
+// to provide convenient methods for tests
+type newUserV1SliceWrapper []apiv1.NewUser
+
+// Sort sorts the collection by CreationTimestamp
+func (k newUserV1SliceWrapper) Sort() {
+	sort.Slice(k, func(i, j int) bool {
+		return k[i].CreationTimestamp.Before(k[j].CreationTimestamp)
+	})
+}
+
+// DecodeOrDie reads and decodes json data from the reader
+func (k *newUserV1SliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *newUserV1SliceWrapper {
+	t.Helper()
+	dec := json.NewDecoder(r)
+	err := dec.Decode(k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return k
+}
+
+// EqualOrDie compares whether expected collection is equal to the actual one
+func (k newUserV1SliceWrapper) EqualOrDie(expected newUserV1SliceWrapper, t *testing.T) {
+	t.Helper()
+	if diff := deep.Equal(k, expected); diff != nil {
+		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+	}
 }
