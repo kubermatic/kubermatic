@@ -3,23 +3,26 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/diff"
 )
 
 const testingProjectName = "my-first-projectInternalName"
 
-func createTestProject(name, phase string) *kubermaticapiv1.Project {
+func defaultCreationTimestamp() time.Time {
+	return time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)
+}
+
+func createTestProject(name, phase string, creationTime time.Time) *kubermaticapiv1.Project {
 	return &kubermaticapiv1.Project{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name + "InternalName",
@@ -31,6 +34,7 @@ func createTestProject(name, phase string) *kubermaticapiv1.Project {
 					Name:       "John",
 				},
 			},
+			CreationTimestamp: metav1.NewTime(creationTime),
 		},
 		Spec: kubermaticapiv1.ProjectSpec{Name: name},
 		Status: kubermaticapiv1.ProjectStatus{
@@ -55,9 +59,9 @@ func TestListProjectEndpoint(t *testing.T) {
 			Body:       ``,
 			HTTPStatus: http.StatusOK,
 			ExistingProjects: []*kubermaticapiv1.Project{
-				createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
-				createTestProject("my-second-project", kubermaticapiv1.ProjectActive),
-				createTestProject("my-third-project", kubermaticapiv1.ProjectActive),
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				createTestProject("my-second-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp().Add(time.Minute)),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp().Add(2*time.Minute)),
 			},
 			ExistingKubermaticUser: &kubermaticapiv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
@@ -84,15 +88,17 @@ func TestListProjectEndpoint(t *testing.T) {
 				apiv1.Project{
 					Status: "Active",
 					NewObjectMeta: apiv1.NewObjectMeta{
-						ID:   "my-first-projectInternalName",
-						Name: "my-first-project",
+						ID:                "my-first-projectInternalName",
+						Name:              "my-first-project",
+						CreationTimestamp: time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
 					},
 				},
 				apiv1.Project{
 					Status: "Active",
 					NewObjectMeta: apiv1.NewObjectMeta{
-						ID:   "my-third-projectInternalName",
-						Name: "my-third-project",
+						ID:                "my-third-projectInternalName",
+						Name:              "my-third-project",
+						CreationTimestamp: time.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC),
 					},
 				},
 			},
@@ -119,39 +125,13 @@ func TestListProjectEndpoint(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			// validate the response, we actually need to compare the output against ExpectedResponse
-			// note that the output contains the list which is not stable (sorted)
-			{
-				projectsFromResponse := []apiv1.Project{}
-				rawBody, err := ioutil.ReadAll(res.Body)
-				if err != nil {
-					t.Fatal(err)
-				}
+			actualProjects := projectV1SliceWrapper{}
+			actualProjects.DecodeOrDie(res.Body, t).Sort()
 
-				err = json.Unmarshal(rawBody, &projectsFromResponse)
-				if err != nil {
-					t.Fatal(err)
-				}
+			wrappedExpectedProjects := projectV1SliceWrapper(tc.ExpectedResponse)
+			wrappedExpectedProjects.Sort()
 
-				if len(projectsFromResponse) != len(tc.ExpectedResponse) {
-					t.Fatalf("expected to get %d keys but got %d", len(tc.ExpectedResponse), len(projectsFromResponse))
-				}
-
-				for _, expectedProject := range tc.ExpectedResponse {
-					found := false
-					for _, actualProject := range projectsFromResponse {
-						if actualProject.ID == expectedProject.ID {
-							if !areEqualOrDie(t, actualProject, expectedProject) {
-								t.Fatalf("actual project != expected project, diff = %v", diff.ObjectDiff(actualProject, expectedProject))
-							}
-							found = true
-						}
-					}
-					if !found {
-						t.Fatalf("the project with the name = %s was not found in the returned output", expectedProject.Name)
-					}
-				}
-			}
+			actualProjects.EqualOrDie(wrappedExpectedProjects, t)
 		})
 	}
 }
@@ -172,9 +152,9 @@ func TestGetProjectEndpoint(t *testing.T) {
 			Name:             "scenario 1: get an existing project assigned to the given user",
 			Body:             ``,
 			ProjectToSync:    testingProjectName,
-			ExpectedResponse: `{"id":"my-first-projectInternalName","name":"my-first-project","creationTimestamp":"0001-01-01T00:00:00Z","status":"Active"}`,
+			ExpectedResponse: `{"id":"my-first-projectInternalName","name":"my-first-project","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active"}`,
 			HTTPStatus:       http.StatusOK,
-			ExistingProject:  createTestProject("my-first-project", kubermaticapiv1.ProjectActive),
+			ExistingProject:  createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticapiv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticapiv1.UserSpec{
