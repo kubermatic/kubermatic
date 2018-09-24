@@ -24,7 +24,7 @@ spec:
         - kubermatic-cluster-docluster-1a2b3c4d5e
         token: ""
       containerRuntimeInfo:
-        name: docker
+        name: ""
         version: ""
       operatingSystem: ubuntu
       operatingSystemSpec:

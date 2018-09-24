@@ -30,7 +30,7 @@ spec:
         tokenId: ""
         username: ""
       containerRuntimeInfo:
-        name: docker
+        name: ""
         version: ""
       operatingSystem: ubuntu
       operatingSystemSpec:

@@ -47,12 +47,6 @@ func Machine(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.DatacenterMe
 		config.SSHPublicKeys[i] = key.Spec.PublicKey
 	}
 
-	// Required for TestCreateNodeForCluster/scenario_1 not to fail
-	// I (@alvaroaleman) have no idea what did the defaulting before
-	if node.Spec.Versions.ContainerRuntime.Name == "" {
-		node.Spec.Versions.ContainerRuntime.Name = "docker"
-	}
-
 	config.ContainerRuntimeInfo.Name = node.Spec.Versions.ContainerRuntime.Name
 	config.ContainerRuntimeInfo.Version = node.Spec.Versions.ContainerRuntime.Version
 

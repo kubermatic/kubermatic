@@ -27,7 +27,7 @@ spec:
         vmSize: Standard_B1ms
         vnetName: cluster-azurecluster-1a2b3c4d5e
       containerRuntimeInfo:
-        name: docker
+        name: ""
         version: ""
       operatingSystem: coreos
       operatingSystemSpec:

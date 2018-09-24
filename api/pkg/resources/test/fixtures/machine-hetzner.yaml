@@ -16,7 +16,7 @@ spec:
         serverType: hetzner-type
         token: ""
       containerRuntimeInfo:
-        name: docker
+        name: ""
         version: ""
       operatingSystem: ubuntu
       operatingSystemSpec:
