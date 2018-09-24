@@ -18,7 +18,7 @@ import (
 
 const testingProjectName = "my-first-projectInternalName"
 
-func defaultCreatoinTimestamp() time.Time {
+func defaultCreationTimestamp() time.Time {
 	return time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)
 }
 
@@ -59,9 +59,9 @@ func TestListProjectEndpoint(t *testing.T) {
 			Body:       ``,
 			HTTPStatus: http.StatusOK,
 			ExistingProjects: []*kubermaticapiv1.Project{
-				createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreatoinTimestamp()),
-				createTestProject("my-second-project", kubermaticapiv1.ProjectActive, defaultCreatoinTimestamp().Add(time.Minute)),
-				createTestProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreatoinTimestamp().Add(2*time.Minute)),
+				createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				createTestProject("my-second-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp().Add(time.Minute)),
+				createTestProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp().Add(2*time.Minute)),
 			},
 			ExistingKubermaticUser: &kubermaticapiv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
@@ -125,10 +125,10 @@ func TestListProjectEndpoint(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			actualProjects := ProjectV1SliceWrapper{}
+			actualProjects := projectV1SliceWrapper{}
 			actualProjects.DecodeOrDie(res.Body, t).Sort()
 
-			wrappedExpectedProjects := ProjectV1SliceWrapper(tc.ExpectedResponse)
+			wrappedExpectedProjects := projectV1SliceWrapper(tc.ExpectedResponse)
 			wrappedExpectedProjects.Sort()
 
 			actualProjects.EqualOrDie(wrappedExpectedProjects, t)
@@ -154,7 +154,7 @@ func TestGetProjectEndpoint(t *testing.T) {
 			ProjectToSync:    testingProjectName,
 			ExpectedResponse: `{"id":"my-first-projectInternalName","name":"my-first-project","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active"}`,
 			HTTPStatus:       http.StatusOK,
-			ExistingProject:  createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreatoinTimestamp()),
+			ExistingProject:  createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticapiv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticapiv1.UserSpec{

@@ -42,7 +42,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 			Body:            ``,
 			HTTPStatus:      http.StatusOK,
 			NodeIDToDelete:  "venus",
-			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreatoinTimestamp()),
+			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
@@ -218,7 +218,7 @@ func TestListNodesForCluster(t *testing.T) {
 			Name:            "scenario 1: list nodes that belong to the given cluster",
 			Body:            ``,
 			HTTPStatus:      http.StatusOK,
-			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreatoinTimestamp()),
+			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
@@ -410,10 +410,10 @@ func TestListNodesForCluster(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			actualNodes := NodeV1SliceWrapper{}
+			actualNodes := nodeV1SliceWrapper{}
 			actualNodes.DecodeOrDie(res.Body, t).Sort()
 
-			wrappedExpectedNodes := NodeV1SliceWrapper(tc.ExpectedResponse)
+			wrappedExpectedNodes := nodeV1SliceWrapper(tc.ExpectedResponse)
 			wrappedExpectedNodes.Sort()
 
 			actualNodes.EqualOrDie(wrappedExpectedNodes, t)
@@ -443,7 +443,7 @@ func TestGetNodeForCluster(t *testing.T) {
 			ExpectedResponse: `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":null}},"operatingSystem":{},"versions":{"kubelet":"","containerRuntime":{"name":"","version":""}}},"status":{"machineName":"venus","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
 			HTTPStatus:       http.StatusOK,
 			NodeIDToSync:     "venus",
-			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreatoinTimestamp()),
+			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
@@ -552,7 +552,7 @@ func TestCreateNodeForCluster(t *testing.T) {
 			ExpectedResponse:                   `{"id":"%s","name":"%s","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-abcd"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"","containerRuntime":{"name":"docker","version":""}}},"status":{"machineName":"%s","capacity":{"cpu":"","memory":""},"allocatable":{"cpu":"","memory":""},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
 			HTTPStatus:                         http.StatusCreated,
 			RewriteClusterNameAndNamespaceName: true,
-			ExistingProject:                    createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreatoinTimestamp()),
+			ExistingProject:                    createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
@@ -606,7 +606,7 @@ func TestCreateNodeForCluster(t *testing.T) {
 			ExpectedResponse:                   `{"error":{"code":503,"message":"Cluster components are not ready yet"}}`,
 			HTTPStatus:                         http.StatusServiceUnavailable,
 			RewriteClusterNameAndNamespaceName: true,
-			ExistingProject:                    createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreatoinTimestamp()),
+			ExistingProject:                    createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",
