@@ -25,6 +25,8 @@ type machineTestData struct {
 }
 
 func TestSingleCIDRAllocation(t *testing.T) {
+	t.Parallel()
+
 	nets := []Network{buildNet(t, "192.168.0.0/16", "192.168.0.1", "8.8.8.8")}
 
 	m := createMachine("susi")
@@ -45,6 +47,8 @@ func TestSingleCIDRAllocation(t *testing.T) {
 }
 
 func TestMultipleCIDRAllocation(t *testing.T) {
+	t.Parallel()
+
 	nets := []Network{
 		buildNet(t, "192.168.0.0/30", "192.168.0.1", "8.8.8.8"),
 		buildNet(t, "10.0.0.0/24", "10.0.0.1", "8.8.8.8"),
@@ -80,6 +84,8 @@ func TestMultipleCIDRAllocation(t *testing.T) {
 }
 
 func TestReuseReleasedIP(t *testing.T) {
+	t.Parallel()
+
 	nets := []Network{buildNet(t, "192.168.0.0/16", "192.168.0.1", "8.8.8.8")}
 
 	mSusi := createMachine("susi")
@@ -132,6 +138,8 @@ func TestReuseReleasedIP(t *testing.T) {
 }
 
 func TestFailWhenCIDRIsExhausted(t *testing.T) {
+	t.Parallel()
+
 	nets := []Network{buildNet(t, "192.168.0.0/30", "192.168.0.1", "8.8.8.8")}
 
 	mSusi := createMachine("susi")
