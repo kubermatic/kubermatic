@@ -55,7 +55,7 @@ spec:
         - tun
         - --auth-nocache
         - --remote
-        - openvpn-server.cluster-de-test-01.svc.cluster.local
+        - openvpn-server.cluster-de-test-01.svc.cluster.local.
         - "1194"
         - --nobind
         - --connect-timeout
@@ -199,17 +199,18 @@ spec:
       dnsPolicy: None
       initContainers:
       - args:
-        - -c
-        - "\n\t\t\tname=apiserver-external.cluster-de-test-01.svc.cluster.local\n\t\t\tport=30000\n\t\t\t#
-          manual re-resolving enables use of trailing dot with curl\n\t\t\tip=$(getent
-          hosts $name | cut -d\" \" -f1)\n\t\t\twhile ! curl --resolve $name:$port:$ip
-          --insecure --silent --show-error --max-time 3 https://apiserver-external.cluster-de-test-01.svc.cluster.local:30000/healthz;
-          do\n\t\t\t\tif [ $(( timeout++ )) -gt 100 ]; then\n\t\t\t\t\techo \"Giving
-          up after 100 tries.\"\n\t\t\t\t\texit 1\n\t\t\t\tfi\n\t\t\t\tsleep 2\n\t\t\t\techo
-          \"Retry $timeout/100\"\n\t\t\t\tip=$(getent hosts $name | cut -d\" \" -f1)\n\t\t\tdone"
+        - -endpoint
+        - https://apiserver-external.cluster-de-test-01.svc.cluster.local.:30000/healthz
+        - -insecure
+        - -retries
+        - "100"
+        - -retry-wait
+        - "2"
+        - -timeout
+        - "1"
         command:
-        - /bin/sh
-        image: quay.io/kubermatic/curl:v0.1
+        - /usr/local/bin/http-prober
+        image: quay.io/kubermatic/http-prober:v0.1
         imagePullPolicy: IfNotPresent
         name: apiserver-running
         resources: {}

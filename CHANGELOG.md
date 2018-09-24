@@ -1,4 +1,29 @@
 
+### [v2.7.3]()
+
+
+**Misc:**
+
+- kube-proxy addon was updated to match the cluster version [#2019](https://github.com/kubermatic/kubermatic/issues/2019) ([mrIncompetent](https://github.com/mrIncompetent))
+
+
+
+
+### [v2.7.2]()
+
+
+**Monitoring:**
+
+- `KubePersistentVolumeFullInFourDays` will only be predicted when there is at least 6h of historical data available [#1862](https://github.com/kubermatic/kubermatic/issues/1862) ([cbeneke](https://github.com/cbeneke))
+
+
+**Misc:**
+
+- Updated machine-controller to `v0.7.22` [#1999](https://github.com/kubermatic/kubermatic/issues/1999) ([mrIncompetent](https://github.com/mrIncompetent))
+
+
+
+
 ### [v2.7.1]()
 
 
