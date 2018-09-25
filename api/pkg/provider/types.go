@@ -181,7 +181,6 @@ type NewSSHKeyProvider interface {
 type UserProvider interface {
 	UserByEmail(email string) (*kubermaticv1.User, error)
 	CreateUser(id, name, email string) (*kubermaticv1.User, error)
-	Update(*kubermaticv1.User) (*kubermaticv1.User, error)
 	ListByProject(projectName string) ([]*kubermaticv1.User, error)
 	UserByID(id string) (*kubermaticv1.User, error)
 }
