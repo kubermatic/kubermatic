@@ -103,7 +103,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 			return nil, err
 		}
 
-		if err = cc.userClusterEnsureCustomResourceDefinictions(cluster); err != nil {
+		if err = cc.userClusterEnsureCustomResourceDefinitions(cluster); err != nil {
 			return nil, err
 		}
 	}
