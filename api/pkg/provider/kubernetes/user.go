@@ -1,8 +1,6 @@
 package kubernetes
 
 import (
-	"strings"
-
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -62,7 +60,6 @@ func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
 		return nil, err
 	}
 
-	email = normalizeText(email)
 	for _, user := range users {
 		if user.Spec.Email == email {
 			return user.DeepCopy(), nil
@@ -97,24 +94,6 @@ func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, e
 	user.Spec.Name = name
 	user.Spec.ID = id
 	user.Spec.Projects = []kubermaticv1.ProjectGroup{}
-	normalizedUser := normalizeUser(user)
 
-	return p.client.KubermaticV1().Users().Create(&normalizedUser)
-}
-
-// Update updates the given user
-func (p *UserProvider) Update(user *kubermaticv1.User) (*kubermaticv1.User, error) {
-	normalizedUser := normalizeUser(*user)
-	return p.client.KubermaticV1().Users().Update(&normalizedUser)
-}
-
-func normalizeText(text string) string {
-	return strings.TrimSpace(text)
-}
-
-func normalizeUser(user kubermaticv1.User) kubermaticv1.User {
-	user.Spec.Email = normalizeText(user.Spec.Email)
-	user.Spec.Name = normalizeText(user.Spec.Name)
-	user.Spec.ID = normalizeText(user.Spec.ID)
-	return user
+	return p.client.KubermaticV1().Users().Create(&user)
 }
