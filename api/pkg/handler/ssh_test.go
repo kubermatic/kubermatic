@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -16,16 +15,11 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestDeleteSSHKey(t *testing.T) {
 	t.Parallel()
-	const longForm = "Jan 2, 2006 at 3:04pm (MST)"
-	creationTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")
-	if err != nil {
-		t.Fatal(err)
-	}
+	creationTime := defaultCreationTimestamp()
 
 	testcases := []struct {
 		Name                   string
@@ -42,7 +36,7 @@ func TestDeleteSSHKey(t *testing.T) {
 			Name:            "scenario 1: delete a ssh-keyfrom from a specific project",
 			HTTPStatus:      http.StatusOK,
 			SSHKeyToDelete:  "key-abc-yafn",
-			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
@@ -172,11 +166,7 @@ func TestDeleteSSHKey(t *testing.T) {
 
 func TestListSSHKeys(t *testing.T) {
 	t.Parallel()
-	const longForm = "Jan 2, 2006 at 3:04pm (MST)"
-	creationTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")
-	if err != nil {
-		t.Fatal(err)
-	}
+	creationTime := defaultCreationTimestamp()
 
 	testcases := []struct {
 		Name                   string
@@ -210,7 +200,7 @@ func TestListSSHKeys(t *testing.T) {
 				},
 			},
 			HTTPStatus:      http.StatusOK,
-			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingProject: createTestProject("my-first-project", kubermaticv1.ProjectActive, creationTime),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
@@ -310,19 +300,12 @@ func TestListSSHKeys(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			var receivedKeys []apiv1.NewSSHKey
-			dec := json.NewDecoder(res.Body)
-			err = dec.Decode(&receivedKeys)
-			assert.NoError(t, err)
+			actualKeys := newSSHKeyV1SliceWrapper{}
+			actualKeys.DecodeOrDie(res.Body, t).Sort()
 
-			// sort the slices before comparison because the unstable order would make the test flaky otherwise
-			sort.Slice(receivedKeys, func(i int, j int) bool {
-				return receivedKeys[i].CreationTimestamp.Before(receivedKeys[j].CreationTimestamp)
-			})
-			sort.Slice(tc.ExpectedKeys, func(i int, j int) bool {
-				return tc.ExpectedKeys[i].CreationTimestamp.Before(tc.ExpectedKeys[j].CreationTimestamp)
-			})
-			assert.Equal(t, receivedKeys, tc.ExpectedKeys)
+			wrappedExpectedKeys := newSSHKeyV1SliceWrapper(tc.ExpectedKeys)
+			wrappedExpectedKeys.Sort()
+			actualKeys.EqualOrDie(wrappedExpectedKeys, t)
 		})
 	}
 }
@@ -345,7 +328,7 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 			Body:             `{"name":"my-second-ssh-key","spec":{"publicKey":"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8LlXSRW4HUYAjzx1+r5JzpjXIDDyFkWZzBQ8aU14J8LdMyQsU6/ZKuO5IKoWWVoPi0e63qSjkXPTjnUAwpE62hDm6uLaPgIlc3ND+8d9xbItS+gyXk9TSkC3emrsCWpS76W3KjLwyz5euIfnMCQZSASM7F5CrNg6XSppOgRWlyY09VEKi9PmvEDKCy5JNt6afcUzB3rAOK3SYZ0BYDyrVjuqTcMZwRodryxKb/jxDS+qQNplBNuUBqUzqjuKyI5oAk+aVTYIfTwgBTQyZT7So/u70gSDbRp9uHI05PkH60IftAHdYu4TJTmCwJxLW/suOEx3PPvIsUP14XQUZgmDJEuIuWDlsvfOo9DXZNnl832SGvTyhclBpsauWJ1OwOllT+hlM7u8dwcb70GD/OzCG7RSEatVoiNtg4XdeUf4kiqqzKZEqpopHQqwVKMhlhPKKulY0vrtetJxaLokEwPOYyycxlXsNBK2ei/IbGan+uI39v0s30ySWKzr+M9z0QlLAG7rjgCSWFSmy+Ez2fxU5HQQTNCep8+VjNeI79uO9VDJ8qvV/y6fDtrwgl67hUgDcHyv80TzVROTGFBMCP7hyswArT0GxpL9q7PjPU92D43UEDY5YNOZN2A976O5jd4bPrWp0mKsye1BhLrct16Xdn9x68D8nS2T1uSSWovFhkQ== lukasz@loodse.com "}}`,
 			ExpectedResponse: `{"id":"%s","name":"my-second-ssh-key","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"fingerprint":"c0:8a:a5:c7:ab:f3:45:04:f1:85:52:84:64:85:26:7d","publicKey":"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8LlXSRW4HUYAjzx1+r5JzpjXIDDyFkWZzBQ8aU14J8LdMyQsU6/ZKuO5IKoWWVoPi0e63qSjkXPTjnUAwpE62hDm6uLaPgIlc3ND+8d9xbItS+gyXk9TSkC3emrsCWpS76W3KjLwyz5euIfnMCQZSASM7F5CrNg6XSppOgRWlyY09VEKi9PmvEDKCy5JNt6afcUzB3rAOK3SYZ0BYDyrVjuqTcMZwRodryxKb/jxDS+qQNplBNuUBqUzqjuKyI5oAk+aVTYIfTwgBTQyZT7So/u70gSDbRp9uHI05PkH60IftAHdYu4TJTmCwJxLW/suOEx3PPvIsUP14XQUZgmDJEuIuWDlsvfOo9DXZNnl832SGvTyhclBpsauWJ1OwOllT+hlM7u8dwcb70GD/OzCG7RSEatVoiNtg4XdeUf4kiqqzKZEqpopHQqwVKMhlhPKKulY0vrtetJxaLokEwPOYyycxlXsNBK2ei/IbGan+uI39v0s30ySWKzr+M9z0QlLAG7rjgCSWFSmy+Ez2fxU5HQQTNCep8+VjNeI79uO9VDJ8qvV/y6fDtrwgl67hUgDcHyv80TzVROTGFBMCP7hyswArT0GxpL9q7PjPU92D43UEDY5YNOZN2A976O5jd4bPrWp0mKsye1BhLrct16Xdn9x68D8nS2T1uSSWovFhkQ== lukasz@loodse.com "}}`,
 			HTTPStatus:       http.StatusCreated,
-			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive),
+			ExistingProject:  createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticv1.UserSpec{
