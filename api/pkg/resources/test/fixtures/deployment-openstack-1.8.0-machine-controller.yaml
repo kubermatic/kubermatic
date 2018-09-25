@@ -55,7 +55,7 @@ spec:
           value: openstack-domain
         - name: OS_TENANT_NAME
           value: openstack-tenant
-        image: docker.io/kubermatic/machine-controller:v0.7.22
+        image: docker.io/kubermatic/machine-controller:v0.7.23
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 8
