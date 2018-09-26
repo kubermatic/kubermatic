@@ -12,9 +12,11 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	transporthttp "github.com/go-kit/kit/transport/http"
 	"github.com/golang/glog"
+	"golang.org/x/oauth2"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-	"golang.org/x/oauth2"
+	"github.com/kubermatic/kubermatic/api/pkg/util/hash"
 )
 
 const (
@@ -110,8 +112,20 @@ func (o openIDAuthenticator) Verifier() endpoint.Middleware {
 				email = ce.(string)
 			}
 
+			rawID := claims["sub"].(string)
+			if rawID == "" {
+				glog.Error(err)
+				return nil, errors.NewNotAuthorized()
+			}
+
+			id, err := hash.GetUserID(rawID)
+			if err != nil {
+				glog.Error(err)
+				return nil, errors.NewNotAuthorized()
+			}
+
 			user := apiv1.User{
-				ID:    claims["sub"].(string),
+				ID:    id,
 				Name:  name,
 				Email: email,
 				Roles: map[string]struct{}{},

@@ -1665,6 +1665,26 @@ func TestClustersEndpoint(t *testing.T) {
 	}
 }
 
+func TestClustersEndpointWithInvalidUserID(t *testing.T) {
+	req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster", nil)
+	res := httptest.NewRecorder()
+	ep, err := createTestEndpoint(getUser(strings.Repeat("A", 100), false), []runtime.Object{}, []runtime.Object{}, nil, nil)
+	if err != nil {
+		t.Fatalf("failed to create test endpoint due to %v", err)
+	}
+
+	ep.ServeHTTP(res, req)
+
+	if res.Code != http.StatusInternalServerError {
+		t.Fatalf("got invalid status code. Expected 500, got: %d", res.Code)
+	}
+
+	s := res.Body.String()
+	if !strings.Contains(s, "failed to create a valid cluster filter") {
+		t.Fatalf("got unknown response error: %s", s)
+	}
+}
+
 func TestUpdateClusterEndpoint(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
