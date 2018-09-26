@@ -1,8 +1,11 @@
 package kubernetes
 
 import (
+	"fmt"
 	"strings"
 	"time"
+
+	"k8s.io/apimachinery/pkg/selection"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
@@ -138,9 +141,12 @@ func (p *ClusterProvider) Clusters(user apiv1.User) ([]*kubermaticv1.Cluster, er
 	if p.isAdmin(user) {
 		selector = labels.Everything()
 	} else {
-		filter := map[string]string{}
-		filter[userLabelKey] = user.ID
-		selector = labels.SelectorFromSet(labels.Set(filter))
+		selector = labels.NewSelector()
+		req, err := labels.NewRequirement(userLabelKey, selection.Equals, []string{user.ID})
+		if err == nil {
+			return nil, fmt.Errorf("failed to create a valid cluster filter: %v", err)
+		}
+		selector = selector.Add(*req)
 	}
 
 	return p.clusterLister.List(selector)
