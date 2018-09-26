@@ -1,4 +1,14 @@
 
+### [v2.7.4]()
+
+
+**Bugfix:**
+
+- Updated machine controller to `v0.7.23`: write permissions on vSphere datacenters are no longer needed. [#2069](https://github.com/kubermatic/kubermatic/issues/2069) ([pkavajin](https://github.com/pkavajin))
+
+
+
+
 ### [v2.7.3]()
 
 
