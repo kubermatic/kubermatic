@@ -6,8 +6,11 @@ import (
 	"sync"
 
 	"github.com/golang/glog"
+
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticKubernetesProvider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/util/hash"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,9 +29,13 @@ type cleanupContext struct {
 	config           *rest.Config
 }
 
-// Task represents a cleanup action, taking the current cluster for which the cleanup should be executed and the current context.
+// ClusterTask represents a cleanup action, taking the current cluster for which the cleanup should be executed and the current context.
 // In case of an error, the correspondent error will be returned, else nil.
-type Task func(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error
+type ClusterTask func(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error
+
+// KeyTask represents a cleanup action, taking the current key for which the cleanup should be executed and the current context.
+// In case of an error, the correspondent error will be returned, else nil.
+type KeyTask func(key *kubermaticv1.UserSSHKey, ctx *cleanupContext) error
 
 func main() {
 	var kubeconfig, masterURL string
@@ -63,14 +70,29 @@ func main() {
 			cleanupCluster(c, &ctx)
 		}(&clusters.Items[i])
 	}
+	w.Wait()
 
+	keys, err := ctx.kubermaticClient.KubermaticV1().UserSSHKeies().List(metav1.ListOptions{})
+	if err != nil {
+		glog.Fatal(err)
+	}
+
+	w = sync.WaitGroup{}
+	w.Add(len(keys.Items))
+
+	for i := range keys.Items {
+		go func(key *kubermaticv1.UserSSHKey) {
+			defer w.Done()
+			cleanupKey(key, &ctx)
+		}(&keys.Items[i])
+	}
 	w.Wait()
 }
 
 func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
 	glog.Infof("Cleaning up cluster %s", cluster.Name)
 
-	tasks := []Task{
+	tasks := []ClusterTask{
 		cleanupPrometheus,
 		cleanupAPIServer,
 		cleanupControllerManager,
@@ -81,15 +103,40 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
 		removeDeprecatedFinalizers,
 		migrateVersion,
 		cleanupAddonManager,
+		migrateClusterUserLabel,
 	}
 
 	w := sync.WaitGroup{}
 	w.Add(len(tasks))
 
 	for _, task := range tasks {
-		go func(t Task) {
+		go func(t ClusterTask) {
 			defer w.Done()
 			err := t(cluster, ctx)
+
+			if err != nil {
+				glog.Error(err)
+			}
+		}(task)
+	}
+
+	w.Wait()
+}
+
+func cleanupKey(key *kubermaticv1.UserSSHKey, ctx *cleanupContext) {
+	glog.Infof("Cleaning up SSHKey %s", key.Name)
+
+	tasks := []KeyTask{
+		migrateSSHKeyOwner,
+	}
+
+	w := sync.WaitGroup{}
+	w.Add(len(tasks))
+
+	for _, task := range tasks {
+		go func(t KeyTask) {
+			defer w.Done()
+			err := t(key, ctx)
 
 			if err != nil {
 				glog.Error(err)
@@ -197,6 +244,52 @@ func migrateVersion(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 	if cluster.Spec.Version == "" {
 		cluster.Spec.Version = cluster.Spec.MasterVersion
 		if _, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// We now hash all user ID's to avoid breaking the label requirements
+func migrateClusterUserLabel(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	// If there is not label - nothing to migrate
+	if cluster.Labels == nil {
+		return nil
+	}
+	oldID := cluster.Labels[kubermaticKubernetesProvider.UserLabelKey]
+	if !strings.HasSuffix(oldID, hash.UserIDSuffix) {
+		newID, err := hash.GetUserID(oldID)
+		if err != nil {
+			return err
+		}
+
+		// Set new ID
+		cluster.Labels[kubermaticKubernetesProvider.UserLabelKey] = newID
+		cluster.Labels[kubermaticKubernetesProvider.UserLabelKey+"_RAW"] = oldID
+		if _, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// We now hash all user ID's to avoid breaking the label requirements
+func migrateSSHKeyOwner(key *kubermaticv1.UserSSHKey, ctx *cleanupContext) error {
+	oldID := key.Spec.Owner
+	if !strings.HasSuffix(oldID, hash.UserIDSuffix) {
+		newID, err := hash.GetUserID(oldID)
+		if err != nil {
+			return err
+		}
+
+		// Set new ID
+		key.Spec.Owner = newID
+		// Saving as label. Otherwise we would need to create a new field
+		if key.Labels == nil {
+			key.Labels = map[string]string{}
+		}
+		key.Labels[kubermaticKubernetesProvider.UserLabelKey+"_RAW"] = oldID
+		if _, err := ctx.kubermaticClient.KubermaticV1().UserSSHKeies().Update(key); err != nil {
 			return err
 		}
 	}
