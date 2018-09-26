@@ -2,6 +2,7 @@ package controllermanager
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 
@@ -213,6 +214,14 @@ func getFlags(cluster *kubermaticv1.Cluster) []string {
 	if cluster.Spec.Cloud.Azure != nil {
 		flags = append(flags, "--cloud-provider", "azure")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
+	}
+
+	// This is required in 1.12.0-rc.2 as a workaround for
+	// https://github.com/kubernetes/kubernetes/issues/68986
+	// TODO: Check on 1.12 release/patch releases if the issue
+	// got fixed and if yes, remove the check/make it more granular
+	if strings.HasPrefix(cluster.Spec.Version, "1.12.") {
+		flags = append(flags, "--authentication-skip-lookup=true")
 	}
 	return flags
 }
