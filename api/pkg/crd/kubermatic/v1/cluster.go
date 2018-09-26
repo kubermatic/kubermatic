@@ -175,9 +175,6 @@ const (
 )
 
 // CloudSpec mutually stores access data to a cloud provider.
-//
-// Note:
-// When adding a new provider please updated UpdateCloudSpec and RemoveSensitiveDataFromCloudSpec functions
 type CloudSpec struct {
 	// DatacenterName where the users 'cloud' lives in.
 	DatacenterName string `json:"dc"`
