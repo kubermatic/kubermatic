@@ -317,6 +317,10 @@ func cleanupHeapsterAddon(cluster *kubermaticv1.Cluster, ctx *cleanupContext) er
 
 // We now hash all user ID's to avoid breaking the label requirements
 func migrateClusterUserLabel(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	// If there is not label - nothing to migrate
+	if cluster.Labels == nil {
+		return nil
+	}
 	oldID := cluster.Labels[kubermaticKubernetesProvider.UserLabelKey]
 	if !strings.HasSuffix(oldID, hash.UserIDSuffix) {
 		newID, err := hash.GetUserID(oldID)
