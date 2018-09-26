@@ -1668,7 +1668,7 @@ func TestClustersEndpoint(t *testing.T) {
 func TestClustersEndpointWithInvalidUserID(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster", nil)
 	res := httptest.NewRecorder()
-	ep, err := createTestEndpoint(getUser(strings.Repeat("A", 100), false), []runtime.Object{}, []runtime.Object{}, nil, nil)
+	ep, err := createTestEndpoint(getUser("foo", strings.Repeat("A", 100), "some-email@loodse.com", false), []runtime.Object{}, []runtime.Object{}, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to create test endpoint due to %v", err)
 	}
