@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	userLabelKey = "user"
+	// UserLabelKey defines the label key for the user -> cluster relation
+	UserLabelKey = "user"
 )
 
 // NewUserProvider returns a user provider
