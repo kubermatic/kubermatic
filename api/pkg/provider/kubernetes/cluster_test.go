@@ -32,7 +32,7 @@ func TestSelector(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			selector := labels.NewSelector()
-			req, err := labels.NewRequirement(userLabelKey, selection.Equals, []string{test.id})
+			req, err := labels.NewRequirement(UserLabelKey, selection.Equals, []string{test.id})
 			if err != nil {
 				if test.err == "" {
 					t.Errorf("expected no error when creating the requirement, but got one: %v", err)

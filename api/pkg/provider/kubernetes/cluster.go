@@ -84,7 +84,7 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
 				kubermaticv1.WorkerNameLabelKey: p.workerName,
-				userLabelKey:                    user.ID,
+				UserLabelKey:                    user.ID,
 			},
 			Name: name,
 		},
@@ -126,7 +126,7 @@ func (p *ClusterProvider) Cluster(user apiv1.User, name string) (*kubermaticv1.C
 		}
 		return nil, err
 	}
-	if cluster.Labels[userLabelKey] == user.ID || p.isAdmin(user) {
+	if cluster.Labels[UserLabelKey] == user.ID || p.isAdmin(user) {
 		return cluster, nil
 	}
 
@@ -141,8 +141,8 @@ func (p *ClusterProvider) Clusters(user apiv1.User) ([]*kubermaticv1.Cluster, er
 		selector = labels.Everything()
 	} else {
 		selector = labels.NewSelector()
-		req, err := labels.NewRequirement(userLabelKey, selection.Equals, []string{user.ID})
-		if err == nil {
+		req, err := labels.NewRequirement(UserLabelKey, selection.Equals, []string{user.ID})
+		if err != nil {
 			return nil, fmt.Errorf("failed to create a valid cluster filter: %v", err)
 		}
 		selector = selector.Add(*req)
