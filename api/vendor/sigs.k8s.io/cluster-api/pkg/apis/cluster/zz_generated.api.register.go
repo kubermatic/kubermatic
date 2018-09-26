@@ -266,6 +266,7 @@ type MachineStatus struct {
 	ErrorMessage   *string
 	ProviderStatus *pkgruntime.RawExtension
 	Addresses      []corev1.NodeAddress
+	Conditions     []corev1.NodeCondition
 }
 
 //

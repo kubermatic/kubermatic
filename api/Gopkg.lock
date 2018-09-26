@@ -731,7 +731,7 @@
   revision = "7cafcd837844e784b526369c9bce262804aebc60"
 
 [[projects]]
-  digest = "1:148470b0a1977102302d5346cc42c6294e642221dc0a09231d468afcee211e1e"
+  digest = "1:dd8c754d53ed2350116686df2bea12907d9da3c2c886cac831f0deb3442f19d4"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/apis/cluster/v1alpha1/conversions",
@@ -758,8 +758,8 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "dfc89f3a896ed799299aeafc6b25cab5f57e1c37"
-  version = "v0.9.0"
+  revision = "daa1b4502684533b01455405556cbcefab8bc47d"
+  version = "v0.9.2"
 
 [[projects]]
   digest = "1:11813b67edacc2bd17ed90ee8fd80dcc9c8551cf7b0e809a584c52e5bdafb5d3"
@@ -1700,7 +1700,7 @@
   revision = "275e2ce91dec4c05a4094a7b1daee5560b555ac9"
 
 [[projects]]
-  digest = "1:841d5841a6667835a5e95e04aa25787dcb6d60fe39caa7409db4802fc9e708e9"
+  digest = "1:441b4b99cbd8ed6b4891703e3385475dc9e70195c2792a3377455f9fcbdbc383"
   name = "sigs.k8s.io/cluster-api"
   packages = [
     "pkg/apis/cluster",
@@ -1718,7 +1718,7 @@
     "pkg/client/listers_generated/cluster/v1alpha1",
   ]
   pruneopts = "NUT"
-  revision = "e1903be683739379be57f78a4095cd51726495fd"
+  revision = "d99b7630cf7803c40691b86f42ea99eb0e9128a3"
 
 [solve-meta]
   analyzer-name = "dep"
