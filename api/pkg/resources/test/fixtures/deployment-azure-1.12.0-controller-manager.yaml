@@ -132,6 +132,7 @@ spec:
         - azure
         - --cloud-config
         - /etc/kubernetes/cloud/config
+        - --authentication-skip-lookup=true
         command:
         - /hyperkube
         - controller-manager
