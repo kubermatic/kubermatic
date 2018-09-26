@@ -1,4 +1,14 @@
 
+### [v2.7.5]()
+
+
+**Bugfix:**
+
+- Fixed handling of very long user IDs [#2070](https://github.com/kubermatic/kubermatic/issues/2070) ([mrIncompetent](https://github.com/mrIncompetent))
+
+
+
+
 ### [v2.7.4]()
 
 
