@@ -3,12 +3,13 @@ package certificates
 import (
 	"fmt"
 
+	"github.com/kubermatic/kubermatic/api/pkg/certificates"
+
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	certutil "k8s.io/client-go/util/cert"
-	"k8s.io/client-go/util/cert/triple"
 )
 
 // GetCACreator returns a function to create a secret containing a CA with the specified name
@@ -31,13 +32,27 @@ func getCACreator(name, commonName string) func(resources.SecretDataProvider, *c
 			return se, nil
 		}
 
-		caKp, err := triple.NewCA(commonName)
+		key, err := certificates.NewPrivateKey()
 		if err != nil {
-			return nil, fmt.Errorf("unable to create a new CA: %v", err)
+			return nil, fmt.Errorf("unable to create a private key for a new CA: %v", err)
 		}
 
-		se.Data[resources.CAKeySecretKey] = certutil.EncodePrivateKeyPEM(caKp.Key)
-		se.Data[resources.CACertSecretKey] = certutil.EncodeCertPEM(caKp.Cert)
+		config := certificates.Config{
+			CommonName: commonName,
+		}
+
+		cert, err := certificates.NewCACert(config, key)
+		if err != nil {
+			return nil, fmt.Errorf("unable to create a self-signed certificate for a new CA: %v", err)
+		}
+
+		bk, err := certificates.EncodePrivateKeyPEM(key)
+		if err != nil {
+			return nil, fmt.Errorf("unable to encode private key to pem format: %v", err)
+		}
+
+		se.Data[resources.CAKeySecretKey] = bk
+		se.Data[resources.CACertSecretKey] = certutil.EncodeCertPEM(cert)
 
 		return se, nil
 	}

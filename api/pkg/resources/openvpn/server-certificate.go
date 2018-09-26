@@ -4,6 +4,8 @@ import (
 	"crypto/x509"
 	"fmt"
 
+	"github.com/kubermatic/kubermatic/api/pkg/certificates"
+
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -30,7 +32,7 @@ func TLSServingCertificate(data resources.SecretDataProvider, existing *corev1.S
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 	}
-	altNames := certutil.AltNames{}
+	altNames := certificates.AltNames{}
 	if b, exists := se.Data[resources.OpenVPNServerCertSecretKey]; exists {
 		certs, err := certutil.ParseCertsPEM(b)
 		if err != nil {
@@ -40,16 +42,16 @@ func TLSServingCertificate(data resources.SecretDataProvider, existing *corev1.S
 			return se, nil
 		}
 	}
-	key, err := certutil.NewPrivateKey()
+	key, err := certificates.NewPrivateKey()
 	if err != nil {
 		return nil, fmt.Errorf("unable to create a server private key: %v", err)
 	}
-	config := certutil.Config{
+	config := certificates.Config{
 		CommonName: "openvpn-server",
 		AltNames:   altNames,
 		Usages:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 	}
-	cert, err := certutil.NewSignedCert(config, key, ca.Cert, ca.Key)
+	cert, err := certificates.NewSignedCert(config, key, ca.Cert, ca.Key)
 	if err != nil {
 		return nil, fmt.Errorf("unable to sign the server certificate: %v", err)
 	}

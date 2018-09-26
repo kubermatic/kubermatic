@@ -8,6 +8,8 @@ import (
 	"net"
 	"time"
 
+	"github.com/kubermatic/kubermatic/api/pkg/certificates"
+
 	"github.com/golang/glog"
 
 	"github.com/go-test/deep"
@@ -22,6 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	corev1lister "k8s.io/client-go/listers/core/v1"
+	//certutil "k8s.io/client-go/util/cert"
 	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/cert/triple"
 )
@@ -412,7 +415,7 @@ func CertWillExpireSoon(cert *x509.Certificate) bool {
 }
 
 // IsServerCertificateValidForAllOf validates if the given data is present in the given server certificate
-func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string, altNames certutil.AltNames) bool {
+func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string, altNames certificates.AltNames) bool {
 	if CertWillExpireSoon(cert) {
 		return false
 	}

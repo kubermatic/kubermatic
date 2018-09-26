@@ -1,6 +1,8 @@
 package certificates
 
 import (
+	"crypto"
+	"crypto/x509"
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -15,7 +17,7 @@ type templateDataProvider interface {
 	GetClusterRef() metav1.OwnerReference
 }
 
-type caGetter func() (*triple.KeyPair, error)
+type caGetter func() (crypto.Signer, *x509.Certificate, error)
 
 // GetClientCertificateCreator is a generic function to return a secret generator to create a client certificate signed by the cluster CA
 func GetClientCertificateCreator(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA caGetter) func(data templateDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
@@ -30,7 +32,7 @@ func GetClientCertificateCreator(name, commonName string, organizations []string
 		se.Name = name
 		se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 
-		ca, err := getCA()
+		key, cert, err := getCA()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 		}
