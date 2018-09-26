@@ -346,6 +346,9 @@ func migrateSSHKeyOwner(key *kubermaticv1.UserSSHKey, ctx *cleanupContext) error
 		// Set new ID
 		key.Spec.Owner = newID
 		// Saving as label. Otherwise we would need to create a new field
+		if key.Labels == nil {
+			key.Labels = map[string]string{}
+		}
 		key.Labels[kubermaticKubernetesProvider.UserLabelKey+"_RAW"] = oldID
 		if _, err := ctx.kubermaticClient.KubermaticV1().UserSSHKeies().Update(key); err != nil {
 			return err
