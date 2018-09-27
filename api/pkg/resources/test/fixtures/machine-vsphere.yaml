@@ -36,7 +36,6 @@ spec:
               datacenter = "vsphere-datacenter"
               datastore = "vsphere-datastore"
               working-dir = "vsphere-1a2b3c4d5e"
-              vm-uuid = "vm-uuid"
       [Disk]
           scsicontrollertype = pvscsi
     sshPublicKeys:

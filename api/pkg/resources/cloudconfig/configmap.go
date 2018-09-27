@@ -128,7 +128,6 @@ manage-security-groups = true
         datacenter = "{{ .DC.Spec.VSphere.Datacenter }}"
         datastore = "{{ .DC.Spec.VSphere.Datastore }}"
         working-dir = "{{ .Cluster.Name }}"
-        vm-uuid = "vm-uuid"
 [Disk]
     scsicontrollertype = pvscsi
 {{- end }}
