@@ -48,13 +48,13 @@ kubermatic:
     replicas: 2
     image:
       repository: "kubermatic/api"
-      tag: "v2.7.0-rc1"
+      tag: "v2.7.6"
       pullPolicy: "IfNotPresent"
   ui:
     replicas: 2
     image:
       repository: "kubermatic/ui-v2"
-      tag: "v0.37"
+      tag: "v0.37.1"
       pullPolicy: "IfNotPresent"
     config: |
       {
