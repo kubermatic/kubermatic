@@ -198,6 +198,67 @@ type CloudSpec struct {
 	VSphere      *VSphereCloudSpec      `json:"vsphere,omitempty"`
 }
 
+// UpdateCloudSpec is a helper method for updating the cloud spec
+// since cloud credentials are removed from responses sometimes they will be empty
+// for example when a client wants to revoke a token it will send the whole cluster object
+// thus if credentials for specific cloud provider are empty rewrite from an existing object
+func UpdateCloudSpec(updatedShared, existingShared CloudSpec) CloudSpec {
+	updated := updatedShared.DeepCopy()
+
+	if updated.Digitalocean != nil && len(updated.Digitalocean.Token) == 0 {
+		updated.Digitalocean.Token = existingShared.Digitalocean.Token
+	}
+	if updated.AWS != nil && len(updated.AWS.AccessKeyID) == 0 && len(updated.AWS.SecretAccessKey) == 0 {
+		updated.AWS.AccessKeyID = existingShared.AWS.AccessKeyID
+		updated.AWS.SecretAccessKey = existingShared.AWS.SecretAccessKey
+	}
+	if updated.Azure != nil && len(updated.Azure.ClientID) == 0 && len(updated.Azure.ClientSecret) == 0 {
+		updated.Azure.ClientID = existingShared.Azure.ClientID
+		updated.Azure.ClientSecret = existingShared.Azure.ClientSecret
+	}
+	if updated.Openstack != nil && len(updated.Openstack.Username) == 0 && len(updated.Openstack.Password) == 0 {
+		updated.Openstack.Username = existingShared.Openstack.Username
+		updated.Openstack.Password = existingShared.Openstack.Password
+	}
+	if updated.Hetzner != nil && len(updated.Hetzner.Token) == 0 {
+		updated.Hetzner.Token = existingShared.Hetzner.Token
+	}
+	if updated.VSphere != nil && len(updated.VSphere.Username) == 0 && len(updated.VSphere.Password) == 0 {
+		updated.VSphere.Username = existingShared.VSphere.Username
+		updated.VSphere.Password = existingShared.VSphere.Password
+	}
+
+	return *updated
+}
+
+// RemoveSensitiveDataFromCloudSpec remove credentials from cloud providers
+func RemoveSensitiveDataFromCloudSpec(spec CloudSpec) CloudSpec {
+	if spec.Digitalocean != nil {
+		spec.Digitalocean.Token = ""
+	}
+	if spec.AWS != nil {
+		spec.AWS.AccessKeyID = ""
+		spec.AWS.SecretAccessKey = ""
+	}
+	if spec.Azure != nil {
+		spec.Azure.ClientID = ""
+		spec.Azure.ClientSecret = ""
+	}
+	if spec.Openstack != nil {
+		spec.Openstack.Username = ""
+		spec.Openstack.Password = ""
+	}
+	if spec.Hetzner != nil {
+		spec.Hetzner.Token = ""
+	}
+	if spec.VSphere != nil {
+		spec.VSphere.Username = ""
+		spec.VSphere.Password = ""
+	}
+
+	return spec
+}
+
 // ClusterHealth stores health information of a cluster and the timestamp of the last change.
 type ClusterHealth struct {
 	ClusterHealthStatus `json:",inline"`

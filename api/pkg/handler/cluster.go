@@ -65,7 +65,8 @@ func newClusterEndpoint(sshKeysProvider provider.SSHKeyProvider, cloudProviders 
 			return nil, err
 		}
 
-		return c, nil
+		filteredCluster := removeSensitiveDataFromCluster(c)
+		return filteredCluster, nil
 	}
 }
 
@@ -121,7 +122,8 @@ func clusterEndpoint() endpoint.Endpoint {
 			return nil, err
 		}
 
-		return c, nil
+		filteredCluster := removeSensitiveDataFromCluster(c)
+		return filteredCluster, nil
 	}
 }
 
@@ -162,12 +164,18 @@ func updateClusterEndpoint(cloudProviders map[string]provider.CloudProvider) end
 		newCluster.TypeMeta = oldCluster.TypeMeta
 		newCluster.ObjectMeta = oldCluster.ObjectMeta
 		newCluster.Status = oldCluster.Status
+		newCluster.Spec.Cloud = kubermaticapiv1.UpdateCloudSpec(newCluster.Spec.Cloud, oldCluster.Spec.Cloud)
 
 		if err := validation.ValidateUpdateCluster(newCluster, oldCluster, cloudProviders); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 
-		return clusterProvider.UpdateCluster(user, newCluster)
+		updatedCluster, err := clusterProvider.UpdateCluster(user, newCluster)
+		if err != nil {
+			return nil, err
+		}
+		filteredCluster := removeSensitiveDataFromCluster(updatedCluster)
+		return filteredCluster, nil
 	}
 }
 
@@ -212,7 +220,13 @@ func clustersEndpoint() endpoint.Endpoint {
 			return nil, err
 		}
 
-		return cs, nil
+		filteredClusters := make([]*kubermaticapiv1.Cluster, len(cs))
+		for index, cluster := range cs {
+			filteredCluster := removeSensitiveDataFromCluster(cluster)
+			filteredClusters[index] = filteredCluster
+		}
+
+		return filteredClusters, nil
 	}
 }
 
@@ -420,6 +434,17 @@ func convertInternalClustersToExternal(internalClusters []*kubermaticapiv1.Clust
 		apiClusters[index] = convertInternalClusterToExternal(cluster)
 	}
 	return apiClusters
+}
+
+// removeSensitiveDataFromCluster removes admin token and cloud credentials from the cluster resource
+// that is returned to the callers.
+func removeSensitiveDataFromCluster(cluster *kubermaticapiv1.Cluster) *kubermaticapiv1.Cluster {
+	clusterCopy := cluster.DeepCopy()
+
+	clusterCopy.Address.AdminToken = ""
+	clusterCopy.Spec.Cloud = kubermaticapiv1.RemoveSensitiveDataFromCloudSpec(clusterCopy.Spec.Cloud)
+
+	return clusterCopy
 }
 
 func detachSSHKeyFromCluster(sshKeyProvider provider.NewSSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
