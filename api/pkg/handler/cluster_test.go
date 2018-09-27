@@ -14,8 +14,10 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/diff"
 )
 
 func TestRemoveSensitiveDataFromCluster(t *testing.T) {
@@ -45,7 +47,7 @@ func TestRemoveSensitiveDataFromCluster(t *testing.T) {
 	}
 	genClusterWithAWS := func() *kubermaticv1.Cluster {
 		cluster := genClusterResource()
-		cluster.Spec.Cloud = kubermaticv1.CloudSpec{
+		cluster.Spec.Cloud = &kubermaticv1.CloudSpec{
 			AWS: &kubermaticv1.AWSCloudSpec{
 				AccessKeyID:      "secretKeyID",
 				SecretAccessKey:  "secreatAccessKey",
@@ -90,6 +92,8 @@ func TestRemoveSensitiveDataFromCluster(t *testing.T) {
 		})
 	}
 }
+
+func TestAssignSSHKeysToClusterEndpoint(t *testing.T) {
 	testcases := []struct {
 		Name                   string
 		Body                   string
@@ -462,7 +466,7 @@ func TestClusterEndpoint(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
-					Labels: map[string]string{"user": testUsername},
+					Labels: map[string]string{"user": testUserID},
 				},
 				Status: kubermaticv1.ClusterStatus{
 					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
@@ -679,7 +683,7 @@ func TestClustersEndpoint(t *testing.T) {
 func TestClustersEndpointWithInvalidUserID(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster", nil)
 	res := httptest.NewRecorder()
-	ep, err := createTestEndpoint(getUser("foo", strings.Repeat("A", 100), "some-email@loodse.com", false), []runtime.Object{}, []runtime.Object{}, nil, nil)
+	ep, err := createTestEndpoint(getUser(strings.Repeat("A", 100), false), []runtime.Object{}, []runtime.Object{}, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to create test endpoint due to %v", err)
 	}
@@ -745,7 +749,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 					URL: "https://foo.bar:8443",
 				},
 				Spec: kubermaticv1.ClusterSpec{
-					Cloud: kubermaticv1.CloudSpec{
+					Cloud: &kubermaticv1.CloudSpec{
 						Fake: &kubermaticv1.FakeCloudSpec{
 							Token: "foo",
 						},
@@ -795,7 +799,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 					URL: "https://foo.bar:8443",
 				},
 				Spec: kubermaticv1.ClusterSpec{
-					Cloud: kubermaticv1.CloudSpec{
+					Cloud: &kubermaticv1.CloudSpec{
 						Fake: &kubermaticv1.FakeCloudSpec{
 							Token: "bar",
 						},

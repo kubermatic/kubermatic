@@ -165,6 +165,11 @@ type CloudSpec struct {
 // for example when a client wants to revoke a token it will send the whole cluster object
 // thus if credentials for specific cloud provider are empty rewrite from an existing object
 func UpdateCloudSpec(updatedShared, existingShared *CloudSpec) *CloudSpec {
+	if existingShared == nil {
+		return nil
+	}
+
+	// DeepCopy already does the nil check
 	updated := updatedShared.DeepCopy()
 
 	if updated.Digitalocean != nil && len(updated.Digitalocean.Token) == 0 {
@@ -195,6 +200,10 @@ func UpdateCloudSpec(updatedShared, existingShared *CloudSpec) *CloudSpec {
 
 // RemoveSensitiveDataFromCloudSpec remove credentials from cloud providers
 func RemoveSensitiveDataFromCloudSpec(spec *CloudSpec) *CloudSpec {
+	if spec == nil {
+		return nil
+	}
+
 	if spec.Digitalocean != nil {
 		spec.Digitalocean.Token = ""
 	}
