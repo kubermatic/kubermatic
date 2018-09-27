@@ -83,8 +83,7 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				kubermaticv1.WorkerNameLabelKey: p.workerName,
-				UserLabelKey:                    user.ID,
+				UserLabelKey: user.ID,
 			},
 			Name: name,
 		},
