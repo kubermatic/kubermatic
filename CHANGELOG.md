@@ -1,4 +1,24 @@
 
+### [v2.7.7]()
+
+
+**Misc:**
+
+- Removed functionality to copy the admin token in the dashboard [#2083](https://github.com/kubermatic/kubermatic/issues/2083) ([mrIncompetent](https://github.com/mrIncompetent))
+
+
+
+
+### [v2.7.6]()
+
+
+**Misc:**
+
+- Various minor fixes and improvements
+
+
+
+
 ### [v2.7.5]()
 
 
