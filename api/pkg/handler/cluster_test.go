@@ -466,7 +466,7 @@ func TestClusterEndpoint(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
-					Labels: map[string]string{"user": testUserID},
+					Labels: map[string]string{"user": testUsername},
 				},
 				Status: kubermaticv1.ClusterStatus{
 					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
@@ -480,7 +480,7 @@ func TestClusterEndpoint(t *testing.T) {
 			expectedCluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
-					Labels: map[string]string{"user": testUserID},
+					Labels: map[string]string{"user": testUsername},
 				},
 				Status: kubermaticv1.ClusterStatus{
 					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
@@ -740,7 +740,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 			expectedCluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
-					Labels: map[string]string{"user": testUserID},
+					Labels: map[string]string{"user": testUsername},
 				},
 				Status: kubermaticv1.ClusterStatus{
 					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
@@ -790,7 +790,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 			expectedCluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
-					Labels: map[string]string{"user": testUserID},
+					Labels: map[string]string{"user": testUsername},
 				},
 				Status: kubermaticv1.ClusterStatus{
 					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},

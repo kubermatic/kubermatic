@@ -349,6 +349,7 @@ func removeSensitiveDataFromCluster(cluster *kubermaticapiv1.Cluster) *kubermati
 	clusterCopy := cluster.DeepCopy()
 
 	clusterCopy.Address.AdminToken = ""
+	clusterCopy.Address.KubeletToken = ""
 	clusterCopy.Spec.Cloud = kubermaticapiv1.RemoveSensitiveDataFromCloudSpec(clusterCopy.Spec.Cloud)
 
 	return clusterCopy
