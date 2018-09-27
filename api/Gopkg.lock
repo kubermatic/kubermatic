@@ -976,7 +976,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e444d860fba00b1b9adb8c1156460e5700ce90063f5d315719689298a88d361b"
+  digest = "1:01474bf80d6c77b3e8a48545daa7fc6ba844f430d533c4bfafddda61463255e8"
   name = "golang.org/x/crypto"
   packages = [
     "argon2",
@@ -985,6 +985,7 @@
     "ed25519",
     "ed25519/internal/edwards25519",
     "internal/chacha20",
+    "internal/subtle",
     "pbkdf2",
     "pkcs12",
     "pkcs12/internal/rc2",
@@ -994,7 +995,7 @@
     "ssh/terminal",
   ]
   pruneopts = "NUT"
-  revision = "650f4a345ab4e5b245a3034b110ebc7299e68186"
+  revision = "0e37d006457bf46f9e6692014ba72ef82c33022c"
 
 [[projects]]
   branch = "master"
@@ -1024,14 +1025,15 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4301a4973691694236c322c1ed32273b7d42dbff3cd2d0bbb7b06f233edfbd8e"
+  digest = "1:437f881f9743a2b960a7cf3404e8e8a1ee7c860b52cd19f8bf5502bb3afe855b"
   name = "golang.org/x/sys"
   packages = [
+    "cpu",
     "unix",
     "windows",
   ]
   pruneopts = "NUT"
-  revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
+  revision = "c2ed4eda69e7f62900806e4cd6e45f0429f859fa"
 
 [[projects]]
   branch = "master"
