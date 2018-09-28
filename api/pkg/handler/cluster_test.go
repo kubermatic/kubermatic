@@ -722,7 +722,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 2: an ssh key that does not belong to the given project cannot be assigned to the cluster",
 			SSHKeyID:         "key-c08aa5c7abf34504f18552846485267d-yafn",
-			ExpectedResponse: `{"error":{"code":500,"message":"the given ssh key key-c08aa5c7abf34504f18552846485267d-yafn does not belong to the given project my-first-project (my-first-projectInternalName)"}}`,
+			ExpectedResponse: `{"error":{"code":500,"message":"the given ssh key key-c08aa5c7abf34504f18552846485267d-yafn does not belong to the given project my-first-project (my-first-project-ID)"}}`,
 			HTTPStatus:       http.StatusInternalServerError,
 			ExistingProject:  genDefaultProject(),
 			ProjectToSync:    genDefaultProject().Name,
@@ -908,7 +908,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 3: unable to create a cluster when the user doesn't belong to the project",
 			Body:             `{"cluster":{"humanReadableName":"keen-snyder","version":"1.9.7","pause":false,"cloud":{"digitalocean":{"token":"dummy_token"},"dc":"do-fra1"}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: The user \"john@acme.com\" doesn't belong to the given project = my-first-projectInternalName"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: The user \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ExistingProject:  genDefaultProject(),
 			ProjectToSync:    genDefaultProject().Name,
