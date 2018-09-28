@@ -4,8 +4,9 @@ import (
 	"testing"
 
 	kubermaticfakeclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
-	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
+	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -13,8 +14,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/wait"
 	clienttesting "k8s.io/client-go/testing"
-	"k8s.io/client-go/tools/cache"
 )
 
 var addons = []string{"Foo", "Bar"}
@@ -113,46 +114,48 @@ func TestCreateAddon(t *testing.T) {
 				objects = append(objects, test.ns)
 			}
 
-			clusterIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
-			err := clusterIndexer.Add(test.cluster)
-			if err != nil {
-				t.Fatal(err)
-			}
-			addonIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
-			err = addonIndexer.Add(test.cluster)
-			if err != nil {
-				t.Fatal(err)
-			}
 			kubermaticObjs = append(kubermaticObjs, test.cluster)
 			kubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjs...)
+
+			informerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, informer.DefaultInformerResyncPeriod)
 
 			controller := Controller{}
 			controller.client = kubermaticClient
 			controller.defaultAddonList = addons
-			controller.clusterLister = kubermaticv1lister.NewClusterLister(clusterIndexer)
-			controller.addonLister = kubermaticv1lister.NewAddonLister(addonIndexer)
+			controller.clusterLister = informerFactory.Kubermatic().V1().Clusters().Lister()
+			controller.addonLister = informerFactory.Kubermatic().V1().Addons().Lister()
+
+			informerFactory.Start(wait.NeverStop)
+			informerFactory.WaitForCacheSync(wait.NeverStop)
 
 			// act: create
 			actions := controller.client.(*kubermaticfakeclientset.Clientset).Actions()
 			beforeActionCount := len(actions)
-			if beforeActionCount != 0 {
-				t.Errorf("action count is not 0 but %d", beforeActionCount)
-			}
-			err = controller.sync(name)
+
+			err := controller.sync(name)
 			if err != nil {
 				t.Error(err)
 			}
 			actions = controller.client.(*kubermaticfakeclientset.Clientset).Actions()
+
+			if len(actions) == beforeActionCount {
+				t.Fatal("expected action on the client but none was made during the controller sync")
+			}
+
 			for index, action := range actions {
-				if !action.Matches(test.expectedActions[index], "addons") {
+				if index <= beforeActionCount {
+					continue
+				}
+
+				if !action.Matches(test.expectedActions[index-beforeActionCount], "addons") {
 					t.Fatalf("unexpected action %#v", action)
 				}
 				createaction, ok := action.(clienttesting.CreateAction)
 				if !ok {
 					t.Fatalf("unexpected action %#v", action)
 				}
-				if !equality.Semantic.DeepEqual(createaction.GetObject().(*kubermaticv1.Addon), test.expectedClusterAddons[index]) {
-					t.Fatalf("Addon diff: %v", diff.ObjectDiff(test.expectedClusterAddons[index], createaction.GetObject().(*kubermaticv1.Addon)))
+				if !equality.Semantic.DeepEqual(createaction.GetObject().(*kubermaticv1.Addon), test.expectedClusterAddons[index-beforeActionCount]) {
+					t.Fatalf("Addon diff: %v", diff.ObjectDiff(test.expectedClusterAddons[index-beforeActionCount], createaction.GetObject().(*kubermaticv1.Addon)))
 				}
 			}
 
