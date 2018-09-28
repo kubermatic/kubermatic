@@ -18,11 +18,12 @@ import (
 	cloudprovidererrors "github.com/kubermatic/machine-controller/pkg/cloudprovider/errors"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
 	kuberneteshelper "github.com/kubermatic/machine-controller/pkg/kubernetes"
-	"github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+
+	common "sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
+	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 const (
@@ -136,9 +137,12 @@ func New(configVarResolver *providerconfig.ConfigVarResolver) cloud.Provider {
 	return &provider{configVarResolver: configVarResolver}
 }
 
-func (p *provider) getConfig(s runtime.RawExtension) (*config, *providerconfig.Config, error) {
+func (p *provider) getConfig(s v1alpha1.ProviderConfig) (*config, *providerconfig.Config, error) {
+	if s.Value == nil {
+		return nil, nil, fmt.Errorf("machine.spec.providerconfig.value is nil")
+	}
 	pconfig := providerconfig.Config{}
-	err := json.Unmarshal(s.Raw, &pconfig)
+	err := json.Unmarshal(s.Value.Raw, &pconfig)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -319,7 +323,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 	config, providerCfg, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, cloudprovidererrors.TerminalError{
-			Reason:  v1alpha1.InvalidConfigurationMachineError,
+			Reason:  common.InvalidConfigurationMachineError,
 			Message: fmt.Sprintf("failed to parse MachineSpec, due to %v", err),
 		}
 	}
@@ -345,7 +349,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 	var publicIP *network.PublicIPAddress
 	if config.AssignPublicIP {
 		if !kuberneteshelper.HasFinalizer(machine, finalizerPublicIP) {
-			if machine, err = update(machine.Name, func(updatedMachine *v1alpha1.Machine) {
+			if machine, err = update(machine.Namespace, machine.Name, func(updatedMachine *v1alpha1.Machine) {
 				updatedMachine.Finalizers = append(updatedMachine.Finalizers, finalizerPublicIP)
 			}); err != nil {
 				return nil, err
@@ -358,7 +362,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 	}
 
 	if !kuberneteshelper.HasFinalizer(machine, finalizerNIC) {
-		if machine, err = update(machine.Name, func(updatedMachine *v1alpha1.Machine) {
+		if machine, err = update(machine.Namespace, machine.Name, func(updatedMachine *v1alpha1.Machine) {
 			updatedMachine.Finalizers = append(updatedMachine.Finalizers, finalizerNIC)
 		}); err != nil {
 			return nil, err
@@ -416,14 +420,14 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 
 	glog.Infof("Creating machine %q", machine.Spec.Name)
 	if !kuberneteshelper.HasFinalizer(machine, finalizerDisks) {
-		if machine, err = update(machine.Name, func(updatedMachine *v1alpha1.Machine) {
+		if machine, err = update(machine.Namespace, machine.Name, func(updatedMachine *v1alpha1.Machine) {
 			updatedMachine.Finalizers = append(updatedMachine.Finalizers, finalizerDisks)
 		}); err != nil {
 			return nil, err
 		}
 	}
 	if !kuberneteshelper.HasFinalizer(machine, finalizerVM) {
-		if machine, err = update(machine.Name, func(updatedMachine *v1alpha1.Machine) {
+		if machine, err = update(machine.Namespace, machine.Name, func(updatedMachine *v1alpha1.Machine) {
 			updatedMachine.Finalizers = append(updatedMachine.Finalizers, finalizerVM)
 		}); err != nil {
 			return nil, err
@@ -479,7 +483,7 @@ func (p *provider) Delete(machine *v1alpha1.Machine, update cloud.MachineUpdater
 		}
 	}
 
-	if machine, err = update(machine.Name, func(updatedMachine *v1alpha1.Machine) {
+	if machine, err = update(machine.Namespace, machine.Name, func(updatedMachine *v1alpha1.Machine) {
 		updatedMachine.Finalizers = kuberneteshelper.RemoveFinalizer(updatedMachine.Finalizers, finalizerVM)
 	}); err != nil {
 		return err
@@ -489,7 +493,7 @@ func (p *provider) Delete(machine *v1alpha1.Machine, update cloud.MachineUpdater
 	if err = deleteDisksByMachineUID(context.TODO(), config, machine.UID); err != nil {
 		return fmt.Errorf("failed to remove disks of machine %q: %v", machine.Name, err)
 	}
-	if machine, err = update(machine.Name, func(updatedMachine *v1alpha1.Machine) {
+	if machine, err = update(machine.Namespace, machine.Name, func(updatedMachine *v1alpha1.Machine) {
 		updatedMachine.Finalizers = kuberneteshelper.RemoveFinalizer(updatedMachine.Finalizers, finalizerDisks)
 	}); err != nil {
 		return err
@@ -499,7 +503,7 @@ func (p *provider) Delete(machine *v1alpha1.Machine, update cloud.MachineUpdater
 	if err = deleteInterfacesByMachineUID(context.TODO(), config, machine.UID); err != nil {
 		return fmt.Errorf("failed to remove network interfaces of machine %q: %v", machine.Name, err)
 	}
-	if machine, err = update(machine.Name, func(updatedMachine *v1alpha1.Machine) {
+	if machine, err = update(machine.Namespace, machine.Name, func(updatedMachine *v1alpha1.Machine) {
 		updatedMachine.Finalizers = kuberneteshelper.RemoveFinalizer(updatedMachine.Finalizers, finalizerNIC)
 	}); err != nil {
 		return err
@@ -509,7 +513,7 @@ func (p *provider) Delete(machine *v1alpha1.Machine, update cloud.MachineUpdater
 	if err = deleteIPAddressesByMachineUID(context.TODO(), config, machine.UID); err != nil {
 		return fmt.Errorf("failed to remove public IP addresses of machine %q: %v", machine.Name, err)
 	}
-	if machine, err = update(machine.Name, func(updatedMachine *v1alpha1.Machine) {
+	if machine, err = update(machine.Namespace, machine.Name, func(updatedMachine *v1alpha1.Machine) {
 		updatedMachine.Finalizers = kuberneteshelper.RemoveFinalizer(updatedMachine.Finalizers, finalizerPublicIP)
 	}); err != nil {
 		return err

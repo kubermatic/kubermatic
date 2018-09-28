@@ -56,19 +56,17 @@ func createLinkClonedVM(vmName, vmImage, datacenter, clusterName, folder string,
 	}
 
 	// Find the target folder, if its include in the provider config.
-	var targetVMFolderRefPtr *types.ManagedObjectReference
+	targetVMFolder := datacenterFolders.VmFolder
 	if folder != "" {
 		// If non-absolute folder name is used, e.g. 'duplicate-folder' it can match
 		// multiple folders and thus fail. It will also gladly match a folder from
 		// a different datacenter. It is therefore preferable to use absolute folder
 		// paths, e.g. '/Datacenter/vm/nested/folder'.
 		// The target folder must already exist.
-		targetVMFolder, folderErr := f.Folder(ctx, folder)
-		if folderErr != nil {
-			return fmt.Errorf("failed to get target folder: %v", folderErr)
+		targetVMFolder, err = f.Folder(ctx, folder)
+		if err != nil {
+			return fmt.Errorf("failed to get target folder: %v", err)
 		}
-		targetVMFolderRef := targetVMFolder.Reference()
-		targetVMFolderRefPtr = &targetVMFolderRef
 	}
 
 	// Create snapshot of the template VM if not already snapshotted.
@@ -89,17 +87,6 @@ func createLinkClonedVM(vmName, vmImage, datacenter, clusterName, folder string,
 	}
 	glog.V(3).Infof("Cluster is %+v", clsComputeRes)
 
-	resPool, err := clsComputeRes.ResourcePool(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get ressource pool: %v", err)
-	}
-	glog.V(3).Infof("Cluster resource pool is %+v", resPool)
-
-	if resPool == nil {
-		return fmt.Errorf("no resource pool found for cluster %s", clusterName)
-	}
-
-	resPoolRef := resPool.Reference()
 	snapshotRef := snapshot.Reference()
 
 	var vAppAconfig *types.VmConfigSpec
@@ -160,16 +147,11 @@ func createLinkClonedVM(vmName, vmImage, datacenter, clusterName, folder string,
 			MemoryMB:   memoryMB,
 			VAppConfig: vAppAconfig,
 		},
-		Location: types.VirtualMachineRelocateSpec{
-			Pool:         &resPoolRef,
-			Folder:       targetVMFolderRefPtr,
-			DiskMoveType: string(types.VirtualMachineRelocateDiskMoveOptionsCreateNewChildDiskBacking),
-		},
 		Snapshot: &snapshotRef,
 	}
 
 	// Create a link cloned VM from the template VM's snapshot
-	clonedVMTask, err := templateVM.Clone(ctx, datacenterFolders.VmFolder, vmName, *cloneSpec)
+	clonedVMTask, err := templateVM.Clone(ctx, targetVMFolder, vmName, *cloneSpec)
 	if err != nil {
 		return err
 	}

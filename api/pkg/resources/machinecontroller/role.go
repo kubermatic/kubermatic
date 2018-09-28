@@ -24,11 +24,6 @@ func KubeSystemRole(data resources.RoleDataProvider, existing *rbacv1.Role) (*rb
 	r.Rules = []rbacv1.PolicyRule{
 		{
 			APIGroups: []string{""},
-			Resources: []string{"events"},
-			Verbs:     []string{"create"},
-		},
-		{
-			APIGroups: []string{""},
 			Resources: []string{"secrets"},
 			Verbs: []string{
 				"create",
@@ -102,14 +97,6 @@ func Role(data resources.RoleDataProvider, existing *rbacv1.Role) (*rbacv1.Role,
 				"get",
 				"list",
 				"watch",
-			},
-		},
-		{
-			APIGroups: []string{""},
-			Resources: []string{"events"},
-			Verbs: []string{
-				"create",
-				"patch",
 			},
 		},
 	}

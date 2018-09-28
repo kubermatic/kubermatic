@@ -20,7 +20,13 @@ func ClusterRole(_ resources.ClusterRoleDataProvider, existing *rbacv1.ClusterRo
 		{
 			APIGroups: []string{"apiextensions.k8s.io"},
 			Resources: []string{"customresourcedefinitions"},
-			Verbs:     []string{"create"},
+			Verbs:     []string{"get"},
+		},
+		{
+			APIGroups:     []string{"apiextensions.k8s.io"},
+			Resources:     []string{"customresourcedefinitions"},
+			ResourceNames: []string{"machines.machine.k8s.io"},
+			Verbs:         []string{"delete"},
 		},
 		{
 			APIGroups:     []string{"apiextensions.k8s.io"},
@@ -36,6 +42,16 @@ func ClusterRole(_ resources.ClusterRoleDataProvider, existing *rbacv1.ClusterRo
 		{
 			APIGroups: []string{""},
 			Resources: []string{"nodes"},
+			Verbs:     []string{"*"},
+		},
+		{
+			APIGroups: []string{""},
+			Resources: []string{"events"},
+			Verbs:     []string{"create", "patch"},
+		},
+		{
+			APIGroups: []string{"cluster.k8s.io"},
+			Resources: []string{"machines", "machinesets", "machinesets/status", "machinedeployments", "machinedeployments/status", "clusters", "clusters/status"},
 			Verbs:     []string{"*"},
 		},
 	}

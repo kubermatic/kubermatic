@@ -18,6 +18,7 @@ import (
 	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -116,7 +117,7 @@ func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Role: %v", err)
 		}
 
-		if equality.Semantic.DeepEqual(role, existing) {
+		if resources.DeepEqual(role, existing) {
 			continue
 		}
 
@@ -360,6 +361,57 @@ func (cc *Controller) userClusterEnsureConfigMaps(c *kubermaticv1.Cluster) error
 			return fmt.Errorf("failed to update ConfigMap %s: %v", cm.Name, err)
 		}
 		glog.V(4).Infof("Updated ConfigMap %s inside user-cluster %s", cm.Name, c.Name)
+	}
+
+	return nil
+}
+
+// GetCRDCreators reuturns a list of CRDCreateors
+func GetCRDCreators() []resources.CRDCreateor {
+	return []resources.CRDCreateor{
+		machinecontroller.MachineCRD,
+		machinecontroller.MachineSetCRD,
+		machinecontroller.MachineDeploymentCRD,
+		machinecontroller.ClusterCRD,
+	}
+}
+
+func (cc *Controller) userClusterEnsureCustomResourceDefinitions(c *kubermaticv1.Cluster) error {
+	client, err := cc.userClusterConnProvider.GetApiextensionsClient(c)
+	if err != nil {
+		return err
+	}
+
+	for _, create := range GetCRDCreators() {
+		var existing *apiextensionsv1beta1.CustomResourceDefinition
+		crd, err := create(nil)
+		if err != nil {
+			return fmt.Errorf("failed to build CustomResourceDefinitions: %v", err)
+		}
+		if existing, err = client.ApiextensionsV1beta1().CustomResourceDefinitions().Get(crd.Name, metav1.GetOptions{}); err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+			if _, err = client.ApiextensionsV1beta1().CustomResourceDefinitions().Create(crd); err != nil {
+				return fmt.Errorf("failed to create CustomResourceDefinition %s: %v", crd.Name, err)
+			}
+			glog.V(4).Infof("Created CustomResourceDefinition %s inside user cluster %s", crd.Name, c.Name)
+			continue
+		}
+
+		crd, err = create(existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build CustomResourceDefinition: %v", err)
+		}
+
+		if equality.Semantic.DeepEqual(crd, existing) {
+			continue
+		}
+
+		if _, err = client.ApiextensionsV1beta1().CustomResourceDefinitions().Update(crd); err != nil {
+			return fmt.Errorf("failed to update CustomResourceDefinition %s: %v", crd.Name, err)
+		}
+		glog.V(4).Infof("Updated CustomResourceDefinition %s inside user cluster %s", crd.Name, c.Name)
 	}
 
 	return nil

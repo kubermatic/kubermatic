@@ -23,6 +23,7 @@ $(CMD): vendor
 
 check: gofmt lint
 test: vendor
+	@$(GO) generate ./pkg/controller/ipam/
 	@$(GO) test -v ./...
 
 test-update:

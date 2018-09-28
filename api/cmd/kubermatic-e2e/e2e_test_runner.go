@@ -29,7 +29,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
-	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
+
+	clusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 )
 
 const (
@@ -271,12 +272,12 @@ func (ctl *e2eTestRunner) getDatacenter(name string) (provider.DatacenterMeta, e
 }
 
 func (ctl *e2eTestRunner) createMachines(restConfig *rest.Config, dc provider.DatacenterMeta, cluster *kubermaticv1.Cluster, node apiv2.Node) error {
-	machinesClient, err := machineclientset.NewForConfig(restConfig)
+	clusterClient, err := clusterclientset.NewForConfig(restConfig)
 	if err != nil {
 		return err
 	}
 
-	machines := machinesClient.MachineV1alpha1().Machines()
+	machines := clusterClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem)
 	template, err := machineresource.Machine(cluster, &node, dc, nil)
 	if err != nil {
 		return err

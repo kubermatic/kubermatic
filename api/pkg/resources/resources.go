@@ -19,6 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	corev1lister "k8s.io/client-go/listers/core/v1"
@@ -203,6 +204,15 @@ const (
 
 	// TopologyKeyHostname defines the topology key for the node hostname
 	TopologyKeyHostname = "kubernetes.io/hostname"
+
+	// MachineCRDName defines the CRD name for machine objects
+	MachineCRDName = "machines.cluster.k8s.io"
+	// MachineSetCRDName defines the CRD name for machineset objects
+	MachineSetCRDName = "machinesets.cluster.k8s.io"
+	// MachineDeploymentCRDName defines the CRD name for machinedeployment objects
+	MachineDeploymentCRDName = "machinedeployments.cluster.k8s.io"
+	// ClusterCRDName defines the CRD name for cluster objects
+	ClusterCRDName = "clusters.cluster.k8s.io"
 )
 
 const (
@@ -298,6 +308,9 @@ type PodDisruptionBudgetCreator = func(data *TemplateData, existing *policyv1bet
 
 // CronJobCreator defines an interface to create/update CronJobs
 type CronJobCreator = func(data *TemplateData, existing *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error)
+
+// CRDCreateor defines an interface to create/update CustomRessourceDefinitions
+type CRDCreateor = func(existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error)
 
 // GetClusterRef returns a metav1.OwnerReference for the given Cluster
 func GetClusterRef(cluster *kubermaticv1.Cluster) metav1.OwnerReference {
