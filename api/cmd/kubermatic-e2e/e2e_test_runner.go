@@ -89,6 +89,7 @@ func (ctl *e2eTestRunner) run(ctx context.Context) error {
 		ctl.runOpts.ClusterTimeout,
 		ctl.healthyClusterCond(ctx, cluster.Name))
 	if err != nil {
+		log.Infof("Cluster failed to come up. Health status: %+v", cluster.Status.Health.ClusterHealthStatus)
 		return err
 	}
 	log.Info("cluster control plane is up")
