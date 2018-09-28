@@ -17,6 +17,8 @@ import (
 	machinetemplate "github.com/kubermatic/machine-controller/pkg/template"
 	"github.com/kubermatic/machine-controller/pkg/userdata/cloud"
 	userdatahelper "github.com/kubermatic/machine-controller/pkg/userdata/helper"
+
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 func getConfig(r runtime.RawExtension) (*Config, error) {
@@ -63,7 +65,7 @@ func (p Provider) SupportedContainerRuntimes() (runtimes []machinesv1alpha1.Cont
 
 // UserData renders user-data template
 func (p Provider) UserData(
-	spec machinesv1alpha1.MachineSpec,
+	spec clusterv1alpha1.MachineSpec,
 	kubeconfig *clientcmdapi.Config,
 	ccProvider cloud.ConfigProvider,
 	clusterDNSIPs []net.IP,
@@ -109,27 +111,29 @@ func (p Provider) UserData(
 	}
 
 	data := struct {
-		MachineSpec       machinesv1alpha1.MachineSpec
-		ProviderConfig    *providerconfig.Config
-		CoreOSConfig      *Config
-		Kubeconfig        string
-		CloudProvider     string
-		CloudConfig       string
-		HyperkubeImageTag string
-		ClusterDNSIPs     []net.IP
-		KubernetesCACert  string
-		JournaldMaxSize   string
+		MachineSpec          clusterv1alpha1.MachineSpec
+		ProviderConfig       *providerconfig.Config
+		CoreOSConfig         *Config
+		Kubeconfig           string
+		CloudProvider        string
+		CloudConfig          string
+		HyperkubeImageTag    string
+		ClusterDNSIPs        []net.IP
+		KubernetesCACert     string
+		JournaldMaxSize      string
+		ContainerRuntimeInfo machinesv1alpha1.ContainerRuntimeInfo
 	}{
-		MachineSpec:       spec,
-		ProviderConfig:    pconfig,
-		CoreOSConfig:      coreosConfig,
-		Kubeconfig:        kubeconfigString,
-		CloudProvider:     cpName,
-		CloudConfig:       cpConfig,
-		HyperkubeImageTag: fmt.Sprintf("v%s", kubeletVersion.String()),
-		ClusterDNSIPs:     clusterDNSIPs,
-		KubernetesCACert:  kubernetesCACert,
-		JournaldMaxSize:   userdatahelper.JournaldMaxUse,
+		MachineSpec:          spec,
+		ProviderConfig:       pconfig,
+		CoreOSConfig:         coreosConfig,
+		Kubeconfig:           kubeconfigString,
+		CloudProvider:        cpName,
+		CloudConfig:          cpConfig,
+		HyperkubeImageTag:    fmt.Sprintf("v%s", kubeletVersion.String()),
+		ClusterDNSIPs:        clusterDNSIPs,
+		KubernetesCACert:     kubernetesCACert,
+		JournaldMaxSize:      userdatahelper.JournaldMaxUse,
+		ContainerRuntimeInfo: pconfig.ContainerRuntimeInfo,
 	}
 	b := &bytes.Buffer{}
 	err = tmpl.Execute(b, data)
@@ -323,7 +327,7 @@ storage:
         inline: |
 {{ .KubernetesCACert | indent 10 }}
 
-{{- if contains "1.12" .MachineSpec.Versions.ContainerRuntime.Version }}
+{{- if contains "1.12" .ContainerRuntimeInfo.Version }}
     - path: /etc/coreos/docker-1.12
       mode: 0644
       filesystem: root

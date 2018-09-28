@@ -1,51 +1,53 @@
 metadata:
   creationTimestamp: null
   name: machine-vsphere-1a2b3c4d5e-te5s7
+  namespace: kube-system
 spec:
   metadata:
     creationTimestamp: null
     name: vsphere-1a2b3c4d5e-te5s7
   providerConfig:
-    cloudProvider: vsphere
-    cloudProviderSpec:
-      allowInsecure: true
-      cluster: vsphere-cluster
-      cpus: 2
-      datacenter: vsphere-datacenter
-      datastore: vsphere-datastore
-      folder: vsphere-1a2b3c4d5e
-      memoryMB: 2048
-      password: ""
-      templateNetName: ""
-      templateVMName: ""
-      username: ""
-      vmNetName: ""
-      vsphereURL: ""
-    operatingSystem: ubuntu
-    operatingSystemSpec:
-      distUpgradeOnBoot: false
-    overwriteCloudConfig: |2
+    ValueFrom: null
+    value:
+      cloudProvider: vsphere
+      cloudProviderSpec:
+        allowInsecure: true
+        cluster: vsphere-cluster
+        cpus: 2
+        datacenter: vsphere-datacenter
+        datastore: vsphere-datastore
+        folder: vsphere-1a2b3c4d5e
+        memoryMB: 2048
+        password: ""
+        templateNetName: ""
+        templateVMName: ""
+        username: ""
+        vmNetName: ""
+        vsphereURL: ""
+      containerRuntimeInfo:
+        name: ""
+        version: ""
+      operatingSystem: ubuntu
+      operatingSystemSpec:
+        distUpgradeOnBoot: false
+      overwriteCloudConfig: |2
 
 
-      [Global]
-              user = "vsphere-username"
-              password = "vsphere-password"
-              server = "http://vsphere.local"
-              port = "443"
-              insecure-flag = "1"
-              datacenter = "vsphere-datacenter"
-              datastore = "vsphere-datastore"
-              working-dir = "vsphere-1a2b3c4d5e"
-      [Disk]
-          scsicontrollertype = pvscsi
-    sshPublicKeys:
-    - ssh-rsa TEST123test
-  roles:
-  - Node
+        [Global]
+                user = "vsphere-username"
+                password = "vsphere-password"
+                server = "http://vsphere.local"
+                port = "443"
+                insecure-flag = "1"
+                datacenter = "vsphere-datacenter"
+                datastore = "vsphere-datastore"
+                working-dir = "vsphere-1a2b3c4d5e"
+        [Disk]
+            scsicontrollertype = pvscsi
+      sshPublicKeys:
+      - ssh-rsa TEST123test
   versions:
-    containerRuntime:
-      name: ""
-      version: ""
     kubelet: v1.9.6
 status:
   lastUpdated: null
+  providerStatus: null
