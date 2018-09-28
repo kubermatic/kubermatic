@@ -104,7 +104,7 @@ func newCreateClusterEndpoint(sshKeyProvider provider.NewSSHKeyProvider, cloudPr
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		return convertInternalClusterToExternal(newCluster), nil
+		return filterAndConvertInternalClusterToExternal(newCluster), nil
 	}
 }
 
@@ -141,7 +141,7 @@ func newGetCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		return convertInternalClusterToExternal(cluster), nil
+		return filterAndConvertInternalClusterToExternal(cluster), nil
 	}
 }
 
@@ -206,7 +206,7 @@ func newUpdateCluster(cloudProviders map[string]provider.CloudProvider, projectP
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		return convertInternalClusterToExternal(updatedCluster), nil
+		return filterAndConvertInternalClusterToExternal(updatedCluster), nil
 	}
 }
 
@@ -245,7 +245,7 @@ func newListClusters(projectProvider provider.ProjectProvider) endpoint.Endpoint
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		apiClusters := convertInternalClustersToExternal(clusters)
+		apiClusters := filterAndConvertInternalClustersToExternal(clusters)
 		return apiClusters, nil
 	}
 }
@@ -403,7 +403,8 @@ func listSSHKeysAssingedToCluster(sshKeyProvider provider.NewSSHKeyProvider, pro
 	}
 }
 
-func convertInternalClusterToExternal(internalCluster *kubermaticapiv1.Cluster) *apiv1.NewCluster {
+func filterAndConvertInternalClusterToExternal(notFilteredCluster *kubermaticapiv1.Cluster) *apiv1.NewCluster {
+	internalCluster := removeSensitiveDataFromCluster(notFilteredCluster)
 	return &apiv1.NewCluster{
 		NewObjectMeta: apiv1.NewObjectMeta{
 			ID:                internalCluster.Name,
@@ -428,10 +429,10 @@ func convertInternalClusterToExternal(internalCluster *kubermaticapiv1.Cluster) 
 	}
 }
 
-func convertInternalClustersToExternal(internalClusters []*kubermaticapiv1.Cluster) []*apiv1.NewCluster {
+func filterAndConvertInternalClustersToExternal(internalClusters []*kubermaticapiv1.Cluster) []*apiv1.NewCluster {
 	apiClusters := make([]*apiv1.NewCluster, len(internalClusters))
 	for index, cluster := range internalClusters {
-		apiClusters[index] = convertInternalClusterToExternal(cluster)
+		apiClusters[index] = filterAndConvertInternalClusterToExternal(cluster)
 	}
 	return apiClusters
 }

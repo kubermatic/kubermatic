@@ -22,7 +22,7 @@ func defaultCreationTimestamp() time.Time {
 	return time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)
 }
 
-func createTestProject(name, phase string, creationTime time.Time) *kubermaticapiv1.Project {
+func genProject(name, phase string, creationTime time.Time) *kubermaticapiv1.Project {
 	return &kubermaticapiv1.Project{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name + "InternalName",
@@ -43,6 +43,10 @@ func createTestProject(name, phase string, creationTime time.Time) *kubermaticap
 	}
 }
 
+func genDefaultProject() *kubermaticapiv1.Project {
+	return genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp())
+}
+
 func TestListProjectEndpoint(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
@@ -59,9 +63,9 @@ func TestListProjectEndpoint(t *testing.T) {
 			Body:       ``,
 			HTTPStatus: http.StatusOK,
 			ExistingProjects: []*kubermaticapiv1.Project{
-				createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				createTestProject("my-second-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp().Add(time.Minute)),
-				createTestProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp().Add(2*time.Minute)),
+				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				genProject("my-second-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp().Add(time.Minute)),
+				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp().Add(2*time.Minute)),
 			},
 			ExistingKubermaticUser: &kubermaticapiv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
@@ -154,7 +158,7 @@ func TestGetProjectEndpoint(t *testing.T) {
 			ProjectToSync:    testingProjectName,
 			ExpectedResponse: `{"id":"my-first-projectInternalName","name":"my-first-project","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active"}`,
 			HTTPStatus:       http.StatusOK,
-			ExistingProject:  createTestProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+			ExistingProject:  genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 			ExistingKubermaticUser: &kubermaticapiv1.User{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: kubermaticapiv1.UserSpec{
