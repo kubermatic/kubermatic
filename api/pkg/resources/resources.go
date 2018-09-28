@@ -100,6 +100,8 @@ const (
 	ServiceAccountKeySecretName = "service-account-key"
 	//TokensSecretName is the name for the secret containing the user tokens
 	TokensSecretName = "tokens"
+	// OpenVPNCASecretName is the name of the secret that contains the OpenVPN CA
+	OpenVPNCASecretName = "openvpn-ca"
 	//OpenVPNServerCertificatesSecretName is the name for the secret containing the openvpn server certificates
 	OpenVPNServerCertificatesSecretName = "openvpn-server-certificates"
 	//OpenVPNClientCertificatesSecretName is the name for the secret containing the openvpn client certificates
@@ -232,6 +234,10 @@ const (
 	KubeconfigSecretKey = "kubeconfig"
 	// TokensSecretKey tokens.csv
 	TokensSecretKey = "tokens.csv"
+	// OpenVPNCACertKey cert.pem
+	OpenVPNCACertKey = "cert.pem"
+	// OpenVPNCAKeyKey key.pem
+	OpenVPNCAKeyKey = "key.pem"
 	// OpenVPNServerKeySecretKey server.key
 	OpenVPNServerKeySecretKey = "server.key"
 	// OpenVPNServerCertSecretKey server.crt
