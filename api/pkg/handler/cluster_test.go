@@ -22,6 +22,79 @@ import (
 	clienttesting "k8s.io/client-go/testing"
 )
 
+func TestRemoveSensitiveDataFromCluster(t *testing.T) {
+	t.Parallel()
+	genClusterResource := func() *kubermaticv1.Cluster {
+		return &kubermaticv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "abcd",
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: "kubermatic.k8s.io/v1",
+						Kind:       "Project",
+						UID:        "",
+						Name:       "myProjectInternalName",
+					},
+				},
+			},
+		}
+	}
+	genClusterWithAdminToken := func() *kubermaticv1.Cluster {
+		cluster := genClusterResource()
+		cluster.Address.AdminToken = "hfzj6l.w7hgc65nq9z4fxvl"
+		cluster.Address.ExternalName = "w225mx4z66.asia-east1-a-1.cloud.kubermatic.io"
+		cluster.Address.IP = "35.194.142.199"
+		cluster.Address.URL = "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"
+		return cluster
+	}
+	genClusterWithAWS := func() *kubermaticv1.Cluster {
+		cluster := genClusterResource()
+		cluster.Spec.Cloud = kubermaticv1.CloudSpec{
+			AWS: &kubermaticv1.AWSCloudSpec{
+				AccessKeyID:      "secretKeyID",
+				SecretAccessKey:  "secreatAccessKey",
+				SecurityGroupID:  "secuirtyGroupID",
+				AvailabilityZone: "availablityZone",
+			},
+		}
+
+		return cluster
+	}
+	scenarios := []struct {
+		Name            string
+		ExistingCluster *kubermaticv1.Cluster
+		ExpectedCluster *kubermaticv1.Cluster
+	}{
+		{
+			Name:            "scenaio 1: removes the admin token",
+			ExistingCluster: genClusterWithAdminToken(),
+			ExpectedCluster: func() *kubermaticv1.Cluster {
+				cluster := genClusterWithAdminToken()
+				cluster.Address.AdminToken = ""
+				return cluster
+			}(),
+		},
+		{
+			Name:            "scenario 2: removes AWS cloud provider secrets",
+			ExistingCluster: genClusterWithAWS(),
+			ExpectedCluster: func() *kubermaticv1.Cluster {
+				cluster := genClusterWithAWS()
+				cluster.Spec.Cloud.AWS.AccessKeyID = ""
+				cluster.Spec.Cloud.AWS.SecretAccessKey = ""
+				return cluster
+			}(),
+		},
+	}
+	for _, tc := range scenarios {
+		t.Run(tc.Name, func(t *testing.T) {
+			actualCluster := removeSensitiveDataFromCluster(tc.ExistingCluster)
+			if !equality.Semantic.DeepEqual(actualCluster, tc.ExpectedCluster) {
+				t.Fatalf("%v", diff.ObjectDiff(tc.ExpectedCluster, actualCluster))
+			}
+		})
+	}
+}
+
 func TestDeleteClusterEndpoint(t *testing.T) {
 	t.Parallel()
 	testcase := struct {
@@ -1436,10 +1509,11 @@ func TestListClusters(t *testing.T) {
 func TestClusterEndpoint(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name         string
-		clusterName  string
-		responseCode int
-		cluster      *kubermaticv1.Cluster
+		name            string
+		clusterName     string
+		responseCode    int
+		cluster         *kubermaticv1.Cluster
+		expectedCluster *kubermaticv1.Cluster
 	}{
 		{
 			name:        "successful got cluster",
@@ -1455,6 +1529,19 @@ func TestClusterEndpoint(t *testing.T) {
 				Address: kubermaticv1.ClusterAddress{
 					AdminToken: "admintoken",
 					URL:        "https://foo.bar:8443",
+				},
+				Spec: kubermaticv1.ClusterSpec{},
+			},
+			expectedCluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "foo",
+					Labels: map[string]string{"user": testUserID},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
+				},
+				Address: kubermaticv1.ClusterAddress{
+					URL: "https://foo.bar:8443",
 				},
 				Spec: kubermaticv1.ClusterSpec{},
 			},
@@ -1523,7 +1610,7 @@ func TestClusterEndpoint(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if diff := deep.Equal(gotCluster, test.cluster); diff != nil {
+			if diff := deep.Equal(gotCluster, test.expectedCluster); diff != nil {
 				t.Errorf("got different cluster than expected. Diff: %v", diff)
 			}
 		})
@@ -1665,13 +1752,34 @@ func TestClustersEndpoint(t *testing.T) {
 	}
 }
 
+func TestClustersEndpointWithInvalidUserID(t *testing.T) {
+	req := httptest.NewRequest("GET", "/api/v3/dc/us-central1/cluster", nil)
+	res := httptest.NewRecorder()
+	ep, err := createTestEndpoint(getUser("foo", strings.Repeat("A", 100), "some-email@loodse.com", false), []runtime.Object{}, []runtime.Object{}, nil, nil)
+	if err != nil {
+		t.Fatalf("failed to create test endpoint due to %v", err)
+	}
+
+	ep.ServeHTTP(res, req)
+
+	if res.Code != http.StatusInternalServerError {
+		t.Fatalf("got invalid status code. Expected 500, got: %d", res.Code)
+	}
+
+	s := res.Body.String()
+	if !strings.Contains(s, "failed to create a valid cluster filter") {
+		t.Fatalf("got unknown response error: %s", s)
+	}
+}
+
 func TestUpdateClusterEndpoint(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name          string
-		responseCode  int
-		cluster       *kubermaticv1.Cluster
-		modifyCluster func(*kubermaticv1.Cluster) *kubermaticv1.Cluster
+		name            string
+		responseCode    int
+		cluster         *kubermaticv1.Cluster
+		expectedCluster *kubermaticv1.Cluster
+		modifyCluster   func(*kubermaticv1.Cluster) *kubermaticv1.Cluster
 	}{
 		{
 			name: "successful update admin token (deprecated)",
@@ -1701,6 +1809,26 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 				c.Address.AdminToken = "bbbbbb.bbbbbbbbbbbbbbbb"
 				return c
 			},
+			expectedCluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "foo",
+					Labels: map[string]string{"user": testUserID},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
+				},
+				Address: kubermaticv1.ClusterAddress{
+					URL: "https://foo.bar:8443",
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					Cloud: kubermaticv1.CloudSpec{
+						Fake: &kubermaticv1.FakeCloudSpec{
+							Token: "foo",
+						},
+						DatacenterName: "us-central1",
+					},
+				},
+			},
 		},
 		{
 			name: "successful update cloud token",
@@ -1729,6 +1857,26 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 			modifyCluster: func(c *kubermaticv1.Cluster) *kubermaticv1.Cluster {
 				c.Spec.Cloud.Fake.Token = "bar"
 				return c
+			},
+			expectedCluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "foo",
+					Labels: map[string]string{"user": testUserID},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
+				},
+				Address: kubermaticv1.ClusterAddress{
+					URL: "https://foo.bar:8443",
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					Cloud: kubermaticv1.CloudSpec{
+						Fake: &kubermaticv1.FakeCloudSpec{
+							Token: "bar",
+						},
+						DatacenterName: "us-central1",
+					},
+				},
 			},
 		},
 		{
@@ -1821,7 +1969,7 @@ func TestUpdateClusterEndpoint(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if diff := deep.Equal(gotCluster, updatedCluster); diff != nil {
+			if diff := deep.Equal(gotCluster, test.expectedCluster); diff != nil {
 				t.Errorf("got different cluster than expected. Diff: %v", diff)
 			}
 		})
