@@ -145,10 +145,21 @@ func (c *Controller) createDefaultAddon(addon string, cluster *kubermaticv1.Clus
 	}
 
 	if _, err := c.client.KubermaticV1().Addons(cluster.Status.NamespaceName).Create(a); err != nil {
-		if !kerrors.IsAlreadyExists(err) {
-			return err
+		return err
+	}
+
+	err := wait.Poll(10*time.Millisecond, 10*time.Second, func() (bool, error) {
+		_, err := c.addonLister.Addons(cluster.Status.NamespaceName).Get(a.Name)
+		if err != nil {
+			if kerrors.IsNotFound(err) {
+				return false, nil
+			}
+			return false, err
 		}
-		glog.V(4).Infof("tried to create addon '%s' in namespace '%s' but it already exists. Interpreting as success", a.Name, cluster.Status.NamespaceName)
+		return true, nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed waitung for addon %s to exist in the lister", a.Name)
 	}
 
 	return nil
@@ -224,8 +235,12 @@ func (c *Controller) sync(key string) error {
 	cluster := clusterFromCache.DeepCopy()
 
 	// Reconciling
-	if cluster.Status.NamespaceName == "" {
-		glog.V(8).Infof("skipping addon sync for cluster %s as no namespace has been created yet", key)
+
+	// Wait until the Apiserver is running to ensure the namespace exists at least.
+	// Just checking for cluster.status.namespaceName is not enough as it gets set before the namespace exists
+	if !cluster.Status.Health.Apiserver {
+		glog.V(8).Infof("skipping addon sync for cluster %s as the apiserver is not running yet", key)
+		c.queue.AddAfter(key, 1*time.Second)
 		return nil
 	}
 
