@@ -18,34 +18,37 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
-	machinev1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/coreos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
 
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/sets"
+
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 // Machine returns a machine object for the given spec
-func Machine(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*machinev1alpha1.Machine, error) {
-	m := &machinev1alpha1.Machine{}
+func Machine(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.Machine, error) {
+	m := clusterv1alpha1.Machine{}
 	m.Name = fmt.Sprintf("machine-%s", node.Metadata.Name)
+	m.Namespace = metav1.NamespaceSystem
 	m.Spec.Name = node.Metadata.Name
-	m.Spec.Roles = []machinev1alpha1.MachineRole{machinev1alpha1.NodeRole}
 
 	m.Spec.Versions.Kubelet = node.Spec.Versions.Kubelet
-	m.Spec.Versions.ContainerRuntime.Name = node.Spec.Versions.ContainerRuntime.Name
-	m.Spec.Versions.ContainerRuntime.Version = node.Spec.Versions.ContainerRuntime.Version
 
 	config := providerconfig.Config{}
 	config.SSHPublicKeys = make([]string, len(keys))
 	for i, key := range keys {
 		config.SSHPublicKeys[i] = key.Spec.PublicKey
 	}
+
+	config.ContainerRuntimeInfo.Name = node.Spec.Versions.ContainerRuntime.Name
+	config.ContainerRuntimeInfo.Version = node.Spec.Versions.ContainerRuntime.Version
 
 	var (
 		err      error
@@ -137,9 +140,9 @@ func Machine(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.DatacenterMe
 		return nil, err
 	}
 
-	m.Spec.ProviderConfig = runtime.RawExtension{Raw: b}
+	m.Spec.ProviderConfig.Value = &runtime.RawExtension{Raw: b}
 
-	return m, nil
+	return &m, nil
 }
 
 func getAWSProviderSpec(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {

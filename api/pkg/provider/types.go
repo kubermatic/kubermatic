@@ -6,10 +6,11 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 
 	"k8s.io/client-go/kubernetes"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+
+	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 )
 
 var (
@@ -70,7 +71,7 @@ type ClusterProvider interface {
 
 	GetClient(*kubermaticv1.Cluster) (kubernetes.Interface, error)
 
-	GetMachineClient(*kubermaticv1.Cluster) (machineclientset.Interface, error)
+	GetMachineClient(*kubermaticv1.Cluster) (clusterv1alpha1clientset.Interface, error)
 
 	GetAdminKubeconfig(c *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
 }
@@ -140,7 +141,7 @@ type NewClusterProvider interface {
 	// GetMachineClientForCustomerCluster returns a client to interact with machine resources in the given cluster
 	//
 	// Note that the client you will get has admin privileges
-	GetMachineClientForCustomerCluster(cluster *kubermaticv1.Cluster) (machineclientset.Interface, error)
+	GetMachineClientForCustomerCluster(cluster *kubermaticv1.Cluster) (clusterv1alpha1clientset.Interface, error)
 
 	// GetClientForCustomerCluster returns a client to interact with the given cluster
 	//

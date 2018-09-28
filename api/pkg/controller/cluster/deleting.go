@@ -41,12 +41,12 @@ func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv
 		return nil, fmt.Errorf("failed to get cluster machine client: %v", err)
 	}
 
-	machineList, err := machineClient.MachineV1alpha1().Machines().List(metav1.ListOptions{})
+	machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cluster machines: %v", err)
 	}
 	if len(machineList.Items) > 0 {
-		if err = machineClient.MachineV1alpha1().Machines().DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
+		if err = machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
 			return nil, fmt.Errorf("failed to delete cluster machines: %v", err)
 		}
 

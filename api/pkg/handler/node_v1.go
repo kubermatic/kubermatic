@@ -64,7 +64,7 @@ func newDeleteNodeForCluster(projectProvider provider.ProjectProvider) endpoint.
 		}
 
 		if machine != nil {
-			return nil, kubernetesErrorToHTTPError(machineClient.MachineV1alpha1().Machines().Delete(machine.Name, nil))
+			return nil, kubernetesErrorToHTTPError(machineClient.ClusterV1alpha1().Machines(machine.Namespace).Delete(machine.Name, nil))
 		} else if node != nil {
 			return nil, kubernetesErrorToHTTPError(kubeClient.CoreV1().Nodes().Delete(node.Name, nil))
 		}
@@ -103,7 +103,7 @@ func newListNodesForCluster(projectProvider provider.ProjectProvider) endpoint.E
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		machineList, err := machineClient.MachineV1alpha1().Machines().List(metav1.ListOptions{})
+		machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("failed to load machines from cluster: %v", err)
 		}
@@ -280,7 +280,7 @@ func newCreateNodeForCluster(sshKeyProvider provider.NewSSHKeyProvider, projectP
 		}
 
 		// Send machine resource to k8s
-		machine, err = machineClient.MachineV1alpha1().Machines().Create(machine)
+		machine, err = machineClient.ClusterV1alpha1().Machines(machine.Namespace).Create(machine)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create machine: %v", err)
 		}

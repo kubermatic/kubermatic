@@ -18,6 +18,8 @@ import (
 	machinetemplate "github.com/kubermatic/machine-controller/pkg/template"
 	"github.com/kubermatic/machine-controller/pkg/userdata/cloud"
 	userdatahelper "github.com/kubermatic/machine-controller/pkg/userdata/helper"
+
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 var (
@@ -56,7 +58,7 @@ func (p Provider) SupportedContainerRuntimes() (runtimes []machinesv1alpha1.Cont
 
 // UserData renders user-data template
 func (p Provider) UserData(
-	spec machinesv1alpha1.MachineSpec,
+	spec clusterv1alpha1.MachineSpec,
 	kubeconfig *clientcmdapi.Config,
 	ccProvider cloud.ConfigProvider,
 	clusterDNSIPs []net.IP,
@@ -117,18 +119,18 @@ func (p Provider) UserData(
 		return "", fmt.Errorf("error extracting server address from kubeconfig: %v", err)
 	}
 
-	var crPkg, crPkgVersion string
-	if spec.Versions.ContainerRuntime.Name == containerruntime.Docker {
-		crPkg, crPkgVersion, err = getDockerInstallCandidate(spec.Versions.ContainerRuntime.Version)
-		if err != nil {
-			return "", fmt.Errorf("failed to get docker install candidate for %s: %v", spec.Versions.ContainerRuntime.Version, err)
-		}
-	} else {
-		return "", fmt.Errorf("unknown container runtime selected '%s'", spec.Versions.ContainerRuntime.Name)
+	if pconfig.ContainerRuntimeInfo.Name != containerruntime.Docker {
+		return "", fmt.Errorf("unsupported container runtime: %s, only supported runtime: %s",
+			pconfig.ContainerRuntimeInfo.Name, containerruntime.Docker)
+	}
+
+	crPkg, crPkgVersion, err := getDockerInstallCandidate(pconfig.ContainerRuntimeInfo.Version)
+	if err != nil {
+		return "", fmt.Errorf("failed to get docker install candidate for %s: %v", pconfig.ContainerRuntimeInfo.Version, err)
 	}
 
 	data := struct {
-		MachineSpec           machinesv1alpha1.MachineSpec
+		MachineSpec           clusterv1alpha1.MachineSpec
 		ProviderConfig        *providerconfig.Config
 		OSConfig              *Config
 		BoostrapToken         string

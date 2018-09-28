@@ -5,12 +5,14 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 
+	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+
+	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 )
 
 // New returns a new instance of the client connection provider
@@ -74,15 +76,24 @@ func (p *Provider) GetClient(c *kubermaticv1.Cluster) (kubernetes.Interface, err
 }
 
 // GetMachineClient returns a client to interact with machine resources for the given cluster
-func (p *Provider) GetMachineClient(c *kubermaticv1.Cluster) (machineclientset.Interface, error) {
+func (p *Provider) GetMachineClient(c *kubermaticv1.Cluster) (clusterv1alpha1clientset.Interface, error) {
 	config, err := p.GetClientConfig(c)
 	if err != nil {
 		return nil, err
 	}
-	client, err := machineclientset.NewForConfig(config)
+	client, err := clusterv1alpha1clientset.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}
 
 	return client, nil
+}
+
+// GetApiextensionsClient returns a client to interact with apiextension resources for the given cluster
+func (p *Provider) GetApiextensionsClient(c *kubermaticv1.Cluster) (apiextensionsclientset.Interface, error) {
+	config, err := p.GetClientConfig(c)
+	if err != nil {
+		return nil, err
+	}
+	return apiextensionsclientset.NewForConfig(config)
 }

@@ -81,6 +81,6 @@ versions:
   default: false
   allowedNodeVersions: *node-versions
 # Kubernetes 1.12
-- version: "1.12.0-rc.2"
+- version: "1.12.0"
   default: false
   allowedNodeVersions: *node-versions
