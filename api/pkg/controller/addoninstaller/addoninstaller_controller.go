@@ -144,9 +144,14 @@ func (c *Controller) createDefaultAddon(addon string, cluster *kubermaticv1.Clus
 		a.Labels[kubermaticv1.WorkerNameLabelKey] = c.workerName
 	}
 
-	_, err := c.client.KubermaticV1().Addons(cluster.Status.NamespaceName).Create(a)
+	if _, err := c.client.KubermaticV1().Addons(cluster.Status.NamespaceName).Create(a); err != nil {
+		if !kerrors.IsAlreadyExists(err) {
+			return err
+		}
+		glog.V(4).Infof("tried to create addon '%s' in namespace '%s' but it already exists. Interpreting as success", a.Name, cluster.Status.NamespaceName)
+	}
 
-	return err
+	return nil
 }
 
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
@@ -227,8 +232,7 @@ func (c *Controller) sync(key string) error {
 	for _, defaultAddon := range c.defaultAddonList {
 		_, err := c.addonLister.Addons(cluster.Status.NamespaceName).Get(defaultAddon)
 		if err != nil && kerrors.IsNotFound(err) {
-			err = c.createDefaultAddon(defaultAddon, cluster)
-			if err != nil {
+			if err = c.createDefaultAddon(defaultAddon, cluster); err != nil {
 				return fmt.Errorf("failed to create initial adddon %s: %v", defaultAddon, err)
 			}
 		} else if err != nil {
