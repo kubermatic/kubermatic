@@ -1,6 +1,8 @@
 package machinecontroller
 
 import (
+	"github.com/Masterminds/semver"
+
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -12,7 +14,7 @@ const (
 )
 
 // MachineCRD returns the machine CRD definition
-func MachineCRD(_ int64, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
+func MachineCRD(_ semver.Version, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
 	if existing == nil {
 		existing = &apiextensionsv1beta1.CustomResourceDefinition{}
 	}
@@ -30,7 +32,7 @@ func MachineCRD(_ int64, existing *apiextensionsv1beta1.CustomResourceDefinition
 }
 
 // MachineSetCRD returns the machineset CRD definition
-func MachineSetCRD(minorVersion int64, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
+func MachineSetCRD(clusterVersion semver.Version, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
 	if existing == nil {
 		existing = &apiextensionsv1beta1.CustomResourceDefinition{}
 	}
@@ -44,7 +46,7 @@ func MachineSetCRD(minorVersion int64, existing *apiextensionsv1beta1.CustomReso
 	existing.Spec.Names.ListKind = "MachineSetList"
 	existing.Spec.Names.Plural = "machinesets"
 	existing.Spec.Names.Singular = "machineset"
-	if minorVersion > 9 {
+	if clusterVersion.Minor() > 9 {
 		existing.Spec.Subresources = &apiextensionsv1beta1.CustomResourceSubresources{Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{}}
 	}
 
@@ -52,7 +54,7 @@ func MachineSetCRD(minorVersion int64, existing *apiextensionsv1beta1.CustomReso
 }
 
 // MachineDeploymentCRD returns the machinedeployments CRD definition
-func MachineDeploymentCRD(minorVersion int64, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
+func MachineDeploymentCRD(clusterVersion semver.Version, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
 	if existing == nil {
 		existing = &apiextensionsv1beta1.CustomResourceDefinition{}
 	}
@@ -66,7 +68,7 @@ func MachineDeploymentCRD(minorVersion int64, existing *apiextensionsv1beta1.Cus
 	existing.Spec.Names.ListKind = "MachineDeploymentList"
 	existing.Spec.Names.Plural = "machinedeployments"
 	existing.Spec.Names.Singular = "machinedeployment"
-	if minorVersion > 9 {
+	if clusterVersion.Minor() > 9 {
 		existing.Spec.Subresources = &apiextensionsv1beta1.CustomResourceSubresources{Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{}}
 	}
 
@@ -74,7 +76,7 @@ func MachineDeploymentCRD(minorVersion int64, existing *apiextensionsv1beta1.Cus
 }
 
 // ClusterCRD returns the cluster crd definition
-func ClusterCRD(minorVersion int64, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
+func ClusterCRD(clusterVersion semver.Version, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
 	if existing == nil {
 		existing = &apiextensionsv1beta1.CustomResourceDefinition{}
 	}
@@ -88,7 +90,7 @@ func ClusterCRD(minorVersion int64, existing *apiextensionsv1beta1.CustomResourc
 	existing.Spec.Names.ListKind = "ClusterList"
 	existing.Spec.Names.Plural = "clusters"
 	existing.Spec.Names.Singular = "cluster"
-	if minorVersion > 9 {
+	if clusterVersion.Minor() > 9 {
 		existing.Spec.Subresources = &apiextensionsv1beta1.CustomResourceSubresources{Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{}}
 	}
 

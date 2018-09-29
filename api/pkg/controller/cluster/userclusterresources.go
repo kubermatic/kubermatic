@@ -3,6 +3,7 @@ package cluster
 import (
 	"fmt"
 
+	"github.com/Masterminds/semver"
 	"github.com/go-test/deep"
 	"github.com/golang/glog"
 
@@ -13,8 +14,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
-
-	"github.com/Masterminds/semver"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
@@ -391,7 +390,7 @@ func (cc *Controller) userClusterEnsureCustomResourceDefinitions(c *kubermaticv1
 
 	for _, create := range GetCRDCreators() {
 		var existing *apiextensionsv1beta1.CustomResourceDefinition
-		crd, err := create(version.Minor(), nil)
+		crd, err := create(*version, nil)
 		if err != nil {
 			return fmt.Errorf("failed to build CustomResourceDefinitions: %v", err)
 		}
@@ -406,7 +405,7 @@ func (cc *Controller) userClusterEnsureCustomResourceDefinitions(c *kubermaticv1
 			continue
 		}
 
-		crd, err = create(version.Minor(), existing.DeepCopy())
+		crd, err = create(*version, existing.DeepCopy())
 		if err != nil {
 			return fmt.Errorf("failed to build CustomResourceDefinition: %v", err)
 		}
