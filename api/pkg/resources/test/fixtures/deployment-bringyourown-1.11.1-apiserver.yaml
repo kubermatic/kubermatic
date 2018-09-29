@@ -217,10 +217,10 @@ spec:
         - X-Remote-User
         - --kubelet-preferred-address-types
         - ExternalIP,InternalIP
-        - --feature-gates
-        - Initializers=true
         - --runtime-config
         - admissionregistration.k8s.io/v1alpha1
+        - --feature-gates
+        - Initializers=true
         command:
         - /hyperkube
         - apiserver
