@@ -8,12 +8,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
-
 	"github.com/golang/glog"
 	"github.com/oklog/run"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/kubeletdnat"
+	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 
 	"k8s.io/apimachinery/pkg/util/wait"
 	coreinformers "k8s.io/client-go/informers"
