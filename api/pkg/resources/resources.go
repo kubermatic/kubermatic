@@ -8,9 +8,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/golang/glog"
-
+	"github.com/Masterminds/semver"
 	"github.com/go-test/deep"
+	"github.com/golang/glog"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
@@ -306,7 +306,7 @@ type PodDisruptionBudgetCreator = func(data *TemplateData, existing *policyv1bet
 type CronJobCreator = func(data *TemplateData, existing *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error)
 
 // CRDCreateor defines an interface to create/update CustomRessourceDefinitions
-type CRDCreateor = func(existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error)
+type CRDCreateor = func(version semver.Version, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error)
 
 // GetClusterRef returns a metav1.OwnerReference for the given Cluster
 func GetClusterRef(cluster *kubermaticv1.Cluster) metav1.OwnerReference {
