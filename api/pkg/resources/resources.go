@@ -177,8 +177,6 @@ const (
 	KubeStateMetricsClusterRoleBindingName = "system:kubermatic-kube-state-metrics"
 	//ControllerManagerRoleBindingName is the name of the controller-manager's rolebindings
 	ControllerManagerRoleBindingName = "kubermatic:controller-manager"
-	//ControllerManagerClusterRoleBindingName is the name of the controller-manager's clusterrolebindings
-	ControllerManagerClusterRoleBindingName = "kubermatic:controller-manager"
 
 	// EtcdPodDisruptionBudgetName is the name of the PDB for the etcd statefulset
 	EtcdPodDisruptionBudgetName = "etcd"
