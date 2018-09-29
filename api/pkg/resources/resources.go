@@ -310,7 +310,7 @@ type PodDisruptionBudgetCreator = func(data *TemplateData, existing *policyv1bet
 type CronJobCreator = func(data *TemplateData, existing *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error)
 
 // CRDCreateor defines an interface to create/update CustomRessourceDefinitions
-type CRDCreateor = func(existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error)
+type CRDCreateor = func(minorVersion int64, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error)
 
 // GetClusterRef returns a metav1.OwnerReference for the given Cluster
 func GetClusterRef(cluster *kubermaticv1.Cluster) metav1.OwnerReference {
