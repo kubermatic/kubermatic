@@ -360,6 +360,7 @@ func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
 func GetPodDisruptionBudgetCreators() []resources.PodDisruptionBudgetCreator {
 	return []resources.PodDisruptionBudgetCreator{
 		etcd.PodDisruptionBudget,
+		apiserver.PodDisruptionBudget,
 	}
 }
 

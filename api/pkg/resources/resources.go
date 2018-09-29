@@ -178,6 +178,8 @@ const (
 
 	// EtcdPodDisruptionBudgetName is the name of the PDB for the etcd statefulset
 	EtcdPodDisruptionBudgetName = "etcd"
+	// ApiserverPodDisruptionBudgetName is the name of the PDB for the apiserver deployment
+	ApiserverPodDisruptionBudgetName = "apiserver"
 
 	// DefaultOwnerReadOnlyMode represents file mode with read permission for owner only
 	DefaultOwnerReadOnlyMode = 0400
