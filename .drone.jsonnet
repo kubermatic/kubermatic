@@ -162,7 +162,7 @@ local drone = import 'drone/drone.libsonnet';
 
     // deploy run
     '9-deploy-run': drone.step.new('kubeciio/helm') + {
-      helm: 'upgrade --install --wait --timeout 300' + tillerNamespace + versionsValues,
+      helm: 'upgrade --install --wait --timeout 300' + versionsValues,
       secrets: [
         { source: 'kubeconfig_run', target: 'kubeconfig' },
         { source: 'values_run', target: 'values' },
