@@ -334,8 +334,7 @@ pipeline:
     - name: prometheus
       namespace: monitoring
       path: config/monitoring/prometheus/
-    helm: upgrade --install --wait --timeout 300 --tiller-namespace=kubermatic-installer
-      --values config/versions-values.yaml
+    helm: upgrade --install --wait --timeout 300 --values config/versions-values.yaml
     image: kubeciio/helm
     pull: true
     secrets:
