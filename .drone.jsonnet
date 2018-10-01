@@ -114,9 +114,17 @@ local drone = import 'drone/drone.libsonnet';
       context: 'api',
     } + whenBranchMaster,
 
+    // Push release
+    '5-kubermatic-docker-ci-release-27': drone.step.docker.new('kubermatic/api', group='push-master') + {
+      secrets: dockerSecrets,
+      dockerfile: 'api/Dockerfile',
+      tags: ['${DRONE_COMMIT}'],
+      context: 'api',
+    } + whenBranchRelease,
+
 
     // Push Release
-    '6-kubermatic-docker-release': drone.step.docker.new('kubermatic/api', group='push-master') + {
+    '5-kubermatic-docker-release': drone.step.docker.new('kubermatic/api', group='push-master') + {
       secrets: dockerSecrets,
       dockerfile: 'api/Dockerfile',
       tags: ['${DRONE_TAG}', 'latest'],
