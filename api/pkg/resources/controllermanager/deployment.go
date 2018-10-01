@@ -197,6 +197,7 @@ func getFlags(cluster *kubermaticv1.Cluster) []string {
 		"--allocate-node-cidrs=true",
 		"--controllers", "*,bootstrapsigner,tokencleaner",
 		"--feature-gates", "RotateKubeletClientCertificate=true,RotateKubeletServerCertificate=true",
+		"--use-service-account-credentials=true",
 		"--v", "4",
 	}
 	if cluster.Spec.Cloud.AWS != nil {
