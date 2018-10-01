@@ -9,7 +9,6 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
@@ -141,8 +140,6 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster) err
 		machinecontroller.DefaultRoleBinding,
 		machinecontroller.KubeSystemRoleBinding,
 		machinecontroller.KubePublicRoleBinding,
-		controllermanager.SystemBootstrapSignerRoleBinding,
-		controllermanager.PublicBootstrapSignerRoleBinding,
 	}
 
 	for _, create := range creators {
@@ -253,7 +250,6 @@ func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.Clus
 		machinecontroller.ClusterRoleBinding,
 		machinecontroller.NodeBootstrapperClusterRoleBinding,
 		machinecontroller.NodeSignerClusterRoleBinding,
-		controllermanager.AdminClusterRoleBinding,
 		kubestatemetrics.ClusterRoleBinding,
 		vpnsidecar.DnatControllerClusterRoleBinding,
 	}

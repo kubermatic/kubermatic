@@ -126,6 +126,7 @@ spec:
         - '*,bootstrapsigner,tokencleaner'
         - --feature-gates
         - RotateKubeletClientCertificate=true,RotateKubeletServerCertificate=true
+        - --use-service-account-credentials=true
         - --v
         - "4"
         command:
