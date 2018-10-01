@@ -118,15 +118,17 @@ func (r *testRunner) Run() (bool, error) {
 	scenariosCh := make(chan testScenario, len(r.scenarios))
 	resultsCh := make(chan testResult, len(r.scenarios))
 
-	for i := 1; i <= r.clusterParallelCount; i++ {
-		go r.worker(i, scenariosCh, resultsCh)
-	}
-
 	glog.V(2).Infoln("Test suite:")
 	for _, scenario := range r.scenarios {
 		glog.V(2).Infoln(scenario.Name())
 		scenariosCh <- scenario
 	}
+	glog.V(2).Infoln(fmt.Sprintf("Total: %d tests", len(r.scenarios)))
+
+	for i := 1; i <= r.clusterParallelCount; i++ {
+		go r.worker(i, scenariosCh, resultsCh)
+	}
+
 	close(scenariosCh)
 
 	var results []testResult
