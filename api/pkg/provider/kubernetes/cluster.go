@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	kuberrrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -88,7 +90,7 @@ func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.Cluster
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
 				kubermaticv1.WorkerNameLabelKey: p.workerName,
-				userLabelKey:                    user.ID,
+				UserLabelKey:                    user.ID,
 			},
 			Name: name,
 		},
@@ -168,7 +170,7 @@ func (p *ClusterProvider) Cluster(user apiv1.User, name string) (*kubermaticv1.C
 		}
 		return nil, err
 	}
-	if cluster.Labels[userLabelKey] == user.ID || p.isAdmin(user) {
+	if cluster.Labels[UserLabelKey] == user.ID || p.isAdmin(user) {
 		return cluster, nil
 	}
 
@@ -182,9 +184,12 @@ func (p *ClusterProvider) Clusters(user apiv1.User) ([]*kubermaticv1.Cluster, er
 	if p.isAdmin(user) {
 		selector = labels.Everything()
 	} else {
-		filter := map[string]string{}
-		filter[userLabelKey] = user.ID
-		selector = labels.SelectorFromSet(labels.Set(filter))
+		selector = labels.NewSelector()
+		req, err := labels.NewRequirement(UserLabelKey, selection.Equals, []string{user.ID})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create a valid cluster filter: %v", err)
+		}
+		selector = selector.Add(*req)
 	}
 
 	return p.clusterLister.List(selector)

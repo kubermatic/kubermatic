@@ -7,7 +7,7 @@ local drone = import 'drone/drone.libsonnet';
   pipeline: {
     local goImage = 'golang:1.10.3',
 
-    '0-dep': drone.step.new('metalmatze/dep:0.4.1', commands=['cd api', 'dep status -v']),
+    '0-dep': drone.step.new('metalmatze/dep:0.5.0', commands=['cd api', 'dep status -v']),
     '1-gofmt': drone.step.new(goImage, commands=['cd api', 'make gofmt']),
     '2-verify-codegen': drone.step.new(goImage, commands=['cd api', './hack/verify-codegen.sh']),
 
