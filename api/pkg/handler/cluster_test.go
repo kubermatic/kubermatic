@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/go-test/deep"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
@@ -1892,149 +1893,51 @@ func TestLegacyUpdateClusterEndpoint(t *testing.T) {
 	}
 }
 
-func TestGetClusterAdminTokenEndpoint(t *testing.T) {
+func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 	t.Parallel()
-	tester := apiv1.User{
-		ID:    testUserName,
-		Email: testUserEmail,
-	}
-
-	user := &kubermaticv1.User{
-		ObjectMeta: metav1.ObjectMeta{},
-		Spec: kubermaticv1.UserSpec{
-			Name:  "John",
-			Email: testUserEmail,
-			Projects: []kubermaticv1.ProjectGroup{
-				{
-					Group: "owners-" + testingProjectName,
-					Name:  testingProjectName,
-				},
-			},
-		},
-	}
-
-	project := genProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp())
-
-	cluster := &kubermaticv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   "foo",
-			Labels: map[string]string{"user": testUserName},
-		},
-		Status: kubermaticv1.ClusterStatus{
-			RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
-		},
-		Address: kubermaticv1.ClusterAddress{
-			AdminToken: "cccccc.cccccccccccccccc",
-			URL:        "https://foo.bar:8443",
-		},
-		Spec: kubermaticv1.ClusterSpec{
-			Cloud: kubermaticv1.CloudSpec{
-				Fake: &kubermaticv1.FakeCloudSpec{
-					Token: "foo",
-				},
-				DatacenterName: "us-central1",
-			},
-		},
-	}
-
-	expectedResponse := fmt.Sprintf(`{"token":"%s"}`, cluster.Address.AdminToken)
-
 	// setup world view
-	ep, err := createTestEndpoint(tester, []runtime.Object{}, []runtime.Object{user, project, cluster}, nil, nil)
+	expectedResponse := "{}"
+	kubermaticObjs := genDefaultKubermaticObjects()
+	tester := genDefaultAPIUser()
+	projectToSync := genDefaultProject().Name
+	cluster := genDefaultCluster()
+	kubermaticObjs = append(kubermaticObjs, cluster)
+	ep, clientsSets, err := createTestEndpointAndGetClients(*tester, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObjs, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to create test endpoint due to %v", err)
 	}
 
 	// perform test
 	res := httptest.NewRecorder()
-	req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/token", testingProjectName, cluster.Name), nil)
+	req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/token", projectToSync, cluster.Name), nil)
 	ep.ServeHTTP(res, req)
 
 	// check assertions
 	checkStatusCode(http.StatusOK, res, t)
 	compareWithResult(t, res, expectedResponse)
-}
-
-func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
-	t.Parallel()
-	tester := apiv1.User{
-		ID:    testUserName,
-		Email: testUserEmail,
+	wasUpdateActionValidated := false
+	for _, action := range clientsSets.fakeKubermaticClient.Actions() {
+		if action.Matches("update", "clusters") {
+			updateAction, ok := action.(clienttesting.CreateAction)
+			if !ok {
+				t.Errorf("unexpected action %#v", action)
+			}
+			updatedCluster, ok := updateAction.GetObject().(*kubermaticv1.Cluster)
+			if !ok {
+				t.Error("updateAction doesn't contain *kubermaticv1.Cluster")
+			}
+			updatedToken := updatedCluster.Address.AdminToken
+			if err := validation.ValidateKubernetesToken(updatedToken); err != nil {
+				t.Errorf("generated token '%s' is malformed: %v", updatedToken, err)
+			}
+			if updatedToken == cluster.Address.AdminToken {
+				t.Errorf("generated token '%s' is exactly the same as the old one : %s", updatedToken, cluster.Address.AdminToken)
+			}
+			wasUpdateActionValidated = true
+		}
 	}
 
-	user := &kubermaticv1.User{
-		ObjectMeta: metav1.ObjectMeta{},
-		Spec: kubermaticv1.UserSpec{
-			Name:  "John",
-			Email: testUserEmail,
-			Projects: []kubermaticv1.ProjectGroup{
-				{
-					Group: "owners-" + testingProjectName,
-					Name:  testingProjectName,
-				},
-			},
-		},
-	}
-
-	project := genProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp())
-
-	cluster := &kubermaticv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   "foo",
-			Labels: map[string]string{"user": testUserName},
-		},
-		Status: kubermaticv1.ClusterStatus{
-			RootCA: kubermaticv1.KeyCert{Cert: []byte("foo")},
-		},
-		Address: kubermaticv1.ClusterAddress{
-			AdminToken: "cccccc.cccccccccccccccc",
-			URL:        "https://foo.bar:8443",
-		},
-		Spec: kubermaticv1.ClusterSpec{
-			Cloud: kubermaticv1.CloudSpec{
-				Fake: &kubermaticv1.FakeCloudSpec{
-					Token: "foo",
-				},
-				DatacenterName: "us-central1",
-			},
-		},
-	}
-
-	// setup world view
-	ep, clientsSets, err := createTestEndpointAndGetClients(tester, nil, []runtime.Object{}, []runtime.Object{}, []runtime.Object{user, project, cluster}, nil, nil)
-	if err != nil {
-		t.Fatalf("failed to create test endpoint due to %v", err)
-	}
-
-	// perform test
-	res := httptest.NewRecorder()
-	req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/token", testingProjectName, cluster.Name), nil)
-	ep.ServeHTTP(res, req)
-
-	// check assertions
-	checkStatusCode(http.StatusOK, res, t)
-
-	response := &apiv1.ClusterAdminToken{}
-	err = json.Unmarshal(res.Body.Bytes(), response)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(response.Token) == 0 || response.Token == cluster.Address.AdminToken {
-		t.Errorf("revocation response does not contain updated admin token, but '%s'", response.Token)
-	}
-
-	if err := validation.ValidateKubernetesToken(response.Token); err != nil {
-		t.Errorf("generated token '%s' is malformed: %v", response.Token, err)
-	}
-
-	// check if the cluster was really updated
-	updatedCluster, err := clientsSets.fakeKubermaticClient.KubermaticV1().Clusters().Get(cluster.Name, metav1.GetOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if updatedCluster.Address.AdminToken == cluster.Address.AdminToken {
+	if !wasUpdateActionValidated {
 		t.Error("updated admin token in cluster resource was not persisted")
 	}
 }
@@ -2047,14 +1950,6 @@ func genCluster(id string, name string, projectID string, creationTime time.Time
 			CreationTimestamp: func() metav1.Time {
 				return metav1.NewTime(creationTime)
 			}(),
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: "kubermatic.k8s.io/v1",
-					Kind:       "Project",
-					UID:        "",
-					Name:       projectID,
-				},
-			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: kubermaticv1.CloudSpec{

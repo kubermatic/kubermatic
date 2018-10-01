@@ -852,9 +852,8 @@ func decodeDetachSSHKeysFromCluster(c context.Context, r *http.Request) (interfa
 	return req, nil
 }
 
-// ClusterAdminTokenReq defines HTTP request data for getClusterAdminToken and
-// revokeClusterAdminToken endpoints.
-// swagger:parameters getClusterAdminToken revokeClusterAdminToken
+// ClusterAdminTokenReq defines HTTP request data for revokeClusterAdminToken endpoints.
+// swagger:parameters revokeClusterAdminToken
 type ClusterAdminTokenReq struct {
 	DCReq
 	// in: path
@@ -878,26 +877,6 @@ func decodeClusterAdminTokenReq(c context.Context, r *http.Request) (interface{}
 	return req, nil
 }
 
-func getClusterAdminToken(projectProvider provider.ProjectProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(ClusterAdminTokenReq)
-		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
-
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
-		}
-
-		return convertInternalClusterTokenToExternal(cluster), nil
-	}
-}
-
 func revokeClusterAdminToken(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(ClusterAdminTokenReq)
@@ -917,16 +896,6 @@ func revokeClusterAdminToken(projectProvider provider.ProjectProvider) endpoint.
 		cluster.Address.AdminToken = kubernetes.GenerateToken()
 
 		_, err = clusterProvider.Update(userInfo, cluster)
-		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
-		}
-
-		return convertInternalClusterTokenToExternal(cluster), nil
-	}
-}
-
-func convertInternalClusterTokenToExternal(internalCluster *kubermaticapiv1.Cluster) *apiv1.ClusterAdminToken {
-	return &apiv1.ClusterAdminToken{
-		Token: internalCluster.Address.AdminToken,
+		return nil, kubernetesErrorToHTTPError(err)
 	}
 }
