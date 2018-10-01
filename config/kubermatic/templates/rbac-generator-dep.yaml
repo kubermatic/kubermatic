@@ -1,3 +1,4 @@
+{{ if .Values.kubermatic.isMaster }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -40,7 +41,7 @@ spec:
         image: '{{.Values.kubermatic.rbac.image.repository}}:{{.Values.kubermatic.rbac.image.tag}}'
         imagePullPolicy: {{.Values.kubermatic.rbac.image.pullPolicy}}
         volumeMounts:
-          - name: kubeconfigwithseeds
+          - name: kubeconfig
             mountPath: "/opt/.kube/"
             readOnly: true
         resources:
@@ -51,8 +52,9 @@ spec:
             memory: "256Mi"
             cpu: "200m"
       imagePullSecrets:
-        - name: dockerregistry
+        - name: dockercfg
       volumes:
-        - name: kubeconfigwithseeds
+        - name: kubeconfig
           secret:
-            secretName: kubeconfigwithseeds
+            secretName: kubeconfig
+{{ end }}

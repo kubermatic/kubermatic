@@ -161,9 +161,6 @@ pipeline:
     - name: minio
       namespace: minio
       path: config/minio/
-    - name: kubermatic-master
-      namespace: kubermatic
-      path: config/kubermatic/master
     - name: nginx
       namespace: ingress-nginx
       path: config/nginx-ingress-controller/
@@ -220,7 +217,7 @@ pipeline:
       path: config/minio/
     group: deploy-cloud
     helm: upgrade --install --wait --timeout 300 --kube-context=asia-east1-a-1 --tiller-namespace=kubermatic-installer
-      --values config/versions-values.yaml
+      --values config/versions-values.yaml --set=kubermatic.isMaster=false
     image: kubeciio/helm
     pull: true
     secrets:
@@ -243,9 +240,6 @@ pipeline:
     - name: minio
       namespace: minio
       path: config/minio/
-    - name: kubermatic-master
-      namespace: kubermatic
-      path: config/kubermatic/master
     - name: nginx
       namespace: ingress-nginx
       path: config/nginx-ingress-controller/
@@ -303,7 +297,7 @@ pipeline:
       path: config/minio/
     group: deploy-cloud
     helm: upgrade --install --wait --timeout 300 --kube-context=us-central1-c-1 --tiller-namespace=kubermatic-installer
-      --values config/versions-values.yaml
+      --values config/versions-values.yaml --set=kubermatic.isMaster=false
     image: kubeciio/helm
     pull: true
     secrets:
@@ -326,9 +320,6 @@ pipeline:
     - name: minio
       namespace: minio
       path: config/minio/
-    - name: kubermatic-master
-      namespace: kubermatic
-      path: config/kubermatic/master
     - name: nginx
       namespace: ingress-nginx
       path: config/nginx-ingress-controller/
