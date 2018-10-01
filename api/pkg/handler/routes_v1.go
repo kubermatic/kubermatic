@@ -205,12 +205,6 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}").
 		Handler(r.newDeleteNodeForCluster())
 
-	//
-	// Defines set of HTTP endpoints for the admin token that belongs to a cluster
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token").
-		Handler(r.getClusterAdminToken())
-
 	mux.Methods(http.MethodPut).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token").
 		Handler(r.revokeClusterAdminToken())
@@ -1035,42 +1029,16 @@ func (r Routing) newDetachSSHKeyFromCluster() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token project getClusterAdminToken
-//
-//     Returns the current admin token for the given cluster.
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: ClusterAdminToken
-//       401: empty
-//       403: empty
-func (r Routing) getClusterAdminToken() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-			r.newDatacenterMiddleware(),
-			r.userInfoMiddleware(),
-		)(getClusterAdminToken(r.projectProvider)),
-		decodeClusterAdminTokenReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
 // swagger:route PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token project revokeClusterAdminToken
 //
-//     Revokes the current admin token and returns a newly generated one.
+//     Revokes the current admin token
 //
 //     Produces:
 //     - application/json
 //
 //     Responses:
 //       default: errorResponse
-//       200: ClusterAdminToken
+//       200: empty
 //       401: empty
 //       403: empty
 func (r Routing) revokeClusterAdminToken() http.Handler {
