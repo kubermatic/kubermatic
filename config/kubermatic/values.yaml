@@ -1,4 +1,7 @@
 kubermatic:
+  # Whether the cluster is a master cluster
+  # This must be false for any non-master seed
+  isMaster: true
   # the base64 encoded docker/quay authentication json file
   imagePullSecretData: ""
   auth:
@@ -56,6 +59,12 @@ kubermatic:
       {
         "show_demo_info": false
       }
+  rbac:
+    replicas: 1
+    image:
+      repository: "kubermatic/api"
+      tag: "latest"
+      pullPolicy: "IfNotPresent"
   s3_exporter:
     image:
       repository: quay.io/kubermatic/s3-exporter
