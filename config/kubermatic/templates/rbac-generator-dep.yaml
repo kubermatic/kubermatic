@@ -27,7 +27,7 @@ spec:
         - -kubeconfig=/opt/.kube/kubeconfig
         - -dry-run=false
         volumeMounts:
-          - name: kubeconfigwithseeds
+          - name: kubeconfig
             mountPath: "/opt/.kube/"
             readOnly: true
       containers:
