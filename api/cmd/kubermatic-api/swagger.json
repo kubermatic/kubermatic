@@ -1044,64 +1044,14 @@
       }
     },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "project"
-        ],
-        "summary": "Returns the current admin token for the given cluster.",
-        "operationId": "getClusterAdminToken",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterID",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ClusterAdminToken",
-            "schema": {
-              "$ref": "#/definitions/ClusterAdminToken"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      },
       "put": {
+        "description": "Revokes the current admin token",
         "produces": [
           "application/json"
         ],
         "tags": [
           "project"
         ],
-        "summary": "Revokes the current admin token and returns a newly generated one.",
         "operationId": "revokeClusterAdminToken",
         "parameters": [
           {
@@ -1128,10 +1078,7 @@
         ],
         "responses": {
           "200": {
-            "description": "ClusterAdminToken",
-            "schema": {
-              "$ref": "#/definitions/ClusterAdminToken"
-            }
+            "$ref": "#/responses/empty"
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -2827,17 +2774,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "ClusterAdminToken": {
-      "description": "ClusterAdminToken represents a cluster's admin token",
-      "type": "object",
-      "properties": {
-        "token": {
-          "type": "string",
-          "x-go-name": "Token"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "ClusterHealth": {
       "type": "object",
