@@ -209,7 +209,7 @@ local drone = import 'drone/drone.libsonnet';
     } + whenBranchMaster,
 
     '9-deploy-cloud-us': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
-      helm: 'upgrade --install --wait --timeout 300 --kube-context=us-central1-c-1' + tillerNamespace + versionsValues,
+      helm: 'upgrade --install --wait --timeout 300 --kube-context=us-central1-c-1' + tillerNamespace + versionsValues + ' --set=kubermatic.isMaster=false',
       secrets: [
         { source: 'kubeconfig_cloud', target: 'kubeconfig' },
         { source: 'values_cloud_us', target: 'values' },
@@ -219,7 +219,7 @@ local drone = import 'drone/drone.libsonnet';
     } + whenBranchMaster,
 
     '9-deploy-cloud-asia': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
-      helm: 'upgrade --install --wait --timeout 300 --kube-context=asia-east1-a-1' + tillerNamespace + versionsValues,
+      helm: 'upgrade --install --wait --timeout 300 --kube-context=asia-east1-a-1' + tillerNamespace + versionsValues + ' --set=kubermatic.isMaster=false',
       secrets: [
         { source: 'kubeconfig_cloud', target: 'kubeconfig' },
         { source: 'values_cloud_as', target: 'values' },
