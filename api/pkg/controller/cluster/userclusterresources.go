@@ -3,12 +3,12 @@ package cluster
 import (
 	"fmt"
 
+	"github.com/Masterminds/semver"
 	"github.com/go-test/deep"
 	"github.com/golang/glog"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
@@ -18,6 +18,7 @@ import (
 	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -116,7 +117,7 @@ func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to build Role: %v", err)
 		}
 
-		if equality.Semantic.DeepEqual(role, existing) {
+		if resources.DeepEqual(role, existing) {
 			continue
 		}
 
@@ -139,8 +140,6 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster) err
 		machinecontroller.DefaultRoleBinding,
 		machinecontroller.KubeSystemRoleBinding,
 		machinecontroller.KubePublicRoleBinding,
-		controllermanager.SystemBootstrapSignerRoleBinding,
-		controllermanager.PublicBootstrapSignerRoleBinding,
 	}
 
 	for _, create := range creators {
@@ -251,7 +250,6 @@ func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.Clus
 		machinecontroller.ClusterRoleBinding,
 		machinecontroller.NodeBootstrapperClusterRoleBinding,
 		machinecontroller.NodeSignerClusterRoleBinding,
-		controllermanager.AdminClusterRoleBinding,
 		kubestatemetrics.ClusterRoleBinding,
 		vpnsidecar.DnatControllerClusterRoleBinding,
 	}
@@ -360,6 +358,62 @@ func (cc *Controller) userClusterEnsureConfigMaps(c *kubermaticv1.Cluster) error
 			return fmt.Errorf("failed to update ConfigMap %s: %v", cm.Name, err)
 		}
 		glog.V(4).Infof("Updated ConfigMap %s inside user-cluster %s", cm.Name, c.Name)
+	}
+
+	return nil
+}
+
+// GetCRDCreators reuturns a list of CRDCreateors
+func GetCRDCreators() []resources.CRDCreateor {
+	return []resources.CRDCreateor{
+		machinecontroller.MachineCRD,
+		machinecontroller.MachineSetCRD,
+		machinecontroller.MachineDeploymentCRD,
+		machinecontroller.ClusterCRD,
+	}
+}
+
+func (cc *Controller) userClusterEnsureCustomResourceDefinitions(c *kubermaticv1.Cluster) error {
+	client, err := cc.userClusterConnProvider.GetApiextensionsClient(c)
+	if err != nil {
+		return err
+	}
+
+	version, err := semver.NewVersion(c.Spec.Version)
+	if err != nil {
+		return fmt.Errorf("failed to extract version from cluster %s: %v", c.Name, err)
+	}
+
+	for _, create := range GetCRDCreators() {
+		var existing *apiextensionsv1beta1.CustomResourceDefinition
+		crd, err := create(*version, nil)
+		if err != nil {
+			return fmt.Errorf("failed to build CustomResourceDefinitions: %v", err)
+		}
+		if existing, err = client.ApiextensionsV1beta1().CustomResourceDefinitions().Get(crd.Name, metav1.GetOptions{}); err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+			if _, err = client.ApiextensionsV1beta1().CustomResourceDefinitions().Create(crd); err != nil {
+				return fmt.Errorf("failed to create CustomResourceDefinition %s: %v", crd.Name, err)
+			}
+			glog.V(4).Infof("Created CustomResourceDefinition %s inside user cluster %s", crd.Name, c.Name)
+			continue
+		}
+
+		crd, err = create(*version, existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build CustomResourceDefinition: %v", err)
+		}
+
+		if equality.Semantic.DeepEqual(crd, existing) {
+			continue
+		}
+
+		if _, err = client.ApiextensionsV1beta1().CustomResourceDefinitions().Update(crd); err != nil {
+			return fmt.Errorf("failed to update CustomResourceDefinition %s: %v", crd.Name, err)
+		}
+		glog.V(4).Infof("Updated CustomResourceDefinition %s inside user cluster %s", crd.Name, c.Name)
 	}
 
 	return nil

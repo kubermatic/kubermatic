@@ -45,7 +45,7 @@ spec:
         - 0.0.0.0:8085
         command:
         - /usr/local/bin/machine-controller
-        image: docker.io/kubermatic/machine-controller:v0.8.0
+        image: docker.io/kubermatic/machine-controller:v0.9.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 8

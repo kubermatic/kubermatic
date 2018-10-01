@@ -136,7 +136,7 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 				},
 				Spec: kubermaticv1.ClusterSpec{Version: "1.6.0"},
 			},
-			project: createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
+			project: genProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			user: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "George",
@@ -197,7 +197,7 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 				},
 				Spec: kubermaticv1.ClusterSpec{Version: "1.6.0"},
 			},
-			project: createTestProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
+			project: genProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
 			user: &kubermaticv1.User{
 				Spec: kubermaticv1.UserSpec{
 					Name:  "John",

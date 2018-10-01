@@ -9,10 +9,14 @@ import (
 
 	"os"
 
+	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1/conversions"
+	machinesv1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
+
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 var (
@@ -54,11 +58,13 @@ type NetworkConfig struct {
 type Config struct {
 	SSHPublicKeys []string `json:"sshPublicKeys"`
 
-	CloudProvider     CloudProvider        `json:"cloudProvider,omitempty"`
-	CloudProviderSpec runtime.RawExtension `json:"cloudProviderSpec,omitempty"`
+	CloudProvider     CloudProvider        `json:"cloudProvider"`
+	CloudProviderSpec runtime.RawExtension `json:"cloudProviderSpec"`
 
 	OperatingSystem     OperatingSystem      `json:"operatingSystem"`
 	OperatingSystemSpec runtime.RawExtension `json:"operatingSystemSpec"`
+
+	ContainerRuntimeInfo machinesv1alpha1.ContainerRuntimeInfo `json:"containerRuntimeInfo"`
 
 	// +optional
 	Network *NetworkConfig `json:"network,omitempty"`
@@ -320,13 +326,46 @@ func NewConfigVarResolver(kubeClient kubernetes.Interface) *ConfigVarResolver {
 	return &ConfigVarResolver{kubeClient: kubeClient}
 }
 
-func GetConfig(r runtime.RawExtension) (*Config, error) {
+func GetConfig(r clusterv1alpha1.ProviderConfig) (*Config, error) {
+	if r.Value == nil {
+		return nil, fmt.Errorf("machine.spec.providerconfig.value is nil")
+	}
 	p := new(Config)
-	if len(r.Raw) == 0 {
+	if len(r.Value.Raw) == 0 {
 		return p, nil
 	}
-	if err := json.Unmarshal(r.Raw, p); err != nil {
+	if err := json.Unmarshal(r.Value.Raw, p); err != nil {
 		return nil, err
 	}
 	return p, nil
+}
+
+func GetContainerRuntimeInfo(pc clusterv1alpha1.ProviderConfig) (machinesv1alpha1.ContainerRuntimeInfo, error) {
+	config, err := GetConfig(pc)
+	if err != nil {
+		return machinesv1alpha1.ContainerRuntimeInfo{}, err
+	}
+	return config.ContainerRuntimeInfo, nil
+}
+
+func AddContainerRuntimeInfoToProviderconfig(pc clusterv1alpha1.ProviderConfig, cri machinesv1alpha1.ContainerRuntimeInfo) (*clusterv1alpha1.ProviderConfig, error) {
+	if pc.Value == nil {
+		return nil, fmt.Errorf("machine.spec.providerconfig.value is nil")
+	}
+
+	pcRaw := map[string]interface{}{}
+	// We can not re-use GetConfig here because we may lose data
+	if len(pc.Value.Raw) != 0 {
+		if err := json.Unmarshal(pc.Value.Raw, &pcRaw); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal providerconfig: %v", err)
+		}
+	}
+
+	pcRaw[conversions.ContainerRuntimeInfoKey] = cri
+	providerConfigSerialized, err := json.Marshal(pcRaw)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal providerconfig: %v", err)
+	}
+
+	return &clusterv1alpha1.ProviderConfig{Value: &runtime.RawExtension{Raw: providerConfigSerialized}}, nil
 }

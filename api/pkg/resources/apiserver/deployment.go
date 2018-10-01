@@ -302,10 +302,20 @@ func getApiserverFlags(data resources.DeploymentDataProvider, externalNodePort i
 		"--requestheader-username-headers", "X-Remote-User",
 		"--kubelet-preferred-address-types", "ExternalIP,InternalIP",
 	}
+	var featureGates []string
+
 	if clusterVersionSemVer.Minor() >= 9 {
-		flags = append(flags, "--feature-gates", "Initializers=true")
+		featureGates = append(featureGates, "Initializers=true")
 		flags = append(flags, "--runtime-config", "admissionregistration.k8s.io/v1alpha1")
 	}
+	if clusterVersionSemVer.Minor() == 10 {
+		featureGates = append(featureGates, "CustomResourceSubresources=true")
+	}
+	if len(featureGates) > 0 {
+		flags = append(flags, "--feature-gates")
+		flags = append(flags, strings.Join(featureGates, ","))
+	}
+
 	if data.Cluster().Spec.Cloud.AWS != nil {
 		flags = append(flags, "--cloud-provider", "aws")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")

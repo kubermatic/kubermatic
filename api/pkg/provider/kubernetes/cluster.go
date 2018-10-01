@@ -11,7 +11,6 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-	machineclientset "github.com/kubermatic/machine-controller/pkg/client/clientset/versioned"
 
 	kuberrrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,12 +21,14 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+
+	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 )
 
 // UserClusterConnectionProvider offers functions to interact with a user cluster
 type UserClusterConnectionProvider interface {
 	GetClient(*kubermaticv1.Cluster) (kubernetes.Interface, error)
-	GetMachineClient(*kubermaticv1.Cluster) (machineclientset.Interface, error)
+	GetMachineClient(*kubermaticv1.Cluster) (clusterv1alpha1clientset.Interface, error)
 	GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
 }
 
@@ -185,7 +186,7 @@ func (p *ClusterProvider) GetAdminKubeconfig(c *kubermaticv1.Cluster) (*clientcm
 }
 
 // GetMachineClient returns a client to interact with machine resources in the given cluster
-func (p *ClusterProvider) GetMachineClient(c *kubermaticv1.Cluster) (machineclientset.Interface, error) {
+func (p *ClusterProvider) GetMachineClient(c *kubermaticv1.Cluster) (clusterv1alpha1clientset.Interface, error) {
 	return p.userClusterConnProvider.GetMachineClient(c)
 }
 

@@ -197,6 +197,7 @@ func getFlags(cluster *kubermaticv1.Cluster) []string {
 		"--allocate-node-cidrs=true",
 		"--controllers", "*,bootstrapsigner,tokencleaner",
 		"--feature-gates", "RotateKubeletClientCertificate=true,RotateKubeletServerCertificate=true",
+		"--use-service-account-credentials=true",
 		"--v", "4",
 	}
 	if cluster.Spec.Cloud.AWS != nil {
@@ -220,6 +221,8 @@ func getFlags(cluster *kubermaticv1.Cluster) []string {
 	// https://github.com/kubernetes/kubernetes/issues/68986
 	// TODO: Check on 1.12 release/patch releases if the issue
 	// got fixed and if yes, remove the check/make it more granular
+	// Cherry-pick got created but not merged for 1.12.0:
+	// https://github.com/kubernetes/kubernetes/pull/69117
 	if strings.HasPrefix(cluster.Spec.Version, "1.12.") {
 		flags = append(flags, "--authentication-skip-lookup=true")
 	}

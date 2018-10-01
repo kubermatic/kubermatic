@@ -1,39 +1,41 @@
 metadata:
   creationTimestamp: null
   name: machine-azurecluster-1a2b3c4d5e-te5s7
+  namespace: kube-system
 spec:
   metadata:
     creationTimestamp: null
     name: azurecluster-1a2b3c4d5e-te5s7
   providerConfig:
-    cloudProvider: azure
-    cloudProviderSpec:
-      assignPublicIP: true
-      availabilitySet: ""
-      clientID: 32hrf23oh89f32
-      clientSecret: rbyughv438oh32f23v2
-      location: westeurope
-      resourceGroup: cluster-azurecluster-1a2b3c4d5e
-      routeTableName: cluster-azurecluster-1a2b3c4d5e
-      subnetName: cluster-azurecluster-1a2b3c4d5e
-      subscriptionID: 32h9q8r8xqp3h9
-      tags:
-        KubernetesCluster: azurecluster-1a2b3c4d5e
-        foo: bar
-      tenantID: 38w7giefb32fhifw3q
-      vmSize: Standard_B1ms
-      vnetName: cluster-azurecluster-1a2b3c4d5e
-    operatingSystem: coreos
-    operatingSystemSpec:
-      disableAutoUpdate: true
-    sshPublicKeys:
-    - ssh-rsa TEST123test
-  roles:
-  - Node
+    ValueFrom: null
+    value:
+      cloudProvider: azure
+      cloudProviderSpec:
+        assignPublicIP: true
+        availabilitySet: ""
+        clientID: 32hrf23oh89f32
+        clientSecret: rbyughv438oh32f23v2
+        location: westeurope
+        resourceGroup: cluster-azurecluster-1a2b3c4d5e
+        routeTableName: cluster-azurecluster-1a2b3c4d5e
+        subnetName: cluster-azurecluster-1a2b3c4d5e
+        subscriptionID: 32h9q8r8xqp3h9
+        tags:
+          KubernetesCluster: azurecluster-1a2b3c4d5e
+          foo: bar
+        tenantID: 38w7giefb32fhifw3q
+        vmSize: Standard_B1ms
+        vnetName: cluster-azurecluster-1a2b3c4d5e
+      containerRuntimeInfo:
+        name: ""
+        version: ""
+      operatingSystem: coreos
+      operatingSystemSpec:
+        disableAutoUpdate: true
+      sshPublicKeys:
+      - ssh-rsa TEST123test
   versions:
-    containerRuntime:
-      name: ""
-      version: ""
     kubelet: v1.10.3
 status:
   lastUpdated: null
+  providerStatus: null

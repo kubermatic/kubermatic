@@ -7,7 +7,7 @@ set -o pipefail
 cd $(go env GOPATH)/src/github.com/kubermatic/machine-controller
 
 KUBECONFIG_MACHINE_CONTROLLER=$(mktemp)
-kubectl get secret admin-kubeconfig -o go-template='{{ index .data "admin-kubeconfig" }}' \
+kubectl get secret admin-kubeconfig -o go-template='{{ index .data "kubeconfig" }}' \
   | base64 -d > $KUBECONFIG_MACHINE_CONTROLLER
 
 

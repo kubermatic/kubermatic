@@ -17,12 +17,13 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/common/ssh"
 	cloudprovidererrors "github.com/kubermatic/machine-controller/pkg/cloudprovider/errors"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
-	"github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
+
+	common "sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
+	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 type provider struct {
@@ -94,9 +95,12 @@ func getClient(token string) *godo.Client {
 	return godo.NewClient(oauthClient)
 }
 
-func (p *provider) getConfig(s runtime.RawExtension) (*Config, *providerconfig.Config, error) {
+func (p *provider) getConfig(s v1alpha1.ProviderConfig) (*Config, *providerconfig.Config, error) {
+	if s.Value == nil {
+		return nil, nil, fmt.Errorf("machine.spec.providerconfig.value is nil")
+	}
 	pconfig := providerconfig.Config{}
-	err := json.Unmarshal(s.Raw, &pconfig)
+	err := json.Unmarshal(s.Value.Raw, &pconfig)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -254,7 +258,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, _ cloud.MachineUpdater, use
 	c, pc, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, cloudprovidererrors.TerminalError{
-			Reason:  v1alpha1.InvalidConfigurationMachineError,
+			Reason:  common.InvalidConfigurationMachineError,
 			Message: fmt.Sprintf("Failed to parse MachineSpec, due to %v", err),
 		}
 	}
@@ -276,7 +280,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, _ cloud.MachineUpdater, use
 	slug, err := getSlugForOS(pc.OperatingSystem)
 	if err != nil {
 		return nil, cloudprovidererrors.TerminalError{
-			Reason:  v1alpha1.InvalidConfigurationMachineError,
+			Reason:  common.InvalidConfigurationMachineError,
 			Message: fmt.Sprintf("Failed to parse MachineSpec, invalid operating system specified %q: %v", pc.OperatingSystem, err),
 		}
 	}
@@ -334,7 +338,7 @@ func (p *provider) Delete(machine *v1alpha1.Machine, _ cloud.MachineUpdater) err
 	c, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return cloudprovidererrors.TerminalError{
-			Reason:  v1alpha1.InvalidConfigurationMachineError,
+			Reason:  common.InvalidConfigurationMachineError,
 			Message: fmt.Sprintf("Failed to parse MachineSpec, due to %v", err),
 		}
 	}
@@ -357,7 +361,7 @@ func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 	c, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, cloudprovidererrors.TerminalError{
-			Reason:  v1alpha1.InvalidConfigurationMachineError,
+			Reason:  common.InvalidConfigurationMachineError,
 			Message: fmt.Sprintf("Failed to parse MachineSpec, due to %v", err),
 		}
 	}
@@ -440,7 +444,7 @@ func doStatusAndErrToTerminalError(status int, err error) error {
 		// authorization primitives come from MachineSpec
 		// thus we are setting InvalidConfigurationMachineError
 		return cloudprovidererrors.TerminalError{
-			Reason:  v1alpha1.InvalidConfigurationMachineError,
+			Reason:  common.InvalidConfigurationMachineError,
 			Message: "A request has been rejected due to invalid credentials which were taken from the MachineSpec",
 		}
 	default:
