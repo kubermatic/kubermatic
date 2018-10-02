@@ -3,7 +3,6 @@ package openvpn
 import (
 	"crypto/x509"
 	"fmt"
-	"time"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
@@ -28,9 +27,9 @@ func TLSServingCertificate(data resources.SecretDataProvider, existing *corev1.S
 		se.Data = map[string][]byte{}
 	}
 
-	ca, err := data.GetRootCA()
+	ca, err := data.GetOpenVPNCA()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cluster ca: %v", err)
+		return nil, fmt.Errorf("failed to get openvpn ca: %v", err)
 	}
 	altNames := certutil.AltNames{}
 	if b, exists := se.Data[resources.OpenVPNServerCertSecretKey]; exists {
@@ -42,22 +41,18 @@ func TLSServingCertificate(data resources.SecretDataProvider, existing *corev1.S
 			return se, nil
 		}
 	}
-	key, err := certutil.NewPrivateKey()
-	if err != nil {
-		return nil, fmt.Errorf("unable to create a server private key: %v", err)
-	}
 	config := certutil.Config{
 		CommonName: "openvpn-server",
 		AltNames:   altNames,
 		Usages:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 	}
-	cert, err := certutil.NewSignedCert(config, key, ca.Cert, ca.Key)
+	cert, key, err := certificates.GetSignedECDSACertAndKey(certificates.Duration365d, config, ca.Cert, ca.Key)
 	if err != nil {
 		return nil, fmt.Errorf("unable to sign the server certificate: %v", err)
 	}
 
-	se.Data[resources.OpenVPNServerKeySecretKey] = certutil.EncodePrivateKeyPEM(key)
-	se.Data[resources.OpenVPNServerCertSecretKey] = certutil.EncodeCertPEM(cert)
+	se.Data[resources.OpenVPNServerKeySecretKey] = cert
+	se.Data[resources.OpenVPNServerCertSecretKey] = key
 
 	return se, nil
 }
@@ -88,7 +83,7 @@ func CertificateAuthority(data resources.SecretDataProvider, existing *corev1.Se
 		}
 	}
 
-	cert, key, err := certificates.GetECDSACertAndKey(time.Now().AddDate(10, 0, 0), true, nil)
+	cert, key, err := certificates.GetECDSACACertAndKey()
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate OpenVPN CA: %v", err)
 	}

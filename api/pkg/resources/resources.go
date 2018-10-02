@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
 	"errors"
@@ -274,6 +275,12 @@ const (
 	minimumCertValidity30d = 30 * 24 * time.Hour
 )
 
+// ECDSAKeyPair is a ECDSA x509 certifcate and private key
+type ECDSAKeyPair struct {
+	Key  *ecdsa.PrivateKey
+	Cert *x509.Certificate
+}
+
 // ConfigMapCreator defines an interface to create/update ConfigMap's
 type ConfigMapCreator = func(data ConfigMapDataProvider, existing *corev1.ConfigMap) (*corev1.ConfigMap, error)
 
@@ -476,37 +483,67 @@ func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 	return wantOrganizations.Equal(certOrganizations)
 }
 
+func getECDSAClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*ECDSAKeyPair, error) {
+	cert, key, err := getClusterCAFromLister(name, cluster, lister)
+	if err != nil {
+		return nil, err
+	}
+	ecdsaKey, isECDSAKey := key.(*ecdsa.PrivateKey)
+	if !isECDSAKey {
+		return nil, errors.New("key is not a ECDSA key")
+	}
+	return &ECDSAKeyPair{Cert: cert, Key: ecdsaKey}, nil
+}
+
+func getRSAClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*triple.KeyPair, error) {
+	cert, key, err := getClusterCAFromLister(name, cluster, lister)
+	if err != nil {
+		return nil, err
+	}
+	rsaKey, isRSAKey := key.(*rsa.PrivateKey)
+	if !isRSAKey {
+		return nil, errors.New("key is not a RSA key")
+	}
+	return &triple.KeyPair{Cert: cert, Key: rsaKey}, nil
+}
+
 // getClusterCAFromLister returns the CA of the cluster from the lister
-func getClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*triple.KeyPair, error) {
+func getClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*x509.Certificate, interface{}, error) {
 	caCertSecret, err := lister.Secrets(cluster.Status.NamespaceName).Get(name)
 	if err != nil {
-		return nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
+		return nil, nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
 	}
 
 	certs, err := certutil.ParseCertsPEM(caCertSecret.Data[CACertSecretKey])
 	if err != nil {
-		return nil, fmt.Errorf("got an invalid cert from the CA secret %s: %v", CASecretName, err)
+		return nil, nil, fmt.Errorf("got an invalid cert from the CA secret %s: %v", CASecretName, err)
+	}
+
+	if len(certs) != 1 {
+		return nil, nil, fmt.Errorf("did not find exactly one but %v certificates in the CA secret", len(certs))
 	}
 
 	key, err := certutil.ParsePrivateKeyPEM(caCertSecret.Data[CAKeySecretKey])
 	if err != nil {
-		return nil, fmt.Errorf("got an invalid private key from the CA secret %s: %v", CASecretName, err)
+		return nil, nil, fmt.Errorf("got an invalid private key from the CA secret %s: %v", CASecretName, err)
 	}
 
-	return &triple.KeyPair{
-		Cert: certs[0],
-		Key:  key.(*rsa.PrivateKey),
-	}, nil
+	return certs[0], key, nil
 }
 
 // GetClusterRootCA returns the root CA of the cluster from the lister
 func GetClusterRootCA(cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*triple.KeyPair, error) {
-	return getClusterCAFromLister(CASecretName, cluster, lister)
+	return getRSAClusterCAFromLister(CASecretName, cluster, lister)
 }
 
 // GetClusterFrontProxyCA returns the frontproxy CA of the cluster from the lister
 func GetClusterFrontProxyCA(cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*triple.KeyPair, error) {
-	return getClusterCAFromLister(FrontProxyCASecretName, cluster, lister)
+	return getRSAClusterCAFromLister(FrontProxyCASecretName, cluster, lister)
+}
+
+// GetOpenVPNCA returns the OpenVPN CA of the cluster from the lister
+func GetOpenVPNCA(cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*ECDSAKeyPair, error) {
+	return getECDSAClusterCAFromLister(OpenVPNCASecretName, cluster, lister)
 }
 
 // ClusterIPForService returns the cluster ip for the given service

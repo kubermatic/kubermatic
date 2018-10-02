@@ -8,15 +8,36 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"math/big"
-	"net"
 	"time"
+
+	certutil "k8s.io/client-go/util/cert"
 )
 
+const Duration365d = time.Hour * 24 * 365
+
+func GetSignedECDSACertAndKey(notAfter time.Duration, cfg certutil.Config, caCert *x509.Certificate, caKey *ecdsa.PrivateKey) (cert []byte, key []byte, err error) {
+	if len(cfg.CommonName) == 0 {
+		return nil, nil, errors.New("must specify a CommonName")
+	}
+	if len(cfg.Usages) == 0 {
+		return nil, nil, errors.New("must specify at least one ExtKeyUsage")
+	}
+
+	return generateECDSACertAndKey(notAfter, false, cfg, caCert, caKey)
+}
+
 // GetECDSACertAndKey returns a pem-encoded ECDSA certificate and key
+func GetECDSACACertAndKey() (cert []byte, key []byte, err error) {
+	return generateECDSACertAndKey(Duration365d*10, true, certutil.Config{}, nil, nil)
+}
+
+// generateECDSACertAndKey generates an ECDSA x509 certificate and key
+// if both caCert and caKey are non-nil it will be signed by that CA
 // Most of the code is copied over from https://golang.org/src/crypto/tls/generate_cert.go
-func GetECDSACertAndKey(validUntil time.Time, isCA bool, hosts []string) (cert []byte, key []byte, err error) {
+func generateECDSACertAndKey(notAfter time.Duration, isCA bool, cfg certutil.Config, caCert *x509.Certificate, caKey *ecdsa.PrivateKey) ([]byte, []byte, error) {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to generate private key: %v", err)
@@ -31,21 +52,16 @@ func GetECDSACertAndKey(validUntil time.Time, isCA bool, hosts []string) (cert [
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			Organization: []string{"Acme Co"},
+			CommonName:   cfg.CommonName,
+			Organization: cfg.Organization,
 		},
-		NotBefore: time.Now(),
-		NotAfter:  validUntil,
+		DNSNames:    cfg.AltNames.DNSNames,
+		IPAddresses: cfg.AltNames.IPs,
+		NotBefore:   time.Now().UTC(),
+		NotAfter:    time.Now().Add(notAfter).UTC(),
 
-		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		BasicConstraintsValid: true,
-	}
-	for _, h := range hosts {
-		if ip := net.ParseIP(h); ip != nil {
-			template.IPAddresses = append(template.IPAddresses, ip)
-		} else {
-			template.DNSNames = append(template.DNSNames, h)
-		}
+		KeyUsage:    x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage: cfg.Usages,
 	}
 
 	if isCA {
@@ -53,7 +69,12 @@ func GetECDSACertAndKey(validUntil time.Time, isCA bool, hosts []string) (cert [
 		template.KeyUsage |= x509.KeyUsageCertSign
 	}
 
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
+	var derBytes []byte
+	if caCert != nil && caKey != nil {
+		derBytes, err = x509.CreateCertificate(rand.Reader, &template, caCert, &privateKey.PublicKey, caKey)
+	} else {
+		derBytes, err = x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
+	}
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to generate certificate: %v", err)
 	}
@@ -72,8 +93,6 @@ func GetECDSACertAndKey(validUntil time.Time, isCA bool, hosts []string) (cert [
 	if err := pem.Encode(pemKeyReader, &pem.Block{Type: "EC PRIVATE KEY", Bytes: privateKeyPemBlock}); err != nil {
 		return nil, nil, fmt.Errorf("failed to pem-encode private key: %v", err)
 	}
-	cert = pemCertReader.Bytes()
-	key = pemKeyReader.Bytes()
 
-	return cert, key, nil
+	return pemCertReader.Bytes(), pemKeyReader.Bytes(), nil
 }
