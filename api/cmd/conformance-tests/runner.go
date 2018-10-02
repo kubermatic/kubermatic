@@ -114,7 +114,7 @@ func (r *testRunner) worker(id int, scenarios <-chan testScenario, results chan<
 	}
 }
 
-func (r *testRunner) Run() (bool, error) {
+func (r *testRunner) Run() error {
 	scenariosCh := make(chan testScenario, len(r.scenarios))
 	resultsCh := make(chan testResult, len(r.scenarios))
 
@@ -159,7 +159,10 @@ func (r *testRunner) Run() (bool, error) {
 	fmt.Println("========================== RESULT ===========================")
 	fmt.Println(overallResultBuf.String())
 
-	return hadFailure, nil
+	if hadFailure {
+		return errors.New("some tests failed")
+	}
+	return nil
 }
 
 func (r *testRunner) testScenario(scenario testScenario) (*reporters.JUnitTestSuite, error) {

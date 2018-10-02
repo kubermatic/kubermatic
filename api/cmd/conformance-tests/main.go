@@ -30,6 +30,7 @@ var supportedVersions = []*semver.Version{
 	semver.MustParse("v1.9.10"),
 	semver.MustParse("v1.10.8"),
 	semver.MustParse("v1.11.3"),
+	semver.MustParse("v1.12.0"),
 }
 
 // Opts represent combination of flags and ENV options
@@ -182,13 +183,8 @@ func main() {
 	scenarios = append(scenarios, getOpenStackScenarios()...)
 
 	runner := newRunner(scenarios, &opts)
-	hadFailure, err := runner.Run()
-	if err != nil {
-		glog.Fatalf("failed to execute the scenarios: %v", err)
-	}
 
-	if hadFailure {
-		glog.Infof("Some tests failed.")
-		os.Exit(1)
+	if err := runner.Run(); err != nil {
+		glog.Fatal(err)
 	}
 }
