@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -138,25 +137,25 @@ func main() {
 
 	if opts.cleanupOnStart {
 		if opts.namePrefix == "" {
-			log.Fatalf("cleanup-on-start was specified but name-prefix is empty")
+			glog.Fatalf("cleanup-on-start was specified but name-prefix is empty")
 		}
 
 		clusterList, err := kubermaticClient.KubermaticV1().Clusters().List(metav1.ListOptions{})
 		if err != nil {
-			log.Fatal(err)
+			glog.Fatal(err)
 		}
 		for _, cluster := range clusterList.Items {
 			if strings.HasPrefix(cluster.Name, opts.namePrefix) {
 				p := metav1.DeletePropagationBackground
 				opts := metav1.DeleteOptions{PropagationPolicy: &p}
-				fmt.Println("Deleting cluster " + cluster.Name + "...")
+				glog.Infof("Deleting cluster %s...", cluster.Name)
 				if err = kubermaticClient.KubermaticV1().Clusters().Delete(cluster.Name, &opts); err != nil {
-					log.Fatalf("failed to delete cluster %s: %v", cluster.Name, err)
+					glog.Fatalf("failed to delete cluster %s: %v", cluster.Name, err)
 				}
 			}
 		}
 
-		fmt.Println("Cleaned up all old clusters")
+		glog.Info("Cleaned up all old clusters")
 		os.Exit(0)
 	}
 
