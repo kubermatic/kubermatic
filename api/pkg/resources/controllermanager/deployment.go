@@ -213,6 +213,11 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 
 	featureGates := []string{"RotateKubeletClientCertificate=true",
 		"RotateKubeletServerCertificate=true"}
+	// This is required for Kubelets < 1.11, they don't start DaemonSet
+	// pods scheduled by the scheduler: https://github.com/kubernetes/kubernetes/issues/69346
+	// TODO: Remove once we don't support Kube 1.10 anymore
+	// TODO: Before removing, add check that prevents upgrading to 1.12 when
+	// there is still a node < 1.11
 	if clusterVersionSemVer.Minor() >= 12 {
 		featureGates = append(featureGates, "ScheduleDaemonSetPods=false")
 	}
