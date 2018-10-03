@@ -8,6 +8,7 @@ import (
 	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
+	"encoding/json"
 	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
@@ -289,6 +290,179 @@ type ClusterSpec struct {
 
 	// Version desired version of the kubernetes master components
 	Version string `json:"version"`
+}
+
+func (cs *NewClusterSpec) MarshalJSON() ([]byte, error) {
+	ret, err := json.Marshal(struct {
+		MachineNetworks []kubermaticv1.MachineNetworkingConfig `json:"machineNetworks,omitempty"`
+		Version         string                                 `json:"version"`
+
+		// Overshadows kubermaticv1.CloudSpec to avoid putting sensitive data in API responses.
+		Cloud PublicCloudSpec `json:"cloud"`
+	}{
+		Cloud: PublicCloudSpec{
+			DatacenterName: cs.Cloud.DatacenterName,
+			Fake:           NewPublicFakeCloudSpec(cs.Cloud.Fake),
+			Digitalocean:   NewPublicDigitaloceanCloudSpec(cs.Cloud.Digitalocean),
+			BringYourOwn:   NewPublicBringYourOwnCloudSpec(cs.Cloud.BringYourOwn),
+			AWS:            NewPublicAWSCloudSpec(cs.Cloud.AWS),
+			Azure:          NewPublicAzureCloudSpec(cs.Cloud.Azure),
+			Openstack:      NewPublicOpenstackCloudSpec(cs.Cloud.Openstack),
+			Hetzner:        NewPublicHetznerCloudSpec(cs.Cloud.Hetzner),
+			VSphere:        NewPublicVSphereCloudSpec(cs.Cloud.VSphere),
+		},
+		Version:         cs.Version,
+		MachineNetworks: cs.MachineNetworks,
+	})
+
+	return ret, err
+}
+
+// NewCloudSpec overshadows kubermaticv1.CloudSpec to avoid putting sensitive data in API responses.
+type PublicCloudSpec struct {
+	DatacenterName string                       `json:"dc"`
+	Fake           *PublicFakeCloudSpec         `json:"fake,omitempty"`
+	Digitalocean   *PublicDigitaloceanCloudSpec `json:"digitalocean,omitempty"`
+	BringYourOwn   *PublicBringYourOwnCloudSpec `json:"bringyourown,omitempty"`
+	AWS            *PublicAWSCloudSpec          `json:"aws,omitempty"`
+	Azure          *PublicAzureCloudSpec        `json:"azure,omitempty"`
+	Openstack      *PublicOpenstackCloudSpec    `json:"openstack,omitempty"`
+	Hetzner        *PublicHetznerCloudSpec      `json:"hetzner,omitempty"`
+	VSphere        *PublicVSphereCloudSpec      `json:"vsphere,omitempty"`
+}
+
+type PublicFakeCloudSpec struct{}
+
+func NewPublicFakeCloudSpec(internal *kubermaticv1.FakeCloudSpec) (public *PublicFakeCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicFakeCloudSpec{}
+}
+
+type PublicDigitaloceanCloudSpec struct{}
+
+func NewPublicDigitaloceanCloudSpec(internal *kubermaticv1.DigitaloceanCloudSpec) (public *PublicDigitaloceanCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicDigitaloceanCloudSpec{}
+}
+
+type PublicHetznerCloudSpec struct{}
+
+func NewPublicHetznerCloudSpec(internal *kubermaticv1.HetznerCloudSpec) (public *PublicHetznerCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicHetznerCloudSpec{}
+}
+
+type PublicAzureCloudSpec struct {
+	TenantID        string `json:"tenantID"`
+	SubscriptionID  string `json:"subscriptionID"`
+	ResourceGroup   string `json:"resourceGroup"`
+	VNetName        string `json:"vnet"`
+	SubnetName      string `json:"subnet"`
+	RouteTableName  string `json:"routeTable"`
+	SecurityGroup   string `json:"securityGroup"`
+	AvailabilitySet string `json:"availabilitySet"`
+}
+
+func NewPublicAzureCloudSpec(internal *kubermaticv1.AzureCloudSpec) (public *PublicAzureCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicAzureCloudSpec{
+		TenantID:        internal.TenantID,
+		SubscriptionID:  internal.SubscriptionID,
+		ResourceGroup:   internal.ResourceGroup,
+		VNetName:        internal.VNetName,
+		SubnetName:      internal.SubnetName,
+		AvailabilitySet: internal.AvailabilitySet,
+		RouteTableName:  internal.RouteTableName,
+		SecurityGroup:   internal.SecurityGroup,
+	}
+}
+
+type PublicVSphereCloudSpec struct {
+	VMNetName string `json:"vmNetName"`
+}
+
+func NewPublicVSphereCloudSpec(internal *kubermaticv1.VSphereCloudSpec) (public *PublicVSphereCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicVSphereCloudSpec{
+		VMNetName: internal.VMNetName,
+	}
+}
+
+type PublicBringYourOwnCloudSpec struct{}
+
+func NewPublicBringYourOwnCloudSpec(internal *kubermaticv1.BringYourOwnCloudSpec) (public *PublicBringYourOwnCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicBringYourOwnCloudSpec{}
+}
+
+type PublicAWSCloudSpec struct {
+	VPCID               string `json:"vpcId"`
+	SubnetID            string `json:"subnetId"`
+	RoleName            string `json:"roleName"`
+	RouteTableID        string `json:"routeTableId"`
+	InstanceProfileName string `json:"instanceProfileName"`
+	SecurityGroupID     string `json:"securityGroupID"`
+	AvailabilityZone    string `json:"availabilityZone"`
+}
+
+func NewPublicAWSCloudSpec(internal *kubermaticv1.AWSCloudSpec) (public *PublicAWSCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicAWSCloudSpec{
+		VPCID:               internal.VPCID,
+		SubnetID:            internal.SubnetID,
+		RoleName:            internal.RoleName,
+		RouteTableID:        internal.RouteTableID,
+		InstanceProfileName: internal.InstanceProfileName,
+		SecurityGroupID:     internal.SecurityGroupID,
+		AvailabilityZone:    internal.AvailabilityZone,
+	}
+}
+
+type PublicOpenstackCloudSpec struct {
+	Tenant         string `json:"tenant"`
+	Domain         string `json:"domain"`
+	Network        string `json:"network"`
+	SecurityGroups string `json:"securityGroups"`
+	FloatingIPPool string `json:"floatingIpPool"`
+	RouterID       string `json:"routerID"`
+	SubnetID       string `json:"subnetID"`
+}
+
+func NewPublicOpenstackCloudSpec(internal *kubermaticv1.OpenstackCloudSpec) (public *PublicOpenstackCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicOpenstackCloudSpec{
+		Tenant:         internal.Tenant,
+		Domain:         internal.Domain,
+		Network:        internal.Network,
+		SecurityGroups: internal.SecurityGroups,
+		FloatingIPPool: internal.FloatingIPPool,
+		RouterID:       internal.RouterID,
+		SubnetID:       internal.SubnetID,
+	}
 }
 
 // ClusterStatus defines the cluster status
