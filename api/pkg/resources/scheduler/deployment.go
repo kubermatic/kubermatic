@@ -2,9 +2,13 @@ package scheduler
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 
+	"github.com/Masterminds/semver"
+
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
@@ -42,6 +46,11 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 	dep.Name = resources.SchedulerDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	dep.Labels = resources.BaseAppLabel(name, nil)
+
+	flags, err := getFlags(data.Cluster())
+	if err != nil {
+		return nil, err
+	}
 
 	dep.Spec.Replicas = resources.Int32(1)
 	if data.Cluster().Spec.ComponentsOverride.Scheduler.Replicas != nil {
@@ -105,14 +114,11 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
 		{
-			Name:            name,
-			Image:           data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version,
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command:         []string{"/hyperkube", "scheduler"},
-			Args: []string{
-				"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-				"--v", "4",
-			},
+			Name:                     name,
+			Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version,
+			ImagePullPolicy:          corev1.PullIfNotPresent,
+			Command:                  []string{"/hyperkube", "scheduler"},
+			Args:                     flags,
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			VolumeMounts: []corev1.VolumeMount{
@@ -192,4 +198,27 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 	}
+}
+
+func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
+	clusterVersionSemVer, err := semver.NewVersion(cluster.Spec.Version)
+	if err != nil {
+		return nil, err
+	}
+
+	flags := []string{
+		"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+		"--v", "4",
+	}
+
+	var featureGates []string
+	if clusterVersionSemVer.Minor() >= 12 {
+		featureGates = append(featureGates, "ScheduleDaemonSetPods=false")
+	}
+	if len(featureGates) > 0 {
+		flags = append(flags, "--feature-gates")
+		flags = append(flags, strings.Join(featureGates, ","))
+	}
+
+	return flags, nil
 }

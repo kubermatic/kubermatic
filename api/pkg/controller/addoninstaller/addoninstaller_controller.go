@@ -159,7 +159,7 @@ func (c *Controller) createDefaultAddon(addon string, cluster *kubermaticv1.Clus
 		return true, nil
 	})
 	if err != nil {
-		return fmt.Errorf("failed waitung for addon %s to exist in the lister", a.Name)
+		return fmt.Errorf("failed waiting for addon %s to exist in the lister", a.Name)
 	}
 
 	return nil
