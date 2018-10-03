@@ -30,7 +30,7 @@ kubermatic:
     addons:
       image:
         repository: "quay.io/kubermatic/addons"
-        tag: "v0.1.11"
+        tag: "v0.1.12"
         pullPolicy: "IfNotPresent"
       # list of Addons to install into every user-cluster. All need to exist in the addons image
       defaultAddons:

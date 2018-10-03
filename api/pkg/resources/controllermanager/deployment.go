@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
+	"github.com/Masterminds/semver"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
@@ -47,6 +48,11 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 	dep.Name = resources.ControllerManagerDeploymentName
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	dep.Labels = resources.BaseAppLabel(name, nil)
+
+	flags, err := getFlags(data.Cluster())
+	if err != nil {
+		return nil, err
+	}
 
 	dep.Spec.Replicas = resources.Int32(1)
 	if data.Cluster().Spec.ComponentsOverride.ControllerManager.Replicas != nil {
@@ -146,7 +152,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version,
 			ImagePullPolicy:          corev1.PullIfNotPresent,
 			Command:                  []string{"/hyperkube", "controller-manager"},
-			Args:                     getFlags(data.Cluster()),
+			Args:                     flags,
 			Env:                      getEnvVars(data.Cluster()),
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -185,7 +191,12 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 	return dep, nil
 }
 
-func getFlags(cluster *kubermaticv1.Cluster) []string {
+func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
+	clusterVersionSemVer, err := semver.NewVersion(cluster.Spec.Version)
+	if err != nil {
+		return nil, err
+	}
+
 	flags := []string{
 		"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"--service-account-private-key-file", "/etc/kubernetes/service-account-key/sa.key",
@@ -196,10 +207,25 @@ func getFlags(cluster *kubermaticv1.Cluster) []string {
 		"--configure-cloud-routes=false",
 		"--allocate-node-cidrs=true",
 		"--controllers", "*,bootstrapsigner,tokencleaner",
-		"--feature-gates", "RotateKubeletClientCertificate=true,RotateKubeletServerCertificate=true",
 		"--use-service-account-credentials=true",
 		"--v", "4",
 	}
+
+	featureGates := []string{"RotateKubeletClientCertificate=true",
+		"RotateKubeletServerCertificate=true"}
+	// This is required for Kubelets < 1.11, they don't start DaemonSet
+	// pods scheduled by the scheduler: https://github.com/kubernetes/kubernetes/issues/69346
+	// TODO: Remove once we don't support Kube 1.10 anymore
+	// TODO: Before removing, add check that prevents upgrading to 1.12 when
+	// there is still a node < 1.11
+	if clusterVersionSemVer.Minor() >= 12 {
+		featureGates = append(featureGates, "ScheduleDaemonSetPods=false")
+	}
+	if len(featureGates) > 0 {
+		flags = append(flags, "--feature-gates")
+		flags = append(flags, strings.Join(featureGates, ","))
+	}
+
 	if cluster.Spec.Cloud.AWS != nil {
 		flags = append(flags, "--cloud-provider", "aws")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
@@ -223,10 +249,10 @@ func getFlags(cluster *kubermaticv1.Cluster) []string {
 	// got fixed and if yes, remove the check/make it more granular
 	// Cherry-pick got created but not merged for 1.12.0:
 	// https://github.com/kubernetes/kubernetes/pull/69117
-	if strings.HasPrefix(cluster.Spec.Version, "1.12.") {
+	if clusterVersionSemVer.Minor() == 12 {
 		flags = append(flags, "--authentication-skip-lookup=true")
 	}
-	return flags
+	return flags, nil
 }
 
 func getVolumes() []corev1.Volume {
