@@ -21,7 +21,7 @@ func InternalClientCertificate(data resources.SecretDataProvider, existing *core
 func UserClusterClientCertificate(existing *corev1.Secret, ca *resources.ECDSAKeyPair) (*corev1.Secret, error) {
 	return certificates.GetECDSAClientCertificateCreator(
 		resources.OpenVPNClientCertificatesSecretName,
-		"internal-client",
+		"user-cluster-client",
 		[]string{},
 		resources.OpenVPNInternalClientCertSecretKey,
 		resources.OpenVPNInternalClientKeySecretKey,
