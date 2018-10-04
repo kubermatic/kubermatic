@@ -51,8 +51,8 @@ func TLSServingCertificate(data resources.SecretDataProvider, existing *corev1.S
 		return nil, fmt.Errorf("unable to sign the server certificate: %v", err)
 	}
 
-	se.Data[resources.OpenVPNServerKeySecretKey] = cert
-	se.Data[resources.OpenVPNServerCertSecretKey] = key
+	se.Data[resources.OpenVPNServerCertSecretKey] = cert
+	se.Data[resources.OpenVPNServerKeySecretKey] = key
 
 	return se, nil
 }

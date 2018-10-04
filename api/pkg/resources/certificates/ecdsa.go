@@ -42,6 +42,10 @@ func GetECDSAClientCertificateCreator(name, commonName string, organizations []s
 			return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 		}
 
+		if se.Data == nil {
+			se.Data = map[string][]byte{}
+		}
+
 		if b, exists := se.Data[dataCertKey]; exists {
 			certs, err := certutil.ParseCertsPEM(b)
 			if err != nil {
@@ -63,8 +67,8 @@ func GetECDSAClientCertificateCreator(name, commonName string, organizations []s
 			return nil, fmt.Errorf("failed to get a signed ECDSA cert and key: %v", err)
 		}
 
-		se.Data[dataKeyKey] = cert
-		se.Data[dataCertKey] = key
+		se.Data[dataCertKey] = cert
+		se.Data[dataKeyKey] = key
 		// Include the CA for simplicity
 		se.Data[resources.CACertSecretKey] = certutil.EncodeCertPEM(ca.Cert)
 

@@ -235,10 +235,12 @@ const (
 	KubeconfigSecretKey = "kubeconfig"
 	// TokensSecretKey tokens.csv
 	TokensSecretKey = "tokens.csv"
-	// OpenVPNCACertKey cert.pem
-	OpenVPNCACertKey = "cert.pem"
-	// OpenVPNCAKeyKey key.pem
-	OpenVPNCAKeyKey = "key.pem"
+	// OpenVPNCACertKey cert.pem, must match CACertSecretKey, otherwise getClusterCAFromLister doesnt work as it has
+	// the key hardcoded
+	OpenVPNCACertKey = CACertSecretKey
+	// OpenVPNCAKeyKey key.pem, must match CAKeySecretKey, otherwise getClusterCAFromLister doesnt work as it has
+	// the key hardcoded
+	OpenVPNCAKeyKey = CAKeySecretKey
 	// OpenVPNServerKeySecretKey server.key
 	OpenVPNServerKeySecretKey = "server.key"
 	// OpenVPNServerCertSecretKey server.crt
