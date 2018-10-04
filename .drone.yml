@@ -1,38 +1,38 @@
 pipeline:
-  0-dep:
+  dep:
     commands:
     - cd api
     - dep ensure -v
     - '[[ -z "$(git diff)" ]]'
     image: metalmatze/dep:0.5.0
     pull: true
-  1-gofmt:
+  gofmt:
     commands:
     - cd api
     - make gofmt
     image: golang:1.11.0
     pull: true
-  2-verify-codegen:
+  verify-codegen:
     commands:
     - cd api
     - ./hack/verify-codegen.sh
     image: golang:1.11.0
     pull: true
-  3-license-validation:
+  license-validation:
     commands:
     - cd api
     - wwhrd check -f ../allowed_licensed.yaml
     group: lint
     image: metalmatze/wwhrd:1.9
     pull: true
-  3-lint:
+  lint:
     commands:
     - cd api
     - make lint
     group: lint
     image: quay.io/kubermatic/gometalinter:latest
     pull: true
-  3-verify-addons-up-to-date:
+  verify-addons-up-to-date:
     commands:
     - ./api/hack/verify-addon-version.sh
     group: lint
@@ -40,38 +40,28 @@ pipeline:
     pull: true
     volumes:
     - /var/run/docker.sock:/var/run/docker.sock
-  3-verify-swagger-spec:
+  verify-swagger-spec:
     commands:
     - cd api
     - ./hack/verify-swagger.sh
     group: lint
     image: golang:1.11.0
     pull: true
-  4-build:
+  build:
     commands:
     - cd api
     - make build
     group: build
     image: golang:1.11.0
     pull: true
-  4-test:
+  test:
     commands:
     - cd api
     - make test
     group: build
     image: golang:1.11.0
     pull: true
-  4-write-version:
-    commands:
-    - cd config
-    - sed -i "s/{API_IMAGE_TAG}/${DRONE_TAG=$DRONE_COMMIT}/g" versions-values.yaml
-    - sed -i "s/{CONTROLLER_IMAGE_TAG}/${DRONE_TAG=$DRONE_COMMIT}/g" versions-values.yaml
-    - sed -i "s/{BARE_METAL_PROVIDER_IMAGE_TAG}/${DRONE_TAG=$DRONE_COMMIT}/g" versions-values.yaml
-    - cat versions-values.yaml
-    group: build
-    image: ubuntu
-    pull: true
-  5-kubermatic-docker-master:
+  kubermatic-docker-master:
     context: api
     dockerfile: api/Dockerfile
     group: push-master
@@ -86,7 +76,7 @@ pipeline:
     - ${DRONE_COMMIT}
     when:
       branch: master
-  6-kubermatic-docker-release:
+  kubermatic-docker-release:
     context: api
     dockerfile: api/Dockerfile
     group: push-master
@@ -102,7 +92,7 @@ pipeline:
     when:
       event:
       - tag
-  6-kubermatic-e2e-docker-push-on-master:
+  kubermatic-e2e-docker-push-on-master:
     context: api
     dockerfile: api/Dockerfile.e2e
     image: plugins/docker
@@ -118,7 +108,7 @@ pipeline:
     - latest
     when:
       branch: master
-  6-kubermatic-e2e-docker-push-on-tag:
+  kubermatic-e2e-docker-push-on-tag:
     context: api
     dockerfile: api/Dockerfile.e2e
     image: plugins/docker
@@ -135,9 +125,11 @@ pipeline:
     when:
       event:
       - tag
-  7-sync-charts:
+  sync-charts:
     commands:
     - apk add --no-cache -U git bash openssh
+    - export LATEST_VERSION=$(git describe --tags | cut -d '-' -f 1)
+    - sed -i "s/__KUBERMATIC_TAG__/${LATEST_VERSION}/g" config/kubermatic/values.yaml
     - git config --global user.email "dev@loodse.com"
     - git config --global user.name "drone"
     - cd api && ./hack/sync-charts.sh ${DRONE_BRANCH} ../config
@@ -150,7 +142,7 @@ pipeline:
         - release/*cherry*
         include:
         - release/*
-  8-deploy-dev:
+  deploy-dev:
     charts:
     - name: kubermatic
       namespace: kubermatic
@@ -192,7 +184,9 @@ pipeline:
       namespace: monitoring
       path: config/monitoring/prometheus/
     helm: upgrade --install --wait --timeout 300 --tiller-namespace=kubermatic-installer
-      --values config/versions-values.yaml
+      --set=kubermatic.controller.image.tag=${DRONE_TAG=$DRONE_COMMIT}
+      --set=kubermatic.api.image.tag=${DRONE_TAG=$DRONE_COMMIT}
+      --set=kubermatic.rbac.image.tag=${DRONE_TAG=$DRONE_COMMIT}
     image: kubeciio/helm
     pull: true
     secrets:
@@ -204,7 +198,7 @@ pipeline:
     - values
     when:
       branch: master
-  9-deploy-cloud-asia:
+  deploy-cloud-asia:
     charts:
     - name: kubermatic
       namespace: kubermatic
@@ -217,7 +211,10 @@ pipeline:
       path: config/minio/
     group: deploy-cloud
     helm: upgrade --install --wait --timeout 300 --kube-context=asia-east1-a-1 --tiller-namespace=kubermatic-installer
-      --values config/versions-values.yaml --set=kubermatic.isMaster=false
+      --set=kubermatic.isMaster=false
+      --set=kubermatic.controller.image.tag=${DRONE_TAG=$DRONE_COMMIT}
+      --set=kubermatic.api.image.tag=${DRONE_TAG=$DRONE_COMMIT}
+      --set=kubermatic.rbac.image.tag=${DRONE_TAG=$DRONE_COMMIT}
     image: kubeciio/helm
     pull: true
     secrets:
@@ -229,7 +226,7 @@ pipeline:
     - values
     when:
       branch: master
-  9-deploy-cloud-europe:
+  deploy-cloud-europe:
     charts:
     - name: kubermatic
       namespace: kubermatic
@@ -272,7 +269,9 @@ pipeline:
       path: config/monitoring/prometheus/
     group: deploy-cloud
     helm: upgrade --install --wait --timeout 300 --kube-context=europe-west3-c-1 --tiller-namespace=kubermatic-installer
-      --values config/versions-values.yaml
+      --set=kubermatic.controller.image.tag=${DRONE_TAG=$DRONE_COMMIT}
+      --set=kubermatic.api.image.tag=${DRONE_TAG=$DRONE_COMMIT}
+      --set=kubermatic.rbac.image.tag=${DRONE_TAG=$DRONE_COMMIT}
     image: kubeciio/helm
     pull: true
     secrets:
@@ -284,7 +283,7 @@ pipeline:
     - values
     when:
       branch: master
-  9-deploy-cloud-us:
+  deploy-cloud-us:
     charts:
     - name: kubermatic
       namespace: kubermatic
@@ -297,7 +296,10 @@ pipeline:
       path: config/minio/
     group: deploy-cloud
     helm: upgrade --install --wait --timeout 300 --kube-context=us-central1-c-1 --tiller-namespace=kubermatic-installer
-      --values config/versions-values.yaml --set=kubermatic.isMaster=false
+      --set=kubermatic.isMaster=false
+      --set=kubermatic.controller.image.tag=${DRONE_TAG=$DRONE_COMMIT}
+      --set=kubermatic.api.image.tag=${DRONE_TAG=$DRONE_COMMIT}
+      --set=kubermatic.rbac.image.tag=${DRONE_TAG=$DRONE_COMMIT}
     image: kubeciio/helm
     pull: true
     secrets:
@@ -309,7 +311,7 @@ pipeline:
     - values
     when:
       branch: master
-  9-deploy-run:
+  deploy-run:
     charts:
     - name: kubermatic
       namespace: kubermatic
@@ -351,7 +353,9 @@ pipeline:
       namespace: monitoring
       path: config/monitoring/prometheus/
     helm: upgrade --install --wait --timeout 300 --tiller-namespace=kubermatic-installer
-      --values config/versions-values.yaml
+      --set=kubermatic.controller.image.tag=${DRONE_TAG=$DRONE_COMMIT}
+      --set=kubermatic.api.image.tag=${DRONE_TAG=$DRONE_COMMIT}
+      --set=kubermatic.rbac.image.tag=${DRONE_TAG=$DRONE_COMMIT}
     image: kubeciio/helm
     pull: true
     secrets:
@@ -362,8 +366,8 @@ pipeline:
     values:
     - values
     when:
-      branch: release/v2.7.*
-  10-e2e-on-master:
+      branch: release/v2.7
+  e2e-on-master:
     commands:
     - echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig
     - echo "$CLUSTER_YAML" > /tmp/cluster.yaml
@@ -381,7 +385,7 @@ pipeline:
       target: node_yaml
     when:
       branch: master
-  10-e2e-on-tag:
+  e2e-on-tag:
     commands:
     - echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig
     - echo "$CLUSTER_YAML" > /tmp/cluster.yaml
@@ -400,7 +404,7 @@ pipeline:
     when:
       event:
       - tag
-  11-slack:
+  slack:
     channel: dev
     group: slack
     icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
@@ -414,7 +418,7 @@ pipeline:
       branch: master
       status:
       - success
-  11-slack-failure:
+  slack-failure:
     author_recipient_mapping:
     - alvaroaleman=alvaro
     - cbrgm=christian
