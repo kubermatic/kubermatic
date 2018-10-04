@@ -164,6 +164,9 @@ func updateClusterEndpoint(cloudProviders map[string]provider.CloudProvider) end
 		newCluster.ObjectMeta = oldCluster.ObjectMeta
 		newCluster.Status = oldCluster.Status
 		newCluster.Spec.Cloud = kubermaticapiv1.UpdateCloudSpec(newCluster.Spec.Cloud, oldCluster.Spec.Cloud)
+		if len(newCluster.Address.AdminToken) == 0 {
+			newCluster.Address.AdminToken = oldCluster.Address.AdminToken
+		}
 
 		if err := validation.ValidateUpdateCluster(newCluster, oldCluster, cloudProviders); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
