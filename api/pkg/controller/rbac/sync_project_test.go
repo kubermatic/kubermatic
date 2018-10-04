@@ -2128,6 +2128,9 @@ func createProject(name string, owner *kubermaticv1.User) *kubermaticv1.Project 
 		Spec: kubermaticv1.ProjectSpec{
 			Name: name,
 		},
+		Status: kubermaticv1.ProjectStatus{
+			Phase: kubermaticv1.ProjectInactive,
+		},
 	}
 }
 
