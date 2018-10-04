@@ -15,6 +15,8 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
+
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 func deleteMemberFromProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
@@ -283,16 +285,20 @@ func (r Routing) userSaverMiddleware() endpoint.Middleware {
 
 			user, err := r.userProvider.UserByEmail(apiUser.Email)
 			if err != nil {
-				if err == provider.ErrNotFound {
-					user, err = r.userProvider.CreateUser(apiUser.ID, apiUser.Name, apiUser.Email)
-					if err != nil {
+				if err != provider.ErrNotFound {
+					return nil, kubernetesErrorToHTTPError(err)
+				}
+				// handling ErrNotFound
+				user, err = r.userProvider.CreateUser(apiUser.ID, apiUser.Name, apiUser.Email)
+				if err != nil {
+					if !kerrors.IsAlreadyExists(err) {
 						return nil, kubernetesErrorToHTTPError(err)
 					}
-				} else {
-					return nil, err
+					if user, err = r.userProvider.UserByEmail(apiUser.Email); err != nil {
+						return nil, kubernetesErrorToHTTPError(err)
+					}
 				}
 			}
-
 			return next(context.WithValue(ctx, userCRContextKey, user), request)
 		}
 	}
