@@ -184,9 +184,9 @@ pipeline:
       namespace: monitoring
       path: config/monitoring/prometheus/
     helm: upgrade --install --wait --timeout 300 --tiller-namespace=kubermatic-installer
-      --set=kubermatic.controller.image.tag=${DRONE_TAG=$DRONE_COMMIT}
-      --set=kubermatic.api.image.tag=${DRONE_TAG=$DRONE_COMMIT}
-      --set=kubermatic.rbac.image.tag=${DRONE_TAG=$DRONE_COMMIT}
+      --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
+      --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
+      --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
     image: kubeciio/helm
     pull: true
     secrets:
@@ -212,9 +212,9 @@ pipeline:
     group: deploy-cloud
     helm: upgrade --install --wait --timeout 300 --kube-context=asia-east1-a-1 --tiller-namespace=kubermatic-installer
       --set=kubermatic.isMaster=false
-      --set=kubermatic.controller.image.tag=${DRONE_TAG=$DRONE_COMMIT}
-      --set=kubermatic.api.image.tag=${DRONE_TAG=$DRONE_COMMIT}
-      --set=kubermatic.rbac.image.tag=${DRONE_TAG=$DRONE_COMMIT}
+      --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
+      --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
+      --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
     image: kubeciio/helm
     pull: true
     secrets:
@@ -269,9 +269,9 @@ pipeline:
       path: config/monitoring/prometheus/
     group: deploy-cloud
     helm: upgrade --install --wait --timeout 300 --kube-context=europe-west3-c-1 --tiller-namespace=kubermatic-installer
-      --set=kubermatic.controller.image.tag=${DRONE_TAG=$DRONE_COMMIT}
-      --set=kubermatic.api.image.tag=${DRONE_TAG=$DRONE_COMMIT}
-      --set=kubermatic.rbac.image.tag=${DRONE_TAG=$DRONE_COMMIT}
+      --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
+      --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
+      --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
     image: kubeciio/helm
     pull: true
     secrets:
@@ -297,9 +297,9 @@ pipeline:
     group: deploy-cloud
     helm: upgrade --install --wait --timeout 300 --kube-context=us-central1-c-1 --tiller-namespace=kubermatic-installer
       --set=kubermatic.isMaster=false
-      --set=kubermatic.controller.image.tag=${DRONE_TAG=$DRONE_COMMIT}
-      --set=kubermatic.api.image.tag=${DRONE_TAG=$DRONE_COMMIT}
-      --set=kubermatic.rbac.image.tag=${DRONE_TAG=$DRONE_COMMIT}
+      --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
+      --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
+      --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
     image: kubeciio/helm
     pull: true
     secrets:
@@ -353,9 +353,9 @@ pipeline:
       namespace: monitoring
       path: config/monitoring/prometheus/
     helm: upgrade --install --wait --timeout 300 --tiller-namespace=kubermatic-installer
-      --set=kubermatic.controller.image.tag=${DRONE_TAG=$DRONE_COMMIT}
-      --set=kubermatic.api.image.tag=${DRONE_TAG=$DRONE_COMMIT}
-      --set=kubermatic.rbac.image.tag=${DRONE_TAG=$DRONE_COMMIT}
+      --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
+      --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
+      --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
     image: kubeciio/helm
     pull: true
     secrets:
