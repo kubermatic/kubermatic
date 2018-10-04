@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -49,12 +50,16 @@ func genUser(id, name, email string) *kubermaticapiv1.User {
 }
 
 func genDefaultUser() *kubermaticapiv1.User {
-	return genUser("bobID", "Bob", "bob@acme.com")
+	// the name of the object is derived from the email address and encoded as sha256
+	userEmail := "bob@acme.com"
+	userID := fmt.Sprintf("%x", sha256.Sum256([]byte(userEmail)))
+	return genUser(userID, "Bob", userEmail)
 }
 
 func genDefaultAPIUser() *apiv1.User {
 	return &apiv1.User{
 		ID:    genDefaultUser().Name,
+		Name:  genDefaultUser().Spec.Name,
 		Email: genDefaultUser().Spec.Email,
 	}
 }
@@ -1607,61 +1612,85 @@ func TestGetCurrentUser(t *testing.T) {
 }
 
 func TestNewUser(t *testing.T) {
-	expectedResponse := `{"id":"","name":"user1","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com"}`
-	apiUser := getUser(testUserEmail, testUserID, testUserName, false)
+	t.Parallel()
+	testcases := []struct {
+		Name                      string
+		HTTPStatus                int
+		ExpectedResponse          string
+		ExpectedKubermaticUser    *kubermaticapiv1.User
+		ExistingKubermaticObjects []runtime.Object
+		ExistingAPIUser           *apiv1.User
+	}{
+		{
+			Name:             "scenario 1: successfully creates a new user resource",
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com"}`,
+			HTTPStatus:       http.StatusOK,
+			ExpectedKubermaticUser: func() *kubermaticapiv1.User {
+				apiUser := genDefaultAPIUser()
+				expectedKubermaticUser := apiUserToKubermaticUser(*apiUser)
+				// the name of the object is derived from the email address and encoded as sha256
+				expectedKubermaticUser.Name = fmt.Sprintf("%x", sha256.Sum256([]byte(apiUser.Email)))
+				return expectedKubermaticUser
+			}(),
+			ExistingAPIUser: genDefaultAPIUser(),
+		},
 
-	expectedKubermaticUser := apiUserToKubermaticUser(apiUser)
-	expectedKubermaticUser.GenerateName = "user-"
+		{
+			Name:             "scenario 2: fails when creating a user without an email address",
+			ExpectedResponse: `{"error":{"code":400,"message":"Email, ID and Name cannot be empty when creating a new user resource"}}`,
+			HTTPStatus:       http.StatusBadRequest,
+			ExistingAPIUser: func() *apiv1.User {
+				apiUser := genDefaultAPIUser()
+				apiUser.Email = ""
+				return apiUser
+			}(),
+		},
 
-	kubermaticObj := []runtime.Object{}
-
-	ep, clientSet, err := createTestEndpointAndGetClients(apiUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil)
-	if err != nil {
-		t.Fatalf("failed to create test endpoint due to %v", err)
+		{
+			Name:             "scenario 3: creating a user if already exists doesn't have effect",
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com"}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingKubermaticObjects: []runtime.Object{
+				genDefaultUser(),
+			},
+			ExistingAPIUser: genDefaultAPIUser(),
+		},
 	}
 
-	req := httptest.NewRequest("GET", "/api/v1/me", nil)
-	res := httptest.NewRecorder()
-	ep.ServeHTTP(res, req)
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
 
-	if res.Code != http.StatusOK {
-		t.Fatalf("Expected HTTP status code %d, got %d: %s", http.StatusOK, res.Code, res.Body.String())
-	}
-	compareWithResult(t, res, expectedResponse)
+			ep, clientSet, err := createTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
 
-	actions := clientSet.fakeKubermaticClient.Actions()
-	if len(actions) != 12 {
-		t.Fatalf("expected to get exactly 10 action but got %d, actions = %v", len(actions), actions)
-	}
+			// act
+			req := httptest.NewRequest("GET", "/api/v1/me", nil)
+			res := httptest.NewRecorder()
+			ep.ServeHTTP(res, req)
 
-	action := actions[11]
-	if !action.Matches("create", "users") {
-		t.Fatalf("unexpected action %#v", action)
-	}
-	createAction, ok := action.(clienttesting.CreateAction)
-	if !ok {
-		t.Fatalf("unexpected action %#v", action)
-	}
-	if !equality.Semantic.DeepEqual(createAction.GetObject().(*kubermaticapiv1.User), expectedKubermaticUser) {
-		t.Fatalf("%v", diff.ObjectDiff(expectedKubermaticUser, createAction.GetObject().(*kubermaticapiv1.User)))
-	}
-}
+			// validate
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", http.StatusOK, res.Code, res.Body.String())
+			}
+			compareWithResult(t, res, tc.ExpectedResponse)
 
-func TestCreateUserWithoutEmail(t *testing.T) {
-	expectedResponse := `{"error":{"code":400,"message":"Email, ID and Name cannot be empty when creating a new user resource"}}`
-	apiUser := getUser("", "", "", false)
-
-	ep, _, err := createTestEndpointAndGetClients(apiUser, nil, []runtime.Object{}, []runtime.Object{}, []runtime.Object{}, nil, nil)
-	if err != nil {
-		t.Fatalf("failed to create test endpoint due to %v", err)
+			for _, action := range clientSet.fakeKubermaticClient.Actions() {
+				if action.Matches("create", "users") {
+					createAction, ok := action.(clienttesting.CreateAction)
+					if !ok {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if !equality.Semantic.DeepEqual(createAction.GetObject().(*kubermaticapiv1.User), tc.ExpectedKubermaticUser) {
+						t.Fatalf("%v", diff.ObjectDiff(tc.ExpectedKubermaticUser, createAction.GetObject().(*kubermaticapiv1.User)))
+					}
+					return /*pass*/
+				}
+			}
+			if tc.ExpectedKubermaticUser != nil {
+				t.Fatal("expected to find create action (fake client) but haven't received one.")
+			}
+		})
 	}
-
-	req := httptest.NewRequest("GET", "/api/v1/me", nil)
-	res := httptest.NewRecorder()
-	ep.ServeHTTP(res, req)
-
-	if res.Code != http.StatusBadRequest {
-		t.Fatalf("Expected HTTP status code %d, got %d: %s", http.StatusBadRequest, res.Code, res.Body.String())
-	}
-	compareWithResult(t, res, expectedResponse)
 }
