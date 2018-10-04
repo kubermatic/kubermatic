@@ -124,11 +124,11 @@ spec:
         - --allocate-node-cidrs=true
         - --controllers
         - '*,bootstrapsigner,tokencleaner'
-        - --feature-gates
-        - RotateKubeletClientCertificate=true,RotateKubeletServerCertificate=true
         - --use-service-account-credentials=true
         - --v
         - "4"
+        - --feature-gates
+        - RotateKubeletClientCertificate=true,RotateKubeletServerCertificate=true,ScheduleDaemonSetPods=false
         - --cloud-provider
         - azure
         - --cloud-config
