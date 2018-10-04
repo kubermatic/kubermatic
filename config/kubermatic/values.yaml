@@ -25,12 +25,12 @@ kubermatic:
     replicas: 2
     image:
       repository: "kubermatic/api"
-      tag: "v2.6.5"
+      tag: "__KUBERMATIC_TAG__"
       pullPolicy: "IfNotPresent"
     addons:
       image:
         repository: "quay.io/kubermatic/addons"
-        tag: "v0.1.11"
+        tag: "v0.1.12"
         pullPolicy: "IfNotPresent"
       # list of Addons to install into every user-cluster. All need to exist in the addons image
       defaultAddons:
@@ -47,7 +47,7 @@ kubermatic:
     replicas: 2
     image:
       repository: "kubermatic/api"
-      tag: "v2.6.5"
+      tag: "__KUBERMATIC_TAG__"
       pullPolicy: "IfNotPresent"
   ui:
     replicas: 2
@@ -63,7 +63,7 @@ kubermatic:
     replicas: 1
     image:
       repository: "kubermatic/api"
-      tag: "latest"
+      tag: "__KUBERMATIC_TAG__"
       pullPolicy: "IfNotPresent"
   s3_exporter:
     image:

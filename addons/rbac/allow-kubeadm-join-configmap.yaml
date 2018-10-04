@@ -1,13 +1,14 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: machine-controller:kubelet-config-1.11
+  name: machine-controller:kubelet-config
   namespace: kube-system
 rules:
 - apiGroups:
   - ""
   resourceNames:
   - kubelet-config-1.11
+  - kubelet-config-1.12
   resources:
   - configmaps
   verbs:
@@ -16,12 +17,12 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: machine-controller:kubelet-config-1.11
+  name: machine-controller:kubelet-config
   namespace: kube-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: machine-controller:kubelet-config-1.11
+  name: machine-controller:kubelet-config
 subjects:
 - apiGroup: rbac.authorization.k8s.io
   kind: Group
@@ -29,20 +30,3 @@ subjects:
 - apiGroup: rbac.authorization.k8s.io
   kind: Group
   name: system:bootstrappers:machine-controller:default-node-token
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: kubeadm:kubelet-config-1.11
-  namespace: kube-system
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: machine-controller:kubelet-config-1.11
-subjects:
-- apiGroup: rbac.authorization.k8s.io
-  kind: Group
-  name: system:nodes
-- apiGroup: rbac.authorization.k8s.io
-  kind: Group
-  name: system:bootstrappers:kubeadm:default-node-token

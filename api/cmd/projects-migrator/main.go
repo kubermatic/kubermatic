@@ -465,7 +465,7 @@ func removeOrDetectDuplicatedUsers(ctx migrationContext, phase string, stopOnDup
 						if seenUserWithProjects {
 							return errors.New("there is more that one user that belongs to some projects fot the given key, please manually remove one of them and rerun the app")
 						}
-						glog.Warningf("cannot remove the user = %s because it already belongs to some projects = %v", user.Name, user.Spec.Projects)
+						glog.Warningf("cannot remove the user = %s because it already belongs to some projects = %v", user.Name, projectName)
 						seenUserWithProjects = true
 						continue
 					}

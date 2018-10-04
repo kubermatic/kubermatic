@@ -1,6 +1,9 @@
 package kubernetes
 
 import (
+	"crypto/sha256"
+	"fmt"
+
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -83,14 +86,24 @@ func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
 	return nil, provider.ErrNotFound
 }
 
-// CreateUser creates a user
+// CreateUser creates a new user.
+//
+// Note that:
+// The name of the newly created resource will be unique and it is derived from the user's email address (sha256(email)
+// This prevents creating multiple resources for the same user with the same email address.
+//
+// In the beginning I was considering to hex-encode the email address as it will produce a unique output because the email address in unique.
+// The only issue I have found with this approach is that the length can get quite long quite fast.
+// Thus decided to use sha256 as it produces fixed output and the hash collisions are very, very, very, very rare.
 func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, error) {
 	if len(id) == 0 || len(name) == 0 || len(email) == 0 {
 		return nil, kerrors.NewBadRequest("Email, ID and Name cannot be empty when creating a new user resource")
 	}
 
+	uniqueObjectName := fmt.Sprintf("%x", sha256.Sum256([]byte(email)))
+
 	user := kubermaticv1.User{}
-	user.GenerateName = "user-"
+	user.Name = uniqueObjectName
 	user.Spec.Email = email
 	user.Spec.Name = name
 	user.Spec.ID = id

@@ -73,15 +73,15 @@ func (c *Controller) ensureProjectInitialized(project *kubermaticv1.Project) err
 }
 
 func (c *Controller) ensureProjectIsInActivePhase(project *kubermaticv1.Project) error {
-	var err error
-	if project.Status.Phase != kubermaticv1.ProjectActive {
+	if project.Status.Phase == kubermaticv1.ProjectInactive {
+		var err error
 		project.Status.Phase = kubermaticv1.ProjectActive
 		project, err = c.masterClusterProvider.kubermaticClient.KubermaticV1().Projects().Update(project)
 		if err != nil {
 			return err
 		}
 	}
-	return err
+	return nil
 }
 
 // ensureProjectOwner makes sure that the owner of the project is assign to "owners" group
