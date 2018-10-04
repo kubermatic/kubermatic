@@ -128,7 +128,8 @@ pipeline:
   sync-charts:
     commands:
     - apk add --no-cache -U git bash openssh
-    - export LATEST_VERSION=$(git describe --tags | cut -d '-' -f 1)
+    - git fetch
+    - export LATEST_VERSION=$(git describe --tags --abbrev=0)
     - sed -i "s/__KUBERMATIC_TAG__/${LATEST_VERSION}/g" config/kubermatic/values.yaml
     - git config --global user.email "dev@loodse.com"
     - git config --global user.name "drone"
