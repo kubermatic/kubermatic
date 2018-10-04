@@ -3,47 +3,85 @@ package handler
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-04-01/compute"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/go-kit/kit/endpoint"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
+
+func legacyAzureSizeEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(LegacyAzureSizeReq)
+		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+		cluster, err := clusterProvider.Cluster(user, req.ClusterName)
+		if err != nil {
+			if err == provider.ErrNotFound {
+				return nil, errors.NewNotFound("cluster", req.ClusterName)
+			}
+			return nil, err
+		}
+		if cluster.Spec.Cloud.Azure == nil {
+			return nil, errors.NewNotFound("cloud spec for ", req.ClusterName)
+		}
+
+		dc, err := listDatacenter(dcs, req.DC)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, err.Error())
+		}
+
+		if dc.Spec.Azure == nil {
+			return nil, errors.NewNotFound("cloud spec (dc) for ", req.ClusterName)
+		}
+
+		azureSpec := cluster.Spec.Cloud.Azure
+		azureLocation := dc.Spec.Azure.Location
+		return azureSize(ctx, azureSpec.SubscriptionID, azureSpec.ClientID, azureSpec.ClientSecret, azureSpec.TenantID, azureLocation)
+	}
+}
 
 func azureSizeEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AzureSizeReq)
-
-		var err error
-		sizesClient := compute.NewVirtualMachineSizesClient(req.SubscriptionID)
-		sizesClient.Authorizer, err = auth.NewClientCredentialsConfig(req.ClientID, req.ClientSecret, req.TenantID).Authorizer()
-		if err != nil {
-			return nil, fmt.Errorf("failed to create authorizer: %v", err)
-		}
-
-		sizesResult, err := sizesClient.List(ctx, req.Location)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list sizes: %v", err)
-		}
-
-		if sizesResult.Value == nil {
-			return nil, fmt.Errorf("failed to list sizes: Azure return a nil result")
-		}
-
-		var sizeList apiv1.AzureSizeList
-		for _, v := range *sizesResult.Value {
-			s := apiv1.AzureSize{
-				Name:                 v.Name,
-				NumberOfCores:        v.NumberOfCores,
-				OsDiskSizeInMB:       v.OsDiskSizeInMB,
-				ResourceDiskSizeInMB: v.ResourceDiskSizeInMB,
-				MemoryInMB:           v.MemoryInMB,
-				MaxDataDiskCount:     v.MaxDataDiskCount,
-			}
-
-			sizeList = append(sizeList, s)
-		}
-
-		return sizeList, nil
+		return azureSize(ctx, req.SubscriptionID, req.ClientID, req.ClientSecret, req.TenantID, req.Location)
 	}
+}
+
+func azureSize(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location string) (apiv1.AzureSizeList, error) {
+	var err error
+	sizesClient := compute.NewVirtualMachineSizesClient(subscriptionID)
+	sizesClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create authorizer: %v", err)
+	}
+
+	sizesResult, err := sizesClient.List(ctx, location)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list sizes: %v", err)
+	}
+
+	if sizesResult.Value == nil {
+		return nil, fmt.Errorf("failed to list sizes: Azure return a nil result")
+	}
+
+	var sizeList apiv1.AzureSizeList
+	for _, v := range *sizesResult.Value {
+		s := apiv1.AzureSize{
+			Name:                 v.Name,
+			NumberOfCores:        v.NumberOfCores,
+			OsDiskSizeInMB:       v.OsDiskSizeInMB,
+			ResourceDiskSizeInMB: v.ResourceDiskSizeInMB,
+			MemoryInMB:           v.MemoryInMB,
+			MaxDataDiskCount:     v.MaxDataDiskCount,
+		}
+
+		sizeList = append(sizeList, s)
+	}
+
+	return sizeList, nil
 }

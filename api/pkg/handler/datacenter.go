@@ -54,32 +54,30 @@ func datacentersEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoi
 
 func datacenterEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := ctx.Value(apiUserContextKey).(apiv1.User)
 		req := request.(LegacyDCReq)
-
-		dc, found := dcs[req.DC]
-		if !found {
-			return nil, errors.NewNotFound("datacenter", req.DC)
-		}
-
-		if dc.Private && !IsAdmin(user) {
-			return nil, errors.NewNotFound("datacenter", req.DC)
-		}
-
-		spec, err := apiSpec(&dc)
-		if err != nil {
-			return nil, fmt.Errorf("api spec error in dc %q: %v", req.DC, err)
-		}
-
-		return &apiv1.Datacenter{
-			Metadata: apiv1.ObjectMeta{
-				Name:            req.DC,
-				ResourceVersion: "1",
-			},
-			Spec: *spec,
-			Seed: dc.IsSeed,
-		}, nil
+		return listDatacenter(dcs, req.DC)
 	}
+}
+
+func listDatacenter(dcs map[string]provider.DatacenterMeta, datacenterToGet string) (apiv1.Datacenter, error) {
+	dc, found := dcs[datacenterToGet]
+	if !found {
+		return apiv1.Datacenter{}, errors.NewNotFound("datacenter", datacenterToGet)
+	}
+
+	spec, err := apiSpec(&dc)
+	if err != nil {
+		return apiv1.Datacenter{}, fmt.Errorf("api spec error in dc %q: %v", datacenterToGet, err)
+	}
+
+	return apiv1.Datacenter{
+		Metadata: apiv1.ObjectMeta{
+			Name:            datacenterToGet,
+			ResourceVersion: "1",
+		},
+		Spec: *spec,
+		Seed: dc.IsSeed,
+	}, nil
 }
 
 func imagesMap(images provider.ImageList) map[string]string {
