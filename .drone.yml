@@ -130,7 +130,7 @@ pipeline:
     - apk add --no-cache -U git bash openssh
     - git fetch
     - export LATEST_VERSION=$(git describe --tags --abbrev=0)
-    - sed -i "s/__KUBERMATIC_TAG__/${LATEST_VERSION}/g" config/kubermatic/values.yaml
+    - sed -i "s/__KUBERMATIC_TAG__/$LATEST_VERSION/g" config/kubermatic/values.yaml
     - git config --global user.email "dev@loodse.com"
     - git config --global user.name "drone"
     - cd api && ./hack/sync-charts.sh ${DRONE_BRANCH} ../config
