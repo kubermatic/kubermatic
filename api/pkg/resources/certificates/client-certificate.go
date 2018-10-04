@@ -35,6 +35,10 @@ func GetClientCertificateCreator(name, commonName string, organizations []string
 			return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 		}
 
+		if se.Data == nil {
+			se.Data = map[string][]byte{}
+		}
+
 		if b, exists := se.Data[dataCertKey]; exists {
 			certs, err := certutil.ParseCertsPEM(b)
 			if err != nil {
@@ -51,9 +55,6 @@ func GetClientCertificateCreator(name, commonName string, organizations []string
 			return nil, fmt.Errorf("failed to create %s key pair: %v", name, err)
 		}
 
-		if se.Data == nil {
-			se.Data = map[string][]byte{}
-		}
 		se.Data[dataKeyKey] = certutil.EncodePrivateKeyPEM(newKP.Key)
 		se.Data[dataCertKey] = certutil.EncodeCertPEM(newKP.Cert)
 		// Include the CA for simplicity

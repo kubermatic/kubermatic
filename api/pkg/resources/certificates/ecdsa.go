@@ -13,11 +13,64 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	certutil "k8s.io/client-go/util/cert"
 )
 
 const Duration365d = time.Hour * 24 * 365
 
+type ecdsaCAGetter func() (*resources.ECDSAKeyPair, error)
+
+// GetClientCertificateCreator is a generic function to return a secret generator to create a client certificate signed by the cluster CA
+func GetECDSAClientCertificateCreator(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA ecdsaCAGetter) func(data templateDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
+	return func(data templateDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
+		var se *corev1.Secret
+		if existing != nil {
+			se = existing
+		} else {
+			se = &corev1.Secret{}
+		}
+
+		se.Name = name
+		se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+
+		ca, err := getCA()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get cluster ca: %v", err)
+		}
+
+		if b, exists := se.Data[dataCertKey]; exists {
+			certs, err := certutil.ParseCertsPEM(b)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret %s: %v", name, dataCertKey, err)
+			}
+
+			if resources.IsClientCertificateValidForAllOf(certs[0], commonName, organizations) {
+				return se, nil
+			}
+		}
+
+		config := certutil.Config{
+			CommonName:   commonName,
+			Organization: organizations,
+			Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+		}
+		cert, key, err := GetSignedECDSACertAndKey(Duration365d, config, ca.Cert, ca.Key)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get a signed ECDSA cert and key: %v", err)
+		}
+
+		se.Data[dataKeyKey] = cert
+		se.Data[dataCertKey] = key
+		// Include the CA for simplicity
+		se.Data[resources.CACertSecretKey] = certutil.EncodeCertPEM(ca.Cert)
+
+		return se, nil
+	}
+}
 func GetSignedECDSACertAndKey(notAfter time.Duration, cfg certutil.Config, caCert *x509.Certificate, caKey *ecdsa.PrivateKey) (cert []byte, key []byte, err error) {
 	if len(cfg.CommonName) == 0 {
 		return nil, nil, errors.New("must specify a CommonName")

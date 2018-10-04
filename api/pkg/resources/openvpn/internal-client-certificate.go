@@ -9,11 +9,11 @@ import (
 
 // InternalClientCertificate returns a secret with a client certificate for the openvpn clients in the seed-cluster.
 func InternalClientCertificate(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
-	return certificates.GetClientCertificateCreator(
+	return certificates.GetECDSAClientCertificateCreator(
 		resources.OpenVPNClientCertificatesSecretName,
 		"internal-client",
 		[]string{},
 		resources.OpenVPNInternalClientCertSecretKey,
 		resources.OpenVPNInternalClientKeySecretKey,
-		data.GetRootCA)(data, existing)
+		data.GetOpenVPNCA)(data, existing)
 }
