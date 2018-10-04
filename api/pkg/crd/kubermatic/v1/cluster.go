@@ -199,24 +199,46 @@ func UpdateCloudSpec(updatedShared, existingShared CloudSpec) CloudSpec {
 	if updated.Digitalocean != nil && len(updated.Digitalocean.Token) == 0 {
 		updated.Digitalocean.Token = existingShared.Digitalocean.Token
 	}
-	if updated.AWS != nil && len(updated.AWS.AccessKeyID) == 0 && len(updated.AWS.SecretAccessKey) == 0 {
-		updated.AWS.AccessKeyID = existingShared.AWS.AccessKeyID
-		updated.AWS.SecretAccessKey = existingShared.AWS.SecretAccessKey
+	if updated.AWS != nil {
+		if len(updated.AWS.AccessKeyID) == 0 {
+			updated.AWS.AccessKeyID = existingShared.AWS.AccessKeyID
+		}
+		if len(updated.AWS.SecretAccessKey) == 0 {
+			updated.AWS.SecretAccessKey = existingShared.AWS.SecretAccessKey
+		}
 	}
-	if updated.Azure != nil && len(updated.Azure.ClientID) == 0 && len(updated.Azure.ClientSecret) == 0 {
-		updated.Azure.ClientID = existingShared.Azure.ClientID
-		updated.Azure.ClientSecret = existingShared.Azure.ClientSecret
+	if updated.Azure != nil {
+		if len(updated.Azure.ClientID) == 0 {
+			updated.Azure.ClientID = existingShared.Azure.ClientID
+		}
+		if len(updated.Azure.ClientSecret) == 0 {
+			updated.Azure.ClientSecret = existingShared.Azure.ClientSecret
+		}
 	}
-	if updated.Openstack != nil && len(updated.Openstack.Username) == 0 && len(updated.Openstack.Password) == 0 {
-		updated.Openstack.Username = existingShared.Openstack.Username
-		updated.Openstack.Password = existingShared.Openstack.Password
+	if updated.Openstack != nil {
+		if len(updated.Openstack.Username) == 0 {
+			updated.Openstack.Username = existingShared.Openstack.Username
+		}
+		if len(updated.Openstack.Password) == 0 {
+			updated.Openstack.Password = existingShared.Openstack.Password
+		}
 	}
 	if updated.Hetzner != nil && len(updated.Hetzner.Token) == 0 {
 		updated.Hetzner.Token = existingShared.Hetzner.Token
 	}
-	if updated.VSphere != nil && len(updated.VSphere.Username) == 0 && len(updated.VSphere.Password) == 0 {
-		updated.VSphere.Username = existingShared.VSphere.Username
-		updated.VSphere.Password = existingShared.VSphere.Password
+	if updated.VSphere != nil {
+		if len(updated.VSphere.Username) == 0 {
+			updated.VSphere.Username = existingShared.VSphere.Username
+		}
+		if len(updated.VSphere.Password) == 0 {
+			updated.VSphere.Password = existingShared.VSphere.Password
+		}
+		if len(updated.VSphere.InfraManagementUser.Username) == 0 {
+			updated.VSphere.InfraManagementUser.Username = existingShared.VSphere.InfraManagementUser.Username
+		}
+		if len(updated.VSphere.InfraManagementUser.Password) == 0 {
+			updated.VSphere.InfraManagementUser.Password = existingShared.VSphere.InfraManagementUser.Password
+		}
 	}
 
 	return *updated
