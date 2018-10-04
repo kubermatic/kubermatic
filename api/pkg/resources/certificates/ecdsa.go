@@ -52,7 +52,7 @@ func GetECDSAClientCertificateCreator(name, commonName string, organizations []s
 				return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret %s: %v", name, dataCertKey, err)
 			}
 
-			if resources.IsClientCertificateValidForAllOf(certs[0], commonName, organizations) {
+			if resources.IsClientCertificateValidForAllOf(certs[0], commonName, organizations, ca.Cert) {
 				return se, nil
 			}
 		}
@@ -76,9 +76,6 @@ func GetECDSAClientCertificateCreator(name, commonName string, organizations []s
 	}
 }
 func GetSignedECDSACertAndKey(notAfter time.Duration, cfg certutil.Config, caCert *x509.Certificate, caKey *ecdsa.PrivateKey) (cert []byte, key []byte, err error) {
-	if len(cfg.CommonName) == 0 {
-		return nil, nil, errors.New("must specify a CommonName")
-	}
 	if len(cfg.Usages) == 0 {
 		return nil, nil, errors.New("must specify at least one ExtKeyUsage")
 	}
@@ -88,13 +85,17 @@ func GetSignedECDSACertAndKey(notAfter time.Duration, cfg certutil.Config, caCer
 
 // GetECDSACertAndKey returns a pem-encoded ECDSA certificate and key
 func GetECDSACACertAndKey() (cert []byte, key []byte, err error) {
-	return generateECDSACertAndKey(Duration365d*10, true, certutil.Config{}, nil, nil)
+	return generateECDSACertAndKey(Duration365d*10, true, certutil.Config{CommonName: "CA"}, nil, nil)
 }
 
 // generateECDSACertAndKey generates an ECDSA x509 certificate and key
 // if both caCert and caKey are non-nil it will be signed by that CA
 // Most of the code is copied over from https://golang.org/src/crypto/tls/generate_cert.go
 func generateECDSACertAndKey(notAfter time.Duration, isCA bool, cfg certutil.Config, caCert *x509.Certificate, caKey *ecdsa.PrivateKey) ([]byte, []byte, error) {
+	if len(cfg.CommonName) == 0 {
+		return nil, nil, errors.New("must specify a CommonName")
+	}
+
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to generate private key: %v", err)
@@ -122,6 +123,7 @@ func generateECDSACertAndKey(notAfter time.Duration, isCA bool, cfg certutil.Con
 	}
 
 	if isCA {
+		template.BasicConstraintsValid = true
 		template.IsCA = true
 		template.KeyUsage |= x509.KeyUsageCertSign
 	}

@@ -45,7 +45,7 @@ func GetClientCertificateCreator(name, commonName string, organizations []string
 				return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret %s: %v", name, dataCertKey, err)
 			}
 
-			if resources.IsClientCertificateValidForAllOf(certs[0], commonName, organizations) {
+			if resources.IsClientCertificateValidForAllOf(certs[0], commonName, organizations, ca.Cert) {
 				return se, nil
 			}
 		}

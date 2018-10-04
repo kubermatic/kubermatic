@@ -438,7 +438,7 @@ func CertWillExpireSoon(cert *x509.Certificate) bool {
 }
 
 // IsServerCertificateValidForAllOf validates if the given data is present in the given server certificate
-func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string, altNames certutil.AltNames) bool {
+func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string, altNames certutil.AltNames, ca *x509.Certificate) bool {
 	if CertWillExpireSoon(cert) {
 		return false
 	}
@@ -465,12 +465,24 @@ func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 	wantDNSNames := sets.NewString(altNames.DNSNames...)
 	certDNSNames := sets.NewString(cert.DNSNames...)
 
-	return wantDNSNames.Equal(certDNSNames)
+	if !wantDNSNames.Equal(certDNSNames) {
+		return false
+	}
+
+	certPool := x509.NewCertPool()
+	certPool.AddCert(ca)
+	if _, err := cert.Verify(x509.VerifyOptions{Roots: certPool,
+		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}}); err != nil {
+		glog.V(4).Infof("Certificate verifycation for CN %s failed due to: %v", commonName, err)
+		return false
+	}
+
+	return true
 }
 
 // IsClientCertificateValidForAllOf validates if the given data matches exactly the given client certificate
 // (It also returns true if all given data is in the cert, but the cert has more organizations)
-func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string, organizations []string) bool {
+func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string, organizations []string, ca *x509.Certificate) bool {
 	if CertWillExpireSoon(cert) {
 		return false
 	}
@@ -482,7 +494,19 @@ func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 	wantOrganizations := sets.NewString(organizations...)
 	certOrganizations := sets.NewString(cert.Subject.Organization...)
 
-	return wantOrganizations.Equal(certOrganizations)
+	if !wantOrganizations.Equal(certOrganizations) {
+		return false
+	}
+
+	certPool := x509.NewCertPool()
+	certPool.AddCert(ca)
+	if _, err := cert.Verify(x509.VerifyOptions{Roots: certPool,
+		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}}); err != nil {
+		glog.V(4).Infof("Certificate verifycation for CN %s failed due to: %v", commonName, err)
+		return false
+	}
+
+	return true
 }
 
 func getECDSAClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*ECDSAKeyPair, error) {

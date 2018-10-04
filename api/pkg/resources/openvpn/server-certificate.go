@@ -37,7 +37,7 @@ func TLSServingCertificate(data resources.SecretDataProvider, existing *corev1.S
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %v", resources.OpenVPNServerCertSecretKey, err)
 		}
-		if resources.IsServerCertificateValidForAllOf(certs[0], "openvpn-server", altNames) {
+		if resources.IsServerCertificateValidForAllOf(certs[0], "openvpn-server", altNames, ca.Cert) {
 			return se, nil
 		}
 	}
