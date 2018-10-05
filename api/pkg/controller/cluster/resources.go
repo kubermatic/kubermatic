@@ -12,10 +12,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 
 	corev1 "k8s.io/api/core/v1"
@@ -30,21 +28,6 @@ const (
 func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) error {
 	data, err := cc.getClusterTemplateData(cluster)
 	if err != nil {
-		return err
-	}
-
-	// check that all service accounts are created
-	if err := cc.ensureCheckServiceAccounts(cluster, data); err != nil {
-		return err
-	}
-
-	// check that all roles are created
-	if err := cc.ensureRoles(cluster, data); err != nil {
-		return err
-	}
-
-	// check that all role bindings are created
-	if err := cc.ensureRoleBindings(cluster, data); err != nil {
 		return err
 	}
 
@@ -145,7 +128,6 @@ func GetServiceCreators() []resources.ServiceCreator {
 	return []resources.ServiceCreator{
 		apiserver.Service,
 		apiserver.ExternalService,
-		prometheus.Service,
 		openvpn.Service,
 		etcd.Service,
 		dns.Service,
@@ -164,48 +146,6 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster, data *resources.Te
 	return nil
 }
 
-func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := []resources.ServiceAccountCreator{
-		prometheus.ServiceAccount,
-	}
-
-	for _, create := range creators {
-		if err := resources.EnsureServiceAccount(data, create, cc.serviceAccountLister.ServiceAccounts(c.Status.NamespaceName), cc.kubeClient.CoreV1().ServiceAccounts(c.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the ServiceAccount exists: %v", err)
-		}
-	}
-
-	return nil
-}
-
-func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := []resources.RoleCreator{
-		prometheus.Role,
-	}
-
-	for _, create := range creators {
-		if err := resources.EnsureRole(data, create, cc.roleLister.Roles(c.Status.NamespaceName), cc.kubeClient.RbacV1().Roles(c.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the Role exists: %v", err)
-		}
-	}
-
-	return nil
-}
-
-func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := []resources.RoleBindingCreator{
-		prometheus.RoleBinding,
-	}
-
-	for _, create := range creators {
-		if err := resources.EnsureRoleBinding(data, create, cc.roleBindingLister.RoleBindings(c.Status.NamespaceName), cc.kubeClient.RbacV1().RoleBindings(c.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the RoleBinding exists: %v", err)
-		}
-	}
-
-	return nil
-}
-
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
 func GetDeploymentCreators(c *kubermaticv1.Cluster) []resources.DeploymentCreator {
 	creators := []resources.DeploymentCreator{
@@ -215,7 +155,6 @@ func GetDeploymentCreators(c *kubermaticv1.Cluster) []resources.DeploymentCreato
 		scheduler.Deployment,
 		controllermanager.Deployment,
 		dns.Deployment,
-		kubestatemetrics.Deployment,
 	}
 
 	if c != nil && len(c.Spec.MachineNetworks) > 0 {
@@ -285,7 +224,6 @@ func GetConfigMapCreators(data *resources.TemplateData) []resources.ConfigMapCre
 	return []resources.ConfigMapCreator{
 		cloudconfig.ConfigMapCreator(data),
 		openvpn.ServerClientConfigsConfigMapCreator(data),
-		prometheus.ConfigMapCreator(data),
 		dns.ConfigMapCreator(data),
 	}
 }
@@ -305,7 +243,6 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster, data *resources.
 // GetStatefulSetCreators returns all StatefulSetCreators that are currently in use
 func GetStatefulSetCreators() []resources.StatefulSetCreator {
 	return []resources.StatefulSetCreator{
-		prometheus.StatefulSet,
 		etcd.StatefulSet,
 	}
 }
