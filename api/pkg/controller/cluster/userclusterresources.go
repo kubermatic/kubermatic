@@ -22,14 +22,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
-func (cc *Controller) userClusterEnsureInitializerConfiguration(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
+func (cc *Controller) userClusterEnsureInitializerConfiguration(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	creators := []resources.InitializerConfigurationCreator{
 		ipamcontroller.MachineIPAMInitializerConfiguration,
 	}
@@ -76,12 +72,7 @@ func (cc *Controller) userClusterEnsureInitializerConfiguration(c *kubermaticv1.
 	return nil
 }
 
-func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
+func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	creators := []resources.RoleCreator{
 		machinecontroller.Role,
 		machinecontroller.KubeSystemRole,
@@ -130,12 +121,7 @@ func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
+func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	creators := []resources.RoleBindingCreator{
 		machinecontroller.DefaultRoleBinding,
 		machinecontroller.KubeSystemRoleBinding,
@@ -194,12 +180,7 @@ func GetUserClusterRoleCreators(c *kubermaticv1.Cluster) []resources.ClusterRole
 	return creators
 }
 
-func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
+func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	creators := GetUserClusterRoleCreators(c)
 
 	data, err := cc.getClusterTemplateData(c)
@@ -261,12 +242,7 @@ func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.Clus
 	return creators
 }
 
-func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
+func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	creators := GetUserClusterRoleBindingCreators(c)
 
 	data, err := cc.getClusterTemplateData(c)
@@ -311,12 +287,7 @@ func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Clust
 	return nil
 }
 
-func (cc *Controller) userClusterEnsureConfigMaps(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
+func (cc *Controller) userClusterEnsureConfigMaps(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
 		return err
