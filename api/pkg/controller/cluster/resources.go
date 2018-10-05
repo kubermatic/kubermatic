@@ -306,25 +306,24 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 }
 
 // GetConfigMapCreators returns all ConfigMapCreators that are currently in use
-func GetConfigMapCreators() []resources.ConfigMapCreator {
+func GetConfigMapCreators(data *resources.TemplateData) []resources.ConfigMapCreator {
 	return []resources.ConfigMapCreator{
-		cloudconfig.ConfigMap,
-		openvpn.ServerClientConfigsConfigMap,
-		prometheus.ConfigMap,
-		dns.ConfigMap,
+		cloudconfig.ConfigMapCreator(data),
+		openvpn.ServerClientConfigsConfigMapCreator(data),
+		prometheus.ConfigMapCreator(data),
+		dns.ConfigMapCreator(data),
 	}
 }
 
 func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
-	creators := GetConfigMapCreators()
-
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
 		return err
 	}
+	creators := GetConfigMapCreators(data)
 
 	for _, create := range creators {
-		if err := resources.EnsureConfigMap(data, create, cc.configMapLister.ConfigMaps(c.Status.NamespaceName), cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName)); err != nil {
+		if err := resources.EnsureConfigMap(create, cc.configMapLister.ConfigMaps(c.Status.NamespaceName), cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName)); err != nil {
 			return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)
 		}
 	}

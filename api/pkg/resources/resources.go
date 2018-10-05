@@ -284,7 +284,7 @@ type ECDSAKeyPair struct {
 }
 
 // ConfigMapCreator defines an interface to create/update ConfigMap's
-type ConfigMapCreator = func(data ConfigMapDataProvider, existing *corev1.ConfigMap) (*corev1.ConfigMap, error)
+type ConfigMapCreator = func(*corev1.ConfigMap) (*corev1.ConfigMap, error)
 
 // SecretCreator defines an interface to create/update Secret's
 type SecretCreator = func(data SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error)
