@@ -18,62 +18,64 @@ type promTplModel struct {
 	InClusterPrometheusScrapingConfigs string
 }
 
-// ConfigMap returns a ConfigMap containing the prometheus config for the supplied data
-func ConfigMap(data resources.ConfigMapDataProvider, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-	var cm *corev1.ConfigMap
-	if existing != nil {
-		cm = existing
-	} else {
-		cm = &corev1.ConfigMap{}
-	}
-	if cm.Data == nil {
-		cm.Data = map[string]string{}
-	}
-
-	model := &promTplModel{TemplateData: data.TemplateData()}
-	scrapingConfigsFile := data.InClusterPrometheusScrapingConfigsFile()
-	if scrapingConfigsFile != "" {
-		scrapingConfigs, err := ioutil.ReadFile(scrapingConfigsFile)
-		if err != nil {
-			return nil, fmt.Errorf("couldn't read custom scraping configs file, see: %v", err)
+// ConfigMapCreator returns a ConfigMapCreator containing the prometheus config for the supplied data
+func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapCreator {
+	return func(existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+		var cm *corev1.ConfigMap
+		if existing != nil {
+			cm = existing
+		} else {
+			cm = &corev1.ConfigMap{}
+		}
+		if cm.Data == nil {
+			cm.Data = map[string]string{}
 		}
 
-		model.InClusterPrometheusScrapingConfigs = string(scrapingConfigs)
-	}
+		model := &promTplModel{TemplateData: data.TemplateData()}
+		scrapingConfigsFile := data.InClusterPrometheusScrapingConfigsFile()
+		if scrapingConfigsFile != "" {
+			scrapingConfigs, err := ioutil.ReadFile(scrapingConfigsFile)
+			if err != nil {
+				return nil, fmt.Errorf("couldn't read custom scraping configs file, see: %v", err)
+			}
 
-	configBuffer := bytes.Buffer{}
-	configTpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(prometheusConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse prometheus config template: %v", err)
-	}
-	if err := configTpl.Execute(&configBuffer, model); err != nil {
-		return nil, fmt.Errorf("failed to render prometheus config template: %v", err)
-	}
-
-	cm.Name = resources.PrometheusConfigConfigMapName
-	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	cm.Labels = resources.BaseAppLabel(name, nil)
-	cm.Data["prometheus.yaml"] = configBuffer.String()
-
-	if data.InClusterPrometheusDisableDefaultRules() {
-		delete(cm.Data, "rules.yaml")
-	} else {
-		cm.Data["rules.yaml"] = prometheusRules
-	}
-
-	rulesFile := data.InClusterPrometheusRulesFile()
-	if rulesFile == "" {
-		delete(cm.Data, "rules-custom.yaml")
-	} else {
-		customRules, err := ioutil.ReadFile(rulesFile)
-		if err != nil {
-			return nil, fmt.Errorf("couldn't read custom rules file, see: %v", err)
+			model.InClusterPrometheusScrapingConfigs = string(scrapingConfigs)
 		}
 
-		cm.Data["rules-custom.yaml"] = string(customRules)
-	}
+		configBuffer := bytes.Buffer{}
+		configTpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(prometheusConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse prometheus config template: %v", err)
+		}
+		if err := configTpl.Execute(&configBuffer, model); err != nil {
+			return nil, fmt.Errorf("failed to render prometheus config template: %v", err)
+		}
 
-	return cm, nil
+		cm.Name = resources.PrometheusConfigConfigMapName
+		cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+		cm.Labels = resources.BaseAppLabel(name, nil)
+		cm.Data["prometheus.yaml"] = configBuffer.String()
+
+		if data.InClusterPrometheusDisableDefaultRules() {
+			delete(cm.Data, "rules.yaml")
+		} else {
+			cm.Data["rules.yaml"] = prometheusRules
+		}
+
+		rulesFile := data.InClusterPrometheusRulesFile()
+		if rulesFile == "" {
+			delete(cm.Data, "rules-custom.yaml")
+		} else {
+			customRules, err := ioutil.ReadFile(rulesFile)
+			if err != nil {
+				return nil, fmt.Errorf("couldn't read custom rules file, see: %v", err)
+			}
+
+			cm.Data["rules-custom.yaml"] = string(customRules)
+		}
+
+		return cm, nil
+	}
 }
 
 const prometheusConfig = `global:
