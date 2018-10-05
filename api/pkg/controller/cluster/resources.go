@@ -324,7 +324,7 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 	}
 
 	for _, create := range creators {
-		if err := resources.EnsureConfigMap(data, create, cc.configMapLister.ConfigMaps(c.Status.NamespaceName), cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName)); err != nil {
+		if err := resources.EnsureConfigMap(data, create, resources.GetConfigMapViaLister(cc.configMapLister.ConfigMaps(c.Status.NamespaceName)), cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName)); err != nil {
 			return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)
 		}
 	}
