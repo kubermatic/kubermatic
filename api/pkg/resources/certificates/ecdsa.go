@@ -161,7 +161,7 @@ func generateECDSACertAndKey(notAfter time.Duration, isCA bool, cfg certutil.Con
 
 	privateKeyPemBlock, err := x509.MarshalECPrivateKey(privateKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to marshalECPrivateKey into pem.Block: %v", err)
+		return nil, nil, fmt.Errorf("failed to marshal private key into pem.Block: %v", err)
 	}
 
 	pemKeyReader := bytes.NewBuffer([]byte{})
