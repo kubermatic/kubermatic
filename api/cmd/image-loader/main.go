@@ -307,6 +307,7 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		resources.ControllerManagerKubeconfigSecretName,
 		resources.SchedulerKubeconfigSecretName,
 		resources.KubeStateMetricsKubeconfigSecretName,
+		resources.OpenVPNCASecretName,
 		resources.OpenVPNServerCertificatesSecretName,
 		resources.OpenVPNClientCertificatesSecretName,
 		resources.FrontProxyCASecretName,

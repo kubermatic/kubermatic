@@ -54,7 +54,7 @@ func TLSCertificate(data resources.SecretDataProvider, existing *corev1.Secret) 
 			return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret %s: %v", resources.EtcdTLSCertSecretKey, resources.EtcdTLSCertificateSecretName, err)
 		}
 
-		if resources.IsServerCertificateValidForAllOf(certs[0], "etcd", altNames) {
+		if resources.IsServerCertificateValidForAllOf(certs[0], "etcd", altNames, ca.Cert) {
 			return se, nil
 		}
 	}

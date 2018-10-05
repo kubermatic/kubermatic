@@ -75,7 +75,7 @@ func TLSServingCertificate(data resources.SecretDataProvider, existing *corev1.S
 			return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %v", resources.ApiserverTLSCertSecretKey, err)
 		}
 
-		if resources.IsServerCertificateValidForAllOf(certs[0], "kube-apiserver", altNames) {
+		if resources.IsServerCertificateValidForAllOf(certs[0], "kube-apiserver", altNames, ca.Cert) {
 			return se, nil
 		}
 	}
