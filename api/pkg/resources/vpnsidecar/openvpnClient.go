@@ -34,7 +34,7 @@ func OpenVPNSidecarContainer(data resources.DeploymentDataProvider, name string)
 			"--nobind",
 			"--connect-timeout", "5",
 			"--connect-retry", "1",
-			"--ca", "/etc/kubernetes/pki/ca/ca.crt",
+			"--ca", "/etc/openvpn/pki/client/ca.crt",
 			"--cert", "/etc/openvpn/pki/client/client.crt",
 			"--key", "/etc/openvpn/pki/client/client.key",
 			"--remote-cert-tls", "server",
@@ -65,11 +65,6 @@ func OpenVPNSidecarContainer(data resources.DeploymentDataProvider, name string)
 			{
 				MountPath: "/etc/openvpn/pki/client",
 				Name:      resources.OpenVPNClientCertificatesSecretName,
-				ReadOnly:  true,
-			},
-			{
-				MountPath: "/etc/kubernetes/pki/ca",
-				Name:      resources.CASecretName,
 				ReadOnly:  true,
 			},
 		},
