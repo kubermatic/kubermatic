@@ -7,7 +7,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// InternalClientCertificate returns a secret with a client certificate for the openvpn clients in the seed-cluster.
+// InternalClientCertificate returns a secret with a client certificate for the openvpn clients in the seed cluster.
 func InternalClientCertificate(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
 	return certificates.GetECDSAClientCertificateCreatorWithOwnerRef(
 		resources.OpenVPNClientCertificatesSecretName,
@@ -18,6 +18,8 @@ func InternalClientCertificate(data resources.SecretDataProvider, existing *core
 		data.GetOpenVPNCA)(data, existing)
 }
 
+// UserClusterClientCertificate returns a secret with the client certificate for the openvpn client in the user
+// cluster
 func UserClusterClientCertificate(existing *corev1.Secret, ca *resources.ECDSAKeyPair) (*corev1.Secret, error) {
 	return certificates.GetECDSAClientCertificateCreator(
 		resources.OpenVPNClientCertificatesSecretName,

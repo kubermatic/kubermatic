@@ -20,11 +20,12 @@ import (
 	certutil "k8s.io/client-go/util/cert"
 )
 
+// Duration365d is a time.Duration that represents a year
 const Duration365d = time.Hour * 24 * 365
 
 type ecdsaCAGetter func() (*resources.ECDSAKeyPair, error)
 
-// GetClientCertificateCreator is a generic function to return a secret generator to create a client certificate
+// GetECDSAClientCertificateCreatorWithOwnerRef is a generic function to return a secret generator to create a client certificate
 // signed by the cert returned by the passed getCA func. The resulting secret has an ownerRef
 // pointing to the cluster object in data.GetClusterRef
 func GetECDSAClientCertificateCreatorWithOwnerRef(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA ecdsaCAGetter) func(data templateDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
@@ -42,7 +43,7 @@ func GetECDSAClientCertificateCreatorWithOwnerRef(name, commonName string, organ
 	}
 }
 
-// GetClientCertificateCreator is a generic function to return a secret generator to create a client certificate
+// GetECDSAClientCertificateCreator is a generic function to return a secret generator to create a client certificate
 // signed by the cert returned by the passed getCA func. The resulting secret has no ownerRef
 func GetECDSAClientCertificateCreator(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, ca *resources.ECDSAKeyPair) func(existing *corev1.Secret) (*corev1.Secret, error) {
 	return func(existing *corev1.Secret) (*corev1.Secret, error) {
@@ -88,6 +89,8 @@ func GetECDSAClientCertificateCreator(name, commonName string, organizations []s
 		return se, nil
 	}
 }
+
+// GetSignedECDSACertAndKey creates and returns a signed ECDSA x509 certificate and key
 func GetSignedECDSACertAndKey(notAfter time.Duration, cfg certutil.Config, caCert *x509.Certificate, caKey *ecdsa.PrivateKey) (cert []byte, key []byte, err error) {
 	if len(cfg.Usages) == 0 {
 		return nil, nil, errors.New("must specify at least one ExtKeyUsage")
@@ -96,7 +99,7 @@ func GetSignedECDSACertAndKey(notAfter time.Duration, cfg certutil.Config, caCer
 	return generateECDSACertAndKey(notAfter, false, cfg, caCert, caKey)
 }
 
-// GetECDSACertAndKey returns a pem-encoded ECDSA certificate and key
+// GetECDSACACertAndKey returns a pem-encoded ECDSA certificate and key
 func GetECDSACACertAndKey() (cert []byte, key []byte, err error) {
 	return generateECDSACertAndKey(Duration365d*10, true, certutil.Config{CommonName: "CA"}, nil, nil)
 }
