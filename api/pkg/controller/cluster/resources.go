@@ -275,6 +275,7 @@ func GetSecretCreatorOperations(dockerPullConfigJSON []byte) []SecretOperation {
 		{resources.ApiserverTLSSecretName, apiserver.TLSServingCertificate},
 		{resources.KubeletClientCertificatesSecretName, apiserver.KubeletClientCertificate},
 		{resources.ServiceAccountKeySecretName, apiserver.ServiceAccountKey},
+		{resources.OpenVPNCASecretName, openvpn.CertificateAuthority},
 		{resources.OpenVPNServerCertificatesSecretName, openvpn.TLSServingCertificate},
 		{resources.OpenVPNClientCertificatesSecretName, openvpn.InternalClientCertificate},
 		{resources.TokensSecretName, apiserver.TokenUsers},
