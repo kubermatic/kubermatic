@@ -84,3 +84,6 @@ versions:
 - version: "1.12.0"
   default: false
   allowedNodeVersions: *node-versions
+- version: "1.12.1"
+  default: false
+  allowedNodeVersions: *node-versions
