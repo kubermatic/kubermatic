@@ -424,9 +424,21 @@ func EnsureSecret(name string, data SecretDataProvider, create SecretCreator, li
 	return nil
 }
 
+type ConfigMapGetter func(name string) (*corev1.ConfigMap, error)
+
+func GetConfigMapViaLister(lister corev1lister.ConfigMapNamespaceLister) ConfigMapGetter {
+	return lister.Get
+}
+
+func GetConfigMapViaClient(client corev1client.ConfigMapInterface) ConfigMapGetter {
+	return func(name string) (*corev1.ConfigMap, error) {
+		return client.Get(name, metav1.GetOptions{})
+	}
+}
+
 // EnsureConfigMap will create the ConfigMap with the passed create function & create or update it if necessary.
 // To check if it's necessary it will do a lookup of the resource at the lister & compare the existing ConfigMap with the created one
-func EnsureConfigMap(data ConfigMapDataProvider, create ConfigMapCreator, lister corev1lister.ConfigMapNamespaceLister, client corev1client.ConfigMapInterface) error {
+func EnsureConfigMap(data ConfigMapDataProvider, create ConfigMapCreator, get ConfigMapGetter, client corev1client.ConfigMapInterface) error {
 	var existing *corev1.ConfigMap
 	cm, err := create(data, nil)
 	if err != nil {
@@ -437,7 +449,7 @@ func EnsureConfigMap(data ConfigMapDataProvider, create ConfigMapCreator, lister
 	}
 	cm.Annotations[checksumAnnotation] = getChecksumForMapStringString(cm.Data)
 
-	if existing, err = lister.Get(cm.Name); err != nil {
+	if existing, err = get(cm.Name); err != nil {
 		if !kubeerrors.IsNotFound(err) {
 			return err
 		}
