@@ -33,7 +33,7 @@ func legacyOpenstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endp
 		}
 
 		openstackSpec := cluster.Spec.Cloud.Openstack
-		datacenterName := "TODO: HOW DO I GET DC NAME"
+		datacenterName := cluster.Spec.Cloud.DatacenterName
 		return getOpenstackSizes(providers, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.Domain, datacenterName)
 	}
 }
@@ -99,7 +99,7 @@ func legacyOpenstackTenantEndpoint(providers provider.CloudRegistry) endpoint.En
 		}
 
 		openstackSpec := cluster.Spec.Cloud.Openstack
-		datacenterName := "TODO: HOW DO I GET DC NAME"
+		datacenterName := cluster.Spec.Cloud.DatacenterName
 		return getOpenstackTenants(providers, openstackSpec.Username, openstackSpec.Password, openstackSpec.Domain, datacenterName)
 	}
 }
@@ -159,7 +159,7 @@ func legacyOpenstackNetworkEndpoint(providers provider.CloudRegistry) endpoint.E
 		}
 
 		openstackSpec := cluster.Spec.Cloud.Openstack
-		datacenterName := "TODO: HOW DO I GET DC NAME"
+		datacenterName := cluster.Spec.Cloud.DatacenterName
 		return getOpenstackNetworks(providers, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.Domain, datacenterName)
 	}
 }
@@ -221,7 +221,7 @@ func legacyOpenstackSecurityGroupEndpoint(providers provider.CloudRegistry) endp
 		}
 
 		openstackSpec := cluster.Spec.Cloud.Openstack
-		datacenterName := "TODO: HOW DO I GET DC NAME"
+		datacenterName := cluster.Spec.Cloud.DatacenterName
 		return getOpenstackSecurityGroups(providers, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.Domain, datacenterName)
 	}
 }
@@ -282,7 +282,7 @@ func legacyOpenstackSubnetsEndpoint(providers provider.CloudRegistry) endpoint.E
 		}
 
 		openstackSpec := cluster.Spec.Cloud.Openstack
-		datacenterName := "TODO: HOW DO I GET DC NAME"
+		datacenterName := cluster.Spec.Cloud.DatacenterName
 		return getOpenstackSubnets(providers, openstackSpec.Username, openstackSpec.Password, openstackSpec.Domain, openstackSpec.Tenant, req.NetworkID, datacenterName)
 	}
 }

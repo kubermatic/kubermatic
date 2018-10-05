@@ -30,7 +30,7 @@ func legacyAzureSizeEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.En
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterName)
 		}
 
-		dc, err := listDatacenter(dcs, req.DC)
+		dc, err := listDatacenter(dcs, cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}

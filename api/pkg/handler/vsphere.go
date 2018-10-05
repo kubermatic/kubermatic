@@ -40,7 +40,7 @@ func legacyVsphereNetworksEndpoint(providers provider.CloudRegistry) endpoint.En
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterName)
 		}
 
-		datacenterName := "TODO: HOW DO I GET DC NAME"
+		datacenterName := cluster.Spec.Cloud.DatacenterName
 		vSpec := cluster.Spec.Cloud.VSphere
 		return getVsphereNetworks(providers, vSpec.Username, vSpec.Password, datacenterName)
 	}
