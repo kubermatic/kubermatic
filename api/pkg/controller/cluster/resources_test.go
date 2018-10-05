@@ -88,11 +88,11 @@ func TestConfigMapCreatorsKeepAdditionalData(t *testing.T) {
 	dc := &provider.DatacenterMeta{}
 	templateData := resources.NewTemplateData(cluster, dc, "", nil, nil, nil, "", "", "10.12.0.0/8", resource.Quantity{}, "", false, false, "", nil)
 
-	for _, create := range GetConfigMapCreators() {
+	for _, create := range GetConfigMapCreators(templateData) {
 		existing := &corev1.ConfigMap{
 			Data: map[string]string{"Test": "Data"},
 		}
-		new, err := create(templateData, existing)
+		new, err := create(existing)
 		if err != nil {
 			t.Fatalf("Error executing configmap creator: %v", err)
 		}
