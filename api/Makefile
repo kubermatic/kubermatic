@@ -27,7 +27,7 @@ test: vendor
 	@$(GO) test -v ./...
 
 test-update:
-	@$(GO) test -v ./... -update
+	-@$(GO) test -v ./... -update
 
 clean:
 	@cd _build
