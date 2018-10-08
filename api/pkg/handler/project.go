@@ -52,7 +52,7 @@ func listProjectsEndpoint(projectProvider provider.ProjectProvider, memberMapper
 		projects := []*apiv1.Project{}
 		for _, pg := range user.Spec.Projects {
 			userInfo := &provider.UserInfo{Email: user.Spec.Email, Group: pg.Group}
-			projectInternal, err := projectProvider.Get(userInfo, pg.Name, &provider.ProjectGetOptions{IncludeUninitialized:true})
+			projectInternal, err := projectProvider.Get(userInfo, pg.Name, &provider.ProjectGetOptions{IncludeUninitialized: true})
 			if err != nil {
 				return nil, kubernetesErrorToHTTPError(err)
 			}
