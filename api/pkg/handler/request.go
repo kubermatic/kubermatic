@@ -206,6 +206,23 @@ func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
 	}, nil
 }
 
+// LegacyDoSizesReq represent a request for legacy digitalocean sizes EP
+// swagger:parameters listLegacyDigitaloceanSizes
+type LegacyDoSizesReq struct {
+	LegacyGetClusterReq
+}
+
+func decodeLegacyDoSizesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req LegacyDoSizesReq
+	cr, err := decodeLegacyClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.LegacyGetClusterReq = cr.(LegacyGetClusterReq)
+	return req, nil
+}
+
 // DoSizesReq represent a request for digitalocean sizes
 type DoSizesReq struct {
 	DoToken string
@@ -215,6 +232,23 @@ func decodeDoSizesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req DoSizesReq
 
 	req.DoToken = r.Header.Get("DoToken")
+	return req, nil
+}
+
+// LegacyAzureSizeReq represent a request for legacy Azure VM sizes
+// swagger:parameters listLegacyAzureSizes
+type LegacyAzureSizeReq struct {
+	LegacyGetClusterReq
+}
+
+func decodeLegacyAzureSizesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req LegacyAzureSizeReq
+	cr, err := decodeLegacyClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.LegacyGetClusterReq = cr.(LegacyGetClusterReq)
 	return req, nil
 }
 
@@ -259,6 +293,23 @@ func decodeOpenstackReq(c context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
+// LegacyOpenstackReq represent a request for openstack
+// swagger:parameters listLegacyOpenstackSizes listLegacyOpenstackTenants listLegacyOpenstackNetworks listLegacyOpenstackSecurityGroups
+type LegacyOpenstackReq struct {
+	LegacyGetClusterReq
+}
+
+func decodeLegacyOpenstackReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req LegacyOpenstackReq
+	cr, err := decodeLegacyClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.LegacyGetClusterReq = cr.(LegacyGetClusterReq)
+	return req, nil
+}
+
 // OpenstackSubnetReq represent a request for openstack subnets
 // swagger:parameters listOpenstackSubnets
 type OpenstackSubnetReq struct {
@@ -279,6 +330,30 @@ func decodeOpenstackSubnetReq(c context.Context, r *http.Request) (interface{}, 
 	if req.NetworkID == "" {
 		return nil, fmt.Errorf("get openstack subnets needs a parameter 'network_id'")
 	}
+	return req, nil
+}
+
+// LegacyOpenstackSubnetReq represent a request for openstack subnets
+// swagger:parameters listLegacyOpenstackSubnets
+type LegacyOpenstackSubnetReq struct {
+	LegacyOpenstackReq
+	// in: query
+	NetworkID string
+}
+
+func decodeLegacyOpenstackSubnetReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req LegacyOpenstackSubnetReq
+	lr, err := decodeLegacyOpenstackReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.LegacyOpenstackReq = lr.(LegacyOpenstackReq)
+
+	req.NetworkID = r.URL.Query().Get("network_id")
+	if req.NetworkID == "" {
+		return nil, fmt.Errorf("get openstack subnets needs a parameter 'network_id'")
+	}
+
 	return req, nil
 }
 
@@ -394,5 +469,22 @@ func decodeVSphereNetworksReq(c context.Context, r *http.Request) (interface{}, 
 	req.Password = r.Header.Get("Password")
 	req.DatacenterName = r.Header.Get("DatacenterName")
 
+	return req, nil
+}
+
+// LegacyVSphereNetworksReq represent a request for vsphere networks
+// swagger:parameters listLegacyVSphereNetworks
+type LegacyVSphereNetworksReq struct {
+	LegacyGetClusterReq
+}
+
+func decodeLegacyVSphereNetworksReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req LegacyVSphereNetworksReq
+	cr, err := decodeLegacyClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.LegacyGetClusterReq = cr.(LegacyGetClusterReq)
 	return req, nil
 }
