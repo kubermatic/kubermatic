@@ -457,16 +457,16 @@
   "rules":
   - "alert": "KubePodCrashLooping"
     "annotations":
-      "message": "{{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) is restarting {{ printf \"%.2f\" $value }} / second"
+      "message": "Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) is restarting {{ printf \"%.2f\" $value }} times / 5 minutes."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubepodcrashlooping"
     "expr": |
-      rate(kube_pod_container_status_restarts_total{job="kube-state-metrics"}[15m]) > 0
+      rate(kube_pod_container_status_restarts_total{job="kube-state-metrics"}[15m]) * 60 * 5 > 0
     "for": "1h"
     "labels":
       "severity": "critical"
   - "alert": "KubePodNotReady"
     "annotations":
-      "message": "{{ $labels.namespace }}/{{ $labels.pod }} is not ready."
+      "message": "Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready state for longer than an hour."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubepodnotready"
     "expr": |
       sum by (namespace, pod) (kube_pod_status_phase{job="kube-state-metrics", phase=~"Pending|Unknown"}) > 0
@@ -475,7 +475,7 @@
       "severity": "critical"
   - "alert": "KubeDeploymentGenerationMismatch"
     "annotations":
-      "message": "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} generation mismatch"
+      "message": "Deployment generation for {{ $labels.namespace }}/{{ $labels.deployment }} does not match, this indicates that the Deployment has failed but has not been rolled back."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubedeploymentgenerationmismatch"
     "expr": |
       kube_deployment_status_observed_generation{job="kube-state-metrics"}
@@ -486,7 +486,7 @@
       "severity": "critical"
   - "alert": "KubeDeploymentReplicasMismatch"
     "annotations":
-      "message": "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} replica mismatch"
+      "message": "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has not matched the expected number of replicas for longer than an hour."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubedeploymentreplicasmismatch"
     "expr": |
       kube_deployment_spec_replicas{job="kube-state-metrics"}
@@ -497,7 +497,7 @@
       "severity": "critical"
   - "alert": "KubeStatefulSetReplicasMismatch"
     "annotations":
-      "message": "StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} replica mismatch"
+      "message": "StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} has not matched the expected number of replicas for longer than 15 minutes."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubestatefulsetreplicasmismatch"
     "expr": |
       kube_statefulset_status_replicas_ready{job="kube-state-metrics"}
@@ -508,7 +508,7 @@
       "severity": "critical"
   - "alert": "KubeStatefulSetGenerationMismatch"
     "annotations":
-      "message": "StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} generation mismatch"
+      "message": "StatefulSet generation for {{ $labels.namespace }}/{{ $labels.statefulset }} does not match, this indicates that the StatefulSet has failed but has not been rolled back."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubestatefulsetgenerationmismatch"
     "expr": |
       kube_statefulset_status_observed_generation{job="kube-state-metrics"}
@@ -517,9 +517,28 @@
     "for": "15m"
     "labels":
       "severity": "critical"
+  - "alert": "KubeStatefulSetUpdateNotRolledOut"
+    "annotations":
+      "message": "StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} update has not been rolled out."
+      "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubestatefulsetupdatenotrolledout"
+    "expr": |
+      max without (revision) (
+        kube_statefulset_status_current_revision{job="kube-state-metrics"}
+          unless
+        kube_statefulset_status_update_revision{job="kube-state-metrics"}
+      )
+        *
+      (
+        kube_statefulset_replicas{job="kube-state-metrics"}
+          !=
+        kube_statefulset_status_replicas_updated{job="kube-state-metrics"}
+      )
+    "for": "15m"
+    "labels":
+      "severity": "critical"
   - "alert": "KubeDaemonSetRolloutStuck"
     "annotations":
-      "message": "Only {{$value}}% of desired pods scheduled and ready for daemon set {{$labels.namespace}}/{{$labels.daemonset}}"
+      "message": "Only {{ $value }}% of the desired Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} are scheduled and ready."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubedaemonsetrolloutstuck"
     "expr": |
       kube_daemonset_status_number_ready{job="kube-state-metrics"}
@@ -530,7 +549,7 @@
       "severity": "critical"
   - "alert": "KubeDaemonSetNotScheduled"
     "annotations":
-      "message": "A number of pods of daemonset {{$labels.namespace}}/{{$labels.daemonset}} are not scheduled."
+      "message": "{{ $value }} Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} are not scheduled."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubedaemonsetnotscheduled"
     "expr": |
       kube_daemonset_status_desired_number_scheduled{job="kube-state-metrics"}
@@ -541,7 +560,7 @@
       "severity": "warning"
   - "alert": "KubeDaemonSetMisScheduled"
     "annotations":
-      "message": "A number of pods of daemonset {{$labels.namespace}}/{{$labels.daemonset}} are running where they are not supposed to run."
+      "message": "{{ $value }} Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} are running where they are not supposed to run."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubedaemonsetmisscheduled"
     "expr": |
       kube_daemonset_status_number_misscheduled{job="kube-state-metrics"} > 0
@@ -559,7 +578,7 @@
       "severity": "warning"
   - "alert": "KubeJobCompletion"
     "annotations":
-      "message": "Job {{ $labels.namespaces }}/{{ $labels.job }} is taking more than 1h to complete."
+      "message": "Job {{ $labels.namespaces }}/{{ $labels.job }} is taking more than one hour to complete."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubejobcompletion"
     "expr": |
       kube_job_spec_completions{job="kube-state-metrics"} - kube_job_status_succeeded{job="kube-state-metrics"}  > 0
@@ -579,7 +598,7 @@
   "rules":
   - "alert": "KubeCPUOvercommit"
     "annotations":
-      "message": "Overcommited CPU resource requests on Pods, cannot tolerate node failure."
+      "message": "Cluster has overcommitted CPU resource requests for Pods and cannot tolerate node failure."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubecpuovercommit"
     "expr": |
       sum(namespace_name:kube_pod_container_resource_requests_cpu_cores:sum)
@@ -592,7 +611,7 @@
       "severity": "warning"
   - "alert": "KubeMemOvercommit"
     "annotations":
-      "message": "Overcommited Memory resource requests on Pods, cannot tolerate node failure."
+      "message": "Cluster has overcommitted memory resource requests for Pods and cannot tolerate node failure."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubememovercommit"
     "expr": |
       sum(namespace_name:kube_pod_container_resource_requests_memory_bytes:sum)
@@ -607,7 +626,7 @@
       "severity": "warning"
   - "alert": "KubeCPUOvercommit"
     "annotations":
-      "message": "Overcommited CPU resource request quota on Namespaces."
+      "message": "Cluster has overcommitted CPU resource requests for Namespaces."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubecpuovercommit"
     "expr": |
       sum(kube_resourcequota{job="kube-state-metrics", type="hard", resource="requests.cpu"})
@@ -619,7 +638,7 @@
       "severity": "warning"
   - "alert": "KubeMemOvercommit"
     "annotations":
-      "message": "Overcommited Memory resource request quota on Namespaces."
+      "message": "Cluster has overcommitted memory resource requests for Namespaces."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubememovercommit"
     "expr": |
       sum(kube_resourcequota{job="kube-state-metrics", type="hard", resource="requests.memory"})
@@ -631,13 +650,25 @@
       "severity": "warning"
   - "alert": "KubeQuotaExceeded"
     "annotations":
-      "message": "{{ printf \"%0.0f\" $value }}% usage of {{ $labels.resource }} in namespace {{ $labels.namespace }}."
+      "message": "Namespace {{ $labels.namespace }} is using {{ printf \"%0.0f\" $value }}% of its {{ $labels.resource }} quota."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubequotaexceeded"
     "expr": |
       100 * kube_resourcequota{job="kube-state-metrics", type="used"}
         / ignoring(instance, job, type)
-      kube_resourcequota{job="kube-state-metrics", type="hard"}
+      (kube_resourcequota{job="kube-state-metrics", type="hard"} > 0)
         > 90
+    "for": "15m"
+    "labels":
+      "severity": "warning"
+  - "alert": "CPUThrottlingHigh"
+    "annotations":
+      "message": "{{ printf \"%0.0f\" $value }}% throttling of CPU in namespace {{ $labels.namespace }} for {{ $labels.container_name }}."
+      "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-cputhrottlinghigh"
+    "expr": |
+      100 * sum(increase(container_cpu_cfs_throttled_periods_total[5m])) by (container_name, pod_name, namespace)
+        /
+      sum(increase(container_cpu_cfs_periods_total[5m])) by (container_name, pod_name, namespace)
+        > 25
     "for": "15m"
     "labels":
       "severity": "warning"
@@ -645,7 +676,7 @@
   "rules":
   - "alert": "KubePersistentVolumeUsageCritical"
     "annotations":
-      "message": "The persistent volume claimed by {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} has {{ printf \"%0.0f\" $value }}% free."
+      "message": "The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is only {{ printf \"%0.0f\" $value }}% free."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubepersistentvolumeusagecritical"
     "expr": |
       100 * kubelet_volume_stats_available_bytes{job="kubelet"}
@@ -657,10 +688,16 @@
       "severity": "critical"
   - "alert": "KubePersistentVolumeFullInFourDays"
     "annotations":
-      "message": "Based on recent sampling, the persistent volume claimed by {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} is expected to fill up within four days. Currently {{ $value }} bytes are available."
+      "message": "Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is expected to fill up within four days. Currently {{ $value }} bytes are available."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubepersistentvolumefullinfourdays"
     "expr": |
-      kubelet_volume_stats_available_bytes{job="kubelet"} and predict_linear(kubelet_volume_stats_available_bytes{job="kubelet"}[6h], 4 * 24 * 3600) < 0
+      (
+        kubelet_volume_stats_used_bytes{job="kubelet"}
+          /
+        kubelet_volume_stats_capacity_bytes{job="kubelet"}
+      ) > 0.85
+      and
+      predict_linear(kubelet_volume_stats_available_bytes{job="kubelet"}[6h], 4 * 24 * 3600) < 0
     "for": "5m"
     "labels":
       "severity": "critical"
@@ -668,7 +705,7 @@
   "rules":
   - "alert": "KubeNodeNotReady"
     "annotations":
-      "message": "{{ $labels.node }} has been unready for more than an hour"
+      "message": "{{ $labels.node }} has been unready for more than an hour."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubenodenotready"
     "expr": |
       kube_node_status_condition{job="kube-state-metrics",condition="Ready",status="true"} == 0
@@ -698,7 +735,7 @@
       "severity": "warning"
   - "alert": "KubeClientErrors"
     "annotations":
-      "message": "Kubernetes API server client '{{ $labels.job }}/{{ $labels.instance }}' is experiencing {{ printf \"%0.0f\" $value }} errors / sec.'"
+      "message": "Kubernetes API server client '{{ $labels.job }}/{{ $labels.instance }}' is experiencing {{ printf \"%0.0f\" $value }} errors / second."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclienterrors"
     "expr": |
       sum(rate(ksm_scrape_error_total{job="kube-state-metrics"}[5m])) by (instance, job) > 0.1
@@ -707,7 +744,7 @@
       "severity": "warning"
   - "alert": "KubeletTooManyPods"
     "annotations":
-      "message": "Kubelet {{$labels.instance}} is running {{$value}} pods, close to the limit of 110."
+      "message": "Kubelet {{ $labels.instance }} is running {{ $value }} Pods, close to the limit of 110."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubelettoomanypods"
     "expr": |
       kubelet_running_pod_count{job="kubelet"} > 110 * 0.9
@@ -716,7 +753,7 @@
       "severity": "warning"
   - "alert": "KubeAPILatencyHigh"
     "annotations":
-      "message": "The API server has a 99th percentile latency of {{ $value }} seconds for {{$labels.verb}} {{$labels.resource}}."
+      "message": "The API server has a 99th percentile latency of {{ $value }} seconds for {{ $labels.verb }} {{ $labels.resource }}."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubeapilatencyhigh"
     "expr": |
       cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 1
@@ -725,7 +762,7 @@
       "severity": "warning"
   - "alert": "KubeAPILatencyHigh"
     "annotations":
-      "message": "The API server has a 99th percentile latency of {{ $value }} seconds for {{$labels.verb}} {{$labels.resource}}."
+      "message": "The API server has a 99th percentile latency of {{ $value }} seconds for {{ $labels.verb }} {{ $labels.resource }}."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubeapilatencyhigh"
     "expr": |
       cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 4
@@ -734,18 +771,18 @@
       "severity": "critical"
   - "alert": "KubeAPIErrorsHigh"
     "annotations":
-      "message": "API server is erroring for {{ $value }}% of requests."
+      "message": "API server is returning errors for {{ $value }}% of requests."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubeapierrorshigh"
     "expr": |
       sum(rate(apiserver_request_count{job="apiserver",code=~"^(?:5..)$"}[5m])) without(instance, pod)
         /
-      sum(rate(apiserver_request_count{job="apiserver"}[5m])) without(instance, pod) * 100 > 5
+      sum(rate(apiserver_request_count{job="apiserver"}[5m])) without(instance, pod) * 100 > 10
     "for": "10m"
     "labels":
       "severity": "critical"
   - "alert": "KubeAPIErrorsHigh"
     "annotations":
-      "message": "API server is erroring for {{ $value }}% of requests."
+      "message": "API server is returning errors for {{ $value }}% of requests."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubeapierrorshigh"
     "expr": |
       sum(rate(apiserver_request_count{job="apiserver",code=~"^(?:5..)$"}[5m])) without(instance, pod)
@@ -764,7 +801,7 @@
       "severity": "warning"
   - "alert": "KubeClientCertificateExpiration"
     "annotations":
-      "message": "Kubernetes API certificate is expiring in less than 1 day."
+      "message": "Kubernetes API certificate is expiring in less than 24 hours."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclientcertificateexpiration"
     "expr": |
       histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 86400
