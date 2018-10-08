@@ -92,39 +92,6 @@ pipeline:
     when:
       event:
       - tag
-  kubermatic-e2e-docker-push-on-master:
-    context: api
-    dockerfile: api/Dockerfile.e2e
-    image: plugins/docker
-    pull: true
-    registry: quay.io
-    repo: quay.io/kubermatic/e2e
-    secrets:
-    - source: docker_quay_username
-      target: docker_username
-    - source: docker_quay_password
-      target: docker_password
-    tags:
-    - latest
-    when:
-      branch: master
-  kubermatic-e2e-docker-push-on-tag:
-    context: api
-    dockerfile: api/Dockerfile.e2e
-    image: plugins/docker
-    pull: true
-    registry: quay.io
-    repo: quay.io/kubermatic/e2e
-    secrets:
-    - source: docker_quay_username
-      target: docker_username
-    - source: docker_quay_password
-      target: docker_password
-    tags:
-    - ${DRONE_TAG}
-    when:
-      event:
-      - tag
   sync-charts:
     commands:
     - apk add --no-cache -U git bash openssh
@@ -368,43 +335,6 @@ pipeline:
     - values
     when:
       branch: release/v2.7
-  e2e-on-master:
-    commands:
-    - echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig
-    - echo "$CLUSTER_YAML" > /tmp/cluster.yaml
-    - echo "$NODE_YAML" > /tmp/node.yaml
-    - /kubermatic-e2e -kubeconfig=/tmp/kubeconfig -kubermatic-cluster=/tmp/cluster.yaml
-      -kubermatic-node=/tmp/node.yaml
-    image: quay.io/kubermatic/e2e:latest
-    pull: true
-    secrets:
-    - source: kubeconfig_dev
-      target: kubeconfig
-    - source: aws_1.10.5_cluster_yaml
-      target: cluster_yaml
-    - source: aws_1.10.5_node_yaml
-      target: node_yaml
-    when:
-      branch: master
-  e2e-on-tag:
-    commands:
-    - echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig
-    - echo "$CLUSTER_YAML" > /tmp/cluster.yaml
-    - echo "$NODE_YAML" > /tmp/node.yaml
-    - /kubermatic-e2e -kubeconfig=/tmp/kubeconfig -kubermatic-cluster=/tmp/cluster.yaml
-      -kubermatic-node=/tmp/node.yaml
-    image: quay.io/kubermatic/e2e:${DRONE_TAG=no_such_tag}
-    pull: true
-    secrets:
-    - source: kubeconfig_dev
-      target: kubeconfig
-    - source: aws_1.10.5_cluster_yaml
-      target: cluster_yaml
-    - source: aws_1.10.5_node_yaml
-      target: node_yaml
-    when:
-      event:
-      - tag
   slack:
     channel: dev
     group: slack
