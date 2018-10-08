@@ -61,7 +61,7 @@ spec:
         - --connect-retry
         - "1"
         - --ca
-        - /etc/kubernetes/pki/ca/ca.crt
+        - /etc/openvpn/pki/client/ca.crt
         - --cert
         - /etc/openvpn/pki/client/client.crt
         - --key
@@ -101,9 +101,6 @@ spec:
         volumeMounts:
         - mountPath: /etc/openvpn/pki/client
           name: openvpn-client-certificates
-          readOnly: true
-        - mountPath: /etc/kubernetes/pki/ca
-          name: ca
           readOnly: true
       - args:
         - --kubeconfig

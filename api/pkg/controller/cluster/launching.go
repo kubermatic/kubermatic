@@ -1,20 +1,21 @@
 package cluster
 
 import (
-	"crypto/x509"
 	"fmt"
 
 	"github.com/golang/glog"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
+
 	"k8s.io/api/core/v1"
 	"k8s.io/api/rbac/v1beta1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/cert"
-	certutil "k8s.io/client-go/util/cert"
 )
 
 // clusterIsReachable checks if the cluster is reachable via its external name
@@ -49,7 +50,7 @@ func (cc *Controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluste
 	name := "cluster-info"
 	_, err = client.CoreV1().ConfigMaps(metav1.NamespacePublic).Get(name, metav1.GetOptions{})
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if kubeerrors.IsNotFound(err) {
 			config := clientcmdapi.Config{}
 			config.Clusters = map[string]*clientcmdapi.Cluster{
 				"": {
@@ -75,7 +76,7 @@ func (cc *Controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluste
 
 	_, err = client.RbacV1beta1().Roles(metav1.NamespacePublic).Get(name, metav1.GetOptions{})
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if kubeerrors.IsNotFound(err) {
 			role := &v1beta1.Role{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: name,
@@ -99,7 +100,7 @@ func (cc *Controller) launchingCreateClusterInfoConfigMap(c *kubermaticv1.Cluste
 
 	_, err = client.RbacV1beta1().RoleBindings(metav1.NamespacePublic).Get(name, metav1.GetOptions{})
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if kubeerrors.IsNotFound(err) {
 			rolebinding := &v1beta1.RoleBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: name,
@@ -134,48 +135,41 @@ func (cc *Controller) launchingCreateOpenVPNClientCertificates(c *kubermaticv1.C
 		return err
 	}
 
-	name := "openvpn-client-certificates"
-	_, err = client.CoreV1().Secrets(metav1.NamespaceSystem).Get(name, metav1.GetOptions{})
+	caKp, err := resources.GetOpenVPNCA(c, cc.secretLister)
 	if err != nil {
-		if errors.IsNotFound(err) {
-			caKp, err := resources.GetClusterRootCA(c, cc.secretLister)
-			if err != nil {
-				return err
-			}
-
-			clientKey, err := certutil.NewPrivateKey()
-			if err != nil {
-				return fmt.Errorf("unable to create a server private key: %v", err)
-			}
-
-			clientConfig := certutil.Config{
-				CommonName: "user-cluster-client",
-				AltNames:   certutil.AltNames{},
-				Usages:     []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
-			}
-			clientCert, err := certutil.NewSignedCert(clientConfig, clientKey, caKp.Cert, caKp.Key)
-			if err != nil {
-				return fmt.Errorf("unable to sign the server certificate: %v", err)
-			}
-
-			secret := v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: name,
-				},
-				StringData: map[string]string{
-					"ca.crt":     string(certutil.EncodeCertPEM(caKp.Cert)),
-					"client.crt": string(certutil.EncodeCertPEM(clientCert)),
-					"client.key": string(certutil.EncodePrivateKeyPEM(clientKey)),
-				},
-			}
-			_, err = client.CoreV1().Secrets(metav1.NamespaceSystem).Create(&secret)
-			if err != nil {
-				return fmt.Errorf("failed to create openvpn secret: %v", err)
-			}
-		} else {
-			return fmt.Errorf("failed to load openvpn secret from client cluster: %v", err)
-		}
+		return err
 	}
 
+	existing, err := client.CoreV1().Secrets(metav1.NamespaceSystem).Get(resources.OpenVPNClientCertificatesSecretName, metav1.GetOptions{})
+	if err != nil {
+		if !kubeerrors.IsNotFound(err) {
+			return err
+		}
+
+		// Secret does not exist -> Create it
+		secret, err := openvpn.UserClusterClientCertificate(nil, caKp)
+		if err != nil {
+			return fmt.Errorf("failed to build Secret %s: %v", secret.Name, err)
+		}
+
+		if _, err = client.CoreV1().Secrets(metav1.NamespaceSystem).Create(secret); err != nil {
+			return fmt.Errorf("failed to create Secret %s: %v", secret.Name, err)
+		}
+		return nil
+	}
+
+	// Secret already exists, see if we need to update it
+	secret, err := openvpn.UserClusterClientCertificate(existing.DeepCopy(), caKp)
+	if err != nil {
+		return fmt.Errorf("failed to build Secret: %v", err)
+	}
+
+	if equal := resources.DeepEqual(existing, secret); equal {
+		return nil
+	}
+
+	if _, err = client.CoreV1().Secrets(metav1.NamespaceSystem).Update(secret); err != nil {
+		return fmt.Errorf("failed to update Secret %s: %v", secret.Name, err)
+	}
 	return nil
 }

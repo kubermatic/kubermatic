@@ -77,29 +77,34 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 			return nil, err
 		}
 
+		client, err := cc.userClusterConnProvider.GetClient(cluster)
+		if err != nil {
+			return nil, err
+		}
+
 		if len(cluster.Spec.MachineNetworks) > 0 {
-			if err = cc.userClusterEnsureInitializerConfiguration(cluster); err != nil {
+			if err = cc.userClusterEnsureInitializerConfiguration(cluster, client); err != nil {
 				return nil, err
 			}
 		}
 
-		if err = cc.userClusterEnsureRoles(cluster); err != nil {
+		if err = cc.userClusterEnsureRoles(cluster, client); err != nil {
 			return nil, err
 		}
 
-		if err = cc.userClusterEnsureConfigMaps(cluster); err != nil {
+		if err = cc.userClusterEnsureConfigMaps(cluster, client); err != nil {
 			return nil, err
 		}
 
-		if err = cc.userClusterEnsureRoleBindings(cluster); err != nil {
+		if err = cc.userClusterEnsureRoleBindings(cluster, client); err != nil {
 			return nil, err
 		}
 
-		if err = cc.userClusterEnsureClusterRoles(cluster); err != nil {
+		if err = cc.userClusterEnsureClusterRoles(cluster, client); err != nil {
 			return nil, err
 		}
 
-		if err = cc.userClusterEnsureClusterRoleBindings(cluster); err != nil {
+		if err = cc.userClusterEnsureClusterRoleBindings(cluster, client); err != nil {
 			return nil, err
 		}
 

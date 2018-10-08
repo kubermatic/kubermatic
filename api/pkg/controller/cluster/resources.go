@@ -12,10 +12,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 
 	corev1 "k8s.io/api/core/v1"
@@ -28,53 +26,43 @@ const (
 )
 
 func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) error {
-	// check that all service accounts are created
-	if err := cc.ensureCheckServiceAccounts(cluster); err != nil {
-		return err
-	}
-
-	// check that all roles are created
-	if err := cc.ensureRoles(cluster); err != nil {
-		return err
-	}
-
-	// check that all role bindings are created
-	if err := cc.ensureRoleBindings(cluster); err != nil {
+	data, err := cc.getClusterTemplateData(cluster)
+	if err != nil {
 		return err
 	}
 
 	// check that all services are available
-	if err := cc.ensureServices(cluster); err != nil {
+	if err := cc.ensureServices(cluster, data); err != nil {
 		return err
 	}
 
 	// check that all secrets are available // New way of handling secrets
-	if err := cc.ensureSecrets(cluster); err != nil {
+	if err := cc.ensureSecrets(cluster, data); err != nil {
 		return err
 	}
 
 	// check that all ConfigMaps are available
-	if err := cc.ensureConfigMaps(cluster); err != nil {
+	if err := cc.ensureConfigMaps(cluster, data); err != nil {
 		return err
 	}
 
 	// check that all Deployments are available
-	if err := cc.ensureDeployments(cluster); err != nil {
+	if err := cc.ensureDeployments(cluster, data); err != nil {
 		return err
 	}
 
 	// check that all StatefulSets are created
-	if err := cc.ensureStatefulSets(cluster); err != nil {
+	if err := cc.ensureStatefulSets(cluster, data); err != nil {
 		return err
 	}
 
 	// check that all CronJobs are created
-	if err := cc.ensureCronJobs(cluster); err != nil {
+	if err := cc.ensureCronJobs(cluster, data); err != nil {
 		return err
 	}
 
 	// check that all PodDisruptionBudgets are created
-	if err := cc.ensurePodDisruptionBudgets(cluster); err != nil {
+	if err := cc.ensurePodDisruptionBudgets(cluster, data); err != nil {
 		return err
 	}
 
@@ -140,81 +128,18 @@ func GetServiceCreators() []resources.ServiceCreator {
 	return []resources.ServiceCreator{
 		apiserver.Service,
 		apiserver.ExternalService,
-		prometheus.Service,
 		openvpn.Service,
 		etcd.Service,
 		dns.Service,
 	}
 }
 
-func (cc *Controller) ensureServices(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureServices(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetServiceCreators()
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
 
 	for _, create := range creators {
 		if err := resources.EnsureService(data, create, cc.serviceLister.Services(c.Status.NamespaceName), cc.kubeClient.CoreV1().Services(c.Status.NamespaceName)); err != nil {
 			return fmt.Errorf("failed to ensure that the service exists: %v", err)
-		}
-	}
-
-	return nil
-}
-
-func (cc *Controller) ensureCheckServiceAccounts(c *kubermaticv1.Cluster) error {
-	creators := []resources.ServiceAccountCreator{
-		prometheus.ServiceAccount,
-	}
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
-
-	for _, create := range creators {
-		if err := resources.EnsureServiceAccount(data, create, cc.serviceAccountLister.ServiceAccounts(c.Status.NamespaceName), cc.kubeClient.CoreV1().ServiceAccounts(c.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the ServiceAccount exists: %v", err)
-		}
-	}
-
-	return nil
-}
-
-func (cc *Controller) ensureRoles(c *kubermaticv1.Cluster) error {
-	creators := []resources.RoleCreator{
-		prometheus.Role,
-	}
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
-
-	for _, create := range creators {
-		if err := resources.EnsureRole(data, create, cc.roleLister.Roles(c.Status.NamespaceName), cc.kubeClient.RbacV1().Roles(c.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the Role exists: %v", err)
-		}
-	}
-
-	return nil
-}
-
-func (cc *Controller) ensureRoleBindings(c *kubermaticv1.Cluster) error {
-	creators := []resources.RoleBindingCreator{
-		prometheus.RoleBinding,
-	}
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
-
-	for _, create := range creators {
-		if err := resources.EnsureRoleBinding(data, create, cc.roleBindingLister.RoleBindings(c.Status.NamespaceName), cc.kubeClient.RbacV1().RoleBindings(c.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the RoleBinding exists: %v", err)
 		}
 	}
 
@@ -230,7 +155,6 @@ func GetDeploymentCreators(c *kubermaticv1.Cluster) []resources.DeploymentCreato
 		scheduler.Deployment,
 		controllermanager.Deployment,
 		dns.Deployment,
-		kubestatemetrics.Deployment,
 	}
 
 	if c != nil && len(c.Spec.MachineNetworks) > 0 {
@@ -240,13 +164,8 @@ func GetDeploymentCreators(c *kubermaticv1.Cluster) []resources.DeploymentCreato
 	return creators
 }
 
-func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetDeploymentCreators(c)
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
 
 	for _, create := range creators {
 		if err := resources.EnsureDeployment(data, create, cc.deploymentLister.Deployments(c.Status.NamespaceName), cc.kubeClient.AppsV1().Deployments(c.Status.NamespaceName)); err != nil {
@@ -275,6 +194,7 @@ func GetSecretCreatorOperations(dockerPullConfigJSON []byte) []SecretOperation {
 		{resources.ApiserverTLSSecretName, apiserver.TLSServingCertificate},
 		{resources.KubeletClientCertificatesSecretName, apiserver.KubeletClientCertificate},
 		{resources.ServiceAccountKeySecretName, apiserver.ServiceAccountKey},
+		{resources.OpenVPNCASecretName, openvpn.CertificateAuthority},
 		{resources.OpenVPNServerCertificatesSecretName, openvpn.TLSServingCertificate},
 		{resources.OpenVPNClientCertificatesSecretName, openvpn.InternalClientCertificate},
 		{resources.TokensSecretName, apiserver.TokenUsers},
@@ -287,13 +207,8 @@ func GetSecretCreatorOperations(dockerPullConfigJSON []byte) []SecretOperation {
 	}
 }
 
-func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	operations := GetSecretCreatorOperations(cc.dockerPullConfigJSON)
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
 
 	for _, op := range operations {
 		if err := resources.EnsureSecret(op.name, data, op.create, cc.secretLister.Secrets(c.Status.NamespaceName), cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName)); err != nil {
@@ -305,25 +220,19 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster) error {
 }
 
 // GetConfigMapCreators returns all ConfigMapCreators that are currently in use
-func GetConfigMapCreators() []resources.ConfigMapCreator {
+func GetConfigMapCreators(data *resources.TemplateData) []resources.ConfigMapCreator {
 	return []resources.ConfigMapCreator{
-		cloudconfig.ConfigMap,
-		openvpn.ServerClientConfigsConfigMap,
-		prometheus.ConfigMap,
-		dns.ConfigMap,
+		cloudconfig.ConfigMapCreator(data),
+		openvpn.ServerClientConfigsConfigMapCreator(data),
+		dns.ConfigMapCreator(data),
 	}
 }
 
-func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
-	creators := GetConfigMapCreators()
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
+func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	creators := GetConfigMapCreators(data)
 
 	for _, create := range creators {
-		if err := resources.EnsureConfigMap(data, create, cc.configMapLister.ConfigMaps(c.Status.NamespaceName), cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName)); err != nil {
+		if err := resources.EnsureConfigMap(create, cc.configMapLister.ConfigMaps(c.Status.NamespaceName), cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName)); err != nil {
 			return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)
 		}
 	}
@@ -334,18 +243,12 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster) error {
 // GetStatefulSetCreators returns all StatefulSetCreators that are currently in use
 func GetStatefulSetCreators() []resources.StatefulSetCreator {
 	return []resources.StatefulSetCreator{
-		prometheus.StatefulSet,
 		etcd.StatefulSet,
 	}
 }
 
-func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetStatefulSetCreators()
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
 
 	for _, create := range creators {
 		if err := resources.EnsureStatefulSet(data, create, cc.statefulSetLister.StatefulSets(c.Status.NamespaceName), cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName)); err != nil {
@@ -364,13 +267,8 @@ func GetPodDisruptionBudgetCreators() []resources.PodDisruptionBudgetCreator {
 	}
 }
 
-func (cc *Controller) ensurePodDisruptionBudgets(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensurePodDisruptionBudgets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetPodDisruptionBudgetCreators()
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
 
 	for _, create := range creators {
 		if err := resources.EnsurePodDisruptionBudget(data, create, cc.podDisruptionBudgetLister.PodDisruptionBudgets(c.Status.NamespaceName), cc.kubeClient.PolicyV1beta1().PodDisruptionBudgets(c.Status.NamespaceName)); err != nil {
@@ -388,13 +286,8 @@ func GetCronJobCreators() []resources.CronJobCreator {
 	}
 }
 
-func (cc *Controller) ensureCronJobs(c *kubermaticv1.Cluster) error {
+func (cc *Controller) ensureCronJobs(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetCronJobCreators()
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
 
 	for _, create := range creators {
 		if err := resources.EnsureCronJob(data, create, cc.cronJobLister.CronJobs(c.Status.NamespaceName), cc.kubeClient.BatchV1beta1().CronJobs(c.Status.NamespaceName)); err != nil {

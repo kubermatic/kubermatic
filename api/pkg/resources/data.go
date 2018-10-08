@@ -92,6 +92,7 @@ type SecretDataProvider interface {
 	InClusterApiserverURL() (*url.URL, error)
 	GetFrontProxyCA() (*triple.KeyPair, error)
 	GetRootCA() (*triple.KeyPair, error)
+	GetOpenVPNCA() (*ECDSAKeyPair, error)
 	ExternalIP() (*net.IP, error)
 	Cluster() *kubermaticv1.Cluster
 }
@@ -303,9 +304,14 @@ func (d *TemplateData) GetRootCA() (*triple.KeyPair, error) {
 	return GetClusterRootCA(d.cluster, d.SecretLister)
 }
 
-// GetFrontProxyCA returns the root CA of the cluster
+// GetFrontProxyCA returns the root CA for the front proxy
 func (d *TemplateData) GetFrontProxyCA() (*triple.KeyPair, error) {
 	return GetClusterFrontProxyCA(d.cluster, d.SecretLister)
+}
+
+// GetOpenVPNCA returns the root ca for the OpenVPN
+func (d *TemplateData) GetOpenVPNCA() (*ECDSAKeyPair, error) {
+	return GetOpenVPNCA(d.cluster, d.SecretLister)
 }
 
 // SecretRevision returns the resource version of the secret specified by name. A empty string will be returned in case of an error
