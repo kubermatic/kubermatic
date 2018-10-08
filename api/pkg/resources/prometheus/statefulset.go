@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -69,19 +68,7 @@ func StatefulSet(data resources.StatefulSetDataProvider, existing *appsv1.Statef
 	set.Spec.Template.Spec.ServiceAccountName = resources.PrometheusServiceAccountName
 	set.Spec.Template.Spec.TerminationGracePeriodSeconds = resources.Int64(600)
 
-	openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
-	}
-
-	dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(data, "dnat-controller")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
-	}
-
 	set.Spec.Template.Spec.Containers = []corev1.Container{
-		*openvpnSidecar,
-		*dnatControllerSidecar,
 		{
 			Name:                     name,
 			Image:                    data.ImageRegistry(resources.RegistryQuay) + "/prometheus/prometheus:" + tag,
@@ -186,24 +173,6 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  resources.ApiserverEtcdClientCertificateSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
-				},
-			},
-		},
-		{
-			Name: resources.OpenVPNClientCertificatesSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.OpenVPNClientCertificatesSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
-				},
-			},
-		},
-		{
-			Name: resources.KubeletDnatControllerKubeconfigSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.KubeletDnatControllerKubeconfigSecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
