@@ -15,7 +15,7 @@ EOF
   exit 0
 fi
 
-masterCharts=(
+master_charts=(
   kubermatic
   cert-manager
   certs
@@ -24,7 +24,7 @@ masterCharts=(
   oauth
 )
 
-seedCharts=(
+seed_charts=(
   kubermatic
   cert-manager
   certs
@@ -43,7 +43,7 @@ seedCharts=(
   logging/fluentd
 )
 
-allCharts=$(echo "${masterCharts[*]} ${seedCharts[*]}" | tr ' ' '\n' | sort -u)
+all_charts=$(echo "${master_charts[*]} ${seed_charts[*]}" | tr ' ' '\n' | sort -u)
 
 values_yaml() {
   echo "${target_dir}/values.${1}.example.yaml"
@@ -101,16 +101,16 @@ append_values() {
   echo "" >> "${values_file}"
 }
 
-for chart in ${masterCharts[*]}; do
+for chart in ${master_charts[*]}; do
   append_values master "${chart}"
 done
 
-for chart in ${seedCharts[*]}; do
+for chart in ${seed_charts[*]}; do
   append_values seed "${chart}"
 done
 
 # create a combined values.yaml for use in the installer
-for chart in ${allCharts}; do
+for chart in ${all_charts}; do
   append_values "combined" "${chart}"
   copy_chart "${chart}"
 done
