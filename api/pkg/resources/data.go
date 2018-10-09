@@ -16,12 +16,6 @@ import (
 	"k8s.io/client-go/util/cert/triple"
 )
 
-// SecretData is a group of data required to create secrets
-type SecretData struct {
-	cluster      *kubermaticv1.Cluster
-	secretLister corev1lister.SecretLister
-}
-
 // TemplateData is a group of data required for template generation
 type TemplateData struct {
 	cluster                                          *kubermaticv1.Cluster
