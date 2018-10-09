@@ -3,8 +3,8 @@ pipeline:
     commands:
     - cd api
     - dep ensure -v
-    - '[[ -z "$(git diff)" ]]'
-    image: metalmatze/dep:0.5.0
+    - git diff --exit-code
+    image: quay.io/kubermatic/dep:0.5.0-1
     pull: true
   gofmt:
     commands:
