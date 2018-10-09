@@ -133,6 +133,8 @@ spec:
         - vsphere
         - --cloud-config
         - /etc/kubernetes/cloud/config
+        - --authentication-kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
         - --authentication-skip-lookup=true
         command:
         - /hyperkube
