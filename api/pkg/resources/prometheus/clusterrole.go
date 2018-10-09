@@ -29,6 +29,15 @@ func ClusterRole(_ resources.ClusterRoleDataProvider, existing *rbacv1.ClusterRo
 			Verbs: []string{"list", "watch"},
 		},
 		{
+			APIGroups: []string{""},
+			Resources: []string{
+				"services/proxy",
+				"nodes/proxy",
+				"pods/proxy",
+			},
+			Verbs: []string{"get"},
+		},
+		{
 			APIGroups: []string{"extensions"},
 			Resources: []string{
 				"daemonsets",

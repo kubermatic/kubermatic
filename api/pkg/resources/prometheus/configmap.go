@@ -119,7 +119,7 @@ scrape_configs:
 
   kubernetes_sd_configs:
   - role: node
-    api_server: 'apiserver-external.{{ .TemplateData.Cluster.Status.NamespaceName }}.svc.cluster.local:32692'
+    api_server: '{{ .TemplateData.InClusterApiserverAddress }}'
     tls_config:
       ca_file: /etc/kubernetes/ca.crt
       cert_file: /etc/kubernetes/prometheus-client.crt
@@ -129,7 +129,7 @@ scrape_configs:
   - action: labelmap
     regex: __meta_kubernetes_node_label_(.+)
   - target_label: __address__
-    replacement: 'apiserver-external.{{ .TemplateData.Cluster.Status.NamespaceName }}.svc.cluster.local:32692'
+    replacement: '{{ .TemplateData.InClusterApiserverAddress }}'
   - source_labels: [__meta_kubernetes_node_name]
     regex: (.+)
     target_label: __metrics_path__

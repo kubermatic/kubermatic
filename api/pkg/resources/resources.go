@@ -339,19 +339,29 @@ type CronJobCreator = func(data *TemplateData, existing *batchv1beta1.CronJob) (
 // CRDCreateor defines an interface to create/update CustomRessourceDefinitions
 type CRDCreateor = func(version semver.Version, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error)
 
-// GetClusterApiserverURL returns the apiserver url for the given Cluster
-func GetClusterApiserverURL(cluster *kubermaticv1.Cluster, lister corev1lister.ServiceLister) (*url.URL, error) {
+// GetClusterApiserverAddress returns the apiserver address for the given Cluster
+func GetClusterApiserverAddress(cluster *kubermaticv1.Cluster, lister corev1lister.ServiceLister) (string, error) {
 	service, err := lister.Services(cluster.Status.NamespaceName).Get(ApiserverExternalServiceName)
 	if err != nil {
-		return nil, fmt.Errorf("could not get service %s from lister for cluster %s: %v", ApiserverExternalServiceName, cluster.Name, err)
+		return "", fmt.Errorf("could not get service %s from lister for cluster %s: %v", ApiserverExternalServiceName, cluster.Name, err)
 	}
 
 	if len(service.Spec.Ports) != 1 {
-		return nil, errors.New("apiserver service does not have exactly one port")
+		return "", errors.New("apiserver service does not have exactly one port")
 	}
 
 	dnsName := GetAbsoluteServiceDNSName(ApiserverExternalServiceName, cluster.Status.NamespaceName)
-	return url.Parse(fmt.Sprintf("https://%s:%d", dnsName, service.Spec.Ports[0].NodePort))
+	return fmt.Sprintf("%s:%d", dnsName, service.Spec.Ports[0].NodePort), nil
+}
+
+// GetClusterApiserverURL returns the apiserver url for the given Cluster
+func GetClusterApiserverURL(cluster *kubermaticv1.Cluster, lister corev1lister.ServiceLister) (*url.URL, error) {
+	addr, err := GetClusterApiserverAddress(cluster, lister)
+	if err != nil {
+		return nil, err
+	}
+
+	return url.Parse(fmt.Sprintf("https://%s", addr))
 }
 
 // GetClusterExternalIP returns a net.IP for the given Cluster

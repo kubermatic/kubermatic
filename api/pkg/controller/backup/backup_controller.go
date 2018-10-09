@@ -430,6 +430,10 @@ func (d *secretData) InClusterApiserverURL() (*url.URL, error) {
 	return resources.GetClusterApiserverURL(d.cluster, d.serviceLister)
 }
 
+func (d *secretData) InClusterApiserverAddress() (string, error) {
+	return resources.GetClusterApiserverAddress(d.cluster, d.serviceLister)
+}
+
 func (c *Controller) getEtcdSecretName(cluster *kubermaticv1.Cluster) string {
 	return fmt.Sprintf("cluster-%s-etcd-client-certificate", cluster.Name)
 }
