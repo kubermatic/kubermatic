@@ -349,7 +349,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 	var publicIP *network.PublicIPAddress
 	if config.AssignPublicIP {
 		if !kuberneteshelper.HasFinalizer(machine, finalizerPublicIP) {
-			if machine, err = update(machine.Namespace, machine.Name, func(updatedMachine *v1alpha1.Machine) {
+			if machine, err = update(machine, func(updatedMachine *v1alpha1.Machine) {
 				updatedMachine.Finalizers = append(updatedMachine.Finalizers, finalizerPublicIP)
 			}); err != nil {
 				return nil, err
@@ -362,7 +362,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 	}
 
 	if !kuberneteshelper.HasFinalizer(machine, finalizerNIC) {
-		if machine, err = update(machine.Namespace, machine.Name, func(updatedMachine *v1alpha1.Machine) {
+		if machine, err = update(machine, func(updatedMachine *v1alpha1.Machine) {
 			updatedMachine.Finalizers = append(updatedMachine.Finalizers, finalizerNIC)
 		}); err != nil {
 			return nil, err
@@ -420,14 +420,14 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 
 	glog.Infof("Creating machine %q", machine.Spec.Name)
 	if !kuberneteshelper.HasFinalizer(machine, finalizerDisks) {
-		if machine, err = update(machine.Namespace, machine.Name, func(updatedMachine *v1alpha1.Machine) {
+		if machine, err = update(machine, func(updatedMachine *v1alpha1.Machine) {
 			updatedMachine.Finalizers = append(updatedMachine.Finalizers, finalizerDisks)
 		}); err != nil {
 			return nil, err
 		}
 	}
 	if !kuberneteshelper.HasFinalizer(machine, finalizerVM) {
-		if machine, err = update(machine.Namespace, machine.Name, func(updatedMachine *v1alpha1.Machine) {
+		if machine, err = update(machine, func(updatedMachine *v1alpha1.Machine) {
 			updatedMachine.Finalizers = append(updatedMachine.Finalizers, finalizerVM)
 		}); err != nil {
 			return nil, err
@@ -483,7 +483,7 @@ func (p *provider) Delete(machine *v1alpha1.Machine, update cloud.MachineUpdater
 		}
 	}
 
-	if machine, err = update(machine.Namespace, machine.Name, func(updatedMachine *v1alpha1.Machine) {
+	if machine, err = update(machine, func(updatedMachine *v1alpha1.Machine) {
 		updatedMachine.Finalizers = kuberneteshelper.RemoveFinalizer(updatedMachine.Finalizers, finalizerVM)
 	}); err != nil {
 		return err
@@ -493,7 +493,7 @@ func (p *provider) Delete(machine *v1alpha1.Machine, update cloud.MachineUpdater
 	if err = deleteDisksByMachineUID(context.TODO(), config, machine.UID); err != nil {
 		return fmt.Errorf("failed to remove disks of machine %q: %v", machine.Name, err)
 	}
-	if machine, err = update(machine.Namespace, machine.Name, func(updatedMachine *v1alpha1.Machine) {
+	if machine, err = update(machine, func(updatedMachine *v1alpha1.Machine) {
 		updatedMachine.Finalizers = kuberneteshelper.RemoveFinalizer(updatedMachine.Finalizers, finalizerDisks)
 	}); err != nil {
 		return err
@@ -503,7 +503,7 @@ func (p *provider) Delete(machine *v1alpha1.Machine, update cloud.MachineUpdater
 	if err = deleteInterfacesByMachineUID(context.TODO(), config, machine.UID); err != nil {
 		return fmt.Errorf("failed to remove network interfaces of machine %q: %v", machine.Name, err)
 	}
-	if machine, err = update(machine.Namespace, machine.Name, func(updatedMachine *v1alpha1.Machine) {
+	if machine, err = update(machine, func(updatedMachine *v1alpha1.Machine) {
 		updatedMachine.Finalizers = kuberneteshelper.RemoveFinalizer(updatedMachine.Finalizers, finalizerNIC)
 	}); err != nil {
 		return err
@@ -513,7 +513,7 @@ func (p *provider) Delete(machine *v1alpha1.Machine, update cloud.MachineUpdater
 	if err = deleteIPAddressesByMachineUID(context.TODO(), config, machine.UID); err != nil {
 		return fmt.Errorf("failed to remove public IP addresses of machine %q: %v", machine.Name, err)
 	}
-	if machine, err = update(machine.Namespace, machine.Name, func(updatedMachine *v1alpha1.Machine) {
+	if machine, err = update(machine, func(updatedMachine *v1alpha1.Machine) {
 		updatedMachine.Finalizers = kuberneteshelper.RemoveFinalizer(updatedMachine.Finalizers, finalizerPublicIP)
 	}); err != nil {
 		return err

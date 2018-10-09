@@ -2,14 +2,21 @@ package schema
 
 // FloatingIP defines the schema of a Floating IP.
 type FloatingIP struct {
-	ID           int                `json:"id"`
-	Description  *string            `json:"description"`
-	IP           string             `json:"ip"`
-	Type         string             `json:"type"`
-	Server       *int               `json:"server"`
-	DNSPtr       []FloatingIPDNSPtr `json:"dns_ptr"`
-	HomeLocation Location           `json:"home_location"`
-	Blocked      bool               `json:"blocked"`
+	ID           int                  `json:"id"`
+	Description  *string              `json:"description"`
+	IP           string               `json:"ip"`
+	Type         string               `json:"type"`
+	Server       *int                 `json:"server"`
+	DNSPtr       []FloatingIPDNSPtr   `json:"dns_ptr"`
+	HomeLocation Location             `json:"home_location"`
+	Blocked      bool                 `json:"blocked"`
+	Protection   FloatingIPProtection `json:"protection"`
+	Labels       map[string]string    `json:"labels"`
+}
+
+// FloatingIPProtection represents the protection level of a Floating IP.
+type FloatingIPProtection struct {
+	Delete bool `json:"delete"`
 }
 
 // FloatingIPDNSPtr contains reverse DNS information for a
@@ -27,7 +34,8 @@ type FloatingIPGetResponse struct {
 
 // FloatingIPUpdateRequest defines the schema of the request to update a Floating IP.
 type FloatingIPUpdateRequest struct {
-	Description string `json:"description,omitempty"`
+	Description string             `json:"description,omitempty"`
+	Labels      *map[string]string `json:"labels,omitempty"`
 }
 
 // FloatingIPUpdateResponse defines the schema of the response when updating a Floating IP.
@@ -44,10 +52,11 @@ type FloatingIPListResponse struct {
 // FloatingIPCreateRequest defines the schema of the request to
 // create a Floating IP.
 type FloatingIPCreateRequest struct {
-	Type         string  `json:"type"`
-	HomeLocation *string `json:"home_location,omitempty"`
-	Server       *int    `json:"server,omitempty"`
-	Description  *string `json:"description,omitempty"`
+	Type         string             `json:"type"`
+	HomeLocation *string            `json:"home_location,omitempty"`
+	Server       *int               `json:"server,omitempty"`
+	Description  *string            `json:"description,omitempty"`
+	Labels       *map[string]string `json:"labels,omitempty"`
 }
 
 // FloatingIPCreateResponse defines the schema of the response
@@ -89,5 +98,15 @@ type FloatingIPActionChangeDNSPtrRequest struct {
 // FloatingIPActionChangeDNSPtrResponse defines the schema of the response when
 // creating a change_dns_ptr Floating IP action.
 type FloatingIPActionChangeDNSPtrResponse struct {
+	Action Action `json:"action"`
+}
+
+// FloatingIPActionChangeProtectionRequest defines the schema of the request to change the resource protection of a Floating IP.
+type FloatingIPActionChangeProtectionRequest struct {
+	Delete *bool `json:"delete,omitempty"`
+}
+
+// FloatingIPActionChangeProtectionResponse defines the schema of the response when changing the resource protection of a Floating IP.
+type FloatingIPActionChangeProtectionResponse struct {
 	Action Action `json:"action"`
 }
