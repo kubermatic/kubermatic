@@ -23,9 +23,6 @@ spec:
         - kubermatic
         - kubermatic-cluster-docluster-1a2b3c4d5e
         token: ""
-      containerRuntimeInfo:
-        name: ""
-        version: ""
       operatingSystem: ubuntu
       operatingSystemSpec:
         distUpgradeOnBoot: false

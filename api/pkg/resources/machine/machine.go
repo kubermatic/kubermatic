@@ -47,9 +47,6 @@ func Machine(c *kubermaticv1.Cluster, node *apiv2.Node, dc provider.DatacenterMe
 		config.SSHPublicKeys[i] = key.Spec.PublicKey
 	}
 
-	config.ContainerRuntimeInfo.Name = node.Spec.Versions.ContainerRuntime.Name
-	config.ContainerRuntimeInfo.Version = node.Spec.Versions.ContainerRuntime.Version
-
 	var (
 		err      error
 		cloudExt *runtime.RawExtension

@@ -649,15 +649,15 @@
   revision = "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
 
 [[projects]]
-  digest = "1:7e4ef12bb4999fd90fd97b887964ac2278b168882217fccc0a183b1e8786daa8"
+  digest = "1:8b06854389693e9f6b6c4a21a1f94a39d2bf8ca1f9efb5673e6bd36dea6c89c9"
   name = "github.com/hetznercloud/hcloud-go"
   packages = [
     "hcloud",
     "hcloud/schema",
   ]
   pruneopts = "NUT"
-  revision = "b37849e439d7a02b07d495f65e7b797bec30eeae"
-  version = "v1.4.0"
+  revision = "6ff899c25535e0712de9f8f19bafc9a5717603c3"
+  version = "v1.9.0"
 
 [[projects]]
   branch = "master"
@@ -731,10 +731,9 @@
   revision = "7cafcd837844e784b526369c9bce262804aebc60"
 
 [[projects]]
-  digest = "1:dd8c754d53ed2350116686df2bea12907d9da3c2c886cac831f0deb3442f19d4"
+  digest = "1:e11e8e41bb3738460b1f9cae686480f008b0889af8c9a5c452d42718f4ce2d6c"
   name = "github.com/kubermatic/machine-controller"
   packages = [
-    "pkg/apis/cluster/v1alpha1/conversions",
     "pkg/cloudprovider/cloud",
     "pkg/cloudprovider/common/ssh",
     "pkg/cloudprovider/errors",
@@ -745,10 +744,7 @@
     "pkg/cloudprovider/provider/hetzner",
     "pkg/cloudprovider/provider/openstack",
     "pkg/cloudprovider/provider/vsphere",
-    "pkg/containerruntime",
     "pkg/kubernetes",
-    "pkg/machines/common",
-    "pkg/machines/v1alpha1",
     "pkg/providerconfig",
     "pkg/template",
     "pkg/userdata/centos",
@@ -758,8 +754,8 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "daa1b4502684533b01455405556cbcefab8bc47d"
-  version = "v0.9.2"
+  revision = "d9a5810db489e6e099c28234979697162b2bbf38"
+  version = "v0.9.4"
 
 [[projects]]
   digest = "1:11813b67edacc2bd17ed90ee8fd80dcc9c8551cf7b0e809a584c52e5bdafb5d3"
@@ -1770,8 +1766,6 @@
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere",
-    "github.com/kubermatic/machine-controller/pkg/containerruntime",
-    "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1",
     "github.com/kubermatic/machine-controller/pkg/providerconfig",
     "github.com/kubermatic/machine-controller/pkg/userdata/centos",
     "github.com/kubermatic/machine-controller/pkg/userdata/coreos",

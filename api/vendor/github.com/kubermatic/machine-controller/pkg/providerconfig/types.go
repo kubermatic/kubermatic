@@ -5,12 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 
-	"os"
-
-	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1/conversions"
-	machinesv1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -63,8 +60,6 @@ type Config struct {
 
 	OperatingSystem     OperatingSystem      `json:"operatingSystem"`
 	OperatingSystemSpec runtime.RawExtension `json:"operatingSystemSpec"`
-
-	ContainerRuntimeInfo machinesv1alpha1.ContainerRuntimeInfo `json:"containerRuntimeInfo"`
 
 	// +optional
 	Network *NetworkConfig `json:"network,omitempty"`
@@ -338,34 +333,4 @@ func GetConfig(r clusterv1alpha1.ProviderConfig) (*Config, error) {
 		return nil, err
 	}
 	return p, nil
-}
-
-func GetContainerRuntimeInfo(pc clusterv1alpha1.ProviderConfig) (machinesv1alpha1.ContainerRuntimeInfo, error) {
-	config, err := GetConfig(pc)
-	if err != nil {
-		return machinesv1alpha1.ContainerRuntimeInfo{}, err
-	}
-	return config.ContainerRuntimeInfo, nil
-}
-
-func AddContainerRuntimeInfoToProviderconfig(pc clusterv1alpha1.ProviderConfig, cri machinesv1alpha1.ContainerRuntimeInfo) (*clusterv1alpha1.ProviderConfig, error) {
-	if pc.Value == nil {
-		return nil, fmt.Errorf("machine.spec.providerconfig.value is nil")
-	}
-
-	pcRaw := map[string]interface{}{}
-	// We can not re-use GetConfig here because we may lose data
-	if len(pc.Value.Raw) != 0 {
-		if err := json.Unmarshal(pc.Value.Raw, &pcRaw); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal providerconfig: %v", err)
-		}
-	}
-
-	pcRaw[conversions.ContainerRuntimeInfoKey] = cri
-	providerConfigSerialized, err := json.Marshal(pcRaw)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal providerconfig: %v", err)
-	}
-
-	return &clusterv1alpha1.ProviderConfig{Value: &runtime.RawExtension{Raw: providerConfigSerialized}}, nil
 }

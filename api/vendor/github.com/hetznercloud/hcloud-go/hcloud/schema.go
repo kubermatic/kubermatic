@@ -42,6 +42,9 @@ func FloatingIPFromSchema(s schema.FloatingIP) *FloatingIP {
 		Type:         FloatingIPType(s.Type),
 		HomeLocation: LocationFromSchema(s.HomeLocation),
 		Blocked:      s.Blocked,
+		Protection: FloatingIPProtection{
+			Delete: s.Protection.Delete,
+		},
 	}
 	if s.Description != nil {
 		f.Description = *s.Description
@@ -58,6 +61,10 @@ func FloatingIPFromSchema(s schema.FloatingIP) *FloatingIP {
 	for _, entry := range s.DNSPtr {
 		f.DNSPtr[entry.IP] = entry.DNSPtr
 	}
+	f.Labels = map[string]string{}
+	for key, value := range s.Labels {
+		f.Labels[key] = value
+	}
 	return f
 }
 
@@ -68,6 +75,7 @@ func ISOFromSchema(s schema.ISO) *ISO {
 		Name:        s.Name,
 		Description: s.Description,
 		Type:        ISOType(s.Type),
+		Deprecated:  s.Deprecated,
 	}
 }
 
@@ -118,6 +126,10 @@ func ServerFromSchema(s schema.Server) *Server {
 		RescueEnabled:   s.RescueEnabled,
 		Datacenter:      DatacenterFromSchema(s.Datacenter),
 		Locked:          s.Locked,
+		Protection: ServerProtection{
+			Delete:  s.Protection.Delete,
+			Rebuild: s.Protection.Rebuild,
+		},
 	}
 	if s.Image != nil {
 		server.Image = ImageFromSchema(*s.Image)
@@ -133,6 +145,10 @@ func ServerFromSchema(s schema.Server) *Server {
 	}
 	if s.ISO != nil {
 		server.ISO = ISOFromSchema(*s.ISO)
+	}
+	server.Labels = map[string]string{}
+	for key, value := range s.Labels {
+		server.Labels[key] = value
 	}
 	return server
 }
@@ -184,6 +200,7 @@ func ServerTypeFromSchema(s schema.ServerType) *ServerType {
 		Memory:      s.Memory,
 		Disk:        s.Disk,
 		StorageType: StorageType(s.StorageType),
+		CPUType:     CPUType(s.CPUType),
 	}
 	for _, price := range s.Prices {
 		st.Pricings = append(st.Pricings, ServerTypeLocationPricing{
@@ -203,12 +220,17 @@ func ServerTypeFromSchema(s schema.ServerType) *ServerType {
 
 // SSHKeyFromSchema converts a schema.SSHKey to a SSHKey.
 func SSHKeyFromSchema(s schema.SSHKey) *SSHKey {
-	return &SSHKey{
+	sshKey := &SSHKey{
 		ID:          s.ID,
 		Name:        s.Name,
 		Fingerprint: s.Fingerprint,
 		PublicKey:   s.PublicKey,
 	}
+	sshKey.Labels = map[string]string{}
+	for key, value := range s.Labels {
+		sshKey.Labels[key] = value
+	}
+	return sshKey
 }
 
 // ImageFromSchema converts a schema.Image to an Image.
@@ -222,6 +244,10 @@ func ImageFromSchema(s schema.Image) *Image {
 		Created:     s.Created,
 		RapidDeploy: s.RapidDeploy,
 		OSFlavor:    s.OSFlavor,
+		Protection: ImageProtection{
+			Delete: s.Protection.Delete,
+		},
+		Deprecated: s.Deprecated,
 	}
 	if s.Name != nil {
 		i.Name = *s.Name
@@ -242,6 +268,10 @@ func ImageFromSchema(s schema.Image) *Image {
 		i.BoundTo = &Server{
 			ID: *s.BoundTo,
 		}
+	}
+	i.Labels = map[string]string{}
+	for key, value := range s.Labels {
+		i.Labels[key] = value
 	}
 	return i
 }
