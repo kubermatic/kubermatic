@@ -19,8 +19,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-	"github.com/kubermatic/machine-controller/pkg/containerruntime"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -145,18 +143,6 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 		return nil, fmt.Errorf("failed to get node cloud spec from machine: %v", err)
 	}
 
-	containerRuntimeInfo, err := machineconversions.GetAPIV2ContainerRuntimeInfo(machine)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get containerRuntimeInfo from machine: %v", err)
-	}
-
-	//TODO: We should not take info from the machine here but from the node
-	// Kept it as-is because fixing the unit tests afterwards is too hard for me
-	if machine.Status.Versions != nil {
-		nodeStatus.NodeInfo.ContainerRuntime = containerRuntimeInfo.Name
-		nodeStatus.NodeInfo.ContainerRuntimeVersion = containerRuntimeInfo.Version
-	}
-
 	if node != nil {
 		if node.Name != machine.Spec.Name {
 			displayName = node.Name
@@ -182,10 +168,6 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 		Spec: apiv2.NodeSpec{
 			Versions: apiv2.NodeVersionInfo{
 				Kubelet: machine.Spec.Versions.Kubelet,
-				ContainerRuntime: apiv2.NodeContainerRuntimeInfo{
-					Name:    containerRuntimeInfo.Name,
-					Version: containerRuntimeInfo.Version,
-				},
 			},
 			OperatingSystem: *operatingSystemSpec,
 			Cloud:           *cloudSpec,
@@ -242,18 +224,6 @@ func createNodeEndpointV3(dcs map[string]provider.DatacenterMeta, dp provider.SS
 			node.Spec.Cloud.VSphere == nil &&
 			node.Spec.Cloud.Azure == nil {
 			return nil, errors.NewBadRequest("cannot create node without cloud provider")
-		}
-
-		// Support matrix: Ubuntu (crio + docker), containerlinux (docker), centos (docker)
-		usesDocker := node.Spec.Versions.ContainerRuntime.Name == string(containerruntime.Docker)
-		if node.Spec.OperatingSystem.CentOS != nil && !usesDocker {
-			return nil, fmt.Errorf("only docker is allowd when using centos")
-		}
-		if node.Spec.OperatingSystem.ContainerLinux != nil && !usesDocker {
-			return nil, fmt.Errorf("only docker is allowd when using container linux")
-		}
-		if node.Spec.OperatingSystem.ContainerLinux == nil && node.Spec.OperatingSystem.Ubuntu == nil && node.Spec.OperatingSystem.CentOS == nil {
-			return nil, fmt.Errorf("no operating system specified")
 		}
 
 		//TODO(mrIncompetent): We need to make the kubelet version configurable but restrict it to master version
