@@ -26,9 +26,6 @@ spec:
         tenantID: 38w7giefb32fhifw3q
         vmSize: Standard_B1ms
         vnetName: cluster-azurecluster-1a2b3c4d5e
-      containerRuntimeInfo:
-        name: ""
-        version: ""
       operatingSystem: coreos
       operatingSystemSpec:
         disableAutoUpdate: true

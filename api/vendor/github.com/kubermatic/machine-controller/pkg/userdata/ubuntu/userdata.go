@@ -12,18 +12,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
-	"github.com/kubermatic/machine-controller/pkg/containerruntime"
-	machinesv1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	machinetemplate "github.com/kubermatic/machine-controller/pkg/template"
 	"github.com/kubermatic/machine-controller/pkg/userdata/cloud"
 	userdatahelper "github.com/kubermatic/machine-controller/pkg/userdata/helper"
 
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
-)
-
-var (
-	errNoInstallCandidateAvailable = errors.New("no install candidate available for the desired version")
 )
 
 func getConfig(r runtime.RawExtension) (*Config, error) {
@@ -44,17 +38,6 @@ type Config struct {
 
 // Provider is a pkg/userdata.Provider implementation
 type Provider struct{}
-
-// SupportedContainerRuntimes return list of container runtimes
-func (p Provider) SupportedContainerRuntimes() (runtimes []machinesv1alpha1.ContainerRuntimeInfo) {
-	for _, ic := range dockerInstallCandidates {
-		for _, v := range ic.versions {
-			runtimes = append(runtimes, machinesv1alpha1.ContainerRuntimeInfo{Name: containerruntime.Docker, Version: v})
-		}
-	}
-
-	return runtimes
-}
 
 // UserData renders user-data template
 func (p Provider) UserData(
@@ -119,16 +102,6 @@ func (p Provider) UserData(
 		return "", fmt.Errorf("error extracting server address from kubeconfig: %v", err)
 	}
 
-	if pconfig.ContainerRuntimeInfo.Name != containerruntime.Docker {
-		return "", fmt.Errorf("unsupported container runtime: %s, only supported runtime: %s",
-			pconfig.ContainerRuntimeInfo.Name, containerruntime.Docker)
-	}
-
-	crPkg, crPkgVersion, err := getDockerInstallCandidate(pconfig.ContainerRuntimeInfo.Version)
-	if err != nil {
-		return "", fmt.Errorf("failed to get docker install candidate for %s: %v", pconfig.ContainerRuntimeInfo.Version, err)
-	}
-
 	data := struct {
 		MachineSpec           clusterv1alpha1.MachineSpec
 		ProviderConfig        *providerconfig.Config
@@ -138,12 +111,12 @@ func (p Provider) UserData(
 		CloudConfig           string
 		CRAptPackage          string
 		CRAptPackageVersion   string
-		KubernetesVersion     string
 		KubeadmDropInFilename string
 		ClusterDNSIPs         []net.IP
 		KubeadmCACertHash     string
 		ServerAddr            string
 		JournaldMaxSize       string
+		KubeletVersion        string
 	}{
 		MachineSpec:           spec,
 		ProviderConfig:        pconfig,
@@ -151,14 +124,12 @@ func (p Provider) UserData(
 		BoostrapToken:         bootstrapToken,
 		CloudProvider:         cpName,
 		CloudConfig:           cpConfig,
-		CRAptPackage:          crPkg,
-		CRAptPackageVersion:   crPkgVersion,
-		KubernetesVersion:     kubeletVersion.String(),
 		KubeadmDropInFilename: kubeadmDropInFilename,
 		ClusterDNSIPs:         clusterDNSIPs,
 		KubeadmCACertHash:     kubeadmCACertHash,
 		ServerAddr:            serverAddr,
 		JournaldMaxSize:       userdatahelper.JournaldMaxUse,
+		KubeletVersion:        kubeletVersion.String(),
 	}
 	b := &bytes.Buffer{}
 	err = tmpl.Execute(b, data)
@@ -225,7 +196,7 @@ write_files:
     # an apt-mark hold after the install won't do it, which is why we test here if the binaries exist and if
     # yes put them on hold
     set +e
-    which docker && apt-mark hold docker docker-ce
+    which docker && apt-mark hold docker.io docker-ce
     which kubelet && apt-mark hold kubelet
     which kubeadm && apt-mark hold kubeadm
 
@@ -243,21 +214,10 @@ write_files:
       reboot
     fi
 
-    export CR_PKG=''
-{{- if .CRAptPackage }}
-{{- if ne .CRAptPackageVersion "" }}
-    export CR_PKG='{{ .CRAptPackage }}={{ .CRAptPackageVersion }}'
-{{- else }}
-    export CR_PKG='{{ .CRAptPackage }}'
+    export CR_PKG='docker-ce=18.06.0~ce~3-0~ubuntu'
+{{- if semverCompare "<1.12.0" .KubeletVersion }}
+    export CR_PKG='docker.io=17.12.1-0ubuntu1'
 {{ end }}
-{{ end }}
-
-    # There is a dependency issue in the rpm repo for 1.8, if the cni package is not explicitly
-    # specified, installation of the kube packages fails
-    export CNI_PKG=''
-    {{- if semverCompare "=1.8.X" .KubernetesVersion }}
-    export CNI_PKG='kubernetes-cni=0.5.1-00'
-    {{- end }}
 
     DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y \
       curl \
@@ -278,9 +238,8 @@ write_files:
       util-linux \
       ${CR_PKG} \
       open-vm-tools \
-      kubelet={{ .KubernetesVersion }}-00 \
-      kubeadm={{ .KubernetesVersion }}-00 \
-      ${CNI_PKG}
+      kubelet={{ .KubeletVersion }}-00 \
+      kubeadm={{ .KubeletVersion }}-00 \
 
     cp /etc/default/kubelet-overwrite /etc/default/kubelet
 
@@ -291,7 +250,7 @@ write_files:
       kubeadm join \
         --token {{ .BoostrapToken }} \
         --discovery-token-ca-cert-hash sha256:{{ .KubeadmCACertHash }} \
-        {{- if semverCompare ">=1.9.X" .KubernetesVersion }}
+        {{- if semverCompare ">=1.9.X" .KubeletVersion }}
         --ignore-preflight-errors=CRI \
         {{- end }}
         {{ .ServerAddr }}
@@ -405,12 +364,12 @@ write_files:
       --hostname-override={{ .MachineSpec.Name }} \
       --read-only-port=0 \
       --protect-kernel-defaults=true \
-      {{- if semverCompare "<1.11.0" .KubernetesVersion }}
+      {{- if semverCompare "<1.11.0" .KubeletVersion }}
       --resolv-conf=/run/systemd/resolve/resolv.conf \
       {{- end }}
       --cluster-dns={{ ipSliceToCommaSeparatedString .ClusterDNSIPs }} \
       --cluster-domain=cluster.local
-{{ if semverCompare "<1.11.0" .KubernetesVersion }}
+{{ if semverCompare "<1.11.0" .KubeletVersion }}
 - path: "/etc/systemd/system/kubelet.service.d/20-extra.conf"
   permissions: "0644"
   content: |

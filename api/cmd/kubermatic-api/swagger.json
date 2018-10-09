@@ -4488,9 +4488,6 @@
       "description": "NodeVersionInfo node version information",
       "type": "object",
       "properties": {
-        "containerRuntime": {
-          "$ref": "#/definitions/NodeContainerRuntimeInfoV2"
-        },
         "kubelet": {
           "type": "string",
           "x-go-name": "Kubelet"

@@ -15,9 +15,6 @@ spec:
         location: hetzner-location
         serverType: hetzner-type
         token: ""
-      containerRuntimeInfo:
-        name: ""
-        version: ""
       operatingSystem: ubuntu
       operatingSystemSpec:
         distUpgradeOnBoot: false
