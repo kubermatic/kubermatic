@@ -22,11 +22,18 @@ type FloatingIP struct {
 	DNSPtr       map[string]string
 	HomeLocation *Location
 	Blocked      bool
+	Protection   FloatingIPProtection
+	Labels       map[string]string
 }
 
 // DNSPtrForIP returns the reverse DNS pointer of the IP address.
 func (f *FloatingIP) DNSPtrForIP(ip net.IP) string {
 	return f.DNSPtr[ip.String()]
+}
+
+// FloatingIPProtection represents the protection level of a Floating IP.
+type FloatingIPProtection struct {
+	Delete bool
 }
 
 // FloatingIPType represents the type of a Floating IP.
@@ -35,7 +42,7 @@ type FloatingIPType string
 // Floating IP types.
 const (
 	FloatingIPTypeIPv4 FloatingIPType = "ipv4"
-	FloatingIPTypeIPv6                = "ipv6"
+	FloatingIPTypeIPv6 FloatingIPType = "ipv6"
 )
 
 // FloatingIPClient is a client for the Floating IP API.
@@ -88,10 +95,12 @@ func (c *FloatingIPClient) List(ctx context.Context, opts FloatingIPListOpts) ([
 
 // All returns all Floating IPs.
 func (c *FloatingIPClient) All(ctx context.Context) ([]*FloatingIP, error) {
-	allFloatingIPs := []*FloatingIP{}
+	return c.AllWithOpts(ctx, FloatingIPListOpts{ListOpts{PerPage: 50}})
+}
 
-	opts := FloatingIPListOpts{}
-	opts.PerPage = 50
+// AllWithOpts returns all Floating IPs for the given options.
+func (c *FloatingIPClient) AllWithOpts(ctx context.Context, opts FloatingIPListOpts) ([]*FloatingIP, error) {
+	allFloatingIPs := []*FloatingIP{}
 
 	_, err := c.client.all(func(page int) (*Response, error) {
 		opts.Page = page
@@ -115,6 +124,7 @@ type FloatingIPCreateOpts struct {
 	HomeLocation *Location
 	Server       *Server
 	Description  *string
+	Labels       map[string]string
 }
 
 // Validate checks if options are valid.
@@ -153,6 +163,9 @@ func (c *FloatingIPClient) Create(ctx context.Context, opts FloatingIPCreateOpts
 	if opts.Server != nil {
 		reqBody.Server = Int(opts.Server.ID)
 	}
+	if opts.Labels != nil {
+		reqBody.Labels = &opts.Labels
+	}
 	reqBodyData, err := json.Marshal(reqBody)
 	if err != nil {
 		return FloatingIPCreateResult{}, nil, err
@@ -190,12 +203,16 @@ func (c *FloatingIPClient) Delete(ctx context.Context, floatingIP *FloatingIP) (
 // FloatingIPUpdateOpts specifies options for updating a Floating IP.
 type FloatingIPUpdateOpts struct {
 	Description string
+	Labels      map[string]string
 }
 
 // Update updates a Floating IP.
 func (c *FloatingIPClient) Update(ctx context.Context, floatingIP *FloatingIP, opts FloatingIPUpdateOpts) (*FloatingIP, *Response, error) {
 	reqBody := schema.FloatingIPUpdateRequest{
 		Description: opts.Description,
+	}
+	if opts.Labels != nil {
+		reqBody.Labels = &opts.Labels
 	}
 	reqBodyData, err := json.Marshal(reqBody)
 	if err != nil {
@@ -286,4 +303,33 @@ func (c *FloatingIPClient) ChangeDNSPtr(ctx context.Context, floatingIP *Floatin
 		return nil, resp, err
 	}
 	return ActionFromSchema(respBody.Action), resp, nil
+}
+
+// FloatingIPChangeProtectionOpts specifies options for changing the resource protection level of a Floating IP.
+type FloatingIPChangeProtectionOpts struct {
+	Delete *bool
+}
+
+// ChangeProtection changes the resource protection level of a Floating IP.
+func (c *FloatingIPClient) ChangeProtection(ctx context.Context, floatingIP *FloatingIP, opts FloatingIPChangeProtectionOpts) (*Action, *Response, error) {
+	reqBody := schema.FloatingIPActionChangeProtectionRequest{
+		Delete: opts.Delete,
+	}
+	reqBodyData, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	path := fmt.Sprintf("/floating_ips/%d/actions/change_protection", floatingIP.ID)
+	req, err := c.client.NewRequest(ctx, "POST", path, bytes.NewReader(reqBodyData))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	respBody := schema.FloatingIPActionChangeProtectionResponse{}
+	resp, err := c.client.Do(req, &respBody)
+	if err != nil {
+		return nil, resp, err
+	}
+	return ActionFromSchema(respBody.Action), resp, err
 }
