@@ -1,7 +1,6 @@
 package resources
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -16,6 +15,12 @@ import (
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/util/cert/triple"
 )
+
+// SecretData is a group of data required to create secrets
+type SecretData struct {
+	cluster      *kubermaticv1.Cluster
+	secretLister corev1lister.SecretLister
+}
 
 // TemplateData is a group of data required for template generation
 type TemplateData struct {
@@ -232,11 +237,7 @@ func (d *TemplateData) GetClusterRef() metav1.OwnerReference {
 
 // ExternalIP returns the external facing IP or an error if no IP exists
 func (d *TemplateData) ExternalIP() (*net.IP, error) {
-	ip := net.ParseIP(d.cluster.Address.IP)
-	if ip == nil {
-		return nil, fmt.Errorf("failed to create a net.IP object from the external cluster IP '%s'", d.cluster.Address.IP)
-	}
-	return &ip, nil
+	return GetClusterExternalIP(d.cluster)
 }
 
 // ClusterIPByServiceName returns the ClusterIP as string for the
@@ -278,17 +279,7 @@ func (d *TemplateData) GetApiserverExternalNodePort() (int32, error) {
 // and returns them joined by a `:`.
 // Service lookup happens within `Cluster.Status.NamespaceName`.
 func (d *TemplateData) InClusterApiserverURL() (*url.URL, error) {
-	service, err := d.serviceLister.Services(d.Cluster().Status.NamespaceName).Get(ApiserverExternalServiceName)
-	if err != nil {
-		return nil, fmt.Errorf("could not get service %s from lister for cluster %s: %v", ApiserverExternalServiceName, d.Cluster().Name, err)
-	}
-
-	if len(service.Spec.Ports) != 1 {
-		return nil, errors.New("apiserver service does not have exactly one port")
-	}
-
-	dnsName := GetAbsoluteServiceDNSName(ApiserverExternalServiceName, d.Cluster().Status.NamespaceName)
-	return url.Parse(fmt.Sprintf("https://%s:%d", dnsName, service.Spec.Ports[0].NodePort))
+	return GetClusterApiserverURL(d.cluster, d.serviceLister)
 }
 
 // ImageRegistry returns the image registry to use or the passed in default if no override is specified

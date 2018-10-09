@@ -115,6 +115,11 @@ func StatefulSet(data resources.StatefulSetDataProvider, existing *appsv1.Statef
 					MountPath: "/etc/etcd/pki/client",
 					ReadOnly:  true,
 				},
+				{
+					Name:      resources.PrometheusApiserverClientCertificatesSecretName,
+					MountPath: "/etc/kubernetes",
+					ReadOnly:  true,
+				},
 			},
 			LivenessProbe: &corev1.Probe{
 				PeriodSeconds:       5,
@@ -173,6 +178,15 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  resources.ApiserverEtcdClientCertificateSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.PrometheusApiserverClientCertificatesSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.PrometheusApiserverClientCertificatesSecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},

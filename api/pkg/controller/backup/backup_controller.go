@@ -2,6 +2,8 @@ package backup
 
 import (
 	"fmt"
+	"net"
+	"net/url"
 	"strings"
 	"time"
 
@@ -116,6 +118,7 @@ type Controller struct {
 	cronJobLister    listersbatchv1beta1.CronJobLister
 	jobLister        listersbatchv1.JobLister
 	secretLister     corev1lister.SecretLister
+	serviceLister    corev1lister.ServiceLister
 }
 
 // New creates a new Backup controller that is responsible for creating backupjobs
@@ -132,6 +135,7 @@ func New(
 	cronJobInformer informersbatchv1beta1.CronJobInformer,
 	jobInformer informersbatchv1.JobInformer,
 	secretInformer corev1informer.SecretInformer,
+	serviceInformer corev1informer.ServiceInformer,
 ) (*Controller, error) {
 	if err := validateStoreContainer(storeContainer); err != nil {
 		return nil, err
@@ -211,6 +215,7 @@ func New(
 	c.cronJobLister = cronJobInformer.Lister()
 	c.jobLister = jobInformer.Lister()
 	c.secretLister = secretInformer.Lister()
+	c.serviceLister = serviceInformer.Lister()
 	return c, nil
 }
 
@@ -391,8 +396,9 @@ func (c *Controller) sync(key string) error {
 }
 
 type secretData struct {
-	cluster      *kubermaticv1.Cluster
-	secretLister corev1lister.SecretLister
+	cluster       *kubermaticv1.Cluster
+	secretLister  corev1lister.SecretLister
+	serviceLister corev1lister.ServiceLister
 }
 
 // GetRootCA returns the root CA of the cluster
@@ -402,6 +408,26 @@ func (d *secretData) GetRootCA() (*triple.KeyPair, error) {
 
 func (d *secretData) GetClusterRef() metav1.OwnerReference {
 	return resources.GetClusterRef(d.cluster)
+}
+
+func (d *secretData) Cluster() *kubermaticv1.Cluster {
+	return d.cluster
+}
+
+func (d *secretData) ExternalIP() (*net.IP, error) {
+	return resources.GetClusterExternalIP(d.cluster)
+}
+
+func (d *secretData) GetOpenVPNCA() (*resources.ECDSAKeyPair, error) {
+	return resources.GetOpenVPNCA(d.cluster, d.secretLister)
+}
+
+func (d *secretData) GetFrontProxyCA() (*triple.KeyPair, error) {
+	return resources.GetClusterFrontProxyCA(d.cluster, d.secretLister)
+}
+
+func (d *secretData) InClusterApiserverURL() (*url.URL, error) {
+	return resources.GetClusterApiserverURL(d.cluster, d.serviceLister)
 }
 
 func (c *Controller) getEtcdSecretName(cluster *kubermaticv1.Cluster) string {
@@ -417,8 +443,9 @@ func (c *Controller) ensureCronJobSecret(cluster *kubermaticv1.Cluster) error {
 	}
 
 	data := secretData{
-		cluster:      cluster,
-		secretLister: c.secretLister,
+		cluster:       cluster,
+		secretLister:  c.secretLister,
+		serviceLister: c.serviceLister,
 	}
 
 	create := certificates.GetClientCertificateCreator(
