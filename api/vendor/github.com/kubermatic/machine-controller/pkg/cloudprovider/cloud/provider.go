@@ -41,4 +41,4 @@ type Provider interface {
 }
 
 // MachineUpdater defines a function to persist an update to a machine
-type MachineUpdater func(string, string, func(*clusterv1alpha1.Machine)) (*clusterv1alpha1.Machine, error)
+type MachineUpdater func(*clusterv1alpha1.Machine, func(*clusterv1alpha1.Machine)) (*clusterv1alpha1.Machine, error)
