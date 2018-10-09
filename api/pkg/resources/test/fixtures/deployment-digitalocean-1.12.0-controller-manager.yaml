@@ -126,6 +126,8 @@ spec:
         - "4"
         - --feature-gates
         - RotateKubeletClientCertificate=true,RotateKubeletServerCertificate=true,ScheduleDaemonSetPods=false
+        - --authentication-kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
         - --authentication-skip-lookup=true
         command:
         - /hyperkube
