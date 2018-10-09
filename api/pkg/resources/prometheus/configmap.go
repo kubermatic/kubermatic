@@ -110,6 +110,31 @@ scrape_configs:
     replacement: $1
     target_label: instance
 
+- job_name: 'kubernetes-nodes'
+  scheme: https
+  tls_config:
+    ca_file: /etc/kubernetes/ca.crt
+    cert_file: /etc/kubernetes/prometheus-client.crt
+    key_file: /etc/kubernetes/prometheus-client.key
+
+  kubernetes_sd_configs:
+  - role: node
+    api_server: 'apiserver-external.{{ .TemplateData.Cluster.Status.NamespaceName }}.svc.cluster.local:32692'
+    tls_config:
+      ca_file: /etc/kubernetes/ca.crt
+      cert_file: /etc/kubernetes/prometheus-client.crt
+      key_file: /etc/kubernetes/prometheus-client.key
+
+  relabel_configs:
+  - action: labelmap
+    regex: __meta_kubernetes_node_label_(.+)
+  - target_label: __address__
+    replacement: 'apiserver-external.{{ .TemplateData.Cluster.Status.NamespaceName }}.svc.cluster.local:32692'
+  - source_labels: [__meta_kubernetes_node_name]
+    regex: (.+)
+    target_label: __metrics_path__
+    replacement: /api/v1/nodes/${1}/proxy/metrics
+
 {{- range $i, $e := until 2 }}
 - job_name: 'pods-{{ $i }}'
 

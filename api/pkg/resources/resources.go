@@ -179,10 +179,14 @@ const (
 	MachineControllerClusterRoleName = "system:kubermatic-machine-controller"
 	//KubeStateMetricsClusterRoleName is the name for the KubeStateMetrics cluster role
 	KubeStateMetricsClusterRoleName = "system:kubermatic-kube-state-metrics"
+	//PrometheusClusterRoleName is the name for the Prometheus cluster role
+	PrometheusClusterRoleName = "kubermatic-prometheus"
 	//MachineControllerClusterRoleBindingName is the name for the MachineController clusterrolebinding
 	MachineControllerClusterRoleBindingName = "system:kubermatic-machine-controller"
 	//KubeStateMetricsClusterRoleBindingName is the name for the KubeStateMetrics clusterrolebinding
 	KubeStateMetricsClusterRoleBindingName = "system:kubermatic-kube-state-metrics"
+	//PrometheusClusterRoleBindingName is the name for the Prometheus cluster rolebinding
+	PrometheusClusterRoleBindingName = "system:kubermatic-prometheus"
 
 	// EtcdPodDisruptionBudgetName is the name of the PDB for the etcd statefulset
 	EtcdPodDisruptionBudgetName = "etcd"
