@@ -220,7 +220,7 @@ func (r *testRunner) testScenario(scenario testScenario) (*reporters.JUnitTestSu
 	}
 
 	apiNodes := scenario.Nodes(r.nodeCount)
-	for _, node := range apiNodes {
+	for i, node := range apiNodes {
 		var keys []*kubermaticv1.UserSSHKey
 		if r.nodeSSHKeyData != nil {
 			keys = append(keys, &kubermaticv1.UserSSHKey{
@@ -233,6 +233,9 @@ func (r *testRunner) testScenario(scenario testScenario) (*reporters.JUnitTestSu
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Machine from scenario node '%s': %v", node.Metadata.Name, err)
 		}
+		// Make sure all nodes have different names across all scenarios - otherwise the Kubelet might come up (OpenStack has this...)
+		m.Name = fmt.Sprintf("%s-machine-%d", scenario.Name(), i)
+		m.Spec.Name = fmt.Sprintf("%s-node-%d", scenario.Name(), i)
 
 		if _, err := kubeMachineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Create(m); err != nil {
 			return nil, fmt.Errorf("failed to create machine %s: %v", m.Name, err)
