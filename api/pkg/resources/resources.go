@@ -87,7 +87,7 @@ const (
 	//IPAMControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the ipam controller
 	IPAMControllerKubeconfigSecretName = "ipamcontroller-kubeconfig"
 	//PrometheusApiserverClientCertificateSecretName is the name for the secret containing the client certificate used by prometheus to access the apiserver
-	PrometheusApiserverClientCertificateSecretName = "prometheus-apiserver-certificates"
+	PrometheusApiserverClientCertificateSecretName = "prometheus-apiserver-certificate"
 
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
