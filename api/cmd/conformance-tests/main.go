@@ -101,7 +101,7 @@ func main() {
 	flag.DurationVar(&opts.controlPlaneReadyWaitTimeout, "kubermatic-cluster-timeout", defaultTimeout, "cluster creation timeout")
 	flag.DurationVar(&opts.nodeReadyWaitTimeout, "kubermatic-nodes-timeout", defaultTimeout, "nodes creation timeout")
 	flag.BoolVar(&opts.deleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster at the exit")
-	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", "", "path to a public key which gets deployed onto every node")
+	flag.StringVar(&pubKeyPath, "~/.ssh/id_rsa.pub", "", "path to a public key which gets deployed onto every node")
 
 	flag.StringVar(&opts.secrets.AWS.AccessKeyID, "aws-access-key-id", "", "AWS: AccessKeyID")
 	flag.StringVar(&opts.secrets.AWS.SecretAccessKey, "aws-secret-access-key", "", "AWS: SecretAccessKey")
