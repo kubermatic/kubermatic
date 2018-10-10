@@ -233,7 +233,7 @@ func (r *testRunner) testScenario(scenario testScenario) (*reporters.JUnitTestSu
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Machine from scenario node '%s': %v", node.Metadata.Name, err)
 		}
-		// Make sure all nodes have different names across all scenarios - otherwise the Kubelet might come up (OpenStack has this...)
+		// Make sure all nodes have different names across all scenarios - otherwise the Kubelet might not come up (OpenStack has this...)
 		m.Name = fmt.Sprintf("%s-machine-%d", scenario.Name(), i)
 		m.Spec.Name = fmt.Sprintf("%s-node-%d", scenario.Name(), i)
 
