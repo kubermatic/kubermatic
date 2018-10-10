@@ -23,9 +23,9 @@ spec:
   template:
     metadata:
       annotations:
-        prometheus.io-0/path: /metrics
-        prometheus.io-0/port: "8080"
-        prometheus.io-0/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "30000"
+        prometheus.io/scrape-apiserver: "true"
       creationTimestamp: null
       labels:
         apiserver-etcd-client-certificate-secret-revision: "123456"
@@ -147,10 +147,6 @@ spec:
         - "30000"
         - --kubernetes-service-node-port
         - "30000"
-        - --insecure-bind-address
-        - 0.0.0.0
-        - --insecure-port
-        - "8080"
         - --etcd-servers
         - https://etcd-0.etcd.cluster-de-test-01.svc.cluster.local.:2379,https://etcd-1.etcd.cluster-de-test-01.svc.cluster.local.:2379,https://etcd-2.etcd.cluster-de-test-01.svc.cluster.local.:2379
         - --etcd-cafile
@@ -231,7 +227,8 @@ spec:
           failureThreshold: 8
           httpGet:
             path: /healthz
-            port: 8080
+            port: 30000
+            scheme: HTTPS
           initialDelaySeconds: 15
           periodSeconds: 10
           successThreshold: 1
@@ -240,13 +237,12 @@ spec:
         ports:
         - containerPort: 30000
           protocol: TCP
-        - containerPort: 8080
-          protocol: TCP
         readinessProbe:
           failureThreshold: 3
           httpGet:
             path: /healthz
-            port: 8080
+            port: 30000
+            scheme: HTTPS
           periodSeconds: 5
           successThreshold: 1
           timeoutSeconds: 15
