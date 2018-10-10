@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/user"
+	"path"
 	"strings"
 	"time"
 
@@ -89,6 +91,12 @@ func main() {
 		providers: sets.NewString(),
 	}
 
+	usr, err := user.Current()
+	if err != nil {
+		glog.Fatal(err)
+	}
+	pubkeyPath := path.Join(usr.HomeDir, ".ssh/id_rsa.pub")
+
 	flag.StringVar(&opts.kubeconfigPath, "kubeconfig", "/config/kubeconfig", "path to kubeconfig file")
 	flag.StringVar(&providers, "providers", "aws,digitalocean,openstack,hetzner", "comma separated list of providers to test")
 	flag.StringVar(&opts.namePrefix, "name-prefix", "", "prefix used for all cluster names")
@@ -101,7 +109,7 @@ func main() {
 	flag.DurationVar(&opts.controlPlaneReadyWaitTimeout, "kubermatic-cluster-timeout", defaultTimeout, "cluster creation timeout")
 	flag.DurationVar(&opts.nodeReadyWaitTimeout, "kubermatic-nodes-timeout", defaultTimeout, "nodes creation timeout")
 	flag.BoolVar(&opts.deleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster at the exit")
-	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", "~/.ssh/id_rsa.pub", "path to a public key which gets deployed onto every node")
+	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
 
 	flag.StringVar(&opts.secrets.AWS.AccessKeyID, "aws-access-key-id", "", "AWS: AccessKeyID")
 	flag.StringVar(&opts.secrets.AWS.SecretAccessKey, "aws-secret-access-key", "", "AWS: SecretAccessKey")
