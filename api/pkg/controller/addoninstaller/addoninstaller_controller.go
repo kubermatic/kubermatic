@@ -189,36 +189,20 @@ func (c *Controller) processNextItem() bool {
 	}
 	defer c.queue.Done(key)
 
-	err := c.sync(key.(string))
-
-	c.handleErr(err, key)
-	return true
-}
-
-// handleErr checks if an error happened and makes sure we will retry later.
-func (c *Controller) handleErr(err error, key interface{}) {
-	if err == nil {
-		// Forget about the #AddRateLimited history of the key on every successful synchronization.
-		// This ensures that future processing of updates for this key is not delayed because of
-		// an outdated error history.
-		c.queue.Forget(key)
-		return
-	}
-
-	// This controller retries 5 times if something goes wrong. After that, it stops trying.
-	if c.queue.NumRequeues(key) < 5 {
+	if err := c.sync(key.(string)); err != nil {
 		glog.V(0).Infof("Error syncing %v: %v", key, err)
 
 		// Re-enqueue the key rate limited. Based on the rate limiter on the
 		// queue and the re-enqueue history, the key will be processed later again.
 		c.queue.AddRateLimited(key)
-		return
+		return true
 	}
 
+	// Forget about the #AddRateLimited history of the key on every successful synchronization.
+	// This ensures that future processing of updates for this key is not delayed because of
+	// an outdated error history.
 	c.queue.Forget(key)
-	// Report to an external entity that, even after several retries, we could not successfully process this key
-	utilruntime.HandleError(err)
-	glog.V(0).Infof("Dropping %q out of the queue: %v", key, err)
+	return true
 }
 
 // make sure that all default addons are installed on cluster creation

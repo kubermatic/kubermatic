@@ -237,20 +237,11 @@ func (c *Controller) handleProjectErr(err error, key interface{}) {
 		return
 	}
 
-	// This controller retries 5 times if something goes wrong. After that, it stops trying.
-	if c.projectQueue.NumRequeues(key) < 5 {
-		glog.V(0).Infof("Error syncing %v: %v", key, err)
+	glog.V(0).Infof("Error syncing %v: %v", key, err)
 
-		// Re-enqueueProject the key rate limited. Based on the rate limiter on the
-		// projectQueue and the re-enqueueProject history, the key will be processed later again.
-		c.projectQueue.AddRateLimited(key)
-		return
-	}
-
-	c.projectQueue.Forget(key)
-	// Report to an external entity that, even after several retries, we could not successfully process this key
-	runtime.HandleError(err)
-	glog.V(0).Infof("Dropping %q out of the projectQueue: %v", key, err)
+	// Re-enqueueProject the key rate limited. Based on the rate limiter on the
+	// projectQueue and the re-enqueueProject history, the key will be processed later again.
+	c.projectQueue.AddRateLimited(key)
 }
 
 func (c *Controller) enqueueProject(project *kubermaticv1.Project) {
@@ -292,20 +283,11 @@ func (c *Controller) handleProjectResourcesErr(err error, item *projectResourceQ
 		return
 	}
 
-	// This controller retries 5 times if something goes wrong. After that, it stops trying.
-	if c.projectResourcesQueue.NumRequeues(item) < 5 {
-		glog.V(0).Infof("Error syncing gvr %s, kind %s, err %v", item.gvr.String(), item.kind, err)
+	glog.V(0).Infof("Error syncing gvr %s, kind %s, err %v", item.gvr.String(), item.kind, err)
 
-		// Re-enqueueProject the key rate limited. Based on the rate limiter on the
-		// projectQueue and the re-enqueueProject history, the key will be processed later again.
-		c.projectResourcesQueue.AddRateLimited(item)
-		return
-	}
-
-	c.projectResourcesQueue.Forget(item)
-	// Report to an external entity that, even after several retries, we could not successfully process this key
-	runtime.HandleError(err)
-	glog.V(0).Infof("Dropping %q out of the projectResourcesQueue: %v", item, err)
+	// Re-enqueueProject the key rate limited. Based on the rate limiter on the
+	// projectQueue and the re-enqueueProject history, the key will be processed later again.
+	c.projectResourcesQueue.AddRateLimited(item)
 }
 
 func (c *Controller) enqueueProjectResource(obj interface{}, gvr schema.GroupVersionResource, kind string, clusterProvider *ClusterProvider) {

@@ -160,7 +160,11 @@ func (p *RBACCompliantClusterProvider) Delete(userInfo *provider.UserInfo, clust
 		return err
 	}
 
-	return seedImpersonatedClient.Clusters().Delete(clusterName, &metav1.DeleteOptions{})
+	// Will delete all child's after the object is gone - otherwise the etcd might be deleted before all machines are gone
+	// See https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/#controlling-how-the-garbage-collector-deletes-dependents
+	policy := metav1.DeletePropagationBackground
+	opts := metav1.DeleteOptions{PropagationPolicy: &policy}
+	return seedImpersonatedClient.Clusters().Delete(clusterName, &opts)
 }
 
 // Update updates a cluster
