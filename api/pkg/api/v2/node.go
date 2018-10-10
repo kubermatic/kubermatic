@@ -56,8 +56,7 @@ type OperatingSystemSpec struct {
 // NodeVersionInfo node version information
 // swagger:model NodeVersionInfoV2
 type NodeVersionInfo struct {
-	Kubelet          string                   `json:"kubelet"`
-	ContainerRuntime NodeContainerRuntimeInfo `json:"containerRuntime"`
+	Kubelet string `json:"kubelet"`
 }
 
 // NodeContainerRuntimeInfo information about the container runtime. Currently only "cri-o" and "docker" are supported

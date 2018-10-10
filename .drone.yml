@@ -3,15 +3,13 @@ pipeline:
     commands:
     - cd api
     - dep ensure -v
-    - '[[ -z "$(git diff)" ]]'
-    image: metalmatze/dep:0.5.0
-    pull: true
+    - git diff --exit-code
+    image: quay.io/kubermatic/dep:0.5.0-1
   gofmt:
     commands:
     - cd api
     - make gofmt
     image: golang:1.11.0
-    pull: true
   verify-codegen:
     commands:
     - cd api
@@ -23,8 +21,7 @@ pipeline:
     - cd api
     - wwhrd check -f ../allowed_licensed.yaml
     group: lint
-    image: metalmatze/wwhrd:1.9
-    pull: true
+    image: quay.io/kubermatic/wwhrd:0.2.1-1
   lint:
     commands:
     - cd api

@@ -17,8 +17,6 @@ import (
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	apierrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
-	"github.com/kubermatic/machine-controller/pkg/containerruntime"
-
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -235,18 +233,6 @@ func newCreateNodeForCluster(sshKeyProvider provider.NewSSHKeyProvider, projectP
 			node.Spec.Cloud.VSphere == nil &&
 			node.Spec.Cloud.Azure == nil {
 			return nil, errors.NewBadRequest("cannot create node without cloud provider")
-		}
-
-		// Support matrix: Ubuntu (crio + docker), containerlinux (docker), centos (docker)
-		usesDocker := node.Spec.Versions.ContainerRuntime.Name == string(containerruntime.Docker)
-		if node.Spec.OperatingSystem.CentOS != nil && !usesDocker {
-			return nil, fmt.Errorf("only docker is allowd when using centos")
-		}
-		if node.Spec.OperatingSystem.ContainerLinux != nil && !usesDocker {
-			return nil, fmt.Errorf("only docker is allowd when using container linux")
-		}
-		if node.Spec.OperatingSystem.ContainerLinux == nil && node.Spec.OperatingSystem.Ubuntu == nil && node.Spec.OperatingSystem.CentOS == nil {
-			return nil, fmt.Errorf("no operating system specified")
 		}
 
 		//TODO(mrIncompetent): We need to make the kubelet version configurable but restrict it to master version

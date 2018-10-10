@@ -24,9 +24,6 @@ spec:
         username: ""
         vmNetName: ""
         vsphereURL: ""
-      containerRuntimeInfo:
-        name: ""
-        version: ""
       operatingSystem: ubuntu
       operatingSystemSpec:
         distUpgradeOnBoot: false

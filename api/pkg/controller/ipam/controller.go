@@ -102,28 +102,30 @@ func (c *Controller) Run(stopCh <-chan struct{}) error {
 }
 
 func (c *Controller) runWorker() {
-	for c.processNextWorkItem() {
+	for c.processNextItem() {
 	}
 }
 
-func (c *Controller) processNextWorkItem() bool {
+func (c *Controller) processNextItem() bool {
 	key, quit := c.queue.Get()
 	if quit {
 		return false
 	}
-
 	defer c.queue.Done(key)
 
-	glog.V(6).Infof("Processing machine: %s", key)
-	err := c.syncHandler(key.(string))
-	if err == nil {
-		c.queue.Forget(key)
+	if err := c.syncHandler(key.(string)); err != nil {
+		glog.V(0).Infof("Error syncing %v: %v", key, err)
+
+		// Re-enqueue the key rate limited. Based on the rate limiter on the
+		// queue and the re-enqueue history, the key will be processed later again.
+		c.queue.AddRateLimited(key)
 		return true
 	}
 
-	utilruntime.HandleError(fmt.Errorf("%v failed with: %v", key, err))
-	c.queue.AddRateLimited(key)
-
+	// Forget about the #AddRateLimited history of the key on every successful synchronization.
+	// This ensures that future processing of updates for this key is not delayed because of
+	// an outdated error history.
+	c.queue.Forget(key)
 	return true
 }
 

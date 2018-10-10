@@ -29,9 +29,6 @@ spec:
         tenantName: ""
         tokenId: ""
         username: ""
-      containerRuntimeInfo:
-        name: ""
-        version: ""
       operatingSystem: ubuntu
       operatingSystemSpec:
         distUpgradeOnBoot: false

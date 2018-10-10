@@ -32,8 +32,8 @@ func GetUserClusterRoleCreators(c *kubermaticv1.Cluster) []resources.ClusterRole
 	return creators
 }
 
-func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster, data *resources.TemplateData, client kubernetes.Interface) error {
-	creators := GetUserClusterRoleCreators(c)
+func (c *Controller) userClusterEnsureClusterRoles(cluster *kubermaticv1.Cluster, data *resources.TemplateData, client kubernetes.Interface) error {
+	creators := GetUserClusterRoleCreators(cluster)
 
 	for _, create := range creators {
 		var existing *rbacv1.ClusterRole
@@ -50,7 +50,7 @@ func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster, dat
 			if _, err = client.RbacV1().ClusterRoles().Create(cRole); err != nil {
 				return fmt.Errorf("failed to create ClusterRole %s: %v", cRole.Name, err)
 			}
-			glog.V(4).Infof("Created ClusterRole %s inside user-cluster %s", cRole.Name, c.Name)
+			glog.V(4).Infof("Created ClusterRole %s inside user-cluster %s", cRole.Name, cluster.Name)
 			continue
 		}
 
@@ -66,7 +66,7 @@ func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster, dat
 		if _, err = client.RbacV1().ClusterRoles().Update(cRole); err != nil {
 			return fmt.Errorf("failed to update ClusterRole %s: %v", cRole.Name, err)
 		}
-		glog.V(4).Infof("Updated ClusterRole %s inside user-cluster %s", cRole.Name, c.Name)
+		glog.V(4).Infof("Updated ClusterRole %s inside user-cluster %s", cRole.Name, cluster.Name)
 	}
 
 	return nil
@@ -86,8 +86,8 @@ func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.Clus
 	return creators
 }
 
-func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Cluster, data *resources.TemplateData, client kubernetes.Interface) error {
-	creators := GetUserClusterRoleBindingCreators(c)
+func (c *Controller) userClusterEnsureClusterRoleBindings(cluster *kubermaticv1.Cluster, data *resources.TemplateData, client kubernetes.Interface) error {
+	creators := GetUserClusterRoleBindingCreators(cluster)
 
 	for _, create := range creators {
 		var existing *rbacv1.ClusterRoleBinding
@@ -104,7 +104,7 @@ func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Clust
 			if _, err = client.RbacV1().ClusterRoleBindings().Create(crb); err != nil {
 				return fmt.Errorf("failed to create ClusterRoleBinding %s: %v", crb.Name, err)
 			}
-			glog.V(4).Infof("Created ClusterRoleBinding %s inside user-cluster %s", crb.Name, c.Name)
+			glog.V(4).Infof("Created ClusterRoleBinding %s inside user-cluster %s", crb.Name, cluster.Name)
 			continue
 		}
 
@@ -120,7 +120,7 @@ func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Clust
 		if _, err = client.RbacV1().ClusterRoleBindings().Update(crb); err != nil {
 			return fmt.Errorf("failed to update ClusterRoleBinding %s: %v", crb.Name, err)
 		}
-		glog.V(4).Infof("Updated ClusterRoleBinding %s inside user-cluster %s", crb.Name, c.Name)
+		glog.V(4).Infof("Updated ClusterRoleBinding %s inside user-cluster %s", crb.Name, cluster.Name)
 	}
 
 	return nil
