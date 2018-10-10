@@ -347,6 +347,11 @@ func (c *Controller) sync(key string) error {
 		return err
 	}
 
+	// check that all secrets are created
+	if err := c.ensureSecrets(cluster, data); err != nil {
+		return err
+	}
+
 	// check that all services are available
 	if err := c.ensureServices(cluster, data); err != nil {
 		return err

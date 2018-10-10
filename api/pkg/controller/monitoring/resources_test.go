@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,7 +62,18 @@ func TestCreateConfigMap(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var objects []runtime.Object
+			objects := []runtime.Object{
+				&corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      resources.ApiserverExternalServiceName,
+						Namespace: "cluster-nico1",
+					},
+					Spec: corev1.ServiceSpec{
+						Ports:     []corev1.ServicePort{{NodePort: 99}},
+						ClusterIP: "192.0.2.10",
+					},
+				},
+			}
 			if test.cfgm != nil {
 				objects = append(objects, test.cfgm)
 			}
