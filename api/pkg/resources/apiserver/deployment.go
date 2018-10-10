@@ -2,6 +2,7 @@ package apiserver
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -84,9 +85,9 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 		Labels: podLabels,
 		Annotations: map[string]string{
-			"prometheus.io-0/scrape": "true",
-			"prometheus.io-0/path":   "/metrics",
-			"prometheus.io-0/port":   "8080",
+			"prometheus.io/scrape-apiserver": "true",
+			"prometheus.io/path":             "/metrics",
+			"prometheus.io/port":             strconv.Itoa(int(externalNodePort)),
 		},
 	}
 
@@ -164,16 +165,13 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 					ContainerPort: externalNodePort,
 					Protocol:      corev1.ProtocolTCP,
 				},
-				{
-					ContainerPort: 8080,
-					Protocol:      corev1.ProtocolTCP,
-				},
 			},
 			ReadinessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/healthz",
-						Port: intstr.FromInt(8080),
+						Path:   "/healthz",
+						Port:   intstr.FromInt(int(externalNodePort)),
+						Scheme: "HTTPS",
 					},
 				},
 				FailureThreshold: 3,
@@ -184,8 +182,9 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			LivenessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/healthz",
-						Port: intstr.FromInt(8080),
+						Path:   "/healthz",
+						Port:   intstr.FromInt(int(externalNodePort)),
+						Scheme: "HTTPS",
 					},
 				},
 				InitialDelaySeconds: 15,
@@ -266,8 +265,6 @@ func getApiserverFlags(data resources.DeploymentDataProvider, externalNodePort i
 		"--advertise-address", data.Cluster().Address.IP,
 		"--secure-port", fmt.Sprintf("%d", externalNodePort),
 		"--kubernetes-service-node-port", fmt.Sprintf("%d", externalNodePort),
-		"--insecure-bind-address", "0.0.0.0",
-		"--insecure-port", "8080",
 		"--etcd-servers", strings.Join(etcdEndpoints, ","),
 		"--etcd-cafile", "/etc/etcd/pki/client/ca.crt",
 		"--etcd-certfile", "/etc/etcd/pki/client/apiserver-etcd-client.crt",

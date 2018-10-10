@@ -135,6 +135,44 @@ scrape_configs:
     target_label: __metrics_path__
     replacement: /api/v1/nodes/${1}/proxy/metrics
 
+- job_name: 'apiservers'
+  kubernetes_sd_configs:
+  - role: pod
+    namespaces:
+      names:
+      - "{{ $.TemplateData.Cluster.Status.NamespaceName }}"
+  scheme: https
+  tls_config:
+    ca_file: /etc/kubernetes/ca.crt
+    cert_file: /etc/kubernetes/prometheus-client.crt
+    key_file: /etc/kubernetes/prometheus-client.key
+    # insecure_skip_verify is needed because the apiservers certificate
+    # does not contain a common name for the pods ip address
+    insecure_skip_verify: true
+  relabel_configs:
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape_apiserver]
+    action: keep
+    regex: true
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+    action: replace
+    target_label: __metrics_path__
+    regex: (.+)
+  - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+    action: replace
+    regex: ([^:]+)(?::\d+)?;(\d+)
+    replacement: $1:$2
+    target_label: __address__
+  - source_labels: [__meta_kubernetes_pod_label_role, __meta_kubernetes_pod_label_app]
+    action: replace
+    target_label: job
+    separator: ''
+  - source_labels: [__meta_kubernetes_namespace]
+    action: replace
+    target_label: namespace
+  - source_labels: [__meta_kubernetes_pod_name]
+    action: replace
+    target_label: pod
+
 {{- range $i, $e := until 2 }}
 - job_name: 'pods-{{ $i }}'
 
