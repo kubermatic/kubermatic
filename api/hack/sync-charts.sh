@@ -16,6 +16,7 @@ fi
 
 export CHARTS='kubermatic cert-manager certs nginx-ingress-controller nodeport-proxy oauth minio'
 export MONITORING_CHARTS='alertmanager grafana kube-state-metrics node-exporter prometheus'
+export LOGGING_CHARTS='elasticsearch kibana fluentd'
 export INSTALLER_BRANCH=$1
 export CHARTS_DIR=$2
 export TARGET_DIR='sync_target'
@@ -68,6 +69,22 @@ for CHART in ${MONITORING_CHARTS}; do
 
   echo "# ====== ${CHART} ======" >> ${TARGET_VALUES_FILE}
   cat "${CHARTS_DIR}/monitoring/${CHART}/values.yaml" >> ${TARGET_VALUES_FILE}
+  echo "" >> ${TARGET_VALUES_FILE}
+done
+
+echo "" >> ${TARGET_VALUES_FILE}
+echo "# =======================" >> ${TARGET_VALUES_FILE}
+echo "# ======= Logging =======" >> ${TARGET_VALUES_FILE}
+echo "# =======================" >> ${TARGET_VALUES_FILE}
+echo "" >> ${TARGET_VALUES_FILE}
+for CHART in ${LOGGING_CHARTS}; do
+  echo "syncing ${CHART}..."
+  # doing clean copy
+  rm -rf ${TARGET_DIR}/charts/logging/${CHART}
+  cp -r ${CHARTS_DIR}/logging/${CHART} ${TARGET_DIR}/charts/logging/${CHART}
+
+  echo "# ====== ${CHART} ======" >> ${TARGET_VALUES_FILE}
+  cat "${CHARTS_DIR}/logging/${CHART}/values.yaml" >> ${TARGET_VALUES_FILE}
   echo "" >> ${TARGET_VALUES_FILE}
 done
 
