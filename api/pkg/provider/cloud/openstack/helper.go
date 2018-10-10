@@ -369,10 +369,7 @@ func getSubnetForNetwork(netClient *gophercloud.ServiceClient, networkID string)
 }
 
 func isNotFoundErr(err error) bool {
-	if _, ok := err.(gophercloud.ErrDefault404); ok {
-		return true
-	}
-	if strings.Contains(err.Error(), "not found") {
+	if _, ok := err.(gophercloud.ErrDefault404); ok || strings.Contains(err.Error(), "not found") {
 		return true
 	}
 	return false
