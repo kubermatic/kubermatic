@@ -162,7 +162,11 @@ func (p *ClusterProvider) DeleteCluster(user apiv1.User, name string) error {
 		return err
 	}
 
-	return p.client.KubermaticV1().Clusters().Delete(cluster.Name, &metav1.DeleteOptions{})
+	// Will delete all child's after the object is gone - otherwise the etcd might be deleted before all machines are gone
+	// See https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/#controlling-how-the-garbage-collector-deletes-dependents
+	policy := metav1.DeletePropagationBackground
+	opts := metav1.DeleteOptions{PropagationPolicy: &policy}
+	return p.client.KubermaticV1().Clusters().Delete(cluster.Name, &opts)
 }
 
 // UpdateCluster updates a cluster
