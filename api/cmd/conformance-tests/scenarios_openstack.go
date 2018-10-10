@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/Masterminds/semver"
 
@@ -88,9 +87,7 @@ func (s *openStackScenario) Nodes(num int) []*kubermaticapiv2.Node {
 	var nodes []*kubermaticapiv2.Node
 	for i := 0; i < num; i++ {
 		node := &kubermaticapiv2.Node{
-			Metadata: kubermaticapiv2.ObjectMeta{
-				Name: "node" + strconv.Itoa(i),
-			},
+			Metadata: kubermaticapiv2.ObjectMeta{},
 			Spec: kubermaticapiv2.NodeSpec{
 				Cloud: kubermaticapiv2.NodeCloudSpec{
 					Openstack: &kubermaticapiv2.OpenstackNodeSpec{
