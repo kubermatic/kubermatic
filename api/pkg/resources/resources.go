@@ -86,8 +86,8 @@ const (
 	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
 	//IPAMControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the ipam controller
 	IPAMControllerKubeconfigSecretName = "ipamcontroller-kubeconfig"
-	//PrometheusApiserverClientCertificatesSecretName is the name for the secret containing the client certificates used by prometheus to access the apiserver
-	PrometheusApiserverClientCertificatesSecretName = "prometheus-apiserver-certificates"
+	//PrometheusApiserverClientCertificateSecretName is the name for the secret containing the client certificate used by prometheus to access the apiserver
+	PrometheusApiserverClientCertificateSecretName = "prometheus-apiserver-certificates"
 
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
@@ -180,13 +180,13 @@ const (
 	//KubeStateMetricsClusterRoleName is the name for the KubeStateMetrics cluster role
 	KubeStateMetricsClusterRoleName = "system:kubermatic-kube-state-metrics"
 	//PrometheusClusterRoleName is the name for the Prometheus cluster role
-	PrometheusClusterRoleName = "kubermatic-prometheus"
+	PrometheusClusterRoleName = "external-prometheus"
 	//MachineControllerClusterRoleBindingName is the name for the MachineController clusterrolebinding
 	MachineControllerClusterRoleBindingName = "system:kubermatic-machine-controller"
 	//KubeStateMetricsClusterRoleBindingName is the name for the KubeStateMetrics clusterrolebinding
 	KubeStateMetricsClusterRoleBindingName = "system:kubermatic-kube-state-metrics"
 	//PrometheusClusterRoleBindingName is the name for the Prometheus cluster rolebinding
-	PrometheusClusterRoleBindingName = "system:kubermatic-prometheus"
+	PrometheusClusterRoleBindingName = "system:external-prometheus"
 
 	// EtcdPodDisruptionBudgetName is the name of the PDB for the etcd statefulset
 	EtcdPodDisruptionBudgetName = "etcd"

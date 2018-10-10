@@ -108,9 +108,9 @@ type SecretOperation struct {
 func GetSecretCreatorOperations(data *resources.TemplateData) []SecretOperation {
 	return []SecretOperation{
 		{
-			resources.PrometheusApiserverClientCertificatesSecretName,
+			resources.PrometheusApiserverClientCertificateSecretName,
 			certificates.GetClientCertificateCreator(
-				resources.PrometheusApiserverClientCertificatesSecretName,
+				resources.PrometheusApiserverClientCertificateSecretName,
 				resources.PrometheusCertUsername, nil,
 				resources.PrometheusClientCertificateCertSecretKey,
 				resources.PrometheusClientCertificateKeySecretKey,
