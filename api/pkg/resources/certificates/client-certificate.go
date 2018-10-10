@@ -18,8 +18,8 @@ type templateDataProvider interface {
 type caGetter func() (*triple.KeyPair, error)
 
 // GetClientCertificateCreator is a generic function to return a secret generator to create a client certificate signed by the cluster CA
-func GetClientCertificateCreator(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA caGetter) func(data templateDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
-	return func(data templateDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
+func GetClientCertificateCreator(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA caGetter) func(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
+	return func(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
 		var se *corev1.Secret
 		if existing != nil {
 			se = existing

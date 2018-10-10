@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -85,6 +86,8 @@ const (
 	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
 	//IPAMControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the ipam controller
 	IPAMControllerKubeconfigSecretName = "ipamcontroller-kubeconfig"
+	//PrometheusApiserverClientCertificateSecretName is the name for the secret containing the client certificate used by prometheus to access the apiserver
+	PrometheusApiserverClientCertificateSecretName = "prometheus-apiserver-certificate"
 
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
@@ -144,6 +147,8 @@ const (
 	KubeletDnatControllerCertUsername = "kubermatic:kubeletdnat-controller"
 	//IPAMControllerCertUsername is the name of the user coming from kubeconfig cert
 	IPAMControllerCertUsername = "kubermatic:ipam-controller"
+	// PrometheusCertUsername is the name of the user coming from kubeconfig cert
+	PrometheusCertUsername = "prometheus"
 
 	// MachineIPAMInitializerConfigurationName is the name of the initializerconfiguration used for setting up static ips for machines
 	MachineIPAMInitializerConfigurationName = "ipam-initializer"
@@ -174,10 +179,14 @@ const (
 	MachineControllerClusterRoleName = "system:kubermatic-machine-controller"
 	//KubeStateMetricsClusterRoleName is the name for the KubeStateMetrics cluster role
 	KubeStateMetricsClusterRoleName = "system:kubermatic-kube-state-metrics"
+	//PrometheusClusterRoleName is the name for the Prometheus cluster role
+	PrometheusClusterRoleName = "external-prometheus"
 	//MachineControllerClusterRoleBindingName is the name for the MachineController clusterrolebinding
 	MachineControllerClusterRoleBindingName = "system:kubermatic-machine-controller"
 	//KubeStateMetricsClusterRoleBindingName is the name for the KubeStateMetrics clusterrolebinding
 	KubeStateMetricsClusterRoleBindingName = "system:kubermatic-kube-state-metrics"
+	//PrometheusClusterRoleBindingName is the name for the Prometheus cluster rolebinding
+	PrometheusClusterRoleBindingName = "system:external-prometheus"
 
 	// EtcdPodDisruptionBudgetName is the name of the PDB for the etcd statefulset
 	EtcdPodDisruptionBudgetName = "etcd"
@@ -271,6 +280,11 @@ const (
 	BackupEtcdClientCertificateCertSecretKey = "backup-etcd-client.crt"
 	// BackupEtcdClientCertificateKeySecretKey backup-etcd-client.key
 	BackupEtcdClientCertificateKeySecretKey = "backup-etcd-client.key"
+
+	// PrometheusClientCertificateCertSecretKey prometheus-client.crt
+	PrometheusClientCertificateCertSecretKey = "prometheus-client.crt"
+	// PrometheusClientCertificateKeySecretKey prometheus-client.key
+	PrometheusClientCertificateKeySecretKey = "prometheus-client.key"
 )
 
 const (
@@ -324,6 +338,40 @@ type CronJobCreator = func(data *TemplateData, existing *batchv1beta1.CronJob) (
 
 // CRDCreateor defines an interface to create/update CustomRessourceDefinitions
 type CRDCreateor = func(version semver.Version, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error)
+
+// GetClusterApiserverAddress returns the apiserver address for the given Cluster
+func GetClusterApiserverAddress(cluster *kubermaticv1.Cluster, lister corev1lister.ServiceLister) (string, error) {
+	service, err := lister.Services(cluster.Status.NamespaceName).Get(ApiserverExternalServiceName)
+	if err != nil {
+		return "", fmt.Errorf("could not get service %s from lister for cluster %s: %v", ApiserverExternalServiceName, cluster.Name, err)
+	}
+
+	if len(service.Spec.Ports) != 1 {
+		return "", errors.New("apiserver service does not have exactly one port")
+	}
+
+	dnsName := GetAbsoluteServiceDNSName(ApiserverExternalServiceName, cluster.Status.NamespaceName)
+	return fmt.Sprintf("%s:%d", dnsName, service.Spec.Ports[0].NodePort), nil
+}
+
+// GetClusterApiserverURL returns the apiserver url for the given Cluster
+func GetClusterApiserverURL(cluster *kubermaticv1.Cluster, lister corev1lister.ServiceLister) (*url.URL, error) {
+	addr, err := GetClusterApiserverAddress(cluster, lister)
+	if err != nil {
+		return nil, err
+	}
+
+	return url.Parse(fmt.Sprintf("https://%s", addr))
+}
+
+// GetClusterExternalIP returns a net.IP for the given Cluster
+func GetClusterExternalIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
+	ip := net.ParseIP(cluster.Address.IP)
+	if ip == nil {
+		return nil, fmt.Errorf("failed to create a net.IP object from the external cluster IP '%s'", cluster.Address.IP)
+	}
+	return &ip, nil
+}
 
 // GetClusterRef returns a metav1.OwnerReference for the given Cluster
 func GetClusterRef(cluster *kubermaticv1.Cluster) metav1.OwnerReference {
