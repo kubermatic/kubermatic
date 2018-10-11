@@ -63,7 +63,7 @@ spec:
         - --connect-retry
         - "1"
         - --ca
-        - /etc/kubernetes/pki/ca/ca.crt
+        - /etc/openvpn/pki/client/ca.crt
         - --cert
         - /etc/openvpn/pki/client/client.crt
         - --key
@@ -104,9 +104,6 @@ spec:
         - mountPath: /etc/openvpn/pki/client
           name: openvpn-client-certificates
           readOnly: true
-        - mountPath: /etc/kubernetes/pki/ca
-          name: ca
-          readOnly: true
       - args:
         - --kubeconfig
         - /etc/kubernetes/kubeconfig/kubeconfig
@@ -133,6 +130,8 @@ spec:
         - aws
         - --cloud-config
         - /etc/kubernetes/cloud/config
+        - --authentication-kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
         - --authentication-skip-lookup=true
         command:
         - /hyperkube

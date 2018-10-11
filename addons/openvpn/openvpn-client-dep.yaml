@@ -14,6 +14,7 @@ spec:
     metadata:
       labels:
         role: openvpn-client
+        kubermatic-revision: "1"
     spec:
       serviceAccountName: vpn-client-kubermatic
       containers:

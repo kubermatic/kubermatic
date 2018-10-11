@@ -262,6 +262,13 @@ func TestLoadFiles(t *testing.T) {
 					&v1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
+							Name:            resources.OpenVPNCASecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&v1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
 							Name:            resources.ApiserverEtcdClientCertificateSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
@@ -487,8 +494,8 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				for _, create := range clustercontroller.GetConfigMapCreators() {
-					res, err := create(data, nil)
+				for _, create := range clustercontroller.GetConfigMapCreators(data) {
+					res, err := create(nil)
 					if err != nil {
 						t.Fatalf("failed to create ConfigMap: %v", err)
 					}

@@ -14,15 +14,10 @@ import (
 )
 
 var (
-	defaultInitMemoryRequest = resource.MustParse("128Mi")
-	defaultInitCPURequest    = resource.MustParse("250m")
-	defaultInitMemoryLimit   = resource.MustParse("512Mi")
-	defaultInitCPULimit      = resource.MustParse("500m")
-
-	defaultMemoryRequest = resource.MustParse("64Mi")
-	defaultCPURequest    = resource.MustParse("25m")
-	defaultMemoryLimit   = resource.MustParse("256Mi")
-	defaultCPULimit      = resource.MustParse("250m")
+	defaultMemoryRequest = resource.MustParse("16Mi")
+	defaultCPURequest    = resource.MustParse("5m")
+	defaultMemoryLimit   = resource.MustParse("32Mi")
+	defaultCPULimit      = resource.MustParse("25m")
 )
 
 const (
@@ -133,41 +128,12 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
-					corev1.ResourceMemory: defaultInitMemoryRequest,
-					corev1.ResourceCPU:    defaultInitCPURequest,
+					corev1.ResourceMemory: defaultMemoryRequest,
+					corev1.ResourceCPU:    defaultCPURequest,
 				},
 				Limits: corev1.ResourceList{
-					corev1.ResourceMemory: defaultInitMemoryLimit,
-					corev1.ResourceCPU:    defaultInitCPULimit,
-				},
-			},
-		},
-		{
-			Name:            "openssl-dhparam",
-			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/openvpn:v0.4",
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command:         []string{"/usr/bin/openssl"},
-			Args: []string{
-				"dhparam",
-				"-out", "/etc/openvpn/dh/dh2048.pem",
-				"2048",
-			},
-			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceMemory: defaultInitMemoryRequest,
-					corev1.ResourceCPU:    defaultInitCPURequest,
-				},
-				Limits: corev1.ResourceList{
-					corev1.ResourceMemory: defaultInitMemoryLimit,
-					corev1.ResourceCPU:    defaultInitCPULimit,
-				},
-			},
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      "diffie-hellman-params",
-					MountPath: "/etc/openvpn/dh",
+					corev1.ResourceMemory: defaultMemoryLimit,
+					corev1.ResourceCPU:    defaultCPULimit,
 				},
 			},
 		},
@@ -182,7 +148,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 		"--ca", "/etc/kubernetes/pki/ca/ca.crt",
 		"--cert", "/etc/openvpn/pki/server/server.crt",
 		"--key", "/etc/openvpn/pki/server/server.key",
-		"--dh", "/etc/openvpn/dh/dh2048.pem",
+		"--dh", "none",
 		"--duplicate-cn",
 		"--client-config-dir", "/etc/openvpn/clients",
 		"--status", "/run/openvpn-status",
@@ -243,11 +209,6 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			},
 			VolumeMounts: []corev1.VolumeMount{
 				{
-					Name:      "diffie-hellman-params",
-					MountPath: "/etc/openvpn/dh",
-					ReadOnly:  true,
-				},
-				{
 					Name:      resources.OpenVPNServerCertificatesSecretName,
 					MountPath: "/etc/openvpn/pki/server",
 					ReadOnly:  true,
@@ -272,21 +233,15 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 func getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name: "diffie-hellman-params",
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
-		{
 			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CASecretName,
+					SecretName:  resources.OpenVPNCASecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 					Items: []corev1.KeyToPath{
 						{
-							Path: resources.CACertSecretKey,
-							Key:  resources.CACertSecretKey,
+							Path: resources.OpenVPNCACertKey,
+							Key:  resources.OpenVPNCACertKey,
 						},
 					},
 				},

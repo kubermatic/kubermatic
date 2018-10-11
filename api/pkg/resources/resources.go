@@ -1,11 +1,13 @@
 package resources
 
 import (
+	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -84,6 +86,8 @@ const (
 	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
 	//IPAMControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the ipam controller
 	IPAMControllerKubeconfigSecretName = "ipamcontroller-kubeconfig"
+	//PrometheusApiserverClientCertificateSecretName is the name for the secret containing the client certificate used by prometheus to access the apiserver
+	PrometheusApiserverClientCertificateSecretName = "prometheus-apiserver-certificate"
 
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
@@ -100,6 +104,8 @@ const (
 	ServiceAccountKeySecretName = "service-account-key"
 	//TokensSecretName is the name for the secret containing the user tokens
 	TokensSecretName = "tokens"
+	// OpenVPNCASecretName is the name of the secret that contains the OpenVPN CA
+	OpenVPNCASecretName = "openvpn-ca"
 	//OpenVPNServerCertificatesSecretName is the name for the secret containing the openvpn server certificates
 	OpenVPNServerCertificatesSecretName = "openvpn-server-certificates"
 	//OpenVPNClientCertificatesSecretName is the name for the secret containing the openvpn client certificates
@@ -141,6 +147,8 @@ const (
 	KubeletDnatControllerCertUsername = "kubermatic:kubeletdnat-controller"
 	//IPAMControllerCertUsername is the name of the user coming from kubeconfig cert
 	IPAMControllerCertUsername = "kubermatic:ipam-controller"
+	// PrometheusCertUsername is the name of the user coming from kubeconfig cert
+	PrometheusCertUsername = "prometheus"
 
 	// MachineIPAMInitializerConfigurationName is the name of the initializerconfiguration used for setting up static ips for machines
 	MachineIPAMInitializerConfigurationName = "ipam-initializer"
@@ -171,10 +179,14 @@ const (
 	MachineControllerClusterRoleName = "system:kubermatic-machine-controller"
 	//KubeStateMetricsClusterRoleName is the name for the KubeStateMetrics cluster role
 	KubeStateMetricsClusterRoleName = "system:kubermatic-kube-state-metrics"
+	//PrometheusClusterRoleName is the name for the Prometheus cluster role
+	PrometheusClusterRoleName = "external-prometheus"
 	//MachineControllerClusterRoleBindingName is the name for the MachineController clusterrolebinding
 	MachineControllerClusterRoleBindingName = "system:kubermatic-machine-controller"
 	//KubeStateMetricsClusterRoleBindingName is the name for the KubeStateMetrics clusterrolebinding
 	KubeStateMetricsClusterRoleBindingName = "system:kubermatic-kube-state-metrics"
+	//PrometheusClusterRoleBindingName is the name for the Prometheus cluster rolebinding
+	PrometheusClusterRoleBindingName = "system:external-prometheus"
 
 	// EtcdPodDisruptionBudgetName is the name of the PDB for the etcd statefulset
 	EtcdPodDisruptionBudgetName = "etcd"
@@ -232,6 +244,12 @@ const (
 	KubeconfigSecretKey = "kubeconfig"
 	// TokensSecretKey tokens.csv
 	TokensSecretKey = "tokens.csv"
+	// OpenVPNCACertKey cert.pem, must match CACertSecretKey, otherwise getClusterCAFromLister doesnt work as it has
+	// the key hardcoded
+	OpenVPNCACertKey = CACertSecretKey
+	// OpenVPNCAKeyKey key.pem, must match CAKeySecretKey, otherwise getClusterCAFromLister doesnt work as it has
+	// the key hardcoded
+	OpenVPNCAKeyKey = CAKeySecretKey
 	// OpenVPNServerKeySecretKey server.key
 	OpenVPNServerKeySecretKey = "server.key"
 	// OpenVPNServerCertSecretKey server.crt
@@ -262,14 +280,25 @@ const (
 	BackupEtcdClientCertificateCertSecretKey = "backup-etcd-client.crt"
 	// BackupEtcdClientCertificateKeySecretKey backup-etcd-client.key
 	BackupEtcdClientCertificateKeySecretKey = "backup-etcd-client.key"
+
+	// PrometheusClientCertificateCertSecretKey prometheus-client.crt
+	PrometheusClientCertificateCertSecretKey = "prometheus-client.crt"
+	// PrometheusClientCertificateKeySecretKey prometheus-client.key
+	PrometheusClientCertificateKeySecretKey = "prometheus-client.key"
 )
 
 const (
 	minimumCertValidity30d = 30 * 24 * time.Hour
 )
 
+// ECDSAKeyPair is a ECDSA x509 certifcate and private key
+type ECDSAKeyPair struct {
+	Key  *ecdsa.PrivateKey
+	Cert *x509.Certificate
+}
+
 // ConfigMapCreator defines an interface to create/update ConfigMap's
-type ConfigMapCreator = func(data ConfigMapDataProvider, existing *corev1.ConfigMap) (*corev1.ConfigMap, error)
+type ConfigMapCreator = func(*corev1.ConfigMap) (*corev1.ConfigMap, error)
 
 // SecretCreator defines an interface to create/update Secret's
 type SecretCreator = func(data SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error)
@@ -309,6 +338,40 @@ type CronJobCreator = func(data *TemplateData, existing *batchv1beta1.CronJob) (
 
 // CRDCreateor defines an interface to create/update CustomRessourceDefinitions
 type CRDCreateor = func(version semver.Version, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error)
+
+// GetClusterApiserverAddress returns the apiserver address for the given Cluster
+func GetClusterApiserverAddress(cluster *kubermaticv1.Cluster, lister corev1lister.ServiceLister) (string, error) {
+	service, err := lister.Services(cluster.Status.NamespaceName).Get(ApiserverExternalServiceName)
+	if err != nil {
+		return "", fmt.Errorf("could not get service %s from lister for cluster %s: %v", ApiserverExternalServiceName, cluster.Name, err)
+	}
+
+	if len(service.Spec.Ports) != 1 {
+		return "", errors.New("apiserver service does not have exactly one port")
+	}
+
+	dnsName := GetAbsoluteServiceDNSName(ApiserverExternalServiceName, cluster.Status.NamespaceName)
+	return fmt.Sprintf("%s:%d", dnsName, service.Spec.Ports[0].NodePort), nil
+}
+
+// GetClusterApiserverURL returns the apiserver url for the given Cluster
+func GetClusterApiserverURL(cluster *kubermaticv1.Cluster, lister corev1lister.ServiceLister) (*url.URL, error) {
+	addr, err := GetClusterApiserverAddress(cluster, lister)
+	if err != nil {
+		return nil, err
+	}
+
+	return url.Parse(fmt.Sprintf("https://%s", addr))
+}
+
+// GetClusterExternalIP returns a net.IP for the given Cluster
+func GetClusterExternalIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
+	ip := net.ParseIP(cluster.Address.IP)
+	if ip == nil {
+		return nil, fmt.Errorf("failed to create a net.IP object from the external cluster IP '%s'", cluster.Address.IP)
+	}
+	return &ip, nil
+}
 
 // GetClusterRef returns a metav1.OwnerReference for the given Cluster
 func GetClusterRef(cluster *kubermaticv1.Cluster) metav1.OwnerReference {
@@ -423,7 +486,7 @@ func CertWillExpireSoon(cert *x509.Certificate) bool {
 }
 
 // IsServerCertificateValidForAllOf validates if the given data is present in the given server certificate
-func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string, altNames certutil.AltNames) bool {
+func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string, altNames certutil.AltNames, ca *x509.Certificate) bool {
 	if CertWillExpireSoon(cert) {
 		return false
 	}
@@ -450,12 +513,24 @@ func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 	wantDNSNames := sets.NewString(altNames.DNSNames...)
 	certDNSNames := sets.NewString(cert.DNSNames...)
 
-	return wantDNSNames.Equal(certDNSNames)
+	if !wantDNSNames.Equal(certDNSNames) {
+		return false
+	}
+
+	certPool := x509.NewCertPool()
+	certPool.AddCert(ca)
+	if _, err := cert.Verify(x509.VerifyOptions{Roots: certPool,
+		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}}); err != nil {
+		glog.V(4).Infof("Certificate verification for CN %s failed due to: %v", commonName, err)
+		return false
+	}
+
+	return true
 }
 
 // IsClientCertificateValidForAllOf validates if the given data matches exactly the given client certificate
 // (It also returns true if all given data is in the cert, but the cert has more organizations)
-func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string, organizations []string) bool {
+func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string, organizations []string, ca *x509.Certificate) bool {
 	if CertWillExpireSoon(cert) {
 		return false
 	}
@@ -467,40 +542,82 @@ func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 	wantOrganizations := sets.NewString(organizations...)
 	certOrganizations := sets.NewString(cert.Subject.Organization...)
 
-	return wantOrganizations.Equal(certOrganizations)
+	if !wantOrganizations.Equal(certOrganizations) {
+		return false
+	}
+
+	certPool := x509.NewCertPool()
+	certPool.AddCert(ca)
+	if _, err := cert.Verify(x509.VerifyOptions{Roots: certPool,
+		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}}); err != nil {
+		glog.V(4).Infof("Certificate verification for CN %s failed due to: %v", commonName, err)
+		return false
+	}
+
+	return true
+}
+
+func getECDSAClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*ECDSAKeyPair, error) {
+	cert, key, err := getClusterCAFromLister(name, cluster, lister)
+	if err != nil {
+		return nil, err
+	}
+	ecdsaKey, isECDSAKey := key.(*ecdsa.PrivateKey)
+	if !isECDSAKey {
+		return nil, errors.New("key is not a ECDSA key")
+	}
+	return &ECDSAKeyPair{Cert: cert, Key: ecdsaKey}, nil
+}
+
+func getRSAClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*triple.KeyPair, error) {
+	cert, key, err := getClusterCAFromLister(name, cluster, lister)
+	if err != nil {
+		return nil, err
+	}
+	rsaKey, isRSAKey := key.(*rsa.PrivateKey)
+	if !isRSAKey {
+		return nil, errors.New("key is not a RSA key")
+	}
+	return &triple.KeyPair{Cert: cert, Key: rsaKey}, nil
 }
 
 // getClusterCAFromLister returns the CA of the cluster from the lister
-func getClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*triple.KeyPair, error) {
+func getClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*x509.Certificate, interface{}, error) {
 	caCertSecret, err := lister.Secrets(cluster.Status.NamespaceName).Get(name)
 	if err != nil {
-		return nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
+		return nil, nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
 	}
 
 	certs, err := certutil.ParseCertsPEM(caCertSecret.Data[CACertSecretKey])
 	if err != nil {
-		return nil, fmt.Errorf("got an invalid cert from the CA secret %s: %v", CASecretName, err)
+		return nil, nil, fmt.Errorf("got an invalid cert from the CA secret %s: %v", CASecretName, err)
+	}
+
+	if len(certs) != 1 {
+		return nil, nil, fmt.Errorf("did not find exactly one but %v certificates in the CA secret", len(certs))
 	}
 
 	key, err := certutil.ParsePrivateKeyPEM(caCertSecret.Data[CAKeySecretKey])
 	if err != nil {
-		return nil, fmt.Errorf("got an invalid private key from the CA secret %s: %v", CASecretName, err)
+		return nil, nil, fmt.Errorf("got an invalid private key from the CA secret %s: %v", CASecretName, err)
 	}
 
-	return &triple.KeyPair{
-		Cert: certs[0],
-		Key:  key.(*rsa.PrivateKey),
-	}, nil
+	return certs[0], key, nil
 }
 
 // GetClusterRootCA returns the root CA of the cluster from the lister
 func GetClusterRootCA(cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*triple.KeyPair, error) {
-	return getClusterCAFromLister(CASecretName, cluster, lister)
+	return getRSAClusterCAFromLister(CASecretName, cluster, lister)
 }
 
 // GetClusterFrontProxyCA returns the frontproxy CA of the cluster from the lister
 func GetClusterFrontProxyCA(cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*triple.KeyPair, error) {
-	return getClusterCAFromLister(FrontProxyCASecretName, cluster, lister)
+	return getRSAClusterCAFromLister(FrontProxyCASecretName, cluster, lister)
+}
+
+// GetOpenVPNCA returns the OpenVPN CA of the cluster from the lister
+func GetOpenVPNCA(cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*ECDSAKeyPair, error) {
+	return getECDSAClusterCAFromLister(OpenVPNCASecretName, cluster, lister)
 }
 
 // ClusterIPForService returns the cluster ip for the given service

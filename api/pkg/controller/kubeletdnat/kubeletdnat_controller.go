@@ -92,36 +92,31 @@ func (ctrl *Controller) Run(stopCh <-chan struct{}) {
 	<-stopCh
 }
 
-// handleErr checks if an error happened and makes sure we will retry later.
-func (ctrl *Controller) handleErr(err error, key interface{}) {
-	if err == nil {
-		// Forget about the #AddRateLimited history of the key on every successful synchronization.
-		// This ensures that future processing of updates for this key is not delayed because of
-		// an outdated error history.
-		ctrl.queue.Forget(key)
-		return
-	}
-
-	glog.V(0).Infof("Error syncing node access dnat rules %v: %v", key, err)
-
-	// Re-enqueue the key rate limited. Based on the rate limiter on the
-	// queue and the re-enqueue history, the key will be processed later again.
-	ctrl.queue.AddRateLimited(key)
-}
-
 func (ctrl *Controller) runWorker() {
 	for ctrl.processNextItem() {
 	}
 }
+
 func (ctrl *Controller) processNextItem() bool {
 	key, quit := ctrl.queue.Get()
 	if quit {
 		return false
 	}
-
 	defer ctrl.queue.Done(key)
-	err := ctrl.syncDnatRules()
-	ctrl.handleErr(err, key)
+
+	if err := ctrl.syncDnatRules(); err != nil {
+		glog.V(0).Infof("Error syncing %v: %v", key, err)
+
+		// Re-enqueue the key rate limited. Based on the rate limiter on the
+		// queue and the re-enqueue history, the key will be processed later again.
+		ctrl.queue.AddRateLimited(key)
+		return true
+	}
+
+	// Forget about the #AddRateLimited history of the key on every successful synchronization.
+	// This ensures that future processing of updates for this key is not delayed because of
+	// an outdated error history.
+	ctrl.queue.Forget(key)
 	return true
 }
 

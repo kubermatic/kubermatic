@@ -18,8 +18,8 @@ type templateDataProvider interface {
 type caGetter func() (*triple.KeyPair, error)
 
 // GetClientCertificateCreator is a generic function to return a secret generator to create a client certificate signed by the cluster CA
-func GetClientCertificateCreator(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA caGetter) func(data templateDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
-	return func(data templateDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
+func GetClientCertificateCreator(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA caGetter) func(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
+	return func(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
 		var se *corev1.Secret
 		if existing != nil {
 			se = existing
@@ -35,13 +35,17 @@ func GetClientCertificateCreator(name, commonName string, organizations []string
 			return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 		}
 
+		if se.Data == nil {
+			se.Data = map[string][]byte{}
+		}
+
 		if b, exists := se.Data[dataCertKey]; exists {
 			certs, err := certutil.ParseCertsPEM(b)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret %s: %v", name, dataCertKey, err)
 			}
 
-			if resources.IsClientCertificateValidForAllOf(certs[0], commonName, organizations) {
+			if resources.IsClientCertificateValidForAllOf(certs[0], commonName, organizations, ca.Cert) {
 				return se, nil
 			}
 		}
@@ -51,9 +55,6 @@ func GetClientCertificateCreator(name, commonName string, organizations []string
 			return nil, fmt.Errorf("failed to create %s key pair: %v", name, err)
 		}
 
-		if se.Data == nil {
-			se.Data = map[string][]byte{}
-		}
 		se.Data[dataKeyKey] = certutil.EncodePrivateKeyPEM(newKP.Key)
 		se.Data[dataCertKey] = certutil.EncodeCertPEM(newKP.Cert)
 		// Include the CA for simplicity

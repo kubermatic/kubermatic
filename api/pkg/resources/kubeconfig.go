@@ -176,7 +176,7 @@ func isValidKubeconfig(kubeconfigBytes []byte, caCert *x509.Certificate, server,
 		return false, err
 	}
 
-	if !IsClientCertificateValidForAllOf(certs[0], commonName, organizations) {
+	if !IsClientCertificateValidForAllOf(certs[0], commonName, organizations, caCert) {
 		return false, nil
 	}
 

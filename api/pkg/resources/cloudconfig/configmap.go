@@ -16,30 +16,32 @@ const (
 	name = "cloud-config"
 )
 
-// ConfigMap returns a ConfigMap containing the cloud-config for the supplied data
-func ConfigMap(data resources.ConfigMapDataProvider, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-	var cm *corev1.ConfigMap
-	if existing != nil {
-		cm = existing
-	} else {
-		cm = &corev1.ConfigMap{}
-	}
-	if cm.Data == nil {
-		cm.Data = map[string]string{}
-	}
+// ConfigMapCreator returns a function to create the ConfigMap containing the cloud-config
+func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapCreator {
+	return func(existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+		var cm *corev1.ConfigMap
+		if existing != nil {
+			cm = existing
+		} else {
+			cm = &corev1.ConfigMap{}
+		}
+		if cm.Data == nil {
+			cm.Data = map[string]string{}
+		}
 
-	cloudConfig, err := CloudConfig(data)
-	if err != nil {
-		return nil, err
+		cloudConfig, err := CloudConfig(data)
+		if err != nil {
+			return nil, err
+		}
+
+		cm.Name = resources.CloudConfigConfigMapName
+		cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+		cm.Labels = resources.BaseAppLabel(name, nil)
+		cm.Data["config"] = cloudConfig
+		cm.Data[FakeVMWareUUIDKeyName] = fakeVMWareUUID
+
+		return cm, nil
 	}
-
-	cm.Name = resources.CloudConfigConfigMapName
-	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	cm.Labels = resources.BaseAppLabel(name, nil)
-	cm.Data["config"] = cloudConfig
-	cm.Data[FakeVMWareUUIDKeyName] = fakeVMWareUUID
-
-	return cm, nil
 }
 
 // CloudConfig returns the cloud-config for the supplied data

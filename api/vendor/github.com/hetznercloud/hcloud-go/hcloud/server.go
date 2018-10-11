@@ -31,6 +31,13 @@ type Server struct {
 	Locked          bool
 	ISO             *ISO
 	Image           *Image
+	Protection      ServerProtection
+	Labels          map[string]string
+}
+
+// ServerProtection represents the protection level of a server.
+type ServerProtection struct {
+	Delete, Rebuild bool
 }
 
 // ServerStatus specifies a server's status.
@@ -41,10 +48,10 @@ const (
 	ServerStatusInitializing ServerStatus = "initializing"
 
 	// ServerStatusOff is the status when a server is off.
-	ServerStatusOff = "off"
+	ServerStatusOff ServerStatus = "off"
 
 	// ServerStatusRunning is the status when a server is running.
-	ServerStatusRunning = "running"
+	ServerStatusRunning ServerStatus = "running"
 )
 
 // ServerPublicNet represents a server's public network.
@@ -80,8 +87,8 @@ type ServerRescueType string
 // List of rescue types.
 const (
 	ServerRescueTypeLinux32   ServerRescueType = "linux32"
-	ServerRescueTypeLinux64                    = "linux64"
-	ServerRescueTypeFreeBSD64                  = "freebsd64"
+	ServerRescueTypeLinux64   ServerRescueType = "linux64"
+	ServerRescueTypeFreeBSD64 ServerRescueType = "freebsd64"
 )
 
 // ServerClient is a client for the servers API.
@@ -162,10 +169,12 @@ func (c *ServerClient) List(ctx context.Context, opts ServerListOpts) ([]*Server
 
 // All returns all servers.
 func (c *ServerClient) All(ctx context.Context) ([]*Server, error) {
-	allServers := []*Server{}
+	return c.AllWithOpts(ctx, ServerListOpts{ListOpts{PerPage: 50}})
+}
 
-	opts := ServerListOpts{}
-	opts.PerPage = 50
+// AllWithOpts returns all servers for the given options.
+func (c *ServerClient) AllWithOpts(ctx context.Context, opts ServerListOpts) ([]*Server, error) {
+	allServers := []*Server{}
 
 	_, err := c.client.all(func(page int) (*Response, error) {
 		opts.Page = page
@@ -185,13 +194,15 @@ func (c *ServerClient) All(ctx context.Context) ([]*Server, error) {
 
 // ServerCreateOpts specifies options for creating a new server.
 type ServerCreateOpts struct {
-	Name       string
-	ServerType *ServerType
-	Image      *Image
-	SSHKeys    []*SSHKey
-	Location   *Location
-	Datacenter *Datacenter
-	UserData   string
+	Name             string
+	ServerType       *ServerType
+	Image            *Image
+	SSHKeys          []*SSHKey
+	Location         *Location
+	Datacenter       *Datacenter
+	UserData         string
+	StartAfterCreate *bool
+	Labels           map[string]string
 }
 
 // Validate checks if options are valid.
@@ -227,6 +238,7 @@ func (c *ServerClient) Create(ctx context.Context, opts ServerCreateOpts) (Serve
 	var reqBody schema.ServerCreateRequest
 	reqBody.UserData = opts.UserData
 	reqBody.Name = opts.Name
+	reqBody.StartAfterCreate = opts.StartAfterCreate
 	if opts.ServerType.ID != 0 {
 		reqBody.ServerType = opts.ServerType.ID
 	} else if opts.ServerType.Name != "" {
@@ -236,6 +248,9 @@ func (c *ServerClient) Create(ctx context.Context, opts ServerCreateOpts) (Serve
 		reqBody.Image = opts.Image.ID
 	} else if opts.Image.Name != "" {
 		reqBody.Image = opts.Image.Name
+	}
+	if opts.Labels != nil {
+		reqBody.Labels = &opts.Labels
 	}
 	for _, sshKey := range opts.SSHKeys {
 		reqBody.SSHKeys = append(reqBody.SSHKeys, sshKey.ID)
@@ -290,13 +305,17 @@ func (c *ServerClient) Delete(ctx context.Context, server *Server) (*Response, e
 
 // ServerUpdateOpts specifies options for updating a server.
 type ServerUpdateOpts struct {
-	Name string
+	Name   string
+	Labels map[string]string
 }
 
 // Update updates a server.
 func (c *ServerClient) Update(ctx context.Context, server *Server, opts ServerUpdateOpts) (*Server, *Response, error) {
 	reqBody := schema.ServerUpdateRequest{
 		Name: opts.Name,
+	}
+	if opts.Labels != nil {
+		reqBody.Labels = &opts.Labels
 	}
 	reqBodyData, err := json.Marshal(reqBody)
 	if err != nil {
@@ -426,6 +445,7 @@ func (c *ServerClient) ResetPassword(ctx context.Context, server *Server) (Serve
 type ServerCreateImageOpts struct {
 	Type        ImageType
 	Description *string
+	Labels      map[string]string
 }
 
 // Validate checks if options are valid.
@@ -460,6 +480,9 @@ func (c *ServerClient) CreateImage(ctx context.Context, server *Server, opts *Se
 		}
 		if opts.Type != "" {
 			reqBody.Type = String(string(opts.Type))
+		}
+		if opts.Labels != nil {
+			reqBody.Labels = &opts.Labels
 		}
 	}
 	reqBodyData, err := json.Marshal(reqBody)
@@ -720,4 +743,35 @@ func (c *ServerClient) ChangeDNSPtr(ctx context.Context, server *Server, ip stri
 		return nil, resp, err
 	}
 	return ActionFromSchema(respBody.Action), resp, nil
+}
+
+// ServerChangeProtectionOpts specifies options for changing the resource protection level of a server.
+type ServerChangeProtectionOpts struct {
+	Rebuild *bool
+	Delete  *bool
+}
+
+// ChangeProtection changes the resource protection level of a server.
+func (c *ServerClient) ChangeProtection(ctx context.Context, image *Server, opts ServerChangeProtectionOpts) (*Action, *Response, error) {
+	reqBody := schema.ServerActionChangeProtectionRequest{
+		Rebuild: opts.Rebuild,
+		Delete:  opts.Delete,
+	}
+	reqBodyData, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	path := fmt.Sprintf("/servers/%d/actions/change_protection", image.ID)
+	req, err := c.client.NewRequest(ctx, "POST", path, bytes.NewReader(reqBodyData))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	respBody := schema.ServerActionChangeProtectionResponse{}
+	resp, err := c.client.Do(req, &respBody)
+	if err != nil {
+		return nil, resp, err
+	}
+	return ActionFromSchema(respBody.Action), resp, err
 }

@@ -10,7 +10,6 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
@@ -22,14 +21,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
-func (cc *Controller) userClusterEnsureInitializerConfiguration(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
+func (cc *Controller) userClusterEnsureInitializerConfiguration(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	creators := []resources.InitializerConfigurationCreator{
 		ipamcontroller.MachineIPAMInitializerConfiguration,
 	}
@@ -76,12 +71,7 @@ func (cc *Controller) userClusterEnsureInitializerConfiguration(c *kubermaticv1.
 	return nil
 }
 
-func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
+func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	creators := []resources.RoleCreator{
 		machinecontroller.Role,
 		machinecontroller.KubeSystemRole,
@@ -130,12 +120,7 @@ func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
+func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	creators := []resources.RoleBindingCreator{
 		machinecontroller.DefaultRoleBinding,
 		machinecontroller.KubeSystemRoleBinding,
@@ -183,7 +168,6 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster) err
 func GetUserClusterRoleCreators(c *kubermaticv1.Cluster) []resources.ClusterRoleCreator {
 	creators := []resources.ClusterRoleCreator{
 		machinecontroller.ClusterRole,
-		kubestatemetrics.ClusterRole,
 		vpnsidecar.DnatControllerClusterRole,
 	}
 
@@ -194,12 +178,7 @@ func GetUserClusterRoleCreators(c *kubermaticv1.Cluster) []resources.ClusterRole
 	return creators
 }
 
-func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
+func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	creators := GetUserClusterRoleCreators(c)
 
 	data, err := cc.getClusterTemplateData(c)
@@ -250,7 +229,6 @@ func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.Clus
 		machinecontroller.ClusterRoleBinding,
 		machinecontroller.NodeBootstrapperClusterRoleBinding,
 		machinecontroller.NodeSignerClusterRoleBinding,
-		kubestatemetrics.ClusterRoleBinding,
 		vpnsidecar.DnatControllerClusterRoleBinding,
 	}
 
@@ -261,12 +239,7 @@ func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.Clus
 	return creators
 }
 
-func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
+func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	creators := GetUserClusterRoleBindingCreators(c)
 
 	data, err := cc.getClusterTemplateData(c)
@@ -311,24 +284,19 @@ func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Clust
 	return nil
 }
 
-func (cc *Controller) userClusterEnsureConfigMaps(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
-	creators := []resources.ConfigMapCreator{
-		openvpn.ClientConfigConfigMap,
-	}
-
+func (cc *Controller) userClusterEnsureConfigMaps(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
 		return err
 	}
 
+	creators := []resources.ConfigMapCreator{
+		openvpn.ClientConfigConfigMapCreator(data),
+	}
+
 	for _, create := range creators {
 		var existing *corev1.ConfigMap
-		cm, err := create(data, nil)
+		cm, err := create(nil)
 		if err != nil {
 			return fmt.Errorf("failed to build ConfigMap: %v", err)
 		}
@@ -345,7 +313,7 @@ func (cc *Controller) userClusterEnsureConfigMaps(c *kubermaticv1.Cluster) error
 			continue
 		}
 
-		cm, err = create(data, existing.DeepCopy())
+		cm, err = create(existing.DeepCopy())
 		if err != nil {
 			return fmt.Errorf("failed to build ConfigMap: %v", err)
 		}

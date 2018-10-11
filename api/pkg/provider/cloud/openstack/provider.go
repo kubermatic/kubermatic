@@ -181,19 +181,19 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 
 	if kubernetes.HasFinalizer(cluster, networkCleanupFinalizer) {
 		if _, err = detachSubnetFromRouter(netClient, cluster.Spec.Cloud.Openstack.SubnetID, cluster.Spec.Cloud.Openstack.RouterID); err != nil {
-			if _, ok := err.(gophercloud.ErrDefault404); !ok {
+			if !isNotFoundErr(err) {
 				return nil, fmt.Errorf("failed to detach subnet from router: %v", err)
 			}
 		}
 
 		if err = deleteNetworkByName(netClient, cluster.Spec.Cloud.Openstack.Network); err != nil {
-			if _, ok := err.(gophercloud.ErrDefault404); !ok {
+			if !isNotFoundErr(err) {
 				return nil, fmt.Errorf("failed delete network %q: %v", cluster.Spec.Cloud.Openstack.Network, err)
 			}
 		}
 
 		if err = deleteRouter(netClient, cluster.Spec.Cloud.Openstack.RouterID); err != nil {
-			if _, ok := err.(gophercloud.ErrDefault404); !ok {
+			if !isNotFoundErr(err) {
 				return nil, fmt.Errorf("failed delete router %q: %v", cluster.Spec.Cloud.Openstack.RouterID, err)
 			}
 		}

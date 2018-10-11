@@ -38,8 +38,8 @@ import (
 	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 )
 
-// UserClusterConnectionProvider offers functions to retrieve clients for the given user clusters
-type UserClusterConnectionProvider interface {
+// userClusterConnectionProvider offers functions to retrieve clients for the given user clusters
+type userClusterConnectionProvider interface {
 	GetClient(*kubermaticv1.Cluster) (kubernetes.Interface, error)
 	GetMachineClient(*kubermaticv1.Cluster) (clusterv1alpha1clientset.Interface, error)
 	GetApiextensionsClient(*kubermaticv1.Cluster) (apiextensionsclientset.Interface, error)
@@ -49,7 +49,7 @@ type UserClusterConnectionProvider interface {
 type Controller struct {
 	kubermaticClient        kubermaticclientset.Interface
 	kubeClient              kubernetes.Interface
-	userClusterConnProvider UserClusterConnectionProvider
+	userClusterConnProvider userClusterConnectionProvider
 
 	externalURL string
 	dcs         map[string]provider.DatacenterMeta
@@ -93,7 +93,7 @@ func NewController(
 	dc string,
 	dcs map[string]provider.DatacenterMeta,
 	cps map[string]provider.CloudProvider,
-	userClusterConnProvider UserClusterConnectionProvider,
+	userClusterConnProvider userClusterConnectionProvider,
 	overwriteRegistry string,
 	nodePortRange string,
 	nodeAccessNetwork string,
@@ -410,31 +410,22 @@ func (cc *Controller) processNextItem() bool {
 	if quit {
 		return false
 	}
-
 	defer cc.queue.Done(key)
 
-	err := cc.syncCluster(key.(string))
+	if err := cc.syncCluster(key.(string)); err != nil {
+		glog.V(0).Infof("Error syncing %v: %v", key, err)
 
-	cc.handleErr(err, key)
-	return true
-}
-
-// handleErr checks if an error happened and makes sure we will retry later.
-func (cc *Controller) handleErr(err error, key interface{}) {
-	if err == nil {
-		// Forget about the #AddRateLimited history of the key on every successful synchronization.
-		// This ensures that future processing of updates for this key is not delayed because of
-		// an outdated error history.
-		cc.queue.Forget(key)
-		return
+		// Re-enqueue the key rate limited. Based on the rate limiter on the
+		// queue and the re-enqueue history, the key will be processed later again.
+		cc.queue.AddRateLimited(key)
+		return true
 	}
 
-	glog.V(0).Infof("Error syncing cluster %v: %v", key, err)
-
-	// Re-enqueue the key rate limited. Based on the rate limiter on the
-	// queue and the re-enqueue history, the key will be processed later again.
-	cc.queue.AddRateLimited(key)
-	runtime.HandleError(err)
+	// Forget about the #AddRateLimited history of the key on every successful synchronization.
+	// This ensures that future processing of updates for this key is not delayed because of
+	// an outdated error history.
+	cc.queue.Forget(key)
+	return true
 }
 
 // Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
