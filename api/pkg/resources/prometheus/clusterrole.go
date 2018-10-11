@@ -61,6 +61,12 @@ func ClusterRole(_ resources.ClusterRoleDataProvider, existing *rbacv1.ClusterRo
 			},
 			Verbs: []string{"list", "watch"},
 		},
+		{
+			NonResourceURLs: []string{
+				"/metrics",
+			},
+			Verbs: []string{"get"},
+		},
 	}
 	return r, nil
 }
