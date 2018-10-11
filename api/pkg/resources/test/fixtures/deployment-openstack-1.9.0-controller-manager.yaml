@@ -54,6 +54,7 @@ spec:
         - '*,bootstrapsigner,tokencleaner'
         - --v
         - "4"
+        - horizontal-pod-autoscaler-use-rest-clients=false
         - --cloud-provider
         - openstack
         - --cloud-config
