@@ -85,6 +85,7 @@ func TestConfigMapCreatorsKeepAdditionalData(t *testing.T) {
 	cluster := &kubermaticv1.Cluster{}
 	cluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"10.10.0.0/8"}
 	cluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.11.0.0/8"}
+	cluster.Spec.Version = "v1.11.0"
 	dc := &provider.DatacenterMeta{}
 	templateData := resources.NewTemplateData(cluster, dc, "", nil, nil, nil, "", "", "10.12.0.0/8", resource.Quantity{}, "", false, false, "", nil)
 

@@ -30,6 +30,7 @@ func TestCreateConfigMap(t *testing.T) {
 					Cloud: kubermaticv1.CloudSpec{
 						DatacenterName: TestDC,
 					},
+					Version: "v1.11.3",
 				},
 				Address: kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
@@ -48,6 +49,7 @@ func TestCreateConfigMap(t *testing.T) {
 					Cloud: kubermaticv1.CloudSpec{
 						DatacenterName: TestDC,
 					},
+					Version: "v1.11.3",
 				},
 				Address: kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
