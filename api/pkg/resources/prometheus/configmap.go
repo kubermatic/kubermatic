@@ -162,10 +162,6 @@ scrape_configs:
     regex: ([^:]+)(?::\d+)?;(\d+)
     replacement: $1:$2
     target_label: __address__
-  - source_labels: [__meta_kubernetes_pod_label_role, __meta_kubernetes_pod_label_app]
-    action: replace
-    target_label: job
-    separator: ''
   - source_labels: [__meta_kubernetes_namespace]
     action: replace
     target_label: namespace
