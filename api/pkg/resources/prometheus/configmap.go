@@ -181,6 +181,9 @@ scrape_configs:
   - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
     action: keep
     regex: true
+  - source_labels: [__meta_kubernetes_endpoint_ready]
+    action: keep
+    regex: true
   - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
     action: replace
     target_label: __metrics_path__
@@ -190,7 +193,7 @@ scrape_configs:
     regex: ([^:]+)(?::\d+)?;(\d+)
     replacement: $1:$2
     target_label: __address__
-  - source_labels: [__meta_kubernetes_pod_label_role, __meta_kubernetes_pod_label_app]
+  - source_labels: [__meta_kubernetes_endpoints_name, __meta_kubernetes_endpoint_port_name]
     action: replace
     target_label: job
     separator: ''
