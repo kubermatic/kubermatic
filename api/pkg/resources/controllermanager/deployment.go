@@ -3,6 +3,7 @@ package controllermanager
 import (
 	"fmt"
 
+	"github.com/Masterminds/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	appsv1 "k8s.io/api/apps/v1"
@@ -74,6 +75,11 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 		return nil, err
 	}
 
+	flags, err := getFlags(data, apiserverServiceIP)
+	if err != nil {
+		return nil, err
+	}
+
 	dep.Spec.Template.Spec.Volumes = getVolumes()
 	dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 		{
@@ -91,12 +97,12 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	}
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
-			Name:            name,
-			Image:           data.ImageRegistry("gcr.io") + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command:         []string{"/hyperkube", "controller-manager"},
-			Args:            getFlags(data, apiserverServiceIP),
-			Env:             getEnvVars(data),
+			Name:                     name,
+			Image:                    data.ImageRegistry("gcr.io") + "/google_containers/hyperkube-amd64:v" + data.Cluster.Spec.Version,
+			ImagePullPolicy:          corev1.PullIfNotPresent,
+			Command:                  []string{"/hyperkube", "controller-manager"},
+			Args:                     flags,
+			Env:                      getEnvVars(data),
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			Resources: corev1.ResourceRequirements{
@@ -174,7 +180,7 @@ func Deployment(data *resources.TemplateData, existing *appsv1.Deployment) (*app
 	return dep, nil
 }
 
-func getFlags(data *resources.TemplateData, apiserverIP string) []string {
+func getFlags(data *resources.TemplateData, apiserverIP string) ([]string, error) {
 	flags := []string{
 		"--master", "http://" + apiserverIP + ":8080",
 		"--service-account-private-key-file", "/etc/kubernetes/service-account-key/sa.key",
@@ -187,6 +193,16 @@ func getFlags(data *resources.TemplateData, apiserverIP string) []string {
 		"--controllers", "*,bootstrapsigner,tokencleaner",
 		"--v", "4",
 	}
+
+	version, err := semver.NewVersion(data.Cluster.Spec.Version)
+	if err != nil {
+		return nil, err
+	}
+
+	if version.Minor() >= 9 {
+		flags = append(flags, "horizontal-pod-autoscaler-use-rest-clients=false")
+	}
+
 	if data.Cluster.Spec.Cloud.AWS != nil {
 		flags = append(flags, "--cloud-provider", "aws")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
@@ -203,7 +219,7 @@ func getFlags(data *resources.TemplateData, apiserverIP string) []string {
 		flags = append(flags, "--cloud-provider", "azure")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
-	return flags
+	return flags, nil
 }
 
 func getTemplatePodLabels(data *resources.TemplateData) (map[string]string, error) {
