@@ -178,6 +178,13 @@ scrape_configs:
       names:
       - "{{ $.TemplateData.Cluster.Status.NamespaceName }}"
 
+{{- if semverCompare ">=1.11.0, <= 1.11.3" $.TemplateData.Cluster.Spec.Version }}
+  metric_relabel_configs:
+  - source_labels: [job, __name__]
+    regex: 'controller-manager;rest_.*'
+    action: drop
+{{- end }}
+
   relabel_configs:
   - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_{{ $i }}_scrape]
     action: keep

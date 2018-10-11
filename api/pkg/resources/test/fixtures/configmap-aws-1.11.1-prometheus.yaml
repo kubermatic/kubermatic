@@ -35,6 +35,10 @@ data:
         namespaces:
           names:
           - "cluster-de-test-01"
+      metric_relabel_configs:
+      - source_labels: [job, __name__]
+        regex: 'controller-manager;rest_.*'
+        action: drop
 
       relabel_configs:
       - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_0_scrape]
@@ -66,6 +70,10 @@ data:
         namespaces:
           names:
           - "cluster-de-test-01"
+      metric_relabel_configs:
+      - source_labels: [job, __name__]
+        regex: 'controller-manager;rest_.*'
+        action: drop
 
       relabel_configs:
       - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_1_scrape]
