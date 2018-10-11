@@ -193,10 +193,12 @@ scrape_configs:
     regex: ([^:]+)(?::\d+)?;(\d+)
     replacement: $1:$2
     target_label: __address__
-  - source_labels: [__meta_kubernetes_endpoints_name, __meta_kubernetes_endpoint_port_name]
+  - source_labels: [__meta_kubernetes_endpoint_name]
     action: replace
     target_label: job
-    separator: ''
+  - source_labels: [__meta_kubernetes_endpoint_port_name]
+    action: replace
+    target_label: port_name
   - source_labels: [__meta_kubernetes_namespace]
     action: replace
     target_label: namespace
