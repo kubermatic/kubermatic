@@ -169,24 +169,23 @@ scrape_configs:
     action: replace
     target_label: pod
 
-{{- range $i, $e := until 2 }}
-- job_name: 'pods-{{ $i }}'
+- job_name: 'control-plane-service-endpoints'
 
   kubernetes_sd_configs:
-  - role: pod
+  - role: endpoints
     namespaces:
       names:
       - "{{ $.TemplateData.Cluster.Status.NamespaceName }}"
 
   relabel_configs:
-  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_{{ $i }}_scrape]
+  - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
     action: keep
     regex: true
-  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_{{ $i }}_path]
+  - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
     action: replace
     target_label: __metrics_path__
     regex: (.+)
-  - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_{{ $i }}_port]
+  - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
     action: replace
     regex: ([^:]+)(?::\d+)?;(\d+)
     replacement: $1:$2
@@ -201,7 +200,38 @@ scrape_configs:
   - source_labels: [__meta_kubernetes_pod_name]
     action: replace
     target_label: pod
-{{- end }}
+
+- job_name: 'control-plane-pods'
+
+  kubernetes_sd_configs:
+  - role: pod
+    namespaces:
+      names:
+      - "{{ $.TemplateData.Cluster.Status.NamespaceName }}"
+
+  relabel_configs:
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+    action: keep
+    regex: true
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+    action: replace
+    target_label: __metrics_path__
+    regex: (.+)
+  - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+    action: replace
+    regex: ([^:]+)(?::\d+)?;(\d+)
+    replacement: $1:$2
+    target_label: __address__
+  - source_labels: [__meta_kubernetes_pod_label_role, __meta_kubernetes_pod_label_app]
+    action: replace
+    target_label: job
+    separator: ''
+  - source_labels: [__meta_kubernetes_namespace]
+    action: replace
+    target_label: namespace
+  - source_labels: [__meta_kubernetes_pod_name]
+    action: replace
+    target_label: pod
 {{- end }}
 alerting:
   alertmanagers:
