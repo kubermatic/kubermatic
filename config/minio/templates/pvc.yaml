@@ -5,9 +5,9 @@ metadata:
   labels:
     app: minio
 spec:
-  {{ with .Values.minio.storageClass }}
+  {{- with .Values.minio.storageClass }}
   storageClassName: {{ . | quote }}
-  {{ end }}
+  {{- end }}
   accessModes:
     - ReadWriteOnce
   resources:
