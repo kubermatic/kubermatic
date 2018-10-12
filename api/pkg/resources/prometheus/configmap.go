@@ -110,8 +110,103 @@ scrape_configs:
     replacement: $1
     target_label: instance
 
-{{- range $i, $e := until 2 }}
-- job_name: 'pods-{{ $i }}'
+- job_name: 'kubernetes-nodes'
+  scheme: https
+  tls_config:
+    ca_file: /etc/kubernetes/ca.crt
+    cert_file: /etc/kubernetes/prometheus-client.crt
+    key_file: /etc/kubernetes/prometheus-client.key
+
+  kubernetes_sd_configs:
+  - role: node
+    api_server: '{{ .TemplateData.InClusterApiserverAddress }}'
+    tls_config:
+      ca_file: /etc/kubernetes/ca.crt
+      cert_file: /etc/kubernetes/prometheus-client.crt
+      key_file: /etc/kubernetes/prometheus-client.key
+
+  relabel_configs:
+  - action: labelmap
+    regex: __meta_kubernetes_node_label_(.+)
+  - target_label: __address__
+    replacement: '{{ .TemplateData.InClusterApiserverAddress }}'
+  - source_labels: [__meta_kubernetes_node_name]
+    regex: (.+)
+    target_label: __metrics_path__
+    replacement: /api/v1/nodes/${1}/proxy/metrics
+
+- job_name: 'apiservers'
+  kubernetes_sd_configs:
+  - role: pod
+    namespaces:
+      names:
+      - "{{ $.TemplateData.Cluster.Status.NamespaceName }}"
+  scheme: https
+  tls_config:
+    ca_file: /etc/kubernetes/ca.crt
+    cert_file: /etc/kubernetes/prometheus-client.crt
+    key_file: /etc/kubernetes/prometheus-client.key
+    # insecure_skip_verify is needed because the apiservers certificate
+    # does not contain a common name for the pods ip address
+    insecure_skip_verify: true
+  relabel_configs:
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape_apiserver]
+    action: keep
+    regex: true
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+    action: replace
+    target_label: __metrics_path__
+    regex: (.+)
+  - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+    action: replace
+    regex: ([^:]+)(?::\d+)?;(\d+)
+    replacement: $1:$2
+    target_label: __address__
+  - source_labels: [__meta_kubernetes_namespace]
+    action: replace
+    target_label: namespace
+  - source_labels: [__meta_kubernetes_pod_name]
+    action: replace
+    target_label: pod
+
+- job_name: 'control-plane-service-endpoints'
+
+  kubernetes_sd_configs:
+  - role: endpoints
+    namespaces:
+      names:
+      - "{{ $.TemplateData.Cluster.Status.NamespaceName }}"
+
+  relabel_configs:
+  - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+    action: keep
+    regex: true
+  - source_labels: [__meta_kubernetes_endpoint_ready]
+    action: keep
+    regex: true
+  - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+    action: replace
+    target_label: __metrics_path__
+    regex: (.+)
+  - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+    action: replace
+    regex: ([^:]+)(?::\d+)?;(\d+)
+    replacement: $1:$2
+    target_label: __address__
+  - source_labels: [__meta_kubernetes_endpoint_name]
+    action: replace
+    target_label: job
+  - source_labels: [__meta_kubernetes_endpoint_port_name]
+    action: replace
+    target_label: port_name
+  - source_labels: [__meta_kubernetes_namespace]
+    action: replace
+    target_label: namespace
+  - source_labels: [__meta_kubernetes_pod_name]
+    action: replace
+    target_label: pod
+
+- job_name: 'control-plane-pods'
 
   kubernetes_sd_configs:
   - role: pod
@@ -119,15 +214,22 @@ scrape_configs:
       names:
       - "{{ $.TemplateData.Cluster.Status.NamespaceName }}"
 
+{{- if semverCompare ">=1.11.0, <= 1.11.3" $.TemplateData.Cluster.Spec.Version }}
+  metric_relabel_configs:
+  - source_labels: [job, __name__]
+    regex: 'controller-manager;rest_.*'
+    action: drop
+{{- end }}
+
   relabel_configs:
-  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_{{ $i }}_scrape]
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
     action: keep
     regex: true
-  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_{{ $i }}_path]
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
     action: replace
     target_label: __metrics_path__
     regex: (.+)
-  - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_{{ $i }}_port]
+  - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
     action: replace
     regex: ([^:]+)(?::\d+)?;(\d+)
     replacement: $1:$2
@@ -142,7 +244,6 @@ scrape_configs:
   - source_labels: [__meta_kubernetes_pod_name]
     action: replace
     target_label: pod
-{{- end }}
 {{- end }}
 alerting:
   alertmanagers:

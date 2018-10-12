@@ -14,15 +14,10 @@ import (
 )
 
 var (
-	defaultInitMemoryRequest = resource.MustParse("128Mi")
-	defaultInitCPURequest    = resource.MustParse("250m")
-	defaultInitMemoryLimit   = resource.MustParse("512Mi")
-	defaultInitCPULimit      = resource.MustParse("500m")
-
-	defaultMemoryRequest = resource.MustParse("64Mi")
-	defaultCPURequest    = resource.MustParse("25m")
-	defaultMemoryLimit   = resource.MustParse("256Mi")
-	defaultCPULimit      = resource.MustParse("250m")
+	defaultMemoryRequest = resource.MustParse("16Mi")
+	defaultCPURequest    = resource.MustParse("5m")
+	defaultMemoryLimit   = resource.MustParse("32Mi")
+	defaultCPULimit      = resource.MustParse("25m")
 )
 
 const (
@@ -133,12 +128,12 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
-					corev1.ResourceMemory: defaultInitMemoryRequest,
-					corev1.ResourceCPU:    defaultInitCPURequest,
+					corev1.ResourceMemory: defaultMemoryRequest,
+					corev1.ResourceCPU:    defaultCPURequest,
 				},
 				Limits: corev1.ResourceList{
-					corev1.ResourceMemory: defaultInitMemoryLimit,
-					corev1.ResourceCPU:    defaultInitCPULimit,
+					corev1.ResourceMemory: defaultMemoryLimit,
+					corev1.ResourceCPU:    defaultCPULimit,
 				},
 			},
 		},

@@ -5,6 +5,7 @@ metadata:
   labels:
     app: minio
 spec:
+  storageClassName: {{ .Values.minio.storageClass | quote }}
   accessModes:
     - ReadWriteOnce
   resources:

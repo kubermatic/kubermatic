@@ -23,9 +23,9 @@ spec:
   template:
     metadata:
       annotations:
-        prometheus.io-0/path: /metrics
-        prometheus.io-0/port: "10252"
-        prometheus.io-0/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "10252"
+        prometheus.io/scrape: "true"
       creationTimestamp: null
       labels:
         app: controller-manager
@@ -126,6 +126,8 @@ spec:
         - "4"
         - --feature-gates
         - RotateKubeletClientCertificate=true,RotateKubeletServerCertificate=true,ScheduleDaemonSetPods=false
+        - --authentication-kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
         - --authentication-skip-lookup=true
         command:
         - /hyperkube

@@ -5,6 +5,7 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 )
@@ -97,6 +98,40 @@ func (c *Controller) ensureDeployments(cluster *kubermaticv1.Cluster, data *reso
 	return nil
 }
 
+// SecretOperation returns a wrapper struct to utilize a sorted slice instead of an unsorted map
+type SecretOperation struct {
+	name   string
+	create resources.SecretCreator
+}
+
+// GetSecretCreatorOperations returns all SecretCreators that are currently in use
+func GetSecretCreatorOperations(data *resources.TemplateData) []SecretOperation {
+	return []SecretOperation{
+		{
+			resources.PrometheusApiserverClientCertificateSecretName,
+			certificates.GetClientCertificateCreator(
+				resources.PrometheusApiserverClientCertificateSecretName,
+				resources.PrometheusCertUsername, nil,
+				resources.PrometheusClientCertificateCertSecretKey,
+				resources.PrometheusClientCertificateKeySecretKey,
+				data.GetRootCA,
+			),
+		},
+	}
+}
+
+func (c *Controller) ensureSecrets(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	operations := GetSecretCreatorOperations(data)
+
+	for _, op := range operations {
+		if err := resources.EnsureSecret(op.name, data, op.create, c.secretLister.Secrets(cluster.Status.NamespaceName), c.kubeClient.CoreV1().Secrets(cluster.Status.NamespaceName)); err != nil {
+			return fmt.Errorf("failed to ensure that the Secret exists: %v", err)
+		}
+	}
+
+	return nil
+}
+
 // GetConfigMapCreators returns all ConfigMapCreators that are currently in use
 func GetConfigMapCreators(data *resources.TemplateData) []resources.ConfigMapCreator {
 	return []resources.ConfigMapCreator{
@@ -139,6 +174,7 @@ func (c *Controller) ensureStatefulSets(cluster *kubermaticv1.Cluster, data *res
 func GetServiceCreators() []resources.ServiceCreator {
 	return []resources.ServiceCreator{
 		prometheus.Service,
+		kubestatemetrics.Service,
 	}
 }
 

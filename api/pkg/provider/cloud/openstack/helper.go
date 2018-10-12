@@ -3,6 +3,7 @@ package openstack
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
@@ -365,4 +366,11 @@ func getSubnetForNetwork(netClient *gophercloud.ServiceClient, networkID string)
 	}
 
 	return allSubnets, nil
+}
+
+func isNotFoundErr(err error) bool {
+	if _, ok := err.(gophercloud.ErrDefault404); ok || strings.Contains(err.Error(), "not found") {
+		return true
+	}
+	return false
 }

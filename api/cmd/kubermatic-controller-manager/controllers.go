@@ -157,6 +157,7 @@ func createBackupController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.kubeInformerFactory.Batch().V1beta1().CronJobs(),
 		ctrlCtx.kubeInformerFactory.Batch().V1().Jobs(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Secrets(),
+		ctrlCtx.kubeInformerFactory.Core().V1().Services(),
 	)
 }
 

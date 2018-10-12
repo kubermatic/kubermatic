@@ -83,9 +83,9 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 		Labels: podLabels,
 		Annotations: map[string]string{
-			"prometheus.io-0/scrape": "true",
-			"prometheus.io-0/path":   "/metrics",
-			"prometheus.io-0/port":   "10252",
+			"prometheus.io/scrape": "true",
+			"prometheus.io/path":   "/metrics",
+			"prometheus.io/port":   "10252",
 		},
 	}
 
@@ -243,12 +243,18 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
 
+	// New flag in v1.12 which gets used to perform permission checks
+	if clusterVersionSemVer.Minor() >= 12 {
+		flags = append(flags, "--authentication-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
+	}
+
 	// This is required in 1.12.0 as a workaround for
 	// https://github.com/kubernetes/kubernetes/issues/68986, the patch
 	// got cherry-picked onto 1.12.1
 	if clusterVersionSemVer.Minor() == 12 && clusterVersionSemVer.Patch() == 0 {
 		flags = append(flags, "--authentication-skip-lookup=true")
 	}
+
 	return flags, nil
 }
 

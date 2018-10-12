@@ -18,8 +18,10 @@ updates:
 # ======= 1.10 =======
 # Allow to change to any patch version
 - from: 1.10.*
-  #We need to skip 1.10.0 as it broke OpenStack.
-  to: ^1.10.1
+  to: 1.10.*
+  automatic: false
+- from: 1.10.*
+  to: 1.11.0
   automatic: false
 
 # ======= 1.11 =======

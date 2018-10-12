@@ -12,8 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
-	"github.com/kubermatic/machine-controller/pkg/containerruntime"
-	machinesv1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	machinetemplate "github.com/kubermatic/machine-controller/pkg/template"
 	"github.com/kubermatic/machine-controller/pkg/userdata/cloud"
@@ -21,18 +19,6 @@ import (
 
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
-
-type packageCompatibilityMatrix struct {
-	versions []string
-	pkg      string
-}
-
-var dockerInstallCandidates = []packageCompatibilityMatrix{
-	{
-		versions: []string{"1.13", "1.13.1"},
-		pkg:      "docker-1.13.1",
-	},
-}
 
 func getConfig(r runtime.RawExtension) (*Config, error) {
 	p := Config{}
@@ -45,17 +31,6 @@ func getConfig(r runtime.RawExtension) (*Config, error) {
 	return &p, nil
 }
 
-func getDockerPackageName(version string) (string, error) {
-	for _, installCandidate := range dockerInstallCandidates {
-		for _, v := range installCandidate.versions {
-			if v == version {
-				return installCandidate.pkg, nil
-			}
-		}
-	}
-	return "", fmt.Errorf("no package found for version '%s'", version)
-}
-
 // Config TODO
 type Config struct {
 	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
@@ -63,16 +38,6 @@ type Config struct {
 
 // Provider is a pkg/userdata.Provider implementation
 type Provider struct{}
-
-// SupportedContainerRuntimes return list of container runtimes
-func (p Provider) SupportedContainerRuntimes() (runtimes []machinesv1alpha1.ContainerRuntimeInfo) {
-	for _, installCandidate := range dockerInstallCandidates {
-		for _, v := range installCandidate.versions {
-			runtimes = append(runtimes, machinesv1alpha1.ContainerRuntimeInfo{Name: containerruntime.Docker, Version: v})
-		}
-	}
-	return runtimes
-}
 
 // UserData renders user-data template
 func (p Provider) UserData(
@@ -87,11 +52,10 @@ func (p Provider) UserData(
 		return "", fmt.Errorf("failed to parse user-data template: %v", err)
 	}
 
-	semverKubeletVersion, err := semver.NewVersion(spec.Versions.Kubelet)
+	kubeletVersion, err := semver.NewVersion(spec.Versions.Kubelet)
 	if err != nil {
 		return "", fmt.Errorf("invalid kubelet version: '%v'", err)
 	}
-	kubeletVersion := semverKubeletVersion.String()
 
 	cpConfig, cpName, err := ccProvider.GetCloudConfig(spec)
 	if err != nil {
@@ -101,11 +65,6 @@ func (p Provider) UserData(
 	pconfig, err := providerconfig.GetConfig(spec.ProviderConfig)
 	if err != nil {
 		return "", fmt.Errorf("failed to get provider config: %v", err)
-	}
-
-	dockerPackageName, err := getDockerPackageName(pconfig.ContainerRuntimeInfo.Version)
-	if err != nil {
-		return "", fmt.Errorf("error getting Docker package name: '%v'", err)
 	}
 
 	if pconfig.OverwriteCloudConfig != nil {
@@ -144,7 +103,6 @@ func (p Provider) UserData(
 		CloudProvider     string
 		CloudConfig       string
 		KubeletVersion    string
-		DockerPackageName string
 		ClusterDNSIPs     []net.IP
 		KubeadmCACertHash string
 		ServerAddr        string
@@ -156,8 +114,7 @@ func (p Provider) UserData(
 		BoostrapToken:     bootstrapToken,
 		CloudProvider:     cpName,
 		CloudConfig:       cpConfig,
-		KubeletVersion:    kubeletVersion,
-		DockerPackageName: dockerPackageName,
+		KubeletVersion:    kubeletVersion.String(),
 		ClusterDNSIPs:     clusterDNSIPs,
 		KubeadmCACertHash: kubeadmCACertHash,
 		ServerAddr:        serverAddr,
@@ -259,22 +216,14 @@ write_files:
     setenforce 0 || true
     sysctl --system
 
-    # There is a dependency issue in the rpm repo for 1.8, if the cni package is not explicitly
-    # specified, installation of the kube packages fails
-    export CNI_PKG=''
-    {{- if semverCompare "=1.8.X" .KubeletVersion }}
-    export CNI_PKG='kubernetes-cni-0.5.1-1'
-    {{- end }}
-
-    yum install -y {{ .DockerPackageName }} \
+    yum install -y docker-1.13.1 \
       kubelet-{{ .KubeletVersion }} \
       kubeadm-{{ .KubeletVersion }} \
       ebtables \
       ethtool \
       nfs-utils \
       bash-completion \
-      sudo \
-      ${CNI_PKG}
+      sudo
 
     cp /etc/sysconfig/kubelet-overwrite /etc/sysconfig/kubelet
 

@@ -18,6 +18,7 @@ type SSHKey struct {
 	Name        string
 	Fingerprint string
 	PublicKey   string
+	Labels      map[string]string
 }
 
 // SSHKeyClient is a client for the SSH keys API.
@@ -46,6 +47,26 @@ func (c *SSHKeyClient) GetByID(ctx context.Context, id int) (*SSHKey, *Response,
 // GetByName retrieves a SSH key by its name.
 func (c *SSHKeyClient) GetByName(ctx context.Context, name string) (*SSHKey, *Response, error) {
 	path := "/ssh_keys?name=" + url.QueryEscape(name)
+	req, err := c.client.NewRequest(ctx, "GET", path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var body schema.SSHKeyListResponse
+	resp, err := c.client.Do(req, &body)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if len(body.SSHKeys) == 0 {
+		return nil, resp, nil
+	}
+	return SSHKeyFromSchema(body.SSHKeys[0]), resp, nil
+}
+
+// GetByFingerprint retreives a SSH key by its fingerprint.
+func (c *SSHKeyClient) GetByFingerprint(ctx context.Context, fingerprint string) (*SSHKey, *Response, error) {
+	path := "/ssh_keys?fingerprint=" + url.QueryEscape(fingerprint)
 	req, err := c.client.NewRequest(ctx, "GET", path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -98,10 +119,12 @@ func (c *SSHKeyClient) List(ctx context.Context, opts SSHKeyListOpts) ([]*SSHKey
 
 // All returns all SSH keys.
 func (c *SSHKeyClient) All(ctx context.Context) ([]*SSHKey, error) {
-	allSSHKeys := []*SSHKey{}
+	return c.AllWithOpts(ctx, SSHKeyListOpts{ListOpts{PerPage: 50}})
+}
 
-	opts := SSHKeyListOpts{}
-	opts.PerPage = 50
+// AllWithOpts returns all SSH keys with the given options.
+func (c *SSHKeyClient) AllWithOpts(ctx context.Context, opts SSHKeyListOpts) ([]*SSHKey, error) {
+	allSSHKeys := []*SSHKey{}
 
 	_, err := c.client.all(func(page int) (*Response, error) {
 		opts.Page = page
@@ -123,6 +146,7 @@ func (c *SSHKeyClient) All(ctx context.Context) ([]*SSHKey, error) {
 type SSHKeyCreateOpts struct {
 	Name      string
 	PublicKey string
+	Labels    map[string]string
 }
 
 // Validate checks if options are valid.
@@ -141,11 +165,14 @@ func (c *SSHKeyClient) Create(ctx context.Context, opts SSHKeyCreateOpts) (*SSHK
 	if err := opts.Validate(); err != nil {
 		return nil, nil, err
 	}
-
-	reqBodyData, err := json.Marshal(schema.SSHKeyCreateRequest{
+	reqBody := schema.SSHKeyCreateRequest{
 		Name:      opts.Name,
 		PublicKey: opts.PublicKey,
-	})
+	}
+	if opts.Labels != nil {
+		reqBody.Labels = &opts.Labels
+	}
+	reqBodyData, err := json.Marshal(reqBody)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -174,13 +201,17 @@ func (c *SSHKeyClient) Delete(ctx context.Context, sshKey *SSHKey) (*Response, e
 
 // SSHKeyUpdateOpts specifies options for updating a SSH key.
 type SSHKeyUpdateOpts struct {
-	Name string
+	Name   string
+	Labels map[string]string
 }
 
 // Update updates a SSH key.
 func (c *SSHKeyClient) Update(ctx context.Context, sshKey *SSHKey, opts SSHKeyUpdateOpts) (*SSHKey, *Response, error) {
 	reqBody := schema.SSHKeyUpdateRequest{
 		Name: opts.Name,
+	}
+	if opts.Labels != nil {
+		reqBody.Labels = &opts.Labels
 	}
 	reqBodyData, err := json.Marshal(reqBody)
 	if err != nil {

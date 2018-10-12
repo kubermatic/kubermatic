@@ -811,7 +811,7 @@ func (r Routing) newCreateCluster() http.Handler {
 			r.userSaverMiddleware(),
 			r.newDatacenterMiddleware(),
 			r.userInfoMiddleware(),
-		)(newCreateClusterEndpoint(r.newSSHKeyProvider, r.cloudProviders, r.projectProvider)),
+		)(newCreateClusterEndpoint(r.cloudProviders, r.projectProvider)),
 		newDecodeCreateClusterReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
