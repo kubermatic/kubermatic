@@ -293,8 +293,8 @@ func genDefaultProject() *kubermaticapiv1.Project {
 	return genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp(), oRef)
 }
 
-func genDefaultKubermaticObjects() []runtime.Object {
-	return []runtime.Object{
+func genDefaultKubermaticObjects(objs ...runtime.Object) []runtime.Object {
+	defaultsObjs := []runtime.Object{
 		// add a project
 		genDefaultProject(),
 		// add a user
@@ -302,4 +302,6 @@ func genDefaultKubermaticObjects() []runtime.Object {
 		// make a user the owner of the default project
 		genDefaultOwnerBinding(),
 	}
+
+	return append(defaultsObjs, objs...)
 }
