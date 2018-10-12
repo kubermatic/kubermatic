@@ -27,7 +27,21 @@ func openstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 func legacyOpenstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(LegacyOpenstackReq)
-		cluster, err := getClusterForOpenstack(ctx, req.ClusterName)
+		cluster, err := getClusterForOpenstackLegacy(ctx, req.ClusterName)
+		if err != nil {
+			return nil, err
+		}
+
+		openstackSpec := cluster.Spec.Cloud.Openstack
+		datacenterName := cluster.Spec.Cloud.DatacenterName
+		return getOpenstackSizes(providers, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.Domain, datacenterName)
+	}
+}
+
+func openstackSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(OpenstackNoCredentialsReq)
+		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
 		if err != nil {
 			return nil, err
 		}
@@ -93,7 +107,21 @@ func openstackTenantEndpoint(providers provider.CloudRegistry) endpoint.Endpoint
 func legacyOpenstackTenantEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(LegacyOpenstackReq)
-		cluster, err := getClusterForOpenstack(ctx, req.ClusterName)
+		cluster, err := getClusterForOpenstackLegacy(ctx, req.ClusterName)
+		if err != nil {
+			return nil, err
+		}
+
+		openstackSpec := cluster.Spec.Cloud.Openstack
+		datacenterName := cluster.Spec.Cloud.DatacenterName
+		return getOpenstackTenants(providers, openstackSpec.Username, openstackSpec.Password, openstackSpec.Domain, datacenterName)
+	}
+}
+
+func openstackTenantNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(OpenstackNoCredentialsReq)
+		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
 		if err != nil {
 			return nil, err
 		}
@@ -153,7 +181,21 @@ func openstackNetworkEndpoint(providers provider.CloudRegistry) endpoint.Endpoin
 func legacyOpenstackNetworkEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(LegacyOpenstackReq)
-		cluster, err := getClusterForOpenstack(ctx, req.ClusterName)
+		cluster, err := getClusterForOpenstackLegacy(ctx, req.ClusterName)
+		if err != nil {
+			return nil, err
+		}
+
+		openstackSpec := cluster.Spec.Cloud.Openstack
+		datacenterName := cluster.Spec.Cloud.DatacenterName
+		return getOpenstackNetworks(providers, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.Domain, datacenterName)
+	}
+}
+
+func openstackNetworkNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(OpenstackNoCredentialsReq)
+		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
 		if err != nil {
 			return nil, err
 		}
@@ -215,7 +257,21 @@ func openstackSecurityGroupEndpoint(providers provider.CloudRegistry) endpoint.E
 func legacyOpenstackSecurityGroupEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(LegacyOpenstackReq)
-		cluster, err := getClusterForOpenstack(ctx, req.ClusterName)
+		cluster, err := getClusterForOpenstackLegacy(ctx, req.ClusterName)
+		if err != nil {
+			return nil, err
+		}
+
+		openstackSpec := cluster.Spec.Cloud.Openstack
+		datacenterName := cluster.Spec.Cloud.DatacenterName
+		return getOpenstackSecurityGroups(providers, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.Domain, datacenterName)
+	}
+}
+
+func openstackSecurityGroupNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(OpenstackNoCredentialsReq)
+		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
 		if err != nil {
 			return nil, err
 		}
@@ -276,7 +332,21 @@ func openstackSubnetsEndpoint(providers provider.CloudRegistry) endpoint.Endpoin
 func legacyOpenstackSubnetsEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(LegacyOpenstackSubnetReq)
-		cluster, err := getClusterForOpenstack(ctx, req.ClusterName)
+		cluster, err := getClusterForOpenstackLegacy(ctx, req.ClusterName)
+		if err != nil {
+			return nil, err
+		}
+
+		openstackSpec := cluster.Spec.Cloud.Openstack
+		datacenterName := cluster.Spec.Cloud.DatacenterName
+		return getOpenstackSubnets(providers, openstackSpec.Username, openstackSpec.Password, openstackSpec.Domain, openstackSpec.Tenant, req.NetworkID, datacenterName)
+	}
+}
+
+func openstackSubnetsNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(OpenstackSubnetNoCredentialsReq)
+		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
 		if err != nil {
 			return nil, err
 		}
@@ -322,7 +392,7 @@ func getOpenstackSubnets(providers provider.CloudRegistry, username, password, d
 	return apiSubnetIDs, nil
 }
 
-func getClusterForOpenstack(ctx context.Context, clusterName string) (*kubermaticv1.Cluster, error) {
+func getClusterForOpenstackLegacy(ctx context.Context, clusterName string) (*kubermaticv1.Cluster, error) {
 	user := ctx.Value(apiUserContextKey).(apiv1.User)
 	clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 	cluster, err := clusterProvider.Cluster(user, clusterName)
@@ -334,6 +404,23 @@ func getClusterForOpenstack(ctx context.Context, clusterName string) (*kubermati
 	}
 	if cluster.Spec.Cloud.Openstack == nil {
 		return nil, errors.NewNotFound("cloud spec for ", clusterName)
+	}
+	return cluster, nil
+}
+
+func getClusterForOpenstack(ctx context.Context, projectProvider provider.ProjectProvider, projectID string, clusterID string) (*kubermaticv1.Cluster, error) {
+	clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+	userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+	_, err := projectProvider.Get(userInfo, projectID, &provider.ProjectGetOptions{})
+	if err != nil {
+		return nil, kubernetesErrorToHTTPError(err)
+	}
+	cluster, err := clusterProvider.Get(userInfo, clusterID, &provider.ClusterGetOptions{})
+	if err != nil {
+		return nil, kubernetesErrorToHTTPError(err)
+	}
+	if cluster.Spec.Cloud.Openstack == nil {
+		return nil, errors.NewNotFound("cloud spec for ", clusterID)
 	}
 	return cluster, nil
 }

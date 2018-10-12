@@ -24,6 +24,29 @@ func vsphereNetworksEndpoint(providers provider.CloudRegistry) endpoint.Endpoint
 	}
 }
 
+func vsphereNetworksNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(VSphereNetworksNoCredentialsReq)
+		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		if cluster.Spec.Cloud.VSphere == nil {
+			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
+		}
+
+		datacenterName := cluster.Spec.Cloud.DatacenterName
+		vSpec := cluster.Spec.Cloud.VSphere
+		return getVsphereNetworks(providers, vSpec.Username, vSpec.Password, datacenterName)
+	}
+}
+
 func legacyVsphereNetworksEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(LegacyVSphereNetworksReq)

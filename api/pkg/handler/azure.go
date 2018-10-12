@@ -45,6 +45,38 @@ func legacyAzureSizeEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.En
 	}
 }
 
+func azureSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(AzureSizeNoCredentialsReq)
+		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		if cluster.Spec.Cloud.Azure == nil {
+			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
+		}
+
+		dc, err := listDatacenter(dcs, cluster.Spec.Cloud.DatacenterName)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, err.Error())
+		}
+
+		if dc.Spec.Azure == nil {
+			return nil, errors.NewNotFound("cloud spec (dc) for ", req.ClusterID)
+		}
+
+		azureSpec := cluster.Spec.Cloud.Azure
+		azureLocation := dc.Spec.Azure.Location
+		return azureSize(ctx, azureSpec.SubscriptionID, azureSpec.ClientID, azureSpec.ClientSecret, azureSpec.TenantID, azureLocation)
+	}
+}
+
 func azureSizeEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AzureSizeReq)
