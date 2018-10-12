@@ -64,6 +64,8 @@ const (
 	ApiserverInternalServiceName = "apiserver"
 	//PrometheusServiceName is the name for the prometheus service
 	PrometheusServiceName = "prometheus"
+	// KubeStateMetricsServiceName is the name for the kube-state-metrics service
+	KubeStateMetricsServiceName = "kube-state-metrics"
 	//EtcdServiceName is the name for the etcd service
 	EtcdServiceName = "etcd"
 	//EtcdDefragCronJobName is the name for the defrag cronjob deployment

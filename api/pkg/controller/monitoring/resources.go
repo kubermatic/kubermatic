@@ -174,6 +174,7 @@ func (c *Controller) ensureStatefulSets(cluster *kubermaticv1.Cluster, data *res
 func GetServiceCreators() []resources.ServiceCreator {
 	return []resources.ServiceCreator{
 		prometheus.Service,
+		kubestatemetrics.Service,
 	}
 }
 
