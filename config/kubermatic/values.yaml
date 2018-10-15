@@ -53,7 +53,7 @@ kubermatic:
     replicas: 2
     image:
       repository: "kubermatic/ui-v2"
-      tag: "v1.0.0"
+      tag: "v1.0.1"
       pullPolicy: "IfNotPresent"
     config: |
       {
