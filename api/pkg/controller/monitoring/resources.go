@@ -27,6 +27,7 @@ func (c *Controller) getClusterTemplateData(cluster *kubermaticv1.Cluster) (*res
 		c.nodePortRange,
 		c.nodeAccessNetwork,
 		c.etcdDiskSize,
+		c.monitoringScrapeAnnotationPrefix,
 		c.inClusterPrometheusRulesFile,
 		c.inClusterPrometheusDisableDefaultRules,
 		c.inClusterPrometheusDisableDefaultScrapingConfigs,
