@@ -10,12 +10,12 @@ import (
 
 	"github.com/Masterminds/semver"
 	"k8s.io/apimachinery/pkg/runtime"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
-	machinetemplate "github.com/kubermatic/machine-controller/pkg/template"
 	"github.com/kubermatic/machine-controller/pkg/userdata/cloud"
 	userdatahelper "github.com/kubermatic/machine-controller/pkg/userdata/helper"
+
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
@@ -47,7 +47,7 @@ func (p Provider) UserData(
 	clusterDNSIPs []net.IP,
 ) (string, error) {
 
-	tmpl, err := template.New("user-data").Funcs(machinetemplate.TxtFuncMap()).Parse(ctTemplate)
+	tmpl, err := template.New("user-data").Funcs(userdatahelper.TxtFuncMap()).Parse(ctTemplate)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse user-data template: %v", err)
 	}
@@ -55,13 +55,6 @@ func (p Provider) UserData(
 	kubeletVersion, err := semver.NewVersion(spec.Versions.Kubelet)
 	if err != nil {
 		return "", fmt.Errorf("invalid kubelet version: %v", err)
-	}
-
-	var kubeadmDropInFilename string
-	if kubeletVersion.Minor() > 8 {
-		kubeadmDropInFilename = "10-kubeadm.conf"
-	} else {
-		kubeadmDropInFilename = "kubeadm-10.conf"
 	}
 
 	cpConfig, cpName, err := ccProvider.GetCloudConfig(spec)
@@ -87,49 +80,43 @@ func (p Provider) UserData(
 		return "", fmt.Errorf("failed to get ubuntu config from provider config: %v", err)
 	}
 
-	bootstrapToken, err := userdatahelper.GetTokenFromKubeconfig(kubeconfig)
-	if err != nil {
-		return "", fmt.Errorf("error extracting token: %v", err)
-	}
-
-	kubeadmCACertHash, err := userdatahelper.GetKubeadmCACertHash(kubeconfig)
-	if err != nil {
-		return "", fmt.Errorf("error extracting kubeadm cacert hash: %v", err)
-	}
-
 	serverAddr, err := userdatahelper.GetServerAddressFromKubeconfig(kubeconfig)
 	if err != nil {
 		return "", fmt.Errorf("error extracting server address from kubeconfig: %v", err)
 	}
 
+	kubeconfigString, err := userdatahelper.StringifyKubeconfig(kubeconfig)
+	if err != nil {
+		return "", err
+	}
+
+	kubernetesCACert, err := userdatahelper.GetCACert(kubeconfig)
+	if err != nil {
+		return "", fmt.Errorf("error extracting cacert: %v", err)
+	}
+
 	data := struct {
-		MachineSpec           clusterv1alpha1.MachineSpec
-		ProviderConfig        *providerconfig.Config
-		OSConfig              *Config
-		BoostrapToken         string
-		CloudProvider         string
-		CloudConfig           string
-		CRAptPackage          string
-		CRAptPackageVersion   string
-		KubeadmDropInFilename string
-		ClusterDNSIPs         []net.IP
-		KubeadmCACertHash     string
-		ServerAddr            string
-		JournaldMaxSize       string
-		KubeletVersion        string
+		MachineSpec      clusterv1alpha1.MachineSpec
+		ProviderConfig   *providerconfig.Config
+		OSConfig         *Config
+		CloudProvider    string
+		CloudConfig      string
+		ClusterDNSIPs    []net.IP
+		ServerAddr       string
+		KubeletVersion   string
+		Kubeconfig       string
+		KubernetesCACert string
 	}{
-		MachineSpec:           spec,
-		ProviderConfig:        pconfig,
-		OSConfig:              osConfig,
-		BoostrapToken:         bootstrapToken,
-		CloudProvider:         cpName,
-		CloudConfig:           cpConfig,
-		KubeadmDropInFilename: kubeadmDropInFilename,
-		ClusterDNSIPs:         clusterDNSIPs,
-		KubeadmCACertHash:     kubeadmCACertHash,
-		ServerAddr:            serverAddr,
-		JournaldMaxSize:       userdatahelper.JournaldMaxUse,
-		KubeletVersion:        kubeletVersion.String(),
+		MachineSpec:      spec,
+		ProviderConfig:   pconfig,
+		OSConfig:         osConfig,
+		CloudProvider:    cpName,
+		CloudConfig:      cpConfig,
+		ClusterDNSIPs:    clusterDNSIPs,
+		ServerAddr:       serverAddr,
+		KubeletVersion:   kubeletVersion.String(),
+		Kubeconfig:       kubeconfigString,
+		KubernetesCACert: kubernetesCACert,
 	}
 	b := &bytes.Buffer{}
 	err = tmpl.Execute(b, data)
@@ -153,130 +140,19 @@ ssh_authorized_keys:
 write_files:
 - path: "/etc/systemd/journald.conf.d/max_disk_use.conf"
   content: |
-    [Journal]
-    SystemMaxUse={{ .JournaldMaxSize }}
+{{ journalDConfig | indent 4 }}
+
+- path: "/etc/modules-load.d/k8s.conf"
+  content: |
+{{ kernelModules | indent 4 }}
 
 - path: "/etc/sysctl.d/k8s.conf"
   content: |
-    net.bridge.bridge-nf-call-ip6tables = 1
-    net.bridge.bridge-nf-call-iptables = 1
-    kernel.panic_on_oops = 1
-    kernel.panic = 10
-    vm.overcommit_memory = 1
-
-- path: "/etc/kubernetes/cloud-config"
-  content: |
-{{ if ne .CloudConfig "" }}{{ .CloudConfig | indent 4 }}{{ end }}
+{{ kernelSettings | indent 4 }}
 
 - path: "/etc/apt/sources.list.d/docker.list"
   permissions: "0644"
   content: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
-
-- path: "/etc/apt/sources.list.d/kubernetes.list"
-  permissions: "0644"
-  content: deb http://apt.kubernetes.io/ kubernetes-xenial main
-
-- path: "/usr/local/bin/setup"
-  permissions: "0755"
-  content: |
-    #!/bin/bash
-    set -xeuo pipefail
-
-    sysctl --system
-    mkdir -p /opt/bin
-    apt-key add /opt/docker.asc
-    apt-key add /opt/kubernetes.asc
-    apt-get update
-
-    # Hetzner's Ubuntu Bionic comes with swap pre-configured, so we force it off.
-    systemctl mask swap.target
-    swapoff -a
-
-    # If something failed during package installation but one of docker/kubeadm/kubelet was already installed
-    # an apt-mark hold after the install won't do it, which is why we test here if the binaries exist and if
-    # yes put them on hold
-    set +e
-    which docker && apt-mark hold docker.io docker-ce
-    which kubelet && apt-mark hold kubelet
-    which kubeadm && apt-mark hold kubeadm
-
-    # When docker is started from within the apt installation it fails with a
-    # 'no sockets found via socket activation: make sure the service was started by systemd'
-    # Apparently the package is broken in a way that it gets started without its dependencies, manually starting
-    # it works fine thought
-    which docker && systemctl start docker
-    set -e
-
-    {{- if .OSConfig.DistUpgradeOnBoot }}
-    DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade -y
-    {{- end }}
-    if [[ -e /var/run/reboot-required ]]; then
-      reboot
-    fi
-
-    export CR_PKG='docker-ce=18.06.0~ce~3-0~ubuntu'
-{{- if semverCompare "<1.12.0" .KubeletVersion }}
-    export CR_PKG='docker.io=17.12.1-0ubuntu1'
-{{ end }}
-
-    DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y \
-      curl \
-      ca-certificates \
-      ceph-common \
-      cifs-utils \
-      conntrack \
-      e2fsprogs \
-      ebtables \
-      ethtool \
-      glusterfs-client \
-      iptables \
-      jq \
-      kmod \
-      openssh-client \
-      nfs-common \
-      socat \
-      util-linux \
-      ${CR_PKG} \
-      open-vm-tools \
-      kubelet={{ .KubeletVersion }}-00 \
-      kubeadm={{ .KubeletVersion }}-00 \
-
-    cp /etc/default/kubelet-overwrite /etc/default/kubelet
-
-    systemctl enable --now docker
-    systemctl enable kubelet
-
-    if ! [[ -e /etc/kubernetes/pki/ca.crt ]]; then
-      kubeadm join \
-        --token {{ .BoostrapToken }} \
-        --discovery-token-ca-cert-hash sha256:{{ .KubeadmCACertHash }} \
-        {{- if semverCompare ">=1.9.X" .KubeletVersion }}
-        --ignore-preflight-errors=CRI \
-        {{- end }}
-        {{ .ServerAddr }}
-    fi
-
-- path: "/opt/kubernetes.asc"
-  permissions: "0400"
-  content: |
-    -----BEGIN PGP PUBLIC KEY BLOCK-----
-
-    mQENBFrBaNsBCADrF18KCbsZlo4NjAvVecTBCnp6WcBQJ5oSh7+E98jX9YznUCrN
-    rgmeCcCMUvTDRDxfTaDJybaHugfba43nqhkbNpJ47YXsIa+YL6eEE9emSmQtjrSW
-    IiY+2YJYwsDgsgckF3duqkb02OdBQlh6IbHPoXB6H//b1PgZYsomB+841XW1LSJP
-    YlYbIrWfwDfQvtkFQI90r6NknVTQlpqQh5GLNWNYqRNrGQPmsB+NrUYrkl1nUt1L
-    RGu+rCe4bSaSmNbwKMQKkROE4kTiB72DPk7zH4Lm0uo0YFFWG4qsMIuqEihJ/9KN
-    X8GYBr+tWgyLooLlsdK3l+4dVqd8cjkJM1ExABEBAAG0QEdvb2dsZSBDbG91ZCBQ
-    YWNrYWdlcyBBdXRvbWF0aWMgU2lnbmluZyBLZXkgPGdjLXRlYW1AZ29vZ2xlLmNv
-    bT6JAT4EEwECACgFAlrBaNsCGy8FCQWjmoAGCwkIBwMCBhUIAgkKCwQWAgMBAh4B
-    AheAAAoJEGoDCyG6B/T78e8H/1WH2LN/nVNhm5TS1VYJG8B+IW8zS4BqyozxC9iJ
-    AJqZIVHXl8g8a/Hus8RfXR7cnYHcg8sjSaJfQhqO9RbKnffiuQgGrqwQxuC2jBa6
-    M/QKzejTeP0Mgi67pyrLJNWrFI71RhritQZmzTZ2PoWxfv6b+Tv5v0rPaG+ut1J4
-    7pn+kYgtUaKdsJz1umi6HzK6AacDf0C0CksJdKG7MOWsZcB4xeOxJYuy6NuO6Kcd
-    Ez8/XyEUjIuIOlhYTd0hH8E/SEBbXXft7/VBQC5wNq40izPi+6WFK/e1O42DIpzQ
-    749ogYQ1eodexPNhLzekKR3XhGrNXJ95r5KO10VrsLFNd8I=
-    =TKuP
-    -----END PGP PUBLIC KEY BLOCK-----
 
 - path: "/opt/docker.asc"
   permissions: "0400"
@@ -344,7 +220,69 @@ write_files:
     =0YYh
     -----END PGP PUBLIC KEY BLOCK-----
 
-- path: "/usr/local/bin/supervise.sh"
+- path: "/opt/bin/setup"
+  permissions: "0755"
+  content: |
+    #!/bin/bash
+    set -xeuo pipefail
+
+    # As we added some modules and don't want to reboot, restart the service 
+    systemctl restart systemd-modules-load.service
+    sysctl --system
+    
+    apt-key add /opt/docker.asc
+    apt-get update
+
+    # Make sure we always disable swap - Otherwise the kubelet won't start'.
+    systemctl mask swap.target
+    swapoff -a
+    
+{{- if semverCompare "<1.12.0" .KubeletVersion }}
+    export CR_PKG='docker.io=17.12.1-0ubuntu1'
+{{- else }}
+    export CR_PKG='docker-ce=18.06.0~ce~3-0~ubuntu'
+{{- end }}
+
+    DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y \
+      curl \
+      ca-certificates \
+      ceph-common \
+      cifs-utils \
+      conntrack \
+      e2fsprogs \
+      ebtables \
+      ethtool \
+      glusterfs-client \
+      iptables \
+      jq \
+      kmod \
+      openssh-client \
+      nfs-common \
+      socat \
+      util-linux \
+      ${CR_PKG} \
+      open-vm-tools \
+      ipvsadm
+
+    # If something failed during package installation but docker got installed, we need to put it on hold
+    apt-mark hold docker.io || true
+    apt-mark hold docker-ce || true 
+
+    {{- if .OSConfig.DistUpgradeOnBoot }}
+    DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade -y
+    {{- end }}
+    if [[ -e /var/run/reboot-required ]]; then
+      reboot
+    fi
+
+{{ downloadBinariesScript .KubeletVersion true | indent 4 }}
+
+    systemctl enable --now docker
+    systemctl enable --now kubelet 
+    systemctl enable --now --no-block kubelet-healthcheck.service
+    systemctl enable --now --no-block docker-healthcheck.service
+
+- path: "/opt/bin/supervise.sh"
   permissions: "0755"
   content: |
     #!/bin/bash
@@ -353,29 +291,26 @@ write_files:
       sleep 1
     done
 
-- path: "/etc/default/kubelet-overwrite"
+- path: "/etc/systemd/system/kubelet.service"
   content: |
-    KUBELET_DNS_ARGS=
-    KUBELET_EXTRA_ARGS=--authentication-token-webhook=true \
-      {{- if .CloudProvider }}
-      --cloud-provider={{ .CloudProvider }} \
-      --cloud-config=/etc/kubernetes/cloud-config \
-      {{- end}}
-      --hostname-override={{ .MachineSpec.Name }} \
-      --read-only-port=0 \
-      --protect-kernel-defaults=true \
-      {{- if semverCompare "<1.11.0" .KubeletVersion }}
-      --resolv-conf=/run/systemd/resolve/resolv.conf \
-      {{- end }}
-      --cluster-dns={{ ipSliceToCommaSeparatedString .ClusterDNSIPs }} \
-      --cluster-domain=cluster.local
-{{ if semverCompare "<1.11.0" .KubeletVersion }}
-- path: "/etc/systemd/system/kubelet.service.d/20-extra.conf"
-  permissions: "0644"
+{{ kubeletSystemdUnit .KubeletVersion .CloudProvider .MachineSpec.Name .ClusterDNSIPs | indent 4 }}
+
+- path: "/etc/systemd/system/kubelet.service.d/extras.conf"
   content: |
     [Service]
-    EnvironmentFile=/etc/default/kubelet
-{{ end }}
+    Environment="KUBELET_EXTRA_ARGS=--resolv-conf=/run/systemd/resolve/resolv.conf"
+
+- path: "/etc/kubernetes/cloud-config"
+  content: |
+{{ .CloudConfig | indent 4 }}
+
+- path: "/etc/kubernetes/bootstrap-kubelet.conf"
+  content: |
+{{ .Kubeconfig | indent 4 }}
+
+- path: "/etc/kubernetes/pki/ca.crt"
+  content: |
+{{ .KubernetesCACert | indent 4 }}
 
 - path: "/etc/systemd/system/setup.service"
   permissions: "0644"
@@ -390,7 +325,29 @@ write_files:
     [Service]
     Type=oneshot
     RemainAfterExit=true
-    ExecStart=/usr/local/bin/supervise.sh /usr/local/bin/setup
+    ExecStart=/opt/bin/supervise.sh /opt/bin/setup
+
+- path: "/etc/profile.d/opt-bin-path.sh"
+  permissions: "0644"
+  content: |
+    export PATH="/opt/bin:$PATH"
+
+- path: /etc/systemd/system/docker.service.d/10-storage.conf
+  permissions: "0644"
+  content: |
+    [Service]
+    ExecStart=
+    ExecStart=/usr/bin/dockerd -H fd:// --storage-driver=overlay2
+
+- path: /etc/systemd/system/kubelet-healthcheck.service
+  permissions: "0644"
+  content: |
+{{ kubeletHealthCheckSystemdUnit | indent 4 }}
+
+- path: /etc/systemd/system/docker-healthcheck.service
+  permissions: "0644"
+  content: |
+{{ containerRuntimeHealthCheckSystemdUnit | indent 4 }}
 
 runcmd:
 - systemctl enable --now setup.service
