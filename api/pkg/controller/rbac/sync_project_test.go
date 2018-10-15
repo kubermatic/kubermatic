@@ -115,7 +115,7 @@ func TestEnsureProjectInitialized(t *testing.T) {
 			// act
 			target := Controller{}
 			target.masterClusterProvider = fakeMasterClusterProvider
-			err := target.ensureProjectInitialized(test.projectToSync)
+			err := target.ensureCleanupFinalizerExists(test.projectToSync)
 
 			// validate
 			if err != nil {
