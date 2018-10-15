@@ -731,7 +731,7 @@
   revision = "7cafcd837844e784b526369c9bce262804aebc60"
 
 [[projects]]
-  digest = "1:e11e8e41bb3738460b1f9cae686480f008b0889af8c9a5c452d42718f4ce2d6c"
+  digest = "1:4d763c2f6029aed02723d61f15bc28f5ee2aad07b05c1d38e394720fe7ef80e2"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/cloudprovider/cloud",
@@ -745,8 +745,8 @@
     "pkg/cloudprovider/provider/openstack",
     "pkg/cloudprovider/provider/vsphere",
     "pkg/kubernetes",
+    "pkg/node/eviction",
     "pkg/providerconfig",
-    "pkg/template",
     "pkg/userdata/centos",
     "pkg/userdata/cloud",
     "pkg/userdata/coreos",
@@ -754,8 +754,8 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "d9a5810db489e6e099c28234979697162b2bbf38"
-  version = "v0.9.4"
+  revision = "752124dc569ba1cbe4beb76f4889587976863a50"
+  version = "v0.9.5"
 
 [[projects]]
   digest = "1:11813b67edacc2bd17ed90ee8fd80dcc9c8551cf7b0e809a584c52e5bdafb5d3"
@@ -1779,6 +1779,7 @@
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere",
+    "github.com/kubermatic/machine-controller/pkg/node/eviction",
     "github.com/kubermatic/machine-controller/pkg/providerconfig",
     "github.com/kubermatic/machine-controller/pkg/userdata/centos",
     "github.com/kubermatic/machine-controller/pkg/userdata/coreos",
