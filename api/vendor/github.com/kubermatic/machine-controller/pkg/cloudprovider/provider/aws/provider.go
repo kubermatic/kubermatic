@@ -711,8 +711,19 @@ func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 		return nil, cloudprovidererrors.ErrInstanceNotFound
 	}
 
+	i := inOut.Reservations[0].Instances[0]
+	if i.State != nil && i.State.Name != nil {
+		// We consider terminated instances as deleted / don't exist anymore.
+		// The reason is that AWS takes very long >10min to gc those instances.
+		// Customers don't get billed anymore for those instances and they also don't block the deletion of security groups, etc.
+		// In AWS terms, a terminated instance is deleted.
+		if *i.State.Name == ec2.InstanceStateNameTerminated {
+			return nil, cloudprovidererrors.ErrInstanceNotFound
+		}
+	}
+
 	return &awsInstance{
-		instance: inOut.Reservations[0].Instances[0],
+		instance: i,
 	}, nil
 }
 
