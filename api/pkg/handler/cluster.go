@@ -202,9 +202,10 @@ func newUpdateCluster(cloudProviders map[string]provider.CloudProvider, projectP
 		existingCluster.Spec.MachineNetworks = newCluster.Spec.MachineNetworks
 		newCluster.Spec.Cloud = kubermaticapiv1.UpdateCloudSpec(newCluster.Spec.Cloud, existingCluster.Spec.Cloud)
 
-		if err = validation.ValidateUpdateCluster(existingCluster, existingCluster, cloudProviders); err != nil {
+		if err = validation.ValidateUpdateNewCluster(&newCluster, existingCluster, cloudProviders); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
+		existingCluster.Spec.Cloud = newCluster.Spec.Cloud
 
 		updatedCluster, err := clusterProvider.Update(userInfo, existingCluster)
 		if err != nil {
