@@ -19,6 +19,13 @@ import (
 	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 )
 
+// UserClusterConnectionProvider offers functions to interact with a user cluster
+type UserClusterConnectionProvider interface {
+	GetClient(*kubermaticapiv1.Cluster) (kubernetes.Interface, error)
+	GetMachineClient(*kubermaticapiv1.Cluster) (clusterv1alpha1clientset.Interface, error)
+	GetAdminKubeconfig(c *kubermaticapiv1.Cluster) ([]byte, error)
+}
+
 // NewRBACCompliantClusterProvider returns a new cluster provider that respects RBAC policies
 // it uses createSeedImpersonatedClient to create a connection that uses user impersonation
 func NewRBACCompliantClusterProvider(
