@@ -251,6 +251,41 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.revokeClusterAdminToken())
 
 	//
+	// Defines a set of HTTP endpoints for various cloud providers
+	// Note that these endpoints don't require credentials as opposed to the ones defined under /providers/*
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/digitalocean/sizes").
+		Handler(r.listDigitaloceanSizesNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/azure/sizes").
+		Handler(r.listAzureSizesNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/sizes").
+		Handler(r.listOpenstackSizesNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/tenants").
+		Handler(r.listOpenstackTenantsNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/networks").
+		Handler(r.listOpenstackNetworksNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/securitygroups").
+		Handler(r.listOpenstackSecurityGroupsNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/subnets").
+		Handler(r.listOpenstackSubnetsNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/networks").
+		Handler(r.listVSphereNetworksNoCredentials())
+
+	//
 	// Defines set of HTTP endpoints for Users of the given project
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/users").
@@ -1394,6 +1429,30 @@ func (r Routing) getCurrentUser() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/digitalocean/sizes digitalocean listDigitaloceanSizesNoCredentials
+//
+// Lists sizes from digitalocean
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: DigitaloceanSizeList
+func (r Routing) listDigitaloceanSizesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
+		)(digitaloceanSizeNoCredentialsEndpoint(r.projectProvider)),
+		decodeDoSizesNoCredentialsReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v1/dc/{dc}/cluster/{cluster}/digitalocean/sizes digitalocean listLegacyDigitaloceanSizes
 //
 // Lists sizes from digitalocean
@@ -1440,6 +1499,54 @@ func (r Routing) listLegacyAzureSizes() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/azure/sizes azure listAzureSizesNoCredentials
+//
+// Lists available VM sizes in an Azure region
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AzureSizeList
+func (r Routing) listAzureSizesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
+		)(azureSizeNoCredentialsEndpoint(r.projectProvider, r.datacenters)),
+		decodeAzureSizesNoCredentialsReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/sizes openstack listOpenstackSizesNoCredentials
+//
+// Lists sizes from openstack
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []OpenstackSize
+func (r Routing) listOpenstackSizesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
+		)(openstackSizeNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
+		decodeOpenstackNoCredentialsReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v1/dc/{dc}/cluster/{cluster}/openstack/sizes openstack listLegacyOpenstackSizes
 //
 // Lists sizes from openstack
@@ -1458,6 +1565,30 @@ func (r Routing) listLegacyOpenstackSizes() http.Handler {
 			r.datacenterMiddleware(),
 		)(legacyOpenstackSizeEndpoint(r.cloudProviders)),
 		decodeLegacyOpenstackReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/tenants openstack listOpenstackTenantsNoCredentials
+//
+// Lists tenants from openstack
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []OpenstackTenant
+func (r Routing) listOpenstackTenantsNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
+		)(openstackTenantNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
+		decodeOpenstackNoCredentialsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1509,6 +1640,54 @@ func (r Routing) listLegacyOpenstackNetworks() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/networks openstack listOpenstackNetworksNoCredentials
+//
+// Lists networks from openstack
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []OpenstackNetwork
+func (r Routing) listOpenstackNetworksNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
+		)(openstackNetworkNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
+		decodeOpenstackNoCredentialsReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/securitygroups openstack listOpenstackSecurityGroupsNoCredentials
+//
+// Lists security groups from openstack
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []OpenstackSecurityGroup
+func (r Routing) listOpenstackSecurityGroupsNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
+		)(openstackSecurityGroupNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
+		decodeOpenstackNoCredentialsReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v1/dc/{dc}/cluster/{cluster}/openstack/securitygroups openstack listLegacyOpenstackSecurityGroups
 //
 // Lists security groups from openstack
@@ -1555,6 +1734,30 @@ func (r Routing) listLegacyOpenstackSubnets() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/subnets openstack listOpenstackSubnetsNoCredentials
+//
+// Lists subnets from openstack
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []OpenstackSubnet
+func (r Routing) listOpenstackSubnetsNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
+		)(openstackSubnetsNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
+		decodeOpenstackSubnetNoCredentialsReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v1/dc/{dc}/cluster/{cluster}/vsphere/networks vsphere listLegacyVSphereNetworks
 //
 // Lists networks from vsphere datacenter
@@ -1573,6 +1776,30 @@ func (r Routing) listLegacyVSphereNetworks() http.Handler {
 			r.datacenterMiddleware(),
 		)(legacyVsphereNetworksEndpoint(r.cloudProviders)),
 		decodeLegacyVSphereNetworksReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/networks vsphere listVSphereNetworksNoCredentials
+//
+// Lists networks from vsphere datacenter
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []VSphereNetwork
+func (r Routing) listVSphereNetworksNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
+		)(vsphereNetworksNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
+		decodeVSphereNetworksNoCredentialsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
