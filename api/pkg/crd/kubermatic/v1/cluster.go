@@ -250,6 +250,12 @@ func UpdateCloudSpec(updatedShared, existingShared CloudSpec) CloudSpec {
 		}
 	}
 
+	if updated.Fake != nil {
+		if len(updated.Fake.Token) == 0 {
+			updated.Fake.Token = existingShared.Fake.Token
+		}
+	}
+
 	return *updated
 }
 

@@ -884,14 +884,42 @@ func TestUpdateCluster(t *testing.T) {
 		// scenario 1
 		{
 			Name:             "scenario 1: update the cluster version for FakeDatacenter",
-			Body:             `{"name":"keen-snyder","spec":{"version":"0.0.1","cloud":{"fake":{"token":"dummy_token"},"dc":"do-fra1"}}}`,
-			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"FakeDatacenter","fake":{"token":"SecretToken"}},"version":"0.0.1"},"status":{"version":"0.0.1","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
+			Body:             `{"name":"keen-snyder","spec":{"version":"0.0.1","cloud":{"fake":{"token":"dummy_token"},"dc":"FakeDatacenter"}}, "status":{"url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"FakeDatacenter","fake":{"token":"dummy_token"}},"version":"0.0.1"},"status":{"version":"0.0.1","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
 			ClusterToUpdate:  "keen-snyder",
 			HTTPStatus:       http.StatusOK,
 			ProjectToSync:    genDefaultProject().Name,
 			ExistingAPIUser:  genDefaultAPIUser(),
 			ExistingKubermaticObjects: genDefaultKubermaticObjects(
 				genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
+			),
+		},
+
+		// scenario 2
+		{
+			Name:             "scenario 2: changing the datacenter is not allowed on update",
+			Body:             `{"name":"keen-snyder","spec":{"version":"0.0.1","cloud":{"fake":{"token":"dummy_token"},"dc":"do-lon1"}}, "status":{"url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
+			ExpectedResponse: `{"error":{"code":400,"message":"invalid cluster: changing the datacenter is not allowed"}}`,
+			ClusterToUpdate:  "keen-snyder",
+			HTTPStatus:       http.StatusBadRequest,
+			ProjectToSync:    genDefaultProject().Name,
+			ExistingAPIUser:  genDefaultAPIUser(),
+			ExistingKubermaticObjects: genDefaultKubermaticObjects(
+				genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
+			),
+		},
+
+		// scenario 3
+		{
+			Name:             "scenario 3: changing the cloud provider is not allowed on update",
+			Body:             `{"name":"keen-snyder","spec":{"version":"0.0.1","cloud":{"fake":{"token":"dummy_token"},"dc":"do-fra1"}}}`,
+			ExpectedResponse: `{"error":{"code":400,"message":"invalid cluster: not allowed to change the cloud provider"}}`,
+			ClusterToUpdate:  "keen-snyder",
+			HTTPStatus:       http.StatusBadRequest,
+			ProjectToSync:    genDefaultProject().Name,
+			ExistingAPIUser:  genDefaultAPIUser(),
+			ExistingKubermaticObjects: genDefaultKubermaticObjects(
+				genClusterWithOpenstack(genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))),
 			),
 		},
 	}
