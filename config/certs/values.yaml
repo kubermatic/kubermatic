@@ -5,3 +5,5 @@ certificates:
   - "prometheus.kubermatic.example.com"
   - "alertmanager.kubermatic.example.com"
   - "kibana.kubermatic.example.com"
+  issuer:
+    email: dev@loodse.com
