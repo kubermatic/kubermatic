@@ -5,9 +5,14 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
-
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
+)
+
+const (
+	// TODO: Use const from machine-controller repo when updated
+	skipEvictionAnnotation = "kubermatic.io/skip-eviction"
 )
 
 // cleanupCluster is the function which handles clusters in the deleting phase.
@@ -36,6 +41,41 @@ func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv
 		return c, nil
 	}
 
+	userClusterCoreClient, err := cc.userClusterConnProvider.GetClient(c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cluster client: %v", err)
+	}
+
+	nodes, err := userClusterCoreClient.CoreV1().Nodes().List(metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cluster nodes: %v", err)
+	}
+
+	// If we delete a cluster, we should disable the eviction on the nodes
+	for _, node := range nodes.Items {
+		if node.Annotations[skipEvictionAnnotation] == "true" {
+			continue
+		}
+
+		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			// Get latest version of the node to prevent conflict errors
+			currentNode, err := userClusterCoreClient.CoreV1().Nodes().Get(node.Name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			if currentNode.Annotations == nil {
+				currentNode.Annotations = map[string]string{}
+			}
+			node.Annotations[skipEvictionAnnotation] = "true"
+
+			currentNode, err = userClusterCoreClient.CoreV1().Nodes().Update(&node)
+			return err
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to add the annotation '%s=true' to node '%s': %v", skipEvictionAnnotation, node.Name, err)
+		}
+	}
+
 	machineClient, err := cc.userClusterConnProvider.GetMachineClient(c)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cluster machine client: %v", err)
@@ -53,31 +93,12 @@ func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv
 		return c, nil
 	}
 
-	clusterClient, err := cc.userClusterConnProvider.GetClient(c)
+	c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
+		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, nodeDeletionFinalizer)
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cluster client: %v", err)
+		return nil, err
 	}
-
-	nodes, err := clusterClient.CoreV1().Nodes().List(metav1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get cluster nodes: %v", err)
-	}
-
-	if len(nodes.Items) == 0 {
-		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
-			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, nodeDeletionFinalizer)
-		})
-		if err != nil {
-			return nil, err
-		}
-		return c, nil
-	}
-
-	err = clusterClient.CoreV1().Nodes().DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to delete nodes: %v", err)
-	}
-
 	return c, nil
 }
 
