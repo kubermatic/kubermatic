@@ -1133,9 +1133,11 @@ func TestUpdateCluster(t *testing.T) {
 			HTTPStatus:       http.StatusBadRequest,
 			ProjectToSync:    genDefaultProject().Name,
 			ExistingAPIUser:  genDefaultAPIUser(),
-			ExistingKubermaticObjects: genDefaultKubermaticObjects(
-				genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
-			),
+			ExistingKubermaticObjects: func() []runtime.Object {
+				defaultObjs := genDefaultKubermaticObjects()
+				defaultObjs = append(defaultObjs, genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)))
+				return defaultObjs
+			}(),
 		},
 
 		// scenario 3
@@ -1147,9 +1149,11 @@ func TestUpdateCluster(t *testing.T) {
 			HTTPStatus:       http.StatusBadRequest,
 			ProjectToSync:    genDefaultProject().Name,
 			ExistingAPIUser:  genDefaultAPIUser(),
-			ExistingKubermaticObjects: genDefaultKubermaticObjects(
-				genClusterWithOpenstack(genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))),
-			),
+			ExistingKubermaticObjects: func() []runtime.Object {
+				defaultObjs := genDefaultKubermaticObjects()
+				defaultObjs = append(defaultObjs, genClusterWithOpenstack(genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))))
+				return defaultObjs
+			}(),
 		},
 	}
 
