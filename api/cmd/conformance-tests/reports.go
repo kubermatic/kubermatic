@@ -55,15 +55,6 @@ func collectReports(name, reportsDir string, time time.Duration) (*reporters.JUn
 	}
 	sort.Slice(resultSuite.TestCases, func(i, j int) bool { return resultSuite.TestCases[i].Name < resultSuite.TestCases[j].Name })
 
-	b, err := xml.Marshal(resultSuite)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal combined report file: %v", err)
-	}
-
-	if err := ioutil.WriteFile(path.Join(reportsDir, "junit.xml"), b, 0644); err != nil {
-		return nil, fmt.Errorf("failed to wrte combined report file: %v", err)
-	}
-
 	for _, f := range individualReportFiles {
 		if err := os.Remove(f); err != nil {
 			return nil, fmt.Errorf("failed to remove report file: %v", err)
@@ -75,19 +66,24 @@ func collectReports(name, reportsDir string, time time.Duration) (*reporters.JUn
 
 func printDetailedReport(report *reporters.JUnitTestSuite) {
 	testBuf := &bytes.Buffer{}
-	for _, t := range report.TestCases {
-		status := "PASS"
-		if t.FailureMessage != nil {
-			status = "FAIL"
-		}
 
-		if t.FailureMessage == nil {
-			continue
-		}
+	// Only print details errors in case we have a testcase which failed.
+	// Printing everything which has an error will print the errors from retried tests as for each attempt a TestCase entry exists.
+	if report.Failures > 0 || report.Errors > 0 {
+		for _, t := range report.TestCases {
+			status := "PASS"
+			if t.FailureMessage != nil {
+				status = "FAIL"
+			}
 
-		fmt.Fprintln(testBuf, fmt.Sprintf("[%s] - %s", status, t.Name))
-		if t.FailureMessage != nil {
-			fmt.Fprintln(testBuf, fmt.Sprintf("      %s", t.FailureMessage.Message))
+			if t.FailureMessage == nil {
+				continue
+			}
+
+			fmt.Fprintln(testBuf, fmt.Sprintf("[%s] - %s", status, t.Name))
+			if t.FailureMessage != nil {
+				fmt.Fprintln(testBuf, fmt.Sprintf("      %s", t.FailureMessage.Message))
+			}
 		}
 	}
 
