@@ -6,13 +6,11 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
+	"github.com/kubermatic/machine-controller/pkg/node/eviction"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
-)
-
-const (
-	// TODO: Use const from machine-controller repo when updated
-	skipEvictionAnnotation = "kubermatic.io/skip-eviction"
 )
 
 // cleanupCluster is the function which handles clusters in the deleting phase.
@@ -53,7 +51,7 @@ func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv
 
 	// If we delete a cluster, we should disable the eviction on the nodes
 	for _, node := range nodes.Items {
-		if node.Annotations[skipEvictionAnnotation] == "true" {
+		if node.Annotations[eviction.SkipEvictionAnnotationKey] == "true" {
 			continue
 		}
 
@@ -66,13 +64,13 @@ func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv
 			if currentNode.Annotations == nil {
 				currentNode.Annotations = map[string]string{}
 			}
-			node.Annotations[skipEvictionAnnotation] = "true"
+			node.Annotations[eviction.SkipEvictionAnnotationKey] = "true"
 
 			currentNode, err = userClusterCoreClient.CoreV1().Nodes().Update(&node)
 			return err
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to add the annotation '%s=true' to node '%s': %v", skipEvictionAnnotation, node.Name, err)
+			return nil, fmt.Errorf("failed to add the annotation '%s=true' to node '%s': %v", eviction.SkipEvictionAnnotationKey, node.Name, err)
 		}
 	}
 
