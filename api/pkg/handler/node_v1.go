@@ -515,6 +515,14 @@ func findMachineAndNode(name string, machineClient clusterv1alpha1clientset.Inte
 	}
 
 	return machine, node, nil
+		machine = getMachineForNode(node, machineList.Items)
+	}
+
+	if machine != nil && node == nil {
+		node = getNodeForMachine(machine, nodeList.Items)
+	}
+
+	return machine, node, nil
 }
 
 // NewDeleteNodeForClusterReq defines HTTP request for newDeleteNodeForCluster
