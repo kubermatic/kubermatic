@@ -40,13 +40,13 @@ func createLinkClonedVM(vmName, vmImage, datacenter, clusterName, folder string,
 
 	dc, err := f.Datacenter(ctx, datacenter)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get datacenter: %v", err)
 	}
 	f.SetDatacenter(dc)
 
 	templateVM, err := f.VirtualMachine(ctx, vmImage)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get virtualmachine: %v", err)
 	}
 
 	glog.V(3).Infof("Template VM ref is %+v", templateVM)
@@ -99,7 +99,7 @@ func createLinkClonedVM(vmName, vmImage, datacenter, clusterName, folder string,
 		var mvm mo.VirtualMachine
 		err = templateVM.Properties(ctx, templateVM.Reference(), []string{"config", "config.vAppConfig", "config.vAppConfig.property"}, &mvm)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to extract vapp properties for coreos: %v", err)
 		}
 
 		var propertySpecs []types.VAppPropertySpec
@@ -153,22 +153,24 @@ func createLinkClonedVM(vmName, vmImage, datacenter, clusterName, folder string,
 	// Create a link cloned VM from the template VM's snapshot
 	clonedVMTask, err := templateVM.Clone(ctx, targetVMFolder, vmName, *cloneSpec)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to clone template vm: %v", err)
 	}
 
-	_, err = clonedVMTask.WaitForResult(ctx, nil)
-	return err
+	if _, err = clonedVMTask.WaitForResult(ctx, nil); err != nil {
+		return fmt.Errorf("error when waiting for result of clone task: %v", err)
+	}
+	return nil
 }
 
 func updateNetworkForVM(ctx context.Context, vm *object.VirtualMachine, currentNetName string, newNetName string) error {
 	newNet, err := getNetworkFromVM(ctx, vm, newNetName)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get network from vm: %v", err)
 	}
 
 	availableData, err := getNetworkDevicesAndBackingsFromVM(ctx, vm, currentNetName)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get network devices for vm: %v", err)
 	}
 	if len(availableData) == 0 {
 		return errors.New("found no matching network adapter")
@@ -233,12 +235,12 @@ func getNetworkFromVM(ctx context.Context, vm *object.VirtualMachine, netName st
 func createSnapshot(ctx context.Context, vm *object.VirtualMachine, snapshotName string, snapshotDesc string) (object.Reference, error) {
 	task, err := vm.CreateSnapshot(ctx, snapshotName, snapshotDesc, false, false)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create snapshot: %v", err)
 	}
 
 	taskInfo, err := task.WaitForResult(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error waiting for task completion: %v", err)
 	}
 	glog.Infof("taskInfo.Result is %s", taskInfo.Result)
 	return taskInfo.Result.(object.Reference), nil
@@ -249,7 +251,7 @@ func findSnapshot(ctx context.Context, vm *object.VirtualMachine, name string) (
 
 	err := vm.Properties(ctx, vm.Reference(), []string{"snapshot"}, &moVirtualMachine)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get vm properties: %v", err)
 	}
 
 	if moVirtualMachine.Snapshot == nil {
@@ -288,29 +290,29 @@ func uploadAndAttachISO(f *find.Finder, vmRef *object.VirtualMachine, localIsoFi
 
 	datastore, err := f.Datastore(ctx, datastoreName)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get datastore: %v", err)
 	}
 	p := soap.DefaultUpload
 	remoteIsoFilePath := fmt.Sprintf("%s/%s", vmRef.Name(), "cloud-init.iso")
 	glog.V(3).Infof("Uploading userdata ISO to datastore %+v, destination iso is %s\n", datastore, remoteIsoFilePath)
 	err = datastore.UploadFile(ctx, localIsoFilePath, remoteIsoFilePath, &p)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to upload iso: %v", err)
 	}
 	glog.V(3).Infof("Uploaded ISO file %s", localIsoFilePath)
 
 	// Find the cd-rom devide and insert the cloud init iso file into it.
 	devices, err := vmRef.Device(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get devices: %v", err)
 	}
 
 	// passing empty cd-rom name so that the first one gets returned
 	cdrom, err := devices.FindCdrom("")
-	cdrom.Connectable.StartConnected = true
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to find cdrom device: %v", err)
 	}
+	cdrom.Connectable.StartConnected = true
 	iso := datastore.Path(remoteIsoFilePath)
 	return vmRef.EditDevice(ctx, devices.InsertIso(cdrom, iso))
 }
