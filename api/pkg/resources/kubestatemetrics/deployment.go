@@ -58,14 +58,6 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 
 	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 		Labels: podLabels,
-		Annotations: map[string]string{
-			"prometheus.io-0/scrape": "true",
-			"prometheus.io-0/path":   "/metrics",
-			"prometheus.io-0/port":   "8080",
-			"prometheus.io-1/scrape": "true",
-			"prometheus.io-1/path":   "/metrics",
-			"prometheus.io-1/port":   "8081",
-		},
 	}
 
 	dep.Spec.Template.Spec.Volumes = volumes
@@ -94,6 +86,18 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 					Name:      resources.KubeStateMetricsKubeconfigSecretName,
 					MountPath: "/etc/kubernetes/kubeconfig",
 					ReadOnly:  true,
+				},
+			},
+			Ports: []corev1.ContainerPort{
+				{
+					Name:          "metrics",
+					ContainerPort: 8080,
+					Protocol:      corev1.ProtocolTCP,
+				},
+				{
+					Name:          "telemetry",
+					ContainerPort: 8081,
+					Protocol:      corev1.ProtocolTCP,
 				},
 			},
 			Resources: defaultResourceRequirements,
