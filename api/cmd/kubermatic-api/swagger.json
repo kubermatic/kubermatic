@@ -3827,6 +3827,194 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "PublicAWSCloudSpec": {
+      "type": "object",
+      "title": "PublicAWSCloudSpec is a public counterpart of kubermaticv1.AWSCloudSpec.",
+      "properties": {
+        "availabilityZone": {
+          "type": "string",
+          "x-go-name": "AvailabilityZone"
+        },
+        "instanceProfileName": {
+          "type": "string",
+          "x-go-name": "InstanceProfileName"
+        },
+        "roleName": {
+          "type": "string",
+          "x-go-name": "RoleName"
+        },
+        "routeTableId": {
+          "type": "string",
+          "x-go-name": "RouteTableID"
+        },
+        "securityGroupID": {
+          "type": "string",
+          "x-go-name": "SecurityGroupID"
+        },
+        "subnetId": {
+          "type": "string",
+          "x-go-name": "SubnetID"
+        },
+        "vpcId": {
+          "type": "string",
+          "x-go-name": "VPCID"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "PublicAzureCloudSpec": {
+      "type": "object",
+      "title": "PublicAzureCloudSpec is a public counterpart of kubermaticv1.AzureCloudSpec.",
+      "properties": {
+        "availabilitySet": {
+          "type": "string",
+          "x-go-name": "AvailabilitySet"
+        },
+        "resourceGroup": {
+          "type": "string",
+          "x-go-name": "ResourceGroup"
+        },
+        "routeTable": {
+          "type": "string",
+          "x-go-name": "RouteTableName"
+        },
+        "securityGroup": {
+          "type": "string",
+          "x-go-name": "SecurityGroup"
+        },
+        "subnet": {
+          "type": "string",
+          "x-go-name": "SubnetName"
+        },
+        "subscriptionID": {
+          "type": "string",
+          "x-go-name": "SubscriptionID"
+        },
+        "tenantID": {
+          "type": "string",
+          "x-go-name": "TenantID"
+        },
+        "vnet": {
+          "type": "string",
+          "x-go-name": "VNetName"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "PublicBringYourOwnCloudSpec": {
+      "type": "object",
+      "title": "PublicBringYourOwnCloudSpec is a public counterpart of kubermaticv1.BringYourOwnCloudSpec.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "PublicCloudSpec": {
+      "type": "object",
+      "title": "PublicCloudSpec is a public counterpart of kubermaticv1.CloudSpec.",
+      "properties": {
+        "aws": {
+          "$ref": "#/definitions/PublicAWSCloudSpec"
+        },
+        "azure": {
+          "$ref": "#/definitions/PublicAzureCloudSpec"
+        },
+        "bringyourown": {
+          "$ref": "#/definitions/PublicBringYourOwnCloudSpec"
+        },
+        "dc": {
+          "type": "string",
+          "x-go-name": "DatacenterName"
+        },
+        "digitalocean": {
+          "$ref": "#/definitions/PublicDigitaloceanCloudSpec"
+        },
+        "fake": {
+          "$ref": "#/definitions/PublicFakeCloudSpec"
+        },
+        "hetzner": {
+          "$ref": "#/definitions/PublicHetznerCloudSpec"
+        },
+        "openstack": {
+          "$ref": "#/definitions/PublicOpenstackCloudSpec"
+        },
+        "vsphere": {
+          "$ref": "#/definitions/PublicVSphereCloudSpec"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "PublicDigitaloceanCloudSpec": {
+      "type": "object",
+      "title": "PublicDigitaloceanCloudSpec is a public counterpart of kubermaticv1.DigitaloceanCloudSpec.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "PublicFakeCloudSpec": {
+      "type": "object",
+      "title": "PublicFakeCloudSpec is a public counterpart of kubermaticv1.FakeCloudSpec.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "PublicHetznerCloudSpec": {
+      "type": "object",
+      "title": "PublicHetznerCloudSpec is a public counterpart of kubermaticv1.HetznerCloudSpec.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "PublicOpenstackCloudSpec": {
+      "type": "object",
+      "title": "PublicOpenstackCloudSpec is a public counterpart of kubermaticv1.OpenstackCloudSpec.",
+      "properties": {
+        "domain": {
+          "type": "string",
+          "x-go-name": "Domain"
+        },
+        "floatingIpPool": {
+          "type": "string",
+          "x-go-name": "FloatingIPPool"
+        },
+        "network": {
+          "type": "string",
+          "x-go-name": "Network"
+        },
+        "routerID": {
+          "type": "string",
+          "x-go-name": "RouterID"
+        },
+        "securityGroups": {
+          "type": "string",
+          "x-go-name": "SecurityGroups"
+        },
+        "subnetID": {
+          "type": "string",
+          "x-go-name": "SubnetID"
+        },
+        "tenant": {
+          "type": "string",
+          "x-go-name": "Tenant"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "PublicVSphereCloudSpec": {
+      "type": "object",
+      "title": "PublicVSphereCloudSpec is a public counterpart of kubermaticv1.VSphereCloudSpec.",
+      "properties": {
+        "vmNetName": {
+          "type": "string",
+          "x-go-name": "VMNetName"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "RSAKeys": {
+      "type": "object",
+      "title": "RSAKeys is a pair of private and public key where the key is not published to the API client.",
+      "properties": {
+        "privateKey": {
+          "$ref": "#/definitions/Bytes"
+        },
+        "publicKey": {
+          "$ref": "#/definitions/Bytes"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "RawExtension": {
       "description": "To use this, make a field which has RawExtension as its type in your external, versioned\nstruct, and Object in your internal struct. You also need to register your\nvarious plugin types.\n\nInternal package:\ntype MyAPIObject struct {\nruntime.TypeMeta `json:\",inline\"`\nMyPlugin runtime.Object `json:\"myPlugin\"`\n}\ntype PluginA struct {\nAOption string `json:\"aOption\"`\n}\n\nExternal package:\ntype MyAPIObject struct {\nruntime.TypeMeta `json:\",inline\"`\nMyPlugin runtime.RawExtension `json:\"myPlugin\"`\n}\ntype PluginA struct {\nAOption string `json:\"aOption\"`\n}\n\nOn the wire, the JSON will look something like this:\n{\n\"kind\":\"MyAPIObject\",\n\"apiVersion\":\"v1\",\n\"myPlugin\": {\n\"kind\":\"PluginA\",\n\"aOption\":\"foo\",\n},\n}\n\nSo what happens? Decode first uses json or yaml to unmarshal the serialized data into\nyour external MyAPIObject. That causes the raw JSON to be stored, but not unpacked.\nThe next step is to copy (using pkg/conversion) into the internal struct. The runtime\npackage's DefaultScheme has conversion functions installed which will unpack the\nJSON stored in RawExtension, turning it into the correct object type, and storing it\nin the Object. (TODO: In the case where the object is of an unknown type, a\nruntime.Unknown object will be created and stored.)\n\n+k8s:deepcopy-gen=true\n+protobuf=true\n+k8s:openapi-gen=true",
       "type": "object",
