@@ -292,24 +292,26 @@ type ClusterSpec struct {
 	Version string `json:"version"`
 }
 
+// MarshalJSON marshals NewClusterSpec object into JSON. It is overwritten to control data
+// that will be returned in the API responses (see: PublicCloudSpec struct).
 func (cs *NewClusterSpec) MarshalJSON() ([]byte, error) {
 	ret, err := json.Marshal(struct {
 		MachineNetworks []kubermaticv1.MachineNetworkingConfig `json:"machineNetworks,omitempty"`
 		Version         string                                 `json:"version"`
 
-		// Overshadows kubermaticv1.CloudSpec to avoid putting sensitive data in API responses.
+		// Overshadows kubermaticv1.CloudSpec to keep sensitive data out of API responses.
 		Cloud PublicCloudSpec `json:"cloud"`
 	}{
 		Cloud: PublicCloudSpec{
 			DatacenterName: cs.Cloud.DatacenterName,
-			Fake:           NewPublicFakeCloudSpec(cs.Cloud.Fake),
-			Digitalocean:   NewPublicDigitaloceanCloudSpec(cs.Cloud.Digitalocean),
-			BringYourOwn:   NewPublicBringYourOwnCloudSpec(cs.Cloud.BringYourOwn),
-			AWS:            NewPublicAWSCloudSpec(cs.Cloud.AWS),
-			Azure:          NewPublicAzureCloudSpec(cs.Cloud.Azure),
-			Openstack:      NewPublicOpenstackCloudSpec(cs.Cloud.Openstack),
-			Hetzner:        NewPublicHetznerCloudSpec(cs.Cloud.Hetzner),
-			VSphere:        NewPublicVSphereCloudSpec(cs.Cloud.VSphere),
+			Fake:           newPublicFakeCloudSpec(cs.Cloud.Fake),
+			Digitalocean:   newPublicDigitaloceanCloudSpec(cs.Cloud.Digitalocean),
+			BringYourOwn:   newPublicBringYourOwnCloudSpec(cs.Cloud.BringYourOwn),
+			AWS:            newPublicAWSCloudSpec(cs.Cloud.AWS),
+			Azure:          newPublicAzureCloudSpec(cs.Cloud.Azure),
+			Openstack:      newPublicOpenstackCloudSpec(cs.Cloud.Openstack),
+			Hetzner:        newPublicHetznerCloudSpec(cs.Cloud.Hetzner),
+			VSphere:        newPublicVSphereCloudSpec(cs.Cloud.VSphere),
 		},
 		Version:         cs.Version,
 		MachineNetworks: cs.MachineNetworks,
@@ -318,7 +320,7 @@ func (cs *NewClusterSpec) MarshalJSON() ([]byte, error) {
 	return ret, err
 }
 
-// NewCloudSpec overshadows kubermaticv1.CloudSpec to avoid putting sensitive data in API responses.
+// PublicCloudSpec is a public counterpart of kubermaticv1.CloudSpec.
 type PublicCloudSpec struct {
 	DatacenterName string                       `json:"dc"`
 	Fake           *PublicFakeCloudSpec         `json:"fake,omitempty"`
@@ -331,9 +333,10 @@ type PublicCloudSpec struct {
 	VSphere        *PublicVSphereCloudSpec      `json:"vsphere,omitempty"`
 }
 
+// PublicFakeCloudSpec is a public counterpart of kubermaticv1.FakeCloudSpec.
 type PublicFakeCloudSpec struct{}
 
-func NewPublicFakeCloudSpec(internal *kubermaticv1.FakeCloudSpec) (public *PublicFakeCloudSpec) {
+func newPublicFakeCloudSpec(internal *kubermaticv1.FakeCloudSpec) (public *PublicFakeCloudSpec) {
 	if internal == nil {
 		return nil
 	}
@@ -341,9 +344,10 @@ func NewPublicFakeCloudSpec(internal *kubermaticv1.FakeCloudSpec) (public *Publi
 	return &PublicFakeCloudSpec{}
 }
 
+// PublicDigitaloceanCloudSpec is a public counterpart of kubermaticv1.DigitaloceanCloudSpec.
 type PublicDigitaloceanCloudSpec struct{}
 
-func NewPublicDigitaloceanCloudSpec(internal *kubermaticv1.DigitaloceanCloudSpec) (public *PublicDigitaloceanCloudSpec) {
+func newPublicDigitaloceanCloudSpec(internal *kubermaticv1.DigitaloceanCloudSpec) (public *PublicDigitaloceanCloudSpec) {
 	if internal == nil {
 		return nil
 	}
@@ -351,9 +355,10 @@ func NewPublicDigitaloceanCloudSpec(internal *kubermaticv1.DigitaloceanCloudSpec
 	return &PublicDigitaloceanCloudSpec{}
 }
 
+// PublicHetznerCloudSpec is a public counterpart of kubermaticv1.HetznerCloudSpec.
 type PublicHetznerCloudSpec struct{}
 
-func NewPublicHetznerCloudSpec(internal *kubermaticv1.HetznerCloudSpec) (public *PublicHetznerCloudSpec) {
+func newPublicHetznerCloudSpec(internal *kubermaticv1.HetznerCloudSpec) (public *PublicHetznerCloudSpec) {
 	if internal == nil {
 		return nil
 	}
@@ -361,6 +366,7 @@ func NewPublicHetznerCloudSpec(internal *kubermaticv1.HetznerCloudSpec) (public 
 	return &PublicHetznerCloudSpec{}
 }
 
+// PublicAzureCloudSpec is a public counterpart of kubermaticv1.AzureCloudSpec.
 type PublicAzureCloudSpec struct {
 	TenantID        string `json:"tenantID"`
 	SubscriptionID  string `json:"subscriptionID"`
@@ -372,7 +378,7 @@ type PublicAzureCloudSpec struct {
 	AvailabilitySet string `json:"availabilitySet"`
 }
 
-func NewPublicAzureCloudSpec(internal *kubermaticv1.AzureCloudSpec) (public *PublicAzureCloudSpec) {
+func newPublicAzureCloudSpec(internal *kubermaticv1.AzureCloudSpec) (public *PublicAzureCloudSpec) {
 	if internal == nil {
 		return nil
 	}
@@ -389,11 +395,12 @@ func NewPublicAzureCloudSpec(internal *kubermaticv1.AzureCloudSpec) (public *Pub
 	}
 }
 
+// PublicVSphereCloudSpec is a public counterpart of kubermaticv1.VSphereCloudSpec.
 type PublicVSphereCloudSpec struct {
 	VMNetName string `json:"vmNetName"`
 }
 
-func NewPublicVSphereCloudSpec(internal *kubermaticv1.VSphereCloudSpec) (public *PublicVSphereCloudSpec) {
+func newPublicVSphereCloudSpec(internal *kubermaticv1.VSphereCloudSpec) (public *PublicVSphereCloudSpec) {
 	if internal == nil {
 		return nil
 	}
@@ -403,9 +410,10 @@ func NewPublicVSphereCloudSpec(internal *kubermaticv1.VSphereCloudSpec) (public 
 	}
 }
 
+// PublicBringYourOwnCloudSpec is a public counterpart of kubermaticv1.BringYourOwnCloudSpec.
 type PublicBringYourOwnCloudSpec struct{}
 
-func NewPublicBringYourOwnCloudSpec(internal *kubermaticv1.BringYourOwnCloudSpec) (public *PublicBringYourOwnCloudSpec) {
+func newPublicBringYourOwnCloudSpec(internal *kubermaticv1.BringYourOwnCloudSpec) (public *PublicBringYourOwnCloudSpec) {
 	if internal == nil {
 		return nil
 	}
@@ -413,6 +421,7 @@ func NewPublicBringYourOwnCloudSpec(internal *kubermaticv1.BringYourOwnCloudSpec
 	return &PublicBringYourOwnCloudSpec{}
 }
 
+// PublicAWSCloudSpec is a public counterpart of kubermaticv1.AWSCloudSpec.
 type PublicAWSCloudSpec struct {
 	VPCID               string `json:"vpcId"`
 	SubnetID            string `json:"subnetId"`
@@ -423,7 +432,7 @@ type PublicAWSCloudSpec struct {
 	AvailabilityZone    string `json:"availabilityZone"`
 }
 
-func NewPublicAWSCloudSpec(internal *kubermaticv1.AWSCloudSpec) (public *PublicAWSCloudSpec) {
+func newPublicAWSCloudSpec(internal *kubermaticv1.AWSCloudSpec) (public *PublicAWSCloudSpec) {
 	if internal == nil {
 		return nil
 	}
@@ -439,6 +448,7 @@ func NewPublicAWSCloudSpec(internal *kubermaticv1.AWSCloudSpec) (public *PublicA
 	}
 }
 
+// PublicOpenstackCloudSpec is a public counterpart of kubermaticv1.OpenstackCloudSpec.
 type PublicOpenstackCloudSpec struct {
 	Tenant         string `json:"tenant"`
 	Domain         string `json:"domain"`
@@ -449,7 +459,7 @@ type PublicOpenstackCloudSpec struct {
 	SubnetID       string `json:"subnetID"`
 }
 
-func NewPublicOpenstackCloudSpec(internal *kubermaticv1.OpenstackCloudSpec) (public *PublicOpenstackCloudSpec) {
+func newPublicOpenstackCloudSpec(internal *kubermaticv1.OpenstackCloudSpec) (public *PublicOpenstackCloudSpec) {
 	if internal == nil {
 		return nil
 	}
