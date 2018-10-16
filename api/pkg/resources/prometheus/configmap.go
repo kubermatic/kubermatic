@@ -186,7 +186,7 @@ scrape_configs:
   - source_labels: [__meta_kubernetes_pod_annotation_{{ .TemplateData.MonitoringScrapeAnnotationPrefix }}_scrape, __meta_kubernetes_pod_annotation_{{ .TemplateData.MonitoringScrapeAnnotationPrefix }}_port]
     action: keep
     regex: true;(.+)
-  - source_labels: [__meta_kubernetes_service_annotation_{{ .TemplateData.MonitoringScrapeAnnotationPrefix }}_path]
+  - source_labels: [__meta_kubernetes_pod_annotation_{{ .TemplateData.MonitoringScrapeAnnotationPrefix }}_path]
     regex: (.+)
     action: replace
     target_label: __metrics_path__
