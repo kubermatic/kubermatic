@@ -59,7 +59,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 			},
 		},
 		{
-			"case 1: filter token from Hetzner",
+			"case 3: filter token from Hetzner",
 			NewClusterSpec{
 				Version: "1.2.3",
 				Cloud: kubermaticv1.CloudSpec{
@@ -70,7 +70,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 			},
 		},
 		{
-			"case 1: filter token from DigitalOcean",
+			"case 4: filter token from DigitalOcean",
 			NewClusterSpec{
 				Version: "1.2.3",
 				Cloud: kubermaticv1.CloudSpec{
@@ -81,7 +81,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 			},
 		},
 		{
-			"case 1: filter usernames and passwords from VSphere",
+			"case 5: filter usernames and passwords from VSphere",
 			NewClusterSpec{
 				Version: "1.2.3",
 				Cloud: kubermaticv1.CloudSpec{
@@ -98,7 +98,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 			},
 		},
 		{
-			"case 1: filter access key ID and secret access key from AWS",
+			"case 6: filter access key ID and secret access key from AWS",
 			NewClusterSpec{
 				Version: "1.2.3",
 				Cloud: kubermaticv1.CloudSpec{
