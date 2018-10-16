@@ -296,11 +296,11 @@ type ClusterSpec struct {
 // that will be returned in the API responses (see: PublicCloudSpec struct).
 func (cs *NewClusterSpec) MarshalJSON() ([]byte, error) {
 	ret, err := json.Marshal(struct {
-		MachineNetworks []kubermaticv1.MachineNetworkingConfig `json:"machineNetworks,omitempty"`
-		Version         string                                 `json:"version"`
-
 		// Overshadows kubermaticv1.CloudSpec to keep sensitive data out of API responses.
 		Cloud PublicCloudSpec `json:"cloud"`
+
+		MachineNetworks []kubermaticv1.MachineNetworkingConfig `json:"machineNetworks,omitempty"`
+		Version         string                                 `json:"version"`
 	}{
 		Cloud: PublicCloudSpec{
 			DatacenterName: cs.Cloud.DatacenterName,
