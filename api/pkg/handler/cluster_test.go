@@ -30,152 +30,17 @@ func TestRemoveSensitiveDataFromCluster(t *testing.T) {
 		cluster.Address.URL = "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"
 		return cluster
 	}
-	genClusterWithAWS := func() *kubermaticv1.Cluster {
-		cluster := genDefaultCluster()
-		cluster.Address.AdminToken = ""
-		cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-			AWS: &kubermaticv1.AWSCloudSpec{
-				AccessKeyID:         "secretKeyID",
-				SecretAccessKey:     "secreatAccessKey",
-				SecurityGroupID:     "secuirtyGroupID",
-				AvailabilityZone:    "availablityZone",
-				InstanceProfileName: "instanceProfileName",
-				RoleName:            "roleName",
-				RouteTableID:        "routeTableID",
-				SubnetID:            "subnetID",
-				VPCID:               "vpcID",
-			},
-		}
-
-		return cluster
-	}
-	genClusterWithAzure := func() *kubermaticv1.Cluster {
-		cluster := genDefaultCluster()
-		cluster.Address.AdminToken = ""
-		cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-			Azure: &kubermaticv1.AzureCloudSpec{
-				ClientID:        "clientID",
-				ClientSecret:    "clientSecret",
-				TenantID:        "tenantID",
-				AvailabilitySet: "availablitySet",
-				ResourceGroup:   "resourceGroup",
-				RouteTableName:  "routeTableName",
-				SecurityGroup:   "securityGroup",
-				SubnetName:      "subnetName",
-				SubscriptionID:  "subsciprionID",
-				VNetName:        "vnetname",
-			},
-		}
-		return cluster
-	}
-	genClusterWithHetzner := func() *kubermaticv1.Cluster {
-		cluster := genDefaultCluster()
-		cluster.Address.AdminToken = ""
-		cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-			Hetzner: &kubermaticv1.HetznerCloudSpec{
-				Token: "token",
-			},
-		}
-		return cluster
-	}
-	genClusterWithDO := func() *kubermaticv1.Cluster {
-		cluster := genDefaultCluster()
-		cluster.Address.AdminToken = ""
-		cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-			Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
-				Token: "token",
-			},
-		}
-		return cluster
-	}
-	genClusterWithVsphere := func() *kubermaticv1.Cluster {
-		cluster := genDefaultCluster()
-		cluster.Address.AdminToken = ""
-		cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-			VSphere: &kubermaticv1.VSphereCloudSpec{
-				Password: "password",
-				Username: "username",
-				InfraManagementUser: kubermaticv1.VSphereCredentials{
-					Username: "infraUsername",
-					Password: "infraPassword",
-				},
-				VMNetName: "vmNetName",
-			},
-		}
-		return cluster
-	}
 	scenarios := []struct {
 		Name            string
 		ExistingCluster *kubermaticv1.Cluster
 		ExpectedCluster *kubermaticv1.Cluster
 	}{
 		{
-			Name:            "scenaio 1: removes the admin token",
+			Name:            "scenario 1: removes the admin token",
 			ExistingCluster: genClusterWithAdminToken(),
 			ExpectedCluster: func() *kubermaticv1.Cluster {
 				cluster := genClusterWithAdminToken()
 				cluster.Address.AdminToken = ""
-				return cluster
-			}(),
-		},
-		{
-			Name:            "scenario 2: removes AWS cloud provider secrets",
-			ExistingCluster: genClusterWithAWS(),
-			ExpectedCluster: func() *kubermaticv1.Cluster {
-				cluster := genClusterWithAWS()
-				cluster.Spec.Cloud.AWS.AccessKeyID = ""
-				cluster.Spec.Cloud.AWS.SecretAccessKey = ""
-				return cluster
-			}(),
-		},
-		{
-			Name:            "scenario 3: removes Azure cloud provider secrets",
-			ExistingCluster: genClusterWithAzure(),
-			ExpectedCluster: func() *kubermaticv1.Cluster {
-				cluster := genClusterWithAzure()
-				cluster.Spec.Cloud.Azure.ClientID = ""
-				cluster.Spec.Cloud.Azure.ClientSecret = ""
-				return cluster
-			}(),
-		},
-		{
-			Name:            "scenario 4: removes Openstack cloud provider secrets",
-			ExistingCluster: genClusterWithOpenstack(genDefaultCluster()),
-			ExpectedCluster: func() *kubermaticv1.Cluster {
-				cluster := genClusterWithOpenstack(genDefaultCluster())
-				cluster.Address.AdminToken = ""
-				cluster.Spec.Cloud.Openstack.Username = ""
-				cluster.Spec.Cloud.Openstack.Password = ""
-				return cluster
-			}(),
-		},
-		{
-			Name:            "scenario 5: removes Hetzner cloud provider secrets",
-			ExistingCluster: genClusterWithHetzner(),
-			ExpectedCluster: func() *kubermaticv1.Cluster {
-				cluster := genClusterWithHetzner()
-				cluster.Spec.Cloud.Hetzner.Token = ""
-				return cluster
-			}(),
-		},
-		{
-			Name:            "scenario 6: removes Digitalocean cloud provider secrets",
-			ExistingCluster: genClusterWithDO(),
-			ExpectedCluster: func() *kubermaticv1.Cluster {
-				cluster := genClusterWithDO()
-				cluster.Spec.Cloud.Digitalocean.Token = ""
-				return cluster
-			}(),
-		},
-		{
-			Name:            "scenario 7: removes Vsphere cloud provider secrets",
-			ExistingCluster: genClusterWithVsphere(),
-			ExpectedCluster: func() *kubermaticv1.Cluster {
-				cluster := genClusterWithVsphere()
-				cluster.Spec.Cloud.VSphere.Username = ""
-				cluster.Spec.Cloud.VSphere.Password = ""
-				cluster.Spec.Cloud.VSphere.InfraManagementUser.Password = ""
-				cluster.Spec.Cloud.VSphere.InfraManagementUser.Username = ""
 				return cluster
 			}(),
 		},
