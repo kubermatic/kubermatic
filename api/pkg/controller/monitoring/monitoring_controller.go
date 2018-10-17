@@ -55,6 +55,9 @@ type Controller struct {
 	inClusterPrometheusDisableDefaultScrapingConfigs bool
 	inClusterPrometheusScrapingConfigsFile           string
 	dockerPullConfigJSON                             []byte
+	// Annotation prefix to discover user cluster resources
+	// example: kubermatic.io -> kubermatic.io/path,kubermatic.io/port
+	monitoringScrapeAnnotationPrefix string
 
 	queue workqueue.RateLimitingInterface
 
@@ -82,6 +85,7 @@ func New(
 	nodePortRange string,
 	nodeAccessNetwork string,
 	etcdDiskSize string,
+	monitoringScrapeAnnotationPrefix string,
 	inClusterPrometheusRulesFile string,
 	inClusterPrometheusDisableDefaultRules bool,
 	inClusterPrometheusDisableDefaultScrapingConfigs bool,
@@ -108,12 +112,13 @@ func New(
 			"monitoring_cluster",
 		),
 
-		overwriteRegistry:                      overwriteRegistry,
-		nodePortRange:                          nodePortRange,
-		nodeAccessNetwork:                      nodeAccessNetwork,
-		etcdDiskSize:                           resource.MustParse(etcdDiskSize),
-		inClusterPrometheusRulesFile:           inClusterPrometheusRulesFile,
-		inClusterPrometheusDisableDefaultRules: inClusterPrometheusDisableDefaultRules,
+		overwriteRegistry:                                overwriteRegistry,
+		nodePortRange:                                    nodePortRange,
+		nodeAccessNetwork:                                nodeAccessNetwork,
+		etcdDiskSize:                                     resource.MustParse(etcdDiskSize),
+		monitoringScrapeAnnotationPrefix:                 monitoringScrapeAnnotationPrefix,
+		inClusterPrometheusRulesFile:                     inClusterPrometheusRulesFile,
+		inClusterPrometheusDisableDefaultRules:           inClusterPrometheusDisableDefaultRules,
 		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
 		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
 		dockerPullConfigJSON:                             dockerPullConfigJSON,

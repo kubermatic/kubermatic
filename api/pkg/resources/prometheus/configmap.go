@@ -169,6 +169,41 @@ scrape_configs:
     action: replace
     target_label: pod
 
+- job_name: 'user-cluster-pods'
+  scheme: https
+  tls_config:
+    ca_file: /etc/kubernetes/ca.crt
+    cert_file: /etc/kubernetes/prometheus-client.crt
+    key_file: /etc/kubernetes/prometheus-client.key
+  kubernetes_sd_configs:
+  - role: pod
+    api_server: '{{ .TemplateData.InClusterApiserverAddress }}'
+    tls_config:
+      ca_file: /etc/kubernetes/ca.crt
+      cert_file: /etc/kubernetes/prometheus-client.crt
+      key_file: /etc/kubernetes/prometheus-client.key
+  relabel_configs:
+  - source_labels: [__meta_kubernetes_pod_annotation_{{ .TemplateData.MonitoringScrapeAnnotationPrefix }}_port]
+    action: keep
+    regex: \d+
+  - source_labels: [__meta_kubernetes_pod_annotation_{{ .TemplateData.MonitoringScrapeAnnotationPrefix }}_path]
+    regex: (.+)
+    action: replace
+    target_label: __metrics_path__
+  - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_name, __meta_kubernetes_pod_annotation_{{ .TemplateData.MonitoringScrapeAnnotationPrefix }}_port, __metrics_path__]
+    action: replace
+    regex: (.*);(.*);(.*);(.*)
+    target_label: __metrics_path__
+    replacement: /api/v1/namespaces/${1}/pods/${2}:${3}/proxy${4}
+  - target_label: __address__
+    replacement: '{{ .TemplateData.InClusterApiserverAddress }}'
+  - source_labels: [__meta_kubernetes_namespace]
+    action: replace
+    target_label: namespace
+  - source_labels: [__meta_kubernetes_pod_name]
+    action: replace
+    target_label: pod
+
 - job_name: 'control-plane-service-endpoints'
 
   kubernetes_sd_configs:

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"strings"
 
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -28,6 +29,7 @@ type TemplateData struct {
 	nodePortRange                                    string
 	nodeAccessNetwork                                string
 	etcdDiskSize                                     resource.Quantity
+	monitoringScrapeAnnotationPrefix                 string
 	inClusterPrometheusRulesFile                     string
 	inClusterPrometheusDisableDefaultRules           bool
 	inClusterPrometheusDisableDefaultScrapingConfigs bool
@@ -79,6 +81,7 @@ type ConfigMapDataProvider interface {
 	TemplateData() interface{}
 	ServiceLister() corev1lister.ServiceLister
 	NodeAccessNetwork() string
+	MonitoringScrapeAnnotationPrefix() string
 	InClusterPrometheusRulesFile() string
 	InClusterPrometheusScrapingConfigsFile() string
 	InClusterPrometheusDisableDefaultRules() bool
@@ -135,6 +138,7 @@ func NewTemplateData(
 	nodePortRange string,
 	nodeAccessNetwork string,
 	etcdDiskSize resource.Quantity,
+	monitoringScrapeAnnotationPrefix string,
 	inClusterPrometheusRulesFile string,
 	inClusterPrometheusDisableDefaultRules bool,
 	inClusterPrometheusDisableDefaultScrapingConfigs bool,
@@ -151,6 +155,7 @@ func NewTemplateData(
 		nodePortRange:                          nodePortRange,
 		nodeAccessNetwork:                      nodeAccessNetwork,
 		etcdDiskSize:                           etcdDiskSize,
+		monitoringScrapeAnnotationPrefix:       monitoringScrapeAnnotationPrefix,
 		inClusterPrometheusRulesFile:           inClusterPrometheusRulesFile,
 		inClusterPrometheusDisableDefaultRules: inClusterPrometheusDisableDefaultRules,
 		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
@@ -182,6 +187,11 @@ func (d *TemplateData) ConfigMapLister() corev1lister.ConfigMapLister {
 // EtcdDiskSize returns the etcd disk size
 func (d *TemplateData) EtcdDiskSize() resource.Quantity {
 	return d.etcdDiskSize
+}
+
+// MonitoringScrapeAnnotationPrefix returns the scrape annotation prefix
+func (d *TemplateData) MonitoringScrapeAnnotationPrefix() string {
+	return strings.NewReplacer(".", "_", "/", "").Replace(d.monitoringScrapeAnnotationPrefix)
 }
 
 // InClusterPrometheusRulesFile returns inClusterPrometheusRulesFile
