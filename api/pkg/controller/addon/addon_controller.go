@@ -248,14 +248,10 @@ func (c *Controller) sync(key string) error {
 	addon := addonFromCache.DeepCopy()
 	clusterFromCache, err := c.clusterLister.Get(addon.Spec.Cluster.Name)
 	if err != nil {
-		if kerrors.IsNotFound(err) {
-			//Cluster got deleted - directly remove the finalizer
-			finalizers := sets.NewString(addon.Finalizers...)
-			if finalizers.Has(cleanupFinalizerName) {
-				finalizers.Delete(cleanupFinalizerName)
-				addon.Finalizers = finalizers.List()
-				_, err := c.client.KubermaticV1().Addons(addon.Namespace).Update(addon)
-				return err
+		// Cluster does not exist anymore & the addon has the DeletionTimestamp set -> Just remove the finalizer
+		if kerrors.IsNotFound(err) && addon.DeletionTimestamp != nil {
+			if err := c.removeCleanupFinalizer(addon); err != nil {
+				return fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
 			}
 			return nil
 		}
@@ -263,13 +259,17 @@ func (c *Controller) sync(key string) error {
 	}
 	cluster := clusterFromCache.DeepCopy()
 
-	// When a cluster gets deleted - we can skip it - not worth the effort
+	// When a cluster gets deleted - we can skip it - not worth the effort.
+	// This could lead though to a potential leak of resources in case addons deploy LB's or PV's.
+	// The correct way of handling it though should be a optional cleanup routine in the cluster controller, which will delete all PV's and LB's inside the cluster cluster.
 	if cluster.DeletionTimestamp != nil {
+		glog.V(6).Infof("cluster %s is already being deleted - no need to cleanup the manifests", cluster.Name)
 		return nil
 	}
 
 	// When the apiserver is not healthy, we must skip it
 	if !cluster.Status.Health.Apiserver {
+		glog.V(6).Infof("API server of cluster %s is not running - not processing the addon", cluster.Name)
 		return nil
 	}
 
@@ -278,24 +278,33 @@ func (c *Controller) sync(key string) error {
 		if err := c.cleanupManifests(addon, cluster); err != nil {
 			return fmt.Errorf("failed to delete manifests from cluster: %v", err)
 		}
-		finalizers := sets.NewString(addon.Finalizers...)
-		if finalizers.Has(cleanupFinalizerName) {
-			finalizers.Delete(cleanupFinalizerName)
-			addon.Finalizers = finalizers.List()
-			_, err := c.client.KubermaticV1().Addons(addon.Namespace).Update(addon)
-			return err
+		if err := c.removeCleanupFinalizer(addon); err != nil {
+			return fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
 		}
 	}
 
 	// Reconciling
 	if err := c.ensureIsInstalled(addon, cluster); err != nil {
-		return err
+		return fmt.Errorf("failed to deploy the addon manifests into the cluster: %v", err)
 	}
 	if err := c.ensureFinalizerIsSet(addon); err != nil {
-		return err
+		return fmt.Errorf("failed to ensure that the cleanup finalizer existis on the addon: %v", err)
 	}
 
 	return err
+}
+
+func (c *Controller) removeCleanupFinalizer(addon *kubermaticv1.Addon) error {
+	finalizers := sets.NewString(addon.Finalizers...)
+	if finalizers.Has(cleanupFinalizerName) {
+		finalizers.Delete(cleanupFinalizerName)
+		addon.Finalizers = finalizers.List()
+		if _, err := c.client.KubermaticV1().Addons(addon.Namespace).Update(addon); err != nil {
+			return err
+		}
+		glog.V(6).Infof("removed the cleanup finalizer from the addon %s/%s", addon.Namespace, addon.Name)
+	}
+	return nil
 }
 
 type templateData struct {
