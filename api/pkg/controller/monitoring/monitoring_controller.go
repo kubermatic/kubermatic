@@ -56,7 +56,7 @@ type Controller struct {
 	inClusterPrometheusScrapingConfigsFile           string
 	dockerPullConfigJSON                             []byte
 	// Annotation prefix to discover user cluster resources
-	// example: kubermatic.io -> kubermatic.io/scrape,kubermatic.io/path,kubermatic.io/port
+	// example: kubermatic.io -> kubermatic.io/path,kubermatic.io/port
 	monitoringScrapeAnnotationPrefix string
 
 	queue workqueue.RateLimitingInterface

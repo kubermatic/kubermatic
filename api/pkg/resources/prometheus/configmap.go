@@ -183,9 +183,9 @@ scrape_configs:
       cert_file: /etc/kubernetes/prometheus-client.crt
       key_file: /etc/kubernetes/prometheus-client.key
   relabel_configs:
-  - source_labels: [__meta_kubernetes_pod_annotation_{{ .TemplateData.MonitoringScrapeAnnotationPrefix }}_scrape, __meta_kubernetes_pod_annotation_{{ .TemplateData.MonitoringScrapeAnnotationPrefix }}_port]
+  - source_labels: [__meta_kubernetes_pod_annotation_{{ .TemplateData.MonitoringScrapeAnnotationPrefix }}_port]
     action: keep
-    regex: true;(.+)
+    regex: \d+
   - source_labels: [__meta_kubernetes_pod_annotation_{{ .TemplateData.MonitoringScrapeAnnotationPrefix }}_path]
     regex: (.+)
     action: replace
