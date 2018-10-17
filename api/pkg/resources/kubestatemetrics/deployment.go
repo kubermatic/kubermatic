@@ -78,6 +78,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 				"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 				"--port", "8080",
 				"--telemetry-port", "8081",
+				"--collectors", "nodes",
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
