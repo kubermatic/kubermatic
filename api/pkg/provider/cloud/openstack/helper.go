@@ -231,6 +231,14 @@ func deleteNetworkByName(netClient *gophercloud.ServiceClient, networkName strin
 	return res.ExtractErr()
 }
 
+func deleteSubnet(netClient *gophercloud.ServiceClient, subnetID string) error {
+	res := ossubnets.Delete(netClient, subnetID)
+	if res.Err != nil {
+		return res.Err
+	}
+	return res.ExtractErr()
+}
+
 func deleteRouter(netClient *gophercloud.ServiceClient, routerID string) error {
 	res := osrouters.Delete(netClient, routerID)
 	if res.Err != nil {
