@@ -69,7 +69,7 @@ func newDeleteNodeForCluster(projectProvider provider.ProjectProvider) endpoint.
 			return nil, fmt.Errorf("failed to create a kubernetes client: %v", err)
 		}
 
-		machine, node, err := tryToFindMachineAndNode(req.NodeID, machineClient, kubeClient)
+		machine, node, err := findMachineAndNode(req.NodeID, machineClient, kubeClient)
 		if err != nil {
 			return nil, err
 		}
@@ -185,7 +185,7 @@ func newGetNodeForCluster(projectProvider provider.ProjectProvider) endpoint.End
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		machine, node, err := tryToFindMachineAndNode(req.NodeID, machineClient, kubeClient)
+		machine, node, err := findMachineAndNode(req.NodeID, machineClient, kubeClient)
 		if err != nil {
 			return nil, err
 		}
@@ -477,7 +477,7 @@ func getMachineForNode(node *corev1.Node, machines []clusterv1alpha1.Machine) *c
 	return nil
 }
 
-func tryToFindMachineAndNode(name string, machineClient clusterv1alpha1clientset.Interface, kubeClient kubernetes.Interface) (*clusterv1alpha1.Machine, *corev1.Node, error) {
+func findMachineAndNode(name string, machineClient clusterv1alpha1clientset.Interface, kubeClient kubernetes.Interface) (*clusterv1alpha1.Machine, *corev1.Node, error) {
 	machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to load machines from cluster: %v", err)
@@ -503,14 +503,6 @@ func tryToFindMachineAndNode(name string, machineClient clusterv1alpha1clientset
 			machine = &machineList.Items[i]
 			break
 		}
-	}
-
-	if node == nil && machine == nil {
-		return nil, nil, nil
-	}
-
-	if node != nil && machine != nil {
-		return machine, node, nil
 	}
 
 	//Check if we can get a owner ref from a machine
