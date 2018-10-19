@@ -250,6 +250,12 @@ func UpdateCloudSpec(updatedShared, existingShared CloudSpec) CloudSpec {
 		}
 	}
 
+	if updated.Fake != nil {
+		if len(updated.Fake.Token) == 0 {
+			updated.Fake.Token = existingShared.Fake.Token
+		}
+	}
+
 	return *updated
 }
 
@@ -368,12 +374,23 @@ type AWSCloudSpec struct {
 
 // OpenstackCloudSpec specifies access data to an openstack cloud.
 type OpenstackCloudSpec struct {
-	Username       string `json:"username"`
-	Password       string `json:"password"`
-	Tenant         string `json:"tenant"`
-	Domain         string `json:"domain"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Tenant   string `json:"tenant"`
+	Domain   string `json:"domain"`
+	// Network holds the name of the internal network
+	// When specified, all worker nodes will be attached to this network. If not specified, a network, subnet & router will be created
+	//
+	// Note that the network is internal if the "External" field is set to false
 	Network        string `json:"network"`
 	SecurityGroups string `json:"securityGroups"`
+	// FloatingIPPool holds the name of the public network
+	// The public network is reachable from the outside world
+	// and should provide the pool of IP addresses to choose from.
+	//
+	// When specified, all worker nodes will receive a public ip from this floating ip pool
+	//
+	// Note that the network is external if the "External" field is set to true
 	FloatingIPPool string `json:"floatingIpPool"`
 	RouterID       string `json:"routerID"`
 	SubnetID       string `json:"subnetID"`

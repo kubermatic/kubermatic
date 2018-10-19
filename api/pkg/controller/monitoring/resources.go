@@ -27,6 +27,7 @@ func (c *Controller) getClusterTemplateData(cluster *kubermaticv1.Cluster) (*res
 		c.nodePortRange,
 		c.nodeAccessNetwork,
 		c.etcdDiskSize,
+		c.monitoringScrapeAnnotationPrefix,
 		c.inClusterPrometheusRulesFile,
 		c.inClusterPrometheusDisableDefaultRules,
 		c.inClusterPrometheusDisableDefaultScrapingConfigs,
@@ -174,6 +175,7 @@ func (c *Controller) ensureStatefulSets(cluster *kubermaticv1.Cluster, data *res
 func GetServiceCreators() []resources.ServiceCreator {
 	return []resources.ServiceCreator{
 		prometheus.Service,
+		kubestatemetrics.Service,
 	}
 }
 

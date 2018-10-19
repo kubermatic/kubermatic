@@ -24,7 +24,6 @@ const (
 	userCRContextKey             ContextKey = "user-cr"
 	userInfoContextKey           ContextKey = "user-info"
 	datacenterContextKey         ContextKey = "datacenter"
-	clusterProviderContextKey    ContextKey = "cluster-provider"
 	newClusterProviderContextKey ContextKey = "new-cluster-provider"
 )
 
@@ -41,13 +40,11 @@ type UpdateManager interface {
 type Routing struct {
 	datacenters           map[string]provider.DatacenterMeta
 	cloudProviders        provider.CloudRegistry
-	sshKeyProvider        provider.SSHKeyProvider
 	newSSHKeyProvider     provider.NewSSHKeyProvider
 	userProvider          provider.UserProvider
 	projectProvider       provider.ProjectProvider
 	logger                log.Logger
 	authenticator         Authenticator
-	clusterProviders      map[string]provider.ClusterProvider
 	newClusterProviders   map[string]provider.NewClusterProvider
 	updateManager         UpdateManager
 	prometheusClient      prometheusapi.Client
@@ -58,10 +55,8 @@ type Routing struct {
 // NewRouting creates a new Routing.
 func NewRouting(
 	datacenters map[string]provider.DatacenterMeta,
-	clusterProviders map[string]provider.ClusterProvider,
 	newClusterProviders map[string]provider.NewClusterProvider,
 	cloudProviders map[string]provider.CloudProvider,
-	sshKeyProvider provider.SSHKeyProvider,
 	newSSHKeyProvider provider.NewSSHKeyProvider,
 	userProvider provider.UserProvider,
 	projectProvider provider.ProjectProvider,
@@ -73,9 +68,7 @@ func NewRouting(
 ) Routing {
 	return Routing{
 		datacenters:           datacenters,
-		clusterProviders:      clusterProviders,
 		newClusterProviders:   newClusterProviders,
-		sshKeyProvider:        sshKeyProvider,
 		newSSHKeyProvider:     newSSHKeyProvider,
 		userProvider:          userProvider,
 		projectProvider:       projectProvider,

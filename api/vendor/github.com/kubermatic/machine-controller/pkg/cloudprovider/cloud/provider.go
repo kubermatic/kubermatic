@@ -21,6 +21,8 @@ type Provider interface {
 	// Note that this method can return what we call a "terminal" error,
 	// which indicates that a manual interaction is required to recover from this state.
 	// See v1alpha1.MachineStatus for more info and TerminalError type
+	//
+	// In case the instance cannot be found, github.com/kubermatic/machine-controller/pkg/cloudprovider/errors/ErrInstanceNotFound will be returned
 	Get(machine *clusterv1alpha1.Machine) (instance.Instance, error)
 
 	GetCloudConfig(spec clusterv1alpha1.MachineSpec) (config string, name string, err error)
@@ -31,6 +33,7 @@ type Provider interface {
 	// Delete deletes the instance and all associated ressources
 	// This will always be called on machine deletion, the implemention must check if there is actually
 	// something to delete and just do nothing if there isn't
+	// In case the instance is already gone, nil will be returned
 	Delete(machine *clusterv1alpha1.Machine, update MachineUpdater) error
 
 	// MachineMetricsLabels returns labels used for the Prometheus metrics

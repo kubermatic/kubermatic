@@ -869,6 +869,397 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/azure/sizes": {
+      "get": {
+        "description": "Lists available VM sizes in an Azure region",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "azure"
+        ],
+        "operationId": "listAzureSizesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AzureSizeList",
+            "schema": {
+              "$ref": "#/definitions/AzureSizeList"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/digitalocean/sizes": {
+      "get": {
+        "description": "Lists sizes from digitalocean",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "digitalocean"
+        ],
+        "operationId": "listDigitaloceanSizesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DigitaloceanSizeList",
+            "schema": {
+              "$ref": "#/definitions/DigitaloceanSizeList"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/networks": {
+      "get": {
+        "description": "Lists networks from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackNetworksNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OpenstackNetwork",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackNetwork"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/securitygroups": {
+      "get": {
+        "description": "Lists security groups from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackSecurityGroupsNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OpenstackSecurityGroup",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackSecurityGroup"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/sizes": {
+      "get": {
+        "description": "Lists sizes from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackSizesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OpenstackSize",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackSize"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/subnets": {
+      "get": {
+        "description": "Lists subnets from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackSubnetsNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "NetworkID",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OpenstackSubnet",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackSubnet"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/tenants": {
+      "get": {
+        "description": "Lists tenants from openstack",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "openstack"
+        ],
+        "operationId": "listOpenstackTenantsNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OpenstackTenant",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenstackTenant"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/networks": {
+      "get": {
+        "description": "Lists networks from vsphere datacenter",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "vsphere"
+        ],
+        "operationId": "listVSphereNetworksNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VSphereNetwork",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/VSphereNetwork"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys": {
       "get": {
         "description": "Lists ssh keys that are assigned to the cluster\nThe returned collection is sorted by creation timestamp.",
@@ -1695,84 +2086,6 @@
         }
       }
     },
-    "/api/v1/ssh-keys": {
-      "get": {
-        "description": "Lists SSH keys from the user",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "ssh-keys"
-        ],
-        "operationId": "listSSHKeys",
-        "responses": {
-          "200": {
-            "description": "SSHKey",
-            "schema": {
-              "$ref": "#/definitions/SSHKey"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/ssh-keys/{meta_name}": {
-      "delete": {
-        "description": "Deletes a SSH keys for the user",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "ssh-keys"
-        ],
-        "operationId": "deleteSSHKey",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "MetaName",
-            "name": "meta_name",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/sshkeys": {
-      "post": {
-        "description": "Creates a SSH keys for the user",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "sshkeys"
-        ],
-        "operationId": "createSSHKey",
-        "responses": {
-          "200": {
-            "description": "SSHKey",
-            "schema": {
-              "$ref": "#/definitions/SSHKey"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
     "/api/v1/versions": {
       "get": {
         "description": "Lists all versions which don't result in automatic updates",
@@ -1847,453 +2160,6 @@
           },
           "403": {
             "$ref": "#/responses/empty"
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v3/dc/{dc}/cluster": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "listClustersV3",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ClusterListV1",
-            "schema": {
-              "$ref": "#/definitions/ClusterListV1"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      },
-      "post": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "createClusterV3",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "Body",
-            "in": "body",
-            "schema": {
-              "$ref": "#/definitions/ClusterReqBody"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "ClusterV1",
-            "schema": {
-              "$ref": "#/definitions/ClusterV1"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v3/dc/{dc}/cluster/{cluster}": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "getClusterV3",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ClusterV1",
-            "schema": {
-              "$ref": "#/definitions/ClusterV1"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      },
-      "put": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "updateClusterV3",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "Body",
-            "in": "body",
-            "schema": {
-              "$ref": "#/definitions/CreateClusterReqBody"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ClusterV1",
-            "schema": {
-              "$ref": "#/definitions/ClusterV1"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      },
-      "delete": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "deleteClusterV3",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v3/dc/{dc}/cluster/{cluster}/kubeconfig": {
-      "get": {
-        "produces": [
-          "application/yaml"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "getClusterKubeconfigV3",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Kubeconfig",
-            "schema": {
-              "$ref": "#/definitions/Kubeconfig"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v3/dc/{dc}/cluster/{cluster}/node": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "nodesHandlerV3",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "boolean",
-            "x-go-name": "HideInitialConditions",
-            "name": "hideInitialConditions",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "NodeListV2",
-            "schema": {
-              "$ref": "#/definitions/NodeListV2"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      },
-      "post": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "createNodesHandlerV3",
-        "parameters": [
-          {
-            "name": "Body",
-            "in": "body",
-            "schema": {
-              "$ref": "#/definitions/CreateNodeReqBodyV3"
-            }
-          },
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "NodeV2",
-            "schema": {
-              "$ref": "#/definitions/NodeV2"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v3/dc/{dc}/cluster/{cluster}/node/{node}": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "getNodeHandlerV3",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "NodeName",
-            "name": "node",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "boolean",
-            "x-go-name": "HideInitialConditions",
-            "name": "hideInitialConditions",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "NodeV2",
-            "schema": {
-              "$ref": "#/definitions/NodeV2"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      },
-      "delete": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "deleteNodeHandlerV3",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "NodeName",
-            "name": "node",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "boolean",
-            "x-go-name": "HideInitialConditions",
-            "name": "hideInitialConditions",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v3/dc/{dc}/cluster/{cluster}/upgrades": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "operationId": "legacyGetPossibleClusterUpgradesV3",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterName",
-            "name": "cluster",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "MasterVersion",
-            "schema": {
-              "$ref": "#/definitions/MasterVersion"
-            }
           },
           "default": {
             "$ref": "#/responses/errorResponse"
@@ -2651,19 +2517,6 @@
       "title": "BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "Bytes": {
-      "type": "array",
-      "items": {
-        "type": "integer",
-        "format": "uint8"
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "CauseType": {
-      "description": "CauseType is a machine readable value providing more detail about what\noccurred in a status response. An operation may have multiple causes for a\nstatus (whether Failure or Success).",
-      "type": "string",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
-    },
     "CentOSSpec": {
       "description": "CentOSSpec contains CentOS specific settings",
       "type": "object",
@@ -2748,33 +2601,6 @@
       "x-go-name": "NewCluster",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "ClusterAddress": {
-      "type": "object",
-      "title": "ClusterAddress stores access and address information of a cluster.",
-      "properties": {
-        "adminToken": {
-          "description": "AdminToken is the token for the kubeconfig, the user can download",
-          "type": "string",
-          "x-go-name": "AdminToken"
-        },
-        "externalName": {
-          "description": "ExternalName is the DNS name for this cluster",
-          "type": "string",
-          "x-go-name": "ExternalName"
-        },
-        "ip": {
-          "description": "IP is the external IP under which the apiserver is available",
-          "type": "string",
-          "x-go-name": "IP"
-        },
-        "url": {
-          "description": "URL under which the Apiserver is available",
-          "type": "string",
-          "x-go-name": "URL"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
     "ClusterHealth": {
       "type": "object",
       "title": "NewClusterHealth stores health information about the cluster's components.",
@@ -2812,15 +2638,6 @@
       "x-go-name": "NewClusterList",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "ClusterListV1": {
-      "description": "ClusterList represents a list of clusters",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/ClusterV1"
-      },
-      "x-go-name": "ClusterList",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
     "ClusterMetric": {
       "description": "ClusterMetric defines a metric for the given cluster",
       "type": "object",
@@ -2839,283 +2656,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "ClusterNetworkingConfig": {
-      "description": "ClusterNetworkingConfig specifies the different networking\nparameters for a cluster.",
-      "type": "object",
-      "properties": {
-        "dnsDomain": {
-          "description": "Domain name for services.",
-          "type": "string",
-          "x-go-name": "DNSDomain"
-        },
-        "pods": {
-          "$ref": "#/definitions/NetworkRanges"
-        },
-        "services": {
-          "$ref": "#/definitions/NetworkRanges"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "ClusterPhase": {
-      "type": "string",
-      "title": "ClusterPhase is the life cycle phase of a cluster.",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "ClusterReqBody": {
-      "description": "ClusterReqBody represents the body of a new cluster request",
-      "type": "object",
-      "properties": {
-        "cluster": {
-          "$ref": "#/definitions/ClusterSpec"
-        },
-        "sshKeys": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "SSHKeys"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
-    },
-    "ClusterSpec": {
-      "type": "object",
-      "title": "ClusterSpec specifies the data for a new cluster.",
-      "properties": {
-        "cloud": {
-          "$ref": "#/definitions/CloudSpec"
-        },
-        "clusterNetwork": {
-          "$ref": "#/definitions/ClusterNetworkingConfig"
-        },
-        "componentsOverride": {
-          "$ref": "#/definitions/ComponentSettings"
-        },
-        "humanReadableName": {
-          "description": "HumanReadableName is the cluster name provided by the user",
-          "type": "string",
-          "x-go-name": "HumanReadableName"
-        },
-        "machineNetworks": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/MachineNetworkingConfig"
-          },
-          "x-go-name": "MachineNetworks"
-        },
-        "masterVersion": {
-          "description": "MasterVersion is Deprecated",
-          "type": "string",
-          "x-go-name": "MasterVersion"
-        },
-        "pause": {
-          "description": "Pause tells that this cluster is currently not managed by the controller.\nIt indicates that the user needs to do some action to resolve the pause.",
-          "type": "boolean",
-          "x-go-name": "Pause"
-        },
-        "pauseReason": {
-          "description": "PauseReason is the reason why the cluster is no being managed.",
-          "type": "string",
-          "x-go-name": "PauseReason"
-        },
-        "version": {
-          "description": "Version defines the wanted version of the control plane",
-          "type": "string",
-          "x-go-name": "Version"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "ClusterStatus": {
-      "type": "object",
-      "title": "ClusterStatus stores status information about a cluster.",
-      "properties": {
-        "apiserverCert": {
-          "$ref": "#/definitions/KeyCert"
-        },
-        "apiserverSshKey": {
-          "$ref": "#/definitions/RSAKeys"
-        },
-        "errorMessage": {
-          "description": "ErrorMessage contains a defauled error message in case the controller encountered an error. Will be reset if the error was resolved",
-          "type": "string",
-          "x-go-name": "ErrorMessage"
-        },
-        "errorReason": {
-          "$ref": "#/definitions/ClusterStatusError"
-        },
-        "health": {
-          "$ref": "#/definitions/ClusterHealth"
-        },
-        "kubeletCert": {
-          "$ref": "#/definitions/KeyCert"
-        },
-        "lastUpdated": {
-          "$ref": "#/definitions/Time"
-        },
-        "namespaceName": {
-          "description": "NamespaceName defines the namespace the control plane of this cluster is deployed in",
-          "type": "string",
-          "x-go-name": "NamespaceName"
-        },
-        "phase": {
-          "$ref": "#/definitions/ClusterPhase"
-        },
-        "rootCA": {
-          "$ref": "#/definitions/KeyCert"
-        },
-        "serviceAccountKey": {
-          "$ref": "#/definitions/Bytes"
-        },
-        "userEmail": {
-          "description": "UserEmail contains the email of the owner of this cluster",
-          "type": "string",
-          "x-go-name": "UserEmail"
-        },
-        "userName": {
-          "description": "UserName contains the name of the owner of this cluster",
-          "type": "string",
-          "x-go-name": "UserName"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "ClusterStatusError": {
-      "type": "string",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "ClusterV1": {
-      "type": "object",
-      "title": "Cluster is the object representing a cluster.",
-      "properties": {
-        "address": {
-          "$ref": "#/definitions/ClusterAddress"
-        },
-        "annotations": {
-          "description": "Annotations is an unstructured key value map stored with a resource that may be\nset by external tools to store and retrieve arbitrary metadata. They are not\nqueryable and should be preserved when modifying objects.\nMore info: http://kubernetes.io/docs/user-guide/annotations\n+optional",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "x-go-name": "Annotations"
-        },
-        "apiVersion": {
-          "description": "APIVersion defines the versioned schema of this representation of an object.\nServers should convert recognized schemas to the latest internal value, and\nmay reject unrecognized values.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources\n+optional",
-          "type": "string",
-          "x-go-name": "APIVersion"
-        },
-        "clusterName": {
-          "description": "The name of the cluster which the object belongs to.\nThis is used to distinguish resources with same name and namespace in different clusters.\nThis field is not set anywhere right now and apiserver is going to ignore it if set in create or update request.\n+optional",
-          "type": "string",
-          "x-go-name": "ClusterName"
-        },
-        "creationTimestamp": {
-          "$ref": "#/definitions/Time"
-        },
-        "deletionGracePeriodSeconds": {
-          "description": "Number of seconds allowed for this object to gracefully terminate before\nit will be removed from the system. Only set when deletionTimestamp is also set.\nMay only be shortened.\nRead-only.\n+optional",
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "DeletionGracePeriodSeconds"
-        },
-        "deletionTimestamp": {
-          "$ref": "#/definitions/Time"
-        },
-        "finalizers": {
-          "description": "Must be empty before the object is deleted from the registry. Each entry\nis an identifier for the responsible component that will remove the entry\nfrom the list. If the deletionTimestamp of the object is non-nil, entries\nin this list can only be removed.\n+optional\n+patchStrategy=merge",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "Finalizers"
-        },
-        "generateName": {
-          "description": "GenerateName is an optional prefix, used by the server, to generate a unique\nname ONLY IF the Name field has not been provided.\nIf this field is used, the name returned to the client will be different\nthan the name passed. This value will also be combined with a unique suffix.\nThe provided value has the same validation rules as the Name field,\nand may be truncated by the length of the suffix required to make the value\nunique on the server.\n\nIf this field is specified and the generated name exists, the server will\nNOT return a 409 - instead, it will either return 201 Created or 500 with Reason\nServerTimeout indicating a unique name could not be found in the time allotted, and the client\nshould retry (optionally after the time indicated in the Retry-After header).\n\nApplied only if Name is not specified.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#idempotency\n+optional",
-          "type": "string",
-          "x-go-name": "GenerateName"
-        },
-        "generation": {
-          "description": "A sequence number representing a specific generation of the desired state.\nPopulated by the system. Read-only.\n+optional",
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "Generation"
-        },
-        "initializers": {
-          "$ref": "#/definitions/Initializers"
-        },
-        "kind": {
-          "description": "Kind is a string value representing the REST resource this object represents.\nServers may infer this from the endpoint the client submits requests to.\nCannot be updated.\nIn CamelCase.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds\n+optional",
-          "type": "string",
-          "x-go-name": "Kind"
-        },
-        "labels": {
-          "description": "Map of string keys and values that can be used to organize and categorize\n(scope and select) objects. May match selectors of replication controllers\nand services.\nMore info: http://kubernetes.io/docs/user-guide/labels\n+optional",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "x-go-name": "Labels"
-        },
-        "name": {
-          "description": "Name must be unique within a namespace. Is required when creating resources, although\nsome resources may allow a client to request the generation of an appropriate name\nautomatically. Name is primarily intended for creation idempotence and configuration\ndefinition.\nCannot be updated.\nMore info: http://kubernetes.io/docs/user-guide/identifiers#names\n+optional",
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "namespace": {
-          "description": "Namespace defines the space within each name must be unique. An empty namespace is\nequivalent to the \"default\" namespace, but \"default\" is the canonical representation.\nNot all objects are required to be scoped to a namespace - the value of this field for\nthose objects will be empty.\n\nMust be a DNS_LABEL.\nCannot be updated.\nMore info: http://kubernetes.io/docs/user-guide/namespaces\n+optional",
-          "type": "string",
-          "x-go-name": "Namespace"
-        },
-        "ownerReferences": {
-          "description": "List of objects depended by this object. If ALL objects in the list have\nbeen deleted, this object will be garbage collected. If this object is managed by a controller,\nthen an entry in this list will point to this controller, with the controller field set to true.\nThere cannot be more than one managing controller.\n+optional\n+patchMergeKey=uid\n+patchStrategy=merge",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/OwnerReference"
-          },
-          "x-go-name": "OwnerReferences"
-        },
-        "resourceVersion": {
-          "description": "An opaque value that represents the internal version of this object that can\nbe used by clients to determine when objects have changed. May be used for optimistic\nconcurrency, change detection, and the watch operation on a resource or set of resources.\nClients must treat these values as opaque and passed unmodified back to the server.\nThey may only be valid for a particular resource or set of resources.\n\nPopulated by the system.\nRead-only.\nValue must be treated as opaque by clients and .\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency\n+optional",
-          "type": "string",
-          "x-go-name": "ResourceVersion"
-        },
-        "selfLink": {
-          "description": "SelfLink is a URL representing this object.\nPopulated by the system.\nRead-only.\n+optional",
-          "type": "string",
-          "x-go-name": "SelfLink"
-        },
-        "spec": {
-          "$ref": "#/definitions/ClusterSpec"
-        },
-        "status": {
-          "$ref": "#/definitions/ClusterStatus"
-        },
-        "uid": {
-          "$ref": "#/definitions/UID"
-        }
-      },
-      "x-go-name": "Cluster",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "ComponentSettings": {
-      "type": "object",
-      "properties": {
-        "apiserver": {
-          "$ref": "#/definitions/DeploymentSettings"
-        },
-        "controllerManager": {
-          "$ref": "#/definitions/DeploymentSettings"
-        },
-        "etcd": {
-          "$ref": "#/definitions/EtcdSettings"
-        },
-        "scheduler": {
-          "$ref": "#/definitions/DeploymentSettings"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "ContainerLinuxSpecV2": {
       "description": "ContainerLinuxSpec ubuntu linux specific settings",
@@ -3159,35 +2699,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
-    },
-    "CreateClusterReqBody": {
-      "description": "CreateClusterReqBody represents the request body for a create cluster request",
-      "type": "object",
-      "properties": {
-        "cluster": {
-          "$ref": "#/definitions/Cluster"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
-    },
-    "CreateNodeReqBodyV3": {
-      "description": "CreateNodeReqBodyV3 represents the request body of a create nodes request",
-      "type": "object",
-      "required": [
-        "spec"
-      ],
-      "properties": {
-        "metadata": {
-          "$ref": "#/definitions/ObjectMetaV2"
-        },
-        "spec": {
-          "$ref": "#/definitions/NodeSpecV2"
-        },
-        "status": {
-          "$ref": "#/definitions/NodeStatusV2"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
     },
     "Datacenter": {
       "type": "object",
@@ -3257,20 +2768,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "DeploymentSettings": {
-      "type": "object",
-      "properties": {
-        "replicas": {
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "Replicas"
-        },
-        "resources": {
-          "$ref": "#/definitions/ResourceRequirements"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "DigitaloceanCloudSpec": {
       "type": "object",
@@ -3428,15 +2925,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
     },
-    "EtcdSettings": {
-      "type": "object",
-      "properties": {
-        "resources": {
-          "$ref": "#/definitions/ResourceRequirements"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
     "ExecConfig": {
       "description": "See the client.authentiction.k8s.io API group for specifications of the exact input\nand output format",
       "type": "object",
@@ -3546,49 +3034,6 @@
         "type": "string"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "Initializer": {
-      "type": "object",
-      "title": "Initializer is information about an initializer that has not yet completed.",
-      "properties": {
-        "name": {
-          "description": "name of the process that is responsible for initializing this object.",
-          "type": "string",
-          "x-go-name": "Name"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
-    },
-    "Initializers": {
-      "type": "object",
-      "title": "Initializers tracks the progress of initialization.",
-      "properties": {
-        "pending": {
-          "description": "Pending is a list of initializers that must execute in order before this object is visible.\nWhen the last pending initializer is removed, and no failing result is set, the initializers\nstruct will be set to nil and the object is considered as initialized and visible to all\nclients.\n+patchMergeKey=name\n+patchStrategy=merge",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Initializer"
-          },
-          "x-go-name": "Pending"
-        },
-        "result": {
-          "$ref": "#/definitions/Status"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
-    },
-    "KeyCert": {
-      "type": "object",
-      "title": "KeyCert is a pair of key and cert.",
-      "properties": {
-        "cert": {
-          "$ref": "#/definitions/Bytes"
-        },
-        "key": {
-          "$ref": "#/definitions/Bytes"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "Kubeconfig": {
       "description": "Kubeconfig is a clusters kubeconfig",
@@ -3749,20 +3194,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
-    },
-    "NetworkRanges": {
-      "type": "object",
-      "title": "NetworkRanges represents ranges of network addresses.",
-      "properties": {
-        "cidrBlocks": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "CIDRBlocks"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "NewClusterSpec": {
       "description": "NewClusterSpec defines the cluster specification",
@@ -3928,31 +3359,6 @@
         }
       },
       "x-go-name": "NodeCloudSpec",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
-    },
-    "NodeContainerRuntimeInfoV2": {
-      "description": "NodeContainerRuntimeInfo information about the container runtime. Currently only \"cri-o\" and \"docker\" are supported",
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "version": {
-          "type": "string",
-          "x-go-name": "Version"
-        }
-      },
-      "x-go-name": "NodeContainerRuntimeInfo",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
-    },
-    "NodeListV2": {
-      "description": "NodeList represents a list of nodes",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/NodeV2"
-      },
-      "x-go-name": "NodeList",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
     "NodeResourcesV2": {
@@ -4180,10 +3586,12 @@
           "x-go-name": "Domain"
         },
         "floatingIpPool": {
+          "description": "FloatingIPPool holds the name of the public network\nThe public network is reachable from the outside world\nand should provide the pool of IP addresses to choose from.\n\nWhen specified, all worker nodes will receive a public ip from this floating ip pool\n\nNote that the network is external if the \"External\" field is set to true",
           "type": "string",
           "x-go-name": "FloatingIPPool"
         },
         "network": {
+          "description": "Network holds the name of the internal network\nWhen specified, all worker nodes will be attached to this network. If not specified, a network, subnet \u0026 router will be created\n\nNote that the network is internal if the \"External\" field is set to false",
           "type": "string",
           "x-go-name": "Network"
         },
@@ -4402,41 +3810,6 @@
       "x-go-name": "OperatingSystemSpec",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
-    "OwnerReference": {
-      "description": "OwnerReference contains enough information to let you identify an owning\nobject. Currently, an owning object must be in the same namespace, so there\nis no namespace field.",
-      "type": "object",
-      "properties": {
-        "apiVersion": {
-          "description": "API version of the referent.",
-          "type": "string",
-          "x-go-name": "APIVersion"
-        },
-        "blockOwnerDeletion": {
-          "description": "If true, AND if the owner has the \"foregroundDeletion\" finalizer, then\nthe owner cannot be deleted from the key-value store until this\nreference is removed.\nDefaults to false.\nTo set this field, a user needs \"delete\" permission of the owner,\notherwise 422 (Unprocessable Entity) will be returned.\n+optional",
-          "type": "boolean",
-          "x-go-name": "BlockOwnerDeletion"
-        },
-        "controller": {
-          "description": "If true, this reference points to the managing controller.\n+optional",
-          "type": "boolean",
-          "x-go-name": "Controller"
-        },
-        "kind": {
-          "description": "Kind of the referent.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
-          "type": "string",
-          "x-go-name": "Kind"
-        },
-        "name": {
-          "description": "Name of the referent.\nMore info: http://kubernetes.io/docs/user-guide/identifiers#names",
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "uid": {
-          "$ref": "#/definitions/UID"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
-    },
     "Preferences": {
       "type": "object",
       "properties": {
@@ -4504,19 +3877,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "RSAKeys": {
-      "type": "object",
-      "title": "RSAKeys is a pair of private and public key where the key is not published to the API client.",
-      "properties": {
-        "privateKey": {
-          "$ref": "#/definitions/Bytes"
-        },
-        "publicKey": {
-          "$ref": "#/definitions/Bytes"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
     "RawExtension": {
       "description": "To use this, make a field which has RawExtension as its type in your external, versioned\nstruct, and Object in your internal struct. You also need to register your\nvarious plugin types.\n\nInternal package:\ntype MyAPIObject struct {\nruntime.TypeMeta `json:\",inline\"`\nMyPlugin runtime.Object `json:\"myPlugin\"`\n}\ntype PluginA struct {\nAOption string `json:\"aOption\"`\n}\n\nExternal package:\ntype MyAPIObject struct {\nruntime.TypeMeta `json:\",inline\"`\nMyPlugin runtime.RawExtension `json:\"myPlugin\"`\n}\ntype PluginA struct {\nAOption string `json:\"aOption\"`\n}\n\nOn the wire, the JSON will look something like this:\n{\n\"kind\":\"MyAPIObject\",\n\"apiVersion\":\"v1\",\n\"myPlugin\": {\n\"kind\":\"PluginA\",\n\"aOption\":\"foo\",\n},\n}\n\nSo what happens? Decode first uses json or yaml to unmarshal the serialized data into\nyour external MyAPIObject. That causes the raw JSON to be stored, but not unpacked.\nThe next step is to copy (using pkg/conversion) into the internal struct. The runtime\npackage's DefaultScheme has conversion functions installed which will unpack the\nJSON stored in RawExtension, turning it into the correct object type, and storing it\nin the Object. (TODO: In the case where the object is of an unknown type, a\nruntime.Unknown object will be created and stored.)\n\n+k8s:deepcopy-gen=true\n+protobuf=true\n+k8s:openapi-gen=true",
       "type": "object",
@@ -4532,195 +3892,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/runtime"
-    },
-    "ResourceList": {
-      "title": "ResourceList is a set of (resource name, quantity) pairs.",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
-    },
-    "ResourceRequirements": {
-      "type": "object",
-      "title": "ResourceRequirements describes the compute resource requirements.",
-      "properties": {
-        "limits": {
-          "$ref": "#/definitions/ResourceList"
-        },
-        "requests": {
-          "$ref": "#/definitions/ResourceList"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
-    },
-    "SSHKey": {
-      "description": "SSHKey represents a ssh key",
-      "type": "object",
-      "properties": {
-        "metadata": {
-          "$ref": "#/definitions/ObjectMeta"
-        },
-        "spec": {
-          "$ref": "#/definitions/SSHKeySpec"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "SSHKeySpec": {
-      "description": "SSHKeySpec represents the details of a ssh key",
-      "type": "object",
-      "properties": {
-        "clusters": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "Clusters"
-        },
-        "fingerprint": {
-          "type": "string",
-          "x-go-name": "Fingerprint"
-        },
-        "name": {
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "owner": {
-          "type": "string",
-          "x-go-name": "Owner"
-        },
-        "publicKey": {
-          "type": "string",
-          "x-go-name": "PublicKey"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "Status": {
-      "type": "object",
-      "title": "Status is a return value for calls that don't return other objects.",
-      "properties": {
-        "apiVersion": {
-          "description": "APIVersion defines the versioned schema of this representation of an object.\nServers should convert recognized schemas to the latest internal value, and\nmay reject unrecognized values.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources\n+optional",
-          "type": "string",
-          "x-go-name": "APIVersion"
-        },
-        "code": {
-          "description": "Suggested HTTP return code for this status, 0 if not set.\n+optional",
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "Code"
-        },
-        "continue": {
-          "description": "continue may be set if the user set a limit on the number of items returned, and indicates that\nthe server has more data available. The value is opaque and may be used to issue another request\nto the endpoint that served this list to retrieve the next set of available objects. Continuing a\nlist may not be possible if the server configuration has changed or more than a few minutes have\npassed. The resourceVersion field returned when using this continue value will be identical to\nthe value in the first response.",
-          "type": "string",
-          "x-go-name": "Continue"
-        },
-        "details": {
-          "$ref": "#/definitions/StatusDetails"
-        },
-        "kind": {
-          "description": "Kind is a string value representing the REST resource this object represents.\nServers may infer this from the endpoint the client submits requests to.\nCannot be updated.\nIn CamelCase.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds\n+optional",
-          "type": "string",
-          "x-go-name": "Kind"
-        },
-        "message": {
-          "description": "A human-readable description of the status of this operation.\n+optional",
-          "type": "string",
-          "x-go-name": "Message"
-        },
-        "reason": {
-          "$ref": "#/definitions/StatusReason"
-        },
-        "resourceVersion": {
-          "description": "String that identifies the server's internal version of this object that\ncan be used by clients to determine when objects have changed.\nValue must be treated as opaque by clients and passed unmodified back to the server.\nPopulated by the system.\nRead-only.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency\n+optional",
-          "type": "string",
-          "x-go-name": "ResourceVersion"
-        },
-        "selfLink": {
-          "description": "selfLink is a URL representing this object.\nPopulated by the system.\nRead-only.\n+optional",
-          "type": "string",
-          "x-go-name": "SelfLink"
-        },
-        "status": {
-          "description": "Status of the operation.\nOne of: \"Success\" or \"Failure\".\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status\n+optional",
-          "type": "string",
-          "x-go-name": "Status"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
-    },
-    "StatusCause": {
-      "description": "StatusCause provides more information about an api.Status failure, including\ncases when multiple errors are encountered.",
-      "type": "object",
-      "properties": {
-        "field": {
-          "description": "The field of the resource that has caused this error, as named by its JSON\nserialization. May include dot and postfix notation for nested attributes.\nArrays are zero-indexed.  Fields may appear more than once in an array of\ncauses due to fields having multiple errors.\nOptional.\n\nExamples:\n\"name\" - the field \"name\" on the current resource\n\"items[0].name\" - the field \"name\" on the first array entry in \"items\"\n+optional",
-          "type": "string",
-          "x-go-name": "Field"
-        },
-        "message": {
-          "description": "A human-readable description of the cause of the error.  This field may be\npresented as-is to a reader.\n+optional",
-          "type": "string",
-          "x-go-name": "Message"
-        },
-        "reason": {
-          "$ref": "#/definitions/CauseType"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
-    },
-    "StatusDetails": {
-      "description": "StatusDetails is a set of additional properties that MAY be set by the\nserver to provide additional information about a response. The Reason\nfield of a Status object defines what attributes will be set. Clients\nmust ignore fields that do not match the defined type of each attribute,\nand should assume that any attribute may be empty, invalid, or under\ndefined.",
-      "type": "object",
-      "properties": {
-        "causes": {
-          "description": "The Causes array includes more details associated with the StatusReason\nfailure. Not all StatusReasons may provide detailed causes.\n+optional",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/StatusCause"
-          },
-          "x-go-name": "Causes"
-        },
-        "group": {
-          "description": "The group attribute of the resource associated with the status StatusReason.\n+optional",
-          "type": "string",
-          "x-go-name": "Group"
-        },
-        "kind": {
-          "description": "The kind attribute of the resource associated with the status StatusReason.\nOn some operations may differ from the requested resource Kind.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds\n+optional",
-          "type": "string",
-          "x-go-name": "Kind"
-        },
-        "name": {
-          "description": "The name attribute of the resource associated with the status StatusReason\n(when there is a single name which can be described).\n+optional",
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "retryAfterSeconds": {
-          "description": "If specified, the time in seconds before the operation should be retried. Some errors may indicate\nthe client must take an alternate action - for those errors this field may indicate how long to wait\nbefore taking the alternate action.\n+optional",
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "RetryAfterSeconds"
-        },
-        "uid": {
-          "$ref": "#/definitions/UID"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
-    },
-    "StatusReason": {
-      "description": "StatusReason is an enumeration of possible failure causes.  Each StatusReason\nmust map to a single HTTP status code, but multiple reasons may map\nto the same HTTP status code.\nTODO: move to apiserver",
-      "type": "string",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
-    },
-    "Time": {
-      "description": "+protobuf.options.marshal=false\n+protobuf.as=Timestamp\n+protobuf.options.(gogoproto.goproto_stringer)=false",
-      "type": "object",
-      "title": "Time is a wrapper around time.Time which supports correct\nmarshaling to YAML and JSON.  Wrappers are provided for many\nof the factory methods that the time package offers.",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
-    },
-    "UID": {
-      "description": "UID is a type that holds unique ID values, including UUIDs.  Because we\ndon't ONLY use UUIDs, this is an alias to string.  Being a type captures\nintent and helps make sure that UIDs and names do not get conflated.",
-      "type": "string",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/types"
     },
     "UbuntuSpecV2": {
       "description": "UbuntuSpec ubuntu specific settings",

@@ -23,9 +23,9 @@ spec:
   template:
     metadata:
       annotations:
-        prometheus.io-0/path: /metrics
-        prometheus.io-0/port: "8085"
-        prometheus.io-0/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8085"
+        prometheus.io/scrape: "true"
       creationTimestamp: null
       labels:
         app: machine-controller
@@ -50,7 +50,7 @@ spec:
           value: https://vs-endpoint.io
         - name: VSPHERE_USERNAME
         - name: VSPHERE_PASSWORD
-        image: docker.io/kubermatic/machine-controller:v0.9.4
+        image: docker.io/kubermatic/machine-controller:v0.9.5
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 8

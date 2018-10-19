@@ -16,7 +16,6 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
@@ -47,12 +46,10 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		datacenters = buildDatacenterMeta()
 	}
 	cloudProviders := cloud.Providers(datacenters)
-
 	authenticator := NewFakeAuthenticator(user)
 
 	kubeClient := fake.NewSimpleClientset(kubeObjects...)
 	kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, 10*time.Millisecond)
-
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
 
@@ -60,8 +57,7 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		return kubermaticClient.KubermaticV1(), nil
 	}
 
-	sshKeyProvider := kubernetes.NewSSHKeyProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeies().Lister(), IsAdmin)
-	newSSHKeyProvider := kubernetes.NewRBACCompliantSSHKeyProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeies().Lister())
+	sshKeyProvider := kubernetes.NewRBACCompliantSSHKeyProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeies().Lister())
 	userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister())
 	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister())
 	projectProvider, err := kubernetes.NewProjectProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Projects().Lister())
@@ -69,28 +65,19 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		return nil, nil, err
 	}
 
-	clusterProvider := kubernetes.NewClusterProvider(
-		kubermaticClient,
-		client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
-		kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(),
-		"",
-		IsAdmin,
-	)
-	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
 	fakeMachineClient := fakeclusterclientset.NewSimpleClientset(machineObjects...)
 	fUserClusterConnection := &fakeUserClusterConnection{fakeMachineClient, kubeClient}
 
-	newClusterProvider := kubernetes.NewRBACCompliantClusterProvider(
+	clusterProvider := kubernetes.NewRBACCompliantClusterProvider(
 		fakeImpersonationClient,
 		fUserClusterConnection,
 		kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(),
 		"",
 	)
-	newClusterProviders := map[string]provider.NewClusterProvider{"us-central1": newClusterProvider}
+	clusterProviders := map[string]provider.NewClusterProvider{"us-central1": clusterProvider}
 
 	kubeInformerFactory.Start(wait.NeverStop)
 	kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
-
 	kubermaticInformerFactory.Start(wait.NeverStop)
 	kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
 
@@ -102,10 +89,8 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	r := NewRouting(
 		datacenters,
 		clusterProviders,
-		newClusterProviders,
 		cloudProviders,
 		sshKeyProvider,
-		newSSHKeyProvider,
 		userProvider,
 		projectProvider,
 		authenticator,
@@ -116,9 +101,7 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	)
 	mainRouter := mux.NewRouter()
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
-	v3Router := mainRouter.PathPrefix("/api/v3").Subrouter()
 	r.RegisterV1(v1Router)
-	r.RegisterV3(v3Router)
 
 	return mainRouter, &clientsSets{kubermaticClient, fakeMachineClient}, nil
 }

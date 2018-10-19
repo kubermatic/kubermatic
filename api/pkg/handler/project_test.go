@@ -110,7 +110,7 @@ func TestGetProjectEndpoint(t *testing.T) {
 		{
 			Name:                      "scenario 1: get an existing project assigned to the given user",
 			Body:                      ``,
-			ProjectToSync:             testingProjectName,
+			ProjectToSync:             genDefaultProject().Name,
 			ExpectedResponse:          `{"id":"my-first-project-ID","name":"my-first-project","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active"}`,
 			HTTPStatus:                http.StatusOK,
 			ExistingKubermaticObjects: genDefaultKubermaticObjects(),
@@ -293,8 +293,8 @@ func genDefaultProject() *kubermaticapiv1.Project {
 	return genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp(), oRef)
 }
 
-func genDefaultKubermaticObjects() []runtime.Object {
-	return []runtime.Object{
+func genDefaultKubermaticObjects(objs ...runtime.Object) []runtime.Object {
+	defaultsObjs := []runtime.Object{
 		// add a project
 		genDefaultProject(),
 		// add a user
@@ -302,4 +302,6 @@ func genDefaultKubermaticObjects() []runtime.Object {
 		// make a user the owner of the default project
 		genDefaultOwnerBinding(),
 	}
+
+	return append(defaultsObjs, objs...)
 }

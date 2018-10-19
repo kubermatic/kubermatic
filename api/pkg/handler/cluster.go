@@ -20,55 +20,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
-
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
-
-// Deprecated: newClusterEndpoint is deprecated use newCreateClusterEndpoint instead.
-func newClusterEndpoint(sshKeysProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, updateManager UpdateManager) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(ClusterReq)
-		user := ctx.Value(apiUserContextKey).(apiv1.User)
-		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-
-		spec := req.Body.Cluster
-		if spec == nil {
-			return nil, errors.NewBadRequest("no cluster spec given")
-		}
-
-		if err := defaulting.DefaultCreateClusterSpec(spec, cloudProviders); err != nil {
-			return nil, errors.NewBadRequest("invalid cluster: %v", err)
-		}
-
-		if err := validation.ValidateCreateClusterSpec(spec, cloudProviders); err != nil {
-			return nil, errors.NewBadRequest("invalid cluster: %v", err)
-		}
-
-		if spec.Version == "" {
-			v, err := updateManager.GetDefault()
-			if err != nil {
-				return nil, err
-			}
-			spec.Version = v.Version.String()
-		}
-
-		c, err := clusterProvider.NewCluster(user, spec)
-		if err != nil {
-			if kerrors.IsAlreadyExists(err) {
-				return nil, errors.NewConflict("cluster", spec.Cloud.DatacenterName, spec.HumanReadableName)
-			}
-			return nil, err
-		}
-
-		err = sshKeysProvider.AssignSSHKeysToCluster(user, req.Body.SSHKeys, c.Name)
-		if err != nil {
-			return nil, err
-		}
-
-		filteredCluster := removeSensitiveDataFromCluster(c)
-		return filteredCluster, nil
-	}
-}
 
 func newCreateClusterEndpoint(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -108,25 +60,6 @@ func newCreateClusterEndpoint(cloudProviders map[string]provider.CloudProvider, 
 	}
 }
 
-// Deprecated: clusterEndpoint is deprecated use newGetCluster instead.
-func clusterEndpoint() endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := ctx.Value(apiUserContextKey).(apiv1.User)
-		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		req := request.(LegacyGetClusterReq)
-		c, err := clusterProvider.Cluster(user, req.ClusterName)
-		if err != nil {
-			if err == provider.ErrNotFound {
-				return nil, errors.NewNotFound("cluster", req.ClusterName)
-			}
-			return nil, err
-		}
-
-		filteredCluster := removeSensitiveDataFromCluster(c)
-		return filteredCluster, nil
-	}
-}
-
 func newGetCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NewGetClusterReq)
@@ -142,40 +75,6 @@ func newGetCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 		}
 
 		return filterAndConvertInternalClusterToExternal(cluster), nil
-	}
-}
-
-// Deprecated: updateClusterEndpoint is deprecated use newUpdateCluster instead.
-func updateClusterEndpoint(cloudProviders map[string]provider.CloudProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := ctx.Value(apiUserContextKey).(apiv1.User)
-		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		req := request.(UpdateClusterReq)
-		oldCluster, err := clusterProvider.Cluster(user, req.ClusterName)
-		if err != nil {
-			if err == provider.ErrNotFound {
-				return nil, errors.NewNotFound("cluster", req.ClusterName)
-			}
-			return nil, err
-		}
-		newCluster := req.Body.Cluster
-
-		//We don't allow updating the following fields
-		newCluster.TypeMeta = oldCluster.TypeMeta
-		newCluster.ObjectMeta = oldCluster.ObjectMeta
-		newCluster.Status = oldCluster.Status
-		newCluster.Spec.Cloud = kubermaticapiv1.UpdateCloudSpec(newCluster.Spec.Cloud, oldCluster.Spec.Cloud)
-
-		if err := validation.ValidateUpdateCluster(newCluster, oldCluster, cloudProviders); err != nil {
-			return nil, errors.NewBadRequest("invalid cluster: %v", err)
-		}
-
-		updatedCluster, err := clusterProvider.UpdateCluster(user, newCluster)
-		if err != nil {
-			return nil, err
-		}
-		filteredCluster := removeSensitiveDataFromCluster(updatedCluster)
-		return filteredCluster, nil
 	}
 }
 
@@ -199,35 +98,16 @@ func newUpdateCluster(cloudProviders map[string]provider.CloudProvider, projectP
 		existingCluster.Spec.MachineNetworks = newCluster.Spec.MachineNetworks
 		newCluster.Spec.Cloud = kubermaticapiv1.UpdateCloudSpec(newCluster.Spec.Cloud, existingCluster.Spec.Cloud)
 
-		if err = validation.ValidateUpdateCluster(existingCluster, existingCluster, cloudProviders); err != nil {
+		if err = validation.ValidateUpdateNewCluster(&newCluster, existingCluster, cloudProviders); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
+		existingCluster.Spec.Cloud = newCluster.Spec.Cloud
 
 		updatedCluster, err := clusterProvider.Update(userInfo, existingCluster)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 		return filterAndConvertInternalClusterToExternal(updatedCluster), nil
-	}
-}
-
-// Deprecated: clustersEndpoint is deprecated use newListClusters instead.
-func clustersEndpoint() endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := ctx.Value(apiUserContextKey).(apiv1.User)
-		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		cs, err := clusterProvider.Clusters(user)
-		if err != nil {
-			return nil, err
-		}
-
-		filteredClusters := make([]*kubermaticapiv1.Cluster, len(cs))
-		for index, cluster := range cs {
-			filteredCluster := removeSensitiveDataFromCluster(cluster)
-			filteredClusters[index] = filteredCluster
-		}
-
-		return filteredClusters, nil
 	}
 }
 
@@ -251,24 +131,6 @@ func newListClusters(projectProvider provider.ProjectProvider) endpoint.Endpoint
 	}
 }
 
-// Deprecated: deleteClusterEndpoint is deprecated use newDeleteCluster instead.
-func deleteClusterEndpoint() endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(LegacyGetClusterReq)
-		user := ctx.Value(apiUserContextKey).(apiv1.User)
-		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		c, err := clusterProvider.Cluster(user, req.ClusterName)
-		if err != nil {
-			if err == provider.ErrNotFound {
-				return nil, errors.NewNotFound("cluster", req.ClusterName)
-			}
-			return nil, err
-		}
-
-		return nil, clusterProvider.DeleteCluster(user, c.Name)
-	}
-}
-
 func newDeleteCluster(sshKeyProvider provider.NewSSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NewGetClusterReq)
@@ -279,9 +141,6 @@ func newDeleteCluster(sshKeyProvider provider.NewSSHKeyProvider, projectProvider
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		// TODO: I think that in general it would be better if the cluster resource
-		// has the reference to the ssh keys - not the other way around as it is now.
-		// detach ssh keys that are being used by this clusters
 		clusterSSHKeys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: req.ClusterID})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
@@ -495,62 +354,6 @@ func detachSSHKeyFromCluster(sshKeyProvider provider.NewSSHKeyProvider, projectP
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 		return nil, nil
-	}
-}
-
-type (
-	metricsResponse struct {
-		Metrics []metricResponse `json:"metrics"`
-	}
-	metricResponse struct {
-		Name   string    `json:"name"`
-		Value  float64   `json:"value,omitempty"`
-		Values []float64 `json:"values,omitempty"`
-	}
-)
-
-func legacyGetClusterMetricsEndpoint(prometheusClient prometheusapi.Client) endpoint.Endpoint {
-	if prometheusClient == nil {
-		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			return nil, fmt.Errorf("metrics endpoint disabled")
-		}
-	}
-
-	promAPI := prometheusv1.NewAPI(prometheusClient)
-
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := ctx.Value(apiUserContextKey).(apiv1.User)
-		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		req := request.(LegacyGetClusterReq)
-		c, err := clusterProvider.Cluster(user, req.ClusterName)
-		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
-		}
-
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
-		defer cancel()
-
-		var resp metricsResponse
-
-		val, err := prometheusQuery(ctx, promAPI, fmt.Sprintf(`sum(machine_controller_machines{cluster="%s"})`, c.Name))
-		if err != nil {
-			return nil, err
-		}
-		resp.Metrics = append(resp.Metrics, metricResponse{
-			Name:  "Machines",
-			Value: val,
-		})
-
-		vals, err := prometheusQueryRange(ctx, promAPI, fmt.Sprintf(`sum(machine_controller_machines{cluster="%s"})`, c.Name))
-		if err != nil {
-			return nil, err
-		}
-		resp.Metrics = append(resp.Metrics, metricResponse{
-			Name:   "Machines (1h)",
-			Values: vals,
-		})
-
-		return resp, nil
 	}
 }
 

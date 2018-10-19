@@ -1,20 +1,11 @@
 package helper
 
 import (
-	"crypto/sha256"
-	"crypto/x509"
-	"encoding/pem"
 	"fmt"
 	"strings"
 
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-)
-
-const (
-	// JournaldMaxUse defines the maximum space that journalD logs can occupy.
-	// https://www.freedesktop.org/software/systemd/man/journald.conf.html#SystemMaxUse=
-	JournaldMaxUse = "5G"
 )
 
 func GetServerAddressFromKubeconfig(kubeconfig *clientcmdapi.Config) (string, error) {
@@ -42,37 +33,6 @@ func GetCACert(kubeconfig *clientcmdapi.Config) (string, error) {
 	return "", fmt.Errorf("no CACert found")
 }
 
-// GetKubeadmCACertHash returns a sha256sum of the Certificates RawSubjectPublicKeyInfo
-func GetKubeadmCACertHash(kubeconfig *clientcmdapi.Config) (string, error) {
-	cacert, err := GetCACert(kubeconfig)
-	if err != nil {
-		return "", err
-	}
-	// _ is not an error but the remaining bytes in case the
-	// input to pem.Decode() contains more than one cert
-	certBlock, _ := pem.Decode([]byte(cacert))
-	if certBlock == nil {
-		return "", fmt.Errorf("pem certificate is empty")
-	}
-	cert, err := x509.ParseCertificate(certBlock.Bytes)
-	if err != nil {
-		return "", fmt.Errorf("error parsing certificate: %v", err)
-	}
-	return fmt.Sprintf("%x", sha256.Sum256(cert.RawSubjectPublicKeyInfo)), nil
-}
-
-func GetTokenFromKubeconfig(kubeconfig *clientcmdapi.Config) (string, error) {
-	if len(kubeconfig.AuthInfos) != 1 {
-		return "", fmt.Errorf("kubeconfig does not contain exactly one token, can not extract token")
-	}
-
-	for _, authInfo := range kubeconfig.AuthInfos {
-		return string(authInfo.Token), nil
-	}
-
-	return "", fmt.Errorf("no token found in kubeconfig")
-}
-
 // StringifyKubeconfig marshals a kubeconfig to its text form
 func StringifyKubeconfig(kubeconfig *clientcmdapi.Config) (string, error) {
 	kubeconfigBytes, err := clientcmd.Write(*kubeconfig)
@@ -81,4 +41,34 @@ func StringifyKubeconfig(kubeconfig *clientcmdapi.Config) (string, error) {
 	}
 
 	return string(kubeconfigBytes), nil
+}
+
+// KernelModules returns the list of kernel modules required for a kubernetes worker node
+func KernelModules() string {
+	return `ip_vs
+ip_vs_rr
+ip_vs_wrr
+ip_vs_sh
+nf_conntrack_ipv4
+`
+}
+
+// KernelSettings returns the list of kernel settings required for a kubernetes worker node
+func KernelSettings() string {
+	return `net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+kernel.panic_on_oops = 1
+kernel.panic = 10
+net.ipv4.ip_forward = 1
+vm.overcommit_memory = 1
+`
+}
+
+// JournalDConfig returns the journal config preferable on every node
+func JournalDConfig() string {
+	// JournaldMaxUse defines the maximum space that journalD logs can occupy.
+	// https://www.freedesktop.org/software/systemd/man/journald.conf.html#SystemMaxUse=
+	return `[Journal]
+SystemMaxUse=5G
+`
 }

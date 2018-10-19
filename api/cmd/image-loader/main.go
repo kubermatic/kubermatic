@@ -354,6 +354,7 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		"192.0.2.0/24",
 		resource.Quantity{},
 		"",
+		"",
 		false,
 		false,
 		"",

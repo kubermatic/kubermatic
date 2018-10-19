@@ -2,16 +2,10 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
-
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
 // ProjectReq represents a request for project-specific data
@@ -37,18 +31,6 @@ type ListClustersReq struct {
 	LegacyDCReq
 }
 
-func decodeClustersReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req ListClustersReq
-
-	dcr, err := decodeLegacyDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.LegacyDCReq = dcr.(LegacyDCReq)
-
-	return req, nil
-}
-
 // LegacyGetClusterReq represent a request for cluster specific data
 // swagger:parameters getClusterV3 getClusterKubeconfigV3 deleteClusterV3 getClusterUpdatesV3 createNodesHandlerV3 legacyGetPossibleClusterUpgradesV3
 type LegacyGetClusterReq struct {
@@ -65,19 +47,6 @@ type GetClusterReq struct {
 	ClusterID string `json:"cluster_id"`
 }
 
-func decodeLegacyClusterReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req LegacyGetClusterReq
-	req.ClusterName = mux.Vars(r)["cluster"]
-
-	dcr, err := decodeLegacyDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.LegacyDCReq = dcr.(LegacyDCReq)
-
-	return req, nil
-}
-
 func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req GetClusterReq
 
@@ -92,64 +61,6 @@ func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
 		return nil, err
 	}
 	req.DCReq = dcr.(DCReq)
-
-	return req, nil
-}
-
-// CreateClusterReqBody represents the request body for a create cluster request
-type CreateClusterReqBody struct {
-	Cluster *kubermaticv1.Cluster `json:"cluster"`
-}
-
-// UpdateClusterReq represent a update request for a specific cluster
-// swagger:parameters updateClusterV3
-type UpdateClusterReq struct {
-	LegacyGetClusterReq
-	// in: body
-	Body CreateClusterReqBody
-}
-
-func decodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req UpdateClusterReq
-	cr, err := decodeLegacyClusterReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.LegacyGetClusterReq = cr.(LegacyGetClusterReq)
-
-	if err := json.NewDecoder(r.Body).Decode(&req.Body.Cluster); err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// ClusterReq represent a request for clusters specific data
-// swagger:parameters createCluster createClusterV3
-type ClusterReq struct {
-	LegacyDCReq
-	// in: body
-	Body ClusterReqBody
-}
-
-// ClusterReqBody represents the body of a new cluster request
-type ClusterReqBody struct {
-	Cluster *kubermaticv1.ClusterSpec `json:"cluster"`
-	SSHKeys []string                  `json:"sshKeys"`
-}
-
-func decodeNewClusterReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req ClusterReq
-
-	dcr, err := decodeLegacyDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.LegacyDCReq = dcr.(LegacyDCReq)
-
-	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
-		return nil, err
-	}
 
 	return req, nil
 }
@@ -216,6 +127,24 @@ func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
 	}, nil
 }
 
+// DoSizesNoCredentialsReq represent a request for digitalocean sizes EP,
+// note that the request doesn't have credentials for autN
+// swagger:parameters listDigitaloceanSizesNoCredentials
+type DoSizesNoCredentialsReq struct {
+	NewGetClusterReq
+}
+
+func decodeDoSizesNoCredentialsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req DoSizesNoCredentialsReq
+	cr, err := newDecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.NewGetClusterReq = cr.(NewGetClusterReq)
+	return req, nil
+}
+
 // DoSizesReq represent a request for digitalocean sizes
 type DoSizesReq struct {
 	DoToken string
@@ -225,6 +154,24 @@ func decodeDoSizesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req DoSizesReq
 
 	req.DoToken = r.Header.Get("DoToken")
+	return req, nil
+}
+
+// AzureSizeNoCredentialsReq represent a request for Azure VM sizes
+// note that the request doesn't have credentials for authN
+// swagger:parameters listAzureSizesNoCredentials
+type AzureSizeNoCredentialsReq struct {
+	NewGetClusterReq
+}
+
+func decodeAzureSizesNoCredentialsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req AzureSizeNoCredentialsReq
+	cr, err := newDecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.NewGetClusterReq = cr.(NewGetClusterReq)
 	return req, nil
 }
 
@@ -269,6 +216,23 @@ func decodeOpenstackReq(c context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
+// OpenstackNoCredentialsReq represent a request for openstack
+// swagger:parameters listOpenstackSizesNoCredentials listOpenstackTenantsNoCredentials listOpenstackNetworksNoCredentials listOpenstackSecurityGroupsNoCredentials
+type OpenstackNoCredentialsReq struct {
+	NewGetClusterReq
+}
+
+func decodeOpenstackNoCredentialsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req OpenstackNoCredentialsReq
+	cr, err := newDecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.NewGetClusterReq = cr.(NewGetClusterReq)
+	return req, nil
+}
+
 // OpenstackSubnetReq represent a request for openstack subnets
 // swagger:parameters listOpenstackSubnets
 type OpenstackSubnetReq struct {
@@ -292,6 +256,30 @@ func decodeOpenstackSubnetReq(c context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
+// OpenstackSubnetNoCredentialsReq represent a request for openstack subnets
+// swagger:parameters listOpenstackSubnetsNoCredentials
+type OpenstackSubnetNoCredentialsReq struct {
+	OpenstackNoCredentialsReq
+	// in: query
+	NetworkID string
+}
+
+func decodeOpenstackSubnetNoCredentialsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req OpenstackSubnetNoCredentialsReq
+	lr, err := decodeOpenstackNoCredentialsReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.OpenstackNoCredentialsReq = lr.(OpenstackNoCredentialsReq)
+
+	req.NetworkID = r.URL.Query().Get("network_id")
+	if req.NetworkID == "" {
+		return nil, fmt.Errorf("get openstack subnets needs a parameter 'network_id'")
+	}
+
+	return req, nil
+}
+
 // OpenstackTenantReq represent a request for openstack tenants
 type OpenstackTenantReq struct {
 	Username       string
@@ -311,15 +299,6 @@ func decodeOpenstackTenantReq(c context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
-func decodeKubeconfigReq(c context.Context, r *http.Request) (interface{}, error) {
-	req, err := decodeLegacyClusterReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 // NodeReq represent a request for node specific data
 // swagger:parameters deleteNodeHandlerV3 getNodeHandlerV3
 type NodeReq struct {
@@ -328,53 +307,6 @@ type NodeReq struct {
 	NodeName string `json:"node"`
 	// in: query
 	HideInitialConditions bool `json:"hideInitialConditions"`
-}
-
-func decodeNodeReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req NodeReq
-
-	cr, err := decodeLegacyClusterReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.LegacyGetClusterReq = cr.(LegacyGetClusterReq)
-	req.NodeName = mux.Vars(r)["node"]
-	req.HideInitialConditions, _ = strconv.ParseBool(r.URL.Query().Get("hideInitialConditions"))
-
-	return req, nil
-}
-
-// CreateSSHKeyReq represent a request for specific data to create a new SSH key
-type CreateSSHKeyReq struct {
-	apiv1.SSHKey
-}
-
-func decodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req CreateSSHKeyReq
-	req.SSHKey = apiv1.SSHKey{}
-
-	if err := json.NewDecoder(r.Body).Decode(&req.SSHKey); err != nil {
-		return nil, errors.NewBadRequest("Error parsing the input, got %q", err.Error())
-	}
-
-	return req, nil
-}
-
-// DeleteSSHKeyReq represent a request for deleting a SSH key
-// swagger:parameters deleteSSHKey
-type DeleteSSHKeyReq struct {
-	// in: path
-	MetaName string `json:"meta_name"`
-}
-
-func decodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req DeleteSSHKeyReq
-	var ok bool
-	if req.MetaName, ok = mux.Vars(r)["meta_name"]; !ok {
-		return nil, fmt.Errorf("delte key needs a parameter 'meta_name'")
-	}
-
-	return req, nil
 }
 
 // ListSSHKeyReq represent a request for listing all user SSH Keys
@@ -404,5 +336,21 @@ func decodeVSphereNetworksReq(c context.Context, r *http.Request) (interface{}, 
 	req.Password = r.Header.Get("Password")
 	req.DatacenterName = r.Header.Get("DatacenterName")
 
+	return req, nil
+}
+
+// VSphereNetworksNoCredentialsReq represent a request for vsphere networks
+// swagger:parameters listVSphereNetworksNoCredentials
+type VSphereNetworksNoCredentialsReq struct {
+	NewGetClusterReq
+}
+
+func decodeVSphereNetworksNoCredentialsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req VSphereNetworksNoCredentialsReq
+	lr, err := newDecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.NewGetClusterReq = lr.(NewGetClusterReq)
 	return req, nil
 }

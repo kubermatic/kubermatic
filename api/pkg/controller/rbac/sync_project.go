@@ -23,42 +23,49 @@ const (
 )
 
 func (c *Controller) sync(key string) error {
-	sharedProject, err := c.projectLister.Get(key)
+	listerProject, err := c.projectLister.Get(key)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
-			glog.V(2).Infof("project '%s' in work projectQueue no longer exists", key)
+			glog.V(2).Infof("project '%s' in queue no longer exists", key)
 			return nil
 		}
 		return err
 	}
-	if c.shouldDeleteProject(sharedProject) {
-		return c.ensureProjectCleanup(sharedProject)
+	project := listerProject.DeepCopy()
+
+	if c.shouldDeleteProject(project) {
+		if err := c.ensureProjectCleanup(project); err != nil {
+			return fmt.Errorf("failed to cleanup project: %v", err)
+		}
+		return nil
 	}
 
-	project := sharedProject.DeepCopy()
-	if err = c.ensureProjectInitialized(project); err != nil {
-		return err
+	if err = c.ensureCleanupFinalizerExists(project); err != nil {
+		return fmt.Errorf("failed to ensure that the cleanup finalizer exists on the project: %v", err)
 	}
 	if err = c.ensureProjectOwner(project); err != nil {
-		return err
+		return fmt.Errorf("failed to ensure that the project owner exists in the owners group: %v", err)
 	}
 	if err = c.ensureClusterRBACRoleForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.masterClusterProvider.kubeClient, c.masterClusterProvider.rbacClusterRoleLister); err != nil {
-		return err
+		return fmt.Errorf("failed to ensure that the RBAC Role for the project exists: %v", err)
 	}
 	if err = c.ensureClusterRBACRoleBindingForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.masterClusterProvider.kubeClient, c.masterClusterProvider.rbacClusterRoleBindingLister); err != nil {
-		return err
+		return fmt.Errorf("failed to ensure that the RBAC RoleBinding for the project exists: %v", err)
 	}
 	if err = c.ensureClusterRBACRoleForResources(); err != nil {
-		return err
+		return fmt.Errorf("failed to ensure that the RBAC ClusterRole for the project exists: %v", err)
 	}
 	if err = c.ensureClusterRBACRoleBindingForResources(project.Name); err != nil {
-		return err
+		return fmt.Errorf("failed to ensure that the RBAC ClusterRoleBinding for the project exists: %v", err)
 	}
-	err = c.ensureProjectIsInActivePhase(project)
-	return err
+	if err := c.ensureProjectIsInActivePhase(project); err != nil {
+		return fmt.Errorf("failed to ensure that the project is set to active: %v", err)
+	}
+
+	return nil
 }
 
-func (c *Controller) ensureProjectInitialized(project *kubermaticv1.Project) error {
+func (c *Controller) ensureCleanupFinalizerExists(project *kubermaticv1.Project) error {
 	var err error
 	if !sets.NewString(project.Finalizers...).Has(cleanupFinalizerName) {
 		finalizers := sets.NewString(project.Finalizers...)

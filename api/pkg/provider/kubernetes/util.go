@@ -1,8 +1,6 @@
 package kubernetes
 
 import (
-	"errors"
-
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
@@ -12,11 +10,6 @@ import (
 const (
 	// NamespacePrefix is the prefix for the cluster namespace
 	NamespacePrefix = "cluster-"
-)
-
-var (
-	// ErrAlreadyExist an error indicating that the the resource already exists
-	ErrAlreadyExist = errors.New("AlreadyExist")
 )
 
 // NamespaceName returns the namespace name for a cluster

@@ -66,6 +66,7 @@ type Controller struct {
 	inClusterPrometheusDisableDefaultRules           bool
 	inClusterPrometheusDisableDefaultScrapingConfigs bool
 	inClusterPrometheusScrapingConfigsFile           string
+	monitoringScrapeAnnotationPrefix                 string
 	dockerPullConfigJSON                             []byte
 
 	clusterLister             kubermaticv1lister.ClusterLister
@@ -98,6 +99,7 @@ func NewController(
 	nodePortRange string,
 	nodeAccessNetwork string,
 	etcdDiskSize string,
+	monitoringScrapeAnnotationPrefix string,
 	inClusterPrometheusRulesFile string,
 	inClusterPrometheusDisableDefaultRules bool,
 	inClusterPrometheusDisableDefaultScrapingConfigs bool,
@@ -134,6 +136,7 @@ func NewController(
 		inClusterPrometheusDisableDefaultRules: inClusterPrometheusDisableDefaultRules,
 		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
 		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
+		monitoringScrapeAnnotationPrefix:                 monitoringScrapeAnnotationPrefix,
 		dockerPullConfigJSON:                             dockerPullConfigJSON,
 
 		externalURL: externalURL,
