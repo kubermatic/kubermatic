@@ -147,29 +147,6 @@ func listUsersFromProject(projectProvider provider.ProjectProvider, userProvider
 			externalUsers = append(externalUsers, externalUser)
 		}
 
-		// old approach, read project member from user resources
-		users, err := userProvider.ListByProject(project.Name)
-		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
-		}
-		isAlreadyOnTheList := func(apiUser *apiv1.NewUser) bool {
-			for _, existingAPIUser := range externalUsers {
-				if existingAPIUser.ID == apiUser.ID {
-					return true
-				}
-			}
-			return false
-		}
-
-		for _, user := range users {
-			externalUser := convertInternalUserToExternal(user)
-			if isAlreadyOnTheList(externalUser) {
-				continue
-			}
-			externalUser = filterExternalUser(externalUser, project.Name)
-			externalUsers = append(externalUsers, externalUser)
-		}
-
 		return externalUsers, nil
 	}
 }
@@ -320,15 +297,10 @@ func (r Routing) userInfoMiddleware() endpoint.Middleware {
 			// read group info
 			var group string
 			{
-				// old approach, group was stored in user resource
-				group, err = user.GroupForProject(projectID)
+				group, err = r.userProjectMapper.MapUserToGroup(user.Spec.Email, projectID)
 				if err != nil {
-					// new approach read group info from the mapper
-					group, err = r.userProjectMapper.MapUserToGroup(user.Spec.Email, projectID)
-					if err != nil {
-						// wrapping in k8s error to stay consisted with error messages returned from providers
-						return nil, kubernetesErrorToHTTPError(err)
-					}
+					// wrapping in k8s error to stay consisted with error messages returned from providers
+					return nil, kubernetesErrorToHTTPError(err)
 				}
 			}
 

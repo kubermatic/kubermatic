@@ -19,83 +19,8 @@ import (
 	clienttesting "k8s.io/client-go/testing"
 )
 
-var plan9 = &kubermaticapiv1.Project{
-	ObjectMeta: metav1.ObjectMeta{
-		Name: "plan9",
-		OwnerReferences: []metav1.OwnerReference{
-			{
-				APIVersion: "kubermatic.io/v1",
-				Kind:       "User",
-				UID:        "",
-				Name:       "John",
-			},
-		},
-	},
-	Spec: kubermaticapiv1.ProjectSpec{Name: "my-second-project"},
-	Status: kubermaticapiv1.ProjectStatus{
-		Phase: kubermaticapiv1.ProjectActive,
-	},
-}
-
-func genUser(id, name, email string) *kubermaticapiv1.User {
-	return &kubermaticapiv1.User{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: id,
-		},
-		Spec: kubermaticapiv1.UserSpec{
-			Name:  name,
-			Email: email,
-		},
-	}
-}
-
-func genDefaultUser() *kubermaticapiv1.User {
-	// the name of the object is derived from the email address and encoded as sha256
-	userEmail := "bob@acme.com"
-	userID := fmt.Sprintf("%x", sha256.Sum256([]byte(userEmail)))
-	return genUser(userID, "Bob", userEmail)
-}
-
-func genDefaultAPIUser() *apiv1.User {
-	return &apiv1.User{
-		ID:    genDefaultUser().Name,
-		Name:  genDefaultUser().Spec.Name,
-		Email: genDefaultUser().Spec.Email,
-	}
-}
-
-func genBinding(projectID, email, group string) *kubermaticapiv1.UserProjectBinding {
-	return &kubermaticapiv1.UserProjectBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("%s-%s-%s", projectID, email, group),
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticapiv1.ProjectKindName,
-					Name:       projectID,
-				},
-			},
-		},
-		Spec: kubermaticapiv1.UserProjectBindingSpec{
-			UserEmail: email,
-			ProjectID: projectID,
-			Group:     fmt.Sprintf("%s-%s", group, projectID),
-		},
-	}
-}
-
-func genDefaultOwnerBinding() *kubermaticapiv1.UserProjectBinding {
-	return genBinding(genDefaultProject().Name, genDefaultUser().Spec.Email, "owners")
-}
-
 func TestGetUsersForProject(t *testing.T) {
 	t.Parallel()
-	const longForm = "Jan 2, 2006 at 3:04pm (MST)"
-	creationTime, err := time.Parse(longForm, "Feb 3, 2013 at 7:54pm (PST)")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	testcases := []struct {
 		Name                        string
 		ExpectedResponse            []apiv1.NewUser
@@ -104,91 +29,47 @@ func TestGetUsersForProject(t *testing.T) {
 		ExpectedUserAfterInvitation *kubermaticapiv1.User
 		ProjectToGet                string
 		HTTPStatus                  int
-		ExistingProjects            []*kubermaticapiv1.Project
-		ExistingKubermaticUsers     []*kubermaticapiv1.User
 		ExistingAPIUser             apiv1.User
+		ExistingKubermaticObjs      []runtime.Object
 	}{
 		{
 			Name:         "scenario 1: get a list of user for a project 'foo'",
 			HTTPStatus:   http.StatusOK,
 			ProjectToGet: "foo-ID",
-			ExistingProjects: []*kubermaticapiv1.Project{
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
 				genProject("foo", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				genProject("bar", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				genProject("zorg", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				/*add bindings*/
+				genBinding("foo-ID", "john@acme.com", "owners"),
+				genBinding("bar-ID", "john@acme.com", "editors"),
+				genBinding("foo-ID", "alice@acme.com", "viewers"),
+				genBinding("foo-ID", "bob@acme.com", "editors"),
+				genBinding("bar-ID", "bob@acme.com", "editors"),
+				genBinding("zorg-ID", "bob@acme.com", "editors"),
+				/*add users*/
+				func() *kubermaticapiv1.User {
+					user := genUser("", "john", "john@acme.com")
+					user.CreationTimestamp = metav1.NewTime(time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
+					return user
+				}(),
+				func() *kubermaticapiv1.User {
+					user := genUser("", "alice", "alice@acme.com")
+					user.CreationTimestamp = metav1.NewTime(time.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC))
+					return user
+				}(),
+				func() *kubermaticapiv1.User {
+					user := genUser("", "bob", "bob@acme.com")
+					user.CreationTimestamp = metav1.NewTime(time.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC))
+					return user
+				}(),
 			},
-			ExistingKubermaticUsers: []*kubermaticapiv1.User{
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:              "john",
-						CreationTimestamp: metav1.NewTime(creationTime),
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  "john",
-						ID:    "12345",
-						Email: testUserEmail,
-						Projects: []kubermaticapiv1.ProjectGroup{
-							{
-								Group: "owners-foo",
-								Name:  "foo-ID",
-							},
-							{
-								Group: "editors-bar",
-								Name:  "bar-ID",
-							},
-						},
-					},
-				},
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:              "alice",
-						CreationTimestamp: metav1.NewTime(creationTime.Add(time.Minute)),
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  "Alice",
-						Email: "alice@acme.com",
-						Projects: []kubermaticapiv1.ProjectGroup{
-							{
-								Group: "viewers-foo",
-								Name:  "foo-ID",
-							},
-						},
-					},
-				},
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:              "bob",
-						CreationTimestamp: metav1.NewTime(creationTime.Add(2 * time.Minute)),
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  "Bob",
-						Email: "bob@acme.com",
-						Projects: []kubermaticapiv1.ProjectGroup{
-							{
-								Group: "editors-zorg",
-								Name:  "zorg_ID",
-							},
-							{
-								Group: "editors-foo",
-								Name:  "foo-ID",
-							},
-							{
-								Group: "editors-bar",
-								Name:  "bar-ID",
-							},
-						},
-					},
-				},
-			},
-			ExistingAPIUser: apiv1.User{
-				ID:    "12345",
-				Name:  "john",
-				Email: testUserEmail,
-			},
+			ExistingAPIUser: *genAPIUser("john", "john@acme.com"),
 			ExpectedResponse: []apiv1.NewUser{
 				apiv1.NewUser{
 					NewObjectMeta: apiv1.NewObjectMeta{
-						ID:                "john",
+						ID:                "4b2d8785b49bad23638b17d8db76857a79bf79441241a78a97d88cc64bbf766e",
 						Name:              "john",
 						CreationTimestamp: time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
 					},
@@ -203,8 +84,8 @@ func TestGetUsersForProject(t *testing.T) {
 
 				apiv1.NewUser{
 					NewObjectMeta: apiv1.NewObjectMeta{
-						ID:                "alice",
-						Name:              "Alice",
+						ID:                "0a0a58273565a8f3dcf779375d9debd0f685d94dc56651a16bff3bf901c0b127",
+						Name:              "alice",
 						CreationTimestamp: time.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC),
 					},
 					Email: "alice@acme.com",
@@ -218,8 +99,8 @@ func TestGetUsersForProject(t *testing.T) {
 
 				apiv1.NewUser{
 					NewObjectMeta: apiv1.NewObjectMeta{
-						ID:                "bob",
-						Name:              "Bob",
+						ID:                "405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6",
+						Name:              "bob",
 						CreationTimestamp: time.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC),
 					},
 					Email: "bob@acme.com",
@@ -236,50 +117,19 @@ func TestGetUsersForProject(t *testing.T) {
 			Name:         "scenario 2: get a list of user for a project 'foo' for external user",
 			HTTPStatus:   http.StatusForbidden,
 			ProjectToGet: "foo2InternalName",
-			ExistingProjects: []*kubermaticapiv1.Project{
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
 				genProject("foo2", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				genProject("bar2", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				/*add bindings*/
+				genBinding("bar-ID", "alice2@acme.com", "viewers"),
+				genBinding("foo2-ID", "bob@acme.com", "editors"),
+				genBinding("bar2-ID", "bob@acme.com", "editors"),
+				/*add users*/
+				genUser("", "alice2", "alice2@acme.com"),
+				genDefaultUser(), /*bob*/
 			},
-			ExistingKubermaticUsers: []*kubermaticapiv1.User{
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "alice2",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  "Alice2",
-						Email: "alice2@acme.com",
-						Projects: []kubermaticapiv1.ProjectGroup{
-							{
-								Group: "viewers-bar",
-								Name:  "bar-ID",
-							},
-						},
-					},
-				},
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bob",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  "Bob",
-						Email: "bob@acme.com",
-						Projects: []kubermaticapiv1.ProjectGroup{
-							{
-								Group: "editors-foo2",
-								Name:  "foo2-ID",
-							},
-							{
-								Group: "editors-bar2",
-								Name:  "bar2-ID",
-							},
-						},
-					},
-				},
-			},
-			ExistingAPIUser: apiv1.User{
-				Name:  "alice2",
-				Email: "alice2@acme.com",
-			},
+			ExistingAPIUser:        *genAPIUser("alice2", "alice2@acme.com"),
 			ExpectedResponseString: `{"error":{"code":403,"message":"forbidden: The user \"alice2@acme.com\" doesn't belong to the given project = foo2InternalName"}}`,
 		},
 	}
@@ -289,13 +139,7 @@ func TestGetUsersForProject(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/users", tc.ProjectToGet), nil)
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
-			for _, existingProject := range tc.ExistingProjects {
-				kubermaticObj = append(kubermaticObj, existingProject)
-			}
-			for _, existingUser := range tc.ExistingKubermaticUsers {
-				kubermaticObj = append(kubermaticObj, runtime.Object(existingUser))
-			}
-
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, _, err := createTestEndpointAndGetClients(tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
@@ -335,107 +179,32 @@ func TestDeleteUserFromProject(t *testing.T) {
 		ProjectToSync                string
 		UserIDToDelete               string
 		HTTPStatus                   int
-		ExistingProjects             []*kubermaticapiv1.Project
-		ExistingKubermaticUsers      []*kubermaticapiv1.User
 		ExistingAPIUser              apiv1.User
-		ExistingMembersBindings      []*kubermaticapiv1.UserProjectBinding
+		ExistingKubermaticObjs       []runtime.Object
 	}{
 		// scenario 1
 		{
 			Name:          "scenario 1: john the owner of the plan9 project removes bob from the project",
 			Body:          `{"id":"bobID", "email":"bob@acme.com", "projects":[{"id":"plan9", "group":"editors"}]}`,
 			HTTPStatus:    http.StatusOK,
-			ProjectToSync: "plan9",
-			ExistingProjects: []*kubermaticapiv1.Project{
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
 				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				plan9,
+				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				/*add bindings*/
+				genBinding("plan9-ID", "john@acme.com", "owners"),
+				genBinding("plan9-ID", "bob@acme.com", "viewers"),
+				genBinding("planX-ID", "bob@acme.com", "viewers"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+				genDefaultUser(), /*bob*/
 			},
-			UserIDToDelete: "bobID",
-			ExistingKubermaticUsers: []*kubermaticapiv1.User{
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "johnID",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUserName,
-						ID:    testUserID,
-						Email: testUserEmail,
-					},
-				},
-
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bobID",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  "Bob",
-						Email: "bob@acme.com",
-					},
-				},
-			},
-			ExistingAPIUser: apiv1.User{
-				ID:    testUserID,
-				Name:  testUserName,
-				Email: testUserEmail,
-			},
-			ExpectedResponse: `{}`,
-			ExistingMembersBindings: []*kubermaticapiv1.UserProjectBinding{
-				&kubermaticapiv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bobBindings",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticapiv1.ProjectKindName,
-								Name:       "plan9",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.UserProjectBindingSpec{
-						UserEmail: "bob@acme.com",
-						Group:     "viewers-plan9",
-						ProjectID: "plan9",
-					},
-				},
-
-				&kubermaticapiv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bobPlanXBindings",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticapiv1.ProjectKindName,
-								Name:       "planX",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.UserProjectBindingSpec{
-						UserEmail: "bob@acme.com",
-						Group:     "viewers-planX",
-						ProjectID: "planX",
-					},
-				},
-
-				&kubermaticapiv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "johnBidning",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticapiv1.ProjectKindName,
-								Name:       "plan9",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.UserProjectBindingSpec{
-						UserEmail: testUserEmail,
-						Group:     "owners-plan9",
-						ProjectID: "plan9",
-					},
-				},
-			},
-			ExpectedBindingIDAfterDelete: "bobBindings",
+			UserIDToDelete:               genDefaultUser().Name,
+			ExistingAPIUser:              *genAPIUser("john", "john@acme.com"),
+			ExpectedResponse:             `{}`,
+			ExpectedBindingIDAfterDelete: genBinding("plan9-ID", "bob@acme.com", "viewers").Name,
 		},
 
 		// scenario 2
@@ -443,78 +212,22 @@ func TestDeleteUserFromProject(t *testing.T) {
 			Name:          "scenario 2: john the owner of the plan9 project removes bob, but bob is not a member of the project",
 			Body:          `{"id":"bobID", "email":"bob@acme.com", "projects":[{"id":"plan9", "group":"editors"}]}`,
 			HTTPStatus:    http.StatusBadRequest,
-			ProjectToSync: "plan9",
-			ExistingProjects: []*kubermaticapiv1.Project{
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
 				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				plan9,
+				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				/*add bindings*/
+				genBinding("plan9-ID", "john@acme.com", "owners"),
+				genBinding("planX-ID", "bob@acme.com", "viewers"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+				genDefaultUser(), /*bob*/
 			},
-			UserIDToDelete: "bobID",
-			ExistingKubermaticUsers: []*kubermaticapiv1.User{
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "johnID",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUserName,
-						ID:    testUserID,
-						Email: testUserEmail,
-					},
-				},
-
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bobID",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  "Bob",
-						Email: "bob@acme.com",
-					},
-				},
-			},
-			ExistingAPIUser: apiv1.User{
-				ID:    testUserID,
-				Name:  testUserName,
-				Email: testUserEmail,
-			},
-			ExpectedResponse: `{"error":{"code":400,"message":"cannot delete the user = bob@acme.com from the project plan9 because the user is not a member of the project"}}`,
-			ExistingMembersBindings: []*kubermaticapiv1.UserProjectBinding{
-				&kubermaticapiv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bobPlanXBindings",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticapiv1.ProjectKindName,
-								Name:       "planX",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.UserProjectBindingSpec{
-						UserEmail: "bob@acme.com",
-						Group:     "viewers-planX",
-						ProjectID: "planX",
-					},
-				},
-
-				&kubermaticapiv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "johnBidning",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticapiv1.ProjectKindName,
-								Name:       "plan9",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.UserProjectBindingSpec{
-						UserEmail: testUserEmail,
-						Group:     "owners-plan9",
-						ProjectID: "plan9",
-					},
-				},
-			},
+			UserIDToDelete:   genDefaultUser().Name,
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
+			ExpectedResponse: `{"error":{"code":400,"message":"cannot delete the user = bob@acme.com from the project plan9-ID because the user is not a member of the project"}}`,
 		},
 
 		// scenario 3
@@ -522,78 +235,20 @@ func TestDeleteUserFromProject(t *testing.T) {
 			Name:          "scenario 3: john the owner of the plan9 project removes himself from the projec",
 			Body:          fmt.Sprintf(`{"id":"%s", "email":"%s", "projects":[{"id":"plan9", "group":"owners"}]}`, testUserID, testUserEmail),
 			HTTPStatus:    http.StatusForbidden,
-			ProjectToSync: "plan9",
-			ExistingProjects: []*kubermaticapiv1.Project{
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
 				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				plan9,
+				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				/*add bindings*/
+				genBinding("plan9-ID", "john@acme.com", "owners"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
 			},
-			UserIDToDelete: testUserID,
-			ExistingKubermaticUsers: []*kubermaticapiv1.User{
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: testUserID,
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUserName,
-						ID:    testUserID,
-						Email: testUserEmail,
-					},
-				},
-
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bobID",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  "Bob",
-						Email: "bob@acme.com",
-					},
-				},
-			},
-			ExistingAPIUser: apiv1.User{
-				ID:    testUserID,
-				Name:  testUserName,
-				Email: testUserEmail,
-			},
+			UserIDToDelete:   genUser("", "john", "john@acme.com").Name,
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedResponse: `{"error":{"code":403,"message":"you cannot delete yourself from the project"}}`,
-			ExistingMembersBindings: []*kubermaticapiv1.UserProjectBinding{
-				&kubermaticapiv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bobPlanXBindings",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticapiv1.ProjectKindName,
-								Name:       "planX",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.UserProjectBindingSpec{
-						UserEmail: "bob@acme.com",
-						Group:     "viewers-planX",
-						ProjectID: "planX",
-					},
-				},
-
-				&kubermaticapiv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "johnBidning",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticapiv1.ProjectKindName,
-								Name:       "plan9",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.UserProjectBindingSpec{
-						UserEmail: testUserEmail,
-						Group:     "owners-plan9",
-						ProjectID: "plan9",
-					},
-				},
-			},
 		},
 	}
 	for _, tc := range testcases {
@@ -601,16 +256,7 @@ func TestDeleteUserFromProject(t *testing.T) {
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/users/%s", tc.ProjectToSync, tc.UserIDToDelete), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
-			for _, existingProject := range tc.ExistingProjects {
-				kubermaticObj = append(kubermaticObj, existingProject)
-			}
-			for _, existingUser := range tc.ExistingKubermaticUsers {
-				kubermaticObj = append(kubermaticObj, runtime.Object(existingUser))
-			}
-			for _, existingMember := range tc.ExistingMembersBindings {
-				kubermaticObj = append(kubermaticObj, existingMember)
-			}
-
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, clients, err := createTestEndpointAndGetClients(tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
@@ -659,396 +305,106 @@ func TestEditUserInProject(t *testing.T) {
 		ProjectToSync              string
 		UserIDToUpdate             string
 		HTTPStatus                 int
-		ExistingProjects           []*kubermaticapiv1.Project
-		ExistingKubermaticUsers    []*kubermaticapiv1.User
 		ExistingAPIUser            apiv1.User
-		ExistingMembersBindings    []*kubermaticapiv1.UserProjectBinding
+		ExistingKubermaticObjs     []runtime.Object
 	}{
 		// scenario 1
 		{
 			Name:          "scenario 1: john the owner of the plan9 project changes the group for bob from viewers to editors",
-			Body:          `{"id":"bobID", "email":"bob@acme.com", "projects":[{"id":"plan9", "group":"editors"}]}`,
+			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"editors"}]}`,
 			HTTPStatus:    http.StatusOK,
-			ProjectToSync: "plan9",
-			ExistingProjects: []*kubermaticapiv1.Project{
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
 				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				plan9,
+				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				/*add bindings*/
+				genBinding("plan9-ID", "john@acme.com", "owners"),
+				genBinding("plan9-ID", "bob@acme.com", "viewers"),
+				genBinding("my-third-project-ID", "bob@acme.com", "viewers"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+				genDefaultUser(), /*bob*/
 			},
-			UserIDToUpdate: "bobID",
-			ExistingKubermaticUsers: []*kubermaticapiv1.User{
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "johnID",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUserName,
-						ID:    testUserID,
-						Email: testUserEmail,
-					},
-				},
-
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bobID",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  "Bob",
-						Email: "bob@acme.com",
-					},
-				},
-			},
-			ExistingAPIUser: apiv1.User{
-				ID:    testUserID,
-				Name:  testUserName,
-				Email: testUserEmail,
-			},
-			ExpectedResponse: `{"id":"bobID","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9","group":"editors"}]}`,
-			ExistingMembersBindings: []*kubermaticapiv1.UserProjectBinding{
-				&kubermaticapiv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bobBindings",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticapiv1.ProjectKindName,
-								Name:       "plan9",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.UserProjectBindingSpec{
-						UserEmail: "bob@acme.com",
-						Group:     "viewers-plan9",
-						ProjectID: "plan9",
-					},
-				},
-
-				&kubermaticapiv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bobPlanXBindings",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticapiv1.ProjectKindName,
-								Name:       "planX",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.UserProjectBindingSpec{
-						UserEmail: "bob@acme.com",
-						Group:     "viewers-planX",
-						ProjectID: "planX",
-					},
-				},
-
-				&kubermaticapiv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "johnBidning",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticapiv1.ProjectKindName,
-								Name:       "plan9",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.UserProjectBindingSpec{
-						UserEmail: testUserEmail,
-						Group:     "owners-plan9",
-						ProjectID: "plan9",
-					},
-				},
-			},
-			ExpectedBindingAfterUpdate: &kubermaticapiv1.UserProjectBinding{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "bobBindings",
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticapiv1.ProjectKindName,
-							Name:       "plan9",
-						},
-					},
-				},
-				Spec: kubermaticapiv1.UserProjectBindingSpec{
-					UserEmail: "bob@acme.com",
-					Group:     "editors-plan9",
-					ProjectID: "plan9",
-				},
-			},
+			UserIDToUpdate:   genDefaultUser().Name,
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
+			ExpectedBindingAfterUpdate: func() *kubermaticapiv1.UserProjectBinding {
+				binding := genBinding("plan9-ID", "bob@acme.com", "editors")
+				// the name of the original binding was derived from projectID, email and group
+				binding.Name = genBinding("plan9-ID", "bob@acme.com", "viewers").Name
+				return binding
+			}(),
 		},
 
 		// scenario 2
 		{
 			Name:          "scenario 2: john the owner of the plan9 project changes the group for bob, but bob is not a member of the project",
-			Body:          `{"id":"bobID", "email":"bob@acme.com", "projects":[{"id":"plan9", "group":"editors"}]}`,
+			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"editors"}]}`,
 			HTTPStatus:    http.StatusBadRequest,
-			ProjectToSync: "plan9",
-			ExistingProjects: []*kubermaticapiv1.Project{
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
 				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				plan9,
+				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				/*add bindings*/
+				genBinding("plan9-ID", "john@acme.com", "owners"),
+				genBinding("my-third-project-ID", "bob@acme.com", "viewers"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+				genDefaultUser(), /*bob*/
 			},
-			UserIDToUpdate: "bobID",
-			ExistingKubermaticUsers: []*kubermaticapiv1.User{
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "johnID",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUserName,
-						ID:    testUserID,
-						Email: testUserEmail,
-					},
-				},
-
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bobID",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  "Bob",
-						Email: "bob@acme.com",
-					},
-				},
-			},
-			ExistingAPIUser: apiv1.User{
-				ID:    testUserID,
-				Name:  testUserName,
-				Email: testUserEmail,
-			},
-			ExpectedResponse: `{"error":{"code":400,"message":"cannot change the membership of the user = bob@acme.com for the project plan9 because the user is not a member of the project"}}`,
-			ExistingMembersBindings: []*kubermaticapiv1.UserProjectBinding{
-				&kubermaticapiv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bobPlanXBindings",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticapiv1.ProjectKindName,
-								Name:       "planX",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.UserProjectBindingSpec{
-						UserEmail: "bob@acme.com",
-						Group:     "viewers-planX",
-						ProjectID: "planX",
-					},
-				},
-
-				&kubermaticapiv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "johnBidning",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticapiv1.ProjectKindName,
-								Name:       "plan9",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.UserProjectBindingSpec{
-						UserEmail: testUserEmail,
-						Group:     "owners-plan9",
-						ProjectID: "plan9",
-					},
-				},
-			},
+			UserIDToUpdate:   genDefaultUser().Name,
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
+			ExpectedResponse: `{"error":{"code":400,"message":"cannot change the membership of the user = bob@acme.com for the project plan9-ID because the user is not a member of the project"}}`,
 		},
 
 		// scenario 3
 		{
 			Name:          "scenario 3: john the owner of the plan9 project changes the group for bob from viewers to owners",
-			Body:          `{"id":"bobID", "email":"bob@acme.com", "projects":[{"id":"plan9", "group":"owners"}]}`,
+			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"owners"}]}`,
 			HTTPStatus:    http.StatusForbidden,
-			ProjectToSync: "plan9",
-			ExistingProjects: []*kubermaticapiv1.Project{
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
 				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				plan9,
+				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				/*add bindings*/
+				genBinding("plan9-ID", "john@acme.com", "owners"),
+				genBinding("plan9-ID", "bob@acme.com", "viewers"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+				genDefaultUser(), /*bob*/
 			},
-			UserIDToUpdate: "bobID",
-			ExistingKubermaticUsers: []*kubermaticapiv1.User{
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "johnID",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUserName,
-						ID:    testUserID,
-						Email: testUserEmail,
-					},
-				},
-
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bobID",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  "Bob",
-						Email: "bob@acme.com",
-					},
-				},
-			},
-			ExistingAPIUser: apiv1.User{
-				ID:    testUserID,
-				Name:  testUserName,
-				Email: testUserEmail,
-			},
+			UserIDToUpdate:   genDefaultUser().Name,
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedResponse: `{"error":{"code":403,"message":"the given user cannot be assigned to owners group"}}`,
-			ExistingMembersBindings: []*kubermaticapiv1.UserProjectBinding{
-				&kubermaticapiv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bobBindings",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticapiv1.ProjectKindName,
-								Name:       "plan9",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.UserProjectBindingSpec{
-						UserEmail: "bob@acme.com",
-						Group:     "viewers-plan9",
-						ProjectID: "plan9",
-					},
-				},
-
-				&kubermaticapiv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bobPlanXBindings",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticapiv1.ProjectKindName,
-								Name:       "planX",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.UserProjectBindingSpec{
-						UserEmail: "bob@acme.com",
-						Group:     "viewers-planX",
-						ProjectID: "planX",
-					},
-				},
-
-				&kubermaticapiv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "johnBidning",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticapiv1.ProjectKindName,
-								Name:       "plan9",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.UserProjectBindingSpec{
-						UserEmail: testUserEmail,
-						Group:     "owners-plan9",
-						ProjectID: "plan9",
-					},
-				},
-			},
 		},
 
 		// scenario 4
 		{
 			Name:          "scenario 4: john the owner of the plan9 project changes the group for bob from viewers to admins(wrong name)",
-			Body:          `{"id":"bobID", "email":"bob@acme.com", "projects":[{"id":"plan9", "group":"admins"}]}`,
+			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"admins"}]}`,
 			HTTPStatus:    http.StatusBadRequest,
-			ProjectToSync: "plan9",
-			ExistingProjects: []*kubermaticapiv1.Project{
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
 				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				plan9,
+				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				/*add bindings*/
+				genBinding("plan9-ID", "john@acme.com", "owners"),
+				genBinding("plan9-ID", "bob@acme.com", "viewers"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+				genDefaultUser(), /*bob*/
 			},
-			UserIDToUpdate: "bobID",
-			ExistingKubermaticUsers: []*kubermaticapiv1.User{
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "johnID",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUserName,
-						ID:    testUserID,
-						Email: testUserEmail,
-					},
-				},
-
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bobID",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  "Bob",
-						Email: "bob@acme.com",
-					},
-				},
-			},
-			ExistingAPIUser: apiv1.User{
-				ID:    testUserID,
-				Name:  testUserName,
-				Email: testUserEmail,
-			},
+			UserIDToUpdate:   genDefaultUser().Name,
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedResponse: `{"error":{"code":400,"message":"invalid group name admins"}}`,
-			ExistingMembersBindings: []*kubermaticapiv1.UserProjectBinding{
-				&kubermaticapiv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bobBindings",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticapiv1.ProjectKindName,
-								Name:       "plan9",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.UserProjectBindingSpec{
-						UserEmail: "bob@acme.com",
-						Group:     "viewers-plan9",
-						ProjectID: "plan9",
-					},
-				},
-
-				&kubermaticapiv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bobPlanXBindings",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticapiv1.ProjectKindName,
-								Name:       "planX",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.UserProjectBindingSpec{
-						UserEmail: "bob@acme.com",
-						Group:     "viewers-planX",
-						ProjectID: "planX",
-					},
-				},
-
-				&kubermaticapiv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "johnBidning",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticapiv1.ProjectKindName,
-								Name:       "plan9",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.UserProjectBindingSpec{
-						UserEmail: testUserEmail,
-						Group:     "owners-plan9",
-						ProjectID: "plan9",
-					},
-				},
-			},
 		},
 	}
 	for _, tc := range testcases {
@@ -1056,16 +412,7 @@ func TestEditUserInProject(t *testing.T) {
 			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%s/users/%s", tc.ProjectToSync, tc.UserIDToUpdate), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
-			for _, existingProject := range tc.ExistingProjects {
-				kubermaticObj = append(kubermaticObj, existingProject)
-			}
-			for _, existingUser := range tc.ExistingKubermaticUsers {
-				kubermaticObj = append(kubermaticObj, runtime.Object(existingUser))
-			}
-			for _, existingMember := range tc.ExistingMembersBindings {
-				kubermaticObj = append(kubermaticObj, existingMember)
-			}
-
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, clients, err := createTestEndpointAndGetClients(tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
@@ -1114,79 +461,43 @@ func TestAddUserToProject(t *testing.T) {
 		ExpectedBindingAfterInvitation *kubermaticapiv1.UserProjectBinding
 		ProjectToSync                  string
 		HTTPStatus                     int
-		ExistingProjects               []*kubermaticapiv1.Project
-		ExistingKubermaticUsers        []*kubermaticapiv1.User
 		ExistingAPIUser                apiv1.User
-		ExistingMembers                []*kubermaticapiv1.UserProjectBinding
+		ExistingKubermaticObjs         []runtime.Object
 	}{
 		{
 			Name:          "scenario 1: john the owner of the plan9 project invites bob to the project as an editor",
-			Body:          `{"email":"bob@acme.com", "projects":[{"id":"plan9", "group":"editors"}]}`,
+			Body:          `{"email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"editors"}]}`,
 			HTTPStatus:    http.StatusCreated,
-			ProjectToSync: "plan9",
-			ExistingProjects: []*kubermaticapiv1.Project{
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
 				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				plan9,
+				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				/*add bindings*/
+				genBinding("plan9-ID", "john@acme.com", "owners"),
+				genBinding("my-third-project-ID", "john@acme.com", "editors"),
+				genBinding("placeX-ID", "bob@acme.com", "editors"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+				genDefaultUser(), /*bob*/
 			},
-			ExistingKubermaticUsers: []*kubermaticapiv1.User{
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "john",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUserName,
-						ID:    testUserID,
-						Email: testUserEmail,
-						Projects: []kubermaticapiv1.ProjectGroup{
-							{
-								Group: "owners-plan9",
-								Name:  "plan9",
-							},
-							{
-								Group: "editors-my-third-projectInternalName",
-								Name:  "my-third-projectInternalName",
-							},
-						},
-					},
-				},
-
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bob",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  "Bob",
-						Email: "bob@acme.com",
-						Projects: []kubermaticapiv1.ProjectGroup{
-							{
-								Group: "editors-placeX",
-								Name:  "placeX",
-							},
-						},
-					},
-				},
-			},
-			ExistingAPIUser: apiv1.User{
-				ID:    testUserID,
-				Name:  testUserName,
-				Email: testUserEmail,
-			},
-			ExpectedResponse: `{"id":"bob","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9","group":"editors"}]}`,
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
 			ExpectedBindingAfterInvitation: &kubermaticapiv1.UserProjectBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
 							Kind:       kubermaticapiv1.ProjectKindName,
-							Name:       "plan9",
+							Name:       "plan9-ID",
 						},
 					},
 				},
 				Spec: kubermaticapiv1.UserProjectBindingSpec{
 					UserEmail: "bob@acme.com",
-					Group:     "editors-plan9",
-					ProjectID: "plan9",
+					Group:     "editors-plan9-ID",
+					ProjectID: "plan9-ID",
 				},
 			},
 		},
@@ -1195,242 +506,88 @@ func TestAddUserToProject(t *testing.T) {
 			Name:          "scenario 2: john the owner of the plan9 project tries to invite bob to another project",
 			Body:          `{"email":"bob@acme.com", "projects":[{"id":"moby", "group":"editors"}]}`,
 			HTTPStatus:    http.StatusForbidden,
-			ProjectToSync: "plan9",
-			ExistingProjects: []*kubermaticapiv1.Project{
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
 				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				plan9,
+				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				/* add bindings*/
+				genBinding("plan9-ID", "john@acme.com", "owners"),
+				genBinding("my-third-project-ID", "john@acme.com", "editors"),
+				genBinding("placeX-ID", "bob@acme.com", "editors"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+				genDefaultUser(), /*bob*/
 			},
-			ExistingKubermaticUsers: []*kubermaticapiv1.User{
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "john",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUserName,
-						ID:    testUserID,
-						Email: testUserEmail,
-						Projects: []kubermaticapiv1.ProjectGroup{
-							{
-								Group: "owners-plan9",
-								Name:  "plan9",
-							},
-							{
-								Group: "editors-my-third-projectInternalName",
-								Name:  "my-third-projectInternalName",
-							},
-						},
-					},
-				},
-
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bob",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  "Bob",
-						Email: "bob@acme.com",
-						Projects: []kubermaticapiv1.ProjectGroup{
-							{
-								Group: "editors-placeX",
-								Name:  "placeX",
-							},
-						},
-					},
-				},
-			},
-			ExistingAPIUser: apiv1.User{
-				Name:  testUserName,
-				ID:    testUserID,
-				Email: testUserEmail,
-			},
-			ExpectedResponse: `{"error":{"code":403,"message":"you can only assign the user to plan9 project"}}`,
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
+			ExpectedResponse: `{"error":{"code":403,"message":"you can only assign the user to plan9-ID project"}}`,
 		},
 
 		{
 			Name:          "scenario 3: john the owner of the plan9 project tries to invite  himself to another group",
-			Body:          fmt.Sprintf(`{"email":"%s", "projects":[{"id":"plan9", "group":"editors"}]}`, testUserEmail),
+			Body:          fmt.Sprintf(`{"email":"%s", "projects":[{"id":"plan9-ID", "group":"editors"}]}`, testUserEmail),
 			HTTPStatus:    http.StatusForbidden,
-			ProjectToSync: "plan9",
-			ExistingProjects: []*kubermaticapiv1.Project{
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
 				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				plan9,
+				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				/*add bindings*/
+				genBinding("plan9-ID", "john@acme.com", "owners"),
+				genBinding("my-third-project-ID", "john@acme.com", "editors"),
+				genBinding("placeX-ID", "bob@acme.com", "editors"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+				genDefaultUser(), /*bob*/
 			},
-			ExistingKubermaticUsers: []*kubermaticapiv1.User{
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "john",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUserName,
-						ID:    testUserID,
-						Email: testUserEmail,
-						Projects: []kubermaticapiv1.ProjectGroup{
-							{
-								Group: "owners-plan9",
-								Name:  "plan9",
-							},
-							{
-								Group: "editors-my-third-projectInternalName",
-								Name:  "my-third-projectInternalName",
-							},
-						},
-					},
-				},
-
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bob",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  "Bob",
-						Email: "bob@acme.com",
-						Projects: []kubermaticapiv1.ProjectGroup{
-							{
-								Group: "editors-placeX",
-								Name:  "placeX",
-							},
-						},
-					},
-				},
-			},
-			ExistingAPIUser: apiv1.User{
-				Name:  testUserName,
-				ID:    testUserID,
-				Email: testUserEmail,
-			},
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedResponse: `{"error":{"code":403,"message":"you cannot assign yourself to a different group"}}`,
 		},
 
 		{
 			Name:          "scenario 4: john the owner of the plan9 project tries to invite bob to the project as an owner",
-			Body:          `{"email":"bob@acme.com", "projects":[{"id":"plan9", "group":"owners"}]}`,
+			Body:          `{"email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"owners"}]}`,
 			HTTPStatus:    http.StatusForbidden,
-			ProjectToSync: "plan9",
-			ExistingProjects: []*kubermaticapiv1.Project{
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
 				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				plan9,
+				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				/*add bindings*/
+				genBinding("plan9-ID", "john@acme.com", "owners"),
+				genBinding("my-third-project-ID", "john@acme.com", "editors"),
+				genBinding("placeX-ID", "bob@acme.com", "editors"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+				genDefaultUser(), /*bob*/
 			},
-			ExistingKubermaticUsers: []*kubermaticapiv1.User{
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "john",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUserName,
-						ID:    testUserID,
-						Email: testUserEmail,
-						Projects: []kubermaticapiv1.ProjectGroup{
-							{
-								Group: "owners-plan9",
-								Name:  "plan9",
-							},
-							{
-								Group: "editors-my-third-projectInternalName",
-								Name:  "my-third-projectInternalName",
-							},
-						},
-					},
-				},
-
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bob",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  "Bob",
-						Email: "bob@acme.com",
-						Projects: []kubermaticapiv1.ProjectGroup{
-							{
-								Group: "editors-placeX",
-								Name:  "placeX",
-							},
-						},
-					},
-				},
-			},
-			ExistingAPIUser: apiv1.User{
-				Name:  testUserName,
-				ID:    testUserID,
-				Email: testUserEmail,
-			},
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedResponse: `{"error":{"code":403,"message":"the given user cannot be assigned to owners group"}}`,
 		},
 
 		{
-			Name:          "scenario 5: john the owner of the plan9 project invites bob to the project second time",
-			Body:          `{"email":"bob@acme.com", "projects":[{"id":"plan9", "group":"editors"}]}`,
+			Name:          "scenario 5: john the owner of the plan9 project invites bob to the project one more time",
+			Body:          `{"email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"editors"}]}`,
 			HTTPStatus:    http.StatusBadRequest,
-			ProjectToSync: "plan9",
-			ExistingProjects: []*kubermaticapiv1.Project{
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
 				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
 				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				plan9,
+				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				/*add bindings*/
+				genBinding("plan9-ID", "john@acme.com", "owners"),
+				genBinding("my-third-project-ID", "john@acme.com", "editors"),
+				genBinding("plan9-ID", "bob@acme.com", "editors"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+				genDefaultUser(), /*bob*/
 			},
-			ExistingKubermaticUsers: []*kubermaticapiv1.User{
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "john",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUserName,
-						ID:    testUserID,
-						Email: testUserEmail,
-						Projects: []kubermaticapiv1.ProjectGroup{
-							{
-								Group: "owners-plan9",
-								Name:  "plan9",
-							},
-							{
-								Group: "editors-my-third-projectInternalName",
-								Name:  "my-third-projectInternalName",
-							},
-						},
-					},
-				},
-
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "bob",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  "Bob",
-						Email: "bob@acme.com",
-						Projects: []kubermaticapiv1.ProjectGroup{
-							{
-								Group: "editors-placeX",
-								Name:  "placeX",
-							},
-						},
-					},
-				},
-			},
-			ExistingAPIUser: apiv1.User{
-				ID:    testUserID,
-				Name:  testUserName,
-				Email: testUserEmail,
-			},
-			ExistingMembers: []*kubermaticapiv1.UserProjectBinding{
-				&kubermaticapiv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticapiv1.ProjectKindName,
-								Name:       "plan9",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.UserProjectBindingSpec{
-						UserEmail: "bob@acme.com",
-						ProjectID: "plan9",
-						Group:     "editors-plan9",
-					},
-				},
-			},
-			ExpectedResponse: `{"error":{"code":400,"message":"cannot add the user = bob@acme.com to the project plan9 because user is already in the project"}}`,
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
+			ExpectedResponse: `{"error":{"code":400,"message":"cannot add the user = bob@acme.com to the project plan9-ID because user is already in the project"}}`,
 		},
 	}
 
@@ -1439,16 +596,7 @@ func TestAddUserToProject(t *testing.T) {
 			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/users", tc.ProjectToSync), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
-			for _, existingProject := range tc.ExistingProjects {
-				kubermaticObj = append(kubermaticObj, existingProject)
-			}
-			for _, existingUser := range tc.ExistingKubermaticUsers {
-				kubermaticObj = append(kubermaticObj, runtime.Object(existingUser))
-			}
-			for _, existingMember := range tc.ExistingMembers {
-				kubermaticObj = append(kubermaticObj, existingMember)
-			}
-
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, clients, err := createTestEndpointAndGetClients(tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
@@ -1491,109 +639,45 @@ func TestAddUserToProject(t *testing.T) {
 }
 
 func TestGetCurrentUser(t *testing.T) {
-	tester := apiv1.User{
-		Name:  testUserName,
-		ID:    testUserID,
-		Email: testUserEmail,
-	}
-
 	testcases := []struct {
-		Name                    string
-		ExpectedResponse        string
-		ExpectedStatus          int
-		ExistingProjects        []*kubermaticapiv1.Project
-		ExistingKubermaticUsers []*kubermaticapiv1.User
-		ExistingAPIUser         apiv1.User
+		Name                   string
+		ExpectedResponse       string
+		ExpectedStatus         int
+		ExistingKubermaticObjs []runtime.Object
+		ExistingAPIUser        apiv1.User
 	}{
 		{
-			Name: "scenario 1: a user with no projects yet should omit the `projects` key from the response",
-			ExistingKubermaticUsers: []*kubermaticapiv1.User{
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "john",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUserName,
-						ID:    testUserID,
-						Email: testUserEmail,
-					},
-				},
+			Name: "scenario 1: get john's profile (no projects assigned)",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
 			},
-			ExistingAPIUser:  tester,
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedStatus:   http.StatusOK,
-			ExpectedResponse: `{"id":"john","name":"user1","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com"}`,
+			ExpectedResponse: `{"id":"4b2d8785b49bad23638b17d8db76857a79bf79441241a78a97d88cc64bbf766e","name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com"}`,
 		},
 
 		{
-			Name: "scenario 2: a user who is assigned to projects",
-			ExistingProjects: []*kubermaticapiv1.Project{
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "moby",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "Joe",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-first-project"},
-				},
-				&kubermaticapiv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "plan9",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: "kubermatic.io/v1",
-								Kind:       "User",
-								UID:        "",
-								Name:       "John",
-							},
-						},
-					},
-					Spec: kubermaticapiv1.ProjectSpec{Name: "my-second-project"},
-				},
+			Name: "scenario 2: get john's profile (one project assigned)",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				genProject("moby", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				/*add bindings*/
+				genBinding("plan9-ID", "john@acme.com", "owners"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
 			},
-			ExistingKubermaticUsers: []*kubermaticapiv1.User{
-				&kubermaticapiv1.User{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "john",
-					},
-					Spec: kubermaticapiv1.UserSpec{
-						Name:  testUserName,
-						ID:    testUserID,
-						Email: testUserEmail,
-						Projects: []kubermaticapiv1.ProjectGroup{
-							{
-								Group: "owners-plan9",
-								Name:  "plan9",
-							},
-							{
-								Group: "editors-myThirdProjectInternalName",
-								Name:  "myThirdProjectInternalName",
-							},
-						},
-					},
-				},
-			},
-			ExistingAPIUser:  tester,
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedStatus:   http.StatusOK,
-			ExpectedResponse: `{"id":"john","name":"user1","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","projects":[{"id":"plan9","group":"owners"},{"id":"myThirdProjectInternalName","group":"editors"}]}`,
+			ExpectedResponse: `{"id":"4b2d8785b49bad23638b17d8db76857a79bf79441241a78a97d88cc64bbf766e","name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com","projects":[{"id":"plan9-ID","group":"owners"}]}`,
 		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			kubermaticObj := []runtime.Object{}
-			for _, existingProject := range tc.ExistingProjects {
-				kubermaticObj = append(kubermaticObj, existingProject)
-			}
-			for _, existingUser := range tc.ExistingKubermaticUsers {
-				kubermaticObj = append(kubermaticObj, runtime.Object(existingUser))
-			}
-
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, _, err := createTestEndpointAndGetClients(tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
@@ -1693,4 +777,68 @@ func TestNewUser(t *testing.T) {
 			}
 		})
 	}
+}
+
+// genUser generates a User resource
+// note if the id is empty then it will be auto generated
+func genUser(id, name, email string) *kubermaticapiv1.User {
+	if len(id) == 0 {
+		// the name of the object is derived from the email address and encoded as sha256
+		id = fmt.Sprintf("%x", sha256.Sum256([]byte(email)))
+	}
+	return &kubermaticapiv1.User{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: id,
+		},
+		Spec: kubermaticapiv1.UserSpec{
+			Name:  name,
+			Email: email,
+		},
+	}
+}
+
+func genDefaultUser() *kubermaticapiv1.User {
+	userEmail := "bob@acme.com"
+	return genUser("", "Bob", userEmail)
+}
+
+func genAPIUser(name, email string) *apiv1.User {
+	usr := genUser("", name, email)
+	return &apiv1.User{
+		ID:    usr.Name,
+		Name:  usr.Spec.Name,
+		Email: usr.Spec.Email,
+	}
+}
+
+func genDefaultAPIUser() *apiv1.User {
+	return &apiv1.User{
+		ID:    genDefaultUser().Name,
+		Name:  genDefaultUser().Spec.Name,
+		Email: genDefaultUser().Spec.Email,
+	}
+}
+
+func genBinding(projectID, email, group string) *kubermaticapiv1.UserProjectBinding {
+	return &kubermaticapiv1.UserProjectBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("%s-%s-%s", projectID, email, group),
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticapiv1.ProjectKindName,
+					Name:       projectID,
+				},
+			},
+		},
+		Spec: kubermaticapiv1.UserProjectBindingSpec{
+			UserEmail: email,
+			ProjectID: projectID,
+			Group:     fmt.Sprintf("%s-%s", group, projectID),
+		},
+	}
+}
+
+func genDefaultOwnerBinding() *kubermaticapiv1.UserProjectBinding {
+	return genBinding(genDefaultProject().Name, genDefaultUser().Spec.Email, "owners")
 }

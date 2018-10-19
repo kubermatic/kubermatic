@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	"k8s.io/client-go/kubernetes"
@@ -50,46 +49,6 @@ type CloudSpecProvider interface {
 	CleanUpCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
 	DefaultCloudSpec(spec kubermaticv1.CloudSpec) error
 	ValidateCloudSpec(spec kubermaticv1.CloudSpec) error
-}
-
-// ClusterProvider declares the set of methods for storing and loading clusters.
-type ClusterProvider interface {
-	// NewCluster creates a cluster for the provided user using the given ClusterSpec
-	NewCluster(user apiv1.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error)
-
-	// Cluster return a Cluster struct, given the user and cluster.
-	Cluster(user apiv1.User, name string) (*kubermaticv1.Cluster, error)
-
-	// Clusters returns all clusters for a given user.
-	Clusters(user apiv1.User) ([]*kubermaticv1.Cluster, error)
-
-	// DeleteCluster deletes a Cluster from a user by it's name.
-	DeleteCluster(user apiv1.User, name string) error
-
-	// UpdateCluster updates a cluster
-	UpdateCluster(user apiv1.User, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
-
-	GetClient(*kubermaticv1.Cluster) (kubernetes.Interface, error)
-
-	GetMachineClient(*kubermaticv1.Cluster) (clusterv1alpha1clientset.Interface, error)
-
-	GetAdminKubeconfig(c *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
-}
-
-// SSHKeyProvider declares the set of methods for interacting with ssh keys
-type SSHKeyProvider interface {
-	// SSHKey returns a ssh key by name
-	SSHKey(user apiv1.User, name string) (*kubermaticv1.UserSSHKey, error)
-	// SSHKeys returns the user ssh keys
-	SSHKeys(user apiv1.User) ([]*kubermaticv1.UserSSHKey, error)
-	// AssignSSHKeysToCluster assigns a ssh key to a cluster
-	AssignSSHKeysToCluster(user apiv1.User, names []string, cluster string) error
-	// ClusterSSHKeys returns the ssh keys of a cluster
-	ClusterSSHKeys(user apiv1.User, cluster string) ([]*kubermaticv1.UserSSHKey, error)
-	// CreateSSHKey creates a ssh key
-	CreateSSHKey(name, pubkey string, user apiv1.User) (*kubermaticv1.UserSSHKey, error)
-	// DeleteSSHKey deletes a ssh key
-	DeleteSSHKey(name string, user apiv1.User) error
 }
 
 // ClusterListOptions allows to set filters that will be applied to filter the result.
@@ -182,7 +141,6 @@ type NewSSHKeyProvider interface {
 type UserProvider interface {
 	UserByEmail(email string) (*kubermaticv1.User, error)
 	CreateUser(id, name, email string) (*kubermaticv1.User, error)
-	ListByProject(projectName string) ([]*kubermaticv1.User, error)
 	UserByID(id string) (*kubermaticv1.User, error)
 }
 

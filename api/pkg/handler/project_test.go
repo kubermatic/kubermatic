@@ -110,7 +110,7 @@ func TestGetProjectEndpoint(t *testing.T) {
 		{
 			Name:                      "scenario 1: get an existing project assigned to the given user",
 			Body:                      ``,
-			ProjectToSync:             testingProjectName,
+			ProjectToSync:             genDefaultProject().Name,
 			ExpectedResponse:          `{"id":"my-first-project-ID","name":"my-first-project","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active"}`,
 			HTTPStatus:                http.StatusOK,
 			ExistingKubermaticObjects: genDefaultKubermaticObjects(),

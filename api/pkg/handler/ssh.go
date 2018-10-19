@@ -15,19 +15,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func createSSHKeyEndpoint(dp provider.SSHKeyProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := ctx.Value(apiUserContextKey).(apiv1.User)
-
-		req, ok := request.(CreateSSHKeyReq)
-		if !ok {
-			return nil, errors.NewBadRequest("Bad parameters")
-		}
-
-		return dp.CreateSSHKey(req.Spec.Name, req.Spec.PublicKey, user)
-	}
-}
-
 func newCreateSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(NewCreateSSHKeyReq)
@@ -77,29 +64,6 @@ func newDeleteSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProv
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 		return nil, nil
-	}
-}
-
-func deleteSSHKeyEndpoint(dp provider.SSHKeyProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := ctx.Value(apiUserContextKey).(apiv1.User)
-		req, ok := request.(DeleteSSHKeyReq)
-		if !ok {
-			return nil, errors.NewBadRequest("Bad parameters")
-		}
-
-		k, err := dp.SSHKey(user, req.MetaName)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load ssh key: %v", err)
-		}
-		return nil, dp.DeleteSSHKey(k.Name, user)
-	}
-}
-
-func listSSHKeyEndpoint(dp provider.SSHKeyProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := ctx.Value(apiUserContextKey).(apiv1.User)
-		return dp.SSHKeys(user)
 	}
 }
 

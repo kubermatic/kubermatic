@@ -6,6 +6,10 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
+
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/Masterminds/semver"
 	"github.com/go-kit/kit/endpoint"
@@ -17,10 +21,22 @@ import (
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	apierrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
+
+	machineconversions "github.com/kubermatic/kubermatic/api/pkg/machine"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
+)
+
+const (
+	kubeletVersionConstraint = ">= 1.8"
+	errGlue                  = " & "
+
+	initialConditionParsingDelay = 5
 )
 
 func newDeleteNodeForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
@@ -53,7 +69,7 @@ func newDeleteNodeForCluster(projectProvider provider.ProjectProvider) endpoint.
 			return nil, fmt.Errorf("failed to create a kubernetes client: %v", err)
 		}
 
-		machine, node, err := tryToFindMachineAndNode(req.NodeID, machineClient, kubeClient)
+		machine, node, err := findMachineAndNode(req.NodeID, machineClient, kubeClient)
 		if err != nil {
 			return nil, err
 		}
@@ -169,7 +185,7 @@ func newGetNodeForCluster(projectProvider provider.ProjectProvider) endpoint.End
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		machine, node, err := tryToFindMachineAndNode(req.NodeID, machineClient, kubeClient)
+		machine, node, err := findMachineAndNode(req.NodeID, machineClient, kubeClient)
 		if err != nil {
 			return nil, err
 		}
@@ -312,6 +328,193 @@ func convertNodesV2ToNodesV1(nodesV2 []*apiv2.Node) []*apiv1.Node {
 		nodesV1[index] = convertNodeV2ToNodeV1(nodeV2)
 	}
 	return nodesV1
+}
+
+func outputNode(node *corev1.Node, hideInitialNodeConditions bool) *apiv2.Node {
+	nodeStatus := apiv2.NodeStatus{}
+	nodeStatus = apiNodeStatus(nodeStatus, node, hideInitialNodeConditions)
+	var deletionTimestamp *time.Time
+	if node.DeletionTimestamp != nil {
+		deletionTimestamp = &node.DeletionTimestamp.Time
+	}
+
+	return &apiv2.Node{
+		Metadata: apiv2.ObjectMeta{
+			Name:              node.Name,
+			DisplayName:       node.Name,
+			Labels:            node.Labels,
+			Annotations:       node.Annotations,
+			DeletionTimestamp: deletionTimestamp,
+			CreationTimestamp: node.CreationTimestamp.Time,
+		},
+		Spec: apiv2.NodeSpec{
+			Versions:        apiv2.NodeVersionInfo{},
+			OperatingSystem: apiv2.OperatingSystemSpec{},
+			Cloud:           apiv2.NodeCloudSpec{},
+		},
+		Status: nodeStatus,
+	}
+}
+
+func apiNodeStatus(status apiv2.NodeStatus, inputNode *corev1.Node, hideInitialNodeConditions bool) apiv2.NodeStatus {
+	for _, address := range inputNode.Status.Addresses {
+		status.Addresses = append(status.Addresses, apiv2.NodeAddress{
+			Type:    string(address.Type),
+			Address: string(address.Address),
+		})
+	}
+
+	if !hideInitialNodeConditions || time.Since(inputNode.CreationTimestamp.Time).Minutes() > initialConditionParsingDelay {
+		reason, message := parseNodeConditions(inputNode)
+		status.ErrorReason += reason
+		status.ErrorMessage += message
+	}
+
+	status.Allocatable.Memory = inputNode.Status.Allocatable.Memory().String()
+	status.Allocatable.CPU = inputNode.Status.Allocatable.Cpu().String()
+
+	status.Capacity.Memory = inputNode.Status.Capacity.Memory().String()
+	status.Capacity.CPU = inputNode.Status.Capacity.Cpu().String()
+
+	status.NodeInfo.OperatingSystem = inputNode.Status.NodeInfo.OperatingSystem
+	status.NodeInfo.KubeletVersion = inputNode.Status.NodeInfo.KubeletVersion
+	status.NodeInfo.Architecture = inputNode.Status.NodeInfo.Architecture
+	return status
+}
+
+func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInitialNodeConditions bool) (*apiv2.Node, error) {
+	displayName := machine.Spec.Name
+	labels := map[string]string{}
+	annotations := map[string]string{}
+	nodeStatus := apiv2.NodeStatus{}
+	nodeStatus.MachineName = machine.Name
+	var deletionTimestamp *time.Time
+	if machine.DeletionTimestamp != nil {
+		deletionTimestamp = &machine.DeletionTimestamp.Time
+	}
+
+	if machine.Status.ErrorReason != nil {
+		nodeStatus.ErrorReason += string(*machine.Status.ErrorReason) + errGlue
+		nodeStatus.ErrorMessage += string(*machine.Status.ErrorMessage) + errGlue
+	}
+
+	operatingSystemSpec, err := machineconversions.GetAPIV2OperatingSystemSpec(machine)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get operating system spec from machine: %v", err)
+	}
+
+	cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(machine)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get node cloud spec from machine: %v", err)
+	}
+
+	if node != nil {
+		if node.Name != machine.Spec.Name {
+			displayName = node.Name
+		}
+
+		labels = node.Labels
+		annotations = node.Annotations
+		nodeStatus = apiNodeStatus(nodeStatus, node, hideInitialNodeConditions)
+	}
+
+	nodeStatus.ErrorReason = strings.TrimSuffix(nodeStatus.ErrorReason, errGlue)
+	nodeStatus.ErrorMessage = strings.TrimSuffix(nodeStatus.ErrorMessage, errGlue)
+
+	return &apiv2.Node{
+		Metadata: apiv2.ObjectMeta{
+			Name:              machine.Name,
+			DisplayName:       displayName,
+			Labels:            labels,
+			Annotations:       annotations,
+			DeletionTimestamp: deletionTimestamp,
+			CreationTimestamp: machine.CreationTimestamp.Time,
+		},
+		Spec: apiv2.NodeSpec{
+			Versions: apiv2.NodeVersionInfo{
+				Kubelet: machine.Spec.Versions.Kubelet,
+			},
+			OperatingSystem: *operatingSystemSpec,
+			Cloud:           *cloudSpec,
+		},
+		Status: nodeStatus,
+	}, nil
+}
+
+func parseNodeConditions(node *corev1.Node) (reason string, message string) {
+	for _, condition := range node.Status.Conditions {
+		goodConditionType := condition.Type == corev1.NodeReady || condition.Type == corev1.NodeKubeletConfigOk
+		if goodConditionType && condition.Status != corev1.ConditionTrue {
+			reason += condition.Reason + errGlue
+			message += condition.Message + errGlue
+		} else if !goodConditionType && condition.Status == corev1.ConditionTrue {
+			reason += condition.Reason + errGlue
+			message += condition.Message + errGlue
+		}
+	}
+	return reason, message
+}
+
+func getNodeForMachine(machine *clusterv1alpha1.Machine, nodes []corev1.Node) *corev1.Node {
+	for _, node := range nodes {
+		if (machine.Status.NodeRef != nil && node.UID == machine.Status.NodeRef.UID) || node.Name == machine.Name {
+			return &node
+		}
+	}
+	return nil
+}
+
+func getMachineForNode(node *corev1.Node, machines []clusterv1alpha1.Machine) *clusterv1alpha1.Machine {
+	ref := metav1.GetControllerOf(node)
+	if ref == nil {
+		return nil
+	}
+	for _, machine := range machines {
+		if ref.UID == machine.UID {
+			return &machine
+		}
+	}
+	return nil
+}
+
+func findMachineAndNode(name string, machineClient clusterv1alpha1clientset.Interface, kubeClient kubernetes.Interface) (*clusterv1alpha1.Machine, *corev1.Node, error) {
+	machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to load machines from cluster: %v", err)
+	}
+
+	nodeList, err := kubeClient.CoreV1().Nodes().List(metav1.ListOptions{})
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to load nodes from cluster: %v", err)
+	}
+
+	var node *corev1.Node
+	var machine *clusterv1alpha1.Machine
+
+	for i, n := range nodeList.Items {
+		if n.Name == name {
+			node = &nodeList.Items[i]
+			break
+		}
+	}
+
+	for i, m := range machineList.Items {
+		if m.Name == name {
+			machine = &machineList.Items[i]
+			break
+		}
+	}
+
+	//Check if we can get a owner ref from a machine
+	if node != nil && machine == nil {
+		machine = getMachineForNode(node, machineList.Items)
+	}
+
+	if machine != nil && node == nil {
+		node = getNodeForMachine(machine, nodeList.Items)
+	}
+
+	return machine, node, nil
 }
 
 // NewDeleteNodeForClusterReq defines HTTP request for newDeleteNodeForCluster

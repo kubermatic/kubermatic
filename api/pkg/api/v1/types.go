@@ -145,22 +145,6 @@ type AzureSize struct {
 	MaxDataDiskCount     *int32  `json:"maxDataDiskCount"`
 }
 
-// SSHKey represents a ssh key
-// swagger:model SSHKey
-type SSHKey struct {
-	Metadata ObjectMeta `json:"metadata"`
-	Spec     SSHKeySpec `json:"spec"`
-}
-
-// SSHKeySpec represents the details of a ssh key
-type SSHKeySpec struct {
-	Owner       string   `json:"owner"`
-	Name        string   `json:"name"`
-	Fingerprint string   `json:"fingerprint"`
-	PublicKey   string   `json:"publicKey"`
-	Clusters    []string `json:"clusters"`
-}
-
 // NewSSHKey represents a ssh key
 // swagger:model NewSSHKey
 type NewSSHKey struct {
@@ -213,16 +197,6 @@ type Project struct {
 // swagger:model Kubeconfig
 type Kubeconfig struct {
 	cmdv1.Config
-}
-
-// ClusterList represents a list of clusters
-// swagger:model ClusterListV1
-type ClusterList []Cluster
-
-// Cluster is the object representing a cluster.
-// swagger:model ClusterV1
-type Cluster struct {
-	kubermaticv1.Cluster
 }
 
 // OpenstackSize is the object representing openstack's sizes.

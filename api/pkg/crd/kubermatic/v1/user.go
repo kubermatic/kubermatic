@@ -1,8 +1,6 @@
 package v1
 
 import (
-	"fmt"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,9 +26,10 @@ type User struct {
 
 // UserSpec specifies a user
 type UserSpec struct {
-	ID       string         `json:"id"`
-	Name     string         `json:"name"`
-	Email    string         `json:"email"`
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	// Depreciated: Projects field is depreciated, was replaced by UserProjectBinding
 	Projects []ProjectGroup `json:"projects,omitempty"`
 }
 
@@ -49,14 +48,4 @@ type UserList struct {
 type ProjectGroup struct {
 	Name  string `json:"name"`
 	Group string `json:"group"`
-}
-
-// GroupForProject returns a corresponding group name for the given project name
-func (u *User) GroupForProject(projectName string) (string, error) {
-	for _, pg := range u.Spec.Projects {
-		if pg.Name == projectName {
-			return pg.Group, nil
-		}
-	}
-	return "", fmt.Errorf("The user %q doesn't belong to the given project = %s", u.Spec.Name, projectName)
 }
