@@ -78,7 +78,9 @@ func StatefulSet(data resources.StatefulSetDataProvider, existing *appsv1.Statef
 			Args: []string{
 				"--config.file=/etc/prometheus/config/prometheus.yaml",
 				"--storage.tsdb.path=/var/prometheus/data",
-				"--storage.tsdb.retention=12h",
+				"--storage.tsdb.min-block-duration=15m",
+				"--storage.tsdb.max-block-duration=30m",
+				"--storage.tsdb.retention=1h",
 				"--web.enable-lifecycle",
 				"--storage.tsdb.no-lockfile",
 				"--web.route-prefix=/",
