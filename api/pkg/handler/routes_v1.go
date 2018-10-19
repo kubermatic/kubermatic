@@ -29,65 +29,32 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.datacenterHandler())
 
 	mux.Methods(http.MethodGet).
-		Path("/ssh-keys").
-		Handler(r.listSSHKeys())
-
-	mux.Methods(http.MethodPost).
-		Path("/ssh-keys").
-		Handler(r.createSSHKey())
-
-	mux.Methods(http.MethodDelete).
-		Path("/ssh-keys/{meta_name}").
-		Handler(r.deleteSSHKey())
-
-	mux.Methods(http.MethodGet).
 		Path("/providers/digitalocean/sizes").
 		Handler(r.listDigitaloceanSizes())
-	mux.Methods(http.MethodGet).
-		Path("/digitalocean/sizes").
-		Handler(r.redirectTo("/api/v1/providers/digitalocean/sizes"))
 
 	mux.Methods(http.MethodGet).
 		Path("/providers/azure/sizes").
 		Handler(r.listAzureSizes())
-	mux.Methods(http.MethodGet).
-		Path("/azure/sizes").
-		Handler(r.redirectTo("/api/v1/providers/azure/sizes"))
 
 	mux.Methods(http.MethodGet).
 		Path("/providers/openstack/sizes").
 		Handler(r.listOpenstackSizes())
-	mux.Methods(http.MethodGet).
-		Path("/openstack/sizes").
-		Handler(r.redirectTo("/api/v1/providers/openstack/sizes"))
 
 	mux.Methods(http.MethodGet).
 		Path("/providers/openstack/tenants").
 		Handler(r.listOpenstackTenants())
-	mux.Methods(http.MethodGet).
-		Path("/openstack/tenants").
-		Handler(r.redirectTo("/api/v1/providers/openstack/tenants"))
 
 	mux.Methods(http.MethodGet).
 		Path("/providers/openstack/networks").
 		Handler(r.listOpenstackNetworks())
-	mux.Methods(http.MethodGet).
-		Path("/openstack/networks").
-		Handler(r.redirectTo("/api/v1/providers/openstack/networks"))
 
 	mux.Methods(http.MethodGet).
 		Path("/providers/openstack/securitygroups").
 		Handler(r.listOpenstackSecurityGroups())
-	mux.Methods(http.MethodGet).
-		Path("/openstack/securitygroups").
-		Handler(r.redirectTo("/api/v1/providers/openstack/securitygroups"))
 
 	mux.Methods(http.MethodGet).
 		Path("/providers/openstack/subnets").
 		Handler(r.listOpenstackSubnets())
-	mux.Methods(http.MethodGet).
-		Path("/openstack/subnets").
-		Handler(r.redirectTo("/api/v1/providers/openstack/subnets"))
 
 	mux.Methods(http.MethodGet).
 		Path("/versions").
@@ -98,9 +65,6 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	mux.Methods(http.MethodGet).
 		Path("/providers/vsphere/networks").
 		Handler(r.listVSphereNetworks())
-	mux.Methods(http.MethodGet).
-		Path("/vsphere/networks").
-		Handler(r.redirectTo("/api/v1/providers/vsphere/networks"))
 
 	//
 	// Defines a set of HTTP endpoints for project resource
@@ -269,34 +233,6 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.getCurrentUser())
 }
 
-func (r Routing) redirectTo(path string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, path, http.StatusMovedPermanently)
-	})
-}
-
-// swagger:route GET /api/v1/ssh-keys ssh-keys listSSHKeys
-//
-// Lists SSH keys from the user
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: SSHKey
-func (r Routing) listSSHKeys() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-		)(listSSHKeyEndpoint(r.sshKeyProvider)),
-		decodeListSSHKeyReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
 // swagger:route GET /api/v1/projects/{project_id}/sshkeys project newListSSHKeys
 //
 //     Lists SSH Keys that belong to the given project.
@@ -319,31 +255,6 @@ func (r Routing) newListSSHKeys() http.Handler {
 		)(newListSSHKeyEndpoint(r.newSSHKeyProvider, r.projectProvider)),
 		newDecodeListSSHKeyReq,
 		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route POST /api/v1/sshkeys sshkeys createSSHKey
-//
-// Creates a SSH keys for the user
-//
-//     Consumes:
-//     - application/json
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: SSHKey
-func (r Routing) createSSHKey() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-		)(createSSHKeyEndpoint(r.sshKeyProvider)),
-		decodeCreateSSHKeyReq,
-		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -372,28 +283,6 @@ func (r Routing) newCreateSSHKey() http.Handler {
 		)(newCreateSSHKeyEndpoint(r.newSSHKeyProvider, r.projectProvider)),
 		newDecodeCreateSSHKeyReq,
 		setStatusCreatedHeader(encodeJSON),
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route DELETE /api/v1/ssh-keys/{meta_name} ssh-keys deleteSSHKey
-//
-// Deletes a SSH keys for the user
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: empty
-func (r Routing) deleteSSHKey() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-		)(deleteSSHKeyEndpoint(r.sshKeyProvider)),
-		decodeDeleteSSHKeyReq,
-		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
