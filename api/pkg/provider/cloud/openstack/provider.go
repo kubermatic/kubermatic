@@ -150,7 +150,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 
 	if cluster.Spec.Cloud.Openstack.RouterID == "" {
 		// Check if the subnet has already a router
-		routerID, err := getRouterIDForSubnet(netClient, cluster.Spec.Cloud.Openstack.SubnetID)
+		routerID, err := getRouterIDForSubnet(netClient, cluster.Spec.Cloud.Openstack.SubnetID, network.ID)
 		if err != nil {
 			if err == errNotFound {
 				// No Router exists -> Create a router

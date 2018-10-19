@@ -384,8 +384,8 @@ func isNotFoundErr(err error) bool {
 	return false
 }
 
-func getRouterIDForSubnet(netClient *gophercloud.ServiceClient, subnetID string) (string, error) {
-	ports, err := getAllPorts(netClient)
+func getRouterIDForSubnet(netClient *gophercloud.ServiceClient, subnetID, networkID string) (string, error) {
+	ports, err := getAllNetworkPorts(netClient, networkID)
 	if err != nil {
 		return "", fmt.Errorf("failed to list ports for subnet: %v", err)
 	}
@@ -404,8 +404,10 @@ func getRouterIDForSubnet(netClient *gophercloud.ServiceClient, subnetID string)
 	return "", errNotFound
 }
 
-func getAllPorts(netClient *gophercloud.ServiceClient) ([]osports.Port, error) {
-	allPages, err := osports.List(netClient, osports.ListOpts{}).AllPages()
+func getAllNetworkPorts(netClient *gophercloud.ServiceClient, networkID string) ([]osports.Port, error) {
+	allPages, err := osports.List(netClient, osports.ListOpts{
+		NetworkID: networkID,
+	}).AllPages()
 	if err != nil {
 		return nil, err
 	}
