@@ -11,10 +11,6 @@ import (
 	"k8s.io/client-go/util/cert/triple"
 )
 
-type templateDataProvider interface {
-	GetClusterRef() metav1.OwnerReference
-}
-
 type caGetter func() (*triple.KeyPair, error)
 
 // GetClientCertificateCreator is a generic function to return a secret generator to create a client certificate signed by the cluster CA
