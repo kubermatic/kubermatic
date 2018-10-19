@@ -149,16 +149,33 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	}
 
 	if cluster.Spec.Cloud.Openstack.RouterID == "" {
-		router, err := createKubermaticRouter(netClient, cluster.Name, cluster.Spec.Cloud.Openstack.FloatingIPPool)
+		// Check if the subnet has already a router
+		routerID, err := getRouterIDForSubnet(netClient, cluster.Spec.Cloud.Openstack.SubnetID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create the kubermatic router: %v", err)
-		}
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.Cloud.Openstack.RouterID = router.ID
-			cluster.Finalizers = kubernetes.AddFinalizer(cluster.Finalizers, routerCleanupFinalizer)
-		})
-		if err != nil {
-			return nil, err
+			if err == errNotFound {
+				// No Router exists -> Create a router
+				router, err := createKubermaticRouter(netClient, cluster.Name, cluster.Spec.Cloud.Openstack.FloatingIPPool)
+				if err != nil {
+					return nil, fmt.Errorf("failed to create the kubermatic router: %v", err)
+				}
+				cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+					cluster.Spec.Cloud.Openstack.RouterID = router.ID
+					cluster.Finalizers = kubernetes.AddFinalizer(cluster.Finalizers, routerCleanupFinalizer)
+				})
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				return nil, fmt.Errorf("failed to verify that the subnet '%s' has a router attached: %v", cluster.Spec.Cloud.Openstack.SubnetID, err)
+			}
+		} else {
+			// A router already exists -> Reuse it but don't clean it up
+			cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+				cluster.Spec.Cloud.Openstack.RouterID = routerID
+			})
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 

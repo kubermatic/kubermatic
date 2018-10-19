@@ -16,6 +16,7 @@ import (
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
 	osecruritygrouprules "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
 	osnetworks "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
+	osports "github.com/gophercloud/gophercloud/openstack/networking/v2/ports"
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 	"github.com/gophercloud/gophercloud/pagination"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -381,4 +382,38 @@ func isNotFoundErr(err error) bool {
 		return true
 	}
 	return false
+}
+
+func getRouterIDForSubnet(netClient *gophercloud.ServiceClient, subnetID string) (string, error) {
+	ports, err := getAllPorts(netClient)
+	if err != nil {
+		return "", fmt.Errorf("failed to list ports for subnet: %v", err)
+	}
+
+	for _, port := range ports {
+		if port.DeviceOwner == "network:router_interface" {
+			// Check IP for the interface & check if the IP belongs to the subnet
+			for _, ip := range port.FixedIPs {
+				if ip.SubnetID == subnetID {
+					return port.DeviceID, nil
+				}
+			}
+		}
+	}
+
+	return "", errNotFound
+}
+
+func getAllPorts(netClient *gophercloud.ServiceClient) ([]osports.Port, error) {
+	allPages, err := osports.List(netClient, osports.ListOpts{}).AllPages()
+	if err != nil {
+		return nil, err
+	}
+
+	allPorts, err := osports.ExtractPorts(allPages)
+	if err != nil {
+		return nil, err
+	}
+
+	return allPorts, nil
 }
