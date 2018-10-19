@@ -20,6 +20,13 @@ func RemoveFinalizer(finalizers []string, toRemove string) []string {
 	return set.List()
 }
 
+// AddFinalizer will add the given finalizer to the object. It uses a StringSet to avoid duplicates
+func AddFinalizer(finalizers []string, toAdd string) []string {
+	set := sets.NewString(finalizers...)
+	set.Insert(toAdd)
+	return set.List()
+}
+
 // GenerateToken generates a new, random token that can be used
 // as an admin and kubelet token.
 func GenerateToken() string {
