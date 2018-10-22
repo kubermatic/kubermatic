@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/golang/glog"
 
@@ -267,9 +266,11 @@ func (p *provider) getConfig(s v1alpha1.ProviderConfig) (*Config, *providerconfi
 }
 
 func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	config, _, _, err := p.getConfig(spec.ProviderConfig)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get config: %v", err)
 	}
 
 	if config.VMNetName != "" && config.TemplateNetName == "" {
@@ -281,23 +282,25 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 		return fmt.Errorf("failed to get vsphere client: '%v'", err)
 	}
 	defer func() {
-		if lerr := client.Logout(context.TODO()); lerr != nil {
-			utilruntime.HandleError(fmt.Errorf("vsphere client failed to logout: %s", lerr))
+		if err := client.Logout(context.Background()); err != nil {
+			utilruntime.HandleError(fmt.Errorf("vsphere client failed to logout: %s", err))
 		}
 	}()
 
 	finder, err := getDatacenterFinder(config.Datacenter, client)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get datacenter %s: %v", config.Datacenter, err)
 	}
 
-	_, err = finder.Datastore(context.TODO(), config.Datastore)
-	if err != nil {
-		return err
+	if _, err := finder.Datastore(ctx, config.Datastore); err != nil {
+		return fmt.Errorf("failed to get datastore %s: %v", config.Datastore, err)
 	}
 
-	_, err = finder.ClusterComputeResource(context.TODO(), config.Cluster)
-	return err
+	if _, err := finder.ClusterComputeResource(ctx, config.Cluster); err != nil {
+		return fmt.Errorf("failed to get cluster: %s: %v", config.Cluster, err)
+	}
+
+	return nil
 }
 
 func machineInvalidConfigurationTerminalError(err error) error {
@@ -308,6 +311,9 @@ func machineInvalidConfigurationTerminalError(err error) error {
 }
 
 func (p *provider) Create(machine *v1alpha1.Machine, _ cloud.MachineUpdater, userdata string) (instance.Instance, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	config, pc, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config: %v", err)
@@ -318,8 +324,8 @@ func (p *provider) Create(machine *v1alpha1.Machine, _ cloud.MachineUpdater, use
 		return nil, fmt.Errorf("failed to get vsphere client: '%v'", err)
 	}
 	defer func() {
-		if lerr := client.Logout(context.TODO()); lerr != nil {
-			utilruntime.HandleError(fmt.Errorf("vsphere client failed to logout: %s", lerr))
+		if err := client.Logout(context.Background()); err != nil {
+			utilruntime.HandleError(fmt.Errorf("vsphere client failed to logout: %s", err))
 		}
 	}()
 
@@ -328,39 +334,27 @@ func (p *provider) Create(machine *v1alpha1.Machine, _ cloud.MachineUpdater, use
 		containerLinuxUserdata = userdata
 	}
 
-	if err = createLinkClonedVM(machine.Spec.Name,
-		config.TemplateVMName,
-		config.Datacenter,
-		config.Cluster,
-		config.Folder,
-		config.CPUs,
-		config.MemoryMB,
-		client,
-		containerLinuxUserdata); err != nil {
-		return nil, machineInvalidConfigurationTerminalError(fmt.Errorf("failed to create linked vm: '%v'", err))
-	}
-
-	finder, err := getDatacenterFinder(config.Datacenter, client)
+	finder := find.NewFinder(client.Client, true)
+	dc, err := finder.Datacenter(ctx, config.Datacenter)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get datacenter: %v", err)
 	}
-	virtualMachine, err := finder.VirtualMachine(context.TODO(), machine.Spec.Name)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get virtual machine object: %v", err)
-	}
+	finder.SetDatacenter(dc)
 
-	// Map networks
-	if config.VMNetName != "" {
-		err = updateNetworkForVM(context.TODO(), virtualMachine, config.TemplateNetName, config.VMNetName)
-		if err != nil {
-			return nil, fmt.Errorf("couldn't set network for vm: %v", err)
-		}
+	virtualMachine, err := createClonedVM(ctx,
+		machine.Spec.Name,
+		config,
+		dc,
+		finder,
+		containerLinuxUserdata)
+	if err != nil {
+		return nil, machineInvalidConfigurationTerminalError(fmt.Errorf("failed to create cloned vm: '%v'", err))
 	}
 
 	if pc.OperatingSystem != providerconfig.OperatingSystemCoreos {
 		localUserdataIsoFilePath, err := generateLocalUserdataISO(userdata, machine.Spec.Name)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to generate local userdadata iso: %v", err)
 		}
 
 		defer func() {
@@ -370,30 +364,18 @@ func (p *provider) Create(machine *v1alpha1.Machine, _ cloud.MachineUpdater, use
 			}
 		}()
 
-		err = uploadAndAttachISO(finder, virtualMachine, localUserdataIsoFilePath, config.Datastore, client)
-		if err != nil {
+		if err := uploadAndAttachISO(ctx, finder, virtualMachine, localUserdataIsoFilePath, config.Datastore); err != nil {
 			return nil, machineInvalidConfigurationTerminalError(fmt.Errorf("failed to upload and attach userdata iso: %v", err))
 		}
 	}
 
-	// Ubuntu wont boot with attached floppy device, because it tries to write to it
-	// which fails, because the floppy device does not contain a floppy disk
-	// Upstream issue: https://bugs.launchpad.net/cloud-images/+bug/1573095
-	err = removeFloppyDevice(virtualMachine)
-	if err != nil {
-		return nil, fmt.Errorf("failed to remove floppy device: %v", err)
-	}
-
-	powerOnTask, err := virtualMachine.PowerOn(context.TODO())
+	powerOnTask, err := virtualMachine.PowerOn(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to power on machine: %v", err)
 	}
 
-	powerOnTaskContext, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	err = powerOnTask.Wait(powerOnTaskContext)
-	if err != nil {
-		return nil, fmt.Errorf("timed out waiting to power on vm %s: %v", virtualMachine.Name(), err)
+	if err := powerOnTask.Wait(ctx); err != nil {
+		return nil, fmt.Errorf("error when waiting for vm powerOn task: %v", err)
 	}
 
 	return Server{name: virtualMachine.Name(), status: instance.StatusRunning, id: virtualMachine.Reference().Value}, nil
@@ -417,8 +399,8 @@ func (p *provider) Delete(machine *v1alpha1.Machine, _ cloud.MachineUpdater) err
 		return fmt.Errorf("failed to get vsphere client: '%v'", err)
 	}
 	defer func() {
-		if lerr := client.Logout(context.TODO()); lerr != nil {
-			utilruntime.HandleError(fmt.Errorf("vsphere client failed to logout: %s", lerr))
+		if err := client.Logout(context.TODO()); err != nil {
+			utilruntime.HandleError(fmt.Errorf("vsphere client failed to logout: %s", err))
 		}
 	}()
 	finder := find.NewFinder(client.Client, true)
@@ -459,7 +441,7 @@ func (p *provider) Delete(machine *v1alpha1.Machine, _ cloud.MachineUpdater) err
 	if err != nil {
 		return fmt.Errorf("failed to destroy vm %s: %v", virtualMachine.Name(), err)
 	}
-	if err = destroyTask.Wait(context.TODO()); err != nil {
+	if err := destroyTask.Wait(context.TODO()); err != nil {
 		return fmt.Errorf("failed to destroy vm %s: %v", virtualMachine.Name(), err)
 	}
 
@@ -527,8 +509,7 @@ func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 	if isGuestToolsRunning {
 		var moVirtualMachine mo.VirtualMachine
 		pc := property.DefaultCollector(client.Client)
-		err = pc.RetrieveOne(context.TODO(), virtualMachine.Reference(), []string{"guest"}, &moVirtualMachine)
-		if err != nil {
+		if err := pc.RetrieveOne(context.TODO(), virtualMachine.Reference(), []string{"guest"}, &moVirtualMachine); err != nil {
 			return nil, fmt.Errorf("failed to retrieve guest info: %v", err)
 		}
 
