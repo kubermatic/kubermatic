@@ -365,11 +365,12 @@ func assignFloatingIPToInstance(client *gophercloud.ProviderClient, instanceID, 
 			return osErrorToTerminalError(err, "failed to allocate a floating ip")
 		}
 	} else {
-		ip, err = osfloatingips.Update(netClient, freeFloatingIps[0].ID, osfloatingips.UpdateOpts{
+		freeIP := freeFloatingIps[0]
+		ip, err := osfloatingips.Update(netClient, freeIP.ID, osfloatingips.UpdateOpts{
 			PortID: &port.ID,
 		}).Extract()
 		if err != nil {
-			return fmt.Errorf("failed to update FloatingIP %s: %v", ip.ID, err)
+			return fmt.Errorf("failed to update FloatingIP %s(%s): %v", freeIP.ID, freeIP.FloatingIP, err)
 		}
 
 		// We're now going to wait 3 seconds and check if the IP is still ours. If not, we're going to fail
