@@ -15,9 +15,9 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func newCreateSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func createSSHKeyEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(NewCreateSSHKeyReq)
+		req, ok := request.(CreateSSHKeyReq)
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
@@ -32,13 +32,13 @@ func newCreateSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProv
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		apiKey := apiv1.NewSSHKey{
-			NewObjectMeta: apiv1.NewObjectMeta{
+		apiKey := apiv1.SSHKey{
+			ObjectMeta: apiv1.ObjectMeta{
 				ID:                key.Name,
 				Name:              key.Spec.Name,
 				CreationTimestamp: key.CreationTimestamp.Time,
 			},
-			Spec: apiv1.NewSSHKeySpec{
+			Spec: apiv1.SSHKeySpec{
 				Fingerprint: key.Spec.Fingerprint,
 				PublicKey:   key.Spec.PublicKey,
 			},
@@ -47,9 +47,9 @@ func newCreateSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProv
 	}
 }
 
-func newDeleteSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func deleteSSHKeyEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(NewDeleteSSHKeyReq)
+		req, ok := request.(DeleteSSHKeyReq)
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
@@ -67,9 +67,9 @@ func newDeleteSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProv
 	}
 }
 
-func newListSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func listSSHKeyEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(NewListSSHKeyReq)
+		req, ok := request.(ListSSHKeyReq)
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
@@ -94,16 +94,16 @@ func newListSSHKeyEndpoint(keyProvider provider.NewSSHKeyProvider, projectProvid
 	}
 }
 
-func convertInternalSSHKeysToExternal(internalKeys []*kubermaticapiv1.UserSSHKey) []*apiv1.NewSSHKey {
-	apiKeys := make([]*apiv1.NewSSHKey, len(internalKeys))
+func convertInternalSSHKeysToExternal(internalKeys []*kubermaticapiv1.UserSSHKey) []*apiv1.SSHKey {
+	apiKeys := make([]*apiv1.SSHKey, len(internalKeys))
 	for index, key := range internalKeys {
-		apiKey := &apiv1.NewSSHKey{
-			NewObjectMeta: apiv1.NewObjectMeta{
+		apiKey := &apiv1.SSHKey{
+			ObjectMeta: apiv1.ObjectMeta{
 				ID:                key.Name,
 				Name:              key.Spec.Name,
 				CreationTimestamp: key.CreationTimestamp.Time,
 			},
-			Spec: apiv1.NewSSHKeySpec{
+			Spec: apiv1.SSHKeySpec{
 				Fingerprint: key.Spec.Fingerprint,
 				PublicKey:   key.Spec.PublicKey,
 			},
@@ -113,30 +113,30 @@ func convertInternalSSHKeysToExternal(internalKeys []*kubermaticapiv1.UserSSHKey
 	return apiKeys
 }
 
-// NewListSSHKeyReq defined HTTP request for newListSHHKeys endpoint
-// swagger:parameters newListSSHKeys
-type NewListSSHKeyReq struct {
+// ListSSHKeyReq defined HTTP request for listSHHKeys endpoint
+// swagger:parameters listSSHKeys
+type ListSSHKeyReq struct {
 	ProjectReq
 }
 
-func newDecodeListSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
+func decodeListSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
 	req, err := decodeProjectRequest(c, r)
 	if err != nil {
 		return nil, nil
 	}
-	return NewListSSHKeyReq{ProjectReq: req.(ProjectReq)}, err
+	return ListSSHKeyReq{ProjectReq: req.(ProjectReq)}, err
 }
 
-// NewDeleteSSHKeyReq defines HTTP request for newDeleteSSHKey endpoint
-// swagger:parameters newDeleteSSHKey
-type NewDeleteSSHKeyReq struct {
+// DeleteSSHKeyReq defines HTTP request for deleteSSHKey endpoint
+// swagger:parameters deleteSSHKey
+type DeleteSSHKeyReq struct {
 	ProjectReq
 	// in: path
 	SSHKeyID string `json:"key_id"`
 }
 
-func newDecodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req NewDeleteSSHKeyReq
+func decodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req DeleteSSHKeyReq
 
 	dcr, err := decodeProjectRequest(c, r)
 	if err != nil {
@@ -153,16 +153,16 @@ func newDecodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
-// NewCreateSSHKeyReq represent a request for specific data to create a new SSH key
-// swagger:parameters newCreateSSHKey
-type NewCreateSSHKeyReq struct {
+// CreateSSHKeyReq represent a request for specific data to create a new SSH key
+// swagger:parameters createSSHKey
+type CreateSSHKeyReq struct {
 	ProjectReq
 	// swagger:ignore
-	Key apiv1.NewSSHKey `json:"-"`
+	Key apiv1.SSHKey `json:"-"`
 }
 
-func newDecodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req NewCreateSSHKeyReq
+func decodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req CreateSSHKeyReq
 
 	dcr, err := decodeProjectRequest(c, r)
 	if err != nil {
@@ -170,7 +170,7 @@ func newDecodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, 
 	}
 	req.ProjectReq = dcr.(ProjectReq)
 
-	req.Key = apiv1.NewSSHKey{}
+	req.Key = apiv1.SSHKey{}
 	if err := json.NewDecoder(r.Body).Decode(&req.Key); err != nil {
 		return nil, errors.NewBadRequest("unable to parse the input, err = %v", err.Error())
 	}

@@ -323,7 +323,7 @@ func getOpenstackSubnets(providers provider.CloudRegistry, username, password, d
 }
 
 func getClusterForOpenstack(ctx context.Context, projectProvider provider.ProjectProvider, projectID string, clusterID string) (*kubermaticv1.Cluster, error) {
-	clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+	clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 	userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
 	_, err := projectProvider.Get(userInfo, projectID, &provider.ProjectGetOptions{})
 	if err != nil {
