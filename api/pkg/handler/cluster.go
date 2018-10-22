@@ -128,18 +128,18 @@ func patchCluster(cloudProviders map[string]provider.CloudProvider, projectProvi
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		existingClusterJson, err := json.Marshal(existingCluster)
+		existingClusterJSON, err := json.Marshal(existingCluster)
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot decode existing cluster: %v", err)
 		}
 
-		patchedClusterJson, err := jsonpatch.MergePatch(existingClusterJson, req.Patch)
+		patchedClusterJSON, err := jsonpatch.MergePatch(existingClusterJSON, req.Patch)
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot patch cluster: %v", err)
 		}
 
 		var patchedCluster *kubermaticapiv1.Cluster
-		err = json.Unmarshal(patchedClusterJson, &patchedCluster)
+		err = json.Unmarshal(patchedClusterJSON, &patchedCluster)
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot decode patched cluster: %v", err)
 		}
