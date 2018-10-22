@@ -26,14 +26,14 @@ type UserClusterConnectionProvider interface {
 	GetAdminKubeconfig(c *kubermaticapiv1.Cluster) ([]byte, error)
 }
 
-// NewRBACCompliantClusterProvider returns a new cluster provider that respects RBAC policies
+// NewClusterProvider returns a new cluster provider that respects RBAC policies
 // it uses createSeedImpersonatedClient to create a connection that uses user impersonation
-func NewRBACCompliantClusterProvider(
+func NewClusterProvider(
 	createSeedImpersonatedClient kubermaticImpersonationClient,
 	userClusterConnProvider UserClusterConnectionProvider,
 	clusterLister kubermaticv1lister.ClusterLister,
-	workerName string) *RBACCompliantClusterProvider {
-	return &RBACCompliantClusterProvider{
+	workerName string) *ClusterProvider {
+	return &ClusterProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
 		userClusterConnProvider:      userClusterConnProvider,
 		clusterLister:                clusterLister,
@@ -41,9 +41,9 @@ func NewRBACCompliantClusterProvider(
 	}
 }
 
-// RBACCompliantClusterProvider struct that holds required components in order to provide
+// ClusterProvider struct that holds required components in order to provide
 // cluster provided that is RBAC compliant
-type RBACCompliantClusterProvider struct {
+type ClusterProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
 	createSeedImpersonatedClient kubermaticImpersonationClient
@@ -58,7 +58,7 @@ type RBACCompliantClusterProvider struct {
 }
 
 // New creates a brand new cluster that is bound to the given project
-func (p *RBACCompliantClusterProvider) New(project *kubermaticapiv1.Project, userInfo *provider.UserInfo, spec *kubermaticapiv1.ClusterSpec) (*kubermaticapiv1.Cluster, error) {
+func (p *ClusterProvider) New(project *kubermaticapiv1.Project, userInfo *provider.UserInfo, spec *kubermaticapiv1.ClusterSpec) (*kubermaticapiv1.Cluster, error) {
 	if project == nil || userInfo == nil || spec == nil {
 		return nil, errors.New("project and/or userInfo and/or spec is missing but required")
 	}
@@ -103,7 +103,7 @@ func (p *RBACCompliantClusterProvider) New(project *kubermaticapiv1.Project, use
 // Note:
 // After we get the list of clusters we could try to get each cluster individually using unprivileged account to see if the user have read access,
 // We don't do this because we assume that if the user was able to get the project (argument) it has to have at least read access.
-func (p *RBACCompliantClusterProvider) List(project *kubermaticapiv1.Project, options *provider.ClusterListOptions) ([]*kubermaticapiv1.Cluster, error) {
+func (p *ClusterProvider) List(project *kubermaticapiv1.Project, options *provider.ClusterListOptions) ([]*kubermaticapiv1.Cluster, error) {
 	if project == nil {
 		return nil, errors.New("project is missing but required")
 	}
@@ -137,7 +137,7 @@ func (p *RBACCompliantClusterProvider) List(project *kubermaticapiv1.Project, op
 }
 
 // Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to
-func (p *RBACCompliantClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, options *provider.ClusterGetOptions) (*kubermaticapiv1.Cluster, error) {
+func (p *ClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, options *provider.ClusterGetOptions) (*kubermaticapiv1.Cluster, error) {
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
@@ -161,7 +161,7 @@ func (p *RBACCompliantClusterProvider) Get(userInfo *provider.UserInfo, clusterN
 }
 
 // Delete deletes the given cluster
-func (p *RBACCompliantClusterProvider) Delete(userInfo *provider.UserInfo, clusterName string) error {
+func (p *ClusterProvider) Delete(userInfo *provider.UserInfo, clusterName string) error {
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return err
@@ -175,7 +175,7 @@ func (p *RBACCompliantClusterProvider) Delete(userInfo *provider.UserInfo, clust
 }
 
 // Update updates a cluster
-func (p *RBACCompliantClusterProvider) Update(userInfo *provider.UserInfo, newCluster *kubermaticapiv1.Cluster) (*kubermaticapiv1.Cluster, error) {
+func (p *ClusterProvider) Update(userInfo *provider.UserInfo, newCluster *kubermaticapiv1.Cluster) (*kubermaticapiv1.Cluster, error) {
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
@@ -185,7 +185,7 @@ func (p *RBACCompliantClusterProvider) Update(userInfo *provider.UserInfo, newCl
 }
 
 // GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster
-func (p *RBACCompliantClusterProvider) GetAdminKubeconfigForCustomerCluster(c *kubermaticapiv1.Cluster) (*clientcmdapi.Config, error) {
+func (p *ClusterProvider) GetAdminKubeconfigForCustomerCluster(c *kubermaticapiv1.Cluster) (*clientcmdapi.Config, error) {
 	b, err := p.userClusterConnProvider.GetAdminKubeconfig(c)
 	if err != nil {
 		return nil, err
@@ -197,13 +197,13 @@ func (p *RBACCompliantClusterProvider) GetAdminKubeconfigForCustomerCluster(c *k
 // GetMachineClientForCustomerCluster returns a client to interact with machine resources in the given cluster
 //
 // Note that the client you will get has admin privileges
-func (p *RBACCompliantClusterProvider) GetMachineClientForCustomerCluster(c *kubermaticapiv1.Cluster) (clusterv1alpha1clientset.Interface, error) {
+func (p *ClusterProvider) GetMachineClientForCustomerCluster(c *kubermaticapiv1.Cluster) (clusterv1alpha1clientset.Interface, error) {
 	return p.userClusterConnProvider.GetMachineClient(c)
 }
 
 // GetKubernetesClientForCustomerCluster returns a client to interact with the given cluster
 //
 // Note that the client you will get has admin privileges
-func (p *RBACCompliantClusterProvider) GetKubernetesClientForCustomerCluster(c *kubermaticapiv1.Cluster) (kubernetes.Interface, error) {
+func (p *ClusterProvider) GetKubernetesClientForCustomerCluster(c *kubermaticapiv1.Cluster) (kubernetes.Interface, error) {
 	return p.userClusterConnProvider.GetClient(c)
 }

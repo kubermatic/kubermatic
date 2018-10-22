@@ -24,7 +24,7 @@ func TestDeleteSSHKey(t *testing.T) {
 		HTTPStatus             int
 		SSHKeyToDelete         string
 		ExistingKubermaticObjs []runtime.Object
-		ExistingAPIUser        *apiv1.User
+		ExistingAPIUser        *apiv1.LegacyUser
 		ExistingSSHKeys        []*kubermaticv1.UserSSHKey
 	}{
 		// scenario 1
@@ -101,12 +101,12 @@ func TestListSSHKeys(t *testing.T) {
 	testcases := []struct {
 		Name                   string
 		Body                   string
-		ExpectedKeys           []apiv1.NewSSHKey
+		ExpectedKeys           []apiv1.SSHKey
 		HTTPStatus             int
 		ExistingProject        *kubermaticv1.Project
 		ExistingKubermaticUser *kubermaticv1.User
 		ExistingKubermaticObjs []runtime.Object
-		ExistingAPIUser        *apiv1.User
+		ExistingAPIUser        *apiv1.LegacyUser
 		ExistingCluster        *kubermaticv1.Cluster
 		ExistingSSHKeys        []*kubermaticv1.UserSSHKey
 	}{
@@ -114,16 +114,16 @@ func TestListSSHKeys(t *testing.T) {
 		{
 			Name: "scenario 1: gets a list of ssh keys assigned to cluster",
 			Body: ``,
-			ExpectedKeys: []apiv1.NewSSHKey{
-				apiv1.NewSSHKey{
-					NewObjectMeta: apiv1.NewObjectMeta{
+			ExpectedKeys: []apiv1.SSHKey{
+				apiv1.SSHKey{
+					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "key-c08aa5c7abf34504f18552846485267d-first-key",
 						Name:              "first-key",
 						CreationTimestamp: time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
 					},
 				},
-				apiv1.NewSSHKey{
-					NewObjectMeta: apiv1.NewObjectMeta{
+				apiv1.SSHKey{
+					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "key-abc-second-key",
 						Name:              "second-key",
 						CreationTimestamp: time.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC),
@@ -186,7 +186,7 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 		ExistingProject        *kubermaticv1.Project
 		ExistingKubermaticUser *kubermaticv1.User
 		ExistingKubermaticObjs []runtime.Object
-		ExistingAPIUser        *apiv1.User
+		ExistingAPIUser        *apiv1.LegacyUser
 	}{
 		// scenario 1
 		{
@@ -226,7 +226,7 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			actualSSHKey := &apiv1.NewSSHKey{}
+			actualSSHKey := &apiv1.SSHKey{}
 			err = json.Unmarshal(res.Body.Bytes(), actualSSHKey)
 			if err != nil {
 				t.Fatal(err)

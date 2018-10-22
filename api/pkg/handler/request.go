@@ -25,46 +25,6 @@ func decodeProjectRequest(c context.Context, r *http.Request) (interface{}, erro
 	}, nil
 }
 
-// ListClustersReq represent a request for clusters specific data
-// swagger:parameters listClusters listClustersV3
-type ListClustersReq struct {
-	LegacyDCReq
-}
-
-// LegacyGetClusterReq represent a request for cluster specific data
-// swagger:parameters getClusterV3 getClusterKubeconfigV3 deleteClusterV3 getClusterUpdatesV3 createNodesHandlerV3 legacyGetPossibleClusterUpgradesV3
-type LegacyGetClusterReq struct {
-	LegacyDCReq
-	// in: path
-	ClusterName string `json:"cluster"`
-}
-
-// GetClusterReq represent a request for cluster specific data
-// swagger:parameters getClusterUpgrades clusterMetricsHandler
-type GetClusterReq struct {
-	DCReq
-	// in: path
-	ClusterID string `json:"cluster_id"`
-}
-
-func decodeClusterReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req GetClusterReq
-
-	clusterID, err := decodeClusterID(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.ClusterID = clusterID
-
-	dcr, err := decodeDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.DCReq = dcr.(DCReq)
-
-	return req, nil
-}
-
 // DCsReq represent a request for datacenters specific data
 type DCsReq struct{}
 
@@ -131,17 +91,17 @@ func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
 // note that the request doesn't have credentials for autN
 // swagger:parameters listDigitaloceanSizesNoCredentials
 type DoSizesNoCredentialsReq struct {
-	NewGetClusterReq
+	GetClusterReq
 }
 
 func decodeDoSizesNoCredentialsReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req DoSizesNoCredentialsReq
-	cr, err := newDecodeGetClusterReq(c, r)
+	cr, err := decodeGetClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
 
-	req.NewGetClusterReq = cr.(NewGetClusterReq)
+	req.GetClusterReq = cr.(GetClusterReq)
 	return req, nil
 }
 
@@ -161,17 +121,17 @@ func decodeDoSizesReq(c context.Context, r *http.Request) (interface{}, error) {
 // note that the request doesn't have credentials for authN
 // swagger:parameters listAzureSizesNoCredentials
 type AzureSizeNoCredentialsReq struct {
-	NewGetClusterReq
+	GetClusterReq
 }
 
 func decodeAzureSizesNoCredentialsReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AzureSizeNoCredentialsReq
-	cr, err := newDecodeGetClusterReq(c, r)
+	cr, err := decodeGetClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
 
-	req.NewGetClusterReq = cr.(NewGetClusterReq)
+	req.GetClusterReq = cr.(GetClusterReq)
 	return req, nil
 }
 
@@ -219,17 +179,17 @@ func decodeOpenstackReq(c context.Context, r *http.Request) (interface{}, error)
 // OpenstackNoCredentialsReq represent a request for openstack
 // swagger:parameters listOpenstackSizesNoCredentials listOpenstackTenantsNoCredentials listOpenstackNetworksNoCredentials listOpenstackSecurityGroupsNoCredentials
 type OpenstackNoCredentialsReq struct {
-	NewGetClusterReq
+	GetClusterReq
 }
 
 func decodeOpenstackNoCredentialsReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req OpenstackNoCredentialsReq
-	cr, err := newDecodeGetClusterReq(c, r)
+	cr, err := decodeGetClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
 
-	req.NewGetClusterReq = cr.(NewGetClusterReq)
+	req.GetClusterReq = cr.(GetClusterReq)
 	return req, nil
 }
 
@@ -299,24 +259,6 @@ func decodeOpenstackTenantReq(c context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
-// NodeReq represent a request for node specific data
-// swagger:parameters deleteNodeHandlerV3 getNodeHandlerV3
-type NodeReq struct {
-	LegacyGetClusterReq
-	// in: path
-	NodeName string `json:"node"`
-	// in: query
-	HideInitialConditions bool `json:"hideInitialConditions"`
-}
-
-// ListSSHKeyReq represent a request for listing all user SSH Keys
-type ListSSHKeyReq struct{}
-
-func decodeListSSHKeyReq(c context.Context, _ *http.Request) (interface{}, error) {
-	var req ListSSHKeyReq
-	return req, nil
-}
-
 func decodeEmptyReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req struct{}
 	return req, nil
@@ -342,15 +284,15 @@ func decodeVSphereNetworksReq(c context.Context, r *http.Request) (interface{}, 
 // VSphereNetworksNoCredentialsReq represent a request for vsphere networks
 // swagger:parameters listVSphereNetworksNoCredentials
 type VSphereNetworksNoCredentialsReq struct {
-	NewGetClusterReq
+	GetClusterReq
 }
 
 func decodeVSphereNetworksNoCredentialsReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req VSphereNetworksNoCredentialsReq
-	lr, err := newDecodeGetClusterReq(c, r)
+	lr, err := decodeGetClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}
-	req.NewGetClusterReq = lr.(NewGetClusterReq)
+	req.GetClusterReq = lr.(GetClusterReq)
 	return req, nil
 }

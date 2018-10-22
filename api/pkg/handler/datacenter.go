@@ -14,7 +14,7 @@ import (
 
 func datacentersEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := ctx.Value(apiUserContextKey).(apiv1.User)
+		user := ctx.Value(apiUserContextKey).(apiv1.LegacyUser)
 
 		var adcs []apiv1.Datacenter
 		var keys []string
@@ -38,7 +38,7 @@ func datacentersEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoi
 			}
 
 			adc := apiv1.Datacenter{
-				Metadata: apiv1.ObjectMeta{
+				Metadata: apiv1.LegacyObjectMeta{
 					Name:            dcName,
 					ResourceVersion: "1",
 				},
@@ -71,7 +71,7 @@ func listDatacenter(dcs map[string]provider.DatacenterMeta, datacenterToGet stri
 	}
 
 	return apiv1.Datacenter{
-		Metadata: apiv1.ObjectMeta{
+		Metadata: apiv1.LegacyObjectMeta{
 			Name:            datacenterToGet,
 			ResourceVersion: "1",
 		},
@@ -140,7 +140,7 @@ func apiSpec(dc *provider.DatacenterMeta) (*apiv1.DatacenterSpec, error) {
 	return spec, nil
 }
 
-func (r Routing) newDatacenterMiddleware() endpoint.Middleware {
+func (r Routing) datacenterMiddleware() endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			getter := request.(DCGetter)
@@ -154,7 +154,7 @@ func (r Routing) newDatacenterMiddleware() endpoint.Middleware {
 			if !exists {
 				return nil, errors.NewNotFound("cluster-provider", getter.GetDC())
 			}
-			ctx = context.WithValue(ctx, newClusterProviderContextKey, clusterProvider)
+			ctx = context.WithValue(ctx, clusterProviderContextKey, clusterProvider)
 			return next(ctx, request)
 		}
 	}

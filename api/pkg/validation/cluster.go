@@ -188,7 +188,7 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudPr
 }
 
 // ValidateUpdateNewCluster validates if the newCluster update is allowed
-func ValidateUpdateNewCluster(newCluster *apiv1.NewCluster, oldCluster *kubermaticv1.Cluster, cloudProviders map[string]provider.CloudProvider) error {
+func ValidateUpdateNewCluster(newCluster *apiv1.Cluster, oldCluster *kubermaticv1.Cluster, cloudProviders map[string]provider.CloudProvider) error {
 	if err := ValidateCloudChange(newCluster.Spec.Cloud, oldCluster.Spec.Cloud); err != nil {
 		return err
 	}

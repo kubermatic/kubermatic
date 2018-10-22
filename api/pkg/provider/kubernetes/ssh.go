@@ -16,15 +16,15 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-// NewRBACCompliantSSHKeyProvider returns a new ssh key provider that respects RBAC policies
+// NewSSHKeyProvider returns a new ssh key provider that respects RBAC policies
 // it uses createMasterImpersonatedClient to create a connection that uses User Impersonation
-func NewRBACCompliantSSHKeyProvider(createMasterImpersonatedClient kubermaticImpersonationClient, keyLister kubermaticv1lister.UserSSHKeyLister) *RBACCompliantSSHKeyProvider {
-	return &RBACCompliantSSHKeyProvider{createMasterImpersonatedClient: createMasterImpersonatedClient, keyLister: keyLister}
+func NewSSHKeyProvider(createMasterImpersonatedClient kubermaticImpersonationClient, keyLister kubermaticv1lister.UserSSHKeyLister) *SSHKeyProvider {
+	return &SSHKeyProvider{createMasterImpersonatedClient: createMasterImpersonatedClient, keyLister: keyLister}
 }
 
-// RBACCompliantSSHKeyProvider struct that holds required components in order to provide
+// SSHKeyProvider struct that holds required components in order to provide
 // ssh key provider that is RBAC compliant
-type RBACCompliantSSHKeyProvider struct {
+type SSHKeyProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
 	createMasterImpersonatedClient kubermaticImpersonationClient
@@ -34,7 +34,7 @@ type RBACCompliantSSHKeyProvider struct {
 }
 
 // Create creates a ssh key that will belong to the given project
-func (p *RBACCompliantSSHKeyProvider) Create(userInfo *provider.UserInfo, project *kubermaticapiv1.Project, keyName, pubKey string) (*kubermaticapiv1.UserSSHKey, error) {
+func (p *SSHKeyProvider) Create(userInfo *provider.UserInfo, project *kubermaticapiv1.Project, keyName, pubKey string) (*kubermaticapiv1.UserSSHKey, error) {
 	if keyName == "" {
 		return nil, fmt.Errorf("the ssh key name is missing but required")
 	}
@@ -85,7 +85,7 @@ func (p *RBACCompliantSSHKeyProvider) Create(userInfo *provider.UserInfo, projec
 // Note:
 // After we get the list of the keys we could try to get each individually using unprivileged account to see if the user have read access,
 // We don't do this because we assume that if the user was able to get the project (argument) it has to have at least read access.
-func (p *RBACCompliantSSHKeyProvider) List(project *kubermaticapiv1.Project, options *provider.SSHKeyListOptions) ([]*kubermaticapiv1.UserSSHKey, error) {
+func (p *SSHKeyProvider) List(project *kubermaticapiv1.Project, options *provider.SSHKeyListOptions) ([]*kubermaticapiv1.UserSSHKey, error) {
 	if project == nil {
 		return nil, errors.New("a project is missing but required")
 	}
@@ -128,7 +128,7 @@ func (p *RBACCompliantSSHKeyProvider) List(project *kubermaticapiv1.Project, opt
 }
 
 // Get returns a key with the given name
-func (p *RBACCompliantSSHKeyProvider) Get(userInfo *provider.UserInfo, keyName string) (*kubermaticapiv1.UserSSHKey, error) {
+func (p *SSHKeyProvider) Get(userInfo *provider.UserInfo, keyName string) (*kubermaticapiv1.UserSSHKey, error) {
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
@@ -137,7 +137,7 @@ func (p *RBACCompliantSSHKeyProvider) Get(userInfo *provider.UserInfo, keyName s
 }
 
 // Delete simply deletes the given key
-func (p *RBACCompliantSSHKeyProvider) Delete(userInfo *provider.UserInfo, keyName string) error {
+func (p *SSHKeyProvider) Delete(userInfo *provider.UserInfo, keyName string) error {
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return err
@@ -146,7 +146,7 @@ func (p *RBACCompliantSSHKeyProvider) Delete(userInfo *provider.UserInfo, keyNam
 }
 
 // Update simply updates the given key
-func (p *RBACCompliantSSHKeyProvider) Update(userInfo *provider.UserInfo, newKey *kubermaticapiv1.UserSSHKey) (*kubermaticapiv1.UserSSHKey, error) {
+func (p *SSHKeyProvider) Update(userInfo *provider.UserInfo, newKey *kubermaticapiv1.UserSSHKey) (*kubermaticapiv1.UserSSHKey, error) {
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
