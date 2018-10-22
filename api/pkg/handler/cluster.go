@@ -58,7 +58,7 @@ func createClusterEndpoint(cloudProviders map[string]provider.CloudProvider, pro
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		return filterAndConvertInternalClusterToExternal(newCluster), nil
+		return convertInternalClusterToExternal(newCluster), nil
 	}
 }
 
@@ -76,7 +76,7 @@ func getCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		return filterAndConvertInternalClusterToExternal(cluster), nil
+		return convertInternalClusterToExternal(cluster), nil
 	}
 }
 
@@ -109,7 +109,7 @@ func updateCluster(cloudProviders map[string]provider.CloudProvider, projectProv
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		return filterAndConvertInternalClusterToExternal(updatedCluster), nil
+		return convertInternalClusterToExternal(updatedCluster), nil
 	}
 }
 
@@ -153,7 +153,7 @@ func patchCluster(cloudProviders map[string]provider.CloudProvider, projectProvi
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		return filterAndConvertInternalClusterToExternal(updatedCluster), nil
+		return convertInternalClusterToExternal(updatedCluster), nil
 	}
 }
 
@@ -172,7 +172,7 @@ func listClusters(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		apiClusters := filterAndConvertInternalClustersToExternal(clusters)
+		apiClusters := convertInternalClustersToExternal(clusters)
 		return apiClusters, nil
 	}
 }
@@ -309,8 +309,7 @@ func listSSHKeysAssingedToCluster(sshKeyProvider provider.SSHKeyProvider, projec
 	}
 }
 
-func filterAndConvertInternalClusterToExternal(notFilteredCluster *kubermaticapiv1.Cluster) *apiv1.Cluster {
-	internalCluster := removeSensitiveDataFromCluster(notFilteredCluster)
+func convertInternalClusterToExternal(internalCluster *kubermaticapiv1.Cluster) *apiv1.Cluster {
 	return &apiv1.Cluster{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internalCluster.Name,
@@ -335,22 +334,12 @@ func filterAndConvertInternalClusterToExternal(notFilteredCluster *kubermaticapi
 	}
 }
 
-func filterAndConvertInternalClustersToExternal(internalClusters []*kubermaticapiv1.Cluster) []*apiv1.Cluster {
+func convertInternalClustersToExternal(internalClusters []*kubermaticapiv1.Cluster) []*apiv1.Cluster {
 	apiClusters := make([]*apiv1.Cluster, len(internalClusters))
 	for index, cluster := range internalClusters {
-		apiClusters[index] = filterAndConvertInternalClusterToExternal(cluster)
+		apiClusters[index] = convertInternalClusterToExternal(cluster)
 	}
 	return apiClusters
-}
-
-// removeSensitiveDataFromCluster removes admin token and cloud credentials from the cluster resource
-// that is returned to the callers.
-func removeSensitiveDataFromCluster(cluster *kubermaticapiv1.Cluster) *kubermaticapiv1.Cluster {
-	clusterCopy := cluster.DeepCopy()
-
-	clusterCopy.Address.AdminToken = ""
-
-	return clusterCopy
 }
 
 func detachSSHKeyFromCluster(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
@@ -640,7 +629,7 @@ func decodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, er
 // PatchClusterReq defines HTTP request for patchCluster endpoint
 // swagger:parameters patchClusterReq
 type PatchClusterReq struct {
-	NewGetClusterReq
+	GetClusterReq
 
 	// in: body
 	Patch []byte
