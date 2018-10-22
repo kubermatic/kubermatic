@@ -20,41 +20,6 @@ import (
 	clienttesting "k8s.io/client-go/testing"
 )
 
-func TestRemoveSensitiveDataFromCluster(t *testing.T) {
-	t.Parallel()
-	genClusterWithAdminToken := func() *kubermaticv1.Cluster {
-		cluster := genDefaultCluster()
-		cluster.Address.AdminToken = "hfzj6l.w7hgc65nq9z4fxvl"
-		cluster.Address.ExternalName = "w225mx4z66.asia-east1-a-1.cloud.kubermatic.io"
-		cluster.Address.IP = "35.194.142.199"
-		cluster.Address.URL = "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"
-		return cluster
-	}
-	scenarios := []struct {
-		Name            string
-		ExistingCluster *kubermaticv1.Cluster
-		ExpectedCluster *kubermaticv1.Cluster
-	}{
-		{
-			Name:            "scenario 1: removes the admin token",
-			ExistingCluster: genClusterWithAdminToken(),
-			ExpectedCluster: func() *kubermaticv1.Cluster {
-				cluster := genClusterWithAdminToken()
-				cluster.Address.AdminToken = ""
-				return cluster
-			}(),
-		},
-	}
-	for _, tc := range scenarios {
-		t.Run(tc.Name, func(t *testing.T) {
-			actualCluster := removeSensitiveDataFromCluster(tc.ExistingCluster)
-			if !equality.Semantic.DeepEqual(actualCluster, tc.ExpectedCluster) {
-				t.Fatalf("%v", diff.ObjectDiff(tc.ExpectedCluster, actualCluster))
-			}
-		})
-	}
-}
-
 func TestDeleteClusterEndpoint(t *testing.T) {
 	t.Parallel()
 	testcase := struct {
@@ -827,18 +792,14 @@ func TestPatchCluster(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			Name:             "scenario 1: update the cluster version",
-			Body:             `{"spec":{"version":"1.2.3"}}`,
-			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"FakeDatacenter","fake":{}},"version":"1.2.3"},"status":{"version":"1.2.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
-			cluster:          "keen-snyder",
-			HTTPStatus:       http.StatusOK,
-			project:          genDefaultProject().Name,
-			ExistingAPIUser:  genDefaultAPIUser(),
-			ExistingKubermaticObjects: func() []runtime.Object {
-				defaultObjs := genDefaultKubermaticObjects()
-				defaultObjs = append(defaultObjs, genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)))
-				return defaultObjs
-			}(),
+			Name:                      "scenario 1: update the cluster version",
+			Body:                      `{"spec":{"version":"1.2.3"}}`,
+			ExpectedResponse:          `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"FakeDatacenter","fake":{}},"version":"1.2.3"},"status":{"version":"1.2.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
+			cluster:                   "keen-snyder",
+			HTTPStatus:                http.StatusOK,
+			project:                   genDefaultProject().Name,
+			ExistingAPIUser:           genDefaultAPIUser(),
+			ExistingKubermaticObjects: genDefaultKubermaticObjects(genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))),
 		},
 		// scenario 2
 		{
