@@ -23,7 +23,7 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 		name                   string
 		cluster                *kubermaticv1.Cluster
 		existingKubermaticObjs []runtime.Object
-		apiUser                apiv1.User
+		apiUser                apiv1.LegacyUser
 		versions               []*version.MasterVersion
 		updates                []*version.MasterUpdate
 		wantUpdates            []*apiv1.MasterVersion

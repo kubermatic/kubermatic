@@ -29,7 +29,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 		NodeIDToDelete          string
 		ClusterIDToSync         string
 		ProjectIDToSync         string
-		ExistingAPIUser         *apiv1.User
+		ExistingAPIUser         *apiv1.LegacyUser
 		ExistingNodes           []*corev1.Node
 		ExistingMachines        []*clusterv1alpha1.Machine
 		ExistingKubermaticObjs  []runtime.Object
@@ -178,7 +178,7 @@ func TestListNodesForCluster(t *testing.T) {
 		ClusterIDToSync        string
 		ExistingProject        *kubermaticv1.Project
 		ExistingKubermaticUser *kubermaticv1.User
-		ExistingAPIUser        *apiv1.User
+		ExistingAPIUser        *apiv1.LegacyUser
 		ExistingCluster        *kubermaticv1.Cluster
 		ExistingNodes          []*corev1.Node
 		ExistingMachines       []*clusterv1alpha1.Machine
@@ -246,7 +246,7 @@ func TestListNodesForCluster(t *testing.T) {
 			},
 			ExpectedResponse: []apiv1.Node{
 				apiv1.Node{
-					NewObjectMeta: apiv1.NewObjectMeta{
+					ObjectMeta: apiv1.ObjectMeta{
 						ID:   "venus",
 						Name: "venus",
 					},
@@ -279,7 +279,7 @@ func TestListNodesForCluster(t *testing.T) {
 				},
 
 				apiv1.Node{
-					NewObjectMeta: apiv1.NewObjectMeta{
+					ObjectMeta: apiv1.ObjectMeta{
 						ID:   "mars",
 						Name: "mars",
 					},
@@ -361,7 +361,7 @@ func TestGetNodeForCluster(t *testing.T) {
 		NodeIDToSync           string
 		ClusterIDToSync        string
 		ProjectIDToSync        string
-		ExistingAPIUser        *apiv1.User
+		ExistingAPIUser        *apiv1.LegacyUser
 		ExistingNodes          []*corev1.Node
 		ExistingMachines       []*clusterv1alpha1.Machine
 		ExistingKubermaticObjs []runtime.Object
@@ -446,7 +446,7 @@ func TestCreateNodeForCluster(t *testing.T) {
 		RewriteClusterNameAndNamespaceName bool
 		ExistingProject                    *kubermaticv1.Project
 		ExistingKubermaticUser             *kubermaticv1.User
-		ExistingAPIUser                    *apiv1.User
+		ExistingAPIUser                    *apiv1.LegacyUser
 		ExistingCluster                    *kubermaticv1.Cluster
 		ExistingKubermaticObjs             []runtime.Object
 	}{

@@ -23,13 +23,13 @@ func TestGetUsersForProject(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		Name                        string
-		ExpectedResponse            []apiv1.NewUser
+		ExpectedResponse            []apiv1.User
 		ExpectedResponseString      string
 		ExpectedActions             int
 		ExpectedUserAfterInvitation *kubermaticapiv1.User
 		ProjectToGet                string
 		HTTPStatus                  int
-		ExistingAPIUser             apiv1.User
+		ExistingAPIUser             apiv1.LegacyUser
 		ExistingKubermaticObjs      []runtime.Object
 	}{
 		{
@@ -66,9 +66,9 @@ func TestGetUsersForProject(t *testing.T) {
 				}(),
 			},
 			ExistingAPIUser: *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: []apiv1.NewUser{
-				apiv1.NewUser{
-					NewObjectMeta: apiv1.NewObjectMeta{
+			ExpectedResponse: []apiv1.User{
+				apiv1.User{
+					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "4b2d8785b49bad23638b17d8db76857a79bf79441241a78a97d88cc64bbf766e",
 						Name:              "john",
 						CreationTimestamp: time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
@@ -82,8 +82,8 @@ func TestGetUsersForProject(t *testing.T) {
 					},
 				},
 
-				apiv1.NewUser{
-					NewObjectMeta: apiv1.NewObjectMeta{
+				apiv1.User{
+					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "0a0a58273565a8f3dcf779375d9debd0f685d94dc56651a16bff3bf901c0b127",
 						Name:              "alice",
 						CreationTimestamp: time.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC),
@@ -97,8 +97,8 @@ func TestGetUsersForProject(t *testing.T) {
 					},
 				},
 
-				apiv1.NewUser{
-					NewObjectMeta: apiv1.NewObjectMeta{
+				apiv1.User{
+					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6",
 						Name:              "bob",
 						CreationTimestamp: time.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC),
@@ -179,7 +179,7 @@ func TestDeleteUserFromProject(t *testing.T) {
 		ProjectToSync                string
 		UserIDToDelete               string
 		HTTPStatus                   int
-		ExistingAPIUser              apiv1.User
+		ExistingAPIUser              apiv1.LegacyUser
 		ExistingKubermaticObjs       []runtime.Object
 	}{
 		// scenario 1
@@ -305,7 +305,7 @@ func TestEditUserInProject(t *testing.T) {
 		ProjectToSync              string
 		UserIDToUpdate             string
 		HTTPStatus                 int
-		ExistingAPIUser            apiv1.User
+		ExistingAPIUser            apiv1.LegacyUser
 		ExistingKubermaticObjs     []runtime.Object
 	}{
 		// scenario 1
@@ -461,7 +461,7 @@ func TestAddUserToProject(t *testing.T) {
 		ExpectedBindingAfterInvitation *kubermaticapiv1.UserProjectBinding
 		ProjectToSync                  string
 		HTTPStatus                     int
-		ExistingAPIUser                apiv1.User
+		ExistingAPIUser                apiv1.LegacyUser
 		ExistingKubermaticObjs         []runtime.Object
 	}{
 		{
@@ -644,7 +644,7 @@ func TestGetCurrentUser(t *testing.T) {
 		ExpectedResponse       string
 		ExpectedStatus         int
 		ExistingKubermaticObjs []runtime.Object
-		ExistingAPIUser        apiv1.User
+		ExistingAPIUser        apiv1.LegacyUser
 	}{
 		{
 			Name: "scenario 1: get john's profile (no projects assigned)",
@@ -703,7 +703,7 @@ func TestNewUser(t *testing.T) {
 		ExpectedResponse          string
 		ExpectedKubermaticUser    *kubermaticapiv1.User
 		ExistingKubermaticObjects []runtime.Object
-		ExistingAPIUser           *apiv1.User
+		ExistingAPIUser           *apiv1.LegacyUser
 	}{
 		{
 			Name:             "scenario 1: successfully creates a new user resource",
@@ -723,7 +723,7 @@ func TestNewUser(t *testing.T) {
 			Name:             "scenario 2: fails when creating a user without an email address",
 			ExpectedResponse: `{"error":{"code":400,"message":"Email, ID and Name cannot be empty when creating a new user resource"}}`,
 			HTTPStatus:       http.StatusBadRequest,
-			ExistingAPIUser: func() *apiv1.User {
+			ExistingAPIUser: func() *apiv1.LegacyUser {
 				apiUser := genDefaultAPIUser()
 				apiUser.Email = ""
 				return apiUser
@@ -802,17 +802,17 @@ func genDefaultUser() *kubermaticapiv1.User {
 	return genUser("", "Bob", userEmail)
 }
 
-func genAPIUser(name, email string) *apiv1.User {
+func genAPIUser(name, email string) *apiv1.LegacyUser {
 	usr := genUser("", name, email)
-	return &apiv1.User{
+	return &apiv1.LegacyUser{
 		ID:    usr.Name,
 		Name:  usr.Spec.Name,
 		Email: usr.Spec.Email,
 	}
 }
 
-func genDefaultAPIUser() *apiv1.User {
-	return &apiv1.User{
+func genDefaultAPIUser() *apiv1.LegacyUser {
+	return &apiv1.LegacyUser{
 		ID:    genDefaultUser().Name,
 		Name:  genDefaultUser().Spec.Name,
 		Email: genDefaultUser().Spec.Email,

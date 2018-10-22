@@ -20,7 +20,7 @@ var reOptimized = regexp.MustCompile("(^c|C)")
 func digitaloceanSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(DoSizesNoCredentialsReq)
-		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {

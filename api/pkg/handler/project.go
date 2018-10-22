@@ -34,7 +34,7 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 		}
 
 		return apiv1.Project{
-			NewObjectMeta: apiv1.NewObjectMeta{
+			ObjectMeta: apiv1.ObjectMeta{
 				ID:                kubermaticProject.Name,
 				Name:              kubermaticProject.Spec.Name,
 				CreationTimestamp: kubermaticProject.CreationTimestamp.Time,
@@ -109,7 +109,7 @@ func getProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpo
 
 func convertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project) *apiv1.Project {
 	return &apiv1.Project{
-		NewObjectMeta: apiv1.NewObjectMeta{
+		ObjectMeta: apiv1.ObjectMeta{
 			ID:                kubermaticProject.Name,
 			Name:              kubermaticProject.Spec.Name,
 			CreationTimestamp: kubermaticProject.CreationTimestamp.Time,
