@@ -517,7 +517,7 @@
         "tags": [
           "project"
         ],
-        "summary": "Patches the given cluster.",
+        "summary": "Patches the given cluster using JSON Merge Patch method (https://tools.ietf.org/html/rfc7396).",
         "operationId": "newPatchCluster",
         "responses": {
           "200": {

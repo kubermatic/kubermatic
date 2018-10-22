@@ -789,7 +789,7 @@ func (r Routing) updateCluster() http.Handler {
 
 // swagger:route PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id} project newPatchCluster
 //
-//     Patches the given cluster.
+//     Patches the given cluster using JSON Merge Patch method (https://tools.ietf.org/html/rfc7396).
 //
 //     Produces:
 //     - application/json
