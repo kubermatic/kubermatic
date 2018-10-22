@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -8,7 +9,6 @@ import (
 	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
-	"encoding/json"
 	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 )
 

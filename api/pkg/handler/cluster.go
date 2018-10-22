@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/evanphx/json-patch"
 	"io/ioutil"
 	"net/http"
 	"time"
 
+	"github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	prometheusapi "github.com/prometheus/client_golang/api"
