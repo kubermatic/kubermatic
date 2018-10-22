@@ -809,6 +809,92 @@ func TestUpdateCluster(t *testing.T) {
 	}
 }
 
+func TestPatchCluster(t *testing.T) {
+	t.Parallel()
+
+	// Mock timezone to keep creation timestamp always the same.
+	time.Local = time.UTC
+
+	testcases := []struct {
+		Name                      string
+		Body                      string
+		ExpectedResponse          string
+		HTTPStatus                int
+		cluster                   string
+		project                   string
+		ExistingAPIUser           *apiv1.User
+		ExistingKubermaticObjects []runtime.Object
+	}{
+		// scenario 1
+		{
+			Name:             "scenario 1: update the cluster version",
+			Body:             `{"spec":{"version":"1.2.3"}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"FakeDatacenter","fake":{}},"version":"1.2.3"},"status":{"version":"1.2.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
+			cluster:          "keen-snyder",
+			HTTPStatus:       http.StatusOK,
+			project:          genDefaultProject().Name,
+			ExistingAPIUser:  genDefaultAPIUser(),
+			ExistingKubermaticObjects: func() []runtime.Object {
+				defaultObjs := genDefaultKubermaticObjects()
+				defaultObjs = append(defaultObjs, genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)))
+				return defaultObjs
+			}(),
+		},
+		// scenario 2
+		{
+			Name:             "scenario 2: update the cluster cloud dc",
+			Body:             `{"spec":{"cloud":{"dc":"dc1"}}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"dc1","fake":{}},"version":"9.9.9"},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
+			cluster:          "keen-snyder",
+			HTTPStatus:       http.StatusOK,
+			project:          genDefaultProject().Name,
+			ExistingAPIUser:  genDefaultAPIUser(),
+			ExistingKubermaticObjects: func() []runtime.Object {
+				defaultObjs := genDefaultKubermaticObjects()
+				defaultObjs = append(defaultObjs, genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)))
+				return defaultObjs
+			}(),
+		},
+		// scenario 3
+		{
+			Name:             "scenario 3: fail on invalid patch json",
+			Body:             `{"spec":{"cloud":{"dc":"dc1"`,
+			ExpectedResponse: `{"error":{"code":400,"message":"cannot patch cluster: Invalid JSON Patch"}}`,
+			cluster:          "keen-snyder",
+			HTTPStatus:       http.StatusBadRequest,
+			project:          genDefaultProject().Name,
+			ExistingAPIUser:  genDefaultAPIUser(),
+			ExistingKubermaticObjects: func() []runtime.Object {
+				defaultObjs := genDefaultKubermaticObjects()
+				defaultObjs = append(defaultObjs, genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)))
+				return defaultObjs
+			}(),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			// test data
+			req := httptest.NewRequest(http.MethodPatch, fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s", tc.project, tc.cluster), strings.NewReader(tc.Body))
+			res := httptest.NewRecorder()
+			ep, err := createTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			// act
+			ep.ServeHTTP(res, req)
+
+			// validate
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			compareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+}
+
 func TestGetCluster(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
