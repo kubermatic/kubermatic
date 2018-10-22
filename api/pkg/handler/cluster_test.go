@@ -747,7 +747,7 @@ func TestUpdateCluster(t *testing.T) {
 		{
 			Name:             "scenario 1: update the cluster version for FakeDatacenter",
 			Body:             `{"name":"keen-snyder","spec":{"version":"0.0.1","cloud":{"fake":{"token":"dummy_token"},"dc":"FakeDatacenter"}}, "status":{"url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
-			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"FakeDatacenter","fake":{"token":"dummy_token"}},"version":"0.0.1"},"status":{"version":"0.0.1","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"FakeDatacenter","fake":{}},"version":"0.0.1"},"status":{"version":"0.0.1","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
 			ClusterToUpdate:  "keen-snyder",
 			HTTPStatus:       http.StatusOK,
 			ProjectToSync:    genDefaultProject().Name,
@@ -842,22 +842,7 @@ func TestPatchCluster(t *testing.T) {
 		},
 		// scenario 2
 		{
-			Name:             "scenario 2: update the cluster cloud dc",
-			Body:             `{"spec":{"cloud":{"dc":"dc1"}}}`,
-			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"dc1","fake":{}},"version":"9.9.9"},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
-			cluster:          "keen-snyder",
-			HTTPStatus:       http.StatusOK,
-			project:          genDefaultProject().Name,
-			ExistingAPIUser:  genDefaultAPIUser(),
-			ExistingKubermaticObjects: func() []runtime.Object {
-				defaultObjs := genDefaultKubermaticObjects()
-				defaultObjs = append(defaultObjs, genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)))
-				return defaultObjs
-			}(),
-		},
-		// scenario 3
-		{
-			Name:             "scenario 3: fail on invalid patch json",
+			Name:             "scenario 2: fail on invalid patch json",
 			Body:             `{"spec":{"cloud":{"dc":"dc1"`,
 			ExpectedResponse: `{"error":{"code":400,"message":"cannot patch cluster: Invalid JSON Patch"}}`,
 			cluster:          "keen-snyder",
