@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/evanphx/json-patch"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -107,6 +109,50 @@ func updateCluster(cloudProviders map[string]provider.CloudProvider, projectProv
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
+		return filterAndConvertInternalClusterToExternal(updatedCluster), nil
+	}
+}
+
+func patchCluster(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(PatchClusterReq)
+		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		existingCluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		existingClusterJson, err := json.Marshal(existingCluster)
+		if err != nil {
+			return nil, errors.NewBadRequest("cannot decode existing cluster: %v", err)
+		}
+
+		patchedClusterJson, err := jsonpatch.MergePatch(existingClusterJson, req.Patch)
+		if err != nil {
+			return nil, errors.NewBadRequest("cannot patch cluster: %v", err)
+		}
+
+		var patchedCluster *kubermaticapiv1.Cluster
+		err = json.Unmarshal(patchedClusterJson, &patchedCluster)
+		if err != nil {
+			return nil, errors.NewBadRequest("cannot decode patched cluster: %v", err)
+		}
+
+		if err = validation.ValidateUpdateCluster(patchedCluster, existingCluster, cloudProviders); err != nil {
+			return nil, errors.NewBadRequest("invalid cluster: %v", err)
+		}
+
+		updatedCluster, err := clusterProvider.Update(userInfo, patchedCluster)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
 		return filterAndConvertInternalClusterToExternal(updatedCluster), nil
 	}
 }
@@ -585,6 +631,36 @@ func decodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, er
 	req.ClusterID = clusterID
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// PatchClusterReq defines HTTP request for patchCluster endpoint
+// swagger:parameters patchClusterReq
+type PatchClusterReq struct {
+	NewGetClusterReq
+
+	// in: body
+	Patch []byte
+}
+
+func decodePatchClusterReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req PatchClusterReq
+	clusterID, err := decodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.DCReq = dcr.(DCReq)
+	req.ClusterID = clusterID
+
+	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
 		return nil, err
 	}
 

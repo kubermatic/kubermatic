@@ -119,6 +119,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}").
 		Handler(r.updateCluster())
 
+	mux.Methods(http.MethodPatch).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}").
+		Handler(r.patchCluster())
+
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig").
 		Handler(r.getClusterKubeconfig())
@@ -778,6 +782,32 @@ func (r Routing) updateCluster() http.Handler {
 			r.userInfoMiddleware(),
 		)(updateCluster(r.cloudProviders, r.projectProvider)),
 		decodeUpdateClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id} project newPatchCluster
+//
+//     Patches the given cluster.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Cluster
+//       401: empty
+//       403: empty
+func (r Routing) patchCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.authenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.newDatacenterMiddleware(),
+			r.userInfoMiddleware(),
+		)(patchCluster(r.cloudProviders, r.projectProvider)),
+		decodePatchClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
