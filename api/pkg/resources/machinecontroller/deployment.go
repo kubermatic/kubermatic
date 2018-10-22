@@ -16,7 +16,7 @@ import (
 const (
 	name = "machine-controller"
 
-	tag = "v0.9.5"
+	tag = "v0.9.6"
 )
 
 // Deployment returns the machine-controller Deployment
