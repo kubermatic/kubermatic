@@ -33,7 +33,7 @@ import (
 type testScenario interface {
 	Name() string
 	Cluster(secrets secrets) *kubermaticv1.Cluster
-	Nodes(num int) []*kubermaticapiv2.Node
+	Nodes(num int) []*kubermaticapiv2.LegacyNode
 }
 
 func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
