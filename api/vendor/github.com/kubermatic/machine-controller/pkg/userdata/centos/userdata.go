@@ -177,9 +177,13 @@ write_files:
 
     setenforce 0 || true
 
-    # As we added some modules and don't want to reboot, restart the service 
+    # As we added some modules and don't want to reboot, restart the service
     systemctl restart systemd-modules-load.service
     sysctl --system
+
+    # The normal way of setting it via cloud-init is broken:
+    # https://bugs.launchpad.net/cloud-init/+bug/1662542
+    hostnamectl set-hostname {{ .MachineSpec.Name }}
 
     yum install -y docker-1.13.1 \
       ebtables \
@@ -190,10 +194,14 @@ write_files:
       socat \
       wget \
       curl \
-      ipvsadm
+      ipvsadm{{ if eq .CloudProvider "vsphere" }} \
+      open-vm-tools{{ end }}
 
 {{ downloadBinariesScript .KubeletVersion true | indent 4 }}
 
+    {{- if eq .CloudProvider "vsphere" }}
+    systemctl enable --now vmtoolsd.service
+    {{ end -}}
     systemctl enable --now docker
     systemctl enable --now kubelet
     systemctl enable --now --no-block kubelet-healthcheck.service
