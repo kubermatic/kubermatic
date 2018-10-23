@@ -1750,6 +1750,7 @@
     "github.com/coreos/go-oidc",
     "github.com/davecgh/go-spew/spew",
     "github.com/digitalocean/godo",
+    "github.com/evanphx/json-patch",
     "github.com/ghodss/yaml",
     "github.com/go-kit/kit/endpoint",
     "github.com/go-kit/kit/log",
