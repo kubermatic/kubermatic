@@ -318,11 +318,13 @@ storage:
           yes
 {{ end }}
 
+{{ if ne .CloudProvider "aws" }}
     - path: /etc/hostname
       filesystem: root
       mode: 0600
       contents:
         inline: '{{ .MachineSpec.Name }}'
+{{- end }}
 
     - path: /etc/ssh/sshd_config
       filesystem: root
