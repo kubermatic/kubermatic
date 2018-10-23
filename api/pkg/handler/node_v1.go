@@ -128,7 +128,7 @@ func listNodesForCluster(projectProvider provider.ProjectProvider) endpoint.Endp
 		}
 
 		//The following is a bit tricky. We might have a node which is not created by a machine and vice versa...
-		var nodesV2 []*apiv2.Node
+		var nodesV2 []*apiv2.LegacyNode
 		matchedMachineNodes := sets.NewString()
 
 		//Go over all machines first
@@ -295,9 +295,9 @@ func createNodeForCluster(sshKeyProvider provider.SSHKeyProvider, projectProvide
 	}
 }
 
-func convertNodeV1ToNodeV2(nodeV1 *apiv1.Node) *apiv2.Node {
-	return &apiv2.Node{
-		Metadata: apiv2.ObjectMeta{
+func convertNodeV1ToNodeV2(nodeV1 *apiv1.Node) *apiv2.LegacyNode {
+	return &apiv2.LegacyNode{
+		Metadata: apiv2.LegacyObjectMeta{
 			Name:              nodeV1.ID,
 			DisplayName:       nodeV1.Name,
 			CreationTimestamp: nodeV1.CreationTimestamp,
@@ -308,7 +308,7 @@ func convertNodeV1ToNodeV2(nodeV1 *apiv1.Node) *apiv2.Node {
 	}
 }
 
-func convertNodeV2ToNodeV1(nodeV2 *apiv2.Node) *apiv1.Node {
+func convertNodeV2ToNodeV1(nodeV2 *apiv2.LegacyNode) *apiv1.Node {
 	return &apiv1.Node{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                nodeV2.Metadata.Name,
@@ -321,7 +321,7 @@ func convertNodeV2ToNodeV1(nodeV2 *apiv2.Node) *apiv1.Node {
 	}
 }
 
-func convertNodesV2ToNodesV1(nodesV2 []*apiv2.Node) []*apiv1.Node {
+func convertNodesV2ToNodesV1(nodesV2 []*apiv2.LegacyNode) []*apiv1.Node {
 	nodesV1 := make([]*apiv1.Node, len(nodesV2))
 	for index, nodeV2 := range nodesV2 {
 
@@ -330,7 +330,7 @@ func convertNodesV2ToNodesV1(nodesV2 []*apiv2.Node) []*apiv1.Node {
 	return nodesV1
 }
 
-func outputNode(node *corev1.Node, hideInitialNodeConditions bool) *apiv2.Node {
+func outputNode(node *corev1.Node, hideInitialNodeConditions bool) *apiv2.LegacyNode {
 	nodeStatus := apiv2.NodeStatus{}
 	nodeStatus = apiNodeStatus(nodeStatus, node, hideInitialNodeConditions)
 	var deletionTimestamp *time.Time
@@ -338,8 +338,8 @@ func outputNode(node *corev1.Node, hideInitialNodeConditions bool) *apiv2.Node {
 		deletionTimestamp = &node.DeletionTimestamp.Time
 	}
 
-	return &apiv2.Node{
-		Metadata: apiv2.ObjectMeta{
+	return &apiv2.LegacyNode{
+		Metadata: apiv2.LegacyObjectMeta{
 			Name:              node.Name,
 			DisplayName:       node.Name,
 			Labels:            node.Labels,
@@ -382,7 +382,7 @@ func apiNodeStatus(status apiv2.NodeStatus, inputNode *corev1.Node, hideInitialN
 	return status
 }
 
-func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInitialNodeConditions bool) (*apiv2.Node, error) {
+func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInitialNodeConditions bool) (*apiv2.LegacyNode, error) {
 	displayName := machine.Spec.Name
 	labels := map[string]string{}
 	annotations := map[string]string{}
@@ -421,8 +421,8 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 	nodeStatus.ErrorReason = strings.TrimSuffix(nodeStatus.ErrorReason, errGlue)
 	nodeStatus.ErrorMessage = strings.TrimSuffix(nodeStatus.ErrorMessage, errGlue)
 
-	return &apiv2.Node{
-		Metadata: apiv2.ObjectMeta{
+	return &apiv2.LegacyNode{
+		Metadata: apiv2.LegacyObjectMeta{
 			Name:              machine.Name,
 			DisplayName:       displayName,
 			Labels:            labels,
