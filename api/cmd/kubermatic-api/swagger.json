@@ -3118,6 +3118,25 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "LegacyNode": {
+      "type": "object",
+      "title": "LegacyNode is the object representing a cluster node.",
+      "required": [
+        "spec"
+      ],
+      "properties": {
+        "metadata": {
+          "$ref": "#/definitions/LegacyObjectMeta"
+        },
+        "spec": {
+          "$ref": "#/definitions/NodeSpecV2"
+        },
+        "status": {
+          "$ref": "#/definitions/NodeStatusV2"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
     "LegacyObjectMeta": {
       "description": "Deprecated: LegacyObjectMeta is deprecated use ObjectMeta instead.",
       "type": "object",
@@ -3281,9 +3300,6 @@
     "Node": {
       "description": "Node represents a worker node that is part of a cluster",
       "type": "object",
-      "required": [
-        "spec"
-      ],
       "properties": {
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
@@ -3510,50 +3526,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "ObjectMetaV2": {
-      "type": "object",
-      "title": "ObjectMeta is an object storing common metadata for persistable objects.",
-      "properties": {
-        "annotations": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "x-go-name": "Annotations"
-        },
-        "creationTimestamp": {
-          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-name": "CreationTimestamp"
-        },
-        "deletionTimestamp": {
-          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-name": "DeletionTimestamp"
-        },
-        "displayName": {
-          "description": "The name to display in the frontend",
-          "type": "string",
-          "x-go-name": "DisplayName"
-        },
-        "labels": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "x-go-name": "Labels"
-        },
-        "name": {
-          "description": "The unique name",
-          "type": "string",
-          "x-go-name": "Name"
-        }
-      },
-      "x-go-name": "ObjectMeta",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
     },
     "OpenstackCloudSpec": {
       "type": "object",
