@@ -242,6 +242,10 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 		return nil, fmt.Errorf("failed to setup nodes: %v", err)
 	}
 
+	if err := r.waitUntilAllPodsAreReady(log, clusterKubeClient); err != nil {
+		return nil, fmt.Errorf("failed to wait until all pods are running after creating the cluster: %v", err)
+	}
+
 	report, err := r.testCluster(log, scenario.Name(), cluster, clusterKubeClient, apiNodes, dc, kubeconfigFilename, cloudConfigFilename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to test cluster: %v", err)
@@ -580,6 +584,41 @@ func (r *testRunner) waitForControlPlane(log *logrus.Entry, clusterName string) 
 
 	log.Debugf("Control plane became ready after %.2f seconds", time.Since(started).Seconds())
 	return cluster.DeepCopy(), nil
+}
+
+func (r *testRunner) waitUntilAllPodsAreReady(log *logrus.Entry, client kubernetes.Interface) error {
+	log.Debug("Waiting for all pods to be ready...")
+	started := time.Now()
+
+	podIsReady := func(p *corev1.Pod) bool {
+		for _, c := range p.Status.Conditions {
+			if c.Type == corev1.PodReady && c.Status == corev1.ConditionTrue {
+				return true
+			}
+		}
+		return false
+	}
+
+	err := wait.Poll(defaultUserClusterPollInterval, defaultTimeout, func() (done bool, err error) {
+		podList, err := client.CoreV1().Pods(metav1.NamespaceAll).List(metav1.ListOptions{})
+		if err != nil {
+			log.Warnf("failed to load pod list while waiting until all pods are running: %v", err)
+			return false, nil
+		}
+
+		for _, pod := range podList.Items {
+			if !podIsReady(&pod) {
+				return false, nil
+			}
+		}
+		return true, nil
+	})
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("All pods became ready after %.2f seconds", time.Since(started).Seconds())
+	return nil
 }
 
 func (r *testRunner) runE2E(
