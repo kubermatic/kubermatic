@@ -518,7 +518,41 @@
           "project"
         ],
         "summary": "Patches the given cluster using JSON Merge Patch method (https://tools.ietf.org/html/rfc7396).",
-        "operationId": "newPatchCluster",
+        "operationId": "patchCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Patch",
+            "in": "body",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "uint8"
+              }
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Cluster",
@@ -2686,7 +2720,7 @@
           "x-go-name": "MachineNetworks"
         },
         "version": {
-          "description": "Version desired version of the kubernetes master components",
+          "description": "Version desired version of the kubernetes master components.",
           "type": "string",
           "x-go-name": "Version"
         }
@@ -3856,7 +3890,7 @@
     },
     "PublicAWSCloudSpec": {
       "type": "object",
-      "title": "PublicAWSCloudSpec is a public counterpart of kubermaticv1.AWSCloudSpec.",
+      "title": "PublicAWSCloudSpec is a public counterpart of apiv1.AWSCloudSpec.",
       "properties": {
         "availabilityZone": {
           "type": "string",
@@ -3891,7 +3925,7 @@
     },
     "PublicAzureCloudSpec": {
       "type": "object",
-      "title": "PublicAzureCloudSpec is a public counterpart of kubermaticv1.AzureCloudSpec.",
+      "title": "PublicAzureCloudSpec is a public counterpart of apiv1.AzureCloudSpec.",
       "properties": {
         "availabilitySet": {
           "type": "string",
@@ -3930,12 +3964,12 @@
     },
     "PublicBringYourOwnCloudSpec": {
       "type": "object",
-      "title": "PublicBringYourOwnCloudSpec is a public counterpart of kubermaticv1.BringYourOwnCloudSpec.",
+      "title": "PublicBringYourOwnCloudSpec is a public counterpart of apiv1.BringYourOwnCloudSpec.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "PublicCloudSpec": {
       "type": "object",
-      "title": "PublicCloudSpec is a public counterpart of kubermaticv1.CloudSpec.",
+      "title": "PublicCloudSpec is a public counterpart of apiv1.CloudSpec.",
       "properties": {
         "aws": {
           "$ref": "#/definitions/PublicAWSCloudSpec"
@@ -3970,22 +4004,22 @@
     },
     "PublicDigitaloceanCloudSpec": {
       "type": "object",
-      "title": "PublicDigitaloceanCloudSpec is a public counterpart of kubermaticv1.DigitaloceanCloudSpec.",
+      "title": "PublicDigitaloceanCloudSpec is a public counterpart of apiv1.DigitaloceanCloudSpec.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "PublicFakeCloudSpec": {
       "type": "object",
-      "title": "PublicFakeCloudSpec is a public counterpart of kubermaticv1.FakeCloudSpec.",
+      "title": "PublicFakeCloudSpec is a public counterpart of apiv1.FakeCloudSpec.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "PublicHetznerCloudSpec": {
       "type": "object",
-      "title": "PublicHetznerCloudSpec is a public counterpart of kubermaticv1.HetznerCloudSpec.",
+      "title": "PublicHetznerCloudSpec is a public counterpart of apiv1.HetznerCloudSpec.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "PublicOpenstackCloudSpec": {
       "type": "object",
-      "title": "PublicOpenstackCloudSpec is a public counterpart of kubermaticv1.OpenstackCloudSpec.",
+      "title": "PublicOpenstackCloudSpec is a public counterpart of apiv1.OpenstackCloudSpec.",
       "properties": {
         "domain": {
           "type": "string",
@@ -4020,7 +4054,7 @@
     },
     "PublicVSphereCloudSpec": {
       "type": "object",
-      "title": "PublicVSphereCloudSpec is a public counterpart of kubermaticv1.VSphereCloudSpec.",
+      "title": "PublicVSphereCloudSpec is a public counterpart of apiv1.VSphereCloudSpec.",
       "properties": {
         "vmNetName": {
           "type": "string",
