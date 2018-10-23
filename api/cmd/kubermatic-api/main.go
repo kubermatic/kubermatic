@@ -97,7 +97,7 @@ func main() {
 
 	defaultImpersonationClient := kubernetesprovider.NewKubermaticImpersonationClient(config)
 
-	sshKeyProvider := kubernetesprovider.NewRBACCompliantSSHKeyProvider(defaultImpersonationClient.CreateImpersonatedClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeies().Lister())
+	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultImpersonationClient.CreateImpersonatedClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeies().Lister())
 	userProvider := kubernetesprovider.NewUserProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister())
 	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultImpersonationClient.CreateImpersonatedClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().Projects().Lister())
 	if err != nil {
@@ -111,7 +111,7 @@ func main() {
 		glog.Fatal(err)
 	}
 
-	clusterProviders := map[string]provider.NewClusterProvider{}
+	clusterProviders := map[string]provider.ClusterProvider{}
 	for ctx := range clientcmdConfig.Contexts {
 		clientConfig := clientcmd.NewNonInteractiveClientConfig(
 			*clientcmdConfig,
@@ -134,7 +134,7 @@ func main() {
 
 		defaultImpersonationClientForSeed := kubernetesprovider.NewKubermaticImpersonationClient(cfg)
 
-		clusterProviders[ctx] = kubernetesprovider.NewRBACCompliantClusterProvider(
+		clusterProviders[ctx] = kubernetesprovider.NewClusterProvider(
 			defaultImpersonationClientForSeed.CreateImpersonatedClientSet,
 			client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
 			kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(),

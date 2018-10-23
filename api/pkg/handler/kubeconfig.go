@@ -12,10 +12,10 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-func newGetClusterKubeconfig(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func getClusterKubeconfig(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(NewGetClusterReq)
-		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+		req := request.(GetClusterReq)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
@@ -50,8 +50,8 @@ func encodeKubeconfig(c context.Context, w http.ResponseWriter, response interfa
 	return err
 }
 
-func newDecodeGetClusterKubeconfig(c context.Context, r *http.Request) (interface{}, error) {
-	req, err := newDecodeGetClusterReq(c, r)
+func decodeGetClusterKubeconfig(c context.Context, r *http.Request) (interface{}, error) {
+	req, err := decodeGetClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}

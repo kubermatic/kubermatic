@@ -14,10 +14,10 @@ import (
 func (r Routing) RegisterV1Alpha(mux *mux.Router) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics").
-		Handler(r.clusterMetricsHandler())
+		Handler(r.getClusterMetrics())
 }
 
-// swagger:route GET /api/v1alpha/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics project clusterMetricsHandler
+// swagger:route GET /api/v1alpha/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics project getClusterMetrics
 //
 //    Gets cluster metrics
 //
@@ -29,15 +29,15 @@ func (r Routing) RegisterV1Alpha(mux *mux.Router) {
 //       200: []ClusterMetric
 //       401: empty
 //       403: empty
-func (r Routing) clusterMetricsHandler() http.Handler {
+func (r Routing) getClusterMetrics() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.authenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.newDatacenterMiddleware(),
+			r.datacenterMiddleware(),
 			r.userInfoMiddleware(),
-		)(getClusterMetricsEndpoint(r.projectProvider, r.prometheusClient)),
-		decodeClusterReq,
+		)(getClusterMetrics(r.projectProvider, r.prometheusClient)),
+		decodeGetClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

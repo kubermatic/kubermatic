@@ -1,9 +1,8 @@
 package v2
 
-// Node is the object representing a cluster node.
-// swagger:model NodeV2
-type Node struct {
-	Metadata ObjectMeta `json:"metadata,omitempty"`
+// LegacyNode is the object representing a cluster node.
+type LegacyNode struct {
+	Metadata LegacyObjectMeta `json:"metadata,omitempty"`
 
 	// required: true
 	Spec   NodeSpec   `json:"spec"`

@@ -40,7 +40,7 @@ import (
 	fakeclusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset/fake"
 )
 
-func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *clientsSets, error) {
+func createTestEndpointAndGetClients(user apiv1.LegacyUser, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *clientsSets, error) {
 	datacenters := dc
 	if datacenters == nil {
 		datacenters = buildDatacenterMeta()
@@ -57,7 +57,7 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		return kubermaticClient.KubermaticV1(), nil
 	}
 
-	sshKeyProvider := kubernetes.NewRBACCompliantSSHKeyProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeies().Lister())
+	sshKeyProvider := kubernetes.NewSSHKeyProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeies().Lister())
 	userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister())
 	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister())
 	projectProvider, err := kubernetes.NewProjectProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Projects().Lister())
@@ -68,13 +68,13 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	fakeMachineClient := fakeclusterclientset.NewSimpleClientset(machineObjects...)
 	fUserClusterConnection := &fakeUserClusterConnection{fakeMachineClient, kubeClient}
 
-	clusterProvider := kubernetes.NewRBACCompliantClusterProvider(
+	clusterProvider := kubernetes.NewClusterProvider(
 		fakeImpersonationClient,
 		fUserClusterConnection,
 		kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(),
 		"",
 	)
-	clusterProviders := map[string]provider.NewClusterProvider{"us-central1": clusterProvider}
+	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
 
 	kubeInformerFactory.Start(wait.NeverStop)
 	kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
@@ -106,7 +106,7 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	return mainRouter, &clientsSets{kubermaticClient, fakeMachineClient}, nil
 }
 
-func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, error) {
+func createTestEndpoint(user apiv1.LegacyUser, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, error) {
 	router, _, err := createTestEndpointAndGetClients(user, nil, kubeObjects, nil, kubermaticObjects, versions, updates)
 	return router, err
 }
@@ -192,8 +192,8 @@ const (
 	testUserEmail = "john@acme.com"
 )
 
-func getUser(email, id, name string, admin bool) apiv1.User {
-	u := apiv1.User{
+func getUser(email, id, name string, admin bool) apiv1.LegacyUser {
+	u := apiv1.LegacyUser{
 		ID:    id,
 		Name:  name,
 		Email: email,
@@ -207,7 +207,7 @@ func getUser(email, id, name string, admin bool) apiv1.User {
 	return u
 }
 
-func apiUserToKubermaticUser(user apiv1.User) *kubermaticapiv1.User {
+func apiUserToKubermaticUser(user apiv1.LegacyUser) *kubermaticapiv1.User {
 	return &kubermaticapiv1.User{
 		ObjectMeta: metav1.ObjectMeta{},
 		Spec: kubermaticapiv1.UserSpec{
@@ -261,9 +261,9 @@ type clientsSets struct {
 	fakeMachineClient    *fakeclusterclientset.Clientset
 }
 
-// new>SSHKeyV1SliceWrapper wraps []apiv1.NewSSHKey
+// new>SSHKeyV1SliceWrapper wraps []apiv1.SSHKey
 // to provide convenient methods for tests
-type newSSHKeyV1SliceWrapper []apiv1.NewSSHKey
+type newSSHKeyV1SliceWrapper []apiv1.SSHKey
 
 // Sort sorts the collection by CreationTimestamp
 func (k newSSHKeyV1SliceWrapper) Sort() {
@@ -291,9 +291,9 @@ func (k newSSHKeyV1SliceWrapper) EqualOrDie(expected newSSHKeyV1SliceWrapper, t 
 	}
 }
 
-// newClusterV1SliceWrapper wraps []apiv1.NewCluster
+// newClusterV1SliceWrapper wraps []apiv1.Cluster
 // to provide convenient methods for tests
-type newClusterV1SliceWrapper []apiv1.NewCluster
+type newClusterV1SliceWrapper []apiv1.Cluster
 
 // Sort sorts the collection by CreationTimestamp
 func (k newClusterV1SliceWrapper) Sort() {
@@ -381,9 +381,9 @@ func (k projectV1SliceWrapper) EqualOrDie(expected projectV1SliceWrapper, t *tes
 	}
 }
 
-// newUserV1SliceWrapper wraps []apiv1.NewUser
+// newUserV1SliceWrapper wraps []apiv1.User
 // to provide convenient methods for tests
-type newUserV1SliceWrapper []apiv1.NewUser
+type newUserV1SliceWrapper []apiv1.User
 
 // Sort sorts the collection by CreationTimestamp
 func (k newUserV1SliceWrapper) Sort() {

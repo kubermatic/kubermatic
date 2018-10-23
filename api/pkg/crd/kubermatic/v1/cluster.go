@@ -259,36 +259,6 @@ func UpdateCloudSpec(updatedShared, existingShared CloudSpec) CloudSpec {
 	return *updated
 }
 
-// RemoveSensitiveDataFromCloudSpec remove credentials from cloud providers
-func RemoveSensitiveDataFromCloudSpec(spec CloudSpec) CloudSpec {
-	if spec.Digitalocean != nil {
-		spec.Digitalocean.Token = ""
-	}
-	if spec.AWS != nil {
-		spec.AWS.AccessKeyID = ""
-		spec.AWS.SecretAccessKey = ""
-	}
-	if spec.Azure != nil {
-		spec.Azure.ClientID = ""
-		spec.Azure.ClientSecret = ""
-	}
-	if spec.Openstack != nil {
-		spec.Openstack.Username = ""
-		spec.Openstack.Password = ""
-	}
-	if spec.Hetzner != nil {
-		spec.Hetzner.Token = ""
-	}
-	if spec.VSphere != nil {
-		spec.VSphere.Username = ""
-		spec.VSphere.Password = ""
-		spec.VSphere.InfraManagementUser.Username = ""
-		spec.VSphere.InfraManagementUser.Password = ""
-	}
-
-	return spec
-}
-
 // ClusterHealth stores health information of a cluster and the timestamp of the last change.
 type ClusterHealth struct {
 	ClusterHealthStatus `json:",inline"`
