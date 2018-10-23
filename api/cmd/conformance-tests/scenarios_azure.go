@@ -81,11 +81,11 @@ func (s *azureScenario) Cluster(secrets secrets) *v1.Cluster {
 	}
 }
 
-func (s *azureScenario) Nodes(num int) []*kubermaticapiv2.Node {
-	var nodes []*kubermaticapiv2.Node
+func (s *azureScenario) Nodes(num int) []*kubermaticapiv2.LegacyNode {
+	var nodes []*kubermaticapiv2.LegacyNode
 	for i := 0; i < num; i++ {
-		node := &kubermaticapiv2.Node{
-			Metadata: kubermaticapiv2.ObjectMeta{},
+		node := &kubermaticapiv2.LegacyNode{
+			Metadata: kubermaticapiv2.LegacyObjectMeta{},
 			Spec: kubermaticapiv2.NodeSpec{
 				Cloud: kubermaticapiv2.NodeCloudSpec{
 					Azure: &kubermaticapiv2.AzureNodeSpec{

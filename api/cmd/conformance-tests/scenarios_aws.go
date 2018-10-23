@@ -90,7 +90,6 @@ func (s *awsScenario) Nodes(num int) []*kubermaticapiv1.Node {
 						InstanceType: "t2.medium",
 						VolumeType:   "gp2",
 						VolumeSize:   100,
-						AMI:          ami,
 					},
 				},
 				Versions: kubermaticapiv1.NodeVersionInfo{
