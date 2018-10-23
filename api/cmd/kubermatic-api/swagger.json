@@ -3118,6 +3118,25 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "LegacyNode": {
+      "type": "object",
+      "title": "LegacyNode is the object representing a cluster node.",
+      "required": [
+        "spec"
+      ],
+      "properties": {
+        "metadata": {
+          "$ref": "#/definitions/LegacyObjectMeta"
+        },
+        "spec": {
+          "$ref": "#/definitions/NodeSpecV2"
+        },
+        "status": {
+          "$ref": "#/definitions/NodeStatusV2"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+    },
     "LegacyObjectMeta": {
       "description": "Deprecated: LegacyObjectMeta is deprecated use ObjectMeta instead.",
       "type": "object",
@@ -3281,9 +3300,6 @@
     "Node": {
       "description": "Node represents a worker node that is part of a cluster",
       "type": "object",
-      "required": [
-        "spec"
-      ],
       "properties": {
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",

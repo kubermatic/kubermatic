@@ -563,7 +563,7 @@ func TestLoadFiles(t *testing.T) {
 
 type Data struct {
 	Cluster    *kubermaticv1.Cluster
-	Node       *apiv2.Node
+	Node       *apiv2.LegacyNode
 	Datacenter provider.DatacenterMeta
 	Name       string
 	Keys       []*kubermaticv1.UserSSHKey
@@ -593,8 +593,8 @@ func TestExecute(t *testing.T) {
 						},
 					},
 				},
-				Node: &apiv2.Node{
-					Metadata: apiv2.ObjectMeta{
+				Node: &apiv2.LegacyNode{
+					Metadata: apiv2.LegacyObjectMeta{
 						Name: "docluster-1a2b3c4d5e-te5s7",
 					},
 					Spec: apiv2.NodeSpec{
@@ -674,8 +674,8 @@ func TestExecute(t *testing.T) {
 						},
 					},
 				},
-				Node: &apiv2.Node{
-					Metadata: apiv2.ObjectMeta{
+				Node: &apiv2.LegacyNode{
+					Metadata: apiv2.LegacyObjectMeta{
 						Name: "awscluster-1a2b3c4d5e-te5s7",
 					},
 					Spec: apiv2.NodeSpec{
@@ -768,8 +768,8 @@ func TestExecute(t *testing.T) {
 						},
 					},
 				},
-				Node: &apiv2.Node{
-					Metadata: apiv2.ObjectMeta{
+				Node: &apiv2.LegacyNode{
+					Metadata: apiv2.LegacyObjectMeta{
 						Name: "openstackcluster-1a2b3c4d5e-te5s7",
 					},
 					Spec: apiv2.NodeSpec{
@@ -849,8 +849,8 @@ func TestExecute(t *testing.T) {
 						},
 					},
 				},
-				Node: &apiv2.Node{
-					Metadata: apiv2.ObjectMeta{
+				Node: &apiv2.LegacyNode{
+					Metadata: apiv2.LegacyObjectMeta{
 						Name: "azurecluster-1a2b3c4d5e-te5s7",
 					},
 					Spec: apiv2.NodeSpec{
@@ -919,8 +919,8 @@ func TestExecute(t *testing.T) {
 						},
 					},
 				},
-				Node: &apiv2.Node{
-					Metadata: apiv2.ObjectMeta{
+				Node: &apiv2.LegacyNode{
+					Metadata: apiv2.LegacyObjectMeta{
 						Name: "hetznercluster-1a2b3c4d5e-te5s7",
 					},
 					Spec: apiv2.NodeSpec{
@@ -987,8 +987,8 @@ func TestExecute(t *testing.T) {
 						},
 					},
 				},
-				Node: &apiv2.Node{
-					Metadata: apiv2.ObjectMeta{
+				Node: &apiv2.LegacyNode{
+					Metadata: apiv2.LegacyObjectMeta{
 						Name: "vsphere-1a2b3c4d5e-te5s7",
 					},
 					Spec: apiv2.NodeSpec{

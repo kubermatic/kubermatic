@@ -321,12 +321,12 @@ type Node struct {
 
 	// TODO: normally referring to a field that is defined in v2 is bad, if you are doing this please stop
 	// TODO: I did this only because I know that we are working on the user management
-	// TODO: and once we have it then we will remove apiv2.Node struct.
+	// TODO: and once we have it then we will remove apiv2.LegacyNode struct.
 	Spec apiv2.NodeSpec `json:"spec"`
 
 	// TODO: normally referring to a field that is defined in v2 is bad, if you are doing this please stop
 	// TODO: I did this only because I know that we are working on the user management
-	// TODO: and once we have it then we will remove apiv2.Node struct.
+	// TODO: and once we have it then we will remove apiv2.LegacyNode struct.
 	Status apiv2.NodeStatus `json:"status"`
 }
 
