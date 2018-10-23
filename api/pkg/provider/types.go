@@ -71,9 +71,9 @@ type ProjectGetOptions struct {
 	IncludeUninitialized bool
 }
 
-// NewClusterProvider declares the set of methods for interacting with clusters
+// ClusterProvider declares the set of methods for interacting with clusters
 // This provider is Project and RBAC compliant
-type NewClusterProvider interface {
+type ClusterProvider interface {
 	// New creates a brand new cluster that is bound to the given project
 	New(project *kubermaticv1.Project, userInfo *UserInfo, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error)
 
@@ -114,9 +114,9 @@ type SSHKeyListOptions struct {
 	ClusterName string
 }
 
-// NewSSHKeyProvider declares the set of methods for interacting with ssh keys
+// SSHKeyProvider declares the set of methods for interacting with ssh keys
 // This provider is Project and RBAC compliant
-type NewSSHKeyProvider interface {
+type SSHKeyProvider interface {
 	// List gets a list of ssh keys, by default it will get all the keys that belong to the given project.
 	// If you want to filter the result please take a look at SSHKeyListOptions
 	//

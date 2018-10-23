@@ -13,7 +13,7 @@ import (
 
 func getClusterUpgrades(updateManager UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
 
 		req, ok := request.(GetClusterReq)

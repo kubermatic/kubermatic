@@ -28,7 +28,7 @@ func vsphereNetworksNoCredentialsEndpoint(projectProvider provider.ProjectProvid
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(VSphereNetworksNoCredentialsReq)
 		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
-		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
