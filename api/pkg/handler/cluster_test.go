@@ -787,7 +787,7 @@ func TestPatchCluster(t *testing.T) {
 		HTTPStatus                int
 		cluster                   string
 		project                   string
-		ExistingAPIUser           *apiv1.User
+		ExistingAPIUser           *apiv1.LegacyUser
 		ExistingKubermaticObjects []runtime.Object
 	}{
 		// scenario 1

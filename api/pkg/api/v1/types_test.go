@@ -16,11 +16,11 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 
 	cases := []struct {
 		name    string
-		cluster NewClusterSpec
+		cluster ClusterSpec
 	}{
 		{
 			"case 1: filter username and password from OpenStack",
-			NewClusterSpec{
+			ClusterSpec{
 				Version: "1.2.3",
 				Cloud: kubermaticv1.CloudSpec{
 					DatacenterName: "OpenstackDatacenter",
@@ -40,7 +40,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		},
 		{
 			"case 2: client ID and client secret from Azure",
-			NewClusterSpec{
+			ClusterSpec{
 				Version: "1.2.3",
 				Cloud: kubermaticv1.CloudSpec{
 					Azure: &kubermaticv1.AzureCloudSpec{
@@ -60,7 +60,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		},
 		{
 			"case 3: filter token from Hetzner",
-			NewClusterSpec{
+			ClusterSpec{
 				Version: "1.2.3",
 				Cloud: kubermaticv1.CloudSpec{
 					Hetzner: &kubermaticv1.HetznerCloudSpec{
@@ -71,7 +71,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		},
 		{
 			"case 4: filter token from DigitalOcean",
-			NewClusterSpec{
+			ClusterSpec{
 				Version: "1.2.3",
 				Cloud: kubermaticv1.CloudSpec{
 					Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
@@ -82,7 +82,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		},
 		{
 			"case 5: filter usernames and passwords from VSphere",
-			NewClusterSpec{
+			ClusterSpec{
 				Version: "1.2.3",
 				Cloud: kubermaticv1.CloudSpec{
 					VSphere: &kubermaticv1.VSphereCloudSpec{
@@ -99,7 +99,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		},
 		{
 			"case 6: filter access key ID and secret access key from AWS",
-			NewClusterSpec{
+			ClusterSpec{
 				Version: "1.2.3",
 				Cloud: kubermaticv1.CloudSpec{
 					AWS: &kubermaticv1.AWSCloudSpec{
@@ -129,7 +129,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 				t.Errorf("output JSON: %s should not contain: %s", jsonString, valueToBeFiltered)
 			}
 
-			var jsonObject NewClusterSpec
+			var jsonObject ClusterSpec
 			if err := json.Unmarshal(jsonByteArray, &jsonObject); err != nil {
 				t.Errorf("failed to unmarshal due to an error: %s", err)
 			}

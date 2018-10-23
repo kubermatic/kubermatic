@@ -116,7 +116,7 @@ func updateCluster(cloudProviders map[string]provider.CloudProvider, projectProv
 func patchCluster(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchClusterReq)
-		clusterProvider := ctx.Value(newClusterProviderContextKey).(provider.NewClusterProvider)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
@@ -627,7 +627,7 @@ func decodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, er
 }
 
 // PatchClusterReq defines HTTP request for patchCluster endpoint
-// swagger:parameters patchClusterReq
+// swagger:parameters patchCluster
 type PatchClusterReq struct {
 	GetClusterReq
 

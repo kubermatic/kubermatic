@@ -294,7 +294,7 @@ type ClusterSpec struct {
 
 // MarshalJSON marshals NewClusterSpec object into JSON. It is overwritten to control data
 // that will be returned in the API responses (see: PublicCloudSpec struct).
-func (cs *NewClusterSpec) MarshalJSON() ([]byte, error) {
+func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 	ret, err := json.Marshal(struct {
 		Cloud           PublicCloudSpec                        `json:"cloud"`
 		MachineNetworks []kubermaticv1.MachineNetworkingConfig `json:"machineNetworks,omitempty"`
