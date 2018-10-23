@@ -126,7 +126,10 @@ func (p Provider) UserData(
 }
 
 const ctTemplate = `#cloud-config
+{{ if ne .CloudProvider "aws" }}
 hostname: {{ .MachineSpec.Name }}
+# Never set the hostname on AWS nodes. Kubernetes(kube-proxy) requires the hostname to be the private dns name
+{{ end }}
 
 {{- if .OSConfig.DistUpgradeOnBoot }}
 package_upgrade: true
@@ -181,9 +184,11 @@ write_files:
     systemctl restart systemd-modules-load.service
     sysctl --system
 
+    {{ if ne .CloudProvider "aws" }} 
     # The normal way of setting it via cloud-init is broken:
     # https://bugs.launchpad.net/cloud-init/+bug/1662542
     hostnamectl set-hostname {{ .MachineSpec.Name }}
+    {{ end }}
 
     yum install -y docker-1.13.1 \
       ebtables \

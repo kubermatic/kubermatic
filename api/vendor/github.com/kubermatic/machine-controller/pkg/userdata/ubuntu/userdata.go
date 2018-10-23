@@ -128,7 +128,10 @@ func (p Provider) UserData(
 }
 
 const ctTemplate = `#cloud-config
+{{ if ne .CloudProvider "aws" }}
 hostname: {{ .MachineSpec.Name }}
+# Never set the hostname on AWS nodes. Kubernetes(kube-proxy) requires the hostname to be the private dns name
+{{ end }}
 
 ssh_pwauth: no
 
