@@ -3511,50 +3511,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "ObjectMetaV2": {
-      "type": "object",
-      "title": "ObjectMeta is an object storing common metadata for persistable objects.",
-      "properties": {
-        "annotations": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "x-go-name": "Annotations"
-        },
-        "creationTimestamp": {
-          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-name": "CreationTimestamp"
-        },
-        "deletionTimestamp": {
-          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-name": "DeletionTimestamp"
-        },
-        "displayName": {
-          "description": "The name to display in the frontend",
-          "type": "string",
-          "x-go-name": "DisplayName"
-        },
-        "labels": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "x-go-name": "Labels"
-        },
-        "name": {
-          "description": "The unique name",
-          "type": "string",
-          "x-go-name": "Name"
-        }
-      },
-      "x-go-name": "ObjectMeta",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v2"
-    },
     "OpenstackCloudSpec": {
       "type": "object",
       "title": "OpenstackCloudSpec specifies access data to an openstack cloud.",

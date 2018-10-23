@@ -3,7 +3,6 @@ package v2
 import "time"
 
 // ObjectMeta is an object storing common metadata for persistable objects.
-// swagger:model ObjectMetaV2
 type ObjectMeta struct {
 	// The unique name
 	Name string `json:"name"`
