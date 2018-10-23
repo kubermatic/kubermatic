@@ -731,7 +731,7 @@
   revision = "7cafcd837844e784b526369c9bce262804aebc60"
 
 [[projects]]
-  digest = "1:5243f403b0b75b1b198378fa2348596ae5597ea12f739319e6369875017e434f"
+  digest = "1:89144d8a2304114af44eb47a03a290af7ff9a6e09661469e635f7dd6abc87f09"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/cloudprovider/cloud",
@@ -744,6 +744,7 @@
     "pkg/cloudprovider/provider/hetzner",
     "pkg/cloudprovider/provider/openstack",
     "pkg/cloudprovider/provider/vsphere",
+    "pkg/ini",
     "pkg/kubernetes",
     "pkg/node/eviction",
     "pkg/providerconfig",
@@ -754,8 +755,8 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "85f88d885560fea5c0cce4c1a01a6e057368bf4c"
-  version = "v0.9.6"
+  revision = "f71c64290ec88b73849f7bae3fc2bf0d9d903bba"
+  version = "v0.9.7"
 
 [[projects]]
   digest = "1:11813b67edacc2bd17ed90ee8fd80dcc9c8551cf7b0e809a584c52e5bdafb5d3"
@@ -1244,14 +1245,6 @@
   pruneopts = "NUT"
   revision = "3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4"
   version = "v0.9.0"
-
-[[projects]]
-  digest = "1:74d9b0a7b4107b41e0ade759fac64502876f82d29fb23d77b3dd24b194ee3dd5"
-  name = "gopkg.in/ini.v1"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "5cf292cae48347c2490ac1a58fe36735fb78df7e"
-  version = "v1.38.2"
 
 [[projects]]
   branch = "v2"
