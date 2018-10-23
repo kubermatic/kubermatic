@@ -10,7 +10,6 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
@@ -183,7 +182,6 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster) err
 func GetUserClusterRoleCreators(c *kubermaticv1.Cluster) []resources.ClusterRoleCreator {
 	creators := []resources.ClusterRoleCreator{
 		machinecontroller.ClusterRole,
-		kubestatemetrics.ClusterRole,
 		vpnsidecar.DnatControllerClusterRole,
 	}
 
@@ -250,7 +248,6 @@ func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.Clus
 		machinecontroller.ClusterRoleBinding,
 		machinecontroller.NodeBootstrapperClusterRoleBinding,
 		machinecontroller.NodeSignerClusterRoleBinding,
-		kubestatemetrics.ClusterRoleBinding,
 		vpnsidecar.DnatControllerClusterRoleBinding,
 	}
 
@@ -317,18 +314,18 @@ func (cc *Controller) userClusterEnsureConfigMaps(c *kubermaticv1.Cluster) error
 		return err
 	}
 
-	creators := []resources.ConfigMapCreator{
-		openvpn.ClientConfigConfigMap,
-	}
-
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
 		return err
 	}
 
+	creators := []resources.ConfigMapCreator{
+		openvpn.ClientConfigConfigMapCreator(data),
+	}
+
 	for _, create := range creators {
 		var existing *corev1.ConfigMap
-		cm, err := create(data, nil)
+		cm, err := create(nil)
 		if err != nil {
 			return fmt.Errorf("failed to build ConfigMap: %v", err)
 		}
@@ -345,7 +342,7 @@ func (cc *Controller) userClusterEnsureConfigMaps(c *kubermaticv1.Cluster) error
 			continue
 		}
 
-		cm, err = create(data, existing.DeepCopy())
+		cm, err = create(existing.DeepCopy())
 		if err != nil {
 			return fmt.Errorf("failed to build ConfigMap: %v", err)
 		}

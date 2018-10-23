@@ -459,6 +459,7 @@ func TestLoadFiles(t *testing.T) {
 					"192.0.2.0/24",
 					resource.MustParse("5Gi"),
 					tmpFilePath,
+					"",
 					false,
 					false,
 					tmpFilePath,
@@ -487,8 +488,8 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				for _, create := range clustercontroller.GetConfigMapCreators() {
-					res, err := create(data, nil)
+				for _, create := range clustercontroller.GetConfigMapCreators(data) {
+					res, err := create(nil)
 					if err != nil {
 						t.Fatalf("failed to create ConfigMap: %v", err)
 					}

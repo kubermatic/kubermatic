@@ -38,8 +38,8 @@ import (
 	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 )
 
-// UserClusterConnectionProvider offers functions to retrieve clients for the given user clusters
-type UserClusterConnectionProvider interface {
+// userClusterConnectionProvider offers functions to retrieve clients for the given user clusters
+type userClusterConnectionProvider interface {
 	GetClient(*kubermaticv1.Cluster) (kubernetes.Interface, error)
 	GetMachineClient(*kubermaticv1.Cluster) (clusterv1alpha1clientset.Interface, error)
 	GetApiextensionsClient(*kubermaticv1.Cluster) (apiextensionsclientset.Interface, error)
@@ -49,7 +49,7 @@ type UserClusterConnectionProvider interface {
 type Controller struct {
 	kubermaticClient        kubermaticclientset.Interface
 	kubeClient              kubernetes.Interface
-	userClusterConnProvider UserClusterConnectionProvider
+	userClusterConnProvider userClusterConnectionProvider
 
 	externalURL string
 	dcs         map[string]provider.DatacenterMeta
@@ -66,6 +66,7 @@ type Controller struct {
 	inClusterPrometheusDisableDefaultRules           bool
 	inClusterPrometheusDisableDefaultScrapingConfigs bool
 	inClusterPrometheusScrapingConfigsFile           string
+	monitoringScrapeAnnotationPrefix                 string
 	dockerPullConfigJSON                             []byte
 
 	clusterLister             kubermaticv1lister.ClusterLister
@@ -93,11 +94,12 @@ func NewController(
 	dc string,
 	dcs map[string]provider.DatacenterMeta,
 	cps map[string]provider.CloudProvider,
-	userClusterConnProvider UserClusterConnectionProvider,
+	userClusterConnProvider userClusterConnectionProvider,
 	overwriteRegistry string,
 	nodePortRange string,
 	nodeAccessNetwork string,
 	etcdDiskSize string,
+	monitoringScrapeAnnotationPrefix string,
 	inClusterPrometheusRulesFile string,
 	inClusterPrometheusDisableDefaultRules bool,
 	inClusterPrometheusDisableDefaultScrapingConfigs bool,
@@ -134,6 +136,7 @@ func NewController(
 		inClusterPrometheusDisableDefaultRules: inClusterPrometheusDisableDefaultRules,
 		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
 		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
+		monitoringScrapeAnnotationPrefix:                 monitoringScrapeAnnotationPrefix,
 		dockerPullConfigJSON:                             dockerPullConfigJSON,
 
 		externalURL: externalURL,

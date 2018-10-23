@@ -13,6 +13,7 @@ import (
 
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/monitoring"
 	clusterv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -157,7 +158,11 @@ func getImagesForVersion(versions []*version.MasterVersion, requestedVersion str
 
 func getImagesFromCreators(templateData *resources.TemplateData) (images []string, err error) {
 	statefulsetCreators := cluster.GetStatefulSetCreators()
+	statefulsetCreators = append(statefulsetCreators, monitoring.GetStatefulSetCreators()...)
+
 	deploymentCreators := cluster.GetDeploymentCreators(nil)
+	deploymentCreators = append(deploymentCreators, monitoring.GetDeploymentCreators(nil)...)
+
 	cronjobCreators := cluster.GetCronJobCreators()
 
 	for _, createFunc := range statefulsetCreators {
@@ -311,6 +316,7 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		resources.OpenVPNClientCertificatesSecretName,
 		resources.FrontProxyCASecretName,
 		resources.KubeletDnatControllerKubeconfigSecretName,
+		resources.PrometheusApiserverClientCertificateSecretName,
 	})
 	objects := []runtime.Object{configMapList, secretList, serviceList}
 	client := kubefake.NewSimpleClientset(objects...)
@@ -346,6 +352,7 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		"",
 		"192.0.2.0/24",
 		resource.Quantity{},
+		"",
 		"",
 		false,
 		false,

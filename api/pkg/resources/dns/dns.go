@@ -173,24 +173,25 @@ func getVolumes() []corev1.Volume {
 	}
 }
 
-// ConfigMap returns a ConfigMap containing the cloud-config for the supplied data
-func ConfigMap(data resources.ConfigMapDataProvider, existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-	cm := existing
-	if cm == nil {
-		cm = &corev1.ConfigMap{}
-	}
-	if cm.Data == nil {
-		cm.Data = map[string]string{}
-	}
+// ConfigMapCreator returns a ConfigMap containing the cloud-config for the supplied data
+func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapCreator {
+	return func(existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+		cm := existing
+		if cm == nil {
+			cm = &corev1.ConfigMap{}
+		}
+		if cm.Data == nil {
+			cm.Data = map[string]string{}
+		}
 
-	dnsIP, err := resources.UserClusterDNSResolverIP(data.Cluster())
-	if err != nil {
-		return nil, err
-	}
-	cm.Name = resources.DNSResolverConfigMapName
-	cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	seedClusterNamespaceDNS := fmt.Sprintf("%s.svc.cluster.local.", data.Cluster().Status.NamespaceName)
-	cm.Data["Corefile"] = fmt.Sprintf(`
+		dnsIP, err := resources.UserClusterDNSResolverIP(data.Cluster())
+		if err != nil {
+			return nil, err
+		}
+		cm.Name = resources.DNSResolverConfigMapName
+		cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+		seedClusterNamespaceDNS := fmt.Sprintf("%s.svc.cluster.local.", data.Cluster().Status.NamespaceName)
+		cm.Data["Corefile"] = fmt.Sprintf(`
 %s {
     forward . /etc/resolv.conf
     errors
@@ -206,5 +207,6 @@ func ConfigMap(data resources.ConfigMapDataProvider, existing *corev1.ConfigMap)
 }
 `, seedClusterNamespaceDNS, data.Cluster().Spec.ClusterNetwork.DNSDomain, dnsIP)
 
-	return cm, nil
+		return cm, nil
+	}
 }

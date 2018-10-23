@@ -14,6 +14,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/addoninstaller"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/monitoring"
 	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/update"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
@@ -33,6 +34,7 @@ var allControllers = map[string]controllerCreator{
 	"Addon":          createAddonController,
 	"AddonInstaller": createAddonInstallerController,
 	"Backup":         createBackupController,
+	"Monitoring":     createMonitoringController,
 }
 
 type controllerCreator func(*controllerContext) (runner, error)
@@ -106,6 +108,7 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.nodePortRange,
 		ctrlCtx.runOptions.nodeAccessNetwork,
 		ctrlCtx.runOptions.etcdDiskSize,
+		ctrlCtx.runOptions.monitoringScrapeAnnotationPrefix,
 		ctrlCtx.runOptions.inClusterPrometheusRulesFile,
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultRules,
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultScrapingConfigs,
@@ -154,6 +157,48 @@ func createBackupController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 		ctrlCtx.kubeInformerFactory.Batch().V1beta1().CronJobs(),
 		ctrlCtx.kubeInformerFactory.Batch().V1().Jobs(),
+		ctrlCtx.kubeInformerFactory.Core().V1().Secrets(),
+		ctrlCtx.kubeInformerFactory.Core().V1().Services(),
+	)
+}
+
+func createMonitoringController(ctrlCtx *controllerContext) (runner, error) {
+	dcs, err := provider.LoadDatacentersMeta(ctrlCtx.runOptions.dcFile)
+	if err != nil {
+		return nil, err
+	}
+
+	dockerPullConfigJSON, err := ioutil.ReadFile(ctrlCtx.runOptions.dockerPullConfigJSONFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load ImagePullSecret from %s: %v", ctrlCtx.runOptions.dockerPullConfigJSONFile, err)
+	}
+
+	return monitoring.New(
+		ctrlCtx.kubeClient,
+		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
+
+		ctrlCtx.runOptions.dc,
+		dcs,
+		ctrlCtx.runOptions.overwriteRegistry,
+		ctrlCtx.runOptions.nodePortRange,
+		ctrlCtx.runOptions.nodeAccessNetwork,
+		ctrlCtx.runOptions.etcdDiskSize,
+		ctrlCtx.runOptions.monitoringScrapeAnnotationPrefix,
+		ctrlCtx.runOptions.inClusterPrometheusRulesFile,
+		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultRules,
+		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultScrapingConfigs,
+		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
+		dockerPullConfigJSON,
+
+		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
+		ctrlCtx.kubeInformerFactory.Core().V1().ServiceAccounts(),
+		ctrlCtx.kubeInformerFactory.Core().V1().ConfigMaps(),
+		ctrlCtx.kubeInformerFactory.Rbac().V1().Roles(),
+		ctrlCtx.kubeInformerFactory.Rbac().V1().RoleBindings(),
+		ctrlCtx.kubeInformerFactory.Core().V1().Services(),
+		ctrlCtx.kubeInformerFactory.Apps().V1().StatefulSets(),
+		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
+		ctrlCtx.kubeInformerFactory.Apps().V1().Deployments(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Secrets(),
 	)
 }

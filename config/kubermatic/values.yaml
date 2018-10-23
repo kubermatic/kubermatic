@@ -17,6 +17,8 @@ kubermatic:
   domain: ""
   # base64 encoded kubeconfig which gives admin access to all seed clusters
   kubeconfig: ""
+  # The prefix for monitoring annotations in the user cluster. Default: monitoring.kubermatic.io -> monitoring.kubermatic.io/scrape, monitoring.kubermatic.io/path
+  monitoringScrapeAnnotationPrefix: ""
   etcd:
     # PV size for the etcd StatefulSet of new clusters
     diskSize: "5Gi"
