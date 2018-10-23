@@ -1,36 +1,3 @@
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: s3-exporter
-  namespace: kube-system
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: kubermatic:s3exporter:clusters:reader
-rules:
-- apiGroups:
-  - kubermatic.k8s.io
-  resources:
-  - clusters
-  verbs:
-  - get
-  - watch
-  - list
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: kubermatic:s3exporter:clusters:reader
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: kubermatic:s3exporter:clusters:reader
-subjects:
-- kind: ServiceAccount
-  name: s3-exporter
-  namespace: kube-system
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -52,7 +19,7 @@ spec:
       serviceAccount: s3-exporter
       containers:
         - name: s3-exporter
-          image: '{{.Values.kubermatic.s3_exporter.image.repository}}:{{.Values.kubermatic.s3_exporter.image.tag}}'
+          image: '{{ .Values.s3Exporter.image.repository }}:{{ .Values.s3Exporter.image.tag }}'
           env:
           - name: ACCESS_KEY_ID
             valueFrom:
@@ -69,7 +36,7 @@ spec:
           args:
             - -v=4
             - -logtostderr
-            - -endpoint={{.Values.kubermatic.s3_exporter.endpoint}}
+            - -endpoint={{ .Values.s3Exporter.endpoint }}
             - -access-key-id=$(ACCESS_KEY_ID)
             - -secret-access-key=$(SECRET_ACCESS_KEY)
-            - -bucket={{.Values.kubermatic.s3_exporter.bucket}}
+            - -bucket={{ .Values.s3Exporter.bucket }}
