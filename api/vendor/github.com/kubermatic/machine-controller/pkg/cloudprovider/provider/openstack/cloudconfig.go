@@ -3,16 +3,30 @@ package openstack
 import (
 	"bytes"
 	"fmt"
-	"strconv"
-	"strings"
+	"text/template"
 
-	"gopkg.in/ini.v1"
+	"github.com/kubermatic/machine-controller/pkg/ini"
+
+	"github.com/Masterminds/sprig"
 )
 
-// Allowed escaping characters by gopkg.in/gcfg.v1 - the lib kubernetes uses
-var escaper = strings.NewReplacer(
-	`\`, `\\`,
-	`"`, `\"`,
+const (
+	cloudConfigTpl = `[Global]
+auth-url    = {{ .Global.AuthURL | iniEscape }}
+username    = {{ .Global.Username | iniEscape }}
+password    = {{ .Global.Password | iniEscape }}
+tenant-name = {{ .Global.TenantName | iniEscape }}
+domain-name = {{ .Global.DomainName | iniEscape }}
+region      = {{ .Global.Region | iniEscape }}
+
+[LoadBalancer]
+manage-security-groups = {{ .LoadBalancer.ManageSecurityGroups }}
+
+[BlockStorage]
+ignore-volume-az  = {{ .BlockStorage.IgnoreVolumeAZ }}
+trust-device-path = {{ .BlockStorage.TrustDevicePath }}
+bs-version        = {{ .BlockStorage.BSVersion | iniEscape }}
+`
 )
 
 type LoadBalancerOpts struct {
@@ -42,59 +56,18 @@ type CloudConfig struct {
 }
 
 func CloudConfigToString(c *CloudConfig) (string, error) {
-	cfg := ini.Empty()
+	funcMap := sprig.TxtFuncMap()
+	funcMap["iniEscape"] = ini.Escape
 
-	// Global
-	gsec, err := cfg.NewSection("Global")
+	tpl, err := template.New("cloud-config").Funcs(funcMap).Parse(cloudConfigTpl)
 	if err != nil {
-		return "", fmt.Errorf("failed to create the global section in ini: %v", err)
-	}
-	if _, err := gsec.NewKey("auth-url", escaper.Replace(c.Global.AuthURL)); err != nil {
-		return "", fmt.Errorf("failed to write global.auth-url: %v", err)
-	}
-	if _, err := gsec.NewKey("username", escaper.Replace(c.Global.Username)); err != nil {
-		return "", fmt.Errorf("failed to write global.username: %v", err)
-	}
-	if _, err := gsec.NewKey("password", escaper.Replace(c.Global.Password)); err != nil {
-		return "", fmt.Errorf("failed to write global.password: %v", err)
-	}
-	if _, err := gsec.NewKey("tenant-name", escaper.Replace(c.Global.TenantName)); err != nil {
-		return "", fmt.Errorf("failed to write global.tenant-name: %v", err)
-	}
-	if _, err := gsec.NewKey("domain-name", escaper.Replace(c.Global.DomainName)); err != nil {
-		return "", fmt.Errorf("failed to write global.domain-name: %v", err)
-	}
-	if _, err := gsec.NewKey("region", escaper.Replace(c.Global.Region)); err != nil {
-		return "", fmt.Errorf("failed to write global.region: %v", err)
+		return "", fmt.Errorf("failed to parse the cloud config template: %v", err)
 	}
 
-	// LoadBalancer
-	lbsec, err := cfg.NewSection("LoadBalancer")
-	if err != nil {
-		return "", fmt.Errorf("failed to create the LoadBalancer section in ini: %v", err)
-	}
-	if _, err := lbsec.NewKey("manage-security-groups", strconv.FormatBool(c.LoadBalancer.ManageSecurityGroups)); err != nil {
-		return "", fmt.Errorf("failed to write LoadBalancer.manage-security-groups: %v", err)
+	buf := &bytes.Buffer{}
+	if err := tpl.Execute(buf, c); err != nil {
+		return "", fmt.Errorf("failed to execute cloud config template: %v", err)
 	}
 
-	// BlockStorage
-	bssec, err := cfg.NewSection("BlockStorage")
-	if err != nil {
-		return "", fmt.Errorf("failed to create the BlockStorage section in ini: %v", err)
-	}
-	if _, err := bssec.NewKey("ignore-volume-az", strconv.FormatBool(c.BlockStorage.IgnoreVolumeAZ)); err != nil {
-		return "", fmt.Errorf("failed to write BlockStorage.ignore-volume-az: %v", err)
-	}
-	if _, err := bssec.NewKey("trust-device-path", strconv.FormatBool(c.BlockStorage.TrustDevicePath)); err != nil {
-		return "", fmt.Errorf("failed to write BlockStorage.trust-device-path: %v", err)
-	}
-	if _, err := bssec.NewKey("bs-version", c.BlockStorage.BSVersion); err != nil {
-		return "", fmt.Errorf("failed to write BlockStorage.bs-version: %v", err)
-	}
-
-	b := &bytes.Buffer{}
-	if _, err := cfg.WriteTo(b); err != nil {
-		return "", fmt.Errorf("failed to write ini to buffer: %v", err)
-	}
-	return b.String(), nil
+	return buf.String(), nil
 }
