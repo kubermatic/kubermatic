@@ -274,6 +274,11 @@ type MasterVersion struct {
 }
 
 // Cluster defines the cluster resource
+//
+// Note:
+// Cluster has a custom MarshalJSON method defined
+// and thus the output may vary
+//
 // swagger:model Cluster
 type Cluster struct {
 	ObjectMeta `json:",inline"`
@@ -285,6 +290,7 @@ type Cluster struct {
 type ClusterSpec struct {
 	// Cloud specifies the cloud providers configuration
 	Cloud kubermaticv1.CloudSpec `json:"cloud"`
+
 	// MachineNetworks optionally specifies the parameters for IPAM.
 	MachineNetworks []kubermaticv1.MachineNetworkingConfig `json:"machineNetworks,omitempty"`
 
@@ -292,7 +298,7 @@ type ClusterSpec struct {
 	Version string `json:"version"`
 }
 
-// MarshalJSON marshals NewClusterSpec object into JSON. It is overwritten to control data
+// MarshalJSON marshals ClusterSpec object into JSON. It is overwritten to control data
 // that will be returned in the API responses (see: PublicCloudSpec struct).
 func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 	ret, err := json.Marshal(struct {
