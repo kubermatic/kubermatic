@@ -11,7 +11,6 @@ type serverRunOptions struct {
 	kubeconfig               string
 	internalAddr             string
 	prometheusURL            string
-	prometheusEndpoint       bool
 	masterResources          string
 	dcFile                   string
 	workerName               string
@@ -20,16 +19,17 @@ type serverRunOptions struct {
 	tokenIssuer              string
 	clientID                 string
 	tokenIssuerSkipTLSVerify bool
+	featureGates             featureGate
 }
 
-func newServerRunOptions() serverRunOptions {
+func newServerRunOptions() (serverRunOptions, error) {
 	s := serverRunOptions{}
+	var rawFeatureGates string
 
 	flag.StringVar(&s.listenAddress, "address", ":8080", "The address to listen on")
 	flag.StringVar(&s.kubeconfig, "kubeconfig", "", "Path to the kubeconfig.")
 	flag.StringVar(&s.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal handler should be exposed")
 	flag.StringVar(&s.prometheusURL, "prometheus-url", "http://prometheus-kubermatic.monitoring.svc.local:web", "The URL on which this API can talk to Prometheus")
-	flag.BoolVar(&s.prometheusEndpoint, "enable-prometheus-endpoint", false, "Activate the API endpoint to expose metrics")
 	flag.StringVar(&s.masterResources, "master-resources", "", "The path to the master resources (Required).")
 	flag.StringVar(&s.dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
 	flag.StringVar(&s.workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
@@ -38,9 +38,15 @@ func newServerRunOptions() serverRunOptions {
 	flag.StringVar(&s.tokenIssuer, "token-issuer", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.BoolVar(&s.tokenIssuerSkipTLSVerify, "token-issuer-skip-tls-verify", false, "SKip TLS verification for the token issuer")
 	flag.StringVar(&s.clientID, "client-id", "", "OpenID client ID")
+	flag.StringVar(&rawFeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for various features.")
 	flag.Parse()
 
-	return s
+	featureGates, err := newFeatures(rawFeatureGates)
+	if err != nil {
+		return s, err
+	}
+	s.featureGates = featureGates
+	return s, nil
 }
 
 type providers struct {
