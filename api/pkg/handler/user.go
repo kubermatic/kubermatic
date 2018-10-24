@@ -113,8 +113,7 @@ func editMemberOfProject(projectProvider provider.ProjectProvider, userProvider 
 	}
 }
 
-// TODO: change to listMembers
-func listUsersFromProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
+func listMembersOfProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
 		req, ok := request.(GetProjectRq)
@@ -136,7 +135,7 @@ func listUsersFromProject(projectProvider provider.ProjectProvider, userProvider
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		externalUsers := []*apiv1.NewUser{}
+		externalUsers := []*apiv1.User{}
 		for _, memberOfProjectBinding := range membersOfProjectBindings {
 			user, err := userProvider.UserByEmail(memberOfProjectBinding.Spec.UserEmail)
 			if err != nil {
@@ -147,34 +146,10 @@ func listUsersFromProject(projectProvider provider.ProjectProvider, userProvider
 			externalUsers = append(externalUsers, externalUser)
 		}
 
-		// old approach, read project member from user resources
-		users, err := userProvider.ListByProject(project.Name)
-		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
-		}
-		isAlreadyOnTheList := func(apiUser *apiv1.NewUser) bool {
-			for _, existingAPIUser := range externalUsers {
-				if existingAPIUser.ID == apiUser.ID {
-					return true
-				}
-			}
-			return false
-		}
-
-		for _, user := range users {
-			externalUser := convertInternalUserToExternal(user)
-			if isAlreadyOnTheList(externalUser) {
-				continue
-			}
-			externalUser = filterExternalUser(externalUser, project.Name)
-			externalUsers = append(externalUsers, externalUser)
-		}
-
 		return externalUsers, nil
 	}
 }
 
-// TODO: change to addMember
 func addUserToProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AddUserToProjectReq)
@@ -231,9 +206,9 @@ func getCurrentUserEndpoint(users provider.UserProvider, memberMapper provider.P
 	}
 }
 
-func convertInternalUserToExternal(internalUser *kubermaticapiv1.User, bindings ...*kubermaticapiv1.UserProjectBinding) *apiv1.NewUser {
-	apiUser := &apiv1.NewUser{
-		NewObjectMeta: apiv1.NewObjectMeta{
+func convertInternalUserToExternal(internalUser *kubermaticapiv1.User, bindings ...*kubermaticapiv1.UserProjectBinding) *apiv1.User {
+	apiUser := &apiv1.User{
+		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internalUser.Name,
 			Name:              internalUser.Spec.Name,
 			CreationTimestamp: internalUser.CreationTimestamp.Time,
@@ -262,7 +237,7 @@ func convertInternalUserToExternal(internalUser *kubermaticapiv1.User, bindings 
 	return apiUser
 }
 
-func filterExternalUser(externalUser *apiv1.NewUser, projectID string) *apiv1.NewUser {
+func filterExternalUser(externalUser *apiv1.User, projectID string) *apiv1.User {
 	// remove all projects except requested one
 	// in the future user resources will not contain projects bindings
 	for _, pg := range externalUser.Projects {
@@ -281,7 +256,7 @@ func (r Routing) userSaverMiddleware() endpoint.Middleware {
 			if cAPIUser == nil {
 				return nil, errors.New("no user in context found")
 			}
-			apiUser := cAPIUser.(apiv1.User)
+			apiUser := cAPIUser.(apiv1.LegacyUser)
 
 			user, err := r.userProvider.UserByEmail(apiUser.Email)
 			if err != nil {
@@ -320,15 +295,10 @@ func (r Routing) userInfoMiddleware() endpoint.Middleware {
 			// read group info
 			var group string
 			{
-				// old approach, group was stored in user resource
-				group, err = user.GroupForProject(projectID)
+				group, err = r.userProjectMapper.MapUserToGroup(user.Spec.Email, projectID)
 				if err != nil {
-					// new approach read group info from the mapper
-					group, err = r.userProjectMapper.MapUserToGroup(user.Spec.Email, projectID)
-					if err != nil {
-						// wrapping in k8s error to stay consisted with error messages returned from providers
-						return nil, kubernetesErrorToHTTPError(err)
-					}
+					// wrapping in k8s error to stay consisted with error messages returned from providers
+					return nil, kubernetesErrorToHTTPError(err)
 				}
 			}
 
@@ -343,7 +313,7 @@ func (r Routing) userInfoMiddleware() endpoint.Middleware {
 }
 
 // IsAdmin tells if the user has the admin role
-func IsAdmin(u apiv1.User) bool {
+func IsAdmin(u apiv1.LegacyUser) bool {
 	_, ok := u.Roles[AdminRoleKey]
 	return ok
 }
@@ -353,7 +323,7 @@ func IsAdmin(u apiv1.User) bool {
 type AddUserToProjectReq struct {
 	ProjectReq
 	// in: body
-	Body apiv1.NewUser
+	Body apiv1.User
 }
 
 // Validate validates AddUserToProjectReq request

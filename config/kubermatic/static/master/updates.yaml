@@ -6,10 +6,6 @@ updates:
   automatic: true
 
 # ======= 1.9 =======
-# Allow to change to any patch version
-- from: 1.9.*
-  to: 1.9.*
-  automatic: false
 # Allow to next minor release
 - from: 1.9.*
   to: 1.10.1

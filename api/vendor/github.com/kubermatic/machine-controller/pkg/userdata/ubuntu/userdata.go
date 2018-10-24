@@ -128,7 +128,10 @@ func (p Provider) UserData(
 }
 
 const ctTemplate = `#cloud-config
+{{ if ne .CloudProvider "aws" }}
 hostname: {{ .MachineSpec.Name }}
+# Never set the hostname on AWS nodes. Kubernetes(kube-proxy) requires the hostname to be the private dns name
+{{ end }}
 
 ssh_pwauth: no
 
@@ -226,17 +229,17 @@ write_files:
     #!/bin/bash
     set -xeuo pipefail
 
-    # As we added some modules and don't want to reboot, restart the service 
+    # As we added some modules and don't want to reboot, restart the service
     systemctl restart systemd-modules-load.service
     sysctl --system
-    
+
     apt-key add /opt/docker.asc
     apt-get update
 
     # Make sure we always disable swap - Otherwise the kubelet won't start'.
     systemctl mask swap.target
     swapoff -a
-    
+
 {{- if semverCompare "<1.12.0" .KubeletVersion }}
     export CR_PKG='docker.io=17.12.1-0ubuntu1'
 {{- else }}
@@ -261,12 +264,12 @@ write_files:
       socat \
       util-linux \
       ${CR_PKG} \
-      open-vm-tools \
-      ipvsadm
+      ipvsadm{{ if eq .CloudProvider "vsphere" }} \
+      open-vm-tools{{ end }}
 
     # If something failed during package installation but docker got installed, we need to put it on hold
     apt-mark hold docker.io || true
-    apt-mark hold docker-ce || true 
+    apt-mark hold docker-ce || true
 
     {{- if .OSConfig.DistUpgradeOnBoot }}
     DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade -y
@@ -278,7 +281,7 @@ write_files:
 {{ downloadBinariesScript .KubeletVersion true | indent 4 }}
 
     systemctl enable --now docker
-    systemctl enable --now kubelet 
+    systemctl enable --now kubelet
     systemctl enable --now --no-block kubelet-healthcheck.service
     systemctl enable --now --no-block docker-healthcheck.service
 

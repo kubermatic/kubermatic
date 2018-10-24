@@ -24,7 +24,7 @@ func TestListProjectEndpoint(t *testing.T) {
 		ExpectedResponse          []apiv1.Project
 		HTTPStatus                int
 		ExistingKubermaticObjects []runtime.Object
-		ExistingAPIUser           apiv1.User
+		ExistingAPIUser           apiv1.LegacyUser
 	}{
 		{
 			Name:       "scenario 1: list projects that John is the member of",
@@ -41,14 +41,14 @@ func TestListProjectEndpoint(t *testing.T) {
 				genBinding("my-first-project-ID", "john@acme.com", "owners"),
 				genBinding("my-third-project-ID", "john@acme.com", "editors"),
 			},
-			ExistingAPIUser: apiv1.User{
+			ExistingAPIUser: apiv1.LegacyUser{
 				ID:    testUserName,
 				Email: testUserEmail,
 			},
 			ExpectedResponse: []apiv1.Project{
 				apiv1.Project{
 					Status: "Active",
-					NewObjectMeta: apiv1.NewObjectMeta{
+					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "my-first-project-ID",
 						Name:              "my-first-project",
 						CreationTimestamp: time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
@@ -56,7 +56,7 @@ func TestListProjectEndpoint(t *testing.T) {
 				},
 				apiv1.Project{
 					Status: "Active",
-					NewObjectMeta: apiv1.NewObjectMeta{
+					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "my-third-project-ID",
 						Name:              "my-third-project",
 						CreationTimestamp: time.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC),
@@ -105,12 +105,12 @@ func TestGetProjectEndpoint(t *testing.T) {
 		HTTPStatus                int
 		ExistingKubermaticUser    *kubermaticapiv1.User
 		ExistingKubermaticObjects []runtime.Object
-		ExistingAPIUser           *apiv1.User
+		ExistingAPIUser           *apiv1.LegacyUser
 	}{
 		{
 			Name:                      "scenario 1: get an existing project assigned to the given user",
 			Body:                      ``,
-			ProjectToSync:             testingProjectName,
+			ProjectToSync:             genDefaultProject().Name,
 			ExpectedResponse:          `{"id":"my-first-project-ID","name":"my-first-project","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active"}`,
 			HTTPStatus:                http.StatusOK,
 			ExistingKubermaticObjects: genDefaultKubermaticObjects(),
@@ -149,7 +149,7 @@ func TestCreateProjectEndpoint(t *testing.T) {
 		ExpectedResponse          string
 		HTTPStatus                int
 		ExistingKubermaticObjects []runtime.Object
-		ExistingAPIUser           *apiv1.User
+		ExistingAPIUser           *apiv1.LegacyUser
 	}{
 		{
 			Name:             "scenario 1: a user doesn't have any projects, thus creating one succeeds",
@@ -214,7 +214,7 @@ func TestDeleteProjectEndpoint(t *testing.T) {
 		HTTPStatus                int
 		ProjectToSync             string
 		ExistingKubermaticObjects []runtime.Object
-		ExistingAPIUser           *apiv1.User
+		ExistingAPIUser           *apiv1.LegacyUser
 	}{
 		{
 			Name:                      "scenario 1: the owner of the project can delete the project",
@@ -235,7 +235,7 @@ func TestDeleteProjectEndpoint(t *testing.T) {
 				// make John the editor of the project
 				genBinding("my-second-project-ID", "john@acme.com", "editors"),
 			},
-			ExistingAPIUser: &apiv1.User{
+			ExistingAPIUser: &apiv1.LegacyUser{
 				ID:    "JohnID",
 				Email: "john@acme.com",
 			},

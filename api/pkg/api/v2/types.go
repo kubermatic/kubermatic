@@ -2,9 +2,8 @@ package v2
 
 import "time"
 
-// ObjectMeta is an object storing common metadata for persistable objects.
-// swagger:model ObjectMetaV2
-type ObjectMeta struct {
+// LegacyObjectMeta is an object storing common metadata for persistable objects.
+type LegacyObjectMeta struct {
 	// The unique name
 	Name string `json:"name"`
 	// The name to display in the frontend

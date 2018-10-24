@@ -62,7 +62,7 @@ type e2eTestRunner struct {
 func (ctl *e2eTestRunner) run(ctx context.Context) error {
 	var (
 		clusterTemplate kubermaticv1.Cluster
-		nodeTemplate    apiv2.Node
+		nodeTemplate    apiv2.LegacyNode
 	)
 
 	if err := unmarshalObj(ctl.runOpts.ClusterPath, &clusterTemplate); err != nil {
@@ -272,7 +272,7 @@ func (ctl *e2eTestRunner) getDatacenter(name string) (provider.DatacenterMeta, e
 	return dc, nil
 }
 
-func (ctl *e2eTestRunner) createMachines(restConfig *rest.Config, dc provider.DatacenterMeta, cluster *kubermaticv1.Cluster, node apiv2.Node) error {
+func (ctl *e2eTestRunner) createMachines(restConfig *rest.Config, dc provider.DatacenterMeta, cluster *kubermaticv1.Cluster, node apiv2.LegacyNode) error {
 	clusterClient, err := clusterclientset.NewForConfig(restConfig)
 	if err != nil {
 		return err

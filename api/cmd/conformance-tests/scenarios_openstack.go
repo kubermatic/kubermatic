@@ -82,12 +82,12 @@ func (s *openStackScenario) Cluster(secrets secrets) *v1.Cluster {
 	}
 }
 
-func (s *openStackScenario) Nodes(num int) []*kubermaticapiv2.Node {
+func (s *openStackScenario) Nodes(num int) []*kubermaticapiv2.LegacyNode {
 	osName := getOSNameFromSpec(s.nodeOsSpec)
-	var nodes []*kubermaticapiv2.Node
+	var nodes []*kubermaticapiv2.LegacyNode
 	for i := 0; i < num; i++ {
-		node := &kubermaticapiv2.Node{
-			Metadata: kubermaticapiv2.ObjectMeta{},
+		node := &kubermaticapiv2.LegacyNode{
+			Metadata: kubermaticapiv2.LegacyObjectMeta{},
 			Spec: kubermaticapiv2.NodeSpec{
 				Cloud: kubermaticapiv2.NodeCloudSpec{
 					Openstack: &kubermaticapiv2.OpenstackNodeSpec{

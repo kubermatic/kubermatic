@@ -124,7 +124,7 @@ func (o openIDAuthenticator) Verifier() endpoint.Middleware {
 				return nil, errors.NewNotAuthorized()
 			}
 
-			user := apiv1.User{
+			user := apiv1.LegacyUser{
 				ID:    id,
 				Name:  name,
 				Email: email,
@@ -219,18 +219,18 @@ func (c combinedExtractor) Extract(r *http.Request) string {
 }
 
 type testAuthenticator struct {
-	user apiv1.User
+	user apiv1.LegacyUser
 }
 
 // NewFakeAuthenticator returns an testing authentication middleware
-func NewFakeAuthenticator(user apiv1.User) Authenticator {
+func NewFakeAuthenticator(user apiv1.LegacyUser) Authenticator {
 	return testAuthenticator{user: user}
 }
 
 func (o testAuthenticator) Verifier() endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			_, ok := ctx.Value(apiUserContextKey).(apiv1.User)
+			_, ok := ctx.Value(apiUserContextKey).(apiv1.LegacyUser)
 			if !ok {
 				return nil, errors.NewNotAuthorized()
 			}

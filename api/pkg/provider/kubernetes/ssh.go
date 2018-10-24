@@ -1,126 +1,155 @@
 package kubernetes
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
+	"golang.org/x/crypto/ssh"
+
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/ssh"
-	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/uuid"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-const (
-	sshKeyKind = "ssh-key"
-)
-
-// NewSSHKeyProvider returns a ssh key provider
-func NewSSHKeyProvider(client kubermaticclientset.Interface, sshKeyLister kubermaticv1lister.UserSSHKeyLister, isAdmin func(apiv1.User) bool) *SSHKeyProvider {
-	return &SSHKeyProvider{
-		client:       client,
-		sshKeyLister: sshKeyLister,
-		isAdmin:      isAdmin,
-	}
+// NewSSHKeyProvider returns a new ssh key provider that respects RBAC policies
+// it uses createMasterImpersonatedClient to create a connection that uses User Impersonation
+func NewSSHKeyProvider(createMasterImpersonatedClient kubermaticImpersonationClient, keyLister kubermaticv1lister.UserSSHKeyLister) *SSHKeyProvider {
+	return &SSHKeyProvider{createMasterImpersonatedClient: createMasterImpersonatedClient, keyLister: keyLister}
 }
 
-// SSHKeyProvider manages ssh key resources
+// SSHKeyProvider struct that holds required components in order to provide
+// ssh key provider that is RBAC compliant
 type SSHKeyProvider struct {
-	client       kubermaticclientset.Interface
-	sshKeyLister kubermaticv1lister.UserSSHKeyLister
-	isAdmin      func(apiv1.User) bool
+	// createMasterImpersonatedClient is used as a ground for impersonation
+	// whenever a connection to Seed API server is required
+	createMasterImpersonatedClient kubermaticImpersonationClient
+
+	// keyLister provide access to local cache that stores ssh keys objects
+	keyLister kubermaticv1lister.UserSSHKeyLister
 }
 
-// SSHKey returns a ssh key by name
-func (p *SSHKeyProvider) SSHKey(user apiv1.User, name string) (*kubermaticv1.UserSSHKey, error) {
-	k, err := p.sshKeyLister.Get(name)
+// Create creates a ssh key that will belong to the given project
+func (p *SSHKeyProvider) Create(userInfo *provider.UserInfo, project *kubermaticapiv1.Project, keyName, pubKey string) (*kubermaticapiv1.UserSSHKey, error) {
+	if keyName == "" {
+		return nil, fmt.Errorf("the ssh key name is missing but required")
+	}
+	if pubKey == "" {
+		return nil, fmt.Errorf("the ssh public part of the key is missing but required")
+	}
+	if userInfo == nil {
+		return nil, errors.New("a userInfo is missing but required")
+	}
+
+	pubKeyParsed, _, _, _, err := ssh.ParseAuthorizedKey([]byte(pubKey))
+	if err != nil {
+		return nil, fmt.Errorf("the provided ssh key is invalid due to = %v", err)
+	}
+	sshKeyHash := ssh.FingerprintLegacyMD5(pubKeyParsed)
+
+	keyInternalName := fmt.Sprintf("key-%s-%s", strings.NewReplacer(":", "").Replace(sshKeyHash), uuid.ShortUID(4))
+	sshKey := &kubermaticapiv1.UserSSHKey{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: keyInternalName,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticapiv1.ProjectKindName,
+					UID:        project.GetUID(),
+					Name:       project.Name,
+				},
+			},
+		},
+		Spec: kubermaticapiv1.SSHKeySpec{
+			PublicKey:   pubKey,
+			Fingerprint: sshKeyHash,
+			Name:        keyName,
+			Clusters:    []string{},
+		},
+	}
+
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
-	if k.Spec.Owner == user.ID || p.isAdmin(user) {
-		return k, nil
-	}
-	return nil, errors.NewNotFound(sshKeyKind, name)
+	return masterImpersonatedClient.UserSSHKeies().Create(sshKey)
 }
 
-// SSHKeys returns the user ssh keys
-func (p *SSHKeyProvider) SSHKeys(user apiv1.User) ([]*kubermaticv1.UserSSHKey, error) {
-	allKeys, err := p.sshKeyLister.List(labels.Everything())
+// List gets a list of ssh keys, by default it will get all the keys that belong to the given project.
+// If you want to filter the result please take a look at SSHKeyListOptions
+//
+// Note:
+// After we get the list of the keys we could try to get each individually using unprivileged account to see if the user have read access,
+// We don't do this because we assume that if the user was able to get the project (argument) it has to have at least read access.
+func (p *SSHKeyProvider) List(project *kubermaticapiv1.Project, options *provider.SSHKeyListOptions) ([]*kubermaticapiv1.UserSSHKey, error) {
+	if project == nil {
+		return nil, errors.New("a project is missing but required")
+	}
+	allKeys, err := p.keyLister.List(labels.Everything())
 	if err != nil {
 		return nil, err
 	}
-	if p.isAdmin(user) {
-		return allKeys, err
-	}
 
-	userkeys := []*kubermaticv1.UserSSHKey{}
+	projectKeys := []*kubermaticapiv1.UserSSHKey{}
 	for _, key := range allKeys {
-		if key.Spec.Owner == user.ID {
-			userkeys = append(userkeys, key)
+		owners := key.GetOwnerReferences()
+		for _, owner := range owners {
+			if owner.APIVersion == kubermaticapiv1.SchemeGroupVersion.String() && owner.Kind == kubermaticapiv1.ProjectKindName && owner.Name == project.Name {
+				projectKeys = append(projectKeys, key)
+			}
 		}
 	}
 
-	return userkeys, nil
-}
-
-func (p *SSHKeyProvider) assignSSHKeyToCluster(user apiv1.User, name, cluster string) error {
-	k, err := p.SSHKey(user, name)
-	if err != nil {
-		return err
+	if options == nil {
+		return projectKeys, nil
 	}
-	k.AddToCluster(cluster)
+	if len(options.ClusterName) == 0 {
+		return projectKeys, nil
+	}
 
-	_, err = p.client.KubermaticV1().UserSSHKeies().Update(k)
-	return err
-}
+	filteredKeys := []*kubermaticapiv1.UserSSHKey{}
+	for _, key := range projectKeys {
+		if key.Spec.Clusters == nil {
+			continue
+		}
 
-// AssignSSHKeysToCluster assigns a ssh key to a cluster
-func (p *SSHKeyProvider) AssignSSHKeysToCluster(user apiv1.User, names []string, cluster string) error {
-	for _, name := range names {
-		if err := p.assignSSHKeyToCluster(user, name, cluster); err != nil {
-			return fmt.Errorf("failed to assign key %s to cluster: %v", name, err)
+		for _, actualClusterName := range key.Spec.Clusters {
+			if actualClusterName == options.ClusterName {
+				filteredKeys = append(filteredKeys, key)
+			}
 		}
 	}
-	return nil
+	return filteredKeys, nil
+
 }
 
-// ClusterSSHKeys returns the ssh keys of a cluster
-func (p *SSHKeyProvider) ClusterSSHKeys(user apiv1.User, cluster string) ([]*kubermaticv1.UserSSHKey, error) {
-	keys, err := p.SSHKeys(user)
+// Get returns a key with the given name
+func (p *SSHKeyProvider) Get(userInfo *provider.UserInfo, keyName string) (*kubermaticapiv1.UserSSHKey, error) {
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
-
-	var clusterKeys []*kubermaticv1.UserSSHKey
-	for _, k := range keys {
-		if k.IsUsedByCluster(cluster) {
-			clusterKeys = append(clusterKeys, k)
-		}
-	}
-	return clusterKeys, nil
+	return masterImpersonatedClient.UserSSHKeies().Get(keyName, metav1.GetOptions{})
 }
 
-// CreateSSHKey creates a ssh key
-func (p *SSHKeyProvider) CreateSSHKey(name, pubkey string, user apiv1.User) (*kubermaticv1.UserSSHKey, error) {
-	key, err := ssh.NewUserSSHKeyBuilder().
-		SetName(name).
-		SetOwner(user.ID).
-		SetRawKey(pubkey).
-		Build()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build key: %v", err)
-	}
-
-	return p.client.KubermaticV1().UserSSHKeies().Create(key)
-}
-
-// DeleteSSHKey deletes a ssh key
-func (p *SSHKeyProvider) DeleteSSHKey(name string, user apiv1.User) error {
-	k, err := p.SSHKey(user, name)
+// Delete simply deletes the given key
+func (p *SSHKeyProvider) Delete(userInfo *provider.UserInfo, keyName string) error {
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return err
 	}
-	return p.client.KubermaticV1().UserSSHKeies().Delete(k.Name, &metav1.DeleteOptions{})
+	return masterImpersonatedClient.UserSSHKeies().Delete(keyName, &metav1.DeleteOptions{})
+}
+
+// Update simply updates the given key
+func (p *SSHKeyProvider) Update(userInfo *provider.UserInfo, newKey *kubermaticapiv1.UserSSHKey) (*kubermaticapiv1.UserSSHKey, error) {
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	if err != nil {
+		return nil, err
+	}
+	return masterImpersonatedClient.UserSSHKeies().Update(newKey)
 }

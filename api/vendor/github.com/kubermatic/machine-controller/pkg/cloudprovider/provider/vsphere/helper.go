@@ -33,59 +33,46 @@ const (
 
 var errSnapshotNotFound = errors.New("no snapshot with given name found")
 
-func createLinkClonedVM(vmName, vmImage, datacenter, clusterName, folder string, cpus int32, memoryMB int64, client *govmomi.Client, containerLinuxUserdata string) error {
-	f := find.NewFinder(client.Client, true)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	dc, err := f.Datacenter(ctx, datacenter)
+func createClonedVM(ctx context.Context, vmName string, config *Config, dc *object.Datacenter, f *find.Finder, containerLinuxUserdata string) (*object.VirtualMachine, error) {
+	templateVM, err := f.VirtualMachine(ctx, config.TemplateVMName)
 	if err != nil {
-		return fmt.Errorf("failed to get datacenter: %v", err)
-	}
-	f.SetDatacenter(dc)
-
-	templateVM, err := f.VirtualMachine(ctx, vmImage)
-	if err != nil {
-		return fmt.Errorf("failed to get virtualmachine: %v", err)
+		return nil, fmt.Errorf("failed to get template vm: %v", err)
 	}
 
 	glog.V(3).Infof("Template VM ref is %+v", templateVM)
-	datacenterFolders, err := dc.Folders(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get datacenter folders: %v", err)
-	}
 
-	// Find the target folder, if its include in the provider config.
-	targetVMFolder := datacenterFolders.VmFolder
-	if folder != "" {
+	// Find the target folder, if its included in the provider config.
+	var targetVMFolder *object.Folder
+	if config.Folder != "" {
 		// If non-absolute folder name is used, e.g. 'duplicate-folder' it can match
 		// multiple folders and thus fail. It will also gladly match a folder from
 		// a different datacenter. It is therefore preferable to use absolute folder
 		// paths, e.g. '/Datacenter/vm/nested/folder'.
 		// The target folder must already exist.
-		targetVMFolder, err = f.Folder(ctx, folder)
+		targetVMFolder, err = f.Folder(ctx, config.Folder)
 		if err != nil {
-			return fmt.Errorf("failed to get target folder: %v", err)
+			return nil, fmt.Errorf("failed to get target folder: %v", err)
 		}
+	} else {
+		// Do not query datacenter folders unless required
+		datacenterFolders, err := dc.Folders(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get datacenter folders: %v", err)
+		}
+		targetVMFolder = datacenterFolders.VmFolder
 	}
 
 	// Create snapshot of the template VM if not already snapshotted.
 	snapshot, err := findSnapshot(ctx, templateVM, snapshotName)
 	if err != nil {
 		if err != errSnapshotNotFound {
-			return fmt.Errorf("failed to find snapshot: %v", err)
+			return nil, fmt.Errorf("failed to find snapshot: %v", err)
 		}
 		snapshot, err = createSnapshot(ctx, templateVM, snapshotName, snapshotDesc)
 		if err != nil {
-			return fmt.Errorf("failed to create snapshot: %v", err)
+			return nil, fmt.Errorf("failed to create snapshot: %v", err)
 		}
 	}
-
-	clsComputeRes, err := f.ClusterComputeResource(ctx, clusterName)
-	if err != nil {
-		return fmt.Errorf("failed to get cluster %s: %v", clusterName, err)
-	}
-	glog.V(3).Infof("Cluster is %+v", clsComputeRes)
 
 	snapshotRef := snapshot.Reference()
 
@@ -97,14 +84,13 @@ func createLinkClonedVM(vmName, vmImage, datacenter, clusterName, folder string,
 		// In order to overwrite them, we need to specify their numeric Key values,
 		// which we'll extract from that template.
 		var mvm mo.VirtualMachine
-		err = templateVM.Properties(ctx, templateVM.Reference(), []string{"config", "config.vAppConfig", "config.vAppConfig.property"}, &mvm)
-		if err != nil {
-			return fmt.Errorf("failed to extract vapp properties for coreos: %v", err)
+		if err := templateVM.Properties(ctx, templateVM.Reference(), []string{"config", "config.vAppConfig", "config.vAppConfig.property"}, &mvm); err != nil {
+			return nil, fmt.Errorf("failed to extract vapp properties for coreos: %v", err)
 		}
 
 		var propertySpecs []types.VAppPropertySpec
 		if mvm.Config.VAppConfig.GetVmConfigInfo() == nil {
-			return fmt.Errorf("no vm config found in template '%s'. Make sure you import the correct OVA with the appropriate coreos settings", vmImage)
+			return nil, fmt.Errorf("no vm config found in template '%s'. Make sure you import the correct OVA with the appropriate coreos settings", config.TemplateVMName)
 		}
 
 		for _, item := range mvm.Config.VAppConfig.GetVmConfigInfo().Property {
@@ -138,28 +124,54 @@ func createLinkClonedVM(vmName, vmImage, datacenter, clusterName, folder string,
 	}
 
 	diskUUIDEnabled := true
-	cloneSpec := &types.VirtualMachineCloneSpec{
-		Config: &types.VirtualMachineConfigSpec{
-			Flags: &types.VirtualMachineFlagInfo{
-				DiskUuidEnabled: &diskUUIDEnabled,
-			},
-			NumCPUs:    cpus,
-			MemoryMB:   memoryMB,
-			VAppConfig: vAppAconfig,
+	desiredConfig := types.VirtualMachineConfigSpec{
+		Flags: &types.VirtualMachineFlagInfo{
+			DiskUuidEnabled: &diskUUIDEnabled,
 		},
-		Snapshot: &snapshotRef,
+		NumCPUs:    config.CPUs,
+		MemoryMB:   config.MemoryMB,
+		VAppConfig: vAppAconfig,
 	}
 
-	// Create a link cloned VM from the template VM's snapshot
-	clonedVMTask, err := templateVM.Clone(ctx, targetVMFolder, vmName, *cloneSpec)
+	// Create a cloned VM from the template VM's snapshot
+	clonedVMTask, err := templateVM.Clone(ctx, targetVMFolder, vmName, types.VirtualMachineCloneSpec{Snapshot: &snapshotRef})
 	if err != nil {
-		return fmt.Errorf("failed to clone template vm: %v", err)
+		return nil, fmt.Errorf("failed to clone template vm: %v", err)
 	}
 
-	if _, err = clonedVMTask.WaitForResult(ctx, nil); err != nil {
-		return fmt.Errorf("error when waiting for result of clone task: %v", err)
+	if err := clonedVMTask.Wait(ctx); err != nil {
+		return nil, fmt.Errorf("error when waiting for result of clone task: %v", err)
 	}
-	return nil
+
+	virtualMachine, err := f.VirtualMachine(ctx, vmName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get virtual machine object after cloning: %v", err)
+	}
+
+	reconfigureTask, err := virtualMachine.Reconfigure(ctx, desiredConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reconfigure vm: %v", err)
+	}
+
+	if err := reconfigureTask.Wait(ctx); err != nil {
+		return nil, fmt.Errorf("error waiting for reconfigure task to finish: %v", err)
+	}
+
+	// Update network if requested
+	if config.VMNetName != "" {
+		if err := updateNetworkForVM(ctx, virtualMachine, config.TemplateNetName, config.VMNetName); err != nil {
+			return nil, fmt.Errorf("couldn't set network for vm: %v", err)
+		}
+	}
+
+	// Ubuntu wont boot with attached floppy device, because it tries to write to it
+	// which fails, because the floppy device does not contain a floppy disk
+	// Upstream issue: https://bugs.launchpad.net/cloud-images/+bug/1573095
+	if err := removeFloppyDevice(ctx, virtualMachine); err != nil {
+		return nil, fmt.Errorf("failed to remove floppy device: %v", err)
+	}
+
+	return virtualMachine, nil
 }
 
 func updateNetworkForVM(ctx context.Context, vm *object.VirtualMachine, currentNetName string, newNetName string) error {
@@ -249,8 +261,7 @@ func createSnapshot(ctx context.Context, vm *object.VirtualMachine, snapshotName
 func findSnapshot(ctx context.Context, vm *object.VirtualMachine, name string) (object.Reference, error) {
 	var moVirtualMachine mo.VirtualMachine
 
-	err := vm.Properties(ctx, vm.Reference(), []string{"snapshot"}, &moVirtualMachine)
-	if err != nil {
+	if err := vm.Properties(ctx, vm.Reference(), []string{"snapshot"}, &moVirtualMachine); err != nil {
 		return nil, fmt.Errorf("failed to get vm properties: %v", err)
 	}
 
@@ -284,9 +295,7 @@ func addMatchingSnapshotToList(list *[]object.Reference, tree types.VirtualMachi
 	}
 }
 
-func uploadAndAttachISO(f *find.Finder, vmRef *object.VirtualMachine, localIsoFilePath, datastoreName string, client *govmomi.Client) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func uploadAndAttachISO(ctx context.Context, f *find.Finder, vmRef *object.VirtualMachine, localIsoFilePath, datastoreName string) error {
 
 	datastore, err := f.Datastore(ctx, datastoreName)
 	if err != nil {
@@ -295,8 +304,7 @@ func uploadAndAttachISO(f *find.Finder, vmRef *object.VirtualMachine, localIsoFi
 	p := soap.DefaultUpload
 	remoteIsoFilePath := fmt.Sprintf("%s/%s", vmRef.Name(), "cloud-init.iso")
 	glog.V(3).Infof("Uploading userdata ISO to datastore %+v, destination iso is %s\n", datastore, remoteIsoFilePath)
-	err = datastore.UploadFile(ctx, localIsoFilePath, remoteIsoFilePath, &p)
-	if err != nil {
+	if err := datastore.UploadFile(ctx, localIsoFilePath, remoteIsoFilePath, &p); err != nil {
 		return fmt.Errorf("failed to upload iso: %v", err)
 	}
 	glog.V(3).Infof("Uploaded ISO file %s", localIsoFilePath)
@@ -335,8 +343,7 @@ func generateLocalUserdataISO(userdata, name string) (string, error) {
 		return "", fmt.Errorf("failed to create local temp directory for userdata at %s: %v", userdataDir, err)
 	}
 	defer func() {
-		err := os.RemoveAll(userdataDir)
-		if err != nil {
+		if err := os.RemoveAll(userdataDir); err != nil {
 			utilruntime.HandleError(fmt.Errorf("error cleaning up local userdata tempdir %s: %v", userdataDir, err))
 		}
 	}()
@@ -357,18 +364,15 @@ func generateLocalUserdataISO(userdata, name string) (string, error) {
 		InstanceID: name,
 		Hostname:   name,
 	}
-	err = metadataTmpl.Execute(metadata, templateContext)
-	if err != nil {
+	if err = metadataTmpl.Execute(metadata, templateContext); err != nil {
 		return "", fmt.Errorf("failed to render metadata: %v", err)
 	}
 
-	err = ioutil.WriteFile(userdataFilePath, []byte(userdata), 0644)
-	if err != nil {
+	if err := ioutil.WriteFile(userdataFilePath, []byte(userdata), 0644); err != nil {
 		return "", fmt.Errorf("failed to locally write userdata file to %s: %v", userdataFilePath, err)
 	}
 
-	err = ioutil.WriteFile(metadataFilePath, metadata.Bytes(), 0644)
-	if err != nil {
+	if err := ioutil.WriteFile(metadataFilePath, metadata.Bytes(), 0644); err != nil {
 		return "", fmt.Errorf("failed to locally write metadata file to %s: %v", userdataFilePath, err)
 	}
 
@@ -386,16 +390,15 @@ func generateLocalUserdataISO(userdata, name string) (string, error) {
 	}
 
 	cmd := exec.Command(command, args...)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
+	if output, err := cmd.CombinedOutput(); err != nil {
 		return "", fmt.Errorf("error executing command `%s %s`: output: `%s`, error: `%v`", command, args, string(output), err)
 	}
 
 	return isoFilePath, nil
 }
 
-func removeFloppyDevice(virtualMachine *object.VirtualMachine) error {
-	vmDevices, err := virtualMachine.Device(context.TODO())
+func removeFloppyDevice(ctx context.Context, virtualMachine *object.VirtualMachine) error {
+	vmDevices, err := virtualMachine.Device(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get device list: %v", err)
 	}
@@ -410,8 +413,7 @@ func removeFloppyDevice(virtualMachine *object.VirtualMachine) error {
 		return fmt.Errorf("failed to find floppy: %v", err)
 	}
 
-	err = virtualMachine.RemoveDevice(context.TODO(), false, floppyDevice)
-	if err != nil {
+	if err := virtualMachine.RemoveDevice(ctx, false, floppyDevice); err != nil {
 		return fmt.Errorf("failed to remove floppy device: %v", err)
 	}
 

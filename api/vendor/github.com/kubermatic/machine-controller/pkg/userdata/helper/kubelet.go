@@ -27,7 +27,7 @@ const (
 --cloud-provider={{ .CloudProvider }} \
 --cloud-config=/etc/kubernetes/cloud-config \
 {{- end }}
-{{- if .Hostname }}
+{{- if and (.Hostname) (ne .CloudProvider "aws") }}
 --hostname-override={{ .Hostname }} \
 {{- end }}
 --read-only-port=0 \

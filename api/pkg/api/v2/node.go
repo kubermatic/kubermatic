@@ -1,13 +1,8 @@
 package v2
 
-// NodeList represents a list of nodes
-// swagger:model NodeListV2
-type NodeList []Node
-
-// Node is the object representing a cluster node.
-// swagger:model NodeV2
-type Node struct {
-	Metadata ObjectMeta `json:"metadata,omitempty"`
+// LegacyNode is the object representing a cluster node.
+type LegacyNode struct {
+	Metadata LegacyObjectMeta `json:"metadata,omitempty"`
 
 	// required: true
 	Spec   NodeSpec   `json:"spec"`
@@ -57,13 +52,6 @@ type OperatingSystemSpec struct {
 // swagger:model NodeVersionInfoV2
 type NodeVersionInfo struct {
 	Kubelet string `json:"kubelet"`
-}
-
-// NodeContainerRuntimeInfo information about the container runtime. Currently only "cri-o" and "docker" are supported
-// swagger:model NodeContainerRuntimeInfoV2
-type NodeContainerRuntimeInfo struct {
-	Name    string `json:"name"`
-	Version string `json:"version"`
 }
 
 // NodeSpec node specification

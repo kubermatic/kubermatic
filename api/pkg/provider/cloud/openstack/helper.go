@@ -16,6 +16,7 @@ import (
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
 	osecruritygrouprules "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
 	osnetworks "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
+	osports "github.com/gophercloud/gophercloud/openstack/networking/v2/ports"
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 	"github.com/gophercloud/gophercloud/pagination"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -231,6 +232,14 @@ func deleteNetworkByName(netClient *gophercloud.ServiceClient, networkName strin
 	return res.ExtractErr()
 }
 
+func deleteSubnet(netClient *gophercloud.ServiceClient, subnetID string) error {
+	res := ossubnets.Delete(netClient, subnetID)
+	if res.Err != nil {
+		return res.Err
+	}
+	return res.ExtractErr()
+}
+
 func deleteRouter(netClient *gophercloud.ServiceClient, routerID string) error {
 	res := osrouters.Delete(netClient, routerID)
 	if res.Err != nil {
@@ -373,4 +382,40 @@ func isNotFoundErr(err error) bool {
 		return true
 	}
 	return false
+}
+
+func getRouterIDForSubnet(netClient *gophercloud.ServiceClient, subnetID, networkID string) (string, error) {
+	ports, err := getAllNetworkPorts(netClient, networkID)
+	if err != nil {
+		return "", fmt.Errorf("failed to list ports for subnet: %v", err)
+	}
+
+	for _, port := range ports {
+		if port.DeviceOwner == "network:router_interface" {
+			// Check IP for the interface & check if the IP belongs to the subnet
+			for _, ip := range port.FixedIPs {
+				if ip.SubnetID == subnetID {
+					return port.DeviceID, nil
+				}
+			}
+		}
+	}
+
+	return "", errNotFound
+}
+
+func getAllNetworkPorts(netClient *gophercloud.ServiceClient, networkID string) ([]osports.Port, error) {
+	allPages, err := osports.List(netClient, osports.ListOpts{
+		NetworkID: networkID,
+	}).AllPages()
+	if err != nil {
+		return nil, err
+	}
+
+	allPorts, err := osports.ExtractPorts(allPages)
+	if err != nil {
+		return nil, err
+	}
+
+	return allPorts, nil
 }

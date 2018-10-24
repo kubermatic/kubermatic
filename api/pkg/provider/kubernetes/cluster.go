@@ -1,23 +1,17 @@
 package kubernetes
 
 import (
-	"fmt"
+	"errors"
 	"strings"
-	"time"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
-	kuberrrors "k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -27,137 +21,148 @@ import (
 
 // UserClusterConnectionProvider offers functions to interact with a user cluster
 type UserClusterConnectionProvider interface {
-	GetClient(*kubermaticv1.Cluster) (kubernetes.Interface, error)
-	GetMachineClient(*kubermaticv1.Cluster) (clusterv1alpha1clientset.Interface, error)
-	GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
+	GetClient(*kubermaticapiv1.Cluster) (kubernetes.Interface, error)
+	GetMachineClient(*kubermaticapiv1.Cluster) (clusterv1alpha1clientset.Interface, error)
+	GetAdminKubeconfig(c *kubermaticapiv1.Cluster) ([]byte, error)
 }
 
-// NewClusterProvider returns a datacenter specific cluster provider
+// NewClusterProvider returns a new cluster provider that respects RBAC policies
+// it uses createSeedImpersonatedClient to create a connection that uses user impersonation
 func NewClusterProvider(
-	client kubermaticclientset.Interface,
+	createSeedImpersonatedClient kubermaticImpersonationClient,
 	userClusterConnProvider UserClusterConnectionProvider,
 	clusterLister kubermaticv1lister.ClusterLister,
-	workerName string,
-	isAdmin func(apiv1.User) bool) *ClusterProvider {
+	workerName string) *ClusterProvider {
 	return &ClusterProvider{
-		client:                  client,
-		userClusterConnProvider: userClusterConnProvider,
-		clusterLister:           clusterLister,
-		workerName:              workerName,
-		isAdmin:                 isAdmin,
+		createSeedImpersonatedClient: createSeedImpersonatedClient,
+		userClusterConnProvider:      userClusterConnProvider,
+		clusterLister:                clusterLister,
+		workerName:                   workerName,
 	}
 }
 
-// ClusterProvider handles actions to create/modify/delete clusters in a specific kubernetes cluster
+// ClusterProvider struct that holds required components in order to provide
+// cluster provided that is RBAC compliant
 type ClusterProvider struct {
-	client                  kubermaticclientset.Interface
+	// createSeedImpersonatedClient is used as a ground for impersonation
+	// whenever a connection to Seed API server is required
+	createSeedImpersonatedClient kubermaticImpersonationClient
+
+	// userClusterConnProvider used for obtaining a connection to the client's cluster
 	userClusterConnProvider UserClusterConnectionProvider
-	clusterLister           kubermaticv1lister.ClusterLister
-	isAdmin                 func(apiv1.User) bool
-	workerName              string
+
+	// clusterLister provide access to local cache that stores cluster objects
+	clusterLister kubermaticv1lister.ClusterLister
+
+	workerName string
 }
 
-// NewCluster creates a new Cluster with the given ClusterSpec for the given user
-func (p *ClusterProvider) NewCluster(user apiv1.User, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error) {
+// New creates a brand new cluster that is bound to the given project
+func (p *ClusterProvider) New(project *kubermaticapiv1.Project, userInfo *provider.UserInfo, spec *kubermaticapiv1.ClusterSpec) (*kubermaticapiv1.Cluster, error) {
+	if project == nil || userInfo == nil || spec == nil {
+		return nil, errors.New("project and/or userInfo and/or spec is missing but required")
+	}
 	spec.HumanReadableName = strings.TrimSpace(spec.HumanReadableName)
 
-	clusters, err := p.Clusters(user)
-	if err != nil {
-		return nil, err
+	labels := map[string]string{
+		kubermaticapiv1.ProjectIDLabelKey: project.Name,
 	}
-
-	for _, c := range clusters {
-		if c.Spec.HumanReadableName == spec.HumanReadableName {
-			return nil, errors.NewAlreadyExists("cluster", spec.HumanReadableName)
-		}
-	}
-
-	// sanity checks for a fresh cluster
-	switch {
-	case user.ID == "":
-		return nil, errors.NewBadRequest("user id is required")
-	case spec.HumanReadableName == "":
-		return nil, errors.NewBadRequest("cluster humanReadableName is required")
+	if len(p.workerName) > 0 {
+		labels[kubermaticapiv1.WorkerNameLabelKey] = p.workerName
 	}
 
 	name := rand.String(10)
-	cluster := &kubermaticv1.Cluster{
+	cluster := &kubermaticapiv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{
-				UserLabelKey: user.ID,
-			},
-			Name: name,
+			Labels: labels,
+			Name:   name,
 		},
 		Spec: *spec,
-		Status: kubermaticv1.ClusterStatus{
-			UserEmail:     user.Email,
-			UserName:      user.Name,
+		Status: kubermaticapiv1.ClusterStatus{
+			UserEmail:     userInfo.Email,
 			NamespaceName: NamespaceName(name),
 		},
-		Address: kubermaticv1.ClusterAddress{},
+		Address: kubermaticapiv1.ClusterAddress{},
 	}
 
-	if p.workerName != "" {
-		cluster.Labels[kubermaticv1.WorkerNameLabelKey] = p.workerName
-	}
-
-	cluster, err = p.client.KubermaticV1().Clusters().Create(cluster)
+	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
-		if kuberrrors.IsAlreadyExists(err) {
-			return nil, provider.ErrAlreadyExists
-		}
+		return nil, err
+	}
+	cluster, err = seedImpersonatedClient.Clusters().Create(cluster)
+	if err != nil {
 		return nil, err
 	}
 
-	//We wait until the cluster exists in the lister so we can use this instead of doing api calls
-	existsInLister := func() (bool, error) {
-		_, err := p.clusterLister.Get(cluster.Name)
-		if err != nil {
-			return false, nil
-		}
-		return true, nil
-	}
-
-	return cluster, wait.Poll(10*time.Millisecond, 30*time.Second, existsInLister)
+	return cluster, nil
 }
 
-// Cluster returns the given cluster
-func (p *ClusterProvider) Cluster(user apiv1.User, name string) (*kubermaticv1.Cluster, error) {
-	cluster, err := p.clusterLister.Get(name)
+// List gets all clusters that belong to the given project
+// If you want to filter the result please take a look at ClusterListOptions
+//
+// Note:
+// After we get the list of clusters we could try to get each cluster individually using unprivileged account to see if the user have read access,
+// We don't do this because we assume that if the user was able to get the project (argument) it has to have at least read access.
+func (p *ClusterProvider) List(project *kubermaticapiv1.Project, options *provider.ClusterListOptions) ([]*kubermaticapiv1.Cluster, error) {
+	if project == nil {
+		return nil, errors.New("project is missing but required")
+	}
+	clusters, err := p.clusterLister.List(labels.Everything())
 	if err != nil {
-		if kuberrrors.IsNotFound(err) {
-			return nil, provider.ErrNotFound
-		}
 		return nil, err
 	}
-	if cluster.Labels[UserLabelKey] == user.ID || p.isAdmin(user) {
-		return cluster, nil
-	}
 
-	return nil, errors.NewNotAuthorized()
-}
-
-// Clusters returns all clusters for the given user
-func (p *ClusterProvider) Clusters(user apiv1.User) ([]*kubermaticv1.Cluster, error) {
-	var selector labels.Selector
-
-	if p.isAdmin(user) {
-		selector = labels.Everything()
-	} else {
-		selector = labels.NewSelector()
-		req, err := labels.NewRequirement(UserLabelKey, selection.Equals, []string{user.ID})
-		if err != nil {
-			return nil, fmt.Errorf("failed to create a valid cluster filter: %v", err)
+	projectClusters := []*kubermaticapiv1.Cluster{}
+	for _, cluster := range clusters {
+		if clusterProject := cluster.GetLabels()[kubermaticapiv1.ProjectIDLabelKey]; clusterProject == project.Name {
+			projectClusters = append(projectClusters, cluster)
 		}
-		selector = selector.Add(*req)
 	}
 
-	return p.clusterLister.List(selector)
+	if options == nil {
+		return projectClusters, nil
+	}
+	if len(options.ClusterSpecName) == 0 {
+		return projectClusters, nil
+	}
+
+	filteredProjectClusters := []*kubermaticapiv1.Cluster{}
+	for _, projectCluster := range projectClusters {
+		if projectCluster.Spec.HumanReadableName == options.ClusterSpecName {
+			filteredProjectClusters = append(filteredProjectClusters, projectCluster)
+		}
+	}
+
+	return filteredProjectClusters, nil
 }
 
-// DeleteCluster deletes the given cluster
-func (p *ClusterProvider) DeleteCluster(user apiv1.User, name string) error {
-	cluster, err := p.Cluster(user, name)
+// Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to
+func (p *ClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, options *provider.ClusterGetOptions) (*kubermaticapiv1.Cluster, error) {
+	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	if err != nil {
+		return nil, err
+	}
+
+	cluster, err := seedImpersonatedClient.Clusters().Get(clusterName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if options.CheckInitStatus {
+		isHealthy := cluster.Status.Health.Apiserver &&
+			cluster.Status.Health.Scheduler &&
+			cluster.Status.Health.Controller &&
+			cluster.Status.Health.MachineController &&
+			cluster.Status.Health.Etcd
+		if !isHealthy {
+			return nil, kerrors.NewServiceUnavailable("Cluster components are not ready yet")
+		}
+	}
+	return cluster, nil
+}
+
+// Delete deletes the given cluster
+func (p *ClusterProvider) Delete(userInfo *provider.UserInfo, clusterName string) error {
+	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return err
 	}
@@ -166,21 +171,21 @@ func (p *ClusterProvider) DeleteCluster(user apiv1.User, name string) error {
 	// See https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/#controlling-how-the-garbage-collector-deletes-dependents
 	policy := metav1.DeletePropagationBackground
 	opts := metav1.DeleteOptions{PropagationPolicy: &policy}
-	return p.client.KubermaticV1().Clusters().Delete(cluster.Name, &opts)
+	return seedImpersonatedClient.Clusters().Delete(clusterName, &opts)
 }
 
-// UpdateCluster updates a cluster
-func (p *ClusterProvider) UpdateCluster(user apiv1.User, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	_, err := p.Cluster(user, newCluster.Name)
+// Update updates a cluster
+func (p *ClusterProvider) Update(userInfo *provider.UserInfo, newCluster *kubermaticapiv1.Cluster) (*kubermaticapiv1.Cluster, error) {
+	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
-	return p.client.KubermaticV1().Clusters().Update(newCluster)
+	return seedImpersonatedClient.Clusters().Update(newCluster)
 }
 
-// GetAdminKubeconfig returns the admin kubeconfig for the given cluster
-func (p *ClusterProvider) GetAdminKubeconfig(c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
+// GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster
+func (p *ClusterProvider) GetAdminKubeconfigForCustomerCluster(c *kubermaticapiv1.Cluster) (*clientcmdapi.Config, error) {
 	b, err := p.userClusterConnProvider.GetAdminKubeconfig(c)
 	if err != nil {
 		return nil, err
@@ -189,12 +194,16 @@ func (p *ClusterProvider) GetAdminKubeconfig(c *kubermaticv1.Cluster) (*clientcm
 	return clientcmd.Load(b)
 }
 
-// GetMachineClient returns a client to interact with machine resources in the given cluster
-func (p *ClusterProvider) GetMachineClient(c *kubermaticv1.Cluster) (clusterv1alpha1clientset.Interface, error) {
+// GetMachineClientForCustomerCluster returns a client to interact with machine resources in the given cluster
+//
+// Note that the client you will get has admin privileges
+func (p *ClusterProvider) GetMachineClientForCustomerCluster(c *kubermaticapiv1.Cluster) (clusterv1alpha1clientset.Interface, error) {
 	return p.userClusterConnProvider.GetMachineClient(c)
 }
 
-// GetClient returns a client to interact with the given cluster
-func (p *ClusterProvider) GetClient(c *kubermaticv1.Cluster) (kubernetes.Interface, error) {
+// GetKubernetesClientForCustomerCluster returns a client to interact with the given cluster
+//
+// Note that the client you will get has admin privileges
+func (p *ClusterProvider) GetKubernetesClientForCustomerCluster(c *kubermaticapiv1.Cluster) (kubernetes.Interface, error) {
 	return p.userClusterConnProvider.GetClient(c)
 }

@@ -34,7 +34,7 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 		}
 
 		return apiv1.Project{
-			NewObjectMeta: apiv1.NewObjectMeta{
+			ObjectMeta: apiv1.ObjectMeta{
 				ID:                kubermaticProject.Name,
 				Name:              kubermaticProject.Spec.Name,
 				CreationTimestamp: kubermaticProject.CreationTimestamp.Time,
@@ -47,36 +47,13 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 func listProjectsEndpoint(projectProvider provider.ProjectProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
-
-		// old approach were we stored info about bindings in the user resource object
 		projects := []*apiv1.Project{}
-		for _, pg := range user.Spec.Projects {
-			userInfo := &provider.UserInfo{Email: user.Spec.Email, Group: pg.Group}
-			projectInternal, err := projectProvider.Get(userInfo, pg.Name, &provider.ProjectGetOptions{IncludeUninitialized: true})
-			if err != nil {
-				return nil, kubernetesErrorToHTTPError(err)
-			}
-			projects = append(projects, convertInternalProjectToExternal(projectInternal))
-		}
 
-		// TODO: remove old apprach when we migrate to the new one
-		// new approach bindings are provided by the mapper
-		isProjectAlreadyOnTheList := func(projectID string) bool {
-			for _, project := range projects {
-				if project.ID == projectID {
-					return true
-				}
-			}
-			return false
-		}
 		userMappings, err := memberMapper.MappingsFor(user.Spec.Email)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 		for _, mapping := range userMappings {
-			if isProjectAlreadyOnTheList(mapping.Spec.ProjectID) {
-				continue
-			}
 			userInfo := &provider.UserInfo{Email: mapping.Spec.UserEmail, Group: mapping.Spec.Group}
 			projectInternal, err := projectProvider.Get(userInfo, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 			if err != nil {
@@ -132,7 +109,7 @@ func getProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpo
 
 func convertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project) *apiv1.Project {
 	return &apiv1.Project{
-		NewObjectMeta: apiv1.NewObjectMeta{
+		ObjectMeta: apiv1.ObjectMeta{
 			ID:                kubermaticProject.Name,
 			Name:              kubermaticProject.Spec.Name,
 			CreationTimestamp: kubermaticProject.CreationTimestamp.Time,

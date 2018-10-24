@@ -1,0 +1,8 @@
+name: s3-exporter
+version: 0.1.0
+keywords:
+  - k8s
+  - kubermatic
+  - prometheus
+  - s3
+  - minio

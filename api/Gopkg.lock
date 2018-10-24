@@ -561,7 +561,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c549bd4ec595922d02aeae0a7abfa1604c85fc5071a7f9aae9a1fbeac67988ab"
+  digest = "1:339c34647de58ef2355169a019b15bf5b248f2a5dc393a5ddba01ca30ed5d733"
   name = "github.com/gophercloud/gophercloud"
   packages = [
     ".",
@@ -592,7 +592,7 @@
     "pagination",
   ]
   pruneopts = "NUT"
-  revision = "19abc56a8cd8d3630ab9735173cb92c0bf635f33"
+  revision = "6f0ea755af5c6931678bc34f9ef315a5b0aa6ff0"
 
 [[projects]]
   digest = "1:dbd86d229eacaa86a98b10f8fb3e3fc69a1913e0f4e010e7cc1f92bf12edca92"
@@ -731,7 +731,7 @@
   revision = "7cafcd837844e784b526369c9bce262804aebc60"
 
 [[projects]]
-  digest = "1:4d763c2f6029aed02723d61f15bc28f5ee2aad07b05c1d38e394720fe7ef80e2"
+  digest = "1:11a8005508c1de5b077ba5491919ac10efb8e075f9d9ff9fd5d5b601ca5dbc28"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/cloudprovider/cloud",
@@ -744,6 +744,7 @@
     "pkg/cloudprovider/provider/hetzner",
     "pkg/cloudprovider/provider/openstack",
     "pkg/cloudprovider/provider/vsphere",
+    "pkg/ini",
     "pkg/kubernetes",
     "pkg/node/eviction",
     "pkg/providerconfig",
@@ -754,8 +755,8 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "752124dc569ba1cbe4beb76f4889587976863a50"
-  version = "v0.9.5"
+  revision = "33a31df1152e1dd74b99846e3e5bfbebc74e889c"
+  version = "v0.9.8"
 
 [[projects]]
   digest = "1:11813b67edacc2bd17ed90ee8fd80dcc9c8551cf7b0e809a584c52e5bdafb5d3"
@@ -1259,14 +1260,6 @@
   version = "v0.9.0"
 
 [[projects]]
-  digest = "1:74d9b0a7b4107b41e0ade759fac64502876f82d29fb23d77b3dd24b194ee3dd5"
-  name = "gopkg.in/ini.v1"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "5cf292cae48347c2490ac1a58fe36735fb78df7e"
-  version = "v1.38.2"
-
-[[projects]]
   branch = "v2"
   digest = "1:9e8ac8aa4f4c5557ba0b03a55d407b07b7030ed552b437a9dc7e5ec90f16ab39"
   name = "gopkg.in/mgo.v2"
@@ -1750,6 +1743,7 @@
     "github.com/coreos/go-oidc",
     "github.com/davecgh/go-spew/spew",
     "github.com/digitalocean/godo",
+    "github.com/evanphx/json-patch",
     "github.com/ghodss/yaml",
     "github.com/go-kit/kit/endpoint",
     "github.com/go-kit/kit/log",
@@ -1768,6 +1762,7 @@
     "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups",
     "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules",
     "github.com/gophercloud/gophercloud/openstack/networking/v2/networks",
+    "github.com/gophercloud/gophercloud/openstack/networking/v2/ports",
     "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets",
     "github.com/gophercloud/gophercloud/pagination",
     "github.com/gorilla/handlers",
