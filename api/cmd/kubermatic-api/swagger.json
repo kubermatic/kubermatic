@@ -13,7 +13,7 @@
     "description": "Kubermatic API\n\nThis describes possible operations which can be made against the Kubermatic API.",
     "title": "Kubermatic API.",
     "termsOfService": "there are no TOS at this moment, use at your own risk we take no responsibility",
-    "version": "2.2.3"
+    "version": "2.8"
   },
   "host": "cloud.kubermatic.io",
   "paths": {
@@ -2616,8 +2616,9 @@
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "Cluster": {
-      "description": "Cluster defines the cluster resource",
+      "description": "Note:\nCluster has a custom MarshalJSON method defined\nand thus the output may vary",
       "type": "object",
+      "title": "Cluster defines the cluster resource",
       "properties": {
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
