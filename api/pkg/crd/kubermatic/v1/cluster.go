@@ -198,67 +198,6 @@ type CloudSpec struct {
 	VSphere      *VSphereCloudSpec      `json:"vsphere,omitempty"`
 }
 
-// UpdateCloudSpec is a helper method for updating the cloud spec
-// since cloud credentials are removed from responses sometimes they will be empty
-// for example when a client wants to revoke a token it will send the whole cluster object
-// thus if credentials for specific cloud provider are empty rewrite from an existing object
-func UpdateCloudSpec(updatedShared, existingShared CloudSpec) CloudSpec {
-	updated := updatedShared.DeepCopy()
-
-	if updated.Digitalocean != nil && len(updated.Digitalocean.Token) == 0 {
-		updated.Digitalocean.Token = existingShared.Digitalocean.Token
-	}
-	if updated.AWS != nil {
-		if len(updated.AWS.AccessKeyID) == 0 {
-			updated.AWS.AccessKeyID = existingShared.AWS.AccessKeyID
-		}
-		if len(updated.AWS.SecretAccessKey) == 0 {
-			updated.AWS.SecretAccessKey = existingShared.AWS.SecretAccessKey
-		}
-	}
-	if updated.Azure != nil {
-		if len(updated.Azure.ClientID) == 0 {
-			updated.Azure.ClientID = existingShared.Azure.ClientID
-		}
-		if len(updated.Azure.ClientSecret) == 0 {
-			updated.Azure.ClientSecret = existingShared.Azure.ClientSecret
-		}
-	}
-	if updated.Openstack != nil {
-		if len(updated.Openstack.Username) == 0 {
-			updated.Openstack.Username = existingShared.Openstack.Username
-		}
-		if len(updated.Openstack.Password) == 0 {
-			updated.Openstack.Password = existingShared.Openstack.Password
-		}
-	}
-	if updated.Hetzner != nil && len(updated.Hetzner.Token) == 0 {
-		updated.Hetzner.Token = existingShared.Hetzner.Token
-	}
-	if updated.VSphere != nil {
-		if len(updated.VSphere.Username) == 0 {
-			updated.VSphere.Username = existingShared.VSphere.Username
-		}
-		if len(updated.VSphere.Password) == 0 {
-			updated.VSphere.Password = existingShared.VSphere.Password
-		}
-		if len(updated.VSphere.InfraManagementUser.Username) == 0 {
-			updated.VSphere.InfraManagementUser.Username = existingShared.VSphere.InfraManagementUser.Username
-		}
-		if len(updated.VSphere.InfraManagementUser.Password) == 0 {
-			updated.VSphere.InfraManagementUser.Password = existingShared.VSphere.InfraManagementUser.Password
-		}
-	}
-
-	if updated.Fake != nil {
-		if len(updated.Fake.Token) == 0 {
-			updated.Fake.Token = existingShared.Fake.Token
-		}
-	}
-
-	return *updated
-}
-
 // ClusterHealth stores health information of a cluster and the timestamp of the last change.
 type ClusterHealth struct {
 	ClusterHealthStatus `json:",inline"`

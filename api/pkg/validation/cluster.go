@@ -8,7 +8,6 @@ import (
 
 	"github.com/Masterminds/semver"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -165,36 +164,6 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudPr
 
 	if !equality.Semantic.DeepEqual(newCluster.TypeMeta, oldCluster.TypeMeta) {
 		return errors.New("changing the type metadata is not allowed")
-	}
-
-	if err := ValidateCloudSpec(newCluster.Spec.Cloud); err != nil {
-		return fmt.Errorf("invalid cloud spec: %v", err)
-	}
-
-	providerName, err := provider.ClusterCloudProviderName(newCluster.Spec.Cloud)
-	if err != nil {
-		return fmt.Errorf("invalid cloud spec: %v", err)
-	}
-
-	cloudProvider, exists := cloudProviders[providerName]
-	if !exists {
-		return fmt.Errorf("invalid cloud provider '%s' specified: %v", err, providerName)
-	}
-
-	if err := cloudProvider.ValidateCloudSpec(newCluster.Spec.Cloud); err != nil {
-		return fmt.Errorf("invalid cloud spec: %v", err)
-	}
-	return nil
-}
-
-// ValidateUpdateNewCluster validates if the newCluster update is allowed
-func ValidateUpdateNewCluster(newCluster *apiv1.Cluster, oldCluster *kubermaticv1.Cluster, cloudProviders map[string]provider.CloudProvider) error {
-	if err := ValidateCloudChange(newCluster.Spec.Cloud, oldCluster.Spec.Cloud); err != nil {
-		return err
-	}
-
-	if newCluster.Status.URL != oldCluster.Address.URL {
-		return errors.New("changing the url is not allowed")
 	}
 
 	if err := ValidateCloudSpec(newCluster.Spec.Cloud); err != nil {
