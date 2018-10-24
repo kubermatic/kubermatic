@@ -271,7 +271,7 @@ data:
           message: 'Etcd cluster "{{ $labels.job }}": insufficient members ({{ $value
             }}).'
         expr: |
-          count(up{job=~".*etcd.*"} == 0) by (job) > (count(up{job=~".*etcd.*"}) by (job) / 2 - 1)
+          sum(up{job=~".*etcd.*"} == bool 1) by (job) < ((count(up{job=~".*etcd.*"}) by (job) + 1) / 2)
         for: 3m
         labels:
           severity: critical
