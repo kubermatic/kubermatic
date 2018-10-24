@@ -803,18 +803,14 @@ func TestPatchCluster(t *testing.T) {
 		},
 		// scenario 2
 		{
-			Name:             "scenario 2: fail on invalid patch json",
-			Body:             `{"spec":{"cloud":{"dc":"dc1"`,
-			ExpectedResponse: `{"error":{"code":400,"message":"cannot patch cluster: Invalid JSON Patch"}}`,
-			cluster:          "keen-snyder",
-			HTTPStatus:       http.StatusBadRequest,
-			project:          genDefaultProject().Name,
-			ExistingAPIUser:  genDefaultAPIUser(),
-			ExistingKubermaticObjects: func() []runtime.Object {
-				defaultObjs := genDefaultKubermaticObjects()
-				defaultObjs = append(defaultObjs, genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)))
-				return defaultObjs
-			}(),
+			Name:                      "scenario 2: fail on invalid patch json",
+			Body:                      `{"spec":{"cloud":{"dc":"dc1"`,
+			ExpectedResponse:          `{"error":{"code":400,"message":"cannot patch cluster: Invalid JSON Patch"}}`,
+			cluster:                   "keen-snyder",
+			HTTPStatus:                http.StatusBadRequest,
+			project:                   genDefaultProject().Name,
+			ExistingAPIUser:           genDefaultAPIUser(),
+			ExistingKubermaticObjects: genDefaultKubermaticObjects(genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))),
 		},
 	}
 
