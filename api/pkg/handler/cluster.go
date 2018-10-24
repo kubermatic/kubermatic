@@ -80,39 +80,6 @@ func getCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	}
 }
 
-func updateCluster(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(UpdateClusterReq)
-		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
-		}
-
-		existingCluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
-		}
-
-		newCluster := req.Body
-		existingCluster.Spec.Version = req.Body.Spec.Version
-		existingCluster.Spec.MachineNetworks = newCluster.Spec.MachineNetworks
-		newCluster.Spec.Cloud = kubermaticapiv1.UpdateCloudSpec(newCluster.Spec.Cloud, existingCluster.Spec.Cloud)
-
-		if err = validation.ValidateUpdateNewCluster(&newCluster, existingCluster, cloudProviders); err != nil {
-			return nil, errors.NewBadRequest("invalid cluster: %v", err)
-		}
-		existingCluster.Spec.Cloud = newCluster.Spec.Cloud
-
-		updatedCluster, err := clusterProvider.Update(userInfo, existingCluster)
-		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
-		}
-		return convertInternalClusterToExternal(updatedCluster), nil
-	}
-}
-
 func patchCluster(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchClusterReq)
@@ -595,35 +562,6 @@ func decodeSSHKeyID(c context.Context, r *http.Request) (string, error) {
 	}
 
 	return keyID, nil
-}
-
-// UpdateClusterReq defines HTTP request for updateCluster endpoint
-// swagger:parameters updateCluster
-type UpdateClusterReq struct {
-	GetClusterReq
-	// in: body
-	Body apiv1.Cluster
-}
-
-func decodeUpdateClusterReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req UpdateClusterReq
-	clusterID, err := decodeClusterID(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	dcr, err := decodeDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.DCReq = dcr.(DCReq)
-	req.ClusterID = clusterID
-
-	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
-		return nil, err
-	}
-
-	return req, nil
 }
 
 // PatchClusterReq defines HTTP request for patchCluster endpoint

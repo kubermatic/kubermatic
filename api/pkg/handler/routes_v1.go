@@ -115,10 +115,6 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}").
 		Handler(r.getCluster())
 
-	mux.Methods(http.MethodPut).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}").
-		Handler(r.updateCluster())
-
 	mux.Methods(http.MethodPatch).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}").
 		Handler(r.patchCluster())
@@ -756,32 +752,6 @@ func (r Routing) getCluster() http.Handler {
 			r.userInfoMiddleware(),
 		)(getCluster(r.projectProvider)),
 		decodeGetClusterReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id} project updateCluster
-//
-//     Updates the given cluster.
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: Cluster
-//       401: empty
-//       403: empty
-func (r Routing) updateCluster() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.authenticator.Verifier(),
-			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
-			r.userInfoMiddleware(),
-		)(updateCluster(r.cloudProviders, r.projectProvider)),
-		decodeUpdateClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
