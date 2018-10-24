@@ -3,6 +3,7 @@ package openstack
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -24,7 +25,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
-	common "sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
+	"sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
 	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
@@ -640,23 +641,45 @@ func (d *osInstance) Status() instance.Status {
 //
 // if the given error doesn't qualify the error passed as an argument will be returned
 func osErrorToTerminalError(err error, msg string) error {
-	prepareAndReturnError := func() error {
-		return fmt.Errorf("%s, due to %s", msg, err)
-	}
-	if err != nil {
-		default401 := gophercloud.ErrDefault401{}
-
-		switch err.Error() {
-		case "Authentication failed", default401.Error():
-			// authorization primitives come from MachineSpec
-			// thus we are setting InvalidConfigurationMachineError
-			return cloudprovidererrors.TerminalError{
-				Reason:  common.InvalidConfigurationMachineError,
-				Message: "A request has been rejected due to invalid credentials which were taken from the MachineSpec",
-			}
-		default:
-			return prepareAndReturnError()
+	if errUnauthorized, ok := err.(gophercloud.ErrDefault401); ok {
+		return cloudprovidererrors.TerminalError{
+			Reason:  common.InvalidConfigurationMachineError,
+			Message: fmt.Sprintf("A request has been rejected due to invalid credentials which were taken from the MachineSpec: %v", errUnauthorized),
 		}
 	}
-	return err
+
+	if errForbidden, ok := err.(gophercloud.ErrDefault403); ok {
+		terr := cloudprovidererrors.TerminalError{
+			Reason:  common.InvalidConfigurationMachineError,
+			Message: fmt.Sprintf("%s. The request against the OpenStack API is forbidden: %s", msg, errForbidden.Error()),
+		}
+
+		// The response from OpenStack might contain a more detailed message
+		info := &forbiddenResponse{}
+		if err := json.Unmarshal(errForbidden.Body, info); err != nil {
+			// We just log here as we just do this to make the response more pretty
+			glog.V(0).Infof("failed to unmarshal response body from 403 response from OpenStack API: %v\n%s", err, errForbidden.Body)
+			return terr
+		}
+
+		// If we have more details, interpret them
+		if info.Forbidden.Message != "" {
+			terr.Message = fmt.Sprintf("%s. The request against the OpenStack API is forbidden: %s", msg, info.Forbidden.Message)
+			if strings.Contains(info.Forbidden.Message, "Quota exceeded") {
+				terr.Reason = common.InsufficientResourcesMachineError
+			}
+		}
+
+		return terr
+	}
+
+	return fmt.Errorf("%s, due to %s", msg, err)
+}
+
+// forbiddenResponse is a potential response body from the OpenStack API when the request is forbidden (code: 403)
+type forbiddenResponse struct {
+	Forbidden struct {
+		Message string `json:"message"`
+		Code    int    `json:"code"`
+	} `json:"forbidden"`
 }

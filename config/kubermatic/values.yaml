@@ -32,7 +32,7 @@ kubermatic:
     addons:
       image:
         repository: "quay.io/kubermatic/addons"
-        tag: "v0.1.13"
+        tag: "v0.1.15"
         pullPolicy: "IfNotPresent"
       # list of Addons to install into every user-cluster. All need to exist in the addons image
       defaultAddons:
@@ -67,12 +67,6 @@ kubermatic:
       repository: "kubermatic/api"
       tag: "__KUBERMATIC_TAG__"
       pullPolicy: "IfNotPresent"
-  s3_exporter:
-    image:
-      repository: quay.io/kubermatic/s3-exporter
-      tag: v0.2
-    endpoint: http://minio.minio.svc.cluster.local:9000
-    bucket: kubermatic-etcd-backups
   storeContainer: |
     command:
     - /bin/sh
