@@ -434,7 +434,7 @@ func (r *testRunner) getKubeconfig(log *logrus.Entry, cluster *kubermaticv1.Clus
 	if err != nil {
 		return "", fmt.Errorf("failed to load kubeconfig from cluster client provider: %v", err)
 	}
-	filename := fmt.Sprintf("/tmp/%s-kubeconfig", cluster.Name)
+	filename := path.Join(r.homeDir, fmt.Sprintf("%s-kubeconfig", cluster.Name))
 	if err := ioutil.WriteFile(filename, kubeconfig, 0644); err != nil {
 		return "", fmt.Errorf("failed to write kubeconfig to %s: %v", filename, err)
 	}
@@ -459,7 +459,7 @@ func (r *testRunner) getCloudConfig(log *logrus.Entry, cluster *kubermaticv1.Clu
 		return "", fmt.Errorf("failed to get cloud config ConfigMap: %v", err)
 	}
 
-	filename := fmt.Sprintf("/tmp/%s-cloud-config", cluster.Name)
+	filename := path.Join(r.homeDir, fmt.Sprintf("%s-cloud-config", cluster.Name))
 	if err := ioutil.WriteFile(filename, []byte(cmData), 0644); err != nil {
 		return "", fmt.Errorf("failed to write cloud config: %v", err)
 	}

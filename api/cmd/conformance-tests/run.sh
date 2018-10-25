@@ -13,6 +13,7 @@ go build github.com/kubermatic/kubermatic/api/cmd/conformance-tests
     -name-prefix=henrik-e2e \
     -reports-root=$(go env GOPATH)/src/github.com/kubermatic/kubermatic/reports \
     -cleanup-on-start=false \
+    -providers=aws \
     -aws-access-key-id="$(vault kv get -field=accessKeyID dev/e2e-aws)" \
     -aws-secret-access-key="$(vault kv get -field=secretAccessKey dev/e2e-aws)" \
     -digitalocean-token="$(vault kv get -field=token dev/e2e-digitalocean)" \

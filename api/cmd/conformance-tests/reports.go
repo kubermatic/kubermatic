@@ -71,19 +71,12 @@ func printDetailedReport(report *reporters.JUnitTestSuite) {
 	// Printing everything which has an error will print the errors from retried tests as for each attempt a TestCase entry exists.
 	if report.Failures > 0 || report.Errors > 0 {
 		for _, t := range report.TestCases {
-			status := "PASS"
-			if t.FailureMessage != nil {
-				status = "FAIL"
-			}
-
 			if t.FailureMessage == nil {
 				continue
 			}
 
-			fmt.Fprintln(testBuf, fmt.Sprintf("[%s] - %s", status, t.Name))
-			if t.FailureMessage != nil {
-				fmt.Fprintln(testBuf, fmt.Sprintf("      %s", t.FailureMessage.Message))
-			}
+			fmt.Fprintln(testBuf, fmt.Sprintf("[FAIL] - %s", t.Name))
+			fmt.Fprintln(testBuf, fmt.Sprintf("      %s", t.FailureMessage.Message))
 		}
 	}
 
