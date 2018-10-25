@@ -1,8 +1,19 @@
 
 ### [v2.8.0]()
 
+Supported Kubernetes versions:
+- `1.9.0` - `1.9.10`
+- `1.10.0` - `1.10.8`
+- `1.11.0` - `1.11.3`
+- `1.12.0` - `1.12.1`
+
+
+**Major changes:**
+
+
 - Implemented user/project management
 - Old clusters will be automatically migrated to each user&#39;s default project [#1829](https://github.com/kubermatic/kubermatic/issues/1829) ([p0lyn0mial](https://github.com/p0lyn0mial))
+- Kubermatic now supports Kubernetes 1.12 [#2132](https://github.com/kubermatic/kubermatic/issues/2132) ([alvaroaleman](https://github.com/alvaroaleman))
 
 
 **Dashboard:**
@@ -70,7 +81,6 @@
 - The kubermatic-master chart has been merged into the main kubermatic chart [#2103](https://github.com/kubermatic/kubermatic/issues/2103) ([alvaroaleman](https://github.com/alvaroaleman))
 - Version v1.11.0 - 1.11.3 Clusters will no longer gather `rest_*` metrics from the controller-manager due to a [bug in kubernetes](https://github.com/kubernetes/kubernetes/pull/68530) [#2020](https://github.com/kubermatic/kubermatic/issues/2020) ([cbeneke](https://github.
 com/cbeneke))
-- Kubermatic now supports Kubernetes 1.12 [#2132](https://github.com/kubermatic/kubermatic/issues/2132) ([alvaroaleman](https://github.com/alvaroaleman))
 - Communicating with cloud providers through the non-project APIs no longer requires providing additional credentials. [#2156](https://github.com/kubermatic/kubermatic/issues/2156) ([p0lyn0mial](https://github.com/p0lyn0mial))
 - Communicating with cloud providers through the project APIs no longer requires providing additional credentials. [#2227](https://github.com/kubermatic/kubermatic/issues/2227) ([p0lyn0mial](https://github.com/p0lyn0mial))
 - Updated dashboard to `v1.0.1` [#2228](https://github.com/kubermatic/kubermatic/issues/2228) ([mrIncompetent](https://github.com/mrIncompetent))
