@@ -42,6 +42,10 @@ type ClusterTask func(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error
 // In case of an error, the correspondent error will be returned, else nil.
 type KeyTask func(key *kubermaticv1.UserSSHKey, ctx *cleanupContext) error
 
+// UserTask represents a cleanup action, taking the current user for which the cleanup should be executed and the current context.
+// In case of an error, the correspondent error will be returned, else nil.
+type UserTask func(user *kubermaticv1.User, ctx *cleanupContext) error
+
 func main() {
 	var kubeconfig, masterURL, workerName string
 
@@ -62,10 +66,24 @@ func main() {
 	ctx.kubeClient = kubernetes.NewForConfigOrDie(ctx.config)
 	ctx.kubermaticClient = kubermaticclientset.NewForConfigOrDie(ctx.config)
 
+	if err := cleanupClusters(workerName, &ctx); err != nil {
+		glog.Fatalf("failed to cleanup clusters: %v", err)
+	}
+
+	if err := cleanupUsers(&ctx); err != nil {
+		glog.Fatalf("failed to cleanup users: %v", err)
+	}
+
+	if err := cleanupKeys(&ctx); err != nil {
+		glog.Fatalf("failed to cleanup keys: %v", err)
+	}
+}
+
+func cleanupClusters(workerName string, ctx *cleanupContext) error {
 	// The worker labels used to be assigned to every cluster, even if they were empty.
 	// We remove these empty labels first, since the label selector below expects
 	// them to be absent for empty worker label.
-	if err = purgeEmptyWorkerLabels(ctx.kubermaticClient); err != nil {
+	if err := purgeEmptyWorkerLabels(ctx.kubermaticClient); err != nil {
 		glog.Fatalf("failed to remove empty worker labels: %v", err)
 	}
 
@@ -77,36 +95,61 @@ func main() {
 	selector(&options)
 	clusters, err := ctx.kubermaticClient.KubermaticV1().Clusters().List(options)
 	if err != nil {
-		glog.Fatal(err)
+		return err
 	}
 
 	w := sync.WaitGroup{}
 	w.Add(len(clusters.Items))
-
 	for i := range clusters.Items {
 		go func(c *kubermaticv1.Cluster) {
 			defer w.Done()
 
-			cleanupCluster(c, &ctx)
+			cleanupCluster(c, ctx)
 		}(&clusters.Items[i])
 	}
 	w.Wait()
 
+	return nil
+}
+
+func cleanupKeys(ctx *cleanupContext) error {
 	keys, err := ctx.kubermaticClient.KubermaticV1().UserSSHKeies().List(metav1.ListOptions{})
 	if err != nil {
 		glog.Fatal(err)
 	}
 
-	w = sync.WaitGroup{}
+	w := sync.WaitGroup{}
 	w.Add(len(keys.Items))
 
 	for i := range keys.Items {
 		go func(key *kubermaticv1.UserSSHKey) {
 			defer w.Done()
-			cleanupKey(key, &ctx)
+			cleanupKey(key, ctx)
 		}(&keys.Items[i])
 	}
 	w.Wait()
+
+	return nil
+}
+
+func cleanupUsers(ctx *cleanupContext) error {
+	userList, err := ctx.kubermaticClient.KubermaticV1().Users().List(metav1.ListOptions{})
+	if err != nil {
+		glog.Fatal(err)
+	}
+
+	w := sync.WaitGroup{}
+	w.Add(len(userList.Items))
+
+	for i := range userList.Items {
+		go func(user *kubermaticv1.User) {
+			defer w.Done()
+			cleanupUser(user, ctx)
+		}(&userList.Items[i])
+	}
+	w.Wait()
+
+	return nil
 }
 
 func purgeEmptyWorkerLabels(kubermaticClient kubermaticclientset.Interface) error {
@@ -189,6 +232,30 @@ func cleanupKey(key *kubermaticv1.UserSSHKey, ctx *cleanupContext) {
 		go func(t KeyTask) {
 			defer w.Done()
 			err := t(key, ctx)
+
+			if err != nil {
+				glog.Error(err)
+			}
+		}(task)
+	}
+
+	w.Wait()
+}
+
+func cleanupUser(user *kubermaticv1.User, ctx *cleanupContext) {
+	glog.Infof("Cleaning up User %s (%s)", user.Name, user.Spec.Email)
+
+	tasks := []UserTask{
+		migrateUserID,
+	}
+
+	w := sync.WaitGroup{}
+	w.Add(len(tasks))
+
+	for _, task := range tasks {
+		go func(t UserTask) {
+			defer w.Done()
+			err := t(user, ctx)
 
 			if err != nil {
 				glog.Error(err)
@@ -402,6 +469,29 @@ func migrateSSHKeyOwner(key *kubermaticv1.UserSSHKey, ctx *cleanupContext) error
 		}
 		key.Labels[kubermaticKubernetesProvider.UserLabelKey+"_RAW"] = oldID
 		if _, err := ctx.kubermaticClient.KubermaticV1().UserSSHKeies().Update(key); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// We now hash all user ID's to avoid breaking the label requirements
+func migrateUserID(user *kubermaticv1.User, ctx *cleanupContext) error {
+	oldID := user.Spec.ID
+	if !strings.HasSuffix(oldID, hash.UserIDSuffix) {
+		newID, err := hash.GetUserID(oldID)
+		if err != nil {
+			return err
+		}
+
+		// Set new ID
+		user.Spec.ID = newID
+		// Saving as label. Otherwise we would need to create a new field
+		if user.Labels == nil {
+			user.Labels = map[string]string{}
+		}
+		user.Labels[kubermaticKubernetesProvider.UserLabelKey+"_RAW"] = oldID
+		if _, err := ctx.kubermaticClient.KubermaticV1().Users().Update(user); err != nil {
 			return err
 		}
 	}
