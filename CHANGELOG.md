@@ -1,4 +1,22 @@
 
+### [v2.8.1]()
+
+
+**Misc:**
+
+- Prometheus is now scraping user clusters [#2219](https://github.com/kubermatic/kubermatic/issues/2219) ([thetechnick](https://github.com/thetechnick))
+- Updated the Kubermatic dashboard to `v1.0.2` [#2263](https://github.com/kubermatic/kubermatic/issues/2263) ([mrIncompetent](https://github.com/mrIncompetent))
+- Update machine controller to `v0.9.8` [#2275](https://github.com/kubermatic/kubermatic/issues/2275) ([mrIncompetent](https://github.com/mrIncompetent))
+
+
+**Dashboard:**
+
+- Removed Container Runtime selection, which is no longer supported. [#828](https://github.com/kubermatic/dashboard-v2/issues/828) ([bashofmann](https://github.com/bashofmann))
+- Various minor visual improvements
+
+
+
+
 ### [v2.8.0]()
 
 Supported Kubernetes versions:
