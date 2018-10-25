@@ -53,20 +53,23 @@ func main() {
 	if err != nil {
 		glog.Fatalf("failed to create server run options due to = %v", err)
 	}
+	if err := options.validate(); err != nil {
+		glog.Fatalf("incorrect flags were passed to the server, err  = %v", err)
+	}
 
 	providers, err := createInitProviders(options)
 	if err != nil {
 		glog.Fatalf("failed to create and initialize providers due to %v", err)
 	}
-	authenticator, err := createAuthenticator(options)
+	authenticator, issuerVerifier, err := createOIDCAuthenticatorIssuer(options)
 	if err != nil {
-		glog.Fatalf("failed to create a openid authenticator for issuer %s (clientID=%s) due to %v", options.tokenIssuer, options.clientID, err)
+		glog.Fatalf("failed to create a openid authenticator for issuer %s (oidcClientID=%s) due to %v", options.oidcIssuerURL, options.oidcClientID, err)
 	}
 	updateManager, err := version.NewFromFiles(options.versionsFile, options.updatesFile)
 	if err != nil {
 		glog.Fatal(fmt.Sprintf("failed to create update manager due to %v", err))
 	}
-	apiHandler, err := createAPIHandler(options, providers, authenticator, updateManager)
+	apiHandler, err := createAPIHandler(options, providers, authenticator, issuerVerifier, updateManager)
 	if err != nil {
 		glog.Fatalf(fmt.Sprintf("failed to create API Handler due to %v", err))
 	}
@@ -147,21 +150,23 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	return providers{sshKey: sshKeyProvider, user: userProvider, project: projectProvider, projectMember: projectMemberProvider, memberMapper: projectMemberProvider, cloud: cloudProviders, clusters: clusterProviders, datacenters: datacenters}, nil
 }
 
-func createAuthenticator(options serverRunOptions) (handler.Authenticator, error) {
+func createOIDCAuthenticatorIssuer(options serverRunOptions) (handler.OIDCAuthenticator, handler.OIDCIssuerVerifier, error) {
 	authenticator, err := handler.NewOpenIDAuthenticator(
-		options.tokenIssuer,
-		options.clientID,
+		options.oidcIssuerURL,
+		options.oidcClientID,
+		options.oidcClientSecret,
+		options.oidcRedirectURI,
 		handler.NewCombinedExtractor(
 			handler.NewHeaderBearerTokenExtractor("Authorization"),
 			handler.NewQueryParamBearerTokenExtractor("token"),
 		),
-		options.tokenIssuerSkipTLSVerify,
+		options.oidcSkipTLSVerify,
 	)
 
-	return authenticator, err
+	return authenticator, authenticator, err
 }
 
-func createAPIHandler(options serverRunOptions, prov providers, authenticator handler.Authenticator, updateManager *version.Manager) (http.HandlerFunc, error) {
+func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticator handler.OIDCAuthenticator, oidcIssuerVerifier handler.OIDCIssuerVerifier, updateManager *version.Manager) (http.HandlerFunc, error) {
 	var prometheusClient prometheusapi.Client
 	if options.featureGates.Enabled(PrometheusEndpoint) {
 		var err error
@@ -179,7 +184,8 @@ func createAPIHandler(options serverRunOptions, prov providers, authenticator ha
 		prov.sshKey,
 		prov.user,
 		prov.project,
-		authenticator,
+		oidcAuthenticator,
+		oidcIssuerVerifier,
 		updateManager,
 		prometheusClient,
 		prov.projectMember,
@@ -190,6 +196,14 @@ func createAPIHandler(options serverRunOptions, prov providers, authenticator ha
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
 	v1AlphaRouter := mainRouter.PathPrefix("/api/v1alpha").Subrouter()
 	r.RegisterV1(v1Router)
+	r.RegisterV1Optional(v1Router,
+		options.featureGates.enabled(OIDCKubeCfgEndpoint),
+		handler.OIDCConfiguration{
+			URL:          options.oidcIssuerURL,
+			ClientID:     options.oidcClientID,
+			ClientSecret: options.oidcClientSecret,
+		},
+		mainRouter)
 	r.RegisterV1Alpha(v1AlphaRouter)
 
 	metrics.RegisterHTTPVecs()

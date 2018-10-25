@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"github.com/go-test/deep"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -12,6 +11,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/go-test/deep"
 
 	"github.com/gorilla/mux"
 
@@ -47,6 +48,7 @@ func createTestEndpointAndGetClients(user apiv1.LegacyUser, dc map[string]provid
 	}
 	cloudProviders := cloud.Providers(datacenters)
 	authenticator := NewFakeAuthenticator(user)
+	issuerVerifier := NewFakeIssuerVerifier()
 
 	kubeClient := fake.NewSimpleClientset(kubeObjects...)
 	kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, 10*time.Millisecond)
@@ -94,6 +96,7 @@ func createTestEndpointAndGetClients(user apiv1.LegacyUser, dc map[string]provid
 		userProvider,
 		projectProvider,
 		authenticator,
+		issuerVerifier,
 		updateManager,
 		prometheusClient,
 		projectMemberProvider,

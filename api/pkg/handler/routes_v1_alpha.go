@@ -32,7 +32,7 @@ func (r Routing) RegisterV1Alpha(mux *mux.Router) {
 func (r Routing) getClusterMetrics() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.authenticator.Verifier(),
+			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
 			r.userInfoMiddleware(),
