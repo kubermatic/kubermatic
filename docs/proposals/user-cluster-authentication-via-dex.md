@@ -4,8 +4,7 @@
 
 **Status**: Proposal
 
-*short description of the topic e.g.*
-Currently user's of kubermatic authenticate via Dex against the kubermatic dashboard, to manage their clusters but they need to download a special created kubeconfig for each cluster to use it.
+Currently user's of kubermatic authenticate via Dex against the kubermatic dashboard, to manage their clusters but they need to download a specially created kubeconfig for each cluster to use it.
 This proposal aims to describe all needed tasks that need to be done, so users can use Dex to authenticate against their clusters.
 
 ## Motivation and Background
@@ -51,6 +50,7 @@ For this the following flags must be configured:
 
 The dashboard should show a button, next to the download-kubeconfig button, which will open up a modal,
 explaining how to share the cluster using OpenID-Connect.
+As sharing a cluster works by sharing a unique URL, the dashboard should offer a `click-to-copy` function - like with node IP's.
 As we implement this via a feature flag, a new config option must be introduced in the dashboard config.
 
 ### Client side
