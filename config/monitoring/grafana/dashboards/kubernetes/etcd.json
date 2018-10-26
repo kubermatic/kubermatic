@@ -1955,7 +1955,7 @@
         "query": "label_values(job:etcd_server_has_leader:sum, cluster)",
         "refresh": 1,
         "regex": "",
-        "sort": 2,
+        "sort": 1,
         "tagValuesQuery": "",
         "tags": [],
         "tagsQuery": "",
