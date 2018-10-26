@@ -16,7 +16,7 @@ import (
 const (
 	name = "machine-controller"
 
-	tag = "v0.9.8"
+	tag = "be54360d57ab81a0f5a2bb31d74378ffb4a8ead3"
 )
 
 // Deployment returns the machine-controller Deployment
@@ -49,7 +49,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 		},
 	}
 
-	volumes := getVolumes()
+	volumes := []corev1.Volume{getKubeconfigVolume()}
 	podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pod labels: %v", err)
@@ -79,7 +79,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:            name,
-			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
+			Image:           data.ImageRegistry(resources.RegistryDocker) + "/alvaroaleman/machine-controller:" + tag,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/local/bin/machine-controller"},
 			Args: []string{
@@ -130,17 +130,15 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 	return dep, nil
 }
 
-func getVolumes() []corev1.Volume {
-	return []corev1.Volume{
-		{
-			Name: resources.MachineControllerKubeconfigSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.MachineControllerKubeconfigSecretName,
-					// We have to make the secret readable for all for now because owner/group cannot be changed.
-					// ( upstream proposal: https://github.com/kubernetes/kubernetes/pull/28733 )
-					DefaultMode: resources.Int32(resources.DefaultAllReadOnlyMode),
-				},
+func getKubeconfigVolume() corev1.Volume {
+	return corev1.Volume{
+		Name: resources.MachineControllerKubeconfigSecretName,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: resources.MachineControllerKubeconfigSecretName,
+				// We have to make the secret readable for all for now because owner/group cannot be changed.
+				// ( upstream proposal: https://github.com/kubernetes/kubernetes/pull/28733 )
+				DefaultMode: resources.Int32(resources.DefaultAllReadOnlyMode),
 			},
 		},
 	}

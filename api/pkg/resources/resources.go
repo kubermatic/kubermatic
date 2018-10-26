@@ -43,6 +43,8 @@ const (
 	SchedulerDeploymentName = "scheduler"
 	//MachineControllerDeploymentName is the name for the machine-controller deployment
 	MachineControllerDeploymentName = "machine-controller"
+	// MachineControllerWebhookDeploymentName is the name for the machine-controller webhook deployment
+	MachineControllerWebhookDeploymentName = "machine-controller-webhook"
 	//OpenVPNServerDeploymentName is the name for the openvpn server deployment
 	OpenVPNServerDeploymentName = "openvpn-server"
 	//DNSResolverDeploymentName is the name of the dns resolver deployment
@@ -73,6 +75,8 @@ const (
 	EtcdDefragCronJobName = "etcd-defragger"
 	//OpenVPNServerServiceName is the name for the openvpn server service
 	OpenVPNServerServiceName = "openvpn-server"
+	//MachineControllerWebhookServiceName is the name of the machine-controller webhook service
+	MachineControllerWebhookServiceName = "machine-controller-webhook"
 
 	//AdminKubeconfigSecretName is the name for the secret containing the private ca key
 	AdminKubeconfigSecretName = "admin-kubeconfig"
@@ -86,6 +90,13 @@ const (
 	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
 	//MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the machinecontroller
 	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
+	//MachineControllerWebhookServingCertSecretName is the name for the secret containing the serving cert for the
+	//machine-controller webhook
+	MachineControllerWebhookServingCertSecretName = "machinecontroller-webhook-serving-cert"
+	//MachineControllerWebhookServingCertCertKeyName is the name for the key that contains the cert
+	MachineControllerWebhookServingCertCertKeyName = "cert.pem"
+	//MachineControllerWebhookServingCertKeyKeyName is the name for the key that contains the key
+	MachineControllerWebhookServingCertKeyKeyName = "key.pem"
 	//IPAMControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the ipam controller
 	IPAMControllerKubeconfigSecretName = "ipamcontroller-kubeconfig"
 	//PrometheusApiserverClientCertificateSecretName is the name for the secret containing the client certificate used by prometheus to access the apiserver
