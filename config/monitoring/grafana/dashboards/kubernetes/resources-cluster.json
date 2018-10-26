@@ -1286,7 +1286,7 @@
       },
       "yaxes": [
         {
-          "format": "decbytes",
+          "format": "bytes",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -1385,7 +1385,7 @@
           "pattern": "Value #A",
           "thresholds": [],
           "type": "number",
-          "unit": "decbytes"
+          "unit": "bytes"
         },
         {
           "alias": "Memory Requests",
@@ -1399,7 +1399,7 @@
           "pattern": "Value #B",
           "thresholds": [],
           "type": "number",
-          "unit": "decbytes"
+          "unit": "bytes"
         },
         {
           "alias": "Memory Requests %",
@@ -1427,7 +1427,7 @@
           "pattern": "Value #D",
           "thresholds": [],
           "type": "number",
-          "unit": "decbytes"
+          "unit": "bytes"
         },
         {
           "alias": "Memory Limits %",
