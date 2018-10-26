@@ -25,6 +25,7 @@ spec:
             - |-
               etcdctl() {
               ETCDCTL_API=3 /usr/local/bin/etcdctl \
+                --command-timeout=60s \
                 --endpoints https://$1.etcd.cluster-de-test-01.svc.cluster.local.:2379 \
                 --cacert /etc/etcd/pki/client/ca.crt \
                 --cert /etc/etcd/pki/client/apiserver-etcd-client.crt \
