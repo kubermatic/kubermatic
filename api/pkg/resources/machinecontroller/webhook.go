@@ -3,9 +3,11 @@ package machinecontroller
 import (
 	"fmt"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -208,4 +210,42 @@ func TLSServingCertificate(data resources.SecretDataProvider, existing *corev1.S
 	se.Data[resources.CACertSecretKey] = certutil.EncodeCertPEM(ca.Cert)
 
 	return se, nil
+}
+
+// MutatingwebhookConfiguration returns the MutatingwebhookConfiguration for the machine controler
+func MutatingwebhookConfiguration(c *kubermaticv1.Cluster, existing *admissionregistrationv1beta1.MutatingWebhookConfiguration) (*admissionregistrationv1beta1.MutatingWebhookConfiguration, error) {
+	mutatingWebhookConfiguration := existing
+	if mutatingWebhookConfiguration == nil {
+		mutatingWebhookConfiguration = &admissionregistrationv1beta1.MutatingWebhookConfiguration{}
+	}
+	mutatingWebhookConfiguration.Name = resources.MachineControllerMutatingWebhookConfigurationName
+
+	mutatingWebhookConfiguration.Webhooks = []admissionregistrationv1beta1.Webhook{
+		{
+			Name:          resources.MachineControllerMutatingWebhookConfigurationName,
+			FailurePolicy: failurePolicyPtr(admissionregistrationv1beta1.Fail),
+			Rules: []admissionregistrationv1beta1.RuleWithOperations{{
+				[]admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
+				admissionregistrationv1beta1.Rule{
+					APIGroups:   []string{clusterAPIGroup},
+					APIVersions: []string{clusterAPIVersion},
+					Resources:   []string{"machinedeployments"},
+				},
+			},
+			},
+			ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
+				URL: strPtr(fmt.Sprintf("https://%s.%s.svc.cluster.local", resources.MachineControllerWebhookServiceName, c.Status.NamespaceName)),
+			},
+		},
+	}
+
+	return mutatingWebhookConfiguration, nil
+}
+
+func strPtr(a string) *string {
+	return &a
+}
+
+func failurePolicyPtr(a admissionregistrationv1beta1.FailurePolicyType) *admissionregistrationv1beta1.FailurePolicyType {
+	return &a
 }

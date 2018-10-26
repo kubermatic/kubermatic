@@ -236,6 +236,10 @@ const (
 	MachineDeploymentCRDName = "machinedeployments.cluster.k8s.io"
 	// ClusterCRDName defines the CRD name for cluster objects
 	ClusterCRDName = "clusters.cluster.k8s.io"
+
+	// MachineControllerMutatingWebhookConfigurationName is the name of the machine-controllers mutating webhook
+	// configuration
+	MachineControllerMutatingWebhookConfigurationName = "machine-controller.kubermatic.io"
 )
 
 const (

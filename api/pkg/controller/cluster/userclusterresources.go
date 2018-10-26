@@ -386,3 +386,43 @@ func (cc *Controller) userClusterEnsureCustomResourceDefinitions(c *kubermaticv1
 
 	return nil
 }
+
+func (cc *Controller) userClusterEnsureMutatingWebhookConfigurations(c *kubermaticv1.Cluster) error {
+	client, err := cc.userClusterConnProvider.GetAdmissionRegistrationClient(c)
+	if err != nil {
+		return err
+	}
+
+	mutatingWebhookConfiguration, err := machinecontroller.MutatingwebhookConfiguration(c, nil)
+	if err != nil {
+		return fmt.Errorf("failed to build MutatingwebhookConfiguration: %v", err)
+	}
+	existing, err := client.MutatingWebhookConfigurations().Get(mutatingWebhookConfiguration.Name, metav1.GetOptions{})
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			return err
+		}
+
+		if _, err = client.MutatingWebhookConfigurations().Create(mutatingWebhookConfiguration); err != nil {
+			return fmt.Errorf("failed to create MutatingWebhookConfiguration: %v", err)
+		}
+		glog.V(4).Infof("Created MutatingWebhookConfiguration %s", mutatingWebhookConfiguration.Name)
+	}
+
+	mutatingWebhookConfiguration, err = machinecontroller.MutatingwebhookConfiguration(c, existing.DeepCopy())
+	if err != nil {
+		return fmt.Errorf("failed to build MutatingWebhookConfigurations %s: %v", err)
+	}
+
+	if equality.Semantic.DeepEqual(mutatingWebhookConfiguration, existing) {
+		return nil
+	}
+
+	if _, err = client.MutatingWebhookConfigurations().Update(mutatingWebhookConfiguration); err != nil {
+		return fmt.Errorf("failed to update MutatingWebhookConfigurations %s: %v", mutatingWebhookConfiguration.Name, err)
+	}
+	glog.V(4).Infof("Updated MutatingWebhookConfigurations %s inside user cluster %s", mutatingWebhookConfiguration.Name, c.Name)
+
+	return nil
+
+}

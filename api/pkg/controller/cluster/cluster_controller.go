@@ -25,6 +25,7 @@ import (
 	policyv1beta1informers "k8s.io/client-go/informers/policy/v1beta1"
 	rbacv1informer "k8s.io/client-go/informers/rbac/v1"
 	"k8s.io/client-go/kubernetes"
+	admissionregistrationclientset "k8s.io/client-go/kubernetes/typed/admissionregistration/v1beta1"
 	appsv1lister "k8s.io/client-go/listers/apps/v1"
 	batchv1beta1lister "k8s.io/client-go/listers/batch/v1beta1"
 	corev1lister "k8s.io/client-go/listers/core/v1"
@@ -43,6 +44,7 @@ type userClusterConnectionProvider interface {
 	GetClient(*kubermaticv1.Cluster) (kubernetes.Interface, error)
 	GetMachineClient(*kubermaticv1.Cluster) (clusterv1alpha1clientset.Interface, error)
 	GetApiextensionsClient(*kubermaticv1.Cluster) (apiextensionsclientset.Interface, error)
+	GetAdmissionRegistrationClient(*kubermaticv1.Cluster) (admissionregistrationclientset.AdmissionregistrationV1beta1Interface, error)
 }
 
 // Controller is a controller which is responsible for managing clusters

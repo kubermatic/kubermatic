@@ -108,6 +108,10 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 			return nil, err
 		}
 
+		if err = cc.userClusterEnsureMutatingWebhookConfigurations(cluster); err != nil {
+			return nil, err
+		}
+
 		if err = cc.userClusterEnsureCustomResourceDefinitions(cluster); err != nil {
 			return nil, err
 		}
