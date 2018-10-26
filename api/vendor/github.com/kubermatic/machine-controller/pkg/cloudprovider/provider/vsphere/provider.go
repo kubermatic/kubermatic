@@ -25,6 +25,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
+	ktypes "k8s.io/apimachinery/pkg/types"
 	common "sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
 	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
@@ -526,6 +527,10 @@ func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 	}
 
 	return Server{name: virtualMachine.Name(), status: status, addresses: addresses, id: virtualMachine.Reference().Value}, nil
+}
+
+func (p *provider) MigrateUID(machine *v1alpha1.Machine, new ktypes.UID) error {
+	return nil
 }
 
 func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, name string, err error) {
