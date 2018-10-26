@@ -355,7 +355,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 				return nil, err
 			}
 		}
-		publicIP, err = createPublicIPAddress(context.TODO(), publicIPName, machine.UID, config)
+		publicIP, err = createOrUpdatePublicIPAddress(context.TODO(), publicIPName, machine.UID, config)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create public IP: %v", err)
 		}
@@ -368,7 +368,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 			return nil, err
 		}
 	}
-	iface, err := createNetworkInterface(context.TODO(), ifaceName, machine.UID, config, publicIP)
+	iface, err := createOrUpdateNetworkInterface(context.TODO(), ifaceName, machine.UID, config, publicIP)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate main network interface: %v", err)
 	}
@@ -719,6 +719,83 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 	}
 
 	_, err = getOSImageReference(providerCfg.OperatingSystem)
+	return nil
+}
+
+func (p *provider) MigrateUID(machine *v1alpha1.Machine, new types.UID) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	config, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	if err != nil {
+		return cloudprovidererrors.TerminalError{
+			Reason:  common.InvalidConfigurationMachineError,
+			Message: fmt.Sprintf("failed to parse MachineSpec, due to %v", err),
+		}
+	}
+
+	vmClient, err := getVMClient(config)
+	if err != nil {
+		return fmt.Errorf("failed to create VM client: %v", err)
+	}
+
+	ifaceName := machine.Spec.Name + "-netiface"
+	publicIPName := ifaceName + "-pubip"
+	var publicIP *network.PublicIPAddress
+
+	if kuberneteshelper.HasFinalizer(machine, finalizerPublicIP) {
+		_, err = createOrUpdatePublicIPAddress(ctx, publicIPName, new, config)
+		if err != nil {
+			return fmt.Errorf("failed to update UID on public IP: %v", err)
+		}
+	}
+
+	if kuberneteshelper.HasFinalizer(machine, finalizerNIC) {
+		_, err = createOrUpdateNetworkInterface(ctx, ifaceName, new, config, publicIP)
+		if err != nil {
+			return fmt.Errorf("failed to update UID on main network interface: %v", err)
+		}
+	}
+
+	if kuberneteshelper.HasFinalizer(machine, finalizerDisks) {
+		disksClient, err := getDisksClient(config)
+		if err != nil {
+			return fmt.Errorf("failed to get disks client: %v", err)
+		}
+
+		disks, err := getDisksByMachineUID(ctx, disksClient, config, machine.UID)
+		if err != nil {
+			return fmt.Errorf("failed to get disks: %v", err)
+		}
+
+		for _, disk := range disks {
+			disk.Tags[machineUIDTag] = to.StringPtr(string(new))
+			future, err := disksClient.CreateOrUpdate(ctx, config.ResourceGroup, *disk.Name, disk)
+			if err != nil {
+				return fmt.Errorf("failed to update UID for disk %s: %v", *disk.Name, err)
+			}
+			if err := future.WaitForCompletion(ctx, disksClient.Client); err != nil {
+				return fmt.Errorf("failed waiting for completion of update UID operation for disk %s: %v", *disk.Name, err)
+			}
+		}
+	}
+
+	tags := map[string]*string{}
+	for k, v := range config.Tags {
+		tags[k] = to.StringPtr(v)
+	}
+	tags[machineUIDTag] = to.StringPtr(string(new))
+
+	vmSpec := compute.VirtualMachine{Location: &config.Location, Tags: tags}
+	future, err := vmClient.CreateOrUpdate(ctx, config.ResourceGroup, machine.Spec.Name, vmSpec)
+	if err != nil {
+		return fmt.Errorf("failed to update UID of the instance: %v", err)
+	}
+
+	if err := future.WaitForCompletion(ctx, vmClient.Client); err != nil {
+		return fmt.Errorf("error waiting for instance to have the updated UID: %v", err)
+	}
+
 	return nil
 }
 

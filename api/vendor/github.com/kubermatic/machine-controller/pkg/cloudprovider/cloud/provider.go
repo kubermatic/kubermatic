@@ -3,6 +3,8 @@ package cloud
 import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
 
+	"k8s.io/apimachinery/pkg/types"
+
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
@@ -41,6 +43,10 @@ type Provider interface {
 	// or whatever the provider deems interesting. Should always return
 	// a "size" label.
 	MachineMetricsLabels(machine *clusterv1alpha1.Machine) (map[string]string, error)
+
+	// MigrateUID is called when the controller migrates types and the UID of the machine object changes
+	// All cloud providers that use Machine.UID to uniquely identify resources must implement this
+	MigrateUID(machine *clusterv1alpha1.Machine, new types.UID) error
 }
 
 // MachineUpdater defines a function to persist an update to a machine
