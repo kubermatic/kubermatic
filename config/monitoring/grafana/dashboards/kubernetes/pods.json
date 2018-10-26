@@ -16,7 +16,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -80,7 +80,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -118,7 +118,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -182,7 +182,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -220,7 +220,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -271,7 +271,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -309,7 +309,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -360,7 +360,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,

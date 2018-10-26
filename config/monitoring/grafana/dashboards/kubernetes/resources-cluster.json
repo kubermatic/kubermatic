@@ -2,7 +2,7 @@
   "annotations": {
     "list": []
   },
-  "editable": "<< editable | toJson >>",
+  "editable": "<< editable | default false | toJson >>",
   "gnetId": null,
   "graphTooltip": 1,
   "hideControls": "<< hideControls | default false | toJson >>",
@@ -36,7 +36,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "format": "percentunit",
       "gauge": {
@@ -124,7 +124,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -175,7 +175,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "format": "percentunit",
       "gauge": {
@@ -263,7 +263,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -314,7 +314,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "format": "percentunit",
       "gauge": {
@@ -402,7 +402,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -453,7 +453,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "format": "percentunit",
       "gauge": {
@@ -541,7 +541,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -592,7 +592,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "format": "percentunit",
       "gauge": {
@@ -680,7 +680,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -731,7 +731,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "format": "percentunit",
       "gauge": {
@@ -819,7 +819,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -876,7 +876,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 10,
       "gridPos": {
         "h": 7,
@@ -926,7 +926,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -979,7 +979,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "fontSize": "100%",
       "gridPos": {
@@ -1177,7 +1177,7 @@
         "value_type": "individual"
       },
       "transform": "table",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "table",
       "xaxis": {
         "buckets": null,
@@ -1225,7 +1225,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 10,
       "gridPos": {
         "h": 7,
@@ -1275,7 +1275,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1328,7 +1328,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "fontSize": "100%",
       "gridPos": {
@@ -1526,7 +1526,7 @@
         "value_type": "individual"
       },
       "transform": "table",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "table",
       "xaxis": {
         "buckets": null,

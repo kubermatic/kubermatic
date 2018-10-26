@@ -18,7 +18,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -78,7 +78,7 @@
       ],
       "thresholds": "",
       "title": "CPU",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -100,7 +100,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "gbytes",
       "gauge": {
         "maxValue": 100,
@@ -160,7 +160,7 @@
       ],
       "thresholds": "",
       "title": "Memory",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -182,7 +182,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "Bps",
       "gauge": {
         "maxValue": 100,
@@ -242,7 +242,7 @@
       ],
       "thresholds": "",
       "title": "Network",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -264,7 +264,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -325,7 +325,7 @@
       ],
       "thresholds": "",
       "title": "Desired Replicas",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -347,7 +347,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -408,7 +408,7 @@
       ],
       "thresholds": "",
       "title": "Replicas of current version",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -430,7 +430,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -491,7 +491,7 @@
       ],
       "thresholds": "",
       "title": "Observed Generation",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -513,7 +513,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -574,7 +574,7 @@
       ],
       "thresholds": "",
       "title": "Metadata Generation",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -592,7 +592,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -671,7 +671,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
