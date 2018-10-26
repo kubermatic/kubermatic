@@ -128,40 +128,53 @@ func deleteVMsByMachineUID(ctx context.Context, c *config, machineUID types.UID)
 func deleteDisksByMachineUID(ctx context.Context, c *config, machineUID types.UID) error {
 	disksClient, err := getDisksClient(c)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get disks client: %v", err)
 	}
 
-	list, err := disksClient.List(ctx)
+	matchingDisks, err := getDisksByMachineUID(ctx, disksClient, c, machineUID)
 	if err != nil {
 		return err
 	}
 
-	var allDisks []compute.Disk
-
-	for list.NotDone() {
-		allDisks = append(allDisks, list.Values()...)
-		if err = list.Next(); err != nil {
-			return fmt.Errorf("failed to iterate the result list: %s", err)
+	for _, disk := range matchingDisks {
+		future, err := disksClient.Delete(ctx, c.ResourceGroup, *disk.Name)
+		if err != nil {
+			return fmt.Errorf("failed to delete disk %s: %v", *disk.Name, err)
 		}
-	}
 
-	for _, disk := range allDisks {
-		if disk.Tags != nil && disk.Tags[machineUIDTag] != nil && *disk.Tags[machineUIDTag] == string(machineUID) {
-			future, err := disksClient.Delete(ctx, c.ResourceGroup, *disk.Name)
-			if err != nil {
-				return err
-			}
-
-			if err = future.WaitForCompletion(ctx, disksClient.Client); err != nil {
-				return err
-			}
+		if err = future.WaitForCompletion(ctx, disksClient.Client); err != nil {
+			return fmt.Errorf("failed to wait for deletion of disk %s: %v", *disk.Name, err)
 		}
 	}
 
 	return nil
 }
 
-func createPublicIPAddress(ctx context.Context, ipName string, machineUID types.UID, c *config) (*network.PublicIPAddress, error) {
+func getDisksByMachineUID(ctx context.Context, disksClient *compute.DisksClient, c *config, UID types.UID) ([]compute.Disk, error) {
+
+	list, err := disksClient.List(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list disks: %v", err)
+	}
+
+	var allDisks, matchingDisks []compute.Disk
+	for list.NotDone() {
+		allDisks = append(allDisks, list.Values()...)
+		if err = list.Next(); err != nil {
+			return nil, fmt.Errorf("failed to iterate the result list: %s", err)
+		}
+	}
+
+	for _, disk := range allDisks {
+		if disk.Tags != nil && disk.Tags[machineUIDTag] != nil && *disk.Tags[machineUIDTag] == string(UID) {
+			matchingDisks = append(matchingDisks, disk)
+		}
+	}
+
+	return matchingDisks, nil
+}
+
+func createOrUpdatePublicIPAddress(ctx context.Context, ipName string, machineUID types.UID, c *config) (*network.PublicIPAddress, error) {
 	glog.Infof("Creating public IP %q", ipName)
 	ipClient, err := getIPClient(c)
 	if err != nil {
@@ -227,7 +240,7 @@ func getVirtualNetwork(ctx context.Context, c *config) (network.VirtualNetwork, 
 	return virtualNetworksClient.Get(ctx, c.ResourceGroup, c.VNetName, "")
 }
 
-func createNetworkInterface(ctx context.Context, ifName string, machineUID types.UID, config *config, publicIP *network.PublicIPAddress) (network.Interface, error) {
+func createOrUpdateNetworkInterface(ctx context.Context, ifName string, machineUID types.UID, config *config, publicIP *network.PublicIPAddress) (network.Interface, error) {
 	ifClient, err := getInterfacesClient(config)
 	if err != nil {
 		return network.Interface{}, fmt.Errorf("failed to create interfaces client: %v", err)
@@ -246,7 +259,7 @@ func createNetworkInterface(ctx context.Context, ifName string, machineUID types
 				{
 					Name: to.StringPtr("ip-config-1"),
 					InterfaceIPConfigurationPropertiesFormat: &network.InterfaceIPConfigurationPropertiesFormat{
-						Subnet: &subnet,
+						Subnet:                    &subnet,
 						PrivateIPAllocationMethod: network.Dynamic,
 						PublicIPAddress:           publicIP,
 					},
@@ -255,7 +268,7 @@ func createNetworkInterface(ctx context.Context, ifName string, machineUID types
 		},
 		Tags: map[string]*string{machineUIDTag: to.StringPtr(string(machineUID))},
 	}
-	glog.Infof("Creating public network interface %q", ifName)
+	glog.Infof("Creating/Updating public network interface %q", ifName)
 	future, err := ifClient.CreateOrUpdate(ctx, config.ResourceGroup, ifName, ifSpec)
 	if err != nil {
 		return network.Interface{}, fmt.Errorf("failed to create interface: %v", err)
