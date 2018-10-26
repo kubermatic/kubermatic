@@ -4,7 +4,7 @@
   },
   "editable": "<< editable | default false | toJson >>",
   "gnetId": null,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "hideControls": "<< hideControls | default false | toJson >>",
   "links": [],
   "panels": [
