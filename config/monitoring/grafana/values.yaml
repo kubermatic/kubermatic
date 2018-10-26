@@ -37,6 +37,12 @@ grafana:
       #  version: 1
       #  editable: false
 
+    # override Grafana configuration flags
+    configuration:
+      # change this to "Editor" to allow OAuth-authenticated users
+      # to add and edit the dashboards
+      auto_assign_org_role: Viewer
+
   # If you manage your dashboards via your own configmaps,
   # you can add them here to have them automatically be
   # mounted in Grafana. For each volume, specify either a

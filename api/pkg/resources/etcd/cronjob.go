@@ -102,6 +102,7 @@ func defraggerCommand(data *resources.TemplateData) ([]string, error) {
 const (
 	defraggerCommandTpl = `etcdctl() {
 ETCDCTL_API=3 /usr/local/bin/etcdctl \
+  --command-timeout=60s \
   --endpoints https://$1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local.:2379 \
   --cacert /etc/etcd/pki/client/{{ .CACertFile }} \
   --cert /etc/etcd/pki/client/{{ .CertFile }} \
