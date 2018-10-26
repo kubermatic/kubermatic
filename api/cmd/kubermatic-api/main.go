@@ -49,11 +49,14 @@ import (
 )
 
 func main() {
-	options := newServerRunOptions()
+	options, err := newServerRunOptions()
+	if err != nil {
+		glog.Fatalf("failed to create server run options due to = %v", err)
+	}
 
 	providers, err := createInitProviders(options)
 	if err != nil {
-		glog.Fatal(err)
+		glog.Fatalf("failed to create and initialize providers due to %v", err)
 	}
 	authenticator, err := createAuthenticator(options)
 	if err != nil {
@@ -79,7 +82,6 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		return providers{}, fmt.Errorf("unable to build client configuration from kubeconfig due to %v", err)
 	}
 
-	//
 	// create cluster providers - one foreach context
 	clusterProviders := map[string]provider.ClusterProvider{}
 	{
@@ -121,7 +123,6 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		}
 	}
 
-	//
 	// create other providers
 	kubermaticMasterClient := kubermaticclientset.NewForConfigOrDie(config)
 	kubermaticMasterInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticMasterClient, informer.DefaultInformerResyncPeriod)
@@ -161,9 +162,8 @@ func createAuthenticator(options serverRunOptions) (handler.Authenticator, error
 }
 
 func createAPIHandler(options serverRunOptions, prov providers, authenticator handler.Authenticator, updateManager *version.Manager) (http.HandlerFunc, error) {
-	// Only enable the metrics endpoint when prometheusEndpoint is true
 	var prometheusClient prometheusapi.Client
-	if options.prometheusEndpoint {
+	if options.featureGates.enabled(PrometheusEndpoint) {
 		var err error
 		if prometheusClient, err = prometheusapi.NewClient(prometheusapi.Config{
 			Address: options.prometheusURL,

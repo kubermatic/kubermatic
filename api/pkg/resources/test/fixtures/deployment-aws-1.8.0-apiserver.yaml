@@ -126,10 +126,10 @@ spec:
         resources:
           limits:
             cpu: 20m
-            memory: 20Mi
+            memory: 64Mi
           requests:
             cpu: 5m
-            memory: 10Mi
+            memory: 16Mi
         securityContext:
           capabilities:
             add:

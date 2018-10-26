@@ -406,63 +406,6 @@
           }
         }
       },
-      "put": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "project"
-        ],
-        "summary": "Updates the given cluster.",
-        "operationId": "updateCluster",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterID",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "Body",
-            "in": "body",
-            "schema": {
-              "$ref": "#/definitions/Cluster"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Cluster",
-            "schema": {
-              "$ref": "#/definitions/Cluster"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      },
       "delete": {
         "description": "Deletes the specified cluster",
         "produces": [

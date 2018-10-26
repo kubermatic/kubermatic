@@ -59,7 +59,8 @@ kubermatic:
       pullPolicy: "IfNotPresent"
     config: |
       {
-        "show_demo_info": false
+        "show_demo_info": false,
+        "show_terms_of_service": false
       }
   rbac:
     replicas: 1
