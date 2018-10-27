@@ -10,6 +10,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -743,6 +744,38 @@ func (p *provider) MachineMetricsLabels(machine *v1alpha1.Machine) (map[string]s
 	}
 
 	return labels, err
+}
+
+func (p *provider) MigrateUID(machine *v1alpha1.Machine, new types.UID) error {
+	instance, err := p.Get(machine)
+	if err != nil {
+		if err == cloudprovidererrors.ErrInstanceNotFound {
+			return nil
+		}
+		return fmt.Errorf("failed to get instance: %v", err)
+	}
+
+	config, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	if err != nil {
+		return cloudprovidererrors.TerminalError{
+			Reason:  common.InvalidConfigurationMachineError,
+			Message: fmt.Sprintf("Failed to parse MachineSpec, due to %v", err),
+		}
+	}
+
+	ec2Client, err := getEC2client(config.AccessKeyID, config.SecretAccessKey, config.Region)
+	if err != nil {
+		return fmt.Errorf("failed to get EC2 client: %v", err)
+	}
+
+	_, err = ec2Client.CreateTags(&ec2.CreateTagsInput{
+		Resources: aws.StringSlice([]string{instance.ID()}),
+		Tags:      []*ec2.Tag{{Key: aws.String(machineUIDTag), Value: aws.String(string(new))}}})
+	if err != nil {
+		return fmt.Errorf("failed to update instance with new machineUIDTag: %v", err)
+	}
+
+	return nil
 }
 
 type awsInstance struct {

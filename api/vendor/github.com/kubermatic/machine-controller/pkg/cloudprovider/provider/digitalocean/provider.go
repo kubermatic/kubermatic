@@ -19,6 +19,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -381,6 +382,48 @@ func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 	}
 
 	return nil, cloudprovidererrors.ErrInstanceNotFound
+}
+
+func (p *provider) MigrateUID(machine *v1alpha1.Machine, new types.UID) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	if err != nil {
+		return fmt.Errorf("failed to decode providerconfig: %v", err)
+	}
+	client := getClient(c.Token)
+	droplets, _, err := client.Droplets.List(ctx, &godo.ListOptions{PerPage: 1000})
+	if err != nil {
+		return fmt.Errorf("failed to list droplets: %v", err)
+	}
+
+	// The create does not fail if that tag already exists, it even keep responsing with a http/201
+	_, response, err := client.Tags.Create(ctx, &godo.TagCreateRequest{Name: string(new)})
+	if err != nil {
+		return fmt.Errorf("failed to create new UID tag: %v, status code: %v", err, response.StatusCode)
+	}
+
+	for _, droplet := range droplets {
+		if droplet.Name == machine.Spec.Name && sets.NewString(droplet.Tags...).Has(string(machine.UID)) {
+			tagResourceRequest := &godo.TagResourcesRequest{
+				Resources: []godo.Resource{{ID: strconv.Itoa(droplet.ID), Type: godo.DropletResourceType}},
+			}
+			_, err = client.Tags.TagResources(ctx, string(new), tagResourceRequest)
+			if err != nil {
+				return fmt.Errorf("failed to tag droplet with new UID tag: %v", err)
+			}
+			untagResourceRequest := &godo.UntagResourcesRequest{
+				Resources: []godo.Resource{{ID: strconv.Itoa(droplet.ID), Type: godo.DropletResourceType}},
+			}
+			_, err = client.Tags.UntagResources(ctx, string(machine.UID), untagResourceRequest)
+			if err != nil {
+				return fmt.Errorf("failed to remove old UID tag: %v", err)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, name string, err error) {
