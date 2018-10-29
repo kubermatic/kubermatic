@@ -5,7 +5,7 @@ import (
 
 	"github.com/Masterminds/semver"
 
-	kubermaticapiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,16 +18,16 @@ func getHetznerScenarios() []testScenario {
 		// Ubuntu
 		scenarios = append(scenarios, &hetznerScenario{
 			version: v,
-			nodeOsSpec: kubermaticapiv2.OperatingSystemSpec{
-				Ubuntu: &kubermaticapiv2.UbuntuSpec{},
+			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
+				Ubuntu: &kubermaticapiv1.UbuntuSpec{},
 			},
 		})
 		// CentOS
 		//TODO: Fix
 		//scenarios = append(scenarios, &hetznerScenario{
 		//	version: v,
-		//	nodeOsSpec: kubermaticapiv2.OperatingSystemSpec{
-		//		CentOS: &kubermaticapiv2.CentOSSpec{},
+		//	nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
+		//		CentOS: &kubermaticapiv1.CentOSSpec{},
 		//	},
 		//})
 	}
@@ -37,7 +37,7 @@ func getHetznerScenarios() []testScenario {
 
 type hetznerScenario struct {
 	version    *semver.Version
-	nodeOsSpec kubermaticapiv2.OperatingSystemSpec
+	nodeOsSpec kubermaticapiv1.OperatingSystemSpec
 }
 
 func (s *hetznerScenario) Name() string {
@@ -69,18 +69,18 @@ func (s *hetznerScenario) Cluster(secrets secrets) *v1.Cluster {
 	}
 }
 
-func (s *hetznerScenario) Nodes(num int) []*kubermaticapiv2.LegacyNode {
-	var nodes []*kubermaticapiv2.LegacyNode
+func (s *hetznerScenario) Nodes(num int) []*kubermaticapiv1.Node {
+	var nodes []*kubermaticapiv1.Node
 	for i := 0; i < num; i++ {
-		node := &kubermaticapiv2.LegacyNode{
-			Metadata: kubermaticapiv2.LegacyObjectMeta{},
-			Spec: kubermaticapiv2.NodeSpec{
-				Cloud: kubermaticapiv2.NodeCloudSpec{
-					Hetzner: &kubermaticapiv2.HetznerNodeSpec{
+		node := &kubermaticapiv1.Node{
+			ObjectMeta: kubermaticapiv1.ObjectMeta{},
+			Spec: kubermaticapiv1.NodeSpec{
+				Cloud: kubermaticapiv1.NodeCloudSpec{
+					Hetzner: &kubermaticapiv1.HetznerNodeSpec{
 						Type: "cx31",
 					},
 				},
-				Versions: kubermaticapiv2.NodeVersionInfo{
+				Versions: kubermaticapiv1.NodeVersionInfo{
 					Kubelet: s.version.String(),
 				},
 				OperatingSystem: s.nodeOsSpec,
