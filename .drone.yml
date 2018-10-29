@@ -341,6 +341,15 @@ pipeline:
     - name: prometheus
       namespace: monitoring
       path: config/monitoring/prometheus/
+    - name: elasticsearch
+      namespace: monitoring
+      path: config/monitoring/elasticsearch/
+    - name: fluentd
+      namespace: monitoring
+      path: config/monitoring/fluentd/
+    - name: kibana
+      namespace: monitoring
+      path: config/monitoring/kibana/
     helm: upgrade --install --wait --timeout 300 --tiller-namespace=kubermatic-installer
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
