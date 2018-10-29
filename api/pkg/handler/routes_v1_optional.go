@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -30,11 +29,6 @@ func (r Routing) RegisterV1Optional(mux *mux.Router, oidcKubeConfEndpoint bool, 
 		mux.Methods(http.MethodGet).
 			Path("/kubeconfig").
 			Handler(r.createOIDCKubeconfig(oidcCfg))
-
-		// Remove this EP
-		mainMux.Methods(http.MethodGet).
-			Path("/clusters").
-			Handler(r.redirectTo("/api/v1/kubeconfig"))
 	}
 }
 
@@ -58,13 +52,4 @@ func (r Routing) createOIDCKubeconfig(oidcCfg OIDCConfiguration) http.Handler {
 		encodeKubeconfigDoINeddAcditional,
 		r.defaultServerOptions()...,
 	)
-}
-
-// Remove this EP
-func (r Routing) redirectTo(path string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rawQuery := r.URL.RawQuery
-		newPath := fmt.Sprintf("%s?%s", path, rawQuery)
-		http.Redirect(w, r, newPath, http.StatusMovedPermanently)
-	})
 }
