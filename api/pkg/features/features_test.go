@@ -1,4 +1,4 @@
-package main
+package features
 
 import (
 	"testing"
@@ -22,12 +22,12 @@ func TestFeatureGates(t *testing.T) {
 
 	for _, tc := range scenarios {
 		t.Run(tc.name, func(t *testing.T) {
-			target, err := newFeatures(tc.input)
+			target, err := NewFeatures(tc.input)
 			if err != nil {
 				t.Fatal(err)
 			}
 			for feature, shouldBeEnabled := range tc.output {
-				isEnabled := target.enabled(feature)
+				isEnabled := target.Enabled(feature)
 				if isEnabled != shouldBeEnabled {
 					t.Fatalf("expected feature = %s to be set to %v but was set to %v", feature, shouldBeEnabled, isEnabled)
 				}
