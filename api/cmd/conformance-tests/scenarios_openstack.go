@@ -5,7 +5,7 @@ import (
 
 	"github.com/Masterminds/semver"
 
-	kubermaticapiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,15 +18,15 @@ func getOpenStackScenarios() []testScenario {
 		// Ubuntu
 		scenarios = append(scenarios, &openStackScenario{
 			version: v,
-			nodeOsSpec: kubermaticapiv2.OperatingSystemSpec{
-				Ubuntu: &kubermaticapiv2.UbuntuSpec{},
+			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
+				Ubuntu: &kubermaticapiv1.UbuntuSpec{},
 			},
 		})
 		// CoreOS
 		scenarios = append(scenarios, &openStackScenario{
 			version: v,
-			nodeOsSpec: kubermaticapiv2.OperatingSystemSpec{
-				ContainerLinux: &kubermaticapiv2.ContainerLinuxSpec{
+			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
+				ContainerLinux: &kubermaticapiv1.ContainerLinuxSpec{
 					// Otherwise the nodes restart directly after creation - bad for tests
 					DisableAutoUpdate: true,
 				},
@@ -36,8 +36,8 @@ func getOpenStackScenarios() []testScenario {
 		//TODO: Fix
 		//scenarios = append(scenarios, &openStackScenario{
 		//	version: v,
-		//	nodeOsSpec: kubermaticapiv2.OperatingSystemSpec{
-		//		CentOS: &kubermaticapiv2.CentOSSpec{},
+		//	nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
+		//		CentOS: &kubermaticapiv1.CentOSSpec{},
 		//	},
 		//})
 	}
@@ -47,7 +47,7 @@ func getOpenStackScenarios() []testScenario {
 
 type openStackScenario struct {
 	version    *semver.Version
-	nodeOsSpec kubermaticapiv2.OperatingSystemSpec
+	nodeOsSpec kubermaticapiv1.OperatingSystemSpec
 }
 
 func (s *openStackScenario) Name() string {
@@ -82,20 +82,20 @@ func (s *openStackScenario) Cluster(secrets secrets) *v1.Cluster {
 	}
 }
 
-func (s *openStackScenario) Nodes(num int) []*kubermaticapiv2.LegacyNode {
+func (s *openStackScenario) Nodes(num int) []*kubermaticapiv1.Node {
 	osName := getOSNameFromSpec(s.nodeOsSpec)
-	var nodes []*kubermaticapiv2.LegacyNode
+	var nodes []*kubermaticapiv1.Node
 	for i := 0; i < num; i++ {
-		node := &kubermaticapiv2.LegacyNode{
-			Metadata: kubermaticapiv2.LegacyObjectMeta{},
-			Spec: kubermaticapiv2.NodeSpec{
-				Cloud: kubermaticapiv2.NodeCloudSpec{
-					Openstack: &kubermaticapiv2.OpenstackNodeSpec{
+		node := &kubermaticapiv1.Node{
+			ObjectMeta: kubermaticapiv1.ObjectMeta{},
+			Spec: kubermaticapiv1.NodeSpec{
+				Cloud: kubermaticapiv1.NodeCloudSpec{
+					Openstack: &kubermaticapiv1.OpenstackNodeSpec{
 						Flavor: "m1.small",
 						Image:  "kubermatic-e2e-" + osName,
 					},
 				},
-				Versions: kubermaticapiv2.NodeVersionInfo{
+				Versions: kubermaticapiv1.NodeVersionInfo{
 					Kubelet: s.version.String(),
 				},
 				OperatingSystem: s.nodeOsSpec,
