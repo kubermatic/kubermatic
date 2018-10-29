@@ -370,47 +370,25 @@ func newPublicHetznerCloudSpec(internal *kubermaticv1.HetznerCloudSpec) (public 
 }
 
 // PublicAzureCloudSpec is a public counterpart of apiv1.AzureCloudSpec.
-type PublicAzureCloudSpec struct {
-	TenantID        string `json:"tenantID"`
-	SubscriptionID  string `json:"subscriptionID"`
-	ResourceGroup   string `json:"resourceGroup"`
-	VNetName        string `json:"vnet"`
-	SubnetName      string `json:"subnet"`
-	RouteTableName  string `json:"routeTable"`
-	SecurityGroup   string `json:"securityGroup"`
-	AvailabilitySet string `json:"availabilitySet"`
-}
+type PublicAzureCloudSpec struct{}
 
 func newPublicAzureCloudSpec(internal *kubermaticv1.AzureCloudSpec) (public *PublicAzureCloudSpec) {
 	if internal == nil {
 		return nil
 	}
 
-	return &PublicAzureCloudSpec{
-		TenantID:        internal.TenantID,
-		SubscriptionID:  internal.SubscriptionID,
-		ResourceGroup:   internal.ResourceGroup,
-		VNetName:        internal.VNetName,
-		SubnetName:      internal.SubnetName,
-		AvailabilitySet: internal.AvailabilitySet,
-		RouteTableName:  internal.RouteTableName,
-		SecurityGroup:   internal.SecurityGroup,
-	}
+	return &PublicAzureCloudSpec{}
 }
 
 // PublicVSphereCloudSpec is a public counterpart of apiv1.VSphereCloudSpec.
-type PublicVSphereCloudSpec struct {
-	VMNetName string `json:"vmNetName"`
-}
+type PublicVSphereCloudSpec struct{}
 
 func newPublicVSphereCloudSpec(internal *kubermaticv1.VSphereCloudSpec) (public *PublicVSphereCloudSpec) {
 	if internal == nil {
 		return nil
 	}
 
-	return &PublicVSphereCloudSpec{
-		VMNetName: internal.VMNetName,
-	}
+	return &PublicVSphereCloudSpec{}
 }
 
 // PublicBringYourOwnCloudSpec is a public counterpart of apiv1.BringYourOwnCloudSpec.
@@ -425,57 +403,25 @@ func newPublicBringYourOwnCloudSpec(internal *kubermaticv1.BringYourOwnCloudSpec
 }
 
 // PublicAWSCloudSpec is a public counterpart of apiv1.AWSCloudSpec.
-type PublicAWSCloudSpec struct {
-	VPCID               string `json:"vpcId"`
-	SubnetID            string `json:"subnetId"`
-	RoleName            string `json:"roleName"`
-	RouteTableID        string `json:"routeTableId"`
-	InstanceProfileName string `json:"instanceProfileName"`
-	SecurityGroupID     string `json:"securityGroupID"`
-	AvailabilityZone    string `json:"availabilityZone"`
-}
+type PublicAWSCloudSpec struct{}
 
 func newPublicAWSCloudSpec(internal *kubermaticv1.AWSCloudSpec) (public *PublicAWSCloudSpec) {
 	if internal == nil {
 		return nil
 	}
 
-	return &PublicAWSCloudSpec{
-		VPCID:               internal.VPCID,
-		SubnetID:            internal.SubnetID,
-		RoleName:            internal.RoleName,
-		RouteTableID:        internal.RouteTableID,
-		InstanceProfileName: internal.InstanceProfileName,
-		SecurityGroupID:     internal.SecurityGroupID,
-		AvailabilityZone:    internal.AvailabilityZone,
-	}
+	return &PublicAWSCloudSpec{}
 }
 
 // PublicOpenstackCloudSpec is a public counterpart of apiv1.OpenstackCloudSpec.
-type PublicOpenstackCloudSpec struct {
-	Tenant         string `json:"tenant"`
-	Domain         string `json:"domain"`
-	Network        string `json:"network"`
-	SecurityGroups string `json:"securityGroups"`
-	FloatingIPPool string `json:"floatingIpPool"`
-	RouterID       string `json:"routerID"`
-	SubnetID       string `json:"subnetID"`
-}
+type PublicOpenstackCloudSpec struct{}
 
 func newPublicOpenstackCloudSpec(internal *kubermaticv1.OpenstackCloudSpec) (public *PublicOpenstackCloudSpec) {
 	if internal == nil {
 		return nil
 	}
 
-	return &PublicOpenstackCloudSpec{
-		Tenant:         internal.Tenant,
-		Domain:         internal.Domain,
-		Network:        internal.Network,
-		SecurityGroups: internal.SecurityGroups,
-		FloatingIPPool: internal.FloatingIPPool,
-		RouterID:       internal.RouterID,
-		SubnetID:       internal.SubnetID,
-	}
+	return &PublicOpenstackCloudSpec{}
 }
 
 // ClusterStatus defines the cluster status
