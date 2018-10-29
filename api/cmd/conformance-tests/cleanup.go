@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/sirupsen/logrus"
-	"k8s.io/client-go/kubernetes"
 
 	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
@@ -14,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/retry"
 )
 
@@ -69,11 +69,6 @@ func tryToDeleteClusterWithRetries(log *logrus.Entry, cluster *kubermaticv1.Clus
 func tryToDeleteCluster(log *logrus.Entry, cluster *kubermaticv1.Cluster, clusterClientProvider *clusterclient.Provider, kubermaticClient kubermaticclientset.Interface) error {
 	log.Infof("Trying to delete cluster...")
 
-	clusterAPIClient, err := clusterClientProvider.GetMachineClient(cluster)
-	if err != nil {
-		return fmt.Errorf("failed to get the client for the cluster: %v", err)
-	}
-
 	kubeClient, err := clusterClientProvider.GetClient(cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get the client for the cluster: %v", err)
@@ -103,17 +98,6 @@ func tryToDeleteCluster(log *logrus.Entry, cluster *kubermaticv1.Cluster, cluste
 		})
 		if err != nil {
 			return fmt.Errorf("failed to add the annotation '%s=true' to node '%s': %v", eviction.SkipEvictionAnnotationKey, node.Name, err)
-		}
-	}
-
-	machineList, err := clusterAPIClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to list Machines from cluster: %v", err)
-	}
-	for _, m := range machineList.Items {
-		log.Debugf("Deleting Machine '%s'...", m.Name)
-		if err := clusterAPIClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Delete(m.Name, nil); err != nil {
-			return fmt.Errorf("failed to delete Machine '%s': %v", m.Name, err)
 		}
 	}
 

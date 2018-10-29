@@ -174,9 +174,7 @@ func main() {
 		mainLog.SetLevel(logrus.DebugLevel)
 	}
 
-	fields := logrus.Fields{
-		"component": "conformance-tester",
-	}
+	fields := logrus.Fields{}
 	if opts.workerName != "" {
 		fields["worker-name"] = opts.workerName
 	}
