@@ -148,6 +148,15 @@ pipeline:
     - name: prometheus
       namespace: monitoring
       path: config/monitoring/prometheus/
+    - name: elasticsearch
+      namespace: logging
+      path: config/logging/elasticsearch/
+    - name: fluentd
+      namespace: logging
+      path: config/logging/fluentd/
+    - name: kibana
+      namespace: logging
+      path: config/logging/kibana/
     helm: upgrade --install --wait --timeout 300 --tiller-namespace=kubermatic-installer
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
@@ -186,6 +195,15 @@ pipeline:
     - name: prometheus
       namespace: monitoring
       path: config/monitoring/prometheus/
+    - name: elasticsearch
+      namespace: logging
+      path: config/logging/elasticsearch/
+    - name: fluentd
+      namespace: logging
+      path: config/logging/fluentd/
+    - name: kibana
+      namespace: logging
+      path: config/logging/kibana/
     group: deploy-cloud
     helm: upgrade --install --wait --timeout 300 --kube-context=asia-east1-a-1 --tiller-namespace=kubermatic-installer
       --set=kubermatic.isMaster=false
@@ -244,6 +262,15 @@ pipeline:
     - name: prometheus
       namespace: monitoring
       path: config/monitoring/prometheus/
+    - name: elasticsearch
+      namespace: logging
+      path: config/logging/elasticsearch/
+    - name: fluentd
+      namespace: logging
+      path: config/logging/fluentd/
+    - name: kibana
+      namespace: logging
+      path: config/logging/kibana/
     group: deploy-cloud
     helm: upgrade --install --wait --timeout 300 --kube-context=europe-west3-c-1 --tiller-namespace=kubermatic-installer
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
@@ -283,6 +310,15 @@ pipeline:
     - name: prometheus
       namespace: monitoring
       path: config/monitoring/prometheus/
+    - name: elasticsearch
+      namespace: logging
+      path: config/logging/elasticsearch/
+    - name: fluentd
+      namespace: logging
+      path: config/logging/fluentd/
+    - name: kibana
+      namespace: logging
+      path: config/logging/kibana/
     group: deploy-cloud
     helm: upgrade --install --wait --timeout 300 --kube-context=us-central1-c-1 --tiller-namespace=kubermatic-installer
       --set=kubermatic.isMaster=false
@@ -342,14 +378,14 @@ pipeline:
       namespace: monitoring
       path: config/monitoring/prometheus/
     - name: elasticsearch
-      namespace: monitoring
-      path: config/monitoring/elasticsearch/
+      namespace: logging
+      path: config/logging/elasticsearch/
     - name: fluentd
-      namespace: monitoring
-      path: config/monitoring/fluentd/
+      namespace: logging
+      path: config/logging/fluentd/
     - name: kibana
-      namespace: monitoring
-      path: config/monitoring/kibana/
+      namespace: logging
+      path: config/logging/kibana/
     helm: upgrade --install --wait --timeout 300 --tiller-namespace=kubermatic-installer
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
