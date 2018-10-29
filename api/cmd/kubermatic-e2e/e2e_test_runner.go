@@ -12,7 +12,7 @@ import (
 	"time"
 
 	log "github.com/golang/glog"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	kuberrrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,7 +23,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -62,7 +62,7 @@ type e2eTestRunner struct {
 func (ctl *e2eTestRunner) run(ctx context.Context) error {
 	var (
 		clusterTemplate kubermaticv1.Cluster
-		nodeTemplate    apiv2.LegacyNode
+		nodeTemplate    apiv1.Node
 	)
 
 	if err := unmarshalObj(ctl.runOpts.ClusterPath, &clusterTemplate); err != nil {
@@ -272,7 +272,7 @@ func (ctl *e2eTestRunner) getDatacenter(name string) (provider.DatacenterMeta, e
 	return dc, nil
 }
 
-func (ctl *e2eTestRunner) createMachines(restConfig *rest.Config, dc provider.DatacenterMeta, cluster *kubermaticv1.Cluster, node apiv2.LegacyNode) error {
+func (ctl *e2eTestRunner) createMachines(restConfig *rest.Config, dc provider.DatacenterMeta, cluster *kubermaticv1.Cluster, node apiv1.Node) error {
 	clusterClient, err := clusterclientset.NewForConfig(restConfig)
 	if err != nil {
 		return err
