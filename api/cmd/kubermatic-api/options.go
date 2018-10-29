@@ -21,10 +21,11 @@ type serverRunOptions struct {
 
 	// OIDC configuration
 	oidcIssuerURL     string
-	featureGates             features.FeatureGate
+	oidcClientID      string
 	oidcClientSecret  string
 	oidcRedirectURI   string
 	oidcSkipTLSVerify bool
+	featureGates             features.FeatureGate
 
 }
 
@@ -59,7 +60,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 }
 
 func (o serverRunOptions) validate() error {
-	if o.featureGates.enabled(OIDCKubeCfgEndpoint) {
+	if o.featureGates.Enabled(OIDCKubeCfgEndpoint) {
 		if len(o.oidcClientSecret) == 0 {
 			return fmt.Errorf("%s feature is enabled but \"oidc-client-secret\" flag was not specified", OIDCKubeCfgEndpoint)
 		}

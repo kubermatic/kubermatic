@@ -757,7 +757,6 @@ func (r Routing) getCluster() http.Handler {
 	)
 }
 
-			r.oidcAuthenticator.Verifier(),
 // swagger:route PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id} project patchCluster
 //
 //     Patches the given cluster using JSON Merge Patch method (https://tools.ietf.org/html/rfc7396).
