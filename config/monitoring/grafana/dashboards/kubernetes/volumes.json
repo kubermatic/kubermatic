@@ -31,7 +31,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "percentunit",
       "gauge": {
         "maxValue": 1,
@@ -91,7 +91,7 @@
       ],
       "thresholds": "0.7,0.9",
       "title": "Total Disk Usage",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -113,7 +113,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "bytes",
       "gauge": {
         "maxValue": 100,
@@ -173,7 +173,7 @@
       ],
       "thresholds": "",
       "title": "Total Disk Capacity",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "70%",
       "valueMaps": [
@@ -195,7 +195,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "bytes",
       "gauge": {
         "maxValue": 100,
@@ -255,7 +255,7 @@
       ],
       "thresholds": "",
       "title": "Total Available Disk Space",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "70%",
       "valueMaps": [
@@ -277,7 +277,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "bytes",
       "gauge": {
         "maxValue": 100,
@@ -337,7 +337,7 @@
       ],
       "thresholds": "",
       "title": "Total Used Disk Space",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "70%",
       "valueMaps": [
@@ -374,7 +374,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "percentunit",
       "gauge": {
         "maxValue": 1,
@@ -437,7 +437,7 @@
       ],
       "thresholds": "0.7,0.9",
       "title": "Disk Usage",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -459,7 +459,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "bytes",
       "gauge": {
         "maxValue": 100,
@@ -522,7 +522,7 @@
       ],
       "thresholds": "",
       "title": "Capacity",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "70%",
       "valueMaps": [
@@ -543,7 +543,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 0,
       "gridPos": {
         "h": 8,
@@ -596,7 +596,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -638,7 +638,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "bytes",
       "gauge": {
         "maxValue": 100,
@@ -701,7 +701,7 @@
       ],
       "thresholds": "",
       "title": "Available",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "70%",
       "valueMaps": [
@@ -723,7 +723,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "bytes",
       "gauge": {
         "maxValue": 100,
@@ -786,7 +786,7 @@
       ],
       "thresholds": "",
       "title": "Used",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "70%",
       "valueMaps": [
