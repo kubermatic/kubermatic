@@ -132,14 +132,16 @@ func StatefulSet(data resources.StatefulSetDataProvider, existing *appsv1.Statef
 			},
 			Resources: resourceRequirements,
 			ReadinessProbe: &corev1.Probe{
-				TimeoutSeconds:   1,
-				PeriodSeconds:    10,
-				SuccessThreshold: 1,
-				FailureThreshold: 3,
+				TimeoutSeconds:      10,
+				PeriodSeconds:       30,
+				SuccessThreshold:    1,
+				FailureThreshold:    3,
+				InitialDelaySeconds: 15,
 				Handler: corev1.Handler{
 					Exec: &corev1.ExecAction{
 						Command: []string{
 							"/usr/local/bin/etcdctl",
+							"--command-timeout", "10s",
 							"--cacert", "/etc/etcd/pki/ca/ca.crt",
 							"--cert", "/etc/etcd/pki/client/apiserver-etcd-client.crt",
 							"--key", "/etc/etcd/pki/client/apiserver-etcd-client.key",

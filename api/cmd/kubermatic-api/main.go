@@ -163,7 +163,7 @@ func createAuthenticator(options serverRunOptions) (handler.Authenticator, error
 
 func createAPIHandler(options serverRunOptions, prov providers, authenticator handler.Authenticator, updateManager *version.Manager) (http.HandlerFunc, error) {
 	var prometheusClient prometheusapi.Client
-	if options.featureGates.enabled(PrometheusEndpoint) {
+	if options.featureGates.Enabled(PrometheusEndpoint) {
 		var err error
 		if prometheusClient, err = prometheusapi.NewClient(prometheusapi.Config{
 			Address: options.prometheusURL,

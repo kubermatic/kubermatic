@@ -366,7 +366,7 @@ func assignFloatingIPToInstance(client *gophercloud.ProviderClient, instanceID, 
 		}
 	} else {
 		freeIP := freeFloatingIps[0]
-		ip, err := osfloatingips.Update(netClient, freeIP.ID, osfloatingips.UpdateOpts{
+		ip, err = osfloatingips.Update(netClient, freeIP.ID, osfloatingips.UpdateOpts{
 			PortID: &port.ID,
 		}).Extract()
 		if err != nil {

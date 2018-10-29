@@ -17,6 +17,8 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
+	"k8s.io/apimachinery/pkg/types"
+
 	common "sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
 	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
@@ -284,6 +286,46 @@ func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 	}
 
 	return nil, cloudprovidererrors.ErrInstanceNotFound
+}
+
+func (p *provider) MigrateUID(machine *v1alpha1.Machine, new types.UID) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	if err != nil {
+		return cloudprovidererrors.TerminalError{
+			Reason:  common.InvalidConfigurationMachineError,
+			Message: fmt.Sprintf("Failed to parse MachineSpec, due to %v", err),
+		}
+	}
+	client := getClient(c.Token)
+
+	// We didn't use the UID for Hetzner before
+	server, _, err := client.Server.Get(ctx, machine.Spec.Name)
+	if err != nil {
+		return fmt.Errorf("failed to get server: %v", err)
+	}
+	if server == nil {
+		glog.Infof("No instance exists for machine %s", machine.Name)
+		return nil
+	}
+
+	glog.Infof("Setting UID label for machine %s", machine.Name)
+	_, response, err := client.Server.Update(ctx, server, hcloud.ServerUpdateOpts{
+		Labels: map[string]string{machineUIDLabelKey: string(new)},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update UID label: %v", err)
+	}
+	if response.Response.StatusCode != http.StatusOK {
+		return fmt.Errorf("got unexpected response code %v, expected %v", response.Response.Status, http.StatusOK)
+	}
+	// This succeeds, but does not result in a label on the server, seems to be a bug
+	// on Hetzner side
+	glog.Infof("Successfully set UID label for machine %s", machine.Name)
+
+	return nil
 }
 
 func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, name string, err error) {

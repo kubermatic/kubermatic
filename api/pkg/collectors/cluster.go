@@ -32,21 +32,32 @@ type ClusterCollector struct {
 func MustRegisterClusterCollector(registry prometheus.Registerer, _ kubeinformers.SharedInformerFactory, kubermaticInformerfactory kubermaticinformers.SharedInformerFactory) {
 	cc := &ClusterCollector{
 		clusterLister: kubermaticInformerfactory.Kubermatic().V1().Clusters().Lister(),
-
 		clusterCreated: prometheus.NewDesc(
 			prefix+"created",
 			"Unix creation timestamp",
-			[]string{"cluster"}, nil,
+			[]string{"cluster"},
+			nil,
 		),
 		clusterDeleted: prometheus.NewDesc(
 			prefix+"deleted",
 			"Unix deletion timestamp",
-			[]string{"cluster"}, nil,
+			[]string{"cluster"},
+			nil,
 		),
 		clusterInfo: prometheus.NewDesc(
 			prefix+"info",
 			"Cluster information like owner or version",
-			[]string{"name", "display_name", "ip", "master_version", "cloud_provider", "user_name", "user_email"}, nil,
+			[]string{
+				"name",
+				"display_name",
+				"ip",
+				"master_version",
+				"cloud_provider",
+				"datacenter",
+				"user_name",
+				"user_email",
+			},
+			nil,
 		),
 	}
 
@@ -117,6 +128,7 @@ func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]stri
 		cluster.Address.IP,
 		cluster.Spec.Version,
 		provider,
+		cluster.Spec.Cloud.DatacenterName,
 		cluster.Status.UserName,
 		cluster.Status.UserEmail,
 	}, nil

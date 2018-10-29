@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
@@ -250,28 +249,28 @@ func TestListNodesForCluster(t *testing.T) {
 						ID:   "venus",
 						Name: "venus",
 					},
-					Spec: apiv2.NodeSpec{
-						Cloud: apiv2.NodeCloudSpec{
-							Digitalocean: &apiv2.DigitaloceanNodeSpec{
+					Spec: apiv1.NodeSpec{
+						Cloud: apiv1.NodeCloudSpec{
+							Digitalocean: &apiv1.DigitaloceanNodeSpec{
 								Size: "2GB",
 							},
 						},
-						OperatingSystem: apiv2.OperatingSystemSpec{
-							Ubuntu: &apiv2.UbuntuSpec{
+						OperatingSystem: apiv1.OperatingSystemSpec{
+							Ubuntu: &apiv1.UbuntuSpec{
 								DistUpgradeOnBoot: true,
 							},
 						},
-						Versions: apiv2.NodeVersionInfo{
+						Versions: apiv1.NodeVersionInfo{
 							Kubelet: "v1.9.6",
 						},
 					},
-					Status: apiv2.NodeStatus{
+					Status: apiv1.NodeStatus{
 						MachineName: "venus",
-						Capacity: apiv2.NodeResources{
+						Capacity: apiv1.NodeResources{
 							CPU:    "0",
 							Memory: "0",
 						},
-						Allocatable: apiv2.NodeResources{
+						Allocatable: apiv1.NodeResources{
 							CPU:    "0",
 							Memory: "0",
 						},
@@ -283,29 +282,29 @@ func TestListNodesForCluster(t *testing.T) {
 						ID:   "mars",
 						Name: "mars",
 					},
-					Spec: apiv2.NodeSpec{
-						Cloud: apiv2.NodeCloudSpec{
-							AWS: &apiv2.AWSNodeSpec{
+					Spec: apiv1.NodeSpec{
+						Cloud: apiv1.NodeCloudSpec{
+							AWS: &apiv1.AWSNodeSpec{
 								InstanceType: "t2.micro",
 								VolumeSize:   50,
 							},
 						},
-						OperatingSystem: apiv2.OperatingSystemSpec{
-							Ubuntu: &apiv2.UbuntuSpec{
+						OperatingSystem: apiv1.OperatingSystemSpec{
+							Ubuntu: &apiv1.UbuntuSpec{
 								DistUpgradeOnBoot: false,
 							},
 						},
-						Versions: apiv2.NodeVersionInfo{
+						Versions: apiv1.NodeVersionInfo{
 							Kubelet: "v1.9.9",
 						},
 					},
-					Status: apiv2.NodeStatus{
+					Status: apiv1.NodeStatus{
 						MachineName: "mars",
-						Capacity: apiv2.NodeResources{
+						Capacity: apiv1.NodeResources{
 							CPU:    "0",
 							Memory: "0",
 						},
-						Allocatable: apiv2.NodeResources{
+						Allocatable: apiv1.NodeResources{
 							CPU:    "0",
 							Memory: "0",
 						},
@@ -474,6 +473,7 @@ func TestCreateNodeForCluster(t *testing.T) {
 			),
 			ExistingAPIUser: genDefaultAPIUser(),
 		},
+
 		// scenario 2
 		{
 			Name:                               "scenario 2: cluster components are not ready",

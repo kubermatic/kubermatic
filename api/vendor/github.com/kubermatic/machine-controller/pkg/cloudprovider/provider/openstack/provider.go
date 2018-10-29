@@ -7,10 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
-
 	"github.com/golang/glog"
 
 	"github.com/gophercloud/gophercloud"
@@ -24,6 +20,11 @@ import (
 	cloudprovidererrors "github.com/kubermatic/machine-controller/pkg/cloudprovider/errors"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	"sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
 	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
@@ -504,8 +505,11 @@ func (p *provider) Delete(machine *v1alpha1.Machine, _ cloud.MachineUpdater) err
 		return osErrorToTerminalError(err, "failed to get compute client")
 	}
 
-	err = osservers.Delete(computeClient, instance.ID()).ExtractErr()
-	return osErrorToTerminalError(err, "failed to delete instance")
+	if err := osservers.Delete(computeClient, instance.ID()).ExtractErr(); err != nil {
+		return osErrorToTerminalError(err, "failed to delete instance")
+	}
+
+	return nil
 }
 
 func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
@@ -549,6 +553,54 @@ func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 	}
 
 	return nil, cloudprovidererrors.ErrInstanceNotFound
+}
+
+func (p *provider) MigrateUID(machine *v1alpha1.Machine, new types.UID) error {
+	c, _, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	if err != nil {
+		return cloudprovidererrors.TerminalError{
+			Reason:  common.InvalidConfigurationMachineError,
+			Message: fmt.Sprintf("Failed to parse MachineSpec, due to %v", err),
+		}
+	}
+
+	client, err := getClient(c)
+	if err != nil {
+		return osErrorToTerminalError(err, "failed to get a openstack client")
+	}
+
+	computeClient, err := goopenstack.NewComputeV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: c.Region})
+	if err != nil {
+		return osErrorToTerminalError(err, "failed to get compute client")
+	}
+
+	var allServers []serverWithExt
+	pager := osservers.List(computeClient, osservers.ListOpts{Name: machine.Spec.Name})
+	err = pager.EachPage(func(page pagination.Page) (bool, error) {
+		var servers []serverWithExt
+		err = osservers.ExtractServersInto(page, &servers)
+		if err != nil {
+			return false, osErrorToTerminalError(err, "failed to extract instance info")
+		}
+		allServers = append(allServers, servers...)
+		return true, nil
+	})
+	if err != nil {
+		return osErrorToTerminalError(err, "failed to list instances")
+	}
+
+	for _, s := range allServers {
+		if s.Metadata[machineUIDMetaKey] == string(machine.UID) {
+			metadataOpts := osservers.MetadataOpts(s.Metadata)
+			metadataOpts[machineUIDMetaKey] = string(new)
+			response := osservers.UpdateMetadata(computeClient, s.ID, metadataOpts)
+			if response.Err != nil {
+				return fmt.Errorf("failed to update instance metadata with new UID: %v", err)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, name string, err error) {
