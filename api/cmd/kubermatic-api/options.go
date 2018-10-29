@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 
+	"github.com/kubermatic/kubermatic/api/pkg/features"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
@@ -19,7 +20,7 @@ type serverRunOptions struct {
 	tokenIssuer              string
 	clientID                 string
 	tokenIssuerSkipTLSVerify bool
-	featureGates             featureGate
+	featureGates             features.FeatureGate
 }
 
 func newServerRunOptions() (serverRunOptions, error) {
@@ -41,7 +42,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&rawFeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for various features.")
 	flag.Parse()
 
-	featureGates, err := newFeatures(rawFeatureGates)
+	featureGates, err := features.NewFeatures(rawFeatureGates)
 	if err != nil {
 		return s, err
 	}
