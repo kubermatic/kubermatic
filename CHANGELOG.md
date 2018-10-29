@@ -1,4 +1,15 @@
 
+### [v2.8.2]()
+
+
+- Fixed migration of users from older versions of Kubermatic [#2294](https://github.com/kubermatic/kubermatic/issues/2294) ([mrIncompetent](https://github.com/mrIncompetent))
+- Fixed a bug in the machine-migration that caused cloud provider instances to not be properly identified anymore [#2307](https://github.com/kubermatic/kubermatic/issues/2307) ([alvaroaleman](https://github.com/alvaroaleman))
+- Increased etcd readiness check timeout [#2312](https://github.com/kubermatic/kubermatic/issues/2312) ([mrIncompetent](https://github.com/mrIncompetent))
+- Updated machine-controller to `v0.9.9`
+
+
+
+
 ### [v2.8.1]()
 
 
