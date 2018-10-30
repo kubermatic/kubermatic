@@ -2,6 +2,8 @@ package v1
 
 import (
 	"encoding/json"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -642,4 +644,28 @@ type NodeSystemInfo struct {
 type ClusterMetric struct {
 	Name   string    `json:"name"`
 	Values []float64 `json:"values,omitempty"`
+}
+
+// NodeSet represents a set of worker nodes that is part of a cluster
+// swagger:model NodeSet
+type NodeSet struct {
+	ObjectMeta `json:",inline"`
+
+	Spec   NodeSetSpec                      `json:"spec"`
+	Status v1alpha1.MachineDeploymentStatus `json:"status"`
+}
+
+// NodeSetSpec node set specification
+// swagger:model NodeSetSpec
+type NodeSetSpec struct {
+	Replicas *int32           `json:"replicas,omitempty"`
+	Selector v1.LabelSelector `json:"selector"`
+
+	// required: true
+	Template                NodeSpec                           `json:"template"`
+	Strategy                v1alpha1.MachineDeploymentStrategy `json:"strategy,omitempty"`
+	MinReadySeconds         *int32                             `json:"minReadySeconds,omitempty"`
+	RevisionHistoryLimit    *int32                             `json:"revisionHistoryLimit,omitempty"`
+	Paused                  bool                               `json:"paused,omitempty"`
+	ProgressDeadlineSeconds *int32                             `json:"progressDeadlineSeconds,omitempty"`
 }

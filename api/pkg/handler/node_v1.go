@@ -350,12 +350,12 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 		nodeStatus.ErrorMessage += string(*machine.Status.ErrorMessage) + errGlue
 	}
 
-	operatingSystemSpec, err := machineconversions.GetAPIV1OperatingSystemSpec(machine)
+	operatingSystemSpec, err := machineconversions.GetAPIV1OperatingSystemSpec(machine.Spec)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get operating system spec from machine: %v", err)
 	}
 
-	cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(machine)
+	cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(machine.Spec)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get node cloud spec from machine: %v", err)
 	}
@@ -587,4 +587,166 @@ func decodeGetNodeForCluster(c context.Context, r *http.Request) (interface{}, e
 	req.DCReq = dcr.(DCReq)
 
 	return req, nil
+}
+
+// CreateMachineDeploymentReq defines HTTP request for createMachineDeployment
+// swagger:parameters createMachineDeployment
+type CreateNodeSetReq struct {
+	GetClusterReq
+	// in: body
+	Body apiv1.NodeSet
+}
+
+func decodeCreateNodeSetForCluster(c context.Context, r *http.Request) (interface{}, error) {
+	var req CreateNodeSetReq
+
+	clusterID, err := decodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ClusterID = clusterID
+	req.DCReq = dcr.(DCReq)
+
+	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func createNodeSetForCluster(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(CreateNodeSetReq)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+
+		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: req.ClusterID})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		// TODO:
+		// normally we have project, user and sshkey providers
+		// but here we decided to use machineClient and kubeClient directly to access the user cluster.
+		//
+		// how about moving machineClient and kubeClient to their own provider ?
+		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(cluster)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
+		if !found {
+			return nil, fmt.Errorf("unknown cluster datacenter %s", cluster.Spec.Cloud.DatacenterName)
+		}
+
+		nodeset := &req.Body
+
+		if nodeset.Spec.Template.Cloud.Openstack == nil &&
+			nodeset.Spec.Template.Cloud.Digitalocean == nil &&
+			nodeset.Spec.Template.Cloud.AWS == nil &&
+			nodeset.Spec.Template.Cloud.Hetzner == nil &&
+			nodeset.Spec.Template.Cloud.VSphere == nil &&
+			nodeset.Spec.Template.Cloud.Azure == nil {
+			return nil, errors.NewBadRequest("cannot create node without cloud provider")
+		}
+
+		//TODO: We need to make the kubelet version configurable but restrict it to master version
+		if nodeset.Spec.Template.Versions.Kubelet != "" {
+			kversion, err := semver.NewVersion(nodeset.Spec.Template.Versions.Kubelet)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse kubelet version: %v", err)
+			}
+			c, err := semver.NewConstraint(kubeletVersionConstraint)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse kubelet constraint version: %v", err)
+			}
+
+			if !c.Check(kversion) {
+				return nil, fmt.Errorf("kubelet version does not fit constraint. Allowed %s", kubeletVersionConstraint)
+			}
+			nodeset.Spec.Template.Versions.Kubelet = kversion.String()
+		} else {
+			//TODO: rework the versions
+			nodeset.Spec.Template.Versions.Kubelet = cluster.Spec.Version
+		}
+
+		if nodeset.Name == "" {
+			nodeset.Name = "kubermatic-" + cluster.Name + "-" + rand.String(5)
+		}
+
+		// Create Machine Deployment resource.
+		md, err := machineresource.MachineDeployment(cluster, nodeset, dc, keys)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
+		}
+
+		// Save Machine Deployment resource into Kubernetes.
+		md, err = machineClient.ClusterV1alpha1().MachineDeployments(md.Namespace).Create(md)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create machine deployment: %v", err)
+		}
+
+		return outputMachineDeployment(md)
+	}
+}
+
+func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.NodeSet, error) {
+	nodeStatus := apiv1.NodeStatus{}
+	nodeStatus.MachineName = md.Name
+	var deletionTimestamp *time.Time
+	if md.DeletionTimestamp != nil {
+		deletionTimestamp = &md.DeletionTimestamp.Time
+	}
+
+	operatingSystemSpec, err := machineconversions.GetAPIV1OperatingSystemSpec(md.Spec.Template.Spec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get operating system spec from machine: %v", err)
+	}
+
+	cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(md.Spec.Template.Spec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get node cloud spec from machine: %v", err)
+	}
+
+	return &apiv1.NodeSet{
+		ObjectMeta: apiv1.ObjectMeta{
+			ID:                md.Name,
+			Name:              md.Name,
+			DeletionTimestamp: deletionTimestamp,
+			CreationTimestamp: md.CreationTimestamp.Time,
+		},
+		Spec: apiv1.NodeSetSpec{
+			Replicas: md.Spec.Replicas,
+			Selector: md.Spec.Selector,
+			Template: apiv1.NodeSpec{
+				Versions: apiv1.NodeVersionInfo{
+					Kubelet: md.Spec.Template.Spec.Versions.Kubelet,
+				},
+				OperatingSystem: *operatingSystemSpec,
+				Cloud:           *cloudSpec,
+			},
+			Strategy:                md.Spec.Strategy,
+			MinReadySeconds:         md.Spec.MinReadySeconds,
+			RevisionHistoryLimit:    md.Spec.RevisionHistoryLimit,
+			Paused:                  md.Spec.Paused,
+			ProgressDeadlineSeconds: md.Spec.ProgressDeadlineSeconds,
+		},
+		Status: md.Status,
+	}, nil
 }

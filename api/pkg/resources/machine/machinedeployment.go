@@ -17,14 +17,24 @@ import (
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
-// Machine returns a machine object for the given spec
-func Machine(c *kubermaticv1.Cluster, node *apiv1.Node, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.Machine, error) {
-	m := clusterv1alpha1.Machine{}
-	m.Name = fmt.Sprintf("machine-%s", node.Name)
-	m.Namespace = metav1.NamespaceSystem
-	m.Spec.Name = node.Name
+// MachineDeployment returns a Machine Deployment object for the given Node Set spec.
+func MachineDeployment(c *kubermaticv1.Cluster, ns *apiv1.NodeSet, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.MachineDeployment, error) {
+	md := clusterv1alpha1.MachineDeployment{}
 
-	m.Spec.Versions.Kubelet = node.Spec.Versions.Kubelet
+	md.Name = fmt.Sprintf("machinedeployment-%s", ns.Name)
+	md.Namespace = metav1.NamespaceSystem
+
+	md.Spec.Replicas = ns.Spec.Replicas
+	md.Spec.Selector = ns.Spec.Selector
+	md.Spec.Template.Spec.Versions.Kubelet = ns.Spec.Template.Versions.Kubelet
+	md.Spec.Strategy = ns.Spec.Strategy
+	md.Spec.MinReadySeconds = ns.Spec.MinReadySeconds
+	md.Spec.RevisionHistoryLimit = ns.Spec.RevisionHistoryLimit
+	md.Spec.Paused = ns.Spec.Paused
+	md.Spec.ProgressDeadlineSeconds = ns.Spec.ProgressDeadlineSeconds
+
+	// MachineDeploymentSpec's label selector must match the machine template's labels as docs say.
+	md.Spec.Template.ObjectMeta.Labels = md.Spec.Selector.MatchLabels
 
 	config := providerconfig.Config{}
 	config.SSHPublicKeys = make([]string, len(keys))
@@ -32,25 +42,24 @@ func Machine(c *kubermaticv1.Cluster, node *apiv1.Node, dc provider.DatacenterMe
 		config.SSHPublicKeys[i] = key.Spec.PublicKey
 	}
 
-	var (
-		err      error
-		cloudExt *runtime.RawExtension
-	)
+	var err error
+	var cloudExt *runtime.RawExtension
+
 	// Cloud specifics
 	switch {
-	case node.Spec.Cloud.AWS != nil:
+	case ns.Spec.Template.Cloud.AWS != nil:
 		config.CloudProvider = providerconfig.CloudProviderAWS
-		cloudExt, err = getAWSProviderSpec(c, node.Spec, dc)
+		cloudExt, err = getAWSProviderSpec(c, ns.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
-	case node.Spec.Cloud.Azure != nil:
+	case ns.Spec.Template.Cloud.Azure != nil:
 		config.CloudProvider = providerconfig.CloudProviderAzure
-		cloudExt, err = getAzureProviderSpec(c, node.Spec, dc)
+		cloudExt, err = getAzureProviderSpec(c, ns.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
-	case node.Spec.Cloud.VSphere != nil:
+	case ns.Spec.Template.Cloud.VSphere != nil:
 		config.CloudProvider = providerconfig.CloudProviderVsphere
 
 		// We use OverwriteCloudConfig for Vsphere to ensure we always
@@ -63,25 +72,25 @@ func Machine(c *kubermaticv1.Cluster, node *apiv1.Node, dc provider.DatacenterMe
 		}
 		config.OverwriteCloudConfig = &overwriteCloudConfig
 
-		cloudExt, err = getVSphereProviderSpec(c, node.Spec, dc)
+		cloudExt, err = getVSphereProviderSpec(c, ns.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
-	case node.Spec.Cloud.Openstack != nil:
+	case ns.Spec.Template.Cloud.Openstack != nil:
 		config.CloudProvider = providerconfig.CloudProviderOpenstack
-		cloudExt, err = getOpenstackProviderSpec(c, node.Spec, dc)
+		cloudExt, err = getOpenstackProviderSpec(c, ns.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
-	case node.Spec.Cloud.Hetzner != nil:
+	case ns.Spec.Template.Cloud.Hetzner != nil:
 		config.CloudProvider = providerconfig.CloudProviderHetzner
-		cloudExt, err = getHetznerProviderSpec(c, node.Spec, dc)
+		cloudExt, err = getHetznerProviderSpec(c, ns.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
-	case node.Spec.Cloud.Digitalocean != nil:
+	case ns.Spec.Template.Cloud.Digitalocean != nil:
 		config.CloudProvider = providerconfig.CloudProviderDigitalocean
-		cloudExt, err = getDigitaloceanProviderSpec(c, node.Spec, dc)
+		cloudExt, err = getDigitaloceanProviderSpec(c, ns.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
@@ -94,21 +103,21 @@ func Machine(c *kubermaticv1.Cluster, node *apiv1.Node, dc provider.DatacenterMe
 
 	// OS specifics
 	switch {
-	case node.Spec.OperatingSystem.ContainerLinux != nil:
+	case ns.Spec.Template.OperatingSystem.ContainerLinux != nil:
 		config.OperatingSystem = providerconfig.OperatingSystemCoreos
-		osExt, err = getCoreosOperatingSystemSpec(node.Spec)
+		osExt, err = getCoreosOperatingSystemSpec(ns.Spec.Template)
 		if err != nil {
 			return nil, err
 		}
-	case node.Spec.OperatingSystem.Ubuntu != nil:
+	case ns.Spec.Template.OperatingSystem.Ubuntu != nil:
 		config.OperatingSystem = providerconfig.OperatingSystemUbuntu
-		osExt, err = getUbuntuOperatingSystemSpec(node.Spec)
+		osExt, err = getUbuntuOperatingSystemSpec(ns.Spec.Template)
 		if err != nil {
 			return nil, err
 		}
-	case node.Spec.OperatingSystem.CentOS != nil:
+	case ns.Spec.Template.OperatingSystem.CentOS != nil:
 		config.OperatingSystem = providerconfig.OperatingSystemCentOS
-		osExt, err = getCentOSOperatingSystemSpec(node.Spec)
+		osExt, err = getCentOSOperatingSystemSpec(ns.Spec.Template)
 		if err != nil {
 			return nil, err
 		}
@@ -122,7 +131,7 @@ func Machine(c *kubermaticv1.Cluster, node *apiv1.Node, dc provider.DatacenterMe
 		return nil, err
 	}
 
-	m.Spec.ProviderConfig.Value = &runtime.RawExtension{Raw: b}
+	md.Spec.Template.Spec.ProviderConfig.Value = &runtime.RawExtension{Raw: b}
 
-	return &m, nil
+	return &md, nil
 }
