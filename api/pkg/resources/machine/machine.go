@@ -6,7 +6,7 @@ import (
 	"path"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
-	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -33,11 +33,11 @@ import (
 )
 
 // Machine returns a machine object for the given spec
-func Machine(c *kubermaticv1.Cluster, node *apiv2.LegacyNode, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.Machine, error) {
+func Machine(c *kubermaticv1.Cluster, node *apiv1.Node, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.Machine, error) {
 	m := clusterv1alpha1.Machine{}
-	m.Name = fmt.Sprintf("machine-%s", node.Metadata.Name)
+	m.Name = fmt.Sprintf("machine-%s", node.Name)
 	m.Namespace = metav1.NamespaceSystem
-	m.Spec.Name = node.Metadata.Name
+	m.Spec.Name = node.Name
 
 	m.Spec.Versions.Kubelet = node.Spec.Versions.Kubelet
 
@@ -142,7 +142,7 @@ func Machine(c *kubermaticv1.Cluster, node *apiv2.LegacyNode, dc provider.Datace
 	return &m, nil
 }
 
-func getAWSProviderSpec(c *kubermaticv1.Cluster, node *apiv2.LegacyNode, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+func getAWSProviderSpec(c *kubermaticv1.Cluster, node *apiv1.Node, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
 	config := aws.RawConfig{
 		SubnetID:         providerconfig.ConfigVarString{Value: c.Spec.Cloud.AWS.SubnetID},
 		VpcID:            providerconfig.ConfigVarString{Value: c.Spec.Cloud.AWS.VPCID},
@@ -178,7 +178,7 @@ func getAWSProviderSpec(c *kubermaticv1.Cluster, node *apiv2.LegacyNode, dc prov
 	return ext, nil
 }
 
-func getAzureProviderSpec(c *kubermaticv1.Cluster, node *apiv2.LegacyNode, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+func getAzureProviderSpec(c *kubermaticv1.Cluster, node *apiv1.Node, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
 	config := azure.RawConfig{
 		SubscriptionID: providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.SubscriptionID},
 		TenantID:       providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.TenantID},
@@ -212,7 +212,7 @@ func getAzureProviderSpec(c *kubermaticv1.Cluster, node *apiv2.LegacyNode, dc pr
 	return ext, nil
 }
 
-func getVSphereProviderSpec(c *kubermaticv1.Cluster, node *apiv2.LegacyNode, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+func getVSphereProviderSpec(c *kubermaticv1.Cluster, node *apiv1.Node, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
 	folderPath := path.Join(dc.Spec.VSphere.RootPath, c.ObjectMeta.Name)
 
 	config := vsphere.RawConfig{
@@ -238,7 +238,7 @@ func getVSphereProviderSpec(c *kubermaticv1.Cluster, node *apiv2.LegacyNode, dc 
 	return ext, nil
 }
 
-func getOpenstackProviderSpec(c *kubermaticv1.Cluster, node *apiv2.LegacyNode, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+func getOpenstackProviderSpec(c *kubermaticv1.Cluster, node *apiv1.Node, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
 	config := openstack.RawConfig{
 		Image:            providerconfig.ConfigVarString{Value: node.Spec.Cloud.Openstack.Image},
 		Flavor:           providerconfig.ConfigVarString{Value: node.Spec.Cloud.Openstack.Flavor},
@@ -267,7 +267,7 @@ func getOpenstackProviderSpec(c *kubermaticv1.Cluster, node *apiv2.LegacyNode, d
 	return ext, nil
 }
 
-func getHetznerProviderSpec(c *kubermaticv1.Cluster, node *apiv2.LegacyNode, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+func getHetznerProviderSpec(c *kubermaticv1.Cluster, node *apiv1.Node, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
 	config := hetzner.RawConfig{
 		Datacenter: providerconfig.ConfigVarString{Value: dc.Spec.Hetzner.Datacenter},
 		Location:   providerconfig.ConfigVarString{Value: dc.Spec.Hetzner.Location},
@@ -284,7 +284,7 @@ func getHetznerProviderSpec(c *kubermaticv1.Cluster, node *apiv2.LegacyNode, dc 
 	return ext, nil
 }
 
-func getDigitaloceanProviderSpec(c *kubermaticv1.Cluster, node *apiv2.LegacyNode, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+func getDigitaloceanProviderSpec(c *kubermaticv1.Cluster, node *apiv1.Node, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
 	config := digitalocean.RawConfig{
 		Region:            providerconfig.ConfigVarString{Value: dc.Spec.Digitalocean.Region},
 		Backups:           providerconfig.ConfigVarBool{Value: node.Spec.Cloud.Digitalocean.Backups},
@@ -311,7 +311,7 @@ func getDigitaloceanProviderSpec(c *kubermaticv1.Cluster, node *apiv2.LegacyNode
 	return ext, nil
 }
 
-func getCentOSOperatingSystemSpec(c *kubermaticv1.Cluster, node *apiv2.LegacyNode) (*runtime.RawExtension, error) {
+func getCentOSOperatingSystemSpec(c *kubermaticv1.Cluster, node *apiv1.Node) (*runtime.RawExtension, error) {
 	config := centos.Config{
 		DistUpgradeOnBoot: node.Spec.OperatingSystem.CentOS.DistUpgradeOnBoot,
 	}
@@ -326,7 +326,7 @@ func getCentOSOperatingSystemSpec(c *kubermaticv1.Cluster, node *apiv2.LegacyNod
 	return ext, nil
 }
 
-func getCoreosOperatingSystemSpec(c *kubermaticv1.Cluster, node *apiv2.LegacyNode) (*runtime.RawExtension, error) {
+func getCoreosOperatingSystemSpec(c *kubermaticv1.Cluster, node *apiv1.Node) (*runtime.RawExtension, error) {
 	config := coreos.Config{
 		DisableAutoUpdate: node.Spec.OperatingSystem.ContainerLinux.DisableAutoUpdate,
 	}
@@ -341,7 +341,7 @@ func getCoreosOperatingSystemSpec(c *kubermaticv1.Cluster, node *apiv2.LegacyNod
 	return ext, nil
 }
 
-func getUbuntuOperatingSystemSpec(c *kubermaticv1.Cluster, node *apiv2.LegacyNode) (*runtime.RawExtension, error) {
+func getUbuntuOperatingSystemSpec(c *kubermaticv1.Cluster, node *apiv1.Node) (*runtime.RawExtension, error) {
 	config := ubuntu.Config{
 		DistUpgradeOnBoot: node.Spec.OperatingSystem.Ubuntu.DistUpgradeOnBoot,
 	}

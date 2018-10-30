@@ -14,7 +14,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/onsi/ginkgo/reporters"
 
-	kubermaticapiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
@@ -33,7 +33,7 @@ import (
 type testScenario interface {
 	Name() string
 	Cluster(secrets secrets) *kubermaticv1.Cluster
-	Nodes(num int) []*kubermaticapiv2.LegacyNode
+	Nodes(num int) []*kubermaticapiv1.Node
 }
 
 func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
@@ -231,7 +231,7 @@ func (r *testRunner) testScenario(scenario testScenario) (*reporters.JUnitTestSu
 		}
 		m, err := machine.Machine(cluster, node, dc, keys)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create Machine from scenario node '%s': %v", node.Metadata.Name, err)
+			return nil, fmt.Errorf("failed to create Machine from scenario node '%s': %v", node.Name, err)
 		}
 		// Make sure all nodes have different names across all scenarios - otherwise the Kubelet might not come up (OpenStack has this...)
 		m.Name = fmt.Sprintf("%s-machine-%d", scenario.Name(), i)

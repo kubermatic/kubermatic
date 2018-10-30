@@ -787,7 +787,7 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 2: gets cluster for Openstack and no sensitive data (credentials) are returned",
 			Body:             ``,
-			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"tenant":"tenant","domain":"domain","network":"network","securityGroups":"securityGroups","floatingIpPool":"floatingIPPool","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9"},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{}},"version":"9.9.9"},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
 			ClusterToGet:     genDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: genDefaultKubermaticObjects(
@@ -833,7 +833,7 @@ func TestListClusters(t *testing.T) {
 		{
 			Name: "scenario 1: list clusters that belong to the given project",
 			ExpectedClusters: []apiv1.Cluster{
-				apiv1.Cluster{
+				{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "clusterAbcID",
 						Name:              "clusterAbc",
@@ -851,7 +851,7 @@ func TestListClusters(t *testing.T) {
 						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
 					},
 				},
-				apiv1.Cluster{
+				{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "clusterDefID",
 						Name:              "clusterDef",
@@ -869,7 +869,7 @@ func TestListClusters(t *testing.T) {
 						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
 					},
 				},
-				apiv1.Cluster{
+				{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "clusterOpenstackID",
 						Name:              "clusterOpenstack",
@@ -878,12 +878,7 @@ func TestListClusters(t *testing.T) {
 					Spec: apiv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "OpenstackDatacenter",
-							Openstack: func() *kubermaticv1.OpenstackCloudSpec {
-								cluster := genClusterWithOpenstack(genDefaultCluster())
-								cluster.Spec.Cloud.Openstack.Password = ""
-								cluster.Spec.Cloud.Openstack.Username = ""
-								return cluster.Spec.Cloud.Openstack
-							}(),
+							Openstack:      &kubermaticv1.OpenstackCloudSpec{},
 						},
 						Version: "9.9.9",
 					},
