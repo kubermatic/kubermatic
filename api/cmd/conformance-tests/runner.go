@@ -377,7 +377,7 @@ func (r *testRunner) testCluster(
 	return report, nil
 }
 
-func (r *testRunner) setupNodes(log *logrus.Entry, scenarioName string, cluster *kubermaticv1.Cluster, clusterKubeClient kubernetes.Interface, apiNodes []*kubermaticapiv2.LegacyNode, dc provider.DatacenterMeta) error {
+func (r *testRunner) setupNodes(log *logrus.Entry, scenarioName string, cluster *kubermaticv1.Cluster, clusterKubeClient kubernetes.Interface, apiNodes []*kubermaticapiv1.Node, dc provider.DatacenterMeta) error {
 	log.Info("Creating machines...")
 	kubeMachineClient, err := r.clusterClientProvider.GetMachineClient(cluster)
 	if err != nil {
@@ -627,7 +627,7 @@ func (r *testRunner) runE2E(
 	kubeconfigFilename,
 	cloudConfigFilename,
 	reportsDir string,
-	nodes []*kubermaticapiv2.LegacyNode,
+	nodes []*kubermaticapiv1.Node,
 	dc provider.DatacenterMeta,
 ) error {
 	kubeconfigFilename = path.Clean(kubeconfigFilename)

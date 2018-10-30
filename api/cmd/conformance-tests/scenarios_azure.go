@@ -5,7 +5,7 @@ import (
 
 	"github.com/Masterminds/semver"
 
-	kubermaticapiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,15 +18,15 @@ func getAzureScenarios() []testScenario {
 		// Ubuntu
 		scenarios = append(scenarios, &azureScenario{
 			version: v,
-			nodeOsSpec: kubermaticapiv2.OperatingSystemSpec{
-				Ubuntu: &kubermaticapiv2.UbuntuSpec{},
+			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
+				Ubuntu: &kubermaticapiv1.UbuntuSpec{},
 			},
 		})
 		// CoreOS
 		scenarios = append(scenarios, &azureScenario{
 			version: v,
-			nodeOsSpec: kubermaticapiv2.OperatingSystemSpec{
-				ContainerLinux: &kubermaticapiv2.ContainerLinuxSpec{
+			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
+				ContainerLinux: &kubermaticapiv1.ContainerLinuxSpec{
 					// Otherwise the nodes restart directly after creation - bad for tests
 					DisableAutoUpdate: true,
 				},
@@ -36,8 +36,8 @@ func getAzureScenarios() []testScenario {
 		//TODO: Fix
 		//scenarios = append(scenarios, &azureScenario{
 		//	version: v,
-		//	nodeOsSpec: kubermaticapiv2.OperatingSystemSpec{
-		//		CentOS: &kubermaticapiv2.CentOSSpec{},
+		//	nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
+		//		CentOS: &kubermaticapiv1.CentOSSpec{},
 		//	},
 		//})
 	}
@@ -46,7 +46,7 @@ func getAzureScenarios() []testScenario {
 
 type azureScenario struct {
 	version    *semver.Version
-	nodeOsSpec kubermaticapiv2.OperatingSystemSpec
+	nodeOsSpec kubermaticapiv1.OperatingSystemSpec
 }
 
 func (s *azureScenario) Name() string {
@@ -81,18 +81,18 @@ func (s *azureScenario) Cluster(secrets secrets) *v1.Cluster {
 	}
 }
 
-func (s *azureScenario) Nodes(num int) []*kubermaticapiv2.LegacyNode {
-	var nodes []*kubermaticapiv2.LegacyNode
+func (s *azureScenario) Nodes(num int) []*kubermaticapiv1.Node {
+	var nodes []*kubermaticapiv1.Node
 	for i := 0; i < num; i++ {
-		node := &kubermaticapiv2.LegacyNode{
-			Metadata: kubermaticapiv2.LegacyObjectMeta{},
-			Spec: kubermaticapiv2.NodeSpec{
-				Cloud: kubermaticapiv2.NodeCloudSpec{
-					Azure: &kubermaticapiv2.AzureNodeSpec{
+		node := &kubermaticapiv1.Node{
+			ObjectMeta: kubermaticapiv1.ObjectMeta{},
+			Spec: kubermaticapiv1.NodeSpec{
+				Cloud: kubermaticapiv1.NodeCloudSpec{
+					Azure: &kubermaticapiv1.AzureNodeSpec{
 						Size: "Standard_F1",
 					},
 				},
-				Versions: kubermaticapiv2.NodeVersionInfo{
+				Versions: kubermaticapiv1.NodeVersionInfo{
 					Kubelet: s.version.String(),
 				},
 				OperatingSystem: s.nodeOsSpec,
