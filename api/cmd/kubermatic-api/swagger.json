@@ -3802,75 +3802,11 @@
     "PublicAWSCloudSpec": {
       "type": "object",
       "title": "PublicAWSCloudSpec is a public counterpart of apiv1.AWSCloudSpec.",
-      "properties": {
-        "availabilityZone": {
-          "type": "string",
-          "x-go-name": "AvailabilityZone"
-        },
-        "instanceProfileName": {
-          "type": "string",
-          "x-go-name": "InstanceProfileName"
-        },
-        "roleName": {
-          "type": "string",
-          "x-go-name": "RoleName"
-        },
-        "routeTableId": {
-          "type": "string",
-          "x-go-name": "RouteTableID"
-        },
-        "securityGroupID": {
-          "type": "string",
-          "x-go-name": "SecurityGroupID"
-        },
-        "subnetId": {
-          "type": "string",
-          "x-go-name": "SubnetID"
-        },
-        "vpcId": {
-          "type": "string",
-          "x-go-name": "VPCID"
-        }
-      },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "PublicAzureCloudSpec": {
       "type": "object",
       "title": "PublicAzureCloudSpec is a public counterpart of apiv1.AzureCloudSpec.",
-      "properties": {
-        "availabilitySet": {
-          "type": "string",
-          "x-go-name": "AvailabilitySet"
-        },
-        "resourceGroup": {
-          "type": "string",
-          "x-go-name": "ResourceGroup"
-        },
-        "routeTable": {
-          "type": "string",
-          "x-go-name": "RouteTableName"
-        },
-        "securityGroup": {
-          "type": "string",
-          "x-go-name": "SecurityGroup"
-        },
-        "subnet": {
-          "type": "string",
-          "x-go-name": "SubnetName"
-        },
-        "subscriptionID": {
-          "type": "string",
-          "x-go-name": "SubscriptionID"
-        },
-        "tenantID": {
-          "type": "string",
-          "x-go-name": "TenantID"
-        },
-        "vnet": {
-          "type": "string",
-          "x-go-name": "VNetName"
-        }
-      },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "PublicBringYourOwnCloudSpec": {
@@ -3931,47 +3867,11 @@
     "PublicOpenstackCloudSpec": {
       "type": "object",
       "title": "PublicOpenstackCloudSpec is a public counterpart of apiv1.OpenstackCloudSpec.",
-      "properties": {
-        "domain": {
-          "type": "string",
-          "x-go-name": "Domain"
-        },
-        "floatingIpPool": {
-          "type": "string",
-          "x-go-name": "FloatingIPPool"
-        },
-        "network": {
-          "type": "string",
-          "x-go-name": "Network"
-        },
-        "routerID": {
-          "type": "string",
-          "x-go-name": "RouterID"
-        },
-        "securityGroups": {
-          "type": "string",
-          "x-go-name": "SecurityGroups"
-        },
-        "subnetID": {
-          "type": "string",
-          "x-go-name": "SubnetID"
-        },
-        "tenant": {
-          "type": "string",
-          "x-go-name": "Tenant"
-        }
-      },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "PublicVSphereCloudSpec": {
       "type": "object",
       "title": "PublicVSphereCloudSpec is a public counterpart of apiv1.VSphereCloudSpec.",
-      "properties": {
-        "vmNetName": {
-          "type": "string",
-          "x-go-name": "VMNetName"
-        }
-      },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "RawExtension": {
