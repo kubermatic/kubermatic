@@ -200,7 +200,15 @@ pipeline:
     - name: prometheus
       namespace: monitoring
       path: config/monitoring/prometheus/
-
+    - name: elasticsearch
+      namespace: logging
+      path: config/logging/elasticsearch/
+    - name: fluentd
+      namespace: logging
+      path: config/logging/fluentd/
+    - name: kibana
+      namespace: logging
+      path: config/logging/kibana/
     # depends on 'kubermatic-docker-master' step to build the images
     helm: upgrade --install --wait --timeout 300 --tiller-namespace=kubermatic-installer
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT}
@@ -228,6 +236,15 @@ pipeline:
     - name: minio
       namespace: minio
       path: config/minio/
+    - name: elasticsearch
+      namespace: logging
+      path: config/logging/elasticsearch/
+    - name: fluentd
+      namespace: logging
+      path: config/logging/fluentd/
+    - name: kibana
+      namespace: logging
+      path: config/logging/kibana/
     group: deploy-cloud
     # depends on 'kubermatic-docker-master' step to build the images
     helm: upgrade --install --wait --timeout 300 --kube-context=asia-east1-a-1 --tiller-namespace=kubermatic-installer
@@ -287,6 +304,15 @@ pipeline:
     - name: prometheus
       namespace: monitoring
       path: config/monitoring/prometheus/
+    - name: elasticsearch
+      namespace: logging
+      path: config/logging/elasticsearch/
+    - name: fluentd
+      namespace: logging
+      path: config/logging/fluentd/
+    - name: kibana
+      namespace: logging
+      path: config/logging/kibana/
     group: deploy-cloud
     # depends on 'kubermatic-docker-master' step to build the images
     helm: upgrade --install --wait --timeout 300 --kube-context=europe-west3-c-1 --tiller-namespace=kubermatic-installer
@@ -315,6 +341,15 @@ pipeline:
     - name: minio
       namespace: minio
       path: config/minio/
+    - name: elasticsearch
+      namespace: logging
+      path: config/logging/elasticsearch/
+    - name: fluentd
+      namespace: logging
+      path: config/logging/fluentd/
+    - name: kibana
+      namespace: logging
+      path: config/logging/kibana/
     group: deploy-cloud
     # depends on 'kubermatic-docker-master' step to build the images
     helm: upgrade --install --wait --timeout 300 --kube-context=us-central1-c-1 --tiller-namespace=kubermatic-installer
@@ -374,6 +409,15 @@ pipeline:
     - name: prometheus
       namespace: monitoring
       path: config/monitoring/prometheus/
+    - name: elasticsearch
+      namespace: logging
+      path: config/logging/elasticsearch/
+    - name: fluentd
+      namespace: logging
+      path: config/logging/fluentd/
+    - name: kibana
+      namespace: logging
+      path: config/logging/kibana/
     # depends on 'kubermatic-docker-release-v28' step to build the images
     helm: upgrade --install --wait --timeout 300
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
