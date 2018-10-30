@@ -268,7 +268,6 @@ func main() {
 		wg.Wait()
 
 		log.Info("Cleaned up all old clusters")
-		os.Exit(0)
 	}
 
 	log.Info("Starting E2E tests...")
