@@ -40,15 +40,15 @@ func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVe
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		oidcIssuer := oidcIssuerVerifier.(OIDCIssuer)
 		oidcVerifier := oidcIssuerVerifier.(OIDCVerifier)
-		req := request.(createOIDCKubeconfigReq)
+		req := request.(CreateOIDCKubeconfigReq)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
 
-		_, err := projectProvider.Get(userInfo, req.projectID, &provider.ProjectGetOptions{})
+		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		cluster, err := clusterProvider.Get(userInfo, req.clusterID, &provider.ClusterGetOptions{})
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
@@ -84,19 +84,19 @@ func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVe
 				// grab admin kubeconfig to read the cluster info
 				var clusterFromAdminKubeCfg *clientcmdapi.Cluster
 				for clusterName, cluster := range adminKubeConfig.Clusters {
-					if clusterName == req.clusterID {
+					if clusterName == req.ClusterID {
 						clusterFromAdminKubeCfg = cluster
 					}
 				}
 				if clusterFromAdminKubeCfg == nil {
-					return nil, kcerrors.New(http.StatusInternalServerError, fmt.Sprintf("unable to construct kubeconfig because couldn't find %s cluster enty in existing kubecfg", req.clusterID))
+					return nil, kcerrors.New(http.StatusInternalServerError, fmt.Sprintf("unable to construct kubeconfig because couldn't find %s cluster enty in existing kubecfg", req.ClusterID))
 				}
 
 				// create cluster entry
 				clientCmdCluster := clientcmdapi.NewCluster()
 				clientCmdCluster.Server = clusterFromAdminKubeCfg.Server
 				clientCmdCluster.CertificateAuthorityData = clusterFromAdminKubeCfg.CertificateAuthorityData
-				oidcKubeCfg.Clusters[req.clusterID] = clientCmdCluster
+				oidcKubeCfg.Clusters[req.ClusterID] = clientCmdCluster
 
 				// create auth entry
 				clientCmdAuth := clientcmdapi.NewAuthInfo()
@@ -113,7 +113,7 @@ func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVe
 
 				// create default ctx
 				clientCmdCtx := clientcmdapi.NewContext()
-				clientCmdCtx.Cluster = req.clusterID
+				clientCmdCtx.Cluster = req.ClusterID
 				clientCmdCtx.AuthInfo = claims.Email
 				oidcKubeCfg.Contexts["default"] = clientCmdCtx
 				oidcKubeCfg.CurrentContext = "default"
@@ -138,10 +138,10 @@ func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVe
 		scopes := []string{"openid", "email", "offline_access"}
 		oidcState := state{
 			Nonce:      "nonce=TODO",
-			ClusterID:  req.clusterID,
-			ProjectID:  req.projectID,
-			UserID:     req.userID,
-			Datacenter: req.datacenter,
+			ClusterID:  req.ClusterID,
+			ProjectID:  req.ProjectID,
+			UserID:     req.UserID,
+			Datacenter: req.Datacenter,
 		}
 		rawState, err := json.Marshal(oidcState)
 		if err != nil {
@@ -227,24 +227,23 @@ type state struct {
 	// nonce a random string that binds requests / responses of API server and OIDC provider
 	// see https://tools.ietf.org/html/rfc6749#section-10.12
 	Nonce     string `json:"nonce"`
-	ClusterID string
-	ProjectID string
+	ClusterID string `json:"cluster_id"`
+	ProjectID string `json:"project_id"`
 	// UserID holds the ID of the user on behalf of which the request is being handled.
-	UserID     string
-	Datacenter string
+	UserID     string `json:"user_id"`
+	Datacenter string `json:"datacenter"`
 }
 
-// CreateOIDCKubeconfig represent a request for creating kubeconfig for a cluster with OIDC credentials
-// swagger:parameters
-type createOIDCKubeconfigReq struct {
-	// required for the initialPhase
+// CreateOIDCKubeconfigReq represent a request for creating kubeconfig for a cluster with OIDC credentials
+// swagger:parameters createOIDCKubeconfig
+type CreateOIDCKubeconfigReq struct {
 	// in: query
-	clusterID  string
-	projectID  string
-	userID     string
-	datacenter string
+	ClusterID  string
+	ProjectID  string
+	UserID     string
+	Datacenter string
 
-	// required for exchangeCodePhase
+	// not exported so that they don't leak to swagger spec.
 	code         string
 	encodedState string
 	decodedState state
@@ -252,7 +251,7 @@ type createOIDCKubeconfigReq struct {
 }
 
 func decodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}, error) {
-	req := createOIDCKubeconfigReq{}
+	req := CreateOIDCKubeconfigReq{}
 
 	// if true - then this is a callback from OIDC provider and the next step is
 	// to exchange the given code and generate kubeconfig
@@ -273,20 +272,20 @@ func decodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}
 			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected json encoded value, err = %v", err)
 		}
 		req.phase = exchangeCodePhase
-		req.datacenter = oidcState.Datacenter
-		req.projectID = oidcState.ProjectID
-		req.userID = oidcState.UserID
-		req.clusterID = oidcState.ClusterID
+		req.Datacenter = oidcState.Datacenter
+		req.ProjectID = oidcState.ProjectID
+		req.UserID = oidcState.UserID
+		req.ClusterID = oidcState.ClusterID
 		req.decodedState = oidcState
 		return req, nil
 	}
 
 	// initial flow an end-user wants to authenticate using OIDC provider
-	req.clusterID = r.URL.Query().Get("cluster_id")
-	req.projectID = r.URL.Query().Get("project_id")
-	req.userID = r.URL.Query().Get("user_id")
-	req.datacenter = r.URL.Query().Get("datacenter")
-	if len(req.clusterID) == 0 || len(req.projectID) == 0 || len(req.userID) == 0 || len(req.datacenter) == 0 {
+	req.ClusterID = r.URL.Query().Get("cluster_id")
+	req.ProjectID = r.URL.Query().Get("project_id")
+	req.UserID = r.URL.Query().Get("user_id")
+	req.Datacenter = r.URL.Query().Get("datacenter")
+	if len(req.ClusterID) == 0 || len(req.ProjectID) == 0 || len(req.UserID) == 0 || len(req.Datacenter) == 0 {
 		return nil, errors.New("the following query parameters cluster_id, project_id, user_id and datacenter are mandatory, please make sure that all are set")
 	}
 	req.phase = initialPhase
@@ -294,16 +293,16 @@ func decodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}
 }
 
 // GetUserID implements UserGetter interface
-func (r createOIDCKubeconfigReq) GetUserID() string {
-	return r.userID
+func (r CreateOIDCKubeconfigReq) GetUserID() string {
+	return r.UserID
 }
 
 // GetDC implements DCGetter interface
-func (r createOIDCKubeconfigReq) GetDC() string {
-	return r.datacenter
+func (r CreateOIDCKubeconfigReq) GetDC() string {
+	return r.Datacenter
 }
 
 // GetProjectID implements ProjectGetter interface
-func (r createOIDCKubeconfigReq) GetProjectID() string {
-	return r.projectID
+func (r CreateOIDCKubeconfigReq) GetProjectID() string {
+	return r.ProjectID
 }

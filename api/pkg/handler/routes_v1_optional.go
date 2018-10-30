@@ -21,27 +21,25 @@ type OIDCConfiguration struct {
 
 // RegisterV1Optional declares all router paths for v1
 func (r Routing) RegisterV1Optional(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg OIDCConfiguration, mainMux *mux.Router) {
-
-	//
 	// if enabled exposes defines an endpoint for generating kubeconfig for a cluster that will contain OIDC tokens
 	if oidcKubeConfEndpoint {
-		// GET or POST ?? !!
 		mux.Methods(http.MethodGet).
 			Path("/kubeconfig").
 			Handler(r.createOIDCKubeconfig(oidcCfg))
 	}
 }
 
-// swagger:route GET /api/v1/kubeconfig
+// swagger:route GET /api/v1/kubeconfig createOIDCKubeconfig
 //
-// Lists sizes from digitalocean
+//     Starts OIDC flow and generates kubeconfig, the generated config
+//     contains OIDC provider authentication info
 //
 //     Produces:
 //     - application/json
 //
 //     Responses:
 //       default: errorResponse
-//       200: TODO ???!!!!!!!!!!!!!!!!!!!!!!!!!!!?????!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//       200: Kubeconfig
 func (r Routing) createOIDCKubeconfig(oidcCfg OIDCConfiguration) http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(

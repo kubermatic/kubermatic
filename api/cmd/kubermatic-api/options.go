@@ -26,7 +26,7 @@ type serverRunOptions struct {
 	oidcRedirectURI   string
 	oidcSkipTLSVerify bool
 
-	featureGates      features.FeatureGate
+	featureGates features.FeatureGate
 }
 
 func newServerRunOptions() (serverRunOptions, error) {
