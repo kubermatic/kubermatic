@@ -70,7 +70,7 @@ clusters:
 contexts:
 - context:
     cluster: 2jmwjskgzn
-    user: default
+    user: henrik@loodse.com
   name: default
 current-context: default
 kind: Config
@@ -98,6 +98,11 @@ It must be called via:
 ## Task & effort:
 * Add initial feature-flag handling - 1d
 * Configure the kubernetes API server of each cluster to use OpenID-Connect - 0.5d
-* Implement an endpoint which will generate the Kubeconfig - 1d
+* Implement an endpoint which will generate the Kubeconfig - 4d
+* Modify the new API endpoint to generate and preserver session token - 0.5d
+* Add unit test for testing kubeconfig generation - 2d
+* Add Dex TLS verification to API - 0.5d
+* Configure dex - 0.5d
 * Write relevant documentation describing on how to create basic RBAC manifests to grant others permission - 0.5d
 * Implement modal in Dashboard + feature flag(config variable) - 1d
+* Conduct a manual test to verify the feature - 1.5 d 
