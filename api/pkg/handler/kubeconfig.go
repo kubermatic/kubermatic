@@ -252,6 +252,15 @@ type CreateOIDCKubeconfigReq struct {
 func decodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}, error) {
 	req := CreateOIDCKubeconfigReq{}
 
+	// handle OIDC errors
+	{
+		errType := r.URL.Query().Get("error")
+		errMessage := r.URL.Query().Get("error_description")
+		if len(errMessage) != 0 {
+			return nil, fmt.Errorf("OIDC provider error type = %s, description = %s", errType, errMessage)
+		}
+	}
+
 	// if true - then this is a callback from OIDC provider and the next step is
 	// to exchange the given code and generate kubeconfig
 	// note: state is decoded here so that the middlewares can load providers (cluster) into the ctx.
