@@ -20,11 +20,12 @@ type serverRunOptions struct {
 	updatesFile     string
 
 	// OIDC configuration
-	oidcIssuerURL     string
-	oidcClientID      string
-	oidcClientSecret  string
-	oidcRedirectURI   string
-	oidcSkipTLSVerify bool
+	oidcIssuerURL            string
+	oidcClientID             string
+	oidcClientSecret         string
+	oidcRedirectURI          string
+	oidcSkipTLSVerify        bool
+	oidcOfflineAccessAsScope bool
 
 	featureGates features.FeatureGate
 }
@@ -47,6 +48,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.oidcClientID, "oidc-client-id", "", "OpenID client ID")
 	flag.StringVar(&s.oidcClientSecret, "oidc-client-secret", "", "OpenID client secret")
 	flag.StringVar(&s.oidcRedirectURI, "oidc-redirect-uri", "", "Callback URL for OpenID responses.")
+	flag.BoolVar(&s.oidcOfflineAccessAsScope, "oidc-offline-access-as-scope", true, "Set it to false if OIDC provider requires to set \"access_type=offline\" query param when accessing the refresh token")
 	flag.StringVar(&rawFeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for various features.")
 	flag.Parse()
 

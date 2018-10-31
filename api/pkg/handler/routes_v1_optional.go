@@ -17,6 +17,9 @@ type OIDCConfiguration struct {
 	ClientID string
 	// ClientSecret holds OIDC ClientSecret
 	ClientSecret string
+	// OfflineAccessAsScope if true then "offline_access" scope will be used
+	// otherwise 'access_type=offline" query param will be passed
+	OfflineAccessAsScope bool
 }
 
 // RegisterV1Optional declares all router paths for v1

@@ -64,6 +64,9 @@ func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVe
 			if err != nil {
 				return nil, kcerrors.NewBadRequest("error while exchaning oidc code for token = %v", err)
 			}
+			if len(oidcTokens.RefreshToken) == 0 {
+				return nil, kcerrors.NewBadRequest("the refresh token is missing but required, try setting/unsetting \"oidc-offline-access-as-scope\" command line flag")
+			}
 
 			claims, err := oidcVerifier.Verify(ctx, oidcTokens.IDToken)
 			if err != nil {
@@ -133,8 +136,10 @@ func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVe
 
 		// TODO: pass nonce
 		rsp := createOIDCKubeconfigRsp{}
-		// TODO: Define a proper list of scopes, is offline_access only a scope ? (you can set it also via clientlib)
-		scopes := []string{"openid", "email", "offline_access"}
+		scopes := []string{"openid", "email"}
+		if oidcCfg.OfflineAccessAsScope {
+			scopes = append(scopes, "offline_access")
+		}
 		oidcState := state{
 			Nonce:      "nonce=TODO",
 			ClusterID:  req.ClusterID,
@@ -148,7 +153,7 @@ func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVe
 		}
 		encodedState := base64.StdEncoding.EncodeToString(rawState)
 		urlSafeState := url.QueryEscape(encodedState)
-		rsp.authCodeURL = oidcIssuer.AuthCodeURL(urlSafeState, scopes...)
+		rsp.authCodeURL = oidcIssuer.AuthCodeURL(urlSafeState, oidcCfg.OfflineAccessAsScope, scopes...)
 
 		return rsp, nil
 	}

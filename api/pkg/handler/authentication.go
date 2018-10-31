@@ -74,7 +74,7 @@ type OIDCIssuer interface {
 	// always provide a non-zero string and validate that it matches the
 	// the state query parameter on your redirect callback.
 	// See http://tools.ietf.org/html/rfc6749#section-10.12 for more info.
-	AuthCodeURL(state string, scopes ...string) string
+	AuthCodeURL(state string, offlineAsScope bool, scopes ...string) string
 
 	// Exchange converts an authorization code into a token.
 	Exchange(ctx context.Context, code string) (OIDCToken, error)
@@ -258,9 +258,13 @@ func (o *OpenIDAuthenticator) Verify(ctx context.Context, token string) (OIDCCla
 // always provide a non-zero string and validate that it matches the
 // the state query parameter on your redirect callback.
 // See http://tools.ietf.org/html/rfc6749#section-10.12 for more info.
-func (o *OpenIDAuthenticator) AuthCodeURL(state string, scopes ...string) string {
+func (o *OpenIDAuthenticator) AuthCodeURL(state string, offlineAsScope bool, scopes ...string) string {
 	oauth2Config := o.oauth2Config(scopes...)
-	return oauth2Config.AuthCodeURL(state)
+	options := oauth2.AccessTypeOnline
+	if !offlineAsScope {
+		options = oauth2.AccessTypeOffline
+	}
+	return oauth2Config.AuthCodeURL(state, options)
 }
 
 // Exchange converts an authorization code into a token.
@@ -385,7 +389,7 @@ var _ OIDCIssuerVerifier = FakeIssuerVerifier{}
 
 // AuthCodeURL returns a URL to OpenID provider's consent page
 // note: not implemented
-func (o FakeIssuerVerifier) AuthCodeURL(state string, scopes ...string) string {
+func (o FakeIssuerVerifier) AuthCodeURL(state string, offlineAsScope bool, scopes ...string) string {
 	return "not implemented"
 }
 

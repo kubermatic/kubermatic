@@ -199,9 +199,10 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticato
 	r.RegisterV1Optional(v1Router,
 		options.featureGates.Enabled(OIDCKubeCfgEndpoint),
 		handler.OIDCConfiguration{
-			URL:          options.oidcIssuerURL,
-			ClientID:     options.oidcClientID,
-			ClientSecret: options.oidcClientSecret,
+			URL:                  options.oidcIssuerURL,
+			ClientID:             options.oidcClientID,
+			ClientSecret:         options.oidcClientSecret,
+			OfflineAccessAsScope: options.oidcOfflineAccessAsScope,
 		},
 		mainRouter)
 	r.RegisterV1Alpha(v1AlphaRouter)
