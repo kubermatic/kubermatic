@@ -102,8 +102,7 @@ func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVe
 				clientCmdAuth := clientcmdapi.NewAuthInfo()
 				clientCmdAuthProvider := &clientcmdapi.AuthProviderConfig{Config: map[string]string{}}
 				clientCmdAuthProvider.Name = "oidc"
-				clientCmdAuthProvider.Config["id-token"] = oidcTokens.AccessToken
-				clientCmdAuthProvider.Config["refresh-token"] = oidcTokens.RefreshToken
+				clientCmdAuthProvider.Config["id-token"] = oidcTokens.IDToken
 				clientCmdAuthProvider.Config["refresh-token"] = oidcTokens.RefreshToken
 				clientCmdAuthProvider.Config["idp-issuer-url"] = oidcCfg.URL
 				clientCmdAuthProvider.Config["client-id"] = oidcCfg.ClientID
