@@ -31,6 +31,8 @@ import (
 	extensionsv1beta1lister "k8s.io/client-go/listers/extensions/v1beta1"
 	policyv1beta1lister "k8s.io/client-go/listers/policy/v1beta1"
 	rbacb1lister "k8s.io/client-go/listers/rbac/v1"
+	aggregationclientset "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
+
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
@@ -43,6 +45,7 @@ type userClusterConnectionProvider interface {
 	GetClient(*kubermaticv1.Cluster) (kubernetes.Interface, error)
 	GetMachineClient(*kubermaticv1.Cluster) (clusterv1alpha1clientset.Interface, error)
 	GetApiextensionsClient(*kubermaticv1.Cluster) (apiextensionsclientset.Interface, error)
+	GetKubeAggregatorClient(*kubermaticv1.Cluster) (aggregationclientset.Interface, error)
 }
 
 // Controller is a controller which is responsible for managing clusters

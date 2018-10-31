@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: metrics-server
+  namespace: kube-system
+  labels:
+    kubernetes.io/name: "Metrics-server"
+spec:
+  type: ExternalName
+  externalName: metrics-server.cluster-7zmnlbq2gs.svc.cluster.local

@@ -1,0 +1,47 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: metrics-server
+  namespace: cluster-7zmnlbq2gs
+spec:
+  selector:
+    matchLabels:
+      k8s-app: metrics-server
+  template:
+    metadata:
+      name: metrics-server
+      labels:
+        k8s-app: metrics-server
+    spec:
+      containers:
+      - name: metrics-server
+        image: gcr.io/google_containers/metrics-server-amd64:v0.3.1
+        command:
+        - '/metrics-server'
+        args:
+        - '--kubeconfig'
+        - '/etc/kubernetes/kubeconfig/kubeconfig'
+        - '--kubelet-port'
+        - '10250'
+        - '--kubelet-insecure-tls'
+        - '--authentication-kubeconfig'
+        - '/etc/kubernetes/kubeconfig/kubeconfig'
+        - '--authorization-kubeconfig'
+        - '/etc/kubernetes/kubeconfig/kubeconfig'
+        - '--kubelet-preferred-address-types'
+        - 'ExternalIP,InternalIP'
+        - '--metric-resolution'
+        - '10s'
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: tmp-dir
+          mountPath: /tmp
+        - name: admin-kubeconfig
+          mountPath: /etc/kubernetes/kubeconfig
+      volumes:
+      # mount in tmp so we can safely use from-scratch images and/or read-only containers
+      - name: tmp-dir
+        emptyDir: {}
+      - name: admin-kubeconfig
+        secret:
+          secretName: admin-kubeconfig
