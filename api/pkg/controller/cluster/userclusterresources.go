@@ -3,8 +3,6 @@ package cluster
 import (
 	"fmt"
 
-	"github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
-
 	"github.com/Masterminds/semver"
 	"github.com/go-test/deep"
 	"github.com/golang/glog"
@@ -13,6 +11,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
@@ -26,6 +25,53 @@ import (
 	"k8s.io/client-go/kubernetes"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
+
+func (cc *Controller) reconcileUserClusterResources(cluster *kubermaticv1.Cluster, client kubernetes.Interface) (*kubermaticv1.Cluster, error) {
+	var err error
+	if err = cc.launchingCreateOpenVPNClientCertificates(cluster); err != nil {
+		return nil, err
+	}
+
+	if len(cluster.Spec.MachineNetworks) > 0 {
+		if err = cc.userClusterEnsureInitializerConfiguration(cluster, client); err != nil {
+			return nil, err
+		}
+	}
+
+	if err = cc.userClusterEnsureRoles(cluster, client); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureConfigMaps(cluster, client); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureRoleBindings(cluster, client); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureClusterRoles(cluster, client); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureClusterRoleBindings(cluster, client); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureCustomResourceDefinitions(cluster); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureAPIServices(cluster); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureServices(cluster); err != nil {
+		return nil, err
+	}
+
+	return cluster, nil
+}
 
 func (cc *Controller) userClusterEnsureInitializerConfiguration(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	creators := []resources.InitializerConfigurationCreator{
@@ -76,9 +122,10 @@ func (cc *Controller) userClusterEnsureInitializerConfiguration(c *kubermaticv1.
 
 func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	creators := []resources.RoleCreator{
-		machinecontroller.Role,
+		machinecontroller.EndpointReaderRole,
 		machinecontroller.KubeSystemRole,
 		machinecontroller.KubePublicRole,
+		machinecontroller.ClusterInfoReaderRole,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -128,6 +175,7 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster, cli
 		machinecontroller.DefaultRoleBinding,
 		machinecontroller.KubeSystemRoleBinding,
 		machinecontroller.KubePublicRoleBinding,
+		machinecontroller.ClusterInfoAnonymousRoleBinding,
 		metricsserver.RolebindingAuthReader,
 	}
 
@@ -299,6 +347,7 @@ func (cc *Controller) userClusterEnsureConfigMaps(c *kubermaticv1.Cluster, clien
 
 	creators := []resources.ConfigMapCreator{
 		openvpn.ClientConfigConfigMapCreator(data),
+		machinecontroller.ClusterInfoConfigMapCreator(data),
 	}
 
 	for _, create := range creators {
