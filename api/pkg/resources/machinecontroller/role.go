@@ -49,7 +49,7 @@ func KubeSystemRole(data resources.RoleDataProvider, existing *rbacv1.Role) (*rb
 
 // KubePublicRole returns a role for the machine controller. This
 // role has to be put in the user-cluster and carries a namespace.
-func KubePublicRole(data resources.RoleDataProvider, existing *rbacv1.Role) (*rbacv1.Role, error) {
+func KubePublicRole(_ resources.RoleDataProvider, existing *rbacv1.Role) (*rbacv1.Role, error) {
 	var r *rbacv1.Role
 	if existing != nil {
 		r = existing
@@ -75,9 +75,9 @@ func KubePublicRole(data resources.RoleDataProvider, existing *rbacv1.Role) (*rb
 	return r, nil
 }
 
-// Role returns a role for the machine controller. This
+// EndpointReaderRole returns a role for the machine controller. This
 // role has to be put in the user-cluster and carries a namespace.
-func Role(data resources.RoleDataProvider, existing *rbacv1.Role) (*rbacv1.Role, error) {
+func EndpointReaderRole(_ resources.RoleDataProvider, existing *rbacv1.Role) (*rbacv1.Role, error) {
 	var r *rbacv1.Role
 	if existing != nil {
 		r = existing
@@ -98,6 +98,30 @@ func Role(data resources.RoleDataProvider, existing *rbacv1.Role) (*rbacv1.Role,
 				"list",
 				"watch",
 			},
+		},
+	}
+	return r, nil
+}
+
+// ClusterInfoReaderRole returns a role to read the cluster-info ConfigMap. This
+// role has to be put in the user-cluster and carries a namespace.
+func ClusterInfoReaderRole(_ resources.RoleDataProvider, existing *rbacv1.Role) (*rbacv1.Role, error) {
+	var r *rbacv1.Role
+	if existing != nil {
+		r = existing
+	} else {
+		r = &rbacv1.Role{}
+	}
+
+	r.Name = resources.ClusterInfoReaderRoleName
+	r.Namespace = metav1.NamespacePublic
+
+	r.Rules = []rbacv1.PolicyRule{
+		{
+			APIGroups:     []string{""},
+			ResourceNames: []string{"cluster-info"},
+			Resources:     []string{"configmaps"},
+			Verbs:         []string{"get"},
 		},
 	}
 	return r, nil
