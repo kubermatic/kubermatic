@@ -138,6 +138,8 @@ const (
 	OpenVPNClientConfigsConfigMapName = "openvpn-client-configs"
 	//OpenVPNClientConfigConfigMapName is the name for the ConfigMap containing the OpenVPN client config used by the client inside the user cluster
 	OpenVPNClientConfigConfigMapName = "openvpn-client-config"
+	//ClusterInfoConfigMapName is the name for the ConfigMap containing the cluster-info used by the bootstrap token machanism
+	ClusterInfoConfigMapName = "cluster-info"
 	//PrometheusConfigConfigMapName is the name for the configmap containing the prometheus config
 	PrometheusConfigConfigMapName = "prometheus"
 
@@ -188,10 +190,14 @@ const (
 	// KubeletDnatControllerClusterRoleBindingName is the name for the KubeletDnatController clusterrolebinding
 	KubeletDnatControllerClusterRoleBindingName = "system:kubermatic-kubeletdnat-controller"
 
+	//ClusterInfoReaderRoleName is the name for the role which allows reading the cluster-info ConfigMap
+	ClusterInfoReaderRoleName = "cluster-info"
 	//MachineControllerRoleName is the name for the MachineController roles
 	MachineControllerRoleName = "machine-controller"
 	//MachineControllerRoleBindingName is the name for the MachineController rolebinding
 	MachineControllerRoleBindingName = "machine-controller"
+	//ClusterInfoAnonymousRoleBindingName is the name for the RoleBinding giving access to the cluster-info ConfigMap to anonymous users
+	ClusterInfoAnonymousRoleBindingName = "cluster-info"
 	//MetricsServerAuthReaderRoleName is the name for the metrics server role
 	MetricsServerAuthReaderRoleName = "metrics-server-auth-reader"
 	//MachineControllerClusterRoleName is the name for the MachineController cluster role

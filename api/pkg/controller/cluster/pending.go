@@ -69,55 +69,14 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 			}
 		}
 
-		if err = cc.launchingCreateClusterInfoConfigMap(cluster); err != nil {
-			return nil, err
-		}
-
-		if err = cc.launchingCreateOpenVPNClientCertificates(cluster); err != nil {
-			return nil, err
-		}
-
 		client, err := cc.userClusterConnProvider.GetClient(cluster)
 		if err != nil {
 			return nil, err
 		}
 
-		if len(cluster.Spec.MachineNetworks) > 0 {
-			if err = cc.userClusterEnsureInitializerConfiguration(cluster, client); err != nil {
-				return nil, err
-			}
-		}
-
-		if err = cc.userClusterEnsureRoles(cluster, client); err != nil {
-			return nil, err
-		}
-
-		if err = cc.userClusterEnsureConfigMaps(cluster, client); err != nil {
-			return nil, err
-		}
-
-		if err = cc.userClusterEnsureRoleBindings(cluster, client); err != nil {
-			return nil, err
-		}
-
-		if err = cc.userClusterEnsureClusterRoles(cluster, client); err != nil {
-			return nil, err
-		}
-
-		if err = cc.userClusterEnsureClusterRoleBindings(cluster, client); err != nil {
-			return nil, err
-		}
-
-		if err = cc.userClusterEnsureCustomResourceDefinitions(cluster); err != nil {
-			return nil, err
-		}
-
-		if err = cc.userClusterEnsureAPIServices(cluster); err != nil {
-			return nil, err
-		}
-
-		if err = cc.userClusterEnsureServices(cluster); err != nil {
-			return nil, err
+		// TODO: Move into own controller
+		if cluster, err = cc.reconcileUserClusterResources(cluster, client); err != nil {
+			return nil, fmt.Errorf("failed to reconcile user cluster resources: %v", err)
 		}
 	}
 
