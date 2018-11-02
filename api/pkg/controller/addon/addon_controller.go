@@ -615,11 +615,7 @@ func (c *Controller) cleanupManifests(addon *kubermaticv1.Addon, cluster *kuberm
 }
 
 func wasKubectlDeleteSuccessful(out string) bool {
-	out = strings.TrimSpace(out)
-	if out == "" {
-		return false
-	}
-	lines := strings.Split(out, "\n")
+	lines := strings.Split(strings.TrimSpace(out), "\n")
 	for _, rawLine := range lines {
 		line := strings.TrimSpace(rawLine)
 		if line == "" {
@@ -635,14 +631,15 @@ func wasKubectlDeleteSuccessful(out string) bool {
 
 func isKubectlDeleteSuccessful(message string) bool {
 	// Resource got successfully deleted. Something like: apiservice.apiregistration.k8s.io "v1beta1.metrics.k8s.io" deleted
-	if strings.HasPrefix(message, "\" deleted") {
+	if strings.HasSuffix(message, "\" deleted") {
 		return true
 	}
 
 	// Something like: Error from server (NotFound): error when deleting "/tmp/cluster-rwhxp9j5j-metrics-server.yaml": serviceaccounts "metrics-server" not found
-	if strings.HasPrefix(message, "\" not found") {
+	if strings.HasSuffix(message, "\" not found") {
 		return true
 	}
 
+	fmt.Printf("fail: %v", message)
 	return false
 }
