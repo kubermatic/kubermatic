@@ -135,7 +135,7 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster, cli
 		var existing *rbacv1.RoleBinding
 		rb, err := create(nil, nil)
 		if err != nil {
-			return fmt.Errorf("failed to build RolebindingAuthReader: %v", err)
+			return fmt.Errorf("failed to build RoleBinding: %v", err)
 		}
 
 		if existing, err = client.RbacV1().RoleBindings(rb.Namespace).Get(rb.Name, metav1.GetOptions{}); err != nil {
@@ -144,15 +144,15 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster, cli
 			}
 
 			if _, err = client.RbacV1().RoleBindings(rb.Namespace).Create(rb); err != nil {
-				return fmt.Errorf("failed to create RolebindingAuthReader %s in namespace %s: %v", rb.Name, rb.Namespace, err)
+				return fmt.Errorf("failed to create RoleBinding %s in namespace %s: %v", rb.Name, rb.Namespace, err)
 			}
-			glog.V(4).Infof("Created RolebindingAuthReader %s inside user-cluster %s", rb.Name, c.Name)
+			glog.V(4).Infof("Created RoleBinding %s inside user-cluster %s", rb.Name, c.Name)
 			continue
 		}
 
 		rb, err = create(nil, existing.DeepCopy())
 		if err != nil {
-			return fmt.Errorf("failed to build RolebindingAuthReader: %v", err)
+			return fmt.Errorf("failed to build RoleBinding: %v", err)
 		}
 
 		if equality.Semantic.DeepEqual(rb, existing) {
@@ -160,9 +160,9 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster, cli
 		}
 
 		if _, err = client.RbacV1().RoleBindings(rb.Namespace).Update(rb); err != nil {
-			return fmt.Errorf("failed to update RolebindingAuthReader %s in namespace %s: %v", rb.Name, rb.Namespace, err)
+			return fmt.Errorf("failed to update RoleBinding %s in namespace %s: %v", rb.Name, rb.Namespace, err)
 		}
-		glog.V(4).Infof("Updated RolebindingAuthReader %s inside user-cluster %s", rb.Name, c.Name)
+		glog.V(4).Infof("Updated RoleBinding %s inside user-cluster %s", rb.Name, c.Name)
 	}
 
 	return nil
