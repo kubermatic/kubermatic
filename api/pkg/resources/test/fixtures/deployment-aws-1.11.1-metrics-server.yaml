@@ -1,0 +1,180 @@
+metadata:
+  creationTimestamp: null
+  labels:
+    app: metrics-server
+  name: metrics-server
+  ownerReferences:
+  - apiVersion: kubermatic.k8s.io/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Cluster
+    name: de-test-01
+    uid: "1234567890"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metrics-server
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: metrics-server
+        cluster: de-test-01
+        kubeletdnatcontroller-kubeconfig-secret-revision: "123456"
+        metrics-server-secret-revision: "123456"
+        openvpn-client-certificates-secret-revision: "123456"
+    spec:
+      containers:
+      - args:
+        - --kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
+        - --authentication-kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
+        - --authorization-kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
+        - --kubelet-port
+        - "10250"
+        - --kubelet-insecure-tls
+        - --kubelet-preferred-address-types
+        - ExternalIP,InternalIP
+        - --v
+        - "1"
+        - --logtostderr
+        command:
+        - /metrics-server
+        image: gcr.io/google_containers/metrics-server-amd64:v0.3.1
+        imagePullPolicy: IfNotPresent
+        name: metrics-server
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/kubernetes/kubeconfig
+          name: metrics-server
+          readOnly: true
+      - args:
+        - --client
+        - --proto
+        - tcp
+        - --dev
+        - tun
+        - --auth-nocache
+        - --remote
+        - openvpn-server.cluster-de-test-01.svc.cluster.local.
+        - "1194"
+        - --nobind
+        - --connect-timeout
+        - "5"
+        - --connect-retry
+        - "1"
+        - --ca
+        - /etc/openvpn/pki/client/ca.crt
+        - --cert
+        - /etc/openvpn/pki/client/client.crt
+        - --key
+        - /etc/openvpn/pki/client/client.key
+        - --remote-cert-tls
+        - server
+        - --link-mtu
+        - "1432"
+        - --cipher
+        - AES-256-GCM
+        - --auth
+        - SHA1
+        - --keysize
+        - "256"
+        - --script-security
+        - "2"
+        - --status
+        - /run/openvpn-status
+        - --log
+        - /dev/stdout
+        command:
+        - /usr/sbin/openvpn
+        image: docker.io/kubermatic/openvpn:v0.4
+        imagePullPolicy: IfNotPresent
+        name: openvpn-client
+        resources:
+          limits:
+            cpu: 40m
+            memory: 64Mi
+          requests:
+            cpu: 10m
+            memory: 30Mi
+        securityContext:
+          privileged: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/openvpn/pki/client
+          name: openvpn-client-certificates
+          readOnly: true
+      - args:
+        - --kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
+        - --node-access-network
+        - 192.0.2.0/24
+        - -v
+        - "4"
+        - -logtostderr
+        command:
+        - /usr/local/bin/kubeletdnat-controller
+        image: quay.io/kubermatic/vpnsidecar-dnat-controller:v0.2.0
+        imagePullPolicy: IfNotPresent
+        name: dnat-controller
+        resources:
+          limits:
+            cpu: 20m
+            memory: 64Mi
+          requests:
+            cpu: 5m
+            memory: 16Mi
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/kubernetes/kubeconfig
+          name: kubeletdnatcontroller-kubeconfig
+          readOnly: true
+      initContainers:
+      - args:
+        - -endpoint
+        - https://apiserver-external.cluster-de-test-01.svc.cluster.local.:30000/healthz
+        - -insecure
+        - -retries
+        - "100"
+        - -retry-wait
+        - "2"
+        - -timeout
+        - "1"
+        command:
+        - /usr/local/bin/http-prober
+        image: quay.io/kubermatic/http-prober:v0.1
+        imagePullPolicy: IfNotPresent
+        name: apiserver-running
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      volumes:
+      - name: metrics-server
+        secret:
+          defaultMode: 292
+          secretName: metrics-server
+      - name: openvpn-client-certificates
+        secret:
+          defaultMode: 256
+          secretName: openvpn-client-certificates
+      - name: kubeletdnatcontroller-kubeconfig
+        secret:
+          defaultMode: 256
+          secretName: kubeletdnatcontroller-kubeconfig
+status: {}

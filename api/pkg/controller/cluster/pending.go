@@ -111,6 +111,14 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 		if err = cc.userClusterEnsureCustomResourceDefinitions(cluster); err != nil {
 			return nil, err
 		}
+
+		if err = cc.userClusterEnsureAPIServices(cluster); err != nil {
+			return nil, err
+		}
+
+		if err = cc.userClusterEnsureServices(cluster); err != nil {
+			return nil, err
+		}
 	}
 
 	if !cluster.Status.Health.AllHealthy() {
