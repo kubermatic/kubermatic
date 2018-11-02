@@ -372,3 +372,48 @@ func TestController_getApplyCommand(t *testing.T) {
 		t.Fatalf("invalid apply command returned. Expected \n%s, Got \n%s", expected, got)
 	}
 }
+
+func TestController_wasKubectlDeleteSuccessful(t *testing.T) {
+	tests := []struct {
+		name    string
+		out     string
+		success bool
+	}{
+		{
+			name: "everything was deleted successfully",
+			out: `clusterrolebinding.rbac.authorization.k8s.io "metrics-server:system:auth-delegator" deleted
+rolebinding.rbac.authorization.k8s.io "metrics-server-auth-reader" deleted
+apiservice.apiregistration.k8s.io "v1beta1.metrics.k8s.io" deleted
+service "metrics-server" deleted
+clusterrole.rbac.authorization.k8s.io "system:metrics-server" deleted
+clusterrolebinding.rbac.authorization.k8s.io "system:metrics-server" deleted`,
+			success: true,
+		},
+		{
+			name: "some thing where not found - but everything else was successfully deleted",
+			out: `clusterrolebinding.rbac.authorization.k8s.io "metrics-server:system:auth-delegator" deleted
+rolebinding.rbac.authorization.k8s.io "metrics-server-auth-reader" deleted
+apiservice.apiregistration.k8s.io "v1beta1.metrics.k8s.io" deleted
+service "metrics-server" deleted
+clusterrole.rbac.authorization.k8s.io "system:metrics-server" deleted
+clusterrolebinding.rbac.authorization.k8s.io "system:metrics-server" deleted
+Error from server (NotFound): error when deleting "/tmp/cluster-rwhxp9j5j-metrics-server.yaml": serviceaccounts "metrics-server" not found
+Error from server (NotFound): error when stopping "/tmp/cluster-rwhxp9j5j-metrics-server.yaml": deployments.extensions "metrics-server" not found`,
+			success: true,
+		},
+		{
+			name:    "failed to delete",
+			out:     `connection refused`,
+			success: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			res := wasKubectlDeleteSuccessful(test.out)
+			if res != test.success {
+				t.Errorf("expected to get %v, got %v", test.success, res)
+			}
+		})
+	}
+}
