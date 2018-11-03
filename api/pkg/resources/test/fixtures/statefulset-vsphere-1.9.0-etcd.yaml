@@ -130,6 +130,8 @@ spec:
         - mountPath: /etc/etcd/pki/client
           name: apiserver-etcd-client-certificate
           readOnly: true
+      imagePullSecrets:
+      - name: dockercfg
       volumes:
       - name: etcd-tls-certificate
         secret:

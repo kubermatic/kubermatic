@@ -70,6 +70,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			IntVal: 0,
 		},
 	}
+	dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 	volumes := getVolumes()
 	podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
@@ -92,12 +93,6 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 	}
 
 	etcdEndpoints := etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName)
-
-	dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
-		{
-			Name: resources.ImagePullSecretName,
-		},
-	}
 
 	// Configure user cluster DNS resolver for this pod.
 	dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)

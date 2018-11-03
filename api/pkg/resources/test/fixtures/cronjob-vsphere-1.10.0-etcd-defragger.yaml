@@ -54,6 +54,8 @@ spec:
             - mountPath: /etc/etcd/pki/client
               name: apiserver-etcd-client-certificate
               readOnly: true
+          imagePullSecrets:
+          - name: dockercfg
           restartPolicy: OnFailure
           volumes:
           - name: apiserver-etcd-client-certificate
