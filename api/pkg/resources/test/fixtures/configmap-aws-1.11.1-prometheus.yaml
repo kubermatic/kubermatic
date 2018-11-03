@@ -102,14 +102,14 @@ data:
           cert_file: /etc/kubernetes/prometheus-client.crt
           key_file: /etc/kubernetes/prometheus-client.key
       relabel_configs:
-      - source_labels: [__meta_kubernetes_pod_annotation_tmpkubermatic051637917_port]
+      - source_labels: [__meta_kubernetes_pod_annotation_tmpkubermatic435573937_port]
         action: keep
         regex: \d+
-      - source_labels: [__meta_kubernetes_pod_annotation_tmpkubermatic051637917_path]
+      - source_labels: [__meta_kubernetes_pod_annotation_tmpkubermatic435573937_path]
         regex: (.+)
         action: replace
         target_label: __metrics_path__
-      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_name, __meta_kubernetes_pod_annotation_tmpkubermatic051637917_port, __metrics_path__]
+      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_name, __meta_kubernetes_pod_annotation_tmpkubermatic435573937_port, __metrics_path__]
         action: replace
         regex: (.*);(.*);(.*);(.*)
         target_label: __metrics_path__
