@@ -28,38 +28,139 @@ data:
         action: replace
         replacement: $1
         target_label: instance
-    - job_name: 'pods-0'
 
+    - job_name: 'kubernetes-nodes'
+      scheme: https
+      tls_config:
+        ca_file: /etc/kubernetes/ca.crt
+        cert_file: /etc/kubernetes/prometheus-client.crt
+        key_file: /etc/kubernetes/prometheus-client.key
+
+      kubernetes_sd_configs:
+      - role: node
+        api_server: 'apiserver-external.cluster-de-test-01.svc.cluster.local.:30000'
+        tls_config:
+          ca_file: /etc/kubernetes/ca.crt
+          cert_file: /etc/kubernetes/prometheus-client.crt
+          key_file: /etc/kubernetes/prometheus-client.key
+
+      relabel_configs:
+      - action: labelmap
+        regex: __meta_kubernetes_node_label_(.+)
+      - target_label: __address__
+        replacement: 'apiserver-external.cluster-de-test-01.svc.cluster.local.:30000'
+      - source_labels: [__meta_kubernetes_node_name]
+        regex: (.+)
+        target_label: __metrics_path__
+        replacement: /api/v1/nodes/${1}/proxy/metrics
+
+    - job_name: 'apiservers'
       kubernetes_sd_configs:
       - role: pod
         namespaces:
           names:
           - "cluster-de-test-01"
-
+      scheme: https
+      tls_config:
+        ca_file: /etc/kubernetes/ca.crt
+        cert_file: /etc/kubernetes/prometheus-client.crt
+        key_file: /etc/kubernetes/prometheus-client.key
+        # insecure_skip_verify is needed because the apiservers certificate
+        # does not contain a common name for the pods ip address
+        insecure_skip_verify: true
       relabel_configs:
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_0_scrape]
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape_apiserver]
         action: keep
         regex: true
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_0_path]
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
         action: replace
         target_label: __metrics_path__
         regex: (.+)
-      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_0_port]
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
         action: replace
         regex: ([^:]+)(?::\d+)?;(\d+)
         replacement: $1:$2
         target_label: __address__
-      - source_labels: [__meta_kubernetes_pod_label_role, __meta_kubernetes_pod_label_app]
-        action: replace
-        target_label: job
-        separator: ''
       - source_labels: [__meta_kubernetes_namespace]
         action: replace
         target_label: namespace
       - source_labels: [__meta_kubernetes_pod_name]
         action: replace
         target_label: pod
-    - job_name: 'pods-1'
+
+    - job_name: 'user-cluster-pods'
+      scheme: https
+      tls_config:
+        ca_file: /etc/kubernetes/ca.crt
+        cert_file: /etc/kubernetes/prometheus-client.crt
+        key_file: /etc/kubernetes/prometheus-client.key
+      kubernetes_sd_configs:
+      - role: pod
+        api_server: 'apiserver-external.cluster-de-test-01.svc.cluster.local.:30000'
+        tls_config:
+          ca_file: /etc/kubernetes/ca.crt
+          cert_file: /etc/kubernetes/prometheus-client.crt
+          key_file: /etc/kubernetes/prometheus-client.key
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_tmpkubermatic922268512_port]
+        action: keep
+        regex: \d+
+      - source_labels: [__meta_kubernetes_pod_annotation_tmpkubermatic922268512_path]
+        regex: (.+)
+        action: replace
+        target_label: __metrics_path__
+      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_name, __meta_kubernetes_pod_annotation_tmpkubermatic922268512_port, __metrics_path__]
+        action: replace
+        regex: (.*);(.*);(.*);(.*)
+        target_label: __metrics_path__
+        replacement: /api/v1/namespaces/${1}/pods/${2}:${3}/proxy${4}
+      - target_label: __address__
+        replacement: 'apiserver-external.cluster-de-test-01.svc.cluster.local.:30000'
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: pod
+
+    - job_name: 'control-plane-service-endpoints'
+
+      kubernetes_sd_configs:
+      - role: endpoints
+        namespaces:
+          names:
+          - "cluster-de-test-01"
+
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_endpoint_ready]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+        action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        target_label: __address__
+      - source_labels: [__meta_kubernetes_endpoint_name]
+        action: replace
+        target_label: job
+      - source_labels: [__meta_kubernetes_endpoint_port_name]
+        action: replace
+        target_label: port_name
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: pod
+
+    - job_name: 'control-plane-pods'
 
       kubernetes_sd_configs:
       - role: pod
@@ -68,14 +169,14 @@ data:
           - "cluster-de-test-01"
 
       relabel_configs:
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_1_scrape]
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
         action: keep
         regex: true
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_1_path]
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
         action: replace
         target_label: __metrics_path__
         regex: (.+)
-      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_1_port]
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
         action: replace
         regex: ([^:]+)(?::\d+)?;(\d+)
         replacement: $1:$2
@@ -97,7 +198,6 @@ data:
           - 'alertmanager-kubermatic.monitoring.svc.cluster.local'
           type: A
           port: 9093
-  rules-custom.yaml: some test
   rules.yaml: |2
 
     groups:
