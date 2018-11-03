@@ -480,7 +480,7 @@ func TestLoadFiles(t *testing.T) {
 					"",
 					"192.0.2.0/24",
 					resource.MustParse("5Gi"),
-					tmpFilePath,
+					"kubermatic_io_monitoring",
 					"",
 					false,
 					false,
