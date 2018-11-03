@@ -50,6 +50,7 @@ func StatefulSet(data resources.StatefulSetDataProvider, existing *appsv1.Statef
 	set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 	set.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
 	set.Spec.ServiceName = resources.EtcdServiceName
+	set.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 	baseLabels := getBasePodLabels(data.Cluster())
 	set.Spec.Selector = &metav1.LabelSelector{

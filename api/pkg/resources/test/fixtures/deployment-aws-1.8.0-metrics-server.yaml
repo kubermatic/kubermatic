@@ -145,6 +145,8 @@ spec:
         - mountPath: /etc/kubernetes/kubeconfig
           name: kubeletdnatcontroller-kubeconfig
           readOnly: true
+      imagePullSecrets:
+      - name: dockercfg
       initContainers:
       - args:
         - -endpoint

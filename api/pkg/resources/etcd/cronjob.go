@@ -32,6 +32,7 @@ func CronJob(data *resources.TemplateData, existing *batchv1beta1.CronJob) (*bat
 	job.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
 	job.Spec.Schedule = "@every 3h"
 	job.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
+	job.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 	job.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:                     "defragger",

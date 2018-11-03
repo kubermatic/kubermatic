@@ -65,6 +65,7 @@ func StatefulSet(data resources.StatefulSetDataProvider, existing *appsv1.Statef
 		RunAsNonRoot: resources.Bool(true),
 		RunAsUser:    resources.Int64(1000),
 	}
+	set.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 	set.Spec.Template.Spec.ServiceAccountName = resources.PrometheusServiceAccountName
 	set.Spec.Template.Spec.TerminationGracePeriodSeconds = resources.Int64(600)
 
