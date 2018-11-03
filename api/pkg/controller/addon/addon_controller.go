@@ -281,6 +281,7 @@ func (c *Controller) sync(key string) error {
 		if err := c.removeCleanupFinalizer(addon); err != nil {
 			return fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
 		}
+		return nil
 	}
 
 	// Reconciling
