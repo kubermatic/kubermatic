@@ -101,7 +101,6 @@ It must be called via:
 * Implement an endpoint which will generate the Kubeconfig - 4d
 * Modify the new API endpoint to generate and preserver session token - 0.5d
 * Add unit test for testing kubeconfig generation - 2d
-* Add Dex TLS verification to API - 0.5d
 * Configure dex - 0.5d
 * Write relevant documentation describing on how to create basic RBAC manifests to grant others permission - 0.5d
 * Implement modal in Dashboard + feature flag(config variable) - 1d
