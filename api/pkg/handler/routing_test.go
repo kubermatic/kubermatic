@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/go-test/deep"
-
 	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"

@@ -128,10 +128,10 @@ func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVe
 			return rsp, nil
 		}
 
-		// PHASE initial handles request from and end-user that want to authenticate
-		// and kickoff the process of kubeconfig generation
+		// PHASE initial handles request from the end-user that wants to authenticate
+		// and kicksoff the process of kubeconfig generation
 		if req.phase != initialPhase {
-			return nil, kcerrors.NewBadRequest("bad request unexpected ")
+			return nil, kcerrors.NewBadRequest(fmt.Sprintf("bad request unexpected phase = %d, expected phase = %d, did you forget to set the phase while decoding the request ?", req.phase, initialPhase))
 		}
 
 		// TODO: pass nonce
