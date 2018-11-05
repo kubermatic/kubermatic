@@ -58,7 +58,17 @@ func (p *Provider) GetClientConfig(c *kubermaticv1.Cluster) (*restclient.Config,
 		&clientcmd.ConfigOverrides{},
 		nil,
 	)
-	return iconfig.ClientConfig()
+
+	clientConfig, err := iconfig.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	// Avoid blocking of the controller by increasing the QPS for user cluster interaction
+	clientConfig.QPS = 20
+	clientConfig.Burst = 50
+
+	return clientConfig, err
 }
 
 // GetClient returns a kubernetes client to interact with the given cluster
