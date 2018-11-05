@@ -16,7 +16,7 @@ import (
 const (
 	name = "machine-controller"
 
-	tag = "v0.9.8"
+	tag = "v0.9.9"
 )
 
 // Deployment returns the machine-controller Deployment
@@ -48,6 +48,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			IntVal: 0,
 		},
 	}
+	dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 	volumes := getVolumes()
 	podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)

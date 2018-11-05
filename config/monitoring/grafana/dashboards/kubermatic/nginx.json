@@ -80,7 +80,7 @@
       ],
       "thresholds": "",
       "title": "Controller Request Volume",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -164,7 +164,7 @@
       ],
       "thresholds": "",
       "title": "Controller Connections",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -247,7 +247,7 @@
       ],
       "thresholds": "95, 99, 99.5",
       "title": "Controller Success Rate (non-4|5xx responses)",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -332,7 +332,7 @@
       ],
       "thresholds": "",
       "title": "Config Reloads",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -417,7 +417,7 @@
       ],
       "thresholds": "",
       "title": "Last Config Failed",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -509,7 +509,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -613,7 +613,7 @@
         "sort": 2,
         "value_type": "cumulative"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -722,7 +722,7 @@
         "sort": 2,
         "value_type": "cumulative"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -972,7 +972,7 @@
       "timeFrom": null,
       "title": "Ingress Percentile Response Times and Transfer Rates",
       "transform": "table",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "table"
     },
     {
@@ -1054,7 +1054,7 @@
       ],
       "title": "Ingress Certificate Expiry",
       "transform": "timeseries_aggregations",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "table"
     }
   ],

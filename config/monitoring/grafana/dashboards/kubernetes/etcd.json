@@ -3,7 +3,7 @@
     "list": []
   },
   "description": "etcd metrics",
-  "editable": "<< editable | toJson >>",
+  "editable": "<< editable | default false | toJson >>",
   "gnetId": null,
   "graphTooltip": 1,
   "hideControls": "<< hideControls | default false | toJson >>",
@@ -33,7 +33,7 @@
         "rgba(50, 172, 45, 0.97)"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "format": "none",
       "gauge": {
@@ -98,7 +98,7 @@
       ],
       "thresholds": "1,2",
       "title": "Up",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "200%",
       "valueMaps": [
@@ -116,7 +116,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 0,
       "gridPos": {
@@ -169,7 +169,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -207,7 +207,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 0,
       "gridPos": {
@@ -260,7 +260,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -298,7 +298,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 0,
       "gridPos": {
@@ -351,7 +351,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -403,7 +403,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "decimals": null,
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 0,
       "grid": {},
@@ -458,7 +458,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -494,7 +494,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 0,
       "grid": {},
@@ -558,7 +558,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -607,7 +607,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -660,7 +660,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -698,7 +698,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -751,7 +751,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -789,7 +789,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 0,
       "gridPos": {
@@ -842,7 +842,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -881,7 +881,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "decimals": null,
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 0,
       "grid": {},
@@ -936,7 +936,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -972,7 +972,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 0,
       "gridPos": {
@@ -1051,7 +1051,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1090,7 +1090,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "decimals": 0,
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 0,
       "gridPos": {
@@ -1145,7 +1145,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1196,7 +1196,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -1249,7 +1249,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1287,7 +1287,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -1340,7 +1340,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1378,7 +1378,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -1431,7 +1431,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1469,7 +1469,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -1522,7 +1522,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1560,7 +1560,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -1613,7 +1613,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1651,7 +1651,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -1704,7 +1704,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1742,7 +1742,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -1795,7 +1795,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1833,7 +1833,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -1886,7 +1886,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1955,7 +1955,7 @@
         "query": "label_values(job:etcd_server_has_leader:sum, cluster)",
         "refresh": 1,
         "regex": "",
-        "sort": 2,
+        "sort": 1,
         "tagValuesQuery": "",
         "tags": [],
         "tagsQuery": "",

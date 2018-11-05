@@ -94,6 +94,8 @@ spec:
           exec:
             command:
             - /usr/local/bin/etcdctl
+            - --command-timeout
+            - 10s
             - --cacert
             - /etc/etcd/pki/ca/ca.crt
             - --cert
@@ -105,9 +107,10 @@ spec:
             - endpoint
             - health
           failureThreshold: 3
-          periodSeconds: 10
+          initialDelaySeconds: 15
+          periodSeconds: 30
           successThreshold: 1
-          timeoutSeconds: 1
+          timeoutSeconds: 10
         resources:
           limits:
             cpu: 100m
@@ -127,6 +130,8 @@ spec:
         - mountPath: /etc/etcd/pki/client
           name: apiserver-etcd-client-certificate
           readOnly: true
+      imagePullSecrets:
+      - name: dockercfg
       volumes:
       - name: etcd-tls-certificate
         secret:

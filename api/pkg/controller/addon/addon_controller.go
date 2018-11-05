@@ -281,6 +281,7 @@ func (c *Controller) sync(key string) error {
 		if err := c.removeCleanupFinalizer(addon); err != nil {
 			return fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
 		}
+		return nil
 	}
 
 	// Reconciling
@@ -606,7 +607,7 @@ func (c *Controller) cleanupManifests(addon *kubermaticv1.Addon, cluster *kuberm
 	out, err := cmd.CombinedOutput()
 	glog.V(8).Infof("executed '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
 	if err != nil {
-		if isKubectlDeleteAllNotFoundMessage(string(out), manifestFilename) {
+		if wasKubectlDeleteSuccessful(string(out)) {
 			return nil
 		}
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %v\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
@@ -614,18 +615,14 @@ func (c *Controller) cleanupManifests(addon *kubermaticv1.Addon, cluster *kuberm
 	return nil
 }
 
-func isKubectlDeleteAllNotFoundMessage(out, filename string) bool {
-	out = strings.TrimSpace(out)
-	if out == "" {
-		return false
-	}
-	lines := strings.Split(out, "\n")
+func wasKubectlDeleteSuccessful(out string) bool {
+	lines := strings.Split(strings.TrimSpace(out), "\n")
 	for _, rawLine := range lines {
 		line := strings.TrimSpace(rawLine)
 		if line == "" {
 			continue
 		}
-		if !isKubectlDeleteNotFoundMessage(line, filename) {
+		if !isKubectlDeleteSuccessful(line) {
 			return false
 		}
 	}
@@ -633,14 +630,17 @@ func isKubectlDeleteAllNotFoundMessage(out, filename string) bool {
 	return true
 }
 
-func isKubectlDeleteNotFoundMessage(message, filename string) bool {
-	if !strings.HasPrefix(message, fmt.Sprintf("Error from server (NotFound): error when deleting \"%s\"", filename)) {
-		return false
+func isKubectlDeleteSuccessful(message string) bool {
+	// Resource got successfully deleted. Something like: apiservice.apiregistration.k8s.io "v1beta1.metrics.k8s.io" deleted
+	if strings.HasSuffix(message, "\" deleted") {
+		return true
 	}
 
-	if !strings.HasSuffix(message, "not found") {
-		return false
+	// Something like: Error from server (NotFound): error when deleting "/tmp/cluster-rwhxp9j5j-metrics-server.yaml": serviceaccounts "metrics-server" not found
+	if strings.HasSuffix(message, "\" not found") {
+		return true
 	}
 
-	return true
+	fmt.Printf("fail: %v", message)
+	return false
 }

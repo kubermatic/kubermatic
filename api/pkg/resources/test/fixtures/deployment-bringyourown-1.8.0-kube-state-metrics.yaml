@@ -18,13 +18,6 @@ spec:
   strategy: {}
   template:
     metadata:
-      annotations:
-        prometheus.io-0/path: /metrics
-        prometheus.io-0/port: "8080"
-        prometheus.io-0/scrape: "true"
-        prometheus.io-1/path: /metrics
-        prometheus.io-1/port: "8081"
-        prometheus.io-1/scrape: "true"
       creationTimestamp: null
       labels:
         app: kube-state-metrics
@@ -44,6 +37,13 @@ spec:
         image: quay.io/coreos/kube-state-metrics:v1.3.1
         imagePullPolicy: IfNotPresent
         name: kube-state-metrics
+        ports:
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
+        - containerPort: 8081
+          name: telemetry
+          protocol: TCP
         readinessProbe:
           failureThreshold: 3
           httpGet:
@@ -55,7 +55,7 @@ spec:
         resources:
           limits:
             cpu: 50m
-            memory: 64Mi
+            memory: 128Mi
           requests:
             cpu: 10m
             memory: 12Mi
@@ -65,6 +65,8 @@ spec:
         - mountPath: /etc/kubernetes/kubeconfig
           name: kube-state-metrics-kubeconfig
           readOnly: true
+      imagePullSecrets:
+      - name: dockercfg
       initContainers:
       - args:
         - -endpoint
