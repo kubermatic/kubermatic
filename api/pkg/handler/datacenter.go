@@ -150,7 +150,7 @@ func (r Routing) datacenterMiddleware() endpoint.Middleware {
 			}
 			ctx = context.WithValue(ctx, datacenterContextKey, dc)
 
-			clusterProvider, exists := r.newClusterProviders[getter.GetDC()]
+			clusterProvider, exists := r.clusterProviders[getter.GetDC()]
 			if !exists {
 				return nil, errors.NewNotFound("cluster-provider", getter.GetDC())
 			}
