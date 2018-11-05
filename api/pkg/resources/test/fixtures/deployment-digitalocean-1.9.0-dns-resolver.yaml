@@ -126,6 +126,8 @@ spec:
         - mountPath: /etc/coredns
           name: dns-resolver
           readOnly: true
+      imagePullSecrets:
+      - name: dockercfg
       volumes:
       - configMap:
           name: dns-resolver
