@@ -108,6 +108,10 @@ required = [
   branch = "release-7.0"
 
 [[override]]
+  name = "k8s.io/kube-aggregator"
+  branch = "release-1.10"
+
+[[override]]
   name = "k8s.io/code-generator"
   branch = "release-1.10"
 

@@ -11,6 +11,7 @@ import (
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	aggregationclientset "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 
 	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 )
@@ -96,4 +97,13 @@ func (p *Provider) GetApiextensionsClient(c *kubermaticv1.Cluster) (apiextension
 		return nil, err
 	}
 	return apiextensionsclientset.NewForConfig(config)
+}
+
+// GetKubeAggregatorClient returns a client to interact with the aggregation API for the given cluster
+func (p *Provider) GetKubeAggregatorClient(c *kubermaticv1.Cluster) (aggregationclientset.Interface, error) {
+	config, err := p.GetClientConfig(c)
+	if err != nil {
+		return nil, err
+	}
+	return aggregationclientset.NewForConfig(config)
 }
