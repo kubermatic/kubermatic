@@ -63,7 +63,7 @@ func main() {
 	}
 	authenticator, issuerVerifier, err := createOIDCAuthenticatorIssuer(options)
 	if err != nil {
-		glog.Fatalf("failed to create a openid authenticator for issuer %s (oidcClientID=%s) due to %v", options.oidcIssuerURL, options.oidcClientID, err)
+		glog.Fatalf("failed to create a openid authenticator for issuer %s (oidcClientID=%s) due to %v", options.oidcURL, options.oidcAuthenticatorClientID, err)
 	}
 	updateManager, err := version.NewFromFiles(options.versionsFile, options.updatesFile)
 	if err != nil {
@@ -152,10 +152,10 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 
 func createOIDCAuthenticatorIssuer(options serverRunOptions) (handler.OIDCAuthenticator, handler.OIDCIssuerVerifier, error) {
 	authenticator, err := handler.NewOpenIDAuthenticator(
-		options.oidcIssuerURL,
-		options.oidcClientID,
-		options.oidcClientSecret,
-		options.oidcRedirectURI,
+		options.oidcURL,
+		options.oidcAuthenticatorClientID,
+		"",
+		"",
 		handler.NewCombinedExtractor(
 			handler.NewHeaderBearerTokenExtractor("Authorization"),
 			handler.NewQueryParamBearerTokenExtractor("token"),
@@ -163,7 +163,23 @@ func createOIDCAuthenticatorIssuer(options serverRunOptions) (handler.OIDCAuthen
 		options.oidcSkipTLSVerify,
 	)
 
-	return authenticator, authenticator, err
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create OIDC Authenticator: %v", err)
+	}
+
+	issuer, err := handler.NewOpenIDAuthenticator(
+		options.oidcURL,
+		options.oidcIssuerClientID,
+		options.oidcIssuerClientSecret,
+		options.oidcIssuerRedirectURI,
+		handler.NewCombinedExtractor(
+			handler.NewHeaderBearerTokenExtractor("Authorization"),
+			handler.NewQueryParamBearerTokenExtractor("token"),
+		),
+		options.oidcSkipTLSVerify,
+	)
+
+	return authenticator, issuer, err
 }
 
 func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticator handler.OIDCAuthenticator, oidcIssuerVerifier handler.OIDCIssuerVerifier, updateManager *version.Manager) (http.HandlerFunc, error) {
@@ -199,10 +215,10 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticato
 	r.RegisterV1Optional(v1Router,
 		options.featureGates.Enabled(OIDCKubeCfgEndpoint),
 		handler.OIDCConfiguration{
-			URL:                  options.oidcIssuerURL,
-			ClientID:             options.oidcClientID,
-			ClientSecret:         options.oidcClientSecret,
-			OfflineAccessAsScope: options.oidcOfflineAccessAsScope,
+			URL:                  options.oidcURL,
+			ClientID:             options.oidcIssuerClientID,
+			ClientSecret:         options.oidcIssuerClientSecret,
+			OfflineAccessAsScope: options.oidcIssuerOfflineAccessAsScope,
 		},
 		mainRouter)
 	r.RegisterV1Alpha(v1AlphaRouter)
