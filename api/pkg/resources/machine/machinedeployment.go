@@ -8,6 +8,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
 
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -25,13 +27,48 @@ func MachineDeployment(c *kubermaticv1.Cluster, ns *apiv1.NodeSet, dc provider.D
 	md.Namespace = metav1.NamespaceSystem
 
 	md.Spec.Replicas = &ns.Spec.Replicas
-	md.Spec.Selector = ns.Spec.Selector
 	md.Spec.Template.Spec.Versions.Kubelet = ns.Spec.Template.Versions.Kubelet
-	md.Spec.Strategy = ns.Spec.Strategy
-	md.Spec.MinReadySeconds = ns.Spec.MinReadySeconds
 	md.Spec.RevisionHistoryLimit = ns.Spec.RevisionHistoryLimit
-	md.Spec.Paused = ns.Spec.Paused
 	md.Spec.ProgressDeadlineSeconds = ns.Spec.ProgressDeadlineSeconds
+
+	if ns.Spec.Strategy != nil {
+		md.Spec.Strategy = *ns.Spec.Strategy
+	} else {
+		md.Spec.Strategy = clusterv1alpha1.MachineDeploymentStrategy{
+			Type: common.RollingUpdateMachineDeploymentStrategyType,
+			RollingUpdate: &clusterv1alpha1.MachineRollingUpdateDeployment{
+				MaxSurge: &intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 1,
+				},
+				MaxUnavailable: &intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 0,
+				},
+			},
+		}
+	}
+
+	if ns.Spec.MinReadySeconds != nil {
+		md.Spec.MinReadySeconds = ns.Spec.MinReadySeconds
+	} else {
+		var defMinReadySec int32 = 0
+		md.Spec.MinReadySeconds = &defMinReadySec
+	}
+
+	if ns.Spec.Paused != nil {
+		md.Spec.Paused = *ns.Spec.Paused
+	} else {
+		md.Spec.Paused = false
+	}
+
+	if md.Spec.Selector.MatchLabels == nil {
+		md.Spec.Selector.MatchLabels = map[string]string{}
+	} else {
+		md.Spec.Selector = ns.Spec.Selector
+	}
+
+	md.Spec.Selector.MatchLabels["name"] = md.Name
 
 	// MachineDeploymentSpec's label selector must match the machine template's labels as docs say.
 	md.Spec.Template.ObjectMeta.Labels = md.Spec.Selector.MatchLabels

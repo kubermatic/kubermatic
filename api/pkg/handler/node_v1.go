@@ -709,6 +709,7 @@ func createNodeSetForCluster(sshKeyProvider provider.SSHKeyProvider, projectProv
 func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.NodeSet, error) {
 	nodeStatus := apiv1.NodeStatus{}
 	nodeStatus.MachineName = md.Name
+
 	var deletionTimestamp *time.Time
 	if md.DeletionTimestamp != nil {
 		deletionTimestamp = &md.DeletionTimestamp.Time
@@ -741,10 +742,10 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 				OperatingSystem: *operatingSystemSpec,
 				Cloud:           *cloudSpec,
 			},
-			Strategy:                md.Spec.Strategy,
+			Strategy:                &md.Spec.Strategy,
 			MinReadySeconds:         md.Spec.MinReadySeconds,
 			RevisionHistoryLimit:    md.Spec.RevisionHistoryLimit,
-			Paused:                  md.Spec.Paused,
+			Paused:                  &md.Spec.Paused,
 			ProgressDeadlineSeconds: md.Spec.ProgressDeadlineSeconds,
 		},
 		Status: md.Status,

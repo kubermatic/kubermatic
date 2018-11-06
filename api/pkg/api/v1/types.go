@@ -659,14 +659,15 @@ type NodeSet struct {
 // swagger:model NodeSetSpec
 type NodeSetSpec struct {
 	// required: true
-	Replicas int32            `json:"replicas,omitempty"`
-	Selector v1.LabelSelector `json:"selector"`
+	Replicas int32 `json:"replicas,omitempty"`
 
 	// required: true
-	Template                NodeSpec                           `json:"template"`
-	Strategy                v1alpha1.MachineDeploymentStrategy `json:"strategy,omitempty"`
-	MinReadySeconds         *int32                             `json:"minReadySeconds,omitempty"`
-	RevisionHistoryLimit    *int32                             `json:"revisionHistoryLimit,omitempty"`
-	Paused                  bool                               `json:"paused,omitempty"`
-	ProgressDeadlineSeconds *int32                             `json:"progressDeadlineSeconds,omitempty"`
+	Template NodeSpec `json:"template"`
+
+	Selector                v1.LabelSelector                    `json:"selector"`
+	Strategy                *v1alpha1.MachineDeploymentStrategy `json:"strategy,omitempty"`
+	MinReadySeconds         *int32                              `json:"minReadySeconds,omitempty"`
+	RevisionHistoryLimit    *int32                              `json:"revisionHistoryLimit,omitempty"`
+	Paused                  *bool                               `json:"paused,omitempty"`
+	ProgressDeadlineSeconds *int32                              `json:"progressDeadlineSeconds,omitempty"`
 }
