@@ -40,8 +40,9 @@ type Routing struct {
 	userProvider          provider.UserProvider
 	projectProvider       provider.ProjectProvider
 	logger                log.Logger
-	authenticator         Authenticator
-	newClusterProviders   map[string]provider.ClusterProvider
+	oidcAuthenticator     OIDCAuthenticator
+	oidcIssuer            OIDCIssuerVerifier
+	clusterProviders      map[string]provider.ClusterProvider
 	updateManager         UpdateManager
 	prometheusClient      prometheusapi.Client
 	projectMemberProvider provider.ProjectMemberProvider
@@ -56,7 +57,8 @@ func NewRouting(
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	projectProvider provider.ProjectProvider,
-	authenticator Authenticator,
+	oidcAuthenticator OIDCAuthenticator,
+	oidcIssuerVerifier OIDCIssuerVerifier,
 	updateManager UpdateManager,
 	prometheusClient prometheusapi.Client,
 	projectMemberProvider provider.ProjectMemberProvider,
@@ -64,13 +66,14 @@ func NewRouting(
 ) Routing {
 	return Routing{
 		datacenters:           datacenters,
-		newClusterProviders:   newClusterProviders,
+		clusterProviders:      newClusterProviders,
 		sshKeyProvider:        newSSHKeyProvider,
 		userProvider:          userProvider,
 		projectProvider:       projectProvider,
 		cloudProviders:        cloudProviders,
 		logger:                log.NewLogfmtLogger(os.Stderr),
-		authenticator:         authenticator,
+		oidcAuthenticator:     oidcAuthenticator,
+		oidcIssuer:            oidcIssuerVerifier,
 		updateManager:         updateManager,
 		prometheusClient:      prometheusClient,
 		projectMemberProvider: projectMemberProvider,
@@ -82,6 +85,6 @@ func (r Routing) defaultServerOptions() []httptransport.ServerOption {
 	return []httptransport.ServerOption{
 		httptransport.ServerErrorLogger(r.logger),
 		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.authenticator.Extractor()),
+		httptransport.ServerBefore(r.oidcAuthenticator.Extractor()),
 	}
 }

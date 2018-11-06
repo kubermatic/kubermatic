@@ -127,6 +127,8 @@ spec:
         - mountPath: /etc/openvpn/clients
           name: openvpn-client-configs
           readOnly: true
+      imagePullSecrets:
+      - name: dockercfg
       initContainers:
       - args:
         - -c

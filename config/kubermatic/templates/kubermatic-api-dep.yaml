@@ -26,14 +26,14 @@ spec:
           - -v=4
           - -logtostderr
           - -datacenters=/opt/datacenter/datacenters.yaml
-          - -token-issuer={{ .Values.kubermatic.auth.tokenIssuer }}
-          - -client-id={{ .Values.kubermatic.auth.clientID }}
+          - -oidc-issuer-url={{ .Values.kubermatic.auth.tokenIssuer }}
+          - -oidc-client-id={{ .Values.kubermatic.auth.clientID }}
           - -versions=/opt/master-files/versions.yaml
           - -updates=/opt/master-files/updates.yaml
           - -internal-address=0.0.0.0:8085
           - -kubeconfig=/opt/.kube/kubeconfig
           - -master-resources=/opt/master-files
-          - -token-issuer-skip-tls-verify={{ default false .Values.kubermatic.auth.skipTokenIssuerTLSVerify }}
+          - -oidc-skip-tls-verify={{ default false .Values.kubermatic.auth.skipTokenIssuerTLSVerify }}
           image: '{{ .Values.kubermatic.api.image.repository }}:{{.Values.kubermatic.api.image.tag}}'
           imagePullPolicy: {{.Values.kubermatic.api.image.pullPolicy}}
           ports:

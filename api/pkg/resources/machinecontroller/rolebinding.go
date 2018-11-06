@@ -53,3 +53,31 @@ func createRoleBinding(existing *rbacv1.RoleBinding, namespace string) (*rbacv1.
 	}
 	return rb, nil
 }
+
+// ClusterInfoAnonymousRoleBinding will return a RoleBinding giving access to the cluster-info ConfigMap for anonymous users
+func ClusterInfoAnonymousRoleBinding(_ resources.RoleBindingDataProvider, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+	var rb *rbacv1.RoleBinding
+	if existing != nil {
+		rb = existing
+	} else {
+		rb = &rbacv1.RoleBinding{}
+	}
+
+	rb.Name = resources.ClusterInfoAnonymousRoleBindingName
+	rb.Namespace = metav1.NamespacePublic
+
+	rb.RoleRef = rbacv1.RoleRef{
+		Name:     resources.ClusterInfoReaderRoleName,
+		Kind:     "Role",
+		APIGroup: rbacv1.GroupName,
+	}
+	rb.Subjects = []rbacv1.Subject{
+		{
+			APIGroup: rbacv1.GroupName,
+			Kind:     rbacv1.UserKind,
+			Name:     "system:anonymous",
+		},
+	}
+
+	return rb, nil
+}

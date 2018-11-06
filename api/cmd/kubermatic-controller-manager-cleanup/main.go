@@ -198,6 +198,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
 		setVSphereInfraManagementUser,
 		combineCACertAndKey,
 		cleanupHeapsterAddon,
+		cleanupMetricsServerAddon,
 		migrateClusterUserLabel,
 	}
 
@@ -427,6 +428,12 @@ func combineCACertAndKey(cluster *kubermaticv1.Cluster, ctx *cleanupContext) err
 func cleanupHeapsterAddon(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 	ns := cluster.Status.NamespaceName
 	return deleteResourceIgnoreNonExistent(ns, "kubermatic.k8s.io", "v1", "addons", "heapster", ctx)
+}
+
+// We moved the metrics server into the seed
+func cleanupMetricsServerAddon(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	ns := cluster.Status.NamespaceName
+	return deleteResourceIgnoreNonExistent(ns, "kubermatic.k8s.io", "v1", "addons", "metrics-server", ctx)
 }
 
 // We now hash all user ID's to avoid breaking the label requirements
