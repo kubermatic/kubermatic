@@ -1465,7 +1465,7 @@ func (r Routing) listVSphereNetworksNoCredentials() http.Handler {
 func (r Routing) createNodeSetForCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.authenticator.Verifier(),
+			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
 			r.userInfoMiddleware(),
