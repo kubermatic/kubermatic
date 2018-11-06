@@ -24,7 +24,7 @@ func MachineDeployment(c *kubermaticv1.Cluster, ns *apiv1.NodeSet, dc provider.D
 	md.Name = fmt.Sprintf("machinedeployment-%s", ns.Name)
 	md.Namespace = metav1.NamespaceSystem
 
-	md.Spec.Replicas = ns.Spec.Replicas
+	md.Spec.Replicas = &ns.Spec.Replicas
 	md.Spec.Selector = ns.Spec.Selector
 	md.Spec.Template.Spec.Versions.Kubelet = ns.Spec.Template.Versions.Kubelet
 	md.Spec.Strategy = ns.Spec.Strategy

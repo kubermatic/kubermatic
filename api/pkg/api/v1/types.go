@@ -658,7 +658,8 @@ type NodeSet struct {
 // NodeSetSpec node set specification
 // swagger:model NodeSetSpec
 type NodeSetSpec struct {
-	Replicas *int32           `json:"replicas,omitempty"`
+	// required: true
+	Replicas int32            `json:"replicas,omitempty"`
 	Selector v1.LabelSelector `json:"selector"`
 
 	// required: true
