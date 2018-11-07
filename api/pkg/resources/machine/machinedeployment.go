@@ -31,36 +31,16 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 	md.Spec.RevisionHistoryLimit = nd.Spec.RevisionHistoryLimit
 	md.Spec.ProgressDeadlineSeconds = nd.Spec.ProgressDeadlineSeconds
 
-	// TODO: Remove once we have webhook
 	if nd.Spec.Strategy != nil {
 		md.Spec.Strategy = *nd.Spec.Strategy
-	} else {
-		md.Spec.Strategy = clusterv1alpha1.MachineDeploymentStrategy{
-			Type: common.RollingUpdateMachineDeploymentStrategyType,
-			RollingUpdate: &clusterv1alpha1.MachineRollingUpdateDeployment{
-				MaxSurge: &intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: 1,
-				},
-				MaxUnavailable: &intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: 0,
-				},
-			},
-		}
 	}
 
 	if nd.Spec.MinReadySeconds != nil {
 		md.Spec.MinReadySeconds = nd.Spec.MinReadySeconds
-	} else {
-		var defaultMinReadySeconds int32
-		md.Spec.MinReadySeconds = &defaultMinReadySeconds
 	}
 
 	if nd.Spec.Paused != nil {
 		md.Spec.Paused = *nd.Spec.Paused
-	} else {
-		md.Spec.Paused = false
 	}
 
 	if md.Spec.Selector.MatchLabels == nil {
