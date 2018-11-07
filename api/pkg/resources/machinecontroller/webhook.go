@@ -44,6 +44,7 @@ func WebhookDeployment(data resources.DeploymentDataProvider, existing *appsv1.D
 			IntVal: 0,
 		},
 	}
+	dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 	volumes := []corev1.Volume{getKubeconfigVolume(), getServingCertVolume()}
 	dep.Spec.Template.Spec.Volumes = volumes
