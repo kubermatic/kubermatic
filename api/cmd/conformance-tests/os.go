@@ -1,10 +1,10 @@
 package main
 
 import (
-	kubermaticapiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 )
 
-func getOSNameFromSpec(spec kubermaticapiv2.OperatingSystemSpec) string {
+func getOSNameFromSpec(spec kubermaticapiv1.OperatingSystemSpec) string {
 	if spec.CentOS != nil {
 		return "centos"
 	}

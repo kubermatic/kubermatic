@@ -696,84 +696,6 @@ func TestGetClusterHealth(t *testing.T) {
 	}
 }
 
-func TestUpdateCluster(t *testing.T) {
-	t.Parallel()
-	testcases := []struct {
-		Name                      string
-		Body                      string
-		ExpectedResponse          string
-		HTTPStatus                int
-		ClusterToUpdate           string
-		ProjectToSync             string
-		ExistingAPIUser           *apiv1.LegacyUser
-		ExistingKubermaticObjects []runtime.Object
-	}{
-		// scenario 1
-		{
-			Name:             "scenario 1: update the cluster version for FakeDatacenter",
-			Body:             `{"name":"keen-snyder","spec":{"version":"0.0.1","cloud":{"fake":{"token":"dummy_token"},"dc":"FakeDatacenter"}}, "status":{"url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
-			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"FakeDatacenter","fake":{}},"version":"0.0.1"},"status":{"version":"0.0.1","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
-			ClusterToUpdate:  "keen-snyder",
-			HTTPStatus:       http.StatusOK,
-			ProjectToSync:    genDefaultProject().Name,
-			ExistingAPIUser:  genDefaultAPIUser(),
-			ExistingKubermaticObjects: genDefaultKubermaticObjects(
-				genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
-			),
-		},
-
-		// scenario 2
-		{
-			Name:             "scenario 2: changing the datacenter is not allowed on update",
-			Body:             `{"name":"keen-snyder","spec":{"version":"0.0.1","cloud":{"fake":{"token":"dummy_token"},"dc":"do-lon1"}}, "status":{"url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
-			ExpectedResponse: `{"error":{"code":400,"message":"invalid cluster: changing the datacenter is not allowed"}}`,
-			ClusterToUpdate:  "keen-snyder",
-			HTTPStatus:       http.StatusBadRequest,
-			ProjectToSync:    genDefaultProject().Name,
-			ExistingAPIUser:  genDefaultAPIUser(),
-			ExistingKubermaticObjects: genDefaultKubermaticObjects(
-				genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
-			),
-		},
-
-		// scenario 3
-		{
-			Name:             "scenario 3: changing the cloud provider is not allowed on update",
-			Body:             `{"name":"keen-snyder","spec":{"version":"0.0.1","cloud":{"fake":{"token":"dummy_token"},"dc":"do-fra1"}}}`,
-			ExpectedResponse: `{"error":{"code":400,"message":"invalid cluster: not allowed to change the cloud provider"}}`,
-			ClusterToUpdate:  "keen-snyder",
-			HTTPStatus:       http.StatusBadRequest,
-			ProjectToSync:    genDefaultProject().Name,
-			ExistingAPIUser:  genDefaultAPIUser(),
-			ExistingKubermaticObjects: genDefaultKubermaticObjects(
-				genClusterWithOpenstack(genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))),
-			),
-		},
-	}
-
-	for _, tc := range testcases {
-		t.Run(tc.Name, func(t *testing.T) {
-			// test data
-			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s", tc.ProjectToSync, tc.ClusterToUpdate), strings.NewReader(tc.Body))
-			res := httptest.NewRecorder()
-			ep, err := createTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil)
-			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
-			}
-
-			// act
-			ep.ServeHTTP(res, req)
-
-			// validate
-			if res.Code != tc.HTTPStatus {
-				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
-			}
-
-			compareWithResult(t, res, tc.ExpectedResponse)
-		})
-	}
-}
-
 func TestPatchCluster(t *testing.T) {
 	t.Parallel()
 
@@ -865,7 +787,7 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 2: gets cluster for Openstack and no sensitive data (credentials) are returned",
 			Body:             ``,
-			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"tenant":"tenant","domain":"domain","network":"network","securityGroups":"securityGroups","floatingIpPool":"floatingIPPool","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9"},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{}},"version":"9.9.9"},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
 			ClusterToGet:     genDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: genDefaultKubermaticObjects(
@@ -911,7 +833,7 @@ func TestListClusters(t *testing.T) {
 		{
 			Name: "scenario 1: list clusters that belong to the given project",
 			ExpectedClusters: []apiv1.Cluster{
-				apiv1.Cluster{
+				{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "clusterAbcID",
 						Name:              "clusterAbc",
@@ -929,7 +851,7 @@ func TestListClusters(t *testing.T) {
 						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
 					},
 				},
-				apiv1.Cluster{
+				{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "clusterDefID",
 						Name:              "clusterDef",
@@ -947,7 +869,7 @@ func TestListClusters(t *testing.T) {
 						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
 					},
 				},
-				apiv1.Cluster{
+				{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "clusterOpenstackID",
 						Name:              "clusterOpenstack",
@@ -956,12 +878,7 @@ func TestListClusters(t *testing.T) {
 					Spec: apiv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "OpenstackDatacenter",
-							Openstack: func() *kubermaticv1.OpenstackCloudSpec {
-								cluster := genClusterWithOpenstack(genDefaultCluster())
-								cluster.Spec.Cloud.Openstack.Password = ""
-								cluster.Spec.Cloud.Openstack.Username = ""
-								return cluster.Spec.Cloud.Openstack
-							}(),
+							Openstack:      &kubermaticv1.OpenstackCloudSpec{},
 						},
 						Version: "9.9.9",
 					},

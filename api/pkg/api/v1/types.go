@@ -2,11 +2,12 @@ package v1
 
 import (
 	"encoding/json"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	"time"
 
 	"github.com/Masterminds/semver"
 
-	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
@@ -371,47 +372,25 @@ func newPublicHetznerCloudSpec(internal *kubermaticv1.HetznerCloudSpec) (public 
 }
 
 // PublicAzureCloudSpec is a public counterpart of apiv1.AzureCloudSpec.
-type PublicAzureCloudSpec struct {
-	TenantID        string `json:"tenantID"`
-	SubscriptionID  string `json:"subscriptionID"`
-	ResourceGroup   string `json:"resourceGroup"`
-	VNetName        string `json:"vnet"`
-	SubnetName      string `json:"subnet"`
-	RouteTableName  string `json:"routeTable"`
-	SecurityGroup   string `json:"securityGroup"`
-	AvailabilitySet string `json:"availabilitySet"`
-}
+type PublicAzureCloudSpec struct{}
 
 func newPublicAzureCloudSpec(internal *kubermaticv1.AzureCloudSpec) (public *PublicAzureCloudSpec) {
 	if internal == nil {
 		return nil
 	}
 
-	return &PublicAzureCloudSpec{
-		TenantID:        internal.TenantID,
-		SubscriptionID:  internal.SubscriptionID,
-		ResourceGroup:   internal.ResourceGroup,
-		VNetName:        internal.VNetName,
-		SubnetName:      internal.SubnetName,
-		AvailabilitySet: internal.AvailabilitySet,
-		RouteTableName:  internal.RouteTableName,
-		SecurityGroup:   internal.SecurityGroup,
-	}
+	return &PublicAzureCloudSpec{}
 }
 
 // PublicVSphereCloudSpec is a public counterpart of apiv1.VSphereCloudSpec.
-type PublicVSphereCloudSpec struct {
-	VMNetName string `json:"vmNetName"`
-}
+type PublicVSphereCloudSpec struct{}
 
 func newPublicVSphereCloudSpec(internal *kubermaticv1.VSphereCloudSpec) (public *PublicVSphereCloudSpec) {
 	if internal == nil {
 		return nil
 	}
 
-	return &PublicVSphereCloudSpec{
-		VMNetName: internal.VMNetName,
-	}
+	return &PublicVSphereCloudSpec{}
 }
 
 // PublicBringYourOwnCloudSpec is a public counterpart of apiv1.BringYourOwnCloudSpec.
@@ -426,57 +405,25 @@ func newPublicBringYourOwnCloudSpec(internal *kubermaticv1.BringYourOwnCloudSpec
 }
 
 // PublicAWSCloudSpec is a public counterpart of apiv1.AWSCloudSpec.
-type PublicAWSCloudSpec struct {
-	VPCID               string `json:"vpcId"`
-	SubnetID            string `json:"subnetId"`
-	RoleName            string `json:"roleName"`
-	RouteTableID        string `json:"routeTableId"`
-	InstanceProfileName string `json:"instanceProfileName"`
-	SecurityGroupID     string `json:"securityGroupID"`
-	AvailabilityZone    string `json:"availabilityZone"`
-}
+type PublicAWSCloudSpec struct{}
 
 func newPublicAWSCloudSpec(internal *kubermaticv1.AWSCloudSpec) (public *PublicAWSCloudSpec) {
 	if internal == nil {
 		return nil
 	}
 
-	return &PublicAWSCloudSpec{
-		VPCID:               internal.VPCID,
-		SubnetID:            internal.SubnetID,
-		RoleName:            internal.RoleName,
-		RouteTableID:        internal.RouteTableID,
-		InstanceProfileName: internal.InstanceProfileName,
-		SecurityGroupID:     internal.SecurityGroupID,
-		AvailabilityZone:    internal.AvailabilityZone,
-	}
+	return &PublicAWSCloudSpec{}
 }
 
 // PublicOpenstackCloudSpec is a public counterpart of apiv1.OpenstackCloudSpec.
-type PublicOpenstackCloudSpec struct {
-	Tenant         string `json:"tenant"`
-	Domain         string `json:"domain"`
-	Network        string `json:"network"`
-	SecurityGroups string `json:"securityGroups"`
-	FloatingIPPool string `json:"floatingIpPool"`
-	RouterID       string `json:"routerID"`
-	SubnetID       string `json:"subnetID"`
-}
+type PublicOpenstackCloudSpec struct{}
 
 func newPublicOpenstackCloudSpec(internal *kubermaticv1.OpenstackCloudSpec) (public *PublicOpenstackCloudSpec) {
 	if internal == nil {
 		return nil
 	}
 
-	return &PublicOpenstackCloudSpec{
-		Tenant:         internal.Tenant,
-		Domain:         internal.Domain,
-		Network:        internal.Network,
-		SecurityGroups: internal.SecurityGroups,
-		FloatingIPPool: internal.FloatingIPPool,
-		RouterID:       internal.RouterID,
-		SubnetID:       internal.SubnetID,
-	}
+	return &PublicOpenstackCloudSpec{}
 }
 
 // ClusterStatus defines the cluster status
@@ -506,16 +453,190 @@ type ClusterList []Cluster
 // swagger:model Node
 type Node struct {
 	ObjectMeta `json:",inline"`
+	Spec       NodeSpec   `json:"spec"`
+	Status     NodeStatus `json:"status"`
+}
 
-	// TODO: normally referring to a field that is defined in v2 is bad, if you are doing this please stop
-	// TODO: I did this only because I know that we are working on the user management
-	// TODO: and once we have it then we will remove apiv2.LegacyNode struct.
-	Spec apiv2.NodeSpec `json:"spec"`
+// NodeCloudSpec represents the collection of cloud provider specific settings. Only one must be set at a time.
+// swagger:model NodeCloudSpec
+type NodeCloudSpec struct {
+	Digitalocean *DigitaloceanNodeSpec `json:"digitalocean,omitempty"`
+	AWS          *AWSNodeSpec          `json:"aws,omitempty"`
+	Azure        *AzureNodeSpec        `json:"azure,omitempty"`
+	Openstack    *OpenstackNodeSpec    `json:"openstack,omitempty"`
+	Hetzner      *HetznerNodeSpec      `json:"hetzner,omitempty"`
+	VSphere      *VSphereNodeSpec      `json:"vsphere,omitempty"`
+}
 
-	// TODO: normally referring to a field that is defined in v2 is bad, if you are doing this please stop
-	// TODO: I did this only because I know that we are working on the user management
-	// TODO: and once we have it then we will remove apiv2.LegacyNode struct.
-	Status apiv2.NodeStatus `json:"status"`
+// UbuntuSpec ubuntu specific settings
+// swagger:model UbuntuSpec
+type UbuntuSpec struct {
+	// do a dist-upgrade on boot and reboot it required afterwards
+	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
+}
+
+// CentOSSpec contains CentOS specific settings
+type CentOSSpec struct {
+	// do a dist-upgrade on boot and reboot it required afterwards
+	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
+}
+
+// ContainerLinuxSpec ubuntu linux specific settings
+// swagger:model ContainerLinuxSpec
+type ContainerLinuxSpec struct {
+	// disable container linux auto-update feature
+	DisableAutoUpdate bool `json:"disableAutoUpdate"`
+}
+
+// OperatingSystemSpec represents the collection of os specific settings. Only one must be set at a time.
+// swagger:model OperatingSystemSpec
+type OperatingSystemSpec struct {
+	Ubuntu         *UbuntuSpec         `json:"ubuntu,omitempty"`
+	ContainerLinux *ContainerLinuxSpec `json:"containerLinux,omitempty"`
+	CentOS         *CentOSSpec         `json:"centos,omitempty"`
+}
+
+// NodeVersionInfo node version information
+// swagger:model NodeVersionInfo
+type NodeVersionInfo struct {
+	Kubelet string `json:"kubelet"`
+}
+
+// NodeSpec node specification
+// swagger:model NodeSpec
+type NodeSpec struct {
+	// required: true
+	Cloud NodeCloudSpec `json:"cloud"`
+	// required: true
+	OperatingSystem OperatingSystemSpec `json:"operatingSystem"`
+	// required: true
+	Versions NodeVersionInfo `json:"versions,omitempty"`
+}
+
+// DigitaloceanNodeSpec digitalocean node settings
+// swagger:model DigitaloceanNodeSpec
+type DigitaloceanNodeSpec struct {
+	// droplet size slug
+	// required: true
+	Size string `json:"size"`
+	// enable backups for the droplet
+	Backups bool `json:"backups"`
+	// enable ipv6 for the droplet
+	IPv6 bool `json:"ipv6"`
+	// enable monitoring for the droplet
+	Monitoring bool `json:"monitoring"`
+	// additional droplet tags
+	Tags []string `json:"tags"`
+}
+
+// HetznerNodeSpec Hetzner node settings
+// swagger:model HetznerNodeSpec
+type HetznerNodeSpec struct {
+	// server type
+	// required: true
+	Type string `json:"type"`
+}
+
+// AzureNodeSpec describes settings for an Azure node
+// swagger:model AzureNodeSpec
+type AzureNodeSpec struct {
+	// VM size
+	// required: true
+	Size string `json:"size"`
+	// should the machine have a publicly accessible IP address
+	// required: false
+	AssignPublicIP bool `json:"assignPublicIP"`
+	// Additional metadata to set
+	// required: false
+	Tags map[string]string `json:"tags,omitempty"`
+}
+
+// VSphereNodeSpec VSphere node settings
+// swagger:model VSphereNodeSpec
+type VSphereNodeSpec struct {
+	CPUs            int    `json:"cpus"`
+	Memory          int    `json:"memory"`
+	Template        string `json:"template"`
+	TemplateNetName string `json:"templateNetName"`
+}
+
+// OpenstackNodeSpec openstack node settings
+// swagger:model OpenstackNodeSpec
+type OpenstackNodeSpec struct {
+	// instance flavor
+	// required: true
+	Flavor string `json:"flavor"`
+	// image to use
+	// required: true
+	Image string `json:"image"`
+	// Additional metadata to set
+	// required: false
+	Tags map[string]string `json:"tags,omitempty"`
+}
+
+// AWSNodeSpec aws specific node settings
+// swagger:model AWSNodeSpec
+type AWSNodeSpec struct {
+	// instance type. for example: t2.micro
+	// required: true
+	InstanceType string `json:"instanceType"`
+	// size of the volume in gb. Only one volume will be created
+	// required: true
+	VolumeSize int64 `json:"diskSize"`
+	// type of the volume. for example: gp2, io1, st1, sc1, standard
+	// required: true
+	VolumeType string `json:"volumeType"`
+	// ami to use. Will be defaulted to a ami for your selected operating system and region. Only set this when you know what you do.
+	AMI string `json:"ami"`
+	// additional instance tags
+	Tags map[string]string `json:"tags"`
+}
+
+// NodeResources cpu and memory of a node
+// swagger:model NodeResources
+type NodeResources struct {
+	CPU    string `json:"cpu"`
+	Memory string `json:"memory"`
+}
+
+// NodeStatus is information about the current status of a node.
+// swagger:model NodeStatus
+type NodeStatus struct {
+	// name of the actual Machine object
+	MachineName string `json:"machineName"`
+	// resources in total
+	Capacity NodeResources `json:"capacity,omitempty"`
+	// allocatable resources
+	Allocatable NodeResources `json:"allocatable,omitempty"`
+	// different addresses of a node
+	Addresses []NodeAddress `json:"addresses,omitempty"`
+	// node versions and systems info
+	NodeInfo NodeSystemInfo `json:"nodeInfo,omitempty"`
+
+	// in case of a error this will contain a short error message
+	ErrorReason string `json:"errorReason,omitempty"`
+	// in case of a error this will contain a detailed error explanation
+	ErrorMessage string `json:"errorMessage,omitempty"`
+}
+
+// NodeAddress contains information for the node's address.
+// swagger:model NodeAddress
+type NodeAddress struct {
+	// address type. for example: ExternalIP, InternalIP, InternalDNS, ExternalDNS
+	Type string `json:"type"`
+	// the actual address. for example: 192.168.1.1, node1.my.dns
+	Address string `json:"address"`
+}
+
+// NodeSystemInfo is a set of versions/ids/uuids to uniquely identify the node.
+// swagger:model NodeSystemInfo
+type NodeSystemInfo struct {
+	KernelVersion           string `json:"kernelVersion"`
+	ContainerRuntime        string `json:"containerRuntime"`
+	ContainerRuntimeVersion string `json:"containerRuntimeVersion"`
+	KubeletVersion          string `json:"kubeletVersion"`
+	OperatingSystem         string `json:"operatingSystem"`
+	Architecture            string `json:"architecture"`
 }
 
 // ClusterMetric defines a metric for the given cluster
@@ -523,4 +644,30 @@ type Node struct {
 type ClusterMetric struct {
 	Name   string    `json:"name"`
 	Values []float64 `json:"values,omitempty"`
+}
+
+// NodeDeployment represents a set of worker nodes that is part of a cluster
+// swagger:model NodeDeployment
+type NodeDeployment struct {
+	ObjectMeta `json:",inline"`
+
+	Spec   NodeDeploymentSpec               `json:"spec"`
+	Status v1alpha1.MachineDeploymentStatus `json:"status"`
+}
+
+// NodeDeploymentSpec node deployment specification
+// swagger:model NodeDeploymentSpec
+type NodeDeploymentSpec struct {
+	// required: true
+	Replicas int32 `json:"replicas,omitempty"`
+
+	// required: true
+	Template NodeSpec `json:"template"`
+
+	Selector                v1.LabelSelector                    `json:"selector"`
+	Strategy                *v1alpha1.MachineDeploymentStrategy `json:"strategy,omitempty"`
+	MinReadySeconds         *int32                              `json:"minReadySeconds,omitempty"`
+	RevisionHistoryLimit    *int32                              `json:"revisionHistoryLimit,omitempty"`
+	Paused                  *bool                               `json:"paused,omitempty"`
+	ProgressDeadlineSeconds *int32                              `json:"progressDeadlineSeconds,omitempty"`
 }

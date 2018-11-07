@@ -12,6 +12,7 @@ import (
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	aggregationclientset "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 
 	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 )
@@ -58,7 +59,17 @@ func (p *Provider) GetClientConfig(c *kubermaticv1.Cluster) (*restclient.Config,
 		&clientcmd.ConfigOverrides{},
 		nil,
 	)
-	return iconfig.ClientConfig()
+
+	clientConfig, err := iconfig.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	// Avoid blocking of the controller by increasing the QPS for user cluster interaction
+	clientConfig.QPS = 20
+	clientConfig.Burst = 50
+
+	return clientConfig, err
 }
 
 // GetClient returns a kubernetes client to interact with the given cluster
@@ -106,4 +117,13 @@ func (p *Provider) GetAdmissionRegistrationClient(c *kubermaticv1.Cluster) (admi
 		return nil, err
 	}
 	return admissionregistrationclientset.NewForConfig(config)
+}
+
+// GetKubeAggregatorClient returns a client to interact with the aggregation API for the given cluster
+func (p *Provider) GetKubeAggregatorClient(c *kubermaticv1.Cluster) (aggregationclientset.Interface, error) {
+	config, err := p.GetClientConfig(c)
+	if err != nil {
+		return nil, err
+	}
+	return aggregationclientset.NewForConfig(config)
 }

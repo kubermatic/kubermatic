@@ -5,7 +5,7 @@ import (
 
 	"github.com/Masterminds/semver"
 
-	kubermaticapiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,15 +18,15 @@ func getAWSScenarios() []testScenario {
 		// Ubuntu
 		scenarios = append(scenarios, &awsScenario{
 			version: v,
-			nodeOsSpec: kubermaticapiv2.OperatingSystemSpec{
-				Ubuntu: &kubermaticapiv2.UbuntuSpec{},
+			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
+				Ubuntu: &kubermaticapiv1.UbuntuSpec{},
 			},
 		})
 		// CoreOS
 		scenarios = append(scenarios, &awsScenario{
 			version: v,
-			nodeOsSpec: kubermaticapiv2.OperatingSystemSpec{
-				ContainerLinux: &kubermaticapiv2.ContainerLinuxSpec{
+			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
+				ContainerLinux: &kubermaticapiv1.ContainerLinuxSpec{
 					// Otherwise the nodes restart directly after creation - bad for tests
 					DisableAutoUpdate: true,
 				},
@@ -46,7 +46,7 @@ func getAWSScenarios() []testScenario {
 
 type awsScenario struct {
 	version    *semver.Version
-	nodeOsSpec kubermaticapiv2.OperatingSystemSpec
+	nodeOsSpec kubermaticapiv1.OperatingSystemSpec
 }
 
 func (s *awsScenario) Name() string {
@@ -79,20 +79,20 @@ func (s *awsScenario) Cluster(secrets secrets) *v1.Cluster {
 	}
 }
 
-func (s *awsScenario) Nodes(num int) []*kubermaticapiv2.LegacyNode {
-	var nodes []*kubermaticapiv2.LegacyNode
+func (s *awsScenario) Nodes(num int) []*kubermaticapiv1.Node {
+	var nodes []*kubermaticapiv1.Node
 	for i := 0; i < num; i++ {
-		node := &kubermaticapiv2.LegacyNode{
-			Metadata: kubermaticapiv2.LegacyObjectMeta{},
-			Spec: kubermaticapiv2.NodeSpec{
-				Cloud: kubermaticapiv2.NodeCloudSpec{
-					AWS: &kubermaticapiv2.AWSNodeSpec{
+		node := &kubermaticapiv1.Node{
+			ObjectMeta: kubermaticapiv1.ObjectMeta{},
+			Spec: kubermaticapiv1.NodeSpec{
+				Cloud: kubermaticapiv1.NodeCloudSpec{
+					AWS: &kubermaticapiv1.AWSNodeSpec{
 						InstanceType: "t2.medium",
 						VolumeType:   "gp2",
 						VolumeSize:   50,
 					},
 				},
-				Versions: kubermaticapiv2.NodeVersionInfo{
+				Versions: kubermaticapiv1.NodeVersionInfo{
 					Kubelet: s.version.String(),
 				},
 				OperatingSystem: s.nodeOsSpec,

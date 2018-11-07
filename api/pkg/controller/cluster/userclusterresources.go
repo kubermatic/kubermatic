@@ -11,9 +11,10 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
-	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -22,7 +23,59 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
+
+func (cc *Controller) reconcileUserClusterResources(cluster *kubermaticv1.Cluster, client kubernetes.Interface) (*kubermaticv1.Cluster, error) {
+	var err error
+	if err = cc.launchingCreateOpenVPNClientCertificates(cluster); err != nil {
+		return nil, err
+	}
+
+	if len(cluster.Spec.MachineNetworks) > 0 {
+		if err = cc.userClusterEnsureInitializerConfiguration(cluster, client); err != nil {
+			return nil, err
+		}
+	}
+
+	if err = cc.userClusterEnsureRoles(cluster, client); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureConfigMaps(cluster, client); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureRoleBindings(cluster, client); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureClusterRoles(cluster, client); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureClusterRoleBindings(cluster, client); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureMutatingWebhookConfigurations(cluster); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureCustomResourceDefinitions(cluster); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureAPIServices(cluster); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureServices(cluster); err != nil {
+		return nil, err
+	}
+
+	return cluster, nil
+}
 
 func (cc *Controller) userClusterEnsureInitializerConfiguration(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	creators := []resources.InitializerConfigurationCreator{
@@ -73,9 +126,10 @@ func (cc *Controller) userClusterEnsureInitializerConfiguration(c *kubermaticv1.
 
 func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	creators := []resources.RoleCreator{
-		machinecontroller.Role,
+		machinecontroller.EndpointReaderRole,
 		machinecontroller.KubeSystemRole,
 		machinecontroller.KubePublicRole,
+		machinecontroller.ClusterInfoReaderRole,
 	}
 
 	data, err := cc.getClusterTemplateData(c)
@@ -125,6 +179,8 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster, cli
 		machinecontroller.DefaultRoleBinding,
 		machinecontroller.KubeSystemRoleBinding,
 		machinecontroller.KubePublicRoleBinding,
+		machinecontroller.ClusterInfoAnonymousRoleBinding,
+		metricsserver.RolebindingAuthReader,
 	}
 
 	for _, create := range creators {
@@ -169,6 +225,7 @@ func GetUserClusterRoleCreators(c *kubermaticv1.Cluster) []resources.ClusterRole
 	creators := []resources.ClusterRoleCreator{
 		machinecontroller.ClusterRole,
 		vpnsidecar.DnatControllerClusterRole,
+		metricsserver.ClusterRole,
 	}
 
 	if len(c.Spec.MachineNetworks) > 0 {
@@ -230,6 +287,8 @@ func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.Clus
 		machinecontroller.NodeBootstrapperClusterRoleBinding,
 		machinecontroller.NodeSignerClusterRoleBinding,
 		vpnsidecar.DnatControllerClusterRoleBinding,
+		metricsserver.ClusterRoleBindingResourceReader,
+		metricsserver.ClusterRoleBindingAuthDelegator,
 	}
 
 	if len(c.Spec.MachineNetworks) > 0 {
@@ -292,6 +351,7 @@ func (cc *Controller) userClusterEnsureConfigMaps(c *kubermaticv1.Cluster, clien
 
 	creators := []resources.ConfigMapCreator{
 		openvpn.ClientConfigConfigMapCreator(data),
+		machinecontroller.ClusterInfoConfigMapCreator(data),
 	}
 
 	for _, create := range creators {
@@ -424,5 +484,105 @@ func (cc *Controller) userClusterEnsureMutatingWebhookConfigurations(c *kubermat
 	glog.V(4).Infof("Updated MutatingWebhookConfigurations %s inside user cluster %s", mutatingWebhookConfiguration.Name, c.Name)
 
 	return nil
+}
 
+// GetAPIServiceCreators returns a list of APIServiceCreator
+func GetAPIServiceCreators() []resources.APIServiceCreator {
+	return []resources.APIServiceCreator{
+		metricsserver.APIService,
+	}
+}
+
+func (cc *Controller) userClusterEnsureAPIServices(c *kubermaticv1.Cluster) error {
+	client, err := cc.userClusterConnProvider.GetKubeAggregatorClient(c)
+	if err != nil {
+		return err
+	}
+
+	for _, create := range GetAPIServiceCreators() {
+		var existing *apiregistrationv1.APIService
+		apiService, err := create(nil)
+		if err != nil {
+			return fmt.Errorf("failed to build APIService: %v", err)
+		}
+		if existing, err = client.ApiregistrationV1().APIServices().Get(apiService.Name, metav1.GetOptions{}); err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+			if _, err = client.ApiregistrationV1().APIServices().Create(apiService); err != nil {
+				return fmt.Errorf("failed to create APIService %s: %v", apiService.Name, err)
+			}
+			glog.V(4).Infof("Created APIService %s inside user cluster %s", apiService.Name, c.Name)
+			continue
+		}
+
+		apiService, err = create(existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build APIService: %v", err)
+		}
+
+		if equality.Semantic.DeepEqual(apiService, existing) {
+			continue
+		}
+
+		if _, err = client.ApiregistrationV1().APIServices().Update(apiService); err != nil {
+			return fmt.Errorf("failed to update APIService %s: %v", apiService.Name, err)
+		}
+		glog.V(4).Infof("Updated APIService %s inside user cluster %s", apiService.Name, c.Name)
+	}
+
+	return nil
+}
+
+// GetUserClusterServiceCreators returns a list of ServiceCreator's used for the user cluster
+func GetUserClusterServiceCreators() []resources.ServiceCreator {
+	return []resources.ServiceCreator{
+		metricsserver.ExternalNameService,
+	}
+}
+
+func (cc *Controller) userClusterEnsureServices(c *kubermaticv1.Cluster) error {
+	client, err := cc.userClusterConnProvider.GetClient(c)
+	if err != nil {
+		return err
+	}
+
+	data, err := cc.getClusterTemplateData(c)
+	if err != nil {
+		return err
+	}
+
+	for _, create := range GetUserClusterServiceCreators() {
+		var existing *corev1.Service
+		service, err := create(data, nil)
+		if err != nil {
+			return fmt.Errorf("failed to build Service: %v", err)
+		}
+		if existing, err = client.CoreV1().Services(service.Namespace).Get(service.Name, metav1.GetOptions{}); err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+			if _, err = client.CoreV1().Services(service.Namespace).Create(service); err != nil {
+				return fmt.Errorf("failed to create Service %s: %v", service.Name, err)
+			}
+			glog.V(4).Infof("Created Service %s inside user cluster %s", service.Name, c.Name)
+			continue
+		}
+
+		service, err = create(data, existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build Service: %v", err)
+		}
+
+		if equality.Semantic.DeepEqual(service, existing) {
+			continue
+		}
+
+		if _, err = client.CoreV1().Services(service.Namespace).Update(service); err != nil {
+			return fmt.Errorf("failed to update Service %s: %v", service.Name, err)
+		}
+		glog.V(4).Infof("Updated Service %s inside user cluster %s", service.Name, c.Name)
+	}
+
+	return nil
 }

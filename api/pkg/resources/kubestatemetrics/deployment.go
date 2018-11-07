@@ -20,7 +20,7 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("10m"),
 		},
 		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("64Mi"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
 			corev1.ResourceCPU:    resource.MustParse("50m"),
 		},
 	}
@@ -49,6 +49,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 	dep.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: resources.BaseAppLabel(name, nil),
 	}
+	dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 	volumes := getVolumes()
 	podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)

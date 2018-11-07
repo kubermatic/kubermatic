@@ -49,21 +49,27 @@ import (
 )
 
 func main() {
-	options := newServerRunOptions()
+	options, err := newServerRunOptions()
+	if err != nil {
+		glog.Fatalf("failed to create server run options due to = %v", err)
+	}
+	if err := options.validate(); err != nil {
+		glog.Fatalf("incorrect flags were passed to the server, err  = %v", err)
+	}
 
 	providers, err := createInitProviders(options)
 	if err != nil {
-		glog.Fatal(err)
+		glog.Fatalf("failed to create and initialize providers due to %v", err)
 	}
-	authenticator, err := createAuthenticator(options)
+	authenticator, issuerVerifier, err := createOIDCAuthenticatorIssuer(options)
 	if err != nil {
-		glog.Fatalf("failed to create a openid authenticator for issuer %s (clientID=%s) due to %v", options.tokenIssuer, options.clientID, err)
+		glog.Fatalf("failed to create a openid authenticator for issuer %s (oidcClientID=%s) due to %v", options.oidcURL, options.oidcAuthenticatorClientID, err)
 	}
 	updateManager, err := version.NewFromFiles(options.versionsFile, options.updatesFile)
 	if err != nil {
 		glog.Fatal(fmt.Sprintf("failed to create update manager due to %v", err))
 	}
-	apiHandler, err := createAPIHandler(options, providers, authenticator, updateManager)
+	apiHandler, err := createAPIHandler(options, providers, authenticator, issuerVerifier, updateManager)
 	if err != nil {
 		glog.Fatalf(fmt.Sprintf("failed to create API Handler due to %v", err))
 	}
@@ -79,7 +85,6 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		return providers{}, fmt.Errorf("unable to build client configuration from kubeconfig due to %v", err)
 	}
 
-	//
 	// create cluster providers - one foreach context
 	clusterProviders := map[string]provider.ClusterProvider{}
 	{
@@ -121,7 +126,6 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		}
 	}
 
-	//
 	// create other providers
 	kubermaticMasterClient := kubermaticclientset.NewForConfigOrDie(config)
 	kubermaticMasterInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticMasterClient, informer.DefaultInformerResyncPeriod)
@@ -146,24 +150,41 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	return providers{sshKey: sshKeyProvider, user: userProvider, project: projectProvider, projectMember: projectMemberProvider, memberMapper: projectMemberProvider, cloud: cloudProviders, clusters: clusterProviders, datacenters: datacenters}, nil
 }
 
-func createAuthenticator(options serverRunOptions) (handler.Authenticator, error) {
+func createOIDCAuthenticatorIssuer(options serverRunOptions) (handler.OIDCAuthenticator, handler.OIDCIssuerVerifier, error) {
 	authenticator, err := handler.NewOpenIDAuthenticator(
-		options.tokenIssuer,
-		options.clientID,
+		options.oidcURL,
+		options.oidcAuthenticatorClientID,
+		"",
+		"",
 		handler.NewCombinedExtractor(
 			handler.NewHeaderBearerTokenExtractor("Authorization"),
 			handler.NewQueryParamBearerTokenExtractor("token"),
 		),
-		options.tokenIssuerSkipTLSVerify,
+		options.oidcSkipTLSVerify,
 	)
 
-	return authenticator, err
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create OIDC Authenticator: %v", err)
+	}
+
+	issuer, err := handler.NewOpenIDAuthenticator(
+		options.oidcURL,
+		options.oidcIssuerClientID,
+		options.oidcIssuerClientSecret,
+		options.oidcIssuerRedirectURI,
+		handler.NewCombinedExtractor(
+			handler.NewHeaderBearerTokenExtractor("Authorization"),
+			handler.NewQueryParamBearerTokenExtractor("token"),
+		),
+		options.oidcSkipTLSVerify,
+	)
+
+	return authenticator, issuer, err
 }
 
-func createAPIHandler(options serverRunOptions, prov providers, authenticator handler.Authenticator, updateManager *version.Manager) (http.HandlerFunc, error) {
-	// Only enable the metrics endpoint when prometheusEndpoint is true
+func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticator handler.OIDCAuthenticator, oidcIssuerVerifier handler.OIDCIssuerVerifier, updateManager *version.Manager) (http.HandlerFunc, error) {
 	var prometheusClient prometheusapi.Client
-	if options.prometheusEndpoint {
+	if options.featureGates.Enabled(PrometheusEndpoint) {
 		var err error
 		if prometheusClient, err = prometheusapi.NewClient(prometheusapi.Config{
 			Address: options.prometheusURL,
@@ -179,7 +200,8 @@ func createAPIHandler(options serverRunOptions, prov providers, authenticator ha
 		prov.sshKey,
 		prov.user,
 		prov.project,
-		authenticator,
+		oidcAuthenticator,
+		oidcIssuerVerifier,
 		updateManager,
 		prometheusClient,
 		prov.projectMember,
@@ -190,6 +212,15 @@ func createAPIHandler(options serverRunOptions, prov providers, authenticator ha
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
 	v1AlphaRouter := mainRouter.PathPrefix("/api/v1alpha").Subrouter()
 	r.RegisterV1(v1Router)
+	r.RegisterV1Optional(v1Router,
+		options.featureGates.Enabled(OIDCKubeCfgEndpoint),
+		handler.OIDCConfiguration{
+			URL:                  options.oidcURL,
+			ClientID:             options.oidcIssuerClientID,
+			ClientSecret:         options.oidcIssuerClientSecret,
+			OfflineAccessAsScope: options.oidcIssuerOfflineAccessAsScope,
+		},
+		mainRouter)
 	r.RegisterV1Alpha(v1AlphaRouter)
 
 	metrics.RegisterHTTPVecs()

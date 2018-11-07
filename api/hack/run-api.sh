@@ -9,7 +9,7 @@ make -C $(dirname $0)/.. kubermatic-api
 
 KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 
-# Please make sure to set -enable-prometheus-endpoint=true if you want to use that endpoint.
+# Please make sure to set -feature-gates=PrometheusEndpoint=true if you want to use that endpoint.
 
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
 ./_build/kubermatic-api \
@@ -19,10 +19,10 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
   -updates=../config/kubermatic/static/master/updates.yaml \
   -master-resources=../config/kubermatic/static/master \
   -worker-name="$(tr -cd '[:alnum:]' <<< $KUBERMATIC_WORKERNAME | tr '[:upper:]' '[:lower:]')" \
-  -token-issuer=https://dev.kubermatic.io/dex \
   -internal-address=127.0.0.1:18085 \
   -prometheus-url=http://localhost:9090 \
   -address=127.0.0.1:8080 \
-  -client-id=kubermatic \
+  -oidc-url=https://dev.kubermatic.io/dex \
+  -oidc-authenticator-client-id=kubermatic \
   -logtostderr \
   -v=8 $@

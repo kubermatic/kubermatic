@@ -16,7 +16,6 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	apierrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
@@ -26,7 +25,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
@@ -128,7 +126,7 @@ func listNodesForCluster(projectProvider provider.ProjectProvider) endpoint.Endp
 		}
 
 		//The following is a bit tricky. We might have a node which is not created by a machine and vice versa...
-		var nodesV2 []*apiv2.LegacyNode
+		var nodesV1 []*apiv1.Node
 		matchedMachineNodes := sets.NewString()
 
 		//Go over all machines first
@@ -141,16 +139,16 @@ func listNodesForCluster(projectProvider provider.ProjectProvider) endpoint.Endp
 			if err != nil {
 				return nil, fmt.Errorf("failed to output machine %s: %v", machineList.Items[i].Name, err)
 			}
-			nodesV2 = append(nodesV2, outNode)
+			nodesV1 = append(nodesV1, outNode)
 		}
 
 		// Now all nodes, which do not belong to a machine - Relevant for BYO
 		for i := range nodeList.Items {
 			if !matchedMachineNodes.Has(string(nodeList.Items[i].UID)) {
-				nodesV2 = append(nodesV2, outputNode(&nodeList.Items[i], req.HideInitialConditions))
+				nodesV1 = append(nodesV1, outputNode(&nodeList.Items[i], req.HideInitialConditions))
 			}
 		}
-		return convertNodesV2ToNodesV1(nodesV2), nil
+		return nodesV1, nil
 	}
 }
 
@@ -194,14 +192,10 @@ func getNodeForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoi
 		}
 
 		if machine == nil {
-			return convertNodeV2ToNodeV1(outputNode(node, req.HideInitialConditions)), nil
+			return outputNode(node, req.HideInitialConditions), nil
 		}
 
-		nodeV2, err := outputMachine(machine, node, req.HideInitialConditions)
-		if err != nil {
-			return nil, err
-		}
-		return convertNodeV2ToNodeV1(nodeV2), nil
+		return outputMachine(machine, node, req.HideInitialConditions)
 	}
 }
 
@@ -241,7 +235,7 @@ func createNodeForCluster(sshKeyProvider provider.SSHKeyProvider, projectProvide
 			return nil, fmt.Errorf("unknown cluster datacenter %s", cluster.Spec.Cloud.DatacenterName)
 		}
 
-		node := convertNodeV1ToNodeV2(&req.Body)
+		node := &req.Body
 		if node.Spec.Cloud.Openstack == nil &&
 			node.Spec.Cloud.Digitalocean == nil &&
 			node.Spec.Cloud.AWS == nil &&
@@ -271,10 +265,6 @@ func createNodeForCluster(sshKeyProvider provider.SSHKeyProvider, projectProvide
 			node.Spec.Versions.Kubelet = cluster.Spec.Version
 		}
 
-		if node.Metadata.Name == "" {
-			node.Metadata.Name = "kubermatic-" + cluster.Name + "-" + rand.String(5)
-		}
-
 		// Create machine resource
 		machine, err := machineresource.Machine(cluster, node, dc, keys)
 		if err != nil {
@@ -287,78 +277,37 @@ func createNodeForCluster(sshKeyProvider provider.SSHKeyProvider, projectProvide
 			return nil, fmt.Errorf("failed to create machine: %v", err)
 		}
 
-		nodeV2, err := outputMachine(machine, nil, false)
-		if err != nil {
-			return nil, err
-		}
-		return convertNodeV2ToNodeV1(nodeV2), nil
+		return outputMachine(machine, nil, false)
 	}
 }
 
-func convertNodeV1ToNodeV2(nodeV1 *apiv1.Node) *apiv2.LegacyNode {
-	return &apiv2.LegacyNode{
-		Metadata: apiv2.LegacyObjectMeta{
-			Name:              nodeV1.ID,
-			DisplayName:       nodeV1.Name,
-			CreationTimestamp: nodeV1.CreationTimestamp,
-			DeletionTimestamp: nodeV1.DeletionTimestamp,
-		},
-		Spec:   nodeV1.Spec,
-		Status: nodeV1.Status,
-	}
-}
-
-func convertNodeV2ToNodeV1(nodeV2 *apiv2.LegacyNode) *apiv1.Node {
-	return &apiv1.Node{
-		ObjectMeta: apiv1.ObjectMeta{
-			ID:                nodeV2.Metadata.Name,
-			Name:              nodeV2.Metadata.DisplayName,
-			CreationTimestamp: nodeV2.Metadata.CreationTimestamp,
-			DeletionTimestamp: nodeV2.Metadata.DeletionTimestamp,
-		},
-		Spec:   nodeV2.Spec,
-		Status: nodeV2.Status,
-	}
-}
-
-func convertNodesV2ToNodesV1(nodesV2 []*apiv2.LegacyNode) []*apiv1.Node {
-	nodesV1 := make([]*apiv1.Node, len(nodesV2))
-	for index, nodeV2 := range nodesV2 {
-
-		nodesV1[index] = convertNodeV2ToNodeV1(nodeV2)
-	}
-	return nodesV1
-}
-
-func outputNode(node *corev1.Node, hideInitialNodeConditions bool) *apiv2.LegacyNode {
-	nodeStatus := apiv2.NodeStatus{}
+func outputNode(node *corev1.Node, hideInitialNodeConditions bool) *apiv1.Node {
+	nodeStatus := apiv1.NodeStatus{}
 	nodeStatus = apiNodeStatus(nodeStatus, node, hideInitialNodeConditions)
 	var deletionTimestamp *time.Time
 	if node.DeletionTimestamp != nil {
 		deletionTimestamp = &node.DeletionTimestamp.Time
 	}
 
-	return &apiv2.LegacyNode{
-		Metadata: apiv2.LegacyObjectMeta{
+	return &apiv1.Node{
+		ObjectMeta: apiv1.ObjectMeta{
+			ID:                node.Name,
 			Name:              node.Name,
-			DisplayName:       node.Name,
-			Labels:            node.Labels,
-			Annotations:       node.Annotations,
 			DeletionTimestamp: deletionTimestamp,
 			CreationTimestamp: node.CreationTimestamp.Time,
 		},
-		Spec: apiv2.NodeSpec{
-			Versions:        apiv2.NodeVersionInfo{},
-			OperatingSystem: apiv2.OperatingSystemSpec{},
-			Cloud:           apiv2.NodeCloudSpec{},
+		Spec: apiv1.NodeSpec{
+			Versions:        apiv1.NodeVersionInfo{},
+			OperatingSystem: apiv1.OperatingSystemSpec{},
+			Cloud:           apiv1.NodeCloudSpec{},
 		},
 		Status: nodeStatus,
 	}
 }
 
-func apiNodeStatus(status apiv2.NodeStatus, inputNode *corev1.Node, hideInitialNodeConditions bool) apiv2.NodeStatus {
+func apiNodeStatus(status apiv1.NodeStatus, inputNode *corev1.Node, hideInitialNodeConditions bool) apiv1.NodeStatus {
 	for _, address := range inputNode.Status.Addresses {
-		status.Addresses = append(status.Addresses, apiv2.NodeAddress{
+		status.Addresses = append(status.Addresses, apiv1.NodeAddress{
 			Type:    string(address.Type),
 			Address: string(address.Address),
 		})
@@ -382,11 +331,9 @@ func apiNodeStatus(status apiv2.NodeStatus, inputNode *corev1.Node, hideInitialN
 	return status
 }
 
-func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInitialNodeConditions bool) (*apiv2.LegacyNode, error) {
+func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInitialNodeConditions bool) (*apiv1.Node, error) {
 	displayName := machine.Spec.Name
-	labels := map[string]string{}
-	annotations := map[string]string{}
-	nodeStatus := apiv2.NodeStatus{}
+	nodeStatus := apiv1.NodeStatus{}
 	nodeStatus.MachineName = machine.Name
 	var deletionTimestamp *time.Time
 	if machine.DeletionTimestamp != nil {
@@ -398,12 +345,12 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 		nodeStatus.ErrorMessage += string(*machine.Status.ErrorMessage) + errGlue
 	}
 
-	operatingSystemSpec, err := machineconversions.GetAPIV2OperatingSystemSpec(machine)
+	operatingSystemSpec, err := machineconversions.GetAPIV1OperatingSystemSpec(machine.Spec)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get operating system spec from machine: %v", err)
 	}
 
-	cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(machine)
+	cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(machine.Spec)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get node cloud spec from machine: %v", err)
 	}
@@ -412,26 +359,21 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 		if node.Name != machine.Spec.Name {
 			displayName = node.Name
 		}
-
-		labels = node.Labels
-		annotations = node.Annotations
 		nodeStatus = apiNodeStatus(nodeStatus, node, hideInitialNodeConditions)
 	}
 
 	nodeStatus.ErrorReason = strings.TrimSuffix(nodeStatus.ErrorReason, errGlue)
 	nodeStatus.ErrorMessage = strings.TrimSuffix(nodeStatus.ErrorMessage, errGlue)
 
-	return &apiv2.LegacyNode{
-		Metadata: apiv2.LegacyObjectMeta{
-			Name:              machine.Name,
-			DisplayName:       displayName,
-			Labels:            labels,
-			Annotations:       annotations,
+	return &apiv1.Node{
+		ObjectMeta: apiv1.ObjectMeta{
+			ID:                machine.Name,
+			Name:              displayName,
 			DeletionTimestamp: deletionTimestamp,
 			CreationTimestamp: machine.CreationTimestamp.Time,
 		},
-		Spec: apiv2.NodeSpec{
-			Versions: apiv2.NodeVersionInfo{
+		Spec: apiv1.NodeSpec{
+			Versions: apiv1.NodeVersionInfo{
 				Kubelet: machine.Spec.Versions.Kubelet,
 			},
 			OperatingSystem: *operatingSystemSpec,
@@ -640,4 +582,163 @@ func decodeGetNodeForCluster(c context.Context, r *http.Request) (interface{}, e
 	req.DCReq = dcr.(DCReq)
 
 	return req, nil
+}
+
+// CreateNodeDeploymentReq defines HTTP request for createMachineDeployment
+// swagger:parameters createNodeDeploymentForCluster
+type CreateNodeDeploymentReq struct {
+	GetClusterReq
+	// in: body
+	Body apiv1.NodeDeployment
+}
+
+func decodeCreateNodeDeploymentForCluster(c context.Context, r *http.Request) (interface{}, error) {
+	var req CreateNodeDeploymentReq
+
+	clusterID, err := decodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ClusterID = clusterID
+	req.DCReq = dcr.(DCReq)
+
+	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func createNodeDeploymentForCluster(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(CreateNodeDeploymentReq)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+
+		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: req.ClusterID})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		// TODO:
+		// normally we have project, user and sshkey providers
+		// but here we decided to use machineClient and kubeClient directly to access the user cluster.
+		//
+		// how about moving machineClient and kubeClient to their own provider ?
+		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(cluster)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
+		if !found {
+			return nil, fmt.Errorf("unknown cluster datacenter %s", cluster.Spec.Cloud.DatacenterName)
+		}
+
+		nd := &req.Body
+
+		if nd.Spec.Template.Cloud.Openstack == nil &&
+			nd.Spec.Template.Cloud.Digitalocean == nil &&
+			nd.Spec.Template.Cloud.AWS == nil &&
+			nd.Spec.Template.Cloud.Hetzner == nil &&
+			nd.Spec.Template.Cloud.VSphere == nil &&
+			nd.Spec.Template.Cloud.Azure == nil {
+			return nil, errors.NewBadRequest("cannot create node deployment without cloud provider")
+		}
+
+		//TODO: We need to make the kubelet version configurable but restrict it to master version
+		if nd.Spec.Template.Versions.Kubelet != "" {
+			kversion, err := semver.NewVersion(nd.Spec.Template.Versions.Kubelet)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse kubelet version: %v", err)
+			}
+			c, err := semver.NewConstraint(kubeletVersionConstraint)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse kubelet constraint version: %v", err)
+			}
+
+			if !c.Check(kversion) {
+				return nil, fmt.Errorf("kubelet version does not fit constraint. Allowed %s", kubeletVersionConstraint)
+			}
+			nd.Spec.Template.Versions.Kubelet = kversion.String()
+		} else {
+			//TODO: rework the versions
+			nd.Spec.Template.Versions.Kubelet = cluster.Spec.Version
+		}
+
+		// Create Machine Deployment resource.
+		md, err := machineresource.Deployment(cluster, nd, dc, keys)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
+		}
+
+		// Save Machine Deployment resource into Kubernetes.
+		md, err = machineClient.ClusterV1alpha1().MachineDeployments(md.Namespace).Create(md)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create machine deployment: %v", err)
+		}
+
+		return outputMachineDeployment(md)
+	}
+}
+
+func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.NodeDeployment, error) {
+	nodeStatus := apiv1.NodeStatus{}
+	nodeStatus.MachineName = md.Name
+
+	var deletionTimestamp *time.Time
+	if md.DeletionTimestamp != nil {
+		deletionTimestamp = &md.DeletionTimestamp.Time
+	}
+
+	operatingSystemSpec, err := machineconversions.GetAPIV1OperatingSystemSpec(md.Spec.Template.Spec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get operating system spec from machine deployment: %v", err)
+	}
+
+	cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(md.Spec.Template.Spec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get node cloud spec from machine deployment: %v", err)
+	}
+
+	return &apiv1.NodeDeployment{
+		ObjectMeta: apiv1.ObjectMeta{
+			ID:                md.Name,
+			Name:              md.Name,
+			DeletionTimestamp: deletionTimestamp,
+			CreationTimestamp: md.CreationTimestamp.Time,
+		},
+		Spec: apiv1.NodeDeploymentSpec{
+			Replicas: *md.Spec.Replicas,
+			Selector: md.Spec.Selector,
+			Template: apiv1.NodeSpec{
+				Versions: apiv1.NodeVersionInfo{
+					Kubelet: md.Spec.Template.Spec.Versions.Kubelet,
+				},
+				OperatingSystem: *operatingSystemSpec,
+				Cloud:           *cloudSpec,
+			},
+			Strategy:                &md.Spec.Strategy,
+			MinReadySeconds:         md.Spec.MinReadySeconds,
+			RevisionHistoryLimit:    md.Spec.RevisionHistoryLimit,
+			Paused:                  &md.Spec.Paused,
+			ProgressDeadlineSeconds: md.Spec.ProgressDeadlineSeconds,
+		},
+		Status: md.Status,
+	}, nil
 }

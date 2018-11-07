@@ -16,7 +16,7 @@ import (
 const (
 	name = "machine-controller"
 
-	tag = "be54360d57ab81a0f5a2bb31d74378ffb4a8ead3"
+	tag = "65cb55a75723f09f436dc2773ecce3054d8f2217"
 )
 
 // Deployment returns the machine-controller Deployment
@@ -48,6 +48,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			IntVal: 0,
 		},
 	}
+	dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 	volumes := []corev1.Volume{getKubeconfigVolume()}
 	podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)

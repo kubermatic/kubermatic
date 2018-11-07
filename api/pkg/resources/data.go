@@ -78,6 +78,7 @@ type ServiceAccountDataProvider interface {
 type ConfigMapDataProvider interface {
 	GetClusterRef() metav1.OwnerReference
 	Cluster() *kubermaticv1.Cluster
+	GetRootCA() (*triple.KeyPair, error)
 	TemplateData() interface{}
 	ServiceLister() corev1lister.ServiceLister
 	NodeAccessNetwork() string

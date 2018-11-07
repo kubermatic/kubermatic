@@ -15,6 +15,7 @@ import (
 	"github.com/golang/glog"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+
 	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -27,6 +28,7 @@ import (
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/cert/triple"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
 // KUBERMATICCOMMIT is a magic variable containing the git commit hash of the current (as in currently executing) kubermatic api. It gets feeded by Makefile as a ldflag.
@@ -45,6 +47,8 @@ const (
 	MachineControllerDeploymentName = "machine-controller"
 	// MachineControllerWebhookDeploymentName is the name for the machine-controller webhook deployment
 	MachineControllerWebhookDeploymentName = "machine-controller-webhook"
+	//MetricsServerDeploymentName is the name for the metrics-server deployment
+	MetricsServerDeploymentName = "metrics-server"
 	//OpenVPNServerDeploymentName is the name for the openvpn server deployment
 	OpenVPNServerDeploymentName = "openvpn-server"
 	//DNSResolverDeploymentName is the name of the dns resolver deployment
@@ -69,6 +73,10 @@ const (
 	PrometheusServiceName = "prometheus"
 	// KubeStateMetricsServiceName is the name for the kube-state-metrics service
 	KubeStateMetricsServiceName = "kube-state-metrics"
+	// MetricsServerServiceName is the name for the metrics-server service
+	MetricsServerServiceName = "metrics-server"
+	// MetricsServerExternalNameServiceName is the name for the metrics-server service inside the user cluster
+	MetricsServerExternalNameServiceName = "metrics-server"
 	//EtcdServiceName is the name for the etcd service
 	EtcdServiceName = "etcd"
 	//EtcdDefragCronJobName is the name for the defrag cronjob deployment
@@ -78,6 +86,9 @@ const (
 	//MachineControllerWebhookServiceName is the name of the machine-controller webhook service
 	MachineControllerWebhookServiceName = "machine-controller-webhook"
 
+	// MetricsServerAPIServiceName is the name for the metrics-server APIService
+	MetricsServerAPIServiceName = "v1beta1.metrics.k8s.io"
+
 	//AdminKubeconfigSecretName is the name for the secret containing the private ca key
 	AdminKubeconfigSecretName = "admin-kubeconfig"
 	//SchedulerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
@@ -86,6 +97,8 @@ const (
 	KubeletDnatControllerKubeconfigSecretName = "kubeletdnatcontroller-kubeconfig"
 	//KubeStateMetricsKubeconfigSecretName is the name for the secret containing the kubeconfig used by kube-state-metrics
 	KubeStateMetricsKubeconfigSecretName = "kube-state-metrics-kubeconfig"
+	//MetricsServerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the metrics-server
+	MetricsServerKubeconfigSecretName = "metrics-server"
 	//ControllerManagerKubeconfigSecretName is the name of the secret containing the kubeconfig used by controller manager
 	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
 	//MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the machinecontroller
@@ -136,6 +149,8 @@ const (
 	OpenVPNClientConfigsConfigMapName = "openvpn-client-configs"
 	//OpenVPNClientConfigConfigMapName is the name for the ConfigMap containing the OpenVPN client config used by the client inside the user cluster
 	OpenVPNClientConfigConfigMapName = "openvpn-client-config"
+	//ClusterInfoConfigMapName is the name for the ConfigMap containing the cluster-info used by the bootstrap token machanism
+	ClusterInfoConfigMapName = "cluster-info"
 	//PrometheusConfigConfigMapName is the name for the configmap containing the prometheus config
 	PrometheusConfigConfigMapName = "prometheus"
 
@@ -152,6 +167,8 @@ const (
 	MachineControllerCertUsername = "machine-controller"
 	//KubeStateMetricsCertUsername is the name of the user coming from kubeconfig cert
 	KubeStateMetricsCertUsername = "kube-state-metrics"
+	//MetricsServerCertUsername is the name of the user coming from kubeconfig cert
+	MetricsServerCertUsername = "metrics-server"
 	//ControllerManagerCertUsername is the name of the user coming from kubeconfig cert
 	ControllerManagerCertUsername = "system:kube-controller-manager"
 	//SchedulerCertUsername is the name of the user coming from kubeconfig cert
@@ -184,24 +201,36 @@ const (
 	// KubeletDnatControllerClusterRoleBindingName is the name for the KubeletDnatController clusterrolebinding
 	KubeletDnatControllerClusterRoleBindingName = "system:kubermatic-kubeletdnat-controller"
 
+	//ClusterInfoReaderRoleName is the name for the role which allows reading the cluster-info ConfigMap
+	ClusterInfoReaderRoleName = "cluster-info"
 	//MachineControllerRoleName is the name for the MachineController roles
 	MachineControllerRoleName = "machine-controller"
 	//MachineControllerRoleBindingName is the name for the MachineController rolebinding
 	MachineControllerRoleBindingName = "machine-controller"
+	//ClusterInfoAnonymousRoleBindingName is the name for the RoleBinding giving access to the cluster-info ConfigMap to anonymous users
+	ClusterInfoAnonymousRoleBindingName = "cluster-info"
+	//MetricsServerAuthReaderRoleName is the name for the metrics server role
+	MetricsServerAuthReaderRoleName = "metrics-server-auth-reader"
 	//MachineControllerClusterRoleName is the name for the MachineController cluster role
 	MachineControllerClusterRoleName = "system:kubermatic-machine-controller"
 	//KubeStateMetricsClusterRoleName is the name for the KubeStateMetrics cluster role
 	KubeStateMetricsClusterRoleName = "system:kubermatic-kube-state-metrics"
+	//MetricsServerClusterRoleName is the name for the metrics server cluster role
+	MetricsServerClusterRoleName = "system:metrics-server"
 	//PrometheusClusterRoleName is the name for the Prometheus cluster role
 	PrometheusClusterRoleName = "external-prometheus"
-	//MachineControllerClusterRoleBindingName is the name for the MachineController clusterrolebinding
+	//MachineControllerClusterRoleBindingName is the name for the MachineController ClusterRoleBinding
 	MachineControllerClusterRoleBindingName = "system:kubermatic-machine-controller"
-	//KubeStateMetricsClusterRoleBindingName is the name for the KubeStateMetrics clusterrolebinding
+	//KubeStateMetricsClusterRoleBindingName is the name for the KubeStateMetrics ClusterRoleBinding
 	KubeStateMetricsClusterRoleBindingName = "system:kubermatic-kube-state-metrics"
-	//PrometheusClusterRoleBindingName is the name for the Prometheus cluster rolebinding
+	//PrometheusClusterRoleBindingName is the name for the Prometheus ClusterRoleBinding
 	PrometheusClusterRoleBindingName = "system:external-prometheus"
+	//MetricsServerAuthDelegatorClusterRoleBindingName is the name for the metrics server ClusterRoleBinding used for token access review
+	MetricsServerAuthDelegatorClusterRoleBindingName = "metrics-server:system:auth-delegator"
+	//MetricsServerResourceReaderClusterRoleBindingName is the name for the metrics server ClusterRoleBinding
+	MetricsServerResourceReaderClusterRoleBindingName = "system:metrics-server"
 
-	// EtcdPodDisruptionBudgetName is the name of the PDB for the etcd statefulset
+	// EtcdPodDisruptionBudgetName is the name of the PDB for the etcd StatefulSet
 	EtcdPodDisruptionBudgetName = "etcd"
 	// ApiserverPodDisruptionBudgetName is the name of the PDB for the apiserver deployment
 	ApiserverPodDisruptionBudgetName = "apiserver"
@@ -355,6 +384,9 @@ type CronJobCreator = func(data *TemplateData, existing *batchv1beta1.CronJob) (
 
 // CRDCreateor defines an interface to create/update CustomRessourceDefinitions
 type CRDCreateor = func(version semver.Version, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error)
+
+// APIServiceCreator defines an interface to create/update APIService's
+type APIServiceCreator = func(existing *apiregistrationv1.APIService) (*apiregistrationv1.APIService, error)
 
 // GetClusterApiserverAddress returns the apiserver address for the given Cluster
 func GetClusterApiserverAddress(cluster *kubermaticv1.Cluster, lister corev1lister.ServiceLister) (string, error) {

@@ -61,6 +61,7 @@ echo "# ========================" >> ${TARGET_VALUES_FILE}
 echo "# ====== Monitoring ======" >> ${TARGET_VALUES_FILE}
 echo "# ========================" >> ${TARGET_VALUES_FILE}
 echo "" >> ${TARGET_VALUES_FILE}
+mkdir -p "${TARGET_DIR}/charts/monitoring"
 for CHART in ${MONITORING_CHARTS}; do
   echo "syncing ${CHART}..."
   # doing clean copy
@@ -77,6 +78,7 @@ echo "# =======================" >> ${TARGET_VALUES_FILE}
 echo "# ======= Logging =======" >> ${TARGET_VALUES_FILE}
 echo "# =======================" >> ${TARGET_VALUES_FILE}
 echo "" >> ${TARGET_VALUES_FILE}
+mkdir -p "${TARGET_DIR}/charts/logging"
 for CHART in ${LOGGING_CHARTS}; do
   echo "syncing ${CHART}..."
   # doing clean copy
