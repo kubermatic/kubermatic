@@ -31,6 +31,7 @@ func Deployment(c *kubermaticv1.Cluster, ns *apiv1.NodeSet, dc provider.Datacent
 	md.Spec.RevisionHistoryLimit = ns.Spec.RevisionHistoryLimit
 	md.Spec.ProgressDeadlineSeconds = ns.Spec.ProgressDeadlineSeconds
 
+	// TODO: Remove once we have webhook
 	if ns.Spec.Strategy != nil {
 		md.Spec.Strategy = *ns.Spec.Strategy
 	} else {
