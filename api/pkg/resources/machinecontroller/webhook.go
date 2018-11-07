@@ -232,8 +232,9 @@ func MutatingwebhookConfiguration(c *kubermaticv1.Cluster, data *resources.Templ
 
 	mutatingWebhookConfiguration.Webhooks = []admissionregistrationv1beta1.Webhook{
 		{
-			Name:          fmt.Sprintf("%s-machinedeployments", resources.MachineControllerMutatingWebhookConfigurationName),
-			FailurePolicy: failurePolicyPtr(admissionregistrationv1beta1.Fail),
+			Name:              fmt.Sprintf("%s-machinedeployments", resources.MachineControllerMutatingWebhookConfigurationName),
+			NamespaceSelector: &metav1.LabelSelector{},
+			FailurePolicy:     failurePolicyPtr(admissionregistrationv1beta1.Fail),
 			Rules: []admissionregistrationv1beta1.RuleWithOperations{
 				{
 					Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
@@ -250,8 +251,9 @@ func MutatingwebhookConfiguration(c *kubermaticv1.Cluster, data *resources.Templ
 			},
 		},
 		{
-			Name:          fmt.Sprintf("%s-machines", resources.MachineControllerMutatingWebhookConfigurationName),
-			FailurePolicy: failurePolicyPtr(admissionregistrationv1beta1.Fail),
+			Name:              fmt.Sprintf("%s-machines", resources.MachineControllerMutatingWebhookConfigurationName),
+			NamespaceSelector: &metav1.LabelSelector{},
+			FailurePolicy:     failurePolicyPtr(admissionregistrationv1beta1.Fail),
 			Rules: []admissionregistrationv1beta1.RuleWithOperations{
 				{
 					Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
