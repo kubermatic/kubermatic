@@ -3,10 +3,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/Masterminds/semver"
-
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -46,7 +45,7 @@ func getOpenStackScenarios() []testScenario {
 }
 
 type openStackScenario struct {
-	version    *semver.Version
+	version    *semver.Semver
 	nodeOsSpec kubermaticapiv1.OperatingSystemSpec
 }
 
@@ -58,7 +57,7 @@ func (s *openStackScenario) Cluster(secrets secrets) *v1.Cluster {
 	return &v1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{},
 		Spec: v1.ClusterSpec{
-			Version:           s.version.String(),
+			Version:           *s.version,
 			HumanReadableName: s.Name(),
 			ClusterNetwork: v1.ClusterNetworkingConfig{
 				Services: v1.NetworkRanges{

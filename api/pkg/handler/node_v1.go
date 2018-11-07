@@ -247,22 +247,21 @@ func createNodeForCluster(sshKeyProvider provider.SSHKeyProvider, projectProvide
 
 		//TODO(mrIncompetent): We need to make the kubelet version configurable but restrict it to master version
 		if node.Spec.Versions.Kubelet != "" {
-			kversion, err := semver.NewVersion(node.Spec.Versions.Kubelet)
+			semverVersion, err := semver.NewVersion(node.Spec.Versions.Kubelet)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse kubelet version: %v", err)
+				return nil, err
 			}
 			c, err := semver.NewConstraint(kubeletVersionConstraint)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse kubelet constraint version: %v", err)
 			}
 
-			if !c.Check(kversion) {
+			if !c.Check(semverVersion) {
 				return nil, fmt.Errorf("kubelet version does not fit constraint. Allowed %s", kubeletVersionConstraint)
 			}
-			node.Spec.Versions.Kubelet = kversion.String()
 		} else {
 			//TODO(mrIncompetent): rework the versions
-			node.Spec.Versions.Kubelet = cluster.Spec.Version
+			node.Spec.Versions.Kubelet = cluster.Spec.Version.String()
 		}
 
 		// Create machine resource
@@ -678,7 +677,7 @@ func createNodeDeploymentForCluster(sshKeyProvider provider.SSHKeyProvider, proj
 			nd.Spec.Template.Versions.Kubelet = kversion.String()
 		} else {
 			//TODO: rework the versions
-			nd.Spec.Template.Versions.Kubelet = cluster.Spec.Version
+			nd.Spec.Template.Versions.Kubelet = cluster.Spec.Version.String()
 		}
 
 		// Create Machine Deployment resource.

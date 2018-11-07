@@ -13,8 +13,12 @@ import (
 	"strings"
 	"time"
 
+<<<<<<< HEAD
 	"github.com/Masterminds/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+=======
+	"github.com/golang/glog"
+>>>>>>> Utilize Semver type in code
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/sirupsen/logrus"
 
@@ -590,6 +594,7 @@ func (r *testRunner) waitUntilAllPodsAreReady(log *logrus.Entry, client kubernet
 	log.Debug("Waiting for all pods to be ready...")
 	started := time.Now()
 
+<<<<<<< HEAD
 	podIsReady := func(p *corev1.Pod) bool {
 		for _, c := range p.Status.Conditions {
 			if c.Type == corev1.PodReady && c.Status == corev1.ConditionTrue {
@@ -605,6 +610,20 @@ func (r *testRunner) waitUntilAllPodsAreReady(log *logrus.Entry, client kubernet
 			log.Warnf("failed to load pod list while waiting until all pods are running: %v", err)
 			return false, nil
 		}
+=======
+	data := struct {
+		// Only main + minor
+		Version            string
+		TestBinDir         string
+		KubeconfigFilename string
+		ReportsDir         string
+	}{
+		Version:            fmt.Sprintf("%d.%d", cluster.Spec.Version.Semver().Major(), cluster.Spec.Version.Semver().Minor()),
+		TestBinDir:         testBinDir,
+		KubeconfigFilename: kubeconfigFilename,
+		ReportsDir:         reportsDir,
+	}
+>>>>>>> Utilize Semver type in code
 
 		for _, pod := range podList.Items {
 			if !podIsReady(&pod) {
