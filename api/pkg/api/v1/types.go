@@ -646,18 +646,18 @@ type ClusterMetric struct {
 	Values []float64 `json:"values,omitempty"`
 }
 
-// NodeSet represents a set of worker nodes that is part of a cluster
-// swagger:model NodeSet
-type NodeSet struct {
+// NodeDeployment represents a set of worker nodes that is part of a cluster
+// swagger:model NodeDeployment
+type NodeDeployment struct {
 	ObjectMeta `json:",inline"`
 
-	Spec   NodeSetSpec                      `json:"spec"`
+	Spec   NodeDeploymentSpec               `json:"spec"`
 	Status v1alpha1.MachineDeploymentStatus `json:"status"`
 }
 
-// NodeSetSpec node set specification
-// swagger:model NodeSetSpec
-type NodeSetSpec struct {
+// NodeDeploymentSpec node deployment specification
+// swagger:model NodeDeploymentSpec
+type NodeDeploymentSpec struct {
 	// required: true
 	Replicas int32 `json:"replicas,omitempty"`
 

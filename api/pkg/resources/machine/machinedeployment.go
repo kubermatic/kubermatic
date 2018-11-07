@@ -19,21 +19,21 @@ import (
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
-// Deployment returns a Machine Deployment object for the given Node Set spec.
-func Deployment(c *kubermaticv1.Cluster, ns *apiv1.NodeSet, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.MachineDeployment, error) {
+// Deployment returns a Machine Deployment object for the given Node Deployment spec.
+func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.MachineDeployment, error) {
 	md := clusterv1alpha1.MachineDeployment{}
 
-	md.Name = fmt.Sprintf("machinedeployment-%s", ns.Name)
+	md.Name = fmt.Sprintf("machinedeployment-%s", nd.Name)
 	md.Namespace = metav1.NamespaceSystem
 
-	md.Spec.Replicas = &ns.Spec.Replicas
-	md.Spec.Template.Spec.Versions.Kubelet = ns.Spec.Template.Versions.Kubelet
-	md.Spec.RevisionHistoryLimit = ns.Spec.RevisionHistoryLimit
-	md.Spec.ProgressDeadlineSeconds = ns.Spec.ProgressDeadlineSeconds
+	md.Spec.Replicas = &nd.Spec.Replicas
+	md.Spec.Template.Spec.Versions.Kubelet = nd.Spec.Template.Versions.Kubelet
+	md.Spec.RevisionHistoryLimit = nd.Spec.RevisionHistoryLimit
+	md.Spec.ProgressDeadlineSeconds = nd.Spec.ProgressDeadlineSeconds
 
 	// TODO: Remove once we have webhook
-	if ns.Spec.Strategy != nil {
-		md.Spec.Strategy = *ns.Spec.Strategy
+	if nd.Spec.Strategy != nil {
+		md.Spec.Strategy = *nd.Spec.Strategy
 	} else {
 		md.Spec.Strategy = clusterv1alpha1.MachineDeploymentStrategy{
 			Type: common.RollingUpdateMachineDeploymentStrategyType,
@@ -50,15 +50,15 @@ func Deployment(c *kubermaticv1.Cluster, ns *apiv1.NodeSet, dc provider.Datacent
 		}
 	}
 
-	if ns.Spec.MinReadySeconds != nil {
-		md.Spec.MinReadySeconds = ns.Spec.MinReadySeconds
+	if nd.Spec.MinReadySeconds != nil {
+		md.Spec.MinReadySeconds = nd.Spec.MinReadySeconds
 	} else {
 		var defaultMinReadySeconds int32
 		md.Spec.MinReadySeconds = &defaultMinReadySeconds
 	}
 
-	if ns.Spec.Paused != nil {
-		md.Spec.Paused = *ns.Spec.Paused
+	if nd.Spec.Paused != nil {
+		md.Spec.Paused = *nd.Spec.Paused
 	} else {
 		md.Spec.Paused = false
 	}
@@ -66,7 +66,7 @@ func Deployment(c *kubermaticv1.Cluster, ns *apiv1.NodeSet, dc provider.Datacent
 	if md.Spec.Selector.MatchLabels == nil {
 		md.Spec.Selector.MatchLabels = map[string]string{}
 	} else {
-		md.Spec.Selector = ns.Spec.Selector
+		md.Spec.Selector = nd.Spec.Selector
 	}
 
 	md.Spec.Selector.MatchLabels["name"] = md.Name
@@ -85,19 +85,19 @@ func Deployment(c *kubermaticv1.Cluster, ns *apiv1.NodeSet, dc provider.Datacent
 
 	// Cloud specifics
 	switch {
-	case ns.Spec.Template.Cloud.AWS != nil:
+	case nd.Spec.Template.Cloud.AWS != nil:
 		config.CloudProvider = providerconfig.CloudProviderAWS
-		cloudExt, err = getAWSProviderSpec(c, ns.Spec.Template, dc)
+		cloudExt, err = getAWSProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
-	case ns.Spec.Template.Cloud.Azure != nil:
+	case nd.Spec.Template.Cloud.Azure != nil:
 		config.CloudProvider = providerconfig.CloudProviderAzure
-		cloudExt, err = getAzureProviderSpec(c, ns.Spec.Template, dc)
+		cloudExt, err = getAzureProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
-	case ns.Spec.Template.Cloud.VSphere != nil:
+	case nd.Spec.Template.Cloud.VSphere != nil:
 		config.CloudProvider = providerconfig.CloudProviderVsphere
 
 		// We use OverwriteCloudConfig for Vsphere to ensure we always
@@ -110,25 +110,25 @@ func Deployment(c *kubermaticv1.Cluster, ns *apiv1.NodeSet, dc provider.Datacent
 		}
 		config.OverwriteCloudConfig = &overwriteCloudConfig
 
-		cloudExt, err = getVSphereProviderSpec(c, ns.Spec.Template, dc)
+		cloudExt, err = getVSphereProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
-	case ns.Spec.Template.Cloud.Openstack != nil:
+	case nd.Spec.Template.Cloud.Openstack != nil:
 		config.CloudProvider = providerconfig.CloudProviderOpenstack
-		cloudExt, err = getOpenstackProviderSpec(c, ns.Spec.Template, dc)
+		cloudExt, err = getOpenstackProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
-	case ns.Spec.Template.Cloud.Hetzner != nil:
+	case nd.Spec.Template.Cloud.Hetzner != nil:
 		config.CloudProvider = providerconfig.CloudProviderHetzner
-		cloudExt, err = getHetznerProviderSpec(c, ns.Spec.Template, dc)
+		cloudExt, err = getHetznerProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
-	case ns.Spec.Template.Cloud.Digitalocean != nil:
+	case nd.Spec.Template.Cloud.Digitalocean != nil:
 		config.CloudProvider = providerconfig.CloudProviderDigitalocean
-		cloudExt, err = getDigitaloceanProviderSpec(c, ns.Spec.Template, dc)
+		cloudExt, err = getDigitaloceanProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
@@ -141,21 +141,21 @@ func Deployment(c *kubermaticv1.Cluster, ns *apiv1.NodeSet, dc provider.Datacent
 
 	// OS specifics
 	switch {
-	case ns.Spec.Template.OperatingSystem.ContainerLinux != nil:
+	case nd.Spec.Template.OperatingSystem.ContainerLinux != nil:
 		config.OperatingSystem = providerconfig.OperatingSystemCoreos
-		osExt, err = getCoreosOperatingSystemSpec(ns.Spec.Template)
+		osExt, err = getCoreosOperatingSystemSpec(nd.Spec.Template)
 		if err != nil {
 			return nil, err
 		}
-	case ns.Spec.Template.OperatingSystem.Ubuntu != nil:
+	case nd.Spec.Template.OperatingSystem.Ubuntu != nil:
 		config.OperatingSystem = providerconfig.OperatingSystemUbuntu
-		osExt, err = getUbuntuOperatingSystemSpec(ns.Spec.Template)
+		osExt, err = getUbuntuOperatingSystemSpec(nd.Spec.Template)
 		if err != nil {
 			return nil, err
 		}
-	case ns.Spec.Template.OperatingSystem.CentOS != nil:
+	case nd.Spec.Template.OperatingSystem.CentOS != nil:
 		config.OperatingSystem = providerconfig.OperatingSystemCentOS
-		osExt, err = getCentOSOperatingSystemSpec(ns.Spec.Template)
+		osExt, err = getCentOSOperatingSystemSpec(nd.Spec.Template)
 		if err != nil {
 			return nil, err
 		}

@@ -661,6 +661,68 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments": {
+      "post": {
+        "description": "Creates a node deployment that will belong to the given cluster",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "createNodeDeploymentForCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/NodeDeployment"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "NodeDeployment",
+            "schema": {
+              "$ref": "#/definitions/NodeDeployment"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes": {
       "get": {
         "description": "Lists nodes that belong to the given cluster",
@@ -891,68 +953,6 @@
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodesets": {
-      "post": {
-        "description": "Creates a node set that will belong to the given cluster",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "project"
-        ],
-        "operationId": "createNodeSetForCluster",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterID",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "Body",
-            "in": "body",
-            "schema": {
-              "$ref": "#/definitions/NodeSet"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "NodeSet",
-            "schema": {
-              "$ref": "#/definitions/NodeSet"
-            }
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -3601,23 +3601,8 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "NodeResources": {
-      "description": "NodeResources cpu and memory of a node",
-      "type": "object",
-      "properties": {
-        "cpu": {
-          "type": "string",
-          "x-go-name": "CPU"
-        },
-        "memory": {
-          "type": "string",
-          "x-go-name": "Memory"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "NodeSet": {
-      "description": "NodeSet represents a set of worker nodes that is part of a cluster",
+    "NodeDeployment": {
+      "description": "NodeDeployment represents a set of worker nodes that is part of a cluster",
       "type": "object",
       "properties": {
         "creationTimestamp": {
@@ -3643,7 +3628,7 @@
           "x-go-name": "Name"
         },
         "spec": {
-          "$ref": "#/definitions/NodeSetSpec"
+          "$ref": "#/definitions/NodeDeploymentSpec"
         },
         "status": {
           "$ref": "#/definitions/MachineDeploymentStatus"
@@ -3651,8 +3636,8 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "NodeSetSpec": {
-      "description": "NodeSetSpec node set specification",
+    "NodeDeploymentSpec": {
+      "description": "NodeDeploymentSpec node deployment specification",
       "type": "object",
       "required": [
         "replicas",
@@ -3691,6 +3676,21 @@
         },
         "template": {
           "$ref": "#/definitions/NodeSpec"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "NodeResources": {
+      "description": "NodeResources cpu and memory of a node",
+      "type": "object",
+      "properties": {
+        "cpu": {
+          "type": "string",
+          "x-go-name": "CPU"
+        },
+        "memory": {
+          "type": "string",
+          "x-go-name": "Memory"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"

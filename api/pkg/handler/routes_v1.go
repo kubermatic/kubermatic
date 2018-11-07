@@ -172,10 +172,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.revokeClusterAdminToken())
 
 	//
-	// Defines a set of HTTP endpoint for node sets that belong to a cluster
+	// Defines a set of HTTP endpoint for node deployments that belong to a cluster
 	mux.Methods(http.MethodPost).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodesets").
-		Handler(r.createNodeSetForCluster())
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments").
+		Handler(r.createNodeDeploymentForCluster())
 
 	//
 	// Defines a set of HTTP endpoints for various cloud providers
@@ -1447,9 +1447,9 @@ func (r Routing) listVSphereNetworksNoCredentials() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodesets project createNodeSetForCluster
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments project createNodeDeploymentForCluster
 //
-//     Creates a node set that will belong to the given cluster
+//     Creates a node deployment that will belong to the given cluster
 //
 //     Consumes:
 //     - application/json
@@ -1459,18 +1459,18 @@ func (r Routing) listVSphereNetworksNoCredentials() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: NodeSet
+//       201: NodeDeployment
 //       401: empty
 //       403: empty
-func (r Routing) createNodeSetForCluster() http.Handler {
+func (r Routing) createNodeDeploymentForCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
 			r.userInfoMiddleware(),
-		)(createNodeSetForCluster(r.sshKeyProvider, r.projectProvider, r.datacenters)),
-		decodeCreateNodeSetForCluster,
+		)(createNodeDeploymentForCluster(r.sshKeyProvider, r.projectProvider, r.datacenters)),
+		decodeCreateNodeDeploymentForCluster,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
 	)

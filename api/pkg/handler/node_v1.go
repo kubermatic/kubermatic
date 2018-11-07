@@ -589,16 +589,16 @@ func decodeGetNodeForCluster(c context.Context, r *http.Request) (interface{}, e
 	return req, nil
 }
 
-// CreateNodeSetReq defines HTTP request for createMachineDeployment
-// swagger:parameters createNodeSetForCluster
-type CreateNodeSetReq struct {
+// CreateNodeDeploymentReq defines HTTP request for createMachineDeployment
+// swagger:parameters createNodeDeploymentForCluster
+type CreateNodeDeploymentReq struct {
 	GetClusterReq
 	// in: body
-	Body apiv1.NodeSet
+	Body apiv1.NodeDeployment
 }
 
-func decodeCreateNodeSetForCluster(c context.Context, r *http.Request) (interface{}, error) {
-	var req CreateNodeSetReq
+func decodeCreateNodeDeploymentForCluster(c context.Context, r *http.Request) (interface{}, error) {
+	var req CreateNodeDeploymentReq
 
 	clusterID, err := decodeClusterID(c, r)
 	if err != nil {
@@ -619,9 +619,9 @@ func decodeCreateNodeSetForCluster(c context.Context, r *http.Request) (interfac
 	return req, nil
 }
 
-func createNodeSetForCluster(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+func createNodeDeploymentForCluster(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(CreateNodeSetReq)
+		req := request.(CreateNodeDeploymentReq)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
 
@@ -655,20 +655,20 @@ func createNodeSetForCluster(sshKeyProvider provider.SSHKeyProvider, projectProv
 			return nil, fmt.Errorf("unknown cluster datacenter %s", cluster.Spec.Cloud.DatacenterName)
 		}
 
-		nodeset := &req.Body
+		nd := &req.Body
 
-		if nodeset.Spec.Template.Cloud.Openstack == nil &&
-			nodeset.Spec.Template.Cloud.Digitalocean == nil &&
-			nodeset.Spec.Template.Cloud.AWS == nil &&
-			nodeset.Spec.Template.Cloud.Hetzner == nil &&
-			nodeset.Spec.Template.Cloud.VSphere == nil &&
-			nodeset.Spec.Template.Cloud.Azure == nil {
-			return nil, errors.NewBadRequest("cannot create node set without cloud provider")
+		if nd.Spec.Template.Cloud.Openstack == nil &&
+			nd.Spec.Template.Cloud.Digitalocean == nil &&
+			nd.Spec.Template.Cloud.AWS == nil &&
+			nd.Spec.Template.Cloud.Hetzner == nil &&
+			nd.Spec.Template.Cloud.VSphere == nil &&
+			nd.Spec.Template.Cloud.Azure == nil {
+			return nil, errors.NewBadRequest("cannot create node deployment without cloud provider")
 		}
 
 		//TODO: We need to make the kubelet version configurable but restrict it to master version
-		if nodeset.Spec.Template.Versions.Kubelet != "" {
-			kversion, err := semver.NewVersion(nodeset.Spec.Template.Versions.Kubelet)
+		if nd.Spec.Template.Versions.Kubelet != "" {
+			kversion, err := semver.NewVersion(nd.Spec.Template.Versions.Kubelet)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse kubelet version: %v", err)
 			}
@@ -680,18 +680,18 @@ func createNodeSetForCluster(sshKeyProvider provider.SSHKeyProvider, projectProv
 			if !c.Check(kversion) {
 				return nil, fmt.Errorf("kubelet version does not fit constraint. Allowed %s", kubeletVersionConstraint)
 			}
-			nodeset.Spec.Template.Versions.Kubelet = kversion.String()
+			nd.Spec.Template.Versions.Kubelet = kversion.String()
 		} else {
 			//TODO: rework the versions
-			nodeset.Spec.Template.Versions.Kubelet = cluster.Spec.Version
+			nd.Spec.Template.Versions.Kubelet = cluster.Spec.Version
 		}
 
-		if nodeset.Name == "" {
-			nodeset.Name = "kubermatic-" + cluster.Name + "-" + rand.String(5)
+		if nd.Name == "" {
+			nd.Name = "kubermatic-" + cluster.Name + "-" + rand.String(5)
 		}
 
 		// Create Machine Deployment resource.
-		md, err := machineresource.Deployment(cluster, nodeset, dc, keys)
+		md, err := machineresource.Deployment(cluster, nd, dc, keys)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
 		}
@@ -706,7 +706,7 @@ func createNodeSetForCluster(sshKeyProvider provider.SSHKeyProvider, projectProv
 	}
 }
 
-func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.NodeSet, error) {
+func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.NodeDeployment, error) {
 	nodeStatus := apiv1.NodeStatus{}
 	nodeStatus.MachineName = md.Name
 
@@ -717,22 +717,22 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 
 	operatingSystemSpec, err := machineconversions.GetAPIV1OperatingSystemSpec(md.Spec.Template.Spec)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get operating system spec from machine: %v", err)
+		return nil, fmt.Errorf("failed to get operating system spec from machine deployment: %v", err)
 	}
 
 	cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(md.Spec.Template.Spec)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get node cloud spec from machine: %v", err)
+		return nil, fmt.Errorf("failed to get node cloud spec from machine deployment: %v", err)
 	}
 
-	return &apiv1.NodeSet{
+	return &apiv1.NodeDeployment{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                md.Name,
 			Name:              md.Name,
 			DeletionTimestamp: deletionTimestamp,
 			CreationTimestamp: md.CreationTimestamp.Time,
 		},
-		Spec: apiv1.NodeSetSpec{
+		Spec: apiv1.NodeDeploymentSpec{
 			Replicas: *md.Spec.Replicas,
 			Selector: md.Spec.Selector,
 			Template: apiv1.NodeSpec{
