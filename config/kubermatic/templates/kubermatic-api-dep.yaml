@@ -26,8 +26,8 @@ spec:
           - -v=4
           - -logtostderr
           - -datacenters=/opt/datacenter/datacenters.yaml
-          - -oidc-issuer-url={{ .Values.kubermatic.auth.tokenIssuer }}
-          - -oidc-client-id={{ .Values.kubermatic.auth.clientID }}
+          - -oidc-url={{ .Values.kubermatic.auth.tokenIssuer }}
+          - -oidc-authenticator-client-id={{ .Values.kubermatic.auth.clientID }}
           - -versions=/opt/master-files/versions.yaml
           - -updates=/opt/master-files/updates.yaml
           - -internal-address=0.0.0.0:8085
