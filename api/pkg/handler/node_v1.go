@@ -25,7 +25,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
@@ -264,10 +263,6 @@ func createNodeForCluster(sshKeyProvider provider.SSHKeyProvider, projectProvide
 		} else {
 			//TODO(mrIncompetent): rework the versions
 			node.Spec.Versions.Kubelet = cluster.Spec.Version
-		}
-
-		if node.Name == "" {
-			node.Name = "kubermatic-" + cluster.Name + "-" + rand.String(5)
 		}
 
 		// Create machine resource
@@ -684,10 +679,6 @@ func createNodeDeploymentForCluster(sshKeyProvider provider.SSHKeyProvider, proj
 		} else {
 			//TODO: rework the versions
 			nd.Spec.Template.Versions.Kubelet = cluster.Spec.Version
-		}
-
-		if nd.Name == "" {
-			nd.Name = "kubermatic-" + cluster.Name + "-" + rand.String(5)
 		}
 
 		// Create Machine Deployment resource.

@@ -8,7 +8,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
-
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,7 +19,8 @@ import (
 // Machine returns a machine object for the given spec
 func Machine(c *kubermaticv1.Cluster, node *apiv1.Node, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.Machine, error) {
 	m := clusterv1alpha1.Machine{}
-	m.Name = fmt.Sprintf("machine-%s", node.Name)
+
+	m.GenerateName = fmt.Sprintf("machine-kubermatic-%s-", c.Name)
 	m.Namespace = metav1.NamespaceSystem
 	m.Spec.Name = node.Name
 

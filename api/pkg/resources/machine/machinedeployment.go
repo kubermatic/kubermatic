@@ -23,7 +23,7 @@ import (
 func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.MachineDeployment, error) {
 	md := clusterv1alpha1.MachineDeployment{}
 
-	md.Name = fmt.Sprintf("machinedeployment-%s", nd.Name)
+	md.GenerateName = fmt.Sprintf("machinedeployment-kubermatic-%s-", c.Name)
 	md.Namespace = metav1.NamespaceSystem
 
 	md.Spec.Replicas = &nd.Spec.Replicas
