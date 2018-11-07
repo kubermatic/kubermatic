@@ -58,7 +58,12 @@ func (cc *Controller) reconcileUserClusterResources(cluster *kubermaticv1.Cluste
 		return nil, err
 	}
 
-	if err = cc.userClusterEnsureMutatingWebhookConfigurations(cluster); err != nil {
+	data, err := cc.getClusterTemplateData(cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureMutatingWebhookConfigurations(cluster, data); err != nil {
 		return nil, err
 	}
 
@@ -447,13 +452,13 @@ func (cc *Controller) userClusterEnsureCustomResourceDefinitions(c *kubermaticv1
 	return nil
 }
 
-func (cc *Controller) userClusterEnsureMutatingWebhookConfigurations(c *kubermaticv1.Cluster) error {
+func (cc *Controller) userClusterEnsureMutatingWebhookConfigurations(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	client, err := cc.userClusterConnProvider.GetAdmissionRegistrationClient(c)
 	if err != nil {
 		return err
 	}
 
-	mutatingWebhookConfiguration, err := machinecontroller.MutatingwebhookConfiguration(c, nil)
+	mutatingWebhookConfiguration, err := machinecontroller.MutatingwebhookConfiguration(c, data, nil)
 	if err != nil {
 		return fmt.Errorf("failed to build MutatingwebhookConfiguration: %v", err)
 	}
@@ -469,7 +474,7 @@ func (cc *Controller) userClusterEnsureMutatingWebhookConfigurations(c *kubermat
 		glog.V(4).Infof("Created MutatingWebhookConfiguration %s", mutatingWebhookConfiguration.Name)
 	}
 
-	mutatingWebhookConfiguration, err = machinecontroller.MutatingwebhookConfiguration(c, existing.DeepCopy())
+	mutatingWebhookConfiguration, err = machinecontroller.MutatingwebhookConfiguration(c, data, existing.DeepCopy())
 	if err != nil {
 		return fmt.Errorf("failed to build MutatingWebhookConfigurations %s: %v", err)
 	}

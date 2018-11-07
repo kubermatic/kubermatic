@@ -61,7 +61,7 @@ func WebhookDeployment(data resources.DeploymentDataProvider, existing *appsv1.D
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:            name,
-			Image:           data.ImageRegistry(resources.RegistryDocker) + "/alvaroaleman/machine-controller:" + tag,
+			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/local/bin/webhook"},
 			Args: []string{
@@ -90,8 +90,9 @@ func WebhookDeployment(data resources.DeploymentDataProvider, existing *appsv1.D
 				FailureThreshold: 8,
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/healthz",
-						Port: intstr.FromInt(9876),
+						Path:   "/healthz",
+						Port:   intstr.FromInt(9876),
+						Scheme: corev1.URISchemeHTTPS,
 					},
 				},
 				InitialDelaySeconds: 15,
@@ -175,13 +176,14 @@ func TLSServingCertificate(data resources.SecretDataProvider, existing *corev1.S
 	if err != nil {
 		return nil, fmt.Errorf("failed to get root ca: %v", err)
 	}
-	commonName := fmt.Sprintf("%s.%s.svc", resources.MachineControllerWebhookServiceName, data.Cluster().Status.NamespaceName)
+	commonName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.MachineControllerWebhookServiceName, data.Cluster().Status.NamespaceName)
 	altNames := certutil.AltNames{
 		DNSNames: []string{
 			resources.MachineControllerWebhookServiceName,
 			fmt.Sprintf("%s.%s", resources.MachineControllerWebhookServiceName, data.Cluster().Status.NamespaceName),
 			commonName,
-			fmt.Sprintf("%s.", commonName),
+			fmt.Sprintf("%s.%s.svc", resources.MachineControllerWebhookServiceName, data.Cluster().Status.NamespaceName),
+			fmt.Sprintf("%s.%s.svc.", resources.MachineControllerWebhookServiceName, data.Cluster().Status.NamespaceName),
 		},
 	}
 	if b, exists := se.Data[resources.MachineControllerWebhookServingCertCertKeyName]; exists {
@@ -200,7 +202,8 @@ func TLSServingCertificate(data resources.SecretDataProvider, existing *corev1.S
 		data.Cluster().Status.NamespaceName,
 		"",
 		nil,
-		nil)
+		// For some reason the name the APIServer validates against must be in the SANs, having it as CN is not enough
+		[]string{commonName})
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate serving cert: %v", err)
 	}
@@ -213,28 +216,53 @@ func TLSServingCertificate(data resources.SecretDataProvider, existing *corev1.S
 }
 
 // MutatingwebhookConfiguration returns the MutatingwebhookConfiguration for the machine controler
-func MutatingwebhookConfiguration(c *kubermaticv1.Cluster, existing *admissionregistrationv1beta1.MutatingWebhookConfiguration) (*admissionregistrationv1beta1.MutatingWebhookConfiguration, error) {
+func MutatingwebhookConfiguration(c *kubermaticv1.Cluster, data *resources.TemplateData, existing *admissionregistrationv1beta1.MutatingWebhookConfiguration) (*admissionregistrationv1beta1.MutatingWebhookConfiguration, error) {
 	mutatingWebhookConfiguration := existing
 	if mutatingWebhookConfiguration == nil {
 		mutatingWebhookConfiguration = &admissionregistrationv1beta1.MutatingWebhookConfiguration{}
 	}
 	mutatingWebhookConfiguration.Name = resources.MachineControllerMutatingWebhookConfigurationName
 
+	ca, err := data.GetRootCA()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get root ca: %v", err)
+	}
+
 	mutatingWebhookConfiguration.Webhooks = []admissionregistrationv1beta1.Webhook{
 		{
-			Name:          resources.MachineControllerMutatingWebhookConfigurationName,
+			Name:          fmt.Sprintf("%s-machinedeployments", resources.MachineControllerMutatingWebhookConfigurationName),
 			FailurePolicy: failurePolicyPtr(admissionregistrationv1beta1.Fail),
-			Rules: []admissionregistrationv1beta1.RuleWithOperations{{
-				[]admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
-				admissionregistrationv1beta1.Rule{
-					APIGroups:   []string{clusterAPIGroup},
-					APIVersions: []string{clusterAPIVersion},
-					Resources:   []string{"machinedeployments"},
+			Rules: []admissionregistrationv1beta1.RuleWithOperations{
+				{
+					[]admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
+					admissionregistrationv1beta1.Rule{
+						APIGroups:   []string{clusterAPIGroup},
+						APIVersions: []string{clusterAPIVersion},
+						Resources:   []string{"machinedeployments"},
+					},
 				},
 			},
+			ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
+				URL:      strPtr(fmt.Sprintf("https://%s.%s.svc.cluster.local./machinedeployments", resources.MachineControllerWebhookServiceName, c.Status.NamespaceName)),
+				CABundle: certutil.EncodeCertPEM(ca.Cert),
+			},
+		},
+		{
+			Name:          fmt.Sprintf("%s-machines", resources.MachineControllerMutatingWebhookConfigurationName),
+			FailurePolicy: failurePolicyPtr(admissionregistrationv1beta1.Fail),
+			Rules: []admissionregistrationv1beta1.RuleWithOperations{
+				{
+					[]admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
+					admissionregistrationv1beta1.Rule{
+						APIGroups:   []string{clusterAPIGroup},
+						APIVersions: []string{clusterAPIVersion},
+						Resources:   []string{"machines"},
+					},
+				},
 			},
 			ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
-				URL: strPtr(fmt.Sprintf("https://%s.%s.svc.cluster.local", resources.MachineControllerWebhookServiceName, c.Status.NamespaceName)),
+				URL:      strPtr(fmt.Sprintf("https://%s.%s.svc.cluster.local./machines", resources.MachineControllerWebhookServiceName, c.Status.NamespaceName)),
+				CABundle: certutil.EncodeCertPEM(ca.Cert),
 			},
 		},
 	}
