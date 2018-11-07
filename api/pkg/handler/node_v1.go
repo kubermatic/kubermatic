@@ -663,7 +663,7 @@ func createNodeSetForCluster(sshKeyProvider provider.SSHKeyProvider, projectProv
 			nodeset.Spec.Template.Cloud.Hetzner == nil &&
 			nodeset.Spec.Template.Cloud.VSphere == nil &&
 			nodeset.Spec.Template.Cloud.Azure == nil {
-			return nil, errors.NewBadRequest("cannot create node without cloud provider")
+			return nil, errors.NewBadRequest("cannot create node set without cloud provider")
 		}
 
 		//TODO: We need to make the kubelet version configurable but restrict it to master version

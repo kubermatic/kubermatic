@@ -367,18 +367,15 @@ func TestGetNodeForCluster(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			Name:             "scenario 1: get a node that belongs to the given cluster",
-			Body:             ``,
-			ExpectedResponse: `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":null}},"operatingSystem":{},"versions":{"kubelet":""}},"status":{"machineName":"venus","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
-			HTTPStatus:       http.StatusOK,
-			NodeIDToSync:     "venus",
-			ClusterIDToSync:  genDefaultCluster().Name,
-			ProjectIDToSync:  genDefaultProject().Name,
-			ExistingKubermaticObjs: genDefaultKubermaticObjects(
-				/*add a cluster*/
-				genDefaultCluster(),
-			),
-			ExistingAPIUser: genDefaultAPIUser(),
+			Name:                   "scenario 1: get a node that belongs to the given cluster",
+			Body:                   ``,
+			ExpectedResponse:       `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":null}},"operatingSystem":{},"versions":{"kubelet":""}},"status":{"machineName":"venus","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
+			HTTPStatus:             http.StatusOK,
+			NodeIDToSync:           "venus",
+			ClusterIDToSync:        genDefaultCluster().Name,
+			ProjectIDToSync:        genDefaultProject().Name,
+			ExistingKubermaticObjs: genDefaultKubermaticObjects(genDefaultCluster()),
+			ExistingAPIUser:        genDefaultAPIUser(),
 			ExistingNodes: []*corev1.Node{
 				&corev1.Node{
 					ObjectMeta: metav1.ObjectMeta{
@@ -458,20 +455,8 @@ func TestCreateNodeForCluster(t *testing.T) {
 			RewriteClusterNameAndNamespaceName: true,
 			ProjectIDToSync:                    genDefaultProject().Name,
 			ClusterIDToSync:                    genDefaultCluster().Name,
-			ExistingKubermaticObjs: genDefaultKubermaticObjects(
-				/*add a cluster*/
-				func() *kubermaticv1.Cluster {
-					cluster := genDefaultCluster()
-					cluster.Spec = kubermaticv1.ClusterSpec{
-						Cloud: kubermaticv1.CloudSpec{
-							DatacenterName: "us-central1",
-						},
-					}
-					return cluster
-
-				}(),
-			),
-			ExistingAPIUser: genDefaultAPIUser(),
+			ExistingKubermaticObjs:             genDefaultKubermaticObjects(genTestCluster(true)),
+			ExistingAPIUser:                    genDefaultAPIUser(),
 		},
 
 		// scenario 2
@@ -483,31 +468,8 @@ func TestCreateNodeForCluster(t *testing.T) {
 			RewriteClusterNameAndNamespaceName: true,
 			ProjectIDToSync:                    genDefaultProject().Name,
 			ClusterIDToSync:                    genDefaultCluster().Name,
-			ExistingKubermaticObjs: genDefaultKubermaticObjects(
-				/*add a cluster*/
-				func() *kubermaticv1.Cluster {
-					cluster := genDefaultCluster()
-					cluster.Status = kubermaticv1.ClusterStatus{
-						Health: kubermaticv1.ClusterHealth{
-							ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
-								Apiserver:         true,
-								Scheduler:         true,
-								Controller:        false,
-								MachineController: true,
-								Etcd:              true,
-							},
-						},
-					}
-					cluster.Spec = kubermaticv1.ClusterSpec{
-						Cloud: kubermaticv1.CloudSpec{
-							DatacenterName: "us-central1",
-						},
-					}
-					return cluster
-
-				}(),
-			),
-			ExistingAPIUser: genDefaultAPIUser(),
+			ExistingKubermaticObjs:             genDefaultKubermaticObjects(genTestCluster(false)),
+			ExistingAPIUser:                    genDefaultAPIUser(),
 		},
 	}
 
@@ -545,4 +507,101 @@ func TestCreateNodeForCluster(t *testing.T) {
 			compareWithResult(t, res, expectedResponse)
 		})
 	}
+}
+
+func TestCreateNodeSetForCluster(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                   string
+		Body                   string
+		ExpectedResponse       string
+		ProjectID              string
+		ClusterID              string
+		HTTPStatus             int
+		ExistingProject        *kubermaticv1.Project
+		ExistingKubermaticUser *kubermaticv1.User
+		ExistingAPIUser        *apiv1.LegacyUser
+		ExistingCluster        *kubermaticv1.Cluster
+		ExistingKubermaticObjs []runtime.Object
+	}{
+		// scenario 1
+		{
+			Name:                   "scenario 1: create a node set that match the given spec",
+			Body:                   `{"spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}}`,
+			ExpectedResponse:       `{"id":"%s","name":"%s","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":""}},"selector":{"matchLabels":{"name":"%s"}},"strategy":{"type":"RollingUpdate","rollingUpdate":{"maxUnavailable":0,"maxSurge":1}},"minReadySeconds":0,"paused":false},"status":{}}`,
+			HTTPStatus:             http.StatusCreated,
+			ProjectID:              genDefaultProject().Name,
+			ClusterID:              genDefaultCluster().Name,
+			ExistingKubermaticObjs: genDefaultKubermaticObjects(genTestCluster(true)),
+			ExistingAPIUser:        genDefaultAPIUser(),
+		},
+
+		// scenario 2
+		{
+			Name:                   "scenario 2: cluster components are not ready",
+			Body:                   `{"spec":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}`,
+			ExpectedResponse:       `{"error":{"code":503,"message":"Cluster components are not ready yet"}}`,
+			HTTPStatus:             http.StatusServiceUnavailable,
+			ProjectID:              genDefaultProject().Name,
+			ClusterID:              genDefaultCluster().Name,
+			ExistingKubermaticObjs: genDefaultKubermaticObjects(genTestCluster(false)),
+			ExistingAPIUser:        genDefaultAPIUser(),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodesets", tc.ProjectID, tc.ClusterID), strings.NewReader(tc.Body))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			ep, err := createTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			expectedResponse := tc.ExpectedResponse
+
+			// Since NodeSet's ID, name and match labels are automatically generated by the system just rewrite them.
+			ns := &apiv1.NodeSet{}
+			err = json.Unmarshal(res.Body.Bytes(), ns)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tc.HTTPStatus > 399 {
+				expectedResponse = tc.ExpectedResponse
+			} else {
+				expectedResponse = fmt.Sprintf(tc.ExpectedResponse, ns.ID, ns.Name, ns.Name)
+			}
+
+			compareWithResult(t, res, expectedResponse)
+		})
+	}
+}
+
+func genTestCluster(isControllerReady bool) *kubermaticv1.Cluster {
+	cluster := genDefaultCluster()
+	cluster.Status = kubermaticv1.ClusterStatus{
+		Health: kubermaticv1.ClusterHealth{
+			ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
+				Apiserver:         true,
+				Scheduler:         true,
+				Controller:        isControllerReady,
+				MachineController: true,
+				Etcd:              true,
+			},
+		},
+	}
+	cluster.Spec = kubermaticv1.ClusterSpec{
+		Cloud: kubermaticv1.CloudSpec{
+			DatacenterName: "us-central1",
+		},
+	}
+	return cluster
 }
