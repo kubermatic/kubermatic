@@ -16,6 +16,7 @@ import (
 	"k8s.io/client-go/util/cert/triple"
 )
 
+// WebhookDeployment returns the deployment for the machine-controllers MutatignAdmissionWebhook
 func WebhookDeployment(data resources.DeploymentDataProvider, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
 	var dep *appsv1.Deployment
 	if existing != nil {
@@ -234,8 +235,8 @@ func MutatingwebhookConfiguration(c *kubermaticv1.Cluster, data *resources.Templ
 			FailurePolicy: failurePolicyPtr(admissionregistrationv1beta1.Fail),
 			Rules: []admissionregistrationv1beta1.RuleWithOperations{
 				{
-					[]admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
-					admissionregistrationv1beta1.Rule{
+					Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
+					Rule: admissionregistrationv1beta1.Rule{
 						APIGroups:   []string{clusterAPIGroup},
 						APIVersions: []string{clusterAPIVersion},
 						Resources:   []string{"machinedeployments"},
@@ -252,8 +253,8 @@ func MutatingwebhookConfiguration(c *kubermaticv1.Cluster, data *resources.Templ
 			FailurePolicy: failurePolicyPtr(admissionregistrationv1beta1.Fail),
 			Rules: []admissionregistrationv1beta1.RuleWithOperations{
 				{
-					[]admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
-					admissionregistrationv1beta1.Rule{
+					Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
+					Rule: admissionregistrationv1beta1.Rule{
 						APIGroups:   []string{clusterAPIGroup},
 						APIVersions: []string{clusterAPIVersion},
 						Resources:   []string{"machines"},

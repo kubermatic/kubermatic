@@ -476,7 +476,7 @@ func (cc *Controller) userClusterEnsureMutatingWebhookConfigurations(c *kubermat
 
 	mutatingWebhookConfiguration, err = machinecontroller.MutatingwebhookConfiguration(c, data, existing.DeepCopy())
 	if err != nil {
-		return fmt.Errorf("failed to build MutatingWebhookConfigurations %s: %v", err)
+		return fmt.Errorf("failed to build MutatingWebhookConfigurations%v", err)
 	}
 
 	if equality.Semantic.DeepEqual(mutatingWebhookConfiguration, existing) {
