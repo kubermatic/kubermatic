@@ -19,8 +19,8 @@ import (
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
-// MachineDeployment returns a Machine Deployment object for the given Node Set spec.
-func MachineDeployment(c *kubermaticv1.Cluster, ns *apiv1.NodeSet, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.MachineDeployment, error) {
+// Deployment returns a Machine Deployment object for the given Node Set spec.
+func Deployment(c *kubermaticv1.Cluster, ns *apiv1.NodeSet, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.MachineDeployment, error) {
 	md := clusterv1alpha1.MachineDeployment{}
 
 	md.Name = fmt.Sprintf("machinedeployment-%s", ns.Name)
@@ -52,8 +52,8 @@ func MachineDeployment(c *kubermaticv1.Cluster, ns *apiv1.NodeSet, dc provider.D
 	if ns.Spec.MinReadySeconds != nil {
 		md.Spec.MinReadySeconds = ns.Spec.MinReadySeconds
 	} else {
-		var defMinReadySec int32 = 0
-		md.Spec.MinReadySeconds = &defMinReadySec
+		var defaultMinReadySeconds int32
+		md.Spec.MinReadySeconds = &defaultMinReadySeconds
 	}
 
 	if ns.Spec.Paused != nil {

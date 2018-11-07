@@ -589,8 +589,8 @@ func decodeGetNodeForCluster(c context.Context, r *http.Request) (interface{}, e
 	return req, nil
 }
 
-// CreateMachineDeploymentReq defines HTTP request for createMachineDeployment
-// swagger:parameters createMachineDeployment
+// CreateNodeSetReq defines HTTP request for createMachineDeployment
+// swagger:parameters createNodeSetForCluster
 type CreateNodeSetReq struct {
 	GetClusterReq
 	// in: body
@@ -691,7 +691,7 @@ func createNodeSetForCluster(sshKeyProvider provider.SSHKeyProvider, projectProv
 		}
 
 		// Create Machine Deployment resource.
-		md, err := machineresource.MachineDeployment(cluster, nodeset, dc, keys)
+		md, err := machineresource.Deployment(cluster, nodeset, dc, keys)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
 		}
