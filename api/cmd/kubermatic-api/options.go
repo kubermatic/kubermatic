@@ -20,12 +20,13 @@ type serverRunOptions struct {
 	updatesFile     string
 
 	// OIDC configuration
-	oidcIssuerURL            string
-	oidcClientID             string
-	oidcClientSecret         string
-	oidcRedirectURI          string
-	oidcSkipTLSVerify        bool
-	oidcOfflineAccessAsScope bool
+	oidcURL                        string
+	oidcAuthenticatorClientID      string
+	oidcIssuerClientID             string
+	oidcIssuerClientSecret         string
+	oidcIssuerRedirectURI          string
+	oidcSkipTLSVerify              bool
+	oidcIssuerOfflineAccessAsScope bool
 
 	featureGates features.FeatureGate
 }
@@ -43,12 +44,13 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
 	flag.StringVar(&s.versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&s.updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
-	flag.StringVar(&s.oidcIssuerURL, "oidc-issuer-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
+	flag.StringVar(&s.oidcURL, "oidc-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.BoolVar(&s.oidcSkipTLSVerify, "oidc-skip-tls-verify", false, "Skip TLS verification for the token issuer")
-	flag.StringVar(&s.oidcClientID, "oidc-client-id", "", "OpenID client ID")
-	flag.StringVar(&s.oidcClientSecret, "oidc-client-secret", "", "OpenID client secret")
-	flag.StringVar(&s.oidcRedirectURI, "oidc-redirect-uri", "", "Callback URL for OpenID responses.")
-	flag.BoolVar(&s.oidcOfflineAccessAsScope, "oidc-offline-access-as-scope", true, "Set it to false if OIDC provider requires to set \"access_type=offline\" query param when accessing the refresh token")
+	flag.StringVar(&s.oidcAuthenticatorClientID, "oidc-authenticator-client-id", "", "Authenticator client ID")
+	flag.StringVar(&s.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
+	flag.StringVar(&s.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
+	flag.StringVar(&s.oidcIssuerRedirectURI, "oidc-issuer-redirect-uri", "", "Callback URL for OpenID responses.")
+	flag.BoolVar(&s.oidcIssuerOfflineAccessAsScope, "oidc-issuer-offline-access-as-scope", true, "Set it to false if OIDC provider requires to set \"access_type=offline\" query param when accessing the refresh token")
 	flag.StringVar(&rawFeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for various features.")
 	flag.Parse()
 
@@ -62,10 +64,10 @@ func newServerRunOptions() (serverRunOptions, error) {
 
 func (o serverRunOptions) validate() error {
 	if o.featureGates.Enabled(OIDCKubeCfgEndpoint) {
-		if len(o.oidcClientSecret) == 0 {
+		if len(o.oidcIssuerClientSecret) == 0 {
 			return fmt.Errorf("%s feature is enabled but \"oidc-client-secret\" flag was not specified", OIDCKubeCfgEndpoint)
 		}
-		if len(o.oidcRedirectURI) == 0 {
+		if len(o.oidcIssuerRedirectURI) == 0 {
 			return fmt.Errorf("%s feature is enabled but \"oidc-redirect-uri\" flag was not specified", OIDCKubeCfgEndpoint)
 		}
 	}
