@@ -12,18 +12,18 @@ import (
 )
 
 // Returns a matrix of (version x operating system)
-func getAWSScenarios() []testScenario {
+func getAzureScenarios() []testScenario {
 	var scenarios []testScenario
 	for _, v := range supportedVersions {
 		// Ubuntu
-		scenarios = append(scenarios, &awsScenario{
+		scenarios = append(scenarios, &azureScenario{
 			version: v,
 			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
 				Ubuntu: &kubermaticapiv1.UbuntuSpec{},
 			},
 		})
 		// CoreOS
-		scenarios = append(scenarios, &awsScenario{
+		scenarios = append(scenarios, &azureScenario{
 			version: v,
 			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
 				ContainerLinux: &kubermaticapiv1.ContainerLinuxSpec{
@@ -34,26 +34,26 @@ func getAWSScenarios() []testScenario {
 		})
 		// CentOS
 		//TODO: Fix
-		//scenarios = append(scenarios, &awsScenario{
+		//scenarios = append(scenarios, &azureScenario{
 		//	version: v,
-		//	nodeOsSpec: kubermaticapiv2.OperatingSystemSpec{
-		//		CentOS: &kubermaticapiv2.CentOSSpec{},
+		//	nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
+		//		CentOS: &kubermaticapiv1.CentOSSpec{},
 		//	},
 		//})
 	}
 	return scenarios
 }
 
-type awsScenario struct {
+type azureScenario struct {
 	version    *semver.Version
 	nodeOsSpec kubermaticapiv1.OperatingSystemSpec
 }
 
-func (s *awsScenario) Name() string {
-	return fmt.Sprintf("aws-%s-%s", getOSNameFromSpec(s.nodeOsSpec), s.version.String())
+func (s *azureScenario) Name() string {
+	return fmt.Sprintf("azure-%s-%s", getOSNameFromSpec(s.nodeOsSpec), s.version.String())
 }
 
-func (s *awsScenario) Cluster(secrets secrets) *v1.Cluster {
+func (s *azureScenario) Cluster(secrets secrets) *v1.Cluster {
 	return &v1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{},
 		Spec: v1.ClusterSpec{
@@ -69,27 +69,27 @@ func (s *awsScenario) Cluster(secrets secrets) *v1.Cluster {
 				DNSDomain: "cluster.local",
 			},
 			Cloud: v1.CloudSpec{
-				DatacenterName: "aws-eu-central-1a",
-				AWS: &v1.AWSCloudSpec{
-					SecretAccessKey: secrets.AWS.SecretAccessKey,
-					AccessKeyID:     secrets.AWS.AccessKeyID,
+				DatacenterName: "azure-westeurope",
+				Azure: &v1.AzureCloudSpec{
+					ClientID:       secrets.Azure.ClientID,
+					ClientSecret:   secrets.Azure.ClientSecret,
+					SubscriptionID: secrets.Azure.SubscriptionID,
+					TenantID:       secrets.Azure.TenantID,
 				},
 			},
 		},
 	}
 }
 
-func (s *awsScenario) Nodes(num int) []*kubermaticapiv1.Node {
+func (s *azureScenario) Nodes(num int) []*kubermaticapiv1.Node {
 	var nodes []*kubermaticapiv1.Node
 	for i := 0; i < num; i++ {
 		node := &kubermaticapiv1.Node{
 			ObjectMeta: kubermaticapiv1.ObjectMeta{},
 			Spec: kubermaticapiv1.NodeSpec{
 				Cloud: kubermaticapiv1.NodeCloudSpec{
-					AWS: &kubermaticapiv1.AWSNodeSpec{
-						InstanceType: "t2.medium",
-						VolumeType:   "gp2",
-						VolumeSize:   100,
+					Azure: &kubermaticapiv1.AzureNodeSpec{
+						Size: "Standard_F1",
 					},
 				},
 				Versions: kubermaticapiv1.NodeVersionInfo{

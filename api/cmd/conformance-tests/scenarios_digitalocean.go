@@ -70,7 +70,7 @@ func (s *digitaloceanScenario) Cluster(secrets secrets) *v1.Cluster {
 				DNSDomain: "cluster.local",
 			},
 			Cloud: v1.CloudSpec{
-				DatacenterName: "do-fra1",
+				DatacenterName: "do-ams3",
 				Digitalocean: &v1.DigitaloceanCloudSpec{
 					Token: secrets.Digitalocean.Token,
 				},
