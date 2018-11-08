@@ -466,7 +466,7 @@ func (c *Controller) ensureCronJobSecret(cluster *kubermaticv1.Cluster) error {
 }
 
 func (c *Controller) ensureCronJob(cluster *kubermaticv1.Cluster) error {
-	cronJob, err := c.cronJob(cluster)
+	cronJob, err := c.cronJob(cluster, nil)
 	if err != nil {
 		return err
 	}
@@ -486,6 +486,10 @@ func (c *Controller) ensureCronJob(cluster *kubermaticv1.Cluster) error {
 		return nil
 	}
 
+	cronJob, err = c.cronJob(cluster, existing)
+	if err != nil {
+		return err
+	}
 	if equality.Semantic.DeepEqual(existing.Spec, cronJob.Spec) {
 		return nil
 	}
@@ -537,14 +541,14 @@ func (c *Controller) cleanupJob(cluster *kubermaticv1.Cluster) *v1.Job {
 	return job
 }
 
-func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJob, error) {
-	// Name and Namespace
-	cronJob := batchv1beta1.CronJob{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", cronJobPrefix, cluster.Name),
-			Namespace: metav1.NamespaceSystem,
-		},
+func (c *Controller) cronJob(cluster *kubermaticv1.Cluster, existing *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
+	if existing == nil {
+		existing = &batchv1beta1.CronJob{}
 	}
+	cronJob := existing
+	// Name and Namespace
+	cronJob.Name = fmt.Sprintf("%s-%s", cronJobPrefix, cluster.Name)
+	cronJob.Namespace = metav1.NamespaceSystem
 
 	// OwnerRef
 	gv := kubermaticv1.SchemeGroupVersion
@@ -595,6 +599,10 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJ
 		Name:  clusterEnvVarKey,
 		Value: cluster.Name,
 	})
+	storeContainer.ImagePullPolicy = corev1.PullIfNotPresent
+	storeContainer.TerminationMessagePath = corev1.TerminationMessagePathDefault
+	storeContainer.TerminationMessagePolicy = corev1.TerminationMessageReadFile
+
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{*storeContainer}
 	cronJob.Spec.JobTemplate.Spec.Template.Spec.Volumes = []corev1.Volume{
@@ -615,7 +623,7 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster) (*batchv1beta1.CronJ
 		},
 	}
 
-	return &cronJob, nil
+	return cronJob, nil
 }
 
 func boolPtr(b bool) *bool {
