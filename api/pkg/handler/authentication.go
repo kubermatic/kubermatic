@@ -3,9 +3,9 @@ package handler
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/coreos/go-oidc"
@@ -15,7 +15,7 @@ import (
 	"golang.org/x/oauth2"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/util/hash"
 )
 
@@ -26,11 +26,73 @@ const (
 	AdminRoleKey = "kubermatic:admin"
 )
 
-// Authenticator  is responsible for extracting and verifying
+// OIDCAuthenticator  is responsible for extracting and verifying
 // data to authenticate
-type Authenticator interface {
+type OIDCAuthenticator interface {
 	Verifier() endpoint.Middleware
 	Extractor() transporthttp.RequestFunc
+}
+
+// OIDCToken represents the credentials used to authorize
+// the requests to access protected resources on the OAuth 2.0
+// provider's backend.
+type OIDCToken struct {
+	// AccessToken is the token that authorizes and authenticates
+	// the requests.
+	AccessToken string
+
+	// RefreshToken is a token that's used by the application
+	// (as opposed to the user) to refresh the access token
+	// if it expires.
+	RefreshToken string
+
+	// Expiry is the optional expiration time of the access token.
+	//
+	// If zero, TokenSource implementations will reuse the same
+	// token forever and RefreshToken or equivalent
+	// mechanisms for that TokenSource will not be used.
+	Expiry time.Time
+
+	// IDToken is the token that contains claims about authenticated user
+	//
+	// Users should use OIDCVerifier.Verify method to verify and extract claim from the token
+	IDToken string
+}
+
+// OIDCIssuerVerifier combines OIDCIssuer and OIDCVerifier
+type OIDCIssuerVerifier interface {
+	OIDCIssuer
+	OIDCVerifier
+}
+
+// OIDCIssuer exposes methods for getting OIDC tokens
+type OIDCIssuer interface {
+	// AuthCodeURL returns a URL to OpenID provider's consent page
+	// that asks for permissions for the required scopes explicitly.
+	//
+	// state is a token to protect the user from CSRF attacks. You must
+	// always provide a non-zero string and validate that it matches the
+	// the state query parameter on your redirect callback.
+	// See http://tools.ietf.org/html/rfc6749#section-10.12 for more info.
+	AuthCodeURL(state string, offlineAsScope bool, scopes ...string) string
+
+	// Exchange converts an authorization code into a token.
+	Exchange(ctx context.Context, code string) (OIDCToken, error)
+}
+
+// OIDCVerifier knows how to verify OIDC token
+type OIDCVerifier interface {
+	// Verify parses a raw ID Token, verifies it's been signed by the provider, preforms
+	// any additional checks depending on the Config, and returns the payload as OIDCClaims.
+	Verify(ctx context.Context, token string) (OIDCClaims, error)
+}
+
+// OIDCClaims holds various claims extracted from the id_token
+type OIDCClaims struct {
+	Name    string
+	Email   string
+	Subject string
+	Groups  []string
 }
 
 // TokenExtractor is an interface token extraction
@@ -38,15 +100,20 @@ type TokenExtractor interface {
 	Extract(r *http.Request) string
 }
 
-type openIDAuthenticator struct {
+// OpenIDAuthenticator implements OIDCIssuerVerifier and OIDCAuthenticator
+type OpenIDAuthenticator struct {
 	issuer         string
 	tokenExtractor TokenExtractor
 	clientID       string
+	clientSecret   string
+	redirectURI    string
 	verifier       *oidc.IDTokenVerifier
+	provider       *oidc.Provider
+	httpClient     *http.Client
 }
 
 // NewOpenIDAuthenticator returns an authentication middleware which authenticates against an openID server
-func NewOpenIDAuthenticator(issuer, clientID string, extractor TokenExtractor, insecureSkipVerify bool) (Authenticator, error) {
+func NewOpenIDAuthenticator(issuer, clientID, clientSecret, redirectURI string, extractor TokenExtractor, insecureSkipVerify bool) (*OpenIDAuthenticator, error) {
 	ctx := context.Background()
 	tr := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
@@ -68,100 +135,163 @@ func NewOpenIDAuthenticator(issuer, clientID string, extractor TokenExtractor, i
 		return nil, err
 	}
 
-	return openIDAuthenticator{
+	return &OpenIDAuthenticator{
 		issuer:         issuer,
 		tokenExtractor: extractor,
 		clientID:       clientID,
+		clientSecret:   clientSecret,
+		redirectURI:    redirectURI,
 		verifier:       p.Verifier(&oidc.Config{ClientID: clientID}),
+		provider:       p,
+		httpClient:     client,
 	}, nil
 }
 
-func (o openIDAuthenticator) Verifier() endpoint.Middleware {
+// Verifier is a convenient middleware that extracts the ID Token from the request,
+// verifies it's been signed by the provider and creates apiv1.LegacyUser from it
+func (o *OpenIDAuthenticator) Verifier() endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			t := ctx.Value(rawToken)
 			token, ok := t.(string)
 			if !ok || token == "" {
-				return nil, errors.NewNotAuthorized()
+				return nil, k8cerrors.NewNotAuthorized()
 			}
 
 			verifyCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 			defer cancel()
-			idToken, err := o.verifier.Verify(verifyCtx, token)
+			claims, err := o.Verify(verifyCtx, token)
 			if err != nil {
 				glog.Error(err)
-				return nil, errors.NewNotAuthorized()
+				return nil, k8cerrors.NewNotAuthorized()
 			}
 
-			// Verified
-			claims := map[string]interface{}{}
-			err = idToken.Claims(&claims)
+			if claims.Subject == "" {
+				glog.Error(err)
+				return nil, k8cerrors.NewNotAuthorized()
+			}
+
+			id, err := hash.GetUserID(claims.Subject)
 			if err != nil {
 				glog.Error(err)
-				return nil, errors.NewNotAuthorized()
-			}
-
-			var (
-				name  string
-				email string
-			)
-			if cn, found := claims["name"]; found {
-				name = cn.(string)
-			}
-			if ce, found := claims["email"]; found {
-				email = ce.(string)
-			}
-
-			rawID := claims["sub"].(string)
-			if rawID == "" {
-				glog.Error(err)
-				return nil, errors.NewNotAuthorized()
-			}
-
-			id, err := hash.GetUserID(rawID)
-			if err != nil {
-				glog.Error(err)
-				return nil, errors.NewNotAuthorized()
+				return nil, k8cerrors.NewNotAuthorized()
 			}
 
 			user := apiv1.LegacyUser{
 				ID:    id,
-				Name:  name,
-				Email: email,
+				Name:  claims.Name,
+				Email: claims.Email,
 				Roles: map[string]struct{}{},
 			}
 
 			if user.ID == "" {
 				glog.Error(err)
-				return nil, errors.NewNotAuthorized()
+				return nil, k8cerrors.NewNotAuthorized()
 			}
 
 			roles := []string{UserRoleKey}
-			claimGroups, ok := claims["groups"].([]interface{})
-			if ok && claimGroups != nil {
-				for _, g := range claimGroups {
-					s, ok := g.(string)
-					if ok && s != "" && s != UserRoleKey {
-						roles = append(roles, s)
-					}
+			for _, group := range claims.Groups {
+				if group != "" && group != UserRoleKey {
+					roles = append(roles, group)
 				}
 			}
-
 			for _, r := range roles {
 				user.Roles[r] = struct{}{}
 			}
 
-			glog.V(6).Infof("Authenticated user: %s (Roles: %s)", user.ID, strings.Join(roles, ","))
 			return next(context.WithValue(ctx, apiUserContextKey, user), request)
 		}
 	}
 }
 
-func (o openIDAuthenticator) Extractor() transporthttp.RequestFunc {
+// Extractor knows how to extract the ID token from the request
+func (o *OpenIDAuthenticator) Extractor() transporthttp.RequestFunc {
 	return func(ctx context.Context, r *http.Request) context.Context {
 		token := o.tokenExtractor.Extract(r)
-		glog.V(6).Infof("Extracted oauth token: %s", token)
 		return context.WithValue(ctx, rawToken, token)
+	}
+}
+
+// Verify parses a raw ID Token, verifies it's been signed by the provider, preforms
+// any additional checks depending on the Config, and returns the payload as OIDCClaims.
+func (o *OpenIDAuthenticator) Verify(ctx context.Context, token string) (OIDCClaims, error) {
+	if token == "" {
+		return OIDCClaims{}, errors.New("token cannot be empty")
+	}
+
+	idToken, err := o.verifier.Verify(ctx, token)
+	if err != nil {
+		return OIDCClaims{}, err
+	}
+
+	claims := map[string]interface{}{}
+	err = idToken.Claims(&claims)
+	if err != nil {
+		return OIDCClaims{}, err
+	}
+
+	oidcClaims := OIDCClaims{}
+	if rawName, found := claims["name"]; found {
+		oidcClaims.Name = rawName.(string)
+	}
+	if rawEmail, found := claims["email"]; found {
+		oidcClaims.Email = rawEmail.(string)
+	}
+	if rawSub, found := claims["sub"]; found {
+		oidcClaims.Subject = rawSub.(string)
+	}
+	if rawGroups, found := claims["groups"]; found {
+		for _, rawGroup := range rawGroups.([]interface{}) {
+			if group, ok := rawGroup.(string); ok {
+				oidcClaims.Groups = append(oidcClaims.Groups, group)
+			}
+		}
+	}
+
+	return oidcClaims, nil
+}
+
+// AuthCodeURL returns a URL to OpenID provider's consent page
+// that asks for permissions for the required scopes explicitly.
+//
+// State is a token to protect the user from CSRF attacks. You must
+// always provide a non-zero string and validate that it matches the
+// the state query parameter on your redirect callback.
+// See http://tools.ietf.org/html/rfc6749#section-10.12 for more info.
+func (o *OpenIDAuthenticator) AuthCodeURL(state string, offlineAsScope bool, scopes ...string) string {
+	oauth2Config := o.oauth2Config(scopes...)
+	options := oauth2.AccessTypeOnline
+	if !offlineAsScope {
+		options = oauth2.AccessTypeOffline
+	}
+	return oauth2Config.AuthCodeURL(state, options)
+}
+
+// Exchange converts an authorization code into a token.
+func (o *OpenIDAuthenticator) Exchange(ctx context.Context, code string) (OIDCToken, error) {
+	clientCtx := oidc.ClientContext(ctx, o.httpClient)
+	oauth2Config := o.oauth2Config()
+
+	tokens, err := oauth2Config.Exchange(clientCtx, code)
+	if err != nil {
+		return OIDCToken{}, err
+	}
+
+	oidcToken := OIDCToken{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken, Expiry: tokens.Expiry}
+	if rawIDToken, ok := tokens.Extra("id_token").(string); ok {
+		oidcToken.IDToken = rawIDToken
+	}
+
+	return oidcToken, nil
+}
+
+func (o *OpenIDAuthenticator) oauth2Config(scopes ...string) *oauth2.Config {
+	return &oauth2.Config{
+		ClientID:     o.clientID,
+		ClientSecret: o.clientSecret,
+		Endpoint:     o.provider.Endpoint(),
+		Scopes:       scopes,
+		RedirectURL:  o.redirectURI,
 	}
 }
 
@@ -216,31 +346,4 @@ func (c combinedExtractor) Extract(r *http.Request) string {
 		}
 	}
 	return ""
-}
-
-type testAuthenticator struct {
-	user apiv1.LegacyUser
-}
-
-// NewFakeAuthenticator returns an testing authentication middleware
-func NewFakeAuthenticator(user apiv1.LegacyUser) Authenticator {
-	return testAuthenticator{user: user}
-}
-
-func (o testAuthenticator) Verifier() endpoint.Middleware {
-	return func(next endpoint.Endpoint) endpoint.Endpoint {
-		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			_, ok := ctx.Value(apiUserContextKey).(apiv1.LegacyUser)
-			if !ok {
-				return nil, errors.NewNotAuthorized()
-			}
-			return next(ctx, request)
-		}
-	}
-}
-
-func (o testAuthenticator) Extractor() transporthttp.RequestFunc {
-	return func(ctx context.Context, _ *http.Request) context.Context {
-		return context.WithValue(ctx, apiUserContextKey, o.user)
-	}
 }

@@ -21,8 +21,8 @@ import (
 )
 
 // GetAPIV1OperatingSystemSpec returns the api compatible OperatingSystemSpec for the given machine
-func GetAPIV1OperatingSystemSpec(machine *clusterv1alpha1.Machine) (*apiv1.OperatingSystemSpec, error) {
-	decodedProviderConfig, err := providerconfig.GetConfig(machine.Spec.ProviderConfig)
+func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.OperatingSystemSpec, error) {
+	decodedProviderConfig, err := providerconfig.GetConfig(machineSpec.ProviderConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get machine providerConfig: %v", err)
 	}
@@ -59,8 +59,8 @@ func GetAPIV1OperatingSystemSpec(machine *clusterv1alpha1.Machine) (*apiv1.Opera
 }
 
 // GetAPIV2NodeCloudSpec returns the api compatible NodeCloudSpec for the given machine
-func GetAPIV2NodeCloudSpec(machine *clusterv1alpha1.Machine) (*apiv1.NodeCloudSpec, error) {
-	decodedProviderConfig, err := providerconfig.GetConfig(machine.Spec.ProviderConfig)
+func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.NodeCloudSpec, error) {
+	decodedProviderConfig, err := providerconfig.GetConfig(machineSpec.ProviderConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get machine providerConfig: %v", err)
 	}

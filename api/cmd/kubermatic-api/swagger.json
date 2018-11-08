@@ -70,6 +70,48 @@
         }
       }
     },
+    "/api/v1/kubeconfig": {
+      "get": {
+        "description": "Starts OIDC flow and generates kubeconfig, the generated config\ncontains OIDC provider authentication info",
+        "produces": [
+          "application/json"
+        ],
+        "operationId": "createOIDCKubeconfig",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "ClusterID",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "ProjectID",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "UserID",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "Datacenter",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Kubeconfig",
+            "schema": {
+              "$ref": "#/definitions/Kubeconfig"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/me": {
       "get": {
         "produces": [
@@ -605,6 +647,68 @@
             "description": "Kubeconfig",
             "schema": {
               "$ref": "#/definitions/Kubeconfig"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments": {
+      "post": {
+        "description": "Creates a node deployment that will belong to the given cluster",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "createNodeDeploymentForCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/NodeDeployment"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "NodeDeployment",
+            "schema": {
+              "$ref": "#/definitions/NodeDeployment"
             }
           },
           "401": {
@@ -3061,6 +3165,24 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "IntOrString": {
+      "description": "+protobuf=true\n+protobuf.options.(gogoproto.goproto_stringer)=false\n+k8s:openapi-gen=true",
+      "type": "object",
+      "title": "IntOrString is a type that can hold an int32 or a string.  When used in\nJSON or YAML marshalling and unmarshalling, it produces or consumes the\ninner type.  This allows you to have, for example, a JSON field that can\naccept a name or number.\nTODO: Rename to Int32OrString",
+      "properties": {
+        "IntVal": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "StrVal": {
+          "type": "string"
+        },
+        "Type": {
+          "$ref": "#/definitions/Type"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/util/intstr"
+    },
     "Kubeconfig": {
       "description": "Kubeconfig is a clusters kubeconfig",
       "type": "object",
@@ -3117,6 +3239,57 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "LabelSelector": {
+      "description": "A label selector is a label query over a set of resources. The result of matchLabels and\nmatchExpressions are ANDed. An empty label selector matches all objects. A null\nlabel selector matches no objects.",
+      "type": "object",
+      "properties": {
+        "matchExpressions": {
+          "description": "matchExpressions is a list of label selector requirements. The requirements are ANDed.\n+optional",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LabelSelectorRequirement"
+          },
+          "x-go-name": "MatchExpressions"
+        },
+        "matchLabels": {
+          "description": "matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels\nmap is equivalent to an element of matchExpressions, whose key field is \"key\", the\noperator is \"In\", and the values array contains only \"value\". The requirements are ANDed.\n+optional",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "MatchLabels"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
+    },
+    "LabelSelectorOperator": {
+      "type": "string",
+      "title": "A label selector operator is the set of operators that can be used in a selector requirement.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
+    },
+    "LabelSelectorRequirement": {
+      "description": "A label selector requirement is a selector that contains values, a key, and an operator that\nrelates the key and values.",
+      "type": "object",
+      "properties": {
+        "key": {
+          "description": "key is the label key that the selector applies to.\n+patchMergeKey=key\n+patchStrategy=merge",
+          "type": "string",
+          "x-go-name": "Key"
+        },
+        "operator": {
+          "$ref": "#/definitions/LabelSelectorOperator"
+        },
+        "values": {
+          "description": "values is an array of string values. If the operator is In or NotIn,\nthe values array must be non-empty. If the operator is Exists or DoesNotExist,\nthe values array must be empty. This array is replaced during a strategic\nmerge patch.\n+optional",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Values"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
     },
     "LegacyObjectMeta": {
       "description": "Deprecated: LegacyObjectMeta is deprecated use ObjectMeta instead.",
@@ -3175,6 +3348,66 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "MachineDeploymentStatus": {
+      "description": "MachineDeploymentStatus defines the observed state of MachineDeployment",
+      "type": "object",
+      "properties": {
+        "availableReplicas": {
+          "description": "Total number of available machines (ready for at least minReadySeconds)\ntargeted by this deployment.\n+optional",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "AvailableReplicas"
+        },
+        "observedGeneration": {
+          "description": "The generation observed by the deployment controller.\n+optional",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ObservedGeneration"
+        },
+        "readyReplicas": {
+          "description": "Total number of ready machines targeted by this deployment.\n+optional",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "ReadyReplicas"
+        },
+        "replicas": {
+          "description": "Total number of non-terminated machines targeted by this deployment\n(their labels match the selector).\n+optional",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "Replicas"
+        },
+        "unavailableReplicas": {
+          "description": "Total number of unavailable machines targeted by this deployment.\nThis is the total number of machines that are still required for\nthe deployment to have 100% available capacity. They may either\nbe machines that are running but not yet available or machines\nthat still have not been created.\n+optional",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "UnavailableReplicas"
+        },
+        "updatedReplicas": {
+          "description": "Total number of non-terminated machines targeted by this deployment\nthat have the desired template spec.\n+optional",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "UpdatedReplicas"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+    },
+    "MachineDeploymentStrategy": {
+      "description": "MachineDeploymentStrategy describes how to replace existing machines\nwith new ones.",
+      "type": "object",
+      "properties": {
+        "rollingUpdate": {
+          "$ref": "#/definitions/MachineRollingUpdateDeployment"
+        },
+        "type": {
+          "$ref": "#/definitions/MachineDeploymentStrategyType"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+    },
+    "MachineDeploymentStrategyType": {
+      "type": "string",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
+    },
     "MachineNetworkingConfig": {
       "type": "object",
       "title": "MachineNetworkingConfig specifies the networking parameters used for IPAM.",
@@ -3196,6 +3429,19 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "MachineRollingUpdateDeployment": {
+      "type": "object",
+      "title": "Spec to control the desired behavior of rolling update.",
+      "properties": {
+        "maxSurge": {
+          "$ref": "#/definitions/IntOrString"
+        },
+        "maxUnavailable": {
+          "$ref": "#/definitions/IntOrString"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
     },
     "MasterVersion": {
       "description": "MasterVersion describes a version of the master components",
@@ -3351,6 +3597,85 @@
         },
         "vsphere": {
           "$ref": "#/definitions/VSphereNodeSpec"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "NodeDeployment": {
+      "description": "NodeDeployment represents a set of worker nodes that is part of a cluster",
+      "type": "object",
+      "properties": {
+        "creationTimestamp": {
+          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreationTimestamp"
+        },
+        "deletionTimestamp": {
+          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "DeletionTimestamp"
+        },
+        "id": {
+          "description": "ID unique value that identifies the resource generated by the server",
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "description": "Name represents human readable name for the resource",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/NodeDeploymentSpec"
+        },
+        "status": {
+          "$ref": "#/definitions/MachineDeploymentStatus"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "NodeDeploymentSpec": {
+      "description": "NodeDeploymentSpec node deployment specification",
+      "type": "object",
+      "required": [
+        "replicas",
+        "template"
+      ],
+      "properties": {
+        "minReadySeconds": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MinReadySeconds"
+        },
+        "paused": {
+          "type": "boolean",
+          "x-go-name": "Paused"
+        },
+        "progressDeadlineSeconds": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "ProgressDeadlineSeconds"
+        },
+        "replicas": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "Replicas"
+        },
+        "revisionHistoryLimit": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "RevisionHistoryLimit"
+        },
+        "selector": {
+          "$ref": "#/definitions/LabelSelector"
+        },
+        "strategy": {
+          "$ref": "#/definitions/MachineDeploymentStrategy"
+        },
+        "template": {
+          "$ref": "#/definitions/NodeSpec"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -3936,6 +4261,12 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "Type": {
+      "type": "integer",
+      "format": "int64",
+      "title": "Type represents the stored type of IntOrString.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/util/intstr"
     },
     "UbuntuSpec": {
       "description": "UbuntuSpec ubuntu specific settings",
