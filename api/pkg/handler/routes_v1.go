@@ -172,6 +172,12 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.revokeClusterAdminToken())
 
 	//
+	// Defines a set of HTTP endpoint for node deployments that belong to a cluster
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments").
+		Handler(r.createNodeDeploymentForCluster())
+
+	//
 	// Defines a set of HTTP endpoints for various cloud providers
 	// Note that these endpoints don't require credentials as opposed to the ones defined under /providers/*
 	mux.Methods(http.MethodGet).
@@ -1437,6 +1443,35 @@ func (r Routing) listVSphereNetworksNoCredentials() http.Handler {
 		)(vsphereNetworksNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
 		decodeVSphereNetworksNoCredentialsReq,
 		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments project createNodeDeploymentForCluster
+//
+//     Creates a node deployment that will belong to the given cluster
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: NodeDeployment
+//       401: empty
+//       403: empty
+func (r Routing) createNodeDeploymentForCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.oidcAuthenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+			r.userInfoMiddleware(),
+		)(createNodeDeploymentForCluster(r.sshKeyProvider, r.projectProvider, r.datacenters)),
+		decodeCreateNodeDeploymentForCluster,
+		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
 	)
 }

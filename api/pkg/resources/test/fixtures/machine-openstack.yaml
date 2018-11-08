@@ -1,6 +1,6 @@
 metadata:
   creationTimestamp: null
-  name: machine-openstackcluster-1a2b3c4d5e-te5s7
+  generateName: machine-kubermatic-openstackcluster-1a2b3c4d5e-
   namespace: kube-system
 spec:
   metadata:
