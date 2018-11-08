@@ -51,6 +51,11 @@ func ClusterRole(_ resources.ClusterRoleDataProvider, existing *rbacv1.ClusterRo
 		},
 		{
 			APIGroups: []string{""},
+			Resources: []string{"persistentvolumes"},
+			Verbs:     []string{"list", "get", "watch"},
+		},
+		{
+			APIGroups: []string{""},
 			Resources: []string{"pods/eviction"},
 			Verbs:     []string{"create"},
 		},

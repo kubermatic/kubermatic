@@ -17,6 +17,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -45,6 +46,8 @@ const (
 	SchedulerDeploymentName = "scheduler"
 	//MachineControllerDeploymentName is the name for the machine-controller deployment
 	MachineControllerDeploymentName = "machine-controller"
+	// MachineControllerWebhookDeploymentName is the name for the machine-controller webhook deployment
+	MachineControllerWebhookDeploymentName = "machine-controller-webhook"
 	//MetricsServerDeploymentName is the name for the metrics-server deployment
 	MetricsServerDeploymentName = "metrics-server"
 	//OpenVPNServerDeploymentName is the name for the openvpn server deployment
@@ -81,6 +84,8 @@ const (
 	EtcdDefragCronJobName = "etcd-defragger"
 	//OpenVPNServerServiceName is the name for the openvpn server service
 	OpenVPNServerServiceName = "openvpn-server"
+	//MachineControllerWebhookServiceName is the name of the machine-controller webhook service
+	MachineControllerWebhookServiceName = "machine-controller-webhook"
 
 	// MetricsServerAPIServiceName is the name for the metrics-server APIService
 	MetricsServerAPIServiceName = "v1beta1.metrics.k8s.io"
@@ -99,6 +104,13 @@ const (
 	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
 	//MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the machinecontroller
 	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
+	//MachineControllerWebhookServingCertSecretName is the name for the secret containing the serving cert for the
+	//machine-controller webhook
+	MachineControllerWebhookServingCertSecretName = "machinecontroller-webhook-serving-cert"
+	//MachineControllerWebhookServingCertCertKeyName is the name for the key that contains the cert
+	MachineControllerWebhookServingCertCertKeyName = "cert.pem"
+	//MachineControllerWebhookServingCertKeyKeyName is the name for the key that contains the key
+	MachineControllerWebhookServingCertKeyKeyName = "key.pem"
 	//IPAMControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the ipam controller
 	IPAMControllerKubeconfigSecretName = "ipamcontroller-kubeconfig"
 	//PrometheusApiserverClientCertificateSecretName is the name for the secret containing the client certificate used by prometheus to access the apiserver
@@ -254,6 +266,10 @@ const (
 	MachineDeploymentCRDName = "machinedeployments.cluster.k8s.io"
 	// ClusterCRDName defines the CRD name for cluster objects
 	ClusterCRDName = "clusters.cluster.k8s.io"
+
+	// MachineControllerMutatingWebhookConfigurationName is the name of the machine-controllers mutating webhook
+	// configuration
+	MachineControllerMutatingWebhookConfigurationName = "machine-controller.kubermatic.io"
 )
 
 const (
@@ -372,6 +388,9 @@ type CRDCreateor = func(version semver.Version, existing *apiextensionsv1beta1.C
 
 // APIServiceCreator defines an interface to create/update APIService's
 type APIServiceCreator = func(existing *apiregistrationv1.APIService) (*apiregistrationv1.APIService, error)
+
+// MutatingWebhookConfigurationCreator defines an interface to create/update MutatingWebhookConfigurations
+type MutatingWebhookConfigurationCreator = func(cluster *kubermaticv1.Cluster, data *TemplateData, existing *admissionregistrationv1beta1.MutatingWebhookConfiguration) (*admissionregistrationv1beta1.MutatingWebhookConfiguration, error)
 
 // GetClusterApiserverAddress returns the apiserver address for the given Cluster
 func GetClusterApiserverAddress(cluster *kubermaticv1.Cluster, lister corev1lister.ServiceLister) (string, error) {
