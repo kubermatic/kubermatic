@@ -133,6 +133,7 @@ func GetServiceCreators() []resources.ServiceCreator {
 		openvpn.Service,
 		etcd.Service,
 		dns.Service,
+		machinecontroller.Service,
 		metricsserver.Service,
 	}
 }
@@ -153,6 +154,7 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster, data *resources.Te
 func GetDeploymentCreators(c *kubermaticv1.Cluster) []resources.DeploymentCreator {
 	creators := []resources.DeploymentCreator{
 		machinecontroller.Deployment,
+		machinecontroller.WebhookDeployment,
 		openvpn.Deployment,
 		apiserver.Deployment,
 		scheduler.Deployment,
@@ -208,6 +210,7 @@ func GetSecretCreatorOperations(dockerPullConfigJSON []byte) []SecretOperation {
 		{resources.MachineControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername, nil)},
 		{resources.ControllerManagerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername, nil)},
 		{resources.KubeStateMetricsKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil)},
+		{resources.MachineControllerWebhookServingCertSecretName, machinecontroller.TLSServingCertificate},
 		{resources.MetricsServerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil)},
 	}
 }
