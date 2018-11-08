@@ -4259,9 +4259,8 @@
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "Semver": {
-      "description": "+k8s:deepcopy-gen=true",
+      "description": "Semver is struct that encapsulates semver.Semver struct so we can use it in API\n+k8s:deepcopy-gen=true",
       "type": "object",
-      "title": "Semver is struct that encapsulates semver.Semver struct so we can use it in API.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/semver"
     },
     "Type": {
