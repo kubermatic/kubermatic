@@ -38,7 +38,7 @@ func TestMarshalJSON(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if bytes.Compare(tc.expectedResult, b) != 0 {
+			if !bytes.Equal(tc.expectedResult, b) {
 				t.Errorf("expected to get %s, but got %s", string(tc.expectedResult), string(b))
 			}
 
@@ -47,7 +47,7 @@ func TestMarshalJSON(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if s.Compare(tc.inputSemver.Semver()) != 0 {
+			if !s.Equal(tc.inputSemver) {
 				t.Errorf("expected to get %s, but got %s", tc.inputSemver.String(), s.String())
 			}
 		})
@@ -88,7 +88,7 @@ func TestUnmarshalJSON(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if s.Compare(tc.expectedSemver.Semver()) != 0 {
+			if !s.Equal(tc.expectedSemver) {
 				t.Errorf("expected to get %s, but got %s", tc.expectedSemver.String(), s.String())
 			}
 
@@ -96,7 +96,7 @@ func TestUnmarshalJSON(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if bytes.Compare(b, tc.inputByte) != 0 {
+			if !bytes.Equal(b, tc.inputByte) {
 				t.Errorf("epxected to get %s, but got %s", string(tc.inputByte), string(b))
 			}
 		})
