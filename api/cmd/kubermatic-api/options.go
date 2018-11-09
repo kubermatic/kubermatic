@@ -2,25 +2,33 @@ package main
 
 import (
 	"flag"
+	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/features"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
 type serverRunOptions struct {
-	listenAddress            string
-	kubeconfig               string
-	internalAddr             string
-	prometheusURL            string
-	masterResources          string
-	dcFile                   string
-	workerName               string
-	versionsFile             string
-	updatesFile              string
-	tokenIssuer              string
-	clientID                 string
-	tokenIssuerSkipTLSVerify bool
-	featureGates             features.FeatureGate
+	listenAddress   string
+	kubeconfig      string
+	internalAddr    string
+	prometheusURL   string
+	masterResources string
+	dcFile          string
+	workerName      string
+	versionsFile    string
+	updatesFile     string
+
+	// OIDC configuration
+	oidcURL                        string
+	oidcAuthenticatorClientID      string
+	oidcIssuerClientID             string
+	oidcIssuerClientSecret         string
+	oidcIssuerRedirectURI          string
+	oidcSkipTLSVerify              bool
+	oidcIssuerOfflineAccessAsScope bool
+
+	featureGates features.FeatureGate
 }
 
 func newServerRunOptions() (serverRunOptions, error) {
@@ -36,9 +44,13 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
 	flag.StringVar(&s.versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&s.updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
-	flag.StringVar(&s.tokenIssuer, "token-issuer", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
-	flag.BoolVar(&s.tokenIssuerSkipTLSVerify, "token-issuer-skip-tls-verify", false, "SKip TLS verification for the token issuer")
-	flag.StringVar(&s.clientID, "client-id", "", "OpenID client ID")
+	flag.StringVar(&s.oidcURL, "oidc-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
+	flag.BoolVar(&s.oidcSkipTLSVerify, "oidc-skip-tls-verify", false, "Skip TLS verification for the token issuer")
+	flag.StringVar(&s.oidcAuthenticatorClientID, "oidc-authenticator-client-id", "", "Authenticator client ID")
+	flag.StringVar(&s.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
+	flag.StringVar(&s.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
+	flag.StringVar(&s.oidcIssuerRedirectURI, "oidc-issuer-redirect-uri", "", "Callback URL for OpenID responses.")
+	flag.BoolVar(&s.oidcIssuerOfflineAccessAsScope, "oidc-issuer-offline-access-as-scope", true, "Set it to false if OIDC provider requires to set \"access_type=offline\" query param when accessing the refresh token")
 	flag.StringVar(&rawFeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for various features.")
 	flag.Parse()
 
@@ -48,6 +60,18 @@ func newServerRunOptions() (serverRunOptions, error) {
 	}
 	s.featureGates = featureGates
 	return s, nil
+}
+
+func (o serverRunOptions) validate() error {
+	if o.featureGates.Enabled(OIDCKubeCfgEndpoint) {
+		if len(o.oidcIssuerClientSecret) == 0 {
+			return fmt.Errorf("%s feature is enabled but \"oidc-client-secret\" flag was not specified", OIDCKubeCfgEndpoint)
+		}
+		if len(o.oidcIssuerRedirectURI) == 0 {
+			return fmt.Errorf("%s feature is enabled but \"oidc-redirect-uri\" flag was not specified", OIDCKubeCfgEndpoint)
+		}
+	}
+	return nil
 }
 
 type providers struct {

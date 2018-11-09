@@ -8,6 +8,7 @@ import (
 
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
+	admissionregistrationclientset "k8s.io/client-go/kubernetes/typed/admissionregistration/v1beta1"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -58,7 +59,17 @@ func (p *Provider) GetClientConfig(c *kubermaticv1.Cluster) (*restclient.Config,
 		&clientcmd.ConfigOverrides{},
 		nil,
 	)
-	return iconfig.ClientConfig()
+
+	clientConfig, err := iconfig.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	// Avoid blocking of the controller by increasing the QPS for user cluster interaction
+	clientConfig.QPS = 20
+	clientConfig.Burst = 50
+
+	return clientConfig, err
 }
 
 // GetClient returns a kubernetes client to interact with the given cluster
@@ -97,6 +108,15 @@ func (p *Provider) GetApiextensionsClient(c *kubermaticv1.Cluster) (apiextension
 		return nil, err
 	}
 	return apiextensionsclientset.NewForConfig(config)
+}
+
+// GetAdmissionRegistrationClient returns a client to interact with admissionregistration resources
+func (p *Provider) GetAdmissionRegistrationClient(c *kubermaticv1.Cluster) (admissionregistrationclientset.AdmissionregistrationV1beta1Interface, error) {
+	config, err := p.GetClientConfig(c)
+	if err != nil {
+		return nil, err
+	}
+	return admissionregistrationclientset.NewForConfig(config)
 }
 
 // GetKubeAggregatorClient returns a client to interact with the aggregation API for the given cluster

@@ -4,7 +4,6 @@ kind: PersistentVolumeClaim
 metadata:
   name: redis-datadir
 spec:
-  storageClassName: default
   accessModes: [ "ReadWriteOnce" ]
   resources:
     requests:

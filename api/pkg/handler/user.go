@@ -292,24 +292,56 @@ func (r Routing) userInfoMiddleware() endpoint.Middleware {
 			}
 			projectID := prjIDGetter.GetProjectID()
 
-			// read group info
-			var group string
-			{
-				group, err = r.userProjectMapper.MapUserToGroup(user.Spec.Email, projectID)
-				if err != nil {
-					// wrapping in k8s error to stay consisted with error messages returned from providers
-					return nil, kubernetesErrorToHTTPError(err)
-				}
-			}
-
-			uInfo := &provider.UserInfo{
-				Email: user.Spec.Email,
-				Group: group,
+			uInfo, err := r.createUserInfo(user, projectID)
+			if err != nil {
+				return nil, kubernetesErrorToHTTPError(err)
 			}
 
 			return next(context.WithValue(ctx, userInfoContextKey, uInfo), request)
 		}
 	}
+}
+
+// userInfoMiddlewareUnauthorized tries to build userInfo for not authenticated (token) user
+// instead it reads the user_id from the request and finds the associated user in the database
+func (r Routing) userInfoMiddlewareUnauthorized() endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			userIDGetter, ok := request.(UserIDGetter)
+			if !ok {
+				return nil, k8cerrors.NewBadRequest("you can only use userInfoMiddlewareUnauthorized for endpoints that accepts user ID")
+			}
+			prjIDGetter, ok := request.(ProjectIDGetter)
+			if !ok {
+				return nil, k8cerrors.NewBadRequest("you can only use userInfoMiddlewareUnauthorized for endpoints that accepts project ID")
+			}
+			userID := userIDGetter.GetUserID()
+			projectID := prjIDGetter.GetProjectID()
+			user, err := r.userProvider.UserByID(userID)
+			if err != nil {
+				return nil, kubernetesErrorToHTTPError(err)
+			}
+
+			uInfo, err := r.createUserInfo(user, projectID)
+			if err != nil {
+				return nil, kubernetesErrorToHTTPError(err)
+			}
+			return next(context.WithValue(ctx, userInfoContextKey, uInfo), request)
+		}
+	}
+}
+
+func (r Routing) createUserInfo(user *kubermaticapiv1.User, projectID string) (*provider.UserInfo, error) {
+	var group string
+	{
+		var err error
+		group, err = r.userProjectMapper.MapUserToGroup(user.Spec.Email, projectID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &provider.UserInfo{Email: user.Spec.Email, Group: group}, nil
 }
 
 // IsAdmin tells if the user has the admin role

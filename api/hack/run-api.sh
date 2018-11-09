@@ -19,10 +19,10 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
   -updates=../config/kubermatic/static/master/updates.yaml \
   -master-resources=../config/kubermatic/static/master \
   -worker-name="$(tr -cd '[:alnum:]' <<< $KUBERMATIC_WORKERNAME | tr '[:upper:]' '[:lower:]')" \
-  -token-issuer=https://dev.kubermatic.io/dex \
   -internal-address=127.0.0.1:18085 \
   -prometheus-url=http://localhost:9090 \
   -address=127.0.0.1:8080 \
-  -client-id=kubermatic \
+  -oidc-url=https://dev.kubermatic.io/dex \
+  -oidc-authenticator-client-id=kubermatic \
   -logtostderr \
   -v=8 $@
