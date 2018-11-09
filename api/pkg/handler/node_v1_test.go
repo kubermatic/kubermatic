@@ -585,6 +585,150 @@ func TestCreateNodeDeploymentForCluster(t *testing.T) {
 	}
 }
 
+func TestDeleteNodeDeploymentForCluster(t *testing.T) {
+	t.Parallel()
+
+	var replicas int32 = 1
+
+	testcases := []struct {
+		Name                       string
+		Body                       string
+		HTTPStatus                 int
+		NodeIDToDelete             string
+		ClusterIDToSync            string
+		ProjectIDToSync            string
+		ExistingAPIUser            *apiv1.LegacyUser
+		ExistingNodes              []*corev1.Node
+		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
+		ExistingKubermaticObjs     []runtime.Object
+		ExpectedActions            int
+		ExpectedHTTPStatusOnGet    int
+		ExpectedResponseOnGet      string
+	}{
+		// scenario 1
+		{
+			Name:                   "scenario 1: delete the node that belong to the given cluster",
+			Body:                   ``,
+			HTTPStatus:             http.StatusOK,
+			NodeIDToDelete:         "venus",
+			ClusterIDToSync:        genDefaultCluster().Name,
+			ProjectIDToSync:        genDefaultProject().Name,
+			ExistingKubermaticObjs: genDefaultKubermaticObjects(genDefaultCluster()),
+			ExistingAPIUser:        genDefaultAPIUser(),
+			ExistingNodes: []*corev1.Node{
+				{ObjectMeta: metav1.ObjectMeta{Name: "venus"}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
+			},
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "venus",
+					Namespace: metav1.NamespaceSystem,
+				},
+				Spec: clusterv1alpha1.MachineDeploymentSpec{
+					Replicas: &replicas,
+					Template: clusterv1alpha1.MachineTemplateSpec{
+						Spec: clusterv1alpha1.MachineSpec{
+							ProviderConfig: clusterv1alpha1.ProviderConfig{
+								Value: &runtime.RawExtension{
+									Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
+								},
+							},
+						},
+					},
+				},
+			},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "mars",
+						Namespace: "kube-system",
+					},
+					Spec: clusterv1alpha1.MachineDeploymentSpec{
+						Replicas: &replicas,
+						Template: clusterv1alpha1.MachineTemplateSpec{
+							Spec: clusterv1alpha1.MachineSpec{
+								ProviderConfig: clusterv1alpha1.ProviderConfig{
+									Value: &runtime.RawExtension{
+										Raw: []byte(`{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`),
+									},
+								},
+								Versions: clusterv1alpha1.MachineVersionInfo{
+									Kubelet: "v1.9.9",
+								},
+							},
+						},
+					},
+				},
+			},
+			ExpectedActions: 1,
+			//
+			// Even though the machine deployment object was deleted the associated node object was not.
+			// When the client GETs the previously deleted "node" it will get a valid response.
+			// That is only true for testing, but in a real cluster, the node object will get deleted by the garbage-collector as it has a ownerRef set.
+			ExpectedHTTPStatusOnGet: http.StatusOK,
+			ExpectedResponseOnGet:   `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}},"status":{"machineName":"","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodedeployments/%s",
+				tc.ProjectIDToSync, tc.ClusterIDToSync, tc.NodeIDToDelete), strings.NewReader(tc.Body))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			machineDeploymentObjets := []runtime.Object{}
+			kubernetesObj := []runtime.Object{}
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			for _, existingNode := range tc.ExistingNodes {
+				kubernetesObj = append(kubernetesObj, existingNode)
+			}
+			for _, existingMachineDeployment := range tc.ExistingMachineDeployments {
+				machineDeploymentObjets = append(machineDeploymentObjets, existingMachineDeployment)
+			}
+			ep, clientsSets, err := createTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineDeploymentObjets, kubermaticObj, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			fakeMachineClient := clientsSets.fakeMachineClient
+			if len(fakeMachineClient.Actions()) != tc.ExpectedActions {
+				t.Fatalf("expected to get %d but got %d actions = %v", tc.ExpectedActions, len(fakeMachineClient.Actions()), fakeMachineClient.Actions())
+			}
+
+			deletedActionFound := false
+			for _, action := range fakeMachineClient.Actions() {
+				if action.Matches("delete", "machinedeployments") {
+					deletedActionFound = true
+					deleteAction, ok := action.(clienttesting.DeleteAction)
+					if !ok {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if tc.NodeIDToDelete != deleteAction.GetName() {
+						t.Fatalf("expected that machine deployment %s will be deleted, but machine deployment %s was deleted", tc.NodeIDToDelete, deleteAction.GetName())
+					}
+				}
+			}
+			if !deletedActionFound {
+				t.Fatal("delete action was not found")
+			}
+
+			req = httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodes/%s",
+				tc.ProjectIDToSync, tc.ClusterIDToSync, tc.NodeIDToDelete), strings.NewReader(""))
+			res = httptest.NewRecorder()
+			ep.ServeHTTP(res, req)
+			if res.Code != tc.ExpectedHTTPStatusOnGet {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedHTTPStatusOnGet, res.Code, res.Body.String())
+			}
+			compareWithResult(t, res, tc.ExpectedResponseOnGet)
+		})
+	}
+}
+
 func genTestCluster(isControllerReady bool) *kubermaticv1.Cluster {
 	cluster := genDefaultCluster()
 	cluster.Status = kubermaticv1.ClusterStatus{
