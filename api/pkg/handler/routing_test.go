@@ -2,7 +2,7 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -104,6 +104,10 @@ func createTestEndpointAndGetClients(user apiv1.LegacyUser, dc map[string]provid
 	mainRouter := mux.NewRouter()
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
 	r.RegisterV1(v1Router)
+	r.RegisterV1Optional(v1Router,
+		true,
+		*generateDefaultOicdCfg(),
+		mainRouter)
 
 	return mainRouter, &clientsSets{kubermaticClient, fakeMachineClient}, nil
 }
@@ -247,7 +251,7 @@ type fakeUserClusterConnection struct {
 }
 
 func (f *fakeUserClusterConnection) GetAdminKubeconfig(c *kubermaticapiv1.Cluster) ([]byte, error) {
-	return []byte{}, errors.New("not yet implemented")
+	return []byte(generateTestKubeconfig(testClusterID, testIDToken)), nil
 }
 
 func (f *fakeUserClusterConnection) GetMachineClient(c *kubermaticapiv1.Cluster) (clusterclientset.Interface, error) {
@@ -411,4 +415,36 @@ func (k newUserV1SliceWrapper) EqualOrDie(expected newUserV1SliceWrapper, t *tes
 	if diff := deep.Equal(k, expected); diff != nil {
 		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
 	}
+}
+
+// generateDefaultOicdCfg creates test configuration for OpenID clients
+func generateDefaultOicdCfg() *OIDCConfiguration {
+	return &OIDCConfiguration{
+		URL:                  testIssuerURL,
+		ClientID:             testIssuerClientID,
+		ClientSecret:         testIssuerClientSecret,
+		OfflineAccessAsScope: true,
+	}
+}
+
+// generateTestKubeconfig returns test kubeconfig yaml structure
+func generateTestKubeconfig(clusterID, token string) string {
+	return fmt.Sprintf(`
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: 
+    server: test.fake.io
+  name: %s
+contexts:
+- context:
+    cluster: %s
+    user: default
+  name: default
+current-context: default
+kind: Config
+users:
+- name: default
+  user:
+    token: %s`, clusterID, clusterID, token)
 }

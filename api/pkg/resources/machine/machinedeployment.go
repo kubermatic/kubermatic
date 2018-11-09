@@ -8,9 +8,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
 
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -37,36 +35,16 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 	md.Spec.RevisionHistoryLimit = nd.Spec.RevisionHistoryLimit
 	md.Spec.ProgressDeadlineSeconds = nd.Spec.ProgressDeadlineSeconds
 
-	// TODO: Remove once we have webhook
 	if nd.Spec.Strategy != nil {
 		md.Spec.Strategy = *nd.Spec.Strategy
-	} else {
-		md.Spec.Strategy = clusterv1alpha1.MachineDeploymentStrategy{
-			Type: common.RollingUpdateMachineDeploymentStrategyType,
-			RollingUpdate: &clusterv1alpha1.MachineRollingUpdateDeployment{
-				MaxSurge: &intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: 1,
-				},
-				MaxUnavailable: &intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: 0,
-				},
-			},
-		}
 	}
 
 	if nd.Spec.MinReadySeconds != nil {
 		md.Spec.MinReadySeconds = nd.Spec.MinReadySeconds
-	} else {
-		var defaultMinReadySeconds int32
-		md.Spec.MinReadySeconds = &defaultMinReadySeconds
 	}
 
 	if nd.Spec.Paused != nil {
 		md.Spec.Paused = *nd.Spec.Paused
-	} else {
-		md.Spec.Paused = false
 	}
 
 	config := providerconfig.Config{}

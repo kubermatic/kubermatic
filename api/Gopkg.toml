@@ -156,6 +156,10 @@ required = [
   name = "github.com/evanphx/json-patch"
   version = "v4.1.0"
 
+[[constraint]]
+  name = "github.com/sirupsen/logrus"
+  version = "v1.1.1"
+
 # Otherwise dep panics: https://github.com/golang/dep/issues/1799
 [[override]]
   name = "gopkg.in/fsnotify.v1"
