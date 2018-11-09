@@ -725,7 +725,6 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 		},
 		Spec: apiv1.NodeDeploymentSpec{
 			Replicas: *md.Spec.Replicas,
-			Selector: md.Spec.Selector,
 			Template: apiv1.NodeSpec{
 				Versions: apiv1.NodeVersionInfo{
 					Kubelet: md.Spec.Template.Spec.Versions.Kubelet,

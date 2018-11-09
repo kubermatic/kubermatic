@@ -9,6 +9,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
 
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
@@ -23,8 +24,13 @@ import (
 func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.MachineDeployment, error) {
 	md := clusterv1alpha1.MachineDeployment{}
 
-	md.GenerateName = fmt.Sprintf("machinedeployment-kubermatic-%s-", c.Name)
 	md.Namespace = metav1.NamespaceSystem
+	md.GenerateName = fmt.Sprintf("machinedeployment-kubermatic-%s-", c.Name)
+
+	md.Spec.Selector.MatchLabels = map[string]string{
+		"machine": fmt.Sprintf("md-%s-%s", c.Name, rand.String(10)),
+	}
+	md.Spec.Template.ObjectMeta.Labels = md.Spec.Selector.MatchLabels
 
 	md.Spec.Replicas = &nd.Spec.Replicas
 	md.Spec.Template.Spec.Versions.Kubelet = nd.Spec.Template.Versions.Kubelet
@@ -62,17 +68,6 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 	} else {
 		md.Spec.Paused = false
 	}
-
-	if md.Spec.Selector.MatchLabels == nil {
-		md.Spec.Selector.MatchLabels = map[string]string{}
-	} else {
-		md.Spec.Selector = nd.Spec.Selector
-	}
-
-	md.Spec.Selector.MatchLabels["name"] = md.Name
-
-	// MachineDeploymentSpec's label selector must match the machine template's labels as docs say.
-	md.Spec.Template.ObjectMeta.Labels = md.Spec.Selector.MatchLabels
 
 	config := providerconfig.Config{}
 	config.SSHPublicKeys = make([]string, len(keys))
