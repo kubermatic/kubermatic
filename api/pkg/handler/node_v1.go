@@ -741,3 +741,61 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 		Status: md.Status,
 	}, nil
 }
+
+// DeleteNodeDeploymentForClusterReq defines HTTP request for deleteNodeDeploymentForCluster
+// swagger:parameters deleteNodeDeploymentForCluster
+type DeleteNodeDeploymentForClusterReq struct {
+	GetClusterReq
+	// in: path
+	NodeDeploymentID string `json:"nodedeployment_id"`
+}
+
+func decodeDeleteNodeDeploymentForCluster(c context.Context, r *http.Request) (interface{}, error) {
+	var req DeleteNodeDeploymentForClusterReq
+
+	nodeDeploymentID := mux.Vars(r)["nodedeployment_id"]
+	if nodeDeploymentID == "" {
+		return "", fmt.Errorf("'nodedeployment_id' parameter is required but was not provided")
+	}
+
+	clusterID, err := decodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ClusterID = clusterID
+	req.NodeDeploymentID = nodeDeploymentID
+	req.DCReq = dcr.(DCReq)
+
+	return req, nil
+}
+
+func deleteNodeDeploymentForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(DeleteNodeDeploymentForClusterReq)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+
+		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(cluster)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create a machine client: %v", err)
+		}
+
+		return nil, kubernetesErrorToHTTPError(machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Delete(req.NodeDeploymentID, nil))
+	}
+}
