@@ -5,7 +5,6 @@ import (
 	"flag"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	log "github.com/golang/glog"
 
 	kubermaticsignals "github.com/kubermatic/kubermatic/api/pkg/signals"
@@ -17,46 +16,40 @@ type Opts struct {
 	Addons              flagopts.StringArray
 	ClusterPath         string
 	ClusterTimeout      time.Duration
-	DeleteCluster       bool
-	Focus               string
-	GinkgoBin           string
-	GinkgoNoColor       bool
-	GinkgoTimeout       time.Duration
-	KubeconfPath        string
+	DeleteOnError       bool
+	Kubeconf            flagopts.KubeconfigFlag
 	KubermaticNamespace string
 	NodePath            string
 	Nodes               int
 	NodesTimeout        time.Duration
-	Parallel            int
-	Provider            string
-	ReportsDir          string
-	Skip                string
-	TestBin             string
+	Output              string
 }
 
 func main() {
 	runOpts := Opts{
-		Addons: flagopts.StringArray{"canal", "dns", "kube-proxy", "openvpn", "rbac", "kubelet-configmap", "default-storage-class", "metrics-server"},
+		Addons: flagopts.StringArray{
+			"canal",
+			"dns",
+			"kube-proxy",
+			"openvpn",
+			"rbac",
+			"kubelet-configmap",
+			"default-storage-class",
+			"metrics-server",
+		},
+		Kubeconf: flagopts.NewKubeconfig(),
 	}
 
-	flag.StringVar(&runOpts.KubeconfPath, "kubeconfig", "/config/kubeconfig", "path to kubeconfig file")
-	flag.StringVar(&runOpts.KubermaticNamespace, "kubermatic-namespace", "kubermatic", "namespace where kubermatic and it's configs deployed")
-	flag.StringVar(&runOpts.ClusterPath, "kubermatic-cluster", "/manifests/cluster.yaml", "path to Cluster yaml")
-	flag.StringVar(&runOpts.NodePath, "kubermatic-node", "/manifests/node.yaml", "path to Node yaml")
-	flag.Var(&runOpts.Addons, "kubermatic-addons", "comma separated list of addons")
-	flag.IntVar(&runOpts.Nodes, "kubermatic-nodes", 3, "number of worker nodes")
-	flag.DurationVar(&runOpts.ClusterTimeout, "kubermatic-cluster-timeout", 5*time.Minute, "cluster creation timeout")
-	flag.DurationVar(&runOpts.NodesTimeout, "kubermatic-nodes-timeout", 10*time.Minute, "nodes creation timeout")
-	flag.StringVar(&runOpts.GinkgoBin, "ginkgo-bin", "/usr/local/bin/ginkgo", "path to ginkgo binary")
-	flag.BoolVar(&runOpts.DeleteCluster, "kubermatic-delete-cluster", true, "delete test cluster at the exit")
-	flag.BoolVar(&runOpts.GinkgoNoColor, "ginkgo-nocolor", false, "don't show colors")
-	flag.DurationVar(&runOpts.GinkgoTimeout, "ginkgo-timeout", 5400*time.Second, "ginkgo execution timeout")
-	flag.StringVar(&runOpts.Focus, "ginkgo-focus", `\[Conformance\]`, "tests focus")
-	flag.StringVar(&runOpts.Skip, "ginkgo-skip", `Alpha|\[(Disruptive|Feature:[^\]]+|Flaky)\]`, "skip those groups of tests")
-	flag.IntVar(&runOpts.Parallel, "ginkgo-parallel", 25, "parallelism of tests")
-	flag.StringVar(&runOpts.TestBin, "e2e-test-bin", "/usr/local/bin/e2e.test", "path to e2e.test binary")
-	flag.StringVar(&runOpts.Provider, "e2e-provider", "local", "cloud provider to use in tests")
-	flag.StringVar(&runOpts.ReportsDir, "e2e-results-dir", "/tmp/results", "directory to save test results")
+	flag.BoolVar(&runOpts.DeleteOnError, "delete-on-error", true, "try to delete cluster on error")
+	flag.DurationVar(&runOpts.ClusterTimeout, "cluster-timeout", 5*time.Minute, "cluster creation timeout")
+	flag.DurationVar(&runOpts.NodesTimeout, "nodes-timeout", 10*time.Minute, "nodes creation timeout")
+	flag.IntVar(&runOpts.Nodes, "nodes", 3, "number of worker nodes")
+	flag.StringVar(&runOpts.ClusterPath, "cluster", "cluster.yaml", "path to Cluster yaml")
+	flag.StringVar(&runOpts.KubermaticNamespace, "namespace", "kubermatic", "namespace where kubermatic and it's configs deployed")
+	flag.StringVar(&runOpts.NodePath, "node", "node.yaml", "path to Node yaml")
+	flag.StringVar(&runOpts.Output, "output", "usercluster_kubeconfig", "path to generated usercluster kubeconfig")
+	flag.Var(&runOpts.Addons, "addons", "comma separated list of addons")
+	flag.Var(&runOpts.Kubeconf, "kubeconfig", "path to kubeconfig file")
 
 	if err := flag.CommandLine.Set("logtostderr", "1"); err != nil {
 		panic("can't set flag")
@@ -65,7 +58,6 @@ func main() {
 	flag.Parse()
 
 	log.Info("starting")
-	spew.Dump(runOpts)
 
 	stopCh := kubermaticsignals.SetupSignalHandler()
 	rootCtx, rootCancel := context.WithCancel(context.Background())
@@ -80,15 +72,19 @@ func main() {
 		}
 	}()
 
-	ctl, err := newE2ETestRunner(runOpts)
+	ctl, err := newClusterCreator(runOpts)
 	if err != nil {
 		log.Exit(err)
 	}
 
-	err = ctl.run(rootCtx)
-	if err != nil {
+	if err = ctl.create(rootCtx); err != nil {
+		if runOpts.DeleteOnError {
+			if errd := ctl.delete(); errd != nil {
+				log.Errorf("can't delete cluster %s: %+v", ctl.clusterName, err)
+			}
+		}
 		log.Exit(err)
 	}
 
-	log.Info("e2e run done")
+	log.Info("cluster and machines created")
 }

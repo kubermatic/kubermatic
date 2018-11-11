@@ -1,109 +1,95 @@
-# Automated conformance testing of kubermatic managed clusters
+# Automate creation of kubermatic managed clusters
 
 ## What is this
-It's a tool to automate creating of custome resources for kubermatic managed
-clusters and machines and running conformance tests on top of them.
+It's a tool to automate creating of custom resources for kubermatic managed
+clusters and machine objects
 
 ## Usage
 Run docker container
 
     $ docker run --rm -it \
-        -v /path/to/kubeconfig:/config/kubeconfig \
-        -v /path/to/cluster_template.yaml:/manifests/cluster.yaml \
-        -v /path/to/node_template.yaml:/manifests/node.yaml \
-        kubermatic-e2e
-
-Image ships with dependant binaries like `ginkgo` and `e2e.test` from kubernetes
-test suite.
+        -w /app \
+        -e KUBECONFIG=/config/kubeconfig \
+        -v /host_path/to/kubeconfig:/config/kubeconfig \
+        -v /host_path/to/cluster_template.yaml:/app/cluster.yaml \
+        -v /host_path/to/node_template.yaml:/app/node.yaml \
+        kubermatic/kubermatic user-cluster
 
 ## Flags
-All flags have reasonable defaults
 
+    -addons value
+          comma separated list of addons (default canal,dns,kube-proxy,openvpn,rbac,kubelet-configmap,default-storage-class,metrics-server)
     -alsologtostderr
-        log to standard error as well as files
-    -e2e-provider string
-        cloud provider to use in tests (default "local")
-    -e2e-results-dir string
-        directory to save test results (default "/tmp/results")
-    -e2e-test-bin string
-        path to e2e.test binary (default "/usr/local/bin/e2e.test")
-    -ginkgo-bin string
-        path to ginkgo binary (default "/usr/local/bin/ginkgo")
-    -ginkgo-focus string
-        tests focus (default "\\[Conformance\\]")
-    -ginkgo-nocolor
-        don't show colors
-    -ginkgo-parallel int
-        parallelism of tests (default 25)
-    -ginkgo-skip string
-        skip those groups of tests (default "Alpha|\\[(Disruptive|Feature:[^\\]]+|Flaky)\\]")
-    -ginkgo-timeout duration
-        ginkgo execution timeout (default 1h30m0s)
-    -kubeconfig string
-        path to kubeconfig file (default "/config/kubeconfig")
-    -kubermatic-addons value
-        comma separated list of addons (default canal,dns,kube-proxy,openvpn,rbac,kubelet-configmap,default-storage-class,metrics-server)
-    -kubermatic-cluster string
-        path to Cluster yaml (default "/manifests/cluster.yaml")
-    -kubermatic-cluster-timeout duration
-        cluster creation timeout (default 3m0s)
-    -kubermatic-delete-cluster
-        delete test cluster at the exit (default true)
-    -kubermatic-namespace string
-        namespace where kubermatic and it's configs deployed (default "kubermatic")
-    -kubermatic-node string
-        path to Node yaml (default "/manifests/node.yaml")
-    -kubermatic-nodes int
-        number of worker nodes (default 3)
-    -kubermatic-nodes-timeout duration
-        nodes creation timeout (default 10m0s)
+          log to standard error as well as files
+    -cluster string
+          path to Cluster yaml (default "cluster.yaml")
+    -cluster-timeout duration
+          cluster creation timeout (default 5m0s)
+    -delete-on-error
+          try to delete cluster on error (default true)
+    -kubeconfig value
+          path to kubeconfig file (default /Users/kron/DEV/loodse/secrets/seed-clusters/dev.kubermatic.io/kubeconfig)
     -log_backtrace_at value
-        when logging hits line file:N, emit a stack trace
+          when logging hits line file:N, emit a stack trace
     -log_dir string
-        If non-empty, write log files in this directory
+          If non-empty, write log files in this directory
     -logtostderr
-        log to standard error instead of files
+          log to standard error instead of files
+    -namespace string
+          namespace where kubermatic and it's configs deployed (default "kubermatic")
+    -node string
+          path to Node yaml (default "node.yaml")
+    -nodes int
+          number of worker nodes (default 3)
+    -nodes-timeout duration
+          nodes creation timeout (default 10m0s)
+    -output string
+          path to generated usercluster kubeconfig (default "usercluster_kubeconfig")
     -stderrthreshold value
-        logs at or above this threshold go to stderr
+          logs at or above this threshold go to stderr
     -v value
-        log level for V logs
+          log level for V logs
     -vmodule value
-        comma-separated list of pattern=N settings for file-filtered logging
+          comma-separated list of pattern=N settings for file-filtered logging
 
 ## Examples
 
 ### Example AWS Cluster spec
 
-    apiVersion: kubermatic.k8s.io/v1
-    kind: Cluster
-    metadata:
-      name: aws-e2e-cluster
-      labels:
-        user: << Optional UserID to see cluster in UI>>
-        worker-name: ""
-    spec:
-    cloud:
-      dc: "aws-eu-central-1a" # Datacenter key from datacenters.yaml
-      aws:
-        accessKeyId: << your AWS accessKeyId >>
-        secretAccessKey: << your AWS secretAccessKey >>
-    humanReadableName: aws-e2e-test-runner
-    pause: false
-    version: 1.10.5
+```yaml
+apiVersion: kubermatic.k8s.io/v1
+kind: Cluster
+metadata:
+  name: aws-cicd-tmp-cluster
+  labels:
+    user: << Optional UserID to see cluster in UI>>
+    worker-name: ""
+spec:
+cloud:
+  dc: "aws-eu-central-1a" # Datacenter key from datacenters.yaml
+  aws:
+    accessKeyId: << your AWS accessKeyId >>
+    secretAccessKey: << your AWS secretAccessKey >>
+humanReadableName: aws-cicd-tmp-test-runner
+pause: false
+version: 1.10.5
+```
 
 ### Example AWS Node spec
 
-    spec:
-      cloud:
-        aws:
-          instanceType: t2.medium
-          diskSize: 25
-          volumeType: gp2
-      operatingSystem:
-        ubuntu:
-          distUpgradeOnBoot: false
-      versions:
-        kubelet: 1.10.5
-        containerRuntime:
-          name: docker
-          version: 17.03.2
+```yaml
+spec:
+  cloud:
+    aws:
+      instanceType: t2.medium
+      diskSize: 25
+      volumeType: gp2
+  operatingSystem:
+    ubuntu:
+      distUpgradeOnBoot: false
+  versions:
+    kubelet: 1.10.5
+    containerRuntime:
+      name: docker
+      version: 17.03.2
+```
