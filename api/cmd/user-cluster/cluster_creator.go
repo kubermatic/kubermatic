@@ -53,6 +53,7 @@ type clusterCreator struct {
 	seedClient       *kubernetes.Clientset
 	targetClient     *kubernetes.Clientset
 	kubermaticClient *kubermaticclientset.Clientset
+	clusterName      string
 }
 
 func (ctl *clusterCreator) create(ctx context.Context) error {
@@ -96,6 +97,8 @@ func (ctl *clusterCreator) create(ctx context.Context) error {
 		return err
 	}
 	log.Infof("seed cluster namespace: %s", cluster.Status.NamespaceName)
+	log.Info("cluster name:")
+	fmt.Print(cluster.ObjectMeta.Name) // log to STDOUT, for saving in shell
 
 	if err = ctl.installAddons(cluster); err != nil {
 		return err
@@ -151,8 +154,11 @@ func (ctl *clusterCreator) create(ctx context.Context) error {
 		return err
 	}
 
-	// TODO: dump user-cluster kubeconfig
-	return nil
+	return ioutil.WriteFile(ctl.runOpts.Output, clusterKubeConfig, 0600)
+}
+
+func (ctl *clusterCreator) delete() error {
+	return ctl.kubermaticClient.Kubermatic().Clusters().Delete(ctl.clusterName, nil)
 }
 
 func (ctl *clusterCreator) nodesReadyCond(ctx context.Context) func() (bool, error) {
@@ -264,7 +270,7 @@ func (ctl *clusterCreator) kubeConfig(cluster *kubermaticv1.Cluster) ([]byte, er
 
 	adminKubeConfig, ok := secret.Data[resources.KubeconfigSecretKey]
 	if !ok {
-		return nil, errors.New("admin-kubeconfig not found")
+		return nil, fmt.Errorf("%s/%s secret not found", cluster.Status.NamespaceName, resources.KubeconfigSecretKey)
 	}
 
 	return adminKubeConfig, nil

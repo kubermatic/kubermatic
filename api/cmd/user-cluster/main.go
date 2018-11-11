@@ -77,10 +77,11 @@ func main() {
 		log.Exit(err)
 	}
 
-	err = ctl.create(rootCtx)
-	if err != nil {
+	if err = ctl.create(rootCtx); err != nil {
 		if runOpts.DeleteOnError {
-			//TODO: ctl.deleteCluster()
+			if errd := ctl.delete(); errd != nil {
+				log.Errorf("can't delete cluster %s: %+v", ctl.clusterName, err)
+			}
 		}
 		log.Exit(err)
 	}
