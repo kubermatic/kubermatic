@@ -36,7 +36,7 @@ const (
 )
 
 func newClusterCreator(runOpts Opts) (*clusterCreator, error) {
-	kubeconfig, err := clientcmd.BuildConfigFromFlags("", runOpts.KubeconfPath)
+	kubeconfig, err := clientcmd.BuildConfigFromFlags("", runOpts.Kubeconf.String())
 	if err != nil {
 		return nil, err
 	}
