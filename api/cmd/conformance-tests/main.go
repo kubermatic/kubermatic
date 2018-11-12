@@ -17,7 +17,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/ssh"
 
 	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
@@ -40,7 +41,7 @@ var supportedVersions = []*semver.Semver{
 	semver.NewSemverOrDie("v1.9.10"),
 	semver.NewSemverOrDie("v1.10.8"),
 	semver.NewSemverOrDie("v1.11.3"),
-	semver.NewSemverOrDie("v1.12.0"),
+	semver.NewSemverOrDie("v1.12.1"),
 }
 
 // Opts represent combination of flags and ENV options
