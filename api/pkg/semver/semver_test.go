@@ -43,8 +43,7 @@ func TestMarshalJSON(t *testing.T) {
 			}
 
 			var s Semver
-			err = s.UnmarshalJSON(b)
-			if err != nil {
+			if err = s.UnmarshalJSON(b); err != nil {
 				t.Fatal(err)
 			}
 			if !s.Equal(tc.inputSemver) {
@@ -84,8 +83,7 @@ func TestUnmarshalJSON(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			var s Semver
-			err := s.UnmarshalJSON(tc.inputByte)
-			if err != nil {
+			if err := s.UnmarshalJSON(tc.inputByte); err != nil {
 				t.Fatal(err)
 			}
 			if !s.Equal(tc.expectedSemver) {
