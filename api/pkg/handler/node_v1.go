@@ -125,20 +125,27 @@ func listNodesForCluster(projectProvider provider.ProjectProvider) endpoint.Endp
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		//The following is a bit tricky. We might have a node which is not created by a machine and vice versa...
+		// The following is a bit tricky. We might have a node which is not created by a machine and vice versa...
 		var nodesV1 []*apiv1.Node
 		matchedMachineNodes := sets.NewString()
 
-		//Go over all machines first
+		// Go over all machines first
 		for i := range machineList.Items {
 			node := getNodeForMachine(&machineList.Items[i], nodeList.Items)
 			if node != nil {
 				matchedMachineNodes.Insert(string(node.UID))
 			}
+
+			// Do not list Machines that are controlled, i.e. by Machine Set.
+			if len(machineList.Items[i].ObjectMeta.OwnerReferences) != 0 {
+				continue
+			}
+
 			outNode, err := outputMachine(&machineList.Items[i], node, req.HideInitialConditions)
 			if err != nil {
 				return nil, fmt.Errorf("failed to output machine %s: %v", machineList.Items[i].Name, err)
 			}
+
 			nodesV1 = append(nodesV1, outNode)
 		}
 

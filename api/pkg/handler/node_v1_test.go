@@ -185,31 +185,27 @@ func TestListNodesForCluster(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			Name:            "scenario 1: list nodes that belong to the given cluster",
-			Body:            ``,
-			HTTPStatus:      http.StatusOK,
-			ClusterIDToSync: genDefaultCluster().Name,
-			ProjectIDToSync: genDefaultProject().Name,
-			ExistingKubermaticObjs: genDefaultKubermaticObjects(
-				/*add a cluster*/
-				genDefaultCluster(),
-			),
-			ExistingAPIUser: genDefaultAPIUser(),
+			Name:                   "scenario 1: list nodes that belong to the given cluster",
+			Body:                   ``,
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        genDefaultCluster().Name,
+			ProjectIDToSync:        genDefaultProject().Name,
+			ExistingKubermaticObjs: genDefaultKubermaticObjects(genDefaultCluster()),
+			ExistingAPIUser:        genDefaultAPIUser(),
 			ExistingNodes: []*corev1.Node{
-				&corev1.Node{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "venus",
 					},
 				},
-
-				&corev1.Node{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "mars",
 					},
 				},
 			},
 			ExistingMachines: []*clusterv1alpha1.Machine{
-				&clusterv1alpha1.Machine{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "venus",
 						Namespace: "kube-system",
@@ -225,8 +221,7 @@ func TestListNodesForCluster(t *testing.T) {
 						},
 					},
 				},
-
-				&clusterv1alpha1.Machine{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "mars",
 						Namespace: "kube-system",
@@ -244,7 +239,7 @@ func TestListNodesForCluster(t *testing.T) {
 				},
 			},
 			ExpectedResponse: []apiv1.Node{
-				apiv1.Node{
+				{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:   "venus",
 						Name: "venus",
@@ -276,8 +271,101 @@ func TestListNodesForCluster(t *testing.T) {
 						},
 					},
 				},
-
-				apiv1.Node{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "mars",
+						Name: "mars",
+					},
+					Spec: apiv1.NodeSpec{
+						Cloud: apiv1.NodeCloudSpec{
+							AWS: &apiv1.AWSNodeSpec{
+								InstanceType: "t2.micro",
+								VolumeSize:   50,
+							},
+						},
+						OperatingSystem: apiv1.OperatingSystemSpec{
+							Ubuntu: &apiv1.UbuntuSpec{
+								DistUpgradeOnBoot: false,
+							},
+						},
+						Versions: apiv1.NodeVersionInfo{
+							Kubelet: "v1.9.9",
+						},
+					},
+					Status: apiv1.NodeStatus{
+						MachineName: "mars",
+						Capacity: apiv1.NodeResources{
+							CPU:    "0",
+							Memory: "0",
+						},
+						Allocatable: apiv1.NodeResources{
+							CPU:    "0",
+							Memory: "0",
+						},
+					},
+				},
+			},
+		},
+		// scenario 2
+		{
+			Name:                   "scenario 2: list nodes that belong to the given cluster should skip controlled machines",
+			Body:                   ``,
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        genDefaultCluster().Name,
+			ProjectIDToSync:        genDefaultProject().Name,
+			ExistingKubermaticObjs: genDefaultKubermaticObjects(genDefaultCluster()),
+			ExistingAPIUser:        genDefaultAPIUser(),
+			ExistingNodes: []*corev1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "venus",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "mars",
+					},
+				},
+			},
+			ExistingMachines: []*clusterv1alpha1.Machine{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "venus",
+						Namespace: "kube-system",
+						OwnerReferences: []metav1.OwnerReference{
+							{APIVersion: "", Kind: "", Name: "", UID: ""},
+						},
+					},
+					Spec: clusterv1alpha1.MachineSpec{
+						ProviderConfig: clusterv1alpha1.ProviderConfig{
+							Value: &runtime.RawExtension{
+								Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
+							},
+						},
+						Versions: clusterv1alpha1.MachineVersionInfo{
+							Kubelet: "v1.9.6",
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "mars",
+						Namespace: "kube-system",
+					},
+					Spec: clusterv1alpha1.MachineSpec{
+						ProviderConfig: clusterv1alpha1.ProviderConfig{
+							Value: &runtime.RawExtension{
+								Raw: []byte(`{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`),
+							},
+						},
+						Versions: clusterv1alpha1.MachineVersionInfo{
+							Kubelet: "v1.9.9",
+						},
+					},
+				},
+			},
+			ExpectedResponse: []apiv1.Node{
+				{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:   "mars",
 						Name: "mars",
