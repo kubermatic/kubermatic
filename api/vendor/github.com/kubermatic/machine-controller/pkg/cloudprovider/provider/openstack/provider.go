@@ -207,12 +207,10 @@ func getClient(c *Config) (*gophercloud.ProviderClient, error) {
 	return goopenstack.AuthenticatedClient(opts)
 }
 
-func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec, bool, error) {
-	var changed bool
-
+func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec, error) {
 	c, _, rawConfig, err := p.getConfig(spec.ProviderConfig)
 	if err != nil {
-		return spec, changed, cloudprovidererrors.TerminalError{
+		return spec, cloudprovidererrors.TerminalError{
 			Reason:  common.InvalidConfigurationMachineError,
 			Message: fmt.Sprintf("Failed to parse MachineSpec, due to %v", err),
 		}
@@ -220,21 +218,20 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 
 	client, err := getClient(c)
 	if err != nil {
-		return spec, changed, osErrorToTerminalError(err, "failed to get a openstack client")
+		return spec, osErrorToTerminalError(err, "failed to get a openstack client")
 	}
 
 	if c.Region == "" {
 		glog.V(4).Infof("Trying to default region for machine '%s'...", spec.Name)
 		regions, err := getRegions(client)
 		if err != nil {
-			return spec, changed, osErrorToTerminalError(err, "failed to get regions")
+			return spec, osErrorToTerminalError(err, "failed to get regions")
 		}
 		if len(regions) == 1 {
 			glog.V(4).Infof("Defaulted region for machine '%s' to '%s'", spec.Name, regions[0].ID)
-			changed = true
 			rawConfig.Region.Value = regions[0].ID
 		} else {
-			return spec, changed, fmt.Errorf("could not default region because got '%v' results", len(regions))
+			return spec, fmt.Errorf("could not default region because got '%v' results", len(regions))
 		}
 	}
 
@@ -242,11 +239,10 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 		glog.V(4).Infof("Trying to default availability zone for machine '%s'...", spec.Name)
 		availabilityZones, err := getAvailabilityZones(client, c.Region)
 		if err != nil {
-			return spec, changed, osErrorToTerminalError(err, "failed to get availability zones")
+			return spec, osErrorToTerminalError(err, "failed to get availability zones")
 		}
 		if len(availabilityZones) == 1 {
 			glog.V(4).Infof("Defaulted availability zone for machine '%s' to '%s'", spec.Name, availabilityZones[0].ZoneName)
-			changed = true
 			rawConfig.AvailabilityZone.Value = availabilityZones[0].ZoneName
 		}
 	}
@@ -255,13 +251,12 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 		glog.V(4).Infof("Trying to default network for machine '%s'...", spec.Name)
 		net, err := getDefaultNetwork(client, c.Region)
 		if err != nil {
-			return spec, changed, osErrorToTerminalError(err, "failed to default network")
+			return spec, osErrorToTerminalError(err, "failed to default network")
 		}
 		if net != nil {
 			glog.V(4).Infof("Defaulted network for machine '%s' to '%s'", spec.Name, net.Name)
 			// Use the id as the name may not be unique
 			rawConfig.Network.Value = net.ID
-			changed = true
 		}
 	}
 
@@ -273,24 +268,23 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 
 		net, err := getNetwork(client, c.Region, networkID)
 		if err != nil {
-			return spec, changed, osErrorToTerminalError(err, fmt.Sprintf("failed to get network for subnet defaulting '%s", networkID))
+			return spec, osErrorToTerminalError(err, fmt.Sprintf("failed to get network for subnet defaulting '%s", networkID))
 		}
 		subnet, err := getDefaultSubnet(client, net, c.Region)
 		if err != nil {
-			return spec, changed, osErrorToTerminalError(err, "error defaulting subnet")
+			return spec, osErrorToTerminalError(err, "error defaulting subnet")
 		}
 		if subnet != nil {
 			glog.V(4).Infof("Defaulted subnet for machine '%s' to '%s'", spec.Name, *subnet)
 			rawConfig.Subnet.Value = *subnet
-			changed = true
 		}
 	}
 
 	spec.ProviderConfig.Value, err = setProviderConfig(*rawConfig, spec.ProviderConfig)
 	if err != nil {
-		return spec, changed, osErrorToTerminalError(err, "error marshaling providerconfig")
+		return spec, osErrorToTerminalError(err, "error marshaling providerconfig")
 	}
-	return spec, changed, nil
+	return spec, nil
 }
 
 func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
@@ -352,7 +346,7 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 	return nil
 }
 
-func (p *provider) Create(machine *v1alpha1.Machine, _ cloud.MachineUpdater, userdata string) (instance.Instance, error) {
+func (p *provider) Create(machine *v1alpha1.Machine, _ *cloud.MachineCreateDeleteData, userdata string) (instance.Instance, error) {
 	c, _, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, cloudprovidererrors.TerminalError{
@@ -478,7 +472,7 @@ func deleteInstanceDueToFatalLogged(computeClient *gophercloud.ServiceClient, se
 	glog.V(0).Infof("Instance %s got deleted", serverID)
 }
 
-func (p *provider) Delete(machine *v1alpha1.Machine, _ cloud.MachineUpdater) error {
+func (p *provider) Delete(machine *v1alpha1.Machine, _ *cloud.MachineCreateDeleteData) error {
 	instance, err := p.Get(machine)
 	if err != nil {
 		if err == cloudprovidererrors.ErrInstanceNotFound {

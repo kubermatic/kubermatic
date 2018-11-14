@@ -4,11 +4,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/cloud"
 	cloudprovidererrors "github.com/kubermatic/machine-controller/pkg/cloudprovider/errors"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	"github.com/kubermatic/machine-controller/pkg/userdata/convert"
 
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -20,8 +23,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/golang/glog"
+	gocache "github.com/patrickmn/go-cache"
 
-	common "sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
+	"sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
 	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
@@ -70,64 +74,29 @@ var (
   ]
 }`
 
-	amis = map[providerconfig.OperatingSystem]map[string]string{
+	amiFilters = map[providerconfig.OperatingSystem]amiFilter{
 		providerconfig.OperatingSystemCoreos: {
-			"ap-northeast-1": "ami-6a6bec0c",
-			"ap-northeast-2": "ami-7fb41211",
-			"ap-south-1":     "ami-02b4fd6d",
-			"ap-southeast-1": "ami-cb096db7",
-			"ap-southeast-2": "ami-7957a31b",
-			"ca-central-1":   "ami-9c16adf8",
-			"cn-north-1":     "ami-e803d185",
-			"eu-central-1":   "ami-31c74e5e",
-			"eu-west-1":      "ami-c8a811b1",
-			"eu-west-2":      "ami-8ccdd3e8",
-			"sa-east-1":      "ami-af84c3c3",
-			"us-east-1":      "ami-6dfb9a17",
-			"us-east-2":      "ami-01e2cb64",
-			"us-gov-west-1":  "ami-6bad220a",
-			"us-west-1":      "ami-7d81bb1d",
-			"us-west-2":      "ami-c167bdb9",
-		},
-		// for region in $(aws ec2 describe-regions  | jq '.Regions[].RegionName' --raw-output); do
-		//   IMAGE="$(aws ec2 --region "$region" describe-images --filters Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server* --output json | jq '.Images | sort_by(.CreationDate) | reverse | .[0].ImageId' --raw-output)"
-		//   echo "\"$region\": \"$IMAGE\","
-		// done
-		providerconfig.OperatingSystemUbuntu: {
-			"ap-south-1":     "ami-004ae4f94341b595d",
-			"eu-west-3":      "ami-0f230b076c11618ab",
-			"eu-west-2":      "ami-54d12433",
-			"eu-west-1":      "ami-0bd5ae06b6779872a",
-			"ap-northeast-2": "ami-0cffb4e3f8f2c7ca2",
-			"ap-northeast-1": "ami-18a8d1f5",
-			"sa-east-1":      "ami-0ba619c9d7a85181f",
-			"ca-central-1":   "ami-4875f82c",
-			"ap-southeast-1": "ami-02717f13071669929",
-			"ap-southeast-2": "ami-3b288859",
-			"eu-central-1":   "ami-f3bcb218",
-			"us-east-1":      "ami-920b10ed",
-			"us-east-2":      "ami-03bd56e7bb2f24c5d",
-			"us-west-1":      "ami-f36b8490",
-			"us-west-2":      "ami-349fb84c",
+			description: "CoreOS Container Linux stable*",
+			// The AWS marketplace ID from CoreOS
+			owner: "595879546273",
 		},
 		providerconfig.OperatingSystemCentOS: {
-			"ap-northeast-1": "ami-25bd2743",
-			"ap-south-1":     "ami-5d99ce32",
-			"ap-southeast-1": "ami-d2fa88ae",
-			"ca-central-1":   "ami-dcad28b8",
-			"eu-central-1":   "ami-337be65c",
-			"eu-west-1":      "ami-6e28b517",
-			"sa-east-1":      "ami-f9adef95",
-			"us-east-1":      "ami-4bf3d731",
-			"us-west-1":      "ami-65e0e305",
-			"ap-northeast-2": "ami-7248e81c",
-			"ap-southeast-2": "ami-b6bb47d4",
-			"eu-west-2":      "ami-ee6a718a",
-			"us-east-2":      "ami-e1496384",
-			"us-west-2":      "ami-a042f4d8",
-			"eu-west-3":      "ami-bfff49c2",
+			description: "CentOS Linux 7 x86_64 HVM EBS*",
+			// The AWS marketplace ID from AWS
+			owner: "679593333241",
+		},
+		providerconfig.OperatingSystemUbuntu: {
+			// Be as precise as possible - otherwise we might get a nightly dev build
+			description: "Canonical, Ubuntu, 18.04 LTS, amd64 bionic image build on ????-??-??",
+			// The AWS marketplace ID from Canonical
+			owner: "099720109477",
 		},
 	}
+
+	// cacheLock protects concurrent cache misses against a single key. This usually happens when multiple machines get created simultaneously
+	// We lock so the first access updates/writes the data to the cache and afterwards everyone reads the cached data
+	cacheLock = &sync.Mutex{}
+	cache     = gocache.New(5*time.Minute, 5*time.Minute)
 )
 
 type RawConfig struct {
@@ -168,18 +137,63 @@ type Config struct {
 	Tags         map[string]string
 }
 
-func getDefaultAMIID(os providerconfig.OperatingSystem, region string) (string, error) {
-	amis, osSupported := amis[os]
+type amiFilter struct {
+	description string
+	owner       string
+}
+
+func getDefaultAMIID(client *ec2.EC2, os providerconfig.OperatingSystem, region string) (string, error) {
+	cacheLock.Lock()
+	defer cacheLock.Unlock()
+
+	filter, osSupported := amiFilters[os]
 	if !osSupported {
 		return "", fmt.Errorf("operating system %q not supported", os)
 	}
 
-	id, regionFound := amis[region]
-	if !regionFound {
-		return "", fmt.Errorf("specified region %q not supported with this operating system %q", region, os)
+	cacheKey := fmt.Sprintf("ami-id-%s-%s", region, os)
+	amiID, found := cache.Get(cacheKey)
+	if found {
+		glog.V(4).Info("found AMI-ID in cache!")
+		return amiID.(string), nil
 	}
 
-	return id, nil
+	imagesOut, err := client.DescribeImages(&ec2.DescribeImagesInput{
+		Owners: aws.StringSlice([]string{filter.owner}),
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("description"),
+				Values: aws.StringSlice([]string{filter.description}),
+			},
+			{
+				Name:   aws.String("virtualization-type"),
+				Values: aws.StringSlice([]string{"hvm"}),
+			},
+			{
+				Name:   aws.String("root-device-type"),
+				Values: aws.StringSlice([]string{"ebs"}),
+			},
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+
+	if len(imagesOut.Images) == 0 {
+		return "", fmt.Errorf("could not find Image for '%s'", os)
+	}
+
+	image := imagesOut.Images[0]
+	for _, v := range imagesOut.Images {
+		itime, _ := time.Parse(time.RFC3339, *image.CreationDate)
+		vtime, _ := time.Parse(time.RFC3339, *v.CreationDate)
+		if vtime.After(itime) {
+			image = v
+		}
+	}
+
+	cache.SetDefault(cacheKey, *image.ImageId)
+	return *image.ImageId, nil
 }
 
 func getDefaultRootDevicePath(os providerconfig.OperatingSystem) (string, error) {
@@ -284,14 +298,22 @@ func getEC2client(id, secret, region string) (*ec2.EC2, error) {
 	return ec2.New(sess), nil
 }
 
-func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec, bool, error) {
-	return spec, false, nil
+func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec, error) {
+	return spec, nil
 }
 
 func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 	config, pc, err := p.getConfig(spec.ProviderConfig)
 	if err != nil {
 		return fmt.Errorf("failed to parse config: %v", err)
+	}
+
+	if _, osSupported := amiFilters[pc.OperatingSystem]; !osSupported {
+		return fmt.Errorf("unsupported os %s", pc.OperatingSystem)
+	}
+
+	if !volumeTypes.Has(config.DiskType) {
+		return fmt.Errorf("invalid volume type %s specified. Supported: %s", config.DiskType, volumeTypes)
 	}
 
 	ec2Client, err := getEC2client(config.AccessKeyID, config.SecretAccessKey, config.Region)
@@ -304,11 +326,6 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 		})
 		if err != nil {
 			return fmt.Errorf("failed to validate ami: %v", err)
-		}
-	} else {
-		_, err := getDefaultAMIID(pc.OperatingSystem, config.Region)
-		if err != nil {
-			return fmt.Errorf("invalid region+os configuration: %v", err)
 		}
 	}
 
@@ -345,10 +362,6 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 		if err != nil {
 			return fmt.Errorf("failed to validate instance profile: %v", err)
 		}
-	}
-
-	if !volumeTypes.Has(config.DiskType) {
-		return fmt.Errorf("invalid volume type %s specified. Supported: %s", config.DiskType, volumeTypes)
 	}
 
 	return nil
@@ -509,7 +522,7 @@ func ensureDefaultInstanceProfileExists(client *iam.IAM) error {
 	return nil
 }
 
-func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater, userdata string) (instance.Instance, error) {
+func (p *provider) Create(machine *v1alpha1.Machine, data *cloud.MachineCreateDeleteData, userdata string) (instance.Instance, error) {
 	config, pc, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, cloudprovidererrors.TerminalError{
@@ -558,13 +571,21 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 
 	amiID := config.AMI
 	if amiID == "" {
-		if amiID, err = getDefaultAMIID(pc.OperatingSystem, config.Region); err != nil {
+		if amiID, err = getDefaultAMIID(ec2Client, pc.OperatingSystem, config.Region); err != nil {
 			if err != nil {
 				return nil, cloudprovidererrors.TerminalError{
 					Reason:  common.InvalidConfigurationMachineError,
 					Message: fmt.Sprintf("Invalid Region and Operating System configuration: %v", err),
 				}
 			}
+		}
+	}
+
+	if pc.OperatingSystem != providerconfig.OperatingSystemCoreos {
+		// Gzip the userdata in case we don't use CoreOS.
+		userdata, err = convert.GzipString(userdata)
+		if err != nil {
+			return nil, fmt.Errorf("failed to gzip the userdata")
 		}
 	}
 
@@ -636,7 +657,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 		Groups:     aws.StringSlice(securityGroupIDs),
 	})
 	if err != nil {
-		delErr := p.Delete(machine, update)
+		delErr := p.Delete(machine, data)
 		if delErr != nil {
 			return nil, awsErrorToTerminalError(err, fmt.Sprintf("failed to attach instance %s to security group %s & delete the created instance", aws.StringValue(runOut.Instances[0].InstanceId), defaultSecurityGroupName))
 		}
@@ -646,7 +667,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 	return awsInstance, nil
 }
 
-func (p *provider) Delete(machine *v1alpha1.Machine, _ cloud.MachineUpdater) error {
+func (p *provider) Delete(machine *v1alpha1.Machine, _ *cloud.MachineCreateDeleteData) error {
 	instance, err := p.Get(machine)
 	if err != nil {
 		if err == cloudprovidererrors.ErrInstanceNotFound {
@@ -708,24 +729,25 @@ func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 		return nil, awsErrorToTerminalError(err, "failed to list instances from aws")
 	}
 
-	if len(inOut.Reservations) == 0 || len(inOut.Reservations[0].Instances) == 0 {
-		return nil, cloudprovidererrors.ErrInstanceNotFound
-	}
+	// We might have multiple instances (Maybe some old, terminated ones)
+	// Thus we need to find the instance which is not in the terminated state
+	for _, reservation := range inOut.Reservations {
+		for _, i := range reservation.Instances {
+			if i.State == nil || i.State.Name == nil {
+				continue
+			}
 
-	i := inOut.Reservations[0].Instances[0]
-	if i.State != nil && i.State.Name != nil {
-		// We consider terminated instances as deleted / don't exist anymore.
-		// The reason is that AWS takes very long >10min to gc those instances.
-		// Customers don't get billed anymore for those instances and they also don't block the deletion of security groups, etc.
-		// In AWS terms, a terminated instance is deleted.
-		if *i.State.Name == ec2.InstanceStateNameTerminated {
-			return nil, cloudprovidererrors.ErrInstanceNotFound
+			if *i.State.Name == ec2.InstanceStateNameTerminated {
+				continue
+			}
+
+			return &awsInstance{
+				instance: i,
+			}, nil
 		}
 	}
 
-	return &awsInstance{
-		instance: i,
-	}, nil
+	return nil, cloudprovidererrors.ErrInstanceNotFound
 }
 
 func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, name string, err error) {
