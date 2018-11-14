@@ -7,7 +7,6 @@ spec:
     creationTimestamp: null
     name: docluster-1a2b3c4d5e-te5s7
   providerConfig:
-    ValueFrom: null
     value:
       cloudProvider: digitalocean
       cloudProviderSpec:
@@ -30,6 +29,4 @@ spec:
       - ssh-rsa TEST123test
   versions:
     kubelet: v1.9.6
-status:
-  lastUpdated: null
-  providerStatus: null
+status: {}
