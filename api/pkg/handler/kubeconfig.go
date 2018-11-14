@@ -10,13 +10,21 @@ import (
 	"net/url"
 
 	"github.com/go-kit/kit/endpoint"
-
+	"github.com/gorilla/securecookie"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kcerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	"k8s.io/apimachinery/pkg/util/rand"
 
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
+
+const (
+	csrfCookieName = "csrf_token"
+	cookieMaxAge   = 180
+)
+
+var secureCookie = securecookie.New(securecookie.GenerateRandomKey(32), nil)
 
 func getClusterKubeconfig(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -56,8 +64,8 @@ func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVe
 		// PHASE exchangeCode handles callback response from OIDC provider
 		// and generates kubeconfig
 		if req.phase == exchangeCodePhase {
-			// TODO: validate the state
-			if req.decodedState.Nonce != "nonce=TODO" {
+			// validate the state
+			if req.decodedState.Nonce != req.cookieNonceValue {
 				return nil, kcerrors.NewBadRequest("incorrect value of state parameter = %s", req.decodedState.Nonce)
 			}
 			oidcTokens, err := oidcIssuer.Exchange(ctx, req.code)
@@ -134,14 +142,18 @@ func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVe
 			return nil, kcerrors.NewBadRequest(fmt.Sprintf("bad request unexpected phase = %d, expected phase = %d, did you forget to set the phase while decoding the request ?", req.phase, initialPhase))
 		}
 
-		// TODO: pass nonce
 		rsp := createOIDCKubeconfigRsp{}
 		scopes := []string{"openid", "email"}
 		if oidcCfg.OfflineAccessAsScope {
 			scopes = append(scopes, "offline_access")
 		}
+
+		// pass nonce
+		nonce := rand.String(rand.IntnRange(10, 15))
+		rsp.nonce = nonce
+
 		oidcState := state{
-			Nonce:      "nonce=TODO",
+			Nonce:      nonce,
 			ClusterID:  req.ClusterID,
 			ProjectID:  req.ProjectID,
 			UserID:     req.UserID,
@@ -187,11 +199,14 @@ type createOIDCKubeconfigRsp struct {
 	phase int
 	// oidcKubeConfig holds not serialized kubeconfig
 	oidcKubeConfig *clientcmdapi.Config
+	// nonce holds an arbitrary number storied in cookie to prevent Cross-site Request Forgery attack.
+	nonce string
 }
 
 func encodeKubeconfigDoINeddAcditional(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	rsp := response.(createOIDCKubeconfigRsp)
 
+	setCookie(w, rsp.nonce)
 	// handles kubeconfigGenerated PHASE
 	// it means that kubeconfig was generated and we need to properly encode it.
 	if rsp.phase == kubeconfigGenerated {
@@ -248,10 +263,11 @@ type CreateOIDCKubeconfigReq struct {
 	Datacenter string
 
 	// not exported so that they don't leak to swagger spec.
-	code         string
-	encodedState string
-	decodedState state
-	phase        int
+	code             string
+	encodedState     string
+	decodedState     state
+	phase            int
+	cookieNonceValue string
 }
 
 func decodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}, error) {
@@ -263,6 +279,14 @@ func decodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}
 		errMessage := r.URL.Query().Get("error_description")
 		if len(errMessage) != 0 {
 			return nil, fmt.Errorf("OIDC provider error type = %s, description = %s", errType, errMessage)
+		}
+	}
+
+	// handle cookie
+	if cookie, err := r.Cookie(csrfCookieName); err == nil {
+		value := make(map[string]string)
+		if err = secureCookie.Decode(csrfCookieName, cookie.Value, &value); err == nil {
+			req.cookieNonceValue = value["nonce"]
 		}
 	}
 
@@ -318,4 +342,21 @@ func (r CreateOIDCKubeconfigReq) GetDC() string {
 // GetProjectID implements ProjectGetter interface
 func (r CreateOIDCKubeconfigReq) GetProjectID() string {
 	return r.ProjectID
+}
+
+// setCookie add cookie with random string value
+func setCookie(w http.ResponseWriter, nonce string) {
+	value := map[string]string{
+		"nonce": nonce,
+	}
+
+	if encoded, err := secureCookie.Encode(csrfCookieName, value); err == nil {
+		cookie := &http.Cookie{
+			Name:   csrfCookieName,
+			Value:  encoded,
+			MaxAge: cookieMaxAge,
+		}
+
+		http.SetCookie(w, cookie)
+	}
 }

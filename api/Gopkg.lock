@@ -619,6 +619,14 @@
   version = "v1.6.1"
 
 [[projects]]
+  digest = "1:0faa8131e5822f3420f82426667a29c5c425c3cb7e0fcf0c5d1c718d6e6ba19b"
+  name = "github.com/gorilla/securecookie"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "e59506cc896acb7f7bf732d4fdf5e25f7ccd8983"
+  version = "v1.1.1"
+
+[[projects]]
   branch = "master"
   digest = "1:13e2fa5735a82a5fb044f290cfd0dba633d1c5e516b27da0509e0dbb3515a18e"
   name = "github.com/hashicorp/golang-lru"
@@ -1791,6 +1799,7 @@
     "github.com/gophercloud/gophercloud/pagination",
     "github.com/gorilla/handlers",
     "github.com/gorilla/mux",
+    "github.com/gorilla/securecookie",
     "github.com/hetznercloud/hcloud-go/hcloud",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure",
