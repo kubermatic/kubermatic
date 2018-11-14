@@ -6,6 +6,7 @@ set -o pipefail
 
 echo Removing old clients
 rm -rf "pkg/crd/client"
+rm -rf "pkg/client"
 
 echo "" > /tmp/headerfile
 
@@ -18,10 +19,5 @@ GOPATH=$(go env GOPATH) ./vendor/k8s.io/code-generator/generate-groups.sh "clien
   github.com/kubermatic/kubermatic/api/pkg/client/cluster-api sigs.k8s.io/cluster-api/pkg/apis \
   "cluster:v1alpha1" \
   --go-header-file /tmp/headerfile
-#client-gen --clientset-name clientset \
-#  --input-base sigs.k8s.io/cluster-api/pkg/apis \
-#  --input cluster/v1alpha1 \
-#  --go-header-file /tmp/headerfile \
-#  --output-package="github.com/kubermatic/kubermatic/api/pkg/client/cluster-api"
 
 rm /tmp/headerfile
