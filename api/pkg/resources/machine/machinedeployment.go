@@ -30,7 +30,7 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 	md.Spec.ProgressDeadlineSeconds = nd.Spec.ProgressDeadlineSeconds
 
 	if nd.Spec.Strategy != nil {
-		md.Spec.Strategy = *nd.Spec.Strategy
+		md.Spec.Strategy = nd.Spec.Strategy
 	}
 
 	if nd.Spec.MinReadySeconds != nil {

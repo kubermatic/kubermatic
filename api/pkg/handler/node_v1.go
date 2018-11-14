@@ -733,7 +733,7 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 				OperatingSystem: *operatingSystemSpec,
 				Cloud:           *cloudSpec,
 			},
-			Strategy:                &md.Spec.Strategy,
+			Strategy:                md.Spec.Strategy,
 			MinReadySeconds:         md.Spec.MinReadySeconds,
 			RevisionHistoryLimit:    md.Spec.RevisionHistoryLimit,
 			Paused:                  &md.Spec.Paused,
