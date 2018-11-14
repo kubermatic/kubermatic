@@ -2,7 +2,6 @@ package ipam
 
 import (
 	"net"
-	"os/exec"
 	"strings"
 	"testing"
 	"time"
@@ -14,9 +13,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	clusterv1alpha1fakeclientset "github.com/kubermatic/kubermatic/api/pkg/client/cluster-api/clientset/fake"
+	clusterv1alpha1fakeclientset "github.com/kubermatic/kubermatic/api/pkg/client/cluster-api/clientset/versioned/fake"
+	clusterinformers "github.com/kubermatic/kubermatic/api/pkg/client/cluster-api/informers/externalversions"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
-	clusterinformers "sigs.k8s.io/cluster-api/pkg/client/informers_generated/externalversions"
 )
 
 type machineTestData struct {
@@ -28,9 +27,6 @@ type machineTestData struct {
 func TestIPAMController(t *testing.T) {
 	for name, testCase := range testCases {
 		t.Run(name, testCase)
-	}
-	if out, err := exec.Command("./testdata/cleanup-clusterapi-client.sh").CombinedOutput(); err != nil {
-		t.Fatalf("Failed to clean up clientset for testing: err=%v, out=\n%v", err, string(out))
 	}
 }
 

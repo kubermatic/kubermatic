@@ -8,6 +8,9 @@ import (
 
 	"github.com/golang/glog"
 
+	clusterv1alpha1clientset "github.com/kubermatic/kubermatic/api/pkg/client/cluster-api/clientset/versioned"
+	clusterv1alpha1informers "github.com/kubermatic/kubermatic/api/pkg/client/cluster-api/informers/externalversions/cluster/v1alpha1"
+	clusterlistersv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/client/cluster-api/listers/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,9 +24,6 @@ import (
 
 	clusterv1alpha1common "sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
-	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
-	clusterv1alpha1informers "sigs.k8s.io/cluster-api/pkg/client/informers_generated/externalversions/cluster/v1alpha1"
-	clusterlistersv1alpha1 "sigs.k8s.io/cluster-api/pkg/client/listers_generated/cluster/v1alpha1"
 )
 
 const (

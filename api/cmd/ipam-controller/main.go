@@ -11,6 +11,8 @@ import (
 
 	"github.com/golang/glog"
 
+	clusterv1alpha1clientset "github.com/kubermatic/kubermatic/api/pkg/client/cluster-api/clientset/versioned"
+	clusterv1alpha1informers "github.com/kubermatic/kubermatic/api/pkg/client/cluster-api/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/ipam"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 
@@ -25,8 +27,6 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
-	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
-	clusterv1alpha1informers "sigs.k8s.io/cluster-api/pkg/client/informers_generated/externalversions"
 )
 
 const controllerName = "ipam-controller"
