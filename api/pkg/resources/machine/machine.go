@@ -20,9 +20,8 @@ import (
 func Machine(c *kubermaticv1.Cluster, node *apiv1.Node, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.Machine, error) {
 	m := clusterv1alpha1.Machine{}
 
-	m.GenerateName = fmt.Sprintf("machine-kubermatic-%s-", c.Name)
 	m.Namespace = metav1.NamespaceSystem
-	m.Spec.Name = node.Name
+	m.GenerateName = fmt.Sprintf("machine-kubermatic-%s-", c.Name)
 
 	m.Spec.Versions.Kubelet = node.Spec.Versions.Kubelet
 
