@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/glog"
 
+	clusterv1alpha1clientset "github.com/kubermatic/kubermatic/api/pkg/client/cluster-api/clientset/versioned"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
@@ -37,8 +38,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
-
-	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 )
 
 // userClusterConnectionProvider offers functions to retrieve clients for the given user clusters

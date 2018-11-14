@@ -16,7 +16,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
-	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
+	clusterv1alpha1clientset "github.com/kubermatic/kubermatic/api/pkg/client/cluster-api/clientset/versioned"
 )
 
 // UserClusterConnectionProvider offers functions to interact with a user cluster

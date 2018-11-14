@@ -16,6 +16,8 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	clusterclientset "github.com/kubermatic/kubermatic/api/pkg/client/cluster-api/clientset/versioned"
+	fakeclusterclientset "github.com/kubermatic/kubermatic/api/pkg/client/cluster-api/clientset/versioned/fake"
 	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
@@ -35,9 +37,6 @@ import (
 	kubernetesclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	restclient "k8s.io/client-go/rest"
-
-	fakeclusterclientset "github.com/kubermatic/kubermatic/api/pkg/client/cluster-api/clientset/fake"
-	clusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 )
 
 func createTestEndpointAndGetClients(user apiv1.LegacyUser, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *clientsSets, error) {

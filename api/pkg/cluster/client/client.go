@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 
+	clusterv1alpha1clientset "github.com/kubermatic/kubermatic/api/pkg/client/cluster-api/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
@@ -13,8 +14,6 @@ import (
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	aggregationclientset "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
-
-	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 )
 
 // New returns a new instance of the client connection provider

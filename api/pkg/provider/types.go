@@ -4,12 +4,11 @@ import (
 	"errors"
 	"fmt"
 
+	clusterv1alpha1clientset "github.com/kubermatic/kubermatic/api/pkg/client/cluster-api/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	"k8s.io/client-go/kubernetes"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-
-	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 )
 
 var (
