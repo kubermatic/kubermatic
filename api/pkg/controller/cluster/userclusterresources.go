@@ -21,14 +21,58 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
-func (cc *Controller) userClusterEnsureInitializerConfiguration(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
+func (cc *Controller) reconcileUserClusterResources(cluster *kubermaticv1.Cluster, client kubernetes.Interface) (*kubermaticv1.Cluster, error) {
+	var err error
+	if err = cc.launchingCreateOpenVPNClientCertificates(cluster); err != nil {
+		return nil, err
 	}
 
+	if len(cluster.Spec.MachineNetworks) > 0 {
+		if err = cc.userClusterEnsureInitializerConfiguration(cluster, client); err != nil {
+			return nil, err
+		}
+	}
+
+	if err = cc.userClusterEnsureRoles(cluster, client); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureConfigMaps(cluster, client); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureRoleBindings(cluster, client); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureClusterRoles(cluster, client); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureClusterRoleBindings(cluster, client); err != nil {
+		return nil, err
+	}
+
+	data, err := cc.getClusterTemplateData(cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureMutatingWebhookConfigurations(cluster, data); err != nil {
+		return nil, err
+	}
+
+	if err = cc.userClusterEnsureCustomResourceDefinitions(cluster); err != nil {
+		return nil, err
+	}
+
+	return cluster, nil
+}
+
+func (cc *Controller) userClusterEnsureInitializerConfiguration(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	creators := []resources.InitializerConfigurationCreator{
 		ipamcontroller.MachineIPAMInitializerConfiguration,
 	}
@@ -75,11 +119,7 @@ func (cc *Controller) userClusterEnsureInitializerConfiguration(c *kubermaticv1.
 	return nil
 }
 
-func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
+func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 
 	creators := []resources.RoleCreator{
 		machinecontroller.Role,
@@ -129,12 +169,7 @@ func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster) error {
 	return nil
 }
 
-func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
+func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	creators := []resources.RoleBindingCreator{
 		machinecontroller.DefaultRoleBinding,
 		machinecontroller.KubeSystemRoleBinding,
@@ -192,12 +227,7 @@ func GetUserClusterRoleCreators(c *kubermaticv1.Cluster) []resources.ClusterRole
 	return creators
 }
 
-func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
-
+func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	creators := GetUserClusterRoleCreators(c)
 
 	data, err := cc.getClusterTemplateData(c)
@@ -258,7 +288,7 @@ func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.Clus
 	return creators
 }
 
-func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Cluster) error {
+func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 	client, err := cc.userClusterConnProvider.GetClient(c)
 	if err != nil {
 		return err
@@ -308,11 +338,7 @@ func (cc *Controller) userClusterEnsureClusterRoleBindings(c *kubermaticv1.Clust
 	return nil
 }
 
-func (cc *Controller) userClusterEnsureConfigMaps(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
-	if err != nil {
-		return err
-	}
+func (cc *Controller) userClusterEnsureConfigMaps(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
 
 	data, err := cc.getClusterTemplateData(c)
 	if err != nil {
@@ -411,6 +437,54 @@ func (cc *Controller) userClusterEnsureCustomResourceDefinitions(c *kubermaticv1
 			return fmt.Errorf("failed to update CustomResourceDefinition %s: %v", crd.Name, err)
 		}
 		glog.V(4).Infof("Updated CustomResourceDefinition %s inside user cluster %s", crd.Name, c.Name)
+	}
+
+	return nil
+}
+
+// GetUserClusterMutatingWebhookConfigurationCreators returns all UserClusterMutatingWebhookConfigurationCreators
+func GetUserClusterMutatingWebhookConfigurationCreators() []resources.MutatingWebhookConfigurationCreator {
+	return []resources.MutatingWebhookConfigurationCreator{
+		machinecontroller.MutatingwebhookConfiguration,
+	}
+}
+
+func (cc *Controller) userClusterEnsureMutatingWebhookConfigurations(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	client, err := cc.userClusterConnProvider.GetAdmissionRegistrationClient(c)
+	if err != nil {
+		return err
+	}
+
+	for _, creator := range GetUserClusterMutatingWebhookConfigurationCreators() {
+		mutatingWebhookConfiguration, err := creator(c, data, nil)
+		if err != nil {
+			return fmt.Errorf("failed to build MutatingwebhookConfiguration: %v", err)
+		}
+		existing, err := client.MutatingWebhookConfigurations().Get(mutatingWebhookConfiguration.Name, metav1.GetOptions{})
+		if err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+
+			if _, err = client.MutatingWebhookConfigurations().Create(mutatingWebhookConfiguration); err != nil {
+				return fmt.Errorf("failed to create MutatingWebhookConfiguration: %v", err)
+			}
+			glog.V(4).Infof("Created MutatingWebhookConfiguration %s inside user cluster %s", mutatingWebhookConfiguration.Name, c.Name)
+		}
+
+		mutatingWebhookConfiguration, err = creator(c, data, existing.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to build MutatingWebhookConfiguration: %v", err)
+		}
+
+		if equality.Semantic.DeepEqual(mutatingWebhookConfiguration, existing) {
+			return nil
+		}
+
+		if _, err = client.MutatingWebhookConfigurations().Update(mutatingWebhookConfiguration); err != nil {
+			return fmt.Errorf("failed to update MutatingWebhookConfigurations %s: %v", mutatingWebhookConfiguration.Name, err)
+		}
+		glog.V(4).Infof("Updated MutatingWebhookConfigurations %s inside user cluster %s", mutatingWebhookConfiguration.Name, c.Name)
 	}
 
 	return nil
