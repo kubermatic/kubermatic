@@ -14,8 +14,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	clusterv1alpha1fakeclientset "github.com/kubermatic/kubermatic/api/pkg/client/cluster-api/clientset/fake"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
-	clusterv1alpha1fakeclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset/fake"
 	clusterinformers "sigs.k8s.io/cluster-api/pkg/client/informers_generated/externalversions"
 )
 
@@ -25,13 +25,6 @@ type machineTestData struct {
 	machine *clusterv1alpha1.Machine
 }
 
-// TestIPAMController is a wrapper around all IPAM controller tests
-// that setups a custom fake client within the vendor dir and clears
-// it up after the tests. This is required because the cluster-api
-// clientset has a bug that results in the listers not getting updates
-// This issue got fixed in client-go 1.10 (kubernetes/kubernetes#57504)
-// but not in client-go 1.9 which they use
-//go:generate ./testdata/gen-clusterapi-client.sh
 func TestIPAMController(t *testing.T) {
 	for name, testCase := range testCases {
 		t.Run(name, testCase)

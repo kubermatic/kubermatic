@@ -36,8 +36,8 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	restclient "k8s.io/client-go/rest"
 
+	fakeclusterclientset "github.com/kubermatic/kubermatic/api/pkg/client/cluster-api/clientset/fake"
 	clusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
-	fakeclusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset/fake"
 )
 
 func createTestEndpointAndGetClients(user apiv1.LegacyUser, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *clientsSets, error) {
@@ -433,7 +433,7 @@ func generateTestKubeconfig(clusterID, token string) string {
 apiVersion: v1
 clusters:
 - cluster:
-    certificate-authority-data: 
+    certificate-authority-data:
     server: test.fake.io
   name: %s
 contexts:
