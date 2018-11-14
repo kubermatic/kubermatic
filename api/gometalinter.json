@@ -3,7 +3,8 @@
   "Concurrency": 2,
   "DisableAll": true,
   "Exclude": [
-    "pkg/crd"
+    "pkg/crd",
+    "pkg/client"
   ],
   "Deadline": "5m",
   "Enable": [
