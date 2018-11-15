@@ -22,6 +22,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machine"
+	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	"k8s.io/api/core/v1"
@@ -203,7 +204,7 @@ func TestLoadFiles(t *testing.T) {
 					},
 					Spec: kubermaticv1.ClusterSpec{
 						Cloud:   cloudspec,
-						Version: ver.Version.String(),
+						Version: *ksemver.NewSemverOrDie(ver.Version.String()),
 						ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 							Services: kubermaticv1.NetworkRanges{
 								CIDRBlocks: []string{"10.10.10.0/24"},

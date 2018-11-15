@@ -6,8 +6,6 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 
-	"github.com/Masterminds/semver"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
@@ -116,7 +114,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 		*openvpnSidecar,
 		{
 			Name:                     name,
-			Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version,
+			Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
 			ImagePullPolicy:          corev1.PullIfNotPresent,
 			Command:                  []string{"/hyperkube", "scheduler"},
 			Args:                     flags,
@@ -202,11 +200,6 @@ func getVolumes() []corev1.Volume {
 }
 
 func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
-	clusterVersionSemVer, err := semver.NewVersion(cluster.Spec.Version)
-	if err != nil {
-		return nil, err
-	}
-
 	flags := []string{
 		"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"--v", "4",
@@ -218,7 +211,7 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 	// TODO: Remove once we don't support Kube 1.10 anymore
 	// TODO: Before removing, add check that prevents upgrading to 1.12 when
 	// there is still a node < 1.11
-	if clusterVersionSemVer.Minor() >= 12 {
+	if cluster.Spec.Version.Semver().Minor() >= 12 {
 		featureGates = append(featureGates, "ScheduleDaemonSetPods=false")
 	}
 	if len(featureGates) > 0 {

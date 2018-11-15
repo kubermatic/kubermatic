@@ -13,8 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/sirupsen/logrus"
 
@@ -24,6 +22,7 @@ import (
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 
 	corev1 "k8s.io/api/core/v1"
@@ -632,12 +631,7 @@ func (r *testRunner) runE2E(
 ) error {
 	kubeconfigFilename = path.Clean(kubeconfigFilename)
 	repoRoot := path.Clean(r.repoRoot)
-
-	version, err := semver.NewVersion(cluster.Spec.Version)
-	if err != nil {
-		return fmt.Errorf("invalid cluster version '%s': %v", cluster.Spec.Version, err)
-	}
-	MajorMinor := fmt.Sprintf("%d.%d", version.Major(), version.Minor())
+	MajorMinor := fmt.Sprintf("%d.%d", cluster.Spec.Version.Major(), cluster.Spec.Version.Minor())
 
 	// TODO: Figure out why they fail & potentially fix. Otherwise, explain why they are deactivated
 	//brokenTests := []string{

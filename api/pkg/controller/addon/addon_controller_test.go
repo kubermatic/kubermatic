@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -120,7 +122,7 @@ func setupTestCluster(CIDRBlock string) *kubermaticv1.Cluster {
 			Name: "test-cluster",
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Version: "v1.10.2",
+			Version: *semver.NewSemverOrDie("v1.11.1"),
 			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 				Services: kubermaticv1.NetworkRanges{
 					CIDRBlocks: []string{

@@ -6,11 +6,11 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"net"
 	"net/url"
 	"time"
 
-	"github.com/Masterminds/semver"
 	"github.com/go-test/deep"
 	"github.com/golang/glog"
 
@@ -384,7 +384,7 @@ type PodDisruptionBudgetCreator = func(data *TemplateData, existing *policyv1bet
 type CronJobCreator = func(data *TemplateData, existing *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error)
 
 // CRDCreateor defines an interface to create/update CustomRessourceDefinitions
-type CRDCreateor = func(version semver.Version, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error)
+type CRDCreateor = func(version semver.Semver, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error)
 
 // APIServiceCreator defines an interface to create/update APIService's
 type APIServiceCreator = func(existing *apiregistrationv1.APIService) (*apiregistrationv1.APIService, error)

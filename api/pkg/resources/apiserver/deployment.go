@@ -10,8 +10,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
-	"github.com/Masterminds/semver"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -147,7 +145,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 		*dnatControllerSidecar,
 		{
 			Name:                     name,
-			Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version,
+			Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
 			ImagePullPolicy:          corev1.PullIfNotPresent,
 			Command:                  []string{"/hyperkube", "apiserver"},
 			Env:                      getEnvVars(data.Cluster()),
@@ -249,11 +247,6 @@ func getApiserverFlags(data resources.DeploymentDataProvider, externalNodePort i
 		nodePortRange = defaultNodePortRange
 	}
 
-	clusterVersionSemVer, err := semver.NewVersion(data.Cluster().Spec.Version)
-	if err != nil {
-		return nil, err
-	}
-
 	admissionControlFlagName, admissionControlFlagValue := getAdmissionControlFlags(data)
 
 	flags := []string{
@@ -296,11 +289,11 @@ func getApiserverFlags(data resources.DeploymentDataProvider, externalNodePort i
 	}
 	var featureGates []string
 
-	if clusterVersionSemVer.Minor() >= 9 {
+	if data.Cluster().Spec.Version.Semver().Minor() >= 9 {
 		featureGates = append(featureGates, "Initializers=true")
 		flags = append(flags, "--runtime-config", "admissionregistration.k8s.io/v1alpha1")
 	}
-	if clusterVersionSemVer.Minor() == 10 {
+	if data.Cluster().Spec.Version.Semver().Minor() == 10 {
 		featureGates = append(featureGates, "CustomResourceSubresources=true")
 	}
 	if len(featureGates) > 0 {
@@ -333,18 +326,13 @@ func getAdmissionControlFlags(data resources.DeploymentDataProvider) (string, st
 	admissionControlFlagValue := "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction"
 	admissionControlFlagName := "--admission-control"
 
-	clusterVersionSemVer, err := semver.NewVersion(data.Cluster().Spec.Version)
-	if err != nil {
-		return admissionControlFlagName, admissionControlFlagValue
-	}
-
 	// Enable {Mutating,Validating}AdmissionWebhook for 1.9+
-	if clusterVersionSemVer.Minor() >= 9 {
+	if data.Cluster().Spec.Version.Semver().Minor() >= 9 {
 		admissionControlFlagValue += ",Initializers,MutatingAdmissionWebhook,ValidatingAdmissionWebhook"
 	}
 
 	// Use the newer "--enable-admission-plugins" which doesn't care about order for 1.10+
-	if clusterVersionSemVer.Minor() >= 10 {
+	if data.Cluster().Spec.Version.Semver().Minor() >= 10 {
 		admissionControlFlagName = "--enable-admission-plugins"
 	}
 
