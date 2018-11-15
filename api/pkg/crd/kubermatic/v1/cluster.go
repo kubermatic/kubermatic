@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -73,7 +74,7 @@ type ClusterSpec struct {
 	MachineNetworks []MachineNetworkingConfig `json:"machineNetworks,omitempty"`
 
 	// Version defines the wanted version of the control plane
-	Version string `json:"version"`
+	Version semver.Semver `json:"version"`
 	// MasterVersion is Deprecated
 	MasterVersion string `json:"masterVersion"`
 

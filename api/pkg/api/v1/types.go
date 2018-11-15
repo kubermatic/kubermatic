@@ -2,13 +2,13 @@ package v1
 
 import (
 	"encoding/json"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	"time"
 
 	"github.com/Masterminds/semver"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 )
@@ -295,8 +295,8 @@ type ClusterSpec struct {
 	// MachineNetworks optionally specifies the parameters for IPAM.
 	MachineNetworks []kubermaticv1.MachineNetworkingConfig `json:"machineNetworks,omitempty"`
 
-	// Version desired version of the kubernetes master components.
-	Version string `json:"version"`
+	// Version desired version of the kubernetes master components
+	Version ksemver.Semver `json:"version"`
 }
 
 // MarshalJSON marshals ClusterSpec object into JSON. It is overwritten to control data
@@ -305,7 +305,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 	ret, err := json.Marshal(struct {
 		Cloud           PublicCloudSpec                        `json:"cloud"`
 		MachineNetworks []kubermaticv1.MachineNetworkingConfig `json:"machineNetworks,omitempty"`
-		Version         string                                 `json:"version"`
+		Version         ksemver.Semver                         `json:"version"`
 	}{
 		Cloud: PublicCloudSpec{
 			DatacenterName: cs.Cloud.DatacenterName,
@@ -429,7 +429,7 @@ func newPublicOpenstackCloudSpec(internal *kubermaticv1.OpenstackCloudSpec) (pub
 // ClusterStatus defines the cluster status
 type ClusterStatus struct {
 	// Version actual version of the kubernetes master components
-	Version string `json:"version"`
+	Version ksemver.Semver `json:"version"`
 
 	// URL specifies the address at which the cluster is available
 	URL string `json:"url"`
@@ -664,7 +664,6 @@ type NodeDeploymentSpec struct {
 	// required: true
 	Template NodeSpec `json:"template"`
 
-	Selector                v1.LabelSelector                    `json:"selector"`
 	Strategy                *v1alpha1.MachineDeploymentStrategy `json:"strategy,omitempty"`
 	MinReadySeconds         *int32                              `json:"minReadySeconds,omitempty"`
 	RevisionHistoryLimit    *int32                              `json:"revisionHistoryLimit,omitempty"`

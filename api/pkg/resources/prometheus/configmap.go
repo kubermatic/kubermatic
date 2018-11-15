@@ -249,7 +249,7 @@ scrape_configs:
       names:
       - "{{ $.TemplateData.Cluster.Status.NamespaceName }}"
 
-{{- if semverCompare ">=1.11.0, <= 1.11.3" $.TemplateData.Cluster.Spec.Version }}
+{{- if semverCompare ">=1.11.0, <= 1.11.3" $.TemplateData.ClusterVersion }}
   metric_relabel_configs:
   - source_labels: [job, __name__]
     regex: 'controller-manager;rest_.*'

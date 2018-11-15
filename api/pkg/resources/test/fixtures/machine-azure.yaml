@@ -5,7 +5,6 @@ metadata:
 spec:
   metadata:
     creationTimestamp: null
-    name: azurecluster-1a2b3c4d5e-te5s7
   providerConfig:
     ValueFrom: null
     value:

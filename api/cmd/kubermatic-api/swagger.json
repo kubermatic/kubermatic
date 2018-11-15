@@ -723,6 +723,62 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}": {
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Deletes the given node deployment that belongs to the cluster.",
+        "operationId": "deleteNodeDeploymentForCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "NodeDeploymentID",
+            "name": "nodedeployment_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes": {
       "get": {
         "description": "Lists nodes that belong to the given cluster",
@@ -2766,9 +2822,7 @@
           "x-go-name": "MachineNetworks"
         },
         "version": {
-          "description": "Version desired version of the kubernetes master components.",
-          "type": "string",
-          "x-go-name": "Version"
+          "$ref": "#/definitions/Semver"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -2783,9 +2837,7 @@
           "x-go-name": "URL"
         },
         "version": {
-          "description": "Version actual version of the kubernetes master components",
-          "type": "string",
-          "x-go-name": "Version"
+          "$ref": "#/definitions/Semver"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -3240,57 +3292,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "LabelSelector": {
-      "description": "A label selector is a label query over a set of resources. The result of matchLabels and\nmatchExpressions are ANDed. An empty label selector matches all objects. A null\nlabel selector matches no objects.",
-      "type": "object",
-      "properties": {
-        "matchExpressions": {
-          "description": "matchExpressions is a list of label selector requirements. The requirements are ANDed.\n+optional",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/LabelSelectorRequirement"
-          },
-          "x-go-name": "MatchExpressions"
-        },
-        "matchLabels": {
-          "description": "matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels\nmap is equivalent to an element of matchExpressions, whose key field is \"key\", the\noperator is \"In\", and the values array contains only \"value\". The requirements are ANDed.\n+optional",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "x-go-name": "MatchLabels"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
-    },
-    "LabelSelectorOperator": {
-      "type": "string",
-      "title": "A label selector operator is the set of operators that can be used in a selector requirement.",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
-    },
-    "LabelSelectorRequirement": {
-      "description": "A label selector requirement is a selector that contains values, a key, and an operator that\nrelates the key and values.",
-      "type": "object",
-      "properties": {
-        "key": {
-          "description": "key is the label key that the selector applies to.\n+patchMergeKey=key\n+patchStrategy=merge",
-          "type": "string",
-          "x-go-name": "Key"
-        },
-        "operator": {
-          "$ref": "#/definitions/LabelSelectorOperator"
-        },
-        "values": {
-          "description": "values is an array of string values. If the operator is In or NotIn,\nthe values array must be non-empty. If the operator is Exists or DoesNotExist,\nthe values array must be empty. This array is replaced during a strategic\nmerge patch.\n+optional",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "Values"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/apis/meta/v1"
-    },
     "LegacyObjectMeta": {
       "description": "Deprecated: LegacyObjectMeta is deprecated use ObjectMeta instead.",
       "type": "object",
@@ -3667,9 +3668,6 @@
           "type": "integer",
           "format": "int32",
           "x-go-name": "RevisionHistoryLimit"
-        },
-        "selector": {
-          "$ref": "#/definitions/LabelSelector"
         },
         "strategy": {
           "$ref": "#/definitions/MachineDeploymentStrategy"
@@ -4261,6 +4259,11 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "Semver": {
+      "description": "Semver is struct that encapsulates semver.Semver struct so we can use it in API\n+k8s:deepcopy-gen=true",
+      "type": "object",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/semver"
     },
     "Type": {
       "type": "integer",
