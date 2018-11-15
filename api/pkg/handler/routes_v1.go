@@ -177,6 +177,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments").
 		Handler(r.createNodeDeploymentForCluster())
 
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}").
+		Handler(r.deleteNodeDeploymentForCluster())
+
 	//
 	// Defines a set of HTTP endpoints for various cloud providers
 	// Note that these endpoints don't require credentials as opposed to the ones defined under /providers/*
@@ -1472,6 +1476,32 @@ func (r Routing) createNodeDeploymentForCluster() http.Handler {
 		)(createNodeDeploymentForCluster(r.sshKeyProvider, r.projectProvider, r.datacenters)),
 		decodeCreateNodeDeploymentForCluster,
 		setStatusCreatedHeader(encodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id} project deleteNodeDeploymentForCluster
+//
+//    Deletes the given node deployment that belongs to the cluster.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteNodeDeploymentForCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.oidcAuthenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+			r.userInfoMiddleware(),
+		)(deleteNodeDeploymentForCluster(r.projectProvider)),
+		decodeDeleteNodeDeploymentForCluster,
+		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }

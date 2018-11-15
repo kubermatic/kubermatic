@@ -2,7 +2,6 @@ package v1
 
 import (
 	"encoding/json"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	"time"
 
@@ -665,7 +664,6 @@ type NodeDeploymentSpec struct {
 	// required: true
 	Template NodeSpec `json:"template"`
 
-	Selector                v1.LabelSelector                    `json:"selector"`
 	Strategy                *v1alpha1.MachineDeploymentStrategy `json:"strategy,omitempty"`
 	MinReadySeconds         *int32                              `json:"minReadySeconds,omitempty"`
 	RevisionHistoryLimit    *int32                              `json:"revisionHistoryLimit,omitempty"`
