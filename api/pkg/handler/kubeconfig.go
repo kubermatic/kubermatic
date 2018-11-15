@@ -24,7 +24,7 @@ const (
 	cookieMaxAge   = 180
 )
 
-var secureCookie = securecookie.New(securecookie.GenerateRandomKey(32), nil)
+var secureCookie *securecookie.SecureCookie
 
 func getClusterKubeconfig(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -51,6 +51,10 @@ func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVe
 		req := request.(CreateOIDCKubeconfigReq)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+
+		if secureCookie == nil {
+			secureCookie = securecookie.New([]byte(oidcCfg.CookieHashKey), nil)
+		}
 
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
@@ -133,6 +137,7 @@ func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVe
 			rsp := createOIDCKubeconfigRsp{}
 			rsp.phase = kubeconfigGenerated
 			rsp.oidcKubeConfig = oidcKubeCfg
+			rsp.secureCookieMode = oidcCfg.CookieSecureMode
 			return rsp, nil
 		}
 
@@ -151,6 +156,7 @@ func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVe
 		// pass nonce
 		nonce := rand.String(rand.IntnRange(10, 15))
 		rsp.nonce = nonce
+		rsp.secureCookieMode = oidcCfg.CookieSecureMode
 
 		oidcState := state{
 			Nonce:      nonce,
@@ -201,12 +207,14 @@ type createOIDCKubeconfigRsp struct {
 	oidcKubeConfig *clientcmdapi.Config
 	// nonce holds an arbitrary number storied in cookie to prevent Cross-site Request Forgery attack.
 	nonce string
+	// cookie received only with HTTPS, never with HTTP.
+	secureCookieMode bool
 }
 
 func encodeKubeconfigDoINeddAcditional(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	rsp := response.(createOIDCKubeconfigRsp)
 
-	setCookie(w, rsp.nonce)
+	setCookie(w, rsp.nonce, rsp.secureCookieMode)
 	// handles kubeconfigGenerated PHASE
 	// it means that kubeconfig was generated and we need to properly encode it.
 	if rsp.phase == kubeconfigGenerated {
@@ -282,11 +290,13 @@ func decodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}
 		}
 	}
 
-	// handle cookie
-	if cookie, err := r.Cookie(csrfCookieName); err == nil {
-		value := make(map[string]string)
-		if err = secureCookie.Decode(csrfCookieName, cookie.Value, &value); err == nil {
-			req.cookieNonceValue = value["nonce"]
+	// handle cookie when new endpoint is created and secureCookie was initialized
+	if secureCookie != nil {
+		if cookie, err := r.Cookie(csrfCookieName); err == nil {
+			value := make(map[string]string)
+			if err = secureCookie.Decode(csrfCookieName, cookie.Value, &value); err == nil {
+				req.cookieNonceValue = value["nonce"]
+			}
 		}
 	}
 
@@ -345,16 +355,19 @@ func (r CreateOIDCKubeconfigReq) GetProjectID() string {
 }
 
 // setCookie add cookie with random string value
-func setCookie(w http.ResponseWriter, nonce string) {
+func setCookie(w http.ResponseWriter, nonce string, secureMode bool) {
 	value := map[string]string{
 		"nonce": nonce,
 	}
 
 	if encoded, err := secureCookie.Encode(csrfCookieName, value); err == nil {
 		cookie := &http.Cookie{
-			Name:   csrfCookieName,
-			Value:  encoded,
-			MaxAge: cookieMaxAge,
+			Name:     csrfCookieName,
+			Value:    encoded,
+			MaxAge:   cookieMaxAge,
+			HttpOnly: true,
+			Secure:   secureMode,
+			SameSite: http.SameSiteLaxMode,
 		}
 
 		http.SetCookie(w, cookie)

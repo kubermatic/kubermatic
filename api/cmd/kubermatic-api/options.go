@@ -25,6 +25,8 @@ type serverRunOptions struct {
 	oidcIssuerClientID             string
 	oidcIssuerClientSecret         string
 	oidcIssuerRedirectURI          string
+	oidcIssuerCookieHashKey        string
+	oidcIssuerCookieSecureMode     bool
 	oidcSkipTLSVerify              bool
 	oidcIssuerOfflineAccessAsScope bool
 
@@ -50,6 +52,8 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
 	flag.StringVar(&s.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
 	flag.StringVar(&s.oidcIssuerRedirectURI, "oidc-issuer-redirect-uri", "", "Callback URL for OpenID responses.")
+	flag.StringVar(&s.oidcIssuerCookieHashKey, "oidc-issuer-cookie-hash-key", "", "Hash key authenticates the cookie value using HMAC.")
+	flag.BoolVar(&s.oidcIssuerCookieSecureMode, "oidc-issuer-cookie-secure-mode", true, "When true cookie received only with HTTPS. Set false for local deployment with HTTP")
 	flag.BoolVar(&s.oidcIssuerOfflineAccessAsScope, "oidc-issuer-offline-access-as-scope", true, "Set it to false if OIDC provider requires to set \"access_type=offline\" query param when accessing the refresh token")
 	flag.StringVar(&rawFeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for various features.")
 	flag.Parse()
@@ -69,6 +73,9 @@ func (o serverRunOptions) validate() error {
 		}
 		if len(o.oidcIssuerRedirectURI) == 0 {
 			return fmt.Errorf("%s feature is enabled but \"oidc-redirect-uri\" flag was not specified", OIDCKubeCfgEndpoint)
+		}
+		if len(o.oidcIssuerCookieHashKey) == 0 {
+			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-cookie-hash-key\" flag was not specified", OIDCKubeCfgEndpoint)
 		}
 	}
 	return nil

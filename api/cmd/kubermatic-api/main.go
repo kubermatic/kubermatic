@@ -218,6 +218,8 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticato
 			URL:                  options.oidcURL,
 			ClientID:             options.oidcIssuerClientID,
 			ClientSecret:         options.oidcIssuerClientSecret,
+			CookieHashKey:        options.oidcIssuerCookieHashKey,
+			CookieSecureMode:     options.oidcIssuerCookieSecureMode,
 			OfflineAccessAsScope: options.oidcIssuerOfflineAccessAsScope,
 		},
 		mainRouter)
