@@ -17,7 +17,7 @@
           },
           {
             alert: 'ArkNoRecentBackup',
-            expr: 'changes(ark_backup_success_total[25h]) < 1', // 25 hours to allow for one hour backup runtime
+            expr: 'changes(ark_backup_success_total{schedule!=""}[25h]) < 1', // 25 hours to allow for one hour backup runtime
             labels: {
               severity: 'warning',
             },

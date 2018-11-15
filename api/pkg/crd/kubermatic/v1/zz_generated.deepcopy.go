@@ -369,6 +369,7 @@ func (in *ClusterSpec) DeepCopyInto(out *ClusterSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	out.Version = in.Version.DeepCopy()
 	in.ComponentsOverride.DeepCopyInto(&out.ComponentsOverride)
 	return
 }

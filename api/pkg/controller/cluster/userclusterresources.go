@@ -3,7 +3,6 @@ package cluster
 import (
 	"fmt"
 
-	"github.com/Masterminds/semver"
 	"github.com/go-test/deep"
 	"github.com/golang/glog"
 
@@ -412,14 +411,9 @@ func (cc *Controller) userClusterEnsureCustomResourceDefinitions(c *kubermaticv1
 		return err
 	}
 
-	version, err := semver.NewVersion(c.Spec.Version)
-	if err != nil {
-		return fmt.Errorf("failed to extract version from cluster %s: %v", c.Name, err)
-	}
-
 	for _, create := range GetCRDCreators() {
 		var existing *apiextensionsv1beta1.CustomResourceDefinition
-		crd, err := create(*version, nil)
+		crd, err := create(c.Spec.Version, nil)
 		if err != nil {
 			return fmt.Errorf("failed to build CustomResourceDefinitions: %v", err)
 		}
@@ -434,7 +428,7 @@ func (cc *Controller) userClusterEnsureCustomResourceDefinitions(c *kubermaticv1
 			continue
 		}
 
-		crd, err = create(*version, existing.DeepCopy())
+		crd, err = create(c.Spec.Version, existing.DeepCopy())
 		if err != nil {
 			return fmt.Errorf("failed to build CustomResourceDefinition: %v", err)
 		}

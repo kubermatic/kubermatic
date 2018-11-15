@@ -79,6 +79,7 @@ type ConfigMapDataProvider interface {
 	GetClusterRef() metav1.OwnerReference
 	Cluster() *kubermaticv1.Cluster
 	GetRootCA() (*triple.KeyPair, error)
+	ClusterVersion() string
 	TemplateData() interface{}
 	ServiceLister() corev1lister.ServiceLister
 	NodeAccessNetwork() string
@@ -169,6 +170,11 @@ func NewTemplateData(
 // Cluster returns the cluster
 func (d *TemplateData) Cluster() *kubermaticv1.Cluster {
 	return d.cluster
+}
+
+// ClusterVersion returns version of the cluster
+func (d *TemplateData) ClusterVersion() string {
+	return d.cluster.Spec.Version.String()
 }
 
 // DC returns the dC

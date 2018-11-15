@@ -2,6 +2,7 @@ package v1_test
 
 import (
 	"encoding/json"
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"strings"
 	"testing"
 
@@ -21,7 +22,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 1: filter username and password from OpenStack",
 			ClusterSpec{
-				Version: "1.2.3",
+				Version: *semver.NewSemverOrDie("1.2.3"),
 				Cloud: kubermaticv1.CloudSpec{
 					DatacenterName: "OpenstackDatacenter",
 					Openstack: &kubermaticv1.OpenstackCloudSpec{
@@ -41,7 +42,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 2: client ID and client secret from Azure",
 			ClusterSpec{
-				Version: "1.2.3",
+				Version: *semver.NewSemverOrDie("1.2.3"),
 				Cloud: kubermaticv1.CloudSpec{
 					Azure: &kubermaticv1.AzureCloudSpec{
 						ClientID:        valueToBeFiltered,
@@ -61,7 +62,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 3: filter token from Hetzner",
 			ClusterSpec{
-				Version: "1.2.3",
+				Version: *semver.NewSemverOrDie("1.2.3"),
 				Cloud: kubermaticv1.CloudSpec{
 					Hetzner: &kubermaticv1.HetznerCloudSpec{
 						Token: valueToBeFiltered,
@@ -72,7 +73,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 4: filter token from DigitalOcean",
 			ClusterSpec{
-				Version: "1.2.3",
+				Version: *semver.NewSemverOrDie("1.2.3"),
 				Cloud: kubermaticv1.CloudSpec{
 					Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
 						Token: valueToBeFiltered,
@@ -83,7 +84,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 5: filter usernames and passwords from VSphere",
 			ClusterSpec{
-				Version: "1.2.3",
+				Version: *semver.NewSemverOrDie("1.2.3"),
 				Cloud: kubermaticv1.CloudSpec{
 					VSphere: &kubermaticv1.VSphereCloudSpec{
 						Password: valueToBeFiltered,
@@ -100,7 +101,7 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 6: filter access key ID and secret access key from AWS",
 			ClusterSpec{
-				Version: "1.2.3",
+				Version: *semver.NewSemverOrDie("1.2.3"),
 				Cloud: kubermaticv1.CloudSpec{
 					AWS: &kubermaticv1.AWSCloudSpec{
 						AccessKeyID:         valueToBeFiltered,
