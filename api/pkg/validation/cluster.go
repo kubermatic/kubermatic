@@ -6,8 +6,6 @@ import (
 	"net"
 	"regexp"
 
-	"github.com/Masterminds/semver"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -49,7 +47,7 @@ func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, cloudProviders ma
 		return fmt.Errorf("invalid cloud provider '%s' specified: %v", err, providerName)
 	}
 
-	if spec.Version == "" {
+	if spec.Version.Semver() == nil || spec.Version.String() == "" {
 		return errors.New("invalid cloud spec \"Version\" is required but was not specified")
 	}
 
@@ -71,12 +69,7 @@ func validateMachineNetworksFromClusterSpec(spec *kubermaticv1.ClusterSpec) erro
 		return nil
 	}
 
-	clusterSemVer, err := semver.NewVersion(spec.Version)
-	if err != nil {
-		return fmt.Errorf("couldnt parse version, see: %v", err)
-	}
-
-	if len(networks) > 0 && clusterSemVer.Minor() < 9 {
+	if len(networks) > 0 && spec.Version.Semver().Minor() < 9 {
 		return errors.New("cant specify machinenetworks on kubernetes <= 1.9.0")
 	}
 

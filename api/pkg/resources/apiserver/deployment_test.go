@@ -5,6 +5,7 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -38,7 +39,7 @@ func TestGetAdmissionControlFlags(t *testing.T) {
 
 	for _, test := range tests {
 		templateData := resources.NewTemplateData(&kubermaticv1.Cluster{}, nil, "", nil, nil, nil, "", "", "", resource.Quantity{}, "", "", false, false, "", nil)
-		templateData.Cluster().Spec.Version = test.kubernetesVersion
+		templateData.Cluster().Spec.Version = *semver.NewSemverOrDie(test.kubernetesVersion)
 
 		admissionControlFlagName, admissionControlFlagValue := getAdmissionControlFlags(templateData)
 		if admissionControlFlagName != test.expectedAdmissionControlFlagName {

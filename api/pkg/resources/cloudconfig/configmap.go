@@ -89,12 +89,12 @@ region = "{{ .DC.Spec.Openstack.Region }}"
 [BlockStorage]
 trust-device-path = false
 bs-version = "v2"
-{{- if semverCompare ">=1.9.*" .Cluster.Spec.Version }}
+{{- if semverCompare ">=1.9.*" .ClusterVersion }}
 ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
 {{- end }}
 
 [LoadBalancer]
-{{- if semverCompare "~1.9.10 || ~1.10.6 || ~1.11.1 || >=1.12.*" .Cluster.Spec.Version }}
+{{- if semverCompare "~1.9.10 || ~1.10.6 || ~1.11.1 || >=1.12.*" .ClusterVersion }}
 manage-security-groups = true
 {{- end }}
 {{- end }}

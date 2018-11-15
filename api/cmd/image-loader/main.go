@@ -17,6 +17,7 @@ import (
 	clusterv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
@@ -332,9 +333,13 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 	serviceInformer := kubeInformerFactory.Core().V1().Services()
 	serviceLister := serviceInformer.Lister()
 
+	clusterVersion, err := ksemver.NewSemver(masterVersion.Version.String())
+	if err != nil {
+		return nil, err
+	}
 	fakeCluster := &clusterv1.Cluster{}
 	fakeCluster.Spec.Cloud = clusterv1.CloudSpec{}
-	fakeCluster.Spec.Version = masterVersion.Version.String()
+	fakeCluster.Spec.Version = *clusterVersion
 	fakeCluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
 	fakeCluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
 	fakeCluster.Spec.ClusterNetwork.DNSDomain = "cluster.local"

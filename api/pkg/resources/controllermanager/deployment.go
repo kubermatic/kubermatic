@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Masterminds/semver"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
@@ -150,7 +148,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 		*openvpnSidecar,
 		{
 			Name:                     name,
-			Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version,
+			Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
 			ImagePullPolicy:          corev1.PullIfNotPresent,
 			Command:                  []string{"/hyperkube", "controller-manager"},
 			Args:                     flags,
@@ -193,11 +191,6 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 }
 
 func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
-	clusterVersionSemVer, err := semver.NewVersion(cluster.Spec.Version)
-	if err != nil {
-		return nil, err
-	}
-
 	flags := []string{
 		"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"--service-account-private-key-file", "/etc/kubernetes/service-account-key/sa.key",
@@ -219,7 +212,7 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 	// TODO: Remove once we don't support Kube 1.10 anymore
 	// TODO: Before removing, add check that prevents upgrading to 1.12 when
 	// there is still a node < 1.11
-	if clusterVersionSemVer.Minor() >= 12 {
+	if cluster.Spec.Version.Semver().Minor() >= 12 {
 		featureGates = append(featureGates, "ScheduleDaemonSetPods=false")
 	}
 	if len(featureGates) > 0 {
@@ -245,14 +238,14 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 	}
 
 	// New flag in v1.12 which gets used to perform permission checks
-	if clusterVersionSemVer.Minor() >= 12 {
+	if cluster.Spec.Version.Semver().Minor() >= 12 {
 		flags = append(flags, "--authentication-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
 	}
 
 	// This is required in 1.12.0 as a workaround for
 	// https://github.com/kubernetes/kubernetes/issues/68986, the patch
 	// got cherry-picked onto 1.12.1
-	if clusterVersionSemVer.Minor() == 12 && clusterVersionSemVer.Patch() == 0 {
+	if cluster.Spec.Version.Semver().Minor() == 12 && cluster.Spec.Version.Semver().Patch() == 0 {
 		flags = append(flags, "--authentication-skip-lookup=true")
 	}
 

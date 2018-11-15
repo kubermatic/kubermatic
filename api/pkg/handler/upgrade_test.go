@@ -11,6 +11,7 @@ import (
 	"github.com/go-test/deep"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,7 +36,7 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 					Name:   "foo",
 					Labels: map[string]string{"user": testUserName},
 				},
-				Spec: kubermaticv1.ClusterSpec{Version: "1.6.0"},
+				Spec: kubermaticv1.ClusterSpec{Version: *ksemver.NewSemverOrDie("1.6.0")},
 			},
 			existingKubermaticObjs: genDefaultKubermaticObjects(),
 			apiUser:                *genDefaultAPIUser(),
@@ -78,7 +79,7 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 					Name:   "foo",
 					Labels: map[string]string{"user": testUserName},
 				},
-				Spec: kubermaticv1.ClusterSpec{Version: "1.6.0"},
+				Spec: kubermaticv1.ClusterSpec{Version: *ksemver.NewSemverOrDie("1.6.0")},
 			},
 			existingKubermaticObjs: genDefaultKubermaticObjects(),
 			apiUser:                *genDefaultAPIUser(),
