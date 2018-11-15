@@ -12,6 +12,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kubermaticKubernetesProvider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/util/hash"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
@@ -361,8 +362,12 @@ func removeDeprecatedFinalizers(cluster *kubermaticv1.Cluster, ctx *cleanupConte
 
 // We moved MasterVersion to Version
 func migrateVersion(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
-	if cluster.Spec.Version == "" {
-		cluster.Spec.Version = cluster.Spec.MasterVersion
+	if cluster.Spec.Version.String() == "" {
+		ver, err := semver.NewSemver(cluster.Spec.MasterVersion)
+		if err != nil {
+			return err
+		}
+		cluster.Spec.Version = *ver
 		if _, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
 			return err
 		}

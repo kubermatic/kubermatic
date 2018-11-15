@@ -3,7 +3,8 @@
   "Concurrency": 2,
   "DisableAll": true,
   "Exclude": [
-    "pkg/crd"
+    "pkg/crd",
+    "pkg/semver/zz_generated.deepcopy.go"
   ],
   "Deadline": "5m",
   "Enable": [
