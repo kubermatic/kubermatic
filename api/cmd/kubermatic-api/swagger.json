@@ -692,21 +692,15 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "boolean",
-            "x-go-name": "HideInitialConditions",
-            "name": "hideInitialConditions",
-            "in": "query"
           }
         ],
         "responses": {
           "200": {
-            "description": "Node",
+            "description": "NodeDeployment",
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/Node"
+                "$ref": "#/definitions/NodeDeployment"
               }
             }
           },
@@ -783,6 +777,66 @@
       }
     },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Gets a node deployment that is assigned to the given cluster.",
+        "operationId": "getNodeDeploymentForCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "NodeDeploymentID",
+            "name": "nodedeployment_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NodeDeployment",
+            "schema": {
+              "$ref": "#/definitions/NodeDeployment"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
       "delete": {
         "produces": [
           "application/json"

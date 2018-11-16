@@ -1514,7 +1514,7 @@ func (r Routing) listNodeDeploymentsForCluster() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id} project getNodeDeploymentForCluster
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id} project getNodeDeploymentForCluster
 //
 //     Gets a node deployment that is assigned to the given cluster.
 //
