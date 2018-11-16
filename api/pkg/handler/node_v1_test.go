@@ -3,8 +3,11 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/go-test/deep"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"strings"
 	"testing"
 
@@ -23,7 +26,6 @@ func TestDeleteNodeForCluster(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		Name                    string
-		Body                    string
 		HTTPStatus              int
 		NodeIDToDelete          string
 		ClusterIDToSync         string
@@ -38,32 +40,19 @@ func TestDeleteNodeForCluster(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			Name:            "scenario 1: delete the node that belong to the given cluster",
-			Body:            ``,
-			HTTPStatus:      http.StatusOK,
-			NodeIDToDelete:  "venus",
-			ClusterIDToSync: genDefaultCluster().Name,
-			ProjectIDToSync: genDefaultProject().Name,
-			ExistingKubermaticObjs: genDefaultKubermaticObjects(
-				/*add a cluster*/
-				genDefaultCluster(),
-			),
-			ExistingAPIUser: genDefaultAPIUser(),
+			Name:                   "scenario 1: delete the node that belong to the given cluster",
+			HTTPStatus:             http.StatusOK,
+			NodeIDToDelete:         "venus",
+			ClusterIDToSync:        genDefaultCluster().Name,
+			ProjectIDToSync:        genDefaultProject().Name,
+			ExistingKubermaticObjs: genDefaultKubermaticObjects(genDefaultCluster()),
+			ExistingAPIUser:        genDefaultAPIUser(),
 			ExistingNodes: []*corev1.Node{
-				&corev1.Node{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "venus",
-					},
-				},
-
-				&corev1.Node{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "mars",
-					},
-				},
+				{ObjectMeta: metav1.ObjectMeta{Name: "venus"}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
 			},
 			ExistingMachines: []*clusterv1alpha1.Machine{
-				&clusterv1alpha1.Machine{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "venus",
 						Namespace: "kube-system",
@@ -79,8 +68,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 						},
 					},
 				},
-
-				&clusterv1alpha1.Machine{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "mars",
 						Namespace: "kube-system",
@@ -108,7 +96,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodes/%s", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.NodeIDToDelete), strings.NewReader(tc.Body))
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodes/%s", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.NodeIDToDelete), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			machineObj := []runtime.Object{}
@@ -170,7 +158,6 @@ func TestListNodesForCluster(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		Name                   string
-		Body                   string
 		ExpectedResponse       []apiv1.Node
 		HTTPStatus             int
 		ProjectIDToSync        string
@@ -186,23 +173,14 @@ func TestListNodesForCluster(t *testing.T) {
 		// scenario 1
 		{
 			Name:                   "scenario 1: list nodes that belong to the given cluster",
-			Body:                   ``,
 			HTTPStatus:             http.StatusOK,
 			ClusterIDToSync:        genDefaultCluster().Name,
 			ProjectIDToSync:        genDefaultProject().Name,
 			ExistingKubermaticObjs: genDefaultKubermaticObjects(genDefaultCluster()),
 			ExistingAPIUser:        genDefaultAPIUser(),
 			ExistingNodes: []*corev1.Node{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "venus",
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "mars",
-					},
-				},
+				{ObjectMeta: metav1.ObjectMeta{Name: "venus"}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
 			},
 			ExistingMachines: []*clusterv1alpha1.Machine{
 				{
@@ -309,23 +287,14 @@ func TestListNodesForCluster(t *testing.T) {
 		// scenario 2
 		{
 			Name:                   "scenario 2: list nodes that belong to the given cluster should skip controlled machines",
-			Body:                   ``,
 			HTTPStatus:             http.StatusOK,
 			ClusterIDToSync:        genDefaultCluster().Name,
 			ProjectIDToSync:        genDefaultProject().Name,
 			ExistingKubermaticObjs: genDefaultKubermaticObjects(genDefaultCluster()),
 			ExistingAPIUser:        genDefaultAPIUser(),
 			ExistingNodes: []*corev1.Node{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "venus",
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "mars",
-					},
-				},
+				{ObjectMeta: metav1.ObjectMeta{Name: "venus"}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
 			},
 			ExistingMachines: []*clusterv1alpha1.Machine{
 				{
@@ -404,7 +373,7 @@ func TestListNodesForCluster(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodes", tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(tc.Body))
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodes", tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			machineObj := []runtime.Object{}
@@ -442,7 +411,6 @@ func TestGetNodeForCluster(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		Name                   string
-		Body                   string
 		ExpectedResponse       string
 		HTTPStatus             int
 		NodeIDToSync           string
@@ -456,7 +424,6 @@ func TestGetNodeForCluster(t *testing.T) {
 		// scenario 1
 		{
 			Name:                   "scenario 1: get a node that belongs to the given cluster",
-			Body:                   ``,
 			ExpectedResponse:       `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":null}},"operatingSystem":{},"versions":{"kubelet":""}},"status":{"machineName":"venus","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
 			HTTPStatus:             http.StatusOK,
 			NodeIDToSync:           "venus",
@@ -464,15 +431,9 @@ func TestGetNodeForCluster(t *testing.T) {
 			ProjectIDToSync:        genDefaultProject().Name,
 			ExistingKubermaticObjs: genDefaultKubermaticObjects(genDefaultCluster()),
 			ExistingAPIUser:        genDefaultAPIUser(),
-			ExistingNodes: []*corev1.Node{
-				&corev1.Node{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "venus",
-					},
-				},
-			},
+			ExistingNodes:          []*corev1.Node{{ObjectMeta: metav1.ObjectMeta{Name: "venus"}}},
 			ExistingMachines: []*clusterv1alpha1.Machine{
-				&clusterv1alpha1.Machine{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "venus",
 						Namespace: "kube-system",
@@ -491,7 +452,7 @@ func TestGetNodeForCluster(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodes/%s", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.NodeIDToSync), strings.NewReader(tc.Body))
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodes/%s", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.NodeIDToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			machineObj := []runtime.Object{}
@@ -673,14 +634,273 @@ func TestCreateNodeDeploymentForCluster(t *testing.T) {
 	}
 }
 
-func TestDeleteNodeDeploymentForCluster(t *testing.T) {
+func TestListNodeDeploymentsForCluster(t *testing.T) {
 	t.Parallel()
-
 	var replicas int32 = 1
-
+	var paused = false
 	testcases := []struct {
 		Name                       string
-		Body                       string
+		ExpectedResponse           []apiv1.NodeDeployment
+		HTTPStatus                 int
+		ProjectIDToSync            string
+		ClusterIDToSync            string
+		ExistingProject            *kubermaticv1.Project
+		ExistingKubermaticUser     *kubermaticv1.User
+		ExistingAPIUser            *apiv1.LegacyUser
+		ExistingCluster            *kubermaticv1.Cluster
+		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
+		ExistingKubermaticObjs     []runtime.Object
+	}{
+		// scenario 1
+		{
+			Name:                   "scenario 1: list node deployments that belong to the given cluster",
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        genDefaultCluster().Name,
+			ProjectIDToSync:        genDefaultProject().Name,
+			ExistingKubermaticObjs: genDefaultKubermaticObjects(genDefaultCluster()),
+			ExistingAPIUser:        genDefaultAPIUser(),
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "venus",
+						Namespace: metav1.NamespaceSystem,
+					},
+					Spec: clusterv1alpha1.MachineDeploymentSpec{
+						Replicas: &replicas,
+						Template: clusterv1alpha1.MachineTemplateSpec{
+							Spec: clusterv1alpha1.MachineSpec{
+								ProviderConfig: clusterv1alpha1.ProviderConfig{
+									Value: &runtime.RawExtension{
+										Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "mars",
+						Namespace: "kube-system",
+					},
+					Spec: clusterv1alpha1.MachineDeploymentSpec{
+						Replicas: &replicas,
+						Template: clusterv1alpha1.MachineTemplateSpec{
+							Spec: clusterv1alpha1.MachineSpec{
+								ProviderConfig: clusterv1alpha1.ProviderConfig{
+									Value: &runtime.RawExtension{
+										Raw: []byte(`{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`),
+									},
+								},
+								Versions: clusterv1alpha1.MachineVersionInfo{
+									Kubelet: "v1.9.9",
+								},
+							},
+						},
+					},
+				},
+			},
+			ExpectedResponse: []apiv1.NodeDeployment{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "venus",
+						Name: "venus",
+					},
+					Spec: apiv1.NodeDeploymentSpec{
+						Template: apiv1.NodeSpec{
+							Cloud: apiv1.NodeCloudSpec{
+								Digitalocean: &apiv1.DigitaloceanNodeSpec{
+									Size: "2GB",
+								},
+							},
+							OperatingSystem: apiv1.OperatingSystemSpec{
+								Ubuntu: &apiv1.UbuntuSpec{
+									DistUpgradeOnBoot: true,
+								},
+							},
+						},
+						Replicas: replicas,
+						Paused:   &paused,
+						Strategy: &clusterv1alpha1.MachineDeploymentStrategy{},
+					},
+					Status: clusterv1alpha1.MachineDeploymentStatus{},
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "mars",
+						Name: "mars",
+					},
+					Spec: apiv1.NodeDeploymentSpec{
+						Template: apiv1.NodeSpec{
+							Cloud: apiv1.NodeCloudSpec{
+								AWS: &apiv1.AWSNodeSpec{
+									InstanceType: "t2.micro",
+									VolumeSize:   50,
+								},
+							},
+							OperatingSystem: apiv1.OperatingSystemSpec{
+								Ubuntu: &apiv1.UbuntuSpec{
+									DistUpgradeOnBoot: false,
+								},
+							},
+							Versions: apiv1.NodeVersionInfo{
+								Kubelet: "v1.9.9",
+							},
+						},
+						Replicas: replicas,
+						Paused:   &paused,
+						Strategy: &clusterv1alpha1.MachineDeploymentStrategy{},
+					},
+					Status: clusterv1alpha1.MachineDeploymentStatus{},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodedeployments",
+				tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			machineObj := []runtime.Object{}
+			kubernetesObj := []runtime.Object{}
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			for _, existingMachineDeployment := range tc.ExistingMachineDeployments {
+				machineObj = append(machineObj, existingMachineDeployment)
+			}
+			ep, _, err := createTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			actualNodeDeployments := nodeDeploymentSliceWrapper{}
+			actualNodeDeployments.DecodeOrDie(res.Body, t).Sort()
+
+			wrappedExpectedNodeDeployments := nodeDeploymentSliceWrapper(tc.ExpectedResponse)
+			wrappedExpectedNodeDeployments.Sort()
+
+			actualNodeDeployments.EqualOrDie(wrappedExpectedNodeDeployments, t)
+		})
+	}
+}
+
+func TestGetNodeDeploymentForCluster(t *testing.T) {
+	t.Parallel()
+	var replicas int32 = 1
+	var paused = false
+	testcases := []struct {
+		Name                       string
+		ExpectedResponse           apiv1.NodeDeployment
+		HTTPStatus                 int
+		ProjectIDToSync            string
+		ClusterIDToSync            string
+		ExistingProject            *kubermaticv1.Project
+		ExistingKubermaticUser     *kubermaticv1.User
+		ExistingAPIUser            *apiv1.LegacyUser
+		ExistingCluster            *kubermaticv1.Cluster
+		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
+		ExistingKubermaticObjs     []runtime.Object
+	}{
+		// scenario 1
+		{
+			Name:                   "scenario 1: get node deployment that belong to the given cluster",
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        genDefaultCluster().Name,
+			ProjectIDToSync:        genDefaultProject().Name,
+			ExistingKubermaticObjs: genDefaultKubermaticObjects(genDefaultCluster()),
+			ExistingAPIUser:        genDefaultAPIUser(),
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "venus",
+						Namespace: metav1.NamespaceSystem,
+					},
+					Spec: clusterv1alpha1.MachineDeploymentSpec{
+						Replicas: &replicas,
+						Template: clusterv1alpha1.MachineTemplateSpec{
+							Spec: clusterv1alpha1.MachineSpec{
+								ProviderConfig: clusterv1alpha1.ProviderConfig{
+									Value: &runtime.RawExtension{
+										Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			ExpectedResponse: apiv1.NodeDeployment{
+				ObjectMeta: apiv1.ObjectMeta{
+					ID:   "venus",
+					Name: "venus",
+				},
+				Spec: apiv1.NodeDeploymentSpec{
+					Template: apiv1.NodeSpec{
+						Cloud: apiv1.NodeCloudSpec{
+							Digitalocean: &apiv1.DigitaloceanNodeSpec{
+								Size: "2GB",
+							},
+						},
+						OperatingSystem: apiv1.OperatingSystemSpec{
+							Ubuntu: &apiv1.UbuntuSpec{
+								DistUpgradeOnBoot: true,
+							},
+						},
+					},
+					Replicas: replicas,
+					Paused:   &paused,
+					Strategy: &clusterv1alpha1.MachineDeploymentStrategy{},
+				},
+				Status: clusterv1alpha1.MachineDeploymentStatus{},
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodedeployments/venus",
+				tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			machineObj := []runtime.Object{}
+			kubernetesObj := []runtime.Object{}
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			for _, existingMachineDeployment := range tc.ExistingMachineDeployments {
+				machineObj = append(machineObj, existingMachineDeployment)
+			}
+			ep, _, err := createTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			bytes, err := json.Marshal(tc.ExpectedResponse)
+			if err != nil {
+				t.Fatalf("failed to marshall expected response %v", err)
+			}
+
+			compareWithResult(t, res, string(bytes))
+		})
+	}
+}
+
+func TestDeleteNodeDeploymentForCluster(t *testing.T) {
+	t.Parallel()
+	var replicas int32 = 1
+	testcases := []struct {
+		Name                       string
 		HTTPStatus                 int
 		NodeIDToDelete             string
 		ClusterIDToSync            string
@@ -696,7 +916,6 @@ func TestDeleteNodeDeploymentForCluster(t *testing.T) {
 		// scenario 1
 		{
 			Name:                   "scenario 1: delete the node that belong to the given cluster",
-			Body:                   ``,
 			HTTPStatus:             http.StatusOK,
 			NodeIDToDelete:         "venus",
 			ClusterIDToSync:        genDefaultCluster().Name,
@@ -707,24 +926,25 @@ func TestDeleteNodeDeploymentForCluster(t *testing.T) {
 				{ObjectMeta: metav1.ObjectMeta{Name: "venus"}},
 				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
 			},
-			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "venus",
-					Namespace: metav1.NamespaceSystem,
-				},
-				Spec: clusterv1alpha1.MachineDeploymentSpec{
-					Replicas: &replicas,
-					Template: clusterv1alpha1.MachineTemplateSpec{
-						Spec: clusterv1alpha1.MachineSpec{
-							ProviderConfig: clusterv1alpha1.ProviderConfig{
-								Value: &runtime.RawExtension{
-									Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "venus",
+						Namespace: metav1.NamespaceSystem,
+					},
+					Spec: clusterv1alpha1.MachineDeploymentSpec{
+						Replicas: &replicas,
+						Template: clusterv1alpha1.MachineTemplateSpec{
+							Spec: clusterv1alpha1.MachineSpec{
+								ProviderConfig: clusterv1alpha1.ProviderConfig{
+									Value: &runtime.RawExtension{
+										Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
+									},
 								},
 							},
 						},
 					},
 				},
-			},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "mars",
@@ -760,7 +980,7 @@ func TestDeleteNodeDeploymentForCluster(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodedeployments/%s",
-				tc.ProjectIDToSync, tc.ClusterIDToSync, tc.NodeIDToDelete), strings.NewReader(tc.Body))
+				tc.ProjectIDToSync, tc.ClusterIDToSync, tc.NodeIDToDelete), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			machineDeploymentObjets := []runtime.Object{}
@@ -814,6 +1034,36 @@ func TestDeleteNodeDeploymentForCluster(t *testing.T) {
 			}
 			compareWithResult(t, res, tc.ExpectedResponseOnGet)
 		})
+	}
+}
+
+// nodeDeploymentSliceWrapper wraps []apiv1.NodeDeployment
+// to provide convenient methods for tests
+type nodeDeploymentSliceWrapper []apiv1.NodeDeployment
+
+// Sort sorts the collection by CreationTimestamp
+func (k nodeDeploymentSliceWrapper) Sort() {
+	sort.Slice(k, func(i, j int) bool {
+		return k[i].CreationTimestamp.Before(k[j].CreationTimestamp)
+	})
+}
+
+// DecodeOrDie reads and decodes json data from the reader
+func (k *nodeDeploymentSliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *nodeDeploymentSliceWrapper {
+	t.Helper()
+	dec := json.NewDecoder(r)
+	err := dec.Decode(k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return k
+}
+
+// EqualOrDie compares whether expected collection is equal to the actual one
+func (k nodeDeploymentSliceWrapper) EqualOrDie(expected nodeDeploymentSliceWrapper, t *testing.T) {
+	t.Helper()
+	if diff := deep.Equal(k, expected); diff != nil {
+		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
 	}
 }
 
