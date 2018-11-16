@@ -11,6 +11,7 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
 
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -844,10 +845,10 @@ func TestListClusters(t *testing.T) {
 							DatacenterName: "FakeDatacenter",
 							Fake:           &kubermaticv1.FakeCloudSpec{},
 						},
-						Version: "9.9.9",
+						Version: *semver.NewSemverOrDie("9.9.9"),
 					},
 					Status: apiv1.ClusterStatus{
-						Version: "9.9.9",
+						Version: *semver.NewSemverOrDie("9.9.9"),
 						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
 					},
 				},
@@ -862,10 +863,10 @@ func TestListClusters(t *testing.T) {
 							DatacenterName: "FakeDatacenter",
 							Fake:           &kubermaticv1.FakeCloudSpec{},
 						},
-						Version: "9.9.9",
+						Version: *semver.NewSemverOrDie("9.9.9"),
 					},
 					Status: apiv1.ClusterStatus{
-						Version: "9.9.9",
+						Version: *semver.NewSemverOrDie("9.9.9"),
 						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
 					},
 				},
@@ -880,10 +881,10 @@ func TestListClusters(t *testing.T) {
 							DatacenterName: "OpenstackDatacenter",
 							Openstack:      &kubermaticv1.OpenstackCloudSpec{},
 						},
-						Version: "9.9.9",
+						Version: *semver.NewSemverOrDie("9.9.9"),
 					},
 					Status: apiv1.ClusterStatus{
-						Version: "9.9.9",
+						Version: *semver.NewSemverOrDie("9.9.9"),
 						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
 					},
 				},
@@ -989,7 +990,7 @@ func genCluster(id string, name string, projectID string, creationTime time.Time
 				DatacenterName: "FakeDatacenter",
 				Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
 			},
-			Version:           "9.9.9",
+			Version:           *semver.NewSemverOrDie("9.9.9"),
 			HumanReadableName: name,
 		},
 		Address: kubermaticv1.ClusterAddress{

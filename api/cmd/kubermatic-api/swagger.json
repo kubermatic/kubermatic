@@ -2881,9 +2881,7 @@
           "x-go-name": "MachineNetworks"
         },
         "version": {
-          "description": "Version desired version of the kubernetes master components.",
-          "type": "string",
-          "x-go-name": "Version"
+          "$ref": "#/definitions/Semver"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -2898,9 +2896,7 @@
           "x-go-name": "URL"
         },
         "version": {
-          "description": "Version actual version of the kubernetes master components",
-          "type": "string",
-          "x-go-name": "Version"
+          "$ref": "#/definitions/Semver"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -4322,6 +4318,11 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "Semver": {
+      "description": "Semver is struct that encapsulates semver.Semver struct so we can use it in API\n+k8s:deepcopy-gen=true",
+      "type": "object",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/semver"
     },
     "Type": {
       "type": "integer",

@@ -11,6 +11,7 @@ import (
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -177,15 +178,15 @@ func (c *Controller) sync(key string) error {
 }
 
 func (c *Controller) ensureAutomaticUpdatesAreApplied(cluster *kubermaticv1.Cluster) error {
-	update, err := c.updateManager.AutomaticUpdate(cluster.Spec.Version)
+	update, err := c.updateManager.AutomaticUpdate(cluster.Spec.Version.String())
 	if err != nil {
-		return fmt.Errorf("failed to get automatic update for cluster for version %s: %v", cluster.Spec.Version, err)
+		return fmt.Errorf("failed to get automatic update for cluster for version %s: %v", cluster.Spec.Version.String(), err)
 	}
 	if update == nil {
 		return nil
 	}
 
-	cluster.Spec.Version = update.Version.String()
+	cluster.Spec.Version = *semver.NewSemverOrDie(update.Version.String())
 	// Invalidating the health to prevent automatic updates directly on the next processing.
 	cluster.Status.Health.Apiserver = false
 	cluster.Status.Health.Controller = false

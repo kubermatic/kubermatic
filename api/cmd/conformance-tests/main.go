@@ -17,7 +17,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Masterminds/semver"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 
@@ -27,6 +26,7 @@ import (
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	kubermaticsignals "github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 
@@ -37,11 +37,11 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-var supportedVersions = []*semver.Version{
-	semver.MustParse("v1.9.10"),
-	semver.MustParse("v1.10.8"),
-	semver.MustParse("v1.11.3"),
-	semver.MustParse("v1.12.1"),
+var supportedVersions = []*semver.Semver{
+	semver.NewSemverOrDie("v1.9.10"),
+	semver.NewSemverOrDie("v1.10.8"),
+	semver.NewSemverOrDie("v1.11.3"),
+	semver.NewSemverOrDie("v1.12.1"),
 }
 
 // Opts represent combination of flags and ENV options
