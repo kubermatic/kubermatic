@@ -181,6 +181,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments").
 		Handler(r.listNodeDeploymentsForCluster())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}").
+		Handler(r.getNodeDeploymentForCluster())
+
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}").
 		Handler(r.deleteNodeDeploymentForCluster())
@@ -1486,7 +1490,6 @@ func (r Routing) createNodeDeploymentForCluster() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments project listNodeDeploymentsForCluster
 //
-//
 //     Lists node deployments that belong to the given cluster
 //
 //     Produces:
@@ -1494,7 +1497,7 @@ func (r Routing) createNodeDeploymentForCluster() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: []Node
+//       200: []NodeDeployment
 //       401: empty
 //       403: empty
 func (r Routing) listNodeDeploymentsForCluster() http.Handler {
@@ -1506,6 +1509,35 @@ func (r Routing) listNodeDeploymentsForCluster() http.Handler {
 			r.userInfoMiddleware(),
 		)(listNodeDeploymentsForCluster(r.projectProvider)),
 		decodeListNodeDeploymentsForCluster,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id} project getNodeDeploymentForCluster
+//
+//     Gets a node deployment that is assigned to the given cluster.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: NodeDeployment
+//       401: empty
+//       403: empty
+func (r Routing) getNodeDeploymentForCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.oidcAuthenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+			r.userInfoMiddleware(),
+		)(getNodeDeploymentForCluster(r.projectProvider)),
+		decodeGetNodeDeploymentForCluster,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
