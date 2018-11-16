@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kubermatic/kubermatic/api/pkg/features"
+
 	"github.com/golang/glog"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
@@ -68,6 +70,7 @@ type controllerRunOptions struct {
 	inClusterPrometheusScrapingConfigsFile           string
 	monitoringScrapeAnnotationPrefix                 string
 	dockerPullConfigJSONFile                         string
+	featureGates                                     features.FeatureGate
 }
 
 type controllerContext struct {
@@ -84,6 +87,8 @@ const (
 )
 
 func main() {
+	var rawFeatureGates string
+
 	runOp := controllerRunOptions{}
 	flag.StringVar(&runOp.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&runOp.masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
@@ -112,6 +117,7 @@ func main() {
 	flag.BoolVar(&runOp.inClusterPrometheusDisableDefaultScrapingConfigs, "in-cluster-prometheus-disable-default-scraping-configs", false, "A flag indicating whether the default scraping configs for the prometheus running in the cluster-foo namespaces should be deployed.")
 	flag.StringVar(&runOp.inClusterPrometheusScrapingConfigsFile, "in-cluster-prometheus-scraping-configs-file", "", "The file containing the custom scraping configs for the prometheus running in the cluster-foo namespaces.")
 	flag.StringVar(&runOp.monitoringScrapeAnnotationPrefix, "monitoring-scrape-annotation-prefix", "monitoring.kubermatic.io", "The prefix for monitoring annotations in the user cluster. Default: monitoring.kubermatic.io -> monitoring.kubermatic.io/port, monitoring.kubermatic.io/path")
+	flag.StringVar(&rawFeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for various features.")
 	flag.Parse()
 
 	if runOp.masterResources == "" {
@@ -138,6 +144,12 @@ func main() {
 		glog.Fatal("moniotring-scrape-annotation-prefix is undefined")
 	}
 
+	featureGates, err := features.NewFeatures(rawFeatureGates)
+	if err != nil {
+		glog.Fatalf("could not parse feature gates: %v", err)
+	}
+	runOp.featureGates = featureGates
+
 	// Validate etcd disk size
 	resource.MustParse(runOp.etcdDiskSize)
 
@@ -146,8 +158,7 @@ func main() {
 
 	// dcFile, versionFile, updatesFile are required by cluster controller
 	// the following code ensures that the files are available and fails fast if not.
-	_, err := provider.LoadDatacentersMeta(runOp.dcFile)
-	if err != nil {
+	if _, err := provider.LoadDatacentersMeta(runOp.dcFile); err != nil {
 		glog.Fatalf("failed to load datacenter yaml %q: %v", runOp.dcFile, err)
 	}
 

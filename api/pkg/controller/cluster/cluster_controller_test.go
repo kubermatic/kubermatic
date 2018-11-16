@@ -4,6 +4,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/kubermatic/kubermatic/api/pkg/features"
+
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticfakeclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
@@ -49,6 +51,7 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 		false,
 		"",
 		[]byte{},
+		features.FeatureGate{},
 
 		kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 		kubeInformerFactory.Core().V1().Namespaces(),

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kubermatic/kubermatic/api/pkg/features"
+
 	"github.com/golang/glog"
 
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
@@ -73,6 +75,7 @@ type Controller struct {
 	inClusterPrometheusScrapingConfigsFile           string
 	monitoringScrapeAnnotationPrefix                 string
 	dockerPullConfigJSON                             []byte
+	featureGates                                     features.FeatureGate
 
 	clusterLister             kubermaticv1lister.ClusterLister
 	namespaceLister           corev1lister.NamespaceLister
@@ -110,6 +113,7 @@ func NewController(
 	inClusterPrometheusDisableDefaultScrapingConfigs bool,
 	inClusterPrometheusScrapingConfigsFile string,
 	dockerPullConfigJSON []byte,
+	featureGates features.FeatureGate,
 
 	clusterInformer kubermaticv1informers.ClusterInformer,
 	namespaceInformer corev1informers.NamespaceInformer,
@@ -143,6 +147,7 @@ func NewController(
 		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
 		monitoringScrapeAnnotationPrefix:                 monitoringScrapeAnnotationPrefix,
 		dockerPullConfigJSON:                             dockerPullConfigJSON,
+		featureGates:                                     featureGates,
 
 		externalURL: externalURL,
 		dc:          dc,
