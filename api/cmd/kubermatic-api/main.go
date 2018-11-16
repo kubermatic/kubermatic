@@ -26,6 +26,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/kubermatic/kubermatic/api/pkg/features"
+
 	"github.com/golang/glog"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -184,7 +186,7 @@ func createOIDCAuthenticatorIssuer(options serverRunOptions) (handler.OIDCAuthen
 
 func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticator handler.OIDCAuthenticator, oidcIssuerVerifier handler.OIDCIssuerVerifier, updateManager *version.Manager) (http.HandlerFunc, error) {
 	var prometheusClient prometheusapi.Client
-	if options.featureGates.Enabled(PrometheusEndpoint) {
+	if options.featureGates.Enabled(features.PrometheusEndpoint) {
 		var err error
 		if prometheusClient, err = prometheusapi.NewClient(prometheusapi.Config{
 			Address: options.prometheusURL,
@@ -213,7 +215,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticato
 	v1AlphaRouter := mainRouter.PathPrefix("/api/v1alpha").Subrouter()
 	r.RegisterV1(v1Router)
 	r.RegisterV1Optional(v1Router,
-		options.featureGates.Enabled(OIDCKubeCfgEndpoint),
+		options.featureGates.Enabled(features.OIDCKubeCfgEndpoint),
 		handler.OIDCConfiguration{
 			URL:                  options.oidcURL,
 			ClientID:             options.oidcIssuerClientID,

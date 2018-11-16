@@ -1,4 +1,4 @@
-package main
+package features
 
 const (
 	// All features for the kubermatic-api are defined below.

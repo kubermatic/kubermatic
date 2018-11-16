@@ -63,12 +63,12 @@ func newServerRunOptions() (serverRunOptions, error) {
 }
 
 func (o serverRunOptions) validate() error {
-	if o.featureGates.Enabled(OIDCKubeCfgEndpoint) {
+	if o.featureGates.Enabled(features.OIDCKubeCfgEndpoint) {
 		if len(o.oidcIssuerClientSecret) == 0 {
-			return fmt.Errorf("%s feature is enabled but \"oidc-client-secret\" flag was not specified", OIDCKubeCfgEndpoint)
+			return fmt.Errorf("%s feature is enabled but \"oidc-client-secret\" flag was not specified", features.OIDCKubeCfgEndpoint)
 		}
 		if len(o.oidcIssuerRedirectURI) == 0 {
-			return fmt.Errorf("%s feature is enabled but \"oidc-redirect-uri\" flag was not specified", OIDCKubeCfgEndpoint)
+			return fmt.Errorf("%s feature is enabled but \"oidc-redirect-uri\" flag was not specified", features.OIDCKubeCfgEndpoint)
 		}
 	}
 	return nil
