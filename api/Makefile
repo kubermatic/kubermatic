@@ -1,6 +1,8 @@
 export CGO_ENABLED?=0
 REPO=kubermatic/api
 GO?=go
+CMD=$(notdir $(wildcard ./cmd/*))
+GOBUILDFLAGS?=-v
 GITTAG=$(shell git describe --tags --always)
 TAGS?=$(GITTAG)
 DOCKERTAGS=$(TAGS) latestbuild
@@ -11,8 +13,6 @@ HAS_GOMETALINTER:= $(shell command -v gometalinter 2> /dev/null)
 HAS_DEP:= $(shell command -v dep 2> /dev/null)
 HAS_GIT:= $(shell command -v git 2> /dev/null)
 BUILD_DEST?=_build
-CMD=$(notdir $(wildcard ./cmd/*))
-GOBUILDFLAGS?=-v
 GOTOOLFLAGS?=$(GOBUILDFLAGS) -ldflags '-w $(LDFLAGS)'
 
 default: all

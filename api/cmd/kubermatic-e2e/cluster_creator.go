@@ -27,7 +27,9 @@ import (
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/cluster"
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 )
 
@@ -58,7 +60,7 @@ type clusterCreator struct {
 
 func (ctl *clusterCreator) create(ctx context.Context) error {
 	var (
-		clusterTemplate kubermaticv1.Cluster
+		clusterTemplate apiv1.Cluster
 		nodeTemplate    apiv1.Node
 	)
 
@@ -66,45 +68,57 @@ func (ctl *clusterCreator) create(ctx context.Context) error {
 		return err
 	}
 
-	dc, err := ctl.getDatacenter(clusterTemplate.Spec.Cloud.DatacenterName)
+	dcs, err := ctl.getDatacenters()
 	if err != nil {
 		return err
 	}
 
-	cluster, err := ctl.createCluster(clusterTemplate)
+	dc, found := dcs[clusterTemplate.Spec.Cloud.DatacenterName]
+	if !found {
+		return fmt.Errorf("datacenter %s not found", clusterTemplate.Spec.Cloud.DatacenterName)
+	}
+
+	cloudProviders := cloud.Providers(dcs)
+
+	clusterSpec, err := cluster.Spec(clusterTemplate, cloudProviders)
 	if err != nil {
 		return err
 	}
-	log.Infof("created cluster named: %s", cluster.Name)
+
+	crdCluster, err := ctl.createCluster(kubermaticv1.Cluster{Spec: *clusterSpec})
+	if err != nil {
+		return err
+	}
+	log.Infof("created cluster named: %s", crdCluster.Name)
 
 	log.Info("waiting for cluster to become healthy")
 	err = wait.Poll(
 		1*time.Second,
 		ctl.runOpts.ClusterTimeout,
-		ctl.healthyClusterCond(ctx, cluster.Name))
+		ctl.healthyClusterCond(ctx, crdCluster.Name))
 	if err != nil {
-		log.Infof("Cluster failed to come up. Health status: %+v", cluster.Status.Health.ClusterHealthStatus)
+		log.Infof("Cluster failed to come up. Health status: %+v", crdCluster.Status.Health.ClusterHealthStatus)
 		return err
 	}
 	log.Info("cluster control plane is up")
 
 	// refresh cluster object
-	cluster, err = ctl.kubermaticClient.
+	crdCluster, err = ctl.kubermaticClient.
 		KubermaticV1().
 		Clusters().
-		Get(cluster.Name, metav1.GetOptions{})
+		Get(crdCluster.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-	log.Infof("seed cluster namespace: %s", cluster.Status.NamespaceName)
+	log.Infof("seed cluster namespace: %s", crdCluster.Status.NamespaceName)
 	log.Info("cluster name:")
-	fmt.Print(cluster.ObjectMeta.Name) // log to STDOUT, for saving in shell
+	fmt.Print(crdCluster.ObjectMeta.Name) // log to STDOUT, for saving in shell
 
-	if err = ctl.installAddons(cluster); err != nil {
+	if err = ctl.installAddons(crdCluster); err != nil {
 		return err
 	}
 
-	clusterKubeConfig, err := ctl.kubeConfig(cluster)
+	clusterKubeConfig, err := ctl.kubeConfig(crdCluster)
 	if err != nil {
 		return err
 	}
@@ -123,7 +137,7 @@ func (ctl *clusterCreator) create(ctx context.Context) error {
 		return err
 	}
 
-	if err = ctl.createMachines(clusterAdminRestConfig, dc, cluster, nodeTemplate); err != nil {
+	if err = ctl.createMachines(clusterAdminRestConfig, dc, crdCluster, nodeTemplate); err != nil {
 		return err
 	}
 	log.Info("waiting for machines to boot")
@@ -187,19 +201,19 @@ func (ctl *clusterCreator) nodesReadyCond(ctx context.Context) func() (bool, err
 	}
 }
 
-func (ctl *clusterCreator) getDatacenter(name string) (provider.DatacenterMeta, error) {
+func (ctl *clusterCreator) getDatacenters() (map[string]provider.DatacenterMeta, error) {
 	secret, err := ctl.seedClient.
 		CoreV1().
 		Secrets(ctl.runOpts.KubermaticNamespace).
 		Get("datacenters", metav1.GetOptions{})
 
 	if err != nil {
-		return provider.DatacenterMeta{}, err
+		return nil, err
 	}
 
 	dcsBuf, found := secret.Data["datacenters.yaml"]
 	if !found {
-		return provider.DatacenterMeta{}, errors.New("datacenters.yaml not found")
+		return nil, errors.New("datacenters.yaml not found")
 	}
 
 	dcs := struct {
@@ -207,15 +221,10 @@ func (ctl *clusterCreator) getDatacenter(name string) (provider.DatacenterMeta, 
 	}{}
 
 	if err = yaml.Unmarshal(dcsBuf, &dcs); err != nil {
-		return provider.DatacenterMeta{}, err
+		return nil, err
 	}
 
-	dc, found := dcs.Datacenters[name]
-	if !found {
-		return provider.DatacenterMeta{}, fmt.Errorf("datacenter %s not found", name)
-	}
-
-	return dc, nil
+	return dcs.Datacenters, nil
 }
 
 func (ctl *clusterCreator) createMachines(restConfig *rest.Config, dc provider.DatacenterMeta, cluster *kubermaticv1.Cluster, node apiv1.Node) error {

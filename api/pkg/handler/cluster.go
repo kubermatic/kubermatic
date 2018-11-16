@@ -17,9 +17,9 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/defaulting"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
 )
@@ -34,15 +34,8 @@ func createClusterEndpoint(cloudProviders map[string]provider.CloudProvider, pro
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		spec := &kubermaticapiv1.ClusterSpec{}
-		spec.HumanReadableName = req.Body.Name
-		spec.Cloud = req.Body.Spec.Cloud
-		spec.MachineNetworks = req.Body.Spec.MachineNetworks
-		spec.Version = req.Body.Spec.Version
-		if err = defaulting.DefaultCreateClusterSpec(spec, cloudProviders); err != nil {
-			return nil, errors.NewBadRequest("invalid cluster: %v", err)
-		}
-		if err = validation.ValidateCreateClusterSpec(spec, cloudProviders); err != nil {
+		spec, err := cluster.Spec(req.Body, cloudProviders)
+		if err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 

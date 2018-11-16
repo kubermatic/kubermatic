@@ -48,10 +48,10 @@ func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, cloudProviders ma
 	}
 
 	if spec.Version.Semver() == nil || spec.Version.String() == "" {
-		return errors.New("invalid cloud spec \"Version\" is required but was not specified")
+		return errors.New(`invalid cloud spec "Version" is required but was not specified`)
 	}
 
-	if err := cloudProvider.ValidateCloudSpec(spec.Cloud); err != nil {
+	if err = cloudProvider.ValidateCloudSpec(spec.Cloud); err != nil {
 		return fmt.Errorf("invalid cloud spec: %v", err)
 	}
 

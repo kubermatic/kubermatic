@@ -2,7 +2,6 @@ package v1
 
 import (
 	"encoding/json"
-	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -11,6 +10,7 @@ import (
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
+	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 // LegacyObjectMeta is an object storing common metadata for persistable objects.
