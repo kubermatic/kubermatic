@@ -89,6 +89,10 @@ type Controller struct {
 	roleBindingLister         rbacb1lister.RoleBindingLister
 	clusterRoleBindingLister  rbacb1lister.ClusterRoleBindingLister
 	podDisruptionBudgetLister policyv1beta1lister.PodDisruptionBudgetLister
+
+	oidcConnectTemplateEnable bool
+	oidcURL                   string
+	oidcIssuerClientID        string
 }
 
 // NewController creates a cluster controller.
@@ -125,7 +129,10 @@ func NewController(
 	roleInformer rbacv1informer.RoleInformer,
 	roleBindingInformer rbacv1informer.RoleBindingInformer,
 	clusterRoleBindingInformer rbacv1informer.ClusterRoleBindingInformer,
-	podDisruptionBudgetInformer policyv1beta1informers.PodDisruptionBudgetInformer) (*Controller, error) {
+	podDisruptionBudgetInformer policyv1beta1informers.PodDisruptionBudgetInformer,
+	oidcConnectTemplateEnable bool,
+	oidcURL string,
+	oidcIssuerClientID string) (*Controller, error) {
 	cc := &Controller{
 		kubermaticClient:        kubermaticClient,
 		kubeClient:              kubeClient,
@@ -148,6 +155,10 @@ func NewController(
 		dc:          dc,
 		dcs:         dcs,
 		cps:         cps,
+
+		oidcConnectTemplateEnable: oidcConnectTemplateEnable,
+		oidcURL:                   oidcURL,
+		oidcIssuerClientID:        oidcIssuerClientID,
 	}
 
 	clusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{

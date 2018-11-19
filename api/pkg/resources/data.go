@@ -34,6 +34,9 @@ type TemplateData struct {
 	inClusterPrometheusDisableDefaultRules           bool
 	inClusterPrometheusDisableDefaultScrapingConfigs bool
 	inClusterPrometheusScrapingConfigsFile           string
+	oidcConnectEnable                                bool
+	oidcURL                                          string
+	oidcIssuerClientID                               string
 	DockerPullConfigJSON                             []byte
 }
 
@@ -122,6 +125,9 @@ type DeploymentDataProvider interface {
 	ImageRegistry(string) string
 	Cluster() *kubermaticv1.Cluster
 	DC() *provider.DatacenterMeta
+	OIDCConnectEnable() bool
+	OIDCURL() string
+	OIDCIssuerClientID() string
 }
 
 // StatefulSetDataProvider provides data
@@ -146,7 +152,10 @@ func NewTemplateData(
 	inClusterPrometheusDisableDefaultRules bool,
 	inClusterPrometheusDisableDefaultScrapingConfigs bool,
 	inClusterPrometheusScrapingConfigsFile string,
-	dockerPullConfigJSON []byte) *TemplateData {
+	dockerPullConfigJSON []byte,
+	oidcConnectEnable bool,
+	oidcURL string,
+	oidcIssuerClientID string) *TemplateData {
 	return &TemplateData{
 		cluster:                                cluster,
 		dC:                                     dc,
@@ -164,7 +173,25 @@ func NewTemplateData(
 		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
 		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
 		DockerPullConfigJSON:                             dockerPullConfigJSON,
+		oidcConnectEnable:                                oidcConnectEnable,
+		oidcURL:                                          oidcURL,
+		oidcIssuerClientID:                               oidcIssuerClientID,
 	}
+}
+
+// OIDCConnectEnable returns flag to indicate if OpenID connect enabled
+func (d *TemplateData) OIDCConnectEnable() bool {
+	return d.oidcConnectEnable
+}
+
+// OIDCURL returns URL of the OpenID token issuer
+func (d *TemplateData) OIDCURL() string {
+	return d.oidcURL
+}
+
+// OIDCIssuerClientID return the issuer client ID
+func (d *TemplateData) OIDCIssuerClientID() string {
+	return d.oidcIssuerClientID
 }
 
 // Cluster returns the cluster
