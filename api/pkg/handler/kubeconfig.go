@@ -214,15 +214,18 @@ type createOIDCKubeconfigRsp struct {
 func encodeKubeconfigDoINeddAcditional(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	rsp := response.(createOIDCKubeconfigRsp)
 
-	setCookie(w, rsp.nonce, rsp.secureCookieMode)
 	// handles kubeconfigGenerated PHASE
 	// it means that kubeconfig was generated and we need to properly encode it.
 	if rsp.phase == kubeconfigGenerated {
+		// clear cookie by setting MaxAge<0
+		setCookie(w, "", rsp.secureCookieMode, -1)
 		return encodeKubeconfig(c, w, rsp.oidcKubeConfig)
 	}
 
 	// handles initialPhase
 	// redirects request to OpenID provider's consent page
+	// and set cookie with nonce
+	setCookie(w, rsp.nonce, rsp.secureCookieMode, cookieMaxAge)
 	w.Header().Add("Location", rsp.authCodeURL)
 	w.Header().Add("Cache-Control", "no-cache")
 	w.WriteHeader(http.StatusSeeOther)
@@ -290,16 +293,6 @@ func decodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}
 		}
 	}
 
-	// handle cookie when new endpoint is created and secureCookie was initialized
-	if secureCookie != nil {
-		if cookie, err := r.Cookie(csrfCookieName); err == nil {
-			value := make(map[string]string)
-			if err = secureCookie.Decode(csrfCookieName, cookie.Value, &value); err == nil {
-				req.cookieNonceValue = value["nonce"]
-			}
-		}
-	}
-
 	// if true - then this is a callback from OIDC provider and the next step is
 	// to exchange the given code and generate kubeconfig
 	// note: state is decoded here so that the middlewares can load providers (cluster) into the ctx.
@@ -317,6 +310,18 @@ func decodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}
 		oidcState := state{}
 		if err := json.Unmarshal(rawState, &oidcState); err != nil {
 			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected json encoded value, err = %v", err)
+		}
+		// handle cookie when new endpoint is created and secureCookie was initialized
+		if secureCookie != nil {
+			// cookie should be set in initial code phase
+			if cookie, err := r.Cookie(csrfCookieName); err == nil {
+				value := make(map[string]string)
+				if err = secureCookie.Decode(csrfCookieName, cookie.Value, &value); err == nil {
+					req.cookieNonceValue = value["nonce"]
+				}
+			} else {
+				return nil, kcerrors.NewBadRequest("incorrect value of cookie or cookie not set, err = %v", err)
+			}
 		}
 		req.phase = exchangeCodePhase
 		req.Datacenter = oidcState.Datacenter
@@ -355,7 +360,7 @@ func (r CreateOIDCKubeconfigReq) GetProjectID() string {
 }
 
 // setCookie add cookie with random string value
-func setCookie(w http.ResponseWriter, nonce string, secureMode bool) {
+func setCookie(w http.ResponseWriter, nonce string, secureMode bool, maxAge int) {
 	value := map[string]string{
 		"nonce": nonce,
 	}
@@ -364,7 +369,7 @@ func setCookie(w http.ResponseWriter, nonce string, secureMode bool) {
 		cookie := &http.Cookie{
 			Name:     csrfCookieName,
 			Value:    encoded,
-			MaxAge:   cookieMaxAge,
+			MaxAge:   maxAge,
 			HttpOnly: true,
 			Secure:   secureMode,
 			SameSite: http.SameSiteLaxMode,
