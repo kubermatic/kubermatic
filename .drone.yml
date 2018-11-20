@@ -367,7 +367,7 @@ pipeline:
     values:
     - values
     when:
-      branch: release/v2.7
+      branch: release/v2.8
   e2e-on-master:
     commands:
     - echo "$KUBECONFIG" | base64 -d > /tmp/kubeconfig
