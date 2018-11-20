@@ -168,17 +168,6 @@ local drone = import 'drone/drone.libsonnet';
       values: ['values'],
     } + whenBranchMaster,
 
-    // deploy run
-    '9-deploy-run': drone.step.new('kubeciio/helm') + {
-      helm: 'upgrade --install --wait --timeout 300' + versionsValues,
-      secrets: [
-        { source: 'kubeconfig_run', target: 'kubeconfig' },
-        { source: 'values_run', target: 'values' },
-      ],
-      charts: charts + chartsMaster,
-      values: ['values'],
-    } + whenBranchRelease,
-
     // deploy cloud
     '9-deploy-cloud-europe': drone.step.new('kubeciio/helm', group='deploy-cloud') + {
       helm: 'upgrade --install --wait --timeout 300 --kube-context=europe-west3-c-1' + tillerNamespace + versionsValues,
