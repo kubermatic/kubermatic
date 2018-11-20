@@ -8,5 +8,5 @@ kubermatic:
     replicas: 1
     image:
       repository: "kubermatic/api"
-      tag: "v2.7.6"
+      tag: "v2.7.7"
       pullPolicy: "IfNotPresent"
