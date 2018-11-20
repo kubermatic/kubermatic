@@ -439,16 +439,13 @@ pipeline:
   slack-failure:
     author_recipient_mapping:
     - alvaroaleman=alvaro
-    - cbrgm=christian
     - glower=igor.komlew
     - guusvw=guus
-    - j3ank=eugenia
     - kdomanski=kamil
     - kgroschoff=kristin.groschoff
     - kron4eg=artiom
     - mrIncompetent=henrik
     - p0lyn0mial=lukasz
-    - pkavajin=patrick
     - scheeles=sebastian
     - thz=tobias.hintze
     - toschneck=tobias.schneck
