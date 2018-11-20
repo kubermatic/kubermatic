@@ -386,7 +386,7 @@ pipeline:
     - name: kibana
       namespace: logging
       path: config/logging/kibana/
-    helm: upgrade --install --wait --timeout 300 --tiller-namespace=kubermatic-installer
+    helm: upgrade --install --wait --timeout 300
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
