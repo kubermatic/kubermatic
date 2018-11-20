@@ -73,6 +73,20 @@ pipeline:
     - ${DRONE_COMMIT}
     when:
       branch: master
+  kubermatic-docker-release-v28:
+    context: api
+    dockerfile: api/Dockerfile
+    group: push-master
+    image: plugins/docker
+    pull: true
+    repo: kubermatic/api
+    secrets:
+    - docker_username
+    - docker_password
+    tags:
+    - ${DRONE_COMMIT}
+    when:
+      branch: release/v2.8
   kubermatic-docker-release:
     context: api
     dockerfile: api/Dockerfile
@@ -158,9 +172,9 @@ pipeline:
       namespace: logging
       path: config/logging/kibana/
     helm: upgrade --install --wait --timeout 300 --tiller-namespace=kubermatic-installer
-      --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
-      --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
-      --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
+      --set=kubermatic.controller.image.tag=${DRONE_COMMIT}
+      --set=kubermatic.api.image.tag=${DRONE_COMMIT}
+      --set=kubermatic.rbac.image.tag=${DRONE_COMMIT}
     image: kubeciio/helm
     pull: true
     secrets:
