@@ -73,6 +73,8 @@ pipeline:
     - ${DRONE_COMMIT}
     when:
       branch: master
+  # this will build docker images for every release/v2.8 commit
+  # to be immediately deployed on run.kubermatic.io
   kubermatic-docker-release-v28:
     context: api
     dockerfile: api/Dockerfile
@@ -171,6 +173,7 @@ pipeline:
     - name: kibana
       namespace: logging
       path: config/logging/kibana/
+    # depends on 'kubermatic-docker-master' step to build the images
     helm: upgrade --install --wait --timeout 300 --tiller-namespace=kubermatic-installer
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT}
       --set=kubermatic.api.image.tag=${DRONE_COMMIT}
@@ -219,6 +222,7 @@ pipeline:
       namespace: logging
       path: config/logging/kibana/
     group: deploy-cloud
+    # depends on 'kubermatic-docker-master' step to build the images
     helm: upgrade --install --wait --timeout 300 --kube-context=asia-east1-a-1 --tiller-namespace=kubermatic-installer
       --set=kubermatic.isMaster=false
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
@@ -286,6 +290,7 @@ pipeline:
       namespace: logging
       path: config/logging/kibana/
     group: deploy-cloud
+    # depends on 'kubermatic-docker-master' step to build the images
     helm: upgrade --install --wait --timeout 300 --kube-context=europe-west3-c-1 --tiller-namespace=kubermatic-installer
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
@@ -334,6 +339,7 @@ pipeline:
       namespace: logging
       path: config/logging/kibana/
     group: deploy-cloud
+    # depends on 'kubermatic-docker-master' step to build the images
     helm: upgrade --install --wait --timeout 300 --kube-context=us-central1-c-1 --tiller-namespace=kubermatic-installer
       --set=kubermatic.isMaster=false
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
@@ -400,6 +406,7 @@ pipeline:
     - name: kibana
       namespace: logging
       path: config/logging/kibana/
+    # depends on 'kubermatic-docker-release-v28' step to build the images
     helm: upgrade --install --wait --timeout 300
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
