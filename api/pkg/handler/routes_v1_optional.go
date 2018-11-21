@@ -55,7 +55,7 @@ func (r Routing) createOIDCKubeconfig(oidcCfg OIDCConfiguration) http.Handler {
 			r.userInfoMiddlewareUnauthorized(),
 		)(createOIDCKubeconfig(r.projectProvider, r.oidcIssuer, oidcCfg)),
 		decodeCreateOIDCKubeconfig,
-		encodeKubeconfigDoINeddAcditional,
+		encodeOIDCKubeconfig,
 		r.defaultServerOptions()...,
 	)
 }

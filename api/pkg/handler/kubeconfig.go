@@ -211,21 +211,27 @@ type createOIDCKubeconfigRsp struct {
 	secureCookieMode bool
 }
 
-func encodeKubeconfigDoINeddAcditional(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
+func encodeOIDCKubeconfig(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	rsp := response.(createOIDCKubeconfigRsp)
 
 	// handles kubeconfigGenerated PHASE
 	// it means that kubeconfig was generated and we need to properly encode it.
 	if rsp.phase == kubeconfigGenerated {
 		// clear cookie by setting MaxAge<0
-		setCookie(w, "", rsp.secureCookieMode, -1)
+		err = setCookie(w, "", rsp.secureCookieMode, -1)
+		if err != nil {
+			return fmt.Errorf("the cookie can't be removed, err = %v", err)
+		}
 		return encodeKubeconfig(c, w, rsp.oidcKubeConfig)
 	}
 
 	// handles initialPhase
 	// redirects request to OpenID provider's consent page
 	// and set cookie with nonce
-	setCookie(w, rsp.nonce, rsp.secureCookieMode, cookieMaxAge)
+	err = setCookie(w, rsp.nonce, rsp.secureCookieMode, cookieMaxAge)
+	if err != nil {
+		return fmt.Errorf("the cookie can't be created, err = %v", err)
+	}
 	w.Header().Add("Location", rsp.authCodeURL)
 	w.Header().Add("Cache-Control", "no-cache")
 	w.WriteHeader(http.StatusSeeOther)
@@ -315,9 +321,9 @@ func decodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}
 		if secureCookie != nil {
 			// cookie should be set in initial code phase
 			if cookie, err := r.Cookie(csrfCookieName); err == nil {
-				value := make(map[string]string)
+				var value string
 				if err = secureCookie.Decode(csrfCookieName, cookie.Value, &value); err == nil {
-					req.cookieNonceValue = value["nonce"]
+					req.cookieNonceValue = value
 				}
 			} else {
 				return nil, kcerrors.NewBadRequest("incorrect value of cookie or cookie not set, err = %v", err)
@@ -360,21 +366,21 @@ func (r CreateOIDCKubeconfigReq) GetProjectID() string {
 }
 
 // setCookie add cookie with random string value
-func setCookie(w http.ResponseWriter, nonce string, secureMode bool, maxAge int) {
-	value := map[string]string{
-		"nonce": nonce,
+func setCookie(w http.ResponseWriter, nonce string, secureMode bool, maxAge int) error {
+
+	encoded, err := secureCookie.Encode(csrfCookieName, nonce)
+	if err != nil {
+		return fmt.Errorf("the encode cookie failed, err = %v", err)
+	}
+	cookie := &http.Cookie{
+		Name:     csrfCookieName,
+		Value:    encoded,
+		MaxAge:   maxAge,
+		HttpOnly: true,
+		Secure:   secureMode,
+		SameSite: http.SameSiteLaxMode,
 	}
 
-	if encoded, err := secureCookie.Encode(csrfCookieName, value); err == nil {
-		cookie := &http.Cookie{
-			Name:     csrfCookieName,
-			Value:    encoded,
-			MaxAge:   maxAge,
-			HttpOnly: true,
-			Secure:   secureMode,
-			SameSite: http.SameSiteLaxMode,
-		}
-
-		http.SetCookie(w, cookie)
-	}
+	http.SetCookie(w, cookie)
+	return nil
 }
