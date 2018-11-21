@@ -318,10 +318,13 @@ func getApiserverFlags(data resources.DeploymentDataProvider, externalNodePort i
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
 
-	if data.OIDCConnectEnable() {
-		flags = append(flags, "--oidc-issuer-url", "https://dev.kubermatic.io/dex")
-		flags = append(flags, "--oidc-client-id", "kubermaticIssuer")
+	if data.OIDCAuthPluginEnabled() {
+		flags = append(flags, "--oidc-issuer-url", data.OIDCIssuerURL())
+		flags = append(flags, "--oidc-client-id", data.OIDCIssuerClientID())
 		flags = append(flags, "--oidc-username-claim", "email")
+		if len(data.OIDCCAFile()) > 0 {
+			flags = append(flags, "--oidc-ca-file", data.OIDCCAFile())
+		}
 	}
 
 	return flags, nil

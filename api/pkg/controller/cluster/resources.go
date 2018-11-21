@@ -93,8 +93,8 @@ func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*resource
 		cc.inClusterPrometheusDisableDefaultScrapingConfigs,
 		cc.inClusterPrometheusScrapingConfigsFile,
 		cc.dockerPullConfigJSON,
-		cc.oidcConnectTemplateEnable,
-		cc.oidcURL,
+		cc.oidcCAFile,
+		cc.oidcIssuerURL,
 		cc.oidcIssuerClientID,
 	), nil
 }

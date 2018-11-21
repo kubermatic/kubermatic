@@ -34,8 +34,8 @@ type TemplateData struct {
 	inClusterPrometheusDisableDefaultRules           bool
 	inClusterPrometheusDisableDefaultScrapingConfigs bool
 	inClusterPrometheusScrapingConfigsFile           string
-	oidcConnectEnable                                bool
-	oidcURL                                          string
+	oidcCAFile                                       string
+	oidcIssuerURL                                    string
 	oidcIssuerClientID                               string
 	DockerPullConfigJSON                             []byte
 }
@@ -125,8 +125,9 @@ type DeploymentDataProvider interface {
 	ImageRegistry(string) string
 	Cluster() *kubermaticv1.Cluster
 	DC() *provider.DatacenterMeta
-	OIDCConnectEnable() bool
-	OIDCURL() string
+	OIDCAuthPluginEnabled() bool
+	OIDCCAFile() string
+	OIDCIssuerURL() string
 	OIDCIssuerClientID() string
 }
 
@@ -153,7 +154,7 @@ func NewTemplateData(
 	inClusterPrometheusDisableDefaultScrapingConfigs bool,
 	inClusterPrometheusScrapingConfigsFile string,
 	dockerPullConfigJSON []byte,
-	oidcConnectEnable bool,
+	oidcCAFile string,
 	oidcURL string,
 	oidcIssuerClientID string) *TemplateData {
 	return &TemplateData{
@@ -173,20 +174,25 @@ func NewTemplateData(
 		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
 		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
 		DockerPullConfigJSON:                             dockerPullConfigJSON,
-		oidcConnectEnable:                                oidcConnectEnable,
-		oidcURL:                                          oidcURL,
+		oidcCAFile:                                       oidcCAFile,
+		oidcIssuerURL:                                    oidcURL,
 		oidcIssuerClientID:                               oidcIssuerClientID,
 	}
 }
 
-// OIDCConnectEnable returns flag to indicate if OpenID connect enabled
-func (d *TemplateData) OIDCConnectEnable() bool {
-	return d.oidcConnectEnable
+// OIDCAuthPluginEnabled returns flag to indicate if OpenID auth plugin enabled
+func (d *TemplateData) OIDCAuthPluginEnabled() bool {
+	return len(d.oidcIssuerURL) > 0 && len(d.oidcIssuerClientID) > 0
 }
 
-// OIDCURL returns URL of the OpenID token issuer
-func (d *TemplateData) OIDCURL() string {
-	return d.oidcURL
+// OIDCCAFile return CA file
+func (d *TemplateData) OIDCCAFile() string {
+	return d.oidcCAFile
+}
+
+// OIDCIssuerURL returns URL of the OpenID token issuer
+func (d *TemplateData) OIDCIssuerURL() string {
+	return d.oidcIssuerURL
 }
 
 // OIDCIssuerClientID return the issuer client ID

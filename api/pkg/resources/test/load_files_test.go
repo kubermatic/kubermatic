@@ -494,7 +494,7 @@ func TestLoadFiles(t *testing.T) {
 					false,
 					tmpFilePath,
 					nil,
-					false,
+					"",
 					"",
 					"",
 				)

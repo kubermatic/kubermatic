@@ -49,10 +49,6 @@ func main() {
 		glog.Fatalf("incorrect flags were passed to the controller, err  = %v", err)
 	}
 
-	if options.featureGates.Enabled(OpenIDConnectTokens) {
-		options.oidcConnectEnable = true
-	}
-
 	config, err := clientcmd.BuildConfigFromFlags(options.masterURL, options.kubeconfig)
 	if err != nil {
 		glog.Fatal(err)

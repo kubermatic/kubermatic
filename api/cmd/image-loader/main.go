@@ -366,7 +366,7 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		false,
 		"",
 		nil,
-		false,
+		"",
 		"",
 		""), nil
 }

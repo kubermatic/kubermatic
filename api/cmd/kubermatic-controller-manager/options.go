@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net/url"
 
 	"k8s.io/client-go/kubernetes"
 
@@ -49,8 +50,8 @@ type controllerRunOptions struct {
 	dockerPullConfigJSONFile                         string
 
 	// OIDC configuration
-	oidcConnectEnable  bool
-	oidcURL            string
+	oidcCAFile         string
+	oidcIssuerURL      string
 	oidcIssuerClientID string
 
 	featureGates features.FeatureGate
@@ -88,7 +89,8 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.inClusterPrometheusScrapingConfigsFile, "in-cluster-prometheus-scraping-configs-file", "", "The file containing the custom scraping configs for the prometheus running in the cluster-foo namespaces.")
 	flag.StringVar(&c.monitoringScrapeAnnotationPrefix, "monitoring-scrape-annotation-prefix", "monitoring.kubermatic.io", "The prefix for monitoring annotations in the user cluster. Default: monitoring.kubermatic.io -> monitoring.kubermatic.io/port, monitoring.kubermatic.io/path")
 	flag.StringVar(&rawFeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for various features.")
-	flag.StringVar(&c.oidcURL, "oidc-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
+	flag.StringVar(&c.oidcCAFile, "oidc-ca-file", "", "The path to the certificate for the CA that signed your identity provider’s web certificate.")
+	flag.StringVar(&c.oidcIssuerURL, "oidc-issuer-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.StringVar(&c.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
 	flag.Parse()
 
@@ -102,12 +104,26 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 
 func (o controllerRunOptions) validate() error {
 
-	if o.featureGates.Enabled(OpenIDConnectTokens) {
-		if len(o.oidcURL) == 0 {
-			return fmt.Errorf("%s feature is enabled but \"oidc-url\" flag was not specified", OpenIDConnectTokens)
+	if o.featureGates.Enabled(OpenIDAuthPlugin) {
+		if len(o.oidcIssuerURL) == 0 {
+			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-url\" flag was not specified", OpenIDAuthPlugin)
 		}
+
+		if _, err := url.Parse(o.oidcIssuerURL); err != nil {
+			return fmt.Errorf("wrong format of \"oidc-issuer-url\" flag, err = %v", err)
+		}
+
 		if len(o.oidcIssuerClientID) == 0 {
-			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-client-id\" flag was not specified", OpenIDConnectTokens)
+			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-client-id\" flag was not specified", OpenIDAuthPlugin)
+		}
+	} else {
+		// don't pass OpenID issuer flags if OpenIDAuthPlugin disabled
+		if len(o.oidcIssuerURL) > 0 {
+			return fmt.Errorf("%s feature is disabled but \"oidc-issuer-url\" flag was specified, please remove it", OpenIDAuthPlugin)
+		}
+
+		if len(o.oidcIssuerClientID) > 0 {
+			return fmt.Errorf("%s feature is disabled but \"oidc-issuer-client-id\" flag was specified, please remove it", OpenIDAuthPlugin)
 		}
 	}
 
