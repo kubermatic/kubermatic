@@ -10,11 +10,12 @@ import (
 
 // Spec builds ClusterSpec kubermatic Custom Resource from API Cluster
 func Spec(apiCluster apiv1.Cluster, cloudProviders map[string]provider.CloudProvider) (*kubermaticv1.ClusterSpec, error) {
-	spec := &kubermaticv1.ClusterSpec{}
-	spec.HumanReadableName = apiCluster.Name
-	spec.Cloud = apiCluster.Spec.Cloud
-	spec.MachineNetworks = apiCluster.Spec.MachineNetworks
-	spec.Version = apiCluster.Spec.Version
+	spec := &kubermaticv1.ClusterSpec{
+		HumanReadableName: apiCluster.Name,
+		Cloud:             apiCluster.Spec.Cloud,
+		MachineNetworks:   apiCluster.Spec.MachineNetworks,
+		Version:           apiCluster.Spec.Version,
+	}
 
 	if err := defaulting.DefaultCreateClusterSpec(spec, cloudProviders); err != nil {
 		return nil, err

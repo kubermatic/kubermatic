@@ -15,7 +15,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kuberrrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kubeyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
@@ -31,10 +30,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cluster"
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
-)
-
-const (
-	generateName = "auto-cluster"
 )
 
 func newClusterCreator(runOpts Opts) (*clusterCreator, error) {
@@ -240,9 +235,6 @@ func (ctl *clusterCreator) createMachines(restConfig *rest.Config, dc provider.D
 	}
 
 	for i := 0; i < ctl.runOpts.Nodes; i++ {
-		template.Name = fmt.Sprintf("%s%s", generateName, rand.String(5))
-		template.Spec.Name = template.Name
-
 		m, err := machines.Create(template)
 		if err != nil {
 			return err
@@ -286,7 +278,7 @@ func (ctl *clusterCreator) kubeConfig(cluster *kubermaticv1.Cluster) ([]byte, er
 }
 
 func (ctl *clusterCreator) createCluster(cluster kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	cluster.GenerateName = generateName
+	cluster.GenerateName = cluster.Spec.HumanReadableName
 	cluster.Name = ""
 	return ctl.kubermaticClient.KubermaticV1().Clusters().Create(&cluster)
 }

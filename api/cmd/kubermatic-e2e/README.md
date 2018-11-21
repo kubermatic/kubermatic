@@ -53,6 +53,7 @@ Usage of kubermatic-e2e:
 cluster.yaml
 
 ```yaml
+name: mycoolcluster
 spec:
   cloud:
     dc: "aws-eu-central-1a" # Datacenter key from datacenters.yaml
