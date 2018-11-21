@@ -58,6 +58,7 @@ kubermatic:
       pullPolicy: "IfNotPresent"
     config: |
       {
+        "share_kubeconfig": false,
         "show_demo_info": false,
         "show_terms_of_service": false
       }
