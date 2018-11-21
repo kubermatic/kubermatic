@@ -34,6 +34,9 @@ type TemplateData struct {
 	inClusterPrometheusDisableDefaultRules           bool
 	inClusterPrometheusDisableDefaultScrapingConfigs bool
 	inClusterPrometheusScrapingConfigsFile           string
+	oidcCAFile                                       string
+	oidcIssuerURL                                    string
+	oidcIssuerClientID                               string
 	DockerPullConfigJSON                             []byte
 }
 
@@ -122,6 +125,10 @@ type DeploymentDataProvider interface {
 	ImageRegistry(string) string
 	Cluster() *kubermaticv1.Cluster
 	DC() *provider.DatacenterMeta
+	OIDCAuthPluginEnabled() bool
+	OIDCCAFile() string
+	OIDCIssuerURL() string
+	OIDCIssuerClientID() string
 }
 
 // StatefulSetDataProvider provides data
@@ -146,7 +153,10 @@ func NewTemplateData(
 	inClusterPrometheusDisableDefaultRules bool,
 	inClusterPrometheusDisableDefaultScrapingConfigs bool,
 	inClusterPrometheusScrapingConfigsFile string,
-	dockerPullConfigJSON []byte) *TemplateData {
+	dockerPullConfigJSON []byte,
+	oidcCAFile string,
+	oidcURL string,
+	oidcIssuerClientID string) *TemplateData {
 	return &TemplateData{
 		cluster:                                cluster,
 		dC:                                     dc,
@@ -164,7 +174,30 @@ func NewTemplateData(
 		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
 		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
 		DockerPullConfigJSON:                             dockerPullConfigJSON,
+		oidcCAFile:                                       oidcCAFile,
+		oidcIssuerURL:                                    oidcURL,
+		oidcIssuerClientID:                               oidcIssuerClientID,
 	}
+}
+
+// OIDCAuthPluginEnabled returns flag to indicate if OpenID auth plugin enabled
+func (d *TemplateData) OIDCAuthPluginEnabled() bool {
+	return len(d.oidcIssuerURL) > 0 && len(d.oidcIssuerClientID) > 0
+}
+
+// OIDCCAFile return CA file
+func (d *TemplateData) OIDCCAFile() string {
+	return d.oidcCAFile
+}
+
+// OIDCIssuerURL returns URL of the OpenID token issuer
+func (d *TemplateData) OIDCIssuerURL() string {
+	return d.oidcIssuerURL
+}
+
+// OIDCIssuerClientID return the issuer client ID
+func (d *TemplateData) OIDCIssuerClientID() string {
+	return d.oidcIssuerClientID
 }
 
 // Cluster returns the cluster

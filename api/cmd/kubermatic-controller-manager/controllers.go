@@ -130,6 +130,9 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.kubeInformerFactory.Rbac().V1().RoleBindings(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
 		ctrlCtx.kubeInformerFactory.Policy().V1beta1().PodDisruptionBudgets(),
+		ctrlCtx.runOptions.oidcCAFile,
+		ctrlCtx.runOptions.oidcIssuerURL,
+		ctrlCtx.runOptions.oidcIssuerClientID,
 	)
 }
 
