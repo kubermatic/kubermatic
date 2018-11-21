@@ -33,6 +33,9 @@ func (c *Controller) getClusterTemplateData(cluster *kubermaticv1.Cluster) (*res
 		c.inClusterPrometheusDisableDefaultScrapingConfigs,
 		c.inClusterPrometheusScrapingConfigsFile,
 		c.dockerPullConfigJSON,
+		"",
+		"",
+		"",
 	), nil
 }
 
