@@ -19,7 +19,7 @@ See definition examples below
 # and will dump user-cluster kubeconfig into ./user-cluster-kubeconfig
 kubermatic-e2e \
       -kubeconfig=./kubermaticseedkubeconfig \
-      -output=./user-cluster-kubeconfig
+      -output=./user-cluster-kubeconfig \
       -cluster=./cluster.yaml \
       -node=./node.yaml \
       -nodes=3
