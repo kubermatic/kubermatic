@@ -1,10 +1,36 @@
 # Automate creation of kubermatic managed clusters
 
 ## What is this
-It's a tool to automate creating of custom resources for kubermatic managed
-clusters and machine objects
+It's a tool to automate creating of kubermatic managed clusters
 
 ## Usage
+
+### Run
+
+For this tool to work at least 3 files has to exists:
+* kubeconfig (with kubermatic installed)
+* cluster.yaml definition (conform HTTP API model `github.com/kubermatic/kubermatic/api/pkg/api/v1.Cluster`)
+* node.yaml template definition (conform HTTP API model `github.com/kubermatic/kubermatic/api/pkg/api/v1.Node`)
+
+See definition examples below
+
+```shell
+# this will create user-cluster with 3 nodes (according to definition in node.yaml)
+# and will dump user-cluster kubeconfig into ./user-cluster-kubeconfig
+kubermatic-e2e \
+      -kubeconfig=./kubermaticseedkubeconfig \
+      -output=./user-cluster-kubeconfig
+      -cluster=./cluster.yaml \
+      -node=./node.yaml \
+      -nodes=3
+# now run any workloads on fresh user-cluster you'd like
+kubectl --kubeconfig=./user-cluster-kubeconfig apply -f ./some-manifests
+
+# cleanup
+kubectl \
+      --kubeconfig=./kubermaticseedkubeconfig delete cluster \
+      $(kubectl --kubeconfig=./user-cluster-kubeconfig config view -ojsonpath='{.clusters[0].name}')
+```
 
 ### Flags
 
@@ -60,7 +86,7 @@ spec:
     aws:
       accessKeyId: << your AWS accessKeyId >>
       secretAccessKey: << your AWS secretAccessKey >>
-  version: 1.12.0
+  version: 1.12.1
 ```
 
 ### Example AWS Node
@@ -78,8 +104,5 @@ spec:
     ubuntu:
       distUpgradeOnBoot: false
   versions:
-    kubelet: 1.12.0
-    containerRuntime:
-      name: docker
-      version: 17.03.2
+    kubelet: 1.12.1
 ```
