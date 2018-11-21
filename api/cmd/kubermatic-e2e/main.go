@@ -16,6 +16,7 @@ type Opts struct {
 	Addons              flagopts.StringArray
 	ClusterPath         string
 	ClusterTimeout      time.Duration
+	Context             string
 	DeleteOnError       bool
 	Kubeconf            flagopts.KubeconfigFlag
 	KubermaticNamespace string
@@ -45,6 +46,7 @@ func main() {
 	flag.DurationVar(&runOpts.NodesTimeout, "nodes-timeout", 10*time.Minute, "nodes creation timeout")
 	flag.IntVar(&runOpts.Nodes, "nodes", 3, "number of worker nodes")
 	flag.StringVar(&runOpts.ClusterPath, "cluster", "cluster.yaml", "path to Cluster yaml")
+	flag.StringVar(&runOpts.Context, "context", "", "kubernetes context")
 	flag.StringVar(&runOpts.KubermaticNamespace, "namespace", "kubermatic", "namespace where kubermatic and it's configs deployed")
 	flag.StringVar(&runOpts.NodePath, "node", "node.yaml", "path to Node yaml")
 	flag.StringVar(&runOpts.Output, "output", "usercluster_kubeconfig", "path to generated usercluster kubeconfig")

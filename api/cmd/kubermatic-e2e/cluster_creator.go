@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"time"
 
 	log "github.com/golang/glog"
@@ -33,7 +32,15 @@ import (
 )
 
 func newClusterCreator(runOpts Opts) (*clusterCreator, error) {
-	kubeconfig, err := clientcmd.BuildConfigFromFlags("", runOpts.Kubeconf.String())
+	kubeconfig, err := clientcmd.
+		NewNonInteractiveDeferredLoadingClientConfig(
+			&clientcmd.ClientConfigLoadingRules{
+				ExplicitPath: runOpts.Kubeconf.String(),
+			},
+			&clientcmd.ConfigOverrides{
+				CurrentContext: runOpts.Context,
+			},
+		).ClientConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +114,7 @@ func (ctl *clusterCreator) create(ctx context.Context) error {
 	}
 	log.Infof("seed cluster namespace: %s", crdCluster.Status.NamespaceName)
 	log.Info("cluster name:")
-	fmt.Print(crdCluster.ObjectMeta.Name) // log to STDOUT, for saving in shell
+	fmt.Println(crdCluster.ObjectMeta.Name) // log to STDOUT, for saving in shell
 
 	if err = ctl.installAddons(crdCluster); err != nil {
 		return err
@@ -142,26 +149,7 @@ func (ctl *clusterCreator) create(ctx context.Context) error {
 		return err
 	}
 	log.Info("all nodes are ready")
-
-	e2eKubeConfig, err := ioutil.TempFile("", "")
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		if err2 := os.Remove(e2eKubeConfig.Name()); err2 != nil {
-			log.Error(err2)
-		}
-	}()
-	log.Infof("target cluster adminconfig: %s", e2eKubeConfig.Name())
-
-	if _, err = e2eKubeConfig.Write(clusterKubeConfig); err != nil {
-		return err
-	}
-
-	if err = e2eKubeConfig.Sync(); err != nil {
-		return err
-	}
+	log.Infof("target cluster adminconfig: %s", ctl.runOpts.Output)
 
 	return ioutil.WriteFile(ctl.runOpts.Output, clusterKubeConfig, 0600)
 }

@@ -7,7 +7,7 @@ It's a tool to automate creating of kubermatic managed clusters
 
 ### Run
 
-For this tool to work at least 3 files has to exists:
+For this tool to work at least 3 files have to exists:
 * kubeconfig (with kubermatic installed)
 * cluster.yaml definition (conform HTTP API model `github.com/kubermatic/kubermatic/api/pkg/api/v1.Cluster`)
 * node.yaml template definition (conform HTTP API model `github.com/kubermatic/kubermatic/api/pkg/api/v1.Node`)
@@ -28,7 +28,9 @@ kubectl --kubeconfig=./user-cluster-kubeconfig apply -f ./some-manifests
 
 # cleanup
 kubectl \
-      --kubeconfig=./kubermaticseedkubeconfig delete cluster \
+      --kubeconfig=./kubermaticseedkubeconfig \
+      --wait=false \
+      delete cluster \
       $(kubectl --kubeconfig=./user-cluster-kubeconfig config view -ojsonpath='{.clusters[0].name}')
 ```
 
@@ -44,6 +46,8 @@ Usage of kubermatic-e2e:
         path to Cluster yaml (default "cluster.yaml")
   -cluster-timeout duration
         cluster creation timeout (default 5m0s)
+  -context string
+        kubernetes context
   -delete-on-error
         try to delete cluster on error (default true)
   -kubeconfig value
