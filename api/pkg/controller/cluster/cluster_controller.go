@@ -90,7 +90,7 @@ type Controller struct {
 	clusterRoleBindingLister  rbacb1lister.ClusterRoleBindingLister
 	podDisruptionBudgetLister policyv1beta1lister.PodDisruptionBudgetLister
 
-	oidcCAFile         string
+	skipOidcTLSVerify  bool
 	oidcIssuerURL      string
 	oidcIssuerClientID string
 }
@@ -130,7 +130,7 @@ func NewController(
 	roleBindingInformer rbacv1informer.RoleBindingInformer,
 	clusterRoleBindingInformer rbacv1informer.ClusterRoleBindingInformer,
 	podDisruptionBudgetInformer policyv1beta1informers.PodDisruptionBudgetInformer,
-	oidcCAFile string,
+	skipOidcTLSVerify bool,
 	oidcIssuerURL string,
 	oidcIssuerClientID string) (*Controller, error) {
 	cc := &Controller{
@@ -156,7 +156,7 @@ func NewController(
 		dcs:         dcs,
 		cps:         cps,
 
-		oidcCAFile:         oidcCAFile,
+		skipOidcTLSVerify:  skipOidcTLSVerify,
 		oidcIssuerURL:      oidcIssuerURL,
 		oidcIssuerClientID: oidcIssuerClientID,
 	}

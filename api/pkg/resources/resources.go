@@ -10,11 +10,11 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
+
 	"github.com/golang/glog"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/semver"
-
 	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -142,6 +142,10 @@ const (
 	ApiserverEtcdClientCertificateSecretName = "apiserver-etcd-client-certificate"
 	//ApiserverFrontProxyClientCertificateSecretName is the name for the secret containing the apiserver's client certificate for proxy auth
 	ApiserverFrontProxyClientCertificateSecretName = "apiserver-proxy-client-certificate"
+	// DexCASecretName is the name of the secret that contains the Dex CA bundle
+	DexCASecretName = "dex-ca"
+	// DexCAFileName is the name of Dex CA bundle file
+	DexCAFileName = "ca.pem"
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
@@ -655,6 +659,21 @@ func getClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lister c
 	}
 
 	return certs[0], key, nil
+}
+
+// GetDexCAFromLister returns the Dex CA from the lister
+func GetDexCAFromLister(lister corev1lister.SecretLister) ([]*x509.Certificate, error) {
+	caCertSecret, err := lister.Secrets("oauth").Get(DexCASecretName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
+	}
+
+	certs, err := certutil.ParseCertsPEM(caCertSecret.Data[DexCAFileName])
+	if err != nil {
+		return nil, fmt.Errorf("got an invalid cert from the CA secret %s: %v", DexCASecretName, err)
+	}
+
+	return certs, nil
 }
 
 // GetClusterRootCA returns the root CA of the cluster from the lister

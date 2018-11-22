@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dex-ca
+type: Opaque
+data:
+  ca.pem: "{{ .Values.dex.caBundle | b64enc }}"

@@ -77,7 +77,7 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 		// We use OverwriteCloudConfig for Vsphere to ensure we always
 		// use the credentials passed in via frontend for the cloud-provider
 		// functionality
-		templateData := resources.NewTemplateData(c, &dc, "", nil, nil, nil, "", "", "", resource.Quantity{}, "", "", false, false, "", nil, "", "", "")
+		templateData := resources.NewTemplateData(c, &dc, "", nil, nil, nil, "", "", "", resource.Quantity{}, "", "", false, false, "", nil, true, "", "")
 		overwriteCloudConfig, err := cloudconfig.CloudConfig(templateData)
 		if err != nil {
 			return nil, err

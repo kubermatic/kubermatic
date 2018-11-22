@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"crypto/x509"
 	"fmt"
 	"net"
 	"net/url"
@@ -34,7 +35,7 @@ type TemplateData struct {
 	inClusterPrometheusDisableDefaultRules           bool
 	inClusterPrometheusDisableDefaultScrapingConfigs bool
 	inClusterPrometheusScrapingConfigsFile           string
-	oidcCAFile                                       string
+	skipOidcTLSVerify                                bool
 	oidcIssuerURL                                    string
 	oidcIssuerClientID                               string
 	DockerPullConfigJSON                             []byte
@@ -101,6 +102,7 @@ type SecretDataProvider interface {
 	GetFrontProxyCA() (*triple.KeyPair, error)
 	GetRootCA() (*triple.KeyPair, error)
 	GetOpenVPNCA() (*ECDSAKeyPair, error)
+	GetDexCA() ([]*x509.Certificate, error)
 	ExternalIP() (*net.IP, error)
 	Cluster() *kubermaticv1.Cluster
 }
@@ -126,7 +128,7 @@ type DeploymentDataProvider interface {
 	Cluster() *kubermaticv1.Cluster
 	DC() *provider.DatacenterMeta
 	OIDCAuthPluginEnabled() bool
-	OIDCCAFile() string
+	SkipOIDCTLSVerify() bool
 	OIDCIssuerURL() string
 	OIDCIssuerClientID() string
 }
@@ -154,7 +156,7 @@ func NewTemplateData(
 	inClusterPrometheusDisableDefaultScrapingConfigs bool,
 	inClusterPrometheusScrapingConfigsFile string,
 	dockerPullConfigJSON []byte,
-	oidcCAFile string,
+	skipOidcTLSVerify bool,
 	oidcURL string,
 	oidcIssuerClientID string) *TemplateData {
 	return &TemplateData{
@@ -174,7 +176,7 @@ func NewTemplateData(
 		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
 		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
 		DockerPullConfigJSON:                             dockerPullConfigJSON,
-		oidcCAFile:                                       oidcCAFile,
+		skipOidcTLSVerify:                                skipOidcTLSVerify,
 		oidcIssuerURL:                                    oidcURL,
 		oidcIssuerClientID:                               oidcIssuerClientID,
 	}
@@ -185,9 +187,9 @@ func (d *TemplateData) OIDCAuthPluginEnabled() bool {
 	return len(d.oidcIssuerURL) > 0 && len(d.oidcIssuerClientID) > 0
 }
 
-// OIDCCAFile return CA file
-func (d *TemplateData) OIDCCAFile() string {
-	return d.oidcCAFile
+// SkipOIDCTLSVerify return flag to indicate if skip TLS validation against dex
+func (d *TemplateData) SkipOIDCTLSVerify() bool {
+	return d.skipOidcTLSVerify
 }
 
 // OIDCIssuerURL returns URL of the OpenID token issuer
@@ -340,6 +342,11 @@ func (d *TemplateData) ImageRegistry(defaultRegistry string) string {
 		return d.OverwriteRegistry
 	}
 	return defaultRegistry
+}
+
+// GetDexCA returns the chain of public certificates of the Dex
+func (d *TemplateData) GetDexCA() ([]*x509.Certificate, error) {
+	return GetDexCAFromLister(d.SecretLister)
 }
 
 // GetRootCA returns the root CA of the cluster

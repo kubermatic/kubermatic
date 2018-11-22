@@ -88,7 +88,7 @@ func TestConfigMapCreatorsKeepAdditionalData(t *testing.T) {
 	cluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.11.0.0/8"}
 	cluster.Spec.Version = *semver.NewSemverOrDie("v1.11.1")
 	dc := &provider.DatacenterMeta{}
-	templateData := resources.NewTemplateData(cluster, dc, "", nil, nil, nil, "", "", "10.12.0.0/8", resource.Quantity{}, "", "", false, false, "", nil, "", "", "")
+	templateData := resources.NewTemplateData(cluster, dc, "", nil, nil, nil, "", "", "10.12.0.0/8", resource.Quantity{}, "", "", false, false, "", nil, true, "", "")
 
 	for _, create := range GetConfigMapCreators(templateData) {
 		existing := &corev1.ConfigMap{
@@ -122,6 +122,13 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 	caSecret.Data = map[string][]byte{
 		resources.CACertSecretKey: certutil.EncodeCertPEM(keyPair.Cert),
 		resources.CAKeySecretKey:  certutil.EncodePrivateKeyPEM(keyPair.Key),
+	}
+
+	dexCASecret := &corev1.Secret{}
+	dexCASecret.Name = resources.DexCASecretName
+	dexCASecret.Namespace = "oauth"
+	dexCASecret.Data = map[string][]byte{
+		resources.DexCAFileName: certutil.EncodeCertPEM(keyPair.Cert),
 	}
 
 	frontProxyCASecret := &corev1.Secret{}
@@ -161,6 +168,9 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 	apiserverService.Spec.ClusterIP = "1.2.3.4"
 
 	secretIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+	if err := secretIndexer.Add(dexCASecret); err != nil {
+		t.Fatalf("Error adding secret to indexer: %v", err)
+	}
 	if err := secretIndexer.Add(caSecret); err != nil {
 		t.Fatalf("Error adding secret to indexer: %v", err)
 	}
@@ -181,7 +191,7 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 	}
 	serviceLister := listerscorev1.NewServiceLister(serviceIndexer)
 
-	templateData := resources.NewTemplateData(cluster, dc, "", secretLister, nil, serviceLister, "", "", "", resource.Quantity{}, "", "", false, false, "", nil, "", "", "")
+	templateData := resources.NewTemplateData(cluster, dc, "", secretLister, nil, serviceLister, "", "", "", resource.Quantity{}, "", "", false, false, "", nil, true, "", "")
 
 	for _, op := range GetSecretCreatorOperations([]byte{}) {
 		existing := &corev1.Secret{

@@ -301,6 +301,7 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		},
 	}
 	secretList := createNamedSecrets([]string{
+		resources.DexCASecretName,
 		resources.CASecretName,
 		resources.TokensSecretName,
 		resources.ApiserverTLSSecretName,
@@ -366,7 +367,7 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		false,
 		"",
 		nil,
-		"",
+		true,
 		"",
 		""), nil
 }
