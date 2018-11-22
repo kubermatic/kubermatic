@@ -139,7 +139,7 @@ func (ctl *clusterCreator) create(ctx context.Context) error {
 		return err
 	}
 
-	if err = ctl.createMachines(clusterAdminRestConfig, dc, crdCluster, nodeTemplate); err != nil {
+	if err = ctl.createMachineDeployment(clusterAdminRestConfig, dc, crdCluster, nodeTemplate); err != nil {
 		return err
 	}
 	log.Info("waiting for machines to boot")
@@ -210,26 +210,36 @@ func (ctl *clusterCreator) getDatacenters() (map[string]provider.DatacenterMeta,
 	return dcs.Datacenters, nil
 }
 
-func (ctl *clusterCreator) createMachines(restConfig *rest.Config, dc provider.DatacenterMeta, cluster *kubermaticv1.Cluster, node apiv1.Node) error {
+func (ctl *clusterCreator) createMachineDeployment(restConfig *rest.Config, dc provider.DatacenterMeta, cluster *kubermaticv1.Cluster, node apiv1.Node) error {
 	clusterClient, err := clusterclientset.NewForConfig(restConfig)
 	if err != nil {
 		return err
 	}
 
-	machines := clusterClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem)
-	template, err := machineresource.Machine(cluster, &node, dc, nil)
+	machineReplicas := int32(ctl.runOpts.Nodes)
+	machineDeployment := clusterClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem)
+
+	nd := apiv1.NodeDeployment{
+		ObjectMeta: apiv1.ObjectMeta{
+			Name: node.Name,
+		},
+		Spec: apiv1.NodeDeploymentSpec{
+			Replicas: machineReplicas,
+			Template: node.Spec,
+		},
+	}
+
+	template, err := machineresource.Deployment(cluster, &nd, dc, nil)
 	if err != nil {
 		return err
 	}
 
-	for i := 0; i < ctl.runOpts.Nodes; i++ {
-		m, err := machines.Create(template)
-		if err != nil {
-			return err
-		}
-		log.Infof("created machine: %s", m.Name)
+	md, err := machineDeployment.Create(template)
+	if err != nil {
+		return err
 	}
 
+	log.Infof("created machine deployment: %s", md.Name)
 	return nil
 }
 
