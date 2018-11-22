@@ -26,7 +26,7 @@ spec:
           - -v=4
           - -logtostderr
           - -datacenters=/opt/datacenter/datacenters.yaml
-          - -oidc-url={{ .Values.kubermatic.auth.url }}
+          - -oidc-url={{ .Values.kubermatic.auth.tokenIssuer }}
           - -oidc-authenticator-client-id={{ .Values.kubermatic.auth.clientID }}
           - -oidc-skip-tls-verify={{ default false .Values.kubermatic.auth.skipTokenIssuerTLSVerify }}
           - -versions=/opt/master-files/versions.yaml
