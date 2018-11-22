@@ -17,7 +17,7 @@ See definition examples below
 ```shell
 # this will create user-cluster with 3 nodes (according to definition in node.yaml)
 # and will dump user-cluster kubeconfig into ./user-cluster-kubeconfig
-kubermatic-e2e \
+kubermatic-cli \
       -kubeconfig=./kubermaticseedkubeconfig \
       -output=./user-cluster-kubeconfig \
       -cluster=./cluster.yaml \
@@ -37,7 +37,7 @@ kubectl \
 ### Flags
 
 ```
-Usage of kubermatic-e2e:
+Usage of kubermatic-cli:
   -addons value
         comma separated list of addons (default canal,dns,kube-proxy,openvpn,rbac,kubelet-configmap,default-storage-class,metrics-server)
   -alsologtostderr
