@@ -36,10 +36,12 @@ spec:
           - -master-resources=/opt/master-files
           # the following flags enable oidc kubeconfig feature/endpoint
           - -feature-gates={{ .Values.kubermatic.api.featureGates }}
+          {{- if regexMatch ".*OpenIDAuthPlugin=true.*" (default "" .Values.kubermatic.controller.featureGates) }}
           - -oidc-issuer-redirect-uri={{ .Values.kubermatic.auth.issuerRedirectURL }}
           - -oidc-issuer-client-id={{ .Values.kubermatic.auth.issuerClientID }}
           - -oidc-issuer-client-secret={{ .Values.kubermatic.auth.issuerClientSecret }}
           - -oidc-issuer-cookie-hash-key={{ .Values.kubermatic.auth.issuerCookieKey }}
+          {{- end }}
           image: '{{ .Values.kubermatic.api.image.repository }}:{{.Values.kubermatic.api.image.tag}}'
           imagePullPolicy: {{.Values.kubermatic.api.image.pullPolicy}}
           ports:
