@@ -84,8 +84,18 @@ func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv
 		return nil, fmt.Errorf("failed to list cluster MachineDeployments: %v", err)
 	}
 	if len(machineDeploymentList.Items) > 0 {
-		if err := machineClient.Cluster().MachineDeployments(metav1.NamespaceSystem).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
+		if err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
 			return nil, fmt.Errorf("failed to delete cluster MachineDeployments: %v", err)
+		}
+	}
+
+	machineSetList, err := machineClient.ClusterV1alpha1().MachineSets(metav1.NamespaceSystem).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list cluster MachineSets: %v", err)
+	}
+	if len(machineSetList.Items) > 0 {
+		if err := machineClient.ClusterV1alpha1().MachineSets(metav1.NamespaceSystem).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
+			return nil, fmt.Errorf("failed to delete cluster MachineSets: %v", err)
 		}
 	}
 
