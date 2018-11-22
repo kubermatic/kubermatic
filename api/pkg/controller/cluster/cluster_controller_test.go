@@ -65,6 +65,9 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 		kubeInformerFactory.Rbac().V1().RoleBindings(),
 		kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
 		kubeInformerFactory.Policy().V1beta1().PodDisruptionBudgets(),
+		"",
+		"",
+		"",
 	)
 	if err != nil {
 		log.Fatal(err)
