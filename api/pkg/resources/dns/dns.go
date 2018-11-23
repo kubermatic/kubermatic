@@ -13,6 +13,19 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+var (
+	defaultResourceRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("20Mi"),
+			corev1.ResourceCPU:    resource.MustParse("5m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+		},
+	}
+)
+
 // Service returns the service for the dns resolver
 func Service(data resources.ServiceDataProvider, existing *corev1.Service) (*corev1.Service, error) {
 	svc := existing
@@ -77,32 +90,14 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 		return nil, fmt.Errorf("failed to get openvpn sidecar for dns resolver: %v", err)
 	}
 
-	requestedMemory, err := resource.ParseQuantity("20Mi")
-	if err != nil {
-		return nil, err
-	}
-	requestedCPU, err := resource.ParseQuantity("5m")
-	if err != nil {
-		return nil, err
-	}
-
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		*openvpnSidecar,
 		{
-			Name:            resources.DNSResolverDeploymentName,
-			Image:           data.ImageRegistry(resources.RegistryGCR) + "/google_containers/coredns:1.1.3",
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Args:            []string{"-conf", "/etc/coredns/Corefile"},
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceMemory: requestedMemory,
-					corev1.ResourceCPU:    requestedCPU,
-				},
-				Limits: corev1.ResourceList{
-					corev1.ResourceMemory: requestedMemory,
-					corev1.ResourceCPU:    requestedCPU,
-				},
-			},
+			Name:                     resources.DNSResolverDeploymentName,
+			Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/coredns:1.1.3",
+			ImagePullPolicy:          corev1.PullIfNotPresent,
+			Args:                     []string{"-conf", "/etc/coredns/Corefile"},
+			Resources:                defaultResourceRequirements,
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			VolumeMounts: []corev1.VolumeMount{

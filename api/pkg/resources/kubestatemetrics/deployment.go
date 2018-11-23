@@ -20,8 +20,8 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("10m"),
 		},
 		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
-			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("1Gi"),
+			corev1.ResourceCPU:    resource.MustParse("100m"),
 		},
 	}
 )
