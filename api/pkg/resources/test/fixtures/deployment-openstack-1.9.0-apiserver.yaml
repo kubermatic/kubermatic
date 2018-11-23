@@ -97,11 +97,11 @@ spec:
         name: openvpn-client
         resources:
           limits:
-            cpu: 40m
-            memory: 64Mi
+            cpu: 100m
+            memory: 256Mi
           requests:
-            cpu: 10m
-            memory: 30Mi
+            cpu: 5m
+            memory: 16Mi
         securityContext:
           privileged: true
         terminationMessagePath: /dev/termination-log
@@ -125,8 +125,8 @@ spec:
         name: dnat-controller
         resources:
           limits:
-            cpu: 20m
-            memory: 64Mi
+            cpu: 100m
+            memory: 512Mi
           requests:
             cpu: 5m
             memory: 16Mi
@@ -248,8 +248,8 @@ spec:
           timeoutSeconds: 15
         resources:
           limits:
-            cpu: 500m
-            memory: 1Gi
+            cpu: "2"
+            memory: 4Gi
           requests:
             cpu: 100m
             memory: 256Mi
