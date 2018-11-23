@@ -51,7 +51,13 @@ spec:
         image: gcr.io/google_containers/metrics-server-amd64:v0.3.1
         imagePullPolicy: IfNotPresent
         name: metrics-server
-        resources: {}
+        resources:
+          limits:
+            cpu: 150m
+            memory: 512Mi
+          requests:
+            cpu: 25m
+            memory: 32Mi
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
