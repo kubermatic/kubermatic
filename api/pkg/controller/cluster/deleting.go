@@ -11,7 +11,6 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/node/eviction"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 )
 
@@ -94,18 +93,8 @@ func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv
 		if err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
 			return nil, fmt.Errorf("failed to delete MachineDeployments: %v", err)
 		}
-	}
-	if err := wait.Poll(pollInterval, pollTimeout, func() (bool, error) {
-		machineDeploymentList, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).List(metav1.ListOptions{})
-		if err != nil {
-			return false, err
-		}
-		if len(machineDeploymentList.Items) == 0 {
-			return true, nil
-		}
-		return false, nil
-	}); err != nil {
-		return nil, fmt.Errorf("failed to wait until all MachineDeployments are gone: %v", err)
+		// Return here to make sure we don't attempt to delete MachineSets until the MachineDeployment is actually gone
+		return c, nil
 	}
 
 	machineSetList, err := machineClient.ClusterV1alpha1().MachineSets(metav1.NamespaceSystem).List(metav1.ListOptions{})
@@ -116,18 +105,8 @@ func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv
 		if err := machineClient.ClusterV1alpha1().MachineSets(metav1.NamespaceSystem).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
 			return nil, fmt.Errorf("failed to delete MachineSets: %v", err)
 		}
-	}
-	if err := wait.Poll(pollInterval, pollTimeout, func() (bool, error) {
-		machineSetList, err := machineClient.ClusterV1alpha1().MachineSets(metav1.NamespaceSystem).List(metav1.ListOptions{})
-		if err != nil {
-			return false, err
-		}
-		if len(machineSetList.Items) == 0 {
-			return true, nil
-		}
-		return false, nil
-	}); err != nil {
-		return nil, fmt.Errorf("failed to wait until all MachineSets are gone: %v", err)
+		// Return here to make sure we don't attempt to delete Machines until the MachineSet is actually gone
+		return c, nil
 	}
 
 	machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{})
