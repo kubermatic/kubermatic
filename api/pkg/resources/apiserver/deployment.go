@@ -24,8 +24,8 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("100m"),
 		},
 		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("1Gi"),
-			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("4Gi"),
+			corev1.ResourceCPU:    resource.MustParse("2"),
 		},
 	}
 )
@@ -135,9 +135,9 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 		return nil, err
 	}
 
-	resourceRequirements := defaultResourceRequirements
+	resourceRequirements := defaultResourceRequirements.DeepCopy()
 	if data.Cluster().Spec.ComponentsOverride.Apiserver.Resources != nil {
-		resourceRequirements = *data.Cluster().Spec.ComponentsOverride.Apiserver.Resources
+		resourceRequirements = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources
 	}
 
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
@@ -152,7 +152,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			Args:                     flags,
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-			Resources:                resourceRequirements,
+			Resources:                *resourceRequirements,
 			Ports: []corev1.ContainerPort{
 				{
 					ContainerPort: externalNodePort,

@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"net"
 	"net/url"
 	"time"
@@ -15,6 +14,7 @@ import (
 	"github.com/golang/glog"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
@@ -694,6 +694,9 @@ func ClusterIPForService(name, namespace string, serviceLister corev1lister.Serv
 
 // DeepEqual compares both objects for equality
 func DeepEqual(a, b metav1.Object) bool {
+	// Kubernetes Objects can be deeper than the default 10 levels.
+	deep.MaxDepth = 20
+
 	//TODO: Check why equality.Semantic.DeepEqual returns a different result than deep.Equal
 	// Reproducible by changing the code to use equality.Semantic.DeepEqual & create a cluster.
 	// The ensureDeployments & ensureStatefulSets function in the cluster controller will update the resources on each sync

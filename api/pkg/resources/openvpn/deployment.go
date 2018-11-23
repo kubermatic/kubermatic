@@ -14,10 +14,16 @@ import (
 )
 
 var (
-	defaultMemoryRequest = resource.MustParse("16Mi")
-	defaultCPURequest    = resource.MustParse("5m")
-	defaultMemoryLimit   = resource.MustParse("32Mi")
-	defaultCPULimit      = resource.MustParse("25m")
+	defaultResourceRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("16Mi"),
+			corev1.ResourceCPU:    resource.MustParse("5m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+		},
+	}
 )
 
 const (
@@ -127,16 +133,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceMemory: defaultMemoryRequest,
-					corev1.ResourceCPU:    defaultCPURequest,
-				},
-				Limits: corev1.ResourceList{
-					corev1.ResourceMemory: defaultMemoryLimit,
-					corev1.ResourceCPU:    defaultCPULimit,
-				},
-			},
+			Resources:                defaultResourceRequirements,
 		},
 	}
 
@@ -182,16 +179,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			SecurityContext: &corev1.SecurityContext{
 				Privileged: resources.Bool(true),
 			},
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceMemory: defaultMemoryRequest,
-					corev1.ResourceCPU:    defaultCPURequest,
-				},
-				Limits: corev1.ResourceList{
-					corev1.ResourceMemory: defaultMemoryLimit,
-					corev1.ResourceCPU:    defaultCPULimit,
-				},
-			},
+			Resources: defaultResourceRequirements,
 			ReadinessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
 					Exec: &corev1.ExecAction{
