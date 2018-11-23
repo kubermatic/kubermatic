@@ -17,19 +17,20 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (*kubermaticv1.Clus
 	}
 
 	type depInfo struct {
-		healthy *bool
+		healthy  *bool
+		minReady int32
 	}
 
 	healthMapping := map[string]*depInfo{
-		resources.ApiserverDeploymentName:         {healthy: &health.Apiserver},
-		resources.ControllerManagerDeploymentName: {healthy: &health.Controller},
-		resources.SchedulerDeploymentName:         {healthy: &health.Scheduler},
-		resources.MachineControllerDeploymentName: {healthy: &health.MachineController},
-		resources.OpenVPNServerDeploymentName:     {healthy: &health.OpenVPN},
+		resources.ApiserverDeploymentName:         {healthy: &health.Apiserver, minReady: 1},
+		resources.ControllerManagerDeploymentName: {healthy: &health.Controller, minReady: 1},
+		resources.SchedulerDeploymentName:         {healthy: &health.Scheduler, minReady: 1},
+		resources.MachineControllerDeploymentName: {healthy: &health.MachineController, minReady: 1},
+		resources.OpenVPNServerDeploymentName:     {healthy: &health.OpenVPN, minReady: 1},
 	}
 
 	for name := range healthMapping {
-		healthy, err := cc.healthyDeployment(ns, name)
+		healthy, err := cc.healthyDeployment(ns, name, healthMapping[name].minReady)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get dep health %q: %v", name, err)
 		}
@@ -37,7 +38,7 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (*kubermaticv1.Clus
 	}
 
 	var err error
-	health.Etcd, err = cc.healthyStatefulSet(ns, resources.EtcdStatefulSetName)
+	health.Etcd, err = cc.healthyStatefulSet(ns, resources.EtcdStatefulSetName, 2)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get etcd health: %v", err)
 	}
@@ -45,7 +46,7 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (*kubermaticv1.Clus
 	return &health, nil
 }
 
-func (cc *Controller) healthyDeployment(ns, name string) (bool, error) {
+func (cc *Controller) healthyDeployment(ns, name string, minReady int32) (bool, error) {
 	dep, err := cc.deploymentLister.Deployments(ns).Get(name)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -54,10 +55,10 @@ func (cc *Controller) healthyDeployment(ns, name string) (bool, error) {
 		return false, err
 	}
 
-	return dep.Status.ReadyReplicas == *dep.Spec.Replicas && dep.Status.UpdatedReplicas == *dep.Spec.Replicas, nil
+	return dep.Status.ReadyReplicas >= minReady, nil
 }
 
-func (cc *Controller) healthyStatefulSet(ns, name string) (bool, error) {
+func (cc *Controller) healthyStatefulSet(ns, name string, minReady int32) (bool, error) {
 	set, err := cc.statefulSetLister.StatefulSets(ns).Get(name)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -66,7 +67,7 @@ func (cc *Controller) healthyStatefulSet(ns, name string) (bool, error) {
 		return false, err
 	}
 
-	return set.Status.ReadyReplicas == *set.Spec.Replicas && set.Status.CurrentReplicas == *set.Spec.Replicas, nil
+	return set.Status.ReadyReplicas >= minReady, nil
 }
 
 func (cc *Controller) syncHealth(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
