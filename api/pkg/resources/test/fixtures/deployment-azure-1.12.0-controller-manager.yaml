@@ -91,11 +91,11 @@ spec:
         name: openvpn-client
         resources:
           limits:
-            cpu: 40m
-            memory: 64Mi
+            cpu: 100m
+            memory: 256Mi
           requests:
-            cpu: 10m
-            memory: 30Mi
+            cpu: 5m
+            memory: 16Mi
         securityContext:
           privileged: true
         terminationMessagePath: /dev/termination-log
@@ -158,8 +158,8 @@ spec:
           timeoutSeconds: 15
         resources:
           limits:
-            cpu: 250m
-            memory: 512Mi
+            cpu: "2"
+            memory: 2Gi
           requests:
             cpu: 100m
             memory: 100Mi

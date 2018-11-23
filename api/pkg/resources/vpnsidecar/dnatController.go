@@ -8,14 +8,14 @@ import (
 )
 
 var (
-	defaultResourceRequirements = corev1.ResourceRequirements{
+	dnatControllerResourceRequirements = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
 			corev1.ResourceMemory: resource.MustParse("16Mi"),
 			corev1.ResourceCPU:    resource.MustParse("5m"),
 		},
 		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("64Mi"),
-			corev1.ResourceCPU:    resource.MustParse("20m"),
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+			corev1.ResourceCPU:    resource.MustParse("100m"),
 		},
 	}
 )
@@ -40,7 +40,7 @@ func DnatControllerContainer(data resources.DeploymentDataProvider, name string)
 		},
 		TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 		TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-		Resources:                defaultResourceRequirements,
+		Resources:                dnatControllerResourceRequirements,
 		VolumeMounts: []corev1.VolumeMount{
 			{
 				MountPath: "/etc/kubernetes/kubeconfig",

@@ -108,8 +108,8 @@ spec:
           timeoutSeconds: 1
         resources:
           limits:
-            cpu: 25m
-            memory: 32Mi
+            cpu: 100m
+            memory: 128Mi
           requests:
             cpu: 5m
             memory: 16Mi
@@ -150,8 +150,8 @@ spec:
         name: iptables-init
         resources:
           limits:
-            cpu: 25m
-            memory: 32Mi
+            cpu: 100m
+            memory: 128Mi
           requests:
             cpu: 5m
             memory: 16Mi
