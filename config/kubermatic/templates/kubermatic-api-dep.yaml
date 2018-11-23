@@ -36,7 +36,7 @@ spec:
           - -master-resources=/opt/master-files
           # the following flags enable oidc kubeconfig feature/endpoint
           - -feature-gates={{ .Values.kubermatic.api.featureGates }}
-          {{- if regexMatch ".*OIDCKubeCfgEndpoint=true.*" (default "" .Values.kubermatic.controller.featureGates) }}
+          {{- if regexMatch ".*OIDCKubeCfgEndpoint=true.*" (default "" .Values.kubermatic.api.featureGates) }}
           - -oidc-issuer-redirect-uri={{ .Values.kubermatic.auth.issuerRedirectURL }}
           - -oidc-issuer-client-id={{ .Values.kubermatic.auth.issuerClientID }}
           - -oidc-issuer-client-secret={{ .Values.kubermatic.auth.issuerClientSecret }}
