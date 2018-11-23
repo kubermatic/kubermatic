@@ -217,7 +217,7 @@ func (ctl *clusterCreator) createMachineDeployment(restConfig *rest.Config, dc p
 	}
 
 	machineReplicas := int32(ctl.runOpts.Nodes)
-	machineDeployment := clusterClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem)
+	machineDeploymentClient := clusterClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem)
 
 	nd := apiv1.NodeDeployment{
 		ObjectMeta: apiv1.ObjectMeta{
@@ -234,7 +234,7 @@ func (ctl *clusterCreator) createMachineDeployment(restConfig *rest.Config, dc p
 		return err
 	}
 
-	md, err := machineDeployment.Create(template)
+	md, err := machineDeploymentClient.Create(template)
 	if err != nil {
 		return err
 	}
