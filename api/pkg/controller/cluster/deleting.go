@@ -2,7 +2,6 @@ package cluster
 
 import (
 	"fmt"
-	"time"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
@@ -12,11 +11,6 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
-)
-
-const (
-	pollInterval = 1 * time.Second
-	pollTimeout  = 30 * time.Second
 )
 
 // cleanupCluster is the function which handles clusters in the deleting phase.
