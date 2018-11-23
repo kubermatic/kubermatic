@@ -1,4 +1,4 @@
-package handler
+package ssh
 
 import (
 	"encoding/json"
