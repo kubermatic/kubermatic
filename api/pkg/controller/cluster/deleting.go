@@ -41,12 +41,12 @@ func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv
 
 	userClusterCoreClient, err := cc.userClusterConnProvider.GetClient(c)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cluster client: %v", err)
+		return nil, fmt.Errorf("failed to get user cluster client: %v", err)
 	}
 
 	nodes, err := userClusterCoreClient.CoreV1().Nodes().List(metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cluster nodes: %v", err)
+		return nil, fmt.Errorf("failed to get user cluster nodes: %v", err)
 	}
 
 	// If we delete a cluster, we should disable the eviction on the nodes
@@ -76,16 +76,40 @@ func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv
 
 	machineClient, err := cc.userClusterConnProvider.GetMachineClient(c)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cluster machine client: %v", err)
+		return nil, fmt.Errorf("failed to get machine client: %v", err)
+	}
+
+	machineDeploymentList, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list MachineDeployments: %v", err)
+	}
+	if len(machineDeploymentList.Items) > 0 {
+		if err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
+			return nil, fmt.Errorf("failed to delete MachineDeployments: %v", err)
+		}
+		// Return here to make sure we don't attempt to delete MachineSets until the MachineDeployment is actually gone
+		return c, nil
+	}
+
+	machineSetList, err := machineClient.ClusterV1alpha1().MachineSets(metav1.NamespaceSystem).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list MachineSets: %v", err)
+	}
+	if len(machineSetList.Items) > 0 {
+		if err := machineClient.ClusterV1alpha1().MachineSets(metav1.NamespaceSystem).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
+			return nil, fmt.Errorf("failed to delete MachineSets: %v", err)
+		}
+		// Return here to make sure we don't attempt to delete Machines until the MachineSet is actually gone
+		return c, nil
 	}
 
 	machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get cluster machines: %v", err)
+		return nil, fmt.Errorf("failed to get Machines: %v", err)
 	}
 	if len(machineList.Items) > 0 {
 		if err = machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
-			return nil, fmt.Errorf("failed to delete cluster machines: %v", err)
+			return nil, fmt.Errorf("failed to delete Machines: %v", err)
 		}
 
 		return c, nil
