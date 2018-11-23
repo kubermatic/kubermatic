@@ -37,7 +37,13 @@ spec:
         image: 'docker.io/kubermatic/api:'
         imagePullPolicy: IfNotPresent
         name: ipam-controller
-        resources: {}
+        resources:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
         volumeMounts:
         - mountPath: /etc/kubernetes/ipamcontroller
           name: ipamcontroller-kubeconfig
