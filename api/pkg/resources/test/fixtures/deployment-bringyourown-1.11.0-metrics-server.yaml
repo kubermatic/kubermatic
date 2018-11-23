@@ -53,7 +53,7 @@ spec:
         name: metrics-server
         resources:
           limits:
-            cpu: 250m
+            cpu: 150m
             memory: 512Mi
           requests:
             cpu: 25m
