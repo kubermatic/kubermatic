@@ -26,6 +26,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -524,6 +525,8 @@ func TestLoadFiles(t *testing.T) {
 						t.Errorf("Deployment %s is missing the ImagePullSecret on the PodTemplate", res.Name)
 					}
 
+					verifyContainerResources(fmt.Sprintf("Deployment/%s", res.Name), res.Spec.Template, t)
+
 					checkTestResult(t, fixturePath, res)
 				}
 
@@ -572,6 +575,8 @@ func TestLoadFiles(t *testing.T) {
 						t.Errorf("StatefulSet %s is missing the ImagePullSecret on the PodTemplate", res.Name)
 					}
 
+					verifyContainerResources(fmt.Sprintf("StatefulSet/%s", res.Name), res.Spec.Template, t)
+
 					checkTestResult(t, fixturePath, res)
 				}
 
@@ -608,6 +613,23 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 			})
+		}
+	}
+}
+
+func verifyContainerResources(owner string, podTemplateSpec v1.PodTemplateSpec, t *testing.T) {
+	// Verify that every pod has resource request's & limit's set.
+	for _, container := range podTemplateSpec.Spec.Containers {
+		resourceLists := map[string]corev1.ResourceList{
+			"Limit":    container.Resources.Limits,
+			"Requests": container.Resources.Requests,
+		}
+		for listKind, resourceList := range resourceLists {
+			for _, resourceName := range []corev1.ResourceName{corev1.ResourceCPU, corev1.ResourceMemory} {
+				if _, exists := resourceList[resourceName]; !exists {
+					t.Errorf("Container '%s' of %s is missing the %s %s!", container.Name, owner, resourceName, listKind)
+				}
+			}
 		}
 	}
 }

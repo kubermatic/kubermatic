@@ -3,15 +3,28 @@ package metricsserver
 import (
 	"fmt"
 
-	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
-
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+)
+
+var (
+	defaultResourceRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+			corev1.ResourceCPU:    resource.MustParse("25m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+			corev1.ResourceCPU:    resource.MustParse("150m"),
+		},
+	}
 )
 
 const (
@@ -98,6 +111,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+			Resources:                defaultResourceRequirements,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      resources.MetricsServerKubeconfigSecretName,
