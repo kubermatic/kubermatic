@@ -28,12 +28,20 @@ spec:
           - -datacenters=/opt/datacenter/datacenters.yaml
           - -oidc-url={{ .Values.kubermatic.auth.tokenIssuer }}
           - -oidc-authenticator-client-id={{ .Values.kubermatic.auth.clientID }}
+          - -oidc-skip-tls-verify={{ default false .Values.kubermatic.auth.skipTokenIssuerTLSVerify }}
           - -versions=/opt/master-files/versions.yaml
           - -updates=/opt/master-files/updates.yaml
           - -internal-address=0.0.0.0:8085
           - -kubeconfig=/opt/.kube/kubeconfig
           - -master-resources=/opt/master-files
-          - -oidc-skip-tls-verify={{ default false .Values.kubermatic.auth.skipTokenIssuerTLSVerify }}
+          # the following flags enable oidc kubeconfig feature/endpoint
+          - -feature-gates={{ .Values.kubermatic.api.featureGates }}
+          {{- if regexMatch ".*OpenIDAuthPlugin=true.*" (default "" .Values.kubermatic.controller.featureGates) }}
+          - -oidc-issuer-redirect-uri={{ .Values.kubermatic.auth.issuerRedirectURL }}
+          - -oidc-issuer-client-id={{ .Values.kubermatic.auth.issuerClientID }}
+          - -oidc-issuer-client-secret={{ .Values.kubermatic.auth.issuerClientSecret }}
+          - -oidc-issuer-cookie-hash-key={{ .Values.kubermatic.auth.issuerCookieKey }}
+          {{- end }}
           image: '{{ .Values.kubermatic.api.image.repository }}:{{.Values.kubermatic.api.image.tag}}'
           imagePullPolicy: {{.Values.kubermatic.api.image.pullPolicy}}
           ports:
