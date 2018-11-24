@@ -13,9 +13,6 @@ fi
 
 cd "$(dirname "$0")/../"
 
-docker login -u $(vault kv get -field=username dev/kubermatic-docker) -p $(vault kv get -field=password dev/kubermatic-docker)
-docker login -u $(vault kv get -field=username dev/kubermatic-quay.io) -p $(vault kv get -field=password dev/kubermatic-quay.io) quay.io
-
 docker build -t docker.io/kubermatic/api:${1} .
 
 for TAG in "$@"
