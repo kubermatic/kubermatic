@@ -131,8 +131,9 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			ReadinessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/healthz",
-						Port: intstr.FromInt(10251),
+						Path:   "/healthz",
+						Port:   intstr.FromInt(10251),
+						Scheme: corev1.URISchemeHTTP,
 					},
 				},
 				FailureThreshold: 3,
@@ -144,8 +145,9 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 				FailureThreshold: 8,
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/healthz",
-						Port: intstr.FromInt(10251),
+						Path:   "/healthz",
+						Port:   intstr.FromInt(10251),
+						Scheme: corev1.URISchemeHTTP,
 					},
 				},
 				InitialDelaySeconds: 15,
