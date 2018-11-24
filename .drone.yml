@@ -58,53 +58,21 @@ pipeline:
     group: build
     image: golang:1.11.0
     pull: true
-  kubermatic-docker-master:
-    context: api
-    dockerfile: api/Dockerfile
-    group: push-master
-    image: plugins/docker
-    pull: true
-    repo: kubermatic/api
+  docker:
+    commands:
+    - export VAULT_ADDR=https://vault.loodse.com/
+    - export VAULT_TOKEN=$(vault write --format=json auth/approle/login role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID | jq .auth.client_token -r)
+    - docker login -u $(vault kv get -field=username dev/kubermatic-docker) -p $(vault kv get -field=password dev/kubermatic-docker) docker.io
+    - docker login -u $(vault kv get -field=username dev/kubermatic-quay.io) -p $(vault kv get -field=password dev/kubermatic-quay.io) quay.io
+    - ./api/hack/push_image.sh ${DRONE_COMMIT} ${DRONE_TAG}
+    image: quay.io/kubermatic/docker:18.09.0-3
+    privileged: true
+    group: docker
     secrets:
-    - docker_username
-    - docker_password
-    tags:
-    - master
-    - ${DRONE_COMMIT}
-    when:
-      branch: master
-  # this will build docker images for every release/v2.8 commit
-  # to be immediately deployed on run.kubermatic.io
-  kubermatic-docker-release-v28:
-    context: api
-    dockerfile: api/Dockerfile
-    group: push-master
-    image: plugins/docker
-    pull: true
-    repo: kubermatic/api
-    secrets:
-    - docker_username
-    - docker_password
-    tags:
-    - ${DRONE_COMMIT}
-    when:
-      branch: release/v2.8
-  kubermatic-docker-release:
-    context: api
-    dockerfile: api/Dockerfile
-    group: push-master
-    image: plugins/docker
-    pull: true
-    repo: kubermatic/api
-    secrets:
-    - docker_username
-    - docker_password
-    tags:
-    - ${DRONE_TAG}
-    - latest
-    when:
-      event:
-      - tag
+    - vault_secret_id
+    - vault_role_id
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
   sync-charts:
     commands:
     - apk add --no-cache -U git bash openssh
@@ -114,7 +82,7 @@ pipeline:
     - git config --global user.email "dev@loodse.com"
     - git config --global user.name "drone"
     - cd api && ./hack/sync-charts.sh ${DRONE_BRANCH} ../config
-    image: alpine:3.7
+    image: alpine:3.8
     pull: true
     when:
       branch:
