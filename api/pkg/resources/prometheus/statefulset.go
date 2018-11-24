@@ -129,8 +129,9 @@ func StatefulSet(data resources.StatefulSetDataProvider, existing *appsv1.Statef
 				SuccessThreshold:    1,
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/-/healthy",
-						Port: intstr.FromString("web"),
+						Path:   "/-/healthy",
+						Port:   intstr.FromString("web"),
+						Scheme: corev1.URISchemeHTTP,
 					},
 				},
 			},
@@ -142,8 +143,9 @@ func StatefulSet(data resources.StatefulSetDataProvider, existing *appsv1.Statef
 				SuccessThreshold:    1,
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/-/healthy",
-						Port: intstr.FromString("web"),
+						Path:   "/-/healthy",
+						Port:   intstr.FromString("web"),
+						Scheme: corev1.URISchemeHTTP,
 					},
 				},
 			},
@@ -164,6 +166,7 @@ func getVolumes() []corev1.Volume {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: resources.PrometheusConfigConfigMapName,
 					},
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
 		},

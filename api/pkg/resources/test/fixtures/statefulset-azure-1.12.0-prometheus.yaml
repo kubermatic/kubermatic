@@ -45,6 +45,7 @@ spec:
           httpGet:
             path: /-/healthy
             port: web
+            scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 5
           successThreshold: 1
@@ -59,6 +60,7 @@ spec:
           httpGet:
             path: /-/healthy
             port: web
+            scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 5
           successThreshold: 1
@@ -95,6 +97,7 @@ spec:
       terminationGracePeriodSeconds: 600
       volumes:
       - configMap:
+          defaultMode: 256
           name: prometheus
         name: config
       - emptyDir: {}

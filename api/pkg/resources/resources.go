@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/go-test/deep"
 	"github.com/golang/glog"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -690,23 +689,6 @@ func ClusterIPForService(name, namespace string, serviceLister corev1lister.Serv
 	}
 
 	return &ip, nil
-}
-
-// DeepEqual compares both objects for equality
-func DeepEqual(a, b metav1.Object) bool {
-	// Kubernetes Objects can be deeper than the default 10 levels.
-	deep.MaxDepth = 20
-
-	//TODO: Check why equality.Semantic.DeepEqual returns a different result than deep.Equal
-	// Reproducible by changing the code to use equality.Semantic.DeepEqual & create a cluster.
-	// The ensureDeployments & ensureStatefulSets function in the cluster controller will update the resources on each sync
-	diff := deep.Equal(a, b)
-	if diff == nil {
-		return true
-	}
-
-	glog.V(8).Infof("Object %T %s/%s differs from the one, generated: %v", a, a.GetNamespace(), a.GetName(), diff)
-	return false
 }
 
 // GetAbsoluteServiceDNSName returns the absolute DNS name for the given service and the given cluster. Absolute means a trailing dot will be appended to the DNS name
