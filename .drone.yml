@@ -73,6 +73,14 @@ pipeline:
     - vault_role_id
     volumes:
     - /var/run/docker.sock:/var/run/docker.sock
+    when:
+      branch:
+        exclude:
+        - release/v1.*
+        - release/*cherry*
+        include:
+        - release/*
+        - master
   sync-charts:
     commands:
     - apk add --no-cache -U git bash openssh
