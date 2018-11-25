@@ -98,7 +98,7 @@ pipeline:
     - vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > kubeconfig
     - vault kv get -field=values.yaml dev/seed-clusters/dev.kubermatic.io > values.yaml
     - export KUBECONFIG=$(pwd)/kubeconfig
-    - export EXTRA_ARGS="--tiller-namespace=kubermatic-installer --set=kubermatic.isMaster=false --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA} --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA} --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}"
+    - export EXTRA_ARGS="--tiller-namespace=kubermatic-installer --set=kubermatic.isMaster=true --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA} --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA} --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}"
     - ./api/hack/deploy.sh master ./values.yaml "$EXTRA_ARGS"
     image: quay.io/kubermatic/helm:2.11.0-1
     secrets:
