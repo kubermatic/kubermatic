@@ -505,6 +505,7 @@ func TestLoadFiles(t *testing.T) {
 					true,
 					"",
 					"",
+					"",
 				)
 				kubeInformerFactory.Start(wait.NeverStop)
 				kubeInformerFactory.WaitForCacheSync(wait.NeverStop)

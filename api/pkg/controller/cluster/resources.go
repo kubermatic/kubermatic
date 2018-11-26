@@ -96,6 +96,7 @@ func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*resource
 		cc.skipOidcTLSVerify,
 		cc.oidcIssuerURL,
 		cc.oidcIssuerClientID,
+		cc.oidcDexSecretCAName,
 	), nil
 }
 

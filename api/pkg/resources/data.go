@@ -38,6 +38,7 @@ type TemplateData struct {
 	skipOidcTLSVerify                                bool
 	oidcIssuerURL                                    string
 	oidcIssuerClientID                               string
+	oidcDexSecretCAName                              string
 	DockerPullConfigJSON                             []byte
 }
 
@@ -131,6 +132,7 @@ type DeploymentDataProvider interface {
 	SkipOIDCTLSVerify() bool
 	OIDCIssuerURL() string
 	OIDCIssuerClientID() string
+	OIDCDexSecretCAName() string
 }
 
 // StatefulSetDataProvider provides data
@@ -158,7 +160,9 @@ func NewTemplateData(
 	dockerPullConfigJSON []byte,
 	skipOidcTLSVerify bool,
 	oidcURL string,
-	oidcIssuerClientID string) *TemplateData {
+	oidcIssuerClientID string,
+	oidcDexSecretCAName string,
+) *TemplateData {
 	return &TemplateData{
 		cluster:                                cluster,
 		dC:                                     dc,
@@ -179,6 +183,7 @@ func NewTemplateData(
 		skipOidcTLSVerify:                                skipOidcTLSVerify,
 		oidcIssuerURL:                                    oidcURL,
 		oidcIssuerClientID:                               oidcIssuerClientID,
+		oidcDexSecretCAName:                              oidcDexSecretCAName,
 	}
 }
 
@@ -197,9 +202,14 @@ func (d *TemplateData) OIDCIssuerURL() string {
 	return d.oidcIssuerURL
 }
 
-// OIDCIssuerClientID return the issuer client ID
+// OIDCIssuerClientID returns the issuer client ID
 func (d *TemplateData) OIDCIssuerClientID() string {
 	return d.oidcIssuerClientID
+}
+
+// OIDCDexSecretCAName returns the secret name for Dex CA bundle
+func (d *TemplateData) OIDCDexSecretCAName() string {
+	return d.oidcDexSecretCAName
 }
 
 // Cluster returns the cluster
@@ -346,7 +356,7 @@ func (d *TemplateData) ImageRegistry(defaultRegistry string) string {
 
 // GetDexCA returns the chain of public certificates of the Dex
 func (d *TemplateData) GetDexCA() ([]*x509.Certificate, error) {
-	return GetDexCAFromLister(d.SecretLister)
+	return GetDexCAFromLister(d.oidcDexSecretCAName, d.SecretLister)
 }
 
 // GetRootCA returns the root CA of the cluster

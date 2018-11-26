@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
@@ -662,15 +663,22 @@ func getClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lister c
 }
 
 // GetDexCAFromLister returns the Dex CA from the lister
-func GetDexCAFromLister(lister corev1lister.SecretLister) ([]*x509.Certificate, error) {
-	caCertSecret, err := lister.Secrets("oauth").Get(DexCASecretName)
+func GetDexCAFromLister(dexCASecret string, lister corev1lister.SecretLister) ([]*x509.Certificate, error) {
+
+	// the CA secret consists namespace/secret-name
+	splitResult := strings.Split(dexCASecret, "/")
+
+	// Retrieve elements.
+	namespace := splitResult[0]
+	secretName := splitResult[1]
+	caCertSecret, err := lister.Secrets(namespace).Get(secretName)
 	if err != nil {
 		return nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
 	}
 
 	certs, err := certutil.ParseCertsPEM(caCertSecret.Data[DexCAFileName])
 	if err != nil {
-		return nil, fmt.Errorf("got an invalid cert from the CA secret %s: %v", DexCASecretName, err)
+		return nil, fmt.Errorf("got an invalid cert from the CA secret %s: %v", secretName, err)
 	}
 
 	return certs, nil

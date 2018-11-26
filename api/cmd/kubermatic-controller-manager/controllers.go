@@ -133,6 +133,7 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.skipOidcTLSVerify,
 		ctrlCtx.runOptions.oidcIssuerURL,
 		ctrlCtx.runOptions.oidcIssuerClientID,
+		ctrlCtx.runOptions.oidcDexSecretCAName,
 	)
 }
 
@@ -162,6 +163,7 @@ func createBackupController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.kubeInformerFactory.Batch().V1().Jobs(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Secrets(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Services(),
+		ctrlCtx.runOptions.oidcDexSecretCAName,
 	)
 }
 

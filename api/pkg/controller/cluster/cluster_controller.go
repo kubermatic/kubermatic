@@ -90,9 +90,10 @@ type Controller struct {
 	clusterRoleBindingLister  rbacb1lister.ClusterRoleBindingLister
 	podDisruptionBudgetLister policyv1beta1lister.PodDisruptionBudgetLister
 
-	skipOidcTLSVerify  bool
-	oidcIssuerURL      string
-	oidcIssuerClientID string
+	skipOidcTLSVerify   bool
+	oidcIssuerURL       string
+	oidcIssuerClientID  string
+	oidcDexSecretCAName string
 }
 
 // NewController creates a cluster controller.
@@ -132,7 +133,8 @@ func NewController(
 	podDisruptionBudgetInformer policyv1beta1informers.PodDisruptionBudgetInformer,
 	skipOidcTLSVerify bool,
 	oidcIssuerURL string,
-	oidcIssuerClientID string) (*Controller, error) {
+	oidcIssuerClientID string,
+	oidcDexSecretCAName string) (*Controller, error) {
 	cc := &Controller{
 		kubermaticClient:        kubermaticClient,
 		kubeClient:              kubeClient,
@@ -156,9 +158,10 @@ func NewController(
 		dcs:         dcs,
 		cps:         cps,
 
-		skipOidcTLSVerify:  skipOidcTLSVerify,
-		oidcIssuerURL:      oidcIssuerURL,
-		oidcIssuerClientID: oidcIssuerClientID,
+		skipOidcTLSVerify:   skipOidcTLSVerify,
+		oidcIssuerURL:       oidcIssuerURL,
+		oidcIssuerClientID:  oidcIssuerClientID,
+		oidcDexSecretCAName: oidcDexSecretCAName,
 	}
 
 	clusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{

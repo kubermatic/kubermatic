@@ -36,6 +36,7 @@ func (c *Controller) getClusterTemplateData(cluster *kubermaticv1.Cluster) (*res
 		true,
 		"",
 		"",
+		"",
 	), nil
 }
 

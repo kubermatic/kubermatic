@@ -58,6 +58,12 @@ func main() {
 
 	kubeClient := kubernetes.NewForConfigOrDie(config)
 	kubermaticClient := kubermaticclientset.NewForConfigOrDie(config)
+
+	err = options.validateDexSecretWithCABundle(kubeClient)
+	if err != nil {
+		glog.Fatal(err)
+	}
+
 	recorder, err := getEventRecorder(kubeClient)
 	if err != nil {
 		glog.Fatalf("failed to get event recorder: %v", err)
