@@ -132,7 +132,6 @@ type DeploymentDataProvider interface {
 	SkipOIDCTLSVerify() bool
 	OIDCIssuerURL() string
 	OIDCIssuerClientID() string
-	OIDCDexSecretCAName() string
 }
 
 // StatefulSetDataProvider provides data
@@ -205,11 +204,6 @@ func (d *TemplateData) OIDCIssuerURL() string {
 // OIDCIssuerClientID returns the issuer client ID
 func (d *TemplateData) OIDCIssuerClientID() string {
 	return d.oidcIssuerClientID
-}
-
-// OIDCDexSecretCAName returns the secret name for Dex CA bundle
-func (d *TemplateData) OIDCDexSecretCAName() string {
-	return d.oidcDexSecretCAName
 }
 
 // Cluster returns the cluster

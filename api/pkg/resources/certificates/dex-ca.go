@@ -13,7 +13,7 @@ import (
 type dexCAGetter func() ([]*x509.Certificate, error)
 
 // GetDexCACreator returns a function to create a secret containing a CA bundle with the specified name
-func GetDexCACreator(name, commonName, dataCAKey string, getCA dexCAGetter) func(resources.SecretDataProvider, *corev1.Secret) (*corev1.Secret, error) {
+func GetDexCACreator(name, dataCAKey string, getCA dexCAGetter) func(resources.SecretDataProvider, *corev1.Secret) (*corev1.Secret, error) {
 	return func(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
 		var se *corev1.Secret
 		if existing != nil {
@@ -33,7 +33,7 @@ func GetDexCACreator(name, commonName, dataCAKey string, getCA dexCAGetter) func
 			se.Data = map[string][]byte{}
 		}
 
-		if _, exists := se.Data[resources.DexCAFileName]; exists {
+		if _, exists := se.Data[dataCAKey]; exists {
 			return se, nil
 		}
 
@@ -46,7 +46,7 @@ func GetDexCACreator(name, commonName, dataCAKey string, getCA dexCAGetter) func
 			cert = append(cert, pem.EncodeToMemory(&block)...)
 		}
 
-		se.Data[resources.DexCAFileName] = cert
+		se.Data[dataCAKey] = cert
 		return se, nil
 	}
 }

@@ -11,7 +11,6 @@ import (
 func DexCACertificate(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
 	return certificates.GetDexCACreator(
 		resources.DexCASecretName,
-		"apiserver",
 		resources.DexCAFileName,
 		data.GetDexCA)(data, existing)
 }

@@ -146,7 +146,7 @@ const (
 	// DexCASecretName is the name of the secret that contains the Dex CA bundle
 	DexCASecretName = "dex-ca"
 	// DexCAFileName is the name of Dex CA bundle file
-	DexCAFileName = "ca.pem"
+	DexCAFileName = "caBundle.pem"
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"

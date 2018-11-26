@@ -6,24 +6,22 @@ import (
 	"net/url"
 	"strings"
 
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-
+	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
+	"github.com/kubermatic/kubermatic/api/pkg/features"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
 	"k8s.io/apimachinery/pkg/api/resource"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/net"
 	kubeinformers "k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
 	certutil "k8s.io/client-go/util/cert"
-
-	"github.com/kubermatic/kubermatic/api/pkg/features"
-
-	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 )
 
 // DexCAFileName CA file name
-const DexCAFileName = "ca.pem"
+const dexCAFileName = "caBundle.pem"
 
 type controllerRunOptions struct {
 	kubeconfig   string
@@ -99,7 +97,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.BoolVar(&c.skipOidcTLSVerify, "skip-oidc-tls-verify", false, "The flag used to skip TLS verification against dex.")
 	flag.StringVar(&c.oidcIssuerURL, "oidc-issuer-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.StringVar(&c.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
-	flag.StringVar(&c.oidcDexSecretCAName, "oidc-dex-secret-ca-name", "oauth/dex-ca", "The secret name which contains CA bundle for TLS verification against dex. This flag is optional. The default value is oauth/dex-ca.")
+	flag.StringVar(&c.oidcDexSecretCAName, "oidc-dex-secret-ca-name", "oauth/dex-ca", "The secret name which contains CA bundle for TLS verification against dex. The secret key must be set to caBundle.pem. The default value is oauth/dex-ca.")
 	flag.Parse()
 
 	featureGates, err := features.NewFeatures(rawFeatureGates)
@@ -125,17 +123,6 @@ func (o controllerRunOptions) validate() error {
 			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-client-id\" flag was not specified", OpenIDAuthPlugin)
 		}
 
-		if !o.skipOidcTLSVerify {
-			if len(o.oidcDexSecretCAName) == 0 {
-				return fmt.Errorf("%s feature with TLS verification is enabled but \"oidc-dex-secret-ca-name\" flag was not specified", OpenIDAuthPlugin)
-			}
-
-			splitResult := strings.Split(o.oidcDexSecretCAName, "/")
-			if len(splitResult) != 2 {
-				return fmt.Errorf("wrong \"oidc-dex-secret-ca-name\" field format . The format should be \"namespace/secret-name\" but was %s: ", o.oidcDexSecretCAName)
-			}
-		}
-
 	} else {
 		// don't pass OpenID issuer flags if OpenIDAuthPlugin disabled
 		if len(o.oidcIssuerURL) > 0 {
@@ -145,6 +132,14 @@ func (o controllerRunOptions) validate() error {
 		if len(o.oidcIssuerClientID) > 0 {
 			return fmt.Errorf("%s feature is disabled but \"oidc-issuer-client-id\" flag was specified, please remove it", OpenIDAuthPlugin)
 		}
+	}
+
+	if len(o.oidcDexSecretCAName) == 0 {
+		return fmt.Errorf("the \"oidc-dex-secret-ca-name\" flag was not specified")
+	}
+
+	if splitResult := strings.Split(o.oidcDexSecretCAName, "/"); len(splitResult) != 2 {
+		return fmt.Errorf("wrong \"oidc-dex-secret-ca-name\" field format . The format should be \"namespace/secret-name\" but was %s: ", o.oidcDexSecretCAName)
 	}
 
 	if o.masterResources == "" {
@@ -188,23 +183,20 @@ func (o controllerRunOptions) validate() error {
 
 func (o controllerRunOptions) validateDexSecretWithCABundle(client kubernetes.Interface) error {
 
-	if o.featureGates.Enabled(OpenIDAuthPlugin) && !o.skipOidcTLSVerify {
+	splitResult := strings.Split(o.oidcDexSecretCAName, "/")
 
-		splitResult := strings.Split(o.oidcDexSecretCAName, "/")
+	// Retrieve elements.
+	namespace := splitResult[0]
+	secretName := splitResult[1]
 
-		// Retrieve elements.
-		namespace := splitResult[0]
-		secretName := splitResult[1]
+	rawSecret, err := client.CoreV1().Secrets(namespace).Get(secretName, metaV1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("%s feature with TLS verification is enabled but secret with name %s from namespace %s containing CA bundle cannot be find", OpenIDAuthPlugin, secretName, namespace)
+	}
 
-		rawSecret, err := client.CoreV1().Secrets(namespace).Get(secretName, metaV1.GetOptions{})
-		if err != nil {
-			return fmt.Errorf("%s feature with TLS verification is enabled but secret with name %s from namespace %s containing CA bundle cannot be find", OpenIDAuthPlugin, secretName, namespace)
-		}
-
-		_, err = certutil.ParseCertsPEM(rawSecret.Data[DexCAFileName])
-		if err != nil {
-			return fmt.Errorf("%s feature with TLS verification is enabled but secret got an invalid cert: %v", OpenIDAuthPlugin, err)
-		}
+	_, err = certutil.ParseCertsPEM(rawSecret.Data[dexCAFileName])
+	if err != nil {
+		return fmt.Errorf("%s feature with TLS verification is enabled but secret got an invalid cert: %v", OpenIDAuthPlugin, err)
 	}
 
 	return nil

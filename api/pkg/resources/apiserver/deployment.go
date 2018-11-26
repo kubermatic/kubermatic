@@ -328,7 +328,7 @@ func getApiserverFlags(data resources.DeploymentDataProvider, externalNodePort i
 		flags = append(flags, "--oidc-client-id", data.OIDCIssuerClientID())
 		flags = append(flags, "--oidc-username-claim", "email")
 		if !data.SkipOIDCTLSVerify() {
-			flags = append(flags, "--oidc-ca-file", "/etc/kubernetes/dex/ca/ca.pem")
+			flags = append(flags, "--oidc-ca-file", "/etc/kubernetes/dex/ca/caBundle.pem")
 		}
 	}
 
