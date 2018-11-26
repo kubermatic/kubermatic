@@ -220,6 +220,7 @@ pipeline:
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
+      --set=prometheus.containers.prometheus.resources={"limits":{"cpu":1,"memory":"4Gi"},"requests":{"cpu":"1","memory":"4Gi"}}
     image: kubeciio/helm
     pull: true
     secrets:
