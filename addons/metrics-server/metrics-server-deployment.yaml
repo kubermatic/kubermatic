@@ -29,10 +29,11 @@ spec:
         emptyDir: {}
       containers:
       - name: metrics-server
-        image: gcr.io/google_containers/metrics-server-amd64:v0.2.1
+        image: gcr.io/google_containers/metrics-server-amd64:v0.3.1
         command:
         - /metrics-server
-        - '--source=kubernetes.summary_api:https://kubernetes.default.svc?kubeletHttps=true&kubeletPort=10250&insecure=true'
+        - --kubelet-preferred-address-types=InternalIP
+        - --kubelet-insecure-tls
         imagePullPolicy: Always
         volumeMounts:
         - name: tmp-dir
