@@ -748,6 +748,133 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 	}, nil
 }
 
+// ListNodeDeploymentsForClusterReq defines HTTP request for listNodeDeploymentsForCluster
+// swagger:parameters listNodeDeploymentsForCluster
+type ListNodeDeploymentsForClusterReq struct {
+	GetClusterReq
+}
+
+func decodeListNodeDeploymentsForCluster(c context.Context, r *http.Request) (interface{}, error) {
+	var req ListNodeDeploymentsForClusterReq
+
+	clusterID, err := decodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ClusterID = clusterID
+	req.DCReq = dcr.(DCReq)
+
+	return req, nil
+}
+
+func listNodeDeploymentsForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(ListNodeDeploymentsForClusterReq)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+
+		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(cluster)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		machineDeployments, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).List(metav1.ListOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		nodeDeployments := make([]*apiv1.NodeDeployment, 0, len(machineDeployments.Items))
+		for i := range machineDeployments.Items {
+			nd, err := outputMachineDeployment(&machineDeployments.Items[i])
+			if err != nil {
+				return nil, fmt.Errorf("failed to output machine deployment %s: %v", machineDeployments.Items[i].Name, err)
+			}
+
+			nodeDeployments = append(nodeDeployments, nd)
+		}
+
+		return nodeDeployments, nil
+	}
+}
+
+// NodeDeploymentReq defines HTTP request for getNodeDeploymentForCluster
+// swagger:parameters getNodeDeploymentForCluster
+type NodeDeploymentReq struct {
+	GetClusterReq
+	// in: path
+	NodeDeploymentID string `json:"nodedeployment_id"`
+}
+
+func decodeGetNodeDeploymentForCluster(c context.Context, r *http.Request) (interface{}, error) {
+	var req NodeDeploymentReq
+
+	clusterID, err := decodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	nodeDeploymentID := mux.Vars(r)["nodedeployment_id"]
+	if nodeDeploymentID == "" {
+		return nil, fmt.Errorf("'nodedeployment_id' parameter is required but was not provided")
+	}
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ClusterID = clusterID
+	req.NodeDeploymentID = nodeDeploymentID
+	req.DCReq = dcr.(DCReq)
+
+	return req, nil
+}
+
+func getNodeDeploymentForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(NodeDeploymentReq)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+
+		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(cluster)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		machineDeployment, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Get(req.NodeDeploymentID, metav1.GetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		return outputMachineDeployment(machineDeployment)
+	}
+}
+
 // DeleteNodeDeploymentForClusterReq defines HTTP request for deleteNodeDeploymentForCluster
 // swagger:parameters deleteNodeDeploymentForCluster
 type DeleteNodeDeploymentForClusterReq struct {
