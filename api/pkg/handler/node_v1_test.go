@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-test/deep"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-test/deep"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
@@ -660,45 +660,8 @@ func TestListNodeDeploymentsForCluster(t *testing.T) {
 			ExistingKubermaticObjs: genDefaultKubermaticObjects(genDefaultCluster()),
 			ExistingAPIUser:        genDefaultAPIUser(),
 			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "venus",
-						Namespace: metav1.NamespaceSystem,
-					},
-					Spec: clusterv1alpha1.MachineDeploymentSpec{
-						Replicas: &replicas,
-						Template: clusterv1alpha1.MachineTemplateSpec{
-							Spec: clusterv1alpha1.MachineSpec{
-								ProviderConfig: clusterv1alpha1.ProviderConfig{
-									Value: &runtime.RawExtension{
-										Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
-									},
-								},
-							},
-						},
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "mars",
-						Namespace: "kube-system",
-					},
-					Spec: clusterv1alpha1.MachineDeploymentSpec{
-						Replicas: &replicas,
-						Template: clusterv1alpha1.MachineTemplateSpec{
-							Spec: clusterv1alpha1.MachineSpec{
-								ProviderConfig: clusterv1alpha1.ProviderConfig{
-									Value: &runtime.RawExtension{
-										Raw: []byte(`{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`),
-									},
-								},
-								Versions: clusterv1alpha1.MachineVersionInfo{
-									Kubelet: "v1.9.9",
-								},
-							},
-						},
-					},
-				},
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
+				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`),
 			},
 			ExpectedResponse: []apiv1.NodeDeployment{
 				{
@@ -717,6 +680,9 @@ func TestListNodeDeploymentsForCluster(t *testing.T) {
 								Ubuntu: &apiv1.UbuntuSpec{
 									DistUpgradeOnBoot: true,
 								},
+							},
+							Versions: apiv1.NodeVersionInfo{
+								Kubelet: "v1.9.9",
 							},
 						},
 						Replicas: replicas,
@@ -817,24 +783,7 @@ func TestGetNodeDeploymentForCluster(t *testing.T) {
 			ExistingKubermaticObjs: genDefaultKubermaticObjects(genDefaultCluster()),
 			ExistingAPIUser:        genDefaultAPIUser(),
 			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "venus",
-						Namespace: metav1.NamespaceSystem,
-					},
-					Spec: clusterv1alpha1.MachineDeploymentSpec{
-						Replicas: &replicas,
-						Template: clusterv1alpha1.MachineTemplateSpec{
-							Spec: clusterv1alpha1.MachineSpec{
-								ProviderConfig: clusterv1alpha1.ProviderConfig{
-									Value: &runtime.RawExtension{
-										Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
-									},
-								},
-							},
-						},
-					},
-				},
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
 			},
 			ExpectedResponse: apiv1.NodeDeployment{
 				ObjectMeta: apiv1.ObjectMeta{
@@ -852,6 +801,9 @@ func TestGetNodeDeploymentForCluster(t *testing.T) {
 							Ubuntu: &apiv1.UbuntuSpec{
 								DistUpgradeOnBoot: true,
 							},
+						},
+						Versions: apiv1.NodeVersionInfo{
+							Kubelet: "v1.9.9",
 						},
 					},
 					Replicas: replicas,
@@ -1064,6 +1016,31 @@ func (k nodeDeploymentSliceWrapper) EqualOrDie(expected nodeDeploymentSliceWrapp
 	t.Helper()
 	if diff := deep.Equal(k, expected); diff != nil {
 		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+	}
+}
+
+func genTestMachineDeployment(name, rawProviderConfig string) *clusterv1alpha1.MachineDeployment {
+	var replicas int32 = 1
+	return &clusterv1alpha1.MachineDeployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: metav1.NamespaceSystem,
+		},
+		Spec: clusterv1alpha1.MachineDeploymentSpec{
+			Replicas: &replicas,
+			Template: clusterv1alpha1.MachineTemplateSpec{
+				Spec: clusterv1alpha1.MachineSpec{
+					ProviderConfig: clusterv1alpha1.ProviderConfig{
+						Value: &runtime.RawExtension{
+							Raw: []byte(rawProviderConfig),
+						},
+					},
+					Versions: clusterv1alpha1.MachineVersionInfo{
+						Kubelet: "v1.9.9",
+					},
+				},
+			},
+		},
 	}
 }
 
