@@ -10,10 +10,24 @@ import (
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/cert/triple"
+)
+
+var (
+	webhookResourceRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+			corev1.ResourceCPU:    resource.MustParse("10m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+		},
+	}
 )
 
 // WebhookDeployment returns the deployment for the machine-controllers MutatignAdmissionWebhook
@@ -75,6 +89,7 @@ func WebhookDeployment(data resources.DeploymentDataProvider, existing *appsv1.D
 			Env:                      getEnvVars(data),
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+			Resources:                webhookResourceRequirements,
 			ReadinessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{

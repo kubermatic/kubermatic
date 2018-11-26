@@ -110,8 +110,9 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			ReadinessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/health",
-						Port: intstr.FromInt(8080),
+						Path:   "/health",
+						Port:   intstr.FromInt(8080),
+						Scheme: corev1.URISchemeHTTP,
 					},
 				},
 				InitialDelaySeconds: 2,
@@ -139,6 +140,7 @@ func getVolumes() []corev1.Volume {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: resources.DNSResolverConfigMapName,
 					},
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
 		},
