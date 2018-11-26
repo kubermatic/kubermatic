@@ -4,6 +4,7 @@ import (
 	"path"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"

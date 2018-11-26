@@ -22,10 +22,16 @@ const (
 )
 
 var (
-	defaultCPURequest    = resource.MustParse("50m")
-	defaultMemoryRequest = resource.MustParse("128Mi")
-	defaultCPULimit      = resource.MustParse("100m")
-	defaultMemoryLimit   = resource.MustParse("512Mi")
+	defaultResourceRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("1Gi"),
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+		},
+	}
 )
 
 // StatefulSet returns the prometheus StatefulSet
@@ -93,16 +99,7 @@ func StatefulSet(data resources.StatefulSetDataProvider, existing *appsv1.Statef
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					corev1.ResourceCPU:    defaultCPURequest,
-					corev1.ResourceMemory: defaultMemoryRequest,
-				},
-				Limits: corev1.ResourceList{
-					corev1.ResourceCPU:    defaultCPULimit,
-					corev1.ResourceMemory: defaultMemoryLimit,
-				},
-			},
+			Resources: defaultResourceRequirements,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      volumeConfigName,
@@ -132,8 +129,9 @@ func StatefulSet(data resources.StatefulSetDataProvider, existing *appsv1.Statef
 				SuccessThreshold:    1,
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/-/healthy",
-						Port: intstr.FromString("web"),
+						Path:   "/-/healthy",
+						Port:   intstr.FromString("web"),
+						Scheme: corev1.URISchemeHTTP,
 					},
 				},
 			},
@@ -145,8 +143,9 @@ func StatefulSet(data resources.StatefulSetDataProvider, existing *appsv1.Statef
 				SuccessThreshold:    1,
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/-/healthy",
-						Port: intstr.FromString("web"),
+						Path:   "/-/healthy",
+						Port:   intstr.FromString("web"),
+						Scheme: corev1.URISchemeHTTP,
 					},
 				},
 			},
@@ -167,6 +166,7 @@ func getVolumes() []corev1.Volume {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: resources.PrometheusConfigConfigMapName,
 					},
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
 		},

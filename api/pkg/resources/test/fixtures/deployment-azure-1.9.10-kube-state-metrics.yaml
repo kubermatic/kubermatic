@@ -49,13 +49,14 @@ spec:
           httpGet:
             path: /healthz
             port: 8080
+            scheme: HTTP
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 15
         resources:
           limits:
-            cpu: 50m
-            memory: 128Mi
+            cpu: 100m
+            memory: 1Gi
           requests:
             cpu: 10m
             memory: 12Mi

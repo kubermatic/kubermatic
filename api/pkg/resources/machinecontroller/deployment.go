@@ -3,14 +3,27 @@ package machinecontroller
 import (
 	"fmt"
 
-	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
-
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+)
+
+var (
+	controllerResourceRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+			corev1.ResourceCPU:    resource.MustParse("25m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+			corev1.ResourceCPU:    resource.MustParse("2"),
+		},
+	}
 )
 
 const (
@@ -93,11 +106,13 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			Env:                      getEnvVars(data),
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+			Resources:                controllerResourceRequirements,
 			ReadinessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/ready",
-						Port: intstr.FromInt(8085),
+						Path:   "/ready",
+						Port:   intstr.FromInt(8085),
+						Scheme: corev1.URISchemeHTTP,
 					},
 				},
 				FailureThreshold: 3,
@@ -109,8 +124,9 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 				FailureThreshold: 8,
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/live",
-						Port: intstr.FromInt(8085),
+						Path:   "/live",
+						Port:   intstr.FromInt(8085),
+						Scheme: corev1.URISchemeHTTP,
 					},
 				},
 				InitialDelaySeconds: 15,

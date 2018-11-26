@@ -51,7 +51,13 @@ spec:
         image: gcr.io/google_containers/metrics-server-amd64:v0.3.1
         imagePullPolicy: IfNotPresent
         name: metrics-server
-        resources: {}
+        resources:
+          limits:
+            cpu: 150m
+            memory: 512Mi
+          requests:
+            cpu: 25m
+            memory: 32Mi
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
@@ -102,11 +108,11 @@ spec:
         name: openvpn-client
         resources:
           limits:
-            cpu: 40m
-            memory: 64Mi
+            cpu: 100m
+            memory: 256Mi
           requests:
-            cpu: 10m
-            memory: 30Mi
+            cpu: 5m
+            memory: 16Mi
         securityContext:
           privileged: true
         terminationMessagePath: /dev/termination-log
@@ -130,8 +136,8 @@ spec:
         name: dnat-controller
         resources:
           limits:
-            cpu: 20m
-            memory: 64Mi
+            cpu: 100m
+            memory: 512Mi
           requests:
             cpu: 5m
             memory: 16Mi

@@ -24,8 +24,8 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("20m"),
 		},
 		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
-			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+			corev1.ResourceCPU:    resource.MustParse("1"),
 		},
 	}
 )
@@ -131,8 +131,9 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			ReadinessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/healthz",
-						Port: intstr.FromInt(10251),
+						Path:   "/healthz",
+						Port:   intstr.FromInt(10251),
+						Scheme: corev1.URISchemeHTTP,
 					},
 				},
 				FailureThreshold: 3,
@@ -144,8 +145,9 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 				FailureThreshold: 8,
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/healthz",
-						Port: intstr.FromInt(10251),
+						Path:   "/healthz",
+						Port:   intstr.FromInt(10251),
+						Scheme: corev1.URISchemeHTTP,
 					},
 				},
 				InitialDelaySeconds: 15,

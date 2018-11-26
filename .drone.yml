@@ -58,53 +58,29 @@ pipeline:
     group: build
     image: golang:1.11.0
     pull: true
-  kubermatic-docker-master:
-    context: api
-    dockerfile: api/Dockerfile
-    group: push-master
-    image: plugins/docker
-    pull: true
-    repo: kubermatic/api
+  docker:
+    commands:
+    - export VAULT_ADDR=https://vault.loodse.com/
+    - export VAULT_TOKEN=$(vault write --format=json auth/approle/login role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID | jq .auth.client_token -r)
+    - docker login -u $(vault kv get -field=username dev/kubermatic-docker) -p $(vault kv get -field=password dev/kubermatic-docker) docker.io
+    - docker login -u $(vault kv get -field=username dev/kubermatic-quay.io) -p $(vault kv get -field=password dev/kubermatic-quay.io) quay.io
+    - ./api/hack/push_image.sh ${DRONE_COMMIT} ${DRONE_TAG}
+    image: quay.io/kubermatic/docker:18.09.0-3
+    privileged: true
+    group: docker
     secrets:
-    - docker_username
-    - docker_password
-    tags:
-    - master
-    - ${DRONE_COMMIT}
+    - vault_secret_id
+    - vault_role_id
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
     when:
-      branch: master
-  # this will build docker images for every release/v2.8 commit
-  # to be immediately deployed on run.kubermatic.io
-  kubermatic-docker-release-v28:
-    context: api
-    dockerfile: api/Dockerfile
-    group: push-master
-    image: plugins/docker
-    pull: true
-    repo: kubermatic/api
-    secrets:
-    - docker_username
-    - docker_password
-    tags:
-    - ${DRONE_COMMIT}
-    when:
-      branch: release/v2.8
-  kubermatic-docker-release:
-    context: api
-    dockerfile: api/Dockerfile
-    group: push-master
-    image: plugins/docker
-    pull: true
-    repo: kubermatic/api
-    secrets:
-    - docker_username
-    - docker_password
-    tags:
-    - ${DRONE_TAG}
-    - latest
-    when:
-      event:
-      - tag
+      branch:
+        exclude:
+        - release/v1.*
+        - release/*cherry*
+        include:
+        - release/*
+        - master
   sync-charts:
     commands:
     - apk add --no-cache -U git bash openssh
@@ -114,7 +90,7 @@ pipeline:
     - git config --global user.email "dev@loodse.com"
     - git config --global user.name "drone"
     - cd api && ./hack/sync-charts.sh ${DRONE_BRANCH} ../config
-    image: alpine:3.7
+    image: alpine:3.8
     pull: true
     when:
       branch:
@@ -124,69 +100,18 @@ pipeline:
         include:
         - release/*
   deploy-dev:
-    charts:
-    - name: kubermatic
-      namespace: kubermatic
-      path: config/kubermatic/
-    - name: nodeport-proxy
-      namespace: nodeport-proxy
-      path: config/nodeport-proxy/
-    - name: minio
-      namespace: minio
-      path: config/minio/
-    - name: nginx
-      namespace: ingress-nginx
-      path: config/nginx-ingress-controller/
-    - name: oauth
-      namespace: oauth
-      path: config/oauth/
-    - name: cert-manager
-      namespace: cert-manager
-      path: config/cert-manager/
-    - name: certs
-      namespace: default
-      path: config/certs/
-    - name: iap
-      namespace: iap
-      path: config/iap/
-    - name: node-exporter
-      namespace: monitoring
-      path: config/monitoring/node-exporter/
-    - name: kube-state-metrics
-      namespace: monitoring
-      path: config/monitoring/kube-state-metrics/
-    - name: grafana
-      namespace: monitoring
-      path: config/monitoring/grafana/
-    - name: alertmanager
-      namespace: monitoring
-      path: config/monitoring/alertmanager/
-    - name: prometheus
-      namespace: monitoring
-      path: config/monitoring/prometheus/
-    - name: elasticsearch
-      namespace: logging
-      path: config/logging/elasticsearch/
-    - name: fluentd
-      namespace: logging
-      path: config/logging/fluentd/
-    - name: kibana
-      namespace: logging
-      path: config/logging/kibana/
-    # depends on 'kubermatic-docker-master' step to build the images
-    helm: upgrade --install --wait --timeout 300 --tiller-namespace=kubermatic-installer
-      --set=kubermatic.controller.image.tag=${DRONE_COMMIT}
-      --set=kubermatic.api.image.tag=${DRONE_COMMIT}
-      --set=kubermatic.rbac.image.tag=${DRONE_COMMIT}
-    image: kubeciio/helm
-    pull: true
+    commands:
+    - export VAULT_ADDR=https://vault.loodse.com/
+    - export VAULT_TOKEN=$(vault write --format=json auth/approle/login role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID | jq .auth.client_token -r)
+    - vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > kubeconfig
+    - vault kv get -field=values.yaml dev/seed-clusters/dev.kubermatic.io > values.yaml
+    - export KUBECONFIG=$(pwd)/kubeconfig
+    - export EXTRA_ARGS="--tiller-namespace=kubermatic-installer --set=kubermatic.isMaster=true --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA} --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA} --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}"
+    - ./api/hack/deploy.sh master ./values.yaml "$EXTRA_ARGS"
+    image: quay.io/kubermatic/helm:2.11.0-2
     secrets:
-    - source: kubeconfig_dev
-      target: kubeconfig
-    - source: values_dev
-      target: values
-    values:
-    - values
+    - vault_secret_id
+    - vault_role_id
     when:
       branch: master
   deploy-cloud-asia:

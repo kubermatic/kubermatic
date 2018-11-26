@@ -89,11 +89,11 @@ spec:
         name: openvpn-client
         resources:
           limits:
-            cpu: 40m
-            memory: 64Mi
+            cpu: 100m
+            memory: 256Mi
           requests:
-            cpu: 10m
-            memory: 30Mi
+            cpu: 5m
+            memory: 16Mi
         securityContext:
           privileged: true
         terminationMessagePath: /dev/termination-log
@@ -117,6 +117,7 @@ spec:
           httpGet:
             path: /healthz
             port: 10251
+            scheme: HTTP
           initialDelaySeconds: 15
           periodSeconds: 10
           successThreshold: 1
@@ -127,13 +128,14 @@ spec:
           httpGet:
             path: /healthz
             port: 10251
+            scheme: HTTP
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 15
         resources:
           limits:
-            cpu: 100m
-            memory: 128Mi
+            cpu: "1"
+            memory: 512Mi
           requests:
             cpu: 20m
             memory: 64Mi
