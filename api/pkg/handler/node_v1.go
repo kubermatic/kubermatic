@@ -796,7 +796,7 @@ func listNodeDeploymentsForCluster(projectProvider provider.ProjectProvider) end
 
 		machineDeployments, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).List(metav1.ListOptions{})
 		if err != nil {
-			return nil, fmt.Errorf("failed to load machine deployments from cluster: %v", err)
+			return nil, kubernetesErrorToHTTPError(err)
 		}
 
 		nodeDeployments := make([]*apiv1.NodeDeployment, 0, len(machineDeployments.Items))
@@ -868,7 +868,7 @@ func getNodeDeploymentForCluster(projectProvider provider.ProjectProvider) endpo
 
 		machineDeployment, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Get(req.NodeDeploymentID, metav1.GetOptions{})
 		if err != nil {
-			return nil, fmt.Errorf("failed to load machine deployment %s from cluster: %v", req.NodeDeploymentID, err)
+			return nil, kubernetesErrorToHTTPError(err)
 		}
 
 		return outputMachineDeployment(machineDeployment)
