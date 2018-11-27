@@ -25,8 +25,8 @@ dex:
 #    RedirectURIs:
 #    - http://localhost:8000
 #    - https://dev.kubermatic.io
-#    - http://localhost:8000/clusters
-#    - https://dev.kubermatic.io/clusters
+#    - http://localhost:8000/projects
+#    - https://dev.kubermatic.io/projects
 #
 #  staticPasswordLogins:
 #  - email: "admin@example.com"
