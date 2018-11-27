@@ -11,6 +11,9 @@ KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 
 # Please make sure to set -feature-gates=PrometheusEndpoint=true if you want to use that endpoint.
 
+# Please make sure to set -feature-gates=OIDCKubeCfgEndpoint=true if you want to use that endpoint.
+# Note that you would have to pass a few additional flags as well.
+
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
 ./_build/kubermatic-api \
   -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \

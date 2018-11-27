@@ -77,6 +77,9 @@ func (o serverRunOptions) validate() error {
 		if len(o.oidcIssuerCookieHashKey) == 0 {
 			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-cookie-hash-key\" flag was not specified", OIDCKubeCfgEndpoint)
 		}
+		if len(o.oidcIssuerClientID) == 0 {
+			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-client-id\" flag was not specified", OIDCKubeCfgEndpoint)
+		}
 	}
 	return nil
 }
