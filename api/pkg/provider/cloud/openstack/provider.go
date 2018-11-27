@@ -24,6 +24,9 @@ const (
 	subnetCleanupFinalizer           = "kubermatic.io/cleanup-openstack-subnet-v2"
 	routerCleanupFinalizer           = "kubermatic.io/cleanup-openstack-router-v2"
 	routerSubnetLinkCleanupFinalizer = "kubermatic.io/cleanup-openstack-router-subnet-link-v2"
+
+	// LoadBalancerCleanupFinalizer for cleaning up load balancers, used in deleting.go
+	LoadBalancerCleanupFinalizer = "kubermatic.io/cleanup-load-balancers"
 )
 
 // Provider is a struct that implements CloudProvider interface
@@ -122,6 +125,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.Network = network.Name
 			cluster.Finalizers = kubernetes.AddFinalizer(cluster.Finalizers, networkCleanupFinalizer)
+			cluster.Finalizers = kubernetes.AddFinalizer(cluster.Finalizers, LoadBalancerCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err

@@ -6,9 +6,11 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
 
 	"github.com/kubermatic/machine-controller/pkg/node/eviction"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 )
@@ -25,6 +27,10 @@ func (cc *Controller) cleanupCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Clu
 	// If we still have nodes, we must not cleanup other infrastructure at the cloud provider
 	if kuberneteshelper.HasFinalizer(c, nodeDeletionFinalizer) {
 		return c, nil
+	}
+
+	if c, err = cc.deletingLoadBalancerServices(c); err != nil {
+		return c, err
 	}
 
 	if c, err = cc.deletingCloudProviderCleanup(c); err != nil {
@@ -134,5 +140,46 @@ func (cc *Controller) deletingCloudProviderCleanup(c *kubermaticv1.Cluster) (*ku
 		return nil, err
 	}
 
+	return c, nil
+}
+
+func (cc *Controller) deletingLoadBalancerServices(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	if kuberneteshelper.HasFinalizer(c, openstack.LoadBalancerCleanupFinalizer) {
+		client, err := cc.userClusterConnProvider.GetClient(c)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get kubernetes client: %v", err)
+		}
+
+		namespaceList, err := client.CoreV1().Namespaces().List(metav1.ListOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("error getting namespaces: %v", err)
+		}
+
+		for _, namespace := range namespaceList.Items {
+			serviceList, err := client.CoreV1().Services(namespace.Name).List(metav1.ListOptions{})
+
+			if err != nil {
+				return nil, fmt.Errorf("error getting services in namespace %s: %v", namespace.Name, err)
+			}
+
+			for _, service := range serviceList.Items {
+				if service.Spec.Type == corev1.ServiceTypeLoadBalancer {
+					err := client.CoreV1().Services(namespace.Name).Delete(service.Name, &metav1.DeleteOptions{})
+
+					if err != nil {
+						return nil, fmt.Errorf("error deleting services %s: %v", service.Name, err)
+					}
+				}
+			}
+		}
+
+		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
+			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, openstack.LoadBalancerCleanupFinalizer)
+		})
+
+		if err != nil {
+			return nil, err
+		}
+	}
 	return c, nil
 }
