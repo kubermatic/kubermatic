@@ -93,10 +93,9 @@ func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*resource
 		cc.inClusterPrometheusDisableDefaultScrapingConfigs,
 		cc.inClusterPrometheusScrapingConfigsFile,
 		cc.dockerPullConfigJSON,
-		cc.skipOidcTLSVerify,
+		cc.oidcCAFile,
 		cc.oidcIssuerURL,
 		cc.oidcIssuerClientID,
-		cc.oidcDexSecretCAName,
 	), nil
 }
 
@@ -200,8 +199,8 @@ func GetSecretCreatorOperations(dockerPullConfigJSON []byte) []SecretOperation {
 		{resources.ImagePullSecretName, resources.ImagePullSecretCreator(resources.ImagePullSecretName, dockerPullConfigJSON)},
 		{resources.ApiserverFrontProxyClientCertificateSecretName, apiserver.FrontProxyClientCertificate},
 		{resources.EtcdTLSCertificateSecretName, etcd.TLSCertificate},
-		{resources.DexCASecretName, apiserver.DexCACertificate},
 		{resources.ApiserverEtcdClientCertificateSecretName, apiserver.EtcdClientCertificate},
+		{resources.DexCASecretName, apiserver.DexCACertificate},
 		{resources.ApiserverTLSSecretName, apiserver.TLSServingCertificate},
 		{resources.KubeletClientCertificatesSecretName, apiserver.KubeletClientCertificate},
 		{resources.ServiceAccountKeySecretName, apiserver.ServiceAccountKey},

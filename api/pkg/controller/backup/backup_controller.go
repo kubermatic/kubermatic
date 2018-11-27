@@ -112,15 +112,15 @@ type Controller struct {
 
 	metrics *Metrics
 
-	queue               workqueue.RateLimitingInterface
-	kubermaticClient    kubermaticclientset.Interface
-	kubernetesClient    kubernetes.Interface
-	clusterLister       kubermaticv1lister.ClusterLister
-	cronJobLister       listersbatchv1beta1.CronJobLister
-	jobLister           listersbatchv1.JobLister
-	secretLister        corev1lister.SecretLister
-	serviceLister       corev1lister.ServiceLister
-	oidcDexSecretCAName string
+	queue            workqueue.RateLimitingInterface
+	kubermaticClient kubermaticclientset.Interface
+	kubernetesClient kubernetes.Interface
+	clusterLister    kubermaticv1lister.ClusterLister
+	cronJobLister    listersbatchv1beta1.CronJobLister
+	jobLister        listersbatchv1.JobLister
+	secretLister     corev1lister.SecretLister
+	serviceLister    corev1lister.ServiceLister
+	oidcCABundleFile string
 }
 
 // New creates a new Backup controller that is responsible for creating backupjobs
@@ -138,7 +138,7 @@ func New(
 	jobInformer informersbatchv1.JobInformer,
 	secretInformer corev1informer.SecretInformer,
 	serviceInformer corev1informer.ServiceInformer,
-	oidcDexSecretCAName string,
+	oidcCABundleFile string,
 ) (*Controller, error) {
 	if err := validateStoreContainer(storeContainer); err != nil {
 		return nil, err
@@ -159,7 +159,7 @@ func New(
 		cleanupContainer:     cleanupContainer,
 		backupContainerImage: backupContainerImage,
 		metrics:              metrics,
-		oidcDexSecretCAName:  oidcDexSecretCAName,
+		oidcCABundleFile:     oidcCABundleFile,
 	}
 
 	prometheus.MustRegister(metrics.Workers)
@@ -384,15 +384,15 @@ func (c *Controller) sync(key string) error {
 }
 
 type secretData struct {
-	cluster             *kubermaticv1.Cluster
-	secretLister        corev1lister.SecretLister
-	serviceLister       corev1lister.ServiceLister
-	oidcDexSecretCAName string
+	cluster          *kubermaticv1.Cluster
+	secretLister     corev1lister.SecretLister
+	serviceLister    corev1lister.ServiceLister
+	oidcCABundleFile string
 }
 
 // GetDexCA returns the chain of public certificates for TLS verification of the Dex
 func (d *secretData) GetDexCA() ([]*x509.Certificate, error) {
-	return resources.GetDexCAFromLister(d.oidcDexSecretCAName, d.secretLister)
+	return resources.GetDexCAFromFile(d.oidcCABundleFile)
 }
 
 // GetRootCA returns the root CA of the cluster
@@ -441,10 +441,10 @@ func (c *Controller) ensureCronJobSecret(cluster *kubermaticv1.Cluster) error {
 	}
 
 	data := secretData{
-		cluster:             cluster,
-		secretLister:        c.secretLister,
-		serviceLister:       c.serviceLister,
-		oidcDexSecretCAName: c.oidcDexSecretCAName,
+		cluster:          cluster,
+		secretLister:     c.secretLister,
+		serviceLister:    c.serviceLister,
+		oidcCABundleFile: c.oidcCABundleFile,
 	}
 
 	create := certificates.GetClientCertificateCreator(

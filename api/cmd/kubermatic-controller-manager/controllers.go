@@ -130,10 +130,9 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.kubeInformerFactory.Rbac().V1().RoleBindings(),
 		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
 		ctrlCtx.kubeInformerFactory.Policy().V1beta1().PodDisruptionBudgets(),
-		ctrlCtx.runOptions.skipOidcTLSVerify,
+		ctrlCtx.runOptions.oidcCAFile,
 		ctrlCtx.runOptions.oidcIssuerURL,
 		ctrlCtx.runOptions.oidcIssuerClientID,
-		ctrlCtx.runOptions.oidcDexSecretCAName,
 	)
 }
 
@@ -163,7 +162,7 @@ func createBackupController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.kubeInformerFactory.Batch().V1().Jobs(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Secrets(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Services(),
-		ctrlCtx.runOptions.oidcDexSecretCAName,
+		ctrlCtx.runOptions.oidcCAFile,
 	)
 }
 
