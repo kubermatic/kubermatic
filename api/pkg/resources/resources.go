@@ -37,9 +37,6 @@ import (
 // KUBERMATICCOMMIT is a magic variable containing the git commit hash of the current (as in currently executing) kubermatic api. It gets feeded by Makefile as a ldflag.
 var KUBERMATICCOMMIT string
 
-// dexCACerts CA certificates
-var dexCACerts []*x509.Certificate
-
 const (
 	// KubermaticNamespaceName specifies the name of the kubermatic namespace
 	KubermaticNamespaceName = "kubermatic"
@@ -669,15 +666,26 @@ func getClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lister c
 
 // GetDexCAFromFile returns the Dex CA from the lister
 func GetDexCAFromFile(caBundleFilePath string) ([]*x509.Certificate, error) {
-	if dexCACerts == nil {
-		caBundle, err := getFileContent(caBundleFilePath)
+
+	f, err := os.Open(caBundleFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("got an invalid CA bundle file %v", err)
+	}
+	defer func() {
+		err := f.Close()
 		if err != nil {
-			return nil, fmt.Errorf("got an invalid CA file: %v", err)
+			glog.Fatal(err)
 		}
-		dexCACerts, err = certutil.ParseCertsPEM(caBundle)
-		if err != nil {
-			return nil, fmt.Errorf("got an invalid cert: %v", err)
-		}
+	}()
+
+	bytes, err := ioutil.ReadAll(bufio.NewReader(f))
+	if err != nil {
+		return nil, err
+	}
+
+	dexCACerts, err := certutil.ParseCertsPEM(bytes)
+	if err != nil {
+		return nil, fmt.Errorf("got an invalid cert: %v", err)
 	}
 
 	return dexCACerts, nil
@@ -720,24 +728,4 @@ func ClusterIPForService(name, namespace string, serviceLister corev1lister.Serv
 // GetAbsoluteServiceDNSName returns the absolute DNS name for the given service and the given cluster. Absolute means a trailing dot will be appended to the DNS name
 func GetAbsoluteServiceDNSName(service, namespace string) string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local.", service, namespace)
-}
-
-// getFileContent returns file content
-func getFileContent(filePath string) ([]byte, error) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("got an invalid CA bundle file %v", err)
-	}
-	defer func() {
-		err := f.Close()
-		if err != nil {
-			glog.Fatal(err)
-		}
-	}()
-
-	bytes, err := ioutil.ReadAll(bufio.NewReader(f))
-	if err != nil {
-		return nil, err
-	}
-	return bytes, nil
 }

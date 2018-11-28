@@ -157,7 +157,7 @@ func (o controllerRunOptions) validate() error {
 	}
 
 	// Validate OIDC CA file
-	if err := o.validateDexSecretWithCABundle(); err != nil {
+	if err := o.validateCABundle(); err != nil {
 		return fmt.Errorf("validation CA bundle file failed: %v", err)
 	}
 
@@ -177,7 +177,7 @@ func (o controllerRunOptions) validate() error {
 }
 
 // validateDexSecretWithCABundle
-func (o controllerRunOptions) validateDexSecretWithCABundle() error {
+func (o controllerRunOptions) validateCABundle() error {
 
 	f, err := os.Open(o.oidcCAFile)
 	if err != nil {
