@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"crypto/x509"
 	"fmt"
 	"net"
 	"net/url"
@@ -103,6 +104,7 @@ type SecretDataProvider interface {
 	GetOpenVPNCA() (*ECDSAKeyPair, error)
 	ExternalIP() (*net.IP, error)
 	Cluster() *kubermaticv1.Cluster
+	GetDexCA() ([]*x509.Certificate, error)
 }
 
 // ServiceDataProvider provides data
@@ -178,6 +180,11 @@ func NewTemplateData(
 		oidcIssuerURL:                                    oidcURL,
 		oidcIssuerClientID:                               oidcIssuerClientID,
 	}
+}
+
+// GetDexCA returns the chain of public certificates of the Dex
+func (d *TemplateData) GetDexCA() ([]*x509.Certificate, error) {
+	return GetDexCAFromFile(d.oidcCAFile)
 }
 
 // OIDCAuthPluginEnabled returns flag to indicate if OpenID auth plugin enabled

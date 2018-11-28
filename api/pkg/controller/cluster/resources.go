@@ -200,6 +200,7 @@ func GetSecretCreatorOperations(dockerPullConfigJSON []byte) []SecretOperation {
 		{resources.ApiserverFrontProxyClientCertificateSecretName, apiserver.FrontProxyClientCertificate},
 		{resources.EtcdTLSCertificateSecretName, etcd.TLSCertificate},
 		{resources.ApiserverEtcdClientCertificateSecretName, apiserver.EtcdClientCertificate},
+		{resources.DexCASecretName, apiserver.DexCACertificate},
 		{resources.ApiserverTLSSecretName, apiserver.TLSServingCertificate},
 		{resources.KubeletClientCertificatesSecretName, apiserver.KubeletClientCertificate},
 		{resources.ServiceAccountKeySecretName, apiserver.ServiceAccountKey},

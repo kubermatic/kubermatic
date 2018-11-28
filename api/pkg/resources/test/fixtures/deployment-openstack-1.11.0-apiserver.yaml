@@ -35,6 +35,7 @@ spec:
         ca-secret-revision: "123456"
         cloud-config-configmap-revision: "123456"
         cluster: de-test-01
+        dex-ca-secret-revision: "123456"
         front-proxy-ca-secret-revision: "123456"
         kubelet-client-certificates-secret-revision: "123456"
         kubeletdnatcontroller-kubeconfig-secret-revision: "123456"
@@ -283,6 +284,9 @@ spec:
         - mountPath: /etc/kubernetes/pki/front-proxy/ca
           name: front-proxy-ca
           readOnly: true
+        - mountPath: /etc/kubernetes/dex/ca
+          name: dex-ca
+          readOnly: true
       dnsConfig:
         nameservers:
         - 192.0.2.14
@@ -362,4 +366,8 @@ spec:
         secret:
           defaultMode: 256
           secretName: kubeletdnatcontroller-kubeconfig
+      - name: dex-ca
+        secret:
+          defaultMode: 256
+          secretName: dex-ca
 status: {}

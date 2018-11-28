@@ -1,20 +1,23 @@
 package resources
 
 import (
+	"bufio"
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/url"
+	"os"
 	"time"
+
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	"github.com/golang/glog"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/semver"
-
 	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -142,6 +145,10 @@ const (
 	ApiserverEtcdClientCertificateSecretName = "apiserver-etcd-client-certificate"
 	//ApiserverFrontProxyClientCertificateSecretName is the name for the secret containing the apiserver's client certificate for proxy auth
 	ApiserverFrontProxyClientCertificateSecretName = "apiserver-proxy-client-certificate"
+	// DexCASecretName is the name of the secret that contains the Dex CA bundle
+	DexCASecretName = "dex-ca"
+	// DexCAFileName is the name of Dex CA bundle file
+	DexCAFileName = "caBundle.pem"
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
@@ -655,6 +662,33 @@ func getClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lister c
 	}
 
 	return certs[0], key, nil
+}
+
+// GetDexCAFromFile returns the Dex CA from the lister
+func GetDexCAFromFile(caBundleFilePath string) ([]*x509.Certificate, error) {
+
+	f, err := os.Open(caBundleFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("got an invalid CA bundle file %v", err)
+	}
+	defer func() {
+		err := f.Close()
+		if err != nil {
+			glog.Fatal(err)
+		}
+	}()
+
+	bytes, err := ioutil.ReadAll(bufio.NewReader(f))
+	if err != nil {
+		return nil, err
+	}
+
+	dexCACerts, err := certutil.ParseCertsPEM(bytes)
+	if err != nil {
+		return nil, fmt.Errorf("got an invalid cert: %v", err)
+	}
+
+	return dexCACerts, nil
 }
 
 // GetClusterRootCA returns the root CA of the cluster from the lister
