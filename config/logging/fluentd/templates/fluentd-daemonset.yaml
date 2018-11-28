@@ -34,6 +34,10 @@ spec:
             value: "http"
           - name: FLUENT_UID
             value: "0"
+          # make sure that crashes actually terminate the pod
+          # and make it visible to external monitoring
+          - name: FLUENTD_OPT
+            value: "--no-supervisor"
         resources:
           limits:
             memory: 200Mi
