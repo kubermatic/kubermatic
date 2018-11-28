@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"github.com/golang/glog"
 	"io/ioutil"
 	"log"
 	"os"
@@ -194,7 +195,7 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	defer removeFile(file.Name())
+	defer removeCloseFile(file)
 
 	templateData := resources.NewTemplateData(cluster, dc, "", secretLister, nil, serviceLister, "", "", "", resource.Quantity{}, "", "", false, false, "", nil, file.Name(), "", "")
 
@@ -213,9 +214,13 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 	}
 }
 
-func removeFile(fileName string) {
-	err := os.Remove(fileName)
+func removeCloseFile(file *os.File) {
+	err := os.Remove(file.Name())
 	if err != nil {
 		log.Fatal(err)
+	}
+	err = file.Close()
+	if err != nil {
+		glog.Fatal(err)
 	}
 }

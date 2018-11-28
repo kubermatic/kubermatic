@@ -2,6 +2,7 @@ package backup
 
 import (
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -120,7 +121,6 @@ type Controller struct {
 	jobLister        listersbatchv1.JobLister
 	secretLister     corev1lister.SecretLister
 	serviceLister    corev1lister.ServiceLister
-	oidcCABundleFile string
 }
 
 // New creates a new Backup controller that is responsible for creating backupjobs
@@ -138,7 +138,6 @@ func New(
 	jobInformer informersbatchv1.JobInformer,
 	secretInformer corev1informer.SecretInformer,
 	serviceInformer corev1informer.ServiceInformer,
-	oidcCABundleFile string,
 ) (*Controller, error) {
 	if err := validateStoreContainer(storeContainer); err != nil {
 		return nil, err
@@ -159,7 +158,6 @@ func New(
 		cleanupContainer:     cleanupContainer,
 		backupContainerImage: backupContainerImage,
 		metrics:              metrics,
-		oidcCABundleFile:     oidcCABundleFile,
 	}
 
 	prometheus.MustRegister(metrics.Workers)
@@ -384,15 +382,14 @@ func (c *Controller) sync(key string) error {
 }
 
 type secretData struct {
-	cluster          *kubermaticv1.Cluster
-	secretLister     corev1lister.SecretLister
-	serviceLister    corev1lister.ServiceLister
-	oidcCABundleFile string
+	cluster       *kubermaticv1.Cluster
+	secretLister  corev1lister.SecretLister
+	serviceLister corev1lister.ServiceLister
 }
 
 // GetDexCA returns the chain of public certificates for TLS verification of the Dex
 func (d *secretData) GetDexCA() ([]*x509.Certificate, error) {
-	return resources.GetDexCAFromFile(d.oidcCABundleFile)
+	return nil, errors.New("not implemented")
 }
 
 // GetRootCA returns the root CA of the cluster
@@ -441,10 +438,9 @@ func (c *Controller) ensureCronJobSecret(cluster *kubermaticv1.Cluster) error {
 	}
 
 	data := secretData{
-		cluster:          cluster,
-		secretLister:     c.secretLister,
-		serviceLister:    c.serviceLister,
-		oidcCABundleFile: c.oidcCABundleFile,
+		cluster:       cluster,
+		secretLister:  c.secretLister,
+		serviceLister: c.serviceLister,
 	}
 
 	create := certificates.GetClientCertificateCreator(

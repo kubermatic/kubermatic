@@ -79,7 +79,6 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		kubeInformers.Batch().V1().Jobs(),
 		kubeInformers.Core().V1().Secrets(),
 		kubeInformers.Core().V1().Services(),
-		"",
 	)
 	if err != nil {
 		t.Fatalf("Failed to construct backup controller: %v", err)

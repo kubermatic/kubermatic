@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/golang/glog"
+
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
@@ -181,6 +183,13 @@ func (o controllerRunOptions) validateDexSecretWithCABundle() error {
 	if err != nil {
 		return err
 	}
+
+	defer func() {
+		err := f.Close()
+		if err != nil {
+			glog.Fatal(err)
+		}
+	}()
 
 	bytes, err := ioutil.ReadAll(bufio.NewReader(f))
 	if err != nil {
