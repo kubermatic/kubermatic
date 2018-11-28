@@ -232,6 +232,11 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 					MountPath: "/etc/kubernetes/pki/front-proxy/ca",
 					ReadOnly:  true,
 				},
+				{
+					Name:      resources.DexCASecretName,
+					MountPath: "/etc/kubernetes/dex/ca",
+					ReadOnly:  true,
+				},
 			},
 		},
 	}
@@ -322,9 +327,7 @@ func getApiserverFlags(data resources.DeploymentDataProvider, externalNodePort i
 		flags = append(flags, "--oidc-issuer-url", data.OIDCIssuerURL())
 		flags = append(flags, "--oidc-client-id", data.OIDCIssuerClientID())
 		flags = append(flags, "--oidc-username-claim", "email")
-		if len(data.OIDCCAFile()) > 0 {
-			flags = append(flags, "--oidc-ca-file", data.OIDCCAFile())
-		}
+		flags = append(flags, "--oidc-ca-file", "/etc/kubernetes/dex/ca/caBundle.pem")
 	}
 
 	return flags, nil
@@ -457,6 +460,15 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  resources.KubeletDnatControllerKubeconfigSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.DexCASecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.DexCASecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},

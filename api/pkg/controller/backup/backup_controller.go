@@ -1,6 +1,8 @@
 package backup
 
 import (
+	"crypto/x509"
+	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -383,6 +385,11 @@ type secretData struct {
 	cluster       *kubermaticv1.Cluster
 	secretLister  corev1lister.SecretLister
 	serviceLister corev1lister.ServiceLister
+}
+
+// GetDexCA returns the chain of public certificates for TLS verification of the Dex
+func (d *secretData) GetDexCA() ([]*x509.Certificate, error) {
+	return nil, errors.New("not implemented")
 }
 
 // GetRootCA returns the root CA of the cluster

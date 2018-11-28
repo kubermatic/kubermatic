@@ -1,6 +1,10 @@
 package cluster
 
 import (
+	"github.com/golang/glog"
+	"io/ioutil"
+	"log"
+	"os"
 	"testing"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -181,7 +185,19 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 	}
 	serviceLister := listerscorev1.NewServiceLister(serviceIndexer)
 
-	templateData := resources.NewTemplateData(cluster, dc, "", secretLister, nil, serviceLister, "", "", "", resource.Quantity{}, "", "", false, false, "", nil, "", "", "")
+	file, err := ioutil.TempFile("", "caBundle.pem")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = file.Write(certutil.EncodeCertPEM(keyPair.Cert))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer removeCloseFile(file)
+
+	templateData := resources.NewTemplateData(cluster, dc, "", secretLister, nil, serviceLister, "", "", "", resource.Quantity{}, "", "", false, false, "", nil, file.Name(), "", "")
 
 	for _, op := range GetSecretCreatorOperations([]byte{}) {
 		existing := &corev1.Secret{
@@ -195,5 +211,16 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 		if val, exists := new.Data["Test"]; !exists || string(val) != "Data" {
 			t.Fatalf("Secret creator for %s removed additional data!", new.Name)
 		}
+	}
+}
+
+func removeCloseFile(file *os.File) {
+	err := os.Remove(file.Name())
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = file.Close()
+	if err != nil {
+		glog.Fatal(err)
 	}
 }

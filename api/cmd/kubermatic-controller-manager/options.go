@@ -1,22 +1,26 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/url"
+	"os"
 
-	"k8s.io/client-go/kubernetes"
+	"github.com/golang/glog"
 
+	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
+	"github.com/kubermatic/kubermatic/api/pkg/features"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/net"
 	kubeinformers "k8s.io/client-go/informers"
-
-	"github.com/kubermatic/kubermatic/api/pkg/features"
-
-	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
+	"k8s.io/client-go/kubernetes"
+	certutil "k8s.io/client-go/util/cert"
 )
 
 type controllerRunOptions struct {
@@ -116,6 +120,7 @@ func (o controllerRunOptions) validate() error {
 		if len(o.oidcIssuerClientID) == 0 {
 			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-client-id\" flag was not specified", OpenIDAuthPlugin)
 		}
+
 	} else {
 		// don't pass OpenID issuer flags if OpenIDAuthPlugin disabled
 		if len(o.oidcIssuerURL) > 0 {
@@ -151,6 +156,11 @@ func (o controllerRunOptions) validate() error {
 		return fmt.Errorf("moniotring-scrape-annotation-prefix is undefined")
 	}
 
+	// Validate OIDC CA file
+	if err := o.validateCABundle(); err != nil {
+		return fmt.Errorf("validation CA bundle file failed: %v", err)
+	}
+
 	// Validate etcd disk size
 	resource.MustParse(o.etcdDiskSize)
 
@@ -164,6 +174,31 @@ func (o controllerRunOptions) validate() error {
 		return fmt.Errorf("failed to load datacenter yaml %q: %v", o.dcFile, err)
 	}
 	return nil
+}
+
+// validateDexSecretWithCABundle
+func (o controllerRunOptions) validateCABundle() error {
+
+	f, err := os.Open(o.oidcCAFile)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		err := f.Close()
+		if err != nil {
+			glog.Fatal(err)
+		}
+	}()
+
+	bytes, err := ioutil.ReadAll(bufio.NewReader(f))
+	if err != nil {
+		return err
+	}
+
+	_, err = certutil.ParseCertsPEM(bytes)
+
+	return err
 }
 
 type controllerContext struct {
