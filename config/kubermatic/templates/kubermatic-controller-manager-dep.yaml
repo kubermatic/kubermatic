@@ -57,6 +57,7 @@ spec:
           - -backup-container=/opt/backup/store-container.yaml
           - -cleanup-container=/opt/backup/cleanup-container.yaml
           - -docker-pull-config-json-file=/opt/docker/.dockerconfigjson
+          - -oidc-ca-file=/opt/dex-ca/caBundle.pem
           {{- if regexMatch ".*OpenIDAuthPlugin=true.*" (default "" .Values.kubermatic.controller.featureGates) }}
           # the following flags enable oidc auth plugin on kube-API servers
           - -oidc-issuer-url={{ .Values.kubermatic.auth.tokenIssuer }}
@@ -85,6 +86,9 @@ spec:
               containerPort: 8085
               protocol: TCP
           volumeMounts:
+            - name: dex-ca
+              mountPath: "/opt/dex-ca/"
+              readOnly: true
             - name: master-files
               mountPath: "/opt/master-files/"
               readOnly: true
@@ -135,6 +139,9 @@ spec:
                 values:
                 - "stable"
       volumes:
+        - name: dex-ca
+          secret:
+            secretName: dex-ca
         - name: master-files
           secret:
             secretName: master-files
