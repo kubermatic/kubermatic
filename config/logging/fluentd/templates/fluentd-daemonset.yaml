@@ -21,6 +21,13 @@ spec:
         effect: NoSchedule
       containers:
       - name: fluentd
+        command:
+        - /bin/sh
+        - -c
+        - >-
+            sed -i 's;#!/usr/bin/dumb-init.*;#!/bin/sh;g' /fluentd/entrypoint.sh &&
+            if ! grep -q supervisor /fluentd/entrypoint.sh; then sed -i 's;--gemfile;--no-supervisor --gemfile;g' /fluentd/entrypoint.sh; fi &&
+            exec /fluentd/entrypoint.sh
         image: '{{ .Values.logging.fluentd.image.repository }}:{{ .Values.logging.fluentd.image.tag }}'
         imagePullPolicy: {{ .Values.logging.fluentd.image.pullPolicy }}
         securityContext:
