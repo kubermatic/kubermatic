@@ -20,4 +20,4 @@ helm upgrade --install --kube-context=europe-west3-c --tiller-namespace=kubermat
     --set=kubermatic.api.image.tag=aee6917710fde8e8b8ca65c73d904f950500af55 \
     --set=kubermatic.rbac.image.tag=aee6917710fde8e8b8ca65c73d904f950500af55 \
     --values /home/henrik/go/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/values.yaml \
-    --namespace kubermatic kubermatic ../kubermatic/
+    --namespace kubermatic kubermatic ./kubermatic/
