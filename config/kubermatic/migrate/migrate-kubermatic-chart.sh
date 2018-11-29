@@ -31,4 +31,4 @@ done
 
 helm upgrade --install --tiller-namespace=${TILLER_NAMESPACE} \
     --values ${VALUES_FILE} \
-    --namespace kubermatic kubermatic ./kubermatic/ --dry-run --debug
+    --namespace kubermatic kubermatic ./kubermatic/
