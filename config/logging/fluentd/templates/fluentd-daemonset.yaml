@@ -7,6 +7,11 @@ metadata:
     version: v1
     kubernetes.io/cluster-service: "true"
 spec:
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
   template:
     metadata:
       labels:
