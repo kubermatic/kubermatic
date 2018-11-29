@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 if [ "$#" -lt 1 ] || [ "${1}" == "--help" ]; then
   cat <<EOF
@@ -18,10 +19,10 @@ cd "$(dirname "$0")/../../"
 
 
 # Delete the kubermatic namespace to enable a clean install afterwards
-kubectl delete ns kubermatic
+kubectl delete --ignore-not-found=true ns kubermatic
 
 # Delete a ClusterRoleBinding - which is the only thing which does not exist in the kubermatic namespace
-kubectl delete clusterrolebindings.rbac.authorization.k8s.io kubermatic
+kubectl delete --ignore-not-found=true clusterrolebindings.rbac.authorization.k8s.io kubermatic
 
 for cm in $(kubectl -n kubermatic-installer get configmap -o json | jq -r '.items[].metadata.name' | grep 'kubermatic');do
     echo "Deleting helm release info in ConfigMap: ${TILLER_NAMESPACE}/${cm}"
