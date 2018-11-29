@@ -370,7 +370,8 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		nil,
 		"",
 		"",
-		""), nil
+		"",
+		false), nil
 }
 
 func createNamedSecrets(secretNames []string) *corev1.SecretList {

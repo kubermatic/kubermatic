@@ -102,6 +102,7 @@ func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*resource
 		cc.oidcCAFile,
 		cc.oidcIssuerURL,
 		cc.oidcIssuerClientID,
+		cc.enableEtcdDataCorruptionChecks,
 	), nil
 }
 
@@ -362,7 +363,6 @@ func (cc *Controller) ensureVerticalPodAutoscalers(c *kubermaticv1.Cluster, data
 }
 
 func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	data.GetClusterRef()
 	creators := GetStatefulSetCreators(data)
 
 	return resources.EnsureStatefulSets(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(c))

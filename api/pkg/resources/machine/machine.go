@@ -3,6 +3,7 @@ package machine
 import (
 	"errors"
 	"fmt"
+
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -58,7 +59,7 @@ func Machine(c *kubermaticv1.Cluster, node *apiv1.Node, dc provider.DatacenterMe
 		// We use OverwriteCloudConfig for Vsphere to ensure we always
 		// use the credentials passed in via frontend for the cloud-provider
 		// functionality
-		templateData := resources.NewTemplateData(c, &dc, "", nil, nil, nil, "", "", "", resource.Quantity{}, "", "", false, false, "", nil, "", "", "")
+		templateData := resources.NewTemplateData(c, &dc, "", nil, nil, nil, "", "", "", resource.Quantity{}, "", "", false, false, "", nil, "", "", "", false)
 		overwriteCloudConfig, err := cloudconfig.CloudConfig(templateData)
 		if err != nil {
 			return nil, err

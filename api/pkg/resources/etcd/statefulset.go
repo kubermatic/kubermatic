@@ -74,7 +74,7 @@ func StatefulSetCreator(data *resources.TemplateData) resources.StatefulSetCreat
 			migrate = true
 		}
 
-		etcdStartCmd, err := getEtcdCommand(data.Cluster().Name, data.Cluster().Status.NamespaceName, migrate)
+		etcdStartCmd, err := getEtcdCommand(data.Cluster().Name, data.Cluster().Status.NamespaceName, migrate, data.EnableEtcdDataCorruptionChecks())
 		if err != nil {
 			return nil, err
 		}
@@ -243,25 +243,27 @@ func getBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
 }
 
 type commandTplData struct {
-	ServiceName string
-	Namespace   string
-	Token       string
-	DataDir     string
-	Migrate     bool
+	ServiceName           string
+	Namespace             string
+	Token                 string
+	DataDir               string
+	Migrate               bool
+	EnableCorruptionCheck bool
 }
 
-func getEtcdCommand(name, namespace string, migrate bool) ([]string, error) {
+func getEtcdCommand(name, namespace string, migrate, enableCorruptionCheck bool) ([]string, error) {
 	tpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(etcdStartCommandTpl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse etcd command template: %v", err)
 	}
 
 	tplData := commandTplData{
-		ServiceName: resources.EtcdServiceName,
-		Token:       name,
-		Namespace:   namespace,
-		DataDir:     dataDir,
-		Migrate:     migrate,
+		ServiceName:           resources.EtcdServiceName,
+		Token:                 name,
+		Namespace:             namespace,
+		DataDir:               dataDir,
+		Migrate:               migrate,
+		EnableCorruptionCheck: enableCorruptionCheck,
 	}
 
 	buf := bytes.Buffer{}
@@ -349,6 +351,10 @@ exec /usr/local/bin/etcd \
     --client-cert-auth \
     --cert-file /etc/etcd/pki/tls/etcd-tls.crt \
     --key-file /etc/etcd/pki/tls/etcd-tls.key \
+{{- if .EnableCorruptionCheck }}
+    --experimental-initial-corrupt-check=true \
+    --experimental-corrupt-check-time=10m \
+{{- end }}
     --auto-compaction-retention=8
 `
 )

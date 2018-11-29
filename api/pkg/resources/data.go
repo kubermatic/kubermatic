@@ -39,6 +39,7 @@ type TemplateData struct {
 	oidcIssuerURL                                    string
 	oidcIssuerClientID                               string
 	DockerPullConfigJSON                             []byte
+	enableEtcdDataCorruptionChecks                   bool
 }
 
 // TemplateData returns data for templating
@@ -159,7 +160,8 @@ func NewTemplateData(
 	dockerPullConfigJSON []byte,
 	oidcCAFile string,
 	oidcURL string,
-	oidcIssuerClientID string) *TemplateData {
+	oidcIssuerClientID string,
+	enableEtcdDataCorruptionChecks bool) *TemplateData {
 	return &TemplateData{
 		cluster:                                cluster,
 		dC:                                     dc,
@@ -180,6 +182,7 @@ func NewTemplateData(
 		oidcCAFile:                                       oidcCAFile,
 		oidcIssuerURL:                                    oidcURL,
 		oidcIssuerClientID:                               oidcIssuerClientID,
+		enableEtcdDataCorruptionChecks:                   enableEtcdDataCorruptionChecks,
 	}
 }
 
@@ -271,6 +274,11 @@ func (d *TemplateData) NodeAccessNetwork() string {
 // NodePortRange returns the node access network
 func (d *TemplateData) NodePortRange() string {
 	return d.nodePortRange
+}
+
+// EnableEtcdDataCorruptionChecks tells if the etcdDataCorruptionCheck feature flag has been enabled
+func (d *TemplateData) EnableEtcdDataCorruptionChecks() bool {
+	return d.enableEtcdDataCorruptionChecks
 }
 
 // NewUserClusterData returns an instance of UserClusterData

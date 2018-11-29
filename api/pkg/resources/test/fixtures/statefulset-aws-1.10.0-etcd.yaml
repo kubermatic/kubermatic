@@ -59,7 +59,9 @@ spec:
               --client-cert-auth \
               --cert-file /etc/etcd/pki/tls/etcd-tls.crt \
               --key-file /etc/etcd/pki/tls/etcd-tls.key \
-              --auto-compaction-retention=8
+              --auto-compaction-retention=8 \
+              --experimental-initial-corrupt-check=true \
+              --experimental-corrupt-check-time=10m
         env:
         - name: POD_NAME
           valueFrom:
