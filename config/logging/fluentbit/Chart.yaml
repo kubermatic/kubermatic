@@ -1,10 +1,10 @@
-name: fluentd
+name: fluentbit
 version: 0.1.0
-description: fluentd
+description: fluentbit
 keywords:
   - k8s
   - kubermatic
-  - fluentd
+  - fluentbit
 home: http://www.kubermatic.io/
 sources:
   - https://github.com/kubermatic/kubermatic/config
