@@ -6,6 +6,8 @@ metadata:
     component: elasticsearch
     role: data
 spec:
+  updateStrategy:
+    type: RollingUpdate
   serviceName: elasticsearch-data
   replicas: {{ .Values.logging.elasticsearch.dataReplicas }}
   template:
@@ -14,6 +16,16 @@ spec:
         component: elasticsearch
         role: data
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    component: elasticsearch
+                    role: data
+                topologyKey: kubernetes.io/hostname
+              weight: 100
       serviceAccount: elasticsearch
       serviceAccountName: elasticsearch
       {{ if .Values.logging.elasticsearch.optimizations.maxMapCount }}
@@ -60,7 +72,7 @@ spec:
             cpu: 0.25
             memory: 3Gi
           limits:
-            cpu: 1
+            cpu: 2
             memory: 4Gi
         ports:
         - containerPort: 9200
