@@ -250,6 +250,31 @@ func TestDeleteUserFromProject(t *testing.T) {
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedResponse: `{"error":{"code":403,"message":"you cannot delete yourself from the project"}}`,
 		},
+
+		// scenario 4
+		{
+			Name:          "scenario 4: email case insensitive. Remove bob from the project where email is Bob@acme.com instead bob@acme.com",
+			Body:          `{"id":"bobID", "email":"Bob@acme.com", "projects":[{"id":"plan9", "group":"editors"}]}`,
+			HTTPStatus:    http.StatusOK,
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				/*add bindings*/
+				genBinding("plan9-ID", "john@acme.com", "owners"),
+				genBinding("plan9-ID", "bob@acme.com", "viewers"),
+				genBinding("planX-ID", "bob@acme.com", "viewers"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+				genDefaultUser(), /*bob*/
+			},
+			UserIDToDelete:               genDefaultUser().Name,
+			ExistingAPIUser:              *genAPIUser("john", "john@acme.com"),
+			ExpectedResponse:             `{}`,
+			ExpectedBindingIDAfterDelete: genBinding("plan9-ID", "bob@acme.com", "viewers").Name,
+		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
@@ -405,6 +430,36 @@ func TestEditUserInProject(t *testing.T) {
 			UserIDToUpdate:   genDefaultUser().Name,
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedResponse: `{"error":{"code":400,"message":"invalid group name admins"}}`,
+		},
+
+		// scenario 5
+		{
+			Name:          "scenario 5: email case insensitive. Changes the group for bob from viewers to editors where email is BOB@ACME.COM instead bob@acme.com",
+			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"BOB@ACME.COM", "projects":[{"id":"plan9-ID", "group":"editors"}]}`,
+			HTTPStatus:    http.StatusOK,
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				/*add bindings*/
+				genBinding("plan9-ID", "john@acme.com", "owners"),
+				genBinding("plan9-ID", "bob@acme.com", "viewers"),
+				genBinding("my-third-project-ID", "bob@acme.com", "viewers"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+				genDefaultUser(), /*bob*/
+			},
+			UserIDToUpdate:   genDefaultUser().Name,
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
+			ExpectedBindingAfterUpdate: func() *kubermaticapiv1.UserProjectBinding {
+				binding := genBinding("plan9-ID", "bob@acme.com", "editors")
+				// the name of the original binding was derived from projectID, email and group
+				binding.Name = genBinding("plan9-ID", "bob@acme.com", "viewers").Name
+				return binding
+			}(),
 		},
 	}
 	for _, tc := range testcases {
@@ -588,6 +643,66 @@ func TestAddUserToProject(t *testing.T) {
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedResponse: `{"error":{"code":400,"message":"cannot add the user = bob@acme.com to the project plan9-ID because user is already in the project"}}`,
+		},
+
+		{
+			Name:          "scenario 6: email case insensitive. Bob is invited to the project one more time and emil starts with capital letter",
+			Body:          `{"email":"Bob@acme.com", "projects":[{"id":"plan9-ID", "group":"editors"}]}`,
+			HTTPStatus:    http.StatusBadRequest,
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				/*add bindings*/
+				genBinding("plan9-ID", "john@acme.com", "owners"),
+				genBinding("my-third-project-ID", "john@acme.com", "editors"),
+				genBinding("plan9-ID", "bob@acme.com", "editors"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+				genDefaultUser(), /*bob*/
+			},
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
+			ExpectedResponse: `{"error":{"code":400,"message":"cannot add the user = Bob@acme.com to the project plan9-ID because user is already in the project"}}`,
+		},
+
+		{
+			Name:          "scenario 7: email case insensitive. Bob is invited to the project as an editor with capital letter email",
+			Body:          `{"email":"BOB@ACME.COM", "projects":[{"id":"plan9-ID", "group":"editors"}]}`,
+			HTTPStatus:    http.StatusCreated,
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				/*add bindings*/
+				genBinding("plan9-ID", "john@acme.com", "owners"),
+				genBinding("my-third-project-ID", "john@acme.com", "editors"),
+				genBinding("placeX-ID", "bob@acme.com", "editors"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+				genDefaultUser(), /*bob*/
+			},
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
+			ExpectedBindingAfterInvitation: &kubermaticapiv1.UserProjectBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+							Kind:       kubermaticapiv1.ProjectKindName,
+							Name:       "plan9-ID",
+						},
+					},
+				},
+				Spec: kubermaticapiv1.UserProjectBindingSpec{
+					UserEmail: "bob@acme.com",
+					Group:     "editors-plan9-ID",
+					ProjectID: "plan9-ID",
+				},
+			},
 		},
 	}
 
