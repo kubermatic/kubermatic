@@ -208,7 +208,6 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 		"--allocate-node-cidrs=true",
 		"--controllers", "*,bootstrapsigner,tokencleaner",
 		"--use-service-account-credentials=true",
-		"--v", "4",
 	}
 
 	featureGates := []string{"RotateKubeletClientCertificate=true",

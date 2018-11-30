@@ -208,7 +208,6 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 
 	flags := []string{
 		"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-		"--v", "4",
 	}
 
 	var featureGates []string

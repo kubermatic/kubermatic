@@ -108,8 +108,6 @@ spec:
       - args:
         - --kubeconfig
         - /etc/kubernetes/kubeconfig/kubeconfig
-        - --v
-        - "4"
         - --feature-gates
         - ScheduleDaemonSetPods=false
         command:
