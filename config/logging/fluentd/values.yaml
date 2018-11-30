@@ -1,6 +1,0 @@
-logging:
-  fluentd:
-    image:
-      repository: fluent/fluentd-kubernetes-daemonset
-      tag: elasticsearch
-      pullPolicy: "IfNotPresent"
