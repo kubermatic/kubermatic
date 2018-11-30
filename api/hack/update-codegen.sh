@@ -15,7 +15,7 @@ GOPATH=$(go env GOPATH) ./vendor/k8s.io/code-generator/generate-groups.sh all \
     --go-header-file /tmp/headerfile
 
 echo Generating deepcopy funcs for other packages
-GOPATH=$(go env GOPATH) ${GOPATH}/bin/deepcopy-gen \
+GOPATH=$(go env GOPATH) $(go env GOPATH)/bin/deepcopy-gen \
     --input-dirs github.com/kubermatic/kubermatic/api/pkg/semver \
     -O zz_generated.deepcopy \
     --go-header-file /tmp/headerfile
