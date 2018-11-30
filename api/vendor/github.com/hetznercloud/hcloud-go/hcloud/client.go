@@ -20,7 +20,8 @@ import (
 // Endpoint is the base URL of the API.
 const Endpoint = "https://api.hetzner.cloud/v1"
 
-// UserAgent is the value for the User-Agent header sent with each request.
+// UserAgent is the value for the library part of the User-Agent header
+// that is sent with each request.
 const UserAgent = "hcloud-go/" + Version
 
 // A BackoffFunc returns the duration to wait before performing the
@@ -46,11 +47,14 @@ func ExponentialBackoff(b float64, d time.Duration) BackoffFunc {
 
 // Client is a client for the Hetzner Cloud API.
 type Client struct {
-	endpoint     string
-	token        string
-	pollInterval time.Duration
-	backoffFunc  BackoffFunc
-	httpClient   *http.Client
+	endpoint           string
+	token              string
+	pollInterval       time.Duration
+	backoffFunc        BackoffFunc
+	httpClient         *http.Client
+	applicationName    string
+	applicationVersion string
+	userAgent          string
 
 	Action     ActionClient
 	Datacenter DatacenterClient
@@ -62,6 +66,7 @@ type Client struct {
 	Server     ServerClient
 	ServerType ServerTypeClient
 	SSHKey     SSHKeyClient
+	Volume     VolumeClient
 }
 
 // A ClientOption is used to configure a Client.
@@ -96,6 +101,16 @@ func WithBackoffFunc(f BackoffFunc) ClientOption {
 	}
 }
 
+// WithApplication configures a Client with the given application name and
+// application version. The version may be blank. Programs are encouraged
+// to at least set an application name.
+func WithApplication(name, version string) ClientOption {
+	return func(client *Client) {
+		client.applicationName = name
+		client.applicationVersion = version
+	}
+}
+
 // NewClient creates a new client.
 func NewClient(options ...ClientOption) *Client {
 	client := &Client{
@@ -109,6 +124,8 @@ func NewClient(options ...ClientOption) *Client {
 		option(client)
 	}
 
+	client.buildUserAgent()
+
 	client.Action = ActionClient{client: client}
 	client.Datacenter = DatacenterClient{client: client}
 	client.FloatingIP = FloatingIPClient{client: client}
@@ -119,6 +136,7 @@ func NewClient(options ...ClientOption) *Client {
 	client.Server = ServerClient{client: client}
 	client.ServerType = ServerTypeClient{client: client}
 	client.SSHKey = SSHKeyClient{client: client}
+	client.Volume = VolumeClient{client: client}
 
 	return client
 }
@@ -131,7 +149,7 @@ func (c *Client) NewRequest(ctx context.Context, method, path string, body io.Re
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", UserAgent)
+	req.Header.Set("User-Agent", c.userAgent)
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token))
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
@@ -204,6 +222,17 @@ func (c *Client) all(f func(int) (*Response, error)) (*Response, error) {
 			return resp, nil
 		}
 		page = resp.Meta.Pagination.NextPage
+	}
+}
+
+func (c *Client) buildUserAgent() {
+	switch {
+	case c.applicationName != "" && c.applicationVersion != "":
+		c.userAgent = c.applicationName + "/" + c.applicationVersion + " " + UserAgent
+	case c.applicationName != "" && c.applicationVersion == "":
+		c.userAgent = c.applicationName + " " + UserAgent
+	default:
+		c.userAgent = UserAgent
 	}
 }
 
