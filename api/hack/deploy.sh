@@ -31,7 +31,7 @@ helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES
 helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace monitoring alertmanager ./config/monitoring/alertmanager/
 
 helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace logging elasticsearch ./config/logging/elasticsearch/
-helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace logging fluentd ./config/logging/fluentd/
+helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace logging fluentbit ./config/logging/fluentbit/
 helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace logging kibana ./config/logging/kibana/
 
 helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace kubermatic kubermatic ./config/kubermatic/

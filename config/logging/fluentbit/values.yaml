@@ -1,0 +1,6 @@
+logging:
+  fluentbit:
+    image:
+      repository: fluent/fluent-bit
+      tag: 0.14.7
+      pullPolicy: "IfNotPresent"
