@@ -17,7 +17,7 @@ type FakeUserSSHKeys struct {
 	Fake *FakeKubermaticV1
 }
 
-var usersshkeysResource = schema.GroupVersionResource{Group: "kubermatic.k8s.io", Version: "v1", Resource: "usersshkeys"}
+var usersshkeysResource = schema.GroupVersionResource{Group: "kubermatic.k8s.io", Version: "v1", Resource: "usersshkeies"}
 
 var usersshkeysKind = schema.GroupVersionKind{Group: "kubermatic.k8s.io", Version: "v1", Kind: "UserSSHKey"}
 

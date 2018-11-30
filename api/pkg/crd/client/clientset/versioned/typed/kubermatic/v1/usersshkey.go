@@ -46,7 +46,7 @@ func newUserSSHKeys(c *KubermaticV1Client) *userSSHKeys {
 func (c *userSSHKeys) Get(name string, options metav1.GetOptions) (result *v1.UserSSHKey, err error) {
 	result = &v1.UserSSHKey{}
 	err = c.client.Get().
-		Resource("usersshkeys").
+		Resource("usersshkeies").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
 		Do().
@@ -58,7 +58,7 @@ func (c *userSSHKeys) Get(name string, options metav1.GetOptions) (result *v1.Us
 func (c *userSSHKeys) List(opts metav1.ListOptions) (result *v1.UserSSHKeyList, err error) {
 	result = &v1.UserSSHKeyList{}
 	err = c.client.Get().
-		Resource("usersshkeys").
+		Resource("usersshkeies").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Do().
 		Into(result)
@@ -69,7 +69,7 @@ func (c *userSSHKeys) List(opts metav1.ListOptions) (result *v1.UserSSHKeyList, 
 func (c *userSSHKeys) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 	opts.Watch = true
 	return c.client.Get().
-		Resource("usersshkeys").
+		Resource("usersshkeies").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Watch()
 }
@@ -78,7 +78,7 @@ func (c *userSSHKeys) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 func (c *userSSHKeys) Create(userSSHKey *v1.UserSSHKey) (result *v1.UserSSHKey, err error) {
 	result = &v1.UserSSHKey{}
 	err = c.client.Post().
-		Resource("usersshkeys").
+		Resource("usersshkeies").
 		Body(userSSHKey).
 		Do().
 		Into(result)
@@ -89,7 +89,7 @@ func (c *userSSHKeys) Create(userSSHKey *v1.UserSSHKey) (result *v1.UserSSHKey, 
 func (c *userSSHKeys) Update(userSSHKey *v1.UserSSHKey) (result *v1.UserSSHKey, err error) {
 	result = &v1.UserSSHKey{}
 	err = c.client.Put().
-		Resource("usersshkeys").
+		Resource("usersshkeies").
 		Name(userSSHKey.Name).
 		Body(userSSHKey).
 		Do().
@@ -100,7 +100,7 @@ func (c *userSSHKeys) Update(userSSHKey *v1.UserSSHKey) (result *v1.UserSSHKey, 
 // Delete takes name of the userSSHKey and deletes it. Returns an error if one occurs.
 func (c *userSSHKeys) Delete(name string, options *metav1.DeleteOptions) error {
 	return c.client.Delete().
-		Resource("usersshkeys").
+		Resource("usersshkeies").
 		Name(name).
 		Body(options).
 		Do().
@@ -110,7 +110,7 @@ func (c *userSSHKeys) Delete(name string, options *metav1.DeleteOptions) error {
 // DeleteCollection deletes a collection of objects.
 func (c *userSSHKeys) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
 	return c.client.Delete().
-		Resource("usersshkeys").
+		Resource("usersshkeies").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Body(options).
 		Do().
@@ -121,7 +121,7 @@ func (c *userSSHKeys) DeleteCollection(options *metav1.DeleteOptions, listOption
 func (c *userSSHKeys) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.UserSSHKey, err error) {
 	result = &v1.UserSSHKey{}
 	err = c.client.Patch(pt).
-		Resource("usersshkeys").
+		Resource("usersshkeies").
 		SubResource(subresources...).
 		Name(name).
 		Body(data).
