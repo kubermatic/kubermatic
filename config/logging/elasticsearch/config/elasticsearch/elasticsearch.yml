@@ -1,0 +1,23 @@
+cluster:
+  name: log-data
+
+node:
+  master: ${NODE_MASTER}
+  name: ${NODE_NAME}
+  data: ${NODE_DATA}
+  ingest: ${NODE_INGEST}
+
+network.host: _site_
+
+http:
+  enabled: true
+  compression: true
+
+discovery:
+  zen:
+    minimum_master_nodes: 1
+    ping:
+      unicast:
+        hosts:
+          - es-master
+          - es-data

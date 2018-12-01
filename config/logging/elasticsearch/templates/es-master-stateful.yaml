@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: es-data
+  name: es-master
   labels:
     component: elasticsearch
-    role: data
+    role: master
 spec:
   podManagementPolicy: Parallel
   updateStrategy:
     type: RollingUpdate
-  serviceName: elasticsearch-data
+  serviceName: elasticsearch-master
   replicas: {{ .Values.logging.elasticsearch.dataReplicas }}
   selector:
     matchLabels:
       component: elasticsearch
-      role: data
+      role: master
   template:
     metadata:
       labels:
         component: elasticsearch
-        role: data
+        role: master
     spec:
       affinity:
         podAntiAffinity:
@@ -28,7 +28,7 @@ spec:
                 labelSelector:
                   matchLabels:
                     component: elasticsearch
-                    role: data
+                    role: master
                 topologyKey: kubernetes.io/hostname
               weight: 100
       initContainers:
@@ -52,7 +52,7 @@ spec:
             - name: storage
               mountPath: /usr/share/elasticsearch/data
       containers:
-        - name: es-data
+        - name: es-master
           image: '{{ .Values.logging.elasticsearch.image.repository }}:{{ .Values.logging.elasticsearch.image.tag }}'
           imagePullPolicy: {{ .Values.logging.elasticsearch.image.pullPolicy }}
           env:
@@ -61,11 +61,11 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: NODE_MASTER
-              value: "false"
+              value: "true"
             - name: NODE_INGEST
-              value: "true"
+              value: "false"
             - name: NODE_DATA
-              value: "true"
+              value: "false"
           ports:
             - containerPort: 9200
               name: http
@@ -103,4 +103,4 @@ spec:
         accessModes: [ ReadWriteOnce ]
         resources:
           requests:
-            storage: {{ .Values.logging.elasticsearch.storageSize }}
+            storage: 1Gi
