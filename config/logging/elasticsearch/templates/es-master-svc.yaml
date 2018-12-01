@@ -4,7 +4,6 @@ metadata:
   annotations:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
   name: es-master
-  namespace: elasticsearch
   labels:
     component: elasticsearch
     role: master

@@ -10,7 +10,7 @@ spec:
   updateStrategy:
     type: RollingUpdate
   serviceName: elasticsearch-master
-  replicas: {{ .Values.logging.elasticsearch.dataReplicas }}
+  replicas: {{ .Values.logging.elasticsearch.masterReplicas }}
   selector:
     matchLabels:
       component: elasticsearch
@@ -66,6 +66,8 @@ spec:
               value: "false"
             - name: NODE_DATA
               value: "false"
+            - name: ES_JAVA_OPTS
+              value: "-Xms128m -Xmx128m"
           ports:
             - containerPort: 9200
               name: http
