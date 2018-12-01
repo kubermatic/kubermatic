@@ -7,6 +7,8 @@ metadata:
     version: v1
     kubernetes.io/cluster-service: "true"
 spec:
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -26,7 +28,7 @@ spec:
           - containerPort: 2020
         env:
         - name: FLUENT_ELASTICSEARCH_HOST
-          value: "elasticsearch-data"
+          value: "es-data"
         - name: FLUENT_ELASTICSEARCH_PORT
           value: "9200"
         volumeMounts:
