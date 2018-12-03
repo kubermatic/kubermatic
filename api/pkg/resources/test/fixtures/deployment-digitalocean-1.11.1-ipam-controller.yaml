@@ -45,6 +45,8 @@ spec:
           requests:
             cpu: 10m
             memory: 32Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/kubernetes/ipamcontroller
           name: ipamcontroller-kubeconfig
