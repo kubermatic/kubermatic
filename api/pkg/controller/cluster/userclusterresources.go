@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 )
 
 func (cc *Controller) reconcileUserClusterResources(cluster *kubermaticv1.Cluster, client kubernetes.Interface) (*kubermaticv1.Cluster, error) {
@@ -508,16 +508,16 @@ func (cc *Controller) userClusterEnsureAPIServices(c *kubermaticv1.Cluster) erro
 	}
 
 	for _, create := range GetAPIServiceCreators() {
-		var existing *apiregistrationv1.APIService
+		var existing *apiregistrationv1beta1.APIService
 		apiService, err := create(nil)
 		if err != nil {
 			return fmt.Errorf("failed to build APIService: %v", err)
 		}
-		if existing, err = client.ApiregistrationV1().APIServices().Get(apiService.Name, metav1.GetOptions{}); err != nil {
+		if existing, err = client.ApiregistrationV1beta1().APIServices().Get(apiService.Name, metav1.GetOptions{}); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
-			if _, err = client.ApiregistrationV1().APIServices().Create(apiService); err != nil {
+			if _, err = client.ApiregistrationV1beta1().APIServices().Create(apiService); err != nil {
 				return fmt.Errorf("failed to create APIService %s: %v", apiService.Name, err)
 			}
 			glog.V(4).Infof("Created APIService %s inside user cluster %s", apiService.Name, c.Name)
@@ -533,7 +533,7 @@ func (cc *Controller) userClusterEnsureAPIServices(c *kubermaticv1.Cluster) erro
 			continue
 		}
 
-		if _, err = client.ApiregistrationV1().APIServices().Update(apiService); err != nil {
+		if _, err = client.ApiregistrationV1beta1().APIServices().Update(apiService); err != nil {
 			return fmt.Errorf("failed to update APIService %s: %v", apiService.Name, err)
 		}
 		glog.V(4).Infof("Updated APIService %s inside user cluster %s", apiService.Name, c.Name)
