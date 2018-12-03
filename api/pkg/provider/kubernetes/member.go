@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"fmt"
+	"strings"
 
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -97,7 +98,7 @@ func (p *ProjectMemberProvider) List(userInfo *provider.UserInfo, project *kuber
 	filteredMembers := []*kubermaticapiv1.UserProjectBinding{}
 	if options != nil {
 		for _, member := range projectMembers {
-			if member.Spec.UserEmail == options.MemberEmail {
+			if strings.EqualFold(member.Spec.UserEmail, options.MemberEmail) {
 				filteredMembers = append(filteredMembers, member)
 				break
 			}
@@ -136,7 +137,7 @@ func (p *ProjectMemberProvider) MapUserToGroup(userEmail string, projectID strin
 	}
 
 	for _, member := range allMembers {
-		if member.Spec.UserEmail == userEmail && member.Spec.ProjectID == projectID {
+		if strings.EqualFold(member.Spec.UserEmail, userEmail) && member.Spec.ProjectID == projectID {
 			return member.Spec.Group, nil
 		}
 	}
@@ -154,7 +155,7 @@ func (p *ProjectMemberProvider) MappingsFor(userEmail string) ([]*kubermaticapiv
 
 	memberMappings := []*kubermaticapiv1.UserProjectBinding{}
 	for _, memberMapping := range allMemberMappings {
-		if memberMapping.Spec.UserEmail == userEmail {
+		if strings.EqualFold(memberMapping.Spec.UserEmail, userEmail) {
 			memberMappings = append(memberMappings, memberMapping)
 		}
 	}
