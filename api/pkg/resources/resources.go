@@ -31,7 +31,7 @@ import (
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/cert/triple"
-	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 )
 
 // KUBERMATICCOMMIT is a magic variable containing the git commit hash of the current (as in currently executing) kubermatic api. It gets feeded by Makefile as a ldflag.
@@ -393,7 +393,7 @@ type CronJobCreator = func(data *TemplateData, existing *batchv1beta1.CronJob) (
 type CRDCreateor = func(version semver.Semver, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error)
 
 // APIServiceCreator defines an interface to create/update APIService's
-type APIServiceCreator = func(existing *apiregistrationv1.APIService) (*apiregistrationv1.APIService, error)
+type APIServiceCreator = func(existing *apiregistrationv1beta1.APIService) (*apiregistrationv1beta1.APIService, error)
 
 // MutatingWebhookConfigurationCreator defines an interface to create/update MutatingWebhookConfigurations
 type MutatingWebhookConfigurationCreator = func(cluster *kubermaticv1.Cluster, data *TemplateData, existing *admissionregistrationv1beta1.MutatingWebhookConfiguration) (*admissionregistrationv1beta1.MutatingWebhookConfiguration, error)
