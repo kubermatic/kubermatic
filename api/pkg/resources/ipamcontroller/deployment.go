@@ -39,7 +39,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	dep.Labels = resources.BaseAppLabel(resources.IPAMControllerDeploymentName, nil)
 
-	dep.Spec.Replicas = resources.Int32(3)
+	dep.Spec.Replicas = resources.Int32(1)
 	dep.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
 			resources.AppLabelKey: resources.IPAMControllerDeploymentName,

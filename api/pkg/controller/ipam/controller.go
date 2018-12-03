@@ -27,8 +27,7 @@ import (
 )
 
 const (
-	initializerName = "ipam.kubermatic.io"
-	finalizerName   = initializerName
+	InitializerName = "ipam.kubermatic.io"
 )
 
 type cidrExhaustedError struct{}
@@ -94,8 +93,8 @@ func NewController(client clusterv1alpha1clientset.Interface, machineInformer cl
 
 // Run executes the worker loop. Blocks.
 func (c *Controller) Run(stopCh <-chan struct{}) error {
-	// ATM it is important that only one worker is running at a time since we dont do any locking for the "wait till cache has synchronized"-mechanism which would be needed if we have multiple workers running.
 	go wait.Until(c.runWorker, time.Second, stopCh)
+	glog.Infoln("Successfully started ipam-controller")
 	<-stopCh
 
 	return nil
@@ -251,7 +250,6 @@ func (c *Controller) initMachineIfNeeded(machine *clusterv1alpha1.Machine) error
 		return err
 	}
 
-	machine.Finalizers = append(machine.Finalizers, finalizerName)
 	machine.Spec.ProviderConfig.Value = &runtime.RawExtension{Raw: cfgSerialized}
 	pendingInitializers := machine.ObjectMeta.GetInitializers().Pending
 
@@ -300,11 +298,11 @@ func (c *Controller) ipsToStrs(ips []net.IP) []string {
 }
 
 func (c *Controller) testIfInitIsNeeded(m *clusterv1alpha1.Machine) bool {
-	if m.ObjectMeta.GetInitializers() == nil {
+	if m.ObjectMeta.GetInitializers() == nil || len(m.ObjectMeta.GetInitializers().Pending) == 0 {
 		return false
 	}
 
-	return m.ObjectMeta.GetInitializers().Pending[0].Name == initializerName
+	return m.ObjectMeta.GetInitializers().Pending[0].Name == InitializerName
 }
 
 func (c *Controller) getNextFreeIP() (net.IP, Network, error) {
