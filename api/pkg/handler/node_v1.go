@@ -115,7 +115,7 @@ func listNodesForCluster(projectProvider provider.ProjectProvider) endpoint.Endp
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{})
+		machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{IncludeUninitialized: true})
 		if err != nil {
 			return nil, fmt.Errorf("failed to load machines from cluster: %v", err)
 		}
@@ -426,7 +426,7 @@ func getMachineForNode(node *corev1.Node, machines []clusterv1alpha1.Machine) *c
 }
 
 func findMachineAndNode(name string, machineClient clusterv1alpha1clientset.Interface, kubeClient kubernetes.Interface) (*clusterv1alpha1.Machine, *corev1.Node, error) {
-	machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{})
+	machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{IncludeUninitialized: true})
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to load machines from cluster: %v", err)
 	}
