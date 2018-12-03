@@ -2,7 +2,6 @@ required = [
     "k8s.io/code-generator/cmd/client-gen",
     "k8s.io/code-generator/cmd/deepcopy-gen",
     "k8s.io/gengo/examples/defaulter-gen/generators",
-#    "k8s.io/apimachinery/pkg/apimachinery/registered",
     "github.com/ugorji/go/codec/codecgen",
     "github.com/go-swagger/go-swagger/cmd/swagger"
 ]
