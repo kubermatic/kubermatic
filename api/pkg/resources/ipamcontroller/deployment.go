@@ -65,8 +65,9 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 
 	kcDir := "/etc/kubernetes/ipamcontroller"
 	flags := []string{
-		"--kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.IPAMControllerKubeconfigSecretName),
+		"--kubeconfig", fmt.Sprintf("%s/kubeconfig", kcDir),
 		"-v", "4",
+		"-logtostderr",
 	}
 
 	flags = append(flags, getNetworkArgs(data)...)
@@ -94,7 +95,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
 			Name:            resources.IPAMControllerDeploymentName,
-			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
+			Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/usr/local/bin/ipam-controller"},
 			Args:            flags,

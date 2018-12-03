@@ -22,7 +22,7 @@ func MachineIPAMInitializerConfiguration(data *resources.TemplateData, existing 
 			Name: resources.MachineIPAMInitializerName,
 			Rules: []admissionv1alpha1.Rule{
 				{
-					APIGroups:   []string{"machine.k8s.io"},
+					APIGroups:   []string{"cluster.k8s.io"},
 					APIVersions: []string{"*"},
 					Resources:   []string{"machines"},
 				},
