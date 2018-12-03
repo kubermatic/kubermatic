@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	InitializerName = "ipam.kubermatic.io"
+	initializerName = "ipam.kubermatic.io"
 )
 
 type cidrExhaustedError struct{}
@@ -302,7 +302,7 @@ func (c *Controller) testIfInitIsNeeded(m *clusterv1alpha1.Machine) bool {
 		return false
 	}
 
-	return m.ObjectMeta.GetInitializers().Pending[0].Name == InitializerName
+	return m.ObjectMeta.GetInitializers().Pending[0].Name == initializerName
 }
 
 func (c *Controller) getNextFreeIP() (net.IP, Network, error) {
