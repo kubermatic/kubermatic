@@ -140,9 +140,9 @@ pipeline:
     - name: elasticsearch
       namespace: logging
       path: config/logging/elasticsearch/
-    - name: fluentd
+    - name: fluentbit
       namespace: logging
-      path: config/logging/fluentd/
+      path: config/logging/fluentbit/
     - name: kibana
       namespace: logging
       path: config/logging/kibana/
@@ -208,9 +208,9 @@ pipeline:
     - name: elasticsearch
       namespace: logging
       path: config/logging/elasticsearch/
-    - name: fluentd
+    - name: fluentbit
       namespace: logging
-      path: config/logging/fluentd/
+      path: config/logging/fluentbit/
     - name: kibana
       namespace: logging
       path: config/logging/kibana/
@@ -257,9 +257,9 @@ pipeline:
     - name: elasticsearch
       namespace: logging
       path: config/logging/elasticsearch/
-    - name: fluentd
+    - name: fluentbit
       namespace: logging
-      path: config/logging/fluentd/
+      path: config/logging/fluentbit/
     - name: kibana
       namespace: logging
       path: config/logging/kibana/
@@ -325,9 +325,9 @@ pipeline:
     - name: elasticsearch
       namespace: logging
       path: config/logging/elasticsearch/
-    - name: fluentd
+    - name: fluentbit
       namespace: logging
-      path: config/logging/fluentd/
+      path: config/logging/fluentbit/
     - name: kibana
       namespace: logging
       path: config/logging/kibana/

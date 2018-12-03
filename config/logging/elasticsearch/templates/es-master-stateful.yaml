@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: es-master
+  labels:
+    component: elasticsearch
+    role: master
+spec:
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate
+  serviceName: elasticsearch-master
+  replicas: {{ .Values.logging.elasticsearch.masterReplicas }}
+  selector:
+    matchLabels:
+      component: elasticsearch
+      role: master
+  template:
+    metadata:
+      labels:
+        component: elasticsearch
+        role: master
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    component: elasticsearch
+                    role: master
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      initContainers:
+        - name: sysctl
+          image: '{{ .Values.logging.elasticsearch.init.image.repository }}:{{ .Values.logging.elasticsearch.init.image.tag }}'
+          imagePullPolicy: {{ .Values.logging.elasticsearch.init.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - "ulimit -n 65536 && sysctl -w vm.max_map_count=262144"
+          securityContext:
+            privileged: true
+        - name: chown
+          image: '{{ .Values.logging.elasticsearch.image.repository }}:{{ .Values.logging.elasticsearch.image.tag }}'
+          imagePullPolicy: {{ .Values.logging.elasticsearch.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - "chown -R elasticsearch.root /usr/share/elasticsearch/data"
+          volumeMounts:
+            - name: storage
+              mountPath: /usr/share/elasticsearch/data
+      containers:
+        - name: es-master
+          image: '{{ .Values.logging.elasticsearch.image.repository }}:{{ .Values.logging.elasticsearch.image.tag }}'
+          imagePullPolicy: {{ .Values.logging.elasticsearch.image.pullPolicy }}
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NODE_MASTER
+              value: "true"
+            - name: NODE_INGEST
+              value: "false"
+            - name: NODE_DATA
+              value: "false"
+            - name: ES_JAVA_OPTS
+              value: "-Xms128m -Xmx128m"
+          ports:
+            - containerPort: 9200
+              name: http
+            - containerPort: 9300
+              name: transport
+          livenessProbe:
+            httpGet:
+              path: /_cluster/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: transport
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: storage
+              mountPath: /usr/share/elasticsearch/data
+            - name: config
+              mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+              subPath: elasticsearch.yml
+            - name: config
+              mountPath: /usr/share/elasticsearch/config/jvm.options
+              subPath: jvm.options
+      volumes:
+        - name: config
+          configMap:
+            name: elasticsearch-config
+  volumeClaimTemplates:
+    - metadata:
+        name: storage
+      spec:
+        storageClassName: kubermatic-fast
+        accessModes: [ ReadWriteOnce ]
+        resources:
+          requests:
+            storage: 1Gi

@@ -1,23 +1,21 @@
 logging:
   elasticsearch:
-    dataReplicas: 3
+    dataReplicas: 5
+    masterReplicas: 3
     storageSize: 10Gi
-    optimizations:
-      # Set to 0 to disable setting vm.max_map_count explicitly, useful when multiple es instances run on one node. 
-      maxMapCount: 262144
     image:
-      repository: quay.io/pires/docker-elasticsearch-kubernetes
-      tag: "6.3.0"
+      repository: docker.elastic.co/elasticsearch/elasticsearch
+      tag: "6.5.1"
       pullPolicy: IfNotPresent
     curator:
       # Amount of days after which the indicies should be killed
       interval: 5
       image:
-        repository: quay.io/pires/docker-elasticsearch-curator
-        tag: "5.5.4"
+        repository: quay.io/kubermatic/elasticsearch-curator
+        tag: "5.6.0-1"
         pullPolicy: IfNotPresent
     init:
       image:
-        repository: busybox
+        repository: docker.io/busybox
         tag: "1.27.2"
         pullPolicy: IfNotPresent
