@@ -94,12 +94,14 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
-			Name:            resources.IPAMControllerDeploymentName,
-			Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command:         []string{"/usr/local/bin/ipam-controller"},
-			Args:            flags,
-			Resources:       defaultResourceRequirements,
+			Name:                     resources.IPAMControllerDeploymentName,
+			Image:                    data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
+			ImagePullPolicy:          corev1.PullIfNotPresent,
+			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+			Command:                  []string{"/usr/local/bin/ipam-controller"},
+			Args:                     flags,
+			Resources:                defaultResourceRequirements,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      resources.IPAMControllerKubeconfigSecretName,
