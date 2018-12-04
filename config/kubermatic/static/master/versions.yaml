@@ -30,6 +30,9 @@ versions:
 - version: "1.10.8"
   default: false
   allowedNodeVersions: *node-versions
+- version: "1.10.11"
+  default: false
+  allowedNodeVersions: *node-versions
 # Kubernetes 1.11
 - version: "1.11.0"
   default: false
@@ -43,10 +46,22 @@ versions:
 - version: "1.11.3"
   default: true
   allowedNodeVersions: *node-versions
+- version: "1.11.4"
+  default: true
+  allowedNodeVersions: *node-versions
+- version: "1.11.5"
+  default: true
+  allowedNodeVersions: *node-versions
 # Kubernetes 1.12
 - version: "1.12.0"
   default: false
   allowedNodeVersions: *node-versions
 - version: "1.12.1"
+  default: false
+  allowedNodeVersions: *node-versions
+- version: "1.12.2"
+  default: false
+  allowedNodeVersions: *node-versions
+- version: "1.12.3"
   default: false
   allowedNodeVersions: *node-versions
