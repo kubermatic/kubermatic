@@ -40,7 +40,11 @@ func getClusterKubeconfig(projectProvider provider.ProjectProvider) endpoint.End
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		return clusterProvider.GetAdminKubeconfigForCustomerCluster(cluster)
+		adminClientCfg, err :=  clusterProvider.GetAdminKubeconfigForCustomerCluster(cluster)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		return &encodeKubeConifgResponse{clientCfg:adminClientCfg, filePrefix: "admin"}, nil
 	}
 }
 
@@ -177,10 +181,19 @@ func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVe
 	}
 }
 
-func encodeKubeconfig(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
-	cfg := response.(*clientcmdapi.Config)
+type encodeKubeConifgResponse struct {
+	clientCfg  *clientcmdapi.Config
+	filePrefix string
+}
 
+func encodeKubeconfig(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
+	rsp := response.(*encodeKubeConifgResponse)
+	cfg := rsp.clientCfg
 	filename := "kubeconfig"
+
+	if len(rsp.filePrefix) > 0 {
+		filename = fmt.Sprintf("%s-%s", filename, rsp.filePrefix)
+	}
 
 	if len(cfg.Contexts) > 0 {
 		filename = fmt.Sprintf("%s-%s", filename, cfg.Contexts[cfg.CurrentContext].Cluster)
@@ -214,7 +227,7 @@ type createOIDCKubeconfigRsp struct {
 func encodeOIDCKubeconfig(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	rsp := response.(createOIDCKubeconfigRsp)
 
-	// handles kubeconfigGenerated PHASE
+	// handles kubeconfig Generated PHASE
 	// it means that kubeconfig was generated and we need to properly encode it.
 	if rsp.phase == kubeconfigGenerated {
 		// clear cookie by setting MaxAge<0
@@ -222,7 +235,7 @@ func encodeOIDCKubeconfig(c context.Context, w http.ResponseWriter, response int
 		if err != nil {
 			return fmt.Errorf("the cookie can't be removed, err = %v", err)
 		}
-		return encodeKubeconfig(c, w, rsp.oidcKubeConfig)
+		return encodeKubeconfig(c, w, &encodeKubeConifgResponse{clientCfg: rsp.oidcKubeConfig})
 	}
 
 	// handles initialPhase
