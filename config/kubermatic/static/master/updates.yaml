@@ -24,6 +24,10 @@ updates:
 - from: 1.10.*
   to: 1.11.0
   automatic: false
+# CVE-2018-1002105
+- from: <= 1.10.10
+  to: 1.10.11
+  automatic: true
 
 # ======= 1.11 =======
 # Allow to change to any patch version
@@ -34,9 +38,17 @@ updates:
 - from: 1.11.*
   to: 1.12.*
   automatic: false
+# CVE-2018-1002105
+- from: <= 1.11.4, >= 1.11.0
+  to: 1.11.5
+  automatic: true
 
 # ======= 1.12 =======
 # Allow to change to any patch version
 - from: 1.12.*
   to: 1.12.*
   automatic: false
+# CVE-2018-1002105
+- from: <= 1.12.2, >= 1.12.0
+  to: 1.12.3
+  automatic: true

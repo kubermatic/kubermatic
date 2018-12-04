@@ -1,89 +1,19 @@
 # We support 1.9,1.10,1.11 & kubernetes is able to handle the whole matrix of those versions
 allowed-node-versions: &node-versions
-- "1.9.*"
 - "1.10.*"
 - "1.11.*"
 - "1.12.*"
 
 versions:
-- version: "1.9.0"
-  default: false
-  allowedNodeVersions: *node-versions
-- version: "1.9.1"
-  default: false
-  allowedNodeVersions: *node-versions
-- version: "1.9.2"
-  default: false
-  allowedNodeVersions: *node-versions
-- version: "1.9.3"
-  default: false
-  allowedNodeVersions: *node-versions
-- version: "1.9.4"
-  default: false
-  allowedNodeVersions: *node-versions
-- version: "1.9.5"
-  default: false
-  allowedNodeVersions: *node-versions
-- version: "1.9.6"
-  default: false
-  allowedNodeVersions: *node-versions
-- version: "1.9.7"
-  default: false
-  allowedNodeVersions: *node-versions
-- version: "1.9.8"
-  default: false
-  allowedNodeVersions: *node-versions
-- version: "1.9.9"
-  default: false
-  allowedNodeVersions: *node-versions
-- version: "1.9.10"
-  default: false
-  allowedNodeVersions: *node-versions
 # Kubernetes 1.10
-- version: "1.10.0"
+- version: "1.10.11"
   default: false
-  allowedNodeVersions: *node-versions
-- version: "1.10.1"
-  default: false
-  allowedNodeVersions: *node-versions
-- version: "1.10.2"
-  default: false
-  allowedNodeVersions: *node-versions
-- version: "1.10.3"
-  default: false
-  allowedNodeVersions: *node-versions
-- version: "1.10.4"
-  default: false
-  allowedNodeVersions: *node-versions
-- version: "1.10.5"
-  default: false
-  allowedNodeVersions: *node-versions
-- version: "1.10.6"
-  default: true
-  allowedNodeVersions: *node-versions
-- version: "1.10.7"
-  default: true
-  allowedNodeVersions: *node-versions
-- version: "1.10.8"
-  default: true
   allowedNodeVersions: *node-versions
 # Kubernetes 1.11
-- version: "1.11.0"
-  default: false
-  allowedNodeVersions: *node-versions
-- version: "1.11.1"
-  default: false
-  allowedNodeVersions: *node-versions
-- version: "1.11.2"
-  default: false
-  allowedNodeVersions: *node-versions
-- version: "1.11.3"
-  default: false
+- version: "1.11.5"
+  default: true
   allowedNodeVersions: *node-versions
 # Kubernetes 1.12
-- version: "1.12.0"
-  default: false
-  allowedNodeVersions: *node-versions
-- version: "1.12.1"
+- version: "1.12.3"
   default: false
   allowedNodeVersions: *node-versions
