@@ -25,7 +25,7 @@ updates:
   to: ^1.10.11
   automatic: false
 # CVE-2018-1002105
-- from: <= 1.10.10
+- from: ">=1.10.0, <1.10.10"
   to: 1.10.11
   automatic: true
 # Allow to next minor release
@@ -35,7 +35,7 @@ updates:
 
 # ======= 1.11 =======
 # CVE-2018-1002105
-- from: <=1.11.4
+- from: ">=1.11.0, <1.11.5"
   to: 1.11.5
   automatic: true
 # Allow to change to any patch version
