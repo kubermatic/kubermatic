@@ -6,7 +6,8 @@ set -euox pipefail
 
 TMP_ROOT="./.install-tmp"
 
-for VERSION in 1.9 1.10 1.11 1.12; do
+#for VERSION in 1.9 1.10 1.11 1.12; do
+for VERSION in 1.12; do
     DIRECTORY="${ROOT_DIR}/${VERSION}"
     if [ ! -d "${DIRECTORY}" ]; then
 

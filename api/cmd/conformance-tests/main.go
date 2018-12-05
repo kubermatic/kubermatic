@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"os/exec"
 	"os/user"
 	"path"
 	"strings"
@@ -38,35 +39,36 @@ import (
 )
 
 var supportedVersions = []*semver.Semver{
-	semver.NewSemverOrDie("v1.9.10"),
-	semver.NewSemverOrDie("v1.10.8"),
-	semver.NewSemverOrDie("v1.11.3"),
+	//	semver.NewSemverOrDie("v1.9.10"),
+	//	semver.NewSemverOrDie("v1.10.8"),
+	//	semver.NewSemverOrDie("v1.11.3"),
 	semver.NewSemverOrDie("v1.12.1"),
 }
 
 // Opts represent combination of flags and ENV options
 type Opts struct {
-	namePrefix                   string
-	providers                    sets.String
-	controlPlaneReadyWaitTimeout time.Duration
-	deleteClusterAfterTests      bool
-	kubeconfigPath               string
-	nodeCount                    int
-	nodeReadyWaitTimeout         time.Duration
-	PublicKeys                   [][]byte
-	reportsRoot                  string
-	clusterLister                kubermaticv1lister.ClusterLister
-	kubermaticClient             kubermaticclientset.Interface
-	kubeClient                   kubernetes.Interface
-	clusterClientProvider        *clusterclient.Provider
-	dcFile                       string
-	repoRoot                     string
-	dcs                          map[string]provider.DatacenterMeta
-	cleanupOnStart               bool
-	clusterParallelCount         int
-	workerName                   string
-	HomeDir                      string
-	log                          *logrus.Entry
+	namePrefix                     string
+	providers                      sets.String
+	controlPlaneReadyWaitTimeout   time.Duration
+	deleteClusterAfterTests        bool
+	kubeconfigPath                 string
+	nodeCount                      int
+	nodeReadyWaitTimeout           time.Duration
+	PublicKeys                     [][]byte
+	reportsRoot                    string
+	clusterLister                  kubermaticv1lister.ClusterLister
+	kubermaticClient               kubermaticclientset.Interface
+	kubeClient                     kubernetes.Interface
+	clusterClientProvider          *clusterclient.Provider
+	dcFile                         string
+	repoRoot                       string
+	dcs                            map[string]provider.DatacenterMeta
+	cleanupOnStart                 bool
+	clusterParallelCount           int
+	workerName                     string
+	HomeDir                        string
+	runKubermaticControllerManager bool
+	log                            *logrus.Entry
 
 	secrets secrets
 }
@@ -145,6 +147,7 @@ func main() {
 	flag.BoolVar(&debug, "debug", true, "Enable debug logs")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
 	flag.StringVar(&opts.workerName, "worker-name", "", "name of the worker, if set the 'worker-name' label will be set on all clusters")
+	flag.BoolVar(&opts.runKubermaticControllerManager, "run-kubermatic-controller-manager", true, "should the runner run the controller-manager")
 
 	flag.StringVar(&opts.secrets.AWS.AccessKeyID, "aws-access-key-id", "", "AWS: AccessKeyID")
 	flag.StringVar(&opts.secrets.AWS.SecretAccessKey, "aws-secret-access-key", "", "AWS: SecretAccessKey")
@@ -203,6 +206,28 @@ func main() {
 
 	stopCh := kubermaticsignals.SetupSignalHandler()
 	rootCtx, rootCancel := context.WithCancel(context.Background())
+
+	if opts.runKubermaticControllerManager {
+		controllerManagerEnviron := os.Environ()
+		if opts.workerName != "" {
+			controllerManagerEnviron = append(controllerManagerEnviron, fmt.Sprintf("KUBERMATIC_WORKERNAME=%s", opts.workerName))
+		}
+		out, err := exec.Command("go", "env", "GOPATH").CombinedOutput()
+		if err != nil {
+			log.Fatalf("failed to execute command `go env GOPATH`: out=%s, err=%v", string(out), err)
+		}
+		gopath := strings.Replace(string(out), "\n", "", -1)
+		command := exec.CommandContext(rootCtx, path.Join(gopath, "src/github.com/kubermatic/kubermatic/api/hack/run-controller.sh"))
+		command.Env = controllerManagerEnviron
+		go func() {
+			if out, err := command.CombinedOutput(); err != nil {
+				if rootCtx.Err() == context.Canceled {
+					return
+				}
+				log.Fatalf("failed to run controller-manager: Output:\n---%s\n---\nerr=%v", string(out), err)
+			}
+		}()
+	}
 
 	go func() {
 		select {
