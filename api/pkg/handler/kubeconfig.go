@@ -40,11 +40,11 @@ func getClusterKubeconfig(projectProvider provider.ProjectProvider) endpoint.End
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		adminClientCfg, err :=  clusterProvider.GetAdminKubeconfigForCustomerCluster(cluster)
+		adminClientCfg, err := clusterProvider.GetAdminKubeconfigForCustomerCluster(cluster)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-		return &encodeKubeConifgResponse{clientCfg:adminClientCfg, filePrefix: "admin"}, nil
+		return &encodeKubeConifgResponse{clientCfg: adminClientCfg, filePrefix: "admin"}, nil
 	}
 }
 
