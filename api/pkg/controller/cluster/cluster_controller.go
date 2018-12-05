@@ -7,11 +7,13 @@ import (
 	"github.com/golang/glog"
 
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
+	kubermaticscheme "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -25,13 +27,16 @@ import (
 	policyv1beta1informers "k8s.io/client-go/informers/policy/v1beta1"
 	rbacv1informer "k8s.io/client-go/informers/rbac/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	admissionregistrationclientset "k8s.io/client-go/kubernetes/typed/admissionregistration/v1beta1"
+	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	appsv1lister "k8s.io/client-go/listers/apps/v1"
 	batchv1beta1lister "k8s.io/client-go/listers/batch/v1beta1"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	extensionsv1beta1lister "k8s.io/client-go/listers/extensions/v1beta1"
 	policyv1beta1lister "k8s.io/client-go/listers/policy/v1beta1"
 	rbacb1lister "k8s.io/client-go/listers/rbac/v1"
+	"k8s.io/client-go/tools/record"
 	aggregationclientset "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 
 	"k8s.io/client-go/tools/cache"
@@ -61,7 +66,8 @@ type Controller struct {
 	dc          string
 	cps         map[string]provider.CloudProvider
 
-	queue workqueue.RateLimitingInterface
+	queue    workqueue.RateLimitingInterface
+	recorder record.EventRecorder
 
 	overwriteRegistry                                string
 	nodePortRange                                    string
@@ -133,12 +139,18 @@ func NewController(
 	oidcCAFile string,
 	oidcIssuerURL string,
 	oidcIssuerClientID string) (*Controller, error) {
+	kubermaticscheme.AddToScheme(scheme.Scheme)
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartLogging(glog.V(4).Infof)
+	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
+
 	cc := &Controller{
 		kubermaticClient:        kubermaticClient,
 		kubeClient:              kubeClient,
 		userClusterConnProvider: userClusterConnProvider,
 
-		queue: workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute), "cluster"),
+		queue:    workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute), "cluster"),
+		recorder: eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: "cluster-controller"}),
 
 		overwriteRegistry:                      overwriteRegistry,
 		nodePortRange:                          nodePortRange,
@@ -432,7 +444,12 @@ func (cc *Controller) processNextItem() bool {
 	defer cc.queue.Done(key)
 
 	if err := cc.syncCluster(key.(string)); err != nil {
-		glog.V(0).Infof("Error syncing %v: %v", key, err)
+		cluster, errGetCluster := cc.clusterLister.Get(key.(string))
+		if errGetCluster != nil {
+			glog.V(4).Infof("Error getting cluster %s from lister: %v", key, errGetCluster)
+		} else {
+			cc.recorder.Eventf(cluster, corev1.EventTypeWarning, "ErrorSyncing", err.Error())
+		}
 
 		// Re-enqueue the key rate limited. Based on the rate limiter on the
 		// queue and the re-enqueue history, the key will be processed later again.
