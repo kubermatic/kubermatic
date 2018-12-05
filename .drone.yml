@@ -9,12 +9,12 @@ pipeline:
     commands:
     - cd api
     - make gofmt
-    image: golang:1.11.0
+    image: quay.io/kubermatic/go-111-docker:11.2-1806-0
   verify-codegen:
     commands:
     - cd api
     - ./hack/verify-codegen.sh
-    image: golang:1.11.0
+    image: quay.io/kubermatic/go-111-docker:11.2-1806-0
     pull: true
   license-validation:
     commands:
@@ -42,21 +42,21 @@ pipeline:
     - cd api
     - ./hack/verify-swagger.sh
     group: lint
-    image: golang:1.11.0
+    image: quay.io/kubermatic/go-111-docker:11.2-1806-0
     pull: true
   build:
     commands:
     - cd api
     - make build
     group: build
-    image: golang:1.11.0
+    image: quay.io/kubermatic/go-111-docker:11.2-1806-0
     pull: true
   test:
     commands:
     - cd api
     - make test
     group: build
-    image: golang:1.11.0
+    image: quay.io/kubermatic/go-111-docker:11.2-1806-0
     pull: true
   docker:
     commands:
@@ -153,7 +153,7 @@ pipeline:
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
-    image: kubeciio/helm
+    image: quay.io/kubermatic/helm:2.11.0-2
     pull: true
     secrets:
     - source: kubeconfig_cloud
@@ -220,7 +220,7 @@ pipeline:
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
-    image: kubeciio/helm
+    image: quay.io/kubermatic/helm:2.11.0-2
     pull: true
     secrets:
     - source: kubeconfig_cloud
@@ -270,7 +270,7 @@ pipeline:
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
-    image: kubeciio/helm
+    image: quay.io/kubermatic/helm:2.11.0-2
     pull: true
     secrets:
     - source: kubeconfig_cloud
@@ -336,7 +336,7 @@ pipeline:
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
-    image: kubeciio/helm
+    image: quay.io/kubermatic/helm:2.11.0-2
     pull: true
     secrets:
     - source: kubeconfig_run
@@ -378,6 +378,7 @@ pipeline:
     - xmudrii=marko
     - maciaszczykm=marcin
     - floreks=sebastian.florek
+    - lindtdev=irina
     group: slack
     icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
     image: kubermaticbot/drone-slack
