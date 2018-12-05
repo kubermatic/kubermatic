@@ -32,3 +32,13 @@ updates:
 - from: 1.10.*
   to: ^1.11.5
   automatic: false
+
+# ======= 1.11 =======
+# CVE-2018-1002105
+- from: <=1.11.4
+  to: 1.11.5
+  automatic: true
+# Allow to change to any patch version
+- from: 1.11.*
+  to: ^1.11.5
+  automatic: false
