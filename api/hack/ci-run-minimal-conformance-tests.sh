@@ -24,7 +24,7 @@ function cleanup {
   set +e
   export KUBECONFIG="$(go env GOPATH)/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig"
   # Delete all clusters that have our worker-name label
-  kubectl delete cluster -l worker-name=$BUILD_ID
+  kubectl delete cluster -l worker-name=$BUILD_ID --wait=false
 
   # Remove the worker-name label from all clusters that have our worker-name
   # label so the main cluster-controller will clean them up
