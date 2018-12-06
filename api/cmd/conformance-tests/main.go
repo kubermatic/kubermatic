@@ -159,7 +159,7 @@ func main() {
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
 	flag.StringVar(&opts.workerName, "worker-name", "", "name of the worker, if set the 'worker-name' label will be set on all clusters")
 	flag.BoolVar(&opts.runKubermaticControllerManager, "run-kubermatic-controller-manager", true, "should the runner run the controller-manager")
-	flag.StringVar(&opts.excludeKubernetesVersions, "exclude-kubernetes-versions", "", "a comma-seperated list of minor kubernetes versions that will get excluded from the tests, by default 1.9 - 1.12 are tested")
+	flag.StringVar(&opts.excludeKubernetesVersions, "exclude-kubernetes-versions", "", "a comma-separated list of minor kubernetes versions that will get excluded from the tests, by default 1.9 - 1.12 are tested")
 	flag.StringVar(&opts.excludeSelectorRaw, "exclude-distributions", "", "a comma-separated list of distributions that will get excluded from the tests")
 
 	flag.StringVar(&opts.secrets.AWS.AccessKeyID, "aws-access-key-id", "", "AWS: AccessKeyID")
