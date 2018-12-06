@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -39,9 +40,9 @@ import (
 )
 
 var supportedVersions = []*semver.Semver{
-	//	semver.NewSemverOrDie("v1.9.10"),
-	//	semver.NewSemverOrDie("v1.10.8"),
-	//	semver.NewSemverOrDie("v1.11.3"),
+	semver.NewSemverOrDie("v1.9.10"),
+	semver.NewSemverOrDie("v1.10.8"),
+	semver.NewSemverOrDie("v1.11.3"),
 	semver.NewSemverOrDie("v1.12.1"),
 }
 
@@ -68,6 +69,7 @@ type Opts struct {
 	workerName                     string
 	HomeDir                        string
 	runKubermaticControllerManager bool
+	excludeKubernetesVersions      string
 	log                            *logrus.Entry
 
 	secrets secrets
@@ -148,6 +150,7 @@ func main() {
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
 	flag.StringVar(&opts.workerName, "worker-name", "", "name of the worker, if set the 'worker-name' label will be set on all clusters")
 	flag.BoolVar(&opts.runKubermaticControllerManager, "run-kubermatic-controller-manager", true, "should the runner run the controller-manager")
+	flag.StringVar(&opts.excludeKubernetesVersions, "exclude-kubernetes-versions", "", "a comma-seperated list of minor kubernetes versions that will get exlcuded from the tests, by default 1.9 - 1.12 are tested")
 
 	flag.StringVar(&opts.secrets.AWS.AccessKeyID, "aws-access-key-id", "", "AWS: AccessKeyID")
 	flag.StringVar(&opts.secrets.AWS.SecretAccessKey, "aws-secret-access-key", "", "AWS: SecretAccessKey")
@@ -175,6 +178,26 @@ func main() {
 
 	if debug {
 		mainLog.SetLevel(logrus.DebugLevel)
+	}
+
+	if opts.excludeKubernetesVersions != "" {
+		excludedKubernetesVersions := strings.Split(opts.excludeKubernetesVersions, ",")
+		var newSupportedVersions []*semver.Semver
+	outer:
+		for _, supportedVersion := range supportedVersions {
+			for _, excludedKubernetesVersion := range excludedKubernetesVersions {
+				val, err := strconv.Atoi(excludedKubernetesVersion)
+				if err != nil {
+					mainLog.Fatalf("excluded kubernetes version '%s' cant not be parsed as an int: %v", excludedKubernetesVersion, err)
+				}
+				if supportedVersion.Minor() == int64(val) {
+					continue outer
+				}
+			}
+			mainLog.Infof("Adding %d as supported version", supportedVersion.Minor())
+			newSupportedVersions = append(newSupportedVersions, supportedVersion)
+		}
+		supportedVersions = newSupportedVersions
 	}
 
 	fields := logrus.Fields{}
