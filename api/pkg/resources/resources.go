@@ -194,10 +194,6 @@ const (
 	// IPAMControllerDeploymentName is the name of the ipam controller's deployment
 	IPAMControllerDeploymentName = "ipam-controller"
 
-	// IPAMControllerRoleName is the name for the IPAMController roles
-	IPAMControllerRoleName = "ipam-controller"
-	// IPAMControllerRoleBindingName is the name for the IPAMController rolebinding
-	IPAMControllerRoleBindingName = "ipam-controller"
 	// IPAMControllerClusterRoleName is the name for the IPAMController cluster role
 	IPAMControllerClusterRoleName = "system:kubermatic-ipam-controller"
 	// IPAMControllerClusterRoleBindingName is the name for the IPAMController clusterrolebinding

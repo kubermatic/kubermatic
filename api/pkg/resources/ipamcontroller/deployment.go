@@ -39,7 +39,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	dep.Labels = resources.BaseAppLabel(resources.IPAMControllerDeploymentName, nil)
 
-	dep.Spec.Replicas = resources.Int32(3)
+	dep.Spec.Replicas = resources.Int32(1)
 	dep.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
 			resources.AppLabelKey: resources.IPAMControllerDeploymentName,
@@ -65,8 +65,9 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 
 	kcDir := "/etc/kubernetes/ipamcontroller"
 	flags := []string{
-		"--kubeconfig", fmt.Sprintf("%s/%s", kcDir, resources.IPAMControllerKubeconfigSecretName),
+		"--kubeconfig", fmt.Sprintf("%s/kubeconfig", kcDir),
 		"-v", "4",
+		"-logtostderr",
 	}
 
 	flags = append(flags, getNetworkArgs(data)...)
@@ -93,12 +94,14 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 
 	dep.Spec.Template.Spec.Containers = []corev1.Container{
 		{
-			Name:            resources.IPAMControllerDeploymentName,
-			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command:         []string{"/usr/local/bin/ipam-controller"},
-			Args:            flags,
-			Resources:       defaultResourceRequirements,
+			Name:                     resources.IPAMControllerDeploymentName,
+			Image:                    data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
+			ImagePullPolicy:          corev1.PullIfNotPresent,
+			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+			Command:                  []string{"/usr/local/bin/ipam-controller"},
+			Args:                     flags,
+			Resources:                defaultResourceRequirements,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      resources.IPAMControllerKubeconfigSecretName,

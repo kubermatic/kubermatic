@@ -114,6 +114,7 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 	cluster.Status.NamespaceName = "test-ns"
 	cluster.Address.IP = "1.2.3.4"
 	cluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
+	cluster.Spec.MachineNetworks = []kubermaticv1.MachineNetworkingConfig{{CIDR: "10.11.11.0/24", Gateway: "10.11.11.1", DNSServers: []string{"10.11.11.2"}}}
 	dc := &provider.DatacenterMeta{}
 
 	keyPair, err := triple.NewCA("test-ca")
@@ -199,7 +200,7 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 
 	templateData := resources.NewTemplateData(cluster, dc, "", secretLister, nil, serviceLister, "", "", "", resource.Quantity{}, "", "", false, false, "", nil, file.Name(), "", "")
 
-	for _, op := range GetSecretCreatorOperations([]byte{}) {
+	for _, op := range GetSecretCreatorOperations(cluster, []byte{}) {
 		existing := &corev1.Secret{
 			Data: map[string][]byte{"Test": []byte("Data")},
 		}
