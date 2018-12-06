@@ -100,19 +100,19 @@ func (vm *azureVM) Status() instance.Status {
 }
 
 var imageReferences = map[providerconfig.OperatingSystem]compute.ImageReference{
-	providerconfig.OperatingSystemCoreos: compute.ImageReference{
+	providerconfig.OperatingSystemCoreos: {
 		Publisher: to.StringPtr("CoreOS"),
 		Offer:     to.StringPtr("CoreOS"),
 		Sku:       to.StringPtr("Stable"),
 		Version:   to.StringPtr("latest"),
 	},
-	providerconfig.OperatingSystemCentOS: compute.ImageReference{
+	providerconfig.OperatingSystemCentOS: {
 		Publisher: to.StringPtr("OpenLogic"),
 		Offer:     to.StringPtr("CentOS"),
 		Sku:       to.StringPtr("7-CI"), // https://docs.microsoft.com/en-us/azure/virtual-machines/linux/using-cloud-init
 		Version:   to.StringPtr("latest"),
 	},
-	providerconfig.OperatingSystemUbuntu: compute.ImageReference{
+	providerconfig.OperatingSystemUbuntu: {
 		Publisher: to.StringPtr("Canonical"),
 		Offer:     to.StringPtr("UbuntuServer"),
 		// FIXME We'd like to use Ubuntu 18.04 eventually, but the docker's release
@@ -513,7 +513,7 @@ func (p *provider) Cleanup(machine *v1alpha1.Machine, data *cloud.MachineCreateD
 	if err = deleteIPAddressesByMachineUID(context.TODO(), config, machine.UID); err != nil {
 		return false, fmt.Errorf("failed to remove public IP addresses of machine %q: %v", machine.Name, err)
 	}
-	if machine, err = data.Updater(machine, func(updatedMachine *v1alpha1.Machine) {
+	if _, err = data.Updater(machine, func(updatedMachine *v1alpha1.Machine) {
 		updatedMachine.Finalizers = kuberneteshelper.RemoveFinalizer(updatedMachine.Finalizers, finalizerPublicIP)
 	}); err != nil {
 		return false, err
@@ -719,7 +719,7 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 	}
 
 	_, err = getOSImageReference(providerCfg.OperatingSystem)
-	return nil
+	return err
 }
 
 func (p *provider) MigrateUID(machine *v1alpha1.Machine, new types.UID) error {

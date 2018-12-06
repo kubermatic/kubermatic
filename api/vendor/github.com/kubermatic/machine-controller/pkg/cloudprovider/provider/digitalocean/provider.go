@@ -399,7 +399,7 @@ func (p *provider) MigrateUID(machine *v1alpha1.Machine, new types.UID) error {
 		return fmt.Errorf("failed to list droplets: %v", err)
 	}
 
-	// The create does not fail if that tag already exists, it even keep responsing with a http/201
+	// The create does not fail if that tag already exists, it even keep responding with a http/201
 	_, response, err := client.Tags.Create(ctx, &godo.TagCreateRequest{Name: string(new)})
 	if err != nil {
 		return fmt.Errorf("failed to create new UID tag: %v, status code: %v", err, response.StatusCode)

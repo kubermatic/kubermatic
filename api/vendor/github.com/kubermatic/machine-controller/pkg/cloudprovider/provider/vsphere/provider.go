@@ -533,6 +533,9 @@ func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 	}
 
 	isGuestToolsRunning, err := virtualMachine.IsToolsRunning(context.TODO())
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if guest utils are running: %v", err)
+	}
 	addresses := []string{}
 	if isGuestToolsRunning {
 		var moVirtualMachine mo.VirtualMachine

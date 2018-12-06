@@ -58,7 +58,7 @@ type RawConfig struct {
 	FloatingIPPool   providerconfig.ConfigVarString   `json:"floatingIpPool"`
 	AvailabilityZone providerconfig.ConfigVarString   `json:"availabilityZone"`
 	// This tag is related to server metadata, not compute server's tag
-	Tags             map[string]string                `json:"tags"`
+	Tags map[string]string `json:"tags"`
 }
 
 type Config struct {
@@ -122,9 +122,9 @@ func (p *provider) getConfig(s v1alpha1.ProviderConfig) (*Config, *providerconfi
 	}
 	// Ignore Region not found as Region might not be found and we can default it later
 	c.Region, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Region, "OS_REGION_NAME")
-        if err != nil {
+	if err != nil {
 		glog.V(6).Infof("Region from configuration or environment variable not found")
-        }
+	}
 
 	// We ignore errors here because the OS domain is only required when using Identity API V3
 	c.DomainName, _ = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.DomainName, "OS_DOMAIN_NAME")
