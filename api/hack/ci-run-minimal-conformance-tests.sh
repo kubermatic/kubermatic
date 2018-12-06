@@ -6,6 +6,8 @@ export BUILD_ID=${BUILD_ID:-BUILD_ID_UNDEF}
 
 cd $(dirname $0)/..
 
+sleep 5d
+
 cd $(go env GOPATH)/src/github.com/kubermatic/secrets
 echo $KUBERMATIC_SECRETS_GPG_KEY_BASE64 | base64 -d > /git-crypt-key
 git-crypt unlock /git-crypt-key
