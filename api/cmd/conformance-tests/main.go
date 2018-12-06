@@ -269,13 +269,13 @@ func main() {
 			log.Fatalf("failed to execute command `go env GOPATH`: out=%s, err=%v", string(out), err)
 		}
 		gopath := strings.Replace(string(out), "\n", "", -1)
-		command := exec.CommandContext(rootCtx, path.Join(gopath, "src/github.com/kubermatic/kubermatic/api/hack/run-controller.sh"))
+		// We deliberately do not use `CommandContext` here because we expect this to be executed inside a container
+		// and we want the controller to run at least as long as the conformance tester and _not_ to be killed
+		// because the context for the latter got canceled, because otherwise we don't have cleanup
+		command := exec.Command(path.Join(gopath, "src/github.com/kubermatic/kubermatic/api/hack/run-controller.sh"))
 		command.Env = controllerManagerEnviron
 		go func() {
 			if out, err := command.CombinedOutput(); err != nil {
-				if rootCtx.Err() == context.Canceled {
-					return
-				}
 				log.Fatalf("failed to run controller-manager: Output:\n---%s\n---\nerr=%v", string(out), err)
 			}
 		}()
