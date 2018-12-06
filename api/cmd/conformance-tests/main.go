@@ -31,6 +31,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	kubermaticsignals "github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -38,6 +39,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
+
+//TODO: Move Kubernetes versions into this as well
+type excludeSelector struct {
+	// The value in this map is never used, we use the keys only to have a simple set mechanism
+	Distributions map[providerconfig.OperatingSystem]bool
+}
 
 var supportedVersions = []*semver.Semver{
 	semver.NewSemverOrDie("v1.9.10"),
@@ -71,6 +78,8 @@ type Opts struct {
 	runKubermaticControllerManager bool
 	excludeKubernetesVersions      string
 	log                            *logrus.Entry
+	excludeSelector                excludeSelector
+	excludeSelectorRaw             string
 
 	secrets secrets
 }
@@ -150,7 +159,8 @@ func main() {
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
 	flag.StringVar(&opts.workerName, "worker-name", "", "name of the worker, if set the 'worker-name' label will be set on all clusters")
 	flag.BoolVar(&opts.runKubermaticControllerManager, "run-kubermatic-controller-manager", true, "should the runner run the controller-manager")
-	flag.StringVar(&opts.excludeKubernetesVersions, "exclude-kubernetes-versions", "", "a comma-seperated list of minor kubernetes versions that will get exlcuded from the tests, by default 1.9 - 1.12 are tested")
+	flag.StringVar(&opts.excludeKubernetesVersions, "exclude-kubernetes-versions", "", "a comma-seperated list of minor kubernetes versions that will get excluded from the tests, by default 1.9 - 1.12 are tested")
+	flag.StringVar(&opts.excludeSelectorRaw, "exclude-distributions", "", "a comma-separated list of distributions that will get excluded from the tests")
 
 	flag.StringVar(&opts.secrets.AWS.AccessKeyID, "aws-access-key-id", "", "AWS: AccessKeyID")
 	flag.StringVar(&opts.secrets.AWS.SecretAccessKey, "aws-secret-access-key", "", "AWS: SecretAccessKey")
@@ -178,6 +188,25 @@ func main() {
 
 	if debug {
 		mainLog.SetLevel(logrus.DebugLevel)
+	}
+
+	if opts.excludeSelectorRaw != "" {
+		excludedDistributions := strings.Split(opts.excludeSelectorRaw, ",")
+		if opts.excludeSelector.Distributions == nil {
+			opts.excludeSelector.Distributions = map[providerconfig.OperatingSystem]bool{}
+		}
+		for _, excludedDistribution := range excludedDistributions {
+			switch excludedDistribution {
+			case "ubuntu":
+				opts.excludeSelector.Distributions[providerconfig.OperatingSystemUbuntu] = true
+			case "centos":
+				opts.excludeSelector.Distributions[providerconfig.OperatingSystemCentOS] = true
+			case "coreos":
+				opts.excludeSelector.Distributions[providerconfig.OperatingSystemCoreos] = true
+			default:
+				mainLog.Fatalf("Unknown distribution '%s' in '-exclude-distributions' param", excludedDistribution)
+			}
+		}
 	}
 
 	if opts.excludeKubernetesVersions != "" {
@@ -323,7 +352,7 @@ func main() {
 	var scenarios []testScenario
 	if opts.providers.Has("aws") {
 		log.Info("Adding AWS scenarios")
-		scenarios = append(scenarios, getAWSScenarios()...)
+		scenarios = append(scenarios, getAWSScenarios(opts.excludeSelector)...)
 	}
 	if opts.providers.Has("digitalocean") {
 		log.Info("Adding Digitalocean scenarios")
