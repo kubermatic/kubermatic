@@ -192,8 +192,8 @@ type SecretOperation struct {
 }
 
 // GetSecretCreatorOperations returns all SecretCreators that are currently in use
-func GetSecretCreatorOperations(dockerPullConfigJSON []byte) []SecretOperation {
-	return []SecretOperation{
+func GetSecretCreatorOperations(c *kubermaticv1.Cluster, dockerPullConfigJSON []byte) []SecretOperation {
+	secrets := []SecretOperation{
 		{resources.CASecretName, certificates.RootCA},
 		{resources.FrontProxyCASecretName, certificates.FrontProxyCA},
 		{resources.ImagePullSecretName, resources.ImagePullSecretCreator(resources.ImagePullSecretName, dockerPullConfigJSON)},
@@ -217,10 +217,14 @@ func GetSecretCreatorOperations(dockerPullConfigJSON []byte) []SecretOperation {
 		{resources.MachineControllerWebhookServingCertSecretName, machinecontroller.TLSServingCertificate},
 		{resources.MetricsServerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil)},
 	}
+	if len(c.Spec.MachineNetworks) > 0 {
+		secrets = append(secrets, SecretOperation{resources.IPAMControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.IPAMControllerKubeconfigSecretName, resources.IPAMControllerCertUsername, nil)})
+	}
+	return secrets
 }
 
 func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	operations := GetSecretCreatorOperations(cc.dockerPullConfigJSON)
+	operations := GetSecretCreatorOperations(c, cc.dockerPullConfigJSON)
 
 	for _, op := range operations {
 		if err := resources.EnsureSecret(op.name, data, op.create, cc.secretLister.Secrets(c.Status.NamespaceName), cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName)); err != nil {

@@ -73,6 +73,10 @@ func validateMachineNetworksFromClusterSpec(spec *kubermaticv1.ClusterSpec) erro
 		return errors.New("cant specify machinenetworks on kubernetes <= 1.9.0")
 	}
 
+	if len(networks) > 0 && spec.Cloud.VSphere == nil {
+		return errors.New("machineNetworks are only supported with the vSphere provider")
+	}
+
 	for _, network := range networks {
 		_, _, err := net.ParseCIDR(network.CIDR)
 		if err != nil {
