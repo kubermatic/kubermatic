@@ -122,10 +122,6 @@ required = [
   name = "github.com/kubermatic/machine-controller"
   version = "v0.10.5"
 
-#[[override]]
-#  name = "sigs.k8s.io/cluster-api"
-#  revision = "05cb1e663eb4085fbb92321dd1235377c84567f8"
-
 [[constraint]]
   name = "github.com/prometheus/client_golang"
   branch = "master"
