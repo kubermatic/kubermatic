@@ -17,9 +17,12 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/tools/cache"
 )
 
 const (
@@ -266,8 +269,15 @@ func GetStatefulSetCreators() []resources.StatefulSetCreator {
 func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetStatefulSetCreators()
 
+	informer, err := cc.dynamicCache.GetInformer(&appsv1.StatefulSet{})
+	if err != nil {
+		return fmt.Errorf("failed to get StatefulSet informer: %v", err)
+	}
+	store := informer.GetStore()
+	cache.WaitForCacheSync(wait.NeverStop, informer.GetController().HasSynced)
+
 	for _, create := range creators {
-		if err := resources.EnsureStatefulSet(data, create, cc.statefulSetLister.StatefulSets(c.Status.NamespaceName), cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName)); err != nil {
+		if err := resources.EnsureObject(data, c.Status.NamespaceName, resources.StatefulSetObjectWrapper(create), store, cc.dynamicClient); err != nil {
 			return fmt.Errorf("failed to ensure that the StatefulSet exists: %v", err)
 		}
 	}

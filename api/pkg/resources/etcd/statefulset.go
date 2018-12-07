@@ -37,7 +37,7 @@ const (
 )
 
 // StatefulSet returns the etcd StatefulSet
-func StatefulSet(data resources.StatefulSetDataProvider, existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 	set := existing
 	if set == nil {
 		set = &appsv1.StatefulSet{}

@@ -2,6 +2,7 @@ package resources
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"hash/crc32"
 	"sort"
@@ -14,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	appsv1client "k8s.io/client-go/kubernetes/typed/apps/v1"
 	batchv1beta1client "k8s.io/client-go/kubernetes/typed/batch/v1beta1"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -24,6 +26,9 @@ import (
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	policyv1beta1lister "k8s.io/client-go/listers/policy/v1beta1"
 	rbacv1lister "k8s.io/client-go/listers/rbac/v1"
+	"k8s.io/client-go/tools/cache"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -218,7 +223,7 @@ func EnsureCronJob(data *TemplateData, create CronJobCreator, cronJobLister batc
 
 // EnsureStatefulSet will create the StatefulSet with the passed create function & create or update it if necessary.
 // To check if it's necessary it will do a lookup of the resource at the lister & compare the existing StatefulSet with the created one
-func EnsureStatefulSet(data StatefulSetDataProvider, create StatefulSetCreator, lister appsv1lister.StatefulSetNamespaceLister, client appsv1client.StatefulSetInterface) error {
+func EnsureStatefulSet(data *TemplateData, create StatefulSetCreator, lister appsv1lister.StatefulSetNamespaceLister, client appsv1client.StatefulSetInterface) error {
 	var existing *appsv1.StatefulSet
 	statefulSet, err := create(data, nil)
 	if err != nil {
@@ -498,4 +503,57 @@ func getChecksumForStringSlice(stringSlice []string) string {
 		buffer.WriteString(item)
 	}
 	return fmt.Sprintf("%v", crc32.ChecksumIEEE(buffer.Bytes()))
+}
+
+// EnsureObject will generate the Object with the passed create function & create or update it in Kubernetes if necessary.
+func EnsureObject(data *TemplateData, namespace string, create ObjectCreator, store cache.Store, client ctrlruntimeclient.Client) error {
+	ctx := context.Background()
+
+	obj, err := create(data, nil)
+	if err != nil {
+		return fmt.Errorf("failed to build Object(%T): %v", obj, err)
+	}
+	obj.(metav1.Object).SetNamespace(namespace)
+
+	key, err := cache.MetaNamespaceKeyFunc(obj)
+	if err != nil {
+		return fmt.Errorf("failed to get key for Object(%T): %v", obj, err)
+	}
+
+	iobj, exists, err := store.GetByKey(key)
+	if err != nil {
+		return err
+	}
+
+	// Object does not exist in lister -> Create the Object
+	if !exists {
+		if err := client.Create(ctx, obj); err != nil {
+			return fmt.Errorf("failed to create %T '%s': %v", obj, key, err)
+		}
+		return nil
+	}
+
+	// Object does exist in lister -> Update it
+	existing, ok := iobj.(runtime.Object)
+	if !ok {
+		return fmt.Errorf("failed case Object from lister to metav1.Object. Object is %T", iobj)
+	}
+
+	// Create a copy to ensure we don't modify any lister state
+	existing = existing.DeepCopyObject()
+
+	obj, err = create(data, existing)
+	if err != nil {
+		return fmt.Errorf("failed to build Object(%T) '%s': %v", existing, key, err)
+	}
+
+	if DeepEqual(obj.(metav1.Object), existing.(metav1.Object)) {
+		return nil
+	}
+
+	if err = client.Update(ctx, obj); err != nil {
+		return fmt.Errorf("failed to update object %T '%s': %v", obj, key, err)
+	}
+
+	return nil
 }

@@ -44,6 +44,8 @@ import (
 	"k8s.io/client-go/util/workqueue"
 
 	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
+	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // userClusterConnectionProvider offers functions to retrieve clients for the given user clusters
@@ -57,9 +59,11 @@ type userClusterConnectionProvider interface {
 
 // Controller is a controller which is responsible for managing clusters
 type Controller struct {
-	kubermaticClient        kubermaticclientset.Interface
 	kubeClient              kubernetes.Interface
+	dynamicClient           ctrlruntimeclient.Client
+	kubermaticClient        kubermaticclientset.Interface
 	userClusterConnProvider userClusterConnectionProvider
+	dynamicCache            ctrlruntimecache.Cache
 
 	externalURL string
 	dcs         map[string]provider.DatacenterMeta
@@ -104,6 +108,7 @@ type Controller struct {
 // NewController creates a cluster controller.
 func NewController(
 	kubeClient kubernetes.Interface,
+	dynamicClient ctrlruntimeclient.Client,
 	kubermaticClient kubermaticclientset.Interface,
 	externalURL string,
 	dc string,
@@ -121,6 +126,7 @@ func NewController(
 	inClusterPrometheusScrapingConfigsFile string,
 	dockerPullConfigJSON []byte,
 
+	dynamicCache ctrlruntimecache.Cache,
 	clusterInformer kubermaticv1informers.ClusterInformer,
 	namespaceInformer corev1informers.NamespaceInformer,
 	secretInformer corev1informers.SecretInformer,
@@ -145,9 +151,11 @@ func NewController(
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
 
 	cc := &Controller{
-		kubermaticClient:        kubermaticClient,
 		kubeClient:              kubeClient,
+		dynamicClient:           dynamicClient,
+		kubermaticClient:        kubermaticClient,
 		userClusterConnProvider: userClusterConnProvider,
+		dynamicCache:            dynamicCache,
 
 		queue:    workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute), "cluster"),
 		recorder: eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: "cluster-controller"}),
