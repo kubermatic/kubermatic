@@ -2,7 +2,6 @@ package ipam
 
 import (
 	"net"
-	"os/exec"
 	"strings"
 	"testing"
 	"time"
@@ -25,163 +24,145 @@ type machineTestData struct {
 	machine *clusterv1alpha1.Machine
 }
 
-// TestIPAMController is a wrapper around all IPAM controller tests
-// that setups a custom fake client within the vendor dir and clears
-// it up after the tests. This is required because the cluster-api
-// clientset has a bug that results in the listers not getting updates
-// This issue got fixed in client-go 1.10 (kubernetes/kubernetes#57504)
-// but not in client-go 1.9 which they use
-//go:generate ./testdata/gen-clusterapi-client.sh
-func TestIPAMController(t *testing.T) {
-	for name, testCase := range testCases {
-		t.Run(name, testCase)
+func TestSingleCIDRAllocation(t *testing.T) {
+	t.Parallel()
+
+	nets := []Network{buildNet(t, "192.168.0.0/16", "192.168.0.1", "8.8.8.8")}
+
+	m := createMachine("susi")
+	ctrl, stop := newTestController(nets, m)
+	defer close(stop)
+
+	err := ctrl.syncMachine(m)
+	if err != nil {
+		t.Errorf("error in machineAdded handler: %v", err)
 	}
-	if out, err := exec.Command("./testdata/cleanup-clusterapi-client.sh").CombinedOutput(); err != nil {
-		t.Fatalf("Failed to clean up clientset for testing: err=%v, out=\n%v", err, string(out))
+
+	m2, err := ctrl.client.ClusterV1alpha1().Machines(m.Namespace).Get("susi", metav1.GetOptions{})
+	if err != nil {
+		t.Errorf("couldn't retrieve updated machine, see: %v", err)
+	}
+
+	assertNetworkEquals(t, m2, "192.168.0.2/16", "192.168.0.1", "8.8.8.8")
+}
+
+func TestMultipleCIDRAllocation(t *testing.T) {
+	t.Parallel()
+
+	nets := []Network{
+		buildNet(t, "192.168.0.0/30", "192.168.0.1", "8.8.8.8"),
+		buildNet(t, "10.0.0.0/24", "10.0.0.1", "8.8.8.8"),
+	}
+
+	machines := []machineTestData{
+		{"192.168.0.2/30", "192.168.0.1", createMachine("susi")},
+		{"192.168.0.3/30", "192.168.0.1", createMachine("babsi")},
+		{"10.0.0.2/24", "10.0.0.1", createMachine("joan")},
+	}
+
+	machineValues := make([]runtime.Object, 0, len(machines))
+	for _, m := range machines {
+		machineValues = append(machineValues, m.machine)
+	}
+
+	ctrl, stop := newTestController(nets, machineValues...)
+	defer close(stop)
+
+	for _, tuple := range machines {
+		err := ctrl.syncMachine(tuple.machine)
+		if err != nil {
+			t.Errorf("error in machineAdded handler: %v", err)
+		}
+
+		m2, err := ctrl.client.ClusterV1alpha1().Machines(tuple.machine.Namespace).Get(tuple.machine.Name, metav1.GetOptions{})
+		if err != nil {
+			t.Errorf("couldn't retrieve updated machine, see: %v", err)
+		}
+
+		assertNetworkEquals(t, m2, tuple.ip, tuple.gw, "8.8.8.8")
 	}
 }
 
-var testCases = map[string]func(*testing.T){
-	"TestSingleCIDRAllocation": func(t *testing.T) {
-		t.Parallel()
+func TestReuseReleasedIP(t *testing.T) {
+	t.Parallel()
 
-		nets := []Network{buildNet(t, "192.168.0.0/16", "192.168.0.1", "8.8.8.8")}
+	nets := []Network{buildNet(t, "192.168.0.0/16", "192.168.0.1", "8.8.8.8")}
 
-		m := createMachine("susi")
-		ctrl, stop := newTestController(nets, m)
-		defer close(stop)
+	mSusi := createMachine("susi")
+	mBabsi := createMachine("babsi")
 
-		err := ctrl.syncMachine(m)
+	ctrl, stop := newTestController(nets, mSusi, mBabsi)
+	defer close(stop)
+
+	err := ctrl.syncMachine(mSusi)
+	if err != nil {
+		t.Errorf("error in machineAdded handler: %v", err)
+	}
+
+	mSusi2, err := ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Get("susi", metav1.GetOptions{})
+	if err != nil {
+		t.Errorf("couldn't retrieve updated machine, see: %v", err)
+	}
+
+	assertNetworkEquals(t, mSusi2, "192.168.0.2/16", "192.168.0.1", "8.8.8.8")
+
+	err = ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Delete("susi", &metav1.DeleteOptions{})
+	if err != nil {
+		t.Errorf("couldn't retrieve updated machine, see: %v", err)
+	}
+	err = wait.Poll(5*time.Millisecond, 5*time.Second, func() (bool, error) {
+		_, err = ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Get("susi", metav1.GetOptions{})
 		if err != nil {
-			t.Errorf("error in machineAdded handler: %v", err)
-		}
-
-		m2, err := ctrl.client.ClusterV1alpha1().Machines(m.Namespace).Get("susi", metav1.GetOptions{})
-		if err != nil {
-			t.Errorf("couldn't retrieve updated machine, see: %v", err)
-		}
-
-		assertNetworkEquals(t, m2, "192.168.0.2/16", "192.168.0.1", "8.8.8.8")
-	},
-
-	"TestMultipleCIDRAllocation": func(t *testing.T) {
-		t.Parallel()
-
-		nets := []Network{
-			buildNet(t, "192.168.0.0/30", "192.168.0.1", "8.8.8.8"),
-			buildNet(t, "10.0.0.0/24", "10.0.0.1", "8.8.8.8"),
-		}
-
-		machines := []machineTestData{
-			{"192.168.0.2/30", "192.168.0.1", createMachine("susi")},
-			{"192.168.0.3/30", "192.168.0.1", createMachine("babsi")},
-			{"10.0.0.2/24", "10.0.0.1", createMachine("joan")},
-		}
-
-		machineValues := make([]runtime.Object, 0, len(machines))
-		for _, m := range machines {
-			machineValues = append(machineValues, m.machine)
-		}
-
-		ctrl, stop := newTestController(nets, machineValues...)
-		defer close(stop)
-
-		for _, tuple := range machines {
-			err := ctrl.syncMachine(tuple.machine)
-			if err != nil {
-				t.Errorf("error in machineAdded handler: %v", err)
+			if k8serrors.IsNotFound(err) {
+				return true, nil
 			}
-
-			m2, err := ctrl.client.ClusterV1alpha1().Machines(tuple.machine.Namespace).Get(tuple.machine.Name, metav1.GetOptions{})
-			if err != nil {
-				t.Errorf("couldn't retrieve updated machine, see: %v", err)
-			}
-
-			assertNetworkEquals(t, m2, tuple.ip, tuple.gw, "8.8.8.8")
+			return false, err
 		}
-	},
+		return false, nil
+	})
+	if err != nil {
+		t.Errorf("failed waiting until lister received delete event on machine 'susi': %v", err)
+	}
 
-	"TestReuseReleasedIP": func(t *testing.T) {
-		t.Parallel()
+	err = ctrl.syncMachine(mBabsi)
+	if err != nil {
+		t.Errorf("error in machineAdded handler: %v", err)
+	}
 
-		nets := []Network{buildNet(t, "192.168.0.0/16", "192.168.0.1", "8.8.8.8")}
+	mBabsi2, err := ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Get("babsi", metav1.GetOptions{})
+	if err != nil {
+		t.Errorf("couldn't retrieve updated machine, see: %v", err)
+	}
 
-		mSusi := createMachine("susi")
-		mBabsi := createMachine("babsi")
+	assertNetworkEquals(t, mBabsi2, "192.168.0.2/16", "192.168.0.1", "8.8.8.8")
+}
 
-		ctrl, stop := newTestController(nets, mSusi, mBabsi)
-		defer close(stop)
+func TestFailWhenCIDRIsExhausted(t *testing.T) {
+	t.Parallel()
 
-		err := ctrl.syncMachine(mSusi)
-		if err != nil {
-			t.Errorf("error in machineAdded handler: %v", err)
-		}
+	nets := []Network{buildNet(t, "192.168.0.0/30", "192.168.0.1", "8.8.8.8")}
 
-		mSusi2, err := ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Get("susi", metav1.GetOptions{})
-		if err != nil {
-			t.Errorf("couldn't retrieve updated machine, see: %v", err)
-		}
+	mSusi := createMachine("susi")
+	mBabsi := createMachine("babsi")
+	mJoan := createMachine("joan")
 
-		assertNetworkEquals(t, mSusi2, "192.168.0.2/16", "192.168.0.1", "8.8.8.8")
+	ctrl, stop := newTestController(nets, mSusi, mBabsi, mJoan)
+	defer close(stop)
 
-		err = ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Delete("susi", &metav1.DeleteOptions{})
-		if err != nil {
-			t.Errorf("couldn't retrieve updated machine, see: %v", err)
-		}
-		err = wait.Poll(5*time.Millisecond, 5*time.Second, func() (bool, error) {
-			_, err = ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Get("susi", metav1.GetOptions{})
-			if err != nil {
-				if k8serrors.IsNotFound(err) {
-					return true, nil
-				}
-				return false, err
-			}
-			return false, nil
-		})
-		if err != nil {
-			t.Errorf("failed waiting until lister received delete event on machine 'susi': %v", err)
-		}
+	err := ctrl.syncMachine(mSusi)
+	if err != nil {
+		t.Errorf("error in machineAdded handler: %v", err)
+	}
 
-		err = ctrl.syncMachine(mBabsi)
-		if err != nil {
-			t.Errorf("error in machineAdded handler: %v", err)
-		}
+	err = ctrl.syncMachine(mBabsi)
+	if err != nil {
+		t.Errorf("error in machineAdded handler: %v", err)
+	}
 
-		mBabsi2, err := ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Get("babsi", metav1.GetOptions{})
-		if err != nil {
-			t.Errorf("couldn't retrieve updated machine, see: %v", err)
-		}
-
-		assertNetworkEquals(t, mBabsi2, "192.168.0.2/16", "192.168.0.1", "8.8.8.8")
-	},
-
-	"TestFailWhenCIDRIsExhausted": func(t *testing.T) {
-		t.Parallel()
-
-		nets := []Network{buildNet(t, "192.168.0.0/30", "192.168.0.1", "8.8.8.8")}
-
-		mSusi := createMachine("susi")
-		mBabsi := createMachine("babsi")
-		mJoan := createMachine("joan")
-
-		ctrl, stop := newTestController(nets, mSusi, mBabsi, mJoan)
-		defer close(stop)
-
-		err := ctrl.syncMachine(mSusi)
-		if err != nil {
-			t.Errorf("error in machineAdded handler: %v", err)
-		}
-
-		err = ctrl.syncMachine(mBabsi)
-		if err != nil {
-			t.Errorf("error in machineAdded handler: %v", err)
-		}
-
-		err = ctrl.syncMachine(mJoan)
-		if err == nil || !strings.Contains(err.Error(), "because no more ips can be allocated from the specified cidrs") {
-			t.Error("Expected error for exhausted CIDR range but didnt get it :-(")
-		}
-	},
+	err = ctrl.syncMachine(mJoan)
+	if err == nil || !strings.Contains(err.Error(), "because no more ips can be allocated from the specified cidrs") {
+		t.Error("Expected error for exhausted CIDR range but didnt get it :-(")
+	}
 }
 
 func createMachine(name string) *clusterv1alpha1.Machine {
