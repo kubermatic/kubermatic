@@ -175,19 +175,23 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	// Defines a set of HTTP endpoint for node deployments that belong to a cluster
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments").
-		Handler(r.createNodeDeploymentForCluster())
+		Handler(r.createNodeDeployment())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments").
-		Handler(r.listNodeDeploymentsForCluster())
+		Handler(r.listNodeDeployments())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}").
-		Handler(r.getNodeDeploymentForCluster())
+		Handler(r.getNodeDeployment())
+
+	mux.Methods(http.MethodPatch).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}").
+		Handler(r.patchNodeDeployment())
 
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}").
-		Handler(r.deleteNodeDeploymentForCluster())
+		Handler(r.deleteNodeDeployment())
 
 	//
 	// Defines a set of HTTP endpoints for various cloud providers
@@ -1459,7 +1463,7 @@ func (r Routing) listVSphereNetworksNoCredentials() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments project createNodeDeploymentForCluster
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments project createNodeDeployment
 //
 //     Creates a node deployment that will belong to the given cluster
 //
@@ -1474,21 +1478,21 @@ func (r Routing) listVSphereNetworksNoCredentials() http.Handler {
 //       201: NodeDeployment
 //       401: empty
 //       403: empty
-func (r Routing) createNodeDeploymentForCluster() http.Handler {
+func (r Routing) createNodeDeployment() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
 			r.userInfoMiddleware(),
-		)(createNodeDeploymentForCluster(r.sshKeyProvider, r.projectProvider, r.datacenters)),
-		decodeCreateNodeDeploymentForCluster,
+		)(createNodeDeployment(r.sshKeyProvider, r.projectProvider, r.datacenters)),
+		decodeCreateNodeDeployment,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments project listNodeDeploymentsForCluster
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments project listNodeDeployments
 //
 //     Lists node deployments that belong to the given cluster
 //
@@ -1500,23 +1504,49 @@ func (r Routing) createNodeDeploymentForCluster() http.Handler {
 //       200: []NodeDeployment
 //       401: empty
 //       403: empty
-func (r Routing) listNodeDeploymentsForCluster() http.Handler {
+func (r Routing) listNodeDeployments() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
 			r.userInfoMiddleware(),
-		)(listNodeDeploymentsForCluster(r.projectProvider)),
-		decodeListNodeDeploymentsForCluster,
+		)(listNodeDeployments()),
+		decodeListNodeDeployments,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id} project getNodeDeploymentForCluster
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id} project getNodeDeployment
 //
 //     Gets a node deployment that is assigned to the given cluster.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: NodeDeployment
+//       401: empty
+//       403: empty
+func (r Routing) getNodeDeployment() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.oidcAuthenticator.Verifier(),
+			r.userSaverMiddleware(),
+			r.datacenterMiddleware(),
+			r.userInfoMiddleware(),
+		)(getNodeDeployment()),
+		decodeGetNodeDeployment,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id} project patchNodeDeployment
+//
+//     Patches a node deployment that is assigned to the given cluster.
 //
 //     Consumes:
 //     - application/json
@@ -1529,21 +1559,21 @@ func (r Routing) listNodeDeploymentsForCluster() http.Handler {
 //       200: NodeDeployment
 //       401: empty
 //       403: empty
-func (r Routing) getNodeDeploymentForCluster() http.Handler {
+func (r Routing) patchNodeDeployment() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
 			r.userInfoMiddleware(),
-		)(getNodeDeploymentForCluster(r.projectProvider)),
-		decodeGetNodeDeploymentForCluster,
+		)(patchNodeDeployment(r.sshKeyProvider, r.projectProvider, r.datacenters)),
+		decodePatchNodeDeployment,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id} project deleteNodeDeploymentForCluster
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id} project deleteNodeDeployment
 //
 //    Deletes the given node deployment that belongs to the cluster.
 //
@@ -1555,15 +1585,15 @@ func (r Routing) getNodeDeploymentForCluster() http.Handler {
 //       200: empty
 //       401: empty
 //       403: empty
-func (r Routing) deleteNodeDeploymentForCluster() http.Handler {
+func (r Routing) deleteNodeDeployment() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.datacenterMiddleware(),
 			r.userInfoMiddleware(),
-		)(deleteNodeDeploymentForCluster(r.projectProvider)),
-		decodeDeleteNodeDeploymentForCluster,
+		)(deleteNodeDeployment()),
+		decodeDeleteNodeDeployment,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

@@ -670,7 +670,7 @@
         "tags": [
           "project"
         ],
-        "operationId": "listNodeDeploymentsForCluster",
+        "operationId": "listNodeDeployments",
         "parameters": [
           {
             "type": "string",
@@ -726,7 +726,7 @@
         "tags": [
           "project"
         ],
-        "operationId": "createNodeDeploymentForCluster",
+        "operationId": "createNodeDeployment",
         "parameters": [
           {
             "type": "string",
@@ -787,8 +787,8 @@
         "tags": [
           "project"
         ],
-        "summary": "Gets a node deployment that is assigned to the given cluster.",
-        "operationId": "getNodeDeploymentForCluster",
+        "summary": "Patches a node deployment that is assigned to the given cluster.",
+        "operationId": "patchNodeDeployment",
         "parameters": [
           {
             "type": "string",
@@ -817,6 +817,17 @@
             "name": "nodedeployment_id",
             "in": "path",
             "required": true
+          },
+          {
+            "name": "Patch",
+            "in": "body",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "uint8"
+              }
+            }
           }
         ],
         "responses": {
@@ -845,7 +856,7 @@
           "project"
         ],
         "summary": "Deletes the given node deployment that belongs to the cluster.",
-        "operationId": "deleteNodeDeploymentForCluster",
+        "operationId": "deleteNodeDeployment",
         "parameters": [
           {
             "type": "string",

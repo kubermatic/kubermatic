@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/evanphx/json-patch"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -591,14 +593,14 @@ func decodeGetNodeForCluster(c context.Context, r *http.Request) (interface{}, e
 }
 
 // CreateNodeDeploymentReq defines HTTP request for createMachineDeployment
-// swagger:parameters createNodeDeploymentForCluster
+// swagger:parameters createNodeDeployment
 type CreateNodeDeploymentReq struct {
 	GetClusterReq
 	// in: body
 	Body apiv1.NodeDeployment
 }
 
-func decodeCreateNodeDeploymentForCluster(c context.Context, r *http.Request) (interface{}, error) {
+func decodeCreateNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
 	var req CreateNodeDeploymentReq
 
 	clusterID, err := decodeClusterID(c, r)
@@ -620,7 +622,7 @@ func decodeCreateNodeDeploymentForCluster(c context.Context, r *http.Request) (i
 	return req, nil
 }
 
-func createNodeDeploymentForCluster(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+func createNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateNodeDeploymentReq)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
@@ -693,7 +695,6 @@ func createNodeDeploymentForCluster(sshKeyProvider provider.SSHKeyProvider, proj
 			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
 		}
 
-		// Save Machine Deployment resource into Kubernetes.
 		md, err = machineClient.ClusterV1alpha1().MachineDeployments(md.Namespace).Create(md)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create machine deployment: %v", err)
@@ -748,14 +749,14 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 	}, nil
 }
 
-// ListNodeDeploymentsForClusterReq defines HTTP request for listNodeDeploymentsForCluster
-// swagger:parameters listNodeDeploymentsForCluster
-type ListNodeDeploymentsForClusterReq struct {
+// ListNodeDeploymentsReq defines HTTP request for listNodeDeployments
+// swagger:parameters listNodeDeployments
+type ListNodeDeploymentsReq struct {
 	GetClusterReq
 }
 
-func decodeListNodeDeploymentsForCluster(c context.Context, r *http.Request) (interface{}, error) {
-	var req ListNodeDeploymentsForClusterReq
+func decodeListNodeDeployments(c context.Context, r *http.Request) (interface{}, error) {
+	var req ListNodeDeploymentsReq
 
 	clusterID, err := decodeClusterID(c, r)
 	if err != nil {
@@ -773,16 +774,11 @@ func decodeListNodeDeploymentsForCluster(c context.Context, r *http.Request) (in
 	return req, nil
 }
 
-func listNodeDeploymentsForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func listNodeDeployments() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(ListNodeDeploymentsForClusterReq)
+		req := request.(ListNodeDeploymentsReq)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
-
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
-		}
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
@@ -813,15 +809,15 @@ func listNodeDeploymentsForCluster(projectProvider provider.ProjectProvider) end
 	}
 }
 
-// NodeDeploymentReq defines HTTP request for getNodeDeploymentForCluster
-// swagger:parameters getNodeDeploymentForCluster
+// NodeDeploymentReq defines HTTP request for getNodeDeployment
+// swagger:parameters getNodeDeployment
 type NodeDeploymentReq struct {
 	GetClusterReq
 	// in: path
 	NodeDeploymentID string `json:"nodedeployment_id"`
 }
 
-func decodeGetNodeDeploymentForCluster(c context.Context, r *http.Request) (interface{}, error) {
+func decodeGetNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
 	var req NodeDeploymentReq
 
 	clusterID, err := decodeClusterID(c, r)
@@ -845,16 +841,11 @@ func decodeGetNodeDeploymentForCluster(c context.Context, r *http.Request) (inte
 	return req, nil
 }
 
-func getNodeDeploymentForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func getNodeDeployment() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NodeDeploymentReq)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
-
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
-		}
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
@@ -875,16 +866,133 @@ func getNodeDeploymentForCluster(projectProvider provider.ProjectProvider) endpo
 	}
 }
 
-// DeleteNodeDeploymentForClusterReq defines HTTP request for deleteNodeDeploymentForCluster
-// swagger:parameters deleteNodeDeploymentForCluster
-type DeleteNodeDeploymentForClusterReq struct {
+// PatchNodeDeploymentReq defines HTTP request for patchNodeDeployment endpoint
+// swagger:parameters patchNodeDeployment
+type PatchNodeDeploymentReq struct {
+	NodeDeploymentReq
+
+	// in: body
+	Patch []byte
+}
+
+func decodePatchNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
+	var req PatchNodeDeploymentReq
+
+	clusterID, err := decodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeDeploymentID := mux.Vars(r)["nodedeployment_id"]
+	if nodeDeploymentID == "" {
+		return nil, fmt.Errorf("'nodedeployment_id' parameter is required but was not provided")
+	}
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ClusterID = clusterID
+	req.NodeDeploymentID = nodeDeploymentID
+	req.DCReq = dcr.(DCReq)
+
+	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func patchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(PatchNodeDeploymentReq)
+		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(cluster)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		// We cannot use machineClient.ClusterV1alpha1().MachineDeployments().Patch() method as we are not exposing
+		// MachineDeployment type directly. API uses NodeDeployment type and we cannot ensure compatibility here.
+		machineDeployment, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Get(req.NodeDeploymentID, metav1.GetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		nodeDeployment, err := outputMachineDeployment(machineDeployment)
+		if err != nil {
+			return nil, fmt.Errorf("cannot output existing node deployment: %v", err)
+		}
+
+		nodeDeploymentJSON, err := json.Marshal(nodeDeployment)
+		if err != nil {
+			return nil, fmt.Errorf("cannot decode existing node deployment: %v", err)
+		}
+
+		patchedNodeDeploymentJSON, err := jsonpatch.MergePatch(nodeDeploymentJSON, req.Patch)
+		if err != nil {
+			return nil, fmt.Errorf("cannot patch node deployment: %v", err)
+		}
+
+		var patchedNodeDeployment *apiv1.NodeDeployment
+		err = json.Unmarshal(patchedNodeDeploymentJSON, &patchedNodeDeployment)
+		if err != nil {
+			return nil, fmt.Errorf("cannot decode patched cluster: %v", err)
+		}
+
+		dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
+		if !found {
+			return nil, fmt.Errorf("unknown cluster datacenter %s", cluster.Spec.Cloud.DatacenterName)
+		}
+
+		keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: req.ClusterID})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		md, err := machineresource.Deployment(cluster, patchedNodeDeployment, dc, keys)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
+		}
+
+		// We need to ensure that the name and resource version are set and the selector stays the same.
+		md.Name = req.NodeDeploymentID
+		md.ResourceVersion = machineDeployment.ResourceVersion
+		md.Spec.Selector = machineDeployment.Spec.Selector
+		md.Spec.Template.ObjectMeta.Labels = machineDeployment.Spec.Template.ObjectMeta.Labels
+
+		md, err = machineClient.ClusterV1alpha1().MachineDeployments(md.Namespace).Update(md)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create machine deployment: %v", err)
+		}
+
+		return outputMachineDeployment(md)
+	}
+}
+
+// DeleteNodeDeploymentReq defines HTTP request for deleteNodeDeployment
+// swagger:parameters deleteNodeDeployment
+type DeleteNodeDeploymentReq struct {
 	GetClusterReq
 	// in: path
 	NodeDeploymentID string `json:"nodedeployment_id"`
 }
 
-func decodeDeleteNodeDeploymentForCluster(c context.Context, r *http.Request) (interface{}, error) {
-	var req DeleteNodeDeploymentForClusterReq
+func decodeDeleteNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
+	var req DeleteNodeDeploymentReq
 
 	nodeDeploymentID := mux.Vars(r)["nodedeployment_id"]
 	if nodeDeploymentID == "" {
@@ -908,16 +1016,11 @@ func decodeDeleteNodeDeploymentForCluster(c context.Context, r *http.Request) (i
 	return req, nil
 }
 
-func deleteNodeDeploymentForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func deleteNodeDeployment() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(DeleteNodeDeploymentForClusterReq)
+		req := request.(DeleteNodeDeploymentReq)
 		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
-
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
-		}
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {

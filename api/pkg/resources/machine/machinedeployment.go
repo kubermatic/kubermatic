@@ -1,6 +1,7 @@
 package machine
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -14,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/rand"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
@@ -48,16 +48,31 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 		md.Spec.Paused = *nd.Spec.Paused
 	}
 
+	config, err := getProviderConfig(c, nd, dc, keys)
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	md.Spec.Template.Spec.ProviderConfig.Value = &runtime.RawExtension{Raw: b}
+
+	return &md, nil
+}
+
+func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*providerconfig.Config, error) {
 	config := providerconfig.Config{}
 	config.SSHPublicKeys = make([]string, len(keys))
 	for i, key := range keys {
 		config.SSHPublicKeys[i] = key.Spec.PublicKey
 	}
 
-	var err error
 	var cloudExt *runtime.RawExtension
+	var err error
 
-	// Cloud specifics
 	switch {
 	case nd.Spec.Template.Cloud.AWS != nil:
 		config.CloudProvider = providerconfig.CloudProviderAWS
@@ -74,9 +89,8 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 	case nd.Spec.Template.Cloud.VSphere != nil:
 		config.CloudProvider = providerconfig.CloudProviderVsphere
 
-		// We use OverwriteCloudConfig for Vsphere to ensure we always
-		// use the credentials passed in via frontend for the cloud-provider
-		// functionality
+		// We use OverwriteCloudConfig for VSphere to ensure we always use the credentials
+		// passed in via frontend for the cloud-provider functionality.
 		templateData := resources.NewTemplateData(c, &dc, "", nil, nil, nil, "", "", "", resource.Quantity{}, "", "", false, false, "", nil, "", "", "")
 		overwriteCloudConfig, err := cloudconfig.CloudConfig(templateData)
 		if err != nil {
@@ -134,16 +148,10 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 			return nil, err
 		}
 	default:
+
 		return nil, errors.New("unknown OS")
 	}
+
 	config.OperatingSystemSpec = *osExt
-
-	b, err := json.Marshal(config)
-	if err != nil {
-		return nil, err
-	}
-
-	md.Spec.Template.Spec.ProviderConfig.Value = &runtime.RawExtension{Raw: b}
-
-	return &md, nil
+	return &config, nil
 }
