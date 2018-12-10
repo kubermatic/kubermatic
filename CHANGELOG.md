@@ -1,4 +1,26 @@
 
+### [v2.8.3]()
+
+Supported Kubernetes versions:
+- `1.10.11`
+- `1.11.5`
+- `1.12.3`
+
+
+**Misc:**
+
+- Kubermatic now validates nodes synchronously [#2340](https://github.com/kubermatic/kubermatic/issues/2340) ([alvaroaleman](https://github.com/alvaroaleman))
+- Components will no longer be shown as as unhealthy when only some replicas are up [#2358](https://github.com/kubermatic/kubermatic/issues/2358) ([mrIncompetent](https://github.com/mrIncompetent))
+- Disabled debug logs on control plane components [#2471](https://github.com/kubermatic/kubermatic/issues/2471) ([mrIncompetent](https://github.com/mrIncompetent))
+- Kubernetes will be automatically updated to versions that contain a fix for CVE-2018-1002105 [#2478](https://github.com/kubermatic/kubermatic/issues/2478) ([alvaroaleman](https://github.com/alvaroaleman))
+- Updated the machine-controller to `v0.10.3` [#2479](https://github.com/kubermatic/kubermatic/issues/2479) ([mrIncompetent](https://github.com/mrIncompetent))
+
+**Bugfix:**
+- Fixed missing permissions in kube-state-metrics ClusterRole [#2366](https://github.com/kubermatic/kubermatic/issues/2366) ([bashofmann](https://github.com/bashofmann))
+
+
+
+
 ### [v2.7.8]()
 
 Supported Kubernetes versions:
