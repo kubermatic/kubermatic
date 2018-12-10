@@ -16,6 +16,12 @@ spec:
         checksum/datecenters: {{ include (print $.Template.BasePath "/datacenter-yaml-secret.yaml") . | sha256sum }}
         checksum/backup-container-configmap: {{ include (print $.Template.BasePath "/backup-container-configmap.yaml") . | sha256sum }}
         checksum/dockercfg: {{ include (print $.Template.BasePath "/dockercfg-secret.yaml") . | sha256sum }}
+        {{- if .Values.kubermatic.clusterNamespacePrometheus.rules }}
+        checksum/prometheus-rules: {{ include (print $.Template.BasePath "/clusterns-prometheus-rules-configmap.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if .Values.kubermatic.clusterNamespacePrometheus.scrapingConfigs }}
+        checksum/prometheus-scraping-configs: {{ include (print $.Template.BasePath "/clusterns-prometheus-scraping-configs-configmap.yaml") . | sha256sum }}
+        {{- end }}
     spec:
       serviceAccountName: kubermatic
       initContainers:
