@@ -638,7 +638,7 @@ func (r Routing) createProject() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(createProjectEndpoint(r.projectProvider)),
+		)(createProjectEndpoint(r.projectProvider, r.userProjectMapper)),
 		decodeCreateProject,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,

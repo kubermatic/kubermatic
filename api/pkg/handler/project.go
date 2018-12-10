@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/go-kit/kit/endpoint"
@@ -16,7 +17,7 @@ import (
 )
 
 // createProjectEndpoint defines an HTTP endpoint that creates a new project in the system
-func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func createProjectEndpoint(projectProvider provider.ProjectProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		projectRq, ok := request.(projectReq)
 		if !ok {
@@ -28,6 +29,34 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 		}
 
 		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		projects := []*apiv1.Project{}
+
+		userMappings, err := memberMapper.MappingsFor(user.Spec.Email)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		for _, mapping := range userMappings {
+			isOwner, err := regexp.MatchString("owners*", string(mapping.Spec.Group))
+			if err != nil {
+				return nil, kubernetesErrorToHTTPError(err)
+			}
+
+			if isOwner {
+				userInfo := &provider.UserInfo{Email: mapping.Spec.UserEmail, Group: mapping.Spec.Group}
+				projectInternal, err := projectProvider.Get(userInfo, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+				if err != nil {
+					return nil, kubernetesErrorToHTTPError(err)
+				}
+				projects = append(projects, convertInternalProjectToExternal(projectInternal))
+			}
+		}
+
+		for _, project := range projects {
+			if project.Name == projectRq.Name {
+				return nil, errors.NewBadRequest("already own project with name '%s'", projectRq.Name)
+			}
+		}
+
 		kubermaticProject, err := projectProvider.New(user, projectRq.Name)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
