@@ -29,7 +29,7 @@ var (
 const (
 	name = "machine-controller"
 
-	tag = "v0.10.3"
+	tag = "v0.10.5"
 )
 
 // Deployment returns the machine-controller Deployment
