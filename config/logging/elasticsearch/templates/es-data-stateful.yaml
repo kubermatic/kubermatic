@@ -75,13 +75,15 @@ spec:
             httpGet:
               path: /_cluster/health
               port: http
-            initialDelaySeconds: 30
+            initialDelaySeconds: 120
+            timeoutSeconds: 10
             periodSeconds: 10
           readinessProbe:
             tcpSocket:
               port: transport
-            initialDelaySeconds: 30
-            timeoutSeconds: 5
+            initialDelaySeconds: 120
+            timeoutSeconds: 10
+            periodSeconds: 10
           volumeMounts:
             - name: storage
               mountPath: /usr/share/elasticsearch/data
