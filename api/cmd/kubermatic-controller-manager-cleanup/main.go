@@ -114,7 +114,7 @@ func cleanupClusters(workerName string, ctx *cleanupContext) error {
 }
 
 func cleanupKeys(ctx *cleanupContext) error {
-	keys, err := ctx.kubermaticClient.KubermaticV1().UserSSHKeies().List(metav1.ListOptions{})
+	keys, err := ctx.kubermaticClient.KubermaticV1().UserSSHKeys().List(metav1.ListOptions{})
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -480,7 +480,7 @@ func migrateSSHKeyOwner(key *kubermaticv1.UserSSHKey, ctx *cleanupContext) error
 			key.Labels = map[string]string{}
 		}
 		key.Labels[kubermaticKubernetesProvider.UserLabelKey+"_RAW"] = oldID
-		if _, err := ctx.kubermaticClient.KubermaticV1().UserSSHKeies().Update(key); err != nil {
+		if _, err := ctx.kubermaticClient.KubermaticV1().UserSSHKeys().Update(key); err != nil {
 			return err
 		}
 	}

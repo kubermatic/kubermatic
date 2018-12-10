@@ -8,7 +8,6 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/semver"
-	ctconfig "github.com/coreos/container-linux-config-transpiler/config"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
@@ -115,23 +114,7 @@ func (p Provider) UserData(
 		return "", fmt.Errorf("failed to execute user-data template: %v", err)
 	}
 
-	// Convert to ignition
-	cfg, ast, report := ctconfig.Parse(b.Bytes())
-	if len(report.Entries) > 0 {
-		return "", fmt.Errorf("failed to validate coreos cloud config: %s", report.String())
-	}
-
-	ignCfg, report := ctconfig.Convert(cfg, "", ast)
-	if len(report.Entries) > 0 {
-		return "", fmt.Errorf("failed to convert container linux config to ignition: %s", report.String())
-	}
-
-	out, err := json.MarshalIndent(ignCfg, "", "  ")
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal ignition config: %v", err)
-	}
-
-	return string(out), nil
+	return b.String(), nil
 }
 
 const ctTemplate = `

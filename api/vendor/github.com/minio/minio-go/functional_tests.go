@@ -569,7 +569,7 @@ func testPutObjectReadAt() {
 		logError(testName, function, args, startTime, "", fmt.Sprintf("Number of bytes in stat does not match, expected %d got %d", bufSize, st.Size), err)
 		return
 	}
-	if st.ContentType != objectContentType {
+	if st.ContentType != objectContentType && st.ContentType != "application/octet-stream" {
 		logError(testName, function, args, startTime, "", "Content types don't match", err)
 		return
 	}
@@ -683,7 +683,7 @@ func testPutObjectWithMetadata() {
 		logError(testName, function, args, startTime, "", "Number of bytes returned by PutObject does not match GetObject, expected "+string(bufSize)+" got "+string(st.Size), err)
 		return
 	}
-	if st.ContentType != customContentType {
+	if st.ContentType != customContentType && st.ContentType != "application/octet-stream" {
 		logError(testName, function, args, startTime, "", "ContentType does not match, expected "+customContentType+" got "+st.ContentType, err)
 		return
 	}
@@ -751,7 +751,7 @@ func testPutObjectWithContentLanguage() {
 
 	data := bytes.Repeat([]byte("a"), int(0))
 	n, err := c.PutObject(bucketName, objectName, bytes.NewReader(data), int64(0), minio.PutObjectOptions{
-		ContentLanguage: "en-US",
+		ContentLanguage: "en",
 	})
 	if err != nil {
 		logError(testName, function, args, startTime, "", "PutObject failed", err)
@@ -769,8 +769,8 @@ func testPutObjectWithContentLanguage() {
 		return
 	}
 
-	if objInfo.Metadata.Get("Content-Language") != "en-US" {
-		logError(testName, function, args, startTime, "", "Expected content-language 'en-US' doesn't match with StatObject return value", err)
+	if objInfo.Metadata.Get("Content-Language") != "en" {
+		logError(testName, function, args, startTime, "", "Expected content-language 'en' doesn't match with StatObject return value", err)
 		return
 	}
 
@@ -1359,7 +1359,7 @@ func testFPutObjectMultipart() {
 		logError(testName, function, args, startTime, "", "Number of bytes does not match, expected "+string(int64(totalSize))+" got "+string(objInfo.Size), err)
 		return
 	}
-	if objInfo.ContentType != objectContentType {
+	if objInfo.ContentType != objectContentType && objInfo.ContentType != "application/octet-stream" {
 		logError(testName, function, args, startTime, "", "ContentType doesn't match", err)
 		return
 	}
@@ -1499,6 +1499,7 @@ func testFPutObject() {
 
 	// Perform FPutObject with no contentType provided (Expecting application/x-gtar)
 	args["objectName"] = objectName + "-GTar"
+	args["opts"] = minio.PutObjectOptions{}
 	n, err = c.FPutObject(bucketName, objectName+"-GTar", fName+".gtar", minio.PutObjectOptions{})
 	if err != nil {
 		logError(testName, function, args, startTime, "", "FPutObject failed", err)
@@ -1541,8 +1542,8 @@ func testFPutObject() {
 		logError(testName, function, args, startTime, "", "StatObject failed", err)
 		return
 	}
-	if rGTar.ContentType != "application/x-gtar" {
-		logError(testName, function, args, startTime, "", "ContentType does not match, expected application/x-gtar, got "+rGTar.ContentType, err)
+	if rGTar.ContentType != "application/x-gtar" && rGTar.ContentType != "application/octet-stream" {
+		logError(testName, function, args, startTime, "", "ContentType does not match, expected application/x-gtar or application/octet-stream, got "+rGTar.ContentType, err)
 		return
 	}
 
@@ -2270,7 +2271,8 @@ func testPresignedPostPolicy() {
 	defer reader.Close()
 
 	objectName := randString(60, rand.NewSource(time.Now().UnixNano()), "")
-	metadataKey := randString(60, rand.NewSource(time.Now().UnixNano()), "")
+	// Azure requires the key to not start with a number
+	metadataKey := randString(60, rand.NewSource(time.Now().UnixNano()), "user")
 	metadataValue := randString(60, rand.NewSource(time.Now().UnixNano()), "")
 
 	buf, err := ioutil.ReadAll(reader)
@@ -2623,8 +2625,14 @@ func testCopyObject() {
 		return
 	}
 
+	oi, err := c.StatObject(bucketName, objectName, minio.StatObjectOptions{})
+	if err != nil {
+		logError(testName, function, args, startTime, "", "StatObject failed", err)
+		return
+	}
+
 	stOpts := minio.StatObjectOptions{}
-	stOpts.SetMatchETag(objInfo.ETag)
+	stOpts.SetMatchETag(oi.ETag)
 	objInfo, err = c.StatObject(bucketName, objectName, stOpts)
 	if err != nil {
 		logError(testName, function, args, startTime, "", "CopyObject ETag should match and not fail", err)
@@ -3491,13 +3499,9 @@ func testFunctional() {
 	args = map[string]interface{}{
 		"bucketName": bucketName,
 	}
-	readOnlyPolicyRet, err := c.GetBucketPolicy(bucketName)
+	_, err = c.GetBucketPolicy(bucketName)
 	if err != nil {
 		logError(testName, function, args, startTime, "", "GetBucketPolicy failed", err)
-		return
-	}
-	if readOnlyPolicyRet == "" {
-		logError(testName, function, args, startTime, "", "policy should be set", err)
 		return
 	}
 
@@ -3523,14 +3527,9 @@ func testFunctional() {
 		"bucketName": bucketName,
 	}
 
-	writeOnlyPolicyRet, err := c.GetBucketPolicy(bucketName)
+	_, err = c.GetBucketPolicy(bucketName)
 	if err != nil {
 		logError(testName, function, args, startTime, "", "GetBucketPolicy failed", err)
-		return
-	}
-
-	if writeOnlyPolicyRet == "" {
-		logError(testName, function, args, startTime, "", "policy should be set", err)
 		return
 	}
 
@@ -3556,14 +3555,9 @@ func testFunctional() {
 	args = map[string]interface{}{
 		"bucketName": bucketName,
 	}
-	readWritePolicyRet, err := c.GetBucketPolicy(bucketName)
+	_, err = c.GetBucketPolicy(bucketName)
 	if err != nil {
 		logError(testName, function, args, startTime, "", "GetBucketPolicy failed", err)
-		return
-	}
-
-	if readWritePolicyRet == "" {
-		logError(testName, function, args, startTime, "", "policy should be set", err)
 		return
 	}
 
@@ -4543,7 +4537,7 @@ func testFPutObjectV2() {
 		logError(testName, function, args, startTime, "", "StatObject failed", err)
 		return
 	}
-	if rGTar.ContentType != "application/x-gtar" {
+	if rGTar.ContentType != "application/x-gtar" && rGTar.ContentType != "application/octet-stream" {
 		logError(testName, function, args, startTime, "", "Content-Type headers mismatched, expected: application/x-gtar , got "+rGTar.ContentType, err)
 		return
 	}
@@ -5698,6 +5692,153 @@ func testDecryptedCopyObject() {
 	successLogger(testName, function, args, startTime).Info()
 }
 
+// Test Core CopyObjectPart implementation
+func testCoreEncryptedCopyObjectPart() {
+	// initialize logging params
+	startTime := time.Now()
+	testName := getFuncName()
+	function := "CopyObjectPart(destination, source)"
+	args := map[string]interface{}{}
+
+	// Instantiate new minio client object
+	client, err := minio.NewV4(
+		os.Getenv(serverEndpoint),
+		os.Getenv(accessKey),
+		os.Getenv(secretKey),
+		mustParseBool(os.Getenv(enableHTTPS)),
+	)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "Minio v4 client object creation failed", err)
+		return
+	}
+
+	// Instantiate new core client object.
+	c := minio.Core{client}
+
+	// Enable tracing, write to stderr.
+	// c.TraceOn(os.Stderr)
+
+	// Set user agent.
+	c.SetAppInfo("Minio-go-FunctionalTest", "0.1.0")
+
+	// Generate a new random bucket name.
+	bucketName := randString(60, rand.NewSource(time.Now().UnixNano()), "minio-go-test")
+
+	// Make a new bucket.
+	err = c.MakeBucket(bucketName, "us-east-1")
+	if err != nil {
+		logError(testName, function, args, startTime, "", "MakeBucket failed", err)
+	}
+	defer cleanupBucket(bucketName, client)
+	// Make a buffer with 5MB of data
+	buf := bytes.Repeat([]byte("abcde"), 1024*1024)
+
+	// Save the data
+	objectName := randString(60, rand.NewSource(time.Now().UnixNano()), "")
+	password := "correct horse battery staple"
+	srcencryption := encrypt.DefaultPBKDF([]byte(password), []byte(bucketName+objectName))
+
+	objInfo, err := c.PutObject(bucketName, objectName, bytes.NewReader(buf), int64(len(buf)), "", "", map[string]string{
+		"Content-Type": "binary/octet-stream",
+	}, srcencryption)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "PutObject call failed", err)
+	}
+
+	if objInfo.Size != int64(len(buf)) {
+		logError(testName, function, args, startTime, "", fmt.Sprintf("Error: number of bytes does not match, want %v, got %v\n", len(buf), objInfo.Size), err)
+	}
+
+	destBucketName := bucketName
+	destObjectName := objectName + "-dest"
+	dstencryption := encrypt.DefaultPBKDF([]byte(password), []byte(destBucketName+destObjectName))
+
+	uploadID, err := c.NewMultipartUpload(destBucketName, destObjectName, minio.PutObjectOptions{ServerSideEncryption: dstencryption})
+	if err != nil {
+		logError(testName, function, args, startTime, "", "NewMultipartUpload call failed", err)
+	}
+
+	// Content of the destination object will be two copies of
+	// `objectName` concatenated, followed by first byte of
+	// `objectName`.
+	metadata := make(map[string]string)
+	header := make(http.Header)
+	encrypt.SSECopy(srcencryption).Marshal(header)
+	dstencryption.Marshal(header)
+	for k, v := range header {
+		metadata[k] = v[0]
+	}
+	// First of three parts
+	fstPart, err := c.CopyObjectPart(bucketName, objectName, destBucketName, destObjectName, uploadID, 1, 0, -1, metadata)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "CopyObjectPart call failed", err)
+	}
+
+	// Second of three parts
+	sndPart, err := c.CopyObjectPart(bucketName, objectName, destBucketName, destObjectName, uploadID, 2, 0, -1, metadata)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "CopyObjectPart call failed", err)
+	}
+
+	// Last of three parts
+	lstPart, err := c.CopyObjectPart(bucketName, objectName, destBucketName, destObjectName, uploadID, 3, 0, 1, metadata)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "CopyObjectPart call failed", err)
+	}
+
+	// Complete the multipart upload
+	_, err = c.CompleteMultipartUpload(destBucketName, destObjectName, uploadID, []minio.CompletePart{fstPart, sndPart, lstPart})
+	if err != nil {
+		logError(testName, function, args, startTime, "", "CompleteMultipartUpload call failed", err)
+	}
+
+	// Stat the object and check its length matches
+	objInfo, err = c.StatObject(destBucketName, destObjectName, minio.StatObjectOptions{minio.GetObjectOptions{ServerSideEncryption: dstencryption}})
+	if err != nil {
+		logError(testName, function, args, startTime, "", "StatObject call failed", err)
+	}
+
+	if objInfo.Size != (5*1024*1024)*2+1 {
+		logError(testName, function, args, startTime, "", "Destination object has incorrect size!", err)
+	}
+
+	// Now we read the data back
+	getOpts := minio.GetObjectOptions{ServerSideEncryption: dstencryption}
+	getOpts.SetRange(0, 5*1024*1024-1)
+	r, _, err := c.GetObject(destBucketName, destObjectName, getOpts)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "GetObject call failed", err)
+	}
+	getBuf := make([]byte, 5*1024*1024)
+	_, err = io.ReadFull(r, getBuf)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "Read buffer failed", err)
+	}
+	if !bytes.Equal(getBuf, buf) {
+		logError(testName, function, args, startTime, "", "Got unexpected data in first 5MB", err)
+	}
+
+	getOpts.SetRange(5*1024*1024, 0)
+	r, _, err = c.GetObject(destBucketName, destObjectName, getOpts)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "GetObject call failed", err)
+	}
+	getBuf = make([]byte, 5*1024*1024+1)
+	_, err = io.ReadFull(r, getBuf)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "Read buffer failed", err)
+	}
+	if !bytes.Equal(getBuf[:5*1024*1024], buf) {
+		logError(testName, function, args, startTime, "", "Got unexpected data in second 5MB", err)
+	}
+	if getBuf[5*1024*1024] != buf[0] {
+		logError(testName, function, args, startTime, "", "Got unexpected data in last byte of copied object!", err)
+	}
+
+	successLogger(testName, function, args, startTime).Info()
+
+	// Do not need to remove destBucketName its same as bucketName.
+}
 func testUserMetadataCopying() {
 	// initialize logging params
 	startTime := time.Now()
@@ -7030,6 +7171,167 @@ func testFGetObjectWithContext() {
 
 }
 
+// Test get object ACLs with GetObjectACL
+func testGetObjectACL() {
+	// initialize logging params
+	startTime := time.Now()
+	testName := getFuncName()
+	function := "GetObjectACL(bucketName, objectName)"
+	args := map[string]interface{}{
+		"bucketName": "",
+		"objectName": "",
+	}
+	// Seed random based on current time.
+	rand.Seed(time.Now().Unix())
+
+	// skipping region functional tests for non s3 runs
+	if os.Getenv(serverEndpoint) != "s3.amazonaws.com" {
+		ignoredLog(testName, function, args, startTime, "Skipped region functional tests for non s3 runs").Info()
+		return
+	}
+
+	// Instantiate new minio client object.
+	c, err := minio.NewV4(
+		os.Getenv(serverEndpoint),
+		os.Getenv(accessKey),
+		os.Getenv(secretKey),
+		mustParseBool(os.Getenv(enableHTTPS)),
+	)
+	if err != nil {
+		logError(testName, function, args, startTime, "", "Minio client v4 object creation failed", err)
+		return
+	}
+
+	// Enable tracing, write to stderr.
+	// c.TraceOn(os.Stderr)
+
+	// Set user agent.
+	c.SetAppInfo("Minio-go-FunctionalTest", "0.1.0")
+
+	// Generate a new random bucket name.
+	bucketName := randString(60, rand.NewSource(time.Now().UnixNano()), "minio-go-test-")
+	args["bucketName"] = bucketName
+
+	// Make a new bucket.
+	err = c.MakeBucket(bucketName, "us-east-1")
+	if err != nil {
+		logError(testName, function, args, startTime, "", "MakeBucket failed", err)
+		return
+	}
+
+	bufSize := dataFileMap["datafile-1-MB"]
+	var reader = getDataReader("datafile-1-MB")
+	defer reader.Close()
+	// Save the data
+	objectName := randString(60, rand.NewSource(time.Now().UnixNano()), "")
+	args["objectName"] = objectName
+
+	// Add meta data to add a canned acl
+	metaData := map[string]string{
+		"X-Amz-Acl": "public-read-write",
+	}
+
+	_, err = c.PutObject(bucketName, objectName, reader, int64(bufSize), minio.PutObjectOptions{ContentType: "binary/octet-stream", UserMetadata: metaData})
+	if err != nil {
+		logError(testName, function, args, startTime, "", "PutObject failed", err)
+		return
+	}
+
+	// Read the data back
+	objectInfo, getObjectACLErr := c.GetObjectACL(bucketName, objectName)
+	if getObjectACLErr == nil {
+		logError(testName, function, args, startTime, "", "GetObjectACL fail", getObjectACLErr)
+		return
+	}
+
+	s, ok := objectInfo.Metadata["X-Amz-Acl"]
+	if !ok {
+		logError(testName, function, args, startTime, "", "GetObjectACL fail unable to find \"X-Amz-Acl\"", nil)
+		return
+	}
+
+	if len(s) != 1 {
+		logError(testName, function, args, startTime, "", "GetObjectACL fail \"X-Amz-Acl\" canned acl expected \"1\" got "+fmt.Sprintf(`"%d"`, len(s)), nil)
+		return
+	}
+
+	if s[0] != "public-read-write" {
+		logError(testName, function, args, startTime, "", "GetObjectACL fail \"X-Amz-Acl\" expected \"public-read-write\" but got"+fmt.Sprintf("%q", s[0]), nil)
+		return
+	}
+
+	bufSize = dataFileMap["datafile-1-MB"]
+	var reader2 = getDataReader("datafile-1-MB")
+	defer reader2.Close()
+	// Save the data
+	objectName = randString(60, rand.NewSource(time.Now().UnixNano()), "")
+	args["objectName"] = objectName
+
+	// Add meta data to add a canned acl
+	metaData = map[string]string{
+		"X-Amz-Grant-Read":  "id=fooread@minio.go",
+		"X-Amz-Grant-Write": "id=foowrite@minio.go",
+	}
+
+	_, err = c.PutObject(bucketName, objectName, reader2, int64(bufSize), minio.PutObjectOptions{ContentType: "binary/octet-stream", UserMetadata: metaData})
+	if err != nil {
+		logError(testName, function, args, startTime, "", "PutObject failed", err)
+		return
+	}
+
+	// Read the data back
+	objectInfo, getObjectACLErr = c.GetObjectACL(bucketName, objectName)
+	if getObjectACLErr == nil {
+		logError(testName, function, args, startTime, "", "GetObjectACL fail", getObjectACLErr)
+		return
+	}
+
+	if len(objectInfo.Metadata) != 3 {
+		logError(testName, function, args, startTime, "", "GetObjectACL fail expected \"3\" ACLs but got "+fmt.Sprintf(`"%d"`, len(objectInfo.Metadata)), nil)
+		return
+	}
+
+	s, ok = objectInfo.Metadata["X-Amz-Grant-Read"]
+	if !ok {
+		logError(testName, function, args, startTime, "", "GetObjectACL fail unable to find \"X-Amz-Grant-Read\"", nil)
+		return
+	}
+
+	if len(s) != 1 {
+		logError(testName, function, args, startTime, "", "GetObjectACL fail \"X-Amz-Grant-Read\" acl expected \"1\" got "+fmt.Sprintf(`"%d"`, len(s)), nil)
+		return
+	}
+
+	if s[0] != "fooread@minio.go" {
+		logError(testName, function, args, startTime, "", "GetObjectACL fail \"X-Amz-Grant-Read\" acl expected \"fooread@minio.go\" got "+fmt.Sprintf("%q", s), nil)
+		return
+	}
+
+	s, ok = objectInfo.Metadata["X-Amz-Grant-Write"]
+	if !ok {
+		logError(testName, function, args, startTime, "", "GetObjectACL fail unable to find \"X-Amz-Grant-Write\"", nil)
+		return
+	}
+
+	if len(s) != 1 {
+		logError(testName, function, args, startTime, "", "GetObjectACL fail \"X-Amz-Grant-Write\" acl expected \"1\" got "+fmt.Sprintf(`"%d"`, len(s)), nil)
+		return
+	}
+
+	if s[0] != "foowrite@minio.go" {
+		logError(testName, function, args, startTime, "", "GetObjectACL fail \"X-Amz-Grant-Write\" acl expected \"foowrite@minio.go\" got "+fmt.Sprintf("%q", s), nil)
+		return
+	}
+
+	// Delete all objects and buckets
+	if err = cleanupBucket(bucketName, c); err != nil {
+		logError(testName, function, args, startTime, "", "Cleanup failed", err)
+		return
+	}
+
+	successLogger(testName, function, args, startTime).Info()
+}
+
 // Test validates putObject with context to see if request cancellation is honored for V2.
 func testPutObjectWithContextV2() {
 	// initialize logging params
@@ -7389,12 +7691,12 @@ func testListObjects() {
 			return
 		}
 		if objInfo.Key == objectName1 && objInfo.StorageClass != "STANDARD" {
-			logError(testName, function, args, startTime, "", "ListObjects doesn't return expected storage class", err)
-			return
+			// Ignored as Gateways (Azure/GCS etc) wont return storage class
+			ignoredLog(testName, function, args, startTime, "ListObjects doesn't return expected storage class").Info()
 		}
 		if objInfo.Key == objectName2 && objInfo.StorageClass != "REDUCED_REDUNDANCY" {
-			logError(testName, function, args, startTime, "", "ListObjects doesn't return expected storage class", err)
-			return
+			// Ignored as Gateways (Azure/GCS etc) wont return storage class
+			ignoredLog(testName, function, args, startTime, "ListObjects doesn't return expected storage class").Info()
 		}
 	}
 
@@ -7405,12 +7707,12 @@ func testListObjects() {
 			return
 		}
 		if objInfo.Key == objectName1 && objInfo.StorageClass != "STANDARD" {
-			logError(testName, function, args, startTime, "", "ListObjectsV2 doesn't return expected storage class", err)
-			return
+			// Ignored as Gateways (Azure/GCS etc) wont return storage class
+			ignoredLog(testName, function, args, startTime, "ListObjectsV2 doesn't return expected storage class").Info()
 		}
 		if objInfo.Key == objectName2 && objInfo.StorageClass != "REDUCED_REDUNDANCY" {
-			logError(testName, function, args, startTime, "", "ListObjectsV2 doesn't return expected storage class", err)
-			return
+			// Ignored as Gateways (Azure/GCS etc) wont return storage class
+			ignoredLog(testName, function, args, startTime, "ListObjectsV2 doesn't return expected storage class").Info()
 		}
 	}
 
@@ -7488,6 +7790,7 @@ func main() {
 		testGetObjectWithContext()
 		testFPutObjectWithContext()
 		testFGetObjectWithContext()
+		testGetObjectACL()
 		testPutObjectWithContext()
 		testStorageClassMetadataPutObject()
 		testStorageClassInvalidMetadataPutObject()
@@ -7505,6 +7808,7 @@ func main() {
 			testEncryptedCopyObject()
 			testEncryptedEmptyObject()
 			testDecryptedCopyObject()
+			testCoreEncryptedCopyObjectPart()
 		}
 	} else {
 		testFunctional()

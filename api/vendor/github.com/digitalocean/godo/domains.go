@@ -1,10 +1,9 @@
 package godo
 
 import (
+	"context"
 	"fmt"
 	"net/http"
-
-	"github.com/digitalocean/godo/context"
 )
 
 const domainsBasePath = "v2/domains"
@@ -53,7 +52,7 @@ type domainsRoot struct {
 // DomainCreateRequest respresents a request to create a domain.
 type DomainCreateRequest struct {
 	Name      string `json:"name"`
-	IPAddress string `json:"ip_address"`
+	IPAddress string `json:"ip_address,omitempty"`
 }
 
 // DomainRecordRoot is the root of an individual Domain Record response
@@ -73,10 +72,12 @@ type DomainRecord struct {
 	Type     string `json:"type,omitempty"`
 	Name     string `json:"name,omitempty"`
 	Data     string `json:"data,omitempty"`
-	Priority int    `json:"priority,omitempty"`
+	Priority int    `json:"priority"`
 	Port     int    `json:"port,omitempty"`
 	TTL      int    `json:"ttl,omitempty"`
-	Weight   int    `json:"weight,omitempty"`
+	Weight   int    `json:"weight"`
+	Flags    int    `json:"flags"`
+	Tag      string `json:"tag,omitempty"`
 }
 
 // DomainRecordEditRequest represents a request to update a domain record.
@@ -84,14 +85,20 @@ type DomainRecordEditRequest struct {
 	Type     string `json:"type,omitempty"`
 	Name     string `json:"name,omitempty"`
 	Data     string `json:"data,omitempty"`
-	Priority int    `json:"priority,omitempty"`
+	Priority int    `json:"priority"`
 	Port     int    `json:"port,omitempty"`
 	TTL      int    `json:"ttl,omitempty"`
-	Weight   int    `json:"weight,omitempty"`
+	Weight   int    `json:"weight"`
+	Flags    int    `json:"flags"`
+	Tag      string `json:"tag,omitempty"`
 }
 
 func (d Domain) String() string {
 	return Stringify(d)
+}
+
+func (d Domain) URN() string {
+	return ToURN("Domain", d.Name)
 }
 
 // List all domains.

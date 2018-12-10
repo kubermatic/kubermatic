@@ -391,7 +391,7 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 
 func parseNodeConditions(node *corev1.Node) (reason string, message string) {
 	for _, condition := range node.Status.Conditions {
-		goodConditionType := condition.Type == corev1.NodeReady || condition.Type == corev1.NodeKubeletConfigOk
+		goodConditionType := condition.Type == corev1.NodeReady
 		if goodConditionType && condition.Status != corev1.ConditionTrue {
 			reason += condition.Reason + errGlue
 			message += condition.Message + errGlue
@@ -738,7 +738,7 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 				OperatingSystem: *operatingSystemSpec,
 				Cloud:           *cloudSpec,
 			},
-			Strategy:                &md.Spec.Strategy,
+			Strategy:                md.Spec.Strategy,
 			MinReadySeconds:         md.Spec.MinReadySeconds,
 			RevisionHistoryLimit:    md.Spec.RevisionHistoryLimit,
 			Paused:                  &md.Spec.Paused,

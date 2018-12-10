@@ -20,8 +20,7 @@ import (
 	"fmt"
 	"time"
 
-	"gopkg.in/mgo.v2/bson"
-
+	"github.com/globalsign/mgo/bson"
 	"github.com/mailru/easyjson/jlexer"
 	"github.com/mailru/easyjson/jwriter"
 )
@@ -109,6 +108,9 @@ func (d Date) MarshalEasyJSON(w *jwriter.Writer) {
 
 // UnmarshalJSON sets the Date from JSON
 func (d *Date) UnmarshalJSON(data []byte) error {
+	if string(data) == jsonNull {
+		return nil
+	}
 	l := jlexer.Lexer{Data: data}
 	d.UnmarshalEasyJSON(&l)
 	return l.Error()
