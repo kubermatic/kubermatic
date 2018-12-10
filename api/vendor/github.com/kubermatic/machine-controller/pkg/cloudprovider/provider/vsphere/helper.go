@@ -204,7 +204,6 @@ func getNetworkDevicesAndBackingsFromVM(ctx context.Context, vm *object.VirtualM
 		return nil, fmt.Errorf("couldn't get devices for vm, see: %s", err)
 	}
 
-	var availableBackings []string
 	var availableData []netDeviceAndBackingInfo
 
 	for i, device := range devices {
@@ -220,8 +219,6 @@ func getNetworkDevicesAndBackingsFromVM(ctx context.Context, vm *object.VirtualM
 			data := netDeviceAndBackingInfo{device: &devices[i], backingInfo: ethBacking}
 			availableData = append(availableData, data)
 		}
-
-		availableBackings = append(availableBackings, ethBacking.DeviceName)
 	}
 
 	return availableData, nil
@@ -309,7 +306,7 @@ func uploadAndAttachISO(ctx context.Context, f *find.Finder, vmRef *object.Virtu
 	}
 	glog.V(3).Infof("Uploaded ISO file %s", localIsoFilePath)
 
-	// Find the cd-rom devide and insert the cloud init iso file into it.
+	// Find the cd-rom device and insert the cloud init iso file into it.
 	devices, err := vmRef.Device(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get devices: %v", err)
