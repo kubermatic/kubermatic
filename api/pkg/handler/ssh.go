@@ -27,6 +27,17 @@ func createSSHKeyEndpoint(keyProvider provider.SSHKeyProvider, projectProvider p
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
+		existingKeys, err := keyProvider.List(project, nil)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		for _, key := range existingKeys {
+			if key.Spec.Name == req.Key.Name {
+				return nil, errors.NewBadRequest("SSH key with name '%s' already exists", req.Key.Name)
+			}
+		}
+
 		key, err := keyProvider.Create(userInfo, project, req.Key.Name, req.Key.Spec.PublicKey)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
