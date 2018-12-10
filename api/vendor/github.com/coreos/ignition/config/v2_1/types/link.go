@@ -15,18 +15,16 @@
 package types
 
 import (
-	"fmt"
-
 	"github.com/coreos/ignition/config/validate/report"
 )
 
-func (s Link) Validate() report.Report {
+func (s LinkEmbedded1) ValidateTarget() report.Report {
 	r := report.Report{}
 	if !s.Hard {
 		err := validatePath(s.Target)
 		if err != nil {
 			r.Add(report.Entry{
-				Message: fmt.Sprintf("problem with target path %q: %v", s.Target, err),
+				Message: err.Error(),
 				Kind:    report.EntryError,
 			})
 		}

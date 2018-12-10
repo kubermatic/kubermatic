@@ -33,7 +33,6 @@ showenv:
 check: gofmt lint
 
 test:
-	$(GO) generate ./pkg/controller/ipam/
 	$(GO) test -v ./...
 
 test-update:

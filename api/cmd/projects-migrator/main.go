@@ -288,7 +288,7 @@ func removeKeysWithoutOwner(ctx migrationContext) error {
 	keysWithoutOwner := []kubermaticv1.UserSSHKey{}
 	glog.Info("STEP 1: getting the list of keys that are owned by a project owner")
 	{
-		allKeys, err := ctx.masterKubermaticClient.KubermaticV1().UserSSHKeies().List(metav1.ListOptions{})
+		allKeys, err := ctx.masterKubermaticClient.KubermaticV1().UserSSHKeys().List(metav1.ListOptions{})
 		if err != nil {
 			return err
 		}
@@ -307,7 +307,7 @@ func removeKeysWithoutOwner(ctx migrationContext) error {
 	{
 		for _, keyToRemove := range keysWithoutOwner {
 			if !ctx.dryRun {
-				err := ctx.masterKubermaticClient.KubermaticV1().UserSSHKeies().Delete(keyToRemove.Name, &metav1.DeleteOptions{})
+				err := ctx.masterKubermaticClient.KubermaticV1().UserSSHKeys().Delete(keyToRemove.Name, &metav1.DeleteOptions{})
 				if err != nil {
 					return err
 				}
@@ -358,7 +358,7 @@ func migrateRemainingSSHKeys(ctx migrationContext) error {
 	keysProjectTuple := []keyProjectTuple{}
 	glog.Info("STEP 2: getting the list of keys that are owned by a project owner")
 	{
-		allKeys, err := ctx.masterKubermaticClient.KubermaticV1().UserSSHKeies().List(metav1.ListOptions{})
+		allKeys, err := ctx.masterKubermaticClient.KubermaticV1().UserSSHKeys().List(metav1.ListOptions{})
 		if err != nil {
 			return err
 		}
@@ -394,7 +394,7 @@ func migrateRemainingSSHKeys(ctx migrationContext) error {
 			key := keyProject.key
 			key.OwnerReferences = append(key.OwnerReferences, oRef)
 			if !ctx.dryRun {
-				_, err := ctx.masterKubermaticClient.KubermaticV1().UserSSHKeies().Update(&key)
+				_, err := ctx.masterKubermaticClient.KubermaticV1().UserSSHKeys().Update(&key)
 				if err != nil {
 					return err
 				}
@@ -625,7 +625,7 @@ func migrateToProject(ctx migrationContext) error {
 	sshKeysToAdoptByUserID := map[string][]kubermaticv1.UserSSHKey{}
 	glog.Info("STEP 4: getting the list of ssh keys that are being used by a cluster")
 	{
-		sshKeys, err := ctx.masterKubermaticClient.KubermaticV1().UserSSHKeies().List(metav1.ListOptions{})
+		sshKeys, err := ctx.masterKubermaticClient.KubermaticV1().UserSSHKeys().List(metav1.ListOptions{})
 		if err != nil {
 			return err
 		}
@@ -696,7 +696,7 @@ func migrateToProject(ctx migrationContext) error {
 				ownerRef := createOwnerReferenceForProject(project)
 				sshKey.OwnerReferences = append(sshKey.OwnerReferences, ownerRef)
 				if !ctx.dryRun {
-					_, err := ctx.masterKubermaticClient.KubermaticV1().UserSSHKeies().Update(&sshKey)
+					_, err := ctx.masterKubermaticClient.KubermaticV1().UserSSHKeys().Update(&sshKey)
 					if err != nil {
 						return err
 					}

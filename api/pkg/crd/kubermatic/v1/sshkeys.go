@@ -14,6 +14,7 @@ const (
 
 //+genclient
 //+genclient:nonNamespaced
+//+resourceName=usersshkeies
 
 // UserSSHKey specifies a users UserSSHKey
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

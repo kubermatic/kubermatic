@@ -35,6 +35,15 @@ func ActionFromSchema(s schema.Action) *Action {
 	return action
 }
 
+// ActionsFromSchema converts a slice of schema.Action to a slice of Action.
+func ActionsFromSchema(s []schema.Action) []*Action {
+	var actions []*Action
+	for _, a := range s {
+		actions = append(actions, ActionFromSchema(a))
+	}
+	return actions
+}
+
 // FloatingIPFromSchema converts a schema.FloatingIP to a FloatingIP.
 func FloatingIPFromSchema(s schema.FloatingIP) *FloatingIP {
 	f := &FloatingIP{
@@ -149,6 +158,9 @@ func ServerFromSchema(s schema.Server) *Server {
 	server.Labels = map[string]string{}
 	for key, value := range s.Labels {
 		server.Labels[key] = value
+	}
+	for _, id := range s.Volumes {
+		server.Volumes = append(server.Volumes, &Volume{ID: id})
 	}
 	return server
 }
@@ -274,6 +286,29 @@ func ImageFromSchema(s schema.Image) *Image {
 		i.Labels[key] = value
 	}
 	return i
+}
+
+// VolumeFromSchema converts a schema.Volume to a Volume.
+func VolumeFromSchema(s schema.Volume) *Volume {
+	v := &Volume{
+		ID:          s.ID,
+		Name:        s.Name,
+		Location:    LocationFromSchema(s.Location),
+		Size:        s.Size,
+		LinuxDevice: s.LinuxDevice,
+		Protection: VolumeProtection{
+			Delete: s.Protection.Delete,
+		},
+		Created: s.Created,
+	}
+	if s.Server != nil {
+		v.Server = &Server{ID: *s.Server}
+	}
+	v.Labels = map[string]string{}
+	for key, value := range s.Labels {
+		v.Labels[key] = value
+	}
+	return v
 }
 
 // PaginationFromSchema converts a schema.MetaPagination to a Pagination.

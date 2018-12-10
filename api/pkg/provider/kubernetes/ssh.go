@@ -76,7 +76,7 @@ func (p *SSHKeyProvider) Create(userInfo *provider.UserInfo, project *kubermatic
 	if err != nil {
 		return nil, err
 	}
-	return masterImpersonatedClient.UserSSHKeies().Create(sshKey)
+	return masterImpersonatedClient.UserSSHKeys().Create(sshKey)
 }
 
 // List gets a list of ssh keys, by default it will get all the keys that belong to the given project.
@@ -133,7 +133,7 @@ func (p *SSHKeyProvider) Get(userInfo *provider.UserInfo, keyName string) (*kube
 	if err != nil {
 		return nil, err
 	}
-	return masterImpersonatedClient.UserSSHKeies().Get(keyName, metav1.GetOptions{})
+	return masterImpersonatedClient.UserSSHKeys().Get(keyName, metav1.GetOptions{})
 }
 
 // Delete simply deletes the given key
@@ -142,7 +142,7 @@ func (p *SSHKeyProvider) Delete(userInfo *provider.UserInfo, keyName string) err
 	if err != nil {
 		return err
 	}
-	return masterImpersonatedClient.UserSSHKeies().Delete(keyName, &metav1.DeleteOptions{})
+	return masterImpersonatedClient.UserSSHKeys().Delete(keyName, &metav1.DeleteOptions{})
 }
 
 // Update simply updates the given key
@@ -151,5 +151,5 @@ func (p *SSHKeyProvider) Update(userInfo *provider.UserInfo, newKey *kubermatica
 	if err != nil {
 		return nil, err
 	}
-	return masterImpersonatedClient.UserSSHKeies().Update(newKey)
+	return masterImpersonatedClient.UserSSHKeys().Update(newKey)
 }
