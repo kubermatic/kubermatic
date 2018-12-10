@@ -3,7 +3,7 @@ updates:
 # Allow to next minor release
 - from: 1.8.*
   to: 1.9.0
-  automatic: true
+  automatic: false
 
 # ======= 1.9 =======
 # Allow to next minor release
