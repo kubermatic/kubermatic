@@ -734,6 +734,9 @@ func GetAbsoluteServiceDNSName(service, namespace string) string {
 // This is needed as golang does not support function interface matching
 func StatefulSetObjectWrapper(create StatefulSetCreator) ObjectCreator {
 	return func(data *TemplateData, existing runtime.Object) (runtime.Object, error) {
-		return create(data, existing.(*appsv1.StatefulSet))
+		if existing != nil {
+			return create(data, existing.(*appsv1.StatefulSet))
+		}
+		return create(data, nil)
 	}
 }
