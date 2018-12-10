@@ -1,4 +1,21 @@
 
+### [v2.7.8]()
+
+Supported Kubernetes versions:
+- `1.10.11`
+- `1.11.5`
+
+
+**Major changes:**
+
+- Communicating with cloud providers APIs no longer requires providing additional credentials. [#2151](https://github.com/kubermatic/kubermatic/issues/2151) ([p0lyn0mial](https://github.com/p0lyn0mial))
+- Updated the kubermatic dashboard to `v0.38.0` [#2165](https://github.com/kubermatic/kubermatic/issues/2165) ([mrIncompetent](https://github.com/mrIncompetent))
+  - Provider-specific data will now be fetched without re-sending credentials. [#806](https://github.com/kubermatic/dashboard-v2/issues/806) ([maciaszczykm](https://github.com/maciaszczykm))
+- Kubernetes will be automatically updated to versions that contain a fix for CVE-2018-1002105 and `v1.8`, `v1.9` cluster creation is now dropped [#2487](https://github.com/kubermatic/kubermatic/issues/2487) ([kdomanski](https://github.com/kdomanski))
+
+
+
+
 ### [v2.8.2]()
 
 
