@@ -106,17 +106,18 @@ func (s *DistributedVirtualSwitch) ReconfigureDvsTask(req *types.ReconfigureDvs_
 
 			switch types.ConfigSpecOperation(member.Operation) {
 			case types.ConfigSpecOperationAdd:
-				if FindReference(host.Network, s.Self) != nil {
+				if FindReference(s.Summary.HostMember, member.Host) != nil {
 					return nil, &types.AlreadyExists{Name: host.Name}
 				}
 
-				Map.AppendReference(host, &host.Network, s.Self)
 				Map.AppendReference(host, &host.Network, s.Portgroup...)
 				s.Summary.HostMember = append(s.Summary.HostMember, member.Host)
+				parent := hostParent(&host.HostSystem)
 
 				for _, ref := range s.Portgroup {
 					pg := Map.Get(ref).(*DistributedVirtualPortgroup)
 					Map.AddReference(pg, &pg.Host, member.Host)
+					Map.AddReference(parent, &parent.Network, ref)
 				}
 			case types.ConfigSpecOperationRemove:
 				for _, ref := range host.Vm {
@@ -129,8 +130,7 @@ func (s *DistributedVirtualSwitch) ReconfigureDvsTask(req *types.ReconfigureDvs_
 					}
 				}
 
-				Map.RemoveReference(host, &host.Network, s.Self)
-				RemoveReference(&s.Summary.HostMember, s.Self)
+				RemoveReference(&s.Summary.HostMember, member.Host)
 			case types.ConfigSpecOperationEdit:
 				return nil, &types.NotSupported{}
 			}

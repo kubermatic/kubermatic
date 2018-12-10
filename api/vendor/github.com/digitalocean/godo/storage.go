@@ -1,12 +1,10 @@
 package godo
 
 import (
+	"context"
 	"fmt"
-	"time"
-
 	"net/http"
-
-	"github.com/digitalocean/godo/context"
+	"time"
 )
 
 const (
@@ -46,17 +44,23 @@ var _ StorageService = &StorageServiceOp{}
 
 // Volume represents a Digital Ocean block store volume.
 type Volume struct {
-	ID            string    `json:"id"`
-	Region        *Region   `json:"region"`
-	Name          string    `json:"name"`
-	SizeGigaBytes int64     `json:"size_gigabytes"`
-	Description   string    `json:"description"`
-	DropletIDs    []int     `json:"droplet_ids"`
-	CreatedAt     time.Time `json:"created_at"`
+	ID              string    `json:"id"`
+	Region          *Region   `json:"region"`
+	Name            string    `json:"name"`
+	SizeGigaBytes   int64     `json:"size_gigabytes"`
+	Description     string    `json:"description"`
+	DropletIDs      []int     `json:"droplet_ids"`
+	CreatedAt       time.Time `json:"created_at"`
+	FilesystemType  string    `json:"filesystem_type"`
+	FilesystemLabel string    `json:"filesystem_label"`
 }
 
 func (f Volume) String() string {
 	return Stringify(f)
+}
+
+func (f Volume) URN() string {
+	return ToURN("Volume", f.ID)
 }
 
 type storageVolumesRoot struct {
@@ -72,11 +76,13 @@ type storageVolumeRoot struct {
 // VolumeCreateRequest represents a request to create a block store
 // volume.
 type VolumeCreateRequest struct {
-	Region        string `json:"region"`
-	Name          string `json:"name"`
-	Description   string `json:"description"`
-	SizeGigaBytes int64  `json:"size_gigabytes"`
-	SnapshotID    string `json:"snapshot_id"`
+	Region          string `json:"region"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	SizeGigaBytes   int64  `json:"size_gigabytes"`
+	SnapshotID      string `json:"snapshot_id"`
+	FilesystemType  string `json:"filesystem_type"`
+	FilesystemLabel string `json:"filesystem_label"`
 }
 
 // ListVolumes lists all storage volumes.
@@ -85,6 +91,10 @@ func (svc *StorageServiceOp) ListVolumes(ctx context.Context, params *ListVolume
 	if params != nil {
 		if params.Region != "" && params.Name != "" {
 			path = fmt.Sprintf("%s?name=%s&region=%s", path, params.Name, params.Region)
+		} else if params.Region != "" {
+			path = fmt.Sprintf("%s?region=%s", path, params.Region)
+		} else if params.Name != "" {
+			path = fmt.Sprintf("%s?name=%s", path, params.Name)
 		}
 
 		if params.ListOptions != nil {
