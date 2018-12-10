@@ -3,10 +3,14 @@ package cloudconfig
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
 	"github.com/kubermatic/machine-controller/pkg/ini"
 
 	corev1 "k8s.io/api/core/v1"
@@ -30,9 +34,81 @@ func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapC
 			cm.Data = map[string]string{}
 		}
 
-		cloudConfig, err := CloudConfig(data)
-		if err != nil {
-			return nil, err
+		var cloudConfig string
+		var err error
+		cloud := data.Cluster().Spec.Cloud
+		dc := data.DC()
+		if cloud.AWS != nil {
+			cloudConfig, err = CloudConfig(data)
+			if err != nil {
+				return nil, err
+			}
+		} else if cloud.Azure != nil {
+			//TODO: We need SecurityGroupName, PrimaryAvailabilitySetName
+			// and VnetResourceGroup, this requires updating the machine-controller
+			// with a version that includes kubermatic/machine-controller#411
+			azureCloudConfig := &azure.CloudConfig{
+				Cloud:               "AZUREPUBLICCLOUD",
+				TenantID:            cloud.Azure.TenantID,
+				SubscriptionID:      cloud.Azure.SubscriptionID,
+				AADClientID:         cloud.Azure.ClientID,
+				AADClientSecret:     cloud.Azure.ClientSecret,
+				ResourceGroup:       cloud.Azure.ResourceGroup,
+				Location:            dc.Spec.Azure.Location,
+				VNetName:            cloud.Azure.VNetName,
+				SubnetName:          cloud.Azure.SubnetName,
+				RouteTableName:      cloud.Azure.RouteTableName,
+				UseInstanceMetadata: false,
+			}
+			cloudConfig, err = azure.CloudConfigToString(azureCloudConfig)
+			if err != nil {
+				return nil, err
+			}
+		} else if cloud.Openstack != nil {
+			openstackCloudConfig := &openstack.CloudConfig{
+				Global: openstack.GlobalOpts{
+					AuthURL:    dc.Spec.Openstack.AuthURL,
+					Username:   cloud.Openstack.Username,
+					Password:   cloud.Openstack.Password,
+					DomainName: cloud.Openstack.Domain,
+					TenantName: cloud.Openstack.Tenant,
+					Region:     dc.Spec.Openstack.Region,
+				},
+				BlockStorage: openstack.BlockStorageOpts{
+					BSVersion:       "v2",
+					TrustDevicePath: false,
+				},
+			}
+			//TODO: Wait until the cloud-config struct in the machine-controller
+			// for Openstack has support for switching the loadbalancers
+			// manage-security-groups on/off based on version, then add it here
+			cloudConfig, err = openstack.CloudConfigToString(openstackCloudConfig)
+			if err != nil {
+				return nil, err
+			}
+		} else if cloud.VSphere != nil {
+			vsphereCloudConfig := &vsphere.CloudConfig{
+				Global: vsphere.GlobalOpts{
+					User:         cloud.VSphere.Username,
+					Password:     cloud.VSphere.Password,
+					InsecureFlag: dc.Spec.VSphere.AllowInsecure,
+					VCenterPort:  "443",
+				},
+				Disk: vsphere.DiskOpts{
+					SCSIControllerType: "pvscsi",
+				},
+				Workspace: vsphere.WorkspaceOpts{
+					VCenterIP:        strings.Replace(dc.Spec.VSphere.Endpoint, "https://", "", -1),
+					Datacenter:       dc.Spec.VSphere.Datacenter,
+					DefaultDatastore: dc.Spec.VSphere.Datastore,
+					//TODO: Verify this has the same effect as Global.Working-dir
+					Folder: data.Cluster().Name,
+				},
+			}
+			cloudConfig, err = vsphere.CloudConfigToString(vsphereCloudConfig)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		cm.Name = resources.CloudConfigConfigMapName
@@ -80,62 +156,6 @@ disablesecuritygroupingress=false
 SubnetID={{ .Cluster.Spec.Cloud.AWS.SubnetID | iniEscape }}
 RouteTableID={{ .Cluster.Spec.Cloud.AWS.RouteTableID | iniEscape }}
 disablestrictzonecheck=true
-{{- end }}
-{{- if .Cluster.Spec.Cloud.Openstack }}
-[Global]
-auth-url = {{ .DC.Spec.Openstack.AuthURL | iniEscape }}
-username = {{ .Cluster.Spec.Cloud.Openstack.Username | iniEscape }}
-password = {{ .Cluster.Spec.Cloud.Openstack.Password | iniEscape }}
-domain-name= {{ .Cluster.Spec.Cloud.Openstack.Domain | iniEscape }}
-tenant-name = {{ .Cluster.Spec.Cloud.Openstack.Tenant | iniEscape }}
-region = {{ .DC.Spec.Openstack.Region |iniEscape }}
-
-[BlockStorage]
-trust-device-path = false
-bs-version = "v2"
-{{- if semverCompare ">=1.9.*" .ClusterVersion }}
-ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ| iniEscape  }}
-{{- end }}
-
-[LoadBalancer]
-{{- if semverCompare "~1.9.10 || ~1.10.6 || ~1.11.1 || >=1.12.*" .ClusterVersion }}
-manage-security-groups = true
-{{- end }}
-{{- end }}
-{{- if .Cluster.Spec.Cloud.Azure}}
-{
-  "cloud": "AZUREPUBLICCLOUD",
-  "tenantId": "{{ .Cluster.Spec.Cloud.Azure.TenantID }}",
-  "subscriptionId": "{{ .Cluster.Spec.Cloud.Azure.SubscriptionID }}",
-  "aadClientId": "{{ .Cluster.Spec.Cloud.Azure.ClientID }}",
-  "aadClientSecret": "{{ .Cluster.Spec.Cloud.Azure.ClientSecret }}",
-
-  "resourceGroup": "{{ .Cluster.Spec.Cloud.Azure.ResourceGroup }}",
-  "location": "{{ .DC.Spec.Azure.Location }}",
-  "vnetName": "{{ .Cluster.Spec.Cloud.Azure.VNetName }}",
-  "vnetResourceGroup": "{{ .Cluster.Spec.Cloud.Azure.ResourceGroup }}",
-  "subnetName": "{{ .Cluster.Spec.Cloud.Azure.SubnetName }}",
-  "routeTableName": "{{ .Cluster.Spec.Cloud.Azure.RouteTableName }}",
-  "securityGroupName": "{{ .Cluster.Spec.Cloud.Azure.SecurityGroup }}",
-  "primaryAvailabilitySetName": "{{ .Cluster.Spec.Cloud.Azure.AvailabilitySet }}",
-
-{{/* Consumed by apiserver and controller-manager */}}
-  "useInstanceMetadata": false
-}
-{{- end }}
-{{- if .Cluster.Spec.Cloud.VSphere }}
-{{/* Source: https://docs.openshift.com/container-platform/3.7/install_config/configuring_vsphere.html#vsphere-enabling */}}
-[Global]
-        user = {{ .Cluster.Spec.Cloud.VSphere.Username | iniEscape }}
-        password = {{ .Cluster.Spec.Cloud.VSphere.Password | iniEscape }}
-        server = {{ .DC.Spec.VSphere.Endpoint|replace "https://" "" | iniEscape }}
-        port = "443"
-        insecure-flag = {{ if .DC.Spec.VSphere.AllowInsecure }}1{{ else }}0{{ end }}
-        datacenter = {{ .DC.Spec.VSphere.Datacenter | iniEscape}}
-        datastore = {{ .DC.Spec.VSphere.Datastore | iniEscape }}
-        working-dir = {{ .Cluster.Name | iniEscape }}
-[Disk]
-    scsicontrollertype = pvscsi
 {{- end }}
 `
 )
