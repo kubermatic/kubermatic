@@ -6,7 +6,8 @@ updates:
   automatic: false
 # Allow to next minor release
 - from: 1.8.*
-  to: ^1.10.11
+  to: ^1.9.11
+# CHANGE THIS TO 'true' TO AUTOMATICALLY UPGRADE 1.8->1.9
   automatic: false
 
 # ======= 1.9 =======
@@ -17,6 +18,7 @@ updates:
 # Allow to next minor release
 - from: 1.9.*
   to: ^1.10.11
+# CHANGE THIS TO 'true' TO AUTOMATICALLY UPGRADE 1.9->1.10
   automatic: false
 
 # ======= 1.10 =======
