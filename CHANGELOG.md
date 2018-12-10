@@ -38,6 +38,25 @@ Supported Kubernetes versions:
 
 
 
+### [v2.6.17]()
+
+Supported Kubernetes versions:
+- `1.10.11`
+
+
+**Bugfix:**
+
+- Fixed handling of very long user IDs [#2086](https://github.com/kubermatic/kubermatic/issues/2086) ([kdomanski](https://github.com/kdomanski))
+
+
+**Misc:**
+
+- Enabled the usage of Heapster for the HorizontalPodAutoscaler [#2199](https://github.com/kubermatic/kubermatic/issues/2199) ([mrIncompetent](https://github.com/mrIncompetent))
+- Kubernetes will be automatically updated to versions that contain a fix for CVE-2018-1002105 and `v1.8`, `v1.9` cluster creation is now dropped [#2497](https://github.com/kubermatic/kubermatic/issues/2497) ([kdomanski](https://github.com/kdomanski))
+
+
+
+
 ### [v2.8.2]()
 
 
