@@ -7,6 +7,7 @@ import (
 
 	"github.com/Masterminds/sprig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/machine-controller/pkg/ini"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,8 +47,11 @@ func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapC
 
 // CloudConfig returns the cloud-config for the supplied data
 func CloudConfig(data resources.ConfigMapDataProvider) (string, error) {
+	funcMap := sprig.TxtFuncMap()
+	funcMap["iniEscape"] = ini.Escape
+
 	configBuffer := bytes.Buffer{}
-	configTpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(config)
+	configTpl, err := template.New("base").Funcs(funcMap).Parse(config)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse cloud config template: %v", err)
 	}
@@ -69,28 +73,28 @@ const (
 	config                = `
 {{- if .Cluster.Spec.Cloud.AWS }}
 [global]
-zone={{ .Cluster.Spec.Cloud.AWS.AvailabilityZone }}
-VPC={{ .Cluster.Spec.Cloud.AWS.VPCID }}
-KubernetesClusterID={{ .Cluster.Name }}
+zone={{ .Cluster.Spec.Cloud.AWS.AvailabilityZone | iniEscape }}
+VPC={{ .Cluster.Spec.Cloud.AWS.VPCID | iniEscape }}
+KubernetesClusterID={{ .Cluster.Name | iniEscape }}
 disablesecuritygroupingress=false
-SubnetID={{ .Cluster.Spec.Cloud.AWS.SubnetID }}
-RouteTableID={{ .Cluster.Spec.Cloud.AWS.RouteTableID }}
+SubnetID={{ .Cluster.Spec.Cloud.AWS.SubnetID | iniEscape }}
+RouteTableID={{ .Cluster.Spec.Cloud.AWS.RouteTableID | iniEscape }}
 disablestrictzonecheck=true
 {{- end }}
 {{- if .Cluster.Spec.Cloud.Openstack }}
 [Global]
-auth-url = "{{ .DC.Spec.Openstack.AuthURL }}"
-username = "{{ .Cluster.Spec.Cloud.Openstack.Username }}"
-password = "{{ .Cluster.Spec.Cloud.Openstack.Password }}"
-domain-name= "{{ .Cluster.Spec.Cloud.Openstack.Domain }}"
-tenant-name = "{{ .Cluster.Spec.Cloud.Openstack.Tenant }}"
-region = "{{ .DC.Spec.Openstack.Region }}"
+auth-url = {{ .DC.Spec.Openstack.AuthURL | iniEscape }}
+username = {{ .Cluster.Spec.Cloud.Openstack.Username | iniEscape }}
+password = {{ .Cluster.Spec.Cloud.Openstack.Password | iniEscape }}
+domain-name= {{ .Cluster.Spec.Cloud.Openstack.Domain | iniEscape }}
+tenant-name = {{ .Cluster.Spec.Cloud.Openstack.Tenant | iniEscape }}
+region = {{ .DC.Spec.Openstack.Region |iniEscape }}
 
 [BlockStorage]
 trust-device-path = false
 bs-version = "v2"
 {{- if semverCompare ">=1.9.*" .ClusterVersion }}
-ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
+ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ| iniEscape  }}
 {{- end }}
 
 [LoadBalancer]
@@ -122,14 +126,14 @@ manage-security-groups = true
 {{- if .Cluster.Spec.Cloud.VSphere }}
 {{/* Source: https://docs.openshift.com/container-platform/3.7/install_config/configuring_vsphere.html#vsphere-enabling */}}
 [Global]
-        user = "{{ .Cluster.Spec.Cloud.VSphere.Username }}"
-        password = "{{ .Cluster.Spec.Cloud.VSphere.Password }}"
-        server = "{{ .DC.Spec.VSphere.Endpoint|replace "https://" "" }}"
+        user = {{ .Cluster.Spec.Cloud.VSphere.Username | iniEscape }}
+        password = {{ .Cluster.Spec.Cloud.VSphere.Password | iniEscape }}
+        server = {{ .DC.Spec.VSphere.Endpoint|replace "https://" "" | iniEscape }}
         port = "443"
-        insecure-flag = "{{ if .DC.Spec.VSphere.AllowInsecure }}1{{ else }}0{{ end }}"
-        datacenter = "{{ .DC.Spec.VSphere.Datacenter }}"
-        datastore = "{{ .DC.Spec.VSphere.Datastore }}"
-        working-dir = "{{ .Cluster.Name }}"
+        insecure-flag = {{ if .DC.Spec.VSphere.AllowInsecure }}1{{ else }}0{{ end }}
+        datacenter = {{ .DC.Spec.VSphere.Datacenter | iniEscape}}
+        datastore = {{ .DC.Spec.VSphere.Datastore | iniEscape }}
+        working-dir = {{ .Cluster.Name | iniEscape }}
 [Disk]
     scsicontrollertype = pvscsi
 {{- end }}

@@ -1658,6 +1658,7 @@
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere",
+    "github.com/kubermatic/machine-controller/pkg/ini",
     "github.com/kubermatic/machine-controller/pkg/node/eviction",
     "github.com/kubermatic/machine-controller/pkg/providerconfig",
     "github.com/kubermatic/machine-controller/pkg/userdata/centos",
