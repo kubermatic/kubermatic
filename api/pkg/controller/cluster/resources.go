@@ -232,7 +232,7 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster, data *resources.Tem
 
 	for _, op := range operations {
 		if err := resources.EnsureSecret(op.name, data, op.create, cc.secretLister.Secrets(c.Status.NamespaceName), cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the Secret '%s' exists: %v", op.name, err)
+			return fmt.Errorf("failed to ensure Secret '%s': %v", op.name, err)
 		}
 	}
 
