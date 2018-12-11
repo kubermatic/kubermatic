@@ -572,7 +572,26 @@ func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 }
 
 func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, name string, err error) {
-	return "", "aws", nil
+	c, _, err := p.getConfig(spec.ProviderConfig)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to parse config: %v", err)
+	}
+
+	cc := &CloudConfig{
+		Global: GlobalOpts{
+			VPC:      c.VpcID,
+			SubnetID: c.SubnetID,
+			Zone:     c.AvailabilityZone,
+		},
+	}
+
+	s, err := CloudConfigToString(cc)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to convert cloud-config to string: %v", err)
+	}
+
+	return s, "aws", nil
+
 }
 
 func (p *provider) MachineMetricsLabels(machine *v1alpha1.Machine) (map[string]string, error) {
