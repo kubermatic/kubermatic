@@ -85,11 +85,13 @@ func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapC
 				BlockStorage: openstack.BlockStorageOpts{
 					BSVersion:       "v2",
 					TrustDevicePath: false,
+					IgnoreVolumeAZ:  dc.Spec.Openstack.IgnoreVolumeAZ,
 				},
+				LoadBalancer: openstack.LoadBalancerOpts{
+					ManageSecurityGroups: true,
+				},
+				Version: data.Cluster().Spec.Version.String(),
 			}
-			//TODO: Wait until the cloud-config struct in the machine-controller
-			// for Openstack has support for switching the loadbalancers
-			// manage-security-groups on/off based on version, then add it here
 			cloudConfig, err = openstack.CloudConfigToString(openstackCloudConfig)
 			if err != nil {
 				return nil, err
