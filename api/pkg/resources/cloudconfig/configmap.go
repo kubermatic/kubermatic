@@ -115,20 +115,29 @@ func CloudConfig(data resources.ConfigMapDataProvider) (cloudConfig string, err 
 	} else if cloud.VSphere != nil {
 		vsphereCloudConfig := &vsphere.CloudConfig{
 			Global: vsphere.GlobalOpts{
-				User:         cloud.VSphere.Username,
-				Password:     cloud.VSphere.Password,
-				InsecureFlag: dc.Spec.VSphere.AllowInsecure,
-				VCenterPort:  "443",
+				User:             cloud.VSphere.Username,
+				Password:         cloud.VSphere.Password,
+				VCenterIP:        strings.Replace(dc.Spec.VSphere.Endpoint, "https://", "", -1),
+				VCenterPort:      "443",
+				InsecureFlag:     dc.Spec.VSphere.AllowInsecure,
+				Datacenter:       dc.Spec.VSphere.Datacenter,
+				DefaultDatastore: dc.Spec.VSphere.Datastore,
+				WorkingDir:       data.Cluster().Name,
+			},
+			Workspace: vsphere.WorkspaceOpts{
+				// This is redudant with what the Vsphere cloud provider itself does:
+				// https://github.com/kubernetes/kubernetes/blob/9d80e7522ab7fc977e40dd6f3b5b16d8ebfdc435/pkg/cloudprovider/providers/vsphere/vsphere.go#L346
+				// We do it here because the fields in the "Global" object
+				// are marked as deprecated even thought the code checks
+				// if they are set and will make the controller-manager crash
+				// if they are not - But maybe that will change at some point
+				VCenterIP:        strings.Replace(dc.Spec.VSphere.Endpoint, "https://", "", -1),
+				Datacenter:       dc.Spec.VSphere.Datacenter,
+				Folder:           data.Cluster().Name,
+				DefaultDatastore: dc.Spec.VSphere.Datastore,
 			},
 			Disk: vsphere.DiskOpts{
 				SCSIControllerType: "pvscsi",
-			},
-			Workspace: vsphere.WorkspaceOpts{
-				VCenterIP:        strings.Replace(dc.Spec.VSphere.Endpoint, "https://", "", -1),
-				Datacenter:       dc.Spec.VSphere.Datacenter,
-				DefaultDatastore: dc.Spec.VSphere.Datastore,
-				//TODO: Verify this has the same effect as Global.Working-dir
-				Folder: data.Cluster().Name,
 			},
 		}
 		cloudConfig, err = vsphere.CloudConfigToString(vsphereCloudConfig)

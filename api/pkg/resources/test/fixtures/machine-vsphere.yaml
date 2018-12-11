@@ -27,10 +27,14 @@ spec:
         distUpgradeOnBoot: false
       overwriteCloudConfig: |+
         [Global]
-        user          = "vsphere-username"
-        password      = "vsphere-password"
-        port          = "443"
-        insecure-flag = true
+        user              = "vsphere-username"
+        password          = "vsphere-password"
+        port              = "443"
+        insecure-flag     = true
+        working-dir       = "vsphere-1a2b3c4d5e"
+        datacenter        = "vsphere-datacenter"
+        default-datastore = "vsphere-datastore"
+        server            = "http://vsphere.local"
 
         [Disk]
         scsicontrollertype = "pvscsi"
