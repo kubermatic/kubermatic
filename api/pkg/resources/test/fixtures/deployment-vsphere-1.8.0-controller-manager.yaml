@@ -122,8 +122,6 @@ spec:
         - --controllers
         - '*,bootstrapsigner,tokencleaner'
         - --use-service-account-credentials=true
-        - --v
-        - "4"
         - --feature-gates
         - RotateKubeletClientCertificate=true,RotateKubeletServerCertificate=true
         - --cloud-provider

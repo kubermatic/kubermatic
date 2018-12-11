@@ -17,9 +17,12 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/tools/cache"
 )
 
 const (
@@ -192,8 +195,8 @@ type SecretOperation struct {
 }
 
 // GetSecretCreatorOperations returns all SecretCreators that are currently in use
-func GetSecretCreatorOperations(dockerPullConfigJSON []byte) []SecretOperation {
-	return []SecretOperation{
+func GetSecretCreatorOperations(c *kubermaticv1.Cluster, dockerPullConfigJSON []byte) []SecretOperation {
+	secrets := []SecretOperation{
 		{resources.CASecretName, certificates.RootCA},
 		{resources.FrontProxyCASecretName, certificates.FrontProxyCA},
 		{resources.ImagePullSecretName, resources.ImagePullSecretCreator(resources.ImagePullSecretName, dockerPullConfigJSON)},
@@ -217,10 +220,14 @@ func GetSecretCreatorOperations(dockerPullConfigJSON []byte) []SecretOperation {
 		{resources.MachineControllerWebhookServingCertSecretName, machinecontroller.TLSServingCertificate},
 		{resources.MetricsServerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil)},
 	}
+	if len(c.Spec.MachineNetworks) > 0 {
+		secrets = append(secrets, SecretOperation{resources.IPAMControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.IPAMControllerKubeconfigSecretName, resources.IPAMControllerCertUsername, nil)})
+	}
+	return secrets
 }
 
 func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	operations := GetSecretCreatorOperations(cc.dockerPullConfigJSON)
+	operations := GetSecretCreatorOperations(c, cc.dockerPullConfigJSON)
 
 	for _, op := range operations {
 		if err := resources.EnsureSecret(op.name, data, op.create, cc.secretLister.Secrets(c.Status.NamespaceName), cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName)); err != nil {
@@ -262,8 +269,15 @@ func GetStatefulSetCreators() []resources.StatefulSetCreator {
 func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetStatefulSetCreators()
 
+	informer, err := cc.dynamicCache.GetInformer(&appsv1.StatefulSet{})
+	if err != nil {
+		return fmt.Errorf("failed to get StatefulSet informer: %v", err)
+	}
+	store := informer.GetStore()
+	cache.WaitForCacheSync(wait.NeverStop, informer.GetController().HasSynced)
+
 	for _, create := range creators {
-		if err := resources.EnsureStatefulSet(data, create, cc.statefulSetLister.StatefulSets(c.Status.NamespaceName), cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName)); err != nil {
+		if err := resources.EnsureObject(data, c.Status.NamespaceName, resources.StatefulSetObjectWrapper(create), store, cc.dynamicClient); err != nil {
 			return fmt.Errorf("failed to ensure that the StatefulSet exists: %v", err)
 		}
 	}

@@ -6,7 +6,6 @@ spec:
   metadata:
     creationTimestamp: null
   providerConfig:
-    ValueFrom: null
     value:
       cloudProvider: vsphere
       cloudProviderSpec:
@@ -44,6 +43,4 @@ spec:
       - ssh-rsa TEST123test
   versions:
     kubelet: v1.9.6
-status:
-  lastUpdated: null
-  providerStatus: null
+status: {}

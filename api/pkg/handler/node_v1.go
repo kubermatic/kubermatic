@@ -115,7 +115,7 @@ func listNodesForCluster(projectProvider provider.ProjectProvider) endpoint.Endp
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{})
+		machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{IncludeUninitialized: true})
 		if err != nil {
 			return nil, fmt.Errorf("failed to load machines from cluster: %v", err)
 		}
@@ -391,7 +391,7 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 
 func parseNodeConditions(node *corev1.Node) (reason string, message string) {
 	for _, condition := range node.Status.Conditions {
-		goodConditionType := condition.Type == corev1.NodeReady || condition.Type == corev1.NodeKubeletConfigOk
+		goodConditionType := condition.Type == corev1.NodeReady
 		if goodConditionType && condition.Status != corev1.ConditionTrue {
 			reason += condition.Reason + errGlue
 			message += condition.Message + errGlue
@@ -426,7 +426,7 @@ func getMachineForNode(node *corev1.Node, machines []clusterv1alpha1.Machine) *c
 }
 
 func findMachineAndNode(name string, machineClient clusterv1alpha1clientset.Interface, kubeClient kubernetes.Interface) (*clusterv1alpha1.Machine, *corev1.Node, error) {
-	machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{})
+	machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{IncludeUninitialized: true})
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to load machines from cluster: %v", err)
 	}
@@ -738,7 +738,7 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 				OperatingSystem: *operatingSystemSpec,
 				Cloud:           *cloudSpec,
 			},
-			Strategy:                &md.Spec.Strategy,
+			Strategy:                md.Spec.Strategy,
 			MinReadySeconds:         md.Spec.MinReadySeconds,
 			RevisionHistoryLimit:    md.Spec.RevisionHistoryLimit,
 			Paused:                  &md.Spec.Paused,

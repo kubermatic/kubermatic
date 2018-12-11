@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"crypto/sha256"
 	"fmt"
+	"strings"
 
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
@@ -45,7 +46,7 @@ func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
 	}
 
 	for _, user := range users {
-		if user.Spec.Email == email {
+		if strings.EqualFold(user.Spec.Email, email) {
 			return user.DeepCopy(), nil
 		}
 	}
@@ -58,7 +59,7 @@ func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
 		return nil, err
 	}
 	for _, user := range userList.Items {
-		if user.Spec.Email == email {
+		if strings.EqualFold(user.Spec.Email, email) {
 			return user.DeepCopy(), nil
 		}
 	}

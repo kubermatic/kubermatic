@@ -1,4 +1,62 @@
 
+### [v2.8.3]()
+
+Supported Kubernetes versions:
+- `1.10.11`
+- `1.11.5`
+- `1.12.3`
+
+
+**Misc:**
+
+- Kubermatic now validates nodes synchronously [#2340](https://github.com/kubermatic/kubermatic/issues/2340) ([alvaroaleman](https://github.com/alvaroaleman))
+- Components will no longer be shown as as unhealthy when only some replicas are up [#2358](https://github.com/kubermatic/kubermatic/issues/2358) ([mrIncompetent](https://github.com/mrIncompetent))
+- Disabled debug logs on control plane components [#2471](https://github.com/kubermatic/kubermatic/issues/2471) ([mrIncompetent](https://github.com/mrIncompetent))
+- Kubernetes will be automatically updated to versions that contain a fix for CVE-2018-1002105 [#2478](https://github.com/kubermatic/kubermatic/issues/2478) ([alvaroaleman](https://github.com/alvaroaleman))
+- Updated the machine-controller to `v0.10.3` [#2479](https://github.com/kubermatic/kubermatic/issues/2479) ([mrIncompetent](https://github.com/mrIncompetent))
+
+**Bugfix:**
+- Fixed missing permissions in kube-state-metrics ClusterRole [#2366](https://github.com/kubermatic/kubermatic/issues/2366) ([bashofmann](https://github.com/bashofmann))
+
+
+
+
+### [v2.7.8]()
+
+Supported Kubernetes versions:
+- `1.10.11`
+- `1.11.5`
+
+
+**Major changes:**
+
+- Communicating with cloud providers APIs no longer requires providing additional credentials. [#2151](https://github.com/kubermatic/kubermatic/issues/2151) ([p0lyn0mial](https://github.com/p0lyn0mial))
+- Updated the kubermatic dashboard to `v0.38.0` [#2165](https://github.com/kubermatic/kubermatic/issues/2165) ([mrIncompetent](https://github.com/mrIncompetent))
+  - Provider-specific data will now be fetched without re-sending credentials. [#806](https://github.com/kubermatic/dashboard-v2/issues/806) ([maciaszczykm](https://github.com/maciaszczykm))
+- Kubernetes will be automatically updated to versions that contain a fix for CVE-2018-1002105 and `v1.8`, `v1.9` cluster creation is now dropped [#2487](https://github.com/kubermatic/kubermatic/issues/2487) ([kdomanski](https://github.com/kdomanski))
+
+
+
+
+### [v2.6.17]()
+
+Supported Kubernetes versions:
+- `1.10.11`
+
+
+**Bugfix:**
+
+- Fixed handling of very long user IDs [#2086](https://github.com/kubermatic/kubermatic/issues/2086) ([kdomanski](https://github.com/kdomanski))
+
+
+**Misc:**
+
+- Enabled the usage of Heapster for the HorizontalPodAutoscaler [#2199](https://github.com/kubermatic/kubermatic/issues/2199) ([mrIncompetent](https://github.com/mrIncompetent))
+- Kubernetes will be automatically updated to versions that contain a fix for CVE-2018-1002105 and `v1.8`, `v1.9` cluster creation is now dropped [#2497](https://github.com/kubermatic/kubermatic/issues/2497) ([kdomanski](https://github.com/kdomanski))
+
+
+
+
 ### [v2.8.2]()
 
 

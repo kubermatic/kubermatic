@@ -1,0 +1,13 @@
+name: fluentbit
+version: 0.1.0
+description: fluentbit
+keywords:
+  - k8s
+  - kubermatic
+  - fluentbit
+home: http://www.kubermatic.io/
+sources:
+  - https://github.com/kubermatic/kubermatic/config
+maintainers:
+  - name: Sebastian Scheele
+    email: sebastian@loodse.com

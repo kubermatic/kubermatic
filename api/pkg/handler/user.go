@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/mail"
+	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
@@ -50,7 +52,7 @@ func deleteMemberFromProject(projectProvider provider.ProjectProvider, userProvi
 		}
 
 		bindingForRequestedMember := memberList[0]
-		if bindingForRequestedMember.Spec.UserEmail == userInfo.Email {
+		if strings.EqualFold(bindingForRequestedMember.Spec.UserEmail, userInfo.Email) {
 			return nil, k8cerrors.New(http.StatusForbidden, "you cannot delete yourself from the project")
 		}
 
@@ -70,6 +72,7 @@ func editMemberOfProject(projectProvider provider.ProjectProvider, userProvider 
 		if !ok {
 			return nil, k8cerrors.NewBadRequest("invalid request")
 		}
+
 		err := req.Validate(userInfo)
 		if err != nil {
 			return nil, err
@@ -367,6 +370,9 @@ func (r AddUserToProjectReq) Validate(authenticatesUserInfo *provider.UserInfo) 
 	if len(apiUserFromRequest.Email) == 0 {
 		return k8cerrors.NewBadRequest("the email address cannot be empty")
 	}
+	if _, err := mail.ParseAddress(apiUserFromRequest.Email); err != nil {
+		return k8cerrors.NewBadRequest("incorrect email format: %v", err)
+	}
 	if len(r.Body.Projects) != 1 {
 		return k8cerrors.NewBadRequest("expected exactly one entry in \"Projects\" field, but received %d", len(apiUserFromRequest.Projects))
 	}
@@ -377,7 +383,7 @@ func (r AddUserToProjectReq) Validate(authenticatesUserInfo *provider.UserInfo) 
 	if projectFromRequest.ID != r.ProjectID {
 		return k8cerrors.New(http.StatusForbidden, fmt.Sprintf("you can only assign the user to %s project", r.ProjectID))
 	}
-	if apiUserFromRequest.Email == authenticatesUserInfo.Email {
+	if strings.EqualFold(apiUserFromRequest.Email, authenticatesUserInfo.Email) {
 		return k8cerrors.New(http.StatusForbidden, "you cannot assign yourself to a different group")
 	}
 	if projectFromRequest.GroupPrefix == rbac.OwnerGroupNamePrefix {

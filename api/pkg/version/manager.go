@@ -130,7 +130,7 @@ func (m *Manager) AutomaticUpdate(sfrom string) (*MasterVersion, error) {
 	}
 
 	if len(toVersions) > 1 {
-		return nil, fmt.Errorf("more than one automatic update found for version. Not allowed")
+		return nil, fmt.Errorf("more than one automatic update found for version. Not allowed. Automatic updates to: %v", toVersions)
 	}
 
 	mVersion, err := m.GetVersion(toVersions[0])

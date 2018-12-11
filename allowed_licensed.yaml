@@ -17,3 +17,4 @@ exceptions:
   - github.com/davecgh/go-spew/spew
   - github.com/go-openapi/inflect
   - bitbucket.org/ww/goautoneg
+  - github.com/ajeddeloh/go-json
