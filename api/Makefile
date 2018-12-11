@@ -1,7 +1,7 @@
 export CGO_ENABLED?=0
 REPO=kubermatic/api
 GO?=go
-CMD=$(notdir $(wildcard ./cmd/*))
+CMD=$(filter-out OWNERS, $(notdir $(wildcard ./cmd/*)))
 GOBUILDFLAGS?=-v
 GITTAG=$(shell git describe --tags --always)
 TAGS?=$(GITTAG)
@@ -33,7 +33,6 @@ showenv:
 check: gofmt lint
 
 test:
-	$(GO) generate ./pkg/controller/ipam/
 	$(GO) test -v ./...
 
 test-update:

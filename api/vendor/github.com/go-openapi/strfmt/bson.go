@@ -19,10 +19,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/globalsign/mgo/bson"
 	"github.com/mailru/easyjson/jlexer"
 	"github.com/mailru/easyjson/jwriter"
-
-	"gopkg.in/mgo.v2/bson"
 )
 
 func init() {
@@ -33,11 +32,10 @@ func init() {
 
 // IsBSONObjectID returns true when the string is a valid BSON.ObjectId
 func IsBSONObjectID(str string) bool {
-	var id bson.ObjectId
-	return id.UnmarshalText([]byte(str)) == nil
+	return bson.IsObjectIdHex(str)
 }
 
-// ObjectId represents a BSON object ID (alias to gopkg.in/mgo.v2/bson.ObjectId)
+// ObjectId represents a BSON object ID (alias to github.com/globalsign/mgo/bson.ObjectId)
 //
 // swagger:strfmt bsonobjectid
 type ObjectId bson.ObjectId
@@ -54,12 +52,7 @@ func (id *ObjectId) MarshalText() ([]byte, error) {
 
 // UnmarshalText hydrates this instance from text
 func (id *ObjectId) UnmarshalText(data []byte) error { // validation is performed later on
-	var rawID bson.ObjectId
-	if err := rawID.UnmarshalText(data); err != nil {
-		return err
-	}
-
-	*id = ObjectId(rawID)
+	*id = ObjectId(bson.ObjectIdHex(string(data)))
 	return nil
 }
 

@@ -35,7 +35,7 @@ var (
 )
 
 // StatefulSet returns the prometheus StatefulSet
-func StatefulSet(data resources.StatefulSetDataProvider, existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+func StatefulSet(data *resources.TemplateData, existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 	var set *appsv1.StatefulSet
 	if existing != nil {
 		set = existing

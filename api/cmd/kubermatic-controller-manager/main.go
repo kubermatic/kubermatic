@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-
 	"fmt"
 	"net/http"
 	"time"
@@ -33,6 +32,10 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/record"
+
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 const (
@@ -46,7 +49,7 @@ func main() {
 		glog.Fatalf("failed to create controller run options due to = %v", err)
 	}
 	if err := options.validate(); err != nil {
-		glog.Fatalf("incorrect flags were passed to the controller, err  = %v", err)
+		glog.Fatal(err)
 	}
 
 	config, err := clientcmd.BuildConfigFromFlags(options.masterURL, options.kubeconfig)
@@ -63,6 +66,21 @@ func main() {
 		glog.Fatalf("failed to get event recorder: %v", err)
 	}
 
+	mapper, err := apiutil.NewDiscoveryRESTMapper(config)
+	if err != nil {
+		glog.Fatalf("failed to create rest mapper: %v", err)
+	}
+
+	dynamicClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{Scheme: scheme.Scheme, Mapper: mapper})
+	if err != nil {
+		glog.Fatalf("failed to create dynamic client: %v", err)
+	}
+
+	dynamicCache, err := cache.New(config, cache.Options{})
+	if err != nil {
+		glog.Fatalf("failed to create dynamic informer cache: %v", err)
+	}
+
 	//Register the global error metric. Ensures that runtime.HandleError() increases the error metric
 	metrics.RegisterRuntimErrorMetricCounter("kubermatic_controller_manager", prometheus.DefaultRegisterer)
 
@@ -71,7 +89,14 @@ func main() {
 	defer ctxDone()
 
 	// Create Context
-	ctrlCtx, err := newControllerContext(options, ctx.Done(), kubeClient, kubermaticClient)
+	done := ctx.Done()
+	go func() {
+		if err := dynamicCache.Start(done); err != nil {
+			glog.Fatal("failed to start the dynamic lister")
+		}
+	}()
+
+	ctrlCtx, err := newControllerContext(options, done, kubeClient, kubermaticClient, dynamicClient, dynamicCache)
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -95,7 +120,7 @@ func main() {
 			select {
 			case <-stopCh:
 				return errors.New("user requested to stop the application")
-			case <-ctx.Done():
+			case <-done:
 				return errors.New("parent context has been closed - propagating the request")
 			}
 		}, func(err error) {
@@ -164,7 +189,7 @@ func main() {
 			}
 
 			go leader.Run()
-			<-ctx.Done()
+			<-done
 			return nil
 		}, func(err error) {
 			glog.Errorf("Stopping controller: %v", err)
@@ -192,12 +217,20 @@ func getEventRecorder(masterKubeClient *kubernetes.Clientset) (record.EventRecor
 	return recorder, nil
 }
 
-func newControllerContext(runOp controllerRunOptions, done <-chan struct{}, kubeClient kubernetes.Interface, kubermaticClient kubermaticclientset.Interface) (*controllerContext, error) {
+func newControllerContext(
+	runOp controllerRunOptions,
+	done <-chan struct{},
+	kubeClient kubernetes.Interface,
+	kubermaticClient kubermaticclientset.Interface,
+	dynamicClient ctrlruntimeclient.Client,
+	dynamicCache cache.Cache) (*controllerContext, error) {
 	ctrlCtx := &controllerContext{
 		runOptions:       runOp,
 		stopCh:           done,
 		kubeClient:       kubeClient,
 		kubermaticClient: kubermaticClient,
+		dynamicClient:    dynamicClient,
+		dynamicCache:     dynamicCache,
 	}
 
 	selector, err := workerlabel.LabelSelector(runOp.workerName)
