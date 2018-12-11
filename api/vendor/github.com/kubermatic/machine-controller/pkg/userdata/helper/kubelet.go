@@ -83,7 +83,7 @@ func KubeletSystemdUnit(kubeletVersion, cloudProvider, hostname string, dnsIPs [
 		return "", fmt.Errorf("failed to execute kubelet-systemd-unit template: %v", err)
 	}
 
-	return string(b.String()), nil
+	return b.String(), nil
 }
 
 // KubeletFlags returns the kubelet flags
@@ -110,7 +110,7 @@ func KubeletFlags(version, cloudProvider, hostname string, dnsIPs []net.IP) (str
 		return "", fmt.Errorf("failed to execute kubelet-flags template: %v", err)
 	}
 
-	return string(b.String()), nil
+	return b.String(), nil
 }
 
 func KubeletHealthCheckSystemdUnit() string {
