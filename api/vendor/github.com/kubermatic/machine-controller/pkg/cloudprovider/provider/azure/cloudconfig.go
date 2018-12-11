@@ -12,14 +12,15 @@ type CloudConfig struct {
 	AADClientID     string `json:"aadClientId"`
 	AADClientSecret string `json:"aadClientSecret"`
 
-	ResourceGroup              string `json:"resourceGroup"`
-	Location                   string `json:"location"`
-	VNetName                   string `json:"vnetName"`
-	SubnetName                 string `json:"subnetName"`
-	RouteTableName             string `json:"routeTableName"`
-	SecurityGroupName          string `json:"securityGroupName" yaml:"securityGroupName"`
-	PrimaryAvailabilitySetName string `json:"primaryAvailabilitySetName"`
-	UseInstanceMetadata        bool   `json:"useInstanceMetadata"`
+	ResourceGroup              string  `json:"resourceGroup"`
+	Location                   string  `json:"location"`
+	VNetName                   string  `json:"vnetName"`
+	SubnetName                 string  `json:"subnetName"`
+	RouteTableName             string  `json:"routeTableName"`
+	SecurityGroupName          string  `json:"securityGroupName" yaml:"securityGroupName"`
+	PrimaryAvailabilitySetName string  `json:"primaryAvailabilitySetName"`
+	VnetResourceGroup          *string `json:"vnetResourceGroup,omitempty"`
+	UseInstanceMetadata        bool    `json:"useInstanceMetadata"`
 }
 
 func CloudConfigToString(c *CloudConfig) (string, error) {

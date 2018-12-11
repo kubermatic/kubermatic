@@ -1,18 +1,13 @@
 package cloudconfig
 
 import (
-	"bytes"
-	"fmt"
 	"strings"
-	"text/template"
 
-	"github.com/Masterminds/sprig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
-	"github.com/kubermatic/machine-controller/pkg/ini"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,11 +35,7 @@ func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapC
 		cloud := data.Cluster().Spec.Cloud
 		dc := data.DC()
 		if cloud.AWS != nil {
-			cloudConfig, err = CloudConfig(data)
-			if err != nil {
-				return nil, err
-			}
-			awsCloudConfig := &aws.Config{
+			awsCloudConfig := &aws.CloudConfig{
 				Global: aws.GlobalOpts{
 					Zone:                        cloud.AWS.AvailabilityZone,
 					VPC:                         cloud.AWS.VPCID,
@@ -55,22 +46,27 @@ func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapC
 					DisableStrictZoneCheck:      true,
 				},
 			}
+			cloudConfig, err = aws.CloudConfigToString(awsCloudConfig)
+			if err != nil {
+				return nil, err
+			}
 		} else if cloud.Azure != nil {
-			//TODO: We need SecurityGroupName, PrimaryAvailabilitySetName
-			// and VnetResourceGroup, this requires updating the machine-controller
-			// with a version that includes kubermatic/machine-controller#411
+			vnetResourceGroup := cloud.Azure.ResourceGroup
 			azureCloudConfig := &azure.CloudConfig{
-				Cloud:               "AZUREPUBLICCLOUD",
-				TenantID:            cloud.Azure.TenantID,
-				SubscriptionID:      cloud.Azure.SubscriptionID,
-				AADClientID:         cloud.Azure.ClientID,
-				AADClientSecret:     cloud.Azure.ClientSecret,
-				ResourceGroup:       cloud.Azure.ResourceGroup,
-				Location:            dc.Spec.Azure.Location,
-				VNetName:            cloud.Azure.VNetName,
-				SubnetName:          cloud.Azure.SubnetName,
-				RouteTableName:      cloud.Azure.RouteTableName,
-				UseInstanceMetadata: false,
+				Cloud:                      "AZUREPUBLICCLOUD",
+				TenantID:                   cloud.Azure.TenantID,
+				SubscriptionID:             cloud.Azure.SubscriptionID,
+				AADClientID:                cloud.Azure.ClientID,
+				AADClientSecret:            cloud.Azure.ClientSecret,
+				ResourceGroup:              cloud.Azure.ResourceGroup,
+				Location:                   dc.Spec.Azure.Location,
+				VNetName:                   cloud.Azure.VNetName,
+				SubnetName:                 cloud.Azure.SubnetName,
+				RouteTableName:             cloud.Azure.RouteTableName,
+				SecurityGroupName:          cloud.Azure.SecurityGroup,
+				PrimaryAvailabilitySetName: cloud.Azure.AvailabilitySet,
+				VnetResourceGroup:          &vnetResourceGroup,
+				UseInstanceMetadata:        false,
 			}
 			cloudConfig, err = azure.CloudConfigToString(azureCloudConfig)
 			if err != nil {
@@ -131,23 +127,6 @@ func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapC
 
 		return cm, nil
 	}
-}
-
-// CloudConfig returns the cloud-config for the supplied data
-func CloudConfig(data resources.ConfigMapDataProvider) (string, error) {
-	funcMap := sprig.TxtFuncMap()
-	funcMap["iniEscape"] = ini.Escape
-
-	configBuffer := bytes.Buffer{}
-	configTpl, err := template.New("base").Funcs(funcMap).Parse(config)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse cloud config template: %v", err)
-	}
-	if err := configTpl.Execute(&configBuffer, data); err != nil {
-		return "", fmt.Errorf("failed to render cloud config template: %v", err)
-	}
-
-	return configBuffer.String(), nil
 }
 
 const (
