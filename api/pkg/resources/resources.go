@@ -737,6 +737,6 @@ func StatefulSetObjectWrapper(create StatefulSetCreator) ObjectCreator {
 		if existing != nil {
 			return create(data, existing.(*appsv1.StatefulSet))
 		}
-		return create(data, nil)
+		return create(data, &appsv1.StatefulSet{})
 	}
 }
