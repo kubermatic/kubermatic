@@ -506,14 +506,24 @@ func getChecksumForStringSlice(stringSlice []string) string {
 }
 
 // EnsureObject will generate the Object with the passed create function & create or update it in Kubernetes if necessary.
-func EnsureObject(data *TemplateData, namespace string, create ObjectCreator, store cache.Store, client ctrlruntimeclient.Client) error {
+func EnsureObject(data *TemplateData, namespace string, rawcreate ObjectCreator, store cache.Store, client ctrlruntimeclient.Client) error {
 	ctx := context.Background()
+
+	// A wrapper to ensure we always set the ownerRef and the Namespace. This is useful as we call create twice
+	create := func(data *TemplateData, existing runtime.Object) (runtime.Object, error) {
+		obj, err := rawcreate(data, existing)
+		if err != nil {
+			return nil, err
+		}
+		obj.(metav1.Object).SetNamespace(namespace)
+		obj.(metav1.Object).SetOwnerReferences([]metav1.OwnerReference{data.GetClusterRef()})
+		return obj, nil
+	}
 
 	obj, err := create(data, nil)
 	if err != nil {
 		return fmt.Errorf("failed to build Object(%T): %v", obj, err)
 	}
-	obj.(metav1.Object).SetNamespace(namespace)
 
 	key, err := cache.MetaNamespaceKeyFunc(obj)
 	if err != nil {
