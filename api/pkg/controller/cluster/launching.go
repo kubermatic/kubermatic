@@ -5,9 +5,9 @@ import (
 
 	"github.com/golang/glog"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/openvpn"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

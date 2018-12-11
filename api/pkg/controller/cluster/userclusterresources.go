@@ -6,13 +6,13 @@ import (
 	"github.com/go-test/deep"
 	"github.com/golang/glog"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/ipamcontroller"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/machinecontroller"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/metrics-server"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/openvpn"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/vpnsidecar"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
 	corev1 "k8s.io/api/core/v1"

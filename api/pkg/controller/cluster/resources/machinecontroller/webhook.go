@@ -3,9 +3,10 @@ package machinecontroller
 import (
 	"fmt"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/apiserver"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"

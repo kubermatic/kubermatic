@@ -451,8 +451,10 @@ func (cc *Controller) processNextItem() bool {
 	}
 	defer cc.queue.Done(key)
 
-	if err := cc.syncCluster(key.(string)); err != nil {
-		cluster, errGetCluster := cc.clusterLister.Get(key.(string))
+	sKey := key.(string)
+	if err := cc.syncCluster(sKey); err != nil {
+		glog.Errorf("Failed syncinc '%s': %v", sKey, err)
+		cluster, errGetCluster := cc.clusterLister.Get(sKey)
 		if errGetCluster != nil {
 			glog.V(4).Infof("Error getting cluster %s from lister: %v", key, errGetCluster)
 		} else {

@@ -9,12 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
-
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/robfig/cron"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/etcd"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"

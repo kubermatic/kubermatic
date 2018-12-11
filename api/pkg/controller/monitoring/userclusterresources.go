@@ -5,11 +5,11 @@ import (
 
 	"github.com/golang/glog"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/ipamcontroller"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/monitoring/resources/kubestatemetrics"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/monitoring/resources/prometheus"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"

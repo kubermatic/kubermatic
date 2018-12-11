@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/apiserver"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/cloudconfig"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/vpnsidecar"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

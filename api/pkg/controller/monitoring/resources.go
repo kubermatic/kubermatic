@@ -3,11 +3,11 @@ package monitoring
 import (
 	"fmt"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/monitoring/resources/kubestatemetrics"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/monitoring/resources/prometheus"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 )
 
 func (c *Controller) getClusterTemplateData(cluster *kubermaticv1.Cluster) (*resources.TemplateData, error) {

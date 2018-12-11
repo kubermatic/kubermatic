@@ -3,19 +3,20 @@ package cluster
 import (
 	"fmt"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/apiserver"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/cloudconfig"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/controllermanager"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/dns"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/etcd"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/ipamcontroller"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/machinecontroller"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/metrics-server"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/openvpn"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster/resources/scheduler"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -231,7 +232,7 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster, data *resources.Tem
 
 	for _, op := range operations {
 		if err := resources.EnsureSecret(op.name, data, op.create, cc.secretLister.Secrets(c.Status.NamespaceName), cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the Secret exists: %v", err)
+			return fmt.Errorf("failed to ensure that the Secret '%s' exists: %v", op.name, err)
 		}
 	}
 
