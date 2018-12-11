@@ -8,6 +8,7 @@ import (
 
 	"github.com/Masterminds/sprig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
@@ -42,6 +43,17 @@ func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapC
 			cloudConfig, err = CloudConfig(data)
 			if err != nil {
 				return nil, err
+			}
+			awsCloudConfig := &aws.Config{
+				Global: aws.GlobalOpts{
+					Zone:                        cloud.AWS.AvailabilityZone,
+					VPC:                         cloud.AWS.VPCID,
+					KubernetesClusterID:         data.Cluster().Name,
+					DisableSecurityGroupIngress: false,
+					SubnetID:                    cloud.AWS.SubnetID,
+					RouteTableID:                cloud.AWS.RouteTableID,
+					DisableStrictZoneCheck:      true,
+				},
 			}
 		} else if cloud.Azure != nil {
 			//TODO: We need SecurityGroupName, PrimaryAvailabilitySetName
@@ -146,16 +158,4 @@ const (
 	// Upstream issue: https://github.com/kubernetes/kubernetes/issues/65145
 	FakeVMWareUUIDKeyName = "fakeVmwareUUID"
 	fakeVMWareUUID        = "VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00"
-	config                = `
-{{- if .Cluster.Spec.Cloud.AWS }}
-[global]
-zone={{ .Cluster.Spec.Cloud.AWS.AvailabilityZone | iniEscape }}
-VPC={{ .Cluster.Spec.Cloud.AWS.VPCID | iniEscape }}
-KubernetesClusterID={{ .Cluster.Name | iniEscape }}
-disablesecuritygroupingress=false
-SubnetID={{ .Cluster.Spec.Cloud.AWS.SubnetID | iniEscape }}
-RouteTableID={{ .Cluster.Spec.Cloud.AWS.RouteTableID | iniEscape }}
-disablestrictzonecheck=true
-{{- end }}
-`
 )
