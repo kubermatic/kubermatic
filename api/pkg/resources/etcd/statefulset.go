@@ -37,14 +37,8 @@ const (
 )
 
 // StatefulSet returns the etcd StatefulSet
-func StatefulSet(data resources.StatefulSetDataProvider, existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
-	set := existing
-	if set == nil {
-		set = &appsv1.StatefulSet{}
-	}
-
+func StatefulSet(data *resources.TemplateData, set *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 	set.Name = resources.EtcdStatefulSetName
-	set.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 
 	set.Spec.Replicas = resources.Int32(resources.EtcdClusterSize)
 	set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
