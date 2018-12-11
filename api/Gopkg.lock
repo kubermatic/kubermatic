@@ -1389,6 +1389,14 @@
   revision = "70adfbae261eebb795b76321790745ad0e3c523f"
 
 [[projects]]
+  branch = "master"
+  digest = "1:b5ddc5c20e56276a3f5e81bc1d8110f56bc3012fbfcac36643f1c07b1cf7f866"
+  name = "k8s.io/autoscaler"
+  packages = ["vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"]
+  pruneopts = "NUT"
+  revision = "4fe35d1323d1c8457496d00b6e143a8615433b9d"
+
+[[projects]]
   branch = "release-8.0"
   digest = "1:2727b9d70b14b584e8cf384a4e7b07a876cbab839893e3aaa5715c6daa4e06ce"
   name = "k8s.io/client-go"
@@ -1775,6 +1783,7 @@
     "k8s.io/apimachinery/pkg/util/wait",
     "k8s.io/apimachinery/pkg/util/yaml",
     "k8s.io/apimachinery/pkg/watch",
+    "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1",
     "k8s.io/client-go/discovery",
     "k8s.io/client-go/discovery/fake",
     "k8s.io/client-go/informers",

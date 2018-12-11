@@ -3,6 +3,8 @@ package cluster
 import (
 	"fmt"
 
+	"github.com/golang/glog"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
@@ -16,13 +18,15 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
+	informerutil "github.com/kubermatic/kubermatic/api/pkg/util/informer"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/tools/cache"
+
+	"k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"
 )
 
 const (
@@ -67,6 +71,11 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 
 	// check that all PodDisruptionBudgets are created
 	if err := cc.ensurePodDisruptionBudgets(cluster, data); err != nil {
+		return err
+	}
+
+	// check that all StatefulSets are created
+	if err := cc.ensureVerticalPodAutoscalers(cluster, data); err != nil {
 		return err
 	}
 
@@ -269,13 +278,10 @@ func GetStatefulSetCreators() []resources.StatefulSetCreator {
 func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetStatefulSetCreators()
 
-	informer, err := cc.dynamicCache.GetInformer(&appsv1.StatefulSet{})
+	store, err := informerutil.GetSyncedStoreFromDynamicFactory(cc.dynamicCache, &appsv1.StatefulSet{})
 	if err != nil {
-		return fmt.Errorf("failed to get StatefulSet informer: %v", err)
+		return fmt.Errorf("failed to get StatefulSet Informer: %v", err)
 	}
-	store := informer.GetStore()
-	cache.WaitForCacheSync(wait.NeverStop, informer.GetController().HasSynced)
-
 	for _, create := range creators {
 		if err := resources.EnsureObject(data, c.Status.NamespaceName, resources.StatefulSetObjectWrapper(create), store, cc.dynamicClient); err != nil {
 			return fmt.Errorf("failed to ensure that the StatefulSet exists: %v", err)
@@ -318,6 +324,48 @@ func (cc *Controller) ensureCronJobs(c *kubermaticv1.Cluster, data *resources.Te
 	for _, create := range creators {
 		if err := resources.EnsureCronJob(data, create, cc.cronJobLister.CronJobs(c.Status.NamespaceName), cc.kubeClient.BatchV1beta1().CronJobs(c.Status.NamespaceName)); err != nil {
 			return fmt.Errorf("failed to ensure that the CronJob exists: %v", err)
+		}
+	}
+
+	return nil
+}
+
+// GetVerticalPodAutoscalerCreators returns all VerticalPodAutoscalerCreator's that are currently in use
+func GetVerticalPodAutoscalerCreators() []resources.VerticalPodAutoscalerCreator {
+	return []resources.VerticalPodAutoscalerCreator{
+		apiserver.VerticalPodAutoscaler,
+		controllermanager.VerticalPodAutoscaler,
+		dns.VerticalPodAutoscaler,
+		etcd.VerticalPodAutoscaler,
+		ipamcontroller.VerticalPodAutoscaler,
+		machinecontroller.VerticalPodAutoscaler,
+		machinecontroller.WebhookVerticalPodAutoscaler,
+		metricsserver.VerticalPodAutoscaler,
+		openvpn.VerticalPodAutoscaler,
+		scheduler.VerticalPodAutoscaler,
+	}
+}
+
+func (cc *Controller) ensureVerticalPodAutoscalers(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	creators := GetVerticalPodAutoscalerCreators()
+
+	store, err := informerutil.GetSyncedStoreFromDynamicFactory(cc.dynamicCache, &v1beta1.VerticalPodAutoscaler{})
+	if err != nil {
+		if _, crdNotRegistered := err.(*meta.NoKindMatchError); crdNotRegistered {
+			glog.V(3).Info(`
+The VerticalPodAutoscaler is not installed in this seed cluster. No VerticalPodAutoscaler resources can be created. 
+It's recommended to install the VerticalPodAutoscaler to ensure best resource utilization and realistic Pod resources. 
+After installing the VerticalPodAutoscaler, the Kubermatic controller-manager must be restarted. 
+Notes on the installation: https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler#installation`)
+			return nil
+		}
+		return fmt.Errorf("failed to get VerticalPodAutoscaler informer: %v", err)
+	}
+
+	for _, create := range creators {
+		if err := resources.EnsureObject(data, c.Status.NamespaceName, resources.VerticalPodAutocalerObjectWrapper(create), store, cc.dynamicClient); err != nil {
+
+			return fmt.Errorf("failed to ensure that the StatefulSet exists: %v", err)
 		}
 	}
 

@@ -28,6 +28,9 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("100m"),
 		},
 	}
+
+	// WebhookVerticalPodAutoscaler returns a VerticalPodAutoscaler which can be applied to the machine-controller webhook Deployment
+	WebhookVerticalPodAutoscaler = resources.GetVerticalPodAutoscaler(resources.MachineControllerWebhookDeploymentName, resources.BaseAppLabel(resources.MachineControllerWebhookDeploymentName, nil))
 )
 
 // WebhookDeployment returns the deployment for the machine-controllers MutatignAdmissionWebhook

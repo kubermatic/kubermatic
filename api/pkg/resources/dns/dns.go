@@ -24,6 +24,9 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("100m"),
 		},
 	}
+
+	// VerticalPodAutoscaler returns a VerticalPodAutoscaler which can be applied to the CoreDNS Deployment
+	VerticalPodAutoscaler = resources.GetVerticalPodAutoscaler(resources.DNSResolverVPAName, resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil))
 )
 
 // Service returns the service for the dns resolver
@@ -35,9 +38,7 @@ func Service(data resources.ServiceDataProvider, existing *corev1.Service) (*cor
 
 	svc.Name = resources.DNSResolverServiceName
 	svc.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	svc.Spec.Selector = map[string]string{
-		resources.AppLabelKey: resources.DNSResolverDeploymentName,
-	}
+	svc.Spec.Selector = resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil)
 	svc.Spec.Ports = []corev1.ServicePort{
 		{
 			Name:       "dns",

@@ -24,6 +24,9 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("2"),
 		},
 	}
+
+	// VerticalPodAutoscaler returns a VerticalPodAutoscaler which can be applied to the machine-controller Deployment
+	VerticalPodAutoscaler = resources.GetVerticalPodAutoscaler(name, resources.BaseAppLabel(name, nil))
 )
 
 const (

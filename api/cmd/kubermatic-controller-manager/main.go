@@ -36,6 +36,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+
+	autoscalingv1beta1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"
 )
 
 const (
@@ -71,7 +73,12 @@ func main() {
 		glog.Fatalf("failed to create rest mapper: %v", err)
 	}
 
-	dynamicClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{Scheme: scheme.Scheme, Mapper: mapper})
+	combinedScheme := scheme.Scheme
+	// Add all custom type schemes to our scheme. Otherwise we won't get a informer
+	if err := autoscalingv1beta1.AddToScheme(combinedScheme); err != nil {
+		glog.Fatalf("failed to add the autoscaling.k8s.io scheme: %v", err)
+	}
+	dynamicClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{Scheme: combinedScheme, Mapper: mapper})
 	if err != nil {
 		glog.Fatalf("failed to create dynamic client: %v", err)
 	}

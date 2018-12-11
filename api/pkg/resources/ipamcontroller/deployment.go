@@ -24,6 +24,9 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("100m"),
 		},
 	}
+
+	// VerticalPodAutoscaler returns a VerticalPodAutoscaler which can be applied to the IPAM controller Deployment
+	VerticalPodAutoscaler = resources.GetVerticalPodAutoscaler(name, resources.BaseAppLabel(name, nil))
 )
 
 // Deployment returns the IPAM controller deployment
@@ -41,9 +44,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 
 	dep.Spec.Replicas = resources.Int32(1)
 	dep.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			resources.AppLabelKey: resources.IPAMControllerDeploymentName,
-		},
+		MatchLabels: resources.BaseAppLabel(resources.IPAMControllerDeploymentName, nil),
 	}
 	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 	dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{

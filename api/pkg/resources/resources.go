@@ -33,6 +33,8 @@ import (
 	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/cert/triple"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
+
+	autoscalingv1beta "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"
 )
 
 // KUBERMATICCOMMIT is a magic variable containing the git commit hash of the current (as in currently executing) kubermatic api. It gets feeded by Makefile as a ldflag.
@@ -61,6 +63,8 @@ const (
 	DNSResolverConfigMapName = "dns-resolver"
 	//DNSResolverServiceName is the name of the dns resolvers service
 	DNSResolverServiceName = "dns-resolver"
+	//DNSResolverVPAName is the name of the dns resolvers VerticalPodAutoscaler
+	DNSResolverVPAName = "dns-resolver"
 	//KubeStateMetricsDeploymentName is the name for the kube-state-metrics deployment
 	KubeStateMetricsDeploymentName = "kube-state-metrics"
 
@@ -355,6 +359,9 @@ type SecretCreator = func(data SecretDataProvider, existing *corev1.Secret) (*co
 
 // StatefulSetCreator defines an interface to create/update StatefulSet
 type StatefulSetCreator = func(data *TemplateData, existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error)
+
+// VerticalPodAutoscalerCreator defines an interface to create/update a VerticalPodAutoscaler
+type VerticalPodAutoscalerCreator = func(data *TemplateData, existing *autoscalingv1beta.VerticalPodAutoscaler) (*autoscalingv1beta.VerticalPodAutoscaler, error)
 
 // ServiceCreator defines an interface to create/update Services
 type ServiceCreator = func(data ServiceDataProvider, existing *corev1.Service) (*corev1.Service, error)
@@ -738,5 +745,16 @@ func StatefulSetObjectWrapper(create StatefulSetCreator) ObjectCreator {
 			return create(data, existing.(*appsv1.StatefulSet))
 		}
 		return create(data, &appsv1.StatefulSet{})
+	}
+}
+
+// VerticalPodAutocalerObjectWrapper adds a wrapper so the VerticalPodAutoscalerCreator matches ObjectCreator
+// This is needed as golang does not support function interface matching
+func VerticalPodAutocalerObjectWrapper(create VerticalPodAutoscalerCreator) ObjectCreator {
+	return func(data *TemplateData, existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(data, existing.(*autoscalingv1beta.VerticalPodAutoscaler))
+		}
+		return create(data, nil)
 	}
 }

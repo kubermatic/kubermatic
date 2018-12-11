@@ -25,6 +25,9 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("150m"),
 		},
 	}
+
+	// VerticalPodAutoscaler returns a VerticalPodAutoscaler which can be applied to the metrics-server Deployment
+	VerticalPodAutoscaler = resources.GetVerticalPodAutoscaler(name, resources.BaseAppLabel(name, nil))
 )
 
 const (

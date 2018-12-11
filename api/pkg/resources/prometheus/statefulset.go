@@ -32,6 +32,9 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("100m"),
 		},
 	}
+
+	// VerticalPodAutoscaler returns a VerticalPodAutoscaler which can be applied to the Prometheus Deployment
+	VerticalPodAutoscaler = resources.GetVerticalPodAutoscaler(name, resources.BaseAppLabel(name, nil))
 )
 
 // StatefulSet returns the prometheus StatefulSet
