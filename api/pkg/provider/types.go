@@ -112,6 +112,8 @@ type ClusterProvider interface {
 type SSHKeyListOptions struct {
 	// ClusterName gets the keys that are being used by the given cluster name
 	ClusterName string
+	// KeyName gets the ssh keys with the given name in the spec
+	SSHKeyName string
 }
 
 // SSHKeyProvider declares the set of methods for interacting with ssh keys
