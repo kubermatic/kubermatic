@@ -33,7 +33,7 @@ spec:
         insecure-flag     = true
         working-dir       = "vsphere-1a2b3c4d5e"
         datacenter        = "vsphere-datacenter"
-        default-datastore = "vsphere-datastore"
+        datastore         = "vsphere-datastore"
         server            = "http://vsphere.local"
 
         [Disk]

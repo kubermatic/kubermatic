@@ -18,7 +18,7 @@ port              = {{ .Global.VCenterPort | iniEscape }}
 insecure-flag     = {{ .Global.InsecureFlag }}
 working-dir       = {{ .Global.WorkingDir | iniEscape }}
 datacenter        = {{ .Global.Datacenter | iniEscape }}
-default-datastore = {{ .Global.DefaultDatastore | iniEscape }}
+datastore         = {{ .Global.DefaultDatastore | iniEscape }}
 server            = {{ .Global.VCenterIP | iniEscape }}
 
 [Disk]
@@ -60,7 +60,7 @@ type GlobalOpts struct {
 	VCenterPort      string `gcfg:"port"`
 	WorkingDir       string `gcfg:"working-dir"`
 	Datacenter       string `gcfg:"datacenter"`
-	DefaultDatastore string `gcfg:"default-datastore"`
+	DefaultDatastore string `gcfg:"datastore"`
 	VCenterIP        string `gcfg:"server"`
 }
 

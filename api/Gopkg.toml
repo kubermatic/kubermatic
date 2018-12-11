@@ -120,7 +120,7 @@ required = [
 
 [[override]]
   name = "github.com/kubermatic/machine-controller"
-  revision = "04528ced56ce07892ef796e7432efe84d3a77518"
+  revision = "8fea08fd25edf2bc87511e8cfd4374bf648b5de6"
 
 [[constraint]]
   name = "github.com/prometheus/client_golang"

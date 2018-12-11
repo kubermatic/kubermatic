@@ -7,7 +7,7 @@ data:
     insecure-flag     = false
     working-dir       = "de-test-01"
     datacenter        = "vs-datacenter"
-    default-datastore = "vs-datastore"
+    datastore         = "vs-datastore"
     server            = "vs-endpoint.io"
 
     [Disk]
