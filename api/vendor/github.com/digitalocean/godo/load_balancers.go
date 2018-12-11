@@ -1,10 +1,9 @@
 package godo
 
 import (
+	"context"
 	"fmt"
 	"net/http"
-
-	"github.com/digitalocean/godo/context"
 )
 
 const loadBalancersBasePath = "/v2/load_balancers"
@@ -46,6 +45,10 @@ type LoadBalancer struct {
 // String creates a human-readable description of a LoadBalancer.
 func (l LoadBalancer) String() string {
 	return Stringify(l)
+}
+
+func (l LoadBalancer) URN() string {
+	return ToURN("LoadBalancer", l.ID)
 }
 
 // AsRequest creates a LoadBalancerRequest that can be submitted to Update with the current values of the LoadBalancer.

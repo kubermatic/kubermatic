@@ -28,7 +28,16 @@ var FuncMap template.FuncMap = map[string]interface{}{
 	"camelize":  swag.ToJSONName,
 	"varname":   golang.MangleVarName,
 	"humanize":  swag.ToHumanNameLower,
-	"snakize":   swag.ToFileName,
+	"snakize":   golang.MangleFileName,
+	"toPackagePath": func(name string) string {
+		return filepath.FromSlash(golang.ManglePackagePath(name, ""))
+	},
+	"toPackage": func(name string) string {
+		return golang.ManglePackagePath(name, "")
+	},
+	"toPackageName": func(name string) string {
+		return golang.ManglePackageName(name, "")
+	},
 	"dasherize": swag.ToCommandName,
 	"pluralizeFirstWord": func(arg string) string {
 		sentence := strings.Split(arg, " ")
@@ -46,6 +55,7 @@ var FuncMap template.FuncMap = map[string]interface{}{
 	"hasSecure": func(arg []string) bool {
 		return swag.ContainsStringsCI(arg, "https") || swag.ContainsStringsCI(arg, "wss")
 	},
+	// TODO: simplify redundant functions
 	"stripPackage": func(str, pkg string) string {
 		parts := strings.Split(str, ".")
 		strlen := len(parts)
@@ -213,7 +223,8 @@ func asPrettyJSON(data interface{}) (string, error) {
 func goSliceInitializer(data interface{}) (string, error) {
 	// goSliceInitializer constructs a Go literal initializer from interface{} literals.
 	// e.g. []interface{}{"a", "b"} is transformed in {"a","b",}
-	// e.g. map[string]interface{}{ "a": "x", "b": "y"} is transformed in {"a":"x","b":"y",}
+	// e.g. map[string]interface{}{ "a": "x", "b": "y"} is transformed in {"a":"x","b":"y",}.
+	//
 	// NOTE: this is currently used to construct simple slice intializers for default values.
 	// This allows for nicer slice initializers for slices of primitive types and avoid systematic use for json.Unmarshal().
 	b, err := json.Marshal(data)
@@ -238,7 +249,7 @@ func NewRepository(funcs template.FuncMap) *Repository {
 	return &repo
 }
 
-// Repository is the repository for the generator templates.
+// Repository is the repository for the generator templates
 type Repository struct {
 	files     map[string]string
 	templates map[string]*template.Template
@@ -257,7 +268,6 @@ func (t *Repository) LoadDefaults() {
 
 // LoadDir will walk the specified path and add each .gotmpl file it finds to the repository
 func (t *Repository) LoadDir(templatePath string) error {
-
 	err := filepath.Walk(templatePath, func(path string, info os.FileInfo, err error) error {
 
 		if strings.HasSuffix(path, ".gotmpl") {
@@ -284,6 +294,32 @@ func (t *Repository) LoadDir(templatePath string) error {
 	return nil
 }
 
+// LoadContrib loads template from contrib directory
+func (t *Repository) LoadContrib(name string) error {
+	log.Printf("loading contrib %s", name)
+	const pathPrefix = "templates/contrib/"
+	basePath := pathPrefix + name
+	filesAdded := 0
+	for _, aname := range AssetNames() {
+		if !strings.HasSuffix(aname, ".gotmpl") {
+			continue
+		}
+		if strings.HasPrefix(aname, basePath) {
+			target := aname[len(basePath)+1:]
+			err := t.addFile(target, string(MustAsset(aname)), true)
+			if err != nil {
+				return err
+			}
+			log.Printf("added contributed template %s from %s", target, aname)
+			filesAdded++
+		}
+	}
+	if filesAdded == 0 {
+		return fmt.Errorf("no files added from template: %s", name)
+	}
+	return nil
+}
+
 func (t *Repository) addFile(name, data string, allowOverride bool) error {
 	fileName := name
 	name = swag.ToJSONName(strings.TrimSuffix(name, ".gotmpl"))
@@ -303,7 +339,7 @@ func (t *Repository) addFile(name, data string, allowOverride bool) error {
 		}
 	}
 
-	// Add each defined tempalte into the cache
+	// Add each defined template into the cache
 	for _, template := range templ.Templates() {
 
 		t.files[template.Name()] = fileName
