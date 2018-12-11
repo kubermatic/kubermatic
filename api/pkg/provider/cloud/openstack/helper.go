@@ -222,7 +222,7 @@ func createKubermaticNetwork(netClient *gophercloud.ServiceClient, clusterName s
 func deleteNetworkByName(netClient *gophercloud.ServiceClient, networkName string) error {
 	network, err := getNetworkByName(netClient, networkName, false)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get network '%s' by name: %v", networkName, err)
 	}
 
 	res := osnetworks.Delete(netClient, network.ID)
