@@ -1,19 +1,18 @@
 data:
-  config: |2
-
+  config: |
     [Global]
-    auth-url = "https://example.com:8000/v3"
-    username = "openstack-username"
-    password = "openstack-password"
-    domain-name= "openstack-domain"
+    auth-url    = "https://example.com:8000/v3"
+    username    = "openstack-username"
+    password    = "openstack-password"
     tenant-name = "openstack-tenant"
-    region = "cbk"
+    domain-name = "openstack-domain"
+    region      = "cbk"
+
+    [LoadBalancer]
 
     [BlockStorage]
     trust-device-path = false
-    bs-version = "v2"
-
-    [LoadBalancer]
+    bs-version        = "v2"
   fakeVmwareUUID: VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00
 metadata:
   creationTimestamp: null

@@ -16,6 +16,7 @@ spec:
         location: westeurope
         resourceGroup: cluster-azurecluster-1a2b3c4d5e
         routeTableName: cluster-azurecluster-1a2b3c4d5e
+        securityGroupName: ""
         subnetName: cluster-azurecluster-1a2b3c4d5e
         subscriptionID: 32h9q8r8xqp3h9
         tags:

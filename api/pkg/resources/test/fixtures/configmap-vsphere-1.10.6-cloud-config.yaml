@@ -1,18 +1,22 @@
 data:
-  config: |2
-
-
+  config: |+
     [Global]
-            user = "vs-username"
-            password = "vs-password"
-            server = "vs-endpoint.io"
-            port = "443"
-            insecure-flag = "0"
-            datacenter = "vs-datacenter"
-            datastore = "vs-datastore"
-            working-dir = "de-test-01"
+    user          = "vs-username"
+    password      = "vs-password"
+    port          = "443"
+    insecure-flag = false
+
     [Disk]
-        scsicontrollertype = pvscsi
+    scsicontrollertype = "pvscsi"
+
+    [Workspace]
+    server            = "vs-endpoint.io"
+    datacenter        = "vs-datacenter"
+    folder            = "de-test-01"
+    default-datastore = "vs-datastore"
+    resourcepool-path = ""
+
+
   fakeVmwareUUID: VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00
 metadata:
   creationTimestamp: null

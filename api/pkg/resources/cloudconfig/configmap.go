@@ -1,6 +1,7 @@
 package cloudconfig
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -30,95 +31,9 @@ func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapC
 			cm.Data = map[string]string{}
 		}
 
-		var cloudConfig string
-		var err error
-		cloud := data.Cluster().Spec.Cloud
-		dc := data.DC()
-		if cloud.AWS != nil {
-			awsCloudConfig := &aws.CloudConfig{
-				Global: aws.GlobalOpts{
-					Zone:                        cloud.AWS.AvailabilityZone,
-					VPC:                         cloud.AWS.VPCID,
-					KubernetesClusterID:         data.Cluster().Name,
-					DisableSecurityGroupIngress: false,
-					SubnetID:                    cloud.AWS.SubnetID,
-					RouteTableID:                cloud.AWS.RouteTableID,
-					DisableStrictZoneCheck:      true,
-				},
-			}
-			cloudConfig, err = aws.CloudConfigToString(awsCloudConfig)
-			if err != nil {
-				return nil, err
-			}
-		} else if cloud.Azure != nil {
-			vnetResourceGroup := cloud.Azure.ResourceGroup
-			azureCloudConfig := &azure.CloudConfig{
-				Cloud:                      "AZUREPUBLICCLOUD",
-				TenantID:                   cloud.Azure.TenantID,
-				SubscriptionID:             cloud.Azure.SubscriptionID,
-				AADClientID:                cloud.Azure.ClientID,
-				AADClientSecret:            cloud.Azure.ClientSecret,
-				ResourceGroup:              cloud.Azure.ResourceGroup,
-				Location:                   dc.Spec.Azure.Location,
-				VNetName:                   cloud.Azure.VNetName,
-				SubnetName:                 cloud.Azure.SubnetName,
-				RouteTableName:             cloud.Azure.RouteTableName,
-				SecurityGroupName:          cloud.Azure.SecurityGroup,
-				PrimaryAvailabilitySetName: cloud.Azure.AvailabilitySet,
-				VnetResourceGroup:          &vnetResourceGroup,
-				UseInstanceMetadata:        false,
-			}
-			cloudConfig, err = azure.CloudConfigToString(azureCloudConfig)
-			if err != nil {
-				return nil, err
-			}
-		} else if cloud.Openstack != nil {
-			openstackCloudConfig := &openstack.CloudConfig{
-				Global: openstack.GlobalOpts{
-					AuthURL:    dc.Spec.Openstack.AuthURL,
-					Username:   cloud.Openstack.Username,
-					Password:   cloud.Openstack.Password,
-					DomainName: cloud.Openstack.Domain,
-					TenantName: cloud.Openstack.Tenant,
-					Region:     dc.Spec.Openstack.Region,
-				},
-				BlockStorage: openstack.BlockStorageOpts{
-					BSVersion:       "v2",
-					TrustDevicePath: false,
-					IgnoreVolumeAZ:  dc.Spec.Openstack.IgnoreVolumeAZ,
-				},
-				LoadBalancer: openstack.LoadBalancerOpts{
-					ManageSecurityGroups: true,
-				},
-				Version: data.Cluster().Spec.Version.String(),
-			}
-			cloudConfig, err = openstack.CloudConfigToString(openstackCloudConfig)
-			if err != nil {
-				return nil, err
-			}
-		} else if cloud.VSphere != nil {
-			vsphereCloudConfig := &vsphere.CloudConfig{
-				Global: vsphere.GlobalOpts{
-					User:         cloud.VSphere.Username,
-					Password:     cloud.VSphere.Password,
-					InsecureFlag: dc.Spec.VSphere.AllowInsecure,
-					VCenterPort:  "443",
-				},
-				Disk: vsphere.DiskOpts{
-					SCSIControllerType: "pvscsi",
-				},
-				Workspace: vsphere.WorkspaceOpts{
-					VCenterIP:        strings.Replace(dc.Spec.VSphere.Endpoint, "https://", "", -1),
-					Datacenter:       dc.Spec.VSphere.Datacenter,
-					DefaultDatastore: dc.Spec.VSphere.Datastore,
-					//TODO: Verify this has the same effect as Global.Working-dir
-					Folder: data.Cluster().Name,
-				},
-			}
-			cloudConfig, err = vsphere.CloudConfigToString(vsphereCloudConfig)
-			if err != nil {
-				return nil, err
-			}
+		cloudConfig, err := CloudConfig(data)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create cloud-config: %v", err)
 		}
 
 		cm.Name = resources.CloudConfigConfigMapName
@@ -129,6 +44,99 @@ func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapC
 
 		return cm, nil
 	}
+}
+
+// CloudConfig returns the cloud-config for the supplied data
+func CloudConfig(data resources.ConfigMapDataProvider) (cloudConfig string, err error) {
+	cloud := data.Cluster().Spec.Cloud
+	dc := data.DC()
+	if cloud.AWS != nil {
+		awsCloudConfig := &aws.CloudConfig{
+			Global: aws.GlobalOpts{
+				Zone:                        cloud.AWS.AvailabilityZone,
+				VPC:                         cloud.AWS.VPCID,
+				KubernetesClusterID:         data.Cluster().Name,
+				DisableSecurityGroupIngress: false,
+				SubnetID:                    cloud.AWS.SubnetID,
+				RouteTableID:                cloud.AWS.RouteTableID,
+				DisableStrictZoneCheck:      true,
+			},
+		}
+		cloudConfig, err = aws.CloudConfigToString(awsCloudConfig)
+		if err != nil {
+			return cloudConfig, err
+		}
+	} else if cloud.Azure != nil {
+		vnetResourceGroup := cloud.Azure.ResourceGroup
+		azureCloudConfig := &azure.CloudConfig{
+			Cloud:                      "AZUREPUBLICCLOUD",
+			TenantID:                   cloud.Azure.TenantID,
+			SubscriptionID:             cloud.Azure.SubscriptionID,
+			AADClientID:                cloud.Azure.ClientID,
+			AADClientSecret:            cloud.Azure.ClientSecret,
+			ResourceGroup:              cloud.Azure.ResourceGroup,
+			Location:                   dc.Spec.Azure.Location,
+			VNetName:                   cloud.Azure.VNetName,
+			SubnetName:                 cloud.Azure.SubnetName,
+			RouteTableName:             cloud.Azure.RouteTableName,
+			SecurityGroupName:          cloud.Azure.SecurityGroup,
+			PrimaryAvailabilitySetName: cloud.Azure.AvailabilitySet,
+			VnetResourceGroup:          &vnetResourceGroup,
+			UseInstanceMetadata:        false,
+		}
+		cloudConfig, err = azure.CloudConfigToString(azureCloudConfig)
+		if err != nil {
+			return cloudConfig, err
+		}
+	} else if cloud.Openstack != nil {
+		openstackCloudConfig := &openstack.CloudConfig{
+			Global: openstack.GlobalOpts{
+				AuthURL:    dc.Spec.Openstack.AuthURL,
+				Username:   cloud.Openstack.Username,
+				Password:   cloud.Openstack.Password,
+				DomainName: cloud.Openstack.Domain,
+				TenantName: cloud.Openstack.Tenant,
+				Region:     dc.Spec.Openstack.Region,
+			},
+			BlockStorage: openstack.BlockStorageOpts{
+				BSVersion:       "v2",
+				TrustDevicePath: false,
+				IgnoreVolumeAZ:  dc.Spec.Openstack.IgnoreVolumeAZ,
+			},
+			LoadBalancer: openstack.LoadBalancerOpts{
+				ManageSecurityGroups: true,
+			},
+			Version: data.Cluster().Spec.Version.String(),
+		}
+		cloudConfig, err = openstack.CloudConfigToString(openstackCloudConfig)
+		if err != nil {
+			return cloudConfig, err
+		}
+	} else if cloud.VSphere != nil {
+		vsphereCloudConfig := &vsphere.CloudConfig{
+			Global: vsphere.GlobalOpts{
+				User:         cloud.VSphere.Username,
+				Password:     cloud.VSphere.Password,
+				InsecureFlag: dc.Spec.VSphere.AllowInsecure,
+				VCenterPort:  "443",
+			},
+			Disk: vsphere.DiskOpts{
+				SCSIControllerType: "pvscsi",
+			},
+			Workspace: vsphere.WorkspaceOpts{
+				VCenterIP:        strings.Replace(dc.Spec.VSphere.Endpoint, "https://", "", -1),
+				Datacenter:       dc.Spec.VSphere.Datacenter,
+				DefaultDatastore: dc.Spec.VSphere.Datastore,
+				//TODO: Verify this has the same effect as Global.Working-dir
+				Folder: data.Cluster().Name,
+			},
+		}
+		cloudConfig, err = vsphere.CloudConfigToString(vsphereCloudConfig)
+		if err != nil {
+			return cloudConfig, err
+		}
+	}
+	return cloudConfig, err
 }
 
 const (
