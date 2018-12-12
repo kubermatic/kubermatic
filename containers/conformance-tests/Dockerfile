@@ -1,11 +1,7 @@
-FROM debian:stretch
+FROM golang:1.11.2-stretch
 
 LABEL maintainer "henrik@loodse.com"
 
-RUN apt-get update && apt-get install -y curl
-
-COPY ./conformance-tests /usr/local/bin/
 COPY ./install.sh /opt/install.sh
 
-RUN chmod +x /opt/install.sh
-RUN /opt/install.sh
+RUN chmod +x /opt/install.sh && /opt/install.sh
