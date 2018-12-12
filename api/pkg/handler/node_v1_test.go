@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-test/deep"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -558,7 +559,7 @@ func TestCreateNodeForCluster(t *testing.T) {
 	}
 }
 
-func TestCreateNodeDeploymentForCluster(t *testing.T) {
+func TestCreateNodeDeployment(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		Name                   string
@@ -634,7 +635,7 @@ func TestCreateNodeDeploymentForCluster(t *testing.T) {
 	}
 }
 
-func TestListNodeDeploymentsForCluster(t *testing.T) {
+func TestListNodeDeployments(t *testing.T) {
 	t.Parallel()
 	var replicas int32 = 1
 	var paused = false
@@ -757,7 +758,7 @@ func TestListNodeDeploymentsForCluster(t *testing.T) {
 	}
 }
 
-func TestGetNodeDeploymentForCluster(t *testing.T) {
+func TestGetNodeDeployment(t *testing.T) {
 	t.Parallel()
 	var replicas int32 = 1
 	var paused = false
@@ -848,7 +849,155 @@ func TestGetNodeDeploymentForCluster(t *testing.T) {
 	}
 }
 
-func TestDeleteNodeDeploymentForCluster(t *testing.T) {
+func TestPatchNodeDeployment(t *testing.T) {
+	t.Parallel()
+
+	var replicas int32 = 1
+	var replicasUpdated int32 = 3
+	var kubeletVerUpdated = "v1.2.3"
+
+	// Mock timezone to keep creation timestamp always the same.
+	time.Local = time.UTC
+
+	testcases := []struct {
+		Name                       string
+		Body                       string
+		ExpectedResponse           string
+		HTTPStatus                 int
+		cluster                    string
+		project                    string
+		ExistingAPIUser            *apiv1.LegacyUser
+		NodeDeploymentID           string
+		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
+		ExistingKubermaticObjs     []runtime.Object
+	}{
+		// Scenario 1: Update replicas count.
+		{
+			Name:             "Scenario 1: Update replicas count",
+			Body:             fmt.Sprintf(`{"spec":{"replicas":%v}}`, replicasUpdated),
+			ExpectedResponse: fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":""}},"strategy":{},"paused":false},"status":{}}`, replicasUpdated),
+			cluster:          "keen-snyder",
+			HTTPStatus:       http.StatusOK,
+			project:          genDefaultProject().Name,
+			ExistingAPIUser:  genDefaultAPIUser(),
+			NodeDeploymentID: "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "venus",
+						Namespace: metav1.NamespaceSystem,
+					},
+					Spec: clusterv1alpha1.MachineDeploymentSpec{
+						Replicas: &replicas,
+						Template: clusterv1alpha1.MachineTemplateSpec{
+							Spec: clusterv1alpha1.MachineSpec{
+								ProviderConfig: clusterv1alpha1.ProviderConfig{
+									Value: &runtime.RawExtension{
+										Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			ExistingKubermaticObjs: genDefaultKubermaticObjects(genTestCluster(true)),
+		},
+		// Scenario 2: Update kubelet version.
+		{
+			Name:             "Scenario 2: Update kubelet version",
+			Body:             fmt.Sprintf(`{"spec":{"template":{"versions":{"kubelet":"%v"}}}}`, kubeletVerUpdated),
+			ExpectedResponse: fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"%v"}},"strategy":{},"paused":false},"status":{}}`, replicas, kubeletVerUpdated),
+			cluster:          "keen-snyder",
+			HTTPStatus:       http.StatusOK,
+			project:          genDefaultProject().Name,
+			ExistingAPIUser:  genDefaultAPIUser(),
+			NodeDeploymentID: "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "venus",
+						Namespace: metav1.NamespaceSystem,
+					},
+					Spec: clusterv1alpha1.MachineDeploymentSpec{
+						Replicas: &replicas,
+						Template: clusterv1alpha1.MachineTemplateSpec{
+							Spec: clusterv1alpha1.MachineSpec{
+								ProviderConfig: clusterv1alpha1.ProviderConfig{
+									Value: &runtime.RawExtension{
+										Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			ExistingKubermaticObjs: genDefaultKubermaticObjects(genTestCluster(true)),
+		},
+		// Scenario 3: Change to paused.
+		{
+			Name:             "Scenario 3: Change to paused",
+			Body:             `{"spec":{"paused":true}}`,
+			ExpectedResponse: `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":""}},"strategy":{},"paused":true},"status":{}}`,
+			cluster:          "keen-snyder",
+			HTTPStatus:       http.StatusOK,
+			project:          genDefaultProject().Name,
+			ExistingAPIUser:  genDefaultAPIUser(),
+			NodeDeploymentID: "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "venus",
+						Namespace: metav1.NamespaceSystem,
+					},
+					Spec: clusterv1alpha1.MachineDeploymentSpec{
+						Replicas: &replicas,
+						Template: clusterv1alpha1.MachineTemplateSpec{
+							Spec: clusterv1alpha1.MachineSpec{
+								ProviderConfig: clusterv1alpha1.ProviderConfig{
+									Value: &runtime.RawExtension{
+										Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			ExistingKubermaticObjs: genDefaultKubermaticObjects(genTestCluster(true)),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPatch, fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodedeployments/%s",
+				genDefaultProject().Name, genDefaultCluster().Name, tc.NodeDeploymentID), strings.NewReader(tc.Body))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			machineDeploymentObjets := []runtime.Object{}
+			kubernetesObj := []runtime.Object{}
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			for _, existingMachineDeployment := range tc.ExistingMachineDeployments {
+				machineDeploymentObjets = append(machineDeploymentObjets, existingMachineDeployment)
+			}
+			ep, _, err := createTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineDeploymentObjets, kubermaticObj, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			compareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+}
+
+func TestDeleteNodeDeployment(t *testing.T) {
 	t.Parallel()
 	var replicas int32 = 1
 	testcases := []struct {
