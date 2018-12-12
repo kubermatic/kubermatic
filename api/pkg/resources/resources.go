@@ -358,10 +358,10 @@ type ConfigMapCreator = func(*corev1.ConfigMap) (*corev1.ConfigMap, error)
 type SecretCreator = func(data SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error)
 
 // StatefulSetCreator defines an interface to create/update StatefulSet
-type StatefulSetCreator = func(data *TemplateData, existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error)
+type StatefulSetCreator = func(existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error)
 
 // VerticalPodAutoscalerCreator defines an interface to create/update a VerticalPodAutoscaler
-type VerticalPodAutoscalerCreator = func(data *TemplateData, existing *autoscalingv1beta.VerticalPodAutoscaler) (*autoscalingv1beta.VerticalPodAutoscaler, error)
+type VerticalPodAutoscalerCreator = func(existing *autoscalingv1beta.VerticalPodAutoscaler) (*autoscalingv1beta.VerticalPodAutoscaler, error)
 
 // ServiceCreator defines an interface to create/update Services
 type ServiceCreator = func(data ServiceDataProvider, existing *corev1.Service) (*corev1.Service, error)
@@ -403,7 +403,10 @@ type APIServiceCreator = func(existing *apiregistrationv1beta1.APIService) (*api
 type MutatingWebhookConfigurationCreator = func(cluster *kubermaticv1.Cluster, data *TemplateData, existing *admissionregistrationv1beta1.MutatingWebhookConfiguration) (*admissionregistrationv1beta1.MutatingWebhookConfiguration, error)
 
 // ObjectCreator defines an interface to create/update a runtime.Object
-type ObjectCreator = func(data *TemplateData, existing runtime.Object) (runtime.Object, error)
+type ObjectCreator = func(existing runtime.Object) (runtime.Object, error)
+
+// ObjectModifier is a wrapper function which modifies the object which gets returned by the passed in ObjectCreator
+type ObjectModifier func(create ObjectCreator) ObjectCreator
 
 // GetClusterApiserverAddress returns the apiserver address for the given Cluster
 func GetClusterApiserverAddress(cluster *kubermaticv1.Cluster, lister corev1lister.ServiceLister) (string, error) {
@@ -740,21 +743,21 @@ func GetAbsoluteServiceDNSName(service, namespace string) string {
 // StatefulSetObjectWrapper adds a wrapper so the StatefulSetCreator matches ObjectCreator
 // This is needed as golang does not support function interface matching
 func StatefulSetObjectWrapper(create StatefulSetCreator) ObjectCreator {
-	return func(data *TemplateData, existing runtime.Object) (runtime.Object, error) {
+	return func(existing runtime.Object) (runtime.Object, error) {
 		if existing != nil {
-			return create(data, existing.(*appsv1.StatefulSet))
+			return create(existing.(*appsv1.StatefulSet))
 		}
-		return create(data, &appsv1.StatefulSet{})
+		return create(&appsv1.StatefulSet{})
 	}
 }
 
 // VerticalPodAutocalerObjectWrapper adds a wrapper so the VerticalPodAutoscalerCreator matches ObjectCreator
 // This is needed as golang does not support function interface matching
 func VerticalPodAutocalerObjectWrapper(create VerticalPodAutoscalerCreator) ObjectCreator {
-	return func(data *TemplateData, existing runtime.Object) (runtime.Object, error) {
+	return func(existing runtime.Object) (runtime.Object, error) {
 		if existing != nil {
-			return create(data, existing.(*autoscalingv1beta.VerticalPodAutoscaler))
+			return create(existing.(*autoscalingv1beta.VerticalPodAutoscaler))
 		}
-		return create(data, nil)
+		return create(nil)
 	}
 }

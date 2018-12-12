@@ -8,7 +8,7 @@ import (
 
 // GetVerticalPodAutoscaler returns a function to create a generic VerticalPodAutoscaler with the given name and selector
 func GetVerticalPodAutoscaler(name string, labels map[string]string) VerticalPodAutoscalerCreator {
-	return func(data *TemplateData, existing *autoscalingv1beta1.VerticalPodAutoscaler) (*autoscalingv1beta1.VerticalPodAutoscaler, error) {
+	return func(existing *autoscalingv1beta1.VerticalPodAutoscaler) (*autoscalingv1beta1.VerticalPodAutoscaler, error) {
 		var pdb *autoscalingv1beta1.VerticalPodAutoscaler
 		if existing != nil {
 			pdb = existing
@@ -17,7 +17,6 @@ func GetVerticalPodAutoscaler(name string, labels map[string]string) VerticalPod
 		}
 
 		pdb.Name = name
-		pdb.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 
 		pdb.Spec = autoscalingv1beta1.VerticalPodAutoscalerSpec{
 			Selector: &metav1.LabelSelector{

@@ -13,6 +13,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	kubefake "k8s.io/client-go/kubernetes/fake"
+
+	ctrlruntimefakeinformer "sigs.k8s.io/controller-runtime/pkg/cache/informertest"
+	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
@@ -29,8 +32,10 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 	kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, time.Minute*5)
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, time.Minute*5)
 
+	dynamicClient := ctrlruntimefakeclient.NewFakeClient()
 	controller, err := New(
 		kubeClient,
+		dynamicClient,
 		client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
 		TestDC,
 		dcs,
@@ -45,6 +50,7 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 		"",
 		[]byte{},
 
+		&ctrlruntimefakeinformer.FakeInformers{},
 		kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 		kubeInformerFactory.Core().V1().ServiceAccounts(),
 		kubeInformerFactory.Core().V1().ConfigMaps(),

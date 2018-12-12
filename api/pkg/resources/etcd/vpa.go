@@ -6,9 +6,12 @@ import (
 	autoscalingv1beta "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"
 )
 
-// VerticalPodAutoscaler returns a VerticalPodAutoscaler which can be applied to the etcd StatefulSet
-func VerticalPodAutoscaler(data *resources.TemplateData, existing *autoscalingv1beta.VerticalPodAutoscaler) (*autoscalingv1beta.VerticalPodAutoscaler, error) {
-	baseLabels := getBasePodLabels(data.Cluster())
+// VerticalPodAutoscalerCreator returns the function to reconcile the etcd VerticalPodAutoscaler resource
+func VerticalPodAutoscalerCreator(data *resources.TemplateData) resources.VerticalPodAutoscalerCreator {
+	return func(existing *autoscalingv1beta.VerticalPodAutoscaler) (*autoscalingv1beta.VerticalPodAutoscaler, error) {
+		baseLabels := getBasePodLabels(data.Cluster())
 
-	return resources.GetVerticalPodAutoscaler(name, baseLabels)(data, existing)
+		return resources.GetVerticalPodAutoscaler(name, baseLabels)(existing)
+	}
+
 }
