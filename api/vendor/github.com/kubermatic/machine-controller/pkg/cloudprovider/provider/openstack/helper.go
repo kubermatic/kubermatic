@@ -98,7 +98,7 @@ func getImageByName(client *gophercloud.ProviderClient, region, name string) (*o
 	}
 
 	var allImages []osimages.Image
-	pager := osimages.ListDetail(computeClient, osimages.ListOpts{})
+	pager := osimages.ListDetail(computeClient, osimages.ListOpts{Name: name})
 	err = pager.EachPage(func(page pagination.Page) (bool, error) {
 		images, err := osimages.ExtractImages(page)
 		if err != nil {
@@ -111,13 +111,10 @@ func getImageByName(client *gophercloud.ProviderClient, region, name string) (*o
 		return nil, err
 	}
 
-	for _, i := range allImages {
-		if i.Name == name {
-			return &i, nil
-		}
+	if len(allImages) == 0 {
+		return nil, errNotFound
 	}
-
-	return nil, errNotFound
+	return &allImages[0], nil
 }
 
 func getFlavor(client *gophercloud.ProviderClient, region, name string) (*osflavors.Flavor, error) {

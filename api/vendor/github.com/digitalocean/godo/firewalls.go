@@ -1,11 +1,10 @@
 package godo
 
 import (
+	"context"
 	"net/http"
 	"path"
 	"strconv"
-
-	"github.com/digitalocean/godo/context"
 )
 
 const firewallsBasePath = "/v2/firewalls"
@@ -48,6 +47,10 @@ type Firewall struct {
 // String creates a human-readable description of a Firewall.
 func (fw Firewall) String() string {
 	return Stringify(fw)
+}
+
+func (fw Firewall) URN() string {
+	return ToURN("Firewall", fw.ID)
 }
 
 // FirewallRequest represents the configuration to be applied to an existing or a new Firewall.

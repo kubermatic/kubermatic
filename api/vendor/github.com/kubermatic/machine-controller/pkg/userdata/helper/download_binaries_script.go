@@ -55,5 +55,5 @@ func DownloadBinariesScript(kubeletVersion string, downloadKubelet bool) (string
 		return "", fmt.Errorf("failed to execute download-binaries template: %v", err)
 	}
 
-	return string(b.String()), nil
+	return b.String(), nil
 }

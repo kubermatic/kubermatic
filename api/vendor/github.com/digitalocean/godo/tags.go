@@ -1,10 +1,9 @@
 package godo
 
 import (
+	"context"
 	"fmt"
 	"net/http"
-
-	"github.com/digitalocean/godo/context"
 )
 
 const tagsBasePath = "v2/tags"
@@ -36,6 +35,8 @@ type ResourceType string
 const (
 	//DropletResourceType holds the string representing our ResourceType of Droplet.
 	DropletResourceType ResourceType = "droplet"
+	//ImageResourceType holds the string representing our ResourceType of Image.
+	ImageResourceType ResourceType = "image"
 )
 
 // Resource represent a single resource for associating/disassociating with tags
@@ -46,13 +47,23 @@ type Resource struct {
 
 // TaggedResources represent the set of resources a tag is attached to
 type TaggedResources struct {
-	Droplets *TaggedDropletsResources `json:"droplets,omitempty"`
+	Count         int                      `json:"count"`
+	LastTaggedURI string                   `json:"last_tagged_uri,omitempty"`
+	Droplets      *TaggedDropletsResources `json:"droplets,omitempty"`
+	Images        *TaggedImagesResources   `json:"images"`
 }
 
 // TaggedDropletsResources represent the droplet resources a tag is attached to
 type TaggedDropletsResources struct {
-	Count      int      `json:"count,float64,omitempty"`
-	LastTagged *Droplet `json:"last_tagged,omitempty"`
+	Count         int      `json:"count,float64,omitempty"`
+	LastTagged    *Droplet `json:"last_tagged,omitempty"`
+	LastTaggedURI string   `json:"last_tagged_uri,omitempty"`
+}
+
+// TaggedImagesResources represent the image resources a tag is attached to
+type TaggedImagesResources struct {
+	Count         int    `json:"count,float64,omitempty"`
+	LastTaggedURI string `json:"last_tagged_uri,omitempty"`
 }
 
 // Tag represent DigitalOcean tag

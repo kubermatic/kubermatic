@@ -2,7 +2,6 @@ required = [
     "k8s.io/code-generator/cmd/client-gen",
     "k8s.io/code-generator/cmd/deepcopy-gen",
     "k8s.io/gengo/examples/defaulter-gen/generators",
-    "k8s.io/apimachinery/pkg/apimachinery/registered",
     "github.com/ugorji/go/codec/codecgen",
     "github.com/go-swagger/go-swagger/cmd/swagger"
 ]
@@ -93,31 +92,35 @@ required = [
 
 [[override]]
   name = "k8s.io/apimachinery"
-  branch = "release-1.10"
+  branch = "release-1.11"
 
-[[constraint]]
+[[override]]
   name = "k8s.io/apiextensions-apiserver"
-  branch = "release-1.10"
+  branch = "release-1.11"
 
 [[override]]
   name = "k8s.io/api"
-  branch = "release-1.10"
+  branch = "release-1.11"
 
 [[override]]
   name = "k8s.io/client-go"
-  branch = "release-7.0"
+  branch = "release-8.0"
 
 [[override]]
   name = "k8s.io/kube-aggregator"
-  branch = "release-1.10"
+  branch = "release-1.11"
 
 [[override]]
   name = "k8s.io/code-generator"
-  branch = "release-1.10"
+  branch = "release-1.11"
 
-[[constraint]]
+[[override]]
+  name = "k8s.io/apiserver"
+  branch = "release-1.11"
+
+[[override]]
   name = "github.com/kubermatic/machine-controller"
-  version = "v0.9.9"
+  version = "v0.10.5"
 
 [[constraint]]
   name = "github.com/prometheus/client_golang"
@@ -164,10 +167,6 @@ required = [
 [[override]]
   name = "gopkg.in/fsnotify.v1"
   source = "gopkg.in/fsnotify/fsnotify.v1"
-
-[[override]]
-  name = "k8s.io/apiserver"
-  branch = "release-1.10"
 
 [[override]]
   name = "github.com/golang/protobuf"
