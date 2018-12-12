@@ -11,8 +11,10 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"os/exec"
 	"os/user"
 	"path"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -29,6 +31,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	kubermaticsignals "github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -36,6 +39,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
+
+//TODO: Move Kubernetes versions into this as well
+type excludeSelector struct {
+	// The value in this map is never used, we use the keys only to have a simple set mechanism
+	Distributions map[providerconfig.OperatingSystem]bool
+}
 
 var supportedVersions = []*semver.Semver{
 	semver.NewSemverOrDie("v1.9.10"),
@@ -46,27 +55,31 @@ var supportedVersions = []*semver.Semver{
 
 // Opts represent combination of flags and ENV options
 type Opts struct {
-	namePrefix                   string
-	providers                    sets.String
-	controlPlaneReadyWaitTimeout time.Duration
-	deleteClusterAfterTests      bool
-	kubeconfigPath               string
-	nodeCount                    int
-	nodeReadyWaitTimeout         time.Duration
-	PublicKeys                   [][]byte
-	reportsRoot                  string
-	clusterLister                kubermaticv1lister.ClusterLister
-	kubermaticClient             kubermaticclientset.Interface
-	kubeClient                   kubernetes.Interface
-	clusterClientProvider        *clusterclient.Provider
-	dcFile                       string
-	repoRoot                     string
-	dcs                          map[string]provider.DatacenterMeta
-	cleanupOnStart               bool
-	clusterParallelCount         int
-	workerName                   string
-	HomeDir                      string
-	log                          *logrus.Entry
+	namePrefix                     string
+	providers                      sets.String
+	controlPlaneReadyWaitTimeout   time.Duration
+	deleteClusterAfterTests        bool
+	kubeconfigPath                 string
+	nodeCount                      int
+	nodeReadyWaitTimeout           time.Duration
+	PublicKeys                     [][]byte
+	reportsRoot                    string
+	clusterLister                  kubermaticv1lister.ClusterLister
+	kubermaticClient               kubermaticclientset.Interface
+	kubeClient                     kubernetes.Interface
+	clusterClientProvider          *clusterclient.Provider
+	dcFile                         string
+	repoRoot                       string
+	dcs                            map[string]provider.DatacenterMeta
+	cleanupOnStart                 bool
+	clusterParallelCount           int
+	workerName                     string
+	HomeDir                        string
+	runKubermaticControllerManager bool
+	excludeKubernetesVersions      string
+	log                            *logrus.Entry
+	excludeSelector                excludeSelector
+	excludeSelectorRaw             string
 
 	secrets secrets
 }
@@ -145,6 +158,9 @@ func main() {
 	flag.BoolVar(&debug, "debug", true, "Enable debug logs")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
 	flag.StringVar(&opts.workerName, "worker-name", "", "name of the worker, if set the 'worker-name' label will be set on all clusters")
+	flag.BoolVar(&opts.runKubermaticControllerManager, "run-kubermatic-controller-manager", true, "should the runner run the controller-manager")
+	flag.StringVar(&opts.excludeKubernetesVersions, "exclude-kubernetes-versions", "", "a comma-separated list of minor kubernetes versions that will get excluded from the tests, by default 1.9 - 1.12 are tested")
+	flag.StringVar(&opts.excludeSelectorRaw, "exclude-distributions", "", "a comma-separated list of distributions that will get excluded from the tests")
 
 	flag.StringVar(&opts.secrets.AWS.AccessKeyID, "aws-access-key-id", "", "AWS: AccessKeyID")
 	flag.StringVar(&opts.secrets.AWS.SecretAccessKey, "aws-secret-access-key", "", "AWS: SecretAccessKey")
@@ -172,6 +188,45 @@ func main() {
 
 	if debug {
 		mainLog.SetLevel(logrus.DebugLevel)
+	}
+
+	if opts.excludeSelectorRaw != "" {
+		excludedDistributions := strings.Split(opts.excludeSelectorRaw, ",")
+		if opts.excludeSelector.Distributions == nil {
+			opts.excludeSelector.Distributions = map[providerconfig.OperatingSystem]bool{}
+		}
+		for _, excludedDistribution := range excludedDistributions {
+			switch excludedDistribution {
+			case "ubuntu":
+				opts.excludeSelector.Distributions[providerconfig.OperatingSystemUbuntu] = true
+			case "centos":
+				opts.excludeSelector.Distributions[providerconfig.OperatingSystemCentOS] = true
+			case "coreos":
+				opts.excludeSelector.Distributions[providerconfig.OperatingSystemCoreos] = true
+			default:
+				mainLog.Fatalf("Unknown distribution '%s' in '-exclude-distributions' param", excludedDistribution)
+			}
+		}
+	}
+
+	if opts.excludeKubernetesVersions != "" {
+		excludedKubernetesVersions := strings.Split(opts.excludeKubernetesVersions, ",")
+		var newSupportedVersions []*semver.Semver
+	outer:
+		for _, supportedVersion := range supportedVersions {
+			for _, excludedKubernetesVersion := range excludedKubernetesVersions {
+				val, err := strconv.Atoi(excludedKubernetesVersion)
+				if err != nil {
+					mainLog.Fatalf("excluded kubernetes version '%s' cant not be parsed as an int: %v", excludedKubernetesVersion, err)
+				}
+				if supportedVersion.Minor() == int64(val) {
+					continue outer
+				}
+			}
+			mainLog.Infof("Adding %d as supported version", supportedVersion.Minor())
+			newSupportedVersions = append(newSupportedVersions, supportedVersion)
+		}
+		supportedVersions = newSupportedVersions
 	}
 
 	fields := logrus.Fields{}
@@ -203,6 +258,28 @@ func main() {
 
 	stopCh := kubermaticsignals.SetupSignalHandler()
 	rootCtx, rootCancel := context.WithCancel(context.Background())
+
+	if opts.runKubermaticControllerManager {
+		controllerManagerEnviron := os.Environ()
+		if opts.workerName != "" {
+			controllerManagerEnviron = append(controllerManagerEnviron, fmt.Sprintf("KUBERMATIC_WORKERNAME=%s", opts.workerName))
+		}
+		out, err := exec.Command("go", "env", "GOPATH").CombinedOutput()
+		if err != nil {
+			log.Fatalf("failed to execute command `go env GOPATH`: out=%s, err=%v", string(out), err)
+		}
+		gopath := strings.Replace(string(out), "\n", "", -1)
+		// We deliberately do not use `CommandContext` here because we expect this to be executed inside a container
+		// and we want the controller to run at least as long as the conformance tester and _not_ to be killed
+		// because the context for the latter got canceled, because otherwise we don't have cleanup
+		command := exec.Command(path.Join(gopath, "src/github.com/kubermatic/kubermatic/api/hack/run-controller.sh"))
+		command.Env = controllerManagerEnviron
+		go func() {
+			if out, err := command.CombinedOutput(); err != nil {
+				log.Fatalf("failed to run controller-manager: Output:\n---%s\n---\nerr=%v", string(out), err)
+			}
+		}()
+	}
 
 	go func() {
 		select {
@@ -275,7 +352,7 @@ func main() {
 	var scenarios []testScenario
 	if opts.providers.Has("aws") {
 		log.Info("Adding AWS scenarios")
-		scenarios = append(scenarios, getAWSScenarios()...)
+		scenarios = append(scenarios, getAWSScenarios(opts.excludeSelector)...)
 	}
 	if opts.providers.Has("digitalocean") {
 		log.Info("Adding Digitalocean scenarios")
