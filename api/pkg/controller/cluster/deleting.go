@@ -3,13 +3,11 @@ package cluster
 import (
 	"fmt"
 
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/azure"
-
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/azure"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
 
 	"github.com/kubermatic/machine-controller/pkg/node/eviction"
 
