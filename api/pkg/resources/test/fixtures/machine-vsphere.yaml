@@ -25,20 +25,28 @@ spec:
       operatingSystem: ubuntu
       operatingSystemSpec:
         distUpgradeOnBoot: false
-      overwriteCloudConfig: |2
-
-
+      overwriteCloudConfig: |+
         [Global]
-                user = "vsphere-username"
-                password = "vsphere-password"
-                server = "http://vsphere.local"
-                port = "443"
-                insecure-flag = "1"
-                datacenter = "vsphere-datacenter"
-                datastore = "vsphere-datastore"
-                working-dir = "vsphere-1a2b3c4d5e"
+        user              = "vsphere-username"
+        password          = "vsphere-password"
+        port              = "443"
+        insecure-flag     = true
+        working-dir       = "vsphere-1a2b3c4d5e"
+        datacenter        = "vsphere-datacenter"
+        datastore         = "vsphere-datastore"
+        server            = "http://vsphere.local"
+
         [Disk]
-            scsicontrollertype = pvscsi
+        scsicontrollertype = "pvscsi"
+
+        [Workspace]
+        server            = "http://vsphere.local"
+        datacenter        = "vsphere-datacenter"
+        folder            = "vsphere-1a2b3c4d5e"
+        default-datastore = "vsphere-datastore"
+        resourcepool-path = ""
+
+
       sshPublicKeys:
       - ssh-rsa TEST123test
   versions:

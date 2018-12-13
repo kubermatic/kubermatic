@@ -623,6 +623,7 @@ func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, nam
 			TrustDevicePath: false,
 			IgnoreVolumeAZ:  true,
 		},
+		Version: spec.Versions.Kubelet,
 	}
 
 	s, err := CloudConfigToString(cc)
