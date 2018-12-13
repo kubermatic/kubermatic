@@ -21,12 +21,18 @@ import (
 const (
 	clusterTagKey = "cluster"
 
-	finalizerSecurityGroup   = "kubermatic.io/cleanup-azure-security-group"
-	finalizerRouteTable      = "kubermatic.io/cleanup-azure-route-table"
-	finalizerSubnet          = "kubermatic.io/cleanup-azure-subnet"
-	finalizerVNet            = "kubermatic.io/cleanup-azure-vnet"
-	finalizerResourceGroup   = "kubermatic.io/cleanup-azure-resource-group"
-	finalizerAvailabilitySet = "kubermatic.io/cleanup-azure-availability-set"
+	// FinalizerSecurityGroup will instruct the deletion of the security group
+	FinalizerSecurityGroup = "kubermatic.io/cleanup-azure-security-group"
+	// FinalizerRouteTable will instruct the deletion of the route table
+	FinalizerRouteTable = "kubermatic.io/cleanup-azure-route-table"
+	// FinalizerSubnet will instruct the deletion of the subnet
+	FinalizerSubnet = "kubermatic.io/cleanup-azure-subnet"
+	// FinalizerVNet will instruct the deletion of the virtual network
+	FinalizerVNet = "kubermatic.io/cleanup-azure-vnet"
+	// FinalizerResourceGroup will instruct the deletion of the resource group
+	FinalizerResourceGroup = "kubermatic.io/cleanup-azure-resource-group"
+	// FinalizerAvailabilitySet will instruct the deletion of the availability set
+	FinalizerAvailabilitySet = "kubermatic.io/cleanup-azure-availability-set"
 )
 
 type azure struct {
@@ -149,7 +155,7 @@ func deleteSecurityGroup(cloud kubermaticv1.CloudSpec) error {
 
 func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var err error
-	if kuberneteshelper.HasFinalizer(cluster, finalizerSecurityGroup) {
+	if kuberneteshelper.HasFinalizer(cluster, FinalizerSecurityGroup) {
 		glog.Infof("cluster %q: deleting security group %q", cluster.Name, cluster.Spec.Cloud.Azure.SecurityGroup)
 		if err := deleteSecurityGroup(cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
@@ -157,14 +163,14 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 			}
 		}
 		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-			updatedCluster.Finalizers = kuberneteshelper.RemoveFinalizer(updatedCluster.Finalizers, finalizerSecurityGroup)
+			updatedCluster.Finalizers = kuberneteshelper.RemoveFinalizer(updatedCluster.Finalizers, FinalizerSecurityGroup)
 		})
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if kuberneteshelper.HasFinalizer(cluster, finalizerRouteTable) {
+	if kuberneteshelper.HasFinalizer(cluster, FinalizerRouteTable) {
 		glog.Infof("cluster %q: deleting route table %q", cluster.Name, cluster.Spec.Cloud.Azure.RouteTableName)
 		if err := deleteRouteTable(cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
@@ -172,14 +178,14 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 			}
 		}
 		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-			updatedCluster.Finalizers = kuberneteshelper.RemoveFinalizer(updatedCluster.Finalizers, finalizerRouteTable)
+			updatedCluster.Finalizers = kuberneteshelper.RemoveFinalizer(updatedCluster.Finalizers, FinalizerRouteTable)
 		})
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if kuberneteshelper.HasFinalizer(cluster, finalizerSubnet) {
+	if kuberneteshelper.HasFinalizer(cluster, FinalizerSubnet) {
 		glog.Infof("cluster %q: deleting subnet %q", cluster.Name, cluster.Spec.Cloud.Azure.SubnetName)
 		if err := deleteSubnet(cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
@@ -187,14 +193,14 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 			}
 		}
 		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-			updatedCluster.Finalizers = kuberneteshelper.RemoveFinalizer(updatedCluster.Finalizers, finalizerSubnet)
+			updatedCluster.Finalizers = kuberneteshelper.RemoveFinalizer(updatedCluster.Finalizers, FinalizerSubnet)
 		})
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if kuberneteshelper.HasFinalizer(cluster, finalizerVNet) {
+	if kuberneteshelper.HasFinalizer(cluster, FinalizerVNet) {
 		glog.Infof("cluster %q: deleting vnet %q", cluster.Name, cluster.Spec.Cloud.Azure.VNetName)
 		if err := deleteVNet(cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
@@ -203,14 +209,14 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 		}
 
 		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-			updatedCluster.Finalizers = kuberneteshelper.RemoveFinalizer(updatedCluster.Finalizers, finalizerVNet)
+			updatedCluster.Finalizers = kuberneteshelper.RemoveFinalizer(updatedCluster.Finalizers, FinalizerVNet)
 		})
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if kuberneteshelper.HasFinalizer(cluster, finalizerResourceGroup) {
+	if kuberneteshelper.HasFinalizer(cluster, FinalizerResourceGroup) {
 		glog.Infof("cluster %q: deleting resource group %q", cluster.Name, cluster.Spec.Cloud.Azure.ResourceGroup)
 		if err := deleteResourceGroup(cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
@@ -219,14 +225,14 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 		}
 
 		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-			updatedCluster.Finalizers = kuberneteshelper.RemoveFinalizer(updatedCluster.Finalizers, finalizerResourceGroup)
+			updatedCluster.Finalizers = kuberneteshelper.RemoveFinalizer(updatedCluster.Finalizers, FinalizerResourceGroup)
 		})
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if kuberneteshelper.HasFinalizer(cluster, finalizerAvailabilitySet) {
+	if kuberneteshelper.HasFinalizer(cluster, FinalizerAvailabilitySet) {
 		glog.Infof("cluster %q: deleting availability set %q", cluster.Name, cluster.Spec.Cloud.Azure.AvailabilitySet)
 		if err := deleteAvailabilitySet(cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
@@ -235,7 +241,7 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 		}
 
 		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-			updatedCluster.Finalizers = kuberneteshelper.RemoveFinalizer(updatedCluster.Finalizers, finalizerAvailabilitySet)
+			updatedCluster.Finalizers = kuberneteshelper.RemoveFinalizer(updatedCluster.Finalizers, FinalizerAvailabilitySet)
 		})
 		if err != nil {
 			return nil, err
@@ -488,7 +494,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 
 		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.ResourceGroup = cluster.Spec.Cloud.Azure.ResourceGroup
-			updatedCluster.Finalizers = append(updatedCluster.Finalizers, finalizerResourceGroup)
+			updatedCluster.Finalizers = append(updatedCluster.Finalizers, FinalizerResourceGroup)
 		})
 		if err != nil {
 			return nil, err
@@ -505,7 +511,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 
 		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.VNetName = cluster.Spec.Cloud.Azure.VNetName
-			updatedCluster.Finalizers = append(updatedCluster.Finalizers, finalizerVNet)
+			updatedCluster.Finalizers = append(updatedCluster.Finalizers, FinalizerVNet)
 		})
 		if err != nil {
 			return nil, err
@@ -522,7 +528,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 
 		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.SubnetName = cluster.Spec.Cloud.Azure.SubnetName
-			updatedCluster.Finalizers = append(updatedCluster.Finalizers, finalizerSubnet)
+			updatedCluster.Finalizers = append(updatedCluster.Finalizers, FinalizerSubnet)
 		})
 		if err != nil {
 			return nil, err
@@ -539,7 +545,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 
 		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.RouteTableName = cluster.Spec.Cloud.Azure.RouteTableName
-			updatedCluster.Finalizers = append(updatedCluster.Finalizers, finalizerRouteTable)
+			updatedCluster.Finalizers = append(updatedCluster.Finalizers, FinalizerRouteTable)
 		})
 		if err != nil {
 			return nil, err
@@ -556,7 +562,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 
 		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.SecurityGroup = cluster.Spec.Cloud.Azure.SecurityGroup
-			updatedCluster.Finalizers = append(updatedCluster.Finalizers, finalizerSecurityGroup)
+			updatedCluster.Finalizers = append(updatedCluster.Finalizers, FinalizerSecurityGroup)
 		})
 		if err != nil {
 			return nil, err
@@ -573,7 +579,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 
 		cluster, err = update(cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.AvailabilitySet = asName
-			updatedCluster.Finalizers = append(updatedCluster.Finalizers, finalizerAvailabilitySet)
+			updatedCluster.Finalizers = append(updatedCluster.Finalizers, FinalizerAvailabilitySet)
 		})
 		if err != nil {
 			return nil, err
