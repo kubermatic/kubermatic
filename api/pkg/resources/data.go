@@ -92,6 +92,7 @@ type ConfigMapDataProvider interface {
 	InClusterPrometheusScrapingConfigsFile() string
 	InClusterPrometheusDisableDefaultRules() bool
 	InClusterPrometheusDisableDefaultScrapingConfigs() bool
+	DC() *provider.DatacenterMeta
 }
 
 // SecretDataProvider provides data

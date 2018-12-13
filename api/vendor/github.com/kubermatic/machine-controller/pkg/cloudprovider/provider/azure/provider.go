@@ -47,13 +47,14 @@ type RawConfig struct {
 	ClientID       providerconfig.ConfigVarString `json:"clientID"`
 	ClientSecret   providerconfig.ConfigVarString `json:"clientSecret"`
 
-	Location        providerconfig.ConfigVarString `json:"location"`
-	ResourceGroup   providerconfig.ConfigVarString `json:"resourceGroup"`
-	VMSize          providerconfig.ConfigVarString `json:"vmSize"`
-	VNetName        providerconfig.ConfigVarString `json:"vnetName"`
-	SubnetName      providerconfig.ConfigVarString `json:"subnetName"`
-	RouteTableName  providerconfig.ConfigVarString `json:"routeTableName"`
-	AvailabilitySet providerconfig.ConfigVarString `json:"availabilitySet"`
+	Location          providerconfig.ConfigVarString `json:"location"`
+	ResourceGroup     providerconfig.ConfigVarString `json:"resourceGroup"`
+	VMSize            providerconfig.ConfigVarString `json:"vmSize"`
+	VNetName          providerconfig.ConfigVarString `json:"vnetName"`
+	SubnetName        providerconfig.ConfigVarString `json:"subnetName"`
+	RouteTableName    providerconfig.ConfigVarString `json:"routeTableName"`
+	AvailabilitySet   providerconfig.ConfigVarString `json:"availabilitySet"`
+	SecurityGroupName providerconfig.ConfigVarString `json:"securityGroupName"`
 
 	AssignPublicIP providerconfig.ConfigVarBool `json:"assignPublicIP"`
 	Tags           map[string]string            `json:"tags"`
@@ -65,13 +66,14 @@ type config struct {
 	ClientID       string
 	ClientSecret   string
 
-	Location        string
-	ResourceGroup   string
-	VMSize          string
-	VNetName        string
-	SubnetName      string
-	RouteTableName  string
-	AvailabilitySet string
+	Location          string
+	ResourceGroup     string
+	VMSize            string
+	VNetName          string
+	SubnetName        string
+	RouteTableName    string
+	AvailabilitySet   string
+	SecurityGroupName string
 
 	AssignPublicIP bool
 	Tags           map[string]string
@@ -211,6 +213,11 @@ func (p *provider) getConfig(s v1alpha1.ProviderConfig) (*config, *providerconfi
 	c.AvailabilitySet, err = p.configVarResolver.GetConfigVarStringValue(rawCfg.AvailabilitySet)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get the value of \"availabilitySet\" field, error = %v", err)
+	}
+
+	c.SecurityGroupName, err = p.configVarResolver.GetConfigVarStringValue(rawCfg.SecurityGroupName)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get the value of \"securityGroupName\" field, error = %v", err)
 	}
 
 	c.Tags = rawCfg.Tags
@@ -641,17 +648,19 @@ func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, nam
 	}
 
 	cc := &CloudConfig{
-		Cloud:               "AZUREPUBLICCLOUD",
-		TenantID:            c.TenantID,
-		SubscriptionID:      c.SubscriptionID,
-		AADClientID:         c.ClientID,
-		AADClientSecret:     c.ClientSecret,
-		ResourceGroup:       c.ResourceGroup,
-		Location:            c.Location,
-		VNetName:            c.VNetName,
-		SubnetName:          c.SubnetName,
-		RouteTableName:      c.RouteTableName,
-		UseInstanceMetadata: true,
+		Cloud:                      "AZUREPUBLICCLOUD",
+		TenantID:                   c.TenantID,
+		SubscriptionID:             c.SubscriptionID,
+		AADClientID:                c.ClientID,
+		AADClientSecret:            c.ClientSecret,
+		ResourceGroup:              c.ResourceGroup,
+		Location:                   c.Location,
+		VNetName:                   c.VNetName,
+		SubnetName:                 c.SubnetName,
+		RouteTableName:             c.RouteTableName,
+		PrimaryAvailabilitySetName: c.AvailabilitySet,
+		SecurityGroupName:          c.SecurityGroupName,
+		UseInstanceMetadata:        true,
 	}
 
 	s, err := CloudConfigToString(cc)

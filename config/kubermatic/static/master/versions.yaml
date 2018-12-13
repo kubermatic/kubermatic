@@ -3,6 +3,7 @@ allowed-node-versions: &node-versions
 - "1.10.*"
 - "1.11.*"
 - "1.12.*"
+- "1.13.*"
 
 versions:
 # Kubernetes 1.10
@@ -15,5 +16,9 @@ versions:
   allowedNodeVersions: *node-versions
 # Kubernetes 1.12
 - version: "1.12.3"
+  default: false
+  allowedNodeVersions: *node-versions
+# Kubernetes 1.13
+- version: "1.13.1"
   default: false
   allowedNodeVersions: *node-versions

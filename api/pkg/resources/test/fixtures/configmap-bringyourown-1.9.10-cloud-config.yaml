@@ -1,6 +1,5 @@
 data:
-  config: |2+
-
+  config: ""
   fakeVmwareUUID: VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00
 metadata:
   creationTimestamp: null
