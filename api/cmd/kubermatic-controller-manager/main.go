@@ -23,6 +23,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	"k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -86,6 +87,15 @@ func main() {
 	dynamicCache, err := cache.New(config, cache.Options{})
 	if err != nil {
 		glog.Fatalf("failed to create dynamic informer cache: %v", err)
+	}
+
+	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
+	if _, err := informer.GetSyncedStoreFromDynamicFactory(dynamicCache, &autoscalingv1beta1.VerticalPodAutoscaler{}); err != nil {
+		if _, crdNotRegistered := err.(*meta.NoKindMatchError); crdNotRegistered {
+			glog.Fatal(`
+The VerticalPodAutoscaler is not installed in this seed cluster. 
+Please install the VerticalPodAutoscaler according to the documentation: https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler#installation`)
+		}
 	}
 
 	//Register the global error metric. Ensures that runtime.HandleError() increases the error metric

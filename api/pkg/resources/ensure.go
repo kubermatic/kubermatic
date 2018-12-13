@@ -9,7 +9,6 @@ import (
 
 	informerutil "github.com/kubermatic/kubermatic/api/pkg/util/informer"
 
-	"github.com/golang/glog"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -17,7 +16,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"
@@ -534,14 +532,6 @@ func EnsureObject(namespace string, rawcreate ObjectCreator, store cache.Store, 
 func EnsureVerticalPodAutoscalers(creators []VerticalPodAutoscalerCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, wrapper ...ObjectModifier) error {
 	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &v1beta1.VerticalPodAutoscaler{})
 	if err != nil {
-		if _, crdNotRegistered := err.(*meta.NoKindMatchError); crdNotRegistered {
-			glog.V(3).Info(`
-The VerticalPodAutoscaler is not installed in this seed cluster. No VerticalPodAutoscaler resources can be created. 
-It's recommended to install the VerticalPodAutoscaler to ensure best resource utilization and realistic Pod resources. 
-After installing the VerticalPodAutoscaler, the Kubermatic controller-manager must be restarted. 
-Notes on the installation: https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler#installation`)
-			return nil
-		}
 		return fmt.Errorf("failed to get VerticalPodAutoscaler informer: %v", err)
 	}
 
