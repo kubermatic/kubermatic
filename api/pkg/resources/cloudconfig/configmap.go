@@ -1,12 +1,14 @@
 package cloudconfig
 
 import (
-	"bytes"
 	"fmt"
-	"text/template"
+	"strings"
 
-	"github.com/Masterminds/sprig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,7 +33,7 @@ func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapC
 
 		cloudConfig, err := CloudConfig(data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to create cloud-config: %v", err)
 		}
 
 		cm.Name = resources.CloudConfigConfigMapName
@@ -45,17 +47,105 @@ func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapC
 }
 
 // CloudConfig returns the cloud-config for the supplied data
-func CloudConfig(data resources.ConfigMapDataProvider) (string, error) {
-	configBuffer := bytes.Buffer{}
-	configTpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(config)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse cloud config template: %v", err)
+func CloudConfig(data resources.ConfigMapDataProvider) (cloudConfig string, err error) {
+	cloud := data.Cluster().Spec.Cloud
+	dc := data.DC()
+	if cloud.AWS != nil {
+		awsCloudConfig := &aws.CloudConfig{
+			Global: aws.GlobalOpts{
+				Zone:                        cloud.AWS.AvailabilityZone,
+				VPC:                         cloud.AWS.VPCID,
+				KubernetesClusterID:         data.Cluster().Name,
+				DisableSecurityGroupIngress: false,
+				SubnetID:                    cloud.AWS.SubnetID,
+				RouteTableID:                cloud.AWS.RouteTableID,
+				DisableStrictZoneCheck:      true,
+			},
+		}
+		cloudConfig, err = aws.CloudConfigToString(awsCloudConfig)
+		if err != nil {
+			return cloudConfig, err
+		}
+	} else if cloud.Azure != nil {
+		vnetResourceGroup := cloud.Azure.ResourceGroup
+		azureCloudConfig := &azure.CloudConfig{
+			Cloud:                      "AZUREPUBLICCLOUD",
+			TenantID:                   cloud.Azure.TenantID,
+			SubscriptionID:             cloud.Azure.SubscriptionID,
+			AADClientID:                cloud.Azure.ClientID,
+			AADClientSecret:            cloud.Azure.ClientSecret,
+			ResourceGroup:              cloud.Azure.ResourceGroup,
+			Location:                   dc.Spec.Azure.Location,
+			VNetName:                   cloud.Azure.VNetName,
+			SubnetName:                 cloud.Azure.SubnetName,
+			RouteTableName:             cloud.Azure.RouteTableName,
+			SecurityGroupName:          cloud.Azure.SecurityGroup,
+			PrimaryAvailabilitySetName: cloud.Azure.AvailabilitySet,
+			VnetResourceGroup:          &vnetResourceGroup,
+			UseInstanceMetadata:        false,
+		}
+		cloudConfig, err = azure.CloudConfigToString(azureCloudConfig)
+		if err != nil {
+			return cloudConfig, err
+		}
+	} else if cloud.Openstack != nil {
+		openstackCloudConfig := &openstack.CloudConfig{
+			Global: openstack.GlobalOpts{
+				AuthURL:    dc.Spec.Openstack.AuthURL,
+				Username:   cloud.Openstack.Username,
+				Password:   cloud.Openstack.Password,
+				DomainName: cloud.Openstack.Domain,
+				TenantName: cloud.Openstack.Tenant,
+				Region:     dc.Spec.Openstack.Region,
+			},
+			BlockStorage: openstack.BlockStorageOpts{
+				BSVersion:       "v2",
+				TrustDevicePath: false,
+				IgnoreVolumeAZ:  dc.Spec.Openstack.IgnoreVolumeAZ,
+			},
+			LoadBalancer: openstack.LoadBalancerOpts{
+				ManageSecurityGroups: true,
+			},
+			Version: data.Cluster().Spec.Version.String(),
+		}
+		cloudConfig, err = openstack.CloudConfigToString(openstackCloudConfig)
+		if err != nil {
+			return cloudConfig, err
+		}
+	} else if cloud.VSphere != nil {
+		vsphereCloudConfig := &vsphere.CloudConfig{
+			Global: vsphere.GlobalOpts{
+				User:             cloud.VSphere.Username,
+				Password:         cloud.VSphere.Password,
+				VCenterIP:        strings.Replace(dc.Spec.VSphere.Endpoint, "https://", "", -1),
+				VCenterPort:      "443",
+				InsecureFlag:     dc.Spec.VSphere.AllowInsecure,
+				Datacenter:       dc.Spec.VSphere.Datacenter,
+				DefaultDatastore: dc.Spec.VSphere.Datastore,
+				WorkingDir:       data.Cluster().Name,
+			},
+			Workspace: vsphere.WorkspaceOpts{
+				// This is redudant with what the Vsphere cloud provider itself does:
+				// https://github.com/kubernetes/kubernetes/blob/9d80e7522ab7fc977e40dd6f3b5b16d8ebfdc435/pkg/cloudprovider/providers/vsphere/vsphere.go#L346
+				// We do it here because the fields in the "Global" object
+				// are marked as deprecated even thought the code checks
+				// if they are set and will make the controller-manager crash
+				// if they are not - But maybe that will change at some point
+				VCenterIP:        strings.Replace(dc.Spec.VSphere.Endpoint, "https://", "", -1),
+				Datacenter:       dc.Spec.VSphere.Datacenter,
+				Folder:           data.Cluster().Name,
+				DefaultDatastore: dc.Spec.VSphere.Datastore,
+			},
+			Disk: vsphere.DiskOpts{
+				SCSIControllerType: "pvscsi",
+			},
+		}
+		cloudConfig, err = vsphere.CloudConfigToString(vsphereCloudConfig)
+		if err != nil {
+			return cloudConfig, err
+		}
 	}
-	if err := configTpl.Execute(&configBuffer, data); err != nil {
-		return "", fmt.Errorf("failed to render cloud config template: %v", err)
-	}
-
-	return configBuffer.String(), nil
+	return cloudConfig, err
 }
 
 const (
@@ -66,72 +156,4 @@ const (
 	// Upstream issue: https://github.com/kubernetes/kubernetes/issues/65145
 	FakeVMWareUUIDKeyName = "fakeVmwareUUID"
 	fakeVMWareUUID        = "VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00"
-	config                = `
-{{- if .Cluster.Spec.Cloud.AWS }}
-[global]
-zone={{ .Cluster.Spec.Cloud.AWS.AvailabilityZone }}
-VPC={{ .Cluster.Spec.Cloud.AWS.VPCID }}
-KubernetesClusterID={{ .Cluster.Name }}
-disablesecuritygroupingress=false
-SubnetID={{ .Cluster.Spec.Cloud.AWS.SubnetID }}
-RouteTableID={{ .Cluster.Spec.Cloud.AWS.RouteTableID }}
-disablestrictzonecheck=true
-{{- end }}
-{{- if .Cluster.Spec.Cloud.Openstack }}
-[Global]
-auth-url = "{{ .DC.Spec.Openstack.AuthURL }}"
-username = "{{ .Cluster.Spec.Cloud.Openstack.Username }}"
-password = "{{ .Cluster.Spec.Cloud.Openstack.Password }}"
-domain-name= "{{ .Cluster.Spec.Cloud.Openstack.Domain }}"
-tenant-name = "{{ .Cluster.Spec.Cloud.Openstack.Tenant }}"
-region = "{{ .DC.Spec.Openstack.Region }}"
-
-[BlockStorage]
-trust-device-path = false
-bs-version = "v2"
-{{- if semverCompare ">=1.9.*" .ClusterVersion }}
-ignore-volume-az = {{ .DC.Spec.Openstack.IgnoreVolumeAZ }}
-{{- end }}
-
-[LoadBalancer]
-{{- if semverCompare "~1.9.10 || ~1.10.6 || ~1.11.1 || >=1.12.*" .ClusterVersion }}
-manage-security-groups = true
-{{- end }}
-{{- end }}
-{{- if .Cluster.Spec.Cloud.Azure}}
-{
-  "cloud": "AZUREPUBLICCLOUD",
-  "tenantId": "{{ .Cluster.Spec.Cloud.Azure.TenantID }}",
-  "subscriptionId": "{{ .Cluster.Spec.Cloud.Azure.SubscriptionID }}",
-  "aadClientId": "{{ .Cluster.Spec.Cloud.Azure.ClientID }}",
-  "aadClientSecret": "{{ .Cluster.Spec.Cloud.Azure.ClientSecret }}",
-
-  "resourceGroup": "{{ .Cluster.Spec.Cloud.Azure.ResourceGroup }}",
-  "location": "{{ .DC.Spec.Azure.Location }}",
-  "vnetName": "{{ .Cluster.Spec.Cloud.Azure.VNetName }}",
-  "vnetResourceGroup": "{{ .Cluster.Spec.Cloud.Azure.ResourceGroup }}",
-  "subnetName": "{{ .Cluster.Spec.Cloud.Azure.SubnetName }}",
-  "routeTableName": "{{ .Cluster.Spec.Cloud.Azure.RouteTableName }}",
-  "securityGroupName": "{{ .Cluster.Spec.Cloud.Azure.SecurityGroup }}",
-  "primaryAvailabilitySetName": "{{ .Cluster.Spec.Cloud.Azure.AvailabilitySet }}",
-
-{{/* Consumed by apiserver and controller-manager */}}
-  "useInstanceMetadata": false
-}
-{{- end }}
-{{- if .Cluster.Spec.Cloud.VSphere }}
-{{/* Source: https://docs.openshift.com/container-platform/3.7/install_config/configuring_vsphere.html#vsphere-enabling */}}
-[Global]
-        user = "{{ .Cluster.Spec.Cloud.VSphere.Username }}"
-        password = "{{ .Cluster.Spec.Cloud.VSphere.Password }}"
-        server = "{{ .DC.Spec.VSphere.Endpoint|replace "https://" "" }}"
-        port = "443"
-        insecure-flag = "{{ if .DC.Spec.VSphere.AllowInsecure }}1{{ else }}0{{ end }}"
-        datacenter = "{{ .DC.Spec.VSphere.Datacenter }}"
-        datastore = "{{ .DC.Spec.VSphere.Datastore }}"
-        working-dir = "{{ .Cluster.Name }}"
-[Disk]
-    scsicontrollertype = pvscsi
-{{- end }}
-`
 )

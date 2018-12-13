@@ -277,6 +277,10 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 		return errors.New("specified target network (VMNetName) in cluster, but no source network (TemplateNetName) in machine")
 	}
 
+	if config.CPUs > 8 {
+		return errors.New("number of CPUs must not be greater than 8")
+	}
+
 	client, err := getClient(config.Username, config.Password, config.VSphereURL, config.AllowInsecure)
 	if err != nil {
 		return fmt.Errorf("failed to get vsphere client: '%v'", err)
