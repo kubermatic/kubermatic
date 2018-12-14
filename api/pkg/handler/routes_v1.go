@@ -1546,7 +1546,8 @@ func (r Routing) getNodeDeployment() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id} project patchNodeDeployment
 //
-//     Patches a node deployment that is assigned to the given cluster.
+//     Patches a node deployment that is assigned to the given cluster. Please note that at the moment only
+//	   node deployment's spec can be updated by a patch, no other fields can be changed using this endpoint.
 //
 //     Consumes:
 //     - application/json
