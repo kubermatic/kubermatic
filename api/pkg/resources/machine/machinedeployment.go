@@ -33,16 +33,6 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 
 	md.Spec.Replicas = &nd.Spec.Replicas
 	md.Spec.Template.Spec.Versions.Kubelet = nd.Spec.Template.Versions.Kubelet
-	md.Spec.RevisionHistoryLimit = nd.Spec.RevisionHistoryLimit
-	md.Spec.ProgressDeadlineSeconds = nd.Spec.ProgressDeadlineSeconds
-
-	if nd.Spec.Strategy != nil {
-		md.Spec.Strategy = nd.Spec.Strategy
-	}
-
-	if nd.Spec.MinReadySeconds != nil {
-		md.Spec.MinReadySeconds = nd.Spec.MinReadySeconds
-	}
 
 	if nd.Spec.Paused != nil {
 		md.Spec.Paused = *nd.Spec.Paused
