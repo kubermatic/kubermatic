@@ -4,30 +4,29 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/evanphx/json-patch"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	"k8s.io/client-go/kubernetes"
-
 	"github.com/Masterminds/semver"
+	"github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	machineconversions "github.com/kubermatic/kubermatic/api/pkg/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	apierrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
-	machineconversions "github.com/kubermatic/kubermatic/api/pkg/machine"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/kubernetes"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 )
