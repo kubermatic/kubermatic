@@ -3341,24 +3341,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "IntOrString": {
-      "description": "+protobuf=true\n+protobuf.options.(gogoproto.goproto_stringer)=false\n+k8s:openapi-gen=true",
-      "type": "object",
-      "title": "IntOrString is a type that can hold an int32 or a string.  When used in\nJSON or YAML marshalling and unmarshalling, it produces or consumes the\ninner type.  This allows you to have, for example, a JSON field that can\naccept a name or number.\nTODO: Rename to Int32OrString",
-      "properties": {
-        "IntVal": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "StrVal": {
-          "type": "string"
-        },
-        "Type": {
-          "$ref": "#/definitions/Type"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/util/intstr"
-    },
     "Kubeconfig": {
       "description": "Kubeconfig is a clusters kubeconfig",
       "type": "object",
@@ -3516,23 +3498,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
     },
-    "MachineDeploymentStrategy": {
-      "description": "[MachineDeploymentStrategy]\nMachineDeploymentStrategy describes how to replace existing machines\nwith new ones.",
-      "type": "object",
-      "properties": {
-        "rollingUpdate": {
-          "$ref": "#/definitions/MachineRollingUpdateDeployment"
-        },
-        "type": {
-          "$ref": "#/definitions/MachineDeploymentStrategyType"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
-    },
-    "MachineDeploymentStrategyType": {
-      "type": "string",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
-    },
     "MachineNetworkingConfig": {
       "type": "object",
       "title": "MachineNetworkingConfig specifies the networking parameters used for IPAM.",
@@ -3554,19 +3519,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "MachineRollingUpdateDeployment": {
-      "description": "[MachineRollingUpdateDeployment]\nSpec to control the desired behavior of rolling update.",
-      "type": "object",
-      "properties": {
-        "maxSurge": {
-          "$ref": "#/definitions/IntOrString"
-        },
-        "maxUnavailable": {
-          "$ref": "#/definitions/IntOrString"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
     },
     "MasterVersion": {
       "description": "MasterVersion describes a version of the master components",
@@ -3769,32 +3721,14 @@
         "template"
       ],
       "properties": {
-        "minReadySeconds": {
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "MinReadySeconds"
-        },
         "paused": {
           "type": "boolean",
           "x-go-name": "Paused"
-        },
-        "progressDeadlineSeconds": {
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "ProgressDeadlineSeconds"
         },
         "replicas": {
           "type": "integer",
           "format": "int32",
           "x-go-name": "Replicas"
-        },
-        "revisionHistoryLimit": {
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "RevisionHistoryLimit"
-        },
-        "strategy": {
-          "$ref": "#/definitions/MachineDeploymentStrategy"
         },
         "template": {
           "$ref": "#/definitions/NodeSpec"
@@ -4388,12 +4322,6 @@
       "description": "Semver is struct that encapsulates semver.Semver struct so we can use it in API\n+k8s:deepcopy-gen=true",
       "type": "object",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/semver"
-    },
-    "Type": {
-      "type": "integer",
-      "format": "int64",
-      "title": "Type represents the stored type of IntOrString.",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/util/intstr"
     },
     "UbuntuSpec": {
       "description": "UbuntuSpec ubuntu specific settings",
