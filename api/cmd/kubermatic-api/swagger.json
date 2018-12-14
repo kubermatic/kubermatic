@@ -778,6 +778,7 @@
     },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}": {
       "get": {
+        "description": "Patches a node deployment that is assigned to the given cluster. Please note that at the moment only\nnode deployment's spec can be updated by a patch, no other fields can be changed using this endpoint.",
         "consumes": [
           "application/json"
         ],
@@ -787,7 +788,6 @@
         "tags": [
           "project"
         ],
-        "summary": "Patches a node deployment that is assigned to the given cluster.",
         "operationId": "patchNodeDeployment",
         "parameters": [
           {
