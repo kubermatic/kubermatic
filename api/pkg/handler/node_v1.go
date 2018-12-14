@@ -963,23 +963,21 @@ func patchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		md, err := machineresource.Deployment(cluster, patchedNodeDeployment, dc, keys)
+		patchedMachineDeployment, err := machineresource.Deployment(cluster, patchedNodeDeployment, dc, keys)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
 		}
 
-		// We need to ensure that the name and resource version are set and the selector stays the same.
-		md.Name = req.NodeDeploymentID
-		md.ResourceVersion = machineDeployment.ResourceVersion
-		md.Spec.Selector = machineDeployment.Spec.Selector
-		md.Spec.Template.ObjectMeta.Labels = machineDeployment.Spec.Template.ObjectMeta.Labels
+		// Only spec will be updated by a patch.
+		// It ensures that the name and resource version are set and the selector stays the same.
+		machineDeployment.Spec = patchedMachineDeployment.Spec
 
-		md, err = machineClient.ClusterV1alpha1().MachineDeployments(md.Namespace).Update(md)
+		machineDeployment, err = machineClient.ClusterV1alpha1().MachineDeployments(machineDeployment.Namespace).Update(machineDeployment)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create machine deployment: %v", err)
 		}
 
-		return outputMachineDeployment(md)
+		return outputMachineDeployment(machineDeployment)
 	}
 }
 
