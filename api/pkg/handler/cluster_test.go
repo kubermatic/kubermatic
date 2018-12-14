@@ -31,7 +31,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 		ProjectToSync                 string
 		ClusterToSync                 string
 		ExistingKubermaticObjs        []runtime.Object
-		ExistingAPIUser               *apiv1.LegacyUser
+		ExistingAPIUser               *apiv1.User
 		ExpectedSSHKeys               []*kubermaticv1.UserSSHKey
 		ExpectedListClusterKeysStatus int
 	}{
@@ -176,7 +176,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 		ClusterToSync                   string
 		ExpectedDeleteResponse          string
 		ExpectedDeleteHTTPStatus        int
-		ExistingAPIUser                 *apiv1.LegacyUser
+		ExistingAPIUser                 *apiv1.User
 		ExistingSSHKeys                 []*kubermaticv1.UserSSHKey
 		ExistingKubermaticObjs          []runtime.Object
 		ExpectedResponseOnGetAfterDelte string
@@ -291,7 +291,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 		HTTPStatus             int
 		ExistingProject        *kubermaticv1.Project
 		ExistingKubermaticUser *kubermaticv1.User
-		ExistingAPIUser        *apiv1.LegacyUser
+		ExistingAPIUser        *apiv1.User
 		ExistingCluster        *kubermaticv1.Cluster
 		ExistingSSHKeys        []*kubermaticv1.UserSSHKey
 		ExistingKubermaticObjs []runtime.Object
@@ -401,7 +401,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 		HTTPStatus             int
 		ProjectToSync          string
 		ClusterToSync          string
-		ExistingAPIUser        *apiv1.LegacyUser
+		ExistingAPIUser        *apiv1.User
 		ExistingKubermaticObjs []runtime.Object
 		ExpectedSSHKeys        []*kubermaticv1.UserSSHKey
 	}{
@@ -523,7 +523,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		HTTPStatus             int
 		ProjectToSync          string
 		ExistingProject        *kubermaticv1.Project
-		ExistingAPIUser        *apiv1.LegacyUser
+		ExistingAPIUser        *apiv1.User
 		ExistingKubermaticObjs []runtime.Object
 		RewriteClusterID       bool
 	}{
@@ -571,7 +571,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			HTTPStatus:             http.StatusForbidden,
 			ProjectToSync:          genDefaultProject().Name,
 			ExistingKubermaticObjs: genDefaultKubermaticObjects(),
-			ExistingAPIUser: func() *apiv1.LegacyUser {
+			ExistingAPIUser: func() *apiv1.User {
 				defaultUser := genDefaultAPIUser()
 				defaultUser.Email = "john@acme.com"
 				return defaultUser
@@ -642,7 +642,7 @@ func TestGetClusterHealth(t *testing.T) {
 		HTTPStatus             int
 		ClusterToGet           string
 		ProjectToSync          string
-		ExistingAPIUser        *apiv1.LegacyUser
+		ExistingAPIUser        *apiv1.User
 		ExistingKubermaticObjs []runtime.Object
 	}{
 		// scenario 1
@@ -710,7 +710,7 @@ func TestPatchCluster(t *testing.T) {
 		HTTPStatus                int
 		cluster                   string
 		project                   string
-		ExistingAPIUser           *apiv1.LegacyUser
+		ExistingAPIUser           *apiv1.User
 		ExistingKubermaticObjects []runtime.Object
 	}{
 		// scenario 1
@@ -768,7 +768,7 @@ func TestGetCluster(t *testing.T) {
 		ExpectedResponse       string
 		HTTPStatus             int
 		ClusterToGet           string
-		ExistingAPIUser        *apiv1.LegacyUser
+		ExistingAPIUser        *apiv1.User
 		ExistingKubermaticObjs []runtime.Object
 	}{
 		// scenario 1
@@ -827,7 +827,7 @@ func TestListClusters(t *testing.T) {
 		Name                   string
 		ExpectedClusters       []apiv1.Cluster
 		HTTPStatus             int
-		ExistingAPIUser        *apiv1.LegacyUser
+		ExistingAPIUser        *apiv1.User
 		ExistingKubermaticObjs []runtime.Object
 	}{
 		// scenario 1

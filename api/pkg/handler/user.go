@@ -255,24 +255,24 @@ func filterExternalUser(externalUser *apiv1.User, projectID string) *apiv1.User 
 func (r Routing) userSaverMiddleware() endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			cAPIUser := ctx.Value(apiUserContextKey)
-			if cAPIUser == nil {
+			rawAuthenticatesUser := ctx.Value(authenticatedUserContextKey)
+			if rawAuthenticatesUser == nil {
 				return nil, errors.New("no user in context found")
 			}
-			apiUser := cAPIUser.(apiv1.LegacyUser)
+			authenticatedUser := rawAuthenticatesUser.(apiv1.User)
 
-			user, err := r.userProvider.UserByEmail(apiUser.Email)
+			user, err := r.userProvider.UserByEmail(authenticatedUser.Email)
 			if err != nil {
 				if err != provider.ErrNotFound {
 					return nil, kubernetesErrorToHTTPError(err)
 				}
 				// handling ErrNotFound
-				user, err = r.userProvider.CreateUser(apiUser.ID, apiUser.Name, apiUser.Email)
+				user, err = r.userProvider.CreateUser(authenticatedUser.ID, authenticatedUser.Name, authenticatedUser.Email)
 				if err != nil {
 					if !kerrors.IsAlreadyExists(err) {
 						return nil, kubernetesErrorToHTTPError(err)
 					}
-					if user, err = r.userProvider.UserByEmail(apiUser.Email); err != nil {
+					if user, err = r.userProvider.UserByEmail(authenticatedUser.Email); err != nil {
 						return nil, kubernetesErrorToHTTPError(err)
 					}
 				}
@@ -345,12 +345,6 @@ func (r Routing) createUserInfo(user *kubermaticapiv1.User, projectID string) (*
 	}
 
 	return &provider.UserInfo{Email: user.Spec.Email, Group: group}, nil
-}
-
-// IsAdmin tells if the user has the admin role
-func IsAdmin(u apiv1.LegacyUser) bool {
-	_, ok := u.Roles[AdminRoleKey]
-	return ok
 }
 
 // AddUserToProjectReq defines HTTP request for addUserToProject

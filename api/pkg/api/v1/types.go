@@ -160,15 +160,6 @@ type SSHKeySpec struct {
 	PublicKey   string `json:"publicKey"`
 }
 
-// LegacyUser represents an API user that is used for authentication.
-// Depreciated: use User instead
-type LegacyUser struct {
-	ID    string
-	Name  string
-	Email string
-	Roles map[string]struct{}
-}
-
 // User represent an API user
 // swagger:model User
 type User struct {

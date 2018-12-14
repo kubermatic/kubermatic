@@ -3432,29 +3432,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "LegacyUser": {
-      "description": "Depreciated: use User instead",
-      "type": "object",
-      "title": "LegacyUser represents an API user that is used for authentication.",
-      "properties": {
-        "Email": {
-          "type": "string"
-        },
-        "ID": {
-          "type": "string"
-        },
-        "Name": {
-          "type": "string"
-        },
-        "Roles": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "object"
-          }
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
     "MachineDeploymentStatus": {
       "description": "[MachineDeploymentStatus]\nMachineDeploymentStatus defines the observed state of MachineDeployment",
       "type": "object",
