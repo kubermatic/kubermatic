@@ -818,6 +818,15 @@ type NodeDeploymentReq struct {
 	NodeDeploymentID string `json:"nodedeployment_id"`
 }
 
+func decodeNodeDeploymentID(c context.Context, r *http.Request) (string, error) {
+	nodeDeploymentID := mux.Vars(r)["nodedeployment_id"]
+	if nodeDeploymentID == "" {
+		return "", fmt.Errorf("'nodedeployment_id' parameter is required but was not provided")
+	}
+
+	return nodeDeploymentID, nil
+}
+
 func decodeGetNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
 	var req NodeDeploymentReq
 
@@ -825,12 +834,13 @@ func decodeGetNodeDeployment(c context.Context, r *http.Request) (interface{}, e
 	if err != nil {
 		return nil, err
 	}
-	nodeDeploymentID := mux.Vars(r)["nodedeployment_id"]
-	if nodeDeploymentID == "" {
-		return nil, fmt.Errorf("'nodedeployment_id' parameter is required but was not provided")
-	}
 
 	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -889,9 +899,9 @@ func decodePatchNodeDeployment(c context.Context, r *http.Request) (interface{},
 		return nil, err
 	}
 
-	nodeDeploymentID := mux.Vars(r)["nodedeployment_id"]
-	if nodeDeploymentID == "" {
-		return nil, fmt.Errorf("'nodedeployment_id' parameter is required but was not provided")
+	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
+	if err != nil {
+		return nil, err
 	}
 
 	dcr, err := decodeDcReq(c, r)
@@ -1003,9 +1013,9 @@ type DeleteNodeDeploymentReq struct {
 func decodeDeleteNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
 	var req DeleteNodeDeploymentReq
 
-	nodeDeploymentID := mux.Vars(r)["nodedeployment_id"]
-	if nodeDeploymentID == "" {
-		return "", fmt.Errorf("'nodedeployment_id' parameter is required but was not provided")
+	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
+	if err != nil {
+		return nil, err
 	}
 
 	clusterID, err := decodeClusterID(c, r)
