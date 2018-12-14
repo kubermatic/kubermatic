@@ -870,99 +870,42 @@ func TestPatchNodeDeployment(t *testing.T) {
 	}{
 		// Scenario 1: Update replicas count.
 		{
-			Name:             "Scenario 1: Update replicas count",
-			Body:             fmt.Sprintf(`{"spec":{"replicas":%v}}`, replicasUpdated),
-			ExpectedResponse: fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":""}},"paused":false},"status":{}}`, replicasUpdated),
-			cluster:          "keen-snyder",
-			HTTPStatus:       http.StatusOK,
-			project:          genDefaultProject().Name,
-			ExistingAPIUser:  genDefaultAPIUser(),
-			NodeDeploymentID: "venus",
-			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "venus",
-						Namespace: metav1.NamespaceSystem,
-					},
-					Spec: clusterv1alpha1.MachineDeploymentSpec{
-						Replicas: &replicas,
-						Template: clusterv1alpha1.MachineTemplateSpec{
-							Spec: clusterv1alpha1.MachineSpec{
-								ProviderConfig: clusterv1alpha1.ProviderConfig{
-									Value: &runtime.RawExtension{
-										Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			ExistingKubermaticObjs: genDefaultKubermaticObjects(genTestCluster(true)),
+			Name:                       "Scenario 1: Update replicas count",
+			Body:                       fmt.Sprintf(`{"spec":{"replicas":%v}}`, replicasUpdated),
+			ExpectedResponse:           fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v1.9.9"}},"paused":false},"status":{}}`, replicasUpdated),
+			cluster:                    "keen-snyder",
+			HTTPStatus:                 http.StatusOK,
+			project:                    genDefaultProject().Name,
+			ExistingAPIUser:            genDefaultAPIUser(),
+			NodeDeploymentID:           "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`)},
+			ExistingKubermaticObjs:     genDefaultKubermaticObjects(genTestCluster(true)),
 		},
 		// Scenario 2: Update kubelet version.
 		{
-			Name:             "Scenario 2: Update kubelet version",
-			Body:             fmt.Sprintf(`{"spec":{"template":{"versions":{"kubelet":"%v"}}}}`, kubeletVerUpdated),
-			ExpectedResponse: fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"%v"}},"paused":false},"status":{}}`, replicas, kubeletVerUpdated),
-			cluster:          "keen-snyder",
-			HTTPStatus:       http.StatusOK,
-			project:          genDefaultProject().Name,
-			ExistingAPIUser:  genDefaultAPIUser(),
-			NodeDeploymentID: "venus",
-			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "venus",
-						Namespace: metav1.NamespaceSystem,
-					},
-					Spec: clusterv1alpha1.MachineDeploymentSpec{
-						Replicas: &replicas,
-						Template: clusterv1alpha1.MachineTemplateSpec{
-							Spec: clusterv1alpha1.MachineSpec{
-								ProviderConfig: clusterv1alpha1.ProviderConfig{
-									Value: &runtime.RawExtension{
-										Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			ExistingKubermaticObjs: genDefaultKubermaticObjects(genTestCluster(true)),
+			Name:                       "Scenario 2: Update kubelet version",
+			Body:                       fmt.Sprintf(`{"spec":{"template":{"versions":{"kubelet":"%v"}}}}`, kubeletVerUpdated),
+			ExpectedResponse:           fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"%v"}},"paused":false},"status":{}}`, replicas, kubeletVerUpdated),
+			cluster:                    "keen-snyder",
+			HTTPStatus:                 http.StatusOK,
+			project:                    genDefaultProject().Name,
+			ExistingAPIUser:            genDefaultAPIUser(),
+			NodeDeploymentID:           "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`)},
+			ExistingKubermaticObjs:     genDefaultKubermaticObjects(genTestCluster(true)),
 		},
 		// Scenario 3: Change to paused.
 		{
-			Name:             "Scenario 3: Change to paused",
-			Body:             `{"spec":{"paused":true}}`,
-			ExpectedResponse: `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":""}},"paused":true},"status":{}}`,
-			cluster:          "keen-snyder",
-			HTTPStatus:       http.StatusOK,
-			project:          genDefaultProject().Name,
-			ExistingAPIUser:  genDefaultAPIUser(),
-			NodeDeploymentID: "venus",
-			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "venus",
-						Namespace: metav1.NamespaceSystem,
-					},
-					Spec: clusterv1alpha1.MachineDeploymentSpec{
-						Replicas: &replicas,
-						Template: clusterv1alpha1.MachineTemplateSpec{
-							Spec: clusterv1alpha1.MachineSpec{
-								ProviderConfig: clusterv1alpha1.ProviderConfig{
-									Value: &runtime.RawExtension{
-										Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			ExistingKubermaticObjs: genDefaultKubermaticObjects(genTestCluster(true)),
+			Name:                       "Scenario 3: Change to paused",
+			Body:                       `{"spec":{"paused":true}}`,
+			ExpectedResponse:           `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v1.9.9"}},"paused":true},"status":{}}`,
+			cluster:                    "keen-snyder",
+			HTTPStatus:                 http.StatusOK,
+			project:                    genDefaultProject().Name,
+			ExistingAPIUser:            genDefaultAPIUser(),
+			NodeDeploymentID:           "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`)},
+			ExistingKubermaticObjs:     genDefaultKubermaticObjects(genTestCluster(true)),
 		},
 	}
 
@@ -996,7 +939,6 @@ func TestPatchNodeDeployment(t *testing.T) {
 
 func TestDeleteNodeDeployment(t *testing.T) {
 	t.Parallel()
-	var replicas int32 = 1
 	testcases := []struct {
 		Name                       string
 		HTTPStatus                 int
@@ -1025,45 +967,8 @@ func TestDeleteNodeDeployment(t *testing.T) {
 				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
 			},
 			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "venus",
-						Namespace: metav1.NamespaceSystem,
-					},
-					Spec: clusterv1alpha1.MachineDeploymentSpec{
-						Replicas: &replicas,
-						Template: clusterv1alpha1.MachineTemplateSpec{
-							Spec: clusterv1alpha1.MachineSpec{
-								ProviderConfig: clusterv1alpha1.ProviderConfig{
-									Value: &runtime.RawExtension{
-										Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
-									},
-								},
-							},
-						},
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "mars",
-						Namespace: "kube-system",
-					},
-					Spec: clusterv1alpha1.MachineDeploymentSpec{
-						Replicas: &replicas,
-						Template: clusterv1alpha1.MachineTemplateSpec{
-							Spec: clusterv1alpha1.MachineSpec{
-								ProviderConfig: clusterv1alpha1.ProviderConfig{
-									Value: &runtime.RawExtension{
-										Raw: []byte(`{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`),
-									},
-								},
-								Versions: clusterv1alpha1.MachineVersionInfo{
-									Kubelet: "v1.9.9",
-								},
-							},
-						},
-					},
-				},
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
+				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`),
 			},
 			ExpectedActions: 1,
 			//
