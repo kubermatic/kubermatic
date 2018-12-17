@@ -118,7 +118,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			reqURL := fmt.Sprintf("/api/v1/kubeconfig?cluster_id=%s&project_id=%s&user_id=%s&datacenter=%s", tc.ClusterID, tc.ProjectID, tc.UserID, tc.Datacenter)
 			req := httptest.NewRequest("GET", reqURL, strings.NewReader(""))
 			res := httptest.NewRecorder()
-			ep, err := createTestEndpoint(apiv1.LegacyUser{}, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil)
+			ep, err := createTestEndpoint(apiv1.User{}, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}

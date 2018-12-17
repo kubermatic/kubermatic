@@ -40,7 +40,7 @@ import (
 	fakeclusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset/fake"
 )
 
-func createTestEndpointAndGetClients(user apiv1.LegacyUser, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *clientsSets, error) {
+func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *clientsSets, error) {
 	datacenters := dc
 	if datacenters == nil {
 		datacenters = buildDatacenterMeta()
@@ -112,7 +112,7 @@ func createTestEndpointAndGetClients(user apiv1.LegacyUser, dc map[string]provid
 	return mainRouter, &clientsSets{kubermaticClient, fakeMachineClient}, nil
 }
 
-func createTestEndpoint(user apiv1.LegacyUser, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, error) {
+func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, error) {
 	router, _, err := createTestEndpointAndGetClients(user, nil, kubeObjects, nil, kubermaticObjects, versions, updates)
 	return router, err
 }
@@ -198,22 +198,18 @@ const (
 	testUserEmail = "john@acme.com"
 )
 
-func getUser(email, id, name string, admin bool) apiv1.LegacyUser {
-	u := apiv1.LegacyUser{
-		ID:    id,
-		Name:  name,
-		Email: email,
-		Roles: map[string]struct{}{
-			"user": {},
+func getUser(email, id, name string, admin bool) apiv1.User {
+	u := apiv1.User{
+		ObjectMeta: apiv1.ObjectMeta{
+			ID:   id,
+			Name: name,
 		},
-	}
-	if admin {
-		u.Roles[AdminRoleKey] = struct{}{}
+		Email: email,
 	}
 	return u
 }
 
-func apiUserToKubermaticUser(user apiv1.LegacyUser) *kubermaticapiv1.User {
+func apiUserToKubermaticUser(user apiv1.User) *kubermaticapiv1.User {
 	return &kubermaticapiv1.User{
 		ObjectMeta: metav1.ObjectMeta{},
 		Spec: kubermaticapiv1.UserSpec{

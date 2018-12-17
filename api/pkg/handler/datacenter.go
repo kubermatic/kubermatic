@@ -14,8 +14,6 @@ import (
 
 func datacentersEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := ctx.Value(apiUserContextKey).(apiv1.LegacyUser)
-
 		var adcs []apiv1.Datacenter
 		var keys []string
 		for k := range dcs {
@@ -25,11 +23,6 @@ func datacentersEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoi
 
 		for _, dcName := range keys {
 			dc := dcs[dcName]
-
-			if dc.Private && !IsAdmin(user) {
-				glog.V(7).Infof("Hiding dc %q for non-admin user %q", dcName, user.ID)
-				continue
-			}
 
 			spec, err := apiSpec(&dc)
 			if err != nil {
