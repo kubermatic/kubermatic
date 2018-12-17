@@ -664,9 +664,5 @@ type NodeDeploymentSpec struct {
 	// required: true
 	Template NodeSpec `json:"template"`
 
-	Strategy                *v1alpha1.MachineDeploymentStrategy `json:"strategy,omitempty"`
-	MinReadySeconds         *int32                              `json:"minReadySeconds,omitempty"`
-	RevisionHistoryLimit    *int32                              `json:"revisionHistoryLimit,omitempty"`
-	Paused                  *bool                               `json:"paused,omitempty"`
-	ProgressDeadlineSeconds *int32                              `json:"progressDeadlineSeconds,omitempty"`
+	Paused *bool `json:"paused,omitempty"`
 }
