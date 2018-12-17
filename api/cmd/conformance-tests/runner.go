@@ -13,10 +13,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/sirupsen/logrus"
 
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	apiv2 "github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
@@ -37,7 +38,7 @@ import (
 type testScenario interface {
 	Name() string
 	Cluster(secrets secrets) *kubermaticv1.Cluster
-	Nodes(num int) []*kubermaticapiv1.Node
+	Nodes(num int) []*apiv2.Node
 }
 
 func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
@@ -274,7 +275,7 @@ func (r *testRunner) testCluster(
 	scenarioName string,
 	cluster *kubermaticv1.Cluster,
 	clusterKubeClient kubernetes.Interface,
-	apiNodes []*kubermaticapiv1.Node,
+	apiNodes []*apiv2.Node,
 	dc provider.DatacenterMeta,
 	kubeconfigFilename string,
 	cloudConfigFilename string,
@@ -376,7 +377,7 @@ func (r *testRunner) testCluster(
 	return report, nil
 }
 
-func (r *testRunner) setupNodes(log *logrus.Entry, scenarioName string, cluster *kubermaticv1.Cluster, clusterKubeClient kubernetes.Interface, apiNodes []*kubermaticapiv1.Node, dc provider.DatacenterMeta) error {
+func (r *testRunner) setupNodes(log *logrus.Entry, scenarioName string, cluster *kubermaticv1.Cluster, clusterKubeClient kubernetes.Interface, apiNodes []*apiv2.Node, dc provider.DatacenterMeta) error {
 	log.Info("Creating machines...")
 	kubeMachineClient, err := r.clusterClientProvider.GetMachineClient(cluster)
 	if err != nil {
@@ -395,7 +396,7 @@ func (r *testRunner) setupNodes(log *logrus.Entry, scenarioName string, cluster 
 	for i, node := range apiNodes {
 		m, err := machine.Machine(cluster, node, dc, keys)
 		if err != nil {
-			return fmt.Errorf("failed to create Machine from scenario node '%s': %v", node.Name, err)
+			return fmt.Errorf("failed to create Machine from scenario node '%s': %v", node.Metadata.Name, err)
 		}
 		// Make sure all nodes have different names across all scenarios - otherwise the Kubelet might not come up (OpenStack has this...)
 		m.Name = fmt.Sprintf("%s-machine-%d", scenarioName, i)
@@ -626,12 +627,17 @@ func (r *testRunner) runE2E(
 	kubeconfigFilename,
 	cloudConfigFilename,
 	reportsDir string,
-	nodes []*kubermaticapiv1.Node,
+	nodes []*apiv2.Node,
 	dc provider.DatacenterMeta,
 ) error {
 	kubeconfigFilename = path.Clean(kubeconfigFilename)
 	repoRoot := path.Clean(r.repoRoot)
-	MajorMinor := fmt.Sprintf("%d.%d", cluster.Spec.Version.Major(), cluster.Spec.Version.Minor())
+
+	version, err := semver.NewVersion(cluster.Spec.Version)
+	if err != nil {
+		return fmt.Errorf("invalid version('%s') in cluster: %v", cluster.Spec.Version, err)
+	}
+	MajorMinor := fmt.Sprintf("%d.%d", version.Major(), version.Minor())
 
 	// TODO: Figure out why they fail & potentially fix. Otherwise, explain why they are deactivated
 	//brokenTests := []string{

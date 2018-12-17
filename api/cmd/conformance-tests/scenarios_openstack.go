@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	"github.com/Masterminds/semver"
+	"github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -17,15 +17,15 @@ func getOpenStackScenarios() []testScenario {
 		// Ubuntu
 		scenarios = append(scenarios, &openStackScenario{
 			version: v,
-			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
-				Ubuntu: &kubermaticapiv1.UbuntuSpec{},
+			nodeOsSpec: v2.OperatingSystemSpec{
+				Ubuntu: &v2.UbuntuSpec{},
 			},
 		})
 		// CoreOS
 		scenarios = append(scenarios, &openStackScenario{
 			version: v,
-			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
-				ContainerLinux: &kubermaticapiv1.ContainerLinuxSpec{
+			nodeOsSpec: v2.OperatingSystemSpec{
+				ContainerLinux: &v2.ContainerLinuxSpec{
 					// Otherwise the nodes restart directly after creation - bad for tests
 					DisableAutoUpdate: true,
 				},
@@ -45,8 +45,8 @@ func getOpenStackScenarios() []testScenario {
 }
 
 type openStackScenario struct {
-	version    *semver.Semver
-	nodeOsSpec kubermaticapiv1.OperatingSystemSpec
+	version    *semver.Version
+	nodeOsSpec v2.OperatingSystemSpec
 }
 
 func (s *openStackScenario) Name() string {
@@ -57,7 +57,7 @@ func (s *openStackScenario) Cluster(secrets secrets) *v1.Cluster {
 	return &v1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{},
 		Spec: v1.ClusterSpec{
-			Version:           *s.version,
+			Version:           s.version.String(),
 			HumanReadableName: s.Name(),
 			ClusterNetwork: v1.ClusterNetworkingConfig{
 				Services: v1.NetworkRanges{
@@ -81,20 +81,20 @@ func (s *openStackScenario) Cluster(secrets secrets) *v1.Cluster {
 	}
 }
 
-func (s *openStackScenario) Nodes(num int) []*kubermaticapiv1.Node {
+func (s *openStackScenario) Nodes(num int) []*v2.Node {
 	osName := getOSNameFromSpec(s.nodeOsSpec)
-	var nodes []*kubermaticapiv1.Node
+	var nodes []*v2.Node
 	for i := 0; i < num; i++ {
-		node := &kubermaticapiv1.Node{
-			ObjectMeta: kubermaticapiv1.ObjectMeta{},
-			Spec: kubermaticapiv1.NodeSpec{
-				Cloud: kubermaticapiv1.NodeCloudSpec{
-					Openstack: &kubermaticapiv1.OpenstackNodeSpec{
+		node := &v2.Node{
+			Metadata: v2.ObjectMeta{},
+			Spec: v2.NodeSpec{
+				Cloud: v2.NodeCloudSpec{
+					Openstack: &v2.OpenstackNodeSpec{
 						Flavor: "m1.small",
 						Image:  "kubermatic-e2e-" + osName,
 					},
 				},
-				Versions: kubermaticapiv1.NodeVersionInfo{
+				Versions: v2.NodeVersionInfo{
 					Kubelet: s.version.String(),
 				},
 				OperatingSystem: s.nodeOsSpec,

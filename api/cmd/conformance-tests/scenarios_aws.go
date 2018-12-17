@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	"github.com/Masterminds/semver"
+	"github.com/kubermatic/kubermatic/api/pkg/api/v2"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,8 +19,8 @@ func getAWSScenarios(es excludeSelector) []testScenario {
 		if _, ok := es.Distributions[providerconfig.OperatingSystemUbuntu]; !ok {
 			scenarios = append(scenarios, &awsScenario{
 				version: v,
-				nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
-					Ubuntu: &kubermaticapiv1.UbuntuSpec{},
+				nodeOsSpec: v2.OperatingSystemSpec{
+					Ubuntu: &v2.UbuntuSpec{},
 				},
 			})
 		}
@@ -28,8 +28,8 @@ func getAWSScenarios(es excludeSelector) []testScenario {
 		if _, ok := es.Distributions[providerconfig.OperatingSystemCoreos]; !ok {
 			scenarios = append(scenarios, &awsScenario{
 				version: v,
-				nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
-					ContainerLinux: &kubermaticapiv1.ContainerLinuxSpec{
+				nodeOsSpec: v2.OperatingSystemSpec{
+					ContainerLinux: &v2.ContainerLinuxSpec{
 						// Otherwise the nodes restart directly after creation - bad for tests
 						DisableAutoUpdate: true,
 					},
@@ -51,8 +51,8 @@ func getAWSScenarios(es excludeSelector) []testScenario {
 }
 
 type awsScenario struct {
-	version    *semver.Semver
-	nodeOsSpec kubermaticapiv1.OperatingSystemSpec
+	version    *semver.Version
+	nodeOsSpec v2.OperatingSystemSpec
 }
 
 func (s *awsScenario) Name() string {
@@ -63,7 +63,7 @@ func (s *awsScenario) Cluster(secrets secrets) *v1.Cluster {
 	return &v1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{},
 		Spec: v1.ClusterSpec{
-			Version:           *s.version,
+			Version:           s.version.String(),
 			HumanReadableName: s.Name(),
 			ClusterNetwork: v1.ClusterNetworkingConfig{
 				Services: v1.NetworkRanges{
@@ -85,20 +85,20 @@ func (s *awsScenario) Cluster(secrets secrets) *v1.Cluster {
 	}
 }
 
-func (s *awsScenario) Nodes(num int) []*kubermaticapiv1.Node {
-	var nodes []*kubermaticapiv1.Node
+func (s *awsScenario) Nodes(num int) []*v2.Node {
+	var nodes []*v2.Node
 	for i := 0; i < num; i++ {
-		node := &kubermaticapiv1.Node{
-			ObjectMeta: kubermaticapiv1.ObjectMeta{},
-			Spec: kubermaticapiv1.NodeSpec{
-				Cloud: kubermaticapiv1.NodeCloudSpec{
-					AWS: &kubermaticapiv1.AWSNodeSpec{
+		node := &v2.Node{
+			Metadata: v2.ObjectMeta{},
+			Spec: v2.NodeSpec{
+				Cloud: v2.NodeCloudSpec{
+					AWS: &v2.AWSNodeSpec{
 						InstanceType: "t2.medium",
 						VolumeType:   "gp2",
 						VolumeSize:   100,
 					},
 				},
-				Versions: kubermaticapiv1.NodeVersionInfo{
+				Versions: v2.NodeVersionInfo{
 					Kubelet: s.version.String(),
 				},
 				OperatingSystem: s.nodeOsSpec,
