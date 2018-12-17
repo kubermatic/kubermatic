@@ -9,7 +9,7 @@ apt update && apt install -y git-crypt curl
 TMP_ROOT="./.install-tmp"
 
 for VERSION in 1.10 1.11 1.12; do
-    DIRECTORY="${ROOT_DIR}/${VERSION}"
+    DIRECTORY="${ROOT_DIR}/${VERSION}-kubernetes"
     if [ ! -d "${DIRECTORY}" ]; then
 
         FULL_VERSION=$(curl -Ss https://storage.googleapis.com/kubernetes-release/release/stable-${VERSION}.txt)
