@@ -110,6 +110,9 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			Args: []string{
 				"-c",
 				`
+                # Always set IP forwarding
+                sysctl -w net.ipv4.ip_forward=1
+
 				# do not give a 10.20.0.0/24 route to clients (nodes) but
 				# masquerade to openvpn-server's IP instead:
 				iptables -t nat -A POSTROUTING -o tun0 -s 10.20.0.0/24 -j MASQUERADE
