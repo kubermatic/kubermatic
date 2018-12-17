@@ -67,6 +67,12 @@ func collectReports(name, reportsDir string, time time.Duration) (*reporters.JUn
 func printDetailedReport(report *reporters.JUnitTestSuite) {
 	testBuf := &bytes.Buffer{}
 
+	logIfFailed := func(_ int, err error) {
+		if err != nil {
+			fmt.Printf("failed to write to byte buffer: %v", err)
+		}
+	}
+
 	// Only print details errors in case we have a testcase which failed.
 	// Printing everything which has an error will print the errors from retried tests as for each attempt a TestCase entry exists.
 	if report.Failures > 0 || report.Errors > 0 {
@@ -75,22 +81,22 @@ func printDetailedReport(report *reporters.JUnitTestSuite) {
 				continue
 			}
 
-			fmt.Fprintln(testBuf, fmt.Sprintf("[FAIL] - %s", t.Name))
-			fmt.Fprintln(testBuf, fmt.Sprintf("      %s", t.FailureMessage.Message))
+			logIfFailed(fmt.Fprintln(testBuf, fmt.Sprintf("[FAIL] - %s", t.Name)))
+			logIfFailed(fmt.Fprintln(testBuf, fmt.Sprintf("      %s", t.FailureMessage.Message)))
 		}
 	}
 
 	buf := &bytes.Buffer{}
 	const separator = "============================================================="
-	fmt.Fprintln(buf, separator)
-	fmt.Fprintln(buf, fmt.Sprintf("Test results for: %s", report.Name))
+	logIfFailed(fmt.Fprintln(buf, separator))
+	logIfFailed(fmt.Fprintln(buf, fmt.Sprintf("Test results for: %s", report.Name)))
 
-	fmt.Fprint(buf, testBuf.String())
+	logIfFailed(fmt.Fprint(buf, testBuf.String()))
 
-	fmt.Fprintln(buf, "----------------------------")
-	fmt.Fprintln(buf, fmt.Sprintf("Passed: %d", report.Tests-report.Failures))
-	fmt.Fprintln(buf, fmt.Sprintf("Failed: %d", report.Failures))
-	fmt.Fprintln(buf, separator)
+	logIfFailed(fmt.Fprintln(buf, "----------------------------"))
+	logIfFailed(fmt.Fprintln(buf, fmt.Sprintf("Passed: %d", report.Tests-report.Failures)))
+	logIfFailed(fmt.Fprintln(buf, fmt.Sprintf("Failed: %d", report.Failures)))
+	logIfFailed(fmt.Fprintln(buf, separator))
 
 	fmt.Println(buf.String())
 }

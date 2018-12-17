@@ -175,7 +175,9 @@ func (r *testRunner) Run() error {
 			scenarioResultMsg = fmt.Sprintf("%s : %v", scenarioResultMsg, result.err)
 		}
 
-		fmt.Fprintln(overallResultBuf, scenarioResultMsg)
+		if _, err := fmt.Fprintln(overallResultBuf, scenarioResultMsg); err != nil {
+			fmt.Printf("failed to write to byte buffer: %v", err)
+		}
 		if result.report != nil {
 			printDetailedReport(result.report)
 		}
