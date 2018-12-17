@@ -15,12 +15,12 @@ import (
 type ContextKey string
 
 const (
-	rawToken                  ContextKey = "raw-auth-token"
-	apiUserContextKey         ContextKey = "api-user"
-	userCRContextKey          ContextKey = "user-cr"
-	userInfoContextKey        ContextKey = "user-info"
-	datacenterContextKey      ContextKey = "datacenter"
-	clusterProviderContextKey ContextKey = "cluster-provider"
+	rawToken                    ContextKey = "raw-auth-token"
+	authenticatedUserContextKey ContextKey = "authenticated-user"
+	userCRContextKey            ContextKey = "user-cr"
+	userInfoContextKey          ContextKey = "user-info"
+	datacenterContextKey        ContextKey = "datacenter"
+	clusterProviderContextKey   ContextKey = "cluster-provider"
 )
 
 // UpdateManager specifies a set of methods to handle cluster versions & updates

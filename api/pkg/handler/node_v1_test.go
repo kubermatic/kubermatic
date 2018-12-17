@@ -31,7 +31,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 		NodeIDToDelete          string
 		ClusterIDToSync         string
 		ProjectIDToSync         string
-		ExistingAPIUser         *apiv1.LegacyUser
+		ExistingAPIUser         *apiv1.User
 		ExistingNodes           []*corev1.Node
 		ExistingMachines        []*clusterv1alpha1.Machine
 		ExistingKubermaticObjs  []runtime.Object
@@ -165,7 +165,7 @@ func TestListNodesForCluster(t *testing.T) {
 		ClusterIDToSync        string
 		ExistingProject        *kubermaticv1.Project
 		ExistingKubermaticUser *kubermaticv1.User
-		ExistingAPIUser        *apiv1.LegacyUser
+		ExistingAPIUser        *apiv1.User
 		ExistingCluster        *kubermaticv1.Cluster
 		ExistingNodes          []*corev1.Node
 		ExistingMachines       []*clusterv1alpha1.Machine
@@ -417,7 +417,7 @@ func TestGetNodeForCluster(t *testing.T) {
 		NodeIDToSync           string
 		ClusterIDToSync        string
 		ProjectIDToSync        string
-		ExistingAPIUser        *apiv1.LegacyUser
+		ExistingAPIUser        *apiv1.User
 		ExistingNodes          []*corev1.Node
 		ExistingMachines       []*clusterv1alpha1.Machine
 		ExistingKubermaticObjs []runtime.Object
@@ -492,7 +492,7 @@ func TestCreateNodeForCluster(t *testing.T) {
 		RewriteClusterNameAndNamespaceName bool
 		ExistingProject                    *kubermaticv1.Project
 		ExistingKubermaticUser             *kubermaticv1.User
-		ExistingAPIUser                    *apiv1.LegacyUser
+		ExistingAPIUser                    *apiv1.User
 		ExistingCluster                    *kubermaticv1.Cluster
 		ExistingKubermaticObjs             []runtime.Object
 	}{
@@ -570,7 +570,7 @@ func TestCreateNodeDeployment(t *testing.T) {
 		HTTPStatus             int
 		ExistingProject        *kubermaticv1.Project
 		ExistingKubermaticUser *kubermaticv1.User
-		ExistingAPIUser        *apiv1.LegacyUser
+		ExistingAPIUser        *apiv1.User
 		ExistingCluster        *kubermaticv1.Cluster
 		ExistingKubermaticObjs []runtime.Object
 	}{
@@ -647,7 +647,7 @@ func TestListNodeDeployments(t *testing.T) {
 		ClusterIDToSync            string
 		ExistingProject            *kubermaticv1.Project
 		ExistingKubermaticUser     *kubermaticv1.User
-		ExistingAPIUser            *apiv1.LegacyUser
+		ExistingAPIUser            *apiv1.User
 		ExistingCluster            *kubermaticv1.Cluster
 		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
 		ExistingKubermaticObjs     []runtime.Object
@@ -768,7 +768,7 @@ func TestGetNodeDeployment(t *testing.T) {
 		ClusterIDToSync            string
 		ExistingProject            *kubermaticv1.Project
 		ExistingKubermaticUser     *kubermaticv1.User
-		ExistingAPIUser            *apiv1.LegacyUser
+		ExistingAPIUser            *apiv1.User
 		ExistingCluster            *kubermaticv1.Cluster
 		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
 		ExistingKubermaticObjs     []runtime.Object
@@ -863,7 +863,7 @@ func TestPatchNodeDeployment(t *testing.T) {
 		HTTPStatus                 int
 		cluster                    string
 		project                    string
-		ExistingAPIUser            *apiv1.LegacyUser
+		ExistingAPIUser            *apiv1.User
 		NodeDeploymentID           string
 		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
 		ExistingKubermaticObjs     []runtime.Object
@@ -945,7 +945,7 @@ func TestDeleteNodeDeployment(t *testing.T) {
 		NodeIDToDelete             string
 		ClusterIDToSync            string
 		ProjectIDToSync            string
-		ExistingAPIUser            *apiv1.LegacyUser
+		ExistingAPIUser            *apiv1.User
 		ExistingNodes              []*corev1.Node
 		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
 		ExistingKubermaticObjs     []runtime.Object

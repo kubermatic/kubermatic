@@ -148,7 +148,7 @@ func NewOpenIDAuthenticator(issuer, clientID, clientSecret, redirectURI string, 
 }
 
 // Verifier is a convenient middleware that extracts the ID Token from the request,
-// verifies it's been signed by the provider and creates apiv1.LegacyUser from it
+// verifies it's been signed by the provider and creates apiv1.User from it
 func (o *OpenIDAuthenticator) Verifier() endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -177,11 +177,12 @@ func (o *OpenIDAuthenticator) Verifier() endpoint.Middleware {
 				return nil, k8cerrors.NewNotAuthorized()
 			}
 
-			user := apiv1.LegacyUser{
-				ID:    id,
-				Name:  claims.Name,
+			user := apiv1.User{
+				ObjectMeta: apiv1.ObjectMeta{
+					ID:   id,
+					Name: claims.Name,
+				},
 				Email: claims.Email,
-				Roles: map[string]struct{}{},
 			}
 
 			if user.ID == "" {
@@ -189,17 +190,7 @@ func (o *OpenIDAuthenticator) Verifier() endpoint.Middleware {
 				return nil, k8cerrors.NewNotAuthorized()
 			}
 
-			roles := []string{UserRoleKey}
-			for _, group := range claims.Groups {
-				if group != "" && group != UserRoleKey {
-					roles = append(roles, group)
-				}
-			}
-			for _, r := range roles {
-				user.Roles[r] = struct{}{}
-			}
-
-			return next(context.WithValue(ctx, apiUserContextKey, user), request)
+			return next(context.WithValue(ctx, authenticatedUserContextKey, user), request)
 		}
 	}
 }

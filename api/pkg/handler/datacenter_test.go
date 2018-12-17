@@ -24,7 +24,7 @@ func TestDatacentersEndpoint(t *testing.T) {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
 	}
 
-	compareWithResult(t, res, `[{"metadata":{"name":"regular-do1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"}}},{"metadata":{"name":"us-central1","resourceVersion":"1"},"spec":{"seed":"","country":"US","location":"us-central","provider":"digitalocean","digitalocean":{"region":"ams2"}},"seed":true}]`)
+	compareWithResult(t, res, `[{"metadata":{"name":"private-do1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"}}},{"metadata":{"name":"regular-do1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"}}},{"metadata":{"name":"us-central1","resourceVersion":"1"},"spec":{"seed":"","country":"US","location":"us-central","provider":"digitalocean","digitalocean":{"region":"ams2"}},"seed":true}]`)
 }
 
 func TestDatacenterEndpointNotFound(t *testing.T) {

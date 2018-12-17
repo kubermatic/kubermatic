@@ -24,7 +24,7 @@ func TestDeleteSSHKey(t *testing.T) {
 		HTTPStatus             int
 		SSHKeyToDelete         string
 		ExistingKubermaticObjs []runtime.Object
-		ExistingAPIUser        *apiv1.LegacyUser
+		ExistingAPIUser        *apiv1.User
 		ExistingSSHKeys        []*kubermaticv1.UserSSHKey
 	}{
 		// scenario 1
@@ -106,7 +106,7 @@ func TestListSSHKeys(t *testing.T) {
 		ExistingProject        *kubermaticv1.Project
 		ExistingKubermaticUser *kubermaticv1.User
 		ExistingKubermaticObjs []runtime.Object
-		ExistingAPIUser        *apiv1.LegacyUser
+		ExistingAPIUser        *apiv1.User
 		ExistingCluster        *kubermaticv1.Cluster
 		ExistingSSHKeys        []*kubermaticv1.UserSSHKey
 	}{
@@ -186,7 +186,7 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 		ExistingProject        *kubermaticv1.Project
 		ExistingKubermaticUser *kubermaticv1.User
 		ExistingKubermaticObjs []runtime.Object
-		ExistingAPIUser        *apiv1.LegacyUser
+		ExistingAPIUser        *apiv1.User
 	}{
 		// scenario 1
 		{

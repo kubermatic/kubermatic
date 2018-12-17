@@ -29,9 +29,9 @@ const (
 
 var _ OIDCIssuerVerifier = FakeIssuerVerifier{}
 
-// testAuthenticator is a test stub that mocks apiv1.LegacyUser
+// testAuthenticator is a test stub that mocks apiv1.User
 type testAuthenticator struct {
-	user apiv1.LegacyUser
+	user apiv1.User
 }
 
 // FakeOicdProvider is a test stub that mocks *oidc.Provider
@@ -41,16 +41,16 @@ type FakeOicdProvider struct {
 }
 
 // NewFakeAuthenticator returns an testing authentication middleware
-func NewFakeAuthenticator(user apiv1.LegacyUser) OIDCAuthenticator {
+func NewFakeAuthenticator(user apiv1.User) OIDCAuthenticator {
 	return testAuthenticator{user: user}
 }
 
 // Verifier is a convenient middleware that extracts the ID Token from the request,
-// verifies it's been signed by the provider and creates apiv1.LegacyUser from it
+// verifies it's been signed by the provider and creates apiv1.User from it
 func (o testAuthenticator) Verifier() endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			_, ok := ctx.Value(apiUserContextKey).(apiv1.LegacyUser)
+			_, ok := ctx.Value(authenticatedUserContextKey).(apiv1.User)
 			if !ok {
 				return nil, k8cerrors.NewNotAuthorized()
 			}
@@ -62,7 +62,7 @@ func (o testAuthenticator) Verifier() endpoint.Middleware {
 // Extractor knows how to extract the ID token from the request
 func (o testAuthenticator) Extractor() transporthttp.RequestFunc {
 	return func(ctx context.Context, _ *http.Request) context.Context {
-		return context.WithValue(ctx, apiUserContextKey, o.user)
+		return context.WithValue(ctx, authenticatedUserContextKey, o.user)
 	}
 }
 
