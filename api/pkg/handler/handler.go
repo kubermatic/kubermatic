@@ -52,7 +52,7 @@ func errorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 
 	w.Header().Set(headerContentType, contentTypeJSON)
 	w.WriteHeader(errorCode)
-	err = encodeJSON(ctx, w, e)
+	err = EncodeJSON(ctx, w, e)
 	if err != nil {
 		glog.Info(err)
 	}
@@ -74,7 +74,8 @@ func setStatusCreatedHeader(f func(context.Context, http.ResponseWriter, interfa
 	}
 }
 
-func encodeJSON(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
+// EncodeJSON writes the JSON encoding of response to the http response writer
+func EncodeJSON(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	w.Header().Set(headerContentType, contentTypeJSON)
 
 	// As long as we pipe the response from the listers we need this.
