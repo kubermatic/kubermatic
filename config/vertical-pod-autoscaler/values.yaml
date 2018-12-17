@@ -1,0 +1,13 @@
+vpa:
+  updater:
+    image:
+      repository: k8s.gcr.io/vpa-updater
+      tag: 0.3.0
+  recommender:
+    image:
+      repository: k8s.gcr.io/vpa-recommender
+      tag: 0.3.0
+  admissioncontroller:
+    image:
+      repository: k8s.gcr.io/vpa-admission-controller
+      tag: 0.3.0

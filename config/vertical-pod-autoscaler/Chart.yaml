@@ -1,0 +1,8 @@
+name: vertical-pod-autoscaler
+version: 0.1.0
+keywords:
+  - k8s
+  - kubermatic
+  - vertical
+  - pod
+  - autoscaling

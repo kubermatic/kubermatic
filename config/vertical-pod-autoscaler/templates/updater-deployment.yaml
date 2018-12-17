@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vpa-updater
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: vpa-updater
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: vpa-updater
+    spec:
+      serviceAccountName: vpa-updater
+      containers:
+      - name: updater
+        image: {{ .Values.vpa.updater.image.repository }}:{{ .Values.vpa.updater.image.tag }}
+        resources:
+          limits:
+            cpu: 200m
+            memory: 1000Mi
+          requests:
+            cpu: 50m
+            memory: 500Mi
+        ports:
+        - containerPort: 8080

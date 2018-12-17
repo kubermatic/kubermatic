@@ -23,6 +23,7 @@ helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES
 helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace minio minio ./config/minio/
 helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace nodeport-proxy nodeport-proxy ./config/nodeport-proxy/
 helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace iap iap ./config/iap/
+helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace kube-system vpa ./config/vertical-pod-autoscaler/
 
 helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace monitoring prometheus ./config/monitoring/prometheus/
 helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace monitoring node-exporter ./config/monitoring/node-exporter/
