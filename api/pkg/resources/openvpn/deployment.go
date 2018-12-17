@@ -106,23 +106,24 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/bin/bash"},
 			Args: []string{
-				"-c",
-				`
-				# do not give a 10.20.0.0/24 route to clients (nodes) but
-				# masquerade to openvpn-server's IP instead:
-				iptables -t nat -A POSTROUTING -o tun0 -s 10.20.0.0/24 -j MASQUERADE
+				"-c", `# Always set IP forwarding
+sysctl -w net.ipv4.ip_forward=1
 
-				# Only allow outbound traffic to services, pods, nodes
-				iptables -P FORWARD DROP
-				iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
-				iptables -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d ` + podNet.String() + ` -j ACCEPT
-				iptables -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d ` + serviceNet.String() + ` -j ACCEPT
-				iptables -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d ` + nodeAccessNetwork.String() + ` -j ACCEPT
+# do not give a 10.20.0.0/24 route to clients (nodes) but
+# masquerade to openvpn-server's IP instead:
+iptables -t nat -A POSTROUTING -o tun0 -s 10.20.0.0/24 -j MASQUERADE
 
-				iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-				iptables -A INPUT -i tun0 -p icmp -j ACCEPT
-				iptables -A INPUT -i tun0 -j DROP
-				`,
+# Only allow outbound traffic to services, pods, nodes
+iptables -P FORWARD DROP
+iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d ` + podNet.String() + ` -j ACCEPT
+iptables -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d ` + serviceNet.String() + ` -j ACCEPT
+iptables -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d ` + nodeAccessNetwork.String() + ` -j ACCEPT
+
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A INPUT -i tun0 -p icmp -j ACCEPT
+iptables -A INPUT -i tun0 -j DROP
+`,
 			},
 			SecurityContext: &corev1.SecurityContext{
 				Capabilities: &corev1.Capabilities{
