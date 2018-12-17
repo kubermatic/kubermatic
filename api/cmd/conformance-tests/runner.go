@@ -531,7 +531,8 @@ func (r *testRunner) waitForReadyNodes(log *logrus.Entry, client kubernetes.Inte
 	err := wait.Poll(nodesReadyPollPeriod, r.nodesReadyWaitTimeout, func() (done bool, err error) {
 		nodeList, err := client.CoreV1().Nodes().List(metav1.ListOptions{})
 		if err != nil {
-			return false, fmt.Errorf("failed to list nodes: %v", err)
+			log.Debugf("failed to list nodes while waiting for them to be ready. %v. Will retry", err)
+			return false, nil
 		}
 
 		if len(nodeList.Items) != num {
