@@ -108,7 +108,7 @@ pipeline:
     - export KUBECONFIG=$(pwd)/kubeconfig
     - export EXTRA_ARGS="--tiller-namespace=kubermatic-installer --set=kubermatic.isMaster=true --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA} --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA} --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}"
     - ./api/hack/deploy.sh master ./values.yaml "$EXTRA_ARGS"
-    image: quay.io/kubermatic/helm:2.11.0-2
+    image: kubeciio/helm
     secrets:
     - vault_secret_id
     - vault_role_id
@@ -153,7 +153,7 @@ pipeline:
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
-    image: quay.io/kubermatic/helm:2.11.0-2
+    image: kubeciio/helm
     pull: true
     secrets:
     - source: kubeconfig_cloud
@@ -220,7 +220,7 @@ pipeline:
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
-    image: quay.io/kubermatic/helm:2.11.0-2
+    image: kubeciio/helm
     pull: true
     secrets:
     - source: kubeconfig_cloud
@@ -270,7 +270,7 @@ pipeline:
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
-    image: quay.io/kubermatic/helm:2.11.0-2
+    image: kubeciio/helm
     pull: true
     secrets:
     - source: kubeconfig_cloud
