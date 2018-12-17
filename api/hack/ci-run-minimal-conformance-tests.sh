@@ -23,6 +23,12 @@ echo "Finished building conformance-tests and kubermatic-controller-manager"
 function cleanup {
   set +e
   export KUBECONFIG="$(go env GOPATH)/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig"
+
+  # Delete addons from all clusters that have our worker-name label
+  kubectl get cluster -l worker-name=$BUILD_ID \
+     -o go-template='{{range .items}}{{.metadata.name}}{{end}}' \
+     |xargs -n 1 -I ^ kubectl label addon -n cluster-^ --all worker-name-
+
   # Delete all clusters that have our worker-name label
   kubectl delete cluster -l worker-name=$BUILD_ID --wait=false
 
