@@ -274,7 +274,7 @@ func (r Routing) listSSHKeys() http.Handler {
 			r.userInfoMiddleware(),
 		)(listSSHKeyEndpoint(r.sshKeyProvider, r.projectProvider)),
 		decodeListSSHKeyReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -302,7 +302,7 @@ func (r Routing) createSSHKey() http.Handler {
 			r.userInfoMiddleware(),
 		)(createSSHKeyEndpoint(r.sshKeyProvider, r.projectProvider)),
 		decodeCreateSSHKeyReq,
-		setStatusCreatedHeader(encodeJSON),
+		setStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -327,7 +327,7 @@ func (r Routing) deleteSSHKey() http.Handler {
 			r.userInfoMiddleware(),
 		)(deleteSSHKeyEndpoint(r.sshKeyProvider, r.projectProvider)),
 		decodeDeleteSSHKeyReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -349,7 +349,7 @@ func (r Routing) listDigitaloceanSizes() http.Handler {
 			r.userSaverMiddleware(),
 		)(digitaloceanSizeEndpoint()),
 		decodeDoSizesReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -371,7 +371,7 @@ func (r Routing) listAzureSizes() http.Handler {
 			r.userSaverMiddleware(),
 		)(azureSizeEndpoint()),
 		decodeAzureSizesReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -393,7 +393,7 @@ func (r Routing) listOpenstackSizes() http.Handler {
 			r.userSaverMiddleware(),
 		)(openstackSizeEndpoint(r.cloudProviders)),
 		decodeOpenstackReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -415,7 +415,7 @@ func (r Routing) listVSphereNetworks() http.Handler {
 			r.userSaverMiddleware(),
 		)(vsphereNetworksEndpoint(r.cloudProviders)),
 		decodeVSphereNetworksReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -437,7 +437,7 @@ func (r Routing) listOpenstackTenants() http.Handler {
 			r.userSaverMiddleware(),
 		)(openstackTenantEndpoint(r.cloudProviders)),
 		decodeOpenstackTenantReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -459,7 +459,7 @@ func (r Routing) listOpenstackNetworks() http.Handler {
 			r.userSaverMiddleware(),
 		)(openstackNetworkEndpoint(r.cloudProviders)),
 		decodeOpenstackReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -481,7 +481,7 @@ func (r Routing) listOpenstackSubnets() http.Handler {
 			r.userSaverMiddleware(),
 		)(openstackSubnetsEndpoint(r.cloudProviders)),
 		decodeOpenstackSubnetReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -503,7 +503,7 @@ func (r Routing) listOpenstackSecurityGroups() http.Handler {
 			r.userSaverMiddleware(),
 		)(openstackSecurityGroupEndpoint(r.cloudProviders)),
 		decodeOpenstackReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -523,7 +523,7 @@ func (r Routing) datacentersHandler() http.Handler {
 			r.userSaverMiddleware(),
 		)(datacentersEndpoint(r.datacenters)),
 		decodeDatacentersReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -544,7 +544,7 @@ func (r Routing) datacenterHandler() http.Handler {
 			r.userSaverMiddleware(),
 		)(datacenterEndpoint(r.datacenters)),
 		decodeLegacyDcReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -566,7 +566,7 @@ func (r Routing) getMasterVersions() http.Handler {
 			r.userSaverMiddleware(),
 		)(getMasterVersions(r.updateManager)),
 		decodeEmptyReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -590,7 +590,7 @@ func (r Routing) listProjects() http.Handler {
 			r.userSaverMiddleware(),
 		)(listProjectsEndpoint(r.projectProvider, r.userProjectMapper)),
 		decodeEmptyReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -615,7 +615,7 @@ func (r Routing) getProject() http.Handler {
 			r.userInfoMiddleware(),
 		)(getProjectEndpoint(r.projectProvider)),
 		decodeGetProject,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -644,7 +644,7 @@ func (r Routing) createProject() http.Handler {
 			r.userSaverMiddleware(),
 		)(createProjectEndpoint(r.projectProvider)),
 		decodeCreateProject,
-		setStatusCreatedHeader(encodeJSON),
+		setStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -667,7 +667,7 @@ func (r Routing) updateProject() http.Handler {
 			r.userInfoMiddleware(),
 		)(updateProjectEndpoint()),
 		decodeUpdateProject,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -693,7 +693,7 @@ func (r Routing) deleteProject() http.Handler {
 			r.userInfoMiddleware(),
 		)(deleteProjectEndpoint(r.projectProvider)),
 		decodeDeleteProject,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -722,7 +722,7 @@ func (r Routing) createCluster() http.Handler {
 			r.userInfoMiddleware(),
 		)(createClusterEndpoint(r.cloudProviders, r.projectProvider)),
 		decodeCreateClusterReq,
-		setStatusCreatedHeader(encodeJSON),
+		setStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -748,7 +748,7 @@ func (r Routing) listClusters() http.Handler {
 			r.userInfoMiddleware(),
 		)(listClusters(r.projectProvider)),
 		decodeListClustersReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -774,7 +774,7 @@ func (r Routing) getCluster() http.Handler {
 			r.userInfoMiddleware(),
 		)(getCluster(r.projectProvider)),
 		decodeGetClusterReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -800,7 +800,7 @@ func (r Routing) patchCluster() http.Handler {
 			r.userInfoMiddleware(),
 		)(patchCluster(r.cloudProviders, r.projectProvider)),
 		decodePatchClusterReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -854,7 +854,7 @@ func (r Routing) deleteCluster() http.Handler {
 			r.userInfoMiddleware(),
 		)(deleteCluster(r.sshKeyProvider, r.projectProvider)),
 		decodeGetClusterReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -880,7 +880,7 @@ func (r Routing) getClusterHealth() http.Handler {
 			r.userInfoMiddleware(),
 		)(getClusterHealth(r.projectProvider)),
 		decodeGetClusterReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -909,7 +909,7 @@ func (r Routing) assignSSHKeyToCluster() http.Handler {
 			r.userInfoMiddleware(),
 		)(assignSSHKeyToCluster(r.sshKeyProvider, r.projectProvider)),
 		decodeAssignSSHKeyToClusterReq,
-		setStatusCreatedHeader(encodeJSON),
+		setStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -939,7 +939,7 @@ func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 			r.userInfoMiddleware(),
 		)(listSSHKeysAssingedToCluster(r.sshKeyProvider, r.projectProvider)),
 		decodeListSSHKeysAssignedToCluster,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -968,7 +968,7 @@ func (r Routing) detachSSHKeyFromCluster() http.Handler {
 			r.userInfoMiddleware(),
 		)(detachSSHKeyFromCluster(r.sshKeyProvider, r.projectProvider)),
 		decodeDetachSSHKeysFromCluster,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -994,7 +994,7 @@ func (r Routing) revokeClusterAdminToken() http.Handler {
 			r.userInfoMiddleware(),
 		)(revokeClusterAdminToken(r.projectProvider)),
 		decodeClusterAdminTokenReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1023,7 +1023,7 @@ func (r Routing) getNodeForCluster() http.Handler {
 			r.userInfoMiddleware(),
 		)(getNodeForCluster(r.projectProvider)),
 		decodeGetNodeForCluster,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1052,7 +1052,7 @@ func (r Routing) createNodeForCluster() http.Handler {
 			r.userInfoMiddleware(),
 		)(createNodeForCluster(r.sshKeyProvider, r.projectProvider, r.datacenters)),
 		decodeCreateNodeForCluster,
-		setStatusCreatedHeader(encodeJSON),
+		setStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -1079,7 +1079,7 @@ func (r Routing) listNodesForCluster() http.Handler {
 			r.userInfoMiddleware(),
 		)(listNodesForCluster(r.projectProvider)),
 		decodeListNodesForCluster,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1105,7 +1105,7 @@ func (r Routing) deleteNodeForCluster() http.Handler {
 			r.userInfoMiddleware(),
 		)(deleteNodeForCluster(r.projectProvider)),
 		decodeDeleteNodeForCluster,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1131,7 +1131,7 @@ func (r Routing) getClusterUpgrades() http.Handler {
 			r.userInfoMiddleware(),
 		)(getClusterUpgrades(r.updateManager, r.projectProvider)),
 		decodeGetClusterReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1159,7 +1159,7 @@ func (r Routing) addUserToProject() http.Handler {
 			r.userInfoMiddleware(),
 		)(addUserToProject(r.projectProvider, r.userProvider, r.projectMemberProvider)),
 		decodeAddUserToProject,
-		setStatusCreatedHeader(encodeJSON),
+		setStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -1187,7 +1187,7 @@ func (r Routing) getUsersForProject() http.Handler {
 			r.userInfoMiddleware(),
 		)(listMembersOfProject(r.projectProvider, r.userProvider, r.projectMemberProvider)),
 		decodeGetProject,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1215,7 +1215,7 @@ func (r Routing) editUserInProject() http.Handler {
 			r.userInfoMiddleware(),
 		)(editMemberOfProject(r.projectProvider, r.userProvider, r.projectMemberProvider)),
 		decodeEditUserToProject,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1243,7 +1243,7 @@ func (r Routing) deleteUserFromProject() http.Handler {
 			r.userInfoMiddleware(),
 		)(deleteMemberFromProject(r.projectProvider, r.userProvider, r.projectMemberProvider)),
 		decodeDeleteUserFromProject,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1266,7 +1266,7 @@ func (r Routing) getCurrentUser() http.Handler {
 			r.userSaverMiddleware(),
 		)(getCurrentUserEndpoint(r.userProvider, r.userProjectMapper)),
 		decodeEmptyReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1290,7 +1290,7 @@ func (r Routing) listDigitaloceanSizesNoCredentials() http.Handler {
 			r.userInfoMiddleware(),
 		)(digitaloceanSizeNoCredentialsEndpoint(r.projectProvider)),
 		decodeDoSizesNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1314,7 +1314,7 @@ func (r Routing) listAzureSizesNoCredentials() http.Handler {
 			r.userInfoMiddleware(),
 		)(azureSizeNoCredentialsEndpoint(r.projectProvider, r.datacenters)),
 		decodeAzureSizesNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1338,7 +1338,7 @@ func (r Routing) listOpenstackSizesNoCredentials() http.Handler {
 			r.userInfoMiddleware(),
 		)(openstackSizeNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
 		decodeOpenstackNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1362,7 +1362,7 @@ func (r Routing) listOpenstackTenantsNoCredentials() http.Handler {
 			r.userInfoMiddleware(),
 		)(openstackTenantNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
 		decodeOpenstackNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1386,7 +1386,7 @@ func (r Routing) listOpenstackNetworksNoCredentials() http.Handler {
 			r.userInfoMiddleware(),
 		)(openstackNetworkNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
 		decodeOpenstackNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1410,7 +1410,7 @@ func (r Routing) listOpenstackSecurityGroupsNoCredentials() http.Handler {
 			r.userInfoMiddleware(),
 		)(openstackSecurityGroupNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
 		decodeOpenstackNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1434,7 +1434,7 @@ func (r Routing) listOpenstackSubnetsNoCredentials() http.Handler {
 			r.userInfoMiddleware(),
 		)(openstackSubnetsNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
 		decodeOpenstackSubnetNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1458,7 +1458,7 @@ func (r Routing) listVSphereNetworksNoCredentials() http.Handler {
 			r.userInfoMiddleware(),
 		)(vsphereNetworksNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
 		decodeVSphereNetworksNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1487,7 +1487,7 @@ func (r Routing) createNodeDeployment() http.Handler {
 			r.userInfoMiddleware(),
 		)(createNodeDeployment(r.sshKeyProvider, r.projectProvider, r.datacenters)),
 		decodeCreateNodeDeployment,
-		setStatusCreatedHeader(encodeJSON),
+		setStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -1513,7 +1513,7 @@ func (r Routing) listNodeDeployments() http.Handler {
 			r.userInfoMiddleware(),
 		)(listNodeDeployments(r.projectProvider)),
 		decodeListNodeDeployments,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1539,7 +1539,7 @@ func (r Routing) getNodeDeployment() http.Handler {
 			r.userInfoMiddleware(),
 		)(getNodeDeployment(r.projectProvider)),
 		decodeGetNodeDeployment,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1569,7 +1569,7 @@ func (r Routing) patchNodeDeployment() http.Handler {
 			r.userInfoMiddleware(),
 		)(patchNodeDeployment(r.sshKeyProvider, r.projectProvider, r.datacenters)),
 		decodePatchNodeDeployment,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1595,7 +1595,7 @@ func (r Routing) deleteNodeDeployment() http.Handler {
 			r.userInfoMiddleware(),
 		)(deleteNodeDeployment(r.projectProvider)),
 		decodeDeleteNodeDeployment,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
