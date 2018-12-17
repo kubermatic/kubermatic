@@ -17,7 +17,7 @@ spec:
       serviceAccountName: vpa-updater
       containers:
       - name: updater
-        image: {{ .Values.vpa.updater.image.repository }}:{{ .Values.vpa.updater.image.tag }}
+        image: {{ .Values.kubermatic.vpa.updater.image.repository }}:{{ .Values.kubermatic.vpa.updater.image.tag }}
         resources:
           limits:
             cpu: 200m

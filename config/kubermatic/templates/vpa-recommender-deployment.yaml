@@ -17,7 +17,7 @@ spec:
       serviceAccountName: vpa-recommender
       containers:
       - name: recommender
-        image: {{ .Values.vpa.recommender.image.repository }}:{{ .Values.vpa.recommender.image.tag }}
+        image: {{ .Values.kubermatic.vpa.recommender.image.repository }}:{{ .Values.kubermatic.vpa.recommender.image.tag }}
         resources:
           limits:
             cpu: 200m

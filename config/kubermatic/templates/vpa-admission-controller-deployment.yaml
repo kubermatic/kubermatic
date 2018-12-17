@@ -14,7 +14,7 @@ spec:
       serviceAccountName: vpa-admission-controller
       containers:
       - name: admission-controller
-        image: {{ .Values.vpa.admissioncontroller.image.repository }}:{{ .Values.vpa.admissioncontroller.image.tag }}
+        image: {{ .Values.kubermatic.vpa.admissioncontroller.image.repository }}:{{ .Values.kubermatic.vpa.admissioncontroller.image.tag }}
         volumeMounts:
           - name: tls-certs
             mountPath: "/etc/tls-certs"

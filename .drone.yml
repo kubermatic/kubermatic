@@ -95,9 +95,6 @@ pipeline:
     - name: kibana
       namespace: logging
       path: config/logging/kibana/
-    - name: vpa
-      namespace: kube-system
-      path: config/vertical-pod-autoscaler/
     group: deploy-cloud
     # depends on 'kubermatic-docker-master' step to build the images
     helm: upgrade --install --wait --timeout 300 --kube-context=asia-east1-a-1 --tiller-namespace=kubermatic-installer
@@ -166,9 +163,6 @@ pipeline:
     - name: kibana
       namespace: logging
       path: config/logging/kibana/
-    - name: vpa
-      namespace: kube-system
-      path: config/vertical-pod-autoscaler/
     group: deploy-cloud
     # depends on 'kubermatic-docker-master' step to build the images
     helm: upgrade --install --wait --timeout 300 --kube-context=europe-west3-c-1 --tiller-namespace=kubermatic-installer
@@ -218,9 +212,6 @@ pipeline:
     - name: kibana
       namespace: logging
       path: config/logging/kibana/
-    - name: vpa
-      namespace: kube-system
-      path: config/vertical-pod-autoscaler/
     group: deploy-cloud
     # depends on 'kubermatic-docker-master' step to build the images
     helm: upgrade --install --wait --timeout 300 --kube-context=us-central1-c-1 --tiller-namespace=kubermatic-installer
@@ -289,9 +280,6 @@ pipeline:
     - name: kibana
       namespace: logging
       path: config/logging/kibana/
-    - name: vpa
-      namespace: kube-system
-      path: config/vertical-pod-autoscaler/
     # depends on 'kubermatic-docker-release-v28' step to build the images
     helm: upgrade --install --wait --timeout 300
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
