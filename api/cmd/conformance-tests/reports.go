@@ -1,0 +1,102 @@
+package main
+
+import (
+	"bytes"
+	"encoding/xml"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path"
+	"sort"
+	"strings"
+	"time"
+
+	"github.com/onsi/ginkgo/reporters"
+)
+
+func collectReports(name, reportsDir string, time time.Duration) (*reporters.JUnitTestSuite, error) {
+	files, err := ioutil.ReadDir(reportsDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list files in reportsDir '%s': %v", reportsDir, err)
+	}
+
+	resultSuite := reporters.JUnitTestSuite{
+		Time: time.Seconds(),
+	}
+	resultSuite.Name = name
+
+	var individualReportFiles []string
+	for _, f := range files {
+		if f.IsDir() {
+			continue
+		}
+
+		if !strings.HasPrefix(f.Name(), "junit_") || !strings.HasSuffix(f.Name(), ".xml") {
+			continue
+		}
+
+		absName := path.Join(reportsDir, f.Name())
+		individualReportFiles = append(individualReportFiles, absName)
+
+		b, err := ioutil.ReadFile(absName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read file '%s': %v", absName, err)
+		}
+
+		suite := &reporters.JUnitTestSuite{}
+		if err := xml.Unmarshal(b, suite); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal report file '%s': %v", absName, err)
+		}
+
+		resultSuite.Tests += suite.Tests
+		resultSuite.Errors += suite.Errors
+		resultSuite.Failures += suite.Failures
+		resultSuite.TestCases = append(resultSuite.TestCases, suite.TestCases...)
+	}
+	sort.Slice(resultSuite.TestCases, func(i, j int) bool { return resultSuite.TestCases[i].Name < resultSuite.TestCases[j].Name })
+
+	for _, f := range individualReportFiles {
+		if err := os.Remove(f); err != nil {
+			return nil, fmt.Errorf("failed to remove report file: %v", err)
+		}
+	}
+
+	return &resultSuite, nil
+}
+
+func printDetailedReport(report *reporters.JUnitTestSuite) {
+	testBuf := &bytes.Buffer{}
+
+	logIfFailed := func(_ int, err error) {
+		if err != nil {
+			fmt.Printf("failed to write to byte buffer: %v", err)
+		}
+	}
+
+	// Only print details errors in case we have a testcase which failed.
+	// Printing everything which has an error will print the errors from retried tests as for each attempt a TestCase entry exists.
+	if report.Failures > 0 || report.Errors > 0 {
+		for _, t := range report.TestCases {
+			if t.FailureMessage == nil {
+				continue
+			}
+
+			logIfFailed(fmt.Fprintln(testBuf, fmt.Sprintf("[FAIL] - %s", t.Name)))
+			logIfFailed(fmt.Fprintln(testBuf, fmt.Sprintf("      %s", t.FailureMessage.Message)))
+		}
+	}
+
+	buf := &bytes.Buffer{}
+	const separator = "============================================================="
+	logIfFailed(fmt.Fprintln(buf, separator))
+	logIfFailed(fmt.Fprintln(buf, fmt.Sprintf("Test results for: %s", report.Name)))
+
+	logIfFailed(fmt.Fprint(buf, testBuf.String()))
+
+	logIfFailed(fmt.Fprintln(buf, "----------------------------"))
+	logIfFailed(fmt.Fprintln(buf, fmt.Sprintf("Passed: %d", report.Tests-report.Failures)))
+	logIfFailed(fmt.Fprintln(buf, fmt.Sprintf("Failed: %d", report.Failures)))
+	logIfFailed(fmt.Fprintln(buf, separator))
+
+	fmt.Println(buf.String())
+}
