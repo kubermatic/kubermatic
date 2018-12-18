@@ -48,13 +48,7 @@ docker-push:
 		docker push $(REPO):$$tag; \
 	done
 
-vendor: Gopkg.lock Gopkg.toml
-ifndef HAS_GIT
-	$(error You must install git)
-endif
-ifndef HAS_DEP
-	go get -u github.com/golang/dep/cmd/dep
-endif
+vendor:
 	dep ensure -v
 
 gittag:
