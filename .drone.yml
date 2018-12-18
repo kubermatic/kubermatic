@@ -108,39 +108,6 @@ pipeline:
     when:
       event:
       - tag
-  kubermatic-e2e-docker-push-on-master:
-    context: api
-    dockerfile: api/Dockerfile.e2e
-    image: plugins/docker
-    pull: true
-    registry: quay.io
-    repo: quay.io/kubermatic/e2e
-    secrets:
-    - source: docker_quay_username
-      target: docker_username
-    - source: docker_quay_password
-      target: docker_password
-    tags:
-    - latest
-    when:
-      branch: master
-  kubermatic-e2e-docker-push-on-tag:
-    context: api
-    dockerfile: api/Dockerfile.e2e
-    image: plugins/docker
-    pull: true
-    registry: quay.io
-    repo: quay.io/kubermatic/e2e
-    secrets:
-    - source: docker_quay_username
-      target: docker_username
-    - source: docker_quay_password
-      target: docker_password
-    tags:
-    - ${DRONE_TAG}
-    when:
-      event:
-      - tag
   sync-charts:
     commands:
     - apk add --no-cache -U git bash openssh
