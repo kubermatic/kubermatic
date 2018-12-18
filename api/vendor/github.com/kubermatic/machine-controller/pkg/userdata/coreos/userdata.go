@@ -152,10 +152,24 @@ systemd:
     - name: locksmithd.service
       mask: true
 {{ end }}
-    - name: docker.service
-      enabled: true
 
-    - name: download-healthcheck-script.service
+    - name: docker.socket
+      mask: true
+
+    - name: download-binaries.service
+      enabled: false
+      contents: |
+        [Unit]
+        Requires=network-online.target
+        After=network-online.target
+        [Service]
+        Type=oneshot
+        ExecStartPre=/opt/bin/download.sh
+        ExecStart=/usr/bin/echo Successfully downloaded all required binaries
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: setup-kubelet.service
       enabled: true
       contents: |
         [Unit]
@@ -163,39 +177,64 @@ systemd:
         After=network-online.target
         [Service]
         Type=oneshot
-        ExecStart=/opt/bin/download.sh
+        ExecStart=/opt/bin/setup.sh
         [Install]
         WantedBy=multi-user.target
 
+    - name: containerd.service
+      enabled: false
+      dropins:
+      - name: override.conf
+        contents: |
+          [Unit]
+          Requires=download-binaries.service
+          After=download-binaries.service
+      contents: |
+{{ containerdSystemdUnit true | indent 8 }}
+
+    - name: docker.service
+      dropins:
+      - name: containerd.conf
+        contents: |
+          [Unit]
+          After=containerd.service
+          Requires=containerd.service
+          [Service]
+          ExecStart= 
+          ExecStart=/opt/bin/dockerd --containerd=/var/run/docker/libcontainerd/docker-containerd.sock 
+
+      contents: |
+{{ dockerSystemdUnit true | indent 8 }}
+
     - name: docker-healthcheck.service
-      enabled: true
+      enabled: false
       dropins:
       - name: 40-docker.conf
         contents: |
           [Unit]
-          Requires=download-healthcheck-script.service
-          After=download-healthcheck-script.service
+          Requires=download-binaries.service docker.service
+          After=download-binaries.service docker.service
       contents: |
 {{ containerRuntimeHealthCheckSystemdUnit | indent 10 }}
 
     - name: kubelet-healthcheck.service
-      enabled: true
+      enabled: false
       dropins:
       - name: 40-docker.conf
         contents: |
           [Unit]
-          Requires=download-healthcheck-script.service
-          After=download-healthcheck-script.service
+          Requires=download-binaries.service kubelet.service
+          After=download-binaries.service kubelet.service
       contents: |
 {{ kubeletHealthCheckSystemdUnit | indent 10 }}
 
     - name: kubelet.service
-      enabled: true
+      enabled: false
       contents: |
         [Unit]
         Description=Kubernetes Kubelet
-        Requires=docker.service
-        After=docker.service
+        Requires=docker.service containerd.service
+        After=docker.service containerd.service
         [Service]
         TimeoutStartSec=5min
         Environment=KUBELET_IMAGE=docker://k8s.gcr.io/hyperkube-amd64:{{ .HyperkubeImageTag }}
@@ -292,15 +331,6 @@ storage:
         inline: |
 {{ .KubernetesCACert | indent 10 }}
 
-{{- if semverCompare "<=1.11.*" .KubeletVersion }}
-    - path: /etc/coreos/docker-1.12
-      mode: 0644
-      filesystem: root
-      contents:
-        inline: |
-          yes
-{{ end }}
-
 {{ if ne .CloudProvider "aws" }}
     - path: /etc/hostname
       filesystem: root
@@ -328,14 +358,6 @@ storage:
           PasswordAuthentication no
           ChallengeResponseAuthentication no
 
-    - path: /etc/systemd/system/docker.service.d/10-storage.conf
-      filesystem: root
-      mode: 0644
-      contents:
-        inline: |
-          [Service]
-          Environment=DOCKER_OPTS=--storage-driver=overlay2
-
     - path: /opt/bin/download.sh
       filesystem: root
       mode: 0755
@@ -344,4 +366,27 @@ storage:
           #!/bin/bash
           set -xeuo pipefail
 {{ downloadBinariesScript .KubeletVersion false | indent 10 }}
+
+    - path: /opt/bin/setup.sh
+      filesystem: root
+      mode: 0755
+      contents:
+        inline: |
+          #!/bin/bash
+          set -xeuo pipefail
+{{ startAllUnits | indent 10 }}
+
+    - path: /etc/docker/daemon.json
+      filesystem: root
+      mode: 0644
+      contents:
+        inline: |
+{{ dockerDaemonConfig | indent 10 }}
+
+    - path: /etc/profile.d/opt-bin-path.sh
+      filesystem: root
+      mode: 0644
+      contents:
+        inline: |
+          export PATH="/opt/bin:$PATH"
 `

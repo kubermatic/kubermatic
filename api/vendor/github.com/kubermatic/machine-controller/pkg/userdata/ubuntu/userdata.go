@@ -9,12 +9,12 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/semver"
-	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"github.com/kubermatic/machine-controller/pkg/userdata/cloud"
 	userdatahelper "github.com/kubermatic/machine-controller/pkg/userdata/helper"
 
+	"k8s.io/apimachinery/pkg/runtime"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
@@ -240,12 +240,6 @@ write_files:
     systemctl mask swap.target
     swapoff -a
 
-{{- if semverCompare "<1.12.0" .KubeletVersion }}
-    export CR_PKG='docker.io=17.12.1-0ubuntu1'
-{{- else }}
-    export CR_PKG='docker-ce=18.06.0~ce~3-0~ubuntu'
-{{- end }}
-
     DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y \
       curl \
       ca-certificates \
@@ -263,13 +257,12 @@ write_files:
       nfs-common \
       socat \
       util-linux \
-      ${CR_PKG} \
+      bridge-utils \
+      libapparmor1 \
+      libltdl7 \
+      perl \
       ipvsadm{{ if eq .CloudProvider "vsphere" }} \
       open-vm-tools{{ end }}
-
-    # If something failed during package installation but docker got installed, we need to put it on hold
-    apt-mark hold docker.io || true
-    apt-mark hold docker-ce || true
 
     {{- if .OSConfig.DistUpgradeOnBoot }}
     DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade -y
@@ -279,11 +272,7 @@ write_files:
     fi
 
 {{ downloadBinariesScript .KubeletVersion true | indent 4 }}
-
-    systemctl enable --now docker
-    systemctl enable --now kubelet
-    systemctl enable --now --no-block kubelet-healthcheck.service
-    systemctl enable --now --no-block docker-healthcheck.service
+{{ startAllUnits | indent 4 }}
 
 - path: "/opt/bin/supervise.sh"
   permissions: "0755"
@@ -335,13 +324,6 @@ write_files:
   content: |
     export PATH="/opt/bin:$PATH"
 
-- path: /etc/systemd/system/docker.service.d/10-storage.conf
-  permissions: "0644"
-  content: |
-    [Service]
-    ExecStart=
-    ExecStart=/usr/bin/dockerd -H fd:// --storage-driver=overlay2
-
 - path: /etc/systemd/system/kubelet-healthcheck.service
   permissions: "0644"
   content: |
@@ -351,6 +333,16 @@ write_files:
   permissions: "0644"
   content: |
 {{ containerRuntimeHealthCheckSystemdUnit | indent 4 }}
+
+- path: /etc/docker/daemon.json
+  permissions: "0644"
+  content: |
+{{ dockerDaemonConfig | indent 4 }}
+
+- path: /etc/systemd/system/docker.service
+  permissions: "0644"
+  content: |
+{{ dockerSystemdUnit true | indent 4 }}
 
 runcmd:
 - systemctl enable --now setup.service

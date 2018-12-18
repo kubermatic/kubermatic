@@ -72,3 +72,14 @@ func JournalDConfig() string {
 SystemMaxUse=5G
 `
 }
+
+// StartAllUnits returns the shell commands to start all required units
+func StartAllUnits() string {
+	return `# Make sure systemd is aware of the new units in /etc/systemd/system
+systemctl daemon-reload
+systemctl enable --now docker
+systemctl enable --now kubelet
+systemctl enable --now --no-block kubelet-healthcheck.service
+systemctl enable --now --no-block docker-healthcheck.service
+`
+}

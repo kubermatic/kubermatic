@@ -14,6 +14,16 @@ mkdir -p /etc/kubernetes/manifests
 mkdir -p /etc/cni/net.d
 mkdir -p /opt/cni/bin
 
+# docker
+if [ ! -f /opt/bin/docker ]; then
+    # TODO: Support newer versions. Make sure to validate if the newer containerd version has configuration changes
+    # Newer versions of docker use containterd with a config file - containerd from 17.03 does not support that
+    # we maybe need to manage both ways(flags & config) or wait until we deprecate Kubernetes 1.11 
+    curl -L http://download.docker.com/linux/static/stable/x86_64/docker-17.03.2-ce.tgz | tar -xvzC /opt/ -f -
+    mv /opt/docker/* /opt/bin/
+    rm -rf /opt/docker
+fi
+
 # cni
 if [ ! -f /opt/cni/bin/loopback ]; then
     curl -L https://github.com/containernetworking/plugins/releases/download/v0.6.0/cni-plugins-amd64-v0.6.0.tgz | tar -xvzC /opt/cni/bin -f -
