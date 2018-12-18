@@ -291,9 +291,10 @@ func createNodeForCluster(sshKeyProvider provider.SSHKeyProvider, projectProvide
 func outputNode(node *corev1.Node, hideInitialNodeConditions bool) *apiv1.Node {
 	nodeStatus := apiv1.NodeStatus{}
 	nodeStatus = apiNodeStatus(nodeStatus, node, hideInitialNodeConditions)
-	var deletionTimestamp *time.Time
+	var deletionTimestamp *apiv1.Time
 	if node.DeletionTimestamp != nil {
-		deletionTimestamp = &node.DeletionTimestamp.Time
+		t := apiv1.NewTime(node.DeletionTimestamp.Time)
+		deletionTimestamp = &t
 	}
 
 	return &apiv1.Node{
@@ -301,7 +302,7 @@ func outputNode(node *corev1.Node, hideInitialNodeConditions bool) *apiv1.Node {
 			ID:                node.Name,
 			Name:              node.Name,
 			DeletionTimestamp: deletionTimestamp,
-			CreationTimestamp: node.CreationTimestamp.Time,
+			CreationTimestamp: apiv1.NewTime(node.CreationTimestamp.Time),
 		},
 		Spec: apiv1.NodeSpec{
 			Versions:        apiv1.NodeVersionInfo{},
@@ -342,9 +343,10 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 	displayName := machine.Spec.Name
 	nodeStatus := apiv1.NodeStatus{}
 	nodeStatus.MachineName = machine.Name
-	var deletionTimestamp *time.Time
+	var deletionTimestamp *apiv1.Time
 	if machine.DeletionTimestamp != nil {
-		deletionTimestamp = &machine.DeletionTimestamp.Time
+		dt := apiv1.NewTime(machine.DeletionTimestamp.Time)
+		deletionTimestamp = &dt
 	}
 
 	if machine.Status.ErrorReason != nil {
@@ -377,7 +379,7 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 			ID:                machine.Name,
 			Name:              displayName,
 			DeletionTimestamp: deletionTimestamp,
-			CreationTimestamp: machine.CreationTimestamp.Time,
+			CreationTimestamp: apiv1.NewTime(machine.CreationTimestamp.Time),
 		},
 		Spec: apiv1.NodeSpec{
 			Versions: apiv1.NodeVersionInfo{
@@ -707,9 +709,10 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 	nodeStatus := apiv1.NodeStatus{}
 	nodeStatus.MachineName = md.Name
 
-	var deletionTimestamp *time.Time
+	var deletionTimestamp *apiv1.Time
 	if md.DeletionTimestamp != nil {
-		deletionTimestamp = &md.DeletionTimestamp.Time
+		dt := apiv1.NewTime(md.DeletionTimestamp.Time)
+		deletionTimestamp = &dt
 	}
 
 	operatingSystemSpec, err := machineconversions.GetAPIV1OperatingSystemSpec(md.Spec.Template.Spec)
@@ -727,7 +730,7 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 			ID:                md.Name,
 			Name:              md.Name,
 			DeletionTimestamp: deletionTimestamp,
-			CreationTimestamp: md.CreationTimestamp.Time,
+			CreationTimestamp: apiv1.NewTime(md.CreationTimestamp.Time),
 		},
 		Spec: apiv1.NodeDeploymentSpec{
 			Replicas: *md.Spec.Replicas,

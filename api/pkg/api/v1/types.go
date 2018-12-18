@@ -2,8 +2,6 @@ package v1
 
 import (
 	"encoding/json"
-	"time"
-
 	"github.com/Masterminds/semver"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -34,10 +32,10 @@ type ObjectMeta struct {
 	Name string `json:"name"`
 
 	// DeletionTimestamp is a timestamp representing the server time when this object was deleted.
-	DeletionTimestamp *time.Time `json:"deletionTimestamp,omitempty"`
+	DeletionTimestamp *Time `json:"deletionTimestamp,omitempty"`
 
 	// CreationTimestamp is a timestamp representing the server time when this object was created.
-	CreationTimestamp time.Time `json:"creationTimestamp,omitempty"`
+	CreationTimestamp Time `json:"creationTimestamp,omitempty"`
 }
 
 // DigitialoceanDatacenterSpec specifies a datacenter of DigitalOcean.

@@ -274,10 +274,11 @@ func convertInternalClusterToExternal(internalCluster *kubermaticapiv1.Cluster) 
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internalCluster.Name,
 			Name:              internalCluster.Spec.HumanReadableName,
-			CreationTimestamp: internalCluster.CreationTimestamp.Time,
-			DeletionTimestamp: func() *time.Time {
+			CreationTimestamp: apiv1.NewTime(internalCluster.CreationTimestamp.Time),
+			DeletionTimestamp: func() *apiv1.Time {
 				if internalCluster.DeletionTimestamp != nil {
-					return &internalCluster.DeletionTimestamp.Time
+					deletionTimestamp := apiv1.NewTime(internalCluster.DeletionTimestamp.Time)
+					return &deletionTimestamp
 				}
 				return nil
 			}(),
