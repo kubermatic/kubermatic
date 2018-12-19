@@ -214,7 +214,7 @@ func convertInternalUserToExternal(internalUser *kubermaticapiv1.User, bindings 
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internalUser.Name,
 			Name:              internalUser.Spec.Name,
-			CreationTimestamp: internalUser.CreationTimestamp.Time,
+			CreationTimestamp: apiv1.NewTime(internalUser.CreationTimestamp.Time),
 		},
 		Email: internalUser.Spec.Email,
 	}

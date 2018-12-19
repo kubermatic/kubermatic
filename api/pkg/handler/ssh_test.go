@@ -119,14 +119,14 @@ func TestListSSHKeys(t *testing.T) {
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "key-c08aa5c7abf34504f18552846485267d-first-key",
 						Name:              "first-key",
-						CreationTimestamp: time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
 					},
 				},
 				apiv1.SSHKey{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "key-abc-second-key",
 						Name:              "second-key",
-						CreationTimestamp: time.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC),
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC),
 					},
 				},
 			},

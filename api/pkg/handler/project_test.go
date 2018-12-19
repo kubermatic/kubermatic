@@ -53,7 +53,7 @@ func TestListProjectEndpoint(t *testing.T) {
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "my-first-project-ID",
 						Name:              "my-first-project",
-						CreationTimestamp: time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
 					},
 				},
 				apiv1.Project{
@@ -61,7 +61,7 @@ func TestListProjectEndpoint(t *testing.T) {
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "my-third-project-ID",
 						Name:              "my-third-project",
-						CreationTimestamp: time.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC),
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC),
 					},
 				},
 			},
