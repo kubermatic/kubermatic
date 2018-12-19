@@ -26,7 +26,7 @@ env "GOBIN=${TMP_DIR}/bin" go install
 export PATH="${TMP_DIR}/bin:${PATH}"
 
 cd ${API_DIR}/cmd/kubermatic-api/
-${GOPATH}/bin/swaggger generate spec --scan-models -o ${TMP_SWAGGER}
+swaggger generate spec --scan-models -o ${TMP_SWAGGER}
 diff -Naup ${SWAGGER_FILE} ${TMP_SWAGGER}
 
-${GOPATH}/bin/swaggger validate ${SWAGGER_FILE}
+swaggger validate ${SWAGGER_FILE}
