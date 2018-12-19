@@ -13,7 +13,7 @@ type Time struct {
 }
 
 // String returns the representation of the time.
-func (t Time) String() string {
+func (t *Time) String() string {
 	return t.Time.String()
 }
 
@@ -34,7 +34,7 @@ func Now() Time {
 }
 
 // MarshalJSON implements the json.Marshaler interface.
-func (t Time) MarshalJSON() ([]byte, error) {
+func (t *Time) MarshalJSON() ([]byte, error) {
 	return json.Marshal(t.UTC().Format(time.RFC3339))
 }
 

@@ -32,9 +32,11 @@ type ObjectMeta struct {
 	Name string `json:"name"`
 
 	// DeletionTimestamp is a timestamp representing the server time when this object was deleted.
+	// swagger:strfmt date-time
 	DeletionTimestamp *Time `json:"deletionTimestamp,omitempty"`
 
 	// CreationTimestamp is a timestamp representing the server time when this object was created.
+	// swagger:strfmt date-time
 	CreationTimestamp Time `json:"creationTimestamp,omitempty"`
 }
 
