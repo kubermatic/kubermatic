@@ -24,9 +24,9 @@ linters:
 
 issues:
   exclude:
-  - cyclomatic complexity 43 of func `main` is high (> 30)
-  - cyclomatic complexity 37 of func `migrateToProject` is high (> 30)
-  - cyclomatic complexity 31 of func `(*azure).CleanUpCloudProvider` is high (> 30)
+  - cyclomatic complexity 43 of func `main` is high
+  - cyclomatic complexity 37 of func `migrateToProject` is high
+  - 'CleanUpCloudProvider` is high'
   - string `get` has 6 occurrences, make it a constant
   - struct of size 536 bytes could be of size 520 bytes
   - "`selector` can be `expvar.Var`"
