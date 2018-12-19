@@ -40,8 +40,8 @@ function cleanup {
     -o go-template='{{range .items}}{{.metadata.name}}{{end}}' \
       |xargs -I ^ kubectl label cluster ^ worker-name-
 }
-trap cleanup EXIT
 
+trap cleanup EXIT
 echo "Starting conformance tests"
 ./conformance-tests \
   -debug \

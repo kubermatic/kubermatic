@@ -33,6 +33,9 @@ spec:
         args:
         - -v=4
         - -logtostderr
+        {{- if .Values.kubermatic.worker_name }}
+        - -worker-name={{ .Values.kubermatic.worker_name }}
+        {{- end }}
       - name: copy-addons
         image: '{{ .Values.kubermatic.controller.addons.image.repository }}:{{ .Values.kubermatic.controller.addons.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.controller.addons.image.pullPolicy }}
@@ -84,6 +87,9 @@ spec:
           {{- end }}
           {{- if .Values.kubermatic.monitoringScrapeAnnotationPrefix }}
           - -monitoring-scrape-annotation-prefix={{ .Values.kubermatic.monitoringScrapeAnnotationPrefix }}
+          {{- end }}
+          {{- if .Values.kubermatic.worker_name }}
+          - -worker-name={{ .Values.kubermatic.worker_name }}
           {{- end }}
           image: '{{.Values.kubermatic.controller.image.repository}}:{{.Values.kubermatic.controller.image.tag}}'
           imagePullPolicy: {{.Values.kubermatic.controller.image.pullPolicy}}
