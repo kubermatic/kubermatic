@@ -1,0 +1,43 @@
+{{ if .Values.kubermatic.deployCRDCHeck }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "check-crd-migration-{{ .Release.Name }}-{{ .Release.Revision }}"
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,pre-delete
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      name: "check-crd-migration-{{ .Release.Name }}-{{ .Release.Revision }}"
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: kubermatic
+      containers:
+      - name: check-crd-migration
+        image: "quay.io/kubermatic/helm:2.11.0-2"
+        command: ["/bin/bash"]
+        args:
+        - "-c"
+        - |
+          set -euo pipefail
+          # Iterate over all namespaces and search for ConfigMaps with the labels NAME=kubermatic&OWNER=TILLER
+          for NS in $(kubectl get ns -o json | jq -r '.items[].metadata.name');do
+            echo "Checking Namespace ${NS}"
+            CONFIGMAPS=$(kubectl -n ${NS} get ConfigMap -l "NAME=kubermatic,OWNER=TILLER" -o json | jq -r '.items[].metadata.name')
+            # Check all revisions
+            for CM in ${CONFIGMAPS};do
+              REVISION=$(kubectl -n ${NS} get ConfigMap ${CM} -o json | jq -r '.metadata.labels.VERSION')
+              RELEASE=$(helm --tiller-namespace=${NS} get kubermatic --revision ${REVISION})
+              if [[ ${RELEASE} == *"CustomResourceDefinition"* ]]; then
+                echo "========================================"
+                echo "================ WARNING ==============="
+                echo "========================================"
+                echo "The last release contains CustomResourceDefinitions. Before proceeding run the migration in charts/kubermatic/migrate/migrate-kubermatic-chart.sh"
+                echo "Otherwise clusters will be deleted!"
+                exit 1
+              fi
+              exit 0
+            done
+          done
+{{ end }}

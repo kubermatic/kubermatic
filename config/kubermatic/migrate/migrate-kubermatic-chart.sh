@@ -17,18 +17,16 @@ VALUES_FILE=$(realpath ${1})
 TILLER_NAMESPACE=${2:-'kube-system'}
 cd "$(dirname "$0")/../../"
 
-
 # Delete the kubermatic namespace to enable a clean install afterwards
 kubectl delete --ignore-not-found=true ns kubermatic
 
 # Delete a ClusterRoleBinding - which is the only thing which does not exist in the kubermatic namespace
 kubectl delete --ignore-not-found=true clusterrolebindings.rbac.authorization.k8s.io kubermatic
 
-for cm in $(kubectl -n kubermatic-installer get configmap -o json | jq -r '.items[].metadata.name' | grep 'kubermatic');do
-    echo "Deleting helm release info in ConfigMap: ${TILLER_NAMESPACE}/${cm}"
-    kubectl -n ${TILLER_NAMESPACE} delete configmap ${cm}
-done
+kubectl -n ${TILLER_NAMESPACE} delete configmap -l NAME=kubermatic
 
 helm upgrade --install --tiller-namespace=${TILLER_NAMESPACE} \
     --values ${VALUES_FILE} \
-    --namespace kubermatic kubermatic ./kubermatic/
+    --namespace kubermatic kubermatic \
+    --set kubermatic.deployCRDCHeck=false \
+    ./kubermatic/
