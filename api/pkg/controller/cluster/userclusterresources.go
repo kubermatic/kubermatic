@@ -3,6 +3,10 @@ package cluster
 import (
 	"fmt"
 
+	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
+
+	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
+
 	"github.com/go-test/deep"
 	"github.com/golang/glog"
 
@@ -185,6 +189,8 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster, cli
 		machinecontroller.KubePublicRoleBinding,
 		machinecontroller.ClusterInfoAnonymousRoleBinding,
 		metricsserver.RolebindingAuthReader,
+		scheduler.RoleBindingAuthDelegator,
+		controllermanager.RoleBindingAuthDelegator,
 	}
 
 	for _, create := range creators {
@@ -293,6 +299,8 @@ func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.Clus
 		vpnsidecar.DnatControllerClusterRoleBinding,
 		metricsserver.ClusterRoleBindingResourceReader,
 		metricsserver.ClusterRoleBindingAuthDelegator,
+		scheduler.ClusterRoleBindingAuthDelegator,
+		controllermanager.ClusterRoleBindingAuthDelegator,
 	}
 
 	if len(c.Spec.MachineNetworks) > 0 {

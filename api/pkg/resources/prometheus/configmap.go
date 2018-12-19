@@ -135,7 +135,7 @@ scrape_configs:
     target_label: __metrics_path__
     replacement: /api/v1/nodes/${1}/proxy/metrics
 
-- job_name: 'apiservers'
+- job_name: 'kubernetes-control-plane'
   kubernetes_sd_configs:
   - role: pod
     namespaces:
@@ -150,7 +150,7 @@ scrape_configs:
     # does not contain a common name for the pods ip address
     insecure_skip_verify: true
   relabel_configs:
-  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape_apiserver]
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape_with_kube_cert]
     action: keep
     regex: true
   - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
@@ -168,6 +168,10 @@ scrape_configs:
   - source_labels: [__meta_kubernetes_pod_name]
     action: replace
     target_label: pod
+  - source_labels: [__meta_kubernetes_pod_label_app]
+    action: replace
+    target_label: job
+
 
 - job_name: 'user-cluster-pods'
   scheme: https
