@@ -317,7 +317,7 @@ func apiNodeStatus(status apiv1.NodeStatus, inputNode *corev1.Node, hideInitialN
 	for _, address := range inputNode.Status.Addresses {
 		status.Addresses = append(status.Addresses, apiv1.NodeAddress{
 			Type:    string(address.Type),
-			Address: string(address.Address),
+			Address: address.Address,
 		})
 	}
 
@@ -351,7 +351,7 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 
 	if machine.Status.ErrorReason != nil {
 		nodeStatus.ErrorReason += string(*machine.Status.ErrorReason) + errGlue
-		nodeStatus.ErrorMessage += string(*machine.Status.ErrorMessage) + errGlue
+		nodeStatus.ErrorMessage += *machine.Status.ErrorMessage + errGlue
 	}
 
 	operatingSystemSpec, err := machineconversions.GetAPIV1OperatingSystemSpec(machine.Spec)

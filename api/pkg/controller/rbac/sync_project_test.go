@@ -185,7 +185,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				},
 			},
 			expectedClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkeies:owners",
 					},
@@ -202,7 +202,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 						Name:     "kubermatic:usersshkeies:owners",
 					},
 				},
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkeies:editors",
 					},
@@ -223,7 +223,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 			seedClusters:            2,
 			expectedActionsForSeeds: []string{"create", "create"},
 			expectedClusterRoleBindingsForSeeds: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:clusters:owners",
 					},
@@ -240,7 +240,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 						Name:     "kubermatic:clusters:owners",
 					},
 				},
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:clusters:editors",
 					},
@@ -285,7 +285,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				},
 			},
 			existingClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkeies:owners",
 					},
@@ -302,7 +302,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 						Name:     "kubermatic:usersshkeies:owners",
 					},
 				},
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkeies:editors",
 					},
@@ -321,7 +321,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				},
 			},
 			expectedClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkeies:owners",
 					},
@@ -344,7 +344,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 						Name:     "kubermatic:usersshkeies:owners",
 					},
 				},
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkeies:editors",
 					},
@@ -371,7 +371,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 			seedClusters:            2,
 			expectedActionsForSeeds: []string{"update", "update"},
 			existingClusterRoleBindingsForSeeds: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:clusters:owners",
 					},
@@ -388,7 +388,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 						Name:     "kubermatic:clusters:owners",
 					},
 				},
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:clusters:editors",
 					},
@@ -407,7 +407,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				},
 			},
 			expectedClusterRoleBindingsForSeeds: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:clusters:owners",
 					},
@@ -429,7 +429,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 						Name:     "kubermatic:clusters:owners",
 					},
 				},
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:clusters:editors",
 					},
@@ -595,10 +595,10 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 			existingClustersOn: map[string][]*kubermaticv1.Cluster{
 
 				// cluster resources that are on "a" physical location
-				"a": []*kubermaticv1.Cluster{
+				"a": {
 
 					// cluster "abcd" that belongs to "thunderball" project
-					&kubermaticv1.Cluster{
+					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "abcd",
 							UID:  types.UID("abcdID"),
@@ -614,7 +614,7 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 					},
 
 					// cluster "ab" that belongs to "plan9" project
-					&kubermaticv1.Cluster{
+					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "ab",
 							UID:  types.UID("abID"),
@@ -631,10 +631,10 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 				},
 
 				// cluster resources that are on "b" physical location
-				"b": []*kubermaticv1.Cluster{
+				"b": {
 
 					// cluster "xyz" that belongs to "plan9" project
-					&kubermaticv1.Cluster{
+					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "xyz",
 							UID:  types.UID("xyzID"),
@@ -650,7 +650,7 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 					},
 
 					// cluster "zzz" that belongs to "plan9" project
-					&kubermaticv1.Cluster{
+					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "zzz",
 							UID:  types.UID("zzzID"),
@@ -667,10 +667,10 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 				},
 
 				// cluster resources that are on "c" physical location
-				"c": []*kubermaticv1.Cluster{
+				"c": {
 
 					// cluster "cat" that belongs to "acme" project
-					&kubermaticv1.Cluster{
+					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "cat",
 							UID:  types.UID("catID"),
@@ -686,7 +686,7 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 					},
 
 					// cluster "bat" that belongs to "acme" project
-					&kubermaticv1.Cluster{
+					{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "bat",
 							UID:  types.UID("batID"),
@@ -703,9 +703,9 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 				},
 			},
 			deletedClustersOn: map[string][]string{
-				"a": []string{"ab"},
-				"b": []string{"xyz", "zzz"},
-				"c": []string{},
+				"a": {"ab"},
+				"b": {"xyz", "zzz"},
+				"c": {},
 			},
 		},
 	}
@@ -846,7 +846,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 			},
 			expectedActionsForMaster: []string{"get", "update", "get", "update"},
 			expectedClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkeies:owners",
 					},
@@ -857,7 +857,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 						Name:     "kubermatic:usersshkeies:owners",
 					},
 				},
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkeies:editors",
 					},
@@ -870,7 +870,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				},
 			},
 			existingClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkeies:owners",
 					},
@@ -887,7 +887,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 						Name:     "kubermatic:usersshkeies:owners",
 					},
 				},
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkeies:editors",
 					},
@@ -908,7 +908,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 			seedClusters:            2,
 			expectedActionsForSeeds: []string{"get", "update", "get", "update"},
 			expectedClusterRoleBindingsForSeeds: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:clusters:owners",
 					},
@@ -919,7 +919,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 						Name:     "kubermatic:clusters:owners",
 					},
 				},
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:clusters:editors",
 					},
@@ -932,7 +932,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				},
 			},
 			existingClusterRoleBindingsForSeeds: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:clusters:owners",
 					},
@@ -949,7 +949,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 						Name:     "kubermatic:clusters:owners",
 					},
 				},
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:clusters:editors",
 					},
@@ -1124,7 +1124,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 			projectToSync:   createProject("thunderball", createUser("James Bond")),
 			expectedActions: []string{"create", "create", "create"},
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1149,7 +1149,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						Name:     "kubermatic:project-thunderball:owners-thunderball",
 					},
 				},
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1174,7 +1174,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						Name:     "kubermatic:project-thunderball:editors-thunderball",
 					},
 				},
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:viewers-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1207,7 +1207,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 			name:          "scenario 2: no op when desicred RBAC Role Bindings exist",
 			projectToSync: createProject("thunderball", createUser("James Bond")),
 			existingClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1232,7 +1232,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						Name:     "kubermatic:project-thunderball:owners-thunderball",
 					},
 				},
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1257,7 +1257,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						Name:     "kubermatic:project-thunderball:editors-thunderball",
 					},
 				},
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:viewers-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1291,7 +1291,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 			projectToSync:   createProject("thunderball", createUser("James Bond")),
 			expectedActions: []string{"update", "update", "update"},
 			existingClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1316,7 +1316,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						Name:     "kubermatic:project-thunderball:owners-thunderball",
 					},
 				},
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1341,7 +1341,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						Name:     "kubermatic:project-thunderball:editors-thunderball",
 					},
 				},
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:viewers-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1368,7 +1368,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 				},
 			},
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1393,7 +1393,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						Name:     "kubermatic:project-thunderball:editors-thunderball",
 					},
 				},
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:viewers-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1510,7 +1510,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			},
 
 			expectedClusterRolesForSeeds: []*rbacv1.ClusterRole{
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:clusters:owners",
 					},
@@ -1523,7 +1523,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					},
 				},
 
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:clusters:editors",
 					},
@@ -1535,7 +1535,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 						},
 					},
 				},
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:clusters:viewers",
 					},
@@ -1550,7 +1550,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			},
 
 			expectedClusterRolesForMaster: []*rbacv1.ClusterRole{
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkeies:owners",
 					},
@@ -1563,7 +1563,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					},
 				},
 
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkeies:editors",
 					},
@@ -1597,7 +1597,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			},
 
 			expectedClusterRolesForMaster: []*rbacv1.ClusterRole{
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:userprojectbindings:owners",
 					},
@@ -1732,7 +1732,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 			projectToSync:   createProject("thunderball", createUser("James Bond")),
 			expectedActions: []string{"create", "create", "create"},
 			expectedClusterRoles: []*rbacv1.ClusterRole{
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1754,7 +1754,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 					},
 				},
 
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1775,7 +1775,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						},
 					},
 				},
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:viewers-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1804,7 +1804,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 			name:          "scenario 2: no op when desicred RBAC Roles exist",
 			projectToSync: createProject("thunderball", createUser("James Bond")),
 			existingClusterRoles: []*rbacv1.ClusterRole{
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1826,7 +1826,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 					},
 				},
 
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1847,7 +1847,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						},
 					},
 				},
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:viewers-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1877,7 +1877,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 			projectToSync:   createProject("thunderball", createUser("James Bond")),
 			expectedActions: []string{"update", "update"},
 			existingClusterRoles: []*rbacv1.ClusterRole{
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1899,7 +1899,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 					},
 				},
 
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1921,7 +1921,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 					},
 				},
 
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:viewers-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1944,7 +1944,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 				},
 			},
 			expectedClusterRoles: []*rbacv1.ClusterRole{
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
