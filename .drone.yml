@@ -27,7 +27,7 @@ pipeline:
     - cd api
     - make lint
     group: lint
-    image: quay.io/kubermatic/gometalinter:latest
+    image: golangci/golangci-lint:v1.12.3
     pull: true
   verify-addons-up-to-date:
     commands:

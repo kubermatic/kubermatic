@@ -64,7 +64,7 @@ fix:
 	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "goimports -w" $$UNFMT; goimports -w $$UNFMT; fi
 
 lint:
-	golangci-lint run
+	golangci-lint run -v
 
 cover:
 	./hack/cover.sh --html

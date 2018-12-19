@@ -1,0 +1,23 @@
+run:
+  deadline: 20m
+  skip-dirs:
+    - vendor
+
+linters:
+  enable:
+    - golint
+    - govet
+    - gofmt
+    - structcheck
+    - varcheck
+    - interfacer
+    - unconvert
+    - ineffassign
+    - goconst
+    - gocyclo
+    - maligned
+    - misspell
+    - gosimple
+    - unused
+    - errcheck
+  disable-all: true
