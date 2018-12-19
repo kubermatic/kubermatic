@@ -305,14 +305,14 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "key-c08aa5c7abf34504f18552846485267d-yafn",
 						Name:              "yafn",
-						CreationTimestamp: time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
 					},
 				},
 				apiv1.SSHKey{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "key-abc-yafn",
 						Name:              "abcd",
-						CreationTimestamp: time.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC),
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC),
 					},
 				},
 			},
@@ -838,7 +838,7 @@ func TestListClusters(t *testing.T) {
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "clusterAbcID",
 						Name:              "clusterAbc",
-						CreationTimestamp: time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
 					},
 					Spec: apiv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{
@@ -856,7 +856,7 @@ func TestListClusters(t *testing.T) {
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "clusterDefID",
 						Name:              "clusterDef",
-						CreationTimestamp: time.Date(2013, 02, 04, 01, 54, 0, 0, time.UTC),
+						CreationTimestamp: apiv1.Date(2013, 02, 04, 01, 54, 0, 0, time.UTC),
 					},
 					Spec: apiv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{
@@ -874,7 +874,7 @@ func TestListClusters(t *testing.T) {
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "clusterOpenstackID",
 						Name:              "clusterOpenstack",
-						CreationTimestamp: time.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC),
+						CreationTimestamp: apiv1.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC),
 					},
 					Spec: apiv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{

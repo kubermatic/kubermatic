@@ -3,14 +3,12 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"net/http"
-	"time"
-
 	"github.com/go-kit/kit/endpoint"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	"net/http"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
@@ -32,12 +30,11 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-
 		return apiv1.Project{
 			ObjectMeta: apiv1.ObjectMeta{
 				ID:                kubermaticProject.Name,
 				Name:              kubermaticProject.Spec.Name,
-				CreationTimestamp: kubermaticProject.CreationTimestamp.Time,
+				CreationTimestamp: apiv1.NewTime(kubermaticProject.CreationTimestamp.Time),
 			},
 			Status: kubermaticProject.Status.Phase,
 		}, nil
@@ -112,10 +109,11 @@ func convertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                kubermaticProject.Name,
 			Name:              kubermaticProject.Spec.Name,
-			CreationTimestamp: kubermaticProject.CreationTimestamp.Time,
-			DeletionTimestamp: func() *time.Time {
+			CreationTimestamp: apiv1.NewTime(kubermaticProject.CreationTimestamp.Time),
+			DeletionTimestamp: func() *apiv1.Time {
 				if kubermaticProject.DeletionTimestamp != nil {
-					return &kubermaticProject.DeletionTimestamp.Time
+					dt := apiv1.NewTime(kubermaticProject.DeletionTimestamp.Time)
+					return &dt
 				}
 				return nil
 			}(),

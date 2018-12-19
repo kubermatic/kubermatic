@@ -44,7 +44,7 @@ func createSSHKeyEndpoint(keyProvider provider.SSHKeyProvider, projectProvider p
 			ObjectMeta: apiv1.ObjectMeta{
 				ID:                key.Name,
 				Name:              key.Spec.Name,
-				CreationTimestamp: key.CreationTimestamp.Time,
+				CreationTimestamp: apiv1.NewTime(key.CreationTimestamp.Time),
 			},
 			Spec: apiv1.SSHKeySpec{
 				Fingerprint: key.Spec.Fingerprint,
@@ -109,7 +109,7 @@ func convertInternalSSHKeysToExternal(internalKeys []*kubermaticapiv1.UserSSHKey
 			ObjectMeta: apiv1.ObjectMeta{
 				ID:                key.Name,
 				Name:              key.Spec.Name,
-				CreationTimestamp: key.CreationTimestamp.Time,
+				CreationTimestamp: apiv1.NewTime(key.CreationTimestamp.Time),
 			},
 			Spec: apiv1.SSHKeySpec{
 				Fingerprint: key.Spec.Fingerprint,

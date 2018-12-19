@@ -4300,6 +4300,11 @@
       "type": "object",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/semver"
     },
+    "Time": {
+      "description": "Time is a wrapper around time.Time which supports correct\nmarshaling JSON.  Wrappers are provided for many\nof the factory methods that the time package offers.",
+      "type": "object",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "UbuntuSpec": {
       "description": "UbuntuSpec ubuntu specific settings",
       "type": "object",
