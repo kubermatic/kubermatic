@@ -1,34 +1,4 @@
 pipeline:
-  dep:
-    commands:
-    - cd api
-    - dep ensure -v
-    - git diff --exit-code
-    image: quay.io/kubermatic/dep:0.5.0-1
-  gofmt:
-    commands:
-    - cd api
-    - make gofmt
-    image: golang:1.11.0
-  verify-codegen:
-    commands:
-    - cd api
-    - ./hack/verify-codegen.sh
-    image: golang:1.11.0
-    pull: true
-  license-validation:
-    commands:
-    - cd api
-    - wwhrd check -f ../allowed_licensed.yaml
-    group: lint
-    image: quay.io/kubermatic/wwhrd:0.2.1-1
-  lint:
-    commands:
-    - cd api
-    - make lint
-    group: lint
-    image: golangci/golangci-lint:v1.12.3
-    pull: true
   verify-addons-up-to-date:
     commands:
     - ./api/hack/verify-addon-version.sh
@@ -37,27 +7,6 @@ pipeline:
     pull: true
     volumes:
     - /var/run/docker.sock:/var/run/docker.sock
-  verify-swagger-spec:
-    commands:
-    - cd api
-    - ./hack/verify-swagger.sh
-    group: lint
-    image: golang:1.11.0
-    pull: true
-  build:
-    commands:
-    - cd api
-    - make build
-    group: build
-    image: golang:1.11.0
-    pull: true
-  test:
-    commands:
-    - cd api
-    - make test
-    group: build
-    image: golang:1.11.0
-    pull: true
   docker:
     commands:
     - export VAULT_ADDR=https://vault.loodse.com/
