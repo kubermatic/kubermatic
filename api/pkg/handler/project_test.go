@@ -48,7 +48,7 @@ func TestListProjectEndpoint(t *testing.T) {
 				Email: testUserEmail,
 			},
 			ExpectedResponse: []apiv1.Project{
-				apiv1.Project{
+				{
 					Status: "Active",
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "my-first-project-ID",
@@ -56,7 +56,7 @@ func TestListProjectEndpoint(t *testing.T) {
 						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
 					},
 				},
-				apiv1.Project{
+				{
 					Status: "Active",
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "my-third-project-ID",

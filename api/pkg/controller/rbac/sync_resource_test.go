@@ -60,7 +60,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 			},
 
 			expectedClusterRoles: []*rbacv1.ClusterRole{
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:cluster-abcd:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -82,7 +82,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 					},
 				},
 
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:cluster-abcd:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -103,7 +103,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 						},
 					},
 				},
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:cluster-abcd:viewers-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -127,7 +127,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 			},
 
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:cluster-abcd:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -153,7 +153,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 					},
 				},
 
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:cluster-abcd:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -179,7 +179,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 					},
 				},
 
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:cluster-abcd:viewers-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -238,7 +238,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 			},
 
 			expectedClusterRoles: []*rbacv1.ClusterRole{
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkey-abcd:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -260,7 +260,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 					},
 				},
 
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkey-abcd:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -281,7 +281,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 						},
 					},
 				},
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkey-abcd:viewers-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -305,7 +305,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 			},
 
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkey-abcd:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -331,7 +331,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 					},
 				},
 
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkey-abcd:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -357,7 +357,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 					},
 				},
 
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkey-abcd:viewers-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -420,7 +420,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 			},
 
 			expectedClusterRoles: []*rbacv1.ClusterRole{
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:userprojectbinding-abcd:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -444,7 +444,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 			},
 
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:userprojectbinding-abcd:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{

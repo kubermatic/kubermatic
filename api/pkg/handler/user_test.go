@@ -67,7 +67,7 @@ func TestGetUsersForProject(t *testing.T) {
 			},
 			ExistingAPIUser: *genAPIUser("john", "john@acme.com"),
 			ExpectedResponse: []apiv1.User{
-				apiv1.User{
+				{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "4b2d8785b49bad23638b17d8db76857a79bf79441241a78a97d88cc64bbf766e",
 						Name:              "john",
@@ -75,14 +75,14 @@ func TestGetUsersForProject(t *testing.T) {
 					},
 					Email: "john@acme.com",
 					Projects: []apiv1.ProjectGroup{
-						apiv1.ProjectGroup{
+						{
 							GroupPrefix: "owners",
 							ID:          "foo-ID",
 						},
 					},
 				},
 
-				apiv1.User{
+				{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "0a0a58273565a8f3dcf779375d9debd0f685d94dc56651a16bff3bf901c0b127",
 						Name:              "alice",
@@ -90,14 +90,14 @@ func TestGetUsersForProject(t *testing.T) {
 					},
 					Email: "alice@acme.com",
 					Projects: []apiv1.ProjectGroup{
-						apiv1.ProjectGroup{
+						{
 							GroupPrefix: "viewers",
 							ID:          "foo-ID",
 						},
 					},
 				},
 
-				apiv1.User{
+				{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6",
 						Name:              "bob",
@@ -105,7 +105,7 @@ func TestGetUsersForProject(t *testing.T) {
 					},
 					Email: "bob@acme.com",
 					Projects: []apiv1.ProjectGroup{
-						apiv1.ProjectGroup{
+						{
 							GroupPrefix: "editors",
 							ID:          "foo-ID",
 						},
