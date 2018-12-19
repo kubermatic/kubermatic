@@ -21,3 +21,19 @@ linters:
     - unused
     - errcheck
   disable-all: true
+
+issues:
+  exclude:
+  - cyclomatic complexity 43 of func `main` is high (> 30)
+  - cyclomatic complexity 37 of func `migrateToProject` is high (> 30)
+  - cyclomatic complexity 31 of func `(*azure).CleanUpCloudProvider` is high (> 30)
+  - string `get` has 6 occurrences, make it a constant
+  - struct of size 536 bytes could be of size 520 bytes
+  - "`selector` can be `expvar.Var`"
+  - "`data` can be `github.com/kubermatic/kubermatic/api/pkg/resources.RoleBindingDataProvider`"
+  - "`data` can be `github.com/kubermatic/kubermatic/api/pkg/resources.DeploymentDataProvider`"
+  - "`data` can be `github.com/kubermatic/kubermatic/api/pkg/resources.SecretDataProvider`"
+  - "`data` can be `github.com/kubermatic/kubermatic/api/pkg/resources.ConfigMapDataProvider`"
+  - "`data` can be `github.com/kubermatic/kubermatic/api/pkg/resources.ClusterRoleBindingDataProvider`"
+  - "`updateManager` can be `github.com/kubermatic/kubermatic/api/pkg/handler.UpdateManager`"
+  - "`store` can be `github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/cache.KeyGetter`"
