@@ -4,15 +4,29 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+function cleanup() {
+    rm -f $TMP_SWAGGER
+
+    if [[ -n "${TMP_DIR:-}" ]]; then
+        rm -rf "${TMP_DIR}"
+    fi
+}
+trap cleanup EXIT SIGINT SIGTERM
+
 API_DIR="$(go env GOPATH)/src/github.com/kubermatic/kubermatic/api"
 SWAGGER_FILE="swagger.json"
 TMP_SWAGGER="${SWAGGER_FILE}.tmp"
-trap "rm -f $TMP_SWAGGER" EXIT SIGINT SIGTERM
+
+# install swagger to temp dir
+TMP_DIR=$(mktemp -d)
+mkdir -p "${TMP_DIR}/bin"
 
 cd ${API_DIR}/vendor/github.com/go-swagger/go-swagger/cmd/swagger
-go install
+env "GOBIN=${TMP_DIR}/bin" go install
+export PATH="${TMP_DIR}/bin:${PATH}"
+
 cd ${API_DIR}/cmd/kubermatic-api/
-swagger generate spec --scan-models -o ${TMP_SWAGGER}
+${GOPATH}/bin/swaggger generate spec --scan-models -o ${TMP_SWAGGER}
 diff -Naup ${SWAGGER_FILE} ${TMP_SWAGGER}
 
-swagger validate ${SWAGGER_FILE}
+${GOPATH}/bin/swaggger validate ${SWAGGER_FILE}
