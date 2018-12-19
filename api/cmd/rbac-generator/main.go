@@ -81,7 +81,7 @@ func main() {
 				glog.Fatal(err)
 			}
 
-			clusterPrefix := "unknown"
+			var clusterPrefix string
 			if ctxName == clientcmdConfig.CurrentContext {
 				glog.V(2).Infof("Adding %s as master cluster", ctxName)
 				clusterPrefix = rbaccontroller.MasterProviderPrefix

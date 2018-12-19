@@ -502,16 +502,6 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
-			kubermaticObjs := []runtime.Object{}
-			projectIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
-			if test.existingProject != nil {
-				err := projectIndexer.Add(test.existingProject)
-				if err != nil {
-					t.Fatal(err)
-				}
-				kubermaticObjs = append(kubermaticObjs, test.existingProject)
-			}
-
 			objs := []runtime.Object{}
 			clusterRoleIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			for _, existingClusterRole := range test.existingClusterRoles {
