@@ -18,7 +18,7 @@ func GetVerticalPodAutoscaler(name string, labels map[string]string) VerticalPod
 
 		pdb.Name = name
 
-		updateMode := autoscalingv1beta1.UpdateModeInitial
+		updateMode := autoscalingv1beta1.UpdateModeOff
 		pdb.Spec = autoscalingv1beta1.VerticalPodAutoscalerSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
