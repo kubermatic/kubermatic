@@ -80,6 +80,10 @@ func tryToDeleteCluster(log *logrus.Entry, cluster *kubermaticv1.Cluster, cluste
 
 	// Disable eviction on all nodes
 	nodes, err := kubeClient.CoreV1().Nodes().List(metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to list nodes: %v", err)
+	}
+
 	for _, node := range nodes.Items {
 		log.Debugf("Disabling eviction on node '%s' ...", node.Name)
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {

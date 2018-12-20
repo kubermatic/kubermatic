@@ -22,7 +22,6 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 	tests := []struct {
 		name                        string
 		dependantToSync             *projectResourceQueueItem
-		existingProject             *kubermaticv1.Project
 		expectedClusterRoles        []*rbacv1.ClusterRole
 		existingClusterRoles        []*rbacv1.ClusterRole
 		expectedClusterRoleBindings []*rbacv1.ClusterRoleBinding
@@ -34,7 +33,6 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 		{
 			name:            "scenario 1: a proper set of RBAC Role/Binding is generated for a cluster",
 			expectedActions: []string{"create", "create", "create", "create", "create", "create"},
-			existingProject: createProject("thunderball", createUser("James Bond")),
 
 			dependantToSync: &projectResourceQueueItem{
 				gvr: schema.GroupVersionResource{
@@ -60,7 +58,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 			},
 
 			expectedClusterRoles: []*rbacv1.ClusterRole{
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:cluster-abcd:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -82,7 +80,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 					},
 				},
 
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:cluster-abcd:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -103,7 +101,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 						},
 					},
 				},
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:cluster-abcd:viewers-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -127,7 +125,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 			},
 
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:cluster-abcd:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -153,7 +151,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 					},
 				},
 
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:cluster-abcd:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -179,7 +177,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 					},
 				},
 
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:cluster-abcd:viewers-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -211,7 +209,6 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 		{
 			name:            "scenario 2: a proper set of RBAC Role/Binding is generated for an ssh key",
 			expectedActions: []string{"create", "create", "create", "create", "create", "create"},
-			existingProject: createProject("thunderball", createUser("James Bond")),
 
 			dependantToSync: &projectResourceQueueItem{
 				gvr: schema.GroupVersionResource{
@@ -238,7 +235,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 			},
 
 			expectedClusterRoles: []*rbacv1.ClusterRole{
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkey-abcd:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -260,7 +257,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 					},
 				},
 
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkey-abcd:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -281,7 +278,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 						},
 					},
 				},
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkey-abcd:viewers-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -305,7 +302,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 			},
 
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkey-abcd:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -331,7 +328,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 					},
 				},
 
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkey-abcd:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -357,7 +354,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 					},
 				},
 
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkey-abcd:viewers-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -389,7 +386,6 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 		{
 			name:            "scenario 3: a proper set of RBAC Role/Binding is generated for a userprojectbinding resource",
 			expectedActions: []string{"create", "create"},
-			existingProject: createProject("thunderball", createUser("James Bond")),
 
 			dependantToSync: &projectResourceQueueItem{
 				gvr: schema.GroupVersionResource{
@@ -420,7 +416,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 			},
 
 			expectedClusterRoles: []*rbacv1.ClusterRole{
-				&rbacv1.ClusterRole{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:userprojectbinding-abcd:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -444,7 +440,7 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 			},
 
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
-				&rbacv1.ClusterRoleBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:userprojectbinding-abcd:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
@@ -474,9 +470,8 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 
 		// scenario 4
 		{
-			name:            "scenario 4 an error is returned when syncing a cluster that doesn't belong to a project",
-			expectError:     true,
-			existingProject: createProject("thunderball", createUser("James Bond")),
+			name:        "scenario 4 an error is returned when syncing a cluster that doesn't belong to a project",
+			expectError: true,
 			dependantToSync: &projectResourceQueueItem{
 				gvr: schema.GroupVersionResource{
 					Group:    kubermaticv1.SchemeGroupVersion.Group,
@@ -502,16 +497,6 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
-			kubermaticObjs := []runtime.Object{}
-			projectIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
-			if test.existingProject != nil {
-				err := projectIndexer.Add(test.existingProject)
-				if err != nil {
-					t.Fatal(err)
-				}
-				kubermaticObjs = append(kubermaticObjs, test.existingProject)
-			}
-
 			objs := []runtime.Object{}
 			clusterRoleIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			for _, existingClusterRole := range test.existingClusterRoles {

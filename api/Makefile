@@ -9,7 +9,6 @@ DOCKERTAGS=$(TAGS) latestbuild
 DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKERTAGS), -t $(REPO):$(tag))
 KUBERMATICCOMMIT=$(shell git log -1 --format=%H)
 LDFLAGS += -extldflags '-static' -X github.com/kubermatic/kubermatic/api/pkg/resources.KUBERMATICCOMMIT=$(KUBERMATICCOMMIT)
-HAS_GOMETALINTER:= $(shell command -v gometalinter 2> /dev/null)
 HAS_DEP:= $(shell command -v dep 2> /dev/null)
 HAS_GIT:= $(shell command -v git 2> /dev/null)
 BUILD_DEST?=_build
@@ -65,20 +64,7 @@ fix:
 	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "goimports -w" $$UNFMT; goimports -w $$UNFMT; fi
 
 lint:
-ifndef HAS_GOMETALINTER
-	go get -u github.com/alecthomas/gometalinter
-	gometalinter --install
-endif
-	{ \
-	set -e ;\
-	echo "gometalinter" ;\
-	gometalinter --config gometalinter.json ./... ;\
-	echo "forbidden functions" ;\
-	./hack/verify-forbidden-functions.sh ;\
-	GOFILES=$$(find . -type f -name '*.go' -not -path "./vendor/*") ;\
-	echo "misspell -error -locale US" ;\
-	misspell -error -locale US $$GOFILES ;\
-	}
+	golangci-lint run -v
 
 cover:
 	./hack/cover.sh --html
@@ -91,5 +77,19 @@ run-api-server:
 
 run-rbac-generator:
 	./hack/run-rbac-generator.sh
+
+verify: gofmt
+		./hack/verify-codegen.sh
+		./hack/verify-swagger.sh
+
+check-dependencies:
+	# We need mercurial for bitbucket.org/ww/goautoneg, otherwise dep hangs forever
+	which hg >/dev/null 2>&1 || apt update && apt install -y mercurial
+	dep version || go get -u github.com/golang/dep/cmd/dep
+	dep status
+	git diff --exit-code
+
+license-validation:
+	wwhrd check -f ../allowed_licensed.yaml
 
 .PHONY: vendor build install test check cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator test-update-fixture $(TARGET)

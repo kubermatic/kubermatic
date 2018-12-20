@@ -115,14 +115,14 @@ func TestListSSHKeys(t *testing.T) {
 			Name: "scenario 1: gets a list of ssh keys assigned to cluster",
 			Body: ``,
 			ExpectedKeys: []apiv1.SSHKey{
-				apiv1.SSHKey{
+				{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "key-c08aa5c7abf34504f18552846485267d-first-key",
 						Name:              "first-key",
 						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
 					},
 				},
-				apiv1.SSHKey{
+				{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "key-abc-second-key",
 						Name:              "second-key",
