@@ -6,6 +6,8 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
+
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/middleware"
 )
 
 // OIDCConfiguration is a struct that holds
@@ -51,7 +53,7 @@ func (r Routing) RegisterV1Optional(mux *mux.Router, oidcKubeConfEndpoint bool, 
 func (r Routing) createOIDCKubeconfig(oidcCfg OIDCConfiguration) http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddlewareUnauthorized(),
 		)(createOIDCKubeconfig(r.projectProvider, r.oidcIssuer, oidcCfg)),
 		decodeCreateOIDCKubeconfig,

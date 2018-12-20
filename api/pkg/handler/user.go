@@ -15,6 +15,7 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
@@ -23,7 +24,7 @@ import (
 
 func deleteMemberFromProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		req, ok := request.(DeleteUserFromProjectReq)
 		if !ok {
 			return nil, k8cerrors.NewBadRequest("invalid request")
@@ -67,7 +68,7 @@ func deleteMemberFromProject(projectProvider provider.ProjectProvider, userProvi
 
 func editMemberOfProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		req, ok := request.(EditUserInProjectReq)
 		if !ok {
 			return nil, k8cerrors.NewBadRequest("invalid request")
@@ -118,7 +119,7 @@ func editMemberOfProject(projectProvider provider.ProjectProvider, userProvider 
 
 func listMembersOfProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		req, ok := request.(GetProjectRq)
 		if !ok {
 			return nil, k8cerrors.NewBadRequest("invalid request")
@@ -156,7 +157,7 @@ func listMembersOfProject(projectProvider provider.ProjectProvider, userProvider
 func addUserToProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AddUserToProjectReq)
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
 		err := req.Validate(userInfo)
 		if err != nil {
@@ -198,7 +199,7 @@ func addUserToProject(projectProvider provider.ProjectProvider, userProvider pro
 
 func getCurrentUserEndpoint(users provider.UserProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		authenticatedUser := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
 
 		bindings, err := memberMapper.MappingsFor(authenticatedUser.Spec.Email)
 		if err != nil {
@@ -255,7 +256,7 @@ func filterExternalUser(externalUser *apiv1.User, projectID string) *apiv1.User 
 func (r Routing) userSaverMiddleware() endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			rawAuthenticatesUser := ctx.Value(authenticatedUserContextKey)
+			rawAuthenticatesUser := ctx.Value(middleware.AuthenticatedUserContextKey)
 			if rawAuthenticatesUser == nil {
 				return nil, errors.New("no user in context found")
 			}
@@ -277,7 +278,7 @@ func (r Routing) userSaverMiddleware() endpoint.Middleware {
 					}
 				}
 			}
-			return next(context.WithValue(ctx, userCRContextKey, user), request)
+			return next(context.WithValue(ctx, middleware.UserCRContextKey, user), request)
 		}
 	}
 }
@@ -285,7 +286,7 @@ func (r Routing) userSaverMiddleware() endpoint.Middleware {
 func (r Routing) userInfoMiddleware() endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			user, ok := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+			user, ok := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
 			if !ok {
 				return nil, k8cerrors.New(http.StatusInternalServerError, "unable to get authenticated user object")
 			}
@@ -300,7 +301,7 @@ func (r Routing) userInfoMiddleware() endpoint.Middleware {
 				return nil, kubernetesErrorToHTTPError(err)
 			}
 
-			return next(context.WithValue(ctx, userInfoContextKey, uInfo), request)
+			return next(context.WithValue(ctx, middleware.UserInfoContextKey, uInfo), request)
 		}
 	}
 }
@@ -329,7 +330,7 @@ func (r Routing) userInfoMiddlewareUnauthorized() endpoint.Middleware {
 			if err != nil {
 				return nil, kubernetesErrorToHTTPError(err)
 			}
-			return next(context.WithValue(ctx, userInfoContextKey, uInfo), request)
+			return next(context.WithValue(ctx, middleware.UserInfoContextKey, uInfo), request)
 		}
 	}
 }

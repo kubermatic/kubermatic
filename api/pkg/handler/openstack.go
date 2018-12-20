@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/middleware"
 
 	"github.com/go-kit/kit/endpoint"
 
@@ -323,8 +324,8 @@ func getOpenstackSubnets(providers provider.CloudRegistry, username, password, d
 }
 
 func getClusterForOpenstack(ctx context.Context, projectProvider provider.ProjectProvider, projectID string, clusterID string) (*kubermaticv1.Cluster, error) {
-	clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-	userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+	userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 	_, err := projectProvider.Get(userInfo, projectID, &provider.ProjectGetOptions{})
 	if err != nil {
 		return nil, kubernetesErrorToHTTPError(err)
