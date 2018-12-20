@@ -67,7 +67,7 @@ func TestListBinding(t *testing.T) {
 			authenticatedUser: createAuthenitactedUser(),
 			projectToSync:     createProject("1234"),
 			existingBindings: []*kubermaticv1.UserProjectBinding{
-				&kubermaticv1.UserProjectBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "abcdBinding",
 					},
@@ -78,7 +78,7 @@ func TestListBinding(t *testing.T) {
 					},
 				},
 
-				&kubermaticv1.UserProjectBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "cdBinding",
 					},
@@ -89,7 +89,7 @@ func TestListBinding(t *testing.T) {
 					},
 				},
 
-				&kubermaticv1.UserProjectBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "differentProjectBinding",
 					},
@@ -101,7 +101,7 @@ func TestListBinding(t *testing.T) {
 				},
 			},
 			expectedBindings: []*kubermaticv1.UserProjectBinding{
-				&kubermaticv1.UserProjectBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "abcdBinding",
 					},
@@ -111,7 +111,7 @@ func TestListBinding(t *testing.T) {
 						Group:     fmt.Sprintf("owners-%s", createProject("123").Name),
 					},
 				},
-				&kubermaticv1.UserProjectBinding{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "cdBinding",
 					},

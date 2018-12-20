@@ -80,7 +80,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 		ClusterToSync:   "clusterAbcID",
 		ExistingAPIUser: genDefaultAPIUser(),
 		ExpectedSSHKeys: []*kubermaticv1.UserSSHKey{
-			&kubermaticv1.UserSSHKey{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 					OwnerReferences: []metav1.OwnerReference{
@@ -96,7 +96,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 					Clusters: []string{},
 				},
 			},
-			&kubermaticv1.UserSSHKey{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "key-abc-yafn",
 					OwnerReferences: []metav1.OwnerReference{
@@ -301,14 +301,14 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 			Name: "scenario 1: gets a list of ssh keys assigned to cluster",
 			Body: ``,
 			ExpectedKeys: []apiv1.SSHKey{
-				apiv1.SSHKey{
+				{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "key-c08aa5c7abf34504f18552846485267d-yafn",
 						Name:              "yafn",
 						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
 					},
 				},
-				apiv1.SSHKey{
+				{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "key-abc-yafn",
 						Name:              "abcd",

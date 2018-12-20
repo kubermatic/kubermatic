@@ -20,7 +20,7 @@ import (
 var (
 	testStoreContainer = corev1.Container{Name: "kubermatic-store",
 		Image:        "busybox",
-		VolumeMounts: []corev1.VolumeMount{corev1.VolumeMount{Name: SharedVolumeName, MountPath: "/etcd-backups"}}}
+		VolumeMounts: []corev1.VolumeMount{{Name: SharedVolumeName, MountPath: "/etcd-backups"}}}
 	testCleanupContainer = corev1.Container{Name: "kubermatic-cleanup",
 		Image: "busybox",
 	}

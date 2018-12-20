@@ -383,7 +383,7 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 			return nil, fmt.Errorf("failed to execute templating on file %s: %v", filename, err)
 		}
 
-		sd := strings.TrimSpace(string(bufferAll.String()))
+		sd := strings.TrimSpace(bufferAll.String())
 		if len(sd) == 0 {
 			glog.V(6).Infof("skipping %s/%s as its empty after parsing", cluster.Status.NamespaceName, addon.Name)
 			continue

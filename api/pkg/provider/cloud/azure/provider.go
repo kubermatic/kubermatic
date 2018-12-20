@@ -287,14 +287,14 @@ func ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 		},
 		SecurityGroupPropertiesFormat: &network.SecurityGroupPropertiesFormat{
 			Subnets: &[]network.Subnet{
-				network.Subnet{
+				{
 					Name: to.StringPtr(cloud.Azure.SubnetName),
 					ID:   to.StringPtr(assembleSubnetID(cloud)),
 				},
 			},
 			// inbound
 			SecurityRules: &[]network.SecurityRule{
-				network.SecurityRule{
+				{
 					Name: to.StringPtr("ssh_ingress"),
 					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 						Direction:                network.SecurityRuleDirectionInbound,
@@ -307,7 +307,7 @@ func ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 						Priority:                 to.Int32Ptr(100),
 					},
 				},
-				network.SecurityRule{
+				{
 					Name: to.StringPtr("kubelet"),
 					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 						Direction:                network.SecurityRuleDirectionInbound,
@@ -320,7 +320,7 @@ func ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 						Priority:                 to.Int32Ptr(101),
 					},
 				},
-				network.SecurityRule{
+				{
 					Name: to.StringPtr("inter_node_comm"),
 					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 						Direction:                network.SecurityRuleDirectionInbound,
@@ -333,7 +333,7 @@ func ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 						Priority:                 to.Int32Ptr(200),
 					},
 				},
-				network.SecurityRule{
+				{
 					Name: to.StringPtr("azure_load_balancer"),
 					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 						Direction:                network.SecurityRuleDirectionInbound,
@@ -346,7 +346,7 @@ func ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 						Priority:                 to.Int32Ptr(300),
 					},
 				},
-				network.SecurityRule{
+				{
 					Name: to.StringPtr("deny_all"),
 					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 						Direction:                network.SecurityRuleDirectionInbound,
@@ -360,7 +360,7 @@ func ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 					},
 				},
 				// outbound
-				network.SecurityRule{
+				{
 					Name: to.StringPtr("outbound_allow_all"),
 					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 						Direction:                network.SecurityRuleDirectionOutbound,
@@ -451,7 +451,7 @@ func ensureRouteTable(cloud kubermaticv1.CloudSpec, location string) error {
 		Location: to.StringPtr(location),
 		RouteTablePropertiesFormat: &network.RouteTablePropertiesFormat{
 			Subnets: &[]network.Subnet{
-				network.Subnet{
+				{
 					Name: to.StringPtr(cloud.Azure.SubnetName),
 					ID:   to.StringPtr(assembleSubnetID(cloud)),
 				},
