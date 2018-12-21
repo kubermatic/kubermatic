@@ -17,7 +17,6 @@ import (
 	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
-	fakeauth "github.com/kubermatic/kubermatic/api/pkg/handler/auth/fake"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
@@ -308,9 +307,9 @@ func (k newUserV1SliceWrapper) EqualOrDie(expected newUserV1SliceWrapper, t *tes
 // generateDefaultOicdCfg creates test configuration for OpenID clients
 func generateDefaultOicdCfg() *OIDCConfiguration {
 	return &OIDCConfiguration{
-		URL:                  fakeauth.IssuerURL,
-		ClientID:             fakeauth.IssuerClientID,
-		ClientSecret:         fakeauth.IssuerClientSecret,
+		URL:                  test.IssuerURL,
+		ClientID:             test.IssuerClientID,
+		ClientSecret:         test.IssuerClientSecret,
 		OfflineAccessAsScope: true,
 	}
 }

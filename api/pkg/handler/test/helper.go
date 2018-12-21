@@ -17,7 +17,6 @@ import (
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	fakeauth "github.com/kubermatic/kubermatic/api/pkg/handler/auth/fake"
 
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
@@ -82,8 +81,8 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		datacenters = buildDatacenterMeta()
 	}
 	cloudProviders := cloud.Providers(datacenters)
-	authenticator := fakeauth.NewAuthenticator(user)
-	issuerVerifier := fakeauth.NewIssuerVerifier()
+	authenticator := NewAuthenticator(user)
+	issuerVerifier := NewIssuerVerifier()
 
 	kubeClient := fake.NewSimpleClientset(kubeObjects...)
 	kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, 10*time.Millisecond)
@@ -188,7 +187,7 @@ type fakeUserClusterConnection struct {
 }
 
 func (f *fakeUserClusterConnection) GetAdminKubeconfig(c *kubermaticapiv1.Cluster) ([]byte, error) {
-	return []byte(generateTestKubeconfig(ClusterID, fakeauth.IDToken)), nil
+	return []byte(generateTestKubeconfig(ClusterID, IDToken)), nil
 }
 
 func (f *fakeUserClusterConnection) GetMachineClient(c *kubermaticapiv1.Cluster) (clusterclientset.Interface, error) {

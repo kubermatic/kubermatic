@@ -4,13 +4,14 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	prometheusapi "github.com/prometheus/client_golang/api"
+
 	"github.com/kubermatic/kubermatic/api/pkg/handler"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
-	fakeauth "github.com/kubermatic/kubermatic/api/pkg/handler/auth/fake"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
-	prometheusapi "github.com/prometheus/client_golang/api"
 )
 
 // NewTestRouting is a hack that helps us avoid circular imports
@@ -59,9 +60,9 @@ func NewTestRouting(
 // generateDefaultOicdCfg creates test configuration for OpenID clients
 func generateDefaultOicdCfg() *handler.OIDCConfiguration {
 	return &handler.OIDCConfiguration{
-		URL:                  fakeauth.IssuerURL,
-		ClientID:             fakeauth.IssuerClientID,
-		ClientSecret:         fakeauth.IssuerClientSecret,
+		URL:                  test.IssuerURL,
+		ClientID:             test.IssuerClientID,
+		ClientSecret:         test.IssuerClientSecret,
 		OfflineAccessAsScope: true,
 	}
 }

@@ -14,7 +14,6 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	fakeauth "github.com/kubermatic/kubermatic/api/pkg/handler/auth/fake"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -177,7 +176,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 				if err != nil {
 					t.Fatalf("error marshal state %v", err)
 				}
-				urlExchangeCodePhase := fmt.Sprintf("/api/v1/kubeconfig?code=%s&state=%s", fakeauth.AuthorizationCode, encodedState)
+				urlExchangeCodePhase := fmt.Sprintf("/api/v1/kubeconfig?code=%s&state=%s", test.AuthorizationCode, encodedState)
 
 				// call kubeconfig endpoint after authentication
 				// exchange code phase
