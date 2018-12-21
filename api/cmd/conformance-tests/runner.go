@@ -56,9 +56,9 @@ func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
 		repoRoot:                     opts.repoRoot,
 		reportsRoot:                  opts.reportsRoot,
 		clusterParallelCount:         opts.clusterParallelCount,
-		PublicKeys:                   opts.PublicKeys,
+		PublicKeys:                   opts.publicKeys,
 		workerName:                   opts.workerName,
-		homeDir:                      opts.HomeDir,
+		homeDir:                      opts.homeDir,
 		kubeClient:                   opts.kubeClient,
 		log:                          opts.log,
 	}
