@@ -7,19 +7,43 @@ export NAMESPACE="prow-kubermatic-${BUILD_ID}"
 
 function cleanup {
   set +e
+  # Delete addons from all clusters that have our worker-name label
+  kubectl get cluster -l worker-name=$BUILD_ID \
+     -o go-template='{{range .items}}{{.metadata.name}}{{end}}' \
+     |xargs -n 1 -I ^ kubectl label addon -n cluster-^ --all worker-name-
+
+  # Delete all clusters that have our worker-name label
+  kubectl delete cluster -l worker-name=$BUILD_ID --wait=false
+
+  # Remove the worker-name label from all clusters that have our worker-name
+  # label so the main cluster-controller will clean them up
+  kubectl get cluster -l worker-name=$BUILD_ID \
+    -o go-template='{{range .items}}{{.metadata.name}}{{end}}' \
+      |xargs -I ^ kubectl label cluster ^ worker-name-
+
+  # Delete the Helm Deployment of Kubermatic
   helm delete --purge kubermatic-$BUILD_ID  \
     --tiller-namespace=$NAMESPACE
+
+  # Delete the Helm installation
   kubectl delete clusterrolebinding -l prowjob=$BUILD_ID
   kubectl delete namespace $NAMESPACE
 }
 trap cleanup EXIT
 
-#echo "Getting secrets from Vault"
-#export VAULT_ADDR=https://vault.loodse.com/
-#export VAULT_TOKEN=$(vault write \
-#  --format=json auth/approle/login \
-#  role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID \
-#  | jq .auth.client_token -r)
+echo "Unlocking secrets repo"
+cd $(go env GOPATH)/src/github.com/kubermatic/secrets
+echo $KUBERMATIC_SECRETS_GPG_KEY_BASE64 | base64 -d > /tmp/git-crypt-key
+git-crypt unlock /tmp/git-crypt-key
+cd -
+echo "Successfully unlocked secrets repo"
+
+echo "Getting secrets from Vault"
+export VAULT_ADDR=https://vault.loodse.com/
+export VAULT_TOKEN=$(vault write \
+  --format=json auth/approle/login \
+  role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID \
+  | jq .auth.client_token -r)
 vault kv get -field=kubeconfig \
   dev/seed-clusters/dev.kubermatic.io > /tmp/kubeconfig
 vault kv get -field=values.yaml \
@@ -29,6 +53,9 @@ export VALUES_FILE=/tmp/values.yaml
 
 echo "Building docker image"
 ./api/hack/push_image.sh ${PULL_PULL_SHA}
+
+echo "Building conformance tests"
+go build github.com/kubermatic/kubermatic/api/cmd/conformance-tests
 
 INITIAL_MANIFESTS=$(cat <<EOF
 apiVersion: v1
@@ -101,3 +128,22 @@ helm upgrade --install --wait --timeout 300 \
   --namespace $NAMESPACE \
   kubermatic-$BUILD_ID ./config/kubermatic/
 echo "Finished installing Kubermatic"
+
+echo "Starting conformance tests"
+./conformance-tests \
+  -debug \
+  -worker-name=$BUILD_ID \
+  -kubeconfig=$KUBECONFIG
+  -datacenters=$(go env GOPATH)/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+  -kubermatic-nodes=3 \
+  -kubermatic-parallel-clusters=11 \
+  -kubermatic-delete-cluster=true \
+  -name-prefix=prow-e2e \
+  -reports-root=/reports \
+  -cleanup-on-start=false \
+  -run-kubermatic-controller-manager=false \
+  -aws-access-key-id="$AWS_E2E_TESTS_KEY_ID" \
+  -aws-secret-access-key="$AWS_E2E_TESTS_SECRET" \
+  -providers=aws \
+  -exclude-kubernetes-versions="9,10,11" \
+  -exclude-distributions="ubuntu,centos"
