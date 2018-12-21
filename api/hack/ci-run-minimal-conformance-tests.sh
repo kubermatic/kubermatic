@@ -4,7 +4,8 @@ set -euo pipefail
 
 export BUILD_ID=${BUILD_ID:-BUILD_ID_UNDEF}
 echo "Build ID is $BUILD_ID"
-
+export VERSIONS=${VERSIONS_TO_TEST:-"v1.12.4"}
+echo "Testing versions: ${VERSIONS}"
 cd $(dirname $0)/..
 
 echo "Unlocking secrets repo"
@@ -15,9 +16,10 @@ cd -
 echo "Successfully unlocked secrets repo"
 
 
-echo "Building conformance-tests cli and kubermatic-controller-manager"
-go build github.com/kubermatic/kubermatic/api/cmd/conformance-tests
-make kubermatic-controller-manager
+echo "Building conformance-tests cli"
+time go build github.com/kubermatic/kubermatic/api/cmd/conformance-tests
+echo "Building kubermatic-controller-manager"
+time make kubermatic-controller-manager
 echo "Finished building conformance-tests and kubermatic-controller-manager"
 
 function cleanup {
@@ -54,6 +56,6 @@ echo "Starting conformance tests"
   -cleanup-on-start=false \
   -aws-access-key-id="$AWS_E2E_TESTS_KEY_ID" \
   -aws-secret-access-key="$AWS_E2E_TESTS_SECRET" \
+  -versions="$VERSIONS" \
   -providers=aws \
-  -exclude-kubernetes-versions="9,10,11" \
   -exclude-distributions="ubuntu,centos"

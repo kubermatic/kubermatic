@@ -15,7 +15,6 @@ linters:
     - ineffassign
     - goconst
     - gocyclo
-    - maligned
     - misspell
     - gosimple
     - unused

@@ -11,9 +11,9 @@ import (
 )
 
 // Returns a matrix of (version x operating system)
-func getHetznerScenarios() []testScenario {
+func getHetznerScenarios(versions []*semver.Semver) []testScenario {
 	var scenarios []testScenario
-	for _, v := range supportedVersions {
+	for _, v := range versions {
 		// Ubuntu
 		scenarios = append(scenarios, &hetznerScenario{
 			version: v,
