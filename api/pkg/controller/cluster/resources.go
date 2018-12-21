@@ -197,7 +197,7 @@ type SecretOperation struct {
 }
 
 // GetSecretCreatorOperations returns all SecretCreators that are currently in use
-func GetSecretCreatorOperations(c *kubermaticv1.Cluster, dockerPullConfigJSON []byte) []SecretOperation {
+func GetSecretCreatorOperations(c *kubermaticv1.Cluster, dockerPullConfigJSON []byte, enableDexCA bool) []SecretOperation {
 	secrets := []SecretOperation{
 		{resources.CASecretName, certificates.RootCA},
 		{resources.FrontProxyCASecretName, certificates.FrontProxyCA},
@@ -205,7 +205,7 @@ func GetSecretCreatorOperations(c *kubermaticv1.Cluster, dockerPullConfigJSON []
 		{resources.ApiserverFrontProxyClientCertificateSecretName, apiserver.FrontProxyClientCertificate},
 		{resources.EtcdTLSCertificateSecretName, etcd.TLSCertificate},
 		{resources.ApiserverEtcdClientCertificateSecretName, apiserver.EtcdClientCertificate},
-		{resources.DexCASecretName, apiserver.DexCACertificate},
+
 		{resources.ApiserverTLSSecretName, apiserver.TLSServingCertificate},
 		{resources.KubeletClientCertificatesSecretName, apiserver.KubeletClientCertificate},
 		{resources.ServiceAccountKeySecretName, apiserver.ServiceAccountKey},
@@ -222,6 +222,12 @@ func GetSecretCreatorOperations(c *kubermaticv1.Cluster, dockerPullConfigJSON []
 		{resources.MachineControllerWebhookServingCertSecretName, machinecontroller.TLSServingCertificate},
 		{resources.MetricsServerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil)},
 	}
+
+	if enableDexCA {
+		secrets = append(secrets,SecretOperation{name: resources.DexCASecretName, create: apiserver.DexCACertificate})
+	}
+
+
 	if len(c.Spec.MachineNetworks) > 0 {
 		secrets = append(secrets, SecretOperation{resources.IPAMControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.IPAMControllerKubeconfigSecretName, resources.IPAMControllerCertUsername, nil)})
 	}
@@ -229,7 +235,13 @@ func GetSecretCreatorOperations(c *kubermaticv1.Cluster, dockerPullConfigJSON []
 }
 
 func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	operations := GetSecretCreatorOperations(c, cc.dockerPullConfigJSON)
+
+	var enableDexCA bool
+	if len(data.OIDCCAFile()) > 0{
+		enableDexCA = true
+	}
+
+	operations := GetSecretCreatorOperations(c, cc.dockerPullConfigJSON, enableDexCA)
 
 	for _, op := range operations {
 		if err := resources.EnsureSecret(op.name, data, op.create, cc.secretLister.Secrets(c.Status.NamespaceName), cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName)); err != nil {

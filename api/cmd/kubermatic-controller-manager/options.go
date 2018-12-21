@@ -178,7 +178,7 @@ func (o controllerRunOptions) validate() error {
 // validateDexSecretWithCABundle
 func (o controllerRunOptions) validateCABundle() error {
 	if len(o.oidcCAFile) == 0 {
-		return fmt.Errorf("-oidc-ca-file not specified")
+		return nil
 	}
 
 	bytes, err := ioutil.ReadFile(o.oidcCAFile)
