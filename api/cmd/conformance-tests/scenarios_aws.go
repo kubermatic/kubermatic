@@ -12,9 +12,9 @@ import (
 )
 
 // Returns a matrix of (version x operating system)
-func getAWSScenarios(es excludeSelector) []testScenario {
+func getAWSScenarios(es excludeSelector, versions []*semver.Semver) []testScenario {
 	var scenarios []testScenario
-	for _, v := range supportedVersions {
+	for _, v := range versions {
 		// Ubuntu
 		if _, ok := es.Distributions[providerconfig.OperatingSystemUbuntu]; !ok {
 			scenarios = append(scenarios, &awsScenario{

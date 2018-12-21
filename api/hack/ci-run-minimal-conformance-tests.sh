@@ -56,6 +56,6 @@ echo "Starting conformance tests"
   -cleanup-on-start=false \
   -aws-access-key-id="$AWS_E2E_TESTS_KEY_ID" \
   -aws-secret-access-key="$AWS_E2E_TESTS_SECRET" \
-  -versions="$VERSIONS" \
   -providers=aws \
+  -exclude-kubernetes-versions="9,10,11" \
   -exclude-distributions="ubuntu,centos"

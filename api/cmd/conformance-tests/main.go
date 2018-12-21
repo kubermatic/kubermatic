@@ -14,7 +14,6 @@ import (
 	"os/exec"
 	"os/user"
 	"path"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -62,7 +61,7 @@ type Opts struct {
 	kubeconfigPath                 string
 	nodeCount                      int
 	nodeReadyWaitTimeout           time.Duration
-	PublicKeys                     [][]byte
+	publicKeys                     [][]byte
 	reportsRoot                    string
 	clusterLister                  kubermaticv1lister.ClusterLister
 	kubermaticClient               kubermaticclientset.Interface
@@ -74,9 +73,9 @@ type Opts struct {
 	cleanupOnStart                 bool
 	clusterParallelCount           int
 	workerName                     string
-	HomeDir                        string
+	homeDir                        string
 	runKubermaticControllerManager bool
-	excludeKubernetesVersions      string
+	versions                       []*semver.Semver
 	log                            *logrus.Entry
 	excludeSelector                excludeSelector
 	excludeSelectorRaw             string
@@ -126,6 +125,7 @@ var (
 	providers  string
 	pubKeyPath string
 	debug      bool
+	sversions  string
 )
 
 func main() {
@@ -134,7 +134,8 @@ func main() {
 
 	opts := Opts{
 		providers:  sets.NewString(),
-		PublicKeys: [][]byte{},
+		publicKeys: [][]byte{},
+		versions:   []*semver.Semver{},
 	}
 
 	usr, err := user.Current()
@@ -159,7 +160,7 @@ func main() {
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
 	flag.StringVar(&opts.workerName, "worker-name", "", "name of the worker, if set the 'worker-name' label will be set on all clusters")
 	flag.BoolVar(&opts.runKubermaticControllerManager, "run-kubermatic-controller-manager", true, "should the runner run the controller-manager")
-	flag.StringVar(&opts.excludeKubernetesVersions, "exclude-kubernetes-versions", "", "a comma-separated list of minor kubernetes versions that will get excluded from the tests, by default 1.9 - 1.12 are tested")
+	flag.StringVar(&sversions, "versions", "v1.10.11,v1.11.6,v1.12.4,v1.13.1", "a comma-separated list of versions to test")
 	flag.StringVar(&opts.excludeSelectorRaw, "exclude-distributions", "", "a comma-separated list of distributions that will get excluded from the tests")
 
 	flag.StringVar(&opts.secrets.AWS.AccessKeyID, "aws-access-key-id", "", "AWS: AccessKeyID")
@@ -177,13 +178,6 @@ func main() {
 	flag.StringVar(&opts.secrets.Azure.TenantID, "azure-tenant-id", "", "Azure: TenantID")
 	flag.StringVar(&opts.secrets.Azure.SubscriptionID, "azure-subscription-id", "", "Azure: SubscriptionID")
 
-	// We're not interested in the client-go logs here - they are just noise
-	if err := flag.CommandLine.Set("logtostderr", "0"); err != nil {
-		mainLog.Fatalf("failed to set logtostderr flag: %v\n", err)
-	}
-	if err := flag.CommandLine.Set("v", "0"); err != nil {
-		mainLog.Fatalf("failed to set loglevel flag: %v\n", err)
-	}
 	flag.Parse()
 
 	if debug {
@@ -209,24 +203,8 @@ func main() {
 		}
 	}
 
-	if opts.excludeKubernetesVersions != "" {
-		excludedKubernetesVersions := strings.Split(opts.excludeKubernetesVersions, ",")
-		var newSupportedVersions []*semver.Version
-	outer:
-		for _, supportedVersion := range supportedVersions {
-			for _, excludedKubernetesVersion := range excludedKubernetesVersions {
-				val, err := strconv.Atoi(excludedKubernetesVersion)
-				if err != nil {
-					mainLog.Fatalf("excluded kubernetes version '%s' cant not be parsed as an int: %v", excludedKubernetesVersion, err)
-				}
-				if supportedVersion.Minor() == int64(val) {
-					continue outer
-				}
-			}
-			mainLog.Infof("Adding %d as supported version", supportedVersion.Minor())
-			newSupportedVersions = append(newSupportedVersions, supportedVersion)
-		}
-		supportedVersions = newSupportedVersions
+	for _, s := range strings.Split(sversions, ",") {
+		opts.versions = append(opts.versions, semver.NewSemverOrDie(s))
 	}
 
 	fields := logrus.Fields{}
@@ -245,15 +223,15 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to load ssh key: %v", err)
 		}
-		opts.PublicKeys = append(opts.PublicKeys, keyData)
+		opts.publicKeys = append(opts.publicKeys, keyData)
 	}
 
 	homeDir, e2eTestPubKeyBytes, err := setupHomeDir(log)
 	if err != nil {
 		log.Fatalf("failed to setup temporary home dir: %v", err)
 	}
-	opts.PublicKeys = append(opts.PublicKeys, e2eTestPubKeyBytes)
-	opts.HomeDir = homeDir
+	opts.publicKeys = append(opts.publicKeys, e2eTestPubKeyBytes)
+	opts.homeDir = homeDir
 	log = logrus.WithFields(logrus.Fields{"home": homeDir})
 
 	stopCh := kubermaticsignals.SetupSignalHandler()
@@ -321,69 +299,76 @@ func main() {
 	kubeInformerFactory.WaitForCacheSync(rootCtx.Done())
 
 	if opts.cleanupOnStart {
-		if opts.namePrefix == "" {
-			log.Fatalf("cleanup-on-start was specified but name-prefix is empty")
+		if err := cleanupClusters(opts, log, kubermaticClient, clusterClientProvider); err != nil {
+			log.Fatalf("failed to cleanup old clusters: %v", err)
 		}
-
-		clusterList, err := kubermaticClient.KubermaticV1().Clusters().List(metav1.ListOptions{})
-		if err != nil {
-			log.Fatal(err)
-		}
-		var wg sync.WaitGroup
-		for _, cluster := range clusterList.Items {
-			if strings.HasPrefix(cluster.Name, opts.namePrefix) {
-				wg.Add(1)
-				go func(cluster v1.Cluster) {
-					clusterDeleteLog := logrus.WithFields(logrus.Fields{"cluster": cluster.Name})
-					defer wg.Done()
-					if err := tryToDeleteClusterWithRetries(clusterDeleteLog, &cluster, clusterClientProvider, kubermaticClient); err != nil {
-						clusterDeleteLog.Errorf("failed to delete cluster: %v", err)
-					}
-				}(cluster)
-			}
-		}
-		wg.Wait()
-
-		log.Info("Cleaned up all old clusters")
 	}
 
 	log.Info("Starting E2E tests...")
-
-	var scenarios []testScenario
-	if opts.providers.Has("aws") {
-		log.Info("Adding AWS scenarios")
-		scenarios = append(scenarios, getAWSScenarios(opts.excludeSelector)...)
-	}
-	if opts.providers.Has("digitalocean") {
-		log.Info("Adding Digitalocean scenarios")
-		scenarios = append(scenarios, getDigitaloceanScenarios()...)
-	}
-	if opts.providers.Has("hetzner") {
-		log.Info("Adding Hetzner scenarios")
-		scenarios = append(scenarios, getHetznerScenarios()...)
-	}
-	if opts.providers.Has("openstack") {
-		log.Info("Adding OpenStack scenarios")
-		scenarios = append(scenarios, getOpenStackScenarios()...)
-	}
-	if opts.providers.Has("vsphere") {
-		log.Info("Adding vSphere scenarios")
-		scenarios = append(scenarios, getVSphereScenarios()...)
-	}
-	if opts.providers.Has("azure") {
-		log.Info("Adding Azure scenarios")
-		scenarios = append(scenarios, getAzureScenarios()...)
-	}
-	// Shuffle scenarios - avoids timeouts caused by quota issues
-	scenarios = shuffle(scenarios)
-
-	runner := newRunner(scenarios, &opts)
+	runner := newRunner(getScenarios(opts, log), &opts)
 
 	start := time.Now()
 	if err := runner.Run(); err != nil {
 		log.Fatal(err)
 	}
 	log.Infof("Whole suite took: %.2f seconds", time.Since(start).Seconds())
+}
+
+func cleanupClusters(opts Opts, log *logrus.Entry, kubermaticClient kubermaticclientset.Interface, clusterClientProvider *clusterclient.Provider) error {
+	if opts.namePrefix == "" {
+		log.Fatalf("cleanup-on-start was specified but name-prefix is empty")
+	}
+	clusterList, err := kubermaticClient.KubermaticV1().Clusters().List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	var wg sync.WaitGroup
+	for _, cluster := range clusterList.Items {
+		if strings.HasPrefix(cluster.Name, opts.namePrefix) {
+			wg.Add(1)
+			go func(cluster v1.Cluster) {
+				clusterDeleteLog := logrus.WithFields(logrus.Fields{"cluster": cluster.Name})
+				defer wg.Done()
+				if err := tryToDeleteClusterWithRetries(clusterDeleteLog, &cluster, clusterClientProvider, kubermaticClient); err != nil {
+					clusterDeleteLog.Errorf("failed to delete cluster: %v", err)
+				}
+			}(cluster)
+		}
+	}
+	wg.Wait()
+	log.Info("Cleaned up all old clusters")
+	return nil
+}
+
+func getScenarios(opts Opts, log *logrus.Entry) []testScenario {
+	var scenarios []testScenario
+	if opts.providers.Has("aws") {
+		log.Info("Adding AWS scenarios")
+		scenarios = append(scenarios, getAWSScenarios(opts.excludeSelector, opts.versions)...)
+	}
+	if opts.providers.Has("digitalocean") {
+		log.Info("Adding Digitalocean scenarios")
+		scenarios = append(scenarios, getDigitaloceanScenarios(opts.versions)...)
+	}
+	if opts.providers.Has("hetzner") {
+		log.Info("Adding Hetzner scenarios")
+		scenarios = append(scenarios, getHetznerScenarios(opts.versions)...)
+	}
+	if opts.providers.Has("openstack") {
+		log.Info("Adding OpenStack scenarios")
+		scenarios = append(scenarios, getOpenStackScenarios(opts.versions)...)
+	}
+	if opts.providers.Has("vsphere") {
+		log.Info("Adding vSphere scenarios")
+		scenarios = append(scenarios, getVSphereScenarios(opts.versions)...)
+	}
+	if opts.providers.Has("azure") {
+		log.Info("Adding Azure scenarios")
+		scenarios = append(scenarios, getAzureScenarios(opts.versions)...)
+	}
+	// Shuffle scenarios - avoids timeouts caused by quota issues
+	scenarios = shuffle(scenarios)
+	return scenarios
 }
 
 func setupHomeDir(log *logrus.Entry) (string, []byte, error) {
