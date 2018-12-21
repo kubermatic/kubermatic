@@ -11,10 +11,12 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/securecookie"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kcerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
-	"k8s.io/apimachinery/pkg/util/rand"
 
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
@@ -29,8 +31,8 @@ var secureCookie *securecookie.SecureCookie
 func getClusterKubeconfig(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GetClusterReq)
-		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
@@ -48,13 +50,13 @@ func getClusterKubeconfig(projectProvider provider.ProjectProvider) endpoint.End
 	}
 }
 
-func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVerifier OIDCIssuerVerifier, oidcCfg OIDCConfiguration) endpoint.Endpoint {
+func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVerifier auth.OIDCIssuerVerifier, oidcCfg OIDCConfiguration) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		oidcIssuer := oidcIssuerVerifier.(OIDCIssuer)
-		oidcVerifier := oidcIssuerVerifier.(OIDCVerifier)
+		oidcIssuer := oidcIssuerVerifier.(auth.OIDCIssuer)
+		oidcVerifier := oidcIssuerVerifier.(auth.OIDCVerifier)
 		req := request.(CreateOIDCKubeconfigReq)
-		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
 		if secureCookie == nil {
 			secureCookie = securecookie.New([]byte(oidcCfg.CookieHashKey), nil)

@@ -2,91 +2,52 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"sort"
-	"strings"
 	"testing"
-	"time"
 
 	"github.com/go-test/deep"
 	"github.com/gorilla/mux"
+	prometheusapi "github.com/prometheus/client_golang/api"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
-	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
-	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
-	prometheusapi "github.com/prometheus/client_golang/api"
 	"k8s.io/apimachinery/pkg/api/equality"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/informers"
-	kubernetesclient "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/fake"
-	restclient "k8s.io/client-go/rest"
 
-	clusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 	fakeclusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset/fake"
 )
 
-func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *clientsSets, error) {
-	datacenters := dc
-	if datacenters == nil {
-		datacenters = buildDatacenterMeta()
-	}
-	cloudProviders := cloud.Providers(datacenters)
-	authenticator := NewFakeAuthenticator(user)
-	issuerVerifier := NewFakeIssuerVerifier()
-
-	kubeClient := fake.NewSimpleClientset(kubeObjects...)
-	kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, 10*time.Millisecond)
-	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
-	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
-
-	fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
-		return kubermaticClient.KubermaticV1(), nil
-	}
-
-	sshKeyProvider := kubernetes.NewSSHKeyProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
-	userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister())
-	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister())
-	projectProvider, err := kubernetes.NewProjectProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Projects().Lister())
-	if err != nil {
-		return nil, nil, err
-	}
-
-	fakeMachineClient := fakeclusterclientset.NewSimpleClientset(machineObjects...)
-	fUserClusterConnection := &fakeUserClusterConnection{fakeMachineClient, kubeClient}
-
-	clusterProvider := kubernetes.NewClusterProvider(
-		fakeImpersonationClient,
-		fUserClusterConnection,
-		kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(),
-		"",
-	)
-	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
-
-	kubeInformerFactory.Start(wait.NeverStop)
-	kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
-	kubermaticInformerFactory.Start(wait.NeverStop)
-	kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
+// newTestRouting defines a func that knows how to create and set up routing required for testing
+// this function is temporal until all types end up in their own packages.
+// it also helps us avoid circular imports
+// for example handler package uses test pkg that needs handler for setting up the routing (NewRouting function)
+func newTestRouting(
+	datacenters map[string]provider.DatacenterMeta,
+	clusterProviders map[string]provider.ClusterProvider,
+	cloudProviders map[string]provider.CloudProvider,
+	sshKeyProvider provider.SSHKeyProvider,
+	userProvider provider.UserProvider,
+	projectProvider provider.ProjectProvider,
+	authenticator auth.OIDCAuthenticator,
+	issuerVerifier auth.OIDCIssuerVerifier,
+	prometheusClient prometheusapi.Client,
+	projectMemberProvider *kubernetes.ProjectMemberProvider,
+	versions []*version.MasterVersion,
+	updates []*version.MasterUpdate) http.Handler {
 
 	updateManager := version.New(versions, updates)
-
-	// Disable the metrics endpoint in tests
-	var prometheusClient prometheusapi.Client
-
 	r := NewRouting(
 		datacenters,
 		clusterProviders,
@@ -101,15 +62,24 @@ func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		projectMemberProvider,
 		projectMemberProvider, /*satisfies also a different interface*/
 	)
+
 	mainRouter := mux.NewRouter()
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
 	r.RegisterV1(v1Router)
 	r.RegisterV1Optional(v1Router,
 		true,
 		*generateDefaultOicdCfg(),
-		mainRouter)
+		mainRouter,
+	)
+	return mainRouter
+}
 
-	return mainRouter, &clientsSets{kubermaticClient, fakeMachineClient}, nil
+func createTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, *clientsSets, error) {
+	handler, cs, err := test.CreateTestEndpointAndGetClients(user, dc, kubeObjects, machineObjects, kubermaticObjects, versions, updates, newTestRouting)
+	if err != nil {
+		return nil, nil, err
+	}
+	return handler, &clientsSets{cs.FakeKubermaticClient, cs.FakeMachineClient}, nil
 }
 
 func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate) (http.Handler, error) {
@@ -117,56 +87,8 @@ func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 	return router, err
 }
 
-func buildDatacenterMeta() map[string]provider.DatacenterMeta {
-	return map[string]provider.DatacenterMeta{
-		"us-central1": {
-			Location: "us-central",
-			Country:  "US",
-			Private:  false,
-			IsSeed:   true,
-			Spec: provider.DatacenterSpec{
-				Digitalocean: &provider.DigitaloceanSpec{
-					Region: "ams2",
-				},
-			},
-		},
-		"private-do1": {
-			Location: "US ",
-			Seed:     "us-central1",
-			Country:  "NL",
-			Private:  true,
-			Spec: provider.DatacenterSpec{
-				Digitalocean: &provider.DigitaloceanSpec{
-					Region: "ams2",
-				},
-			},
-		},
-		"regular-do1": {
-			Location: "Amsterdam",
-			Seed:     "us-central1",
-			Country:  "NL",
-			Spec: provider.DatacenterSpec{
-				Digitalocean: &provider.DigitaloceanSpec{
-					Region: "ams2",
-				},
-			},
-		},
-	}
-}
-
 func compareWithResult(t *testing.T, res *httptest.ResponseRecorder, response string) {
-	t.Helper()
-	bBytes, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Fatal("Unable to read response body")
-	}
-
-	r := strings.TrimSpace(response)
-	b := strings.TrimSpace(string(bBytes))
-
-	if r != b {
-		t.Fatalf("Expected response body to be \n%s \ngot \n%s", r, b)
-	}
+	test.CompareWithResult(t, res, response)
 }
 
 func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseString string) {
@@ -193,31 +115,17 @@ func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseS
 }
 
 const (
-	testUserID    = "1233"
-	testUserName  = "user1"
-	testUserEmail = "john@acme.com"
+	testUserID    = test.UserID
+	testUserName  = test.UserName
+	testUserEmail = test.UserEmail
 )
 
 func getUser(email, id, name string, admin bool) apiv1.User {
-	u := apiv1.User{
-		ObjectMeta: apiv1.ObjectMeta{
-			ID:   id,
-			Name: name,
-		},
-		Email: email,
-	}
-	return u
+	return test.GetUser(email, id, name, admin)
 }
 
 func apiUserToKubermaticUser(user apiv1.User) *kubermaticapiv1.User {
-	return &kubermaticapiv1.User{
-		ObjectMeta: metav1.ObjectMeta{},
-		Spec: kubermaticapiv1.UserSpec{
-			Name:  user.Name,
-			Email: user.Email,
-			ID:    user.ID,
-		},
-	}
+	return test.APIUserToKubermaticUser(user)
 }
 
 func checkStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t *testing.T) {
@@ -239,23 +147,6 @@ func TestUpRoute(t *testing.T) {
 	}
 	ep.ServeHTTP(res, req)
 	checkStatusCode(http.StatusOK, res, t)
-}
-
-type fakeUserClusterConnection struct {
-	fakeMachineClient    clusterclientset.Interface
-	fakeKubernetesClient kubernetesclient.Interface
-}
-
-func (f *fakeUserClusterConnection) GetAdminKubeconfig(c *kubermaticapiv1.Cluster) ([]byte, error) {
-	return []byte(generateTestKubeconfig(testClusterID, testIDToken)), nil
-}
-
-func (f *fakeUserClusterConnection) GetMachineClient(c *kubermaticapiv1.Cluster) (clusterclientset.Interface, error) {
-	return f.fakeMachineClient, nil
-}
-
-func (f *fakeUserClusterConnection) GetClient(c *kubermaticapiv1.Cluster) (kubernetesclient.Interface, error) {
-	return f.fakeKubernetesClient, nil
 }
 
 type clientsSets struct {
@@ -416,31 +307,9 @@ func (k newUserV1SliceWrapper) EqualOrDie(expected newUserV1SliceWrapper, t *tes
 // generateDefaultOicdCfg creates test configuration for OpenID clients
 func generateDefaultOicdCfg() *OIDCConfiguration {
 	return &OIDCConfiguration{
-		URL:                  testIssuerURL,
-		ClientID:             testIssuerClientID,
-		ClientSecret:         testIssuerClientSecret,
+		URL:                  test.IssuerURL,
+		ClientID:             test.IssuerClientID,
+		ClientSecret:         test.IssuerClientSecret,
 		OfflineAccessAsScope: true,
 	}
-}
-
-// generateTestKubeconfig returns test kubeconfig yaml structure
-func generateTestKubeconfig(clusterID, token string) string {
-	return fmt.Sprintf(`
-apiVersion: v1
-clusters:
-- cluster:
-    certificate-authority-data: 
-    server: test.fake.io
-  name: %s
-contexts:
-- context:
-    cluster: %s
-    user: default
-  name: default
-current-context: default
-kind: Config
-users:
-- name: default
-  user:
-    token: %s`, clusterID, clusterID, token)
 }
