@@ -1,18 +1,22 @@
-package handler
+package dc
 
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"sort"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/golang/glog"
+	"github.com/gorilla/mux"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func datacentersEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+// ListEndpoint an HTTP endpoint that returns a list of apiv1.Datacenter
+func ListEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		var adcs []apiv1.Datacenter
 		var keys []string
@@ -45,14 +49,16 @@ func datacentersEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoi
 	}
 }
 
-func datacenterEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+// GetEndpoint an HTTP endpoint that returns a single apiv1.Datacenter object
+func GetEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(LegacyDCReq)
-		return listDatacenter(dcs, req.DC)
+		return GetDatacenter(dcs, req.DC)
 	}
 }
 
-func listDatacenter(dcs map[string]provider.DatacenterMeta, datacenterToGet string) (apiv1.Datacenter, error) {
+// GetDatacenter a function that gives you a single apiv1.Datacenter object
+func GetDatacenter(dcs map[string]provider.DatacenterMeta, datacenterToGet string) (apiv1.Datacenter, error) {
 	dc, found := dcs[datacenterToGet]
 	if !found {
 		return apiv1.Datacenter{}, errors.NewNotFound("datacenter", datacenterToGet)
@@ -133,22 +139,32 @@ func apiSpec(dc *provider.DatacenterMeta) (*apiv1.DatacenterSpec, error) {
 	return spec, nil
 }
 
-func (r Routing) datacenterMiddleware() endpoint.Middleware {
-	return func(next endpoint.Endpoint) endpoint.Endpoint {
-		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			getter := request.(DCGetter)
-			dc, exists := r.datacenters[getter.GetDC()]
-			if !exists {
-				return nil, errors.NewNotFound("datacenter", getter.GetDC())
-			}
-			ctx = context.WithValue(ctx, datacenterContextKey, dc)
+// DCsReq represent a request for datacenters specific data
+type DCsReq struct{}
 
-			clusterProvider, exists := r.clusterProviders[getter.GetDC()]
-			if !exists {
-				return nil, errors.NewNotFound("cluster-provider", getter.GetDC())
-			}
-			ctx = context.WithValue(ctx, clusterProviderContextKey, clusterProvider)
-			return next(ctx, request)
-		}
-	}
+// DecodeDatacentersReq decodes HTTP request into DCsReq
+func DecodeDatacentersReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req DCsReq
+
+	return req, nil
+}
+
+// LegacyDCReq represent a request for datacenter specific data
+// swagger:parameters getDatacenter
+type LegacyDCReq struct {
+	// in: path
+	DC string `json:"dc"`
+}
+
+// GetDC returns the name of the datacenter in the request
+func (req LegacyDCReq) GetDC() string {
+	return req.DC
+}
+
+// DecodeLegacyDcReq decodes http request into LegacyDCReq
+func DecodeLegacyDcReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req LegacyDCReq
+
+	req.DC = mux.Vars(r)["dc"]
+	return req, nil
 }

@@ -1,4 +1,4 @@
-package handler
+package auth
 
 import (
 	"context"
@@ -15,15 +15,16 @@ import (
 	"golang.org/x/oauth2"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/middleware"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/util/hash"
 )
 
+// contextKey defines a dedicated type for keys to use on contexts
+type contextKey string
+
 const (
-	// UserRoleKey is the role key for the default role "user"
-	UserRoleKey = "user"
-	// AdminRoleKey is the role key for the admin role
-	AdminRoleKey = "kubermatic:admin"
+	rawToken contextKey = "raw-auth-token"
 )
 
 // OIDCAuthenticator  is responsible for extracting and verifying
@@ -149,6 +150,7 @@ func NewOpenIDAuthenticator(issuer, clientID, clientSecret, redirectURI string, 
 
 // Verifier is a convenient middleware that extracts the ID Token from the request,
 // verifies it's been signed by the provider and creates apiv1.User from it
+// TODO: move it to middleware pkg
 func (o *OpenIDAuthenticator) Verifier() endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
@@ -190,7 +192,7 @@ func (o *OpenIDAuthenticator) Verifier() endpoint.Middleware {
 				return nil, k8cerrors.NewNotAuthorized()
 			}
 
-			return next(context.WithValue(ctx, authenticatedUserContextKey, user), request)
+			return next(context.WithValue(ctx, middleware.AuthenticatedUserContextKey, user), request)
 		}
 	}
 }

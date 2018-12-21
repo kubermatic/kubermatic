@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/middleware"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -521,8 +523,8 @@ func (r Routing) datacentersHandler() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(datacentersEndpoint(r.datacenters)),
-		decodeDatacentersReq,
+		)(dc.ListEndpoint(r.datacenters)),
+		dc.DecodeDatacentersReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -542,8 +544,8 @@ func (r Routing) datacenterHandler() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(datacenterEndpoint(r.datacenters)),
-		decodeLegacyDcReq,
+		)(dc.GetEndpoint(r.datacenters)),
+		dc.DecodeLegacyDcReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -718,7 +720,7 @@ func (r Routing) createCluster() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(createClusterEndpoint(r.cloudProviders, r.projectProvider)),
 		decodeCreateClusterReq,
@@ -744,7 +746,7 @@ func (r Routing) listClusters() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(listClusters(r.projectProvider)),
 		decodeListClustersReq,
@@ -770,7 +772,7 @@ func (r Routing) getCluster() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(getCluster(r.projectProvider)),
 		decodeGetClusterReq,
@@ -796,7 +798,7 @@ func (r Routing) patchCluster() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(patchCluster(r.cloudProviders, r.projectProvider)),
 		decodePatchClusterReq,
@@ -823,7 +825,7 @@ func (r Routing) getClusterKubeconfig() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(getClusterKubeconfig(r.projectProvider)),
 		decodeGetClusterKubeconfig,
@@ -850,7 +852,7 @@ func (r Routing) deleteCluster() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(deleteCluster(r.sshKeyProvider, r.projectProvider)),
 		decodeGetClusterReq,
@@ -876,7 +878,7 @@ func (r Routing) getClusterHealth() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(getClusterHealth(r.projectProvider)),
 		decodeGetClusterReq,
@@ -905,7 +907,7 @@ func (r Routing) assignSSHKeyToCluster() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(assignSSHKeyToCluster(r.sshKeyProvider, r.projectProvider)),
 		decodeAssignSSHKeyToClusterReq,
@@ -935,7 +937,7 @@ func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(listSSHKeysAssingedToCluster(r.sshKeyProvider, r.projectProvider)),
 		decodeListSSHKeysAssignedToCluster,
@@ -964,7 +966,7 @@ func (r Routing) detachSSHKeyFromCluster() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(detachSSHKeyFromCluster(r.sshKeyProvider, r.projectProvider)),
 		decodeDetachSSHKeysFromCluster,
@@ -990,7 +992,7 @@ func (r Routing) revokeClusterAdminToken() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(revokeClusterAdminToken(r.projectProvider)),
 		decodeClusterAdminTokenReq,
@@ -1019,7 +1021,7 @@ func (r Routing) getNodeForCluster() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(getNodeForCluster(r.projectProvider)),
 		decodeGetNodeForCluster,
@@ -1048,7 +1050,7 @@ func (r Routing) createNodeForCluster() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(createNodeForCluster(r.sshKeyProvider, r.projectProvider, r.datacenters)),
 		decodeCreateNodeForCluster,
@@ -1075,7 +1077,7 @@ func (r Routing) listNodesForCluster() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(listNodesForCluster(r.projectProvider)),
 		decodeListNodesForCluster,
@@ -1101,7 +1103,7 @@ func (r Routing) deleteNodeForCluster() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(deleteNodeForCluster(r.projectProvider)),
 		decodeDeleteNodeForCluster,
@@ -1127,7 +1129,7 @@ func (r Routing) getClusterUpgrades() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(getClusterUpgrades(r.updateManager, r.projectProvider)),
 		decodeGetClusterReq,
@@ -1286,7 +1288,7 @@ func (r Routing) listDigitaloceanSizesNoCredentials() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(digitaloceanSizeNoCredentialsEndpoint(r.projectProvider)),
 		decodeDoSizesNoCredentialsReq,
@@ -1310,7 +1312,7 @@ func (r Routing) listAzureSizesNoCredentials() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(azureSizeNoCredentialsEndpoint(r.projectProvider, r.datacenters)),
 		decodeAzureSizesNoCredentialsReq,
@@ -1334,7 +1336,7 @@ func (r Routing) listOpenstackSizesNoCredentials() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(openstackSizeNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
 		decodeOpenstackNoCredentialsReq,
@@ -1358,7 +1360,7 @@ func (r Routing) listOpenstackTenantsNoCredentials() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(openstackTenantNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
 		decodeOpenstackNoCredentialsReq,
@@ -1382,7 +1384,7 @@ func (r Routing) listOpenstackNetworksNoCredentials() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(openstackNetworkNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
 		decodeOpenstackNoCredentialsReq,
@@ -1406,7 +1408,7 @@ func (r Routing) listOpenstackSecurityGroupsNoCredentials() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(openstackSecurityGroupNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
 		decodeOpenstackNoCredentialsReq,
@@ -1430,7 +1432,7 @@ func (r Routing) listOpenstackSubnetsNoCredentials() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(openstackSubnetsNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
 		decodeOpenstackSubnetNoCredentialsReq,
@@ -1454,7 +1456,7 @@ func (r Routing) listVSphereNetworksNoCredentials() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(vsphereNetworksNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
 		decodeVSphereNetworksNoCredentialsReq,
@@ -1483,7 +1485,7 @@ func (r Routing) createNodeDeployment() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(createNodeDeployment(r.sshKeyProvider, r.projectProvider, r.datacenters)),
 		decodeCreateNodeDeployment,
@@ -1509,7 +1511,7 @@ func (r Routing) listNodeDeployments() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(listNodeDeployments(r.projectProvider)),
 		decodeListNodeDeployments,
@@ -1535,7 +1537,7 @@ func (r Routing) getNodeDeployment() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(getNodeDeployment(r.projectProvider)),
 		decodeGetNodeDeployment,
@@ -1565,7 +1567,7 @@ func (r Routing) patchNodeDeployment() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(patchNodeDeployment(r.sshKeyProvider, r.projectProvider, r.datacenters)),
 		decodePatchNodeDeployment,
@@ -1591,7 +1593,7 @@ func (r Routing) deleteNodeDeployment() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(deleteNodeDeployment(r.projectProvider)),
 		decodeDeleteNodeDeployment,

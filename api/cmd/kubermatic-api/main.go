@@ -35,6 +35,7 @@ import (
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/handler"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
@@ -150,15 +151,15 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	return providers{sshKey: sshKeyProvider, user: userProvider, project: projectProvider, projectMember: projectMemberProvider, memberMapper: projectMemberProvider, cloud: cloudProviders, clusters: clusterProviders, datacenters: datacenters}, nil
 }
 
-func createOIDCAuthenticatorIssuer(options serverRunOptions) (handler.OIDCAuthenticator, handler.OIDCIssuerVerifier, error) {
-	authenticator, err := handler.NewOpenIDAuthenticator(
+func createOIDCAuthenticatorIssuer(options serverRunOptions) (auth.OIDCAuthenticator, auth.OIDCIssuerVerifier, error) {
+	authenticator, err := auth.NewOpenIDAuthenticator(
 		options.oidcURL,
 		options.oidcAuthenticatorClientID,
 		"",
 		"",
-		handler.NewCombinedExtractor(
-			handler.NewHeaderBearerTokenExtractor("Authorization"),
-			handler.NewQueryParamBearerTokenExtractor("token"),
+		auth.NewCombinedExtractor(
+			auth.NewHeaderBearerTokenExtractor("Authorization"),
+			auth.NewQueryParamBearerTokenExtractor("token"),
 		),
 		options.oidcSkipTLSVerify,
 	)
@@ -167,14 +168,14 @@ func createOIDCAuthenticatorIssuer(options serverRunOptions) (handler.OIDCAuthen
 		return nil, nil, fmt.Errorf("failed to create OIDC Authenticator: %v", err)
 	}
 
-	issuer, err := handler.NewOpenIDAuthenticator(
+	issuer, err := auth.NewOpenIDAuthenticator(
 		options.oidcURL,
 		options.oidcIssuerClientID,
 		options.oidcIssuerClientSecret,
 		options.oidcIssuerRedirectURI,
-		handler.NewCombinedExtractor(
-			handler.NewHeaderBearerTokenExtractor("Authorization"),
-			handler.NewQueryParamBearerTokenExtractor("token"),
+		auth.NewCombinedExtractor(
+			auth.NewHeaderBearerTokenExtractor("Authorization"),
+			auth.NewQueryParamBearerTokenExtractor("token"),
 		),
 		options.oidcSkipTLSVerify,
 	)
@@ -182,7 +183,7 @@ func createOIDCAuthenticatorIssuer(options serverRunOptions) (handler.OIDCAuthen
 	return authenticator, issuer, err
 }
 
-func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticator handler.OIDCAuthenticator, oidcIssuerVerifier handler.OIDCIssuerVerifier, updateManager *version.Manager) (http.HandlerFunc, error) {
+func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticator auth.OIDCAuthenticator, oidcIssuerVerifier auth.OIDCIssuerVerifier, updateManager *version.Manager) (http.HandlerFunc, error) {
 	var prometheusClient prometheusapi.Client
 	if options.featureGates.Enabled(PrometheusEndpoint) {
 		var err error

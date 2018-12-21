@@ -4,9 +4,10 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
+	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 
-	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/middleware"
 )
 
 // RegisterV1Alpha declares all HTTP paths that are experimental
@@ -34,7 +35,7 @@ func (r Routing) getClusterMetrics() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-			r.datacenterMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(getClusterMetrics(r.projectProvider, r.prometheusClient)),
 		decodeGetClusterReq,
