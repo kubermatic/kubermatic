@@ -353,6 +353,7 @@ func (r *testRunner) testCluster(
 		return nil
 	})
 	if err != nil {
+		report.Errors++
 		log.Errorf("Failed to successfully run kubernetes e2e tests: %v", err)
 	}
 
