@@ -23,6 +23,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	"k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -36,6 +37,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+
+	autoscalingv1beta1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"
 )
 
 const (
@@ -71,7 +74,12 @@ func main() {
 		glog.Fatalf("failed to create rest mapper: %v", err)
 	}
 
-	dynamicClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{Scheme: scheme.Scheme, Mapper: mapper})
+	combinedScheme := scheme.Scheme
+	// Add all custom type schemes to our scheme. Otherwise we won't get a informer
+	if err := autoscalingv1beta1.AddToScheme(combinedScheme); err != nil {
+		glog.Fatalf("failed to add the autoscaling.k8s.io scheme: %v", err)
+	}
+	dynamicClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{Scheme: combinedScheme, Mapper: mapper})
 	if err != nil {
 		glog.Fatalf("failed to create dynamic client: %v", err)
 	}
@@ -79,6 +87,15 @@ func main() {
 	dynamicCache, err := cache.New(config, cache.Options{})
 	if err != nil {
 		glog.Fatalf("failed to create dynamic informer cache: %v", err)
+	}
+
+	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
+	if _, err := informer.GetSyncedStoreFromDynamicFactory(dynamicCache, &autoscalingv1beta1.VerticalPodAutoscaler{}); err != nil {
+		if _, crdNotRegistered := err.(*meta.NoKindMatchError); crdNotRegistered {
+			glog.Fatal(`
+The VerticalPodAutoscaler is not installed in this seed cluster. 
+Please install the VerticalPodAutoscaler according to the documentation: https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler#installation`)
+		}
 	}
 
 	//Register the global error metric. Ensures that runtime.HandleError() increases the error metric

@@ -7,6 +7,8 @@ import (
 	"hash/crc32"
 	"sort"
 
+	informerutil "github.com/kubermatic/kubermatic/api/pkg/util/informer"
+
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -16,6 +18,7 @@ import (
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"
 	appsv1client "k8s.io/client-go/kubernetes/typed/apps/v1"
 	batchv1beta1client "k8s.io/client-go/kubernetes/typed/batch/v1beta1"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -28,6 +31,7 @@ import (
 	rbacv1lister "k8s.io/client-go/listers/rbac/v1"
 	"k8s.io/client-go/tools/cache"
 
+	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -216,49 +220,6 @@ func EnsureCronJob(data *TemplateData, create CronJobCreator, cronJobLister batc
 
 	if _, err = cronJobClient.Update(cronjob); err != nil {
 		return fmt.Errorf("failed to update CronJob %s: %v", cronjob.Name, err)
-	}
-
-	return nil
-}
-
-// EnsureStatefulSet will create the StatefulSet with the passed create function & create or update it if necessary.
-// To check if it's necessary it will do a lookup of the resource at the lister & compare the existing StatefulSet with the created one
-func EnsureStatefulSet(data *TemplateData, create StatefulSetCreator, lister appsv1lister.StatefulSetNamespaceLister, client appsv1client.StatefulSetInterface) error {
-	var existing *appsv1.StatefulSet
-	statefulSet, err := create(data, nil)
-	if err != nil {
-		return fmt.Errorf("failed to build StatefulSet: %v", err)
-	}
-
-	if existing, err = lister.Get(statefulSet.Name); err != nil {
-		if !kubeerrors.IsNotFound(err) {
-			return err
-		}
-
-		if _, err = client.Create(statefulSet); err != nil {
-			return fmt.Errorf("failed to create StatefulSet %s: %v", statefulSet.Name, err)
-		}
-		return nil
-	}
-	existing = existing.DeepCopy()
-
-	statefulSet, err = create(data, existing.DeepCopy())
-	if err != nil {
-		return fmt.Errorf("failed to build StatefulSet: %v", err)
-	}
-
-	if DeepEqual(statefulSet, existing) {
-		return nil
-	}
-
-	// In case we update something immutable we need to delete&recreate. Creation happens on next sync
-	if !equality.Semantic.DeepEqual(statefulSet.Spec.Selector.MatchLabels, existing.Spec.Selector.MatchLabels) {
-		propagation := metav1.DeletePropagationForeground
-		return client.Delete(statefulSet.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation})
-	}
-
-	if _, err = client.Update(statefulSet); err != nil {
-		return fmt.Errorf("failed to update StatefulSet %s: %v", statefulSet.Name, err)
 	}
 
 	return nil
@@ -506,21 +467,20 @@ func getChecksumForStringSlice(stringSlice []string) string {
 }
 
 // EnsureObject will generate the Object with the passed create function & create or update it in Kubernetes if necessary.
-func EnsureObject(data *TemplateData, namespace string, rawcreate ObjectCreator, store cache.Store, client ctrlruntimeclient.Client) error {
+func EnsureObject(namespace string, rawcreate ObjectCreator, store cache.Store, client ctrlruntimeclient.Client) error {
 	ctx := context.Background()
 
 	// A wrapper to ensure we always set the ownerRef and the Namespace. This is useful as we call create twice
-	create := func(data *TemplateData, existing runtime.Object) (runtime.Object, error) {
-		obj, err := rawcreate(data, existing)
+	create := func(existing runtime.Object) (runtime.Object, error) {
+		obj, err := rawcreate(existing)
 		if err != nil {
 			return nil, err
 		}
 		obj.(metav1.Object).SetNamespace(namespace)
-		obj.(metav1.Object).SetOwnerReferences([]metav1.OwnerReference{data.GetClusterRef()})
 		return obj, nil
 	}
 
-	obj, err := create(data, nil)
+	obj, err := create(nil)
 	if err != nil {
 		return fmt.Errorf("failed to build Object(%T): %v", obj, err)
 	}
@@ -552,7 +512,7 @@ func EnsureObject(data *TemplateData, namespace string, rawcreate ObjectCreator,
 	// Create a copy to ensure we don't modify any lister state
 	existing = existing.DeepCopyObject()
 
-	obj, err = create(data, existing)
+	obj, err = create(existing)
 	if err != nil {
 		return fmt.Errorf("failed to build Object(%T) '%s': %v", existing, key, err)
 	}
@@ -563,6 +523,48 @@ func EnsureObject(data *TemplateData, namespace string, rawcreate ObjectCreator,
 
 	if err = client.Update(ctx, obj); err != nil {
 		return fmt.Errorf("failed to update object %T '%s': %v", obj, key, err)
+	}
+
+	return nil
+}
+
+// EnsureVerticalPodAutoscalers will create and update the VerticalPodAutoscalers coming from the passed VerticalPodAutoscalerCreator slice
+func EnsureVerticalPodAutoscalers(creators []VerticalPodAutoscalerCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, wrapper ...ObjectModifier) error {
+	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &v1beta1.VerticalPodAutoscaler{})
+	if err != nil {
+		return fmt.Errorf("failed to get VerticalPodAutoscaler informer: %v", err)
+	}
+
+	for _, create := range creators {
+		createObject := VerticalPodAutocalerObjectWrapper(create)
+		for _, wrap := range wrapper {
+			createObject = wrap(createObject)
+		}
+
+		if err := EnsureObject(namespace, createObject, store, client); err != nil {
+			return fmt.Errorf("failed to ensure VerticalPodAutoscaler: %v", err)
+		}
+	}
+
+	return nil
+}
+
+// EnsureStatefulSets will create and update the StatefulSets coming from the passed StatefulSetCreator slice
+func EnsureStatefulSets(creators []StatefulSetCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, wrapper ...ObjectModifier) error {
+	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &appsv1.StatefulSet{})
+	if err != nil {
+		return fmt.Errorf("failed to get StatefulSet informer: %v", err)
+	}
+
+	for _, create := range creators {
+		createObject := StatefulSetObjectWrapper(create)
+		for _, wrap := range wrapper {
+			createObject = wrap(createObject)
+		}
+
+		if err := EnsureObject(namespace, createObject, store, client); err != nil {
+			return fmt.Errorf("failed to ensure StatefulSet: %v", err)
+		}
 	}
 
 	return nil
