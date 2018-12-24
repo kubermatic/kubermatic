@@ -26,6 +26,9 @@ import (
 	rbacb1lister "k8s.io/client-go/listers/rbac/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
+
+	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -42,7 +45,9 @@ type userClusterConnectionProvider interface {
 // Controller stores all components required for monitoring
 type Controller struct {
 	kubeClient              kubernetes.Interface
+	dynamicClient           ctrlruntimeclient.Client
 	userClusterConnProvider userClusterConnectionProvider
+	dynamicCache            ctrlruntimecache.Cache
 
 	dcs                                              map[string]provider.DatacenterMeta
 	dc                                               string
@@ -77,6 +82,7 @@ type Controller struct {
 // operating the monitoring components for all managed user clusters
 func New(
 	kubeClient kubernetes.Interface,
+	dynamicClient ctrlruntimeclient.Client,
 	userClusterConnProvider userClusterConnectionProvider,
 
 	dc string,
@@ -92,6 +98,7 @@ func New(
 	inClusterPrometheusScrapingConfigsFile string,
 	dockerPullConfigJSON []byte,
 
+	dynamicCache ctrlruntimecache.Cache,
 	clusterInformer kubermaticv1informers.ClusterInformer,
 	serviceAccountInformer corev1informers.ServiceAccountInformer,
 	configMapInformer corev1informers.ConfigMapInformer,
@@ -105,7 +112,9 @@ func New(
 ) (*Controller, error) {
 	c := &Controller{
 		kubeClient:              kubeClient,
+		dynamicClient:           dynamicClient,
 		userClusterConnProvider: userClusterConnProvider,
+		dynamicCache:            dynamicCache,
 
 		queue: workqueue.NewNamedRateLimitingQueue(
 			workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute),
@@ -357,5 +366,10 @@ func (c *Controller) sync(key string) error {
 	}
 
 	// check that all StatefulSets are created
-	return c.ensureStatefulSets(cluster, data)
+	if err := c.ensureStatefulSets(cluster, data); err != nil {
+		return err
+	}
+
+	// check that all VerticalPodAutoscaler's are created
+	return c.ensureVerticalPodAutoscalers(cluster)
 }

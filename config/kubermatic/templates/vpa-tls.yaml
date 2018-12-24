@@ -1,0 +1,14 @@
+{{- $ca := genCA "deployment-admission-controller" 3650 -}}
+{{- $cn := .Chart.Name -}}
+{{- $altName1 := printf "%s.%s" .Chart.Name .Release.Namespace -}}
+{{- $altName2 := printf "%s.%s.svc" .Chart.Name .Release.Namespace -}}
+{{- $cert := genSignedCert $cn nil (list $altName1 $altName2) 3650 $ca -}}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vpa-tls-certs
+type: Opaque
+data:
+  caCert.pem: {{ b64enc $ca.Cert }}
+  serverCert.pem: {{ b64enc $cert.Cert }}
+  serverKey.pem: {{ b64enc $cert.Key }}
