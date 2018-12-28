@@ -1,0 +1,54 @@
+run:
+  deadline: 20m
+  skip-dirs:
+  - vendor
+
+linters:
+  enable:
+  - golint
+  - govet
+  - gofmt
+  - structcheck
+  - varcheck
+  - interfacer
+  - unconvert
+  - ineffassign
+  - goconst
+  - gocyclo
+  - misspell
+  - gosimple
+  - unused
+  - errcheck
+  disable-all: true
+
+issues:
+  exclude:
+  - cyclomatic complexity 43 of func `main` is high
+  - cyclomatic complexity 37 of func `migrateToProject` is high
+  - 'CleanUpCloudProvider` is high'
+  - string `get` has 6 occurrences, make it a constant
+  - struct of size 536 bytes could be of size 520 bytes
+  - "`selector` can be `expvar.Var`"
+  - "`data` can be `github.com/kubermatic/kubermatic/api/pkg/resources.RoleBindingDataProvider`"
+  - "`data` can be `github.com/kubermatic/kubermatic/api/pkg/resources.DeploymentDataProvider`"
+  - "`data` can be `github.com/kubermatic/kubermatic/api/pkg/resources.SecretDataProvider`"
+  - "`data` can be `github.com/kubermatic/kubermatic/api/pkg/resources.ConfigMapDataProvider`"
+  - "`data` can be `github.com/kubermatic/kubermatic/api/pkg/resources.ClusterRoleBindingDataProvider`"
+  - "`updateManager` can be `github.com/kubermatic/kubermatic/api/pkg/handler.UpdateManager`"
+  - "`store` can be `github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/cache.KeyGetter`"
+  - Error return value of `kubermaticv1.AddToScheme` is not checked
+  - parameterCodec` is unused
+  - type name will be used as fake.FakeAddons by other packages, and that stutters; consider calling this Addons
+  - type name will be used as fake.FakeClusters by other packages, and that stutters; consider calling this Clusters
+  - type name will be used as fake.FakeKubermaticV1 by other packages, and that stutters; consider calling this KubermaticV1
+  - type name will be used as fake.FakeProjects by other packages, and that stutters; consider calling this Projects
+  - type name will be used as fake.FakeUsers by other packages, and that stutters; consider calling this Users
+  - type name will be used as fake.FakeUserProjectBindings by other packages, and that stutters; consider calling this UserProjectBindings
+  - unnecessary conversion
+  - ineffectual assignment to `err`
+  - ineffectual assignment to `clusterPrefix`
+  - ineffectual assignment to `objects`
+  - ineffectual assignment to `kubermaticObjs`
+  - "literal copies lock value from fakePtr: github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/testing.Fake"
+  - File is not `gofmt`-ed with `-s`
+  - var parameterCodec is unused
