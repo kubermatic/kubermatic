@@ -27,9 +27,8 @@ pipeline:
     pull: true
   lint:
     commands:
-    - export PATH=/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     - cd api
-    - make lint
+    - golangci-lint run -v
     group: lint
     image: golangci/golangci-lint:v1.12.3
   verify-addons-up-to-date:
