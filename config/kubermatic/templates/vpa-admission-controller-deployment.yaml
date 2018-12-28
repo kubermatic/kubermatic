@@ -9,7 +9,7 @@ spec:
       labels:
         app: vpa-admission-controller
       annotations:
-        checksum/tls: {{ include (print $.Template.BasePath "/tls.yaml") . | sha256sum }}
+        checksum/tls: {{ include (print $.Template.BasePath "/vpa-tls.yaml") . | sha256sum }}
     spec:
       serviceAccountName: vpa-admission-controller
       containers:
