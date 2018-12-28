@@ -45,13 +45,6 @@ type excludeSelector struct {
 	Distributions map[providerconfig.OperatingSystem]bool
 }
 
-var supportedVersions = []*semver.Version{
-	semver.MustParse("v1.9.10"),
-	semver.MustParse("v1.10.8"),
-	semver.MustParse("v1.11.3"),
-	semver.MustParse("v1.12.1"),
-}
-
 // Opts represent combination of flags and ENV options
 type Opts struct {
 	namePrefix                     string
