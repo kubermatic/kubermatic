@@ -130,13 +130,29 @@ spec:
         - mountPath: /etc/openvpn/clients
           name: openvpn-client-configs
           readOnly: true
+      - args:
+        - -c
+        - while true; do sysctl -w net.ipv4.ip_forward=1; sleep 30; done
+        command:
+        - /bin/bash
+        image: docker.io/kubermatic/openvpn:v0.4
+        imagePullPolicy: IfNotPresent
+        name: ip-forward
+        resources:
+          limits:
+            cpu: 10m
+            memory: 32Mi
+          requests:
+            cpu: 5m
+            memory: 16Mi
+        securityContext:
+          privileged: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
       initContainers:
       - args:
         - -c
         - |
-          # Always set IP forwarding
-          sysctl -w net.ipv4.ip_forward=1
-
           # do not give a 10.20.0.0/24 route to clients (nodes) but
           # masquerade to openvpn-server's IP instead:
           iptables -t nat -A POSTROUTING -o tun0 -s 10.20.0.0/24 -j MASQUERADE
