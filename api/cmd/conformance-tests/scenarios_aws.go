@@ -12,7 +12,7 @@ import (
 )
 
 // Returns a matrix of (version x operating system)
-func getAWSScenarios(es excludeSelector, versions []*semver.Semver) []testScenario {
+func getAWSScenarios(es excludeSelector, versions []*semver.Version) []testScenario {
 	var scenarios []testScenario
 	for _, v := range versions {
 		// Ubuntu

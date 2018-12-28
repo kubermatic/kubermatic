@@ -75,7 +75,7 @@ type Opts struct {
 	workerName                     string
 	homeDir                        string
 	runKubermaticControllerManager bool
-	versions                       []*semver.Semver
+	versions                       []*semver.Version
 	log                            *logrus.Entry
 	excludeSelector                excludeSelector
 	excludeSelectorRaw             string
@@ -135,7 +135,7 @@ func main() {
 	opts := Opts{
 		providers:  sets.NewString(),
 		publicKeys: [][]byte{},
-		versions:   []*semver.Semver{},
+		versions:   []*semver.Version{},
 	}
 
 	usr, err := user.Current()
@@ -204,7 +204,7 @@ func main() {
 	}
 
 	for _, s := range strings.Split(sversions, ",") {
-		opts.versions = append(opts.versions, semver.NewSemverOrDie(s))
+		opts.versions = append(opts.versions, semver.MustParse(s))
 	}
 
 	fields := logrus.Fields{}

@@ -11,7 +11,7 @@ import (
 )
 
 // Returns a matrix of (version x operating system)
-func getOpenStackScenarios(versions []*semver.Semver) []testScenario {
+func getOpenStackScenarios(versions []*semver.Version) []testScenario {
 	var scenarios []testScenario
 	for _, v := range versions {
 		// Ubuntu

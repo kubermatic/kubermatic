@@ -11,7 +11,7 @@ import (
 )
 
 // Returns a matrix of (version x operating system)
-func getDigitaloceanScenarios(versions []*semver.Semver) []testScenario {
+func getDigitaloceanScenarios(versions []*semver.Version) []testScenario {
 	var scenarios []testScenario
 	for _, v := range versions {
 		// Ubuntu
