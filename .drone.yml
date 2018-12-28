@@ -7,6 +7,12 @@ pipeline:
     pull: true
     volumes:
     - /var/run/docker.sock:/var/run/docker.sock
+  build:
+    commands:
+    - cd api
+    - make build
+    group: build
+    image: golang:1.11.4
   docker:
     commands:
     - export VAULT_ADDR=https://vault.loodse.com/
