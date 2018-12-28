@@ -65,16 +65,7 @@ fix:
 	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "goimports -w" $$UNFMT; goimports -w $$UNFMT; fi
 
 lint:
-	{ \
-	set -e ;\
-	echo "gometalinter" ;\
-	gometalinter --config gometalinter.json ./... ;\
-	echo "forbidden functions" ;\
-	./hack/verify-forbidden-functions.sh ;\
-	GOFILES=$$(find . -type f -name '*.go' -not -path "./vendor/*") ;\
-	echo "misspell -error -locale US" ;\
-	misspell -error -locale US $$GOFILES ;\
-	}
+	golangci-lint run -v
 
 cover:
 	./hack/cover.sh --html
