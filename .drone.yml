@@ -28,7 +28,7 @@ pipeline:
   lint:
     commands:
     - cd api
-    - golangci-lint run -v
+    - /go/bin/golangci-lint run -v
     group: lint
     image: golangci/golangci-lint:v1.12.3
   verify-addons-up-to-date:
