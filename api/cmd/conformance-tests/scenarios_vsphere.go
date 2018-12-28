@@ -11,9 +11,9 @@ import (
 )
 
 // Returns a matrix of (version x operating system)
-func getVSphereScenarios() []testScenario {
+func getVSphereScenarios(versions []*semver.Version) []testScenario {
 	var scenarios []testScenario
-	for _, v := range supportedVersions {
+	for _, v := range versions {
 		// Ubuntu
 		scenarios = append(scenarios, &vSphereScenario{
 			version: v,

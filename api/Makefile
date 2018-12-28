@@ -1,3 +1,4 @@
+export CGO_ENABLED?=0
 REPO=kubermatic/api
 GO?=go
 CMD=$(filter-out OWNERS, $(notdir $(wildcard ./cmd/*)))
@@ -8,36 +9,38 @@ DOCKERTAGS=$(TAGS) latestbuild
 DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKERTAGS), -t $(REPO):$(tag))
 KUBERMATICCOMMIT=$(shell git log -1 --format=%H)
 LDFLAGS += -extldflags '-static' -X github.com/kubermatic/kubermatic/api/pkg/resources.KUBERMATICCOMMIT=$(KUBERMATICCOMMIT)
-HAS_GOMETALINTER:= $(shell command -v gometalinter 2> /dev/null)
 HAS_DEP:= $(shell command -v dep 2> /dev/null)
 HAS_GIT:= $(shell command -v git 2> /dev/null)
+BUILD_DEST?=_build
+GOTOOLFLAGS?=$(GOBUILDFLAGS) -ldflags '-w $(LDFLAGS)'
 
 default: all
 
-all: check test build
+all: check vendor build test
 
 build: $(CMD)
 
-$(CMD): vendor
-	CGO_ENABLED=0 $(GO) build $(GOBUILDFLAGS) -ldflags '-w $(LDFLAGS)' -o _build/$@ github.com/kubermatic/kubermatic/api/cmd/$@
+$(CMD):
+	$(GO) build $(GOTOOLFLAGS) -o $(BUILD_DEST)/$@ ./cmd/$@
+
+install:
+	$(GO) install $(GOTOOLFLAGS) ./cmd/...
+
+showenv:
+	@$(GO) env
 
 check: gofmt lint
-test: vendor
+
+test:
 	@$(GO) generate ./pkg/controller/ipam/
-	@$(GO) test -v ./...
+	$(GO) test -v ./...
 
 test-update:
-	@$(GO) test -v ./... -update
+	-$(GO) test -v ./... -update
 
 clean:
-	@cd _build
-	@rm -f $(CMD)
-	@echo "Cleaned _build"
-
-install: vendor
-	@for PRODUCT in $(CMD); do \
-		$(GO) install -v -ldflags '-w $(LDFLAGS)' github.com/kubermatic/kubermatic/api/cmd/$$PRODUCT ; \
-	done
+	rm -f $(TARGET)
+	@echo "Cleaned $(BUILD_DEST)"
 
 docker-build:
 	docker build $(DOCKER_BUILD_FLAG) .
@@ -57,24 +60,12 @@ gittag:
 GFMT=find . -not \( \( -wholename "./vendor" \) -prune \) -name "*.go" | xargs gofmt -l
 gofmt:
 	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "gofmt needed on" $$UNFMT && exit 1; fi
+
 fix:
 	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "goimports -w" $$UNFMT; goimports -w $$UNFMT; fi
 
 lint:
-ifndef HAS_GOMETALINTER
-	go get -u github.com/alecthomas/gometalinter
-	gometalinter --install
-endif
-	{ \
-	set -e ;\
-	echo "gometalinter" ;\
-	gometalinter --config gometalinter.json ./... ;\
-	echo "forbidden functions" ;\
-	./hack/verify-forbidden-functions.sh ;\
-	GOFILES=$$(find . -type f -name '*.go' -not -path "./vendor/*") ;\
-	echo "misspell -error -locale US" ;\
-	misspell -error -locale US $$GOFILES ;\
-	}
+	golangci-lint run -v
 
 cover:
 	./hack/cover.sh --html
@@ -88,4 +79,18 @@ run-api-server:
 run-rbac-generator:
 	./hack/run-rbac-generator.sh
 
-.PHONY: build test check cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator test-update-fixture $(CMD)
+verify: gofmt
+		./hack/verify-codegen.sh
+		./hack/verify-swagger.sh
+
+check-dependencies:
+	# We need mercurial for bitbucket.org/ww/goautoneg, otherwise dep hangs forever
+	which hg >/dev/null 2>&1 || apt update && apt install -y mercurial
+	dep version || go get -u github.com/golang/dep/cmd/dep
+	dep status
+	git diff --exit-code
+
+license-validation:
+	wwhrd check -f ../allowed_licensed.yaml
+
+.PHONY: vendor build install test check cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator test-update-fixture $(TARGET)
