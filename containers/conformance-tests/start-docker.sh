@@ -19,7 +19,7 @@ while true; do
         sleep ${WAIT_N}
     else
         echo "Reached maximum attempts, not waiting any longer..."
-        break
+        exit 1
     fi
 done
 printf '=%.0s' {1..80}; echo
