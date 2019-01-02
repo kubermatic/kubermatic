@@ -35,6 +35,8 @@ function cleanup {
 }
 trap cleanup EXIT
 
+docker ps &>/dev/null || start-docker.sh
+
 echo "Unlocking secrets repo"
 cd $(go env GOPATH)/src/github.com/kubermatic/secrets
 echo $KUBERMATIC_SECRETS_GPG_KEY_BASE64 | base64 -d > /tmp/git-crypt-key
@@ -57,7 +59,7 @@ export VALUES_FILE=/tmp/values.yaml
 echo "Successfully got secrets from Vault"
 
 echo "Building conformance-tests cli"
-time go build github.com/kubermatic/kubermatic/api/cmd/conformance-tests
+time go build -v github.com/kubermatic/kubermatic/api/cmd/conformance-tests
 echo "Building kubermatic-controller-manager"
 time make kubermatic-controller-manager
 echo "Finished building conformance-tests and kubermatic-controller-manager"
