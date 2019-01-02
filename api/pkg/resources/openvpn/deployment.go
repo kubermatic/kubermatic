@@ -35,9 +35,6 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("10m"),
 		},
 	}
-
-	// VerticalPodAutoscaler returns a VerticalPodAutoscaler which can be applied to the OpenVPN server Deployment
-	VerticalPodAutoscaler = resources.GetVerticalPodAutoscaler(name, resources.BaseAppLabel(name, nil))
 )
 
 const (

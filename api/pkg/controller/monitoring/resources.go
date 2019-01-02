@@ -189,16 +189,16 @@ func (c *Controller) ensureServices(cluster *kubermaticv1.Cluster, data *resourc
 	return nil
 }
 
-// GetVerticalPodAutoscalerCreators returns all VerticalPodAutoscalerCreator's that are currently in use
-func GetVerticalPodAutoscalerCreators() []resources.VerticalPodAutoscalerCreator {
-	return []resources.VerticalPodAutoscalerCreator{
-		kubestatemetrics.VerticalPodAutoscaler,
-		prometheus.VerticalPodAutoscaler,
-	}
-}
-
 func (c *Controller) ensureVerticalPodAutoscalers(cluster *kubermaticv1.Cluster) error {
-	creators := GetVerticalPodAutoscalerCreators()
-
-	return resources.EnsureVerticalPodAutoscalers(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.ClusterRefWrapper(cluster))
+	creators, err := resources.GetVerticalPodAutoscalersForAll([]string{
+		"kube-state-metrics",
+	},
+		[]string{
+			"prometheus",
+		}, cluster.Status.NamespaceName,
+		c.dynamicCache)
+	if err != nil {
+		return fmt.Errorf("failed to create the functions to handle VPA resources: %v", err)
+	}
+	return resources.EnsureVerticalPodAutoscalers(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache)
 }

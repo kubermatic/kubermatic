@@ -16,7 +16,6 @@ import (
 	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -317,27 +316,25 @@ func (cc *Controller) ensureCronJobs(c *kubermaticv1.Cluster, data *resources.Te
 	return nil
 }
 
-// GetVerticalPodAutoscalerCreators returns all VerticalPodAutoscalerCreator's that are currently in use
-func GetVerticalPodAutoscalerCreators(data *resources.TemplateData) []resources.VerticalPodAutoscalerCreator {
-	return []resources.VerticalPodAutoscalerCreator{
-		apiserver.VerticalPodAutoscaler,
-		controllermanager.VerticalPodAutoscaler,
-		dns.VerticalPodAutoscaler,
-		etcd.VerticalPodAutoscalerCreator(data),
-		ipamcontroller.VerticalPodAutoscaler,
-		machinecontroller.VerticalPodAutoscaler,
-		machinecontroller.WebhookVerticalPodAutoscaler,
-		metricsserver.VerticalPodAutoscaler,
-		openvpn.VerticalPodAutoscaler,
-		scheduler.VerticalPodAutoscaler,
-	}
-}
-
 func (cc *Controller) ensureVerticalPodAutoscalers(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	data.GetClusterRef()
-	creators := GetVerticalPodAutoscalerCreators(data)
-
-	return resources.EnsureVerticalPodAutoscalers(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(c))
+	creators, err := resources.GetVerticalPodAutoscalersForAll([]string{
+		"apiserver",
+		"controller-manager",
+		"dns-resolver",
+		"machine-controller",
+		"machine-controller-webhook",
+		"metrics-server",
+		"openvpn-server",
+		"scheduler",
+	},
+		[]string{
+			"etcd",
+		}, c.Status.NamespaceName,
+		cc.dynamicCache)
+	if err != nil {
+		return fmt.Errorf("failed to create the functions to handle VPA resources: %v", err)
+	}
+	return resources.EnsureVerticalPodAutoscalers(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache)
 }
 
 func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {

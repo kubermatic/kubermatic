@@ -24,9 +24,6 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("100m"),
 		},
 	}
-
-	// VerticalPodAutoscaler returns a VerticalPodAutoscaler which can be applied to the CoreDNS Deployment
-	VerticalPodAutoscaler = resources.GetVerticalPodAutoscaler(resources.DNSResolverVPAName, resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil))
 )
 
 // Service returns the service for the dns resolver
