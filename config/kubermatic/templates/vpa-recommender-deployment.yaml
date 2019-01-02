@@ -21,6 +21,16 @@ spec:
       containers:
       - name: recommender
         image: {{ .Values.kubermatic.vpa.recommender.image.repository }}:{{ .Values.kubermatic.vpa.recommender.image.tag }}
+        command: ["/recommender"]
+        args: [
+        "--address", ":8942",
+        # Use a higher GC interval to reduce the load on the API.
+        # The recommender only writes new checkpoints when old ones have reached the GC interval
+        "--checkpoints-gc-interval", "1h",
+        "--kube-api-burst", "20",
+        "--kube-api-qps", "10",
+        "--logtostderr",
+        ]
         resources:
           limits:
             cpu: 200m
