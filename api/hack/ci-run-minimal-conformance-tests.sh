@@ -7,7 +7,7 @@ echo "Build ID is $BUILD_ID"
 export VERSIONS=${VERSIONS_TO_TEST:-"v1.12.4"}
 export NAMESPACE="prow-kubermatic-${BUILD_ID}"
 echo "Testing versions: ${VERSIONS}"
-cd $(dirname $0)/..
+cd $(dirname $0)/../..
 
 function cleanup {
   echo "Starting cleanup"
@@ -76,7 +76,7 @@ time make kubermatic-controller-manager
 echo "Finished building conformance-tests and kubermatic-controller-manager"
 
 echo "Building docker image"
-./hack/push_image.sh ${PULL_PULL_SHA}
+./api/hack/push_image.sh ${PULL_PULL_SHA}
 echo "Finished building and pushing docker images"
 
 INITIAL_MANIFESTS=$(cat <<EOF
