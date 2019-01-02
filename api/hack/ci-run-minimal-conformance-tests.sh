@@ -72,7 +72,7 @@ fi
 echo "Building conformance-tests cli"
 time go build -v github.com/kubermatic/kubermatic/api/cmd/conformance-tests
 echo "Building kubermatic-controller-manager"
-time make -C api kubermatic-controller-manager
+time make -C api build
 echo "Finished building conformance-tests and kubermatic-controller-manager"
 
 echo "Building docker image"
