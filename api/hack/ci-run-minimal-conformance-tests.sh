@@ -63,7 +63,7 @@ time make kubermatic-controller-manager
 echo "Finished building conformance-tests and kubermatic-controller-manager"
 
 echo "Building docker image"
-./api/hack/push_image.sh ${PULL_PULL_SHA}
+./hack/push_image.sh ${PULL_PULL_SHA}
 echo "Finished building and pushing docker images"
 
 INITIAL_MANIFESTS=$(cat <<EOF
