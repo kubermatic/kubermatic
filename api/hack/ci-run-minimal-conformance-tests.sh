@@ -10,6 +10,7 @@ echo "Testing versions: ${VERSIONS}"
 cd $(dirname $0)/..
 
 function cleanup {
+  echo "Starting cleanup"
   set +e
   # Delete addons from all clusters that have our worker-name label
   kubectl get cluster -l worker-name=$BUILD_ID \
@@ -32,6 +33,7 @@ function cleanup {
   # Delete the Helm installation
   kubectl delete clusterrolebinding -l prowjob=$BUILD_ID
   kubectl delete namespace $NAMESPACE
+  echo "Finished cleanup"
 }
 trap cleanup EXIT
 
