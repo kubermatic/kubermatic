@@ -1,4 +1,4 @@
-package handler
+package handler_test
 
 // for more responses see: https://developer.openstack.org/api-ref/network/v2/
 // and https://developer.openstack.org/api-ref/identity/v3/

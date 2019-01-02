@@ -1,15 +1,22 @@
-package handler
+package handler_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"html/template"
+	"io/ioutil"
+	"k8s.io/apimachinery/pkg/runtime"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/util/diff"
+
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 var (
@@ -222,10 +229,10 @@ func TestOpenstackEndpoints(t *testing.T) {
 			req.Header.Add("Password", userPass)
 			req.Header.Add("Domain", domain)
 
-			apiUser := getUser(testUserEmail, testUserID, testUserName, false)
+			apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName, false)
 
 			res := httptest.NewRecorder()
-			router, _, err := createTestEndpointAndGetClients(apiUser, buildOpenstackDatacenterMeta(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{apiUserToKubermaticUser(apiUser)}, nil, nil)
+			router, _, err := test.CreateTestEndpointAndGetClients(apiUser, buildOpenstackDatacenterMeta(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{test.APIUserToKubermaticUser(apiUser)}, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v\n", err)
 			}
@@ -233,5 +240,28 @@ func TestOpenstackEndpoints(t *testing.T) {
 			router.ServeHTTP(res, req)
 			compareJSON(t, res, tc.ExpectedResponse)
 		})
+	}
+}
+
+func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseString string) {
+	t.Helper()
+	var actualResponse interface{}
+	var expectedResponse interface{}
+
+	// var err error
+	bBytes, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		t.Fatal("Unable to read response body")
+	}
+	err = json.Unmarshal(bBytes, &actualResponse)
+	if err != nil {
+		t.Fatalf("Error marshaling string 1 :: %s", err.Error())
+	}
+	err = json.Unmarshal([]byte(expectedResponseString), &expectedResponse)
+	if err != nil {
+		t.Fatalf("Error marshaling string 2 :: %s", err.Error())
+	}
+	if !equality.Semantic.DeepEqual(actualResponse, expectedResponse) {
+		t.Fatalf("Objects are different: %v", diff.ObjectDiff(actualResponse, expectedResponse))
 	}
 }
