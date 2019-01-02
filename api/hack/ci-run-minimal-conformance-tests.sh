@@ -150,7 +150,7 @@ echo "Starting conformance tests"
 ./conformance-tests \
   -debug \
   -worker-name=$BUILD_ID \
-  -kubeconfig=$KUBECONFIG
+  -kubeconfig=$KUBECONFIG \
   -datacenters=$(go env GOPATH)/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
   -kubermatic-nodes=3 \
   -kubermatic-parallel-clusters=11 \
