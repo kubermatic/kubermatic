@@ -7,7 +7,7 @@ RUN /opt/install-kube-tests.sh
 RUN rm -rf /opt/kube-test/*/platforms/darwin
 RUN rm -rf /opt/kube-test/*/platforms/windows
 
-FROM golang:1.11.2-stretch
+FROM golang:1.11.4-stretch
 COPY --from=0 /opt/kube-test /opt/kube-test
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN apt update && apt install -y git-crypt curl apt-transport-https software-properties-common unzip && \
