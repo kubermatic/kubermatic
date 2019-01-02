@@ -93,18 +93,12 @@ metadata:
   name: tiller
   namespace: $NAMESPACE
 ---
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: tiller
-  namespace: $NAMESPACE
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: prow-${BUILD_ID}-tiller
   labels:
-    prowjob: ${BUILD_ID}
+    prowjob: "${BUILD_ID}"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -119,7 +113,7 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: prow-${BUILD_ID}-kubermatic
   labels:
-    prowjob: ${BUILD_ID}
+    prowjob: "${BUILD_ID}"
 subjects:
 - kind: ServiceAccount
   name: kubermatic
