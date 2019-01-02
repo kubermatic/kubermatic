@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"sort"
@@ -22,10 +21,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
-	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/diff"
-
 	fakeclusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset/fake"
 )
 
@@ -89,29 +85,6 @@ func createTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 
 func compareWithResult(t *testing.T, res *httptest.ResponseRecorder, response string) {
 	test.CompareWithResult(t, res, response)
-}
-
-func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseString string) {
-	t.Helper()
-	var actualResponse interface{}
-	var expectedResponse interface{}
-
-	// var err error
-	bBytes, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Fatal("Unable to read response body")
-	}
-	err = json.Unmarshal(bBytes, &actualResponse)
-	if err != nil {
-		t.Fatalf("Error marshaling string 1 :: %s", err.Error())
-	}
-	err = json.Unmarshal([]byte(expectedResponseString), &expectedResponse)
-	if err != nil {
-		t.Fatalf("Error marshaling string 2 :: %s", err.Error())
-	}
-	if !equality.Semantic.DeepEqual(actualResponse, expectedResponse) {
-		t.Fatalf("Objects are different: %v", diff.ObjectDiff(actualResponse, expectedResponse))
-	}
 }
 
 const (
