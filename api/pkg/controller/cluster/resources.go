@@ -13,7 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
+	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 
@@ -224,9 +224,8 @@ func GetSecretCreatorOperations(c *kubermaticv1.Cluster, dockerPullConfigJSON []
 	}
 
 	if enableDexCA {
-		secrets = append(secrets,SecretOperation{name: resources.DexCASecretName, create: apiserver.DexCACertificate})
+		secrets = append(secrets, SecretOperation{name: resources.DexCASecretName, create: apiserver.DexCACertificate})
 	}
-
 
 	if len(c.Spec.MachineNetworks) > 0 {
 		secrets = append(secrets, SecretOperation{resources.IPAMControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.IPAMControllerKubeconfigSecretName, resources.IPAMControllerCertUsername, nil)})
@@ -237,7 +236,7 @@ func GetSecretCreatorOperations(c *kubermaticv1.Cluster, dockerPullConfigJSON []
 func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 
 	var enableDexCA bool
-	if len(data.OIDCCAFile()) > 0{
+	if len(data.OIDCCAFile()) > 0 {
 		enableDexCA = true
 	}
 
