@@ -108,10 +108,9 @@ func TestCreateAddon(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var objects []runtime.Object
 			kubermaticObjs := []runtime.Object{}
 			if test.ns != nil {
-				objects = append(objects, test.ns)
+				kubermaticObjs = append(kubermaticObjs, test.ns)
 			}
 
 			kubermaticObjs = append(kubermaticObjs, test.cluster)

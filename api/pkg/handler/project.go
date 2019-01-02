@@ -3,14 +3,13 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"net/http"
-	"time"
-
 	"github.com/go-kit/kit/endpoint"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	"net/http"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
@@ -27,17 +26,16 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 			return nil, errors.NewBadRequest("the name of the project cannot be empty")
 		}
 
-		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		user := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
 		kubermaticProject, err := projectProvider.New(user, projectRq.Name)
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
 		}
-
 		return apiv1.Project{
 			ObjectMeta: apiv1.ObjectMeta{
 				ID:                kubermaticProject.Name,
 				Name:              kubermaticProject.Spec.Name,
-				CreationTimestamp: kubermaticProject.CreationTimestamp.Time,
+				CreationTimestamp: apiv1.NewTime(kubermaticProject.CreationTimestamp.Time),
 			},
 			Status: kubermaticProject.Status.Phase,
 		}, nil
@@ -46,7 +44,7 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 
 func listProjectsEndpoint(projectProvider provider.ProjectProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := ctx.Value(userCRContextKey).(*kubermaticapiv1.User)
+		user := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
 		projects := []*apiv1.Project{}
 
 		userMappings, err := memberMapper.MappingsFor(user.Spec.Email)
@@ -76,7 +74,7 @@ func deleteProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 			return nil, errors.NewBadRequest("the name of the project cannot be empty")
 		}
 
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		err := projectProvider.Delete(userInfo, req.ProjectID)
 		return nil, kubernetesErrorToHTTPError(err)
 	}
@@ -98,7 +96,7 @@ func getProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpo
 			return nil, errors.NewBadRequest("the name of the project cannot be empty")
 		}
 
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		kubermaticProject, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
@@ -112,10 +110,11 @@ func convertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                kubermaticProject.Name,
 			Name:              kubermaticProject.Spec.Name,
-			CreationTimestamp: kubermaticProject.CreationTimestamp.Time,
-			DeletionTimestamp: func() *time.Time {
+			CreationTimestamp: apiv1.NewTime(kubermaticProject.CreationTimestamp.Time),
+			DeletionTimestamp: func() *apiv1.Time {
 				if kubermaticProject.DeletionTimestamp != nil {
-					return &kubermaticProject.DeletionTimestamp.Time
+					dt := apiv1.NewTime(kubermaticProject.DeletionTimestamp.Time)
+					return &dt
 				}
 				return nil
 			}(),

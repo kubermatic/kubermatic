@@ -670,7 +670,7 @@
         "tags": [
           "project"
         ],
-        "operationId": "listNodeDeploymentsForCluster",
+        "operationId": "listNodeDeployments",
         "parameters": [
           {
             "type": "string",
@@ -726,7 +726,7 @@
         "tags": [
           "project"
         ],
-        "operationId": "createNodeDeploymentForCluster",
+        "operationId": "createNodeDeployment",
         "parameters": [
           {
             "type": "string",
@@ -778,6 +778,7 @@
     },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}": {
       "get": {
+        "description": "Patches a node deployment that is assigned to the given cluster. Please note that at the moment only\nnode deployment's spec can be updated by a patch, no other fields can be changed using this endpoint.",
         "consumes": [
           "application/json"
         ],
@@ -787,8 +788,7 @@
         "tags": [
           "project"
         ],
-        "summary": "Gets a node deployment that is assigned to the given cluster.",
-        "operationId": "getNodeDeploymentForCluster",
+        "operationId": "patchNodeDeployment",
         "parameters": [
           {
             "type": "string",
@@ -817,6 +817,17 @@
             "name": "nodedeployment_id",
             "in": "path",
             "required": true
+          },
+          {
+            "name": "Patch",
+            "in": "body",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "uint8"
+              }
+            }
           }
         ],
         "responses": {
@@ -845,7 +856,7 @@
           "project"
         ],
         "summary": "Deletes the given node deployment that belongs to the cluster.",
-        "operationId": "deleteNodeDeploymentForCluster",
+        "operationId": "deleteNodeDeployment",
         "parameters": [
           {
             "type": "string",
@@ -3330,24 +3341,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "IntOrString": {
-      "description": "+protobuf=true\n+protobuf.options.(gogoproto.goproto_stringer)=false\n+k8s:openapi-gen=true",
-      "type": "object",
-      "title": "IntOrString is a type that can hold an int32 or a string.  When used in\nJSON or YAML marshalling and unmarshalling, it produces or consumes the\ninner type.  This allows you to have, for example, a JSON field that can\naccept a name or number.\nTODO: Rename to Int32OrString",
-      "properties": {
-        "IntVal": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "StrVal": {
-          "type": "string"
-        },
-        "Type": {
-          "$ref": "#/definitions/Type"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/util/intstr"
-    },
     "Kubeconfig": {
       "description": "Kubeconfig is a clusters kubeconfig",
       "type": "object",
@@ -3439,31 +3432,8 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "LegacyUser": {
-      "description": "Depreciated: use User instead",
-      "type": "object",
-      "title": "LegacyUser represents an API user that is used for authentication.",
-      "properties": {
-        "Email": {
-          "type": "string"
-        },
-        "ID": {
-          "type": "string"
-        },
-        "Name": {
-          "type": "string"
-        },
-        "Roles": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "object"
-          }
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
     "MachineDeploymentStatus": {
-      "description": "MachineDeploymentStatus defines the observed state of MachineDeployment",
+      "description": "[MachineDeploymentStatus]\nMachineDeploymentStatus defines the observed state of MachineDeployment",
       "type": "object",
       "properties": {
         "availableReplicas": {
@@ -3505,23 +3475,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
     },
-    "MachineDeploymentStrategy": {
-      "description": "MachineDeploymentStrategy describes how to replace existing machines\nwith new ones.",
-      "type": "object",
-      "properties": {
-        "rollingUpdate": {
-          "$ref": "#/definitions/MachineRollingUpdateDeployment"
-        },
-        "type": {
-          "$ref": "#/definitions/MachineDeploymentStrategyType"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
-    },
-    "MachineDeploymentStrategyType": {
-      "type": "string",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
-    },
     "MachineNetworkingConfig": {
       "type": "object",
       "title": "MachineNetworkingConfig specifies the networking parameters used for IPAM.",
@@ -3543,19 +3496,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "MachineRollingUpdateDeployment": {
-      "type": "object",
-      "title": "Spec to control the desired behavior of rolling update.",
-      "properties": {
-        "maxSurge": {
-          "$ref": "#/definitions/IntOrString"
-        },
-        "maxUnavailable": {
-          "$ref": "#/definitions/IntOrString"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
     },
     "MasterVersion": {
       "description": "MasterVersion describes a version of the master components",
@@ -3758,32 +3698,14 @@
         "template"
       ],
       "properties": {
-        "minReadySeconds": {
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "MinReadySeconds"
-        },
         "paused": {
           "type": "boolean",
           "x-go-name": "Paused"
-        },
-        "progressDeadlineSeconds": {
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "ProgressDeadlineSeconds"
         },
         "replicas": {
           "type": "integer",
           "format": "int32",
           "x-go-name": "Replicas"
-        },
-        "revisionHistoryLimit": {
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "RevisionHistoryLimit"
-        },
-        "strategy": {
-          "$ref": "#/definitions/MachineDeploymentStrategy"
         },
         "template": {
           "$ref": "#/definitions/NodeSpec"
@@ -4378,11 +4300,10 @@
       "type": "object",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/semver"
     },
-    "Type": {
-      "type": "integer",
-      "format": "int64",
-      "title": "Type represents the stored type of IntOrString.",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/util/intstr"
+    "Time": {
+      "description": "Time is a wrapper around time.Time which supports correct\nmarshaling JSON.  Wrappers are provided for many\nof the factory methods that the time package offers.",
+      "type": "object",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "UbuntuSpec": {
       "description": "UbuntuSpec ubuntu specific settings",

@@ -98,6 +98,7 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 
 	return cluster.NewController(
 		ctrlCtx.kubeClient,
+		ctrlCtx.dynamicClient,
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.runOptions.externalURL,
 		ctrlCtx.runOptions.dc,
@@ -115,6 +116,7 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
 		dockerPullConfigJSON,
 
+		ctrlCtx.dynamicCache,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Namespaces(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Secrets(),
@@ -178,6 +180,7 @@ func createMonitoringController(ctrlCtx *controllerContext) (runner, error) {
 
 	return monitoring.New(
 		ctrlCtx.kubeClient,
+		ctrlCtx.dynamicClient,
 		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
 
 		ctrlCtx.runOptions.dc,
@@ -193,6 +196,7 @@ func createMonitoringController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
 		dockerPullConfigJSON,
 
+		ctrlCtx.dynamicCache,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 		ctrlCtx.kubeInformerFactory.Core().V1().ServiceAccounts(),
 		ctrlCtx.kubeInformerFactory.Core().V1().ConfigMaps(),

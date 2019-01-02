@@ -11,6 +11,7 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
@@ -21,10 +22,18 @@ func createSSHKeyEndpoint(keyProvider provider.SSHKeyProvider, projectProvider p
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		existingKeys, err := keyProvider.List(project, &provider.SSHKeyListOptions{SSHKeyName: req.Key.Name})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+		if len(existingKeys) > 0 {
+			return nil, errors.NewAlreadyExists("ssh key", req.Key.Name)
 		}
 
 		key, err := keyProvider.Create(userInfo, project, req.Key.Name, req.Key.Spec.PublicKey)
@@ -36,7 +45,7 @@ func createSSHKeyEndpoint(keyProvider provider.SSHKeyProvider, projectProvider p
 			ObjectMeta: apiv1.ObjectMeta{
 				ID:                key.Name,
 				Name:              key.Spec.Name,
-				CreationTimestamp: key.CreationTimestamp.Time,
+				CreationTimestamp: apiv1.NewTime(key.CreationTimestamp.Time),
 			},
 			Spec: apiv1.SSHKeySpec{
 				Fingerprint: key.Spec.Fingerprint,
@@ -53,7 +62,7 @@ func deleteSSHKeyEndpoint(keyProvider provider.SSHKeyProvider, projectProvider p
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
@@ -78,7 +87,7 @@ func listSSHKeyEndpoint(keyProvider provider.SSHKeyProvider, projectProvider pro
 			return nil, errors.NewBadRequest("the name of the project to delete cannot be empty")
 		}
 
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, kubernetesErrorToHTTPError(err)
@@ -101,7 +110,7 @@ func convertInternalSSHKeysToExternal(internalKeys []*kubermaticapiv1.UserSSHKey
 			ObjectMeta: apiv1.ObjectMeta{
 				ID:                key.Name,
 				Name:              key.Spec.Name,
-				CreationTimestamp: key.CreationTimestamp.Time,
+				CreationTimestamp: apiv1.NewTime(key.CreationTimestamp.Time),
 			},
 			Spec: apiv1.SSHKeySpec{
 				Fingerprint: key.Spec.Fingerprint,

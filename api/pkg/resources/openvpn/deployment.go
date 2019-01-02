@@ -24,6 +24,20 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("100m"),
 		},
 	}
+
+	ipForwardRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("16Mi"),
+			corev1.ResourceCPU:    resource.MustParse("5m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+			corev1.ResourceCPU:    resource.MustParse("10m"),
+		},
+	}
+
+	// VerticalPodAutoscaler returns a VerticalPodAutoscaler which can be applied to the OpenVPN server Deployment
+	VerticalPodAutoscaler = resources.GetVerticalPodAutoscaler(name, resources.BaseAppLabel(name, nil))
 )
 
 const (
@@ -108,23 +122,21 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/bin/bash"},
 			Args: []string{
-				"-c",
-				`
-				# do not give a 10.20.0.0/24 route to clients (nodes) but
-				# masquerade to openvpn-server's IP instead:
-				iptables -t nat -A POSTROUTING -o tun0 -s 10.20.0.0/24 -j MASQUERADE
+				"-c", `# do not give a 10.20.0.0/24 route to clients (nodes) but
+# masquerade to openvpn-server's IP instead:
+iptables -t nat -A POSTROUTING -o tun0 -s 10.20.0.0/24 -j MASQUERADE
 
-				# Only allow outbound traffic to services, pods, nodes
-				iptables -P FORWARD DROP
-				iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
-				iptables -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d ` + podNet.String() + ` -j ACCEPT
-				iptables -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d ` + serviceNet.String() + ` -j ACCEPT
-				iptables -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d ` + nodeAccessNetwork.String() + ` -j ACCEPT
+# Only allow outbound traffic to services, pods, nodes
+iptables -P FORWARD DROP
+iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d ` + podNet.String() + ` -j ACCEPT
+iptables -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d ` + serviceNet.String() + ` -j ACCEPT
+iptables -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d ` + nodeAccessNetwork.String() + ` -j ACCEPT
 
-				iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-				iptables -A INPUT -i tun0 -p icmp -j ACCEPT
-				iptables -A INPUT -i tun0 -j DROP
-				`,
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A INPUT -i tun0 -p icmp -j ACCEPT
+iptables -A INPUT -i tun0 -j DROP
+`,
 			},
 			SecurityContext: &corev1.SecurityContext{
 				Capabilities: &corev1.Capabilities{
@@ -213,6 +225,23 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 					ReadOnly:  true,
 				},
 			},
+		},
+		{
+			Name:            "ip-forward",
+			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/openvpn:v0.4",
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			Command:         []string{"/bin/bash"},
+			Args: []string{
+				"-c",
+				// Always set IP forwarding as a CNI plugin might reset this to 0 (Like Calico 3).
+				"while true; do sysctl -w net.ipv4.ip_forward=1; sleep 30; done",
+			},
+			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+			SecurityContext: &corev1.SecurityContext{
+				Privileged: resources.Bool(true),
+			},
+			Resources: ipForwardRequirements,
 		},
 	}
 

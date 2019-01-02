@@ -1,14 +1,10 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/url"
-	"os"
-
-	"github.com/golang/glog"
 
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
@@ -21,6 +17,9 @@ import (
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	certutil "k8s.io/client-go/util/cert"
+
+	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type controllerRunOptions struct {
@@ -178,26 +177,16 @@ func (o controllerRunOptions) validate() error {
 
 // validateDexSecretWithCABundle
 func (o controllerRunOptions) validateCABundle() error {
-
-	f, err := os.Open(o.oidcCAFile)
-	if err != nil {
-		return err
+	if len(o.oidcCAFile) == 0 {
+		return fmt.Errorf("-oidc-ca-file not specified")
 	}
 
-	defer func() {
-		err := f.Close()
-		if err != nil {
-			glog.Fatal(err)
-		}
-	}()
-
-	bytes, err := ioutil.ReadAll(bufio.NewReader(f))
+	bytes, err := ioutil.ReadFile(o.oidcCAFile)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read '%s': %v", o.oidcCAFile, err)
 	}
 
 	_, err = certutil.ParseCertsPEM(bytes)
-
 	return err
 }
 
@@ -208,4 +197,6 @@ type controllerContext struct {
 	kubermaticClient          kubermaticclientset.Interface
 	kubermaticInformerFactory kubermaticinformers.SharedInformerFactory
 	kubeInformerFactory       kubeinformers.SharedInformerFactory
+	dynamicClient             ctrlruntimeclient.Client
+	dynamicCache              ctrlruntimecache.Cache
 }

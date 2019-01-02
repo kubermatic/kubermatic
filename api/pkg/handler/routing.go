@@ -7,20 +7,9 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 	prometheusapi "github.com/prometheus/client_golang/api"
 
+	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
-)
-
-// ContextKey defines a dedicated type for keys to use on contexts
-type ContextKey string
-
-const (
-	rawToken                  ContextKey = "raw-auth-token"
-	apiUserContextKey         ContextKey = "api-user"
-	userCRContextKey          ContextKey = "user-cr"
-	userInfoContextKey        ContextKey = "user-info"
-	datacenterContextKey      ContextKey = "datacenter"
-	clusterProviderContextKey ContextKey = "cluster-provider"
 )
 
 // UpdateManager specifies a set of methods to handle cluster versions & updates
@@ -40,8 +29,8 @@ type Routing struct {
 	userProvider          provider.UserProvider
 	projectProvider       provider.ProjectProvider
 	logger                log.Logger
-	oidcAuthenticator     OIDCAuthenticator
-	oidcIssuer            OIDCIssuerVerifier
+	oidcAuthenticator     auth.OIDCAuthenticator
+	oidcIssuer            auth.OIDCIssuerVerifier
 	clusterProviders      map[string]provider.ClusterProvider
 	updateManager         UpdateManager
 	prometheusClient      prometheusapi.Client
@@ -57,8 +46,8 @@ func NewRouting(
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	projectProvider provider.ProjectProvider,
-	oidcAuthenticator OIDCAuthenticator,
-	oidcIssuerVerifier OIDCIssuerVerifier,
+	oidcAuthenticator auth.OIDCAuthenticator,
+	oidcIssuerVerifier auth.OIDCIssuerVerifier,
 	updateManager UpdateManager,
 	prometheusClient prometheusapi.Client,
 	projectMemberProvider provider.ProjectMemberProvider,

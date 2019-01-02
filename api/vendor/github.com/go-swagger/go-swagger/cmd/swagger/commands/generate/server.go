@@ -15,7 +15,6 @@
 package generate
 
 import (
-	"io/ioutil"
 	"log"
 	"strings"
 
@@ -25,71 +24,66 @@ import (
 // Server the command to generate an entire server application
 type Server struct {
 	shared
-	Name              string   `long:"name" short:"A" description:"the name of the application, defaults to a mangled value of info.title"`
-	Operations        []string `long:"operation" short:"O" description:"specify an operation to include, repeat for multiple"`
-	Tags              []string `long:"tags" description:"the tags to include, if not specified defaults to all"`
-	Principal         string   `long:"principal" short:"P" description:"the model to use for the security principal"`
-	DefaultScheme     string   `long:"default-scheme" description:"the default scheme for this API" default:"http"`
-	Models            []string `long:"model" short:"M" description:"specify a model to include, repeat for multiple"`
-	SkipModels        bool     `long:"skip-models" description:"no models will be generated when this flag is specified"`
-	SkipOperations    bool     `long:"skip-operations" description:"no operations will be generated when this flag is specified"`
-	SkipSupport       bool     `long:"skip-support" description:"no supporting files will be generated when this flag is specified"`
-	ExcludeMain       bool     `long:"exclude-main" description:"exclude main function, so just generate the library"`
-	ExcludeSpec       bool     `long:"exclude-spec" description:"don't embed the swagger specification"`
-	WithContext       bool     `long:"with-context" description:"handlers get a context as first arg (deprecated)"`
-	DumpData          bool     `long:"dump-data" description:"when present dumps the json for the template generator instead of generating files"`
-	FlagStrategy      string   `long:"flag-strategy" description:"the strategy to provide flags for the server" default:"go-flags" choice:"go-flags" choice:"pflag"`
-	CompatibilityMode string   `long:"compatibility-mode" description:"the compatibility mode for the tls server" default:"modern" choice:"modern" choice:"intermediate"`
-	SkipValidation    bool     `long:"skip-validation" description:"skips validation of spec prior to generation"`
-	SkipFlattening    bool     `long:"skip-flatten" description:"skips flattening of spec prior to generation"`
+	Name                   string   `long:"name" short:"A" description:"the name of the application, defaults to a mangled value of info.title"`
+	Operations             []string `long:"operation" short:"O" description:"specify an operation to include, repeat for multiple"`
+	Tags                   []string `long:"tags" description:"the tags to include, if not specified defaults to all"`
+	Principal              string   `long:"principal" short:"P" description:"the model to use for the security principal"`
+	DefaultScheme          string   `long:"default-scheme" description:"the default scheme for this API" default:"http"`
+	Models                 []string `long:"model" short:"M" description:"specify a model to include, repeat for multiple"`
+	SkipModels             bool     `long:"skip-models" description:"no models will be generated when this flag is specified"`
+	SkipOperations         bool     `long:"skip-operations" description:"no operations will be generated when this flag is specified"`
+	SkipSupport            bool     `long:"skip-support" description:"no supporting files will be generated when this flag is specified"`
+	ExcludeMain            bool     `long:"exclude-main" description:"exclude main function, so just generate the library"`
+	ExcludeSpec            bool     `long:"exclude-spec" description:"don't embed the swagger specification"`
+	WithContext            bool     `long:"with-context" description:"handlers get a context as first arg (deprecated)"`
+	DumpData               bool     `long:"dump-data" description:"when present dumps the json for the template generator instead of generating files"`
+	FlagStrategy           string   `long:"flag-strategy" description:"the strategy to provide flags for the server" default:"go-flags" choice:"go-flags" choice:"pflag"`
+	CompatibilityMode      string   `long:"compatibility-mode" description:"the compatibility mode for the tls server" default:"modern" choice:"modern" choice:"intermediate"`
+	SkipValidation         bool     `long:"skip-validation" description:"skips validation of spec prior to generation"`
+	RegenerateConfigureAPI bool     `long:"regenerate-configureapi" description:"Force regeneration of configureapi.go"`
 }
 
 func (s *Server) getOpts() (*generator.GenOpts, error) {
-	var copyrightstr string
-	copyrightfile := string(s.CopyrightFile)
-	if copyrightfile != "" {
-		//Read the Copyright from file path in opts
-		bytebuffer, err := ioutil.ReadFile(copyrightfile)
-		if err != nil {
-			return nil, err
-		}
-		copyrightstr = string(bytebuffer)
-	} else {
-		copyrightstr = ""
+	// warning: deprecation
+	if s.WithContext {
+		log.Printf("warning: deprecated option --with-context is ignored")
 	}
 
 	return &generator.GenOpts{
-		Spec:              string(s.Spec),
-		Target:            string(s.Target),
-		APIPackage:        s.APIPackage,
-		ModelPackage:      s.ModelPackage,
-		ServerPackage:     s.ServerPackage,
-		ClientPackage:     s.ClientPackage,
-		Principal:         s.Principal,
-		DefaultScheme:     s.DefaultScheme,
-		IncludeModel:      !s.SkipModels,
-		IncludeValidator:  !s.SkipModels,
-		IncludeHandler:    !s.SkipOperations,
-		IncludeParameters: !s.SkipOperations,
-		IncludeResponses:  !s.SkipOperations,
-		IncludeURLBuilder: !s.SkipOperations,
-		IncludeMain:       !s.ExcludeMain,
-		IncludeSupport:    !s.SkipSupport,
-		ValidateSpec:      !s.SkipValidation,
-		FlattenSpec:       !s.SkipFlattening,
-		ExcludeSpec:       s.ExcludeSpec,
-		TemplateDir:       string(s.TemplateDir),
-		WithContext:       s.WithContext,
-		DumpData:          s.DumpData,
-		Models:            s.Models,
-		Operations:        s.Operations,
-		Tags:              s.Tags,
-		Name:              s.Name,
-		FlagStrategy:      s.FlagStrategy,
-		CompatibilityMode: s.CompatibilityMode,
-		ExistingModels:    s.ExistingModels,
-		Copyright:         copyrightstr,
+		Spec:                   string(s.Spec),
+		Target:                 string(s.Target),
+		APIPackage:             s.APIPackage,
+		ModelPackage:           s.ModelPackage,
+		ServerPackage:          s.ServerPackage,
+		ClientPackage:          s.ClientPackage,
+		Principal:              s.Principal,
+		DefaultScheme:          s.DefaultScheme,
+		IncludeModel:           !s.SkipModels,
+		IncludeValidator:       !s.SkipModels,
+		IncludeHandler:         !s.SkipOperations,
+		IncludeParameters:      !s.SkipOperations,
+		IncludeResponses:       !s.SkipOperations,
+		IncludeURLBuilder:      !s.SkipOperations,
+		IncludeMain:            !s.ExcludeMain,
+		IncludeSupport:         !s.SkipSupport,
+		ValidateSpec:           !s.SkipValidation,
+		ExcludeSpec:            s.ExcludeSpec,
+		Template:               s.Template,
+		RegenerateConfigureAPI: s.RegenerateConfigureAPI,
+		TemplateDir:            string(s.TemplateDir),
+		DumpData:               s.DumpData,
+		Models:                 s.Models,
+		Operations:             s.Operations,
+		Tags:                   s.Tags,
+		Name:                   s.Name,
+		FlagStrategy:           s.FlagStrategy,
+		CompatibilityMode:      s.CompatibilityMode,
+		ExistingModels:         s.ExistingModels,
 	}, nil
+}
+
+func (s *Server) getShared() *shared {
+	return &s.shared
 }
 
 func (s *Server) generate(opts *generator.GenOpts) error {
@@ -97,9 +91,11 @@ func (s *Server) generate(opts *generator.GenOpts) error {
 }
 
 func (s *Server) log(rp string) {
-	flagsPackage := "github.com/jessevdk/go-flags"
+	var flagsPackage string
 	if strings.HasPrefix(s.FlagStrategy, "pflag") {
 		flagsPackage = "github.com/spf13/pflag"
+	} else {
+		flagsPackage = "github.com/jessevdk/go-flags"
 	}
 
 	log.Printf(`Generation completed!
@@ -107,7 +103,6 @@ func (s *Server) log(rp string) {
 For this generation to compile you need to have some packages in your GOPATH:
 
 	* github.com/go-openapi/runtime
-	* github.com/tylerb/graceful
 	* `+flagsPackage+`
 
 You can get these now with: go get -u -f %s/...

@@ -25,20 +25,6 @@ func decodeProjectRequest(c context.Context, r *http.Request) (interface{}, erro
 	}, nil
 }
 
-// DCsReq represent a request for datacenters specific data
-type DCsReq struct{}
-
-func decodeDatacentersReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req DCsReq
-
-	return req, nil
-}
-
-//DCGetter defines functionality to retrieve a datacenter name
-type DCGetter interface {
-	GetDC() string
-}
-
 // ProjectIDGetter knows how to get project ID from the request
 type ProjectIDGetter interface {
 	GetProjectID() string
@@ -54,25 +40,6 @@ type DCReq struct {
 // GetDC returns the name of the datacenter in the request
 func (req DCReq) GetDC() string {
 	return req.DC
-}
-
-// LegacyDCReq represent a request for datacenter specific data
-// swagger:parameters getDatacenter
-type LegacyDCReq struct {
-	// in: path
-	DC string `json:"dc"`
-}
-
-// GetDC returns the name of the datacenter in the request
-func (req LegacyDCReq) GetDC() string {
-	return req.DC
-}
-
-func decodeLegacyDcReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req LegacyDCReq
-
-	req.DC = mux.Vars(r)["dc"]
-	return req, nil
 }
 
 func decodeDcReq(c context.Context, r *http.Request) (interface{}, error) {

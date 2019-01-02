@@ -1,4 +1,4 @@
-package handler
+package handler_test
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/kubermatic/kubermatic/api/pkg/handler"
 )
 
 func TestEncodeJSON(t *testing.T) {
@@ -27,7 +29,7 @@ func TestEncodeJSON(t *testing.T) {
 	for _, testcase := range testcases {
 		writer := httptest.NewRecorder()
 
-		err := encodeJSON(ctx, writer, testcase.input)
+		err := handler.EncodeJSON(ctx, writer, testcase.input)
 		if err != nil {
 			t.Errorf("failed to encode %#v as JSON: %v", testcase.input, err)
 		}

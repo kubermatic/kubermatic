@@ -10,9 +10,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/stretchr/testify/assert"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
+
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -76,7 +79,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 		},
 		{
 			Name:                "scenario 2, incorrect user ID in state",
-			ClusterID:           testClusterID,
+			ClusterID:           test.ClusterID,
 			ProjectID:           testingProjectName,
 			UserID:              "0000",
 			Datacenter:          testDatacenter,
@@ -84,7 +87,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 		},
 		{
 			Name:                      "scenario 2, exchange phase error: incorrect state parameter: invalid nonce",
-			ClusterID:                 testClusterID,
+			ClusterID:                 test.ClusterID,
 			ProjectID:                 testingProjectName,
 			UserID:                    testUserID,
 			Datacenter:                testDatacenter,
@@ -99,7 +102,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 		},
 		{
 			Name:                      "scenario 4, successful scenario",
-			ClusterID:                 testClusterID,
+			ClusterID:                 test.ClusterID,
 			ProjectID:                 testingProjectName,
 			UserID:                    testUserID,
 			Datacenter:                testDatacenter,
@@ -118,7 +121,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			reqURL := fmt.Sprintf("/api/v1/kubeconfig?cluster_id=%s&project_id=%s&user_id=%s&datacenter=%s", tc.ClusterID, tc.ProjectID, tc.UserID, tc.Datacenter)
 			req := httptest.NewRequest("GET", reqURL, strings.NewReader(""))
 			res := httptest.NewRecorder()
-			ep, err := createTestEndpoint(apiv1.LegacyUser{}, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil)
+			ep, err := createTestEndpoint(apiv1.User{}, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -173,7 +176,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 				if err != nil {
 					t.Fatalf("error marshal state %v", err)
 				}
-				urlExchangeCodePhase := fmt.Sprintf("/api/v1/kubeconfig?code=%s&state=%s", testAuthorizationCode, encodedState)
+				urlExchangeCodePhase := fmt.Sprintf("/api/v1/kubeconfig?code=%s&state=%s", test.AuthorizationCode, encodedState)
 
 				// call kubeconfig endpoint after authentication
 				// exchange code phase
@@ -212,7 +215,7 @@ func genTestKubeconfigKubermaticObjects() []runtime.Object {
 		// make John the owner of the first project and the editor of the second
 		genBinding(testingProjectName, testUserEmail, "owners"),
 		// add a cluster
-		genCluster(testClusterID, testClusterName, genDefaultProject().Name, defaultCreationTimestamp()),
+		genCluster(test.ClusterID, testClusterName, genDefaultProject().Name, defaultCreationTimestamp()),
 	}
 }
 

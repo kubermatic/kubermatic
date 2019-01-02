@@ -2,8 +2,6 @@ package v1
 
 import (
 	"encoding/json"
-	"time"
-
 	"github.com/Masterminds/semver"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -34,10 +32,12 @@ type ObjectMeta struct {
 	Name string `json:"name"`
 
 	// DeletionTimestamp is a timestamp representing the server time when this object was deleted.
-	DeletionTimestamp *time.Time `json:"deletionTimestamp,omitempty"`
+	// swagger:strfmt date-time
+	DeletionTimestamp *Time `json:"deletionTimestamp,omitempty"`
 
 	// CreationTimestamp is a timestamp representing the server time when this object was created.
-	CreationTimestamp time.Time `json:"creationTimestamp,omitempty"`
+	// swagger:strfmt date-time
+	CreationTimestamp Time `json:"creationTimestamp,omitempty"`
 }
 
 // DigitialoceanDatacenterSpec specifies a datacenter of DigitalOcean.
@@ -158,15 +158,6 @@ type SSHKey struct {
 type SSHKeySpec struct {
 	Fingerprint string `json:"fingerprint"`
 	PublicKey   string `json:"publicKey"`
-}
-
-// LegacyUser represents an API user that is used for authentication.
-// Depreciated: use User instead
-type LegacyUser struct {
-	ID    string
-	Name  string
-	Email string
-	Roles map[string]struct{}
 }
 
 // User represent an API user
@@ -664,9 +655,5 @@ type NodeDeploymentSpec struct {
 	// required: true
 	Template NodeSpec `json:"template"`
 
-	Strategy                *v1alpha1.MachineDeploymentStrategy `json:"strategy,omitempty"`
-	MinReadySeconds         *int32                              `json:"minReadySeconds,omitempty"`
-	RevisionHistoryLimit    *int32                              `json:"revisionHistoryLimit,omitempty"`
-	Paused                  *bool                               `json:"paused,omitempty"`
-	ProgressDeadlineSeconds *int32                              `json:"progressDeadlineSeconds,omitempty"`
+	Paused *bool `json:"paused,omitempty"`
 }

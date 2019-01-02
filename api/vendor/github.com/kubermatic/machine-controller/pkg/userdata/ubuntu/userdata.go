@@ -124,7 +124,7 @@ func (p Provider) UserData(
 		return "", fmt.Errorf("failed to execute user-data template: %v", err)
 	}
 
-	return string(b.String()), nil
+	return b.String(), nil
 }
 
 const ctTemplate = `#cloud-config

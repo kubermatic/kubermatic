@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
 
-ver=v0.1
+TAG=v0.3
 
 set -euox pipefail
 
-GOOS=linux GOARCH=amd64 go build github.com/kubermatic/kubermatic/api/cmd/conformance-tests
-
-docker build --no-cache --pull -t quay.io/kubermatic/conformance-tests:${ver} .
-docker push quay.io/kubermatic/conformance-tests:${ver}
-
-rm conformance-tests
+docker build --no-cache --pull -t kubermatic/kubernetes-test-binaries:${TAG} .
+docker push kubermatic/kubernetes-test-binaries:${TAG}

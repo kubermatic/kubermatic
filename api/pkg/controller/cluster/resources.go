@@ -67,6 +67,11 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 		return err
 	}
 
+	// check that all StatefulSets are created
+	if err := cc.ensureVerticalPodAutoscalers(cluster, data); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -257,22 +262,10 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster, data *resources.
 }
 
 // GetStatefulSetCreators returns all StatefulSetCreators that are currently in use
-func GetStatefulSetCreators() []resources.StatefulSetCreator {
+func GetStatefulSetCreators(data *resources.TemplateData) []resources.StatefulSetCreator {
 	return []resources.StatefulSetCreator{
-		etcd.StatefulSet,
+		etcd.StatefulSetCreator(data),
 	}
-}
-
-func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := GetStatefulSetCreators()
-
-	for _, create := range creators {
-		if err := resources.EnsureStatefulSet(data, create, cc.statefulSetLister.StatefulSets(c.Status.NamespaceName), cc.kubeClient.AppsV1().StatefulSets(c.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the StatefulSet exists: %v", err)
-		}
-	}
-
-	return nil
 }
 
 // GetPodDisruptionBudgetCreators returns all PodDisruptionBudgetCreators that are currently in use
@@ -312,4 +305,34 @@ func (cc *Controller) ensureCronJobs(c *kubermaticv1.Cluster, data *resources.Te
 	}
 
 	return nil
+}
+
+// GetVerticalPodAutoscalerCreators returns all VerticalPodAutoscalerCreator's that are currently in use
+func GetVerticalPodAutoscalerCreators(data *resources.TemplateData) []resources.VerticalPodAutoscalerCreator {
+	return []resources.VerticalPodAutoscalerCreator{
+		apiserver.VerticalPodAutoscaler,
+		controllermanager.VerticalPodAutoscaler,
+		dns.VerticalPodAutoscaler,
+		etcd.VerticalPodAutoscalerCreator(data),
+		ipamcontroller.VerticalPodAutoscaler,
+		machinecontroller.VerticalPodAutoscaler,
+		machinecontroller.WebhookVerticalPodAutoscaler,
+		metricsserver.VerticalPodAutoscaler,
+		openvpn.VerticalPodAutoscaler,
+		scheduler.VerticalPodAutoscaler,
+	}
+}
+
+func (cc *Controller) ensureVerticalPodAutoscalers(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	data.GetClusterRef()
+	creators := GetVerticalPodAutoscalerCreators(data)
+
+	return resources.EnsureVerticalPodAutoscalers(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(c))
+}
+
+func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	data.GetClusterRef()
+	creators := GetStatefulSetCreators(data)
+
+	return resources.EnsureStatefulSets(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(c))
 }

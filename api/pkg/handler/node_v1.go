@@ -4,28 +4,30 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/middleware"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	"k8s.io/client-go/kubernetes"
-
 	"github.com/Masterminds/semver"
+	"github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	machineconversions "github.com/kubermatic/kubermatic/api/pkg/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	apierrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
-	machineconversions "github.com/kubermatic/kubermatic/api/pkg/machine"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/kubernetes"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 )
@@ -40,8 +42,8 @@ const (
 func deleteNodeForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(DeleteNodeForClusterReq)
-		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
@@ -87,8 +89,8 @@ func deleteNodeForCluster(projectProvider provider.ProjectProvider) endpoint.End
 func listNodesForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(ListNodesForClusterReq)
-		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
@@ -162,8 +164,8 @@ func listNodesForCluster(projectProvider provider.ProjectProvider) endpoint.Endp
 func getNodeForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NodeReq)
-		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
@@ -209,8 +211,8 @@ func getNodeForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoi
 func createNodeForCluster(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateNodeReq)
-		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
@@ -290,9 +292,10 @@ func createNodeForCluster(sshKeyProvider provider.SSHKeyProvider, projectProvide
 func outputNode(node *corev1.Node, hideInitialNodeConditions bool) *apiv1.Node {
 	nodeStatus := apiv1.NodeStatus{}
 	nodeStatus = apiNodeStatus(nodeStatus, node, hideInitialNodeConditions)
-	var deletionTimestamp *time.Time
+	var deletionTimestamp *apiv1.Time
 	if node.DeletionTimestamp != nil {
-		deletionTimestamp = &node.DeletionTimestamp.Time
+		t := apiv1.NewTime(node.DeletionTimestamp.Time)
+		deletionTimestamp = &t
 	}
 
 	return &apiv1.Node{
@@ -300,7 +303,7 @@ func outputNode(node *corev1.Node, hideInitialNodeConditions bool) *apiv1.Node {
 			ID:                node.Name,
 			Name:              node.Name,
 			DeletionTimestamp: deletionTimestamp,
-			CreationTimestamp: node.CreationTimestamp.Time,
+			CreationTimestamp: apiv1.NewTime(node.CreationTimestamp.Time),
 		},
 		Spec: apiv1.NodeSpec{
 			Versions:        apiv1.NodeVersionInfo{},
@@ -315,7 +318,7 @@ func apiNodeStatus(status apiv1.NodeStatus, inputNode *corev1.Node, hideInitialN
 	for _, address := range inputNode.Status.Addresses {
 		status.Addresses = append(status.Addresses, apiv1.NodeAddress{
 			Type:    string(address.Type),
-			Address: string(address.Address),
+			Address: address.Address,
 		})
 	}
 
@@ -341,14 +344,15 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 	displayName := machine.Spec.Name
 	nodeStatus := apiv1.NodeStatus{}
 	nodeStatus.MachineName = machine.Name
-	var deletionTimestamp *time.Time
+	var deletionTimestamp *apiv1.Time
 	if machine.DeletionTimestamp != nil {
-		deletionTimestamp = &machine.DeletionTimestamp.Time
+		dt := apiv1.NewTime(machine.DeletionTimestamp.Time)
+		deletionTimestamp = &dt
 	}
 
 	if machine.Status.ErrorReason != nil {
 		nodeStatus.ErrorReason += string(*machine.Status.ErrorReason) + errGlue
-		nodeStatus.ErrorMessage += string(*machine.Status.ErrorMessage) + errGlue
+		nodeStatus.ErrorMessage += *machine.Status.ErrorMessage + errGlue
 	}
 
 	operatingSystemSpec, err := machineconversions.GetAPIV1OperatingSystemSpec(machine.Spec)
@@ -376,7 +380,7 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 			ID:                machine.Name,
 			Name:              displayName,
 			DeletionTimestamp: deletionTimestamp,
-			CreationTimestamp: machine.CreationTimestamp.Time,
+			CreationTimestamp: apiv1.NewTime(machine.CreationTimestamp.Time),
 		},
 		Spec: apiv1.NodeSpec{
 			Versions: apiv1.NodeVersionInfo{
@@ -391,7 +395,7 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 
 func parseNodeConditions(node *corev1.Node) (reason string, message string) {
 	for _, condition := range node.Status.Conditions {
-		goodConditionType := condition.Type == corev1.NodeReady || condition.Type == corev1.NodeKubeletConfigOk
+		goodConditionType := condition.Type == corev1.NodeReady
 		if goodConditionType && condition.Status != corev1.ConditionTrue {
 			reason += condition.Reason + errGlue
 			message += condition.Message + errGlue
@@ -591,14 +595,14 @@ func decodeGetNodeForCluster(c context.Context, r *http.Request) (interface{}, e
 }
 
 // CreateNodeDeploymentReq defines HTTP request for createMachineDeployment
-// swagger:parameters createNodeDeploymentForCluster
+// swagger:parameters createNodeDeployment
 type CreateNodeDeploymentReq struct {
 	GetClusterReq
 	// in: body
 	Body apiv1.NodeDeployment
 }
 
-func decodeCreateNodeDeploymentForCluster(c context.Context, r *http.Request) (interface{}, error) {
+func decodeCreateNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
 	var req CreateNodeDeploymentReq
 
 	clusterID, err := decodeClusterID(c, r)
@@ -620,11 +624,11 @@ func decodeCreateNodeDeploymentForCluster(c context.Context, r *http.Request) (i
 	return req, nil
 }
 
-func createNodeDeploymentForCluster(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+func createNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateNodeDeploymentReq)
-		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
@@ -693,7 +697,6 @@ func createNodeDeploymentForCluster(sshKeyProvider provider.SSHKeyProvider, proj
 			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
 		}
 
-		// Save Machine Deployment resource into Kubernetes.
 		md, err = machineClient.ClusterV1alpha1().MachineDeployments(md.Namespace).Create(md)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create machine deployment: %v", err)
@@ -707,9 +710,10 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 	nodeStatus := apiv1.NodeStatus{}
 	nodeStatus.MachineName = md.Name
 
-	var deletionTimestamp *time.Time
+	var deletionTimestamp *apiv1.Time
 	if md.DeletionTimestamp != nil {
-		deletionTimestamp = &md.DeletionTimestamp.Time
+		dt := apiv1.NewTime(md.DeletionTimestamp.Time)
+		deletionTimestamp = &dt
 	}
 
 	operatingSystemSpec, err := machineconversions.GetAPIV1OperatingSystemSpec(md.Spec.Template.Spec)
@@ -727,7 +731,7 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 			ID:                md.Name,
 			Name:              md.Name,
 			DeletionTimestamp: deletionTimestamp,
-			CreationTimestamp: md.CreationTimestamp.Time,
+			CreationTimestamp: apiv1.NewTime(md.CreationTimestamp.Time),
 		},
 		Spec: apiv1.NodeDeploymentSpec{
 			Replicas: *md.Spec.Replicas,
@@ -738,24 +742,20 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 				OperatingSystem: *operatingSystemSpec,
 				Cloud:           *cloudSpec,
 			},
-			Strategy:                &md.Spec.Strategy,
-			MinReadySeconds:         md.Spec.MinReadySeconds,
-			RevisionHistoryLimit:    md.Spec.RevisionHistoryLimit,
-			Paused:                  &md.Spec.Paused,
-			ProgressDeadlineSeconds: md.Spec.ProgressDeadlineSeconds,
+			Paused: &md.Spec.Paused,
 		},
 		Status: md.Status,
 	}, nil
 }
 
-// ListNodeDeploymentsForClusterReq defines HTTP request for listNodeDeploymentsForCluster
-// swagger:parameters listNodeDeploymentsForCluster
-type ListNodeDeploymentsForClusterReq struct {
+// ListNodeDeploymentsReq defines HTTP request for listNodeDeployments
+// swagger:parameters listNodeDeployments
+type ListNodeDeploymentsReq struct {
 	GetClusterReq
 }
 
-func decodeListNodeDeploymentsForCluster(c context.Context, r *http.Request) (interface{}, error) {
-	var req ListNodeDeploymentsForClusterReq
+func decodeListNodeDeployments(c context.Context, r *http.Request) (interface{}, error) {
+	var req ListNodeDeploymentsReq
 
 	clusterID, err := decodeClusterID(c, r)
 	if err != nil {
@@ -773,11 +773,11 @@ func decodeListNodeDeploymentsForCluster(c context.Context, r *http.Request) (in
 	return req, nil
 }
 
-func listNodeDeploymentsForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func listNodeDeployments(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(ListNodeDeploymentsForClusterReq)
-		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		req := request.(ListNodeDeploymentsReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
@@ -813,27 +813,37 @@ func listNodeDeploymentsForCluster(projectProvider provider.ProjectProvider) end
 	}
 }
 
-// NodeDeploymentReq defines HTTP request for getNodeDeploymentForCluster
-// swagger:parameters getNodeDeploymentForCluster
+// NodeDeploymentReq defines HTTP request for getNodeDeployment
+// swagger:parameters getNodeDeployment
 type NodeDeploymentReq struct {
 	GetClusterReq
 	// in: path
 	NodeDeploymentID string `json:"nodedeployment_id"`
 }
 
-func decodeGetNodeDeploymentForCluster(c context.Context, r *http.Request) (interface{}, error) {
+func decodeNodeDeploymentID(c context.Context, r *http.Request) (string, error) {
+	nodeDeploymentID := mux.Vars(r)["nodedeployment_id"]
+	if nodeDeploymentID == "" {
+		return "", fmt.Errorf("'nodedeployment_id' parameter is required but was not provided")
+	}
+
+	return nodeDeploymentID, nil
+}
+
+func decodeGetNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
 	var req NodeDeploymentReq
 
 	clusterID, err := decodeClusterID(c, r)
 	if err != nil {
 		return nil, err
 	}
-	nodeDeploymentID := mux.Vars(r)["nodedeployment_id"]
-	if nodeDeploymentID == "" {
-		return nil, fmt.Errorf("'nodedeployment_id' parameter is required but was not provided")
-	}
 
 	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
 	if err != nil {
 		return nil, err
 	}
@@ -845,11 +855,11 @@ func decodeGetNodeDeploymentForCluster(c context.Context, r *http.Request) (inte
 	return req, nil
 }
 
-func getNodeDeploymentForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func getNodeDeployment(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NodeDeploymentReq)
-		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
@@ -875,20 +885,135 @@ func getNodeDeploymentForCluster(projectProvider provider.ProjectProvider) endpo
 	}
 }
 
-// DeleteNodeDeploymentForClusterReq defines HTTP request for deleteNodeDeploymentForCluster
-// swagger:parameters deleteNodeDeploymentForCluster
-type DeleteNodeDeploymentForClusterReq struct {
+// PatchNodeDeploymentReq defines HTTP request for patchNodeDeployment endpoint
+// swagger:parameters patchNodeDeployment
+type PatchNodeDeploymentReq struct {
+	NodeDeploymentReq
+
+	// in: body
+	Patch []byte
+}
+
+func decodePatchNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
+	var req PatchNodeDeploymentReq
+
+	clusterID, err := decodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	dcr, err := decodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ClusterID = clusterID
+	req.NodeDeploymentID = nodeDeploymentID
+	req.DCReq = dcr.(DCReq)
+
+	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func patchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(PatchNodeDeploymentReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(cluster)
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		// We cannot use machineClient.ClusterV1alpha1().MachineDeployments().Patch() method as we are not exposing
+		// MachineDeployment type directly. API uses NodeDeployment type and we cannot ensure compatibility here.
+		machineDeployment, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Get(req.NodeDeploymentID, metav1.GetOptions{})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		nodeDeployment, err := outputMachineDeployment(machineDeployment)
+		if err != nil {
+			return nil, fmt.Errorf("cannot output existing node deployment: %v", err)
+		}
+
+		nodeDeploymentJSON, err := json.Marshal(nodeDeployment)
+		if err != nil {
+			return nil, fmt.Errorf("cannot decode existing node deployment: %v", err)
+		}
+
+		patchedNodeDeploymentJSON, err := jsonpatch.MergePatch(nodeDeploymentJSON, req.Patch)
+		if err != nil {
+			return nil, fmt.Errorf("cannot patch node deployment: %v", err)
+		}
+
+		var patchedNodeDeployment *apiv1.NodeDeployment
+		err = json.Unmarshal(patchedNodeDeploymentJSON, &patchedNodeDeployment)
+		if err != nil {
+			return nil, fmt.Errorf("cannot decode patched cluster: %v", err)
+		}
+
+		dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
+		if !found {
+			return nil, fmt.Errorf("unknown cluster datacenter %s", cluster.Spec.Cloud.DatacenterName)
+		}
+
+		keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: req.ClusterID})
+		if err != nil {
+			return nil, kubernetesErrorToHTTPError(err)
+		}
+
+		patchedMachineDeployment, err := machineresource.Deployment(cluster, patchedNodeDeployment, dc, keys)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
+		}
+
+		// Only spec will be updated by a patch.
+		// It ensures that the name and resource version are set and the selector stays the same.
+		machineDeployment.Spec = patchedMachineDeployment.Spec
+
+		machineDeployment, err = machineClient.ClusterV1alpha1().MachineDeployments(machineDeployment.Namespace).Update(machineDeployment)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create machine deployment: %v", err)
+		}
+
+		return outputMachineDeployment(machineDeployment)
+	}
+}
+
+// DeleteNodeDeploymentReq defines HTTP request for deleteNodeDeployment
+// swagger:parameters deleteNodeDeployment
+type DeleteNodeDeploymentReq struct {
 	GetClusterReq
 	// in: path
 	NodeDeploymentID string `json:"nodedeployment_id"`
 }
 
-func decodeDeleteNodeDeploymentForCluster(c context.Context, r *http.Request) (interface{}, error) {
-	var req DeleteNodeDeploymentForClusterReq
+func decodeDeleteNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
+	var req DeleteNodeDeploymentReq
 
-	nodeDeploymentID := mux.Vars(r)["nodedeployment_id"]
-	if nodeDeploymentID == "" {
-		return "", fmt.Errorf("'nodedeployment_id' parameter is required but was not provided")
+	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
+	if err != nil {
+		return nil, err
 	}
 
 	clusterID, err := decodeClusterID(c, r)
@@ -908,11 +1033,11 @@ func decodeDeleteNodeDeploymentForCluster(c context.Context, r *http.Request) (i
 	return req, nil
 }
 
-func deleteNodeDeploymentForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func deleteNodeDeployment(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(DeleteNodeDeploymentForClusterReq)
-		clusterProvider := ctx.Value(clusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(userInfoContextKey).(*provider.UserInfo)
+		req := request.(DeleteNodeDeploymentReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {

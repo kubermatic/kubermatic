@@ -20,10 +20,14 @@ domain-name = {{ .Global.DomainName | iniEscape }}
 region      = {{ .Global.Region | iniEscape }}
 
 [LoadBalancer]
+{{- if semverCompare "~1.9.10 || ~1.10.6 || ~1.11.1 || >=1.12.*" .Version }}
 manage-security-groups = {{ .LoadBalancer.ManageSecurityGroups }}
+{{- end }}
 
 [BlockStorage]
+{{- if semverCompare ">=1.9" .Version }}
 ignore-volume-az  = {{ .BlockStorage.IgnoreVolumeAZ }}
+{{- end }}
 trust-device-path = {{ .BlockStorage.TrustDevicePath }}
 bs-version        = {{ .BlockStorage.BSVersion | iniEscape }}
 `
@@ -53,6 +57,7 @@ type CloudConfig struct {
 	Global       GlobalOpts
 	LoadBalancer LoadBalancerOpts
 	BlockStorage BlockStorageOpts
+	Version      string
 }
 
 func CloudConfigToString(c *CloudConfig) (string, error) {

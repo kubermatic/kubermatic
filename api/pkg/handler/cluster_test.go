@@ -31,7 +31,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 		ProjectToSync                 string
 		ClusterToSync                 string
 		ExistingKubermaticObjs        []runtime.Object
-		ExistingAPIUser               *apiv1.LegacyUser
+		ExistingAPIUser               *apiv1.User
 		ExpectedSSHKeys               []*kubermaticv1.UserSSHKey
 		ExpectedListClusterKeysStatus int
 	}{
@@ -80,7 +80,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 		ClusterToSync:   "clusterAbcID",
 		ExistingAPIUser: genDefaultAPIUser(),
 		ExpectedSSHKeys: []*kubermaticv1.UserSSHKey{
-			&kubermaticv1.UserSSHKey{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
 					OwnerReferences: []metav1.OwnerReference{
@@ -96,7 +96,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 					Clusters: []string{},
 				},
 			},
-			&kubermaticv1.UserSSHKey{
+			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "key-abc-yafn",
 					OwnerReferences: []metav1.OwnerReference{
@@ -176,7 +176,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 		ClusterToSync                   string
 		ExpectedDeleteResponse          string
 		ExpectedDeleteHTTPStatus        int
-		ExistingAPIUser                 *apiv1.LegacyUser
+		ExistingAPIUser                 *apiv1.User
 		ExistingSSHKeys                 []*kubermaticv1.UserSSHKey
 		ExistingKubermaticObjs          []runtime.Object
 		ExpectedResponseOnGetAfterDelte string
@@ -291,7 +291,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 		HTTPStatus             int
 		ExistingProject        *kubermaticv1.Project
 		ExistingKubermaticUser *kubermaticv1.User
-		ExistingAPIUser        *apiv1.LegacyUser
+		ExistingAPIUser        *apiv1.User
 		ExistingCluster        *kubermaticv1.Cluster
 		ExistingSSHKeys        []*kubermaticv1.UserSSHKey
 		ExistingKubermaticObjs []runtime.Object
@@ -301,18 +301,18 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 			Name: "scenario 1: gets a list of ssh keys assigned to cluster",
 			Body: ``,
 			ExpectedKeys: []apiv1.SSHKey{
-				apiv1.SSHKey{
+				{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "key-c08aa5c7abf34504f18552846485267d-yafn",
 						Name:              "yafn",
-						CreationTimestamp: time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
 					},
 				},
-				apiv1.SSHKey{
+				{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "key-abc-yafn",
 						Name:              "abcd",
-						CreationTimestamp: time.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC),
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC),
 					},
 				},
 			},
@@ -401,7 +401,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 		HTTPStatus             int
 		ProjectToSync          string
 		ClusterToSync          string
-		ExistingAPIUser        *apiv1.LegacyUser
+		ExistingAPIUser        *apiv1.User
 		ExistingKubermaticObjs []runtime.Object
 		ExpectedSSHKeys        []*kubermaticv1.UserSSHKey
 	}{
@@ -523,7 +523,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		HTTPStatus             int
 		ProjectToSync          string
 		ExistingProject        *kubermaticv1.Project
-		ExistingAPIUser        *apiv1.LegacyUser
+		ExistingAPIUser        *apiv1.User
 		ExistingKubermaticObjs []runtime.Object
 		RewriteClusterID       bool
 	}{
@@ -571,7 +571,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			HTTPStatus:             http.StatusForbidden,
 			ProjectToSync:          genDefaultProject().Name,
 			ExistingKubermaticObjs: genDefaultKubermaticObjects(),
-			ExistingAPIUser: func() *apiv1.LegacyUser {
+			ExistingAPIUser: func() *apiv1.User {
 				defaultUser := genDefaultAPIUser()
 				defaultUser.Email = "john@acme.com"
 				return defaultUser
@@ -642,7 +642,7 @@ func TestGetClusterHealth(t *testing.T) {
 		HTTPStatus             int
 		ClusterToGet           string
 		ProjectToSync          string
-		ExistingAPIUser        *apiv1.LegacyUser
+		ExistingAPIUser        *apiv1.User
 		ExistingKubermaticObjs []runtime.Object
 	}{
 		// scenario 1
@@ -710,7 +710,7 @@ func TestPatchCluster(t *testing.T) {
 		HTTPStatus                int
 		cluster                   string
 		project                   string
-		ExistingAPIUser           *apiv1.LegacyUser
+		ExistingAPIUser           *apiv1.User
 		ExistingKubermaticObjects []runtime.Object
 	}{
 		// scenario 1
@@ -768,7 +768,7 @@ func TestGetCluster(t *testing.T) {
 		ExpectedResponse       string
 		HTTPStatus             int
 		ClusterToGet           string
-		ExistingAPIUser        *apiv1.LegacyUser
+		ExistingAPIUser        *apiv1.User
 		ExistingKubermaticObjs []runtime.Object
 	}{
 		// scenario 1
@@ -827,7 +827,7 @@ func TestListClusters(t *testing.T) {
 		Name                   string
 		ExpectedClusters       []apiv1.Cluster
 		HTTPStatus             int
-		ExistingAPIUser        *apiv1.LegacyUser
+		ExistingAPIUser        *apiv1.User
 		ExistingKubermaticObjs []runtime.Object
 	}{
 		// scenario 1
@@ -838,7 +838,7 @@ func TestListClusters(t *testing.T) {
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "clusterAbcID",
 						Name:              "clusterAbc",
-						CreationTimestamp: time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
 					},
 					Spec: apiv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{
@@ -856,7 +856,7 @@ func TestListClusters(t *testing.T) {
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "clusterDefID",
 						Name:              "clusterDef",
-						CreationTimestamp: time.Date(2013, 02, 04, 01, 54, 0, 0, time.UTC),
+						CreationTimestamp: apiv1.Date(2013, 02, 04, 01, 54, 0, 0, time.UTC),
 					},
 					Spec: apiv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{
@@ -874,7 +874,7 @@ func TestListClusters(t *testing.T) {
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:                "clusterOpenstackID",
 						Name:              "clusterOpenstack",
-						CreationTimestamp: time.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC),
+						CreationTimestamp: apiv1.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC),
 					},
 					Spec: apiv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{

@@ -32,129 +32,134 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("100m"),
 		},
 	}
+
+	// VerticalPodAutoscaler returns a VerticalPodAutoscaler which can be applied to the Prometheus Deployment
+	VerticalPodAutoscaler = resources.GetVerticalPodAutoscaler(name, resources.BaseAppLabel(name, nil))
 )
 
-// StatefulSet returns the prometheus StatefulSet
-func StatefulSet(data resources.StatefulSetDataProvider, existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
-	var set *appsv1.StatefulSet
-	if existing != nil {
-		set = existing
-	} else {
-		set = &appsv1.StatefulSet{}
-	}
+// StatefulSetCreator returns the function to reconcile the Prometheus StatefulSet
+func StatefulSetCreator(data *resources.TemplateData) resources.StatefulSetCreator {
+	return func(existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+		var set *appsv1.StatefulSet
+		if existing != nil {
+			set = existing
+		} else {
+			set = &appsv1.StatefulSet{}
+		}
 
-	set.Name = resources.PrometheusStatefulSetName
-	set.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+		set.Name = resources.PrometheusStatefulSetName
+		set.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 
-	requiredBaseLabels := map[string]string{"cluster": data.Cluster().Name}
-	set.Labels = resources.BaseAppLabel(name, requiredBaseLabels)
-	set.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: resources.BaseAppLabel(name, requiredBaseLabels),
-	}
+		requiredBaseLabels := map[string]string{"cluster": data.Cluster().Name}
+		set.Labels = resources.BaseAppLabel(name, requiredBaseLabels)
+		set.Spec.Selector = &metav1.LabelSelector{
+			MatchLabels: resources.BaseAppLabel(name, requiredBaseLabels),
+		}
 
-	set.Spec.Replicas = resources.Int32(1)
-	set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
-	set.Spec.ServiceName = resources.PrometheusServiceName
+		set.Spec.Replicas = resources.Int32(1)
+		set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
+		set.Spec.ServiceName = resources.PrometheusServiceName
 
-	volumes := getVolumes()
-	podLabels, err := data.GetPodTemplateLabels(name, volumes, requiredBaseLabels)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create pod labels: %v", err)
-	}
+		volumes := getVolumes()
+		podLabels, err := data.GetPodTemplateLabels(name, volumes, requiredBaseLabels)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create pod labels: %v", err)
+		}
 
-	set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-		Labels: podLabels,
-	}
-	set.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyAlways
-	set.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-		FSGroup:      resources.Int64(2000),
-		RunAsNonRoot: resources.Bool(true),
-		RunAsUser:    resources.Int64(1000),
-	}
-	set.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
-	set.Spec.Template.Spec.ServiceAccountName = resources.PrometheusServiceAccountName
-	set.Spec.Template.Spec.TerminationGracePeriodSeconds = resources.Int64(600)
+		set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
+			Labels: podLabels,
+		}
+		set.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyAlways
+		set.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+			FSGroup:      resources.Int64(2000),
+			RunAsNonRoot: resources.Bool(true),
+			RunAsUser:    resources.Int64(1000),
+		}
+		set.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
+		set.Spec.Template.Spec.ServiceAccountName = resources.PrometheusServiceAccountName
+		set.Spec.Template.Spec.TerminationGracePeriodSeconds = resources.Int64(600)
 
-	set.Spec.Template.Spec.Containers = []corev1.Container{
-		{
-			Name:                     name,
-			Image:                    data.ImageRegistry(resources.RegistryQuay) + "/prometheus/prometheus:" + tag,
-			ImagePullPolicy:          corev1.PullIfNotPresent,
-			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-			Args: []string{
-				"--config.file=/etc/prometheus/config/prometheus.yaml",
-				"--storage.tsdb.path=/var/prometheus/data",
-				"--storage.tsdb.min-block-duration=15m",
-				"--storage.tsdb.max-block-duration=30m",
-				"--storage.tsdb.retention=1h",
-				"--web.enable-lifecycle",
-				"--storage.tsdb.no-lockfile",
-				"--web.route-prefix=/",
-			},
-			Ports: []corev1.ContainerPort{
-				{
-					Name:          "web",
-					ContainerPort: 9090,
-					Protocol:      corev1.ProtocolTCP,
+		set.Spec.Template.Spec.Containers = []corev1.Container{
+			{
+				Name:                     name,
+				Image:                    data.ImageRegistry(resources.RegistryQuay) + "/prometheus/prometheus:" + tag,
+				ImagePullPolicy:          corev1.PullIfNotPresent,
+				TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+				TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+				Args: []string{
+					"--config.file=/etc/prometheus/config/prometheus.yaml",
+					"--storage.tsdb.path=/var/prometheus/data",
+					"--storage.tsdb.min-block-duration=15m",
+					"--storage.tsdb.max-block-duration=30m",
+					"--storage.tsdb.retention=1h",
+					"--web.enable-lifecycle",
+					"--storage.tsdb.no-lockfile",
+					"--web.route-prefix=/",
 				},
-			},
-			Resources: defaultResourceRequirements,
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      volumeConfigName,
-					MountPath: "/etc/prometheus/config",
-					ReadOnly:  true,
+				Ports: []corev1.ContainerPort{
+					{
+						Name:          "web",
+						ContainerPort: 9090,
+						Protocol:      corev1.ProtocolTCP,
+					},
 				},
-				{
-					Name:      volumeDataName,
-					MountPath: "/var/prometheus/data",
+				Resources: defaultResourceRequirements,
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      volumeConfigName,
+						MountPath: "/etc/prometheus/config",
+						ReadOnly:  true,
+					},
+					{
+						Name:      volumeDataName,
+						MountPath: "/var/prometheus/data",
+					},
+					{
+						Name:      resources.ApiserverEtcdClientCertificateSecretName,
+						MountPath: "/etc/etcd/pki/client",
+						ReadOnly:  true,
+					},
+					{
+						Name:      resources.PrometheusApiserverClientCertificateSecretName,
+						MountPath: "/etc/kubernetes",
+						ReadOnly:  true,
+					},
 				},
-				{
-					Name:      resources.ApiserverEtcdClientCertificateSecretName,
-					MountPath: "/etc/etcd/pki/client",
-					ReadOnly:  true,
+				LivenessProbe: &corev1.Probe{
+					PeriodSeconds:       5,
+					TimeoutSeconds:      3,
+					FailureThreshold:    10,
+					InitialDelaySeconds: 30,
+					SuccessThreshold:    1,
+					Handler: corev1.Handler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path:   "/-/healthy",
+							Port:   intstr.FromString("web"),
+							Scheme: corev1.URISchemeHTTP,
+						},
+					},
 				},
-				{
-					Name:      resources.PrometheusApiserverClientCertificateSecretName,
-					MountPath: "/etc/kubernetes",
-					ReadOnly:  true,
-				},
-			},
-			LivenessProbe: &corev1.Probe{
-				PeriodSeconds:       5,
-				TimeoutSeconds:      3,
-				FailureThreshold:    10,
-				InitialDelaySeconds: 30,
-				SuccessThreshold:    1,
-				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Path:   "/-/healthy",
-						Port:   intstr.FromString("web"),
-						Scheme: corev1.URISchemeHTTP,
+				ReadinessProbe: &corev1.Probe{
+					PeriodSeconds:       5,
+					TimeoutSeconds:      3,
+					FailureThreshold:    6,
+					InitialDelaySeconds: 30,
+					SuccessThreshold:    1,
+					Handler: corev1.Handler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path:   "/-/healthy",
+							Port:   intstr.FromString("web"),
+							Scheme: corev1.URISchemeHTTP,
+						},
 					},
 				},
 			},
-			ReadinessProbe: &corev1.Probe{
-				PeriodSeconds:       5,
-				TimeoutSeconds:      3,
-				FailureThreshold:    6,
-				InitialDelaySeconds: 30,
-				SuccessThreshold:    1,
-				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Path:   "/-/healthy",
-						Port:   intstr.FromString("web"),
-						Scheme: corev1.URISchemeHTTP,
-					},
-				},
-			},
-		},
+		}
+
+		set.Spec.Template.Spec.Volumes = volumes
+
+		return set, nil
 	}
-
-	set.Spec.Template.Spec.Volumes = volumes
-
-	return set, nil
 }
 
 func getVolumes() []corev1.Volume {

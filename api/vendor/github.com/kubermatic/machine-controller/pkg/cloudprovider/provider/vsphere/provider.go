@@ -11,11 +11,13 @@ import (
 
 	"github.com/golang/glog"
 
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
+	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/property"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
@@ -99,12 +101,10 @@ func (vsphereServer Server) Status() instance.Status {
 	return vsphereServer.status
 }
 
-func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec, bool, error) {
-	changed := false
-
+func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec, error) {
 	cfg, _, rawCfg, err := p.getConfig(spec.ProviderConfig)
 	if err != nil {
-		return spec, changed, cloudprovidererrors.TerminalError{
+		return spec, cloudprovidererrors.TerminalError{
 			Reason:  common.InvalidConfigurationMachineError,
 			Message: fmt.Sprintf("Failed to parse MachineSpec, due to %v", err),
 		}
@@ -115,7 +115,7 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 		ctx := context.TODO()
 		client, err := getClient(cfg.Username, cfg.Password, cfg.VSphereURL, cfg.AllowInsecure)
 		if err != nil {
-			return spec, changed, fmt.Errorf("failed to get vsphere client: '%v'", err)
+			return spec, fmt.Errorf("failed to get vsphere client: '%v'", err)
 		}
 		defer func() {
 			if lerr := client.Logout(ctx); lerr != nil {
@@ -125,17 +125,17 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 
 		finder, err := getDatacenterFinder(cfg.Datacenter, client)
 		if err != nil {
-			return spec, changed, fmt.Errorf("failed to get datacenter finder: %v", err)
+			return spec, fmt.Errorf("failed to get datacenter finder: %v", err)
 		}
 
 		templateVM, err := finder.VirtualMachine(ctx, cfg.TemplateVMName)
 		if err != nil {
-			return spec, changed, fmt.Errorf("failed to get virtual machine: %v", err)
+			return spec, fmt.Errorf("failed to get virtual machine: %v", err)
 		}
 
 		availableNetworkDevices, err := getNetworkDevicesAndBackingsFromVM(ctx, templateVM, "")
 		if err != nil {
-			return spec, changed, fmt.Errorf("failed to get network devices for vm: %v", err)
+			return spec, fmt.Errorf("failed to get network devices for vm: %v", err)
 		}
 
 		if len(availableNetworkDevices) == 0 {
@@ -145,16 +145,15 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 		} else {
 			eth := availableNetworkDevices[0].backingInfo
 			rawCfg.TemplateNetName.Value = eth.DeviceName
-			changed = true
 		}
 	}
 
 	spec.ProviderConfig.Value, err = setProviderConfig(*rawCfg, spec.ProviderConfig)
 	if err != nil {
-		return spec, changed, fmt.Errorf("error marshaling providerconfig: %s", err)
+		return spec, fmt.Errorf("error marshaling providerconfig: %s", err)
 	}
 
-	return spec, changed, nil
+	return spec, nil
 }
 
 func setProviderConfig(rawConfig RawConfig, s v1alpha1.ProviderConfig) (*runtime.RawExtension, error) {
@@ -278,6 +277,10 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 		return errors.New("specified target network (VMNetName) in cluster, but no source network (TemplateNetName) in machine")
 	}
 
+	if config.CPUs > 8 {
+		return errors.New("number of CPUs must not be greater than 8")
+	}
+
 	client, err := getClient(config.Username, config.Password, config.VSphereURL, config.AllowInsecure)
 	if err != nil {
 		return fmt.Errorf("failed to get vsphere client: '%v'", err)
@@ -311,7 +314,7 @@ func machineInvalidConfigurationTerminalError(err error) error {
 	}
 }
 
-func (p *provider) Create(machine *v1alpha1.Machine, _ cloud.MachineUpdater, userdata string) (instance.Instance, error) {
+func (p *provider) Create(machine *v1alpha1.Machine, _ *cloud.MachineCreateDeleteData, userdata string) (instance.Instance, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -382,25 +385,28 @@ func (p *provider) Create(machine *v1alpha1.Machine, _ cloud.MachineUpdater, use
 	return Server{name: virtualMachine.Name(), status: instance.StatusRunning, id: virtualMachine.Reference().Value}, nil
 }
 
-func (p *provider) Delete(machine *v1alpha1.Machine, _ cloud.MachineUpdater) error {
+func (p *provider) Cleanup(machine *v1alpha1.Machine, data *cloud.MachineCreateDeleteData) (bool, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	if _, err := p.Get(machine); err != nil {
 		if err == cloudprovidererrors.ErrInstanceNotFound {
-			return nil
+			return true, nil
 		}
-		return fmt.Errorf("failed to get instance: %v", err)
+		return false, fmt.Errorf("failed to get instance: %v", err)
 	}
 
 	config, pc, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
-		return fmt.Errorf("failed to parse config: %v", err)
+		return false, fmt.Errorf("failed to parse config: %v", err)
 	}
 
 	client, err := getClient(config.Username, config.Password, config.VSphereURL, config.AllowInsecure)
 	if err != nil {
-		return fmt.Errorf("failed to get vsphere client: '%v'", err)
+		return false, fmt.Errorf("failed to get vsphere client: '%v'", err)
 	}
 	defer func() {
-		if err := client.Logout(context.TODO()); err != nil {
+		if err := client.Logout(context.Background()); err != nil {
 			utilruntime.HandleError(fmt.Errorf("vsphere client failed to logout: %s", err))
 		}
 	}()
@@ -410,57 +416,82 @@ func (p *provider) Delete(machine *v1alpha1.Machine, _ cloud.MachineUpdater) err
 	// be able to initialize the Datastore Filemanager to delete the instaces
 	// folder on the storage - This doesn't happen automatically because there
 	// is still the cloud-init iso
-	dc, err := finder.Datacenter(context.TODO(), config.Datacenter)
+	dc, err := finder.Datacenter(ctx, config.Datacenter)
 	if err != nil {
-		return fmt.Errorf("failed to get vsphere datacenter: %v", err)
+		return false, fmt.Errorf("failed to get vsphere datacenter: %v", err)
 	}
 	finder.SetDatacenter(dc)
 
-	virtualMachine, err := finder.VirtualMachine(context.TODO(), machine.Spec.Name)
+	virtualMachine, err := finder.VirtualMachine(ctx, machine.Spec.Name)
 	if err != nil {
-		return fmt.Errorf("failed to get virtual machine object: %v", err)
+		return false, fmt.Errorf("failed to get virtual machine object: %v", err)
 	}
 
-	powerState, err := virtualMachine.PowerState(context.TODO())
+	powerState, err := virtualMachine.PowerState(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to get virtual machine power state: %v", err)
+		return false, fmt.Errorf("failed to get virtual machine power state: %v", err)
 	}
 
 	// We cannot destroy a VM thats powered on, but we also
 	// cannot power off a machine that is already off.
 	if powerState != types.VirtualMachinePowerStatePoweredOff {
-		powerOffTask, err := virtualMachine.PowerOff(context.TODO())
+		powerOffTask, err := virtualMachine.PowerOff(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to poweroff vm %s: %v", virtualMachine.Name(), err)
+			return false, fmt.Errorf("failed to poweroff vm %s: %v", virtualMachine.Name(), err)
 		}
-		if err = powerOffTask.Wait(context.TODO()); err != nil {
-			return fmt.Errorf("failed to poweroff vm %s: %v", virtualMachine.Name(), err)
+		if err = powerOffTask.Wait(ctx); err != nil {
+			return false, fmt.Errorf("failed to poweroff vm %s: %v", virtualMachine.Name(), err)
 		}
 	}
 
-	destroyTask, err := virtualMachine.Destroy(context.TODO())
+	virtualMachineDeviceList, err := virtualMachine.Device(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to destroy vm %s: %v", virtualMachine.Name(), err)
+		return false, fmt.Errorf("failed to get devices for virtual machine: %v", err)
 	}
-	if err := destroyTask.Wait(context.TODO()); err != nil {
-		return fmt.Errorf("failed to destroy vm %s: %v", virtualMachine.Name(), err)
+
+	pvs, err := data.PVLister.List(labels.Everything())
+	if err != nil {
+		return false, fmt.Errorf("failed to list PVs: %v", err)
+	}
+
+	for _, pv := range pvs {
+		if pv.Spec.VsphereVolume == nil {
+			continue
+		}
+		for _, device := range virtualMachineDeviceList {
+			if virtualMachineDeviceList.Type(device) == object.DeviceTypeDisk {
+				fileName := device.GetVirtualDevice().Backing.(types.BaseVirtualDeviceFileBackingInfo).GetVirtualDeviceFileBackingInfo().FileName
+				if pv.Spec.VsphereVolume.VolumePath == fileName {
+					if err := virtualMachine.RemoveDevice(ctx, true, device); err != nil {
+						return false, fmt.Errorf("error detaching pv-backing disk %s: %v", fileName, err)
+					}
+				}
+			}
+		}
+	}
+
+	destroyTask, err := virtualMachine.Destroy(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to destroy vm %s: %v", virtualMachine.Name(), err)
+	}
+	if err := destroyTask.Wait(ctx); err != nil {
+		return false, fmt.Errorf("failed to destroy vm %s: %v", virtualMachine.Name(), err)
 	}
 
 	if pc.OperatingSystem != providerconfig.OperatingSystemCoreos {
-		datastore, err := finder.Datastore(context.TODO(), config.Datastore)
+		datastore, err := finder.Datastore(ctx, config.Datastore)
 		if err != nil {
-			return fmt.Errorf("failed to get datastore %s: %v", config.Datastore, err)
+			return false, fmt.Errorf("failed to get datastore %s: %v", config.Datastore, err)
 		}
 		filemanager := datastore.NewFileManager(dc, false)
 
-		err = filemanager.Delete(context.TODO(), virtualMachine.Name())
-		if err != nil {
-			return fmt.Errorf("failed to delete storage of deleted instance %s: %v", virtualMachine.Name(), err)
+		if err := filemanager.Delete(ctx, virtualMachine.Name()); err != nil {
+			return false, fmt.Errorf("failed to delete storage of deleted instance %s: %v", virtualMachine.Name(), err)
 		}
 	}
 
 	glog.V(2).Infof("Successfully destroyed vm %s", virtualMachine.Name())
-	return nil
+	return false, nil
 }
 
 func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
@@ -506,6 +537,9 @@ func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 	}
 
 	isGuestToolsRunning, err := virtualMachine.IsToolsRunning(context.TODO())
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if guest utils are running: %v", err)
+	}
 	addresses := []string{}
 	if isGuestToolsRunning {
 		var moVirtualMachine mo.VirtualMachine
@@ -523,7 +557,7 @@ func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 			}
 		}
 	} else {
-		glog.Warningf("vmware guest utils for machine %s are not running, can't match it to a node!", machine.Spec.Name)
+		glog.V(4).Infof("vmware guest utils for machine %s are not running, can't match it to a node!", machine.Spec.Name)
 	}
 
 	return Server{name: virtualMachine.Name(), status: status, addresses: addresses, id: virtualMachine.Reference().Value}, nil

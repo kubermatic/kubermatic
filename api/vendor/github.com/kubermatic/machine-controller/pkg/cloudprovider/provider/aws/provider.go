@@ -3,12 +3,16 @@ package aws
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/cloud"
 	cloudprovidererrors "github.com/kubermatic/machine-controller/pkg/cloudprovider/errors"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	"github.com/kubermatic/machine-controller/pkg/userdata/convert"
 
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -20,8 +24,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/golang/glog"
+	gocache "github.com/patrickmn/go-cache"
 
-	common "sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
+	"sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
 	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
@@ -38,13 +43,6 @@ const (
 	nameTag       = "Name"
 	machineUIDTag = "Machine-UID"
 
-	policyRoute53FullAccess = "arn:aws:iam::aws:policy/AmazonRoute53FullAccess"
-	policyEC2FullAccess     = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
-
-	defaultRoleName            = "kubernetes-v1"
-	defaultInstanceProfileName = "kubernetes-v1"
-	defaultSecurityGroupName   = "kubernetes-v1"
-
 	maxRetries = 100
 )
 
@@ -57,77 +55,29 @@ var (
 		ec2.VolumeTypeSt1,
 	)
 
-	roleARNS = []string{policyRoute53FullAccess, policyEC2FullAccess}
-
-	instanceProfileRole = `{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": { "Service": "ec2.amazonaws.com"},
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}`
-
-	amis = map[providerconfig.OperatingSystem]map[string]string{
+	amiFilters = map[providerconfig.OperatingSystem]amiFilter{
 		providerconfig.OperatingSystemCoreos: {
-			"ap-northeast-1": "ami-6a6bec0c",
-			"ap-northeast-2": "ami-7fb41211",
-			"ap-south-1":     "ami-02b4fd6d",
-			"ap-southeast-1": "ami-cb096db7",
-			"ap-southeast-2": "ami-7957a31b",
-			"ca-central-1":   "ami-9c16adf8",
-			"cn-north-1":     "ami-e803d185",
-			"eu-central-1":   "ami-31c74e5e",
-			"eu-west-1":      "ami-c8a811b1",
-			"eu-west-2":      "ami-8ccdd3e8",
-			"sa-east-1":      "ami-af84c3c3",
-			"us-east-1":      "ami-6dfb9a17",
-			"us-east-2":      "ami-01e2cb64",
-			"us-gov-west-1":  "ami-6bad220a",
-			"us-west-1":      "ami-7d81bb1d",
-			"us-west-2":      "ami-c167bdb9",
-		},
-		// for region in $(aws ec2 describe-regions  | jq '.Regions[].RegionName' --raw-output); do
-		//   IMAGE="$(aws ec2 --region "$region" describe-images --filters Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server* --output json | jq '.Images | sort_by(.CreationDate) | reverse | .[0].ImageId' --raw-output)"
-		//   echo "\"$region\": \"$IMAGE\","
-		// done
-		providerconfig.OperatingSystemUbuntu: {
-			"ap-south-1":     "ami-004ae4f94341b595d",
-			"eu-west-3":      "ami-0f230b076c11618ab",
-			"eu-west-2":      "ami-54d12433",
-			"eu-west-1":      "ami-0bd5ae06b6779872a",
-			"ap-northeast-2": "ami-0cffb4e3f8f2c7ca2",
-			"ap-northeast-1": "ami-18a8d1f5",
-			"sa-east-1":      "ami-0ba619c9d7a85181f",
-			"ca-central-1":   "ami-4875f82c",
-			"ap-southeast-1": "ami-02717f13071669929",
-			"ap-southeast-2": "ami-3b288859",
-			"eu-central-1":   "ami-f3bcb218",
-			"us-east-1":      "ami-920b10ed",
-			"us-east-2":      "ami-03bd56e7bb2f24c5d",
-			"us-west-1":      "ami-f36b8490",
-			"us-west-2":      "ami-349fb84c",
+			description: "CoreOS Container Linux stable*",
+			// The AWS marketplace ID from CoreOS
+			owner: "595879546273",
 		},
 		providerconfig.OperatingSystemCentOS: {
-			"ap-northeast-1": "ami-25bd2743",
-			"ap-south-1":     "ami-5d99ce32",
-			"ap-southeast-1": "ami-d2fa88ae",
-			"ca-central-1":   "ami-dcad28b8",
-			"eu-central-1":   "ami-337be65c",
-			"eu-west-1":      "ami-6e28b517",
-			"sa-east-1":      "ami-f9adef95",
-			"us-east-1":      "ami-4bf3d731",
-			"us-west-1":      "ami-65e0e305",
-			"ap-northeast-2": "ami-7248e81c",
-			"ap-southeast-2": "ami-b6bb47d4",
-			"eu-west-2":      "ami-ee6a718a",
-			"us-east-2":      "ami-e1496384",
-			"us-west-2":      "ami-a042f4d8",
-			"eu-west-3":      "ami-bfff49c2",
+			description: "CentOS Linux 7 x86_64 HVM EBS*",
+			// The AWS marketplace ID from AWS
+			owner: "679593333241",
+		},
+		providerconfig.OperatingSystemUbuntu: {
+			// Be as precise as possible - otherwise we might get a nightly dev build
+			description: "Canonical, Ubuntu, 18.04 LTS, amd64 bionic image build on ????-??-??",
+			// The AWS marketplace ID from Canonical
+			owner: "099720109477",
 		},
 	}
+
+	// cacheLock protects concurrent cache misses against a single key. This usually happens when multiple machines get created simultaneously
+	// We lock so the first access updates/writes the data to the cache and afterwards everyone reads the cached data
+	cacheLock = &sync.Mutex{}
+	cache     = gocache.New(5*time.Minute, 5*time.Minute)
 )
 
 type RawConfig struct {
@@ -168,18 +118,63 @@ type Config struct {
 	Tags         map[string]string
 }
 
-func getDefaultAMIID(os providerconfig.OperatingSystem, region string) (string, error) {
-	amis, osSupported := amis[os]
+type amiFilter struct {
+	description string
+	owner       string
+}
+
+func getDefaultAMIID(client *ec2.EC2, os providerconfig.OperatingSystem, region string) (string, error) {
+	cacheLock.Lock()
+	defer cacheLock.Unlock()
+
+	filter, osSupported := amiFilters[os]
 	if !osSupported {
 		return "", fmt.Errorf("operating system %q not supported", os)
 	}
 
-	id, regionFound := amis[region]
-	if !regionFound {
-		return "", fmt.Errorf("specified region %q not supported with this operating system %q", region, os)
+	cacheKey := fmt.Sprintf("ami-id-%s-%s", region, os)
+	amiID, found := cache.Get(cacheKey)
+	if found {
+		glog.V(4).Info("found AMI-ID in cache!")
+		return amiID.(string), nil
 	}
 
-	return id, nil
+	imagesOut, err := client.DescribeImages(&ec2.DescribeImagesInput{
+		Owners: aws.StringSlice([]string{filter.owner}),
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("description"),
+				Values: aws.StringSlice([]string{filter.description}),
+			},
+			{
+				Name:   aws.String("virtualization-type"),
+				Values: aws.StringSlice([]string{"hvm"}),
+			},
+			{
+				Name:   aws.String("root-device-type"),
+				Values: aws.StringSlice([]string{"ebs"}),
+			},
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+
+	if len(imagesOut.Images) == 0 {
+		return "", fmt.Errorf("could not find Image for '%s'", os)
+	}
+
+	image := imagesOut.Images[0]
+	for _, v := range imagesOut.Images {
+		itime, _ := time.Parse(time.RFC3339, *image.CreationDate)
+		vtime, _ := time.Parse(time.RFC3339, *v.CreationDate)
+		if vtime.After(itime) {
+			image = v
+		}
+	}
+
+	cache.SetDefault(cacheKey, *image.ImageId)
+	return *image.ImageId, nil
 }
 
 func getDefaultRootDevicePath(os providerconfig.OperatingSystem) (string, error) {
@@ -205,7 +200,9 @@ func (p *provider) getConfig(s v1alpha1.ProviderConfig) (*Config, *providerconfi
 		return nil, nil, err
 	}
 	rawConfig := RawConfig{}
-	err = json.Unmarshal(pconfig.CloudProviderSpec.Raw, &rawConfig)
+	if err := json.Unmarshal(pconfig.CloudProviderSpec.Raw, &rawConfig); err != nil {
+		return nil, nil, fmt.Errorf("failed to unmarshal: %v", err)
+	}
 	c := Config{}
 	c.AccessKeyID, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.AccessKeyID, "AWS_ACCESS_KEY_ID")
 	if err != nil {
@@ -284,14 +281,22 @@ func getEC2client(id, secret, region string) (*ec2.EC2, error) {
 	return ec2.New(sess), nil
 }
 
-func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec, bool, error) {
-	return spec, false, nil
+func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec, error) {
+	return spec, nil
 }
 
 func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 	config, pc, err := p.getConfig(spec.ProviderConfig)
 	if err != nil {
 		return fmt.Errorf("failed to parse config: %v", err)
+	}
+
+	if _, osSupported := amiFilters[pc.OperatingSystem]; !osSupported {
+		return fmt.Errorf("unsupported os %s", pc.OperatingSystem)
+	}
+
+	if !volumeTypes.Has(config.DiskType) {
+		return fmt.Errorf("invalid volume type %s specified. Supported: %s", config.DiskType, volumeTypes)
 	}
 
 	ec2Client, err := getEC2client(config.AccessKeyID, config.SecretAccessKey, config.Region)
@@ -304,11 +309,6 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 		})
 		if err != nil {
 			return fmt.Errorf("failed to validate ami: %v", err)
-		}
-	} else {
-		_, err := getDefaultAMIID(pc.OperatingSystem, config.Region)
-		if err != nil {
-			return fmt.Errorf("invalid region+os configuration: %v", err)
 		}
 	}
 
@@ -326,13 +326,14 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 		return fmt.Errorf("invalid region %q specified: %v", config.Region, err)
 	}
 
-	if len(config.SecurityGroupIDs) > 0 {
-		_, err := ec2Client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
-			GroupIds: aws.StringSlice(config.SecurityGroupIDs),
-		})
-		if err != nil {
-			return fmt.Errorf("failed to validate security group id's: %v", err)
-		}
+	if len(config.SecurityGroupIDs) == 0 {
+		return errors.New("no security groups were specified")
+	}
+	_, err = ec2Client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+		GroupIds: aws.StringSlice(config.SecurityGroupIDs),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to validate security group id's: %v", err)
 	}
 
 	iamClient, err := getIAMclient(config.AccessKeyID, config.SecretAccessKey, config.Region)
@@ -340,15 +341,11 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 		return fmt.Errorf("failed to create iam client: %v", err)
 	}
 
-	if config.InstanceProfile != "" {
-		_, err := iamClient.GetInstanceProfile(&iam.GetInstanceProfileInput{InstanceProfileName: aws.String(config.InstanceProfile)})
-		if err != nil {
-			return fmt.Errorf("failed to validate instance profile: %v", err)
-		}
+	if config.InstanceProfile == "" {
+		return fmt.Errorf("invalid instance profile specified %q: %v", config.InstanceProfile, err)
 	}
-
-	if !volumeTypes.Has(config.DiskType) {
-		return fmt.Errorf("invalid volume type %s specified. Supported: %s", config.DiskType, volumeTypes)
+	if _, err := iamClient.GetInstanceProfile(&iam.GetInstanceProfileInput{InstanceProfileName: aws.String(config.InstanceProfile)}); err != nil {
+		return fmt.Errorf("failed to validate instance profile: %v", err)
 	}
 
 	return nil
@@ -372,144 +369,7 @@ func getVpc(client *ec2.EC2, id string) (*ec2.Vpc, error) {
 	return vpcOut.Vpcs[0], nil
 }
 
-func ensureDefaultSecurityGroupExists(client *ec2.EC2, vpc *ec2.Vpc) (string, error) {
-	sgOut, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
-		GroupNames: aws.StringSlice([]string{defaultSecurityGroupName}),
-	})
-	if err != nil {
-		if awsErr, ok := err.(awserr.Error); ok {
-			if awsErr.Code() == "InvalidGroup.NotFound" {
-				glog.V(4).Infof("creating security group %s...", defaultSecurityGroupName)
-				csgOut, err := client.CreateSecurityGroup(&ec2.CreateSecurityGroupInput{
-					VpcId:       vpc.VpcId,
-					GroupName:   aws.String(defaultSecurityGroupName),
-					Description: aws.String("Kubernetes security group"),
-				})
-				if err != nil {
-					return "", awsErrorToTerminalError(err, "failed to create security group")
-				}
-				groupID := aws.StringValue(csgOut.GroupId)
-
-				// Allow SSH from everywhere
-				_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-					CidrIp:     aws.String("0.0.0.0/0"),
-					FromPort:   aws.Int64(22),
-					ToPort:     aws.Int64(22),
-					GroupId:    csgOut.GroupId,
-					IpProtocol: aws.String("tcp"),
-				})
-				if err != nil {
-					return "", awsErrorToTerminalError(err, fmt.Sprintf("failed to authorize security group ingress rule for ssh to security group %s", groupID))
-				}
-
-				// Allow kubelet 10250 from everywhere
-				_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-					CidrIp:     aws.String("0.0.0.0/0"),
-					FromPort:   aws.Int64(10250),
-					ToPort:     aws.Int64(10250),
-					GroupId:    csgOut.GroupId,
-					IpProtocol: aws.String("tcp"),
-				})
-				if err != nil {
-					return "", awsErrorToTerminalError(err, fmt.Sprintf("failed to authorize security group ingress rule for kubelet port 10250 to security group %s", groupID))
-				}
-
-				// Allow node-to-node communication
-				_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-					SourceSecurityGroupName: aws.String(defaultSecurityGroupName),
-					GroupId:                 csgOut.GroupId,
-				})
-				if err != nil {
-					return "", awsErrorToTerminalError(err, fmt.Sprintf("failed to authorize security group ingress rule for node-to-node communication to security group %s", groupID))
-				}
-
-				glog.V(4).Infof("security group %s successfully created", defaultSecurityGroupName)
-				return groupID, nil
-			}
-		}
-		return "", awsErrorToTerminalError(err, "failed to list security group")
-	}
-
-	glog.V(6).Infof("security group %s already exists", defaultSecurityGroupName)
-	return aws.StringValue(sgOut.SecurityGroups[0].GroupId), nil
-}
-
-func ensureDefaultRoleExists(client *iam.IAM) error {
-	_, err := client.GetRole(&iam.GetRoleInput{RoleName: aws.String(defaultRoleName)})
-	if err != nil {
-		if awsErr, ok := err.(awserr.Error); ok {
-			if awsErr.Code() == iam.ErrCodeNoSuchEntityException {
-				glog.V(4).Infof("creating machine iam role %s...", defaultRoleName)
-				paramsRole := &iam.CreateRoleInput{
-					AssumeRolePolicyDocument: aws.String(instanceProfileRole),
-					RoleName:                 aws.String(defaultRoleName),
-				}
-				_, err := client.CreateRole(paramsRole)
-				if err != nil {
-					return fmt.Errorf("failed to create role: %v", err)
-				}
-
-				for _, arn := range roleARNS {
-					paramsAttachPolicy := &iam.AttachRolePolicyInput{
-						PolicyArn: aws.String(arn),
-						RoleName:  aws.String(defaultRoleName),
-					}
-					_, err = client.AttachRolePolicy(paramsAttachPolicy)
-					if err != nil {
-						return fmt.Errorf("failed to attach role %q to policy %q: %v", defaultRoleName, arn, err)
-					}
-				}
-				glog.V(4).Infof("machine iam role %s successfully created", defaultRoleName)
-				return nil
-			}
-			return awsErrorToTerminalError(err, fmt.Sprintf("failed to get role %s", defaultRoleName))
-		}
-		return fmt.Errorf("failed to get role %s: %v", defaultRoleName, err)
-	}
-	glog.V(6).Infof("machine iam role %s already exists", defaultRoleName)
-	return nil
-}
-
-func ensureDefaultInstanceProfileExists(client *iam.IAM) error {
-	err := ensureDefaultRoleExists(client)
-	if err != nil {
-		return err
-	}
-
-	_, err = client.GetInstanceProfile(&iam.GetInstanceProfileInput{InstanceProfileName: aws.String(defaultInstanceProfileName)})
-	if err != nil {
-		if awsErr, ok := err.(awserr.Error); ok {
-			if awsErr.Code() == iam.ErrCodeNoSuchEntityException {
-				glog.V(4).Infof("creating instance profile %s...", defaultInstanceProfileName)
-				paramsInstanceProfile := &iam.CreateInstanceProfileInput{
-					InstanceProfileName: aws.String(defaultInstanceProfileName),
-				}
-				_, err = client.CreateInstanceProfile(paramsInstanceProfile)
-				if err != nil {
-					return awsErrorToTerminalError(err, "failed to create instance profile")
-				}
-
-				paramsAddRole := &iam.AddRoleToInstanceProfileInput{
-					InstanceProfileName: aws.String(defaultInstanceProfileName),
-					RoleName:            aws.String(defaultRoleName),
-				}
-				_, err = client.AddRoleToInstanceProfile(paramsAddRole)
-				if err != nil {
-					return awsErrorToTerminalError(err, fmt.Sprintf("failed to add role %q to instance profile %q", defaultInstanceProfileName, defaultRoleName))
-				}
-				glog.V(4).Infof("instance profile %s successfully created", defaultInstanceProfileName)
-				return nil
-			}
-			return awsErrorToTerminalError(err, fmt.Sprintf("failed to get instance profile %s", defaultInstanceProfileName))
-		}
-		return fmt.Errorf("failed to get instance profile: %v", err)
-	}
-	glog.V(6).Infof("instance profile %s already exists", defaultInstanceProfileName)
-
-	return nil
-}
-
-func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater, userdata string) (instance.Instance, error) {
+func (p *provider) Create(machine *v1alpha1.Machine, data *cloud.MachineCreateDeleteData, userdata string) (instance.Instance, error) {
 	config, pc, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
 		return nil, cloudprovidererrors.TerminalError{
@@ -523,34 +383,6 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 		return nil, err
 	}
 
-	iamClient, err := getIAMclient(config.AccessKeyID, config.SecretAccessKey, config.Region)
-	if err != nil {
-		return nil, err
-	}
-
-	instanceProfileName := config.InstanceProfile
-	if instanceProfileName == "" {
-		err = ensureDefaultInstanceProfileExists(iamClient)
-		if err != nil {
-			return nil, err
-		}
-		instanceProfileName = defaultInstanceProfileName
-	}
-
-	vpc, err := getVpc(ec2Client, config.VpcID)
-	if err != nil {
-		return nil, err
-	}
-
-	securityGroupIDs := config.SecurityGroupIDs
-	if len(securityGroupIDs) == 0 {
-		sgID, err := ensureDefaultSecurityGroupExists(ec2Client, vpc)
-		if err != nil {
-			return nil, err
-		}
-		securityGroupIDs = append(securityGroupIDs, sgID)
-	}
-
 	rootDevicePath, err := getDefaultRootDevicePath(pc.OperatingSystem)
 	if err != nil {
 		return nil, err
@@ -558,13 +390,21 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 
 	amiID := config.AMI
 	if amiID == "" {
-		if amiID, err = getDefaultAMIID(pc.OperatingSystem, config.Region); err != nil {
+		if amiID, err = getDefaultAMIID(ec2Client, pc.OperatingSystem, config.Region); err != nil {
 			if err != nil {
 				return nil, cloudprovidererrors.TerminalError{
 					Reason:  common.InvalidConfigurationMachineError,
 					Message: fmt.Sprintf("Invalid Region and Operating System configuration: %v", err),
 				}
 			}
+		}
+	}
+
+	if pc.OperatingSystem != providerconfig.OperatingSystemCoreos {
+		// Gzip the userdata in case we don't use CoreOS.
+		userdata, err = convert.GzipString(userdata)
+		if err != nil {
+			return nil, fmt.Errorf("failed to gzip the userdata")
 		}
 	}
 
@@ -614,7 +454,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 			},
 		},
 		IamInstanceProfile: &ec2.IamInstanceProfileSpecification{
-			Name: aws.String(instanceProfileName),
+			Name: aws.String(config.InstanceProfile),
 		},
 		TagSpecifications: []*ec2.TagSpecification{
 			{
@@ -631,33 +471,35 @@ func (p *provider) Create(machine *v1alpha1.Machine, update cloud.MachineUpdater
 	awsInstance := &awsInstance{instance: runOut.Instances[0]}
 
 	// Change to our security group
-	_, err = ec2Client.ModifyInstanceAttribute(&ec2.ModifyInstanceAttributeInput{
+	_, modifyInstanceErr := ec2Client.ModifyInstanceAttribute(&ec2.ModifyInstanceAttributeInput{
 		InstanceId: runOut.Instances[0].InstanceId,
-		Groups:     aws.StringSlice(securityGroupIDs),
+		Groups:     aws.StringSlice(config.SecurityGroupIDs),
 	})
-	if err != nil {
-		delErr := p.Delete(machine, update)
-		if delErr != nil {
-			return nil, awsErrorToTerminalError(err, fmt.Sprintf("failed to attach instance %s to security group %s & delete the created instance", aws.StringValue(runOut.Instances[0].InstanceId), defaultSecurityGroupName))
+	if modifyInstanceErr != nil {
+		_, err := ec2Client.TerminateInstances(&ec2.TerminateInstancesInput{
+			InstanceIds: []*string{runOut.Instances[0].InstanceId},
+		})
+		if err != nil {
+			return nil, awsErrorToTerminalError(modifyInstanceErr, fmt.Sprintf("failed to delete instance %s due to %v after attaching to security groups %v", aws.StringValue(runOut.Instances[0].InstanceId), err, config.SecurityGroupIDs))
 		}
-		return nil, awsErrorToTerminalError(err, fmt.Sprintf("failed to attach instance %s to security group %s", aws.StringValue(runOut.Instances[0].InstanceId), defaultSecurityGroupName))
+		return nil, awsErrorToTerminalError(modifyInstanceErr, fmt.Sprintf("failed to attach instance %s to security group %v", aws.StringValue(runOut.Instances[0].InstanceId), config.SecurityGroupIDs))
 	}
 
 	return awsInstance, nil
 }
 
-func (p *provider) Delete(machine *v1alpha1.Machine, _ cloud.MachineUpdater) error {
+func (p *provider) Cleanup(machine *v1alpha1.Machine, _ *cloud.MachineCreateDeleteData) (bool, error) {
 	instance, err := p.Get(machine)
 	if err != nil {
 		if err == cloudprovidererrors.ErrInstanceNotFound {
-			return nil
+			return true, nil
 		}
-		return err
+		return false, err
 	}
 
 	config, _, err := p.getConfig(machine.Spec.ProviderConfig)
 	if err != nil {
-		return cloudprovidererrors.TerminalError{
+		return false, cloudprovidererrors.TerminalError{
 			Reason:  common.InvalidConfigurationMachineError,
 			Message: fmt.Sprintf("Failed to parse MachineSpec, due to %v", err),
 		}
@@ -665,21 +507,21 @@ func (p *provider) Delete(machine *v1alpha1.Machine, _ cloud.MachineUpdater) err
 
 	ec2Client, err := getEC2client(config.AccessKeyID, config.SecretAccessKey, config.Region)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	tOut, err := ec2Client.TerminateInstances(&ec2.TerminateInstancesInput{
 		InstanceIds: aws.StringSlice([]string{instance.ID()}),
 	})
 	if err != nil {
-		return awsErrorToTerminalError(err, "failed to terminate instance")
+		return false, awsErrorToTerminalError(err, "failed to terminate instance")
 	}
 
 	if *tOut.TerminatingInstances[0].PreviousState.Name != *tOut.TerminatingInstances[0].CurrentState.Name {
 		glog.V(4).Infof("successfully triggered termination of instance %s at aws", instance.ID())
 	}
 
-	return nil
+	return false, nil
 }
 
 func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
@@ -708,28 +550,48 @@ func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 		return nil, awsErrorToTerminalError(err, "failed to list instances from aws")
 	}
 
-	if len(inOut.Reservations) == 0 || len(inOut.Reservations[0].Instances) == 0 {
-		return nil, cloudprovidererrors.ErrInstanceNotFound
-	}
+	// We might have multiple instances (Maybe some old, terminated ones)
+	// Thus we need to find the instance which is not in the terminated state
+	for _, reservation := range inOut.Reservations {
+		for _, i := range reservation.Instances {
+			if i.State == nil || i.State.Name == nil {
+				continue
+			}
 
-	i := inOut.Reservations[0].Instances[0]
-	if i.State != nil && i.State.Name != nil {
-		// We consider terminated instances as deleted / don't exist anymore.
-		// The reason is that AWS takes very long >10min to gc those instances.
-		// Customers don't get billed anymore for those instances and they also don't block the deletion of security groups, etc.
-		// In AWS terms, a terminated instance is deleted.
-		if *i.State.Name == ec2.InstanceStateNameTerminated {
-			return nil, cloudprovidererrors.ErrInstanceNotFound
+			if *i.State.Name == ec2.InstanceStateNameTerminated {
+				continue
+			}
+
+			return &awsInstance{
+				instance: i,
+			}, nil
 		}
 	}
 
-	return &awsInstance{
-		instance: i,
-	}, nil
+	return nil, cloudprovidererrors.ErrInstanceNotFound
 }
 
 func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, name string, err error) {
-	return "", "aws", nil
+	c, _, err := p.getConfig(spec.ProviderConfig)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to parse config: %v", err)
+	}
+
+	cc := &CloudConfig{
+		Global: GlobalOpts{
+			VPC:      c.VpcID,
+			SubnetID: c.SubnetID,
+			Zone:     c.AvailabilityZone,
+		},
+	}
+
+	s, err := CloudConfigToString(cc)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to convert cloud-config to string: %v", err)
+	}
+
+	return s, "aws", nil
+
 }
 
 func (p *provider) MachineMetricsLabels(machine *v1alpha1.Machine) (map[string]string, error) {
@@ -855,5 +717,5 @@ func awsErrorToTerminalError(err error, msg string) error {
 			return prepareAndReturnError()
 		}
 	}
-	return err
+	return nil
 }

@@ -13,11 +13,11 @@ import (
 	"os"
 	"time"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	"github.com/golang/glog"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -27,11 +27,14 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/cert/triple"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
+
+	autoscalingv1beta "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"
 )
 
 // KUBERMATICCOMMIT is a magic variable containing the git commit hash of the current (as in currently executing) kubermatic api. It gets feeded by Makefile as a ldflag.
@@ -60,6 +63,8 @@ const (
 	DNSResolverConfigMapName = "dns-resolver"
 	//DNSResolverServiceName is the name of the dns resolvers service
 	DNSResolverServiceName = "dns-resolver"
+	//DNSResolverVPAName is the name of the dns resolvers VerticalPodAutoscaler
+	DNSResolverVPAName = "dns-resolver"
 	//KubeStateMetricsDeploymentName is the name for the kube-state-metrics deployment
 	KubeStateMetricsDeploymentName = "kube-state-metrics"
 
@@ -353,7 +358,10 @@ type ConfigMapCreator = func(*corev1.ConfigMap) (*corev1.ConfigMap, error)
 type SecretCreator = func(data SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error)
 
 // StatefulSetCreator defines an interface to create/update StatefulSet
-type StatefulSetCreator = func(data StatefulSetDataProvider, existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error)
+type StatefulSetCreator = func(existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error)
+
+// VerticalPodAutoscalerCreator defines an interface to create/update a VerticalPodAutoscaler
+type VerticalPodAutoscalerCreator = func(existing *autoscalingv1beta.VerticalPodAutoscaler) (*autoscalingv1beta.VerticalPodAutoscaler, error)
 
 // ServiceCreator defines an interface to create/update Services
 type ServiceCreator = func(data ServiceDataProvider, existing *corev1.Service) (*corev1.Service, error)
@@ -393,6 +401,12 @@ type APIServiceCreator = func(existing *apiregistrationv1beta1.APIService) (*api
 
 // MutatingWebhookConfigurationCreator defines an interface to create/update MutatingWebhookConfigurations
 type MutatingWebhookConfigurationCreator = func(cluster *kubermaticv1.Cluster, data *TemplateData, existing *admissionregistrationv1beta1.MutatingWebhookConfiguration) (*admissionregistrationv1beta1.MutatingWebhookConfiguration, error)
+
+// ObjectCreator defines an interface to create/update a runtime.Object
+type ObjectCreator = func(existing runtime.Object) (runtime.Object, error)
+
+// ObjectModifier is a wrapper function which modifies the object which gets returned by the passed in ObjectCreator
+type ObjectModifier func(create ObjectCreator) ObjectCreator
 
 // GetClusterApiserverAddress returns the apiserver address for the given Cluster
 func GetClusterApiserverAddress(cluster *kubermaticv1.Cluster, lister corev1lister.ServiceLister) (string, error) {
@@ -724,4 +738,26 @@ func ClusterIPForService(name, namespace string, serviceLister corev1lister.Serv
 // GetAbsoluteServiceDNSName returns the absolute DNS name for the given service and the given cluster. Absolute means a trailing dot will be appended to the DNS name
 func GetAbsoluteServiceDNSName(service, namespace string) string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local.", service, namespace)
+}
+
+// StatefulSetObjectWrapper adds a wrapper so the StatefulSetCreator matches ObjectCreator
+// This is needed as golang does not support function interface matching
+func StatefulSetObjectWrapper(create StatefulSetCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*appsv1.StatefulSet))
+		}
+		return create(&appsv1.StatefulSet{})
+	}
+}
+
+// VerticalPodAutocalerObjectWrapper adds a wrapper so the VerticalPodAutoscalerCreator matches ObjectCreator
+// This is needed as golang does not support function interface matching
+func VerticalPodAutocalerObjectWrapper(create VerticalPodAutoscalerCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*autoscalingv1beta.VerticalPodAutoscaler))
+		}
+		return create(nil)
+	}
 }

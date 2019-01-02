@@ -20,6 +20,7 @@ import (
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -158,8 +159,8 @@ func getImagesForVersion(versions []*version.MasterVersion, requestedVersion str
 }
 
 func getImagesFromCreators(templateData *resources.TemplateData) (images []string, err error) {
-	statefulsetCreators := cluster.GetStatefulSetCreators()
-	statefulsetCreators = append(statefulsetCreators, monitoring.GetStatefulSetCreators()...)
+	statefulsetCreators := cluster.GetStatefulSetCreators(templateData)
+	statefulsetCreators = append(statefulsetCreators, monitoring.GetStatefulSetCreators(templateData)...)
 
 	deploymentCreators := cluster.GetDeploymentCreators(nil)
 	deploymentCreators = append(deploymentCreators, monitoring.GetDeploymentCreators(nil)...)
@@ -167,7 +168,7 @@ func getImagesFromCreators(templateData *resources.TemplateData) (images []strin
 	cronjobCreators := cluster.GetCronJobCreators()
 
 	for _, createFunc := range statefulsetCreators {
-		statefulset, err := createFunc(templateData, nil)
+		statefulset, err := createFunc(&appsv1.StatefulSet{})
 		if err != nil {
 			return nil, err
 		}

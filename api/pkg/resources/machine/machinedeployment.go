@@ -34,9 +34,6 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 	md.Spec.Replicas = &nd.Spec.Replicas
 	md.Spec.Template.Spec.Versions.Kubelet = nd.Spec.Template.Versions.Kubelet
 
-	// TODO: Remove after machine-controller will be updated to v0.10.7 as it contains fix for defaulting.
-	md.Spec.Strategy = &clusterv1alpha1.MachineDeploymentStrategy{}
-
 	if nd.Spec.Paused != nil {
 		md.Spec.Paused = *nd.Spec.Paused
 	}

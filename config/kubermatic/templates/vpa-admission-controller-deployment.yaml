@@ -1,0 +1,45 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: vpa-admission-controller
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: vpa-admission-controller
+      annotations:
+        checksum/tls: {{ include (print $.Template.BasePath "/vpa-tls.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: vpa-admission-controller
+      containers:
+      - name: admission-controller
+        image: {{ .Values.kubermatic.vpa.admissioncontroller.image.repository }}:{{ .Values.kubermatic.vpa.admissioncontroller.image.tag }}
+        volumeMounts:
+          - name: tls-certs
+            mountPath: "/etc/tls-certs"
+            readOnly: true
+        resources:
+          limits:
+            cpu: 200m
+            memory: 500Mi
+          requests:
+            cpu: 50m
+            memory: 200Mi
+        ports:
+        - containerPort: 8000
+      volumes:
+        - name: tls-certs
+          secret:
+            secretName: vpa-tls-certs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vpa-webhook
+spec:
+  ports:
+    - port: 443
+      targetPort: 8000
+  selector:
+    app: vpa-admission-controller

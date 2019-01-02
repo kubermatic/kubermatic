@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"
+
 	"github.com/Masterminds/semver"
 	"github.com/ghodss/yaml"
 	"github.com/pmezard/go-difflib/difflib"
@@ -564,10 +566,10 @@ func TestLoadFiles(t *testing.T) {
 				}
 
 				var statefulSetCreators []resources.StatefulSetCreator
-				statefulSetCreators = append(statefulSetCreators, clustercontroller.GetStatefulSetCreators()...)
-				statefulSetCreators = append(statefulSetCreators, monitoringcontroller.GetStatefulSetCreators()...)
+				statefulSetCreators = append(statefulSetCreators, clustercontroller.GetStatefulSetCreators(data)...)
+				statefulSetCreators = append(statefulSetCreators, monitoringcontroller.GetStatefulSetCreators(data)...)
 				for _, create := range statefulSetCreators {
-					res, err := create(data, nil)
+					res, err := create(&appsv1.StatefulSet{})
 					if err != nil {
 						t.Fatalf("failed to create StatefulSet: %v", err)
 					}

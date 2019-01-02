@@ -5,7 +5,7 @@
 
 ## Development environment
 
-````bash
+```bash
 mkdir -p $(go env GOPATH)/src/github.com/kubermatic
 cd $(go env GOPATH)/src/github.com/kubermatic
 git clone git@github.com:kubermatic/api
@@ -37,6 +37,11 @@ dep ensure -update
 #### kubermatic-controller-manager
 ```bash
 ./hack/run-controller.sh
+```
+
+#### kubermatic-rbac-generator
+```bash
+./hack/run-rbac-generator.sh
 ```
 
 ### Run linters

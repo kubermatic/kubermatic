@@ -1,12 +1,11 @@
 package godo
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-
-	"github.com/digitalocean/godo/context"
 )
 
 const dropletBasePath = "v2/droplets"
@@ -124,6 +123,10 @@ type BackupWindow struct {
 // Convert Droplet to a string
 func (d Droplet) String() string {
 	return Stringify(d)
+}
+
+func (d Droplet) URN() string {
+	return ToURN("Droplet", d.ID)
 }
 
 // DropletRoot represents a Droplet root
