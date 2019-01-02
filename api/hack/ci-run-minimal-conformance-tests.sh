@@ -60,6 +60,14 @@ export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
 echo "Successfully got secrets from Vault"
 
+
+if [[ ! -f $HOME/.docker/config.json ]]; then
+  echo "Logging into quay.io"
+  docker login -u $QUAY_IO_USERNAME -p $QUAY_IO_PASSWORD quay.io
+  echo "Logging into dockerhub"
+  docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD &&
+fi
+
 echo "Building conformance-tests cli"
 time go build -v github.com/kubermatic/kubermatic/api/cmd/conformance-tests
 echo "Building kubermatic-controller-manager"
