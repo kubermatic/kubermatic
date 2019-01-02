@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"html/template"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/runtime"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
