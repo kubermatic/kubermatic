@@ -65,7 +65,8 @@ if [[ ! -f $HOME/.docker/config.json ]]; then
   echo "Logging into quay.io"
   docker login -u $QUAY_IO_USERNAME -p $QUAY_IO_PASSWORD quay.io
   echo "Logging into dockerhub"
-  docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD &&
+  docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+  echo "Successfully logged into all registries"
 fi
 
 echo "Building conformance-tests cli"
