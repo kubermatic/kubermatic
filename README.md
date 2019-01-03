@@ -13,9 +13,9 @@ This covers the existing, developer focusing, documentation:
   - [Releasing kubermatic](docs/release-process.md) 
   - [datacenters.yaml](docs/datacenters.md)
 - Development guidelines
-  - [Code style] (docs/code-style)
-  - [Logging guideline] (docs/logging.md)
-  - [Events guideline] (docs/events.md)
+  - [Code style](docs/code-style)
+  - [Logging guideline](docs/logging.md)
+  - [Events guideline](docs/events.md)
 - [Proposals](docs/proposals)
 
 

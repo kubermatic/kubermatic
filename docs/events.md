@@ -2,7 +2,7 @@
 
 ## Guidelines
 
-We're following the [guidelines from Kubernetes](https://github.com/kubernetes/community/blob/b3349d5b1354df814b67bbdee6890477f3c250cb/contributors/devel/event-style-guide.md)
+We're following the [guidelines from Kubernetes](https://github.com/kubernetes/community/blob/b3349d5b1354df814b67bbdee6890477f3c250cb/contributors/devel/event-style-guide.md).
 
 ## Handling old code
 
