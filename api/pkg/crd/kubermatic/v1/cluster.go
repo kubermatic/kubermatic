@@ -92,10 +92,11 @@ type ClusterSpec struct {
 }
 
 type ComponentSettings struct {
-	Apiserver         DeploymentSettings `json:"apiserver"`
-	ControllerManager DeploymentSettings `json:"controllerManager"`
-	Scheduler         DeploymentSettings `json:"scheduler"`
-	Etcd              EtcdSettings       `json:"etcd"`
+	Apiserver         DeploymentSettings  `json:"apiserver"`
+	ControllerManager DeploymentSettings  `json:"controllerManager"`
+	Scheduler         DeploymentSettings  `json:"scheduler"`
+	Etcd              StatefulSetSettings `json:"etcd"`
+	Prometheus        StatefulSetSettings `json:"prometheus"`
 }
 
 type DeploymentSettings struct {
@@ -103,7 +104,7 @@ type DeploymentSettings struct {
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
-type EtcdSettings struct {
+type StatefulSetSettings struct {
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
