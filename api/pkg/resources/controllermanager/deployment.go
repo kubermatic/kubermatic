@@ -83,12 +83,8 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 	}
 
 	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-		Labels: podLabels,
-		Annotations: map[string]string{
-			"prometheus.io/scrape": "true",
-			"prometheus.io/path":   "/metrics",
-			"prometheus.io/port":   "10252",
-		},
+		Labels:      podLabels,
+		Annotations: getPodAnnotations(data),
 	}
 
 	// Configure user cluster DNS resolver for this pod.
@@ -161,11 +157,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			Resources:                resourceRequirements,
 			ReadinessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Path:   "/healthz",
-						Port:   intstr.FromInt(10252),
-						Scheme: corev1.URISchemeHTTP,
-					},
+					HTTPGet: getHealthGetAction(data),
 				},
 				FailureThreshold: 3,
 				PeriodSeconds:    10,
@@ -175,11 +167,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			LivenessProbe: &corev1.Probe{
 				FailureThreshold: 8,
 				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Path:   "/healthz",
-						Port:   intstr.FromInt(10252),
-						Scheme: corev1.URISchemeHTTP,
-					},
+					HTTPGet: getHealthGetAction(data),
 				},
 				InitialDelaySeconds: 15,
 				PeriodSeconds:       10,
@@ -244,6 +232,13 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 	// New flag in v1.12 which gets used to perform permission checks
 	if cluster.Spec.Version.Semver().Minor() >= 12 {
 		flags = append(flags, "--authentication-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
+	}
+
+	// With 1.13 we're using the secure port for scraping metrics as the insecure port got marked deprecated
+	if cluster.Spec.Version.Semver().Minor() >= 13 {
+		flags = append(flags, "--authorization-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
+		// We're going to use the https endpoints for scraping the metrics starting from 1.12. Thus we can deactivate the http endpoint
+		flags = append(flags, "--port", "0")
 	}
 
 	// This is required in 1.12.0 as a workaround for
@@ -317,4 +312,35 @@ func getEnvVars(cluster *kubermaticv1.Cluster) []corev1.EnvVar {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_AVAILABILITY_ZONE", Value: cluster.Spec.Cloud.AWS.AvailabilityZone})
 	}
 	return vars
+}
+
+func getPodAnnotations(data resources.DeploymentDataProvider) map[string]string {
+	annotations := map[string]string{
+		"prometheus.io/path": "/metrics",
+	}
+	// With 1.13 we're using the secure port for scraping metrics as the insecure port got marked deprecated
+	if data.Cluster().Spec.Version.Minor() >= 13 {
+		annotations["prometheus.io/scrape_with_kube_cert"] = "true"
+		annotations["prometheus.io/port"] = "10257"
+	} else {
+		annotations["prometheus.io/scrape"] = "true"
+		annotations["prometheus.io/port"] = "10252"
+	}
+
+	return annotations
+}
+
+func getHealthGetAction(data resources.DeploymentDataProvider) *corev1.HTTPGetAction {
+	action := &corev1.HTTPGetAction{
+		Path: "/healthz",
+	}
+	// With 1.13 we're using the secure port for scraping metrics as the insecure port got marked deprecated
+	if data.Cluster().Spec.Version.Minor() >= 13 {
+		action.Scheme = corev1.URISchemeHTTPS
+		action.Port = intstr.FromInt(10257)
+	} else {
+		action.Scheme = corev1.URISchemeHTTP
+		action.Port = intstr.FromInt(10252)
+	}
+	return action
 }
