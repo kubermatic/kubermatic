@@ -1,10 +1,14 @@
 (import './alerts/ark.libsonnet') +
 (import './alerts/kubermatic.libsonnet') +
 (import './alerts/machine-controller.libsonnet') +
+(import './alerts/blacklist.libsonnet') +
 (import 'kubernetes-mixin/mixin.libsonnet') +
 (import 'prometheus/mixin.libsonnet') +
 (import 'node_exporter/mixin.libsonnet') +
 {
+  local arrayHas(haystack, needle) = std.length([1 for name in haystack if needle == name]) > 0,
+  local goodRule(rule) = !std.objectHas(rule, 'alert') || !arrayHas($.prometheusAlertBlacklist, rule.alert),
+
   _config+:: {
     namespace: 'monitoring',
 
@@ -39,8 +43,13 @@
     },
   },
 
-  prometheus+:: {
-    rules+:
-      $._config.prometheus.rules,
-  },
+  output: {
+    groups: [
+      {
+        name: group.name,
+        rules: std.filter(goodRule, group.rules),
+      }
+      for group in $._config.prometheus.rules.groups
+    ]
+  }
 }
