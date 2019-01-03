@@ -329,7 +329,7 @@
     "annotations":
       "message": "There has not been a successful backup for schedule {{ $labels.schedule }} in the last 24 hours."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-arknorecentbackup"
-    "expr": "changes(ark_backup_success_total[25h]) < 1"
+    "expr": "changes(ark_backup_success_total{schedule!=\"\"}[25h]) < 1"
     "labels":
       "severity": "warning"
 - "name": "kubermatic"
