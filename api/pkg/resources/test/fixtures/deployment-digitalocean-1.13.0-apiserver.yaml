@@ -214,15 +214,11 @@ spec:
         - --runtime-config
         - admissionregistration.k8s.io/v1alpha1
         - --feature-gates
-        - Initializers=true,CustomResourceSubresources=true
-        - --cloud-provider
-        - openstack
-        - --cloud-config
-        - /etc/kubernetes/cloud/config
+        - Initializers=true
         command:
         - /hyperkube
         - apiserver
-        image: gcr.io/google_containers/hyperkube-amd64:v1.10.6
+        image: gcr.io/google_containers/hyperkube-amd64:v1.13.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 8

@@ -214,15 +214,24 @@ spec:
         - --runtime-config
         - admissionregistration.k8s.io/v1alpha1
         - --feature-gates
-        - Initializers=true,CustomResourceSubresources=true
+        - Initializers=true
         - --cloud-provider
-        - openstack
+        - aws
         - --cloud-config
         - /etc/kubernetes/cloud/config
         command:
         - /hyperkube
         - apiserver
-        image: gcr.io/google_containers/hyperkube-amd64:v1.10.6
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          value: aws-access-key-id
+        - name: AWS_SECRET_ACCESS_KEY
+          value: aws-secret-access-key
+        - name: AWS_VPC_ID
+          value: aws-vpn-id
+        - name: AWS_AVAILABILITY_ZONE
+          value: aws-availability-zone
+        image: gcr.io/google_containers/hyperkube-amd64:v1.13.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 8

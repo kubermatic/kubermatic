@@ -9,8 +9,10 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
@@ -174,6 +176,8 @@ func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster, cli
 		machinecontroller.DefaultRoleBinding,
 		machinecontroller.KubeSystemRoleBinding,
 		machinecontroller.KubePublicRoleBinding,
+		scheduler.RoleBindingAuthDelegator,
+		controllermanager.RoleBindingAuthDelegator,
 	}
 
 	for _, create := range creators {
@@ -279,6 +283,8 @@ func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.Clus
 		machinecontroller.NodeBootstrapperClusterRoleBinding,
 		machinecontroller.NodeSignerClusterRoleBinding,
 		vpnsidecar.DnatControllerClusterRoleBinding,
+		scheduler.ClusterRoleBindingAuthDelegator,
+		controllermanager.ClusterRoleBindingAuthDelegator,
 	}
 
 	if len(c.Spec.MachineNetworks) > 0 {

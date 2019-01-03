@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
-
 	"github.com/Masterminds/semver"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -47,7 +45,12 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	dep.Labels = resources.BaseAppLabel(name, nil)
 
-	flags, err := getFlags(data.Cluster())
+	semverClusterVersion, err := semver.NewVersion(data.Cluster().Spec.Version)
+	if err != nil {
+		return nil, fmt.Errorf("invalid cluster version '%s': %v", data.Cluster().Spec.Version, err)
+	}
+
+	flags, err := getFlags(semverClusterVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -80,12 +83,8 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 	}
 
 	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-		Labels: podLabels,
-		Annotations: map[string]string{
-			"prometheus.io/scrape": "true",
-			"prometheus.io/path":   "/metrics",
-			"prometheus.io/port":   "10251",
-		},
+		Labels:      podLabels,
+		Annotations: getPodAnnotations(semverClusterVersion),
 	}
 
 	openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
@@ -131,10 +130,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			Resources: resourceRequirements,
 			ReadinessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/healthz",
-						Port: intstr.FromInt(10251),
-					},
+					HTTPGet: getHealthGetAction(semverClusterVersion),
 				},
 				FailureThreshold: 3,
 				PeriodSeconds:    10,
@@ -144,10 +140,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			LivenessProbe: &corev1.Probe{
 				FailureThreshold: 8,
 				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/healthz",
-						Port: intstr.FromInt(10251),
-					},
+					HTTPGet: getHealthGetAction(semverClusterVersion),
 				},
 				InitialDelaySeconds: 15,
 				PeriodSeconds:       10,
@@ -200,14 +193,18 @@ func getVolumes() []corev1.Volume {
 	}
 }
 
-func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
-	clusterVersionSemVer, err := semver.NewVersion(cluster.Spec.Version)
-	if err != nil {
-		return nil, err
-	}
-
+func getFlags(version *semver.Version) ([]string, error) {
 	flags := []string{
 		"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+	}
+
+	// With 1.13 we're using the secure port for scraping metrics as the insecure port got marked deprecated
+	if version.Minor() >= 13 {
+		flags = append(flags, "--authentication-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
+		flags = append(flags, "--authorization-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
+		// We're going to use the https endpoints for scraping the metrics starting from 1.13. Thus we can deactivate the http endpoint
+		flags = append(flags, "--port", "0")
+
 	}
 
 	var featureGates []string
@@ -216,13 +213,45 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 	// TODO: Remove once we don't support Kube 1.10 anymore
 	// TODO: Before removing, add check that prevents upgrading to 1.12 when
 	// there is still a node < 1.11
-	if clusterVersionSemVer.Minor() >= 12 {
+	if version.Minor() >= 12 {
 		featureGates = append(featureGates, "ScheduleDaemonSetPods=false")
 	}
+
 	if len(featureGates) > 0 {
 		flags = append(flags, "--feature-gates")
 		flags = append(flags, strings.Join(featureGates, ","))
 	}
 
 	return flags, nil
+}
+
+func getPodAnnotations(version *semver.Version) map[string]string {
+	annotations := map[string]string{
+		"prometheus.io/path": "/metrics",
+	}
+	// With 1.13 we're using the secure port for scraping metrics as the insecure port got marked deprecated
+	if version.Minor() >= 13 {
+		annotations["prometheus.io/scrape_with_kube_cert"] = "true"
+		annotations["prometheus.io/port"] = "10259"
+	} else {
+		annotations["prometheus.io/scrape"] = "true"
+		annotations["prometheus.io/port"] = "10251"
+	}
+
+	return annotations
+}
+
+func getHealthGetAction(version *semver.Version) *corev1.HTTPGetAction {
+	action := &corev1.HTTPGetAction{
+		Path: "/healthz",
+	}
+	// With 1.13 we're using the secure port for scraping metrics as the insecure port got marked deprecated
+	if version.Minor() >= 13 {
+		action.Scheme = corev1.URISchemeHTTPS
+		action.Port = intstr.FromInt(10259)
+	} else {
+		action.Scheme = corev1.URISchemeHTTP
+		action.Port = intstr.FromInt(10251)
+	}
+	return action
 }

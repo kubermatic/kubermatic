@@ -25,7 +25,7 @@ spec:
       annotations:
         prometheus.io/path: /metrics
         prometheus.io/port: "30000"
-        prometheus.io/scrape-apiserver: "true"
+        prometheus.io/scrape_with_kube_cert: "true"
       creationTimestamp: null
       labels:
         apiserver-etcd-client-certificate-secret-revision: "123456"
