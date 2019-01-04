@@ -1,4 +1,4 @@
-package handler
+package handler_test
 
 import (
 	"encoding/json"
@@ -11,6 +11,8 @@ import (
 	"github.com/go-test/deep"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
@@ -34,12 +36,12 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
-					Labels: map[string]string{"user": testUserName},
+					Labels: map[string]string{"user": test.UserName},
 				},
 				Spec: kubermaticv1.ClusterSpec{Version: *ksemver.NewSemverOrDie("1.6.0")},
 			},
-			existingKubermaticObjs: genDefaultKubermaticObjects(),
-			apiUser:                *genDefaultAPIUser(),
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(),
+			apiUser:                *test.GenDefaultAPIUser(),
 			wantUpdates: []*apiv1.MasterVersion{
 				{
 					Version: semver.MustParse("1.6.1"),
@@ -77,12 +79,12 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "foo",
-					Labels: map[string]string{"user": testUserName},
+					Labels: map[string]string{"user": test.UserName},
 				},
 				Spec: kubermaticv1.ClusterSpec{Version: *ksemver.NewSemverOrDie("1.6.0")},
 			},
-			existingKubermaticObjs: genDefaultKubermaticObjects(),
-			apiUser:                *genDefaultAPIUser(),
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(),
+			apiUser:                *test.GenDefaultAPIUser(),
 			wantUpdates:            []*apiv1.MasterVersion{},
 			versions: []*version.MasterVersion{
 				{
@@ -92,15 +94,15 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 			updates: []*version.MasterUpdate{},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/foo/upgrades", testingProjectName), nil)
+	for _, testStruct := range tests {
+		t.Run(testStruct.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/foo/upgrades", test.ProjectName), nil)
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{test.cluster}
-			kubermaticObj = append(kubermaticObj, test.existingKubermaticObjs...)
-			ep, err := createTestEndpoint(test.apiUser, []runtime.Object{}, kubermaticObj, test.versions, test.updates)
+			kubermaticObj := []runtime.Object{testStruct.cluster}
+			kubermaticObj = append(kubermaticObj, testStruct.existingKubermaticObjs...)
+			ep, err := test.CreateTestEndpoint(testStruct.apiUser, []runtime.Object{}, kubermaticObj, testStruct.versions, testStruct.updates, hack.NewTestRouting)
 			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
+				t.Fatalf("failed to create testStruct endpoint due to %v", err)
 			}
 			ep.ServeHTTP(res, req)
 			if res.Code != http.StatusOK {
@@ -113,7 +115,7 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if diff := deep.Equal(gotUpdates, test.wantUpdates); diff != nil {
+			if diff := deep.Equal(gotUpdates, testStruct.wantUpdates); diff != nil {
 				t.Fatalf("got different upgrade response than expected. Diff: %v", diff)
 			}
 		})
