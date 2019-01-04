@@ -7,7 +7,7 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/middleware"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 )
 
 // OIDCConfiguration is a struct that holds

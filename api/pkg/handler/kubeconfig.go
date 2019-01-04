@@ -12,7 +12,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/securecookie"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/middleware"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kcerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 

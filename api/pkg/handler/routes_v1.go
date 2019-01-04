@@ -1,9 +1,10 @@
 package handler
 
 import (
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/middleware"
 	"net/http"
+
+	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
 
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
