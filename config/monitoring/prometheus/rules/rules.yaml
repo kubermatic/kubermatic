@@ -329,7 +329,7 @@
     "annotations":
       "message": "There has not been a successful backup for schedule {{ $labels.schedule }} in the last 24 hours."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-arknorecentbackup"
-    "expr": "changes(ark_backup_success_total[25h]) < 1"
+    "expr": "changes(ark_backup_success_total{schedule!=\"\"}[25h]) < 1"
     "labels":
       "severity": "warning"
 - "name": "kubermatic"
@@ -348,25 +348,6 @@
       "message": "Cluster {{ $labels.cluster }} is stuck in deletion for more than 30min."
       "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-kubermaticclusterdeletiontakestoolong"
     "expr": "(time() - kubermatic_cluster_deleted) > 30*60"
-    "for": "0m"
-    "labels":
-      "severity": "warning"
-- "name": "machine-controller"
-  "rules":
-  - "alert": "MachineControllerTooManyErrors"
-    "annotations":
-      "message": "Machine Controller in {{ $labels.namespace }} has too many errors in its loop."
-      "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-machinecontrollertoomanyerrors"
-    "expr": |
-      sum(rate(machine_controller_errors_total[5m])) by (namespace) > 0.01
-    "for": "10m"
-    "labels":
-      "severity": "warning"
-  - "alert": "MachineControllerMachineDeletionTakesTooLong"
-    "annotations":
-      "message": "Machine {{ $labels.machine }} of cluster {{ $labels.cluster }} is stuck in deletion for more than 30min."
-      "runbook_url": "https://docs.kubermatic.io/monitoring/runbook/#alert-machinecontrollermachinedeletiontakestoolong"
-    "expr": "(time() - machine_controller_machine_deleted) > 30*60"
     "for": "0m"
     "labels":
       "severity": "warning"
