@@ -1,4 +1,4 @@
-package handler
+package handler_test
 
 import (
 	"net/http"
@@ -7,6 +7,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/vmware/govmomi/simulator"
 )
@@ -53,10 +55,10 @@ func TestVsphereNetworksEndpoint(t *testing.T) {
 	req.Header.Add("Username", "user")
 	req.Header.Add("Password", "pass")
 
-	apiUser := getUser(testUserEmail, testUserID, testUserName, false)
+	apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName, false)
 
 	res := httptest.NewRecorder()
-	ep, _, err := createTestEndpointAndGetClients(apiUser, mock.buildVSphereDatacenterMeta(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{apiUserToKubermaticUser(apiUser)}, nil, nil)
+	ep, _, err := test.CreateTestEndpointAndGetClients(apiUser, mock.buildVSphereDatacenterMeta(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{test.APIUserToKubermaticUser(apiUser)}, nil, nil, hack.NewTestRouting)
 	if err != nil {
 		t.Fatalf("failed to create test endpoint due to %v", err)
 	}
@@ -66,7 +68,7 @@ func TestVsphereNetworksEndpoint(t *testing.T) {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
 	}
 
-	compareWithResult(t, res, `[{"name":"VM Network"}]`)
+	test.CompareWithResult(t, res, `[{"name":"VM Network"}]`)
 }
 
 func (v *vSphereMock) buildVSphereDatacenterMeta() map[string]provider.DatacenterMeta {
