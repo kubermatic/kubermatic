@@ -1,20 +1,22 @@
-package handler
+package provider
 
 import (
 	"context"
 	"fmt"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
+	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func openstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
@@ -25,7 +27,7 @@ func openstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	}
 }
 
-func openstackSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -80,7 +82,7 @@ func getOpenstackSizes(providers provider.CloudRegistry, username, passowrd, ten
 	return apiSizes, nil
 }
 
-func openstackTenantEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackTenantEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackTenantReq)
 		if !ok {
@@ -91,7 +93,7 @@ func openstackTenantEndpoint(providers provider.CloudRegistry) endpoint.Endpoint
 	}
 }
 
-func openstackTenantNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackTenantNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -141,7 +143,7 @@ func getOpenstackTenants(providers provider.CloudRegistry, username, password, d
 	return apiTenants, nil
 }
 
-func openstackNetworkEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackNetworkEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
@@ -151,7 +153,7 @@ func openstackNetworkEndpoint(providers provider.CloudRegistry) endpoint.Endpoin
 	}
 }
 
-func openstackNetworkNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackNetworkNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -203,7 +205,7 @@ func getOpenstackNetworks(providers provider.CloudRegistry, username, password, 
 	return apiNetworks, nil
 }
 
-func openstackSecurityGroupEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackSecurityGroupEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
@@ -213,7 +215,7 @@ func openstackSecurityGroupEndpoint(providers provider.CloudRegistry) endpoint.E
 	}
 }
 
-func openstackSecurityGroupNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackSecurityGroupNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -264,7 +266,7 @@ func getOpenstackSecurityGroups(providers provider.CloudRegistry, username, pass
 	return apiSecurityGroups, nil
 }
 
-func openstackSubnetsEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackSubnetsEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackSubnetReq)
 		if !ok {
@@ -274,7 +276,7 @@ func openstackSubnetsEndpoint(providers provider.CloudRegistry) endpoint.Endpoin
 	}
 }
 
-func openstackSubnetsNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackSubnetsNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackSubnetNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -328,14 +330,118 @@ func getClusterForOpenstack(ctx context.Context, projectProvider provider.Projec
 	userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 	_, err := projectProvider.Get(userInfo, projectID, &provider.ProjectGetOptions{})
 	if err != nil {
-		return nil, kubernetesErrorToHTTPError(err)
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	cluster, err := clusterProvider.Get(userInfo, clusterID, &provider.ClusterGetOptions{})
 	if err != nil {
-		return nil, kubernetesErrorToHTTPError(err)
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	if cluster.Spec.Cloud.Openstack == nil {
 		return nil, errors.NewNotFound("cloud spec for ", clusterID)
 	}
 	return cluster, nil
+}
+
+// OpenstackReq represent a request for openstack
+type OpenstackReq struct {
+	Username       string
+	Password       string
+	Domain         string
+	Tenant         string
+	DatacenterName string
+}
+
+func DecodeOpenstackReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req OpenstackReq
+
+	req.Username = r.Header.Get("Username")
+	req.Password = r.Header.Get("Password")
+	req.Tenant = r.Header.Get("Tenant")
+	req.Domain = r.Header.Get("Domain")
+	req.DatacenterName = r.Header.Get("DatacenterName")
+
+	return req, nil
+}
+
+// OpenstackNoCredentialsReq represent a request for openstack
+// swagger:parameters listOpenstackSizesNoCredentials listOpenstackTenantsNoCredentials listOpenstackNetworksNoCredentials listOpenstackSecurityGroupsNoCredentials
+type OpenstackNoCredentialsReq struct {
+	common.GetClusterReq
+}
+
+func DecodeOpenstackNoCredentialsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req OpenstackNoCredentialsReq
+	cr, err := common.DecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.GetClusterReq = cr.(common.GetClusterReq)
+	return req, nil
+}
+
+// OpenstackSubnetReq represent a request for openstack subnets
+// swagger:parameters listOpenstackSubnets
+type OpenstackSubnetReq struct {
+	OpenstackReq
+	// in: query
+	NetworkID string
+}
+
+func DecodeOpenstackSubnetReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req OpenstackSubnetReq
+
+	req.Username = r.Header.Get("Username")
+	req.Password = r.Header.Get("Password")
+	req.Domain = r.Header.Get("Domain")
+	req.Tenant = r.Header.Get("Tenant")
+	req.DatacenterName = r.Header.Get("DatacenterName")
+	req.NetworkID = r.URL.Query().Get("network_id")
+	if req.NetworkID == "" {
+		return nil, fmt.Errorf("get openstack subnets needs a parameter 'network_id'")
+	}
+	return req, nil
+}
+
+// OpenstackSubnetNoCredentialsReq represent a request for openstack subnets
+// swagger:parameters listOpenstackSubnetsNoCredentials
+type OpenstackSubnetNoCredentialsReq struct {
+	OpenstackNoCredentialsReq
+	// in: query
+	NetworkID string
+}
+
+func DecodeOpenstackSubnetNoCredentialsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req OpenstackSubnetNoCredentialsReq
+	lr, err := DecodeOpenstackNoCredentialsReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.OpenstackNoCredentialsReq = lr.(OpenstackNoCredentialsReq)
+
+	req.NetworkID = r.URL.Query().Get("network_id")
+	if req.NetworkID == "" {
+		return nil, fmt.Errorf("get openstack subnets needs a parameter 'network_id'")
+	}
+
+	return req, nil
+}
+
+// OpenstackTenantReq represent a request for openstack tenants
+type OpenstackTenantReq struct {
+	Username       string
+	Password       string
+	Domain         string
+	DatacenterName string
+}
+
+func DecodeOpenstackTenantReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req OpenstackTenantReq
+
+	req.Username = r.Header.Get("Username")
+	req.Password = r.Header.Get("Password")
+	req.Domain = r.Header.Get("Domain")
+	req.DatacenterName = r.Header.Get("DatacenterName")
+
+	return req, nil
 }
