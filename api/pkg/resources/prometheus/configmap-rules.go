@@ -149,6 +149,7 @@ groups:
     for: 10m
     labels:
       severity: warning
+
   - alert: MachineControllerMachineDeletionTakesTooLong
     annotations:
       message: Machine {{ $labels.machine }} of cluster {{ $labels.cluster }} is stuck
@@ -157,6 +158,7 @@ groups:
     for: 0m
     labels:
       severity: warning
+
 - name: etcd
   rules:
   - alert: EtcdInsufficientMembers
@@ -186,30 +188,6 @@ groups:
     for: 15m
     labels:
       severity: warning
-  - alert: EtcdHighNumberOfFailedGRPCRequests
-    annotations:
-      message: 'Etcd cluster "{{ $labels.job }}": {{ $value }}% of requests for {{
-        $labels.grpc_method }} failed on etcd instance {{ $labels.instance }}.'
-    expr: |
-      100 * sum(rate(grpc_server_handled_total{job=~".*etcd.*", grpc_code!="OK"}[5m])) BY (job, instance, grpc_service, grpc_method)
-        /
-      sum(rate(grpc_server_handled_total{job=~".*etcd.*"}[5m])) BY (job, instance, grpc_service, grpc_method)
-        > 1
-    for: 10m
-    labels:
-      severity: warning
-  - alert: EtcdHighNumberOfFailedGRPCRequests
-    annotations:
-      message: 'Etcd cluster "{{ $labels.job }}": {{ $value }}% of requests for {{
-        $labels.grpc_method }} failed on etcd instance {{ $labels.instance }}.'
-    expr: |
-      100 * sum(rate(grpc_server_handled_total{job=~".*etcd.*", grpc_code!="OK"}[5m])) BY (job, instance, grpc_service, grpc_method)
-        /
-      sum(rate(grpc_server_handled_total{job=~".*etcd.*"}[5m])) BY (job, instance, grpc_service, grpc_method)
-        > 5
-    for: 5m
-    labels:
-      severity: critical
   - alert: EtcdGRPCRequestsSlow
     annotations:
       message: 'Etcd cluster "{{ $labels.job }}": gRPC requests to {{ $labels.grpc_method
