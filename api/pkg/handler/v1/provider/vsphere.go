@@ -1,20 +1,22 @@
-package handler
+package provider
 
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/vsphere"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func vsphereNetworksEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+func VsphereNetworksEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(VSphereNetworksReq)
 		if !ok {
@@ -25,18 +27,18 @@ func vsphereNetworksEndpoint(providers provider.CloudRegistry) endpoint.Endpoint
 	}
 }
 
-func vsphereNetworksNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
+func VsphereNetworksNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(VSphereNetworksNoCredentialsReq)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if cluster.Spec.Cloud.VSphere == nil {
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
@@ -78,4 +80,37 @@ func getVsphereNetworks(providers provider.CloudRegistry, username, password, da
 	}
 
 	return apiNetworks, nil
+}
+
+// VSphereNetworksReq represent a request for vsphere networks
+type VSphereNetworksReq struct {
+	Username       string
+	Password       string
+	DatacenterName string
+}
+
+func DecodeVSphereNetworksReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req VSphereNetworksReq
+
+	req.Username = r.Header.Get("Username")
+	req.Password = r.Header.Get("Password")
+	req.DatacenterName = r.Header.Get("DatacenterName")
+
+	return req, nil
+}
+
+// VSphereNetworksNoCredentialsReq represent a request for vsphere networks
+// swagger:parameters listVSphereNetworksNoCredentials
+type VSphereNetworksNoCredentialsReq struct {
+	common.GetClusterReq
+}
+
+func DecodeVSphereNetworksNoCredentialsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req VSphereNetworksNoCredentialsReq
+	lr, err := common.DecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GetClusterReq = lr.(common.GetClusterReq)
+	return req, nil
 }

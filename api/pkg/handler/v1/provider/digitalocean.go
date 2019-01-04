@@ -1,8 +1,9 @@
-package handler
+package provider
 
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"regexp"
 
 	"github.com/digitalocean/godo"
@@ -11,6 +12,7 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
@@ -18,18 +20,18 @@ import (
 var reStandard = regexp.MustCompile("(^s|S)")
 var reOptimized = regexp.MustCompile("(^c|C)")
 
-func digitaloceanSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func DigitaloceanSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(DoSizesNoCredentialsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if cluster.Spec.Cloud.Digitalocean == nil {
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
@@ -40,7 +42,7 @@ func digitaloceanSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvi
 	}
 }
 
-func digitaloceanSizeEndpoint() endpoint.Endpoint {
+func DigitaloceanSizeEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(DoSizesReq)
 		return digitaloceanSize(ctx, req.DoToken)
@@ -86,4 +88,34 @@ func digitaloceanSize(ctx context.Context, token string) (apiv1.DigitaloceanSize
 	}
 
 	return sizeList, nil
+}
+
+// DoSizesNoCredentialsReq represent a request for digitalocean sizes EP,
+// note that the request doesn't have credentials for autN
+// swagger:parameters listDigitaloceanSizesNoCredentials
+type DoSizesNoCredentialsReq struct {
+	common.GetClusterReq
+}
+
+func DecodeDoSizesNoCredentialsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req DoSizesNoCredentialsReq
+	cr, err := common.DecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.GetClusterReq = cr.(common.GetClusterReq)
+	return req, nil
+}
+
+// DoSizesReq represent a request for digitalocean sizes
+type DoSizesReq struct {
+	DoToken string
+}
+
+func DecodeDoSizesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req DoSizesReq
+
+	req.DoToken = r.Header.Get("DoToken")
+	return req, nil
 }

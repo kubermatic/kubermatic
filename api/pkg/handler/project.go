@@ -3,17 +3,16 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-	"net/http"
-
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // createProjectEndpoint defines an HTTP endpoint that creates a new project in the system
@@ -31,7 +30,7 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 		user := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
 		kubermaticProject, err := projectProvider.New(user, projectRq.Name)
 		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		return apiv1.Project{
 			ObjectMeta: apiv1.ObjectMeta{
@@ -51,13 +50,13 @@ func listProjectsEndpoint(projectProvider provider.ProjectProvider, memberMapper
 
 		userMappings, err := memberMapper.MappingsFor(user.Spec.Email)
 		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		for _, mapping := range userMappings {
 			userInfo := &provider.UserInfo{Email: mapping.Spec.UserEmail, Group: mapping.Spec.Group}
 			projectInternal, err := projectProvider.Get(userInfo, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 			if err != nil {
-				return nil, kubernetesErrorToHTTPError(err)
+				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 			projects = append(projects, convertInternalProjectToExternal(projectInternal))
 		}
@@ -78,7 +77,7 @@ func deleteProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		err := projectProvider.Delete(userInfo, req.ProjectID)
-		return nil, kubernetesErrorToHTTPError(err)
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 }
 
@@ -101,7 +100,7 @@ func getProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpo
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		kubermaticProject, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		return convertInternalProjectToExternal(kubermaticProject), nil
 	}
@@ -128,21 +127,21 @@ func convertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project
 // GetProjectRq defines HTTP request for getProject endpoint
 // swagger:parameters getProject getUsersForProject
 type GetProjectRq struct {
-	ProjectReq
+	common.ProjectReq
 }
 
 func decodeGetProject(c context.Context, r *http.Request) (interface{}, error) {
-	projectReq, err := decodeProjectRequest(c, r)
+	projectReq, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
 		return nil, err
 	}
-	return GetProjectRq{projectReq.(ProjectReq)}, nil
+	return GetProjectRq{projectReq.(common.ProjectReq)}, nil
 }
 
 // UpdateProjectRq defines HTTP request for updateProject
 // swagger:parameters updateProject
 type UpdateProjectRq struct {
-	ProjectReq
+	common.ProjectReq
 }
 
 func decodeUpdateProject(c context.Context, r *http.Request) (interface{}, error) {
@@ -167,24 +166,13 @@ func decodeCreateProject(c context.Context, r *http.Request) (interface{}, error
 // DeleteProjectRq defines HTTP request for deleteProject endpoint
 // swagger:parameters deleteProject
 type DeleteProjectRq struct {
-	ProjectReq
+	common.ProjectReq
 }
 
 func decodeDeleteProject(c context.Context, r *http.Request) (interface{}, error) {
-	req, err := decodeProjectRequest(c, r)
+	req, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
 		return nil, nil
 	}
-	return DeleteProjectRq{ProjectReq: req.(ProjectReq)}, err
-}
-
-// kubernetesErrorToHTTPError constructs HTTPError only if the given err is of type *StatusError.
-// Otherwise unmodified err will be returned to the caller.
-func kubernetesErrorToHTTPError(err error) error {
-	if kubernetesError, ok := err.(*kerrors.StatusError); ok {
-		httpCode := kubernetesError.Status().Code
-		httpMessage := kubernetesError.Status().Message
-		return errors.New(int(httpCode), httpMessage)
-	}
-	return err
+	return DeleteProjectRq{ProjectReq: req.(common.ProjectReq)}, err
 }

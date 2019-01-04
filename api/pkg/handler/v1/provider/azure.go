@@ -1,4 +1,4 @@
-package handler
+package provider
 
 import (
 	"context"
@@ -11,23 +11,24 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func azureSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+func AzureSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AzureSizeNoCredentialsReq)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if cluster.Spec.Cloud.Azure == nil {
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
@@ -48,7 +49,7 @@ func azureSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, dc
 	}
 }
 
-func azureSizeEndpoint() endpoint.Endpoint {
+func AzureSizeEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AzureSizeReq)
 		return azureSize(ctx, req.SubscriptionID, req.ClientID, req.ClientSecret, req.TenantID, req.Location)
@@ -87,4 +88,42 @@ func azureSize(ctx context.Context, subscriptionID, clientID, clientSecret, tena
 	}
 
 	return sizeList, nil
+}
+
+// AzureSizeNoCredentialsReq represent a request for Azure VM sizes
+// note that the request doesn't have credentials for authN
+// swagger:parameters listAzureSizesNoCredentials
+type AzureSizeNoCredentialsReq struct {
+	common.GetClusterReq
+}
+
+func DecodeAzureSizesNoCredentialsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req AzureSizeNoCredentialsReq
+	cr, err := common.DecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.GetClusterReq = cr.(common.GetClusterReq)
+	return req, nil
+}
+
+// AzureSizeReq represent a request for Azure VM sizes
+type AzureSizeReq struct {
+	SubscriptionID string
+	TenantID       string
+	ClientID       string
+	ClientSecret   string
+	Location       string
+}
+
+func DecodeAzureSizesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req AzureSizeReq
+
+	req.SubscriptionID = r.Header.Get("SubscriptionID")
+	req.TenantID = r.Header.Get("TenantID")
+	req.ClientID = r.Header.Get("ClientID")
+	req.ClientSecret = r.Header.Get("ClientSecret")
+	req.Location = r.Header.Get("Location")
+	return req, nil
 }
