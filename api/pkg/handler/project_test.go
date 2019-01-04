@@ -11,6 +11,7 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -270,42 +271,17 @@ func TestDeleteProjectEndpoint(t *testing.T) {
 const testingProjectName = "my-first-project-ID"
 
 func defaultCreationTimestamp() time.Time {
-	return time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)
+	return test.DefaultCreationTimestamp()
 }
 
 func genProject(name, phase string, creationTime time.Time, oRef ...metav1.OwnerReference) *kubermaticapiv1.Project {
-	return &kubermaticapiv1.Project{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:              fmt.Sprintf("%s-%s", name, "ID"),
-			CreationTimestamp: metav1.NewTime(creationTime),
-			OwnerReferences:   oRef,
-		},
-		Spec: kubermaticapiv1.ProjectSpec{Name: name},
-		Status: kubermaticapiv1.ProjectStatus{
-			Phase: phase,
-		},
-	}
+	return test.GenProject(name, phase, creationTime, oRef...)
 }
 
 func genDefaultProject() *kubermaticapiv1.Project {
-	oRef := metav1.OwnerReference{
-		APIVersion: "kubermatic.io/v1",
-		Kind:       "User",
-		UID:        "",
-		Name:       genDefaultUser().Name,
-	}
-	return genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp(), oRef)
+	return test.GenDefaultProject()
 }
 
 func genDefaultKubermaticObjects(objs ...runtime.Object) []runtime.Object {
-	defaultsObjs := []runtime.Object{
-		// add a project
-		genDefaultProject(),
-		// add a user
-		genDefaultUser(),
-		// make a user the owner of the default project
-		genDefaultOwnerBinding(),
-	}
-
-	return append(defaultsObjs, objs...)
+	return test.GenDefaultKubermaticObjects(objs...)
 }

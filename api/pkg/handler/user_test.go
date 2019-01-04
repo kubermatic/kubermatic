@@ -11,6 +11,7 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -897,67 +898,25 @@ func TestNewUser(t *testing.T) {
 // genUser generates a User resource
 // note if the id is empty then it will be auto generated
 func genUser(id, name, email string) *kubermaticapiv1.User {
-	if len(id) == 0 {
-		// the name of the object is derived from the email address and encoded as sha256
-		id = fmt.Sprintf("%x", sha256.Sum256([]byte(email)))
-	}
-	return &kubermaticapiv1.User{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: id,
-		},
-		Spec: kubermaticapiv1.UserSpec{
-			Name:  name,
-			Email: email,
-		},
-	}
+	return test.GenUser(id, name, email)
 }
 
 func genDefaultUser() *kubermaticapiv1.User {
-	userEmail := "bob@acme.com"
-	return genUser("", "Bob", userEmail)
+	return test.GenDefaultUser()
 }
 
 func genAPIUser(name, email string) *apiv1.User {
-	usr := genUser("", name, email)
-	return &apiv1.User{
-		ObjectMeta: apiv1.ObjectMeta{
-			ID:   usr.Name,
-			Name: usr.Spec.Name,
-		},
-		Email: usr.Spec.Email,
-	}
+	return test.GenAPIUser(name, email)
 }
 
 func genDefaultAPIUser() *apiv1.User {
-	return &apiv1.User{
-		ObjectMeta: apiv1.ObjectMeta{
-			ID:   genDefaultUser().Name,
-			Name: genDefaultUser().Spec.Name,
-		},
-		Email: genDefaultUser().Spec.Email,
-	}
+	return test.GenDefaultAPIUser()
 }
 
 func genBinding(projectID, email, group string) *kubermaticapiv1.UserProjectBinding {
-	return &kubermaticapiv1.UserProjectBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("%s-%s-%s", projectID, email, group),
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticapiv1.ProjectKindName,
-					Name:       projectID,
-				},
-			},
-		},
-		Spec: kubermaticapiv1.UserProjectBindingSpec{
-			UserEmail: email,
-			ProjectID: projectID,
-			Group:     fmt.Sprintf("%s-%s", group, projectID),
-		},
-	}
+	return test.GenBinding(projectID, email, group)
 }
 
 func genDefaultOwnerBinding() *kubermaticapiv1.UserProjectBinding {
-	return genBinding(genDefaultProject().Name, genDefaultUser().Spec.Email, "owners")
+	return test.GenBinding(genDefaultProject().Name, genDefaultUser().Spec.Email, "owners")
 }
