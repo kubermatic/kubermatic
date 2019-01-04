@@ -18,6 +18,9 @@ spec:
       labels:
         app: iap
         target: {{ .name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmaps.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
     spec:
       containers:
       - name: keycloak-proxy
