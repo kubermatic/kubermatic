@@ -3,7 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/middleware"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 
 	"github.com/go-kit/kit/endpoint"
 
