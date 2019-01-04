@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 )
 
 // RegisterV1Alpha declares all HTTP paths that are experimental
@@ -38,7 +39,7 @@ func (r Routing) getClusterMetrics() http.Handler {
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(getClusterMetrics(r.projectProvider, r.prometheusClient)),
-		decodeGetClusterReq,
+		common.DecodeGetClusterReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)

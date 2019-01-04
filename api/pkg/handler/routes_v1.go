@@ -3,8 +3,11 @@ package handler
 import (
 	"net/http"
 
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/provider"
 
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
@@ -350,8 +353,8 @@ func (r Routing) listDigitaloceanSizes() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(digitaloceanSizeEndpoint()),
-		decodeDoSizesReq,
+		)(provider.DigitaloceanSizeEndpoint()),
+		provider.DecodeDoSizesReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -372,8 +375,8 @@ func (r Routing) listAzureSizes() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(azureSizeEndpoint()),
-		decodeAzureSizesReq,
+		)(provider.AzureSizeEndpoint()),
+		provider.DecodeAzureSizesReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -394,8 +397,8 @@ func (r Routing) listOpenstackSizes() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(openstackSizeEndpoint(r.cloudProviders)),
-		decodeOpenstackReq,
+		)(provider.OpenstackSizeEndpoint(r.cloudProviders)),
+		provider.DecodeOpenstackReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -416,8 +419,8 @@ func (r Routing) listVSphereNetworks() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(vsphereNetworksEndpoint(r.cloudProviders)),
-		decodeVSphereNetworksReq,
+		)(provider.VsphereNetworksEndpoint(r.cloudProviders)),
+		provider.DecodeVSphereNetworksReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -438,8 +441,8 @@ func (r Routing) listOpenstackTenants() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(openstackTenantEndpoint(r.cloudProviders)),
-		decodeOpenstackTenantReq,
+		)(provider.OpenstackTenantEndpoint(r.cloudProviders)),
+		provider.DecodeOpenstackTenantReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -460,8 +463,8 @@ func (r Routing) listOpenstackNetworks() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(openstackNetworkEndpoint(r.cloudProviders)),
-		decodeOpenstackReq,
+		)(provider.OpenstackNetworkEndpoint(r.cloudProviders)),
+		provider.DecodeOpenstackReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -482,8 +485,8 @@ func (r Routing) listOpenstackSubnets() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(openstackSubnetsEndpoint(r.cloudProviders)),
-		decodeOpenstackSubnetReq,
+		)(provider.OpenstackSubnetsEndpoint(r.cloudProviders)),
+		provider.DecodeOpenstackSubnetReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -504,8 +507,8 @@ func (r Routing) listOpenstackSecurityGroups() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
-		)(openstackSecurityGroupEndpoint(r.cloudProviders)),
-		decodeOpenstackReq,
+		)(provider.OpenstackSecurityGroupEndpoint(r.cloudProviders)),
+		provider.DecodeOpenstackReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -776,7 +779,7 @@ func (r Routing) getCluster() http.Handler {
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(getCluster(r.projectProvider)),
-		decodeGetClusterReq,
+		common.DecodeGetClusterReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -856,7 +859,7 @@ func (r Routing) deleteCluster() http.Handler {
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(deleteCluster(r.sshKeyProvider, r.projectProvider)),
-		decodeGetClusterReq,
+		common.DecodeGetClusterReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -882,7 +885,7 @@ func (r Routing) getClusterHealth() http.Handler {
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(getClusterHealth(r.projectProvider)),
-		decodeGetClusterReq,
+		common.DecodeGetClusterReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1133,7 +1136,7 @@ func (r Routing) getClusterUpgrades() http.Handler {
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(getClusterUpgrades(r.updateManager, r.projectProvider)),
-		decodeGetClusterReq,
+		common.DecodeGetClusterReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1291,8 +1294,8 @@ func (r Routing) listDigitaloceanSizesNoCredentials() http.Handler {
 			r.userSaverMiddleware(),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
-		)(digitaloceanSizeNoCredentialsEndpoint(r.projectProvider)),
-		decodeDoSizesNoCredentialsReq,
+		)(provider.DigitaloceanSizeNoCredentialsEndpoint(r.projectProvider)),
+		provider.DecodeDoSizesNoCredentialsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1315,8 +1318,8 @@ func (r Routing) listAzureSizesNoCredentials() http.Handler {
 			r.userSaverMiddleware(),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
-		)(azureSizeNoCredentialsEndpoint(r.projectProvider, r.datacenters)),
-		decodeAzureSizesNoCredentialsReq,
+		)(provider.AzureSizeNoCredentialsEndpoint(r.projectProvider, r.datacenters)),
+		provider.DecodeAzureSizesNoCredentialsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1339,8 +1342,8 @@ func (r Routing) listOpenstackSizesNoCredentials() http.Handler {
 			r.userSaverMiddleware(),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
-		)(openstackSizeNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
-		decodeOpenstackNoCredentialsReq,
+		)(provider.OpenstackSizeNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
+		provider.DecodeOpenstackNoCredentialsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1363,8 +1366,8 @@ func (r Routing) listOpenstackTenantsNoCredentials() http.Handler {
 			r.userSaverMiddleware(),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
-		)(openstackTenantNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
-		decodeOpenstackNoCredentialsReq,
+		)(provider.OpenstackTenantNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
+		provider.DecodeOpenstackNoCredentialsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1387,8 +1390,8 @@ func (r Routing) listOpenstackNetworksNoCredentials() http.Handler {
 			r.userSaverMiddleware(),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
-		)(openstackNetworkNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
-		decodeOpenstackNoCredentialsReq,
+		)(provider.OpenstackNetworkNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
+		provider.DecodeOpenstackNoCredentialsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1411,8 +1414,8 @@ func (r Routing) listOpenstackSecurityGroupsNoCredentials() http.Handler {
 			r.userSaverMiddleware(),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
-		)(openstackSecurityGroupNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
-		decodeOpenstackNoCredentialsReq,
+		)(provider.OpenstackSecurityGroupNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
+		provider.DecodeOpenstackNoCredentialsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1435,8 +1438,8 @@ func (r Routing) listOpenstackSubnetsNoCredentials() http.Handler {
 			r.userSaverMiddleware(),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
-		)(openstackSubnetsNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
-		decodeOpenstackSubnetNoCredentialsReq,
+		)(provider.OpenstackSubnetsNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
+		provider.DecodeOpenstackSubnetNoCredentialsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1459,8 +1462,8 @@ func (r Routing) listVSphereNetworksNoCredentials() http.Handler {
 			r.userSaverMiddleware(),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
-		)(vsphereNetworksNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
-		decodeVSphereNetworksNoCredentialsReq,
+		)(provider.VsphereNetworksNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
+		provider.DecodeVSphereNetworksNoCredentialsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
