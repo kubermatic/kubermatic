@@ -63,9 +63,9 @@ spec:
           - -backup-container=/opt/backup/store-container.yaml
           - -cleanup-container=/opt/backup/cleanup-container.yaml
           - -docker-pull-config-json-file=/opt/docker/.dockerconfigjson
-          - -oidc-ca-file=/opt/dex-ca/caBundle.pem
           {{- if regexMatch ".*OpenIDAuthPlugin=true.*" (default "" .Values.kubermatic.controller.featureGates) }}
           # the following flags enable oidc auth plugin on kube-API servers
+          - -oidc-ca-file=/opt/dex-ca/caBundle.pem
           - -oidc-issuer-url={{ .Values.kubermatic.auth.tokenIssuer }}
           - -oidc-issuer-client-id={{ .Values.kubermatic.auth.issuerClientID }}
           {{- end }}
