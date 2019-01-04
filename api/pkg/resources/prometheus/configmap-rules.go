@@ -157,6 +157,21 @@ groups:
     labels:
       severity: warning
 
+  - record: job:machine_controller_errors_total:rate5m
+    expr: rate(machine_controller_errors_total[5m])
+    labels:
+      kubermatic: federate
+
+  - record: job:machine_controller_workers:sum
+    expr: sum(machine_controller_workers)
+    labels:
+      kubermatic: federate
+
+  - record: job:machine_controller_machines:sum
+    expr: sum(machine_controller_machines)
+    labels:
+      kubermatic: federate
+
 - name: etcd
   rules:
   - alert: EtcdInsufficientMembers
