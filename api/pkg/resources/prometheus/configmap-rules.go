@@ -257,4 +257,46 @@ groups:
     for: 10m
     labels:
       severity: critical
+
+- name: kubernetes-absent
+  rules:
+  - alert: KubernetesApiserverDown
+    annotations:
+      message: Kubernetes apiserver has disappeared from Prometheus target discovery.
+    expr: absent(up{job="apiserver"} == 1)
+    for: 3m
+    labels:
+      severity: critical
+
+  - alert: KubernetesControllerManagerDown
+    annotations:
+      message: Kubernetes controller-manager has disappeared from Prometheus target discovery.
+    expr: absent(up{job="controller-manager"} == 1)
+    for: 3m
+    labels:
+      severity: critical
+
+  - alert: KubernetesSchedulerDown
+    annotations:
+      message: Kubernetes scheduler has disappeared from Prometheus target discovery.
+    expr: absent(up{job="scheduler"} == 1)
+    for: 3m
+    labels:
+      severity: critical
+
+  - alert: MachineControllerDown
+    annotations:
+      message: Machine controller has disappeared from Prometheus target discovery.
+    expr: absent(up{job="machine-controller"} == 1)
+    for: 3m
+    labels:
+      severity: critical
+
+  - alert: EtcdDown
+    annotations:
+      message: Etcd has disappeared from Prometheus target discovery.
+    expr: absent(up{job="etcd"} == 1)
+    for: 3m
+    labels:
+      severity: critical
 `
