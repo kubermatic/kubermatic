@@ -291,11 +291,13 @@ func (r Routing) userInfoMiddleware() endpoint.Middleware {
 			if !ok {
 				return nil, k8cerrors.New(http.StatusInternalServerError, "unable to get authenticated user object")
 			}
+
+			var projectID string
 			prjIDGetter, ok := request.(common.ProjectIDGetter)
-			if !ok {
-				return nil, k8cerrors.NewBadRequest("you can only use userInfoMiddleware for endpoints that interact with project")
+			if ok {
+				projectID = prjIDGetter.GetProjectID()
+				// return nil, k8cerrors.NewBadRequest("you can only use userInfoMiddleware for endpoints that interact with project")
 			}
-			projectID := prjIDGetter.GetProjectID()
 
 			uInfo, err := r.createUserInfo(user, projectID)
 			if err != nil {
@@ -338,7 +340,7 @@ func (r Routing) userInfoMiddlewareUnauthorized() endpoint.Middleware {
 
 func (r Routing) createUserInfo(user *kubermaticapiv1.User, projectID string) (*provider.UserInfo, error) {
 	var group string
-	{
+	if projectID != "" {
 		var err error
 		group, err = r.userProjectMapper.MapUserToGroup(user.Spec.Email, projectID)
 		if err != nil {

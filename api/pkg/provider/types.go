@@ -160,6 +160,9 @@ type ProjectProvider interface {
 
 	// Get returns the project with the given name
 	Get(userInfo *UserInfo, projectInternalName string, options *ProjectGetOptions) (*kubermaticv1.Project, error)
+
+	// Update update an existing project and returns it
+	Update(userInfo *UserInfo, newProject *kubermaticv1.Project) (*kubermaticv1.Project, error)
 }
 
 // UserInfo represent authenticated user
