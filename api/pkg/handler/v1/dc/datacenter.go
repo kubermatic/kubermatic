@@ -112,10 +112,11 @@ func apiSpec(dc *provider.DatacenterMeta) (*apiv1.DatacenterSpec, error) {
 		spec.BringYourOwn = &apiv1.BringYourOwnDatacenterSpec{}
 	case dc.Spec.Openstack != nil:
 		spec.Openstack = &apiv1.OpenstackDatacenterSpec{
-			AuthURL:          dc.Spec.Openstack.AuthURL,
-			AvailabilityZone: dc.Spec.Openstack.AvailabilityZone,
-			Region:           dc.Spec.Openstack.Region,
-			Images:           imagesMap(dc.Spec.Openstack.Images),
+			AuthURL:           dc.Spec.Openstack.AuthURL,
+			AvailabilityZone:  dc.Spec.Openstack.AvailabilityZone,
+			Region:            dc.Spec.Openstack.Region,
+			Images:            imagesMap(dc.Spec.Openstack.Images),
+			EnforceFloatingIP: dc.Spec.Openstack.EnforceFloatingIP,
 		}
 	case dc.Spec.Hetzner != nil:
 		spec.Hetzner = &apiv1.HetznerDatacenterSpec{

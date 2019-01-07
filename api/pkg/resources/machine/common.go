@@ -128,9 +128,12 @@ func getOpenstackProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, 
 		Region:           providerconfig.ConfigVarString{Value: dc.Spec.Openstack.Region},
 		IdentityEndpoint: providerconfig.ConfigVarString{Value: dc.Spec.Openstack.AuthURL},
 		Network:          providerconfig.ConfigVarString{Value: c.Spec.Cloud.Openstack.Network},
-		FloatingIPPool:   providerconfig.ConfigVarString{Value: c.Spec.Cloud.Openstack.FloatingIPPool},
 		Subnet:           providerconfig.ConfigVarString{Value: c.Spec.Cloud.Openstack.SubnetID},
 		SecurityGroups:   []providerconfig.ConfigVarString{{Value: c.Spec.Cloud.Openstack.SecurityGroups}},
+	}
+
+	if nodeSpec.Cloud.Openstack.UseFloatingIP {
+		config.FloatingIPPool = providerconfig.ConfigVarString{Value: c.Spec.Cloud.Openstack.FloatingIPPool}
 	}
 
 	config.Tags = map[string]string{}

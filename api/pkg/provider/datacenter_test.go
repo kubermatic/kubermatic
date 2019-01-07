@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -33,7 +34,28 @@ datacenters:
     country: NL
     spec:
       digitalocean:
-        region: ams3`
+        region: ams3
+#==================================
+#============OpenStack=============
+#==================================
+  syseleven-dbl1:
+    location: Syseleven - dbl1
+    seed: europe-west3-c
+    country: DE
+    provider: openstack
+    spec:
+      openstack:
+        auth_url: https://api.cbk.cloud.syseleven.net:5000/v3
+        availability_zone: dbl1
+        region: dbl
+        dns_servers:
+        - "37.123.105.116"
+        - "37.123.105.117"
+        images:
+          ubuntu: "Ubuntu 18.04 LTS - 2018-08-10"
+          centos: ""
+          coreos: ""
+        enforce_floating_ip: true`
 	expectedDatacenters := map[string]DatacenterMeta{
 		"europe-west3-c": {
 			Location: "Frankfurt",
@@ -53,6 +75,28 @@ datacenters:
 			Spec: DatacenterSpec{
 				Digitalocean: &DigitaloceanSpec{
 					Region: "ams3",
+				},
+			},
+			Private:          false,
+			IsSeed:           false,
+			SeedDNSOverwrite: nil,
+		},
+		"syseleven-dbl1": {
+			Location: "Syseleven - dbl1",
+			Seed:     "europe-west3-c",
+			Country:  "DE",
+			Spec: DatacenterSpec{
+				Openstack: &OpenstackSpec{
+					AuthURL: "https://api.cbk.cloud.syseleven.net:5000/v3",
+					AvailabilityZone: "dbl1",
+					Region: "dbl",
+					DNSServers: []string{"37.123.105.116", "37.123.105.117"},
+					Images: ImageList{
+						providerconfig.OperatingSystemUbuntu: "Ubuntu 18.04 LTS - 2018-08-10",
+						providerconfig.OperatingSystemCentOS: "",
+						providerconfig.OperatingSystemCoreos: "",
+					},
+					EnforceFloatingIP: true,
 				},
 			},
 			Private:          false,
