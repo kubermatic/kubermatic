@@ -38,19 +38,18 @@ datacenters:
 #==================================
 #============OpenStack=============
 #==================================
-  syseleven-dbl1:
-    location: Syseleven - dbl1
-    seed: europe-west3-c
-    country: DE
+  auos-1:
+    location: Australia
+    seed: sydney-1
+    country: AU
     provider: openstack
     spec:
       openstack:
-        auth_url: https://api.cbk.cloud.syseleven.net:5000/v3
-        availability_zone: dbl1
-        region: dbl
+        availability_zone: au1
+        region: au
         dns_servers:
-        - "37.123.105.116"
-        - "37.123.105.117"
+        - "8.8.8.8"
+        - "8.8.4.4"
         images:
           ubuntu: "Ubuntu 18.04 LTS - 2018-08-10"
           centos: ""
@@ -81,16 +80,15 @@ datacenters:
 			IsSeed:           false,
 			SeedDNSOverwrite: nil,
 		},
-		"syseleven-dbl1": {
-			Location: "Syseleven - dbl1",
-			Seed:     "europe-west3-c",
-			Country:  "DE",
+		"auos-1": {
+			Location: "Australia",
+			Seed:     "sydney-1",
+			Country:  "AU",
 			Spec: DatacenterSpec{
 				Openstack: &OpenstackSpec{
-					AuthURL:          "https://api.cbk.cloud.syseleven.net:5000/v3",
-					AvailabilityZone: "dbl1",
-					Region:           "dbl",
-					DNSServers:       []string{"37.123.105.116", "37.123.105.117"},
+					AvailabilityZone: "au1",
+					Region:           "au",
+					DNSServers:       []string{"8.8.8.8", "8.8.4.4"},
 					Images: ImageList{
 						providerconfig.OperatingSystemUbuntu: "Ubuntu 18.04 LTS - 2018-08-10",
 						providerconfig.OperatingSystemCentOS: "",

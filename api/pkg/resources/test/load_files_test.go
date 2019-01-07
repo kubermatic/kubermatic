@@ -862,6 +862,7 @@ func TestExecute(t *testing.T) {
 								Tags: map[string]string{
 									"foo": "bar",
 								},
+								UseFloatingIP: true,
 							},
 						},
 						OperatingSystem: apiv1.OperatingSystemSpec{
