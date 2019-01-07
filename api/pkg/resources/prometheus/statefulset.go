@@ -78,7 +78,10 @@ func StatefulSetCreator(data *resources.TemplateData) resources.StatefulSetCreat
 		set.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 		set.Spec.Template.Spec.ServiceAccountName = resources.PrometheusServiceAccountName
 		set.Spec.Template.Spec.TerminationGracePeriodSeconds = resources.Int64(600)
-
+		resourceRequirements := defaultResourceRequirements
+		if data.Cluster().Spec.ComponentsOverride.Prometheus.Resources != nil {
+			resourceRequirements = *data.Cluster().Spec.ComponentsOverride.Prometheus.Resources
+		}
 		set.Spec.Template.Spec.Containers = []corev1.Container{
 			{
 				Name:                     name,
@@ -103,7 +106,7 @@ func StatefulSetCreator(data *resources.TemplateData) resources.StatefulSetCreat
 						Protocol:      corev1.ProtocolTCP,
 					},
 				},
-				Resources: defaultResourceRequirements,
+				Resources: resourceRequirements,
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      volumeConfigName,

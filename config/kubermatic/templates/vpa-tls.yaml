@@ -1,12 +1,13 @@
 {{- $ca := genCA "deployment-admission-controller" 3650 -}}
-{{- $cn := .Chart.Name -}}
-{{- $altName1 := printf "%s.%s" .Chart.Name .Release.Namespace -}}
-{{- $altName2 := printf "%s.%s.svc" .Chart.Name .Release.Namespace -}}
+{{- $cn := "vpa-webhook" -}}
+{{- $altName1 := "vpa-webhook.kube-system" -}}
+{{- $altName2 := "vpa-webhook.kube-system.svc" -}}
 {{- $cert := genSignedCert $cn nil (list $altName1 $altName2) 3650 $ca -}}
 apiVersion: v1
 kind: Secret
 metadata:
   name: vpa-tls-certs
+  namespace: kube-system
 type: Opaque
 data:
   caCert.pem: {{ b64enc $ca.Cert }}

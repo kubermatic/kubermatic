@@ -1,8 +1,8 @@
 package test
 
 import (
+	"crypto/sha256"
 	"fmt"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -18,6 +18,7 @@ import (
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
+	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
@@ -43,6 +44,8 @@ const (
 	UserEmail = "john@acme.com"
 	// ClusterID holds the test cluster ID
 	ClusterID = "AbcClusterID"
+	// ProjectName holds the test project ID
+	ProjectName = "my-first-project-ID"
 )
 
 // GetUser is a convenience function for generating apiv1.User
@@ -252,4 +255,122 @@ func CompareWithResult(t *testing.T, res *httptest.ResponseRecorder, response st
 	if r != b {
 		t.Fatalf("Expected response body to be \n%s \ngot \n%s", r, b)
 	}
+}
+
+// GenUser generates a User resource
+// note if the id is empty then it will be auto generated
+func GenUser(id, name, email string) *kubermaticapiv1.User {
+	if len(id) == 0 {
+		// the name of the object is derived from the email address and encoded as sha256
+		id = fmt.Sprintf("%x", sha256.Sum256([]byte(email)))
+	}
+	return &kubermaticapiv1.User{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: id,
+		},
+		Spec: kubermaticapiv1.UserSpec{
+			Name:  name,
+			Email: email,
+		},
+	}
+}
+
+// GenAPIUser generates a API user
+func GenAPIUser(name, email string) *apiv1.User {
+	usr := GenUser("", name, email)
+	return &apiv1.User{
+		ObjectMeta: apiv1.ObjectMeta{
+			ID:   usr.Name,
+			Name: usr.Spec.Name,
+		},
+		Email: usr.Spec.Email,
+	}
+}
+
+// DefaultCreationTimestamp returns default test timestamp
+func DefaultCreationTimestamp() time.Time {
+	return time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)
+}
+
+// GenDefaultAPIUser generates a default API user
+func GenDefaultAPIUser() *apiv1.User {
+	return &apiv1.User{
+		ObjectMeta: apiv1.ObjectMeta{
+			ID:   GenDefaultUser().Name,
+			Name: GenDefaultUser().Spec.Name,
+		},
+		Email: GenDefaultUser().Spec.Email,
+	}
+}
+
+// GenDefaultUser generates a default user
+func GenDefaultUser() *kubermaticapiv1.User {
+	userEmail := "bob@acme.com"
+	return GenUser("", "Bob", userEmail)
+}
+
+// GenProject generates new empty project
+func GenProject(name, phase string, creationTime time.Time, oRef ...metav1.OwnerReference) *kubermaticapiv1.Project {
+	return &kubermaticapiv1.Project{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              fmt.Sprintf("%s-%s", name, "ID"),
+			CreationTimestamp: metav1.NewTime(creationTime),
+			OwnerReferences:   oRef,
+		},
+		Spec: kubermaticapiv1.ProjectSpec{Name: name},
+		Status: kubermaticapiv1.ProjectStatus{
+			Phase: phase,
+		},
+	}
+}
+
+// GenDefaultProject generates a default project
+func GenDefaultProject() *kubermaticapiv1.Project {
+	oRef := metav1.OwnerReference{
+		APIVersion: "kubermatic.io/v1",
+		Kind:       "User",
+		UID:        "",
+		Name:       GenDefaultUser().Name,
+	}
+	return GenProject("my-first-project", kubermaticapiv1.ProjectActive, DefaultCreationTimestamp(), oRef)
+}
+
+// GenBinding generates a binding
+func GenBinding(projectID, email, group string) *kubermaticapiv1.UserProjectBinding {
+	return &kubermaticapiv1.UserProjectBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("%s-%s-%s", projectID, email, group),
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticapiv1.ProjectKindName,
+					Name:       projectID,
+				},
+			},
+		},
+		Spec: kubermaticapiv1.UserProjectBindingSpec{
+			UserEmail: email,
+			ProjectID: projectID,
+			Group:     fmt.Sprintf("%s-%s", group, projectID),
+		},
+	}
+}
+
+// GenDefaultOwnerBinding generates default owner binding
+func GenDefaultOwnerBinding() *kubermaticapiv1.UserProjectBinding {
+	return GenBinding(GenDefaultProject().Name, GenDefaultUser().Spec.Email, "owners")
+}
+
+// GenDefaultKubermaticObjects generates default kubermatic object
+func GenDefaultKubermaticObjects(objs ...runtime.Object) []runtime.Object {
+	defaultsObjs := []runtime.Object{
+		// add a project
+		GenDefaultProject(),
+		// add a user
+		GenDefaultUser(),
+		// make a user the owner of the default project
+		GenDefaultOwnerBinding(),
+	}
+
+	return append(defaultsObjs, objs...)
 }

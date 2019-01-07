@@ -11,8 +11,10 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/securecookie"
+
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/middleware"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kcerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
@@ -30,21 +32,21 @@ var secureCookie *securecookie.SecureCookie
 
 func getClusterKubeconfig(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(GetClusterReq)
+		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		adminClientCfg, err := clusterProvider.GetAdminKubeconfigForCustomerCluster(cluster)
 		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		return &encodeKubeConifgResponse{clientCfg: adminClientCfg, filePrefix: "admin"}, nil
 	}
@@ -64,11 +66,11 @@ func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVe
 
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
-			return nil, kubernetesErrorToHTTPError(err)
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		// PHASE exchangeCode handles callback response from OIDC provider
@@ -96,7 +98,7 @@ func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVe
 
 			adminKubeConfig, err := clusterProvider.GetAdminKubeconfigForCustomerCluster(cluster)
 			if err != nil {
-				return nil, kubernetesErrorToHTTPError(err)
+				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 
 			// create a kubeconfig that contains OIDC tokens
@@ -254,7 +256,7 @@ func encodeOIDCKubeconfig(c context.Context, w http.ResponseWriter, response int
 }
 
 func decodeGetClusterKubeconfig(c context.Context, r *http.Request) (interface{}, error) {
-	req, err := decodeGetClusterReq(c, r)
+	req, err := common.DecodeGetClusterReq(c, r)
 	if err != nil {
 		return nil, err
 	}

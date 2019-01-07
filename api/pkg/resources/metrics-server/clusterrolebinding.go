@@ -34,28 +34,6 @@ func ClusterRoleBindingResourceReader(_ resources.ClusterRoleBindingDataProvider
 }
 
 // ClusterRoleBindingAuthDelegator returns the ClusterRoleBinding required for the metrics server to create token review requests
-func ClusterRoleBindingAuthDelegator(_ resources.ClusterRoleBindingDataProvider, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-	var crb *rbacv1.ClusterRoleBinding
-	if existing != nil {
-		crb = existing
-	} else {
-		crb = &rbacv1.ClusterRoleBinding{}
-	}
-
-	crb.Name = resources.MetricsServerAuthDelegatorClusterRoleBindingName
-	crb.Labels = resources.BaseAppLabel(name, nil)
-
-	crb.RoleRef = rbacv1.RoleRef{
-		Name:     "system:auth-delegator",
-		Kind:     "ClusterRole",
-		APIGroup: rbacv1.GroupName,
-	}
-	crb.Subjects = []rbacv1.Subject{
-		{
-			Kind:     "User",
-			Name:     resources.MetricsServerCertUsername,
-			APIGroup: rbacv1.GroupName,
-		},
-	}
-	return crb, nil
+func ClusterRoleBindingAuthDelegator(data resources.ClusterRoleBindingDataProvider, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+	return resources.ClusterRoleBindingAuthDelegatorCreator(resources.MetricsServerCertUsername)(data, existing)
 }
