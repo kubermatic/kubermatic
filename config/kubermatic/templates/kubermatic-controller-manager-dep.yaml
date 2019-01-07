@@ -92,9 +92,11 @@ spec:
               containerPort: 8085
               protocol: TCP
           volumeMounts:
+            {{- if regexMatch ".*OpenIDAuthPlugin=true.*" (default "" .Values.kubermatic.controller.featureGates) }}
             - name: dex-ca
               mountPath: "/opt/dex-ca/"
               readOnly: true
+            {{- end }}
             - name: master-files
               mountPath: "/opt/master-files/"
               readOnly: true
@@ -145,9 +147,11 @@ spec:
                 values:
                 - "stable"
       volumes:
+        {{- if regexMatch ".*OpenIDAuthPlugin=true.*" (default "" .Values.kubermatic.controller.featureGates) }}
         - name: dex-ca
           secret:
             secretName: dex-ca
+        {{- end }}
         - name: master-files
           secret:
             secretName: master-files
