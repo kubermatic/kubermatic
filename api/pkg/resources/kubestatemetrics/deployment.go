@@ -27,9 +27,8 @@ var (
 )
 
 const (
-	name = "kube-state-metrics"
-
-	version = "v1.3.1"
+	name    = "kube-state-metrics"
+	version = "v1.5.0-beta.0"
 )
 
 // Deployment returns the kube-state-metrics Deployment
