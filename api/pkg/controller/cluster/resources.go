@@ -205,7 +205,6 @@ func GetSecretCreatorOperations(c *kubermaticv1.Cluster, dockerPullConfigJSON []
 		{resources.ApiserverFrontProxyClientCertificateSecretName, apiserver.FrontProxyClientCertificate},
 		{resources.EtcdTLSCertificateSecretName, etcd.TLSCertificate},
 		{resources.ApiserverEtcdClientCertificateSecretName, apiserver.EtcdClientCertificate},
-
 		{resources.ApiserverTLSSecretName, apiserver.TLSServingCertificate},
 		{resources.KubeletClientCertificatesSecretName, apiserver.KubeletClientCertificate},
 		{resources.ServiceAccountKeySecretName, apiserver.ServiceAccountKey},
