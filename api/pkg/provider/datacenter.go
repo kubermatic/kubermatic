@@ -38,7 +38,7 @@ type OpenstackSpec struct {
 	AvailabilityZone  string `yaml:"availability_zone"`
 	Region            string `yaml:"region"`
 	IgnoreVolumeAZ    bool   `yaml:"ignore_volume_az"`
-	EnforceFloatingIP bool	 `yaml:"enforce_floating_ip"`
+	EnforceFloatingIP bool   `yaml:"enforce_floating_ip"`
 	// Used for automatic network creation
 	DNSServers []string  `yaml:"dns_servers"`
 	Images     ImageList `yaml:"images"`

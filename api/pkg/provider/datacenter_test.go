@@ -87,10 +87,10 @@ datacenters:
 			Country:  "DE",
 			Spec: DatacenterSpec{
 				Openstack: &OpenstackSpec{
-					AuthURL: "https://api.cbk.cloud.syseleven.net:5000/v3",
+					AuthURL:          "https://api.cbk.cloud.syseleven.net:5000/v3",
 					AvailabilityZone: "dbl1",
-					Region: "dbl",
-					DNSServers: []string{"37.123.105.116", "37.123.105.117"},
+					Region:           "dbl",
+					DNSServers:       []string{"37.123.105.116", "37.123.105.117"},
 					Images: ImageList{
 						providerconfig.OperatingSystemUbuntu: "Ubuntu 18.04 LTS - 2018-08-10",
 						providerconfig.OperatingSystemCentOS: "",
