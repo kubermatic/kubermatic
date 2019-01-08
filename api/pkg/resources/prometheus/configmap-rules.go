@@ -322,7 +322,7 @@ groups:
       message: '{{ $labels.node }} has been unready for more than an hour.'
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubenodenotready
     expr: kube_node_status_condition{condition="Ready",status="true"} == 0
-    for: 1h
+    for: 30m
     labels:
       severity: warning
 `
