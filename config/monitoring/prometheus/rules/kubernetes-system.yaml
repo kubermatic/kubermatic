@@ -34,17 +34,6 @@ groups:
     labels:
       severity: warning
 
-  - alert: KubeClientErrors
-    annotations:
-      message: >
-        Kubernetes API server client {{ $labels.job }}/{{ $labels.instance }} is experiencing
-        {{ printf "%0.0f" $value }} errors / second.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclienterrors
-    expr: sum(rate(ksm_scrape_error_total{job="kube-state-metrics"}[5m])) by (instance, job) > 0.1
-    for: 15m
-    labels:
-      severity: warning
-
   - alert: KubeletTooManyPods
     annotations:
       message: Kubelet {{ $labels.instance }} is running {{ $value }} pods, close to the limit of 110.
