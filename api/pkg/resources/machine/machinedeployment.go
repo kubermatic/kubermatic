@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/kubermatic/kubermatic/api/pkg/validation"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -94,6 +95,10 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc pro
 		}
 	case nd.Spec.Template.Cloud.Openstack != nil:
 		config.CloudProvider = providerconfig.CloudProviderOpenstack
+		if err := validation.ValidateCreateNodeSpec(c, &nd.Spec.Template, &dc); err != nil {
+			return nil, err
+		}
+
 		cloudExt, err = getOpenstackProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
