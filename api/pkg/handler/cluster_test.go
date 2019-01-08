@@ -717,19 +717,19 @@ func TestPatchCluster(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			Name:                      "scenario 1: update the cluster version",
-			Body:                      `{"spec":{"version":"1.2.3"}}`,
-			ExpectedResponse:          `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"us-central1","fake":{}},"version":"1.2.3"},"status":{"version":"1.2.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
-			cluster:                   "keen-snyder",
-			HTTPStatus:                http.StatusOK,
-			project:                   genDefaultProject().Name,
-			ExistingAPIUser:           genDefaultAPIUser(),
+			Name:             "scenario 1: update the cluster version",
+			Body:             `{"spec":{"version":"1.2.3"}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"us-central1","fake":{}},"version":"1.2.3"},"status":{"version":"1.2.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
+			cluster:          "keen-snyder",
+			HTTPStatus:       http.StatusOK,
+			project:          genDefaultProject().Name,
+			ExistingAPIUser:  genDefaultAPIUser(),
 			ExistingKubermaticObjects: genDefaultKubermaticObjects(
 				func() *kubermaticv1.Cluster {
 					cluster := genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Spec.Cloud.DatacenterName = "us-central1"
 					return cluster
-			}()),
+				}()),
 		},
 		// scenario 2
 		{

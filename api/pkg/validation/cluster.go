@@ -273,5 +273,3 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc provider.DatacenterMeta) 
 
 	return errors.New("no cloud provider specified")
 }
-
-
