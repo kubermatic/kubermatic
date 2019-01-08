@@ -2,6 +2,7 @@ package test
 
 import (
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -23,8 +24,10 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	kubernetesclient "k8s.io/client-go/kubernetes"
@@ -254,6 +257,29 @@ func CompareWithResult(t *testing.T, res *httptest.ResponseRecorder, response st
 
 	if r != b {
 		t.Fatalf("Expected response body to be \n%s \ngot \n%s", r, b)
+	}
+}
+
+func CompareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseString string) {
+	t.Helper()
+	var actualResponse interface{}
+	var expectedResponse interface{}
+
+	// var err error
+	bBytes, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		t.Fatal("Unable to read response body")
+	}
+	err = json.Unmarshal(bBytes, &actualResponse)
+	if err != nil {
+		t.Fatalf("Error marshaling string 1 :: %s", err.Error())
+	}
+	err = json.Unmarshal([]byte(expectedResponseString), &expectedResponse)
+	if err != nil {
+		t.Fatalf("Error marshaling string 2 :: %s", err.Error())
+	}
+	if !equality.Semantic.DeepEqual(actualResponse, expectedResponse) {
+		t.Fatalf("Objects are different: %v", diff.ObjectDiff(actualResponse, expectedResponse))
 	}
 }
 

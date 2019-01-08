@@ -1,4 +1,4 @@
-package provider_test
+package provider
 
 import (
 	"context"
@@ -14,7 +14,6 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
-	azure "github.com/kubermatic/kubermatic/api/pkg/handler/v1/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
@@ -22,6 +21,8 @@ const (
 	testID     = "test"
 	locationUS = "US"
 	locationEU = "EU"
+
+	datacenterName = "ap-northeast-1"
 )
 
 type mockSizeClientImpl struct {
@@ -74,7 +75,7 @@ func TestAzureSizeEndpoint(t *testing.T) {
 			req.Header.Add("TenantID", testID)
 			req.Header.Add("Location", tc.location)
 
-			azure.NewSizeClient = MockNewSizeClient
+			newSizeClient = MockNewSizeClient
 
 			apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName, false)
 
@@ -90,7 +91,7 @@ func TestAzureSizeEndpoint(t *testing.T) {
 			assert.Equal(t, tc.httpStatus, res.Code)
 
 			if res.Code == http.StatusOK {
-				compareJSON(t, res, tc.expectedResponse)
+				test.CompareJSON(t, res, tc.expectedResponse)
 			}
 
 		})
@@ -113,7 +114,7 @@ func buildAzureDatacenterMeta() map[string]provider.DatacenterMeta {
 	}
 }
 
-func MockNewSizeClient(subscriptionID, clientID, clientSecret, tenantID string) (azure.SizeClient, error) {
+func MockNewSizeClient(subscriptionID, clientID, clientSecret, tenantID string) (SizeClient, error) {
 
 	if len(clientSecret) == 0 || len(subscriptionID) == 0 || len(clientID) == 0 || len(tenantID) == 0 {
 		return nil, fmt.Errorf("")

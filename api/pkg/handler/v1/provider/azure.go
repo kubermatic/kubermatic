@@ -17,7 +17,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-var NewSizeClient = func(subscriptionID, clientID, clientSecret, tenantID string) (SizeClient, error) {
+var newSizeClient = func(subscriptionID, clientID, clientSecret, tenantID string) (SizeClient, error) {
 	var err error
 	sizesClient := compute.NewVirtualMachineSizesClient(subscriptionID)
 	sizesClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
@@ -81,7 +81,7 @@ func AzureSizeEndpoint() endpoint.Endpoint {
 }
 
 func azureSize(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location string) (apiv1.AzureSizeList, error) {
-	sizesClient, err := NewSizeClient(subscriptionID, clientID, clientSecret, tenantID)
+	sizesClient, err := newSizeClient(subscriptionID, clientID, clientSecret, tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create authorizer for size client: %v", err)
 	}
