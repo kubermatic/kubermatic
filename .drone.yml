@@ -291,7 +291,7 @@ pipeline:
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
-    image: kubeciio/helm
+    image: quay.io/kubermatic/helm:2.11.0-2
     pull: true
     secrets:
     - source: kubeconfig_run
@@ -333,6 +333,7 @@ pipeline:
     - xmudrii=marko
     - maciaszczykm=marcin
     - floreks=sebastian.florek
+    - lindtdev=irina
     group: slack
     icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
     image: kubermaticbot/drone-slack
