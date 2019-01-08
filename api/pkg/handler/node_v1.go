@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -17,6 +16,7 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	machineconversions "github.com/kubermatic/kubermatic/api/pkg/machine"
