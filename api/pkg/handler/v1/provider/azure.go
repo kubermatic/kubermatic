@@ -106,17 +106,19 @@ func azureSize(ctx context.Context, subscriptionID, clientID, clientSecret, tena
 	var sizeList apiv1.AzureSizeList
 	for _, v := range *sizesResult.Value {
 		// add only valid VM size types
-		if _, ok := validVMSizeSet[*v.Name]; ok {
-			s := apiv1.AzureSize{
-				Name:                 v.Name,
-				NumberOfCores:        v.NumberOfCores,
-				OsDiskSizeInMB:       v.OsDiskSizeInMB,
-				ResourceDiskSizeInMB: v.ResourceDiskSizeInMB,
-				MemoryInMB:           v.MemoryInMB,
-				MaxDataDiskCount:     v.MaxDataDiskCount,
-			}
+		if v.Name != nil {
+			if _, ok := validVMSizeSet[*v.Name]; ok {
+				s := apiv1.AzureSize{
+					Name:                 *v.Name,
+					NumberOfCores:        *v.NumberOfCores,
+					OsDiskSizeInMB:       *v.OsDiskSizeInMB,
+					ResourceDiskSizeInMB: *v.ResourceDiskSizeInMB,
+					MemoryInMB:           *v.MemoryInMB,
+					MaxDataDiskCount:     *v.MaxDataDiskCount,
+				}
 
-			sizeList = append(sizeList, s)
+				sizeList = append(sizeList, s)
+			}
 		}
 	}
 
