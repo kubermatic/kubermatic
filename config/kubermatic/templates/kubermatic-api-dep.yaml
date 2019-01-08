@@ -42,6 +42,9 @@ spec:
           - -oidc-issuer-client-secret={{ .Values.kubermatic.auth.issuerClientSecret }}
           - -oidc-issuer-cookie-hash-key={{ .Values.kubermatic.auth.issuerCookieKey }}
           {{- end }}
+          {{- if .Values.kubermatic.worker_name }}
+          - -worker-name={{ .Values.kubermatic.worker_name }}
+          {{- end }}
           image: '{{ .Values.kubermatic.api.image.repository }}:{{.Values.kubermatic.api.image.tag}}'
           imagePullPolicy: {{.Values.kubermatic.api.image.pullPolicy}}
           ports:

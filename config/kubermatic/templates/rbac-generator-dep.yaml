@@ -25,7 +25,7 @@ spec:
         - -v=3
         - -logtostderr
         - -kubeconfig=/opt/.kube/kubeconfig
-        - -dry-run=false
+        - -dry-run={{default "false" .Values.kubermatic.project_migrator.dry_run}}
         volumeMounts:
           - name: kubeconfig
             mountPath: "/opt/.kube/"
@@ -38,6 +38,9 @@ spec:
         - -v=4
         - -logtostderr
         - -kubeconfig=/opt/.kube/kubeconfig
+        {{- if .Values.kubermatic.worker_name }}
+        - -worker-name={{ .Values.kubermatic.worker_name }}
+        {{- end }}
         image: '{{.Values.kubermatic.rbac.image.repository}}:{{.Values.kubermatic.rbac.image.tag}}'
         imagePullPolicy: {{.Values.kubermatic.rbac.image.pullPolicy}}
         volumeMounts:
