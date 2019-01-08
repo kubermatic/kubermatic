@@ -203,7 +203,7 @@ func TestSecretV2CreatorsKeepAdditionalData(t *testing.T) {
 
 	templateData := resources.NewTemplateData(cluster, dc, "", secretLister, nil, serviceLister, "", "", "", resource.Quantity{}, "", "", false, false, "", nil, file.Name(), "", "")
 
-	for _, op := range GetSecretCreatorOperations(cluster, []byte{}) {
+	for _, op := range GetSecretCreatorOperations(cluster, []byte{}, true) {
 		existing := &corev1.Secret{
 			Data: map[string][]byte{"Test": []byte("Data")},
 		}
