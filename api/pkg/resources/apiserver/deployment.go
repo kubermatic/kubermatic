@@ -42,6 +42,12 @@ const (
 // Deployment returns the kubernetes Apiserver Deployment
 func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
 	var dep *appsv1.Deployment
+	var enableDexCA bool
+
+	if len(data.OIDCCAFile()) > 0 {
+		enableDexCA = true
+	}
+
 	if existing != nil {
 		dep = existing
 	} else {
@@ -74,6 +80,11 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 	dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 	volumes := getVolumes()
+
+	if len(data.OIDCCAFile()) > 0 {
+		volumes = append(volumes, getDexCASecretVolume())
+	}
+
 	podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 	if err != nil {
 		return nil, err
@@ -189,58 +200,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 				SuccessThreshold:    1,
 				TimeoutSeconds:      15,
 			},
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					MountPath: "/etc/kubernetes/tls",
-					Name:      resources.ApiserverTLSSecretName,
-					ReadOnly:  true,
-				},
-				{
-					Name:      resources.TokensSecretName,
-					MountPath: "/etc/kubernetes/tokens",
-					ReadOnly:  true,
-				},
-				{
-					Name:      resources.KubeletClientCertificatesSecretName,
-					MountPath: "/etc/kubernetes/kubelet",
-					ReadOnly:  true,
-				},
-				{
-					Name:      resources.CASecretName,
-					MountPath: "/etc/kubernetes/pki/ca",
-					ReadOnly:  true,
-				},
-				{
-					Name:      resources.ServiceAccountKeySecretName,
-					MountPath: "/etc/kubernetes/service-account-key",
-					ReadOnly:  true,
-				},
-				{
-					Name:      resources.CloudConfigConfigMapName,
-					MountPath: "/etc/kubernetes/cloud",
-					ReadOnly:  true,
-				},
-				{
-					Name:      resources.ApiserverEtcdClientCertificateSecretName,
-					MountPath: "/etc/etcd/pki/client",
-					ReadOnly:  true,
-				},
-				{
-					Name:      resources.ApiserverFrontProxyClientCertificateSecretName,
-					MountPath: "/etc/kubernetes/pki/front-proxy/client",
-					ReadOnly:  true,
-				},
-				{
-					Name:      resources.FrontProxyCASecretName,
-					MountPath: "/etc/kubernetes/pki/front-proxy/ca",
-					ReadOnly:  true,
-				},
-				{
-					Name:      resources.DexCASecretName,
-					MountPath: "/etc/kubernetes/dex/ca",
-					ReadOnly:  true,
-				},
-			},
+			VolumeMounts: getVolumeMounts(enableDexCA),
 		},
 	}
 
@@ -329,7 +289,9 @@ func getApiserverFlags(data resources.DeploymentDataProvider, externalNodePort i
 		flags = append(flags, "--oidc-issuer-url", data.OIDCIssuerURL())
 		flags = append(flags, "--oidc-client-id", data.OIDCIssuerClientID())
 		flags = append(flags, "--oidc-username-claim", "email")
-		flags = append(flags, "--oidc-ca-file", "/etc/kubernetes/dex/ca/caBundle.pem")
+		if len(data.OIDCCAFile()) > 0 {
+			flags = append(flags, "--oidc-ca-file", "/etc/kubernetes/dex/ca/caBundle.pem")
+		}
 	}
 
 	return flags, nil
@@ -355,6 +317,66 @@ func getAdmissionControlFlags(data resources.DeploymentDataProvider) (string, st
 	admissionControlFlagValue += ",ResourceQuota"
 
 	return admissionControlFlagName, admissionControlFlagValue
+}
+
+func getVolumeMounts(enableDexCA bool) []corev1.VolumeMount {
+	volumesMounts := []corev1.VolumeMount{
+		{
+			MountPath: "/etc/kubernetes/tls",
+			Name:      resources.ApiserverTLSSecretName,
+			ReadOnly:  true,
+		},
+		{
+			Name:      resources.TokensSecretName,
+			MountPath: "/etc/kubernetes/tokens",
+			ReadOnly:  true,
+		},
+		{
+			Name:      resources.KubeletClientCertificatesSecretName,
+			MountPath: "/etc/kubernetes/kubelet",
+			ReadOnly:  true,
+		},
+		{
+			Name:      resources.CASecretName,
+			MountPath: "/etc/kubernetes/pki/ca",
+			ReadOnly:  true,
+		},
+		{
+			Name:      resources.ServiceAccountKeySecretName,
+			MountPath: "/etc/kubernetes/service-account-key",
+			ReadOnly:  true,
+		},
+		{
+			Name:      resources.CloudConfigConfigMapName,
+			MountPath: "/etc/kubernetes/cloud",
+			ReadOnly:  true,
+		},
+		{
+			Name:      resources.ApiserverEtcdClientCertificateSecretName,
+			MountPath: "/etc/etcd/pki/client",
+			ReadOnly:  true,
+		},
+		{
+			Name:      resources.ApiserverFrontProxyClientCertificateSecretName,
+			MountPath: "/etc/kubernetes/pki/front-proxy/client",
+			ReadOnly:  true,
+		},
+		{
+			Name:      resources.FrontProxyCASecretName,
+			MountPath: "/etc/kubernetes/pki/front-proxy/ca",
+			ReadOnly:  true,
+		},
+	}
+
+	if enableDexCA {
+		volumesMounts = append(volumesMounts, corev1.VolumeMount{
+			Name:      resources.DexCASecretName,
+			MountPath: "/etc/kubernetes/dex/ca",
+			ReadOnly:  true,
+		})
+	}
+
+	return volumesMounts
 }
 
 func getVolumes() []corev1.Volume {
@@ -466,15 +488,6 @@ func getVolumes() []corev1.Volume {
 				},
 			},
 		},
-		{
-			Name: resources.DexCASecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.DexCASecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
-				},
-			},
-		},
 	}
 }
 
@@ -487,4 +500,17 @@ func getEnvVars(cluster *kubermaticv1.Cluster) []corev1.EnvVar {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_AVAILABILITY_ZONE", Value: cluster.Spec.Cloud.AWS.AvailabilityZone})
 	}
 	return vars
+}
+
+func getDexCASecretVolume() corev1.Volume {
+
+	return corev1.Volume{
+		Name: resources.DexCASecretName,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName:  resources.DexCASecretName,
+				DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+			},
+		},
+	}
 }
