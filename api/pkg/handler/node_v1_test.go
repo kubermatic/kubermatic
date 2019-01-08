@@ -866,7 +866,7 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
 		ExistingMachines           []*clusterv1alpha1.Machine
 		ExistingKubermaticObjs     []runtime.Object
-		NodeDeploymentId           string
+		NodeDeploymentID           string
 	}{
 		// scenario 1
 		{
@@ -880,7 +880,7 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, selector),
 				genTestMachineDeployment("mars", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
 			},
-			NodeDeploymentId: "venus",
+			NodeDeploymentID: "venus",
 			ExistingMachines: []*clusterv1alpha1.Machine{
 				{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1001,7 +1001,7 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodedeployments/%s/nodes", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.NodeDeploymentId), strings.NewReader(""))
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodedeployments/%s/nodes", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.NodeDeploymentID), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			machineObj := []runtime.Object{}
