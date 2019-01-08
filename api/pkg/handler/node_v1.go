@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/labels"
 	"net/http"
 	"strconv"
 	"strings"
@@ -952,12 +953,7 @@ func listNodeDeploymentNodes(projectProvider provider.ProjectProvider) endpoint.
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		selectors := make([]string, 0, len(machineDeployment.Spec.Selector.MatchLabels))
-		for k, v := range machineDeployment.Spec.Selector.MatchLabels {
-			selectors = append(selectors, fmt.Sprintf("%s=%s", k, v))
-		}
-
-		listOptions := metav1.ListOptions{LabelSelector: strings.Join(selectors, ", ")}
+		listOptions := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels).String()}
 		machines, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(listOptions)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
