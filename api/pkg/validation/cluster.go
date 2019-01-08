@@ -28,12 +28,12 @@ func ValidateKubernetesToken(token string) error {
 }
 
 // ValidateCreateClusterSpec validates the given cluster spec
-func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, cloudProviders map[string]provider.CloudProvider) error {
+func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, cloudProviders map[string]provider.CloudProvider, dc provider.DatacenterMeta) error {
 	if spec.HumanReadableName == "" {
 		return errors.New("no name specified")
 	}
 
-	if err := ValidateCloudSpec(spec.Cloud); err != nil {
+	if err := ValidateCloudSpec(spec.Cloud, dc); err != nil {
 		return fmt.Errorf("invalid cloud spec: %v", err)
 	}
 
@@ -130,7 +130,7 @@ func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 }
 
 // ValidateUpdateCluster validates if the cluster update is allowed
-func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudProviders map[string]provider.CloudProvider) error {
+func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudProviders map[string]provider.CloudProvider, dc provider.DatacenterMeta) error {
 	if err := ValidateCloudChange(newCluster.Spec.Cloud, oldCluster.Spec.Cloud); err != nil {
 		return err
 	}
@@ -163,7 +163,7 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudPr
 		return errors.New("changing the type metadata is not allowed")
 	}
 
-	if err := ValidateCloudSpec(newCluster.Spec.Cloud); err != nil {
+	if err := ValidateCloudSpec(newCluster.Spec.Cloud, dc); err != nil {
 		return fmt.Errorf("invalid cloud spec: %v", err)
 	}
 
@@ -184,7 +184,7 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudPr
 }
 
 // ValidateCloudSpec validates if the cloud spec is valid
-func ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
+func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc provider.DatacenterMeta) error {
 	if spec.DatacenterName == "" {
 		return errors.New("no node datacenter specified")
 	}
@@ -246,6 +246,9 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 		if spec.Openstack.Tenant == "" {
 			return errors.New("no tenant specified")
 		}
+		if spec.Openstack.FloatingIPPool == "" && dc.Spec.Openstack != nil && dc.Spec.Openstack.EnforceFloatingIP {
+			return errors.New("no floating ip pool specified")
+		}
 		return nil
 	}
 
@@ -270,3 +273,5 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 
 	return errors.New("no cloud provider specified")
 }
+
+

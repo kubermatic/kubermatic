@@ -25,7 +25,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
 )
 
-func createClusterEndpoint(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func createClusterEndpoint(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -35,7 +35,7 @@ func createClusterEndpoint(cloudProviders map[string]provider.CloudProvider, pro
 			return nil, kubernetesErrorToHTTPError(err)
 		}
 
-		spec, err := cluster.Spec(req.Body, cloudProviders)
+		spec, err := cluster.Spec(req.Body, cloudProviders, dcs)
 		if err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
@@ -74,7 +74,7 @@ func getCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	}
 }
 
-func patchCluster(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func patchCluster(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -105,7 +105,12 @@ func patchCluster(cloudProviders map[string]provider.CloudProvider, projectProvi
 			return nil, errors.NewBadRequest("cannot decode patched cluster: %v", err)
 		}
 
-		if err = validation.ValidateUpdateCluster(patchedCluster, existingCluster, cloudProviders); err != nil {
+		dc, found := dcs[patchedCluster.Spec.Cloud.DatacenterName]
+		if !found {
+			return nil, fmt.Errorf("unknown cluster datacenter %s", patchedCluster.Spec.Cloud.DatacenterName)
+		}
+
+		if err = validation.ValidateUpdateCluster(patchedCluster, existingCluster, cloudProviders, dc); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 

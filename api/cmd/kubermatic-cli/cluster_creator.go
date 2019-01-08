@@ -82,7 +82,7 @@ func (ctl *clusterCreator) create(ctx context.Context) error {
 
 	cloudProviders := cloud.Providers(dcs)
 
-	clusterSpec, err := cluster.Spec(clusterTemplate, cloudProviders)
+	clusterSpec, err := cluster.Spec(clusterTemplate, cloudProviders, dcs)
 	if err != nil {
 		return err
 	}

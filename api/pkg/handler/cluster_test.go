@@ -530,7 +530,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 1
 		{
 			Name:                   "scenario 1: a cluster with invalid spec is rejected",
-			Body:                   `{"name":"keen-snyder","spec":{"cloud":{"digitalocean":{"token":"dummy_token"},"dc":"do-fra1"}, "version":""}}`,
+			Body:                   `{"name":"keen-snyder","spec":{"cloud":{"digitalocean":{"token":"dummy_token"},"dc":"us-central1"}, "version":""}}`,
 			ExpectedResponse:       `{"error":{"code":400,"message":"invalid cluster: invalid cloud spec \"Version\" is required but was not specified"}}`,
 			HTTPStatus:             http.StatusBadRequest,
 			ExistingKubermaticObjs: genDefaultKubermaticObjects(),
@@ -540,8 +540,8 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 2
 		{
 			Name:             "scenario 2: cluster is created when valid spec and ssh key are passed",
-			Body:             `{"name":"keen-snyder","spec":{"version":"1.9.7","cloud":{"fake":{"token":"dummy_token"},"dc":"do-fra1"}}}`,
-			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"dc":"do-fra1","fake":{}},"version":"1.9.7"},"status":{"version":"1.9.7","url":""}}`,
+			Body:             `{"name":"keen-snyder","spec":{"version":"1.9.7","cloud":{"fake":{"token":"dummy_token"},"dc":"us-central1"}}}`,
+			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"dc":"us-central1","fake":{}},"version":"1.9.7"},"status":{"version":"1.9.7","url":""}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    genDefaultProject().Name,
@@ -702,6 +702,8 @@ func TestPatchCluster(t *testing.T) {
 
 	// Mock timezone to keep creation timestamp always the same.
 	time.Local = time.UTC
+	cluster := genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
+	cluster.Spec.Cloud.DatacenterName = "us-central1"
 
 	testcases := []struct {
 		Name                      string
@@ -717,12 +719,17 @@ func TestPatchCluster(t *testing.T) {
 		{
 			Name:                      "scenario 1: update the cluster version",
 			Body:                      `{"spec":{"version":"1.2.3"}}`,
-			ExpectedResponse:          `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"FakeDatacenter","fake":{}},"version":"1.2.3"},"status":{"version":"1.2.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
+			ExpectedResponse:          `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","spec":{"cloud":{"dc":"us-central1","fake":{}},"version":"1.2.3"},"status":{"version":"1.2.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
 			cluster:                   "keen-snyder",
 			HTTPStatus:                http.StatusOK,
 			project:                   genDefaultProject().Name,
 			ExistingAPIUser:           genDefaultAPIUser(),
-			ExistingKubermaticObjects: genDefaultKubermaticObjects(genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))),
+			ExistingKubermaticObjects: genDefaultKubermaticObjects(
+				func() *kubermaticv1.Cluster {
+					cluster := genCluster("keen-snyder", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
+					cluster.Spec.Cloud.DatacenterName = "us-central1"
+					return cluster
+			}()),
 		},
 		// scenario 2
 		{
