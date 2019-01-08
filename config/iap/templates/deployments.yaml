@@ -1,4 +1,3 @@
-{{- $root := . -}}
 {{- range .Values.iap.deployments }}
 ---
 apiVersion: apps/v1
@@ -20,8 +19,8 @@ spec:
         app: iap
         target: {{ .name }}
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmaps.yaml") $root | sha256sum }}
-        checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") $root | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmaps.yaml") $ | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") $ | sha256sum }}
     spec:
       containers:
       - name: keycloak-proxy
