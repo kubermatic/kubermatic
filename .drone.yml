@@ -291,7 +291,7 @@ pipeline:
       --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
       --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
-    image: quay.io/kubermatic/helm:2.11.0-2
+    image: kubeciio/helm
     pull: true
     secrets:
     - source: kubeconfig_run
