@@ -18,3 +18,21 @@ groups:
     for: 0m
     labels:
       severity: warning
+
+  - alert: KubermaticAPIDown
+    annotations:
+      message: KubermaticAPI has disappeared from Prometheus target discovery.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubermaticapidown
+    expr: absent(up{job="pods",namespace="kubermatic",role="kubermatic-api"} == 1)
+    for: 15m
+    labels:
+      severity: critical
+
+  - alert: KubermaticControllerManagerDown
+    annotations:
+      message: KubermaticControllerManager has disappeared from Prometheus target discovery.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubermaticcontrollermanagerdown
+    expr: absent(up{job="pods",namespace="kubermatic",role="controller-manager"} == 1)
+    for: 15m
+    labels:
+      severity: critical

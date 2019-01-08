@@ -10,10 +10,10 @@ groups:
     labels:
       severity: critical
 
-  - alert: KubeAPIDown
+  - alert: KubernetesApiserverDown
     annotations:
-      message: KubeAPI has disappeared from Prometheus target discovery.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeapidown
+      message: KubernetesApiserver has disappeared from Prometheus target discovery.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubernetesapiserverdown
     expr: absent(up{job="apiserver"} == 1)
     for: 15m
     labels:
@@ -51,33 +51,6 @@ groups:
       message: Kubelet has disappeared from Prometheus target discovery.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeletdown
     expr: absent(up{job="kubelet"} == 1)
-    for: 15m
-    labels:
-      severity: critical
-
-  - alert: KubermaticAPIDown
-    annotations:
-      message: KubermaticAPI has disappeared from Prometheus target discovery.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubermaticapidown
-    expr: absent(up{job="pods",namespace="kubermatic",role="kubermatic-api"} == 1)
-    for: 15m
-    labels:
-      severity: critical
-
-  - alert: KubermaticControllerManagerDown
-    annotations:
-      message: KubermaticControllerManager has disappeared from Prometheus target discovery.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubermaticcontrollermanagerdown
-    expr: absent(up{job="pods",namespace="kubermatic",role="controller-manager"} == 1)
-    for: 15m
-    labels:
-      severity: critical
-
-  - alert: KubernetesApiserverDown
-    annotations:
-      message: KubernetesApiserver has disappeared from Prometheus target discovery.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubernetesapiserverdown
-    expr: absent(up{job="apiserver"} == 1)
     for: 15m
     labels:
       severity: critical
