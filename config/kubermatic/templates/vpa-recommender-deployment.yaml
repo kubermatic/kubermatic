@@ -1,3 +1,4 @@
+{{ if .Values.kubermatic.deployVPA }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -29,3 +30,4 @@ spec:
             memory: 500Mi
         ports:
         - containerPort: 8080
+{{ end }}
