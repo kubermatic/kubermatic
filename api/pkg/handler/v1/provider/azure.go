@@ -17,6 +17,30 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
+var NewSizeClient = func(subscriptionID, clientID, clientSecret, tenantID string) (SizeClient, error) {
+	var err error
+	sizesClient := compute.NewVirtualMachineSizesClient(subscriptionID)
+	sizesClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
+	if err != nil {
+		return nil, err
+	}
+	return &sizeClientImpl{
+		vmSizeClient: sizesClient,
+	}, nil
+}
+
+type sizeClientImpl struct {
+	vmSizeClient compute.VirtualMachineSizesClient
+}
+
+type SizeClient interface {
+	List(ctx context.Context, location string) (compute.VirtualMachineSizeListResult, error)
+}
+
+func (s *sizeClientImpl) List(ctx context.Context, location string) (compute.VirtualMachineSizeListResult, error) {
+	return s.vmSizeClient.List(ctx, location)
+}
+
 func AzureSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AzureSizeNoCredentialsReq)
@@ -57,13 +81,12 @@ func AzureSizeEndpoint() endpoint.Endpoint {
 }
 
 func azureSize(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location string) (apiv1.AzureSizeList, error) {
-	var err error
-	sizesClient := compute.NewVirtualMachineSizesClient(subscriptionID)
-	sizesClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
+	sizesClient, err := NewSizeClient(subscriptionID, clientID, clientSecret, tenantID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %v", err)
+		return nil, fmt.Errorf("failed to create authorizer for size client: %v", err)
 	}
 
+	// get all available VM size types for given location
 	sizesResult, err := sizesClient.List(ctx, location)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list sizes: %v", err)
@@ -73,18 +96,30 @@ func azureSize(ctx context.Context, subscriptionID, clientID, clientSecret, tena
 		return nil, fmt.Errorf("failed to list sizes: Azure return a nil result")
 	}
 
+	// prepare set of valid VM size types
+	validVMSizeList := compute.PossibleContainerServiceVMSizeTypesValues()
+	validVMSizeSet := make(map[string]struct{}, len(validVMSizeList))
+	for _, s := range validVMSizeList {
+		validVMSizeSet[string(s)] = struct{}{}
+	}
+
 	var sizeList apiv1.AzureSizeList
 	for _, v := range *sizesResult.Value {
-		s := apiv1.AzureSize{
-			Name:                 v.Name,
-			NumberOfCores:        v.NumberOfCores,
-			OsDiskSizeInMB:       v.OsDiskSizeInMB,
-			ResourceDiskSizeInMB: v.ResourceDiskSizeInMB,
-			MemoryInMB:           v.MemoryInMB,
-			MaxDataDiskCount:     v.MaxDataDiskCount,
-		}
+		// add only valid VM size types
+		if v.Name != nil {
+			if _, ok := validVMSizeSet[*v.Name]; ok {
+				s := apiv1.AzureSize{
+					Name:                 *v.Name,
+					NumberOfCores:        *v.NumberOfCores,
+					OsDiskSizeInMB:       *v.OsDiskSizeInMB,
+					ResourceDiskSizeInMB: *v.ResourceDiskSizeInMB,
+					MemoryInMB:           *v.MemoryInMB,
+					MaxDataDiskCount:     *v.MaxDataDiskCount,
+				}
 
-		sizeList = append(sizeList, s)
+				sizeList = append(sizeList, s)
+			}
+		}
 	}
 
 	return sizeList, nil
