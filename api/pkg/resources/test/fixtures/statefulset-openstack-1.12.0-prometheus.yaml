@@ -38,7 +38,7 @@ spec:
         - --web.enable-lifecycle
         - --storage.tsdb.no-lockfile
         - --web.route-prefix=/
-        image: quay.io/prometheus/prometheus:v2.3.2
+        image: quay.io/prometheus/prometheus:v2.6.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 10

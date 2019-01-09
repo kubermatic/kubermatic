@@ -14,11 +14,10 @@ import (
 
 const (
 	name = "prometheus"
+	tag  = "v2.6.0"
 
 	volumeConfigName = "config"
 	volumeDataName   = "data"
-
-	tag = "v2.3.2"
 )
 
 var (
