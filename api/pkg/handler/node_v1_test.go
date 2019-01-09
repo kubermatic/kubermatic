@@ -53,38 +53,8 @@ func TestDeleteNodeForCluster(t *testing.T) {
 				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
 			},
 			ExistingMachines: []*clusterv1alpha1.Machine{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "venus",
-						Namespace: "kube-system",
-					},
-					Spec: clusterv1alpha1.MachineSpec{
-						ProviderConfig: clusterv1alpha1.ProviderConfig{
-							Value: &runtime.RawExtension{
-								Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
-							},
-						},
-						Versions: clusterv1alpha1.MachineVersionInfo{
-							Kubelet: "v1.9.6",
-						},
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "mars",
-						Namespace: "kube-system",
-					},
-					Spec: clusterv1alpha1.MachineSpec{
-						ProviderConfig: clusterv1alpha1.ProviderConfig{
-							Value: &runtime.RawExtension{
-								Raw: []byte(`{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`),
-							},
-						},
-						Versions: clusterv1alpha1.MachineVersionInfo{
-							Kubelet: "v1.9.9",
-						},
-					},
-				},
+				genTestMachine("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
 			},
 			ExpectedActions: 2,
 			//
@@ -184,38 +154,8 @@ func TestListNodesForCluster(t *testing.T) {
 				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
 			},
 			ExistingMachines: []*clusterv1alpha1.Machine{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "venus",
-						Namespace: "kube-system",
-					},
-					Spec: clusterv1alpha1.MachineSpec{
-						ProviderConfig: clusterv1alpha1.ProviderConfig{
-							Value: &runtime.RawExtension{
-								Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
-							},
-						},
-						Versions: clusterv1alpha1.MachineVersionInfo{
-							Kubelet: "v1.9.6",
-						},
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "mars",
-						Namespace: "kube-system",
-					},
-					Spec: clusterv1alpha1.MachineSpec{
-						ProviderConfig: clusterv1alpha1.ProviderConfig{
-							Value: &runtime.RawExtension{
-								Raw: []byte(`{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`),
-							},
-						},
-						Versions: clusterv1alpha1.MachineVersionInfo{
-							Kubelet: "v1.9.9",
-						},
-					},
-				},
+				genTestMachine("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
 			},
 			ExpectedResponse: []apiv1.Node{
 				{
@@ -235,7 +175,7 @@ func TestListNodesForCluster(t *testing.T) {
 							},
 						},
 						Versions: apiv1.NodeVersionInfo{
-							Kubelet: "v1.9.6",
+							Kubelet: "v1.9.9",
 						},
 					},
 					Status: apiv1.NodeStatus{
@@ -298,41 +238,8 @@ func TestListNodesForCluster(t *testing.T) {
 				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
 			},
 			ExistingMachines: []*clusterv1alpha1.Machine{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "venus",
-						Namespace: "kube-system",
-						OwnerReferences: []metav1.OwnerReference{
-							{APIVersion: "", Kind: "", Name: "", UID: ""},
-						},
-					},
-					Spec: clusterv1alpha1.MachineSpec{
-						ProviderConfig: clusterv1alpha1.ProviderConfig{
-							Value: &runtime.RawExtension{
-								Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
-							},
-						},
-						Versions: clusterv1alpha1.MachineVersionInfo{
-							Kubelet: "v1.9.6",
-						},
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "mars",
-						Namespace: "kube-system",
-					},
-					Spec: clusterv1alpha1.MachineSpec{
-						ProviderConfig: clusterv1alpha1.ProviderConfig{
-							Value: &runtime.RawExtension{
-								Raw: []byte(`{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`),
-							},
-						},
-						Versions: clusterv1alpha1.MachineVersionInfo{
-							Kubelet: "v1.9.9",
-						},
-					},
-				},
+				genTestMachine("venus", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, []metav1.OwnerReference{{APIVersion: "", Kind: "", Name: "", UID: ""}}),
+				genTestMachine("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
 			},
 			ExpectedResponse: []apiv1.Node{
 				{
@@ -425,7 +332,7 @@ func TestGetNodeForCluster(t *testing.T) {
 		// scenario 1
 		{
 			Name:                   "scenario 1: get a node that belongs to the given cluster",
-			ExpectedResponse:       `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":null}},"operatingSystem":{},"versions":{"kubelet":""}},"status":{"machineName":"venus","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
+			ExpectedResponse:       `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":null}},"operatingSystem":{},"versions":{"kubelet":"v1.9.9"}},"status":{"machineName":"venus","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
 			HTTPStatus:             http.StatusOK,
 			NodeIDToSync:           "venus",
 			ClusterIDToSync:        genDefaultCluster().Name,
@@ -433,21 +340,7 @@ func TestGetNodeForCluster(t *testing.T) {
 			ExistingKubermaticObjs: genDefaultKubermaticObjects(genDefaultCluster()),
 			ExistingAPIUser:        genDefaultAPIUser(),
 			ExistingNodes:          []*corev1.Node{{ObjectMeta: metav1.ObjectMeta{Name: "venus"}}},
-			ExistingMachines: []*clusterv1alpha1.Machine{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "venus",
-						Namespace: "kube-system",
-					},
-					Spec: clusterv1alpha1.MachineSpec{
-						ProviderConfig: clusterv1alpha1.ProviderConfig{
-							Value: &runtime.RawExtension{
-								Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}}`),
-							},
-						},
-					},
-				},
-			},
+			ExistingMachines:       []*clusterv1alpha1.Machine{genTestMachine("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}}`, map[string]string{"md-id": "123", "xyz": "abc"}, nil)},
 		},
 	}
 
@@ -847,11 +740,6 @@ func TestGetNodeDeployment(t *testing.T) {
 
 func TestListNodeDeploymentNodes(t *testing.T) {
 	t.Parallel()
-
-	selector := map[string]string{
-		"md-id": "123",
-	}
-
 	testcases := []struct {
 		Name                       string
 		ExpectedResponse           []apiv1.Node
@@ -877,70 +765,15 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 			ExistingKubermaticObjs: genDefaultKubermaticObjects(genDefaultCluster()),
 			ExistingAPIUser:        genDefaultAPIUser(),
 			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
-				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, selector),
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123"}),
 				genTestMachineDeployment("mars", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
 			},
 			NodeDeploymentID: "venus",
 			ExistingMachines: []*clusterv1alpha1.Machine{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "venus-1",
-						Namespace: "kube-system",
-						Labels: map[string]string{
-							"md-id":      "123",
-							"some-other": "xyz",
-						},
-					},
-					Spec: clusterv1alpha1.MachineSpec{
-						ProviderConfig: clusterv1alpha1.ProviderConfig{
-							Value: &runtime.RawExtension{
-								Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
-							},
-						},
-						Versions: clusterv1alpha1.MachineVersionInfo{
-							Kubelet: "v1.9.6",
-						},
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "venus-2",
-						Namespace: "kube-system",
-						Labels: map[string]string{
-							"md-id":      "123",
-							"some-other": "abc",
-						},
-					},
-					Spec: clusterv1alpha1.MachineSpec{
-						ProviderConfig: clusterv1alpha1.ProviderConfig{
-							Value: &runtime.RawExtension{
-								Raw: []byte(`{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`),
-							},
-						},
-						Versions: clusterv1alpha1.MachineVersionInfo{
-							Kubelet: "v1.9.6",
-						},
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "mars-1",
-						Namespace: "kube-system",
-						Labels: map[string]string{
-							"md-id": "333",
-						},
-					},
-					Spec: clusterv1alpha1.MachineSpec{
-						ProviderConfig: clusterv1alpha1.ProviderConfig{
-							Value: &runtime.RawExtension{
-								Raw: []byte(`{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`),
-							},
-						},
-						Versions: clusterv1alpha1.MachineVersionInfo{
-							Kubelet: "v1.9.9",
-						},
-					},
-				},
+				genTestMachine("venus-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("venus-2", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "xyz": "abc"}, nil),
+				genTestMachine("mars-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "345", "xyz": "abc"}, nil),
+				genTestMachine("mars-2", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, nil),
 			},
 			ExpectedResponse: []apiv1.Node{
 				{
@@ -960,7 +793,7 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 							},
 						},
 						Versions: apiv1.NodeVersionInfo{
-							Kubelet: "v1.9.6",
+							Kubelet: "v1.9.9",
 						},
 					},
 					Status: apiv1.NodeStatus{
@@ -986,7 +819,7 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 							},
 						},
 						Versions: apiv1.NodeVersionInfo{
-							Kubelet: "v1.9.6",
+							Kubelet: "v1.9.9",
 						},
 					},
 					Status: apiv1.NodeStatus{
@@ -1259,6 +1092,27 @@ func (k nodeDeploymentSliceWrapper) EqualOrDie(expected nodeDeploymentSliceWrapp
 	t.Helper()
 	if diff := deep.Equal(k, expected); diff != nil {
 		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+	}
+}
+
+func genTestMachine(name, rawProviderConfig string, labels map[string]string, ownerRef []metav1.OwnerReference) *clusterv1alpha1.Machine {
+	return &clusterv1alpha1.Machine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            name,
+			Namespace:       metav1.NamespaceSystem,
+			Labels:          labels,
+			OwnerReferences: ownerRef,
+		},
+		Spec: clusterv1alpha1.MachineSpec{
+			ProviderConfig: clusterv1alpha1.ProviderConfig{
+				Value: &runtime.RawExtension{
+					Raw: []byte(rawProviderConfig),
+				},
+			},
+			Versions: clusterv1alpha1.MachineVersionInfo{
+				Kubelet: "v1.9.9",
+			},
+		},
 	}
 }
 
