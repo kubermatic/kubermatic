@@ -134,7 +134,7 @@ groups:
 
   - alert: KubeCronJobRunning
     annotations:
-      message: CronJob {{ $labels.namespaces }}/{{ $labels.cronjob }} is taking more than 1h to complete.
+      message: CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} is taking more than 1h to complete.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubecronjobrunning
     expr: time() - kube_cronjob_next_schedule_time{job="kube-state-metrics"} > 3600
     for: 1h
@@ -143,18 +143,18 @@ groups:
 
   - alert: KubeJobCompletion
     annotations:
-      message: Job {{ $labels.namespaces }}/{{ $labels.job }} is taking more than one hour to complete.
+      message: Job {{ $labels.namespace }}/{{ $labels.job_name }} is taking more than one hour to complete.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubejobcompletion
-    expr: kube_job_spec_completions{job="kube-state-metrics"} - kube_job_status_succeeded{job="kube-state-metrics"}  > 0
+    expr: kube_job_spec_completions{job="kube-state-metrics"} - kube_job_status_succeeded{job="kube-state-metrics"} > 0
     for: 1h
     labels:
       severity: warning
 
   - alert: KubeJobFailed
     annotations:
-      message: Job {{ $labels.namespaces }}/{{ $labels.job }} failed to complete.
+      message: Job {{ $labels.namespace }}/{{ $labels.job_name }} failed to complete.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubejobfailed
-    expr: kube_job_status_failed{job="kube-state-metrics"}  > 0
+    expr: kube_job_status_failed{job="kube-state-metrics"} > 0
     for: 1h
     labels:
       severity: warning
