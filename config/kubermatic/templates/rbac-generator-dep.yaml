@@ -25,7 +25,9 @@ spec:
         - -v=3
         - -logtostderr
         - -kubeconfig=/opt/.kube/kubeconfig
-        - -dry-run={{default "false" .Values.kubermatic.project_migrator.dry_run}}
+        {{- with .Values.kubermatic.projects_migrator }}
+        - -dry-run={{ .dry_run }}
+        {{- end }}
         volumeMounts:
           - name: kubeconfig
             mountPath: "/opt/.kube/"
