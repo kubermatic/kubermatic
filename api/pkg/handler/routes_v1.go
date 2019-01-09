@@ -863,7 +863,7 @@ func (r Routing) deleteCluster() http.Handler {
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
 		)(deleteCluster(r.sshKeyProvider, r.projectProvider)),
-		common.DecodeGetClusterReq,
+		common.DecodeDeleteClusterReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)

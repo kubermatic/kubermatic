@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -60,6 +61,48 @@ type GetClusterReq struct {
 	DCReq
 	// in: path
 	ClusterID string `json:"cluster_id"`
+}
+
+type DeleteClusterReq struct {
+	DCReq
+	// in: path
+	ClusterID string `json:"cluster_id"`
+	// DeleteVolumes if true all cluster PV's and PVC's will be deleted from cluster
+	DeleteVolumes bool
+	// DeleteVolumes if true all load balancers will be deleted from cluster
+	DeleteLoadBalancers bool
+}
+
+func DecodeDeleteClusterReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req DeleteClusterReq
+
+	clusterReqRaw, err := DecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	clusterReq := clusterReqRaw.(GetClusterReq)
+	req.DCReq = clusterReq.DCReq
+	req.ClusterID = clusterReq.ClusterID
+
+	headerValue := r.Header.Get("DeleteVolumes")
+	if len(headerValue) > 0 {
+		deleteVolumes, err := strconv.ParseBool(headerValue)
+		if err != nil {
+			return nil, err
+		}
+		req.DeleteVolumes = deleteVolumes
+	}
+
+	headerValue = r.Header.Get("DeleteLoadBalancers")
+	if len(headerValue) > 0 {
+		deleteLB, err := strconv.ParseBool(headerValue)
+		if err != nil {
+			return nil, err
+		}
+		req.DeleteLoadBalancers = deleteLB
+	}
+
+	return req, nil
 }
 
 func DecodeGetClusterReq(c context.Context, r *http.Request) (interface{}, error) {

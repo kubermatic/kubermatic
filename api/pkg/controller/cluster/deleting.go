@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	inClusterPVCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-pv"
-	inClusterLBCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-lb"
+	InClusterPVCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-pv"
+	InClusterLBCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-lb"
 )
 
 // cleanupCluster is the function which handles clusters in the deleting phase.
@@ -42,7 +42,7 @@ func (cc *Controller) cleanupCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Clu
 
 	// Do not run the cloud provider cleanup until we finished the PV & LB cleanup.
 	// Otherwise we risk deleting those resources as well
-	if kuberneteshelper.HasFinalizer(c, inClusterLBCleanupFinalizer) || kuberneteshelper.HasFinalizer(c, inClusterPVCleanupFinalizer) {
+	if kuberneteshelper.HasFinalizer(c, InClusterLBCleanupFinalizer) || kuberneteshelper.HasFinalizer(c, InClusterPVCleanupFinalizer) {
 		return c, nil
 	}
 
@@ -54,8 +54,8 @@ func (cc *Controller) cleanupCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Clu
 }
 
 func (cc *Controller) cleanupInClusterResources(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	shouldDeleteLBs := kuberneteshelper.HasFinalizer(c, inClusterLBCleanupFinalizer)
-	shouldDeletePVs := kuberneteshelper.HasFinalizer(c, inClusterPVCleanupFinalizer)
+	shouldDeleteLBs := kuberneteshelper.HasFinalizer(c, InClusterLBCleanupFinalizer)
+	shouldDeletePVs := kuberneteshelper.HasFinalizer(c, InClusterPVCleanupFinalizer)
 
 	// If no relevant finalizer exists, directly return
 	if !shouldDeleteLBs && !shouldDeletePVs {
@@ -144,8 +144,8 @@ func (cc *Controller) cleanupInClusterResources(c *kubermaticv1.Cluster) (*kuber
 			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, azure.FinalizerResourceGroup)
 		}
 
-		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, inClusterLBCleanupFinalizer)
-		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, inClusterPVCleanupFinalizer)
+		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, InClusterLBCleanupFinalizer)
+		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, InClusterPVCleanupFinalizer)
 	})
 	if err != nil {
 		return nil, err
