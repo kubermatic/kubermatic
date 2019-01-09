@@ -2,14 +2,17 @@ job_name: clusters
 honor_labels: true
 params:
   match[]:
-  - '{__name__="up"}'
-  - '{__name__=~"machine_controller.*"}'
   - '{kubermatic="federate"}'
 metrics_path: /federate
 scheme: http
 kubernetes_sd_configs:
 - role: endpoints
 relabel_configs:
+# drop everything within e2e test clusters
+- source_labels: [__meta_kubernetes_namespace]
+  separator: ;
+  regex: .*prow-e2e-.*
+  action: drop
 - source_labels: [__meta_kubernetes_service_label_cluster]
   separator: ;
   regex: user
