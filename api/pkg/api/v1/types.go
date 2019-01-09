@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/json"
+
 	"github.com/Masterminds/semver"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -260,9 +261,8 @@ type VSphereNetwork struct {
 // MasterVersion describes a version of the master components
 // swagger:model MasterVersion
 type MasterVersion struct {
-	Version             *semver.Version `json:"version"`
-	AllowedNodeVersions []string        `json:"allowedNodeVersions"`
-	Default             bool            `json:"default,omitempty"`
+	Version *semver.Version `json:"version"`
+	Default bool            `json:"default,omitempty"`
 }
 
 // Cluster defines the cluster resource

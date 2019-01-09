@@ -21,9 +21,8 @@ type Manager struct {
 
 // MasterVersion is the object representing a Kubernetes Master version.
 type MasterVersion struct {
-	Version             *semver.Version `json:"version"`
-	Default             bool            `json:"default"`
-	AllowedNodeVersions []string        `json:"allowedNodeVersions"`
+	Version *semver.Version `json:"version"`
+	Default bool            `json:"default"`
 }
 
 // MasterUpdate represents an update option for K8s master components
