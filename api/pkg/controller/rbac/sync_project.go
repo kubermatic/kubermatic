@@ -2,6 +2,7 @@ package rbac
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/golang/glog"
 
@@ -112,7 +113,8 @@ func (c *Controller) ensureProjectOwner(project *kubermaticv1.Project) error {
 		return err
 	}
 	for _, binding := range bindings {
-		if binding.Spec.ProjectID == project.Name && binding.Spec.UserEmail == owner.Spec.Email && binding.Spec.Group == GenerateActualGroupNameFor(project.Name, OwnerGroupNamePrefix) {
+		if binding.Spec.ProjectID == project.Name && strings.EqualFold(binding.Spec.UserEmail, owner.Spec.Email) &&
+			binding.Spec.Group == GenerateActualGroupNameFor(project.Name, OwnerGroupNamePrefix) {
 			return nil
 		}
 	}
