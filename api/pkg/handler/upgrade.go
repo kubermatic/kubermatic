@@ -39,8 +39,7 @@ func getClusterUpgrades(updateManager UpdateManager, projectProvider provider.Pr
 		var upgrades []*apiv1.MasterVersion
 		for _, v := range versions {
 			upgrades = append(upgrades, &apiv1.MasterVersion{
-				Version:             v.Version,
-				AllowedNodeVersions: v.AllowedNodeVersions,
+				Version: v.Version,
 			})
 		}
 
@@ -58,9 +57,8 @@ func getMasterVersions(updateManager UpdateManager) endpoint.Endpoint {
 		sv := make([]*apiv1.MasterVersion, len(versions))
 		for v := range versions {
 			sv[v] = &apiv1.MasterVersion{
-				Version:             versions[v].Version,
-				AllowedNodeVersions: versions[v].AllowedNodeVersions,
-				Default:             versions[v].Default,
+				Version: versions[v].Version,
+				Default: versions[v].Default,
 			}
 		}
 

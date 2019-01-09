@@ -3501,13 +3501,6 @@
       "description": "MasterVersion describes a version of the master components",
       "type": "object",
       "properties": {
-        "allowedNodeVersions": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "AllowedNodeVersions"
-        },
         "default": {
           "type": "boolean",
           "x-go-name": "Default"
