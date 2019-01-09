@@ -139,12 +139,12 @@ type AzureSizeList []AzureSize
 // AzureSize is the object representing Azure VM sizes.
 // swagger:model AzureSize
 type AzureSize struct {
-	Name                 *string `json:"name"`
-	NumberOfCores        *int32  `json:"numberOfCores"`
-	OsDiskSizeInMB       *int32  `json:"osDiskSizeInMB"`
-	ResourceDiskSizeInMB *int32  `json:"resourceDiskSizeInMB"`
-	MemoryInMB           *int32  `json:"memoryInMB"`
-	MaxDataDiskCount     *int32  `json:"maxDataDiskCount"`
+	Name                 string `json:"name"`
+	NumberOfCores        int32  `json:"numberOfCores"`
+	OsDiskSizeInMB       int32  `json:"osDiskSizeInMB"`
+	ResourceDiskSizeInMB int32  `json:"resourceDiskSizeInMB"`
+	MemoryInMB           int32  `json:"memoryInMB"`
+	MaxDataDiskCount     int32  `json:"maxDataDiskCount"`
 }
 
 // SSHKey represents a ssh key
