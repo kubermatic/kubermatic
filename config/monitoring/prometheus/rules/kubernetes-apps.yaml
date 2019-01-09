@@ -145,7 +145,7 @@ groups:
     annotations:
       message: Job {{ $labels.namespace }}/{{ $labels.job_name }} is taking more than one hour to complete.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubejobcompletion
-    expr: kube_job_spec_completions{job="kube-state-metrics"} - kube_job_status_succeeded{job="kube-state-metrics"}  > 0
+    expr: kube_job_spec_completions{job="kube-state-metrics"} - kube_job_status_succeeded{job="kube-state-metrics"} > 0
     for: 1h
     labels:
       severity: warning
@@ -154,7 +154,7 @@ groups:
     annotations:
       message: Job {{ $labels.namespace }}/{{ $labels.job_name }} failed to complete.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubejobfailed
-    expr: kube_job_status_failed{job="kube-state-metrics"}  > 0
+    expr: kube_job_status_failed{job="kube-state-metrics"} > 0
     for: 1h
     labels:
       severity: warning
