@@ -12,6 +12,7 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
+	"os/signal"
 	"os/user"
 	"path"
 	"strings"
@@ -124,6 +125,13 @@ var (
 func main() {
 	mainLog := logrus.New()
 	mainLog.SetLevel(logrus.InfoLevel)
+
+	chanSigInt := make(chan os.Signal, 1)
+	signal.Notify(chanSigInt, os.Interrupt)
+	go func() {
+		<-chanSigInt
+		logrus.Fatalf("Received SIGINT, terminating")
+	}()
 
 	opts := Opts{
 		providers:  sets.NewString(),

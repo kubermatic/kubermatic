@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+# Enable job control so we can get the PIDs of our
+# children via `jobs -p` when cleaning up
+set -m
+
 export BUILD_ID=${BUILD_ID:-BUILD_ID_UNDEF}
 echodate() { echo "$(date) $@"; }
 echodate "Build ID is $BUILD_ID"
@@ -11,8 +15,21 @@ echodate "Testing versions: ${VERSIONS}"
 cd $(dirname $0)/../..
 
 function cleanup {
-  echodate "Starting cleanup"
   set +e
+
+  # Poor persons mutex, if we entered here because of a
+  # SIGINT, killing the subshell processes later on
+  # makes the subshell enter this func again because of
+  # the EXIT trap
+  if [ -e /tmp/cleanup-going ]; then return; fi
+  touch /tmp/cleanup-going
+
+  echodate "Starting cleanup"
+
+  # Kill all sub-processes to make sure they don't create
+  # any new resources
+  kill -9 $(jobs -p) &>/dev/null
+
   # Delete addons from all clusters that have our worker-name label
   kubectl get cluster -l worker-name=$BUILD_ID \
      -o go-template='{{range .items}}{{.metadata.name}}{{end}}' \
@@ -35,8 +52,18 @@ function cleanup {
   kubectl delete clusterrolebinding -l prowjob=$BUILD_ID
   kubectl delete namespace $NAMESPACE
   echodate "Finished cleanup"
+
+  # Signal that cleanup is done and pass the original exit code
+  echo -n $1 > /tmp/cleaned-up
 }
-trap cleanup EXIT SIGINT SIGTERM
+trap 'cleanup 2' INT
+
+# Bash can not forward signals and doesn't react to signals
+# when a command is running, so we have to move everything into
+# a subshell and fork it, then do short sleeps
+(
+# Enable the exit trap for the subshell
+trap 'cleanup $?' exit
 
 docker ps &>/dev/null || start-docker.sh
 
@@ -165,3 +192,13 @@ echodate "Starting conformance tests"
   -versions="$VERSIONS" \
   -providers=aws \
   -exclude-distributions="ubuntu,centos"
+
+# Test if cleanup on timeout works
+sleep 1d
+) &
+
+# Bash can not forward signals and doesn't react to signals
+# when a command is running, so we have to move everything into
+# a subshell and fork it, then do short sleeps
+while [[ ! -e /tmp/cleaned-up ]]; do sleep 1; done
+exit "$(cat /tmp/cleaned-up)"
