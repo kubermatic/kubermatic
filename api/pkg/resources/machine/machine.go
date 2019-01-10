@@ -3,6 +3,7 @@ package machine
 import (
 	"errors"
 	"fmt"
+	"github.com/kubermatic/kubermatic/api/pkg/validation"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -70,6 +71,10 @@ func Machine(c *kubermaticv1.Cluster, node *apiv1.Node, dc provider.DatacenterMe
 		}
 	case node.Spec.Cloud.Openstack != nil:
 		config.CloudProvider = providerconfig.CloudProviderOpenstack
+		if err := validation.ValidateCreateNodeSpec(c, &node.Spec, &dc); err != nil {
+			return nil, err
+		}
+
 		cloudExt, err = getOpenstackProviderSpec(c, node.Spec, dc)
 		if err != nil {
 			return nil, err

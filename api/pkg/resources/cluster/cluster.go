@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"fmt"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/defaulting"
@@ -9,7 +10,7 @@ import (
 )
 
 // Spec builds ClusterSpec kubermatic Custom Resource from API Cluster
-func Spec(apiCluster apiv1.Cluster, cloudProviders map[string]provider.CloudProvider) (*kubermaticv1.ClusterSpec, error) {
+func Spec(apiCluster apiv1.Cluster, cloudProviders map[string]provider.CloudProvider, dcs map[string]provider.DatacenterMeta) (*kubermaticv1.ClusterSpec, error) {
 	spec := &kubermaticv1.ClusterSpec{
 		HumanReadableName: apiCluster.Name,
 		Cloud:             apiCluster.Spec.Cloud,
@@ -21,5 +22,10 @@ func Spec(apiCluster apiv1.Cluster, cloudProviders map[string]provider.CloudProv
 		return nil, err
 	}
 
-	return spec, validation.ValidateCreateClusterSpec(spec, cloudProviders)
+	dc, found := dcs[spec.Cloud.DatacenterName]
+	if !found {
+		return nil, fmt.Errorf("unknown cluster datacenter %s", spec.Cloud.DatacenterName)
+	}
+
+	return spec, validation.ValidateCreateClusterSpec(spec, cloudProviders, dc)
 }

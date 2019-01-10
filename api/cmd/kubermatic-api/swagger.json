@@ -3977,6 +3977,10 @@
           "type": "string",
           "x-go-name": "AvailabilityZone"
         },
+        "enforce_floating_ip": {
+          "type": "boolean",
+          "x-go-name": "EnforceFloatingIP"
+        },
         "images": {
           "$ref": "#/definitions/ImageList"
         },
@@ -4034,6 +4038,11 @@
             "type": "string"
           },
           "x-go-name": "Tags"
+        },
+        "useFloatingIP": {
+          "description": "Defines whether floating ip should be used",
+          "type": "boolean",
+          "x-go-name": "UseFloatingIP"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -4286,6 +4295,12 @@
     "PublicOpenstackCloudSpec": {
       "type": "object",
       "title": "PublicOpenstackCloudSpec is a public counterpart of apiv1.OpenstackCloudSpec.",
+      "properties": {
+        "floatingIpPool": {
+          "type": "string",
+          "x-go-name": "FloatingIPPool"
+        }
+      },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "PublicVSphereCloudSpec": {

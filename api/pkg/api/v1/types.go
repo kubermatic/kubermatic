@@ -79,10 +79,11 @@ type AzureDatacenterSpec struct {
 
 // OpenstackDatacenterSpec specifies a generic bare metal datacenter.
 type OpenstackDatacenterSpec struct {
-	AvailabilityZone string    `json:"availability_zone"`
-	Region           string    `json:"region"`
-	AuthURL          string    `json:"auth_url"`
-	Images           ImageList `json:"images"`
+	AvailabilityZone  string    `json:"availability_zone"`
+	Region            string    `json:"region"`
+	AuthURL           string    `json:"auth_url"`
+	Images            ImageList `json:"images"`
+	EnforceFloatingIP bool      `json:"enforce_floating_ip"`
 }
 
 // DatacenterSpec specifies the data for a datacenter.
@@ -407,14 +408,18 @@ func newPublicAWSCloudSpec(internal *kubermaticv1.AWSCloudSpec) (public *PublicA
 }
 
 // PublicOpenstackCloudSpec is a public counterpart of apiv1.OpenstackCloudSpec.
-type PublicOpenstackCloudSpec struct{}
+type PublicOpenstackCloudSpec struct {
+	FloatingIPPool string `json:"floatingIpPool"`
+}
 
 func newPublicOpenstackCloudSpec(internal *kubermaticv1.OpenstackCloudSpec) (public *PublicOpenstackCloudSpec) {
 	if internal == nil {
 		return nil
 	}
 
-	return &PublicOpenstackCloudSpec{}
+	return &PublicOpenstackCloudSpec{
+		FloatingIPPool: internal.FloatingIPPool,
+	}
 }
 
 // ClusterStatus defines the cluster status
@@ -563,6 +568,9 @@ type OpenstackNodeSpec struct {
 	// Additional metadata to set
 	// required: false
 	Tags map[string]string `json:"tags,omitempty"`
+	// Defines whether floating ip should be used
+	// required: false
+	UseFloatingIP bool `json:"useFloatingIP,omitempty"`
 }
 
 // AWSNodeSpec aws specific node settings
