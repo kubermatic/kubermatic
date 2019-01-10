@@ -699,7 +699,7 @@ type DeleteClusterReq struct {
 	ClusterID string `json:"cluster_id"`
 	// DeleteVolumes if true all cluster PV's and PVC's will be deleted from cluster
 	DeleteVolumes bool
-	// DeleteVolumes if true all load balancers will be deleted from cluster
+	// DeleteLoadBalancers if true all load balancers will be deleted from cluster
 	DeleteLoadBalancers bool
 }
 
