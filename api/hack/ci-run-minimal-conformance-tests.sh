@@ -140,6 +140,7 @@ helm upgrade --install --wait --timeout 300 \
   --set=kubermatic.rbac.image.tag=$PULL_PULL_SHA \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.deployVPA=false \
+  --set=kubermatic.ingressClass=non-existent \
   --values ${VALUES_FILE} \
   --namespace $NAMESPACE \
   kubermatic-$BUILD_ID ./config/kubermatic/
