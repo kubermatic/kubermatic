@@ -34,10 +34,11 @@ type ImageList map[providerconfig.OperatingSystem]string
 
 // OpenstackSpec describes a open stack datacenter
 type OpenstackSpec struct {
-	AuthURL          string `yaml:"auth_url"`
-	AvailabilityZone string `yaml:"availability_zone"`
-	Region           string `yaml:"region"`
-	IgnoreVolumeAZ   bool   `yaml:"ignore_volume_az"`
+	AuthURL           string `yaml:"auth_url"`
+	AvailabilityZone  string `yaml:"availability_zone"`
+	Region            string `yaml:"region"`
+	IgnoreVolumeAZ    bool   `yaml:"ignore_volume_az"`
+	EnforceFloatingIP bool   `yaml:"enforce_floating_ip"`
 	// Used for automatic network creation
 	DNSServers []string  `yaml:"dns_servers"`
 	Images     ImageList `yaml:"images"`
