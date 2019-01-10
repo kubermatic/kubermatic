@@ -106,7 +106,7 @@ type secrets struct {
 }
 
 const (
-	defaultTimeout                 = 30 * time.Minute
+	defaultTimeout                 = 10 * time.Minute
 	defaultUserClusterPollInterval = 10 * time.Second
 	defaultAPIRetries              = 100
 
