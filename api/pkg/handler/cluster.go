@@ -694,9 +694,7 @@ func revokeClusterAdminToken(projectProvider provider.ProjectProvider) endpoint.
 }
 
 type DeleteClusterReq struct {
-	common.DCReq
-	// in: path
-	ClusterID string `json:"cluster_id"`
+	common.GetClusterReq
 	// DeleteVolumes if true all cluster PV's and PVC's will be deleted from cluster
 	DeleteVolumes bool
 	// DeleteLoadBalancers if true all load balancers will be deleted from cluster
@@ -711,8 +709,7 @@ func DecodeDeleteClusterReq(c context.Context, r *http.Request) (interface{}, er
 		return nil, err
 	}
 	clusterReq := clusterReqRaw.(common.GetClusterReq)
-	req.DCReq = clusterReq.DCReq
-	req.ClusterID = clusterReq.ClusterID
+	req.GetClusterReq = clusterReq
 
 	headerValue := r.Header.Get("DeleteVolumes")
 	if len(headerValue) > 0 {
