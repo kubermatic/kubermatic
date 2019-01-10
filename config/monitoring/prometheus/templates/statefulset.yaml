@@ -35,7 +35,7 @@ spec:
         {{- if .Values.prometheus.backups }}
         - --web.enable-admin-api
         {{- end }}
-        image: quay.io/prometheus/prometheus:v2.3.2
+        image: 'quay.io/prometheus/prometheus:{{ .Values.prometheus.version }}'
         livenessProbe:
           failureThreshold: 6
           httpGet:
