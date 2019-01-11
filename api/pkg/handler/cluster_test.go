@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -34,6 +36,7 @@ func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
 		ExistingAPIUser        *apiv1.User
 		HeaderParams           map[string]string
 		ExpectedUpdates        int
+		ExpectedFinalizers     []string
 	}{
 		{
 			Name:             "scenario 1: tests deletion of a cluster with finalizers",
@@ -45,13 +48,30 @@ func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
 				// add a cluster
 				genCluster("clusterAbcID", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
 			),
-			ClusterToSync:   "clusterAbcID",
-			ExistingAPIUser: genDefaultAPIUser(),
-			HeaderParams:    map[string]string{"DeleteVolumes": "true", "DeleteLoadBalancers": "true"},
-			ExpectedUpdates: 1,
+			ClusterToSync:      "clusterAbcID",
+			ExistingAPIUser:    genDefaultAPIUser(),
+			HeaderParams:       map[string]string{"DeleteVolumes": "true", "DeleteLoadBalancers": "true"},
+			ExpectedUpdates:    1,
+			ExpectedFinalizers: []string{"kubermatic.io/cleanup-in-cluster-pv", "kubermatic.io/cleanup-in-cluster-lb"},
 		},
 		{
-			Name:             "scenario 1: tests deletion of a cluster without finalizers",
+			Name:             "scenario 2: tests deletion of a cluster with only volume finalizer",
+			Body:             ``,
+			ExpectedResponse: `{}`,
+			HTTPStatus:       http.StatusOK,
+			ProjectToSync:    genDefaultProject().Name,
+			ExistingKubermaticObjs: genDefaultKubermaticObjects(
+				// add a cluster
+				genCluster("clusterAbcID", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
+			),
+			ClusterToSync:      "clusterAbcID",
+			ExistingAPIUser:    genDefaultAPIUser(),
+			HeaderParams:       map[string]string{"DeleteVolumes": "true", "DeleteLoadBalancers": "false"},
+			ExpectedUpdates:    1,
+			ExpectedFinalizers: []string{"kubermatic.io/cleanup-in-cluster-pv"},
+		},
+		{
+			Name:             "scenario 3: tests deletion of a cluster without finalizers",
 			Body:             ``,
 			ExpectedResponse: `{}`,
 			HTTPStatus:       http.StatusOK,
@@ -95,11 +115,28 @@ func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
 			validatedActions := 0
 			for _, action := range kubermaticClient.Actions() {
 				if action.Matches("update", "clusters") {
+					updateaction, ok := action.(clienttesting.UpdateAction)
+					if !ok {
+						t.Fatalf("unexpected action %#v", action)
+					}
+
+					cluster := updateaction.GetObject().(*kubermaticv1.Cluster)
+					finalizers := cluster.GetFinalizers()
+					if len(finalizers) != len(tc.ExpectedFinalizers) {
+						t.Fatalf("not all finalizers were validated, expected to validate %d but validated only %d", len(tc.ExpectedFinalizers), len(finalizers))
+					}
+
+					sort.Strings(finalizers)
+					sort.Strings(tc.ExpectedFinalizers)
+					if !reflect.DeepEqual(finalizers, tc.ExpectedFinalizers) {
+						t.Fatalf("finalizer list %v is not the same as expected %v", finalizers, tc.ExpectedFinalizers)
+					}
+
 					validatedActions = validatedActions + 1
 				}
 			}
 			if validatedActions != tc.ExpectedUpdates {
-				t.Fatalf("not all finalizers were validated, expected to validate %d but validated only %d", tc.ExpectedUpdates, validatedActions)
+				t.Fatalf("not all update action were validated, expected to validate %d but validated only %d", tc.ExpectedUpdates, validatedActions)
 			}
 		})
 	}
