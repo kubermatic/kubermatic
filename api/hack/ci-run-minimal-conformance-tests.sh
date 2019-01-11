@@ -69,7 +69,7 @@ docker ps &>/dev/null || start-docker.sh
 
 echodate "Unlocking secrets repo"
 cd $(go env GOPATH)/src/github.com/kubermatic/secrets
-echodate $KUBERMATIC_SECRETS_GPG_KEY_BASE64 | base64 -d > /tmp/git-crypt-key
+echo $KUBERMATIC_SECRETS_GPG_KEY_BASE64 | base64 -d > /tmp/git-crypt-key
 git-crypt unlock /tmp/git-crypt-key
 cd -
 echodate "Successfully unlocked secrets repo"
