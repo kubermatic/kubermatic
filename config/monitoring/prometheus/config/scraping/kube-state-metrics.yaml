@@ -55,3 +55,7 @@ relabel_configs:
   target_label: endpoint
   replacement: http-metrics
   action: replace
+metric_relabel_configs:
+- source_labels: [namespace]
+  regex: .*prow-(e2e|kubermatic)-.*
+  action: drop
