@@ -28,6 +28,8 @@ spec:
         - name: themes
           mountPath: /web/themes/coreos
           readOnly: true
+{{ if .Values.dex.grpc }}{{ toYaml .Values.dex.grpc.certMount | trim | indent 8 }}
+{{- end }}
       volumes:
       - name: config
         configMap:
@@ -38,3 +40,6 @@ spec:
       - name: themes
         secret:
           secretName: themes
+{{ if .Values.dex.grpc }}{{ toYaml .Values.dex.grpc.certVolume | trim | indent 6 }}
+{{- end }}
+

@@ -17,6 +17,10 @@ data:
         inCluster: true
     web:
       http: 0.0.0.0:5556
+{{ if .Values.dex.grpc }}
+    grpc:
+{{ toYaml .Values.dex.grpc.api | indent 7 }}
+{{- end }}
 {{ if .Values.dex.connectors }}
     connectors:
 {{ toYaml .Values.dex.connectors | indent 7 }}
