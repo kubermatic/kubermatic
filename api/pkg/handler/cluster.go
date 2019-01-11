@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/evanphx/json-patch"
@@ -16,10 +17,12 @@ import (
 	"github.com/prometheus/common/model"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	finalizer "github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
@@ -146,7 +149,7 @@ func listClusters(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 
 func deleteCluster(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(common.GetClusterReq)
+		req := request.(DeleteClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
@@ -162,6 +165,23 @@ func deleteCluster(sshKeyProvider provider.SSHKeyProvider, projectProvider provi
 		for _, clusterSSHKey := range clusterSSHKeys {
 			clusterSSHKey.RemoveFromCluster(req.ClusterID)
 			if _, err = sshKeyProvider.Update(userInfo, clusterSSHKey); err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+		}
+
+		if req.DeleteVolumes || req.DeleteLoadBalancers {
+			existingCluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			if req.DeleteLoadBalancers {
+				existingCluster.Finalizers = kuberneteshelper.AddFinalizer(existingCluster.Finalizers, finalizer.InClusterLBCleanupFinalizer)
+			}
+			if req.DeleteVolumes {
+				existingCluster.Finalizers = kuberneteshelper.AddFinalizer(existingCluster.Finalizers, finalizer.InClusterPVCleanupFinalizer)
+			}
+
+			if _, err = clusterProvider.Update(userInfo, existingCluster); err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 		}
@@ -670,4 +690,43 @@ func revokeClusterAdminToken(projectProvider provider.ProjectProvider) endpoint.
 		_, err = clusterProvider.Update(userInfo, cluster)
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
+}
+
+type DeleteClusterReq struct {
+	common.GetClusterReq
+	// DeleteVolumes if true all cluster PV's and PVC's will be deleted from cluster
+	DeleteVolumes bool
+	// DeleteLoadBalancers if true all load balancers will be deleted from cluster
+	DeleteLoadBalancers bool
+}
+
+func DecodeDeleteClusterReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req DeleteClusterReq
+
+	clusterReqRaw, err := common.DecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	clusterReq := clusterReqRaw.(common.GetClusterReq)
+	req.GetClusterReq = clusterReq
+
+	headerValue := r.Header.Get("DeleteVolumes")
+	if len(headerValue) > 0 {
+		deleteVolumes, err := strconv.ParseBool(headerValue)
+		if err != nil {
+			return nil, err
+		}
+		req.DeleteVolumes = deleteVolumes
+	}
+
+	headerValue = r.Header.Get("DeleteLoadBalancers")
+	if len(headerValue) > 0 {
+		deleteLB, err := strconv.ParseBool(headerValue)
+		if err != nil {
+			return nil, err
+		}
+		req.DeleteLoadBalancers = deleteLB
+	}
+
+	return req, nil
 }
