@@ -215,7 +215,7 @@ func genTestKubeconfigKubermaticObjects() []runtime.Object {
 		// make John the owner of the first project and the editor of the second
 		genBinding(testingProjectName, testUserEmail, "owners"),
 		// add a cluster
-		genCluster(test.ClusterID, testClusterName, genDefaultProject().Name, defaultCreationTimestamp()),
+		test.GenCluster(test.ClusterID, testClusterName, genDefaultProject().Name, defaultCreationTimestamp()),
 	}
 }
 
