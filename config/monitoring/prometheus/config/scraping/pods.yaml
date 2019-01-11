@@ -2,6 +2,11 @@ job_name: 'pods'
 kubernetes_sd_configs:
 - role: pod
 relabel_configs:
+# drop everything within test clusters
+- source_labels: [__meta_kubernetes_namespace]
+  separator: ;
+  regex: prow-kubermatic-.*
+  action: drop
 - source_labels: [__meta_kubernetes_pod_annotation_kubermatic_scrape]
   action: keep
   regex: true
