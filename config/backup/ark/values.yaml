@@ -4,22 +4,25 @@ ark:
   # that also contains the restic binary
   image:
     repository: gcr.io/heptio-images/ark
-    tag: v0.9.1
+    tag: v0.10.0
     pullPolicy: IfNotPresent
 
-  # The value itself is not important for this chart, but it needs
-  # to know whether or not to enable the restic daemonset. Make sure
-  # to use a single values.yaml shared with the ark-config chart to
-  # not let this drift apart.
-  #configuration:
-  #  backupStorageProvider:
-  #    resticLocation: resticbackups
+  # CLI flags to pass to ark server; note that the two flags
+  # `default-backup-storage-location` and `default-volume-snapshot-locations`
+  # are automatically set via the ark-config Helm chart's
+  # values.
+  serverFlags:
+    - --metrics-address=:8085
+    - --backup-sync-period=1m
+
+  # whether or not to create a restic daemonset
+  # restic: true
 
   # configure the credentials used to make snapshots (when using
   # persistentVolumeProvider) and to store backups; you can enable
   # multiple credentials, if for some reason you run on GCP and
   # still want to make restic snapshots to be stored in AWS S3.
-  credentials:
+  credentials: {}
     #aws:
     #  accessKey: ...
     #  secretKey: ...

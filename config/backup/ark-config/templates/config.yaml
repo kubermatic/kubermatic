@@ -1,5 +1,8 @@
+{{ range $name, $config := .Values.ark.backupStorageLocations }}
 apiVersion: ark.heptio.com/v1
-kind: Config
+kind: BackupStorageLocation
 metadata:
-  name: default
-{{ .Values.ark.configuration | toYaml }}
+  name: {{ $name }}
+spec:
+{{ $config | toYaml | indent 2 }}
+{{ end }}
