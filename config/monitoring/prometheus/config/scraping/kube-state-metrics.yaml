@@ -57,5 +57,5 @@ relabel_configs:
   action: replace
 metric_relabel_configs:
 - source_labels: [namespace]
-  regex: prow-kubermatic-.*
+  regex: .*prow-(e2e|kubermatic)-.*
   action: drop
