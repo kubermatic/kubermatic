@@ -181,8 +181,7 @@ func deleteCluster(sshKeyProvider provider.SSHKeyProvider, projectProvider provi
 				existingCluster.Finalizers = kuberneteshelper.AddFinalizer(existingCluster.Finalizers, finalizer.InClusterPVCleanupFinalizer)
 			}
 
-			_, err = clusterProvider.Update(userInfo, existingCluster)
-			if err != nil {
+			if _, err = clusterProvider.Update(userInfo, existingCluster); err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 		}

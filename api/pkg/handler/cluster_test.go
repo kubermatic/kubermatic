@@ -21,6 +21,90 @@ import (
 	clienttesting "k8s.io/client-go/testing"
 )
 
+func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                   string
+		Body                   string
+		ExpectedResponse       string
+		HTTPStatus             int
+		ProjectToSync          string
+		ClusterToSync          string
+		ExistingKubermaticObjs []runtime.Object
+		ExistingAPIUser        *apiv1.User
+		HeaderParams           map[string]string
+		ExpectedUpdates        int
+	}{
+		{
+			Name:             "scenario 1: tests deletion of a cluster with finalizers",
+			Body:             ``,
+			ExpectedResponse: `{}`,
+			HTTPStatus:       http.StatusOK,
+			ProjectToSync:    genDefaultProject().Name,
+			ExistingKubermaticObjs: genDefaultKubermaticObjects(
+				// add a cluster
+				genCluster("clusterAbcID", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
+			),
+			ClusterToSync:   "clusterAbcID",
+			ExistingAPIUser: genDefaultAPIUser(),
+			HeaderParams:    map[string]string{"DeleteVolumes": "true", "DeleteLoadBalancers": "true"},
+			ExpectedUpdates: 1,
+		},
+		{
+			Name:             "scenario 1: tests deletion of a cluster without finalizers",
+			Body:             ``,
+			ExpectedResponse: `{}`,
+			HTTPStatus:       http.StatusOK,
+			ProjectToSync:    genDefaultProject().Name,
+			ExistingKubermaticObjs: genDefaultKubermaticObjects(
+				// add a cluster
+				genCluster("clusterAbcID", "clusterAbc", genDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
+			),
+			ClusterToSync:   "clusterAbcID",
+			ExistingAPIUser: genDefaultAPIUser(),
+			HeaderParams:    map[string]string{},
+			ExpectedUpdates: 0,
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			// validate if deletion was successful
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s", tc.ProjectToSync, tc.ClusterToSync), strings.NewReader(tc.Body))
+
+			for k, v := range tc.HeaderParams {
+				req.Header.Add(k, v)
+			}
+
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			ep, clientsSets, err := createTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			kubermaticClient := clientsSets.fakeKubermaticClient
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+			compareWithResult(t, res, tc.ExpectedResponse)
+
+			validatedActions := 0
+			for _, action := range kubermaticClient.Actions() {
+				if action.Matches("update", "clusters") {
+					validatedActions = validatedActions + 1
+				}
+			}
+			if validatedActions != tc.ExpectedUpdates {
+				t.Fatalf("not all finalizers were validated, expected to validate %d but validated only %d", tc.ExpectedUpdates, validatedActions)
+			}
+		})
+	}
+}
+
 func TestDeleteClusterEndpoint(t *testing.T) {
 	t.Parallel()
 	testcase := struct {
