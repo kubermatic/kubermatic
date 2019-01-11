@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"sort"
 	"strings"
 	"testing"
@@ -128,7 +127,7 @@ func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
 
 					sort.Strings(finalizers)
 					sort.Strings(tc.ExpectedFinalizers)
-					if !reflect.DeepEqual(finalizers, tc.ExpectedFinalizers) {
+					if !equality.Semantic.DeepEqual(finalizers, tc.ExpectedFinalizers) {
 						t.Fatalf("finalizer list %v is not the same as expected %v", finalizers, tc.ExpectedFinalizers)
 					}
 
