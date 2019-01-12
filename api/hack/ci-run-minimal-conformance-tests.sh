@@ -14,8 +14,6 @@ export NAMESPACE="prow-kubermatic-${BUILD_ID}"
 echodate "Testing versions: ${VERSIONS}"
 cd $(dirname $0)/../..
 
-exit 1
-
 function cleanup {
   set +e
 
