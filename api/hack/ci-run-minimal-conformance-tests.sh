@@ -58,6 +58,20 @@ function cleanup {
 }
 trap 'cleanup 2' INT
 
+echodate "Getting secrets from Vault"
+export VAULT_ADDR=https://vault.loodse.com/
+export VAULT_TOKEN=$(vault write \
+  --format=json auth/approle/login \
+  role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID \
+  | jq .auth.client_token -r)
+vault kv get -field=kubeconfig \
+  dev/seed-clusters/dev.kubermatic.io > /tmp/kubeconfig
+vault kv get -field=values.yaml \
+  dev/seed-clusters/dev.kubermatic.io > /tmp/values.yaml
+export KUBECONFIG=/tmp/kubeconfig
+export VALUES_FILE=/tmp/values.yaml
+echodate "Successfully got secrets from Vault"
+
 # Bash can not forward signals and doesn't react to signals
 # when a command is running, so we have to move everything into
 # a subshell and fork it, then do short sleeps
@@ -73,21 +87,6 @@ echo $KUBERMATIC_SECRETS_GPG_KEY_BASE64 | base64 -d > /tmp/git-crypt-key
 git-crypt unlock /tmp/git-crypt-key
 cd -
 echodate "Successfully unlocked secrets repo"
-
-echodate "Getting secrets from Vault"
-export VAULT_ADDR=https://vault.loodse.com/
-export VAULT_TOKEN=$(vault write \
-  --format=json auth/approle/login \
-  role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID \
-  | jq .auth.client_token -r)
-vault kv get -field=kubeconfig \
-  dev/seed-clusters/dev.kubermatic.io > /tmp/kubeconfig
-vault kv get -field=values.yaml \
-  dev/seed-clusters/dev.kubermatic.io > /tmp/values.yaml
-export KUBECONFIG=/tmp/kubeconfig
-export VALUES_FILE=/tmp/values.yaml
-echodate "Successfully got secrets from Vault"
-
 
 if [[ ! -f $HOME/.docker/config.json ]]; then
   echodate "Logging into quay.io"
