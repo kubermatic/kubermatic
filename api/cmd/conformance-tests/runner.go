@@ -783,7 +783,8 @@ func supportsStorage(cluster *kubermaticv1.Cluster) bool {
 	return cluster.Spec.Cloud.Openstack != nil ||
 		cluster.Spec.Cloud.Azure != nil ||
 		cluster.Spec.Cloud.AWS != nil ||
-		cluster.Spec.Cloud.VSphere != nil
+		cluster.Spec.Cloud.VSphere != nil ||
+		cluster.Spec.Cloud.Hetzner != nil
 }
 
 func supportsLBs(cluster *kubermaticv1.Cluster) bool {
