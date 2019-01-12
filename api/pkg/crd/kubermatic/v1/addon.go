@@ -32,7 +32,7 @@ type AddonSpec struct {
 	// Cluster is the reference to the cluster the addon should be installed in
 	Cluster corev1.ObjectReference `json:"cluster"`
 	// Variables is free form data to use for parsing the manifest templates
-	Variables runtime.RawExtension `json:"variables"`
+	Variables runtime.RawExtension `json:"variables,omitempty"`
 }
 
 // AddonList is a list of addons
