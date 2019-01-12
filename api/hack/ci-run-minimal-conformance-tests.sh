@@ -14,6 +14,8 @@ export NAMESPACE="prow-kubermatic-${BUILD_ID}"
 echodate "Testing versions: ${VERSIONS}"
 cd $(dirname $0)/../..
 
+exit 1
+
 function cleanup {
   set +e
 
@@ -27,8 +29,8 @@ function cleanup {
   echodate "Starting cleanup"
 
   # Kill all sub-processes to make sure they don't create
-  # any new resources
-  kill -9 $(jobs -p) &>/dev/null
+  # any new resources and dont block termination of the job
+  jobs -p|xargs -r -I ^ kill -9 ^ &>dev/null
 
   # Delete addons from all clusters that have our worker-name label
   kubectl get cluster -l worker-name=$BUILD_ID \
