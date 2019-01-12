@@ -1,3 +1,4 @@
+{{ if not .Cluster.Spec.Cloud.Hetzner }}
 # This ConfigMap can be used to configure a self-hosted Canal installation.
 kind: ConfigMap
 apiVersion: v1
@@ -58,3 +59,4 @@ data:
         "Type": "vxlan"
       }
     }
+{{ end }}
