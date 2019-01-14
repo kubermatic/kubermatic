@@ -17,6 +17,7 @@ fi
 export CHARTS='kubermatic cert-manager certs nginx-ingress-controller nodeport-proxy oauth minio iap'
 export MONITORING_CHARTS='alertmanager grafana kube-state-metrics node-exporter prometheus'
 export LOGGING_CHARTS='elasticsearch kibana fluentd'
+export BACKUP_CHARTS='ark ark-config'
 export INSTALLER_BRANCH=$1
 export CHARTS_DIR=$2
 export TARGET_DIR='sync_target'
@@ -90,6 +91,22 @@ for CHART in ${LOGGING_CHARTS}; do
 
   echo "# ====== ${CHART} ======" >> ${TARGET_VALUES_FILE}
   cat "${CHARTS_DIR}/logging/${CHART}/values.yaml" >> ${TARGET_VALUES_FILE}
+  echo "" >> ${TARGET_VALUES_FILE}
+done
+
+# sync backup charts
+echo "" >> ${TARGET_VALUES_FILE}
+echo "# =======================" >> ${TARGET_VALUES_FILE}
+echo "# ======= Backups =======" >> ${TARGET_VALUES_FILE}
+echo "# =======================" >> ${TARGET_VALUES_FILE}
+echo "" >> ${TARGET_VALUES_FILE}
+mkdir -p "${TARGET_DIR}/charts/backup"
+for CHART in ${BACKUP_CHARTS}; do
+  echo "syncing ${CHART}..."
+  cp -r ${CHARTS_DIR}/backup/${CHART} ${TARGET_DIR}/charts/backup/${CHART}
+
+  echo "# ====== ${CHART} ======" >> ${TARGET_VALUES_FILE}
+  cat "${CHARTS_DIR}/backup/${CHART}/values.yaml" >> ${TARGET_VALUES_FILE}
   echo "" >> ${TARGET_VALUES_FILE}
 done
 
