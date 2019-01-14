@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 
@@ -28,7 +29,7 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider, memberMappe
 		}
 
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		existingProject, err := listUserProjects(userInfo.Email, projectProvider, memberMapper, &UserProjectsListOptions{ProjectName: projectRq.Name})
+		existingProject, err := listUserProjects(userInfo.Email, projectProvider, memberMapper, &userProjectsListOptions{ProjectName: projectRq.Name, Group: "owners"})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -55,7 +56,7 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider, memberMappe
 func listProjectsEndpoint(projectProvider provider.ProjectProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		internalUserProjects, err := listUserProjects(userInfo.Email, projectProvider, memberMapper, &UserProjectsListOptions{})
+		internalUserProjects, err := listUserProjects(userInfo.Email, projectProvider, memberMapper, &userProjectsListOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -106,7 +107,7 @@ func updateProjectEndpoint(projectProvider provider.ProjectProvider, memberMappe
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		existingProject, err := listUserProjects(userInfo.Email, projectProvider, memberMapper, &UserProjectsListOptions{ProjectName: req.Name})
+		existingProject, err := listUserProjects(userInfo.Email, projectProvider, memberMapper, &userProjectsListOptions{ProjectName: req.Name, Group: "owners"})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -120,7 +121,7 @@ func updateProjectEndpoint(projectProvider provider.ProjectProvider, memberMappe
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		return project, nil
+		return convertInternalProjectToExternal(project), nil
 	}
 }
 
@@ -227,13 +228,14 @@ func decodeDeleteProject(c context.Context, r *http.Request) (interface{}, error
 	return DeleteProjectRq{ProjectReq: req.(common.ProjectReq)}, err
 }
 
-// UserProjectsListOptions allows to set filters for listing user projects
-type UserProjectsListOptions struct {
+// userProjectsListOptions allows to set filters for listing user projects
+type userProjectsListOptions struct {
 	// ProjectName set the project name for the given user
 	ProjectName string
+	Group       string
 }
 
-func listUserProjects(email string, projectProvider provider.ProjectProvider, memberMapper provider.ProjectMemberMapper, options *UserProjectsListOptions) ([]*kubermaticapiv1.Project, error) {
+func listUserProjects(email string, projectProvider provider.ProjectProvider, memberMapper provider.ProjectMemberMapper, options *userProjectsListOptions) ([]*kubermaticapiv1.Project, error) {
 	userMappings, err := memberMapper.MappingsFor(email)
 	if err != nil {
 		return nil, err
@@ -241,6 +243,9 @@ func listUserProjects(email string, projectProvider provider.ProjectProvider, me
 
 	userProjects := []*kubermaticapiv1.Project{}
 	for _, mapping := range userMappings {
+		if len(options.Group) > 0 && !strings.HasPrefix(mapping.Spec.Group, options.Group) {
+			continue
+		}
 		userInfo := &provider.UserInfo{Email: email, Group: mapping.Spec.Group}
 		project, err := projectProvider.Get(userInfo, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 		if err != nil {

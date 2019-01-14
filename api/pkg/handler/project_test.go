@@ -55,7 +55,7 @@ func TestRenameProjectEndpoint(t *testing.T) {
 				},
 				Email: testUserEmail,
 			},
-			ExpectedResponse: `{"metadata":{"name":"my-first-project-ID","creationTimestamp":"2013-02-03T19:54:00Z","ownerReferences":[{"apiVersion":"kubermatic.io/v1","kind":"User","name":"user1","uid":""}]},"spec":{"name":"Super-Project"},"status":{"phase":"Active"}}`,
+			ExpectedResponse: `{"id":"my-first-project-ID","name":"Super-Project","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active"}`,
 		},
 		{
 			Name:            "scenario 2: rename existing project with existing name",
@@ -83,7 +83,33 @@ func TestRenameProjectEndpoint(t *testing.T) {
 			ExpectedResponse: `{"error":{"code":409,"message":"project name \"my-second-project\" already exists"}}`,
 		},
 		{
-			Name:            "scenario 3: rename not existing project",
+			Name:            "scenario 3: rename existing project with existing name where user is not the owner",
+			Body:            `{"Name": "my-second-project"}`,
+			HTTPStatus:      http.StatusOK,
+			ProjectToRename: "my-first-project-ID",
+			ExistingKubermaticObjects: []runtime.Object{
+				// add some projects
+				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp(), oRef),
+				genProject("my-second-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp().Add(time.Minute), oRef),
+				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp().Add(2*time.Minute), oRef),
+				// add John
+				genUser("JohnID", "John", "john@acme.com"),
+				// make John the owner of the projects
+				genBinding("my-first-project-ID", "john@acme.com", "owners"),
+				genBinding("my-second-project-ID", "john@acme.com", "editors"),
+				genBinding("my-third-project-ID", "john@acme.com", "owners"),
+			},
+			ExistingAPIUser: apiv1.User{
+				ObjectMeta: apiv1.ObjectMeta{
+					ID: testUserName,
+				},
+				Email: testUserEmail,
+			},
+			ExpectedResponse: `{"id":"my-first-project-ID","name":"my-second-project","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active"}`,
+		},
+
+		{
+			Name:            "scenario 4: rename not existing project",
 			Body:            `{"Name": "Super-Project"}`,
 			HTTPStatus:      http.StatusForbidden,
 			ProjectToRename: "some-ID",
@@ -99,27 +125,6 @@ func TestRenameProjectEndpoint(t *testing.T) {
 				Email: testUserEmail,
 			},
 			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: The user \"john@acme.com\" doesn't belong to the given project = some-ID"}}`,
-		},
-		{
-			Name:            "scenario 4: rename a project where user is an editor",
-			Body:            `{"Name": "Super-Project"}`,
-			HTTPStatus:      http.StatusOK,
-			ProjectToRename: "my-second-project-ID",
-			ExistingKubermaticObjects: []runtime.Object{
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp(), oRef),
-				genProject("my-second-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp().Add(time.Minute)),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp().Add(2*time.Minute)),
-				genUser("JohnID", "John", "john@acme.com"),
-				genBinding("my-first-project-ID", "john@acme.com", "owners"),
-				genBinding("my-second-project-ID", "john@acme.com", "editors"),
-			},
-			ExistingAPIUser: apiv1.User{
-				ObjectMeta: apiv1.ObjectMeta{
-					ID: testUserName,
-				},
-				Email: testUserEmail,
-			},
-			ExpectedResponse: `{"metadata":{"name":"my-second-project-ID","creationTimestamp":"2013-02-03T19:55:00Z"},"spec":{"name":"Super-Project"},"status":{"phase":"Active"}}`,
 		},
 		{
 			Name:            "scenario 5: rename a project with empty name",

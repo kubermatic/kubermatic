@@ -296,7 +296,6 @@ func (r Routing) userInfoMiddleware() endpoint.Middleware {
 			prjIDGetter, ok := request.(common.ProjectIDGetter)
 			if ok {
 				projectID = prjIDGetter.GetProjectID()
-				// return nil, k8cerrors.NewBadRequest("you can only use userInfoMiddleware for endpoints that interact with project")
 			}
 
 			uInfo, err := r.createUserInfo(user, projectID)
