@@ -57,7 +57,7 @@ func getVPACreatorForPodTemplate(name, namespace string, selector map[string]str
 // If creator functions for VPA's for Deployments should be returned, a deployment store must be passed in. Otherwise a StatefulSet store.
 // All resources must exist in the specified namespace.
 // The VPA resource will have the same selector as the Deployment/StatefulSet. The pod container limits will be set as VPA limits.
-func GetVerticalPodAutoscalersForResource(names []string, namespace string, store cache.Store) ([]VerticalPodAutoscalerCreator, error) {
+func getVerticalPodAutoscalersForResource(names []string, namespace string, store cache.Store) ([]VerticalPodAutoscalerCreator, error) {
 	var creators []VerticalPodAutoscalerCreator
 	for _, name := range names {
 		name := name
@@ -107,7 +107,7 @@ func GetVerticalPodAutoscalersForAll(deploymentNames, statefulSetNames []string,
 		return nil, fmt.Errorf("failed to get Deployment store: %v", err)
 	}
 
-	creators, err := GetVerticalPodAutoscalersForResource(deploymentNames, namespace, deploymentStore)
+	creators, err := getVerticalPodAutoscalersForResource(deploymentNames, namespace, deploymentStore)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create VPA creator functions for Deployments: %v", err)
 	}
@@ -117,7 +117,7 @@ func GetVerticalPodAutoscalersForAll(deploymentNames, statefulSetNames []string,
 		return nil, fmt.Errorf("failed to get StatefulSet store: %v", err)
 	}
 
-	screators, err := GetVerticalPodAutoscalersForResource(statefulSetNames, namespace, statefulSetStore)
+	screators, err := getVerticalPodAutoscalersForResource(statefulSetNames, namespace, statefulSetStore)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create VPA creator functions for StatefulSets: %v", err)
 	}
