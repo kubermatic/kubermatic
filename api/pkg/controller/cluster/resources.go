@@ -200,6 +200,7 @@ type SecretOperation struct {
 func GetSecretCreatorOperations(c *kubermaticv1.Cluster, dockerPullConfigJSON []byte, enableDexCA bool) []SecretOperation {
 	secrets := []SecretOperation{
 		{resources.CASecretName, certificates.RootCA},
+		{resources.OpenVPNCASecretName, openvpn.CertificateAuthority},
 		{resources.FrontProxyCASecretName, certificates.FrontProxyCA},
 		{resources.ImagePullSecretName, resources.ImagePullSecretCreator(resources.ImagePullSecretName, dockerPullConfigJSON)},
 		{resources.ApiserverFrontProxyClientCertificateSecretName, apiserver.FrontProxyClientCertificate},
@@ -208,7 +209,6 @@ func GetSecretCreatorOperations(c *kubermaticv1.Cluster, dockerPullConfigJSON []
 		{resources.ApiserverTLSSecretName, apiserver.TLSServingCertificate},
 		{resources.KubeletClientCertificatesSecretName, apiserver.KubeletClientCertificate},
 		{resources.ServiceAccountKeySecretName, apiserver.ServiceAccountKey},
-		{resources.OpenVPNCASecretName, openvpn.CertificateAuthority},
 		{resources.OpenVPNServerCertificatesSecretName, openvpn.TLSServingCertificate},
 		{resources.OpenVPNClientCertificatesSecretName, openvpn.InternalClientCertificate},
 		{resources.TokensSecretName, apiserver.TokenUsers},

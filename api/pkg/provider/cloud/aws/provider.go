@@ -345,6 +345,7 @@ func createInstanceProfile(client *iam.IAM, name string) (*iam.Role, *iam.Instan
 	kubermaticRoleName := fmt.Sprintf("kubermatic-role-%s", name)
 	kubermaticInstanceProfileName := fmt.Sprintf("kubermatic-instance-profile-%s", name)
 
+	roleName := aws.String(kubermaticRoleName)
 	paramsRole := &iam.CreateRoleInput{
 		AssumeRolePolicyDocument: aws.String(`{
   "Version": "2012-10-17",
@@ -356,11 +357,23 @@ func createInstanceProfile(client *iam.IAM, name string) (*iam.Role, *iam.Instan
     }
   ]
 }`),
-		RoleName: aws.String(kubermaticRoleName), // Required
+		RoleName: roleName, // Required
 	}
+	var role *iam.Role
 	rOut, err := client.CreateRole(paramsRole)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create role: %v", err)
+		if !isEntityAlreadyExists(err) {
+			return nil, nil, fmt.Errorf("failed to create role: %v", err)
+		}
+		// Accept "EntityAlreadyExists" and assume the config is correct
+		paramsRoleGet := &iam.GetRoleInput{RoleName: roleName}
+		getRoleOut, err := client.GetRole(paramsRoleGet)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to get already existing aws IAM role %s: %v", kubermaticRoleName, err)
+		}
+		role = getRoleOut.Role
+	} else {
+		role = rOut.Role
 	}
 
 	for _, arn := range roleARNS {
@@ -374,24 +387,46 @@ func createInstanceProfile(client *iam.IAM, name string) (*iam.Role, *iam.Instan
 		}
 	}
 
+	instanceProfileName := aws.String(kubermaticInstanceProfileName)
 	paramsInstanceProfile := &iam.CreateInstanceProfileInput{
-		InstanceProfileName: aws.String(kubermaticInstanceProfileName), // Required
+		InstanceProfileName: instanceProfileName, // Required
 	}
+	var instanceProfile *iam.InstanceProfile
 	cipOut, err := client.CreateInstanceProfile(paramsInstanceProfile)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create instance profile: %v", err)
+		if !isEntityAlreadyExists(err) {
+			return nil, nil, fmt.Errorf("failed to create instance profile: %v", err)
+		}
+		// Accept "EntityAlreadyExists" and assume the config is correct
+		paramsInstanceProfileGet := &iam.GetInstanceProfileInput{InstanceProfileName: instanceProfileName}
+		getInstanceProfileOut, err := client.GetInstanceProfile(paramsInstanceProfileGet)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to get already existing InstanceProfile %s: %v", *instanceProfileName, err)
+		}
+		instanceProfile = getInstanceProfileOut.InstanceProfile
+	} else {
+		instanceProfile = cipOut.InstanceProfile
 	}
 
-	paramsAddRole := &iam.AddRoleToInstanceProfileInput{
-		InstanceProfileName: aws.String(kubermaticInstanceProfileName), // Required
-		RoleName:            aws.String(kubermaticRoleName),            // Required
+	var instanceProfileHasRole bool
+	for _, role := range instanceProfile.Roles {
+		if *role.RoleName == *roleName {
+			instanceProfileHasRole = true
+			break
+		}
 	}
-	_, err = client.AddRoleToInstanceProfile(paramsAddRole)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to add role %q to instance profile %q: %v", kubermaticInstanceProfileName, kubermaticRoleName, err)
+	if !instanceProfileHasRole {
+		paramsAddRole := &iam.AddRoleToInstanceProfileInput{
+			InstanceProfileName: aws.String(kubermaticInstanceProfileName), // Required
+			RoleName:            aws.String(kubermaticRoleName),            // Required
+		}
+		_, err = client.AddRoleToInstanceProfile(paramsAddRole)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to add role %q to instance profile %q: %v", kubermaticInstanceProfileName, kubermaticRoleName, err)
+		}
 	}
 
-	return rOut.Role, cipOut.InstanceProfile, nil
+	return role, instanceProfile, nil
 }
 
 func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
@@ -600,7 +635,7 @@ func (a *amazonEc2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 
 		for _, policy := range rpout.AttachedPolicies {
 			if _, err = iamClient.DetachRolePolicy(&iam.DetachRolePolicyInput{PolicyArn: policy.PolicyArn, RoleName: aws.String(cluster.Spec.Cloud.AWS.RoleName)}); err != nil {
-				return nil, fmt.Errorf("failed to detach policy %s", *policy.PolicyName)
+				return nil, fmt.Errorf("failed to detach policy %s: %v", *policy.PolicyName, err)
 			}
 		}
 
@@ -630,4 +665,12 @@ func (a *amazonEc2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 	}
 
 	return cluster, nil
+}
+
+func isEntityAlreadyExists(err error) bool {
+	aerr, ok := err.(awserr.Error)
+	if !ok {
+		return false
+	}
+	return aerr.Code() == "EntityAlreadyExists"
 }
