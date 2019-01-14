@@ -2,27 +2,21 @@ package test
 
 import (
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/go-test/deep"
+
 	prometheusapi "github.com/prometheus/client_golang/api"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
-	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
-	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-
-	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -33,6 +27,18 @@ import (
 
 	clusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 	fakeclusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset/fake"
+
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
+	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
+	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
+	"github.com/kubermatic/kubermatic/api/pkg/version"
 )
 
 const (
@@ -44,6 +50,10 @@ const (
 	UserEmail = "john@acme.com"
 	// ClusterID holds the test cluster ID
 	ClusterID = "AbcClusterID"
+	// DefaultClusterID holds the test default cluster ID
+	DefaultClusterID = "defClusterID"
+	// DefaultClusterName holds the test default cluster name
+	DefaultClusterName = "defClusterName"
 	// ProjectName holds the test project ID
 	ProjectName = "my-first-project-ID"
 )
@@ -373,4 +383,144 @@ func GenDefaultKubermaticObjects(objs ...runtime.Object) []runtime.Object {
 	}
 
 	return append(defaultsObjs, objs...)
+}
+
+func GenCluster(id string, name string, projectID string, creationTime time.Time) *kubermaticapiv1.Cluster {
+	return &kubermaticapiv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   id,
+			Labels: map[string]string{"project-id": projectID},
+			CreationTimestamp: func() metav1.Time {
+				return metav1.NewTime(creationTime)
+			}(),
+		},
+		Spec: kubermaticapiv1.ClusterSpec{
+			Cloud: kubermaticapiv1.CloudSpec{
+				DatacenterName: "FakeDatacenter",
+				Fake:           &kubermaticapiv1.FakeCloudSpec{Token: "SecretToken"},
+			},
+			Version:           *semver.NewSemverOrDie("9.9.9"),
+			HumanReadableName: name,
+		},
+		Address: kubermaticapiv1.ClusterAddress{
+			AdminToken:   "drphc2.g4kq82pnlfqjqt65",
+			ExternalName: "w225mx4z66.asia-east1-a-1.cloud.kubermatic.io",
+			IP:           "35.194.142.199",
+			URL:          "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
+		},
+		Status: kubermaticapiv1.ClusterStatus{
+			Health: kubermaticapiv1.ClusterHealth{
+				ClusterHealthStatus: kubermaticapiv1.ClusterHealthStatus{
+					Apiserver:         true,
+					Scheduler:         true,
+					Controller:        true,
+					MachineController: true,
+					Etcd:              true,
+				},
+			},
+		},
+	}
+}
+
+func GenDefaultCluster() *kubermaticapiv1.Cluster {
+	return GenCluster(DefaultClusterID, DefaultClusterName, GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
+}
+
+func CheckStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t *testing.T) {
+	t.Helper()
+	if recorder.Code != wantStatusCode {
+		t.Errorf("Expected status code to be %d, got: %d", wantStatusCode, recorder.Code)
+		t.Error(recorder.Body.String())
+		return
+	}
+}
+
+// NewSSHKeyV1SliceWrapper wraps []apiv1.SSHKey
+// to provide convenient methods for tests
+type NewSSHKeyV1SliceWrapper []apiv1.SSHKey
+
+// Sort sorts the collection by CreationTimestamp
+func (k NewSSHKeyV1SliceWrapper) Sort() {
+	sort.Slice(k, func(i, j int) bool {
+		return k[i].CreationTimestamp.Before(k[j].CreationTimestamp)
+	})
+}
+
+// DecodeOrDie reads and decodes json data from the reader
+func (k *NewSSHKeyV1SliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *NewSSHKeyV1SliceWrapper {
+	t.Helper()
+	dec := json.NewDecoder(r)
+	err := dec.Decode(k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return k
+}
+
+// EqualOrDie compares whether expected collection is equal to the actual one
+func (k NewSSHKeyV1SliceWrapper) EqualOrDie(expected NewSSHKeyV1SliceWrapper, t *testing.T) {
+	t.Helper()
+	if diff := deep.Equal(k, expected); diff != nil {
+		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+	}
+}
+
+// NodeV1SliceWrapper wraps []apiv1.Node
+// to provide convenient methods for tests
+type NodeV1SliceWrapper []apiv1.Node
+
+// Sort sorts the collection by CreationTimestamp
+func (k NodeV1SliceWrapper) Sort() {
+	sort.Slice(k, func(i, j int) bool {
+		return k[i].CreationTimestamp.Before(k[j].CreationTimestamp)
+	})
+}
+
+// DecodeOrDie reads and decodes json data from the reader
+func (k *NodeV1SliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *NodeV1SliceWrapper {
+	t.Helper()
+	dec := json.NewDecoder(r)
+	err := dec.Decode(k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return k
+}
+
+// EqualOrDie compares whether expected collection is equal to the actual one
+func (k NodeV1SliceWrapper) EqualOrDie(expected NodeV1SliceWrapper, t *testing.T) {
+	t.Helper()
+	if diff := deep.Equal(k, expected); diff != nil {
+		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+	}
+}
+
+// NewClusterV1SliceWrapper wraps []apiv1.Cluster
+// to provide convenient methods for tests
+type NewClusterV1SliceWrapper []apiv1.Cluster
+
+// Sort sorts the collection by CreationTimestamp
+func (k NewClusterV1SliceWrapper) Sort() {
+	sort.Slice(k, func(i, j int) bool {
+		return k[i].CreationTimestamp.Before(k[j].CreationTimestamp)
+	})
+}
+
+// DecodeOrDie reads and decodes json data from the reader
+func (k *NewClusterV1SliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *NewClusterV1SliceWrapper {
+	t.Helper()
+	dec := json.NewDecoder(r)
+	err := dec.Decode(k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return k
+}
+
+// EqualOrDie compares whether expected collection is equal to the actual one
+func (k NewClusterV1SliceWrapper) EqualOrDie(expected NewClusterV1SliceWrapper, t *testing.T) {
+	t.Helper()
+	if diff := deep.Equal(k, expected); diff != nil {
+		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+	}
 }
