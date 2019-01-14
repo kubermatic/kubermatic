@@ -1,4 +1,4 @@
-{{ if .Values.ark.configuration.backupStorageProvider.resticLocation }}
+{{ if .Values.ark.restic }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
