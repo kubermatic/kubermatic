@@ -1,6 +1,6 @@
 ark:
   # define one of your backupStorageLocations as the default
-  defaultBackupStorageLocation: aws
+  #defaultBackupStorageLocation: aws
 
   # see https://heptio.github.io/ark/v0.10.0/api-types/backupstoragelocation.html
   #backupStorageLocations:
@@ -13,15 +13,15 @@ ark:
 
   # optionally define some of your volumeSnapshotLocations as the default;
   # each element in the list must be a string of the form "provider:location"
-  defaultVolumeSnapshotLocations:
-    - aws:aws
+  #defaultVolumeSnapshotLocations:
+  #  - aws:aws
 
   # see https://heptio.github.io/ark/v0.10.0/api-types/volumesnapshotlocation.html
-  volumeSnapshotLocations:
-    aws:
-      provider: aws
-      config:
-        region: eu-west-1
+  #volumeSnapshotLocations:
+  #  aws:
+  #    provider: aws
+  #    config:
+  #      region: eu-west-1
 
   # glob expressions to find schedule defitions
   schedulesPath: schedules/*
