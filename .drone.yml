@@ -69,173 +69,173 @@ pipeline:
     - vault_role_id
     when:
       branch: master
-  # deploy-cloud-asia:
-  #   charts:
-  #   - name: kubermatic
-  #     namespace: kubermatic
-  #     path: config/kubermatic/
-  #   - name: nodeport-proxy
-  #     namespace: nodeport-proxy
-  #     path: config/nodeport-proxy/
-  #   - name: minio
-  #     namespace: minio
-  #     path: config/minio/
-  #   - name: node-exporter
-  #     namespace: monitoring
-  #     path: config/monitoring/node-exporter/
-  #   - name: kube-state-metrics
-  #     namespace: monitoring
-  #     path: config/monitoring/kube-state-metrics/
-  #   - name: alertmanager
-  #     namespace: monitoring
-  #     path: config/monitoring/alertmanager/
-  #   - name: prometheus
-  #     namespace: monitoring
-  #     path: config/monitoring/prometheus/
-  #   - name: elasticsearch
-  #     namespace: logging
-  #     path: config/logging/elasticsearch/
-  #   - name: fluentbit
-  #     namespace: logging
-  #     path: config/logging/fluentbit/
-  #   - name: kibana
-  #     namespace: logging
-  #     path: config/logging/kibana/
-  #   group: deploy-cloud
-  #   # depends on 'kubermatic-docker-master' step to build the images
-  #   helm: upgrade --install --wait --timeout 300 --kube-context=asia-east1-a-1 --tiller-namespace=kubermatic-installer
-  #     --set=kubermatic.isMaster=false
-  #     --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
-  #     --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
-  #     --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
-  #   image: kubeciio/helm
-  #   pull: true
-  #   secrets:
-  #   - source: kubeconfig_cloud
-  #     target: kubeconfig
-  #   - source: values_cloud_as
-  #     target: values
-  #   values:
-  #   - values
-  #   when:
-  #     branch: master
-  # deploy-cloud-europe:
-  #   charts:
-  #   - name: kubermatic
-  #     namespace: kubermatic
-  #     path: config/kubermatic/
-  #   - name: nodeport-proxy
-  #     namespace: nodeport-proxy
-  #     path: config/nodeport-proxy/
-  #   - name: minio
-  #     namespace: minio
-  #     path: config/minio/
-  #   - name: nginx
-  #     namespace: ingress-nginx
-  #     path: config/nginx-ingress-controller/
-  #   - name: oauth
-  #     namespace: oauth
-  #     path: config/oauth/
-  #   - name: cert-manager
-  #     namespace: cert-manager
-  #     path: config/cert-manager/
-  #   - name: certs
-  #     namespace: default
-  #     path: config/certs/
-  #   - name: iap
-  #     namespace: iap
-  #     path: config/iap/
-  #   - name: node-exporter
-  #     namespace: monitoring
-  #     path: config/monitoring/node-exporter/
-  #   - name: kube-state-metrics
-  #     namespace: monitoring
-  #     path: config/monitoring/kube-state-metrics/
-  #   - name: grafana
-  #     namespace: monitoring
-  #     path: config/monitoring/grafana/
-  #   - name: alertmanager
-  #     namespace: monitoring
-  #     path: config/monitoring/alertmanager/
-  #   - name: prometheus
-  #     namespace: monitoring
-  #     path: config/monitoring/prometheus/
-  #   - name: elasticsearch
-  #     namespace: logging
-  #     path: config/logging/elasticsearch/
-  #   - name: fluentbit
-  #     namespace: logging
-  #     path: config/logging/fluentbit/
-  #   - name: kibana
-  #     namespace: logging
-  #     path: config/logging/kibana/
-  #   group: deploy-cloud
-  #   # depends on 'kubermatic-docker-master' step to build the images
-  #   helm: upgrade --install --wait --timeout 300 --kube-context=europe-west3-c-1 --tiller-namespace=kubermatic-installer
-  #     --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
-  #     --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
-  #     --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
-  #   image: kubeciio/helm
-  #   pull: true
-  #   secrets:
-  #   - source: kubeconfig_cloud
-  #     target: kubeconfig
-  #   - source: values_cloud_eu
-  #     target: values
-  #   values:
-  #   - values
-  #   when:
-  #     branch: master
-  # deploy-cloud-us:
-  #   charts:
-  #   - name: kubermatic
-  #     namespace: kubermatic
-  #     path: config/kubermatic/
-  #   - name: nodeport-proxy
-  #     namespace: nodeport-proxy
-  #     path: config/nodeport-proxy/
-  #   - name: minio
-  #     namespace: minio
-  #     path: config/minio/
-  #   - name: node-exporter
-  #     namespace: monitoring
-  #     path: config/monitoring/node-exporter/
-  #   - name: kube-state-metrics
-  #     namespace: monitoring
-  #     path: config/monitoring/kube-state-metrics/
-  #   - name: alertmanager
-  #     namespace: monitoring
-  #     path: config/monitoring/alertmanager/
-  #   - name: prometheus
-  #     namespace: monitoring
-  #     path: config/monitoring/prometheus/
-  #   - name: elasticsearch
-  #     namespace: logging
-  #     path: config/logging/elasticsearch/
-  #   - name: fluentbit
-  #     namespace: logging
-  #     path: config/logging/fluentbit/
-  #   - name: kibana
-  #     namespace: logging
-  #     path: config/logging/kibana/
-  #   group: deploy-cloud
-  #   # depends on 'kubermatic-docker-master' step to build the images
-  #   helm: upgrade --install --wait --timeout 300 --kube-context=us-central1-c-1 --tiller-namespace=kubermatic-installer
-  #     --set=kubermatic.isMaster=false
-  #     --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
-  #     --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
-  #     --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
-  #   image: kubeciio/helm
-  #   pull: true
-  #   secrets:
-  #   - source: kubeconfig_cloud
-  #     target: kubeconfig
-  #   - source: values_cloud_us
-  #     target: values
-  #   values:
-  #   - values
-  #   when:
-  #     branch: master
+  deploy-cloud-asia:
+    charts:
+    - name: kubermatic
+      namespace: kubermatic
+      path: config/kubermatic/
+    - name: nodeport-proxy
+      namespace: nodeport-proxy
+      path: config/nodeport-proxy/
+    - name: minio
+      namespace: minio
+      path: config/minio/
+    - name: node-exporter
+      namespace: monitoring
+      path: config/monitoring/node-exporter/
+    - name: kube-state-metrics
+      namespace: monitoring
+      path: config/monitoring/kube-state-metrics/
+    - name: alertmanager
+      namespace: monitoring
+      path: config/monitoring/alertmanager/
+    - name: prometheus
+      namespace: monitoring
+      path: config/monitoring/prometheus/
+    - name: elasticsearch
+      namespace: logging
+      path: config/logging/elasticsearch/
+    - name: fluentbit
+      namespace: logging
+      path: config/logging/fluentbit/
+    - name: kibana
+      namespace: logging
+      path: config/logging/kibana/
+    group: deploy-cloud
+    # depends on 'kubermatic-docker-master' step to build the images
+    helm: upgrade --install --wait --timeout 300 --kube-context=asia-east1-a-1 --tiller-namespace=kubermatic-installer
+      --set=kubermatic.isMaster=false
+      --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
+      --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
+      --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
+    image: kubeciio/helm
+    pull: true
+    secrets:
+    - source: kubeconfig_cloud
+      target: kubeconfig
+    - source: values_cloud_as
+      target: values
+    values:
+    - values
+    when:
+      branch: master
+  deploy-cloud-europe:
+    charts:
+    - name: kubermatic
+      namespace: kubermatic
+      path: config/kubermatic/
+    - name: nodeport-proxy
+      namespace: nodeport-proxy
+      path: config/nodeport-proxy/
+    - name: minio
+      namespace: minio
+      path: config/minio/
+    - name: nginx
+      namespace: ingress-nginx
+      path: config/nginx-ingress-controller/
+    - name: oauth
+      namespace: oauth
+      path: config/oauth/
+    - name: cert-manager
+      namespace: cert-manager
+      path: config/cert-manager/
+    - name: certs
+      namespace: default
+      path: config/certs/
+    - name: iap
+      namespace: iap
+      path: config/iap/
+    - name: node-exporter
+      namespace: monitoring
+      path: config/monitoring/node-exporter/
+    - name: kube-state-metrics
+      namespace: monitoring
+      path: config/monitoring/kube-state-metrics/
+    - name: grafana
+      namespace: monitoring
+      path: config/monitoring/grafana/
+    - name: alertmanager
+      namespace: monitoring
+      path: config/monitoring/alertmanager/
+    - name: prometheus
+      namespace: monitoring
+      path: config/monitoring/prometheus/
+    - name: elasticsearch
+      namespace: logging
+      path: config/logging/elasticsearch/
+    - name: fluentbit
+      namespace: logging
+      path: config/logging/fluentbit/
+    - name: kibana
+      namespace: logging
+      path: config/logging/kibana/
+    group: deploy-cloud
+    # depends on 'kubermatic-docker-master' step to build the images
+    helm: upgrade --install --wait --timeout 300 --kube-context=europe-west3-c-1 --tiller-namespace=kubermatic-installer
+      --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
+      --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
+      --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
+    image: kubeciio/helm
+    pull: true
+    secrets:
+    - source: kubeconfig_cloud
+      target: kubeconfig
+    - source: values_cloud_eu
+      target: values
+    values:
+    - values
+    when:
+      branch: master
+  deploy-cloud-us:
+    charts:
+    - name: kubermatic
+      namespace: kubermatic
+      path: config/kubermatic/
+    - name: nodeport-proxy
+      namespace: nodeport-proxy
+      path: config/nodeport-proxy/
+    - name: minio
+      namespace: minio
+      path: config/minio/
+    - name: node-exporter
+      namespace: monitoring
+      path: config/monitoring/node-exporter/
+    - name: kube-state-metrics
+      namespace: monitoring
+      path: config/monitoring/kube-state-metrics/
+    - name: alertmanager
+      namespace: monitoring
+      path: config/monitoring/alertmanager/
+    - name: prometheus
+      namespace: monitoring
+      path: config/monitoring/prometheus/
+    - name: elasticsearch
+      namespace: logging
+      path: config/logging/elasticsearch/
+    - name: fluentbit
+      namespace: logging
+      path: config/logging/fluentbit/
+    - name: kibana
+      namespace: logging
+      path: config/logging/kibana/
+    group: deploy-cloud
+    # depends on 'kubermatic-docker-master' step to build the images
+    helm: upgrade --install --wait --timeout 300 --kube-context=us-central1-c-1 --tiller-namespace=kubermatic-installer
+      --set=kubermatic.isMaster=false
+      --set=kubermatic.controller.image.tag=${DRONE_COMMIT_SHA}
+      --set=kubermatic.api.image.tag=${DRONE_COMMIT_SHA}
+      --set=kubermatic.rbac.image.tag=${DRONE_COMMIT_SHA}
+    image: kubeciio/helm
+    pull: true
+    secrets:
+    - source: kubeconfig_cloud
+      target: kubeconfig
+    - source: values_cloud_us
+      target: values
+    values:
+    - values
+    when:
+      branch: master
   deploy-run:
     charts:
     - name: kubermatic
