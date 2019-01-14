@@ -64,7 +64,7 @@ func getVerticalPodAutoscalersForResource(names []string, namespace string, stor
 		key := fmt.Sprintf("%s/%s", namespace, name)
 		obj, exists, err := store.GetByKey(key)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get deployment '%s' from store: %v", key, err)
+			return nil, fmt.Errorf("failed to get object '%s' from store: %v", key, err)
 		}
 		if !exists {
 			return nil, fmt.Errorf("object '%s' does not exist in the store", key)
@@ -107,7 +107,7 @@ func GetVerticalPodAutoscalersForAll(deploymentNames, statefulSetNames []string,
 		return nil, fmt.Errorf("failed to get Deployment store: %v", err)
 	}
 
-	creators, err := getVerticalPodAutoscalersForResource(deploymentNames, namespace, deploymentStore)
+	deploymentVPACreators, err := getVerticalPodAutoscalersForResource(deploymentNames, namespace, deploymentStore)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create VPA creator functions for Deployments: %v", err)
 	}
@@ -117,10 +117,10 @@ func GetVerticalPodAutoscalersForAll(deploymentNames, statefulSetNames []string,
 		return nil, fmt.Errorf("failed to get StatefulSet store: %v", err)
 	}
 
-	screators, err := getVerticalPodAutoscalersForResource(statefulSetNames, namespace, statefulSetStore)
+	statefulSetVPACreators, err := getVerticalPodAutoscalersForResource(statefulSetNames, namespace, statefulSetStore)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create VPA creator functions for StatefulSets: %v", err)
 	}
 
-	return append(creators, screators...), nil
+	return append(deploymentVPACreators, statefulSetVPACreators...), nil
 }
