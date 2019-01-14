@@ -916,7 +916,3 @@ func genDefaultAPIUser() *apiv1.User {
 func genBinding(projectID, email, group string) *kubermaticapiv1.UserProjectBinding {
 	return test.GenBinding(projectID, email, group)
 }
-
-func genDefaultOwnerBinding() *kubermaticapiv1.UserProjectBinding {
-	return test.GenBinding(genDefaultProject().Name, genDefaultUser().Spec.Email, "owners")
-}

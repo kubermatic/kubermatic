@@ -15,6 +15,7 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 )
 
 func TestDeleteSSHKey(t *testing.T) {
@@ -40,9 +41,9 @@ func TestDeleteSSHKey(t *testing.T) {
 				/*add users*/
 				genUser("", "john", "john@acme.com"),
 				/*add cluster*/
-				genDefaultCluster(),
+				test.GenDefaultCluster(),
 				/*add ssh keys*/
-				genSSHKey(defaultCreationTimestamp(), "c08aa5c7abf34504f18552846485267d", "first-key", "my-first-project-ID", genDefaultCluster().Name),
+				genSSHKey(defaultCreationTimestamp(), "c08aa5c7abf34504f18552846485267d", "first-key", "my-first-project-ID", test.GenDefaultCluster().Name),
 				genSSHKey(defaultCreationTimestamp(), "abc", "second-key", "my-first-project-ID", "abcd-ID"),
 			},
 			ExistingAPIUser: genAPIUser("john", "john@acme.com"),
@@ -139,9 +140,9 @@ func TestListSSHKeys(t *testing.T) {
 				/*add users*/
 				genUser("", "john", "john@acme.com"),
 				/*add cluster*/
-				genDefaultCluster(),
+				test.GenDefaultCluster(),
 				/*add ssh keys*/
-				genSSHKey(creationTime, "c08aa5c7abf34504f18552846485267d", "first-key", "my-first-project-ID", genDefaultCluster().Name),
+				genSSHKey(creationTime, "c08aa5c7abf34504f18552846485267d", "first-key", "my-first-project-ID", test.GenDefaultCluster().Name),
 				genSSHKey(creationTime.Add(time.Minute), "abc", "second-key", "my-first-project-ID", "abcd-ID"),
 			},
 			ExistingAPIUser: genAPIUser("john", "john@acme.com"),
@@ -204,7 +205,7 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 				/*add users*/
 				genUser("", "john", "john@acme.com"),
 				/*add cluster*/
-				genDefaultCluster(),
+				test.GenDefaultCluster(),
 			},
 			ExistingAPIUser: genAPIUser("john", "john@acme.com"),
 		},
@@ -223,9 +224,9 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 				/*add users*/
 				genUser("", "john", "john@acme.com"),
 				/*add cluster*/
-				genDefaultCluster(),
+				test.GenDefaultCluster(),
 				/*add sshkeys*/
-				genSSHKey(defaultCreationTimestamp(), "d08aa5d7bce34504f18552846485267c", "my-second-ssh-key", "my-first-project-ID", genDefaultCluster().Name),
+				genSSHKey(defaultCreationTimestamp(), "d08aa5d7bce34504f18552846485267c", "my-second-ssh-key", "my-first-project-ID", test.GenDefaultCluster().Name),
 			},
 			ExistingAPIUser: genAPIUser("john", "john@acme.com"),
 		},
