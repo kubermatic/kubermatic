@@ -61,7 +61,7 @@ spec:
         - --connect-retry
         - "1"
         - --ca
-        - /etc/openvpn/pki/client/ca.crt
+        - /etc/kubernetes/pki/ca/ca.crt
         - --cert
         - /etc/openvpn/pki/client/client.crt
         - --key
@@ -89,11 +89,11 @@ spec:
         name: openvpn-client
         resources:
           limits:
-            cpu: 100m
-            memory: 256Mi
+            cpu: 40m
+            memory: 64Mi
           requests:
-            cpu: 5m
-            memory: 16Mi
+            cpu: 10m
+            memory: 30Mi
         securityContext:
           privileged: true
         terminationMessagePath: /dev/termination-log
@@ -101,6 +101,9 @@ spec:
         volumeMounts:
         - mountPath: /etc/openvpn/pki/client
           name: openvpn-client-certificates
+          readOnly: true
+        - mountPath: /etc/kubernetes/pki/ca
+          name: ca
           readOnly: true
       - args:
         - --kubeconfig
@@ -140,8 +143,8 @@ spec:
           timeoutSeconds: 15
         resources:
           limits:
-            cpu: "1"
-            memory: 512Mi
+            cpu: 100m
+            memory: 128Mi
           requests:
             cpu: 20m
             memory: 64Mi
@@ -162,8 +165,6 @@ spec:
         - svc.cluster.local
         - cluster.local
       dnsPolicy: None
-      imagePullSecrets:
-      - name: dockercfg
       initContainers:
       - args:
         - -endpoint

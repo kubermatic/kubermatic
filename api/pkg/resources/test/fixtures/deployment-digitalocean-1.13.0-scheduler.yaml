@@ -24,8 +24,8 @@ spec:
     metadata:
       annotations:
         prometheus.io/path: /metrics
-        prometheus.io/port: "10251"
-        prometheus.io/scrape: "true"
+        prometheus.io/port: "10259"
+        prometheus.io/scrape_with_kube_cert: "true"
       creationTimestamp: null
       labels:
         app: scheduler
@@ -108,16 +108,25 @@ spec:
       - args:
         - --kubeconfig
         - /etc/kubernetes/kubeconfig/kubeconfig
+        - --authentication-kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
+        - --authorization-kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
+        - --port
+        - "0"
+        - --feature-gates
+        - ScheduleDaemonSetPods=false
         command:
         - /hyperkube
         - scheduler
-        image: gcr.io/google_containers/hyperkube-amd64:v1.9.0
+        image: gcr.io/google_containers/hyperkube-amd64:v1.13.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 8
           httpGet:
             path: /healthz
-            port: 10251
+            port: 10259
+            scheme: HTTPS
           initialDelaySeconds: 15
           periodSeconds: 10
           successThreshold: 1
@@ -127,7 +136,8 @@ spec:
           failureThreshold: 3
           httpGet:
             path: /healthz
-            port: 10251
+            port: 10259
+            scheme: HTTPS
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 15

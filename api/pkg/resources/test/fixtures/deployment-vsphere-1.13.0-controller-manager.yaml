@@ -24,8 +24,8 @@ spec:
     metadata:
       annotations:
         prometheus.io/path: /metrics
-        prometheus.io/port: "10252"
-        prometheus.io/scrape: "true"
+        prometheus.io/port: "10257"
+        prometheus.io/scrape_with_kube_cert: "true"
       creationTimestamp: null
       labels:
         app: controller-manager
@@ -126,21 +126,28 @@ spec:
         - '*,bootstrapsigner,tokencleaner'
         - --use-service-account-credentials=true
         - --feature-gates
-        - RotateKubeletClientCertificate=true,RotateKubeletServerCertificate=true
+        - RotateKubeletClientCertificate=true,RotateKubeletServerCertificate=true,ScheduleDaemonSetPods=false
         - --cloud-provider
         - vsphere
         - --cloud-config
         - /etc/kubernetes/cloud/config
+        - --authentication-kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
+        - --authorization-kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
+        - --port
+        - "0"
         command:
         - /hyperkube
         - controller-manager
-        image: gcr.io/google_containers/hyperkube-amd64:v1.8.0
+        image: gcr.io/google_containers/hyperkube-amd64:v1.13.0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 8
           httpGet:
             path: /healthz
-            port: 10252
+            port: 10257
+            scheme: HTTPS
           initialDelaySeconds: 15
           periodSeconds: 10
           successThreshold: 1
@@ -150,7 +157,8 @@ spec:
           failureThreshold: 3
           httpGet:
             path: /healthz
-            port: 10252
+            port: 10257
+            scheme: HTTPS
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 15
