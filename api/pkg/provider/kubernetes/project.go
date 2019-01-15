@@ -144,6 +144,10 @@ func (p *ProjectProvider) Get(userInfo *provider.UserInfo, projectInternalName s
 	return project, nil
 }
 
+// List gets a list of projects, by default it returns all resources.
+// If you want to filter the result please set ProjectListOptions
+//
+// Note that the list is taken from the cache
 func (p *ProjectProvider) List(options *provider.ProjectListOptions) ([]*kubermaticapiv1.Project, error) {
 	if options == nil {
 		options = &provider.ProjectListOptions{}

@@ -18,12 +18,10 @@ import (
 func TestListProjects(t *testing.T) {
 	// test data
 	testcases := []struct {
-		name              string
-		authenticatedUser *kubermaticv1.User
-		projectToSync     *kubermaticv1.Project
-		existingProjects  []*kubermaticv1.Project
-		listOptions       *provider.ProjectListOptions
-		expectedProjects  []*kubermaticv1.Project
+		name             string
+		existingProjects []*kubermaticv1.Project
+		listOptions      *provider.ProjectListOptions
+		expectedProjects []*kubermaticv1.Project
 	}{
 		{
 			name:        "scenario 1: list bob's projects",
