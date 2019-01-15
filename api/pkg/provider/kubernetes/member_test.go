@@ -22,7 +22,7 @@ import (
 func TestCreateBinding(t *testing.T) {
 	// test data
 	kubermaticObjects := []runtime.Object{}
-	impersonationClient, _, bindingLister, err := createFakeClients(kubermaticObjects)
+	impersonationClient, _, indexer, err := createFakeClients(kubermaticObjects)
 	if err != nil {
 		t.Fatalf("unable to create fake clients, err = %v", err)
 	}
@@ -30,6 +30,7 @@ func TestCreateBinding(t *testing.T) {
 	existingProject := createProject("abcd")
 	memberEmail := ""
 	groupName := fmt.Sprintf("owners-%s", existingProject.Name)
+	bindingLister := kubermaticv1lister.NewUserProjectBindingLister(indexer)
 
 	// act
 	target := kubernetes.NewProjectMemberProvider(impersonationClient.CreateFakeImpersonatedClientSet, bindingLister)
@@ -132,10 +133,12 @@ func TestListBinding(t *testing.T) {
 				kubermaticObjects = append(kubermaticObjects, binding)
 			}
 
-			impersonationClient, _, bindingLister, err := createFakeClients(kubermaticObjects)
+			impersonationClient, _, indexer, err := createFakeClients(kubermaticObjects)
 			if err != nil {
 				t.Fatalf("unable to create fake clients, err = %v", err)
 			}
+
+			bindingLister := kubermaticv1lister.NewUserProjectBindingLister(indexer)
 
 			// act
 			target := kubernetes.NewProjectMemberProvider(impersonationClient.CreateFakeImpersonatedClientSet, bindingLister)
@@ -173,7 +176,7 @@ func (f *FakeImpersonationClient) CreateFakeImpersonatedClientSet(impCfg restcli
 	return f.kubermaticClent.KubermaticV1(), nil
 }
 
-func createFakeClients(kubermaticObjects []runtime.Object) (*FakeImpersonationClient, *kubermaticfakeclentset.Clientset, kubermaticv1lister.UserProjectBindingLister, error) {
+func createFakeClients(kubermaticObjects []runtime.Object) (*FakeImpersonationClient, *kubermaticfakeclentset.Clientset, cache.Indexer, error) {
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
 
 	indexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
@@ -183,9 +186,8 @@ func createFakeClients(kubermaticObjects []runtime.Object) (*FakeImpersonationCl
 			return nil, nil, nil, err
 		}
 	}
-	lister := kubermaticv1lister.NewUserProjectBindingLister(indexer)
 
-	return &FakeImpersonationClient{kubermaticClient}, kubermaticClient, lister, nil
+	return &FakeImpersonationClient{kubermaticClient}, kubermaticClient, indexer, nil
 }
 
 func createAuthenitactedUser() *kubermaticv1.User {

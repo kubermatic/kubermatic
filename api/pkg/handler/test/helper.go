@@ -14,19 +14,7 @@ import (
 	"time"
 
 	"github.com/go-test/deep"
-
 	prometheusapi "github.com/prometheus/client_golang/api"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/informers"
-	kubernetesclient "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/fake"
-	restclient "k8s.io/client-go/rest"
-
-	clusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
-	fakeclusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset/fake"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
@@ -39,6 +27,18 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/informers"
+	kubernetesclient "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
+	restclient "k8s.io/client-go/rest"
+
+	clusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
+	fakeclusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset/fake"
 )
 
 const (
@@ -277,6 +277,7 @@ func GenUser(id, name, email string) *kubermaticapiv1.User {
 	return &kubermaticapiv1.User{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: id,
+			UID:  types.UID(fmt.Sprintf("fake-uid-%s", id)),
 		},
 		Spec: kubermaticapiv1.UserSpec{
 			Name:  name,
@@ -336,11 +337,12 @@ func GenProject(name, phase string, creationTime time.Time, oRef ...metav1.Owner
 
 // GenDefaultProject generates a default project
 func GenDefaultProject() *kubermaticapiv1.Project {
+	user := GenDefaultUser()
 	oRef := metav1.OwnerReference{
 		APIVersion: "kubermatic.io/v1",
 		Kind:       "User",
-		UID:        "",
-		Name:       GenDefaultUser().Name,
+		UID:        user.UID,
+		Name:       user.Name,
 	}
 	return GenProject("my-first-project", kubermaticapiv1.ProjectActive, DefaultCreationTimestamp(), oRef)
 }
