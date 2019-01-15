@@ -27,7 +27,6 @@ func TestListProjects(t *testing.T) {
 			name:        "scenario 1: list bob's projects",
 			listOptions: &provider.ProjectListOptions{OwnerUID: types.UID("bob")},
 			existingProjects: []*kubermaticv1.Project{
-
 				// bob's project
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
@@ -40,7 +39,6 @@ func TestListProjects(t *testing.T) {
 						Name: "n1",
 					},
 				},
-
 				// john's project
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
@@ -55,7 +53,6 @@ func TestListProjects(t *testing.T) {
 				},
 			},
 			expectedProjects: []*kubermaticv1.Project{
-
 				// bob's project
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
@@ -75,7 +72,6 @@ func TestListProjects(t *testing.T) {
 			name:        "scenario 2: list all projects",
 			listOptions: nil,
 			existingProjects: []*kubermaticv1.Project{
-
 				// bob's project
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
@@ -88,7 +84,6 @@ func TestListProjects(t *testing.T) {
 						Name: "n1",
 					},
 				},
-
 				// john's project
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
@@ -103,7 +98,6 @@ func TestListProjects(t *testing.T) {
 				},
 			},
 			expectedProjects: []*kubermaticv1.Project{
-
 				// bob's project
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
@@ -116,7 +110,6 @@ func TestListProjects(t *testing.T) {
 						Name: "n1",
 					},
 				},
-
 				// john's project
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
