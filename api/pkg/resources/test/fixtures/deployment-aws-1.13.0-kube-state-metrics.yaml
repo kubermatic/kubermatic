@@ -34,7 +34,7 @@ spec:
         - "8081"
         command:
         - /kube-state-metrics
-        image: quay.io/coreos/kube-state-metrics:v1.3.1
+        image: quay.io/coreos/kube-state-metrics:v1.5.0
         imagePullPolicy: IfNotPresent
         name: kube-state-metrics
         ports:
