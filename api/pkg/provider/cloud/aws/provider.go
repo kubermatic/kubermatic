@@ -360,6 +360,9 @@ func createInstanceProfile(client *iam.IAM, name string) (*iam.Role, *iam.Instan
 		RoleName: roleName, // Required
 	}
 	var role *iam.Role
+
+	// Do the create before doing a get, because in 90% of the cases
+	// this will not exist yet
 	rOut, err := client.CreateRole(paramsRole)
 	if err != nil {
 		if !isEntityAlreadyExists(err) {
@@ -392,6 +395,9 @@ func createInstanceProfile(client *iam.IAM, name string) (*iam.Role, *iam.Instan
 		InstanceProfileName: instanceProfileName, // Required
 	}
 	var instanceProfile *iam.InstanceProfile
+
+	// Do the create before doing a get, because in 90% of the cases
+	// this will not exist yet
 	cipOut, err := client.CreateInstanceProfile(paramsInstanceProfile)
 	if err != nil {
 		if !isEntityAlreadyExists(err) {
@@ -408,22 +414,20 @@ func createInstanceProfile(client *iam.IAM, name string) (*iam.Role, *iam.Instan
 		instanceProfile = cipOut.InstanceProfile
 	}
 
-	var instanceProfileHasRole bool
+	// Just return if Role is already associated to InstanceProfile
 	for _, role := range instanceProfile.Roles {
 		if *role.RoleName == *roleName {
-			instanceProfileHasRole = true
-			break
+			return role, instanceProfile, nil
 		}
 	}
-	if !instanceProfileHasRole {
-		paramsAddRole := &iam.AddRoleToInstanceProfileInput{
-			InstanceProfileName: aws.String(kubermaticInstanceProfileName), // Required
-			RoleName:            aws.String(kubermaticRoleName),            // Required
-		}
-		_, err = client.AddRoleToInstanceProfile(paramsAddRole)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to add role %q to instance profile %q: %v", kubermaticInstanceProfileName, kubermaticRoleName, err)
-		}
+
+	paramsAddRole := &iam.AddRoleToInstanceProfileInput{
+		InstanceProfileName: aws.String(kubermaticInstanceProfileName), // Required
+		RoleName:            aws.String(kubermaticRoleName),            // Required
+	}
+	_, err = client.AddRoleToInstanceProfile(paramsAddRole)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to add role %q to instance profile %q: %v", kubermaticInstanceProfileName, kubermaticRoleName, err)
 	}
 
 	return role, instanceProfile, nil
