@@ -19,16 +19,30 @@ groups:
     labels:
       severity: warning
 
+  # a dedicated rule for pods to include more helpful labels in the message like the instance and job name
   - alert: KubeClientErrors
     annotations:
       message: >
-        Kubernetes API server client {{ $labels.job }}/{{ $labels.instance }} is experiencing
-        {{ printf "%0.0f" $value }}% errors.
+        The pod {{ $labels.namespace }}/{{ $labels.pod }} is experiencing {{ printf "%0.0f" $value }}% errors.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclienterrors
     expr: |
-      (sum(rate(rest_client_requests_total{code!~"2..|404"}[5m])) by (instance, job)
+      (sum(rate(rest_client_requests_total{code=~"5..",job="pods"}[5m])) by (namespace, pod)
         /
-      sum(rate(rest_client_requests_total[5m])) by (instance, job))
+      sum(rate(rest_client_requests_total{job="pods"}[5m])) by (namespace, pod))
+      * 100 > 1
+    for: 15m
+    labels:
+      severity: warning
+
+  - alert: KubeClientErrors
+    annotations:
+      message: >
+        The kubelet on {{ $labels.instance }} is experiencing {{ printf "%0.0f" $value }}% errors.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclienterrors
+    expr: |
+      (sum(rate(rest_client_requests_total{code=~"5..",job="kubelet"}[5m])) by (instance)
+        /
+      sum(rate(rest_client_requests_total{job="kubelet"}[5m])) by (instance))
       * 100 > 1
     for: 15m
     labels:
