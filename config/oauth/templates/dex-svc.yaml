@@ -8,5 +8,7 @@ spec:
     port: 5556
     protocol: TCP
     targetPort: 5556
+{{ if .Values.dex.grpc }}{{ toYaml .Values.dex.grpc.service | trim | indent 2 }}
+{{- end }}
   selector:
     app: dex
