@@ -70,7 +70,8 @@ kubermatic:
         "enable_node_deployments": false,
         "share_kubeconfig": false,
         "show_demo_info": false,
-        "show_terms_of_service": false
+        "show_terms_of_service": false,
+        "cleanup_cluster": false,
       }
   rbac:
     replicas: 1
