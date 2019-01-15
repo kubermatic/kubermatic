@@ -24,6 +24,14 @@ kubermatic:
     # PV size for the etcd StatefulSet of new clusters
     diskSize: "5Gi"
   controller:
+    # Available feature gates:
+    # - OpenIDAuthPlugin
+    #   If enabled configures the flags on the API server to use OAuth2 identity providers.
+    # - VerticalPodAutoscaler
+    #   If enabled the cluster-controller will enable the VerticalPodAutoscaler for all control plane components
+    # For example:
+    # featureGates: "OpenIDAuthPlugin=true,VerticalPodAutoscaler=true"
+    featureGates: ""
     datacenterName: ""
     replicas: 2
     image:

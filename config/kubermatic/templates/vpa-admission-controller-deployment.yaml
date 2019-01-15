@@ -17,6 +17,11 @@ spec:
       containers:
       - name: admission-controller
         image: {{ .Values.kubermatic.vpa.admissioncontroller.image.repository }}:{{ .Values.kubermatic.vpa.admissioncontroller.image.tag }}
+        command: ["/admission-controller"]
+        args: [
+          "--address", ":8944",
+          "--logtostderr",
+        ]
         volumeMounts:
           - name: tls-certs
             mountPath: "/etc/tls-certs"

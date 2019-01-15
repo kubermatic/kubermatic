@@ -21,6 +21,13 @@ spec:
       containers:
       - name: recommender
         image: {{ .Values.kubermatic.vpa.recommender.image.repository }}:{{ .Values.kubermatic.vpa.recommender.image.tag }}
+        command: ["/recommender"]
+        args: [
+        "--address", ":8942",
+        "--kube-api-burst", "20",
+        "--kube-api-qps", "10",
+        "--logtostderr",
+        ]
         resources:
           limits:
             cpu: 200m

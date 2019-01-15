@@ -16,10 +16,11 @@ import (
 	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	autoscalingv1beta "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"
 )
 
 const (
@@ -317,27 +318,46 @@ func (cc *Controller) ensureCronJobs(c *kubermaticv1.Cluster, data *resources.Te
 	return nil
 }
 
-// GetVerticalPodAutoscalerCreators returns all VerticalPodAutoscalerCreator's that are currently in use
-func GetVerticalPodAutoscalerCreators(data *resources.TemplateData) []resources.VerticalPodAutoscalerCreator {
-	return []resources.VerticalPodAutoscalerCreator{
-		apiserver.VerticalPodAutoscaler,
-		controllermanager.VerticalPodAutoscaler,
-		dns.VerticalPodAutoscaler,
-		etcd.VerticalPodAutoscalerCreator(data),
-		ipamcontroller.VerticalPodAutoscaler,
-		machinecontroller.VerticalPodAutoscaler,
-		machinecontroller.WebhookVerticalPodAutoscaler,
-		metricsserver.VerticalPodAutoscaler,
-		openvpn.VerticalPodAutoscaler,
-		scheduler.VerticalPodAutoscaler,
-	}
-}
-
 func (cc *Controller) ensureVerticalPodAutoscalers(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	data.GetClusterRef()
-	creators := GetVerticalPodAutoscalerCreators(data)
+	creators, err := resources.GetVerticalPodAutoscalersForAll([]string{
+		"apiserver",
+		"controller-manager",
+		"dns-resolver",
+		"machine-controller",
+		"machine-controller-webhook",
+		"metrics-server",
+		"openvpn-server",
+		"scheduler",
+	},
+		[]string{
+			"etcd",
+		}, c.Status.NamespaceName,
+		cc.dynamicCache)
+	if err != nil {
+		return fmt.Errorf("failed to create the functions to handle VPA resources: %v", err)
+	}
 
-	return resources.EnsureVerticalPodAutoscalers(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(c))
+	if !cc.enableVPA {
+		// If the feature is disabled, we just wrap the create function to disable the VPA.
+		// This is easier than passing a bool to all required functions.
+		for i, create := range creators {
+			creators[i] = func(existing *autoscalingv1beta.VerticalPodAutoscaler) (*autoscalingv1beta.VerticalPodAutoscaler, error) {
+				vpa, err := create(existing)
+				if err != nil {
+					return nil, err
+				}
+				if vpa.Spec.UpdatePolicy == nil {
+					vpa.Spec.UpdatePolicy = &autoscalingv1beta.PodUpdatePolicy{}
+				}
+				mode := autoscalingv1beta.UpdateModeOff
+				vpa.Spec.UpdatePolicy.UpdateMode = &mode
+
+				return vpa, nil
+			}
+		}
+	}
+
+	return resources.EnsureVerticalPodAutoscalers(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache)
 }
 
 func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {

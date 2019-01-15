@@ -21,6 +21,14 @@ spec:
       containers:
       - name: updater
         image: {{ .Values.kubermatic.vpa.updater.image.repository }}:{{ .Values.kubermatic.vpa.updater.image.tag }}
+        command: ["/updater"]
+        args: [
+          "--address", ":8943",
+          # If a container was killed by a OOM trigger an update.
+          "--evict-after-oom-treshold", "30m0s",
+          "--updater-interval", "10m0s",
+          "--logtostderr",
+        ]
         resources:
           limits:
             cpu: 200m

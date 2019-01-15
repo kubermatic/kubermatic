@@ -24,9 +24,6 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("100m"),
 		},
 	}
-
-	// VerticalPodAutoscaler returns a VerticalPodAutoscaler which can be applied to the kube-state-metrics Deployment
-	VerticalPodAutoscaler = resources.GetVerticalPodAutoscaler(name, resources.BaseAppLabel(name, nil))
 )
 
 const (
