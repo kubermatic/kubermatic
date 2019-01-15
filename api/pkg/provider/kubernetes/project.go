@@ -10,6 +10,8 @@ import (
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/rand"
 	restclient "k8s.io/client-go/rest"
 )
@@ -52,6 +54,14 @@ type ProjectProvider struct {
 func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*kubermaticapiv1.Project, error) {
 	if user == nil {
 		return nil, errors.New("a user is missing but required")
+	}
+
+	alreadyExistingProjects, err := p.List(&provider.ProjectListOptions{ProjectName: projectName, OwnerUID: user.UID})
+	if err != nil {
+		return nil, err
+	}
+	if len(alreadyExistingProjects) > 0 {
+		return nil, kerrors.NewAlreadyExists(schema.GroupResource{Group: kubermaticapiv1.SchemeGroupVersion.Group, Resource: kubermaticapiv1.ProjectResourceName}, projectName)
 	}
 
 	project := &kubermaticapiv1.Project{
@@ -132,6 +142,36 @@ func (p *ProjectProvider) Get(userInfo *provider.UserInfo, projectInternalName s
 		return nil, kerrors.NewServiceUnavailable("Project is not initialized yet")
 	}
 	return project, nil
+}
+
+func (p *ProjectProvider) List(options *provider.ProjectListOptions) ([]*kubermaticapiv1.Project, error) {
+	if options == nil {
+		options = &provider.ProjectListOptions{}
+	}
+	projects, err := p.projectLister.List(labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	ret := []*kubermaticapiv1.Project{}
+	for _, project := range projects {
+		if len(options.ProjectName) > 0 && project.Spec.Name != options.ProjectName {
+			continue
+		}
+		if len(options.OwnerUID) > 0 {
+			owners := project.GetOwnerReferences()
+			for _, owner := range owners {
+				if owner.UID == options.OwnerUID {
+					ret = append(ret, project)
+					continue
+				}
+			}
+			continue
+		}
+
+		ret = append(ret, project)
+	}
+	return ret, nil
 }
 
 // NewKubermaticImpersonationClient creates a new default impersonation client

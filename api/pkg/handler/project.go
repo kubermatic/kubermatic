@@ -8,7 +8,6 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
@@ -17,7 +16,7 @@ import (
 )
 
 // createProjectEndpoint defines an HTTP endpoint that creates a new project in the system
-func createProjectEndpoint(projectProvider provider.ProjectProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
+func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		projectRq, ok := request.(projectReq)
 		if !ok {
@@ -26,15 +25,6 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider, memberMappe
 
 		if len(projectRq.Name) == 0 {
 			return nil, errors.NewBadRequest("the name of the project cannot be empty")
-		}
-
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		existingProject, err := listUserProjects(userInfo.Email, projectProvider, memberMapper, &userProjectsListOptions{ProjectName: projectRq.Name, Group: rbac.OwnerGroupNamePrefix})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		if len(existingProject) > 0 {
-			return nil, errors.NewAlreadyExists("project name", projectRq.Name)
 		}
 
 		user := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
@@ -55,13 +45,19 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider, memberMappe
 
 func listProjectsEndpoint(projectProvider provider.ProjectProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		internalUserProjects, err := listUserProjects(userInfo.Email, projectProvider, memberMapper, &userProjectsListOptions{})
+		user := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
+		projects := []*apiv1.Project{}
+
+		userMappings, err := memberMapper.MappingsFor(user.Spec.Email)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		projects := []*apiv1.Project{}
-		for _, projectInternal := range internalUserProjects {
+		for _, mapping := range userMappings {
+			userInfo := &provider.UserInfo{Email: mapping.Spec.UserEmail, Group: mapping.Spec.Group}
+			projectInternal, err := projectProvider.Get(userInfo, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
 			projects = append(projects, convertInternalProjectToExternal(projectInternal))
 		}
 
@@ -87,7 +83,7 @@ func deleteProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 
 // updateProjectEndpoint defines an HTTP endpoint that updates an existing project in the system
 // in the current implementation only project renaming is supported
-func updateProjectEndpoint(projectProvider provider.ProjectProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
+func updateProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(UpdateProjectRq)
 		if !ok {
@@ -101,22 +97,22 @@ func updateProjectEndpoint(projectProvider provider.ProjectProvider, memberMappe
 		}
 
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		user := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
 
 		kubermaticProject, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		existingProject, err := listUserProjects(userInfo.Email, projectProvider, memberMapper, &userProjectsListOptions{ProjectName: req.Name, Group: rbac.OwnerGroupNamePrefix})
+		alreadyExistingProjects, err := projectProvider.List(&provider.ProjectListOptions{ProjectName: req.Name, OwnerUID: user.UID})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		if len(existingProject) > 0 {
+		if len(alreadyExistingProjects) > 0 {
 			return nil, errors.NewAlreadyExists("project name", req.Name)
 		}
 
 		kubermaticProject.Spec.Name = req.Name
-
 		project, err := projectProvider.Update(userInfo, kubermaticProject)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -226,49 +222,4 @@ func decodeDeleteProject(c context.Context, r *http.Request) (interface{}, error
 		return nil, nil
 	}
 	return DeleteProjectRq{ProjectReq: req.(common.ProjectReq)}, err
-}
-
-// userProjectsListOptions allows to set filters for listing user projects
-type userProjectsListOptions struct {
-	// ProjectName set the project name for the given user
-	ProjectName string
-	Group       string
-}
-
-func listUserProjects(email string, projectProvider provider.ProjectProvider, memberMapper provider.ProjectMemberMapper, options *userProjectsListOptions) ([]*kubermaticapiv1.Project, error) {
-	userMappings, err := memberMapper.MappingsFor(email)
-	if err != nil {
-		return nil, err
-	}
-
-	userProjects := []*kubermaticapiv1.Project{}
-	for _, mapping := range userMappings {
-		groupPrefix := rbac.ExtractGroupPrefix(mapping.Spec.Group)
-		if len(options.Group) > 0 && groupPrefix != options.Group {
-			continue
-		}
-		userInfo := &provider.UserInfo{Email: email, Group: mapping.Spec.Group}
-		project, err := projectProvider.Get(userInfo, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
-		if err != nil {
-			return nil, err
-		}
-		userProjects = append(userProjects, project)
-	}
-
-	if options == nil {
-		return userProjects, nil
-	}
-	if len(options.ProjectName) == 0 {
-		return userProjects, nil
-	}
-
-	filteredUserProjects := []*kubermaticapiv1.Project{}
-	for _, project := range userProjects {
-		if len(options.ProjectName) != 0 && project.Spec.Name == options.ProjectName {
-			filteredUserProjects = append(filteredUserProjects, project)
-			break
-		}
-	}
-
-	return filteredUserProjects, nil
 }

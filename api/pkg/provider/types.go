@@ -6,6 +6,7 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
@@ -69,6 +70,15 @@ type ProjectGetOptions struct {
 	// IncludeUninitialized if set to true will skip the check if project is initialized. By default the call will return
 	// an  error if not all project components are active
 	IncludeUninitialized bool
+}
+
+// ProjectListOptions allows to set filters that will be applied to the result returned form List method
+type ProjectListOptions struct {
+	// ProjectName list only projects with the given name
+	ProjectName string
+
+	// OwnerUID list only project that belong to this user
+	OwnerUID types.UID
 }
 
 // ClusterProvider declares the set of methods for interacting with clusters
@@ -163,6 +173,12 @@ type ProjectProvider interface {
 
 	// Update update an existing project and returns it
 	Update(userInfo *UserInfo, newProject *kubermaticv1.Project) (*kubermaticv1.Project, error)
+
+	// List gets a list of projects, by default it returns all resources.
+	// If you want to filter the result please set ProjectListOptions
+	//
+	// Note that the list is taken from the cache
+	List(options *ProjectListOptions) ([]*kubermaticv1.Project, error)
 }
 
 // UserInfo represent authenticated user
