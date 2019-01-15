@@ -19,3 +19,5 @@ spec:
         backend:
           serviceName: dex
           servicePort: 5556
+{{ if .Values.dex.grpc }}{{ toYaml .Values.dex.grpc.ingress | trim | indent 6 }}
+{{- end }}
