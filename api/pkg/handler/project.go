@@ -72,7 +72,7 @@ func deleteProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 			return nil, errors.NewBadRequest("invalid request")
 		}
 		if len(req.ProjectID) == 0 {
-			return nil, errors.NewBadRequest("the name of the project cannot be empty")
+			return nil, errors.NewBadRequest("the id of the project cannot be empty")
 		}
 
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
@@ -81,9 +81,43 @@ func deleteProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 	}
 }
 
-func updateProjectEndpoint() endpoint.Endpoint {
+// updateProjectEndpoint defines an HTTP endpoint that updates an existing project in the system
+// in the current implementation only project renaming is supported
+func updateProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		return apiv1.Project{}, errors.NewNotImplemented()
+		req, ok := request.(UpdateProjectRq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+		if len(req.ProjectID) == 0 {
+			return nil, errors.NewBadRequest("the id of the project cannot be empty")
+		}
+		if len(req.Name) == 0 {
+			return nil, errors.NewBadRequest("the name of the project cannot be empty")
+		}
+
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		user := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
+
+		kubermaticProject, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		alreadyExistingProjects, err := projectProvider.List(&provider.ProjectListOptions{ProjectName: req.Name, OwnerUID: user.UID})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if len(alreadyExistingProjects) > 0 {
+			return nil, errors.NewAlreadyExists("project name", req.Name)
+		}
+
+		kubermaticProject.Spec.Name = req.Name
+		project, err := projectProvider.Update(userInfo, kubermaticProject)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		return convertInternalProjectToExternal(project), nil
 	}
 }
 
@@ -94,7 +128,7 @@ func getProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpo
 			return nil, errors.NewBadRequest("invalid request")
 		}
 		if len(req.ProjectID) == 0 {
-			return nil, errors.NewBadRequest("the name of the project cannot be empty")
+			return nil, errors.NewBadRequest("the id of the project cannot be empty")
 		}
 
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
@@ -142,11 +176,24 @@ func decodeGetProject(c context.Context, r *http.Request) (interface{}, error) {
 // swagger:parameters updateProject
 type UpdateProjectRq struct {
 	common.ProjectReq
+	projectReq
 }
 
 func decodeUpdateProject(c context.Context, r *http.Request) (interface{}, error) {
-	var rq UpdateProjectRq
-	return rq, errors.NewNotImplemented()
+	pReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	cReq, err := decodeCreateProject(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	return UpdateProjectRq{
+		pReq.(common.ProjectReq),
+		cReq.(projectReq),
+	}, nil
 }
 
 type projectReq struct {

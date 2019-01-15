@@ -55,18 +55,13 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*
 	if user == nil {
 		return nil, errors.New("a user is missing but required")
 	}
-	projects, err := p.projectLister.List(labels.Everything())
+
+	alreadyExistingProjects, err := p.List(&provider.ProjectListOptions{ProjectName: projectName, OwnerUID: user.UID})
 	if err != nil {
 		return nil, err
 	}
-
-	for _, project := range projects {
-		owners := project.GetOwnerReferences()
-		for _, owner := range owners {
-			if owner.UID == user.UID && project.Spec.Name == projectName {
-				return nil, kerrors.NewAlreadyExists(schema.GroupResource{Group: kubermaticapiv1.SchemeGroupVersion.Group, Resource: kubermaticapiv1.ProjectResourceName}, projectName)
-			}
-		}
+	if len(alreadyExistingProjects) > 0 {
+		return nil, kerrors.NewAlreadyExists(schema.GroupResource{Group: kubermaticapiv1.SchemeGroupVersion.Group, Resource: kubermaticapiv1.ProjectResourceName}, projectName)
 	}
 
 	project := &kubermaticapiv1.Project{
@@ -90,6 +85,19 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*
 	}
 
 	return p.clientPrivileged.Create(project)
+}
+
+// Update update a specific project for a specific user and returns the updated project
+func (p *ProjectProvider) Update(userInfo *provider.UserInfo, newProject *kubermaticapiv1.Project) (*kubermaticapiv1.Project, error) {
+	if userInfo == nil {
+		return nil, errors.New("a user is missing but required")
+	}
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	if err != nil {
+		return nil, err
+	}
+
+	return masterImpersonatedClient.Projects().Update(newProject)
 }
 
 // Delete deletes the given project as the given user
@@ -134,6 +142,40 @@ func (p *ProjectProvider) Get(userInfo *provider.UserInfo, projectInternalName s
 		return nil, kerrors.NewServiceUnavailable("Project is not initialized yet")
 	}
 	return project, nil
+}
+
+// List gets a list of projects, by default it returns all resources.
+// If you want to filter the result please set ProjectListOptions
+//
+// Note that the list is taken from the cache
+func (p *ProjectProvider) List(options *provider.ProjectListOptions) ([]*kubermaticapiv1.Project, error) {
+	if options == nil {
+		options = &provider.ProjectListOptions{}
+	}
+	projects, err := p.projectLister.List(labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	ret := []*kubermaticapiv1.Project{}
+	for _, project := range projects {
+		if len(options.ProjectName) > 0 && project.Spec.Name != options.ProjectName {
+			continue
+		}
+		if len(options.OwnerUID) > 0 {
+			owners := project.GetOwnerReferences()
+			for _, owner := range owners {
+				if owner.UID == options.OwnerUID {
+					ret = append(ret, project)
+					continue
+				}
+			}
+			continue
+		}
+
+		ret = append(ret, project)
+	}
+	return ret, nil
 }
 
 // NewKubermaticImpersonationClient creates a new default impersonation client

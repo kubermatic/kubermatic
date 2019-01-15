@@ -598,6 +598,7 @@ func (r Routing) listProjects() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
+			r.userInfoMiddleware(),
 		)(listProjectsEndpoint(r.projectProvider, r.userProjectMapper)),
 		decodeEmptyReq,
 		EncodeJSON,
@@ -652,6 +653,7 @@ func (r Routing) createProject() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
+			r.userInfoMiddleware(),
 		)(createProjectEndpoint(r.projectProvider)),
 		decodeCreateProject,
 		setStatusCreatedHeader(EncodeJSON),
@@ -668,6 +670,10 @@ func (r Routing) createProject() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
+//       201: Project
+//       400: empty
+//       404: empty
+//       500: empty
 //       501: empty
 func (r Routing) updateProject() http.Handler {
 	return httptransport.NewServer(
@@ -675,7 +681,7 @@ func (r Routing) updateProject() http.Handler {
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.userInfoMiddleware(),
-		)(updateProjectEndpoint()),
+		)(updateProjectEndpoint(r.projectProvider)),
 		decodeUpdateProject,
 		EncodeJSON,
 		r.defaultServerOptions()...,
