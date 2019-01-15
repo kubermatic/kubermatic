@@ -28,11 +28,11 @@ func TestListProjects(t *testing.T) {
 			listOptions: &provider.ProjectListOptions{OwnerUID: types.UID("bob")},
 			existingProjects: []*kubermaticv1.Project{
 				// bob's project
-				&kubermaticv1.Project{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "id1",
 						OwnerReferences: []metav1.OwnerReference{
-							metav1.OwnerReference{UID: types.UID("bob")},
+							{UID: types.UID("bob")},
 						},
 					},
 					Spec: kubermaticv1.ProjectSpec{
@@ -40,11 +40,11 @@ func TestListProjects(t *testing.T) {
 					},
 				},
 				// john's project
-				&kubermaticv1.Project{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "id2",
 						OwnerReferences: []metav1.OwnerReference{
-							metav1.OwnerReference{UID: types.UID("john")},
+							{UID: types.UID("john")},
 						},
 					},
 					Spec: kubermaticv1.ProjectSpec{
@@ -54,11 +54,11 @@ func TestListProjects(t *testing.T) {
 			},
 			expectedProjects: []*kubermaticv1.Project{
 				// bob's project
-				&kubermaticv1.Project{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "id1",
 						OwnerReferences: []metav1.OwnerReference{
-							metav1.OwnerReference{UID: types.UID("bob")},
+							{UID: types.UID("bob")},
 						},
 					},
 					Spec: kubermaticv1.ProjectSpec{
@@ -73,11 +73,11 @@ func TestListProjects(t *testing.T) {
 			listOptions: nil,
 			existingProjects: []*kubermaticv1.Project{
 				// bob's project
-				&kubermaticv1.Project{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "id1",
 						OwnerReferences: []metav1.OwnerReference{
-							metav1.OwnerReference{UID: types.UID("bob")},
+							{UID: types.UID("bob")},
 						},
 					},
 					Spec: kubermaticv1.ProjectSpec{
@@ -85,11 +85,11 @@ func TestListProjects(t *testing.T) {
 					},
 				},
 				// john's project
-				&kubermaticv1.Project{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "id2",
 						OwnerReferences: []metav1.OwnerReference{
-							metav1.OwnerReference{UID: types.UID("john")},
+							{UID: types.UID("john")},
 						},
 					},
 					Spec: kubermaticv1.ProjectSpec{
@@ -99,11 +99,11 @@ func TestListProjects(t *testing.T) {
 			},
 			expectedProjects: []*kubermaticv1.Project{
 				// bob's project
-				&kubermaticv1.Project{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "id1",
 						OwnerReferences: []metav1.OwnerReference{
-							metav1.OwnerReference{UID: types.UID("bob")},
+							{UID: types.UID("bob")},
 						},
 					},
 					Spec: kubermaticv1.ProjectSpec{
@@ -111,11 +111,11 @@ func TestListProjects(t *testing.T) {
 					},
 				},
 				// john's project
-				&kubermaticv1.Project{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "id2",
 						OwnerReferences: []metav1.OwnerReference{
-							metav1.OwnerReference{UID: types.UID("john")},
+							{UID: types.UID("john")},
 						},
 					},
 					Spec: kubermaticv1.ProjectSpec{
@@ -130,11 +130,11 @@ func TestListProjects(t *testing.T) {
 			listOptions: &provider.ProjectListOptions{ProjectName: "n1"},
 			existingProjects: []*kubermaticv1.Project{
 				// bob's project
-				&kubermaticv1.Project{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "id1",
 						OwnerReferences: []metav1.OwnerReference{
-							metav1.OwnerReference{UID: types.UID("bob")},
+							{UID: types.UID("bob")},
 						},
 					},
 					Spec: kubermaticv1.ProjectSpec{
@@ -142,11 +142,11 @@ func TestListProjects(t *testing.T) {
 					},
 				},
 				// john's project
-				&kubermaticv1.Project{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "id2",
 						OwnerReferences: []metav1.OwnerReference{
-							metav1.OwnerReference{UID: types.UID("john")},
+							{UID: types.UID("john")},
 						},
 					},
 					Spec: kubermaticv1.ProjectSpec{
@@ -156,11 +156,11 @@ func TestListProjects(t *testing.T) {
 			},
 			expectedProjects: []*kubermaticv1.Project{
 				// bob's project
-				&kubermaticv1.Project{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "id1",
 						OwnerReferences: []metav1.OwnerReference{
-							metav1.OwnerReference{UID: types.UID("bob")},
+							{UID: types.UID("bob")},
 						},
 					},
 					Spec: kubermaticv1.ProjectSpec{
@@ -175,11 +175,11 @@ func TestListProjects(t *testing.T) {
 			listOptions: &provider.ProjectListOptions{ProjectName: "n1"},
 			existingProjects: []*kubermaticv1.Project{
 				// bob's project
-				&kubermaticv1.Project{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "id1",
 						OwnerReferences: []metav1.OwnerReference{
-							metav1.OwnerReference{UID: types.UID("bob")},
+							{UID: types.UID("bob")},
 						},
 					},
 					Spec: kubermaticv1.ProjectSpec{
@@ -187,11 +187,11 @@ func TestListProjects(t *testing.T) {
 					},
 				},
 				// john's project
-				&kubermaticv1.Project{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "id2",
 						OwnerReferences: []metav1.OwnerReference{
-							metav1.OwnerReference{UID: types.UID("john")},
+							{UID: types.UID("john")},
 						},
 					},
 					Spec: kubermaticv1.ProjectSpec{
@@ -201,11 +201,11 @@ func TestListProjects(t *testing.T) {
 			},
 			expectedProjects: []*kubermaticv1.Project{
 				// bob's project
-				&kubermaticv1.Project{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "id1",
 						OwnerReferences: []metav1.OwnerReference{
-							metav1.OwnerReference{UID: types.UID("bob")},
+							{UID: types.UID("bob")},
 						},
 					},
 					Spec: kubermaticv1.ProjectSpec{
@@ -213,11 +213,11 @@ func TestListProjects(t *testing.T) {
 					},
 				},
 				// john's project
-				&kubermaticv1.Project{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "id2",
 						OwnerReferences: []metav1.OwnerReference{
-							metav1.OwnerReference{UID: types.UID("john")},
+							{UID: types.UID("john")},
 						},
 					},
 					Spec: kubermaticv1.ProjectSpec{
@@ -232,11 +232,11 @@ func TestListProjects(t *testing.T) {
 			listOptions: &provider.ProjectListOptions{ProjectName: "n1", OwnerUID: types.UID("bob")},
 			existingProjects: []*kubermaticv1.Project{
 				// bob's project
-				&kubermaticv1.Project{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "id1",
 						OwnerReferences: []metav1.OwnerReference{
-							metav1.OwnerReference{UID: types.UID("bob")},
+							{UID: types.UID("bob")},
 						},
 					},
 					Spec: kubermaticv1.ProjectSpec{
@@ -244,11 +244,11 @@ func TestListProjects(t *testing.T) {
 					},
 				},
 				// john's project
-				&kubermaticv1.Project{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "id2",
 						OwnerReferences: []metav1.OwnerReference{
-							metav1.OwnerReference{UID: types.UID("john")},
+							{UID: types.UID("john")},
 						},
 					},
 					Spec: kubermaticv1.ProjectSpec{
@@ -258,11 +258,11 @@ func TestListProjects(t *testing.T) {
 			},
 			expectedProjects: []*kubermaticv1.Project{
 				// bob's project
-				&kubermaticv1.Project{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "id1",
 						OwnerReferences: []metav1.OwnerReference{
-							metav1.OwnerReference{UID: types.UID("bob")},
+							{UID: types.UID("bob")},
 						},
 					},
 					Spec: kubermaticv1.ProjectSpec{
