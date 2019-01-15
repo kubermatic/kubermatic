@@ -324,16 +324,4 @@ groups:
     for: 30m
     labels:
       severity: warning
-
-- name: kube-state-metrics
-  rules:
-  - alert: KubeStateMetricsHighErrorRate
-    annotations:
-      message: >
-        kube-state-metrics is experiencing {{ printf "%0.0f" $value }} errors / 5min
-        when scraping {{ $labels.resource }} resources on {{ $labels.instance }}.
-    expr: sum(rate(ksm_scrape_error_total[5m])) by (instance, resource) > 0.1
-    for: 15m
-    labels:
-      severity: warning
 `
