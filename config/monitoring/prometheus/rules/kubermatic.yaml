@@ -14,7 +14,7 @@ groups:
     annotations:
       message: Cluster {{ $labels.cluster }} is stuck in deletion for more than 30min.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubermaticclusterdeletiontakestoolong
-    expr: (time() - kubermatic_cluster_deleted) > 30*60
+    expr: (time() - max by (cluster) (kubermatic_cluster_deleted)) > 30*60
     for: 0m
     labels:
       severity: warning
