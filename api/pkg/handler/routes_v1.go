@@ -195,6 +195,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes").
 		Handler(r.listNodeDeploymentNodes())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/events").
+		Handler(r.listNodeDeploymentNodesEvents())
+
 	mux.Methods(http.MethodPatch).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}").
 		Handler(r.patchNodeDeployment())
@@ -1585,6 +1589,33 @@ func (r Routing) listNodeDeploymentNodes() http.Handler {
 			r.userInfoMiddleware(),
 		)(listNodeDeploymentNodes(r.projectProvider)),
 		decodeListNodeDeploymentNodes,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/events project listNodeDeploymentNodesEvents
+//
+//     Lists node deployment events. If query parameter `warning` is set to true then only warning events are retrieved.
+//     If the value is false then normal events are returned. If the query parameter is missing method returns all events.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []Event
+//       401: empty
+//       403: empty
+func (r Routing) listNodeDeploymentNodesEvents() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.oidcAuthenticator.Verifier(),
+			r.userSaverMiddleware(),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
+			r.userInfoMiddleware(),
+		)(listNodeDeploymentNodesEvents()),
+		decodeListNodeDeploymentNodesEvents,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)

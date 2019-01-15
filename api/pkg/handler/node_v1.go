@@ -1077,3 +1077,101 @@ func deleteNodeDeployment(projectProvider provider.ProjectProvider) endpoint.End
 		return nil, common.KubernetesErrorToHTTPError(machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Delete(req.NodeDeploymentID, nil))
 	}
 }
+
+// NodeDeploymentNodesEventsReq defines HTTP request for listNodeDeploymentNodesEvents endpoint
+// swagger:parameters listNodeDeploymentNodesEvents
+type NodeDeploymentNodesEventsReq struct {
+	common.GetClusterReq
+	// in: query
+	Warning string
+
+	// in: path
+	NodeDeploymentID string `json:"nodedeployment_id"`
+}
+
+func decodeListNodeDeploymentNodesEvents(c context.Context, r *http.Request) (interface{}, error) {
+
+	var req NodeDeploymentNodesEventsReq
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	dcr, err := common.DecodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ClusterID = clusterID
+	req.NodeDeploymentID = nodeDeploymentID
+	req.DCReq = dcr.(common.DCReq)
+
+	req.Warning = r.URL.Query().Get("warning")
+
+	return req, nil
+}
+
+func listNodeDeploymentNodesEvents() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		apiv1Events := make([]apiv1.Event, 0)
+		req := request.(NodeDeploymentNodesEventsReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		customerClusterClient, err := clusterProvider.GetKubernetesClientForCustomerCluster(cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		machineDeployment, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Get(req.NodeDeploymentID, metav1.GetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		listOptions := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels).String()}
+		machines, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(listOptions)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		for _, machine := range machines.Items {
+			events, err := GetMachineEvents(customerClusterClient, machine)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			apiv1Events = append(apiv1Events, events...)
+		}
+
+		// If query parameter `warning` is set to true then only warning events are retrieved.
+		// If the value is false then normal events are returned.
+		if len(req.Warning) > 0 {
+			warning, err := strconv.ParseBool(req.Warning)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			if warning {
+				return FilterEventsByType(apiv1Events, corev1.EventTypeWarning), nil
+			}
+			return FilterEventsByType(apiv1Events, corev1.EventTypeNormal), nil
+		}
+
+		// If the query parameter is missing method returns all events.
+		return apiv1Events, nil
+	}
+}
