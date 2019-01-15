@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
@@ -29,7 +29,7 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider, memberMappe
 		}
 
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		existingProject, err := listUserProjects(userInfo.Email, projectProvider, memberMapper, &userProjectsListOptions{ProjectName: projectRq.Name, Group: "owners"})
+		existingProject, err := listUserProjects(userInfo.Email, projectProvider, memberMapper, &userProjectsListOptions{ProjectName: projectRq.Name, Group: rbac.OwnerGroupNamePrefix})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -107,7 +107,7 @@ func updateProjectEndpoint(projectProvider provider.ProjectProvider, memberMappe
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		existingProject, err := listUserProjects(userInfo.Email, projectProvider, memberMapper, &userProjectsListOptions{ProjectName: req.Name, Group: "owners"})
+		existingProject, err := listUserProjects(userInfo.Email, projectProvider, memberMapper, &userProjectsListOptions{ProjectName: req.Name, Group: rbac.OwnerGroupNamePrefix})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -243,7 +243,8 @@ func listUserProjects(email string, projectProvider provider.ProjectProvider, me
 
 	userProjects := []*kubermaticapiv1.Project{}
 	for _, mapping := range userMappings {
-		if len(options.Group) > 0 && !strings.HasPrefix(mapping.Spec.Group, options.Group) {
+		groupPrefix := rbac.ExtractGroupPrefix(mapping.Spec.Group)
+		if len(options.Group) > 0 && groupPrefix != options.Group {
 			continue
 		}
 		userInfo := &provider.UserInfo{Email: email, Group: mapping.Spec.Group}
