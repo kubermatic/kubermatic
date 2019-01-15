@@ -28,9 +28,6 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("1"),
 		},
 	}
-
-	// VerticalPodAutoscaler returns a VerticalPodAutoscaler which can be applied to the scheduler Deployment
-	VerticalPodAutoscaler = resources.GetVerticalPodAutoscaler(name, resources.BaseAppLabel(name, nil))
 )
 
 const (

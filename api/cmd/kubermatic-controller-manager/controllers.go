@@ -135,6 +135,7 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.oidcCAFile,
 		ctrlCtx.runOptions.oidcIssuerURL,
 		ctrlCtx.runOptions.oidcIssuerClientID,
+		ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
 	)
 }
 

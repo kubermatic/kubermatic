@@ -103,6 +103,8 @@ type Controller struct {
 	oidcCAFile         string
 	oidcIssuerURL      string
 	oidcIssuerClientID string
+
+	enableVPA bool
 }
 
 // NewController creates a cluster controller.
@@ -144,7 +146,10 @@ func NewController(
 	podDisruptionBudgetInformer policyv1beta1informers.PodDisruptionBudgetInformer,
 	oidcCAFile string,
 	oidcIssuerURL string,
-	oidcIssuerClientID string) (*Controller, error) {
+	oidcIssuerClientID string,
+	// I would prefer to pass the whole feature gates struct but that leads to a ugly import cycle.
+	// We would first clean up the resource handling to move the data->creator handling into the controller
+	enableVPA bool) (*Controller, error) {
 	kubermaticscheme.AddToScheme(scheme.Scheme)
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(glog.V(4).Infof)
@@ -179,6 +184,8 @@ func NewController(
 		oidcCAFile:         oidcCAFile,
 		oidcIssuerURL:      oidcIssuerURL,
 		oidcIssuerClientID: oidcIssuerClientID,
+
+		enableVPA: enableVPA,
 	}
 
 	clusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
