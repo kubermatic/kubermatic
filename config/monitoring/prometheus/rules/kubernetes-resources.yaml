@@ -84,3 +84,16 @@ groups:
   #   for: 15m
   #   labels:
   #     severity: warning
+
+  - alert: KubePodOOMKilled
+    annotations:
+      message:
+        Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }}
+        has been OOMKilled {{ $value }} times in the last 30 minutes.
+    expr: |
+      (kube_pod_container_status_restarts_total - kube_pod_container_status_restarts_total offset 30m >= 2)
+      and
+      ignoring (reason) min_over_time(kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}[30m]) == 1
+    for: 0m
+    labels:
+      severity: warning
