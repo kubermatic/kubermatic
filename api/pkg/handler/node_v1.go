@@ -1081,9 +1081,11 @@ func patchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
 		}
 
-		// Only spec will be updated by a patch.
+		// Only the fields from NodeDeploymentSpec will be updated by a patch.
 		// It ensures that the name and resource version are set and the selector stays the same.
-		machineDeployment.Spec = patchedMachineDeployment.Spec
+		machineDeployment.Spec.Template.Spec = patchedMachineDeployment.Spec.Template.Spec
+		machineDeployment.Spec.Replicas = patchedMachineDeployment.Spec.Replicas
+		machineDeployment.Spec.Paused = patchedMachineDeployment.Spec.Paused
 
 		machineDeployment, err = machineClient.ClusterV1alpha1().MachineDeployments(machineDeployment.Namespace).Update(machineDeployment)
 		if err != nil {
