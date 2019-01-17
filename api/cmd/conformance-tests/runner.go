@@ -685,12 +685,12 @@ func (r *testRunner) getGinkgoRuns(
 			ginkgoSkip:    `\[Serial\]`,
 			parallelTests: len(nodes) * 10,
 		},
-		//{
-		//	name:          "serial",
-		//	ginkgoFocus:   `\[Serial\].*\[Conformance\]`,
-		//	ginkgoSkip:    `should not cause race condition when used for configmap`,
-		//	parallelTests: 1,
-		//},
+		{
+			name:          "serial",
+			ginkgoFocus:   `\[Serial\].*\[Conformance\]`,
+			ginkgoSkip:    `should not cause race condition when used for configmap`,
+			parallelTests: 1,
+		},
 	}
 	versionRoot := path.Join(repoRoot, MajorMinor)
 	binRoot := path.Join(versionRoot, "/platforms/linux/amd64")
