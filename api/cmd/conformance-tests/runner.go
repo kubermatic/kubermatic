@@ -790,8 +790,12 @@ func executeGinkgoRun(parentLog *logrus.Entry, run *ginkgoRun) (*ginkgoResult, e
 	stopCh := make(chan struct{}, 1)
 	defer close(stopCh)
 	go wait.Until(func() {
-		writer.Flush()
-		file.Sync()
+		if err := writer.Flush(); err != nil {
+			log.Warnf("failed to flush log writer: %v", err)
+		}
+		if err := file.Sync(); err != nil {
+			log.Warnf("failed to sync log file: %v", err)
+		}
 	}, 1*time.Second, stopCh)
 
 	cmd.Stdout = writer
