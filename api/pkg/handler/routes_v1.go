@@ -163,7 +163,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes").
-		Handler(r.createNodeForCluster())
+		Handler(r.createNodeForClusterLegacy())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes").
@@ -1044,9 +1044,13 @@ func (r Routing) getNodeForCluster() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes project createNodeForCluster
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes project createNodeForClusterLegacy
 //
+//     Depreciated:
 //     Creates a node that will belong to the given cluster
+//
+//     This endpoint is depreciated, please create a Node Deployment instead.
+//     Use POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments
 //
 //     Consumes:
 //     - application/json
@@ -1059,14 +1063,14 @@ func (r Routing) getNodeForCluster() http.Handler {
 //       201: Node
 //       401: empty
 //       403: empty
-func (r Routing) createNodeForCluster() http.Handler {
+func (r Routing) createNodeForClusterLegacy() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			r.userInfoMiddleware(),
-		)(createNodeForCluster(r.sshKeyProvider, r.projectProvider, r.datacenters)),
+		)(createNodeForClusterLegacy(r.sshKeyProvider, r.projectProvider, r.datacenters)),
 		decodeCreateNodeForCluster,
 		setStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
