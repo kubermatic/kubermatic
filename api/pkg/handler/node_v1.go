@@ -26,7 +26,6 @@ import (
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -215,84 +214,9 @@ func getNodeForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoi
 	}
 }
 
-func createNodeForCluster(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+func createNodeForClusterLegacy(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(CreateNodeReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-
-		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: req.ClusterID})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		// TODO:
-		// normally we have project, user and sshkey providers
-		// but here we decided to use machineClient and kubeClient directly to access the user cluster.
-		//
-		// how about moving machineClient and kubeClient to their own provider ?
-		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
-		if !found {
-			return nil, fmt.Errorf("unknown cluster datacenter %s", cluster.Spec.Cloud.DatacenterName)
-		}
-
-		node := &req.Body
-		if node.Spec.Cloud.Openstack == nil &&
-			node.Spec.Cloud.Digitalocean == nil &&
-			node.Spec.Cloud.AWS == nil &&
-			node.Spec.Cloud.Hetzner == nil &&
-			node.Spec.Cloud.VSphere == nil &&
-			node.Spec.Cloud.Azure == nil {
-			return nil, errors.NewBadRequest("cannot create node without cloud provider")
-		}
-
-		//TODO(mrIncompetent): We need to make the kubelet version configurable but restrict it to master version
-		if node.Spec.Versions.Kubelet != "" {
-			semverVersion, err := semver.NewVersion(node.Spec.Versions.Kubelet)
-			if err != nil {
-				return nil, err
-			}
-			c, err := semver.NewConstraint(kubeletVersionConstraint)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse kubelet constraint version: %v", err)
-			}
-
-			if !c.Check(semverVersion) {
-				return nil, fmt.Errorf("kubelet version does not fit constraint. Allowed %s", kubeletVersionConstraint)
-			}
-		} else {
-			//TODO(mrIncompetent): rework the versions
-			node.Spec.Versions.Kubelet = cluster.Spec.Version.String()
-		}
-
-		// Create machine resource
-		machine, err := machineresource.Machine(cluster, node, dc, keys)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create machine from template: %v", err)
-		}
-
-		// Send machine resource to k8s
-		machine, err = machineClient.ClusterV1alpha1().Machines(machine.Namespace).Create(machine)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create machine: %v", err)
-		}
-
-		return outputMachine(machine, nil, false)
+		return nil, k8cerrors.NewWithDetails(http.StatusBadRequest, "Creating Nodes is deprecated. Please create a Node Deployment instead", "If you are calling this API endpoint directrly then use POST \"v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments\" instead")
 	}
 }
 
@@ -537,16 +461,16 @@ func decodeListNodesForCluster(c context.Context, r *http.Request) (interface{},
 	return req, nil
 }
 
-// CreateNodeReq defines HTTP request for createNodeForCluster
-// swagger:parameters createNodeForCluster
-type CreateNodeReq struct {
+// CreateNodeReqLegacy defines HTTP request for createNodeForClusterLegacy
+// swagger:parameters createNodeForClusterLegacy
+type CreateNodeReqLegacy struct {
 	common.GetClusterReq
 	// in: body
 	Body apiv1.Node
 }
 
 func decodeCreateNodeForCluster(c context.Context, r *http.Request) (interface{}, error) {
-	var req CreateNodeReq
+	var req CreateNodeReqLegacy
 
 	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
@@ -675,7 +599,7 @@ func createNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 			nd.Spec.Template.Cloud.Hetzner == nil &&
 			nd.Spec.Template.Cloud.VSphere == nil &&
 			nd.Spec.Template.Cloud.Azure == nil {
-			return nil, errors.NewBadRequest("cannot create node deployment without cloud provider")
+			return nil, k8cerrors.NewBadRequest("cannot create node deployment without cloud provider")
 		}
 
 		//TODO: We need to make the kubelet version configurable but restrict it to master version

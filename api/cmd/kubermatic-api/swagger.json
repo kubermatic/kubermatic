@@ -1053,7 +1053,7 @@
         }
       },
       "post": {
-        "description": "Creates a node that will belong to the given cluster",
+        "description": "This endpoint is deprecated, please create a Node Deployment instead.\nUse POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments",
         "consumes": [
           "application/json"
         ],
@@ -1063,7 +1063,8 @@
         "tags": [
           "project"
         ],
-        "operationId": "createNodeForCluster",
+        "summary": "Deprecated:\nCreates a node that will belong to the given cluster",
+        "operationId": "createNodeForClusterLegacy",
         "parameters": [
           {
             "type": "string",
@@ -3311,12 +3312,17 @@
           "description": "The error code",
           "type": "integer",
           "format": "int64",
-          "x-go-name": "ErrorCode"
+          "x-go-name": "Code"
+        },
+        "details": {
+          "description": "Additional error message",
+          "type": "string",
+          "x-go-name": "Additional"
         },
         "message": {
           "description": "The error message",
           "type": "string",
-          "x-go-name": "ErrorMessage"
+          "x-go-name": "Message"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"

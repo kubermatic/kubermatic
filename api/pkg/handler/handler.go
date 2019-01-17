@@ -29,24 +29,31 @@ type ErrorDetails struct {
 	// The error code
 	//
 	// Required: true
-	ErrorCode int `json:"code"`
+	Code int `json:"code"`
 	// The error message
 	//
 	// Required: true
-	ErrorMessage string `json:"message"`
+	Message string `json:"message"`
+	// Additional error message
+	//
+	// Required: false
+	Additional string `json:"details,omitempty"`
 }
 
 func errorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 	errorCode := http.StatusInternalServerError
 	msg := err.Error()
+	additional := ""
 	if h, ok := err.(errors.HTTPError); ok {
 		errorCode = h.StatusCode()
 		msg = h.Error()
+		additional = h.Details()
 	}
 	e := ErrorResponse{
 		Error: ErrorDetails{
-			ErrorCode:    errorCode,
-			ErrorMessage: msg,
+			Code:       errorCode,
+			Message:    msg,
+			Additional: additional,
 		},
 	}
 
