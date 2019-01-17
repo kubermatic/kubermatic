@@ -84,6 +84,10 @@ spec:
             initialDelaySeconds: 120
             timeoutSeconds: 10
             periodSeconds: 10
+          resources:
+            requests:
+              cpu: 200m
+              memory: 1500Mi
           volumeMounts:
             - name: storage
               mountPath: /usr/share/elasticsearch/data
