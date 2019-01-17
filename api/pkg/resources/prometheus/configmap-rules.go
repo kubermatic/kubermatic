@@ -145,7 +145,7 @@ groups:
       message: Machine Controller in {{ $labels.namespace }} has too many errors in its loop.
     expr: |
       sum(rate(machine_controller_errors_total[5m])) by (namespace) > 0.01
-    for: 10m
+    for: 20m
     labels:
       severity: warning
 
@@ -179,7 +179,7 @@ groups:
       message: 'Etcd cluster "{{ $labels.job }}": insufficient members ({{ $value }}).'
     expr: |
       sum(up{job="etcd"} == bool 1) by (job) < ((count(up{job="etcd"}) by (job) + 1) / 2)
-    for: 3m
+    for: 15m
     labels:
       severity: critical
 
@@ -188,7 +188,7 @@ groups:
       message: 'Etcd cluster "{{ $labels.job }}": member {{ $labels.instance }} has no leader.'
     expr: |
       etcd_server_has_leader{job="etcd"} == 0
-    for: 1m
+    for: 15m
     labels:
       severity: critical
 
@@ -279,7 +279,7 @@ groups:
     annotations:
       message: Kubernetes apiserver has disappeared from Prometheus target discovery.
     expr: absent(up{job="apiserver"} == 1)
-    for: 3m
+    for: 15m
     labels:
       severity: critical
 
@@ -287,7 +287,7 @@ groups:
     annotations:
       message: Kubernetes controller-manager has disappeared from Prometheus target discovery.
     expr: absent(up{job="controller-manager"} == 1)
-    for: 3m
+    for: 15m
     labels:
       severity: critical
 
@@ -295,7 +295,7 @@ groups:
     annotations:
       message: Kubernetes scheduler has disappeared from Prometheus target discovery.
     expr: absent(up{job="scheduler"} == 1)
-    for: 3m
+    for: 15m
     labels:
       severity: critical
 
@@ -303,7 +303,7 @@ groups:
     annotations:
       message: Machine controller has disappeared from Prometheus target discovery.
     expr: absent(up{job="machine-controller"} == 1)
-    for: 3m
+    for: 15m
     labels:
       severity: critical
 
@@ -311,7 +311,7 @@ groups:
     annotations:
       message: Etcd has disappeared from Prometheus target discovery.
     expr: absent(up{job="etcd"} == 1)
-    for: 3m
+    for: 15m
     labels:
       severity: critical
 
