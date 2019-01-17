@@ -7,7 +7,7 @@ The basic steps to get started on this are these:
 
 * Create a new cluster via the UI on https://dev.kubermatic.io in your browser, it does not matter which provider you use
 * Clone the [secrets](https://github.com/kubermatic/secrets/) repo onto your `GOPATH`: `git clone git@github.com:kubermatic/secrets.git $(go env GOPATH)/src/github.com/kubermatic/secrets`
-* Decrypt it: `cd $GOPATH/src/github.com/kubermatic/secrets && git-crypt unlock`
+* Decrypt it: `cd $(go env GOPATH)/src/github.com/kubermatic/secrets && git-crypt unlock`
     * Note: This requires `git-crypt` to be installed on your computer
 * For convenience, add an alias to access the `dev.kubermatic` kubeconfig to your `~/.bashrc`: `echo "dev='export KUBECONFIG=$(go env GOPATH)/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig'" >> ~/.bashrc`
 * Test if access to the seed works: `source ~/.bashrc && dev && kubectl get cluster`, you should see an output like this:
