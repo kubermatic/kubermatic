@@ -216,7 +216,7 @@ func getNodeForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoi
 
 func createNodeForClusterLegacy(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		return nil, k8cerrors.NewWithDetails(http.StatusBadRequest, "Creating Nodes is depreciated. Please create a Node Deployment instead", "If you are calling this API endpoint directrly then use POST \"v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments\" instead")
+		return nil, k8cerrors.NewWithDetails(http.StatusBadRequest, "Creating Nodes is deprecated. Please create a Node Deployment instead", "If you are calling this API endpoint directrly then use POST \"v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments\" instead")
 	}
 }
 

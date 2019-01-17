@@ -1046,10 +1046,10 @@ func (r Routing) getNodeForCluster() http.Handler {
 
 // swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes project createNodeForClusterLegacy
 //
-//     Depreciated:
+//     Deprecated:
 //     Creates a node that will belong to the given cluster
 //
-//     This endpoint is depreciated, please create a Node Deployment instead.
+//     This endpoint is deprecated, please create a Node Deployment instead.
 //     Use POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments
 //
 //     Consumes:

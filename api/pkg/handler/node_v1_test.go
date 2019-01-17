@@ -376,7 +376,7 @@ func TestGetNodeForCluster(t *testing.T) {
 	}
 }
 
-func TestCreateNodeForClusterIsDepreciated(t *testing.T) {
+func TestCreateNodeForClusterIsDeprecated(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		Name                               string
@@ -396,7 +396,7 @@ func TestCreateNodeForClusterIsDepreciated(t *testing.T) {
 		{
 			Name:                               "scenario 1: create a node that match the given spec",
 			Body:                               `{"spec":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}`,
-			ExpectedResponse:                   `{"error":{"code":400,"message":"Creating Nodes is depreciated. Please create a Node Deployment instead","details":"If you are calling this API endpoint directrly then use POST \"v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments\" instead"}}`,
+			ExpectedResponse:                   `{"error":{"code":400,"message":"Creating Nodes is deprecated. Please create a Node Deployment instead","details":"If you are calling this API endpoint directrly then use POST \"v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments\" instead"}}`,
 			HTTPStatus:                         http.StatusBadRequest,
 			RewriteClusterNameAndNamespaceName: true,
 			ProjectIDToSync:                    test.GenDefaultProject().Name,
@@ -409,7 +409,7 @@ func TestCreateNodeForClusterIsDepreciated(t *testing.T) {
 		{
 			Name:                               "scenario 2: cluster components are not ready",
 			Body:                               `{"spec":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}`,
-			ExpectedResponse:                   `{"error":{"code":400,"message":"Creating Nodes is depreciated. Please create a Node Deployment instead","details":"If you are calling this API endpoint directrly then use POST \"v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments\" instead"}}`,
+			ExpectedResponse:                   `{"error":{"code":400,"message":"Creating Nodes is deprecated. Please create a Node Deployment instead","details":"If you are calling this API endpoint directrly then use POST \"v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments\" instead"}}`,
 			HTTPStatus:                         http.StatusBadRequest,
 			RewriteClusterNameAndNamespaceName: true,
 			ProjectIDToSync:                    test.GenDefaultProject().Name,

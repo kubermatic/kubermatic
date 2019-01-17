@@ -1053,7 +1053,7 @@
         }
       },
       "post": {
-        "description": "This endpoint is depreciated, please create a Node Deployment instead.\nUse POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments",
+        "description": "This endpoint is deprecated, please create a Node Deployment instead.\nUse POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments",
         "consumes": [
           "application/json"
         ],
@@ -1063,7 +1063,7 @@
         "tags": [
           "project"
         ],
-        "summary": "Depreciated:\nCreates a node that will belong to the given cluster",
+        "summary": "Deprecated:\nCreates a node that will belong to the given cluster",
         "operationId": "createNodeForClusterLegacy",
         "parameters": [
           {
