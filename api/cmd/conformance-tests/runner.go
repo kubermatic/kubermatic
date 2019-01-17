@@ -765,6 +765,16 @@ func executeGinkgoRun(parentLog *logrus.Entry, run *ginkgoRun) (*ginkgoResult, e
 	started := time.Now()
 	log := parentLog.WithField("reports-dir", run.reportsDir)
 
+	if err := os.MkdirAll(run.reportsDir, os.ModePerm); err != nil {
+		return nil, fmt.Errorf("failed to create temporary reports directory: %v", err)
+	}
+	defer func() {
+		// We're clearing up the temp dir on every run
+		if err := os.RemoveAll(run.reportsDir); err != nil {
+			log.Errorf("failed to remove temporary reports directory: %v", err)
+		}
+	}()
+
 	// Make sure we write to a file instead of a byte buffer as the logs are pretty big
 	file, err := ioutil.TempFile("/tmp", run.name+"-log")
 	if err != nil {
@@ -786,14 +796,6 @@ func executeGinkgoRun(parentLog *logrus.Entry, run *ginkgoRun) (*ginkgoResult, e
 	}
 	if _, err := writer.Write([]byte(strings.Join(cmd.Args, argSeparator))); err != nil {
 		return nil, fmt.Errorf("failed to write command to log: %v", err)
-	}
-
-	// We're clearing up the temp dir on every run
-	if err := os.RemoveAll(run.reportsDir); err != nil {
-		return nil, fmt.Errorf("failed to clean temporary reports directory: %v", err)
-	}
-	if err := os.MkdirAll(run.reportsDir, os.ModePerm); err != nil {
-		return nil, fmt.Errorf("failed to create temporary reports directory: %v", err)
 	}
 
 	log.Debugf("Starting Ginkgo run '%s'...", run.name)
