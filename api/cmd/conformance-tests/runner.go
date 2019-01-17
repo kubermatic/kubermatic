@@ -282,6 +282,14 @@ func (r *testRunner) testCluster(
 	const maxTestAttempts = 3
 	var err error
 	totalStart := time.Now()
+	log.Info("Starting to test cluster...")
+	defer log.Infof("Finished testing cluster after %s", time.Since(totalStart))
+
+	// We'll store the report there and all kinds of logs
+	scenarioFolder := path.Join(r.reportsRoot, scenarioName)
+	if err := os.MkdirAll(scenarioFolder, os.ModePerm); err != nil {
+		return nil, fmt.Errorf("failed to create the scenario folder '%s': %v", scenarioFolder, err)
+	}
 
 	report := &reporters.JUnitTestSuite{
 		Name: scenarioName,
@@ -322,58 +330,72 @@ func (r *testRunner) testCluster(
 		report.Tests++
 	}
 
-	var reportsDir string
-	var ginkgoReport *reporters.JUnitTestSuite
-	err = retryNAttempts(maxTestAttempts, func(attempt int) error {
-		startedE2E := time.Now()
-
-		reportsDir = path.Join(r.reportsRoot, scenarioName, fmt.Sprintf("attempt-%d", attempt))
-		if err := os.MkdirAll(reportsDir, 0755); err != nil {
-			return fmt.Errorf("failed to create reports dir: %v", err)
-		}
-
-		log.Infof("[Attempt: %d/%d] Starting E2E tests...", attempt, maxTestAttempts)
-		if err := r.runE2E(log, cluster, kubeconfigFilename, cloudConfigFilename, reportsDir, apiNodes, dc); err != nil {
-			log.Warnf("[Attempt: %d/%d] failed to run E2E tests: %v", attempt, maxTestAttempts, err)
-			return err
-		}
-		log.Infof("[Attempt: %d/%d] E2E tests finished after %.2f seconds", attempt, maxTestAttempts, time.Since(startedE2E).Seconds())
-
-		ginkgoReport, err = collectReports(scenarioName, reportsDir, time.Since(startedE2E))
-		if err != nil {
-			log.Warnf("[Attempt: %d/%d] failed to combine reports: %v. Restarting...", attempt, maxTestAttempts, err)
-			return err
-		}
-
-		if ginkgoReport.Errors > 0 || ginkgoReport.Failures > 0 {
-			log.Warnf("[Attempt: %d/%d] e2e tests had some failures (See %s for details). Restarting...", attempt, maxTestAttempts, reportsDir)
-			return errors.New("encountered partial errors during ginkgo run")
-		}
-
-		return nil
-	})
+	ginkgoRuns, err := r.getGinkgoRuns(log, scenarioName, kubeconfigFilename, cloudConfigFilename, cluster, apiNodes, dc)
 	if err != nil {
-		log.Errorf("Failed to successfully run kubernetes e2e tests: %v", err)
+		return nil, fmt.Errorf("failed to get Ginkgo runs: %v", err)
+	}
+	for _, run := range ginkgoRuns {
+
+		ginkgoRes, err := r.executeGinkgoRunWithRetries(log, run)
+		if err != nil {
+			// Ginkgo failed hard. We don't have any JUnit reports to append, so we appenda custom one to indicate the hard failure
+			report.TestCases = append(report.TestCases, reporters.JUnitTestCase{
+				Name:           "[Ginkgo] Run ginkgo tests",
+				ClassName:      "Ginkgo",
+				FailureMessage: &reporters.JUnitFailureMessage{Message: fmt.Sprintf("%v", err)},
+			})
+
+			// We still wan't to run potential next runs
+			continue
+		}
+
+		// We have a valid report from Ginkgo. It might contain failed tests, but that's ok here.
+		// The executor if this scenario will later on interpret the junit report and decides for a return code.
+		// We append the report from Ginkgo to our scenario wide report
+		report = combineReports("Kubernetes Conformance tests", report, ginkgoRes.report)
 	}
 
-	if ginkgoReport != nil {
-		report.Time = time.Since(totalStart).Seconds()
-		report.Tests += ginkgoReport.Tests
-		report.Errors += ginkgoReport.Errors
-		report.Failures += ginkgoReport.Failures
-		report.TestCases = append(report.TestCases, ginkgoReport.TestCases...)
-	}
-
+	report.Time = time.Since(totalStart).Seconds()
 	b, err := xml.Marshal(report)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal combined report file: %v", err)
 	}
 
-	if err := ioutil.WriteFile(path.Join(reportsDir, "junit.xml"), b, 0644); err != nil {
+	if err := ioutil.WriteFile(path.Join(scenarioFolder, "junit.xml"), b, 0644); err != nil {
 		return nil, fmt.Errorf("failed to wrte combined report file: %v", err)
 	}
 
 	return report, nil
+}
+
+// executeGinkgoRunWithRetries executes the passed GinkgoRun and retries if it failed hard(Failed to execute the Ginkgo binary for example)
+// Or if the JUnit report from Ginkgo contains failed tests.
+// Only if Ginkgo failed hard, an error will be returned. If some tests still failed after retrying the run, the report will reflect that.
+func (r *testRunner) executeGinkgoRunWithRetries(log *logrus.Entry, run *ginkgoRun) (ginkgoRes *ginkgoResult, err error) {
+	const maxAttempts = 3
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		ginkgoRes, err = executeGinkgoRun(log, run)
+		if err != nil {
+			// Something critical happened and we don't have a valid result
+			log.Errorf("failed to execute the Ginkgo run '%s': %v", run.name, err)
+			continue
+		}
+
+		if ginkgoRes.report.Errors > 0 || ginkgoRes.report.Failures > 0 {
+			msg := fmt.Sprintf("Ginkgo run '%s' had failed tests.", run.name)
+			if attempt < maxAttempts {
+				msg = fmt.Sprintf("%s. Retrying...", msg)
+			}
+			log.Info(msg)
+			continue
+		}
+
+		// Ginkgo run successfully and no test failed
+		return ginkgoRes, err
+	}
+
+	return ginkgoRes, err
 }
 
 func (r *testRunner) setupNodes(log *logrus.Entry, scenarioName string, cluster *kubermaticv1.Cluster, clusterKubeClient kubernetes.Interface, apiNodes []*kubermaticapiv1.Node, dc provider.DatacenterMeta) error {
@@ -621,28 +643,35 @@ func (r *testRunner) waitUntilAllPodsAreReady(log *logrus.Entry, client kubernet
 	return nil
 }
 
-func (r *testRunner) runE2E(
+type ginkgoResult struct {
+	logfile  string
+	report   *reporters.JUnitTestSuite
+	duration time.Duration
+}
+
+const (
+	argSeparator = ` \
+    `
+)
+
+type ginkgoRun struct {
+	name       string
+	cmd        *exec.Cmd
+	reportsDir string
+}
+
+func (r *testRunner) getGinkgoRuns(
 	log *logrus.Entry,
-	cluster *kubermaticv1.Cluster,
+	scenarioName,
 	kubeconfigFilename,
-	cloudConfigFilename,
-	reportsDir string,
+	cloudConfigFilename string,
+	cluster *kubermaticv1.Cluster,
 	nodes []*kubermaticapiv1.Node,
 	dc provider.DatacenterMeta,
-) error {
+) ([]*ginkgoRun, error) {
 	kubeconfigFilename = path.Clean(kubeconfigFilename)
 	repoRoot := path.Clean(r.repoRoot)
 	MajorMinor := fmt.Sprintf("%d.%d", cluster.Spec.Version.Major(), cluster.Spec.Version.Minor())
-
-	// TODO: Figure out why they fail & potentially fix. Otherwise, explain why they are deactivated
-	//brokenTests := []string{
-	//	"should set TCP CLOSE_WAIT timeout",                // AWS
-	//	"should support exec through an HTTP proxy",        // AWS
-	//	"should proxy to cadvisor",                         // AWS
-	//	"should handle in-cluster config",                  // AWS
-	//	"should proxy to cadvisor using proxy subresource", // AWS
-	//	"should support exec through kubectl proxy",        // AWS
-	//}
 
 	runs := []struct {
 		name          string
@@ -654,31 +683,21 @@ func (r *testRunner) runE2E(
 			name:          "parallel",
 			ginkgoFocus:   `\[Conformance\]`,
 			ginkgoSkip:    `\[Serial\]`,
-			parallelTests: 25,
+			parallelTests: len(nodes) * 10,
 		},
 		{
 			name:          "serial",
 			ginkgoFocus:   `\[Serial\].*\[Conformance\]`,
-			ginkgoSkip:    ``,
+			ginkgoSkip:    `should not cause race condition when used for configmap`,
 			parallelTests: 1,
 		},
-		// TODO: Enable more e2e tests
-		//{
-		//	name:          "parallel",
-		//	ginkgoFocus:   `.*`,
-		//	ginkgoSkip:    `\[Slow\]|\[Serial\]|\[Disruptive\]|\[Flaky\]|\[Feature:.+\]|\[HPA\]|Dashboard|Services.*functioning.*NodePort|` + strings.Join(brokenTests, "|"),
-		//	parallelTests: 25,
-		//},
-		//{
-		//	name:          "serial",
-		//	ginkgoFocus:   `\[Serial\].*`,
-		//	ginkgoSkip:    `\[Slow\]|\[Disruptive\]|\[Flaky\]|\[Feature:.+\]|\[HPA\]|Dashboard|Services.*functioning.*NodePort` + strings.Join(brokenTests, "|"),
-		//	parallelTests: 1,
-		//},
 	}
 	versionRoot := path.Join(repoRoot, MajorMinor)
 	binRoot := path.Join(versionRoot, "/platforms/linux/amd64")
+	var ginkgoRuns []*ginkgoRun
 	for _, run := range runs {
+
+		reportsDir := path.Join("/tmp", scenarioName, run.name)
 		env := []string{
 			fmt.Sprintf("HOME=%s", r.homeDir),
 			fmt.Sprintf("AWS_SSH_KEY=%s", path.Join(r.homeDir, ".ssh", "google_compute_engine")),
@@ -732,51 +751,94 @@ func (r *testRunner) runE2E(
 		cmd := exec.Command(path.Join(binRoot, "ginkgo"), args...)
 		cmd.Env = env
 
-		run := func() error {
-			logFile := path.Join(reportsDir, "e2e.log")
-			f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE, 0644)
-			if err != nil {
-				return fmt.Errorf("failed to open logfile: %v", err)
-			}
-			defer func() {
-				if err := f.Close(); err != nil {
-					log.Errorf("failed to close file handle on '%s': %v", logFile, err)
-				}
-			}()
+		ginkgoRuns = append(ginkgoRuns, &ginkgoRun{
+			name:       run.name,
+			cmd:        cmd,
+			reportsDir: reportsDir,
+		})
+	}
 
-			writer := bufio.NewWriter(f)
-			defer func() {
-				if err := writer.Flush(); err != nil {
-					log.Errorf("failed to flush log file buffer: %v", err)
-				}
-			}()
+	return ginkgoRuns, nil
+}
 
-			err = ioutil.WriteFile(
-				path.Join(reportsDir, fmt.Sprintf("script-%s.sh", run.name)),
-				[]byte(strings.Join(cmd.Args, ` \
-    `)),
-				0644,
-			)
-			if err != nil {
-				return fmt.Errorf("failed to write script: %v", err)
-			}
+func executeGinkgoRun(parentLog *logrus.Entry, run *ginkgoRun) (*ginkgoResult, error) {
+	started := time.Now()
+	log := parentLog.WithField("reports-dir", run.reportsDir)
 
-			log.Debugf("Starting ginkgo run '%s'...", run.name)
+	// We're clearing up the temp dir on every run
+	if err := os.RemoveAll(run.reportsDir); err != nil {
+		log.Errorf("failed to remove temporary reports directory: %v", err)
+	}
+	if err := os.MkdirAll(run.reportsDir, os.ModePerm); err != nil {
+		return nil, fmt.Errorf("failed to create temporary reports directory: %v", err)
+	}
 
-			cmd.Stdout = writer
-			cmd.Stderr = writer
-			if err := cmd.Run(); err != nil {
-				return fmt.Errorf("failed to execute ginkgo run '%s': %v. Output can be found at %s", run.name, err, logFile)
-			}
-			return nil
+	// Make sure we write to a file instead of a byte buffer as the logs are pretty big
+	file, err := ioutil.TempFile("/tmp", run.name+"-log")
+	if err != nil {
+		return nil, fmt.Errorf("failed to open logfile: %v", err)
+	}
+	defer file.Close()
+	log = log.WithField("ginkgo-log", file.Name())
+
+	writer := bufio.NewWriter(file)
+	defer writer.Flush()
+
+	// Copy the command as we cannot execute a command twice
+	cmd := &exec.Cmd{
+		Path:       run.cmd.Path,
+		Args:       run.cmd.Args,
+		Env:        run.cmd.Env,
+		Dir:        run.cmd.Dir,
+		ExtraFiles: run.cmd.ExtraFiles,
+	}
+	if _, err := writer.Write([]byte(strings.Join(cmd.Args, argSeparator))); err != nil {
+		return nil, fmt.Errorf("failed to write command to log: %v", err)
+	}
+
+	log.Debugf("Starting Ginkgo run '%s'...", run.name)
+
+	// Flush to disk so we can actually watch logs
+	stopCh := make(chan struct{}, 1)
+	defer close(stopCh)
+	go wait.Until(func() {
+		if err := writer.Flush(); err != nil {
+			log.Warnf("failed to flush log writer: %v", err)
 		}
+		if err := file.Sync(); err != nil {
+			log.Warnf("failed to sync log file: %v", err)
+		}
+	}, 1*time.Second, stopCh)
 
-		if err := run(); err != nil {
-			return err
+	cmd.Stdout = writer
+	cmd.Stderr = writer
+	if err := cmd.Run(); err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			log.Debugf("Ginkgo exited with a non 0 return code: %v", exitErr)
+		} else {
+			return nil, fmt.Errorf("ginkgo failed to start: %T %v", err, err)
 		}
 	}
 
-	return nil
+	// When running ginkgo in parallel, each ginkgo worker creates a own report, thus we must combine them
+	combinedReport, err := collectReports(run.name, run.reportsDir)
+	if err != nil {
+		return nil, err
+	}
+
+	// If we have no junit files, we cannot return a valid report
+	if len(combinedReport.TestCases) == 0 {
+		return nil, errors.New("ginkgo report is empty. It seems no tests where executed")
+	}
+
+	combinedReport.Time = time.Since(started).Seconds()
+
+	log.Debugf("Ginkgo run '%s' took %s", run.name, time.Since(started))
+	return &ginkgoResult{
+		logfile:  file.Name(),
+		report:   combinedReport,
+		duration: time.Since(started),
+	}, nil
 }
 
 func supportsStorage(cluster *kubermaticv1.Cluster) bool {
