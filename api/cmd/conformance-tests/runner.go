@@ -335,45 +335,27 @@ func (r *testRunner) testCluster(
 		return nil, fmt.Errorf("failed to get Ginkgo runs: %v", err)
 	}
 	for _, run := range ginkgoRuns {
-		var ginkgoRes *ginkgoResult
-		var runErr error
 
-		for attempt := 1; attempt <= maxTestAttempts; attempt++ {
-
-			ginkgoRes, runErr = executeGinkgoRun(log, run)
-			if runErr != nil {
-				// Something critical happened and we don't have a valid result
-				log.Errorf("failed to execute the Ginkgo run '%s': %v", run.name, runErr)
-				continue
-			}
-
-			if ginkgoRes.report.Errors > 0 || ginkgoRes.report.Failures > 0 {
-				msg := fmt.Sprintf("Ginkgo run '%s' had failed tests.", run.name)
-				if attempt < maxTestAttempts {
-					msg = fmt.Sprintf("%s. Retrying...", msg)
-				}
-				log.Info(msg)
-				continue
-			}
-
-			report = combineReports("Kubernetes Conformance tests", report, ginkgoRes.report)
-			break
-		}
-
-		if ginkgoRes != nil {
-			// We executed all 3 runs but failed all of them. We'll just append to the existing report
-			report = combineReports("Kubernetes Conformance tests", report, ginkgoRes.report)
-		} else {
-			// In case we have no valid ginkgo result, add a failed test case
+		ginkgoRes, err := r.executeGinkgoRunWithRetries(log, run)
+		if err != nil {
+			// Ginkgo failed hard. We don't have any JUnit reports to append, so we appenda custom one to indicate the hard failure
 			report.TestCases = append(report.TestCases, reporters.JUnitTestCase{
 				Name:           "[Ginkgo] Run ginkgo tests",
 				ClassName:      "Ginkgo",
-				FailureMessage: &reporters.JUnitFailureMessage{Message: fmt.Sprintf("%v", runErr)},
+				FailureMessage: &reporters.JUnitFailureMessage{Message: fmt.Sprintf("%v", err)},
 			})
-		}
-	}
-	report.Time = time.Since(totalStart).Seconds()
 
+			// We still wan't to run potential next runs
+			continue
+		}
+
+		// We have a valid report from Ginkgo. It might contain failed tests, but that's ok here.
+		// The executor if this scenario will later on interpret the junit report and decides for a return code.
+		// We append the report from Ginkgo to our scenario wide report
+		report = combineReports("Kubernetes Conformance tests", report, ginkgoRes.report)
+	}
+
+	report.Time = time.Since(totalStart).Seconds()
 	b, err := xml.Marshal(report)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal combined report file: %v", err)
@@ -384,6 +366,36 @@ func (r *testRunner) testCluster(
 	}
 
 	return report, nil
+}
+
+// executeGinkgoRunWithRetries executes the passed GinkgoRun and retries if it failed hard(Failed to execute the Ginkgo binary for example)
+// Or if the JUnit report from Ginkgo contains failed tests.
+// Only if Ginkgo failed hard, an error will be returned. If some tests still failed after retrying the run, the report will reflect that.
+func (r *testRunner) executeGinkgoRunWithRetries(log *logrus.Entry, run *ginkgoRun) (ginkgoRes *ginkgoResult, err error) {
+	const maxAttempts = 3
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		ginkgoRes, err = executeGinkgoRun(log, run)
+		if err != nil {
+			// Something critical happened and we don't have a valid result
+			log.Errorf("failed to execute the Ginkgo run '%s': %v", run.name, err)
+			continue
+		}
+
+		if ginkgoRes.report.Errors > 0 || ginkgoRes.report.Failures > 0 {
+			msg := fmt.Sprintf("Ginkgo run '%s' had failed tests.", run.name)
+			if attempt < maxAttempts {
+				msg = fmt.Sprintf("%s. Retrying...", msg)
+			}
+			log.Info(msg)
+			continue
+		}
+
+		// Ginkgo run successfully and no test failed
+		return ginkgoRes, err
+	}
+
+	return ginkgoRes, err
 }
 
 func (r *testRunner) setupNodes(log *logrus.Entry, scenarioName string, cluster *kubermaticv1.Cluster, clusterKubeClient kubernetes.Interface, apiNodes []*kubermaticapiv1.Node, dc provider.DatacenterMeta) error {
@@ -673,12 +685,12 @@ func (r *testRunner) getGinkgoRuns(
 			ginkgoSkip:    `\[Serial\]`,
 			parallelTests: len(nodes) * 10,
 		},
-		{
-			name:          "serial",
-			ginkgoFocus:   `\[Serial\].*\[Conformance\]`,
-			ginkgoSkip:    `should not cause race condition when used for configmap`,
-			parallelTests: 1,
-		},
+		//{
+		//	name:          "serial",
+		//	ginkgoFocus:   `\[Serial\].*\[Conformance\]`,
+		//	ginkgoSkip:    `should not cause race condition when used for configmap`,
+		//	parallelTests: 1,
+		//},
 	}
 	versionRoot := path.Join(repoRoot, MajorMinor)
 	binRoot := path.Join(versionRoot, "/platforms/linux/amd64")
