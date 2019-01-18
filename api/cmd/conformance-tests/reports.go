@@ -9,21 +9,17 @@ import (
 	"path"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/onsi/ginkgo/reporters"
 )
 
-func collectReports(name, reportsDir string, time time.Duration) (*reporters.JUnitTestSuite, error) {
+func collectReports(name, reportsDir string) (*reporters.JUnitTestSuite, error) {
 	files, err := ioutil.ReadDir(reportsDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list files in reportsDir '%s': %v", reportsDir, err)
 	}
 
-	resultSuite := reporters.JUnitTestSuite{
-		Time: time.Seconds(),
-	}
-	resultSuite.Name = name
+	resultSuite := &reporters.JUnitTestSuite{Name: name}
 
 	var individualReportFiles []string
 	for _, f := range files {
@@ -48,12 +44,8 @@ func collectReports(name, reportsDir string, time time.Duration) (*reporters.JUn
 			return nil, fmt.Errorf("failed to unmarshal report file '%s': %v", absName, err)
 		}
 
-		resultSuite.Tests += suite.Tests
-		resultSuite.Errors += suite.Errors
-		resultSuite.Failures += suite.Failures
-		resultSuite.TestCases = append(resultSuite.TestCases, suite.TestCases...)
+		resultSuite = combineReports(name, resultSuite, suite)
 	}
-	sort.Slice(resultSuite.TestCases, func(i, j int) bool { return resultSuite.TestCases[i].Name < resultSuite.TestCases[j].Name })
 
 	for _, f := range individualReportFiles {
 		if err := os.Remove(f); err != nil {
@@ -61,7 +53,20 @@ func collectReports(name, reportsDir string, time time.Duration) (*reporters.JUn
 		}
 	}
 
-	return &resultSuite, nil
+	return resultSuite, nil
+}
+
+func combineReports(name string, a, b *reporters.JUnitTestSuite) *reporters.JUnitTestSuite {
+	resultSuite := &reporters.JUnitTestSuite{Name: name}
+
+	resultSuite.Tests = a.Tests + b.Tests
+	resultSuite.Errors += a.Errors + b.Errors
+	resultSuite.Failures += a.Failures + b.Failures
+	resultSuite.TestCases = append(a.TestCases, b.TestCases...)
+
+	sort.Slice(resultSuite.TestCases, func(i, j int) bool { return resultSuite.TestCases[i].Name < resultSuite.TestCases[j].Name })
+
+	return resultSuite
 }
 
 func printDetailedReport(report *reporters.JUnitTestSuite) {
