@@ -526,3 +526,33 @@ func (k NewClusterV1SliceWrapper) EqualOrDie(expected NewClusterV1SliceWrapper, 
 		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
 	}
 }
+
+// ProjectV1SliceWrapper wraps []apiv1.Project
+// to provide convenient methods for tests
+type ProjectV1SliceWrapper []apiv1.Project
+
+// Sort sorts the collection by CreationTimestamp
+func (k ProjectV1SliceWrapper) Sort() {
+	sort.Slice(k, func(i, j int) bool {
+		return k[i].CreationTimestamp.Before(k[j].CreationTimestamp)
+	})
+}
+
+// DecodeOrDie reads and decodes json data from the reader
+func (k *ProjectV1SliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *ProjectV1SliceWrapper {
+	t.Helper()
+	dec := json.NewDecoder(r)
+	err := dec.Decode(k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return k
+}
+
+// EqualOrDie compares whether expected collection is equal to the actual one
+func (k ProjectV1SliceWrapper) EqualOrDie(expected ProjectV1SliceWrapper, t *testing.T) {
+	t.Helper()
+	if diff := deep.Equal(k, expected); diff != nil {
+		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+	}
+}

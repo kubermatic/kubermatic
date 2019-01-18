@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,7 +21,6 @@ import (
 const (
 	testDatacenter          = "us-central1"
 	testExpectedRedirectURI = "/api/v1/kubeconfig"
-	testProjectName         = "my-first-project"
 	testClusterName         = "AbcCluster"
 )
 
@@ -34,13 +32,13 @@ clusters:
 contexts:
 - context:
     cluster: AbcClusterID
-    user: john@acme.com
+    user: bob@acme.com
   name: default
 current-context: default
 kind: Config
 preferences: {}
 users:
-- name: john@acme.com
+- name: bob@acme.com
   user:
     auth-provider:
       config:
@@ -80,16 +78,16 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 		{
 			Name:                "scenario 2, incorrect user ID in state",
 			ClusterID:           test.ClusterID,
-			ProjectID:           testingProjectName,
+			ProjectID:           test.GenDefaultProject().Name,
 			UserID:              "0000",
 			Datacenter:          testDatacenter,
 			HTTPStatusInitPhase: http.StatusNotFound,
 		},
 		{
-			Name:                      "scenario 2, exchange phase error: incorrect state parameter: invalid nonce",
+			Name:                      "scenario 3, exchange phase error: incorrect state parameter: invalid nonce",
 			ClusterID:                 test.ClusterID,
-			ProjectID:                 testingProjectName,
-			UserID:                    testUserID,
+			ProjectID:                 test.GenDefaultProject().Name,
+			UserID:                    test.GenDefaultUser().Name,
 			Datacenter:                testDatacenter,
 			Nonce:                     "abc", // incorrect length
 			HTTPStatusInitPhase:       http.StatusSeeOther,
@@ -103,8 +101,8 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 		{
 			Name:                      "scenario 4, successful scenario",
 			ClusterID:                 test.ClusterID,
-			ProjectID:                 testingProjectName,
-			UserID:                    testUserID,
+			ProjectID:                 test.GenDefaultProject().Name,
+			UserID:                    test.GenDefaultUser().Name,
 			Datacenter:                testDatacenter,
 			HTTPStatusInitPhase:       http.StatusSeeOther,
 			ExistingKubermaticObjects: genTestKubeconfigKubermaticObjects(),
@@ -209,13 +207,13 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 func genTestKubeconfigKubermaticObjects() []runtime.Object {
 	return []runtime.Object{
 		// add some project
-		genProject(testProjectName, kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-		// add John
-		genUser(testUserID, testUserName, testUserEmail),
-		// make John the owner of the first project and the editor of the second
-		genBinding(testingProjectName, testUserEmail, "owners"),
+		test.GenDefaultProject(),
+		// add a user
+		test.GenDefaultUser(),
+		// make the user the owner of the first project and the editor of the second
+		test.GenDefaultOwnerBinding(),
 		// add a cluster
-		test.GenCluster(test.ClusterID, testClusterName, genDefaultProject().Name, defaultCreationTimestamp()),
+		test.GenCluster(test.ClusterID, testClusterName, test.GenDefaultProject().Name, test.DefaultCreationTimestamp()),
 	}
 }
 

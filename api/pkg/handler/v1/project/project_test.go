@@ -1,4 +1,4 @@
-package handler
+package project_test
 
 import (
 	"encoding/json"
@@ -12,6 +12,7 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -42,13 +43,13 @@ func TestRenameProjectEndpoint(t *testing.T) {
 			Name:            "scenario 1: rename existing project",
 			Body:            `{"Name": "Super-Project"}`,
 			HTTPStatus:      http.StatusOK,
-			ProjectToRename: genDefaultProject().Name,
+			ProjectToRename: test.GenDefaultProject().Name,
 			ExistingKubermaticObjects: []runtime.Object{
-				genDefaultProject(),
-				genDefaultUser(),
+				test.GenDefaultProject(),
+				test.GenDefaultUser(),
 				test.GenDefaultOwnerBinding(),
 			},
-			ExistingAPIUser:  *genDefaultAPIUser(),
+			ExistingAPIUser:  *test.GenDefaultAPIUser(),
 			ExpectedResponse: `{"id":"my-first-project-ID","name":"Super-Project","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active"}`,
 		},
 		{
@@ -58,15 +59,15 @@ func TestRenameProjectEndpoint(t *testing.T) {
 			ProjectToRename: "my-first-project-ID",
 			ExistingKubermaticObjects: []runtime.Object{
 				// add some projects
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp(), oRef(genDefaultUser())),
-				genProject("my-second-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp().Add(time.Minute), oRef(genDefaultUser())),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp().Add(2*time.Minute), oRef(genDefaultUser())),
-				genDefaultUser(),
-				genBinding("my-first-project-ID", genDefaultUser().Spec.Email, "owners"),
-				genBinding("my-second-project-ID", genDefaultUser().Spec.Email, "owners"),
-				genBinding("my-third-project-ID", genDefaultUser().Spec.Email, "owners"),
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp(), oRef(test.GenDefaultUser())),
+				test.GenProject("my-second-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp().Add(time.Minute), oRef(test.GenDefaultUser())),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute), oRef(test.GenDefaultUser())),
+				test.GenDefaultUser(),
+				test.GenBinding("my-first-project-ID", test.GenDefaultUser().Spec.Email, "owners"),
+				test.GenBinding("my-second-project-ID", test.GenDefaultUser().Spec.Email, "owners"),
+				test.GenBinding("my-third-project-ID", test.GenDefaultUser().Spec.Email, "owners"),
 			},
-			ExistingAPIUser:  *genDefaultAPIUser(),
+			ExistingAPIUser:  *test.GenDefaultAPIUser(),
 			ExpectedResponse: `{"error":{"code":409,"message":"project name \"my-second-project\" already exists"}}`,
 		},
 		{
@@ -76,18 +77,18 @@ func TestRenameProjectEndpoint(t *testing.T) {
 			ProjectToRename: "my-first-project-ID",
 			ExistingKubermaticObjects: []runtime.Object{
 				// add some projects
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp(), oRef(genDefaultUser())),
-				genProject("my-second-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp().Add(time.Minute), oRef(genDefaultUser())),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp().Add(2*time.Minute), oRef(genDefaultUser())),
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp(), oRef(test.GenDefaultUser())),
+				test.GenProject("my-second-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp().Add(time.Minute), oRef(test.GenDefaultUser())),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute), oRef(test.GenDefaultUser())),
 				// add John and Bob
-				genUser("JohnID", "John", "john@acme.com"),
-				genDefaultUser(),
+				test.GenUser("JohnID", "John", "john@acme.com"),
+				test.GenDefaultUser(),
 				// make John the owner of the projects
-				genBinding("my-first-project-ID", "john@acme.com", "owners"),
-				genBinding("my-second-project-ID", genDefaultUser().Spec.Email, "editors"),
-				genBinding("my-third-project-ID", "john@acme.com", "owners"),
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
+				test.GenBinding("my-second-project-ID", test.GenDefaultUser().Spec.Email, "editors"),
+				test.GenBinding("my-third-project-ID", "john@acme.com", "owners"),
 			},
-			ExistingAPIUser:  *genAPIUser("John", "john@acme.com"),
+			ExistingAPIUser:  *test.GenAPIUser("John", "john@acme.com"),
 			ExpectedResponse: `{"id":"my-first-project-ID","name":"my-second-project","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active"}`,
 		},
 
@@ -97,24 +98,24 @@ func TestRenameProjectEndpoint(t *testing.T) {
 			HTTPStatus:      http.StatusForbidden,
 			ProjectToRename: "some-ID",
 			ExistingKubermaticObjects: []runtime.Object{
-				genDefaultProject(),
-				genDefaultUser(),
+				test.GenDefaultProject(),
+				test.GenDefaultUser(),
 				test.GenDefaultOwnerBinding(),
 			},
-			ExistingAPIUser:  *genDefaultAPIUser(),
+			ExistingAPIUser:  *test.GenDefaultAPIUser(),
 			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: The user \"bob@acme.com\" doesn't belong to the given project = some-ID"}}`,
 		},
 		{
 			Name:            "scenario 5: rename a project with empty name",
 			Body:            `{"Name": ""}`,
 			HTTPStatus:      http.StatusBadRequest,
-			ProjectToRename: genDefaultProject().Name,
+			ProjectToRename: test.GenDefaultProject().Name,
 			ExistingKubermaticObjects: []runtime.Object{
-				genDefaultProject(),
-				genDefaultUser(),
+				test.GenDefaultProject(),
+				test.GenDefaultUser(),
 				test.GenDefaultOwnerBinding(),
 			},
-			ExistingAPIUser:  *genDefaultAPIUser(),
+			ExistingAPIUser:  *test.GenDefaultAPIUser(),
 			ExpectedResponse: `{"error":{"code":400,"message":"the name of the project cannot be empty"}}`,
 		},
 	}
@@ -123,7 +124,7 @@ func TestRenameProjectEndpoint(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%s", tc.ProjectToRename), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
-			ep, err := createTestEndpoint(tc.ExistingAPIUser, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil)
+			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -135,7 +136,7 @@ func TestRenameProjectEndpoint(t *testing.T) {
 			if res.Code != tc.HTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
-			compareWithResult(t, res, tc.ExpectedResponse)
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
 		})
 	}
 }
@@ -156,21 +157,20 @@ func TestListProjectEndpoint(t *testing.T) {
 			HTTPStatus: http.StatusOK,
 			ExistingKubermaticObjects: []runtime.Object{
 				// add some projects
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("my-second-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp().Add(time.Minute)),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp().Add(2*time.Minute)),
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-second-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp().Add(time.Minute)),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute)),
 				// add John
-				genUser("JohnID", "John", "john@acme.com"),
+				test.GenUser("JohnID", "John", "john@acme.com"),
 				// make John the owner of the first project and the editor of the second
-				genBinding("my-first-project-ID", "john@acme.com", "owners"),
-				genBinding("my-third-project-ID", "john@acme.com", "editors"),
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
+				test.GenBinding("my-third-project-ID", "john@acme.com", "editors"),
 			},
-			ExistingAPIUser: apiv1.User{
-				ObjectMeta: apiv1.ObjectMeta{
-					ID: testUserName,
-				},
-				Email: testUserEmail,
-			},
+			ExistingAPIUser: func() apiv1.User {
+				apiUser := test.GenDefaultAPIUser()
+				apiUser.Email = "john@acme.com"
+				return *apiUser
+			}(),
 			ExpectedResponse: []apiv1.Project{
 				{
 					Status: "Active",
@@ -197,7 +197,7 @@ func TestListProjectEndpoint(t *testing.T) {
 			// test data
 			req := httptest.NewRequest("GET", "/api/v1/projects", strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
-			ep, err := createTestEndpoint(tc.ExistingAPIUser, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil)
+			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -210,10 +210,10 @@ func TestListProjectEndpoint(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			actualProjects := projectV1SliceWrapper{}
+			actualProjects := test.ProjectV1SliceWrapper{}
 			actualProjects.DecodeOrDie(res.Body, t).Sort()
 
-			wrappedExpectedProjects := projectV1SliceWrapper(tc.ExpectedResponse)
+			wrappedExpectedProjects := test.ProjectV1SliceWrapper(tc.ExpectedResponse)
 			wrappedExpectedProjects.Sort()
 
 			actualProjects.EqualOrDie(wrappedExpectedProjects, t)
@@ -236,11 +236,11 @@ func TestGetProjectEndpoint(t *testing.T) {
 		{
 			Name:                      "scenario 1: get an existing project assigned to the given user",
 			Body:                      ``,
-			ProjectToSync:             genDefaultProject().Name,
+			ProjectToSync:             test.GenDefaultProject().Name,
 			ExpectedResponse:          `{"id":"my-first-project-ID","name":"my-first-project","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active"}`,
 			HTTPStatus:                http.StatusOK,
-			ExistingKubermaticObjects: genDefaultKubermaticObjects(),
-			ExistingAPIUser:           genDefaultAPIUser(),
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(),
+			ExistingAPIUser:           test.GenDefaultAPIUser(),
 		},
 	}
 
@@ -249,7 +249,7 @@ func TestGetProjectEndpoint(t *testing.T) {
 			// test data
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s", tc.ProjectToSync), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
-			ep, err := createTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -261,7 +261,7 @@ func TestGetProjectEndpoint(t *testing.T) {
 			if res.Code != tc.HTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
-			compareWithResult(t, res, tc.ExpectedResponse)
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
 		})
 	}
 }
@@ -284,18 +284,18 @@ func TestCreateProjectEndpoint(t *testing.T) {
 			ExpectedResponse: `{"id":"%s","name":"my-first-project","creationTimestamp":"0001-01-01T00:00:00Z","status":"Inactive"}`,
 			HTTPStatus:       http.StatusCreated,
 			ExistingKubermaticObjects: []runtime.Object{
-				genDefaultUser(),
+				test.GenDefaultUser(),
 			},
-			ExistingAPIUser: genDefaultAPIUser(),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
 
 		{
 			Name:                      "scenario 2: a user has a project with the given name, thus creating one fails",
-			Body:                      fmt.Sprintf(`{"name":"%s"}`, genDefaultProject().Spec.Name),
+			Body:                      fmt.Sprintf(`{"name":"%s"}`, test.GenDefaultProject().Spec.Name),
 			ExpectedResponse:          `{"error":{"code":409,"message":"projects.kubermatic.k8s.io \"my-first-project\" already exists"}}`,
 			HTTPStatus:                http.StatusConflict,
-			ExistingKubermaticObjects: genDefaultKubermaticObjects(),
-			ExistingAPIUser:           genDefaultAPIUser(),
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(),
+			ExistingAPIUser:           test.GenDefaultAPIUser(),
 		},
 	}
 
@@ -304,7 +304,7 @@ func TestCreateProjectEndpoint(t *testing.T) {
 			// test data
 			req := httptest.NewRequest("POST", "/api/v1/projects", strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
-			ep, err := createTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -327,7 +327,7 @@ func TestCreateProjectEndpoint(t *testing.T) {
 				}
 				expectedResponse = fmt.Sprintf(tc.ExpectedResponse, actualProject.ID)
 			}
-			compareWithResult(t, res, expectedResponse)
+			test.CompareWithResult(t, res, expectedResponse)
 
 		})
 	}
@@ -345,9 +345,9 @@ func TestDeleteProjectEndpoint(t *testing.T) {
 		{
 			Name:                      "scenario 1: the owner of the project can delete the project",
 			HTTPStatus:                http.StatusOK,
-			ProjectToSync:             genDefaultProject().Name,
-			ExistingKubermaticObjects: genDefaultKubermaticObjects(),
-			ExistingAPIUser:           genDefaultAPIUser(),
+			ProjectToSync:             test.GenDefaultProject().Name,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(),
+			ExistingAPIUser:           test.GenDefaultAPIUser(),
 		},
 	}
 
@@ -356,7 +356,7 @@ func TestDeleteProjectEndpoint(t *testing.T) {
 			// test data
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s", tc.ProjectToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			ep, err := createTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -370,22 +370,4 @@ func TestDeleteProjectEndpoint(t *testing.T) {
 			}
 		})
 	}
-}
-
-const testingProjectName = "my-first-project-ID"
-
-func defaultCreationTimestamp() time.Time {
-	return test.DefaultCreationTimestamp()
-}
-
-func genProject(name, phase string, creationTime time.Time, oRef ...metav1.OwnerReference) *kubermaticapiv1.Project {
-	return test.GenProject(name, phase, creationTime, oRef...)
-}
-
-func genDefaultProject() *kubermaticapiv1.Project {
-	return test.GenDefaultProject()
-}
-
-func genDefaultKubermaticObjects(objs ...runtime.Object) []runtime.Object {
-	return test.GenDefaultKubermaticObjects(objs...)
 }

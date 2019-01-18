@@ -1,4 +1,4 @@
-package handler
+package project
 
 import (
 	"context"
@@ -15,8 +15,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-// createProjectEndpoint defines an HTTP endpoint that creates a new project in the system
-func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+// CreateEndpoint defines an HTTP endpoint that creates a new project in the system
+func CreateEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		projectRq, ok := request.(projectReq)
 		if !ok {
@@ -43,7 +43,8 @@ func createProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 	}
 }
 
-func listProjectsEndpoint(projectProvider provider.ProjectProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
+// ListEndpoint defines an HTTP endpoint for listing projects
+func ListEndpoint(projectProvider provider.ProjectProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
 		projects := []*apiv1.Project{}
@@ -65,9 +66,10 @@ func listProjectsEndpoint(projectProvider provider.ProjectProvider, memberMapper
 	}
 }
 
-func deleteProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+// DeleteEndpoint defines an HTTP endpoint for deleting a project
+func DeleteEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(DeleteProjectRq)
+		req, ok := request.(deleteRq)
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
@@ -81,11 +83,11 @@ func deleteProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 	}
 }
 
-// updateProjectEndpoint defines an HTTP endpoint that updates an existing project in the system
+// UpdateEndpoint defines an HTTP endpoint that updates an existing project in the system
 // in the current implementation only project renaming is supported
-func updateProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func UpdateEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(UpdateProjectRq)
+		req, ok := request.(updateRq)
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
@@ -121,9 +123,10 @@ func updateProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 	}
 }
 
-func getProjectEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+// GeEndpoint defines an HTTP endpoint for getting a project
+func GetEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(GetProjectRq)
+		req, ok := request.(common.GetProjectRq)
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
@@ -158,39 +161,26 @@ func convertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project
 	}
 }
 
-// GetProjectRq defines HTTP request for getProject endpoint
-// swagger:parameters getProject getUsersForProject
-type GetProjectRq struct {
-	common.ProjectReq
-}
-
-func decodeGetProject(c context.Context, r *http.Request) (interface{}, error) {
-	projectReq, err := common.DecodeProjectRequest(c, r)
-	if err != nil {
-		return nil, err
-	}
-	return GetProjectRq{projectReq.(common.ProjectReq)}, nil
-}
-
-// UpdateProjectRq defines HTTP request for updateProject
+// updateRq defines HTTP request for updateProject
 // swagger:parameters updateProject
-type UpdateProjectRq struct {
+type updateRq struct {
 	common.ProjectReq
 	projectReq
 }
 
-func decodeUpdateProject(c context.Context, r *http.Request) (interface{}, error) {
+// DecodeUpdateRq decodes an HTTP request into updateRq
+func DecodeUpdateRq(c context.Context, r *http.Request) (interface{}, error) {
 	pReq, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
 		return nil, err
 	}
 
-	cReq, err := decodeCreateProject(c, r)
+	cReq, err := DecodeCreate(c, r)
 	if err != nil {
 		return nil, err
 	}
 
-	return UpdateProjectRq{
+	return updateRq{
 		pReq.(common.ProjectReq),
 		cReq.(projectReq),
 	}, nil
@@ -200,7 +190,8 @@ type projectReq struct {
 	Name string `json:"name"`
 }
 
-func decodeCreateProject(c context.Context, r *http.Request) (interface{}, error) {
+// DecodeCreate decodes an HTTP request into projectReq
+func DecodeCreate(c context.Context, r *http.Request) (interface{}, error) {
 	var req projectReq
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -210,16 +201,17 @@ func decodeCreateProject(c context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
-// DeleteProjectRq defines HTTP request for deleteProject endpoint
+// deleteRq defines HTTP request for deleteProject endpoint
 // swagger:parameters deleteProject
-type DeleteProjectRq struct {
+type deleteRq struct {
 	common.ProjectReq
 }
 
-func decodeDeleteProject(c context.Context, r *http.Request) (interface{}, error) {
+// DecodeDelete decodes an HTTP request into deleteRq
+func DecodeDelete(c context.Context, r *http.Request) (interface{}, error) {
 	req, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
 		return nil, nil
 	}
-	return DeleteProjectRq{ProjectReq: req.(common.ProjectReq)}, err
+	return deleteRq{ProjectReq: req.(common.ProjectReq)}, err
 }
