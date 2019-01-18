@@ -2,6 +2,7 @@ package openstack
 
 import (
 	"fmt"
+	"net"
 	"strings"
 
 	"github.com/gophercloud/gophercloud"
@@ -10,6 +11,7 @@ import (
 	osprojects "github.com/gophercloud/gophercloud/openstack/identity/v3/projects"
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
+	"github.com/gophercloud/gophercloud/pagination"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -63,9 +65,17 @@ func (os *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	}
 
 	if spec.Openstack.Network != "" {
-		_, err := getNetworkByName(netClient, spec.Openstack.Network, false)
+		network, err := getNetworkByName(netClient, spec.Openstack.Network, false)
 		if err != nil {
 			return fmt.Errorf("failed to get network %q: %v", spec.Openstack.Network, err)
+		}
+
+		// If we're going to create a subnet in an existing network,
+		// let's check whether any existing subnets collide with our range.
+		if spec.Openstack.SubnetID == "" {
+			if err = validateExistingSubnetOverlap(network.ID, netClient); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -77,6 +87,36 @@ func (os *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	}
 
 	return nil
+}
+
+// validateExistingSubnetOverlap checks whether any subnets in the given network overlap with the default subnet CIDR
+func validateExistingSubnetOverlap(networkID string, netClient *gophercloud.ServiceClient) error {
+	_, defaultCIDR, err := net.ParseCIDR(subnetCIDR)
+	if err != nil {
+		return err
+	}
+
+	pager := ossubnets.List(netClient, ossubnets.ListOpts{NetworkID: networkID})
+	return pager.EachPage(func(page pagination.Page) (bool, error) {
+		subnets, extractErr := ossubnets.ExtractSubnets(page)
+		if extractErr != nil {
+			return false, extractErr
+		}
+
+		for _, sn := range subnets {
+			_, currentCIDR, parseErr := net.ParseCIDR(sn.CIDR)
+			if parseErr != nil {
+				return false, parseErr
+			}
+
+			// do the CIDRs overlap?
+			if currentCIDR.Contains(defaultCIDR.IP) || defaultCIDR.Contains(currentCIDR.IP) {
+				return false, fmt.Errorf("existing subnetwork %q holds a CIDR %q which overlaps with default CIDR %q", sn.Name, sn.CIDR, subnetCIDR)
+			}
+		}
+
+		return true, nil
+	})
 }
 
 // InitializeCloudProvider initializes a cluster, in particular
