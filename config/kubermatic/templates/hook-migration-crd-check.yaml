@@ -1,4 +1,4 @@
-{{ if .Values.kubermatic.deployCRDCHeck }}
+{{ if not .Values.kubermatic.disableCRDCHeck }}
 apiVersion: batch/v1
 kind: Job
 metadata:
