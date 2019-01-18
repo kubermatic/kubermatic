@@ -30,6 +30,20 @@ type ProjectIDGetter interface {
 	GetProjectID() string
 }
 
+// GetProjectRq defines HTTP request for getProject endpoint
+// swagger:parameters getProject getUsersForProject
+type GetProjectRq struct {
+	ProjectReq
+}
+
+func DecodeGetProject(c context.Context, r *http.Request) (interface{}, error) {
+	projectReq, err := DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	return GetProjectRq{projectReq.(ProjectReq)}, nil
+}
+
 // DCReq represent a request for datacenter specific data in a given project
 type DCReq struct {
 	ProjectReq

@@ -3,15 +3,15 @@ package handler
 import (
 	"net/http"
 
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
-
-	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/provider"
-
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
+
+	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/project"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/provider"
 )
 
 // RegisterV1 declares all router paths for v1
@@ -599,7 +599,7 @@ func (r Routing) listProjects() http.Handler {
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.userInfoMiddleware(),
-		)(listProjectsEndpoint(r.projectProvider, r.userProjectMapper)),
+		)(project.ListEndpoint(r.projectProvider, r.userProjectMapper)),
 		decodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -624,8 +624,8 @@ func (r Routing) getProject() http.Handler {
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.userInfoMiddleware(),
-		)(getProjectEndpoint(r.projectProvider)),
-		decodeGetProject,
+		)(project.GetEndpoint(r.projectProvider)),
+		common.DecodeGetProject,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -654,8 +654,8 @@ func (r Routing) createProject() http.Handler {
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.userInfoMiddleware(),
-		)(createProjectEndpoint(r.projectProvider)),
-		decodeCreateProject,
+		)(project.CreateEndpoint(r.projectProvider)),
+		project.DecodeCreate,
 		setStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
@@ -681,8 +681,8 @@ func (r Routing) updateProject() http.Handler {
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.userInfoMiddleware(),
-		)(updateProjectEndpoint(r.projectProvider)),
-		decodeUpdateProject,
+		)(project.UpdateEndpoint(r.projectProvider)),
+		project.DecodeUpdateRq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -707,8 +707,8 @@ func (r Routing) deleteProject() http.Handler {
 			r.oidcAuthenticator.Verifier(),
 			r.userSaverMiddleware(),
 			r.userInfoMiddleware(),
-		)(deleteProjectEndpoint(r.projectProvider)),
-		decodeDeleteProject,
+		)(project.DeleteEndpoint(r.projectProvider)),
+		project.DecodeDelete,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1206,7 +1206,7 @@ func (r Routing) getUsersForProject() http.Handler {
 			r.userSaverMiddleware(),
 			r.userInfoMiddleware(),
 		)(listMembersOfProject(r.projectProvider, r.userProvider, r.projectMemberProvider)),
-		decodeGetProject,
+		common.DecodeGetProject,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)

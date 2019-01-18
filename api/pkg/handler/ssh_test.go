@@ -35,7 +35,7 @@ func TestDeleteSSHKey(t *testing.T) {
 			SSHKeyToDelete: "key-abc-second-key",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("my-first-project-ID", "john@acme.com", "owners"),
 				/*add users*/
@@ -43,8 +43,8 @@ func TestDeleteSSHKey(t *testing.T) {
 				/*add cluster*/
 				test.GenDefaultCluster(),
 				/*add ssh keys*/
-				genSSHKey(defaultCreationTimestamp(), "c08aa5c7abf34504f18552846485267d", "first-key", "my-first-project-ID", test.GenDefaultCluster().Name),
-				genSSHKey(defaultCreationTimestamp(), "abc", "second-key", "my-first-project-ID", "abcd-ID"),
+				genSSHKey(test.DefaultCreationTimestamp(), "c08aa5c7abf34504f18552846485267d", "first-key", "my-first-project-ID", test.GenDefaultCluster().Name),
+				genSSHKey(test.DefaultCreationTimestamp(), "abc", "second-key", "my-first-project-ID", "abcd-ID"),
 			},
 			ExistingAPIUser: genAPIUser("john", "john@acme.com"),
 		},
@@ -53,7 +53,7 @@ func TestDeleteSSHKey(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			sshKeyID := tc.SSHKeyToDelete
-			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/sshkeys/%s", testingProjectName, sshKeyID), nil)
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/sshkeys/%s", "my-first-project-ID", sshKeyID), nil)
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
@@ -97,7 +97,7 @@ func TestDeleteSSHKey(t *testing.T) {
 
 func TestListSSHKeys(t *testing.T) {
 	t.Parallel()
-	creationTime := defaultCreationTimestamp()
+	creationTime := test.DefaultCreationTimestamp()
 
 	testcases := []struct {
 		Name                   string
@@ -134,7 +134,7 @@ func TestListSSHKeys(t *testing.T) {
 			HTTPStatus: http.StatusOK,
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("my-first-project-ID", "john@acme.com", "owners"),
 				/*add users*/
@@ -151,7 +151,7 @@ func TestListSSHKeys(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/sshkeys", testingProjectName), strings.NewReader(tc.Body))
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/sshkeys", "my-first-project-ID"), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
@@ -196,10 +196,10 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 			RewriteSSHKeyID:  true,
 			ExpectedResponse: `{"id":"%s","name":"my-second-ssh-key","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"fingerprint":"c0:8a:a5:c7:ab:f3:45:04:f1:85:52:84:64:85:26:7d","publicKey":"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8LlXSRW4HUYAjzx1+r5JzpjXIDDyFkWZzBQ8aU14J8LdMyQsU6/ZKuO5IKoWWVoPi0e63qSjkXPTjnUAwpE62hDm6uLaPgIlc3ND+8d9xbItS+gyXk9TSkC3emrsCWpS76W3KjLwyz5euIfnMCQZSASM7F5CrNg6XSppOgRWlyY09VEKi9PmvEDKCy5JNt6afcUzB3rAOK3SYZ0BYDyrVjuqTcMZwRodryxKb/jxDS+qQNplBNuUBqUzqjuKyI5oAk+aVTYIfTwgBTQyZT7So/u70gSDbRp9uHI05PkH60IftAHdYu4TJTmCwJxLW/suOEx3PPvIsUP14XQUZgmDJEuIuWDlsvfOo9DXZNnl832SGvTyhclBpsauWJ1OwOllT+hlM7u8dwcb70GD/OzCG7RSEatVoiNtg4XdeUf4kiqqzKZEqpopHQqwVKMhlhPKKulY0vrtetJxaLokEwPOYyycxlXsNBK2ei/IbGan+uI39v0s30ySWKzr+M9z0QlLAG7rjgCSWFSmy+Ez2fxU5HQQTNCep8+VjNeI79uO9VDJ8qvV/y6fDtrwgl67hUgDcHyv80TzVROTGFBMCP7hyswArT0GxpL9q7PjPU92D43UEDY5YNOZN2A976O5jd4bPrWp0mKsye1BhLrct16Xdn9x68D8nS2T1uSSWovFhkQ== lukasz@loodse.com "}}`,
 			HTTPStatus:       http.StatusCreated,
-			ExistingProject:  genProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
+			ExistingProject:  test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("my-first-project-ID", "john@acme.com", "owners"),
 				/*add users*/
@@ -215,10 +215,10 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 			Body:             `{"name":"my-second-ssh-key","spec":{"publicKey":"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8LlXSRW4HUYAjzx1+r5JzpjXIDDyFkWZzBQ8aU14J8LdMyQsU6/ZKuO5IKoWWVoPi0e63qSjkXPTjnUAwpE62hDm6uLaPgIlc3ND+8d9xbItS+gyXk9TSkC3emrsCWpS76W3KjLwyz5euIfnMCQZSASM7F5CrNg6XSppOgRWlyY09VEKi9PmvEDKCy5JNt6afcUzB3rAOK3SYZ0BYDyrVjuqTcMZwRodryxKb/jxDS+qQNplBNuUBqUzqjuKyI5oAk+aVTYIfTwgBTQyZT7So/u70gSDbRp9uHI05PkH60IftAHdYu4TJTmCwJxLW/suOEx3PPvIsUP14XQUZgmDJEuIuWDlsvfOo9DXZNnl832SGvTyhclBpsauWJ1OwOllT+hlM7u8dwcb70GD/OzCG7RSEatVoiNtg4XdeUf4kiqqzKZEqpopHQqwVKMhlhPKKulY0vrtetJxaLokEwPOYyycxlXsNBK2ei/IbGan+uI39v0s30ySWKzr+M9z0QlLAG7rjgCSWFSmy+Ez2fxU5HQQTNCep8+VjNeI79uO9VDJ8qvV/y6fDtrwgl67hUgDcHyv80TzVROTGFBMCP7hyswArT0GxpL9q7PjPU92D43UEDY5YNOZN2A976O5jd4bPrWp0mKsye1BhLrct16Xdn9x68D8nS2T1uSSWovFhkQ== lukasz@loodse.com "}}`,
 			ExpectedResponse: `{"error":{"code":409,"message":"ssh key \"my-second-ssh-key\" already exists"}}`,
 			HTTPStatus:       http.StatusConflict,
-			ExistingProject:  genProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
+			ExistingProject:  test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("my-first-project-ID", "john@acme.com", "owners"),
 				/*add users*/
@@ -226,7 +226,7 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 				/*add cluster*/
 				test.GenDefaultCluster(),
 				/*add sshkeys*/
-				genSSHKey(defaultCreationTimestamp(), "d08aa5d7bce34504f18552846485267c", "my-second-ssh-key", "my-first-project-ID", test.GenDefaultCluster().Name),
+				genSSHKey(test.DefaultCreationTimestamp(), "d08aa5d7bce34504f18552846485267c", "my-second-ssh-key", "my-first-project-ID", test.GenDefaultCluster().Name),
 			},
 			ExistingAPIUser: genAPIUser("john", "john@acme.com"),
 		},
@@ -234,7 +234,7 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/sshkeys", testingProjectName), strings.NewReader(tc.Body))
+			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/sshkeys", "my-first-project-ID"), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)

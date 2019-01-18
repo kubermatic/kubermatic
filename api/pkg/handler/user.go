@@ -121,7 +121,7 @@ func editMemberOfProject(projectProvider provider.ProjectProvider, userProvider 
 func listMembersOfProject(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		req, ok := request.(GetProjectRq)
+		req, ok := request.(common.GetProjectRq)
 		if !ok {
 			return nil, k8cerrors.NewBadRequest("invalid request")
 		}

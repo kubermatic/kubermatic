@@ -39,9 +39,9 @@ func TestGetUsersForProject(t *testing.T) {
 			ProjectToGet: "foo-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("foo", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("bar", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("zorg", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("bar", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("zorg", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("foo-ID", "john@acme.com", "owners"),
 				genBinding("bar-ID", "john@acme.com", "editors"),
@@ -120,8 +120,8 @@ func TestGetUsersForProject(t *testing.T) {
 			ProjectToGet: "foo2InternalName",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("foo2", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("bar2", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("foo2", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("bar2", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("bar-ID", "alice2@acme.com", "viewers"),
 				genBinding("foo2-ID", "bob@acme.com", "editors"),
@@ -191,9 +191,9 @@ func TestDeleteUserFromProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("plan9-ID", "john@acme.com", "owners"),
 				genBinding("plan9-ID", "bob@acme.com", "viewers"),
@@ -216,9 +216,9 @@ func TestDeleteUserFromProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("plan9-ID", "john@acme.com", "owners"),
 				genBinding("planX-ID", "bob@acme.com", "viewers"),
@@ -239,9 +239,9 @@ func TestDeleteUserFromProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("plan9-ID", "john@acme.com", "owners"),
 				/*add users*/
@@ -260,9 +260,9 @@ func TestDeleteUserFromProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("plan9-ID", "john@acme.com", "owners"),
 				genBinding("plan9-ID", "bob@acme.com", "viewers"),
@@ -342,9 +342,9 @@ func TestEditUserInProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("plan9-ID", "john@acme.com", "owners"),
 				genBinding("plan9-ID", "bob@acme.com", "viewers"),
@@ -372,9 +372,9 @@ func TestEditUserInProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("plan9-ID", "john@acme.com", "owners"),
 				genBinding("my-third-project-ID", "bob@acme.com", "viewers"),
@@ -395,9 +395,9 @@ func TestEditUserInProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("plan9-ID", "john@acme.com", "owners"),
 				genBinding("plan9-ID", "bob@acme.com", "viewers"),
@@ -418,9 +418,9 @@ func TestEditUserInProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("plan9-ID", "john@acme.com", "owners"),
 				genBinding("plan9-ID", "bob@acme.com", "viewers"),
@@ -441,9 +441,9 @@ func TestEditUserInProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("plan9-ID", "john@acme.com", "owners"),
 				genBinding("plan9-ID", "bob@acme.com", "viewers"),
@@ -527,9 +527,9 @@ func TestAddUserToProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("plan9-ID", "john@acme.com", "owners"),
 				genBinding("my-third-project-ID", "john@acme.com", "editors"),
@@ -565,9 +565,9 @@ func TestAddUserToProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/* add bindings*/
 				genBinding("plan9-ID", "john@acme.com", "owners"),
 				genBinding("my-third-project-ID", "john@acme.com", "editors"),
@@ -587,9 +587,9 @@ func TestAddUserToProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("plan9-ID", "john@acme.com", "owners"),
 				genBinding("my-third-project-ID", "john@acme.com", "editors"),
@@ -609,9 +609,9 @@ func TestAddUserToProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("plan9-ID", "john@acme.com", "owners"),
 				genBinding("my-third-project-ID", "john@acme.com", "editors"),
@@ -631,9 +631,9 @@ func TestAddUserToProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("plan9-ID", "john@acme.com", "owners"),
 				genBinding("my-third-project-ID", "john@acme.com", "editors"),
@@ -653,9 +653,9 @@ func TestAddUserToProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("plan9-ID", "john@acme.com", "owners"),
 				genBinding("my-third-project-ID", "john@acme.com", "editors"),
@@ -675,9 +675,9 @@ func TestAddUserToProject(t *testing.T) {
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("my-third-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("plan9-ID", "john@acme.com", "owners"),
 				genBinding("my-third-project-ID", "john@acme.com", "editors"),
@@ -777,8 +777,8 @@ func TestGetCurrentUser(t *testing.T) {
 			Name: "scenario 2: get john's profile (one project assigned)",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
-				genProject("moby", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
-				genProject("plan9", kubermaticapiv1.ProjectActive, defaultCreationTimestamp()),
+				test.GenProject("moby", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
 				genBinding("plan9-ID", "john@acme.com", "owners"),
 				/*add users*/
