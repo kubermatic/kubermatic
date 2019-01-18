@@ -28,7 +28,7 @@ function cleanup {
 
   # Kill all sub-processes to make sure they don't create
   # any new resources and dont block termination of the job
-  jobs -p|xargs -r -I ^ kill -9 ^ &>dev/null
+  jobs -p|xargs -r kill -9
 
   # Delete addons from all clusters that have our worker-name label
   kubectl get cluster -l worker-name=$BUILD_ID \
@@ -192,8 +192,6 @@ echodate "Starting conformance tests"
   -providers=aws \
   -exclude-distributions="ubuntu,centos"
 
-# Test if cleanup on timeout works
-sleep 1d
 ) &
 
 # Bash can not forward signals and doesn't react to signals
