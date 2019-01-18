@@ -35,7 +35,7 @@ func TestFilterEventsByType(t *testing.T) {
 			},
 		},
 		{
-			Name:   "scenario 1, filter out normal event types",
+			Name:   "scenario 2, filter out normal event types",
 			Filter: corev1.EventTypeNormal,
 			ExpectedEvents: []v1.Event{
 				genEvent("test3", corev1.EventTypeNormal),

@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/runtime"
+
 	"github.com/Masterminds/semver"
 	"github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
@@ -1088,6 +1090,11 @@ func deleteNodeDeployment(projectProvider provider.ProjectProvider) endpoint.End
 	}
 }
 
+const (
+	warningType = "warning"
+	normalType  = "normal"
+)
+
 // NodeDeploymentNodesEventsReq defines HTTP request for listNodeDeploymentNodesEvents endpoint
 // swagger:parameters listNodeDeploymentNodesEvents
 type NodeDeploymentNodesEventsReq struct {
@@ -1123,6 +1130,12 @@ func decodeListNodeDeploymentNodesEvents(c context.Context, r *http.Request) (in
 	req.DCReq = dcr.(common.DCReq)
 
 	req.Type = r.URL.Query().Get("type")
+	if len(req.Type) > 0 {
+		if req.Type == warningType || req.Type == normalType {
+			return req, nil
+		}
+		return nil, fmt.Errorf("wrong query paramater, unsupported type: %s", req.Type)
+	}
 
 	return req, nil
 }
@@ -1150,22 +1163,49 @@ func listNodeDeploymentNodesEvents() endpoint.Endpoint {
 		}
 
 		for _, machine := range machines.Items {
-			eventList, err := GetMachineEvents(customerClusterClient, machine)
+			eventList, err := getMachineEvents(customerClusterClient, machine)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 
-			if len(req.Type) > 0 {
-				if req.Type == "warning" {
-					eventList = FilterEventsByType(eventList, corev1.EventTypeWarning)
+			if len(eventList.Events) > 0 {
+				if len(req.Type) > 0 {
+					if req.Type == warningType {
+						eventList = FilterEventsByType(eventList, corev1.EventTypeWarning)
+					}
+					if req.Type == normalType {
+						eventList = FilterEventsByType(eventList, corev1.EventTypeNormal)
+					}
 				}
-				if req.Type == "normal" {
-					eventList = FilterEventsByType(eventList, corev1.EventTypeNormal)
-				}
+				apiv1Events = append(apiv1Events, eventList)
 			}
-			apiv1Events = append(apiv1Events, eventList)
 		}
 
 		return apiv1Events, nil
+	}
+}
+
+// GetMachineEvents returns kubernetes API event objects assigned to the machine.
+func getMachineEvents(client kubernetes.Interface, machine clusterv1alpha1.Machine) (apiv1.EventList, error) {
+	events, err := client.CoreV1().Events(metav1.NamespaceSystem).Search(runtime.NewScheme(), &machine)
+	if err != nil {
+		return apiv1.EventList{}, err
+	}
+
+	return createMachineEventList(events.Items, machine), nil
+}
+
+// createMachineEventList converts array of api events to kubermatic EventList
+func createMachineEventList(events []corev1.Event, machine clusterv1alpha1.Machine) apiv1.EventList {
+	kubermaticEvents := make([]apiv1.Event, 0)
+
+	for _, event := range events {
+		kubermaticEvent := toEvent(event)
+		kubermaticEvents = append(kubermaticEvents, kubermaticEvent)
+	}
+
+	return apiv1.EventList{
+		Name:   machine.Name,
+		Events: kubermaticEvents,
 	}
 }

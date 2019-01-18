@@ -3416,10 +3416,6 @@
       "type": "object",
       "title": "EventList is an events response structure.",
       "properties": {
-        "Name": {
-          "description": "The object name that those events are about.",
-          "type": "string"
-        },
         "events": {
           "description": "List of events",
           "type": "array",
@@ -3427,6 +3423,11 @@
             "$ref": "#/definitions/Event"
           },
           "x-go-name": "Events"
+        },
+        "name": {
+          "description": "The object name that those events are about.",
+          "type": "string",
+          "x-go-name": "Name"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"

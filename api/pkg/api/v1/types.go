@@ -668,7 +668,7 @@ type NodeDeploymentSpec struct {
 // EventList is an events response structure.
 type EventList struct {
 	// The object name that those events are about.
-	Name string `json:"Name"`
+	Name string `json:"name"`
 
 	// List of events
 	Events []Event `json:"events"`
