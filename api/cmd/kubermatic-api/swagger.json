@@ -3404,11 +3404,6 @@
           "type": "string",
           "x-go-name": "Message"
         },
-        "reason": {
-          "description": "This should be a short, machine understandable string that gives the reason\nfor the transition into the object's current status.",
-          "type": "string",
-          "x-go-name": "Reason"
-        },
         "type": {
           "description": "Type of this event (normal, warning), new types could be added in the future",
           "type": "string",
@@ -3421,6 +3416,10 @@
       "type": "object",
       "title": "EventList is an events response structure.",
       "properties": {
+        "Name": {
+          "description": "The object name that those events are about.",
+          "type": "string"
+        },
         "events": {
           "description": "List of events",
           "type": "array",
@@ -3428,11 +3427,6 @@
             "$ref": "#/definitions/Event"
           },
           "x-go-name": "Events"
-        },
-        "involvedObjectName": {
-          "description": "The object that those events are about.",
-          "type": "string",
-          "x-go-name": "InvolvedObjectName"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"

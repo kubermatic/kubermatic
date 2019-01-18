@@ -25,7 +25,7 @@ func TestFilterEventsByType(t *testing.T) {
 				genEvent("test2", corev1.EventTypeWarning),
 			},
 			InputEvents: v1.EventList{
-				InvolvedObjectName: "machine",
+				Name: "machine",
 				Events: []v1.Event{
 					genEvent("test1", corev1.EventTypeWarning),
 					genEvent("test2", corev1.EventTypeWarning),
@@ -42,7 +42,7 @@ func TestFilterEventsByType(t *testing.T) {
 				genEvent("test4", corev1.EventTypeNormal),
 			},
 			InputEvents: v1.EventList{
-				InvolvedObjectName: "machine",
+				Name: "machine",
 				Events: []v1.Event{
 					genEvent("test1", corev1.EventTypeWarning),
 					genEvent("test2", corev1.EventTypeWarning),

@@ -667,8 +667,8 @@ type NodeDeploymentSpec struct {
 
 // EventList is an events response structure.
 type EventList struct {
-	// The object that those events are about.
-	InvolvedObjectName string `json:"involvedObjectName"`
+	// The object name that those events are about.
+	Name string `json:"Name"`
 
 	// List of events
 	Events []Event `json:"events"`
@@ -676,10 +676,6 @@ type EventList struct {
 
 // Event is a report of an event somewhere in the cluster.
 type Event struct {
-	// This should be a short, machine understandable string that gives the reason
-	// for the transition into the object's current status.
-	Reason string `json:"reason,omitempty"`
-
 	// A human-readable description of the status of this operation.
 	Message string `json:"message,omitempty"`
 

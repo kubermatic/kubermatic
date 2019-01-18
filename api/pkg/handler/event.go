@@ -36,8 +36,8 @@ func FilterEventsByType(eventList v1.EventList, eventType string) v1.EventList {
 		}
 	}
 	return v1.EventList{
-		InvolvedObjectName: eventList.InvolvedObjectName,
-		Events:             resultEvents,
+		Name:   eventList.Name,
+		Events: resultEvents,
 	}
 }
 
@@ -51,8 +51,8 @@ func createMachineEventList(events []corev1.Event, machine clusterv1alpha1.Machi
 	}
 
 	return v1.EventList{
-		InvolvedObjectName: machine.Name,
-		Events:             kubermaticEvents,
+		Name:   machine.Name,
+		Events: kubermaticEvents,
 	}
 }
 
@@ -60,7 +60,6 @@ func createMachineEventList(events []corev1.Event, machine clusterv1alpha1.Machi
 func toEvent(event corev1.Event) v1.Event {
 	result := v1.Event{
 		Message: event.Message,
-		Reason:  event.Reason,
 		Type:    event.Type,
 	}
 	return result
