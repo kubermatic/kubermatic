@@ -715,6 +715,7 @@ func (r *testRunner) getGinkgoRuns(
 			path.Join(binRoot, "e2e.test"),
 			"--",
 			"--disable-log-dump",
+			"--clean-start",
 			fmt.Sprintf("--repo-root=%s", versionRoot),
 			fmt.Sprintf("--report-dir=%s", reportsDir),
 			fmt.Sprintf("--report-prefix=%s", run.name),
