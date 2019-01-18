@@ -336,7 +336,7 @@ func (r *testRunner) testCluster(
 	}
 	for _, run := range ginkgoRuns {
 
-		ginkgoRes, err := r.executeGinkgoRunWithRetries(log, run)
+		ginkgoRes, err := r.executeGinkgoRunWithRetries(log, run, clusterKubeClient)
 		if err != nil {
 			// Ginkgo failed hard. We don't have any JUnit reports to append, so we appenda custom one to indicate the hard failure
 			report.TestCases = append(report.TestCases, reporters.JUnitTestCase{
@@ -371,11 +371,11 @@ func (r *testRunner) testCluster(
 // executeGinkgoRunWithRetries executes the passed GinkgoRun and retries if it failed hard(Failed to execute the Ginkgo binary for example)
 // Or if the JUnit report from Ginkgo contains failed tests.
 // Only if Ginkgo failed hard, an error will be returned. If some tests still failed after retrying the run, the report will reflect that.
-func (r *testRunner) executeGinkgoRunWithRetries(log *logrus.Entry, run *ginkgoRun) (ginkgoRes *ginkgoResult, err error) {
+func (r *testRunner) executeGinkgoRunWithRetries(log *logrus.Entry, run *ginkgoRun, kubeClient kubernetes.Interface) (ginkgoRes *ginkgoResult, err error) {
 	const maxAttempts = 3
 
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		ginkgoRes, err = executeGinkgoRun(log, run)
+		ginkgoRes, err = executeGinkgoRun(log, run, kubeClient)
 		if err != nil {
 			// Something critical happened and we don't have a valid result
 			log.Errorf("failed to execute the Ginkgo run '%s': %v", run.name, err)
@@ -715,7 +715,6 @@ func (r *testRunner) getGinkgoRuns(
 			path.Join(binRoot, "e2e.test"),
 			"--",
 			"--disable-log-dump",
-			"--clean-start",
 			fmt.Sprintf("--repo-root=%s", versionRoot),
 			fmt.Sprintf("--report-dir=%s", reportsDir),
 			fmt.Sprintf("--report-prefix=%s", run.name),
@@ -762,9 +761,15 @@ func (r *testRunner) getGinkgoRuns(
 	return ginkgoRuns, nil
 }
 
-func executeGinkgoRun(parentLog *logrus.Entry, run *ginkgoRun) (*ginkgoResult, error) {
+func executeGinkgoRun(parentLog *logrus.Entry, run *ginkgoRun, kubeClient kubernetes.Interface) (*ginkgoResult, error) {
 	started := time.Now()
 	log := parentLog.WithField("reports-dir", run.reportsDir)
+
+	defer func() {
+		if err := deleteAllNonDefaultNamespaces(log, kubeClient); err != nil {
+			log.Errorf("Failed to cleanup namespaces after the Ginkgo run test: %v", err)
+		}
+	}()
 
 	// We're clearing up the temp dir on every run
 	if err := os.RemoveAll(run.reportsDir); err != nil {
