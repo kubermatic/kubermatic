@@ -144,6 +144,7 @@ spec:
           httpGet:
             path: /healthz
             port: 10252
+            scheme: HTTP
           initialDelaySeconds: 15
           periodSeconds: 10
           successThreshold: 1
@@ -154,6 +155,7 @@ spec:
           httpGet:
             path: /healthz
             port: 10252
+            scheme: HTTP
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 15

@@ -1,8 +1,9 @@
-# We support 1.9,1.10,1.11 & kubernetes is able to handle the whole matrix of those versions
+# We support 1.10,1.11,1.12 & kubernetes is able to handle the whole matrix of those versions
 allowed-node-versions: &node-versions
 - "1.10.*"
 - "1.11.*"
 - "1.12.*"
+- "1.13.*"
 
 versions:
 # Kubernetes 1.10
@@ -21,5 +22,12 @@ versions:
   default: false
   allowedNodeVersions: *node-versions
 - version: "1.12.4"
+  default: false
+  allowedNodeVersions: *node-versions
+# Kubernetes 1.13
+- version: "1.13.0"
+  default: false
+  allowedNodeVersions: *node-versions
+- version: "1.13.1"
   default: false
   allowedNodeVersions: *node-versions
