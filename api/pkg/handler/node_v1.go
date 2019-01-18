@@ -16,6 +16,7 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
@@ -851,6 +852,26 @@ func decodeListNodeDeploymentNodes(c context.Context, r *http.Request) (interfac
 	return req, nil
 }
 
+func getMachinesForNodeDeployment(clusterProvider provider.ClusterProvider, cluster *v1.Cluster, nodeDeploymentID string) (*clusterv1alpha1.MachineList, error) {
+
+	machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(cluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	machineDeployment, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Get(nodeDeploymentID, metav1.GetOptions{})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	listOptions := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels).String()}
+	machines, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(listOptions)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	return machines, nil
+}
+
 func listNodeDeploymentNodes(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NodeDeploymentNodesReq)
@@ -867,18 +888,7 @@ func listNodeDeploymentNodes(projectProvider provider.ProjectProvider) endpoint.
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		machineDeployment, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Get(req.NodeDeploymentID, metav1.GetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		listOptions := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels).String()}
-		machines, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(listOptions)
+		machines, err := getMachinesForNodeDeployment(clusterProvider, cluster, req.NodeDeploymentID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -1083,7 +1093,7 @@ func deleteNodeDeployment(projectProvider provider.ProjectProvider) endpoint.End
 type NodeDeploymentNodesEventsReq struct {
 	common.GetClusterReq
 	// in: query
-	Warning string
+	Type string
 
 	// in: path
 	NodeDeploymentID string `json:"nodedeployment_id"`
@@ -1112,7 +1122,7 @@ func decodeListNodeDeploymentNodesEvents(c context.Context, r *http.Request) (in
 	req.NodeDeploymentID = nodeDeploymentID
 	req.DCReq = dcr.(common.DCReq)
 
-	req.Warning = r.URL.Query().Get("warning")
+	req.Type = r.URL.Query().Get("type")
 
 	return req, nil
 }
@@ -1134,18 +1144,7 @@ func listNodeDeploymentNodesEvents() endpoint.Endpoint {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		machineDeployment, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Get(req.NodeDeploymentID, metav1.GetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		listOptions := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels).String()}
-		machines, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(listOptions)
+		machines, err := getMachinesForNodeDeployment(clusterProvider, cluster, req.NodeDeploymentID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -1160,15 +1159,15 @@ func listNodeDeploymentNodesEvents() endpoint.Endpoint {
 
 		// If query parameter `warning` is set to true then only warning events are retrieved.
 		// If the value is false then normal events are returned.
-		if len(req.Warning) > 0 {
-			warning, err := strconv.ParseBool(req.Warning)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-			if warning {
+		if len(req.Type) > 0 {
+
+			if req.Type == "warning" {
 				return FilterEventsByType(apiv1Events, corev1.EventTypeWarning), nil
 			}
-			return FilterEventsByType(apiv1Events, corev1.EventTypeNormal), nil
+			if req.Type == "normal" {
+				return FilterEventsByType(apiv1Events, corev1.EventTypeNormal), nil
+			}
+			return nil, common.KubernetesErrorToHTTPError(fmt.Errorf("query parameter error, unsupported type: %s", req.Type))
 		}
 
 		// If the query parameter is missing method returns all events.

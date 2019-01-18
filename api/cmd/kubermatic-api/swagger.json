@@ -994,14 +994,14 @@
     },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/events": {
       "get": {
-        "description": "If the value is false then normal events are returned. If the query parameter is missing method returns all events.",
+        "description": "If the value is 'normal' then normal events are returned. If the query parameter is missing method returns all events.",
         "produces": [
           "application/json"
         ],
         "tags": [
           "project"
         ],
-        "summary": "Lists node deployment events. If query parameter `warning` is set to true then only warning events are retrieved.",
+        "summary": "Lists node deployment events. If query parameter `type` is set to `warning` then only warning events are retrieved.",
         "operationId": "listNodeDeploymentNodesEvents",
         "parameters": [
           {
@@ -1027,7 +1027,7 @@
           },
           {
             "type": "string",
-            "name": "Warning",
+            "name": "Type",
             "in": "query"
           },
           {
@@ -3440,7 +3440,7 @@
           "x-go-name": "Source"
         },
         "type": {
-          "description": "Type of this event (Normal, Warning), new types could be added in the future",
+          "description": "Type of this event (normal, warning), new types could be added in the future",
           "type": "string",
           "x-go-name": "Type"
         }

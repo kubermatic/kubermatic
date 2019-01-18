@@ -3,6 +3,8 @@ package handler_test
 import (
 	"testing"
 
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
+
 	"github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler"
 
@@ -76,8 +78,11 @@ func equal(a, b []v1.Event) bool {
 
 func genEvent(eventName, eventType string) v1.Event {
 	return v1.Event{
-		Namespace: metav1.NamespaceSystem,
-		Name:      eventName,
-		Type:      eventType,
+		Namespace:      metav1.NamespaceSystem,
+		Name:           eventName,
+		Type:           eventType,
+		LastTimestamp:  v1.NewTime(test.DefaultCreationTimestamp()),
+		FirstTimestamp: v1.NewTime(test.DefaultCreationTimestamp()),
+		InvolvedObject: v1.ObjectReference{},
 	}
 }

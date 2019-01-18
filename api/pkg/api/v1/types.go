@@ -701,7 +701,7 @@ type Event struct {
 	// The number of times this event has occurred.
 	Count int32 `json:"count,omitempty"`
 
-	// Type of this event (Normal, Warning), new types could be added in the future
+	// Type of this event (normal, warning), new types could be added in the future
 	Type string `json:"type,omitempty"`
 
 	// The time at which the event was first recorded.

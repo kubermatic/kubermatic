@@ -1596,8 +1596,8 @@ func (r Routing) listNodeDeploymentNodes() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/events project listNodeDeploymentNodesEvents
 //
-//     Lists node deployment events. If query parameter `warning` is set to true then only warning events are retrieved.
-//     If the value is false then normal events are returned. If the query parameter is missing method returns all events.
+//     Lists node deployment events. If query parameter `type` is set to `warning` then only warning events are retrieved.
+//     If the value is 'normal' then normal events are returned. If the query parameter is missing method returns all events.
 //
 //     Produces:
 //     - application/json

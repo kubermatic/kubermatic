@@ -19,7 +19,7 @@ func GetMachineEvents(client kubernetes.Interface, machine clusterv1alpha1.Machi
 		return nil, err
 	}
 
-	return CreateEventList(events.Items), nil
+	return createEventList(events.Items), nil
 }
 
 // FilterEventsByType filters kubernetes API event objects based on event type.
@@ -39,19 +39,19 @@ func FilterEventsByType(events []v1.Event, eventType string) []v1.Event {
 	return result
 }
 
-// CreateEventList converts array of api events to kubermatic array events
-func CreateEventList(events []corev1.Event) []v1.Event {
+// createEventList converts array of api events to kubermatic array events
+func createEventList(events []corev1.Event) []v1.Event {
 	kubermaticEvents := make([]v1.Event, 0)
 
 	for _, event := range events {
-		kubermaticEvent := ToEvent(event)
+		kubermaticEvent := toEvent(event)
 		kubermaticEvents = append(kubermaticEvents, kubermaticEvent)
 	}
 	return kubermaticEvents
 }
 
-// ToEvent converts event api Event to Event model object.
-func ToEvent(event corev1.Event) v1.Event {
+// toEvent converts event api Event to Event model object.
+func toEvent(event corev1.Event) v1.Event {
 	result := v1.Event{
 		Name:           event.ObjectMeta.Name,
 		Namespace:      event.ObjectMeta.Namespace,

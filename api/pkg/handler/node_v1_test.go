@@ -918,7 +918,7 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 		// scenario 2
 		{
 			Name:                   "scenario 2: list all warning events",
-			QueryParams:            "?warning=true",
+			QueryParams:            "?type=warning",
 			HTTPStatus:             http.StatusOK,
 			ClusterIDToSync:        test.GenDefaultCluster().Name,
 			ProjectIDToSync:        test.GenDefaultProject().Name,
@@ -940,7 +940,7 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 		// scenario 3
 		{
 			Name:                   "scenario 3: list all normal events",
-			QueryParams:            "?warning=false",
+			QueryParams:            "?type=normal",
 			HTTPStatus:             http.StatusOK,
 			ClusterIDToSync:        test.GenDefaultCluster().Name,
 			ProjectIDToSync:        test.GenDefaultProject().Name,
