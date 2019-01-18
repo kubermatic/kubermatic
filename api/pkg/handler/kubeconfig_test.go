@@ -21,7 +21,6 @@ import (
 const (
 	testDatacenter          = "us-central1"
 	testExpectedRedirectURI = "/api/v1/kubeconfig"
-	testProjectName         = "my-first-project"
 	testClusterName         = "AbcCluster"
 )
 
