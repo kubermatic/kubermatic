@@ -765,11 +765,9 @@ func executeGinkgoRun(parentLog *logrus.Entry, run *ginkgoRun, kubeClient kubern
 	started := time.Now()
 	log := parentLog.WithField("reports-dir", run.reportsDir)
 
-	defer func() {
-		if err := deleteAllNonDefaultNamespaces(log, kubeClient); err != nil {
-			log.Errorf("Failed to cleanup namespaces after the Ginkgo run test: %v", err)
-		}
-	}()
+	if err := deleteAllNonDefaultNamespaces(log, kubeClient); err != nil {
+		return nil, fmt.Errorf("failed to cleanup namespaces before the Ginkgo run: %v", err)
+	}
 
 	// We're clearing up the temp dir on every run
 	if err := os.RemoveAll(run.reportsDir); err != nil {
