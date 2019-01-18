@@ -148,36 +148,6 @@ func (k newSSHKeyV1SliceWrapper) EqualOrDie(expected newSSHKeyV1SliceWrapper, t 
 	}
 }
 
-// projectV1SliceWrapper wraps []apiv1.Project
-// to provide convenient methods for tests
-type projectV1SliceWrapper []apiv1.Project
-
-// Sort sorts the collection by CreationTimestamp
-func (k projectV1SliceWrapper) Sort() {
-	sort.Slice(k, func(i, j int) bool {
-		return k[i].CreationTimestamp.Before(k[j].CreationTimestamp)
-	})
-}
-
-// DecodeOrDie reads and decodes json data from the reader
-func (k *projectV1SliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *projectV1SliceWrapper {
-	t.Helper()
-	dec := json.NewDecoder(r)
-	err := dec.Decode(k)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return k
-}
-
-// EqualOrDie compares whether expected collection is equal to the actual one
-func (k projectV1SliceWrapper) EqualOrDie(expected projectV1SliceWrapper, t *testing.T) {
-	t.Helper()
-	if diff := deep.Equal(k, expected); diff != nil {
-		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
-	}
-}
-
 // newUserV1SliceWrapper wraps []apiv1.User
 // to provide convenient methods for tests
 type newUserV1SliceWrapper []apiv1.User
