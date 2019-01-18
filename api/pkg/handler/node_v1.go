@@ -1129,7 +1129,7 @@ func decodeListNodeDeploymentNodesEvents(c context.Context, r *http.Request) (in
 
 func listNodeDeploymentNodesEvents() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		apiv1Events := make([]apiv1.Event, 0)
+		apiv1Events := make([]apiv1.EventList, 0)
 		req := request.(NodeDeploymentNodesEventsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
@@ -1150,27 +1150,22 @@ func listNodeDeploymentNodesEvents() endpoint.Endpoint {
 		}
 
 		for _, machine := range machines.Items {
-			events, err := GetMachineEvents(customerClusterClient, machine)
+			eventList, err := GetMachineEvents(customerClusterClient, machine)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			apiv1Events = append(apiv1Events, events...)
+
+			if len(req.Type) > 0 {
+				if req.Type == "warning" {
+					eventList = FilterEventsByType(eventList, corev1.EventTypeWarning)
+				}
+				if req.Type == "normal" {
+					eventList = FilterEventsByType(eventList, corev1.EventTypeNormal)
+				}
+			}
+			apiv1Events = append(apiv1Events, eventList)
 		}
 
-		// If query parameter `warning` is set to true then only warning events are retrieved.
-		// If the value is false then normal events are returned.
-		if len(req.Type) > 0 {
-
-			if req.Type == "warning" {
-				return FilterEventsByType(apiv1Events, corev1.EventTypeWarning), nil
-			}
-			if req.Type == "normal" {
-				return FilterEventsByType(apiv1Events, corev1.EventTypeNormal), nil
-			}
-			return nil, common.KubernetesErrorToHTTPError(fmt.Errorf("query parameter error, unsupported type: %s", req.Type))
-		}
-
-		// If the query parameter is missing method returns all events.
 		return apiv1Events, nil
 	}
 }

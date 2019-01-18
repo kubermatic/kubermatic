@@ -665,29 +665,17 @@ type NodeDeploymentSpec struct {
 	Paused *bool `json:"paused,omitempty"`
 }
 
-// ObjectReference contains enough information to let you inspect or modify the referred object.
-type ObjectReference struct {
-	// Kind of the referent.
-	Kind string `json:"kind,omitempty"`
+// EventList is an events response structure.
+type EventList struct {
+	// The object that those events are about.
+	InvolvedObjectName string `json:"involvedObjectName"`
 
-	// Namespace of the referent.
-	Namespace string `json:"namespace,omitempty"`
-
-	// Name of the referent.
-	Name string `json:"name,omitempty"`
+	// List of events
+	Events []Event `json:"events"`
 }
 
 // Event is a report of an event somewhere in the cluster.
 type Event struct {
-	// Namespace of the event.
-	Namespace string `json:"namespace,omitempty"`
-
-	// Name of the event.
-	Name string `json:"name,omitempty"`
-
-	// The object that this event is about.
-	InvolvedObject ObjectReference `json:"involvedObject"`
-
 	// This should be a short, machine understandable string that gives the reason
 	// for the transition into the object's current status.
 	Reason string `json:"reason,omitempty"`
@@ -695,18 +683,6 @@ type Event struct {
 	// A human-readable description of the status of this operation.
 	Message string `json:"message,omitempty"`
 
-	// The component reporting this event. Should be a short machine understandable string.
-	Source string `json:"source,omitempty"`
-
-	// The number of times this event has occurred.
-	Count int32 `json:"count,omitempty"`
-
 	// Type of this event (normal, warning), new types could be added in the future
 	Type string `json:"type,omitempty"`
-
-	// The time at which the event was first recorded.
-	FirstTimestamp Time `json:"firstTimestamp,omitempty"`
-
-	// The time at which the most recent occurrence of this event was recorded.
-	LastTimestamp Time `json:"lastTimestamp,omitempty"`
 }

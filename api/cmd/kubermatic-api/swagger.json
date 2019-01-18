@@ -3399,50 +3399,40 @@
       "type": "object",
       "title": "Event is a report of an event somewhere in the cluster.",
       "properties": {
-        "count": {
-          "description": "The number of times this event has occurred.",
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "Count"
-        },
-        "firstTimestamp": {
-          "$ref": "#/definitions/Time"
-        },
-        "involvedObject": {
-          "$ref": "#/definitions/ObjectReference"
-        },
-        "lastTimestamp": {
-          "$ref": "#/definitions/Time"
-        },
         "message": {
           "description": "A human-readable description of the status of this operation.",
           "type": "string",
           "x-go-name": "Message"
-        },
-        "name": {
-          "description": "Name of the event.",
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "namespace": {
-          "description": "Namespace of the event.",
-          "type": "string",
-          "x-go-name": "Namespace"
         },
         "reason": {
           "description": "This should be a short, machine understandable string that gives the reason\nfor the transition into the object's current status.",
           "type": "string",
           "x-go-name": "Reason"
         },
-        "source": {
-          "description": "The component reporting this event. Should be a short machine understandable string.",
-          "type": "string",
-          "x-go-name": "Source"
-        },
         "type": {
           "description": "Type of this event (normal, warning), new types could be added in the future",
           "type": "string",
           "x-go-name": "Type"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "EventList": {
+      "type": "object",
+      "title": "EventList is an events response structure.",
+      "properties": {
+        "events": {
+          "description": "List of events",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Event"
+          },
+          "x-go-name": "Events"
+        },
+        "involvedObjectName": {
+          "description": "The object that those events are about.",
+          "type": "string",
+          "x-go-name": "InvolvedObjectName"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -4063,28 +4053,6 @@
           "description": "Name represents human readable name for the resource",
           "type": "string",
           "x-go-name": "Name"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "ObjectReference": {
-      "type": "object",
-      "title": "ObjectReference contains enough information to let you inspect or modify the referred object.",
-      "properties": {
-        "kind": {
-          "description": "Kind of the referent.",
-          "type": "string",
-          "x-go-name": "Kind"
-        },
-        "name": {
-          "description": "Name of the referent.",
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "namespace": {
-          "description": "Namespace of the referent.",
-          "type": "string",
-          "x-go-name": "Namespace"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"

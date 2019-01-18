@@ -3,13 +3,10 @@ package handler_test
 import (
 	"testing"
 
-	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
-
 	"github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestFilterEventsByType(t *testing.T) {
@@ -18,7 +15,7 @@ func TestFilterEventsByType(t *testing.T) {
 		Name           string
 		Filter         string
 		ExpectedEvents []v1.Event
-		InputEvents    []v1.Event
+		InputEvents    v1.EventList
 	}{
 		{
 			Name:   "scenario 1, filter out warning event types",
@@ -27,11 +24,14 @@ func TestFilterEventsByType(t *testing.T) {
 				genEvent("test1", corev1.EventTypeWarning),
 				genEvent("test2", corev1.EventTypeWarning),
 			},
-			InputEvents: []v1.Event{
-				genEvent("test1", corev1.EventTypeWarning),
-				genEvent("test2", corev1.EventTypeWarning),
-				genEvent("test3", corev1.EventTypeNormal),
-				genEvent("test4", corev1.EventTypeNormal),
+			InputEvents: v1.EventList{
+				InvolvedObjectName: "machine",
+				Events: []v1.Event{
+					genEvent("test1", corev1.EventTypeWarning),
+					genEvent("test2", corev1.EventTypeWarning),
+					genEvent("test3", corev1.EventTypeNormal),
+					genEvent("test4", corev1.EventTypeNormal),
+				},
 			},
 		},
 		{
@@ -41,11 +41,14 @@ func TestFilterEventsByType(t *testing.T) {
 				genEvent("test3", corev1.EventTypeNormal),
 				genEvent("test4", corev1.EventTypeNormal),
 			},
-			InputEvents: []v1.Event{
-				genEvent("test1", corev1.EventTypeWarning),
-				genEvent("test2", corev1.EventTypeWarning),
-				genEvent("test3", corev1.EventTypeNormal),
-				genEvent("test4", corev1.EventTypeNormal),
+			InputEvents: v1.EventList{
+				InvolvedObjectName: "machine",
+				Events: []v1.Event{
+					genEvent("test1", corev1.EventTypeWarning),
+					genEvent("test2", corev1.EventTypeWarning),
+					genEvent("test3", corev1.EventTypeNormal),
+					genEvent("test4", corev1.EventTypeNormal),
+				},
 			},
 		},
 	}
@@ -53,7 +56,7 @@ func TestFilterEventsByType(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 
 			result := handler.FilterEventsByType(tc.InputEvents, tc.Filter)
-			if !equal(result, tc.ExpectedEvents) {
+			if !equal(result.Events, tc.ExpectedEvents) {
 				t.Fatalf("event list %v is not the same as expected %v", result, tc.ExpectedEvents)
 			}
 
@@ -76,13 +79,9 @@ func equal(a, b []v1.Event) bool {
 	return true
 }
 
-func genEvent(eventName, eventType string) v1.Event {
+func genEvent(message, eventType string) v1.Event {
 	return v1.Event{
-		Namespace:      metav1.NamespaceSystem,
-		Name:           eventName,
-		Type:           eventType,
-		LastTimestamp:  v1.NewTime(test.DefaultCreationTimestamp()),
-		FirstTimestamp: v1.NewTime(test.DefaultCreationTimestamp()),
-		InvolvedObject: v1.ObjectReference{},
+		Type:    eventType,
+		Message: message,
 	}
 }

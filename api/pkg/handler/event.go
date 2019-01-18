@@ -13,61 +13,55 @@ import (
 )
 
 // GetMachineEvents returns kubernetes API event objects assigned to the machine.
-func GetMachineEvents(client kubernetes.Interface, machine clusterv1alpha1.Machine) ([]v1.Event, error) {
+func GetMachineEvents(client kubernetes.Interface, machine clusterv1alpha1.Machine) (v1.EventList, error) {
 	events, err := client.CoreV1().Events(metav1.NamespaceSystem).Search(runtime.NewScheme(), &machine)
 	if err != nil {
-		return nil, err
+		return v1.EventList{}, err
 	}
 
-	return createEventList(events.Items), nil
+	return createMachineEventList(events.Items, machine), nil
 }
 
 // FilterEventsByType filters kubernetes API event objects based on event type.
 // Empty string will return all events.
-func FilterEventsByType(events []v1.Event, eventType string) []v1.Event {
-	if len(eventType) == 0 || len(events) == 0 {
-		return events
+func FilterEventsByType(eventList v1.EventList, eventType string) v1.EventList {
+	if len(eventType) == 0 || len(eventList.Events) == 0 {
+		return eventList
 	}
 
-	result := make([]v1.Event, 0)
-	for _, event := range events {
+	resultEvents := make([]v1.Event, 0)
+	for _, event := range eventList.Events {
 		if event.Type == eventType {
-			result = append(result, event)
+			resultEvents = append(resultEvents, event)
 		}
 	}
-
-	return result
+	return v1.EventList{
+		InvolvedObjectName: eventList.InvolvedObjectName,
+		Events:             resultEvents,
+	}
 }
 
-// createEventList converts array of api events to kubermatic array events
-func createEventList(events []corev1.Event) []v1.Event {
+// createMachineEventList converts array of api events to kubermatic EventList
+func createMachineEventList(events []corev1.Event, machine clusterv1alpha1.Machine) v1.EventList {
 	kubermaticEvents := make([]v1.Event, 0)
 
 	for _, event := range events {
 		kubermaticEvent := toEvent(event)
 		kubermaticEvents = append(kubermaticEvents, kubermaticEvent)
 	}
-	return kubermaticEvents
+
+	return v1.EventList{
+		InvolvedObjectName: machine.Name,
+		Events:             kubermaticEvents,
+	}
 }
 
 // toEvent converts event api Event to Event model object.
 func toEvent(event corev1.Event) v1.Event {
 	result := v1.Event{
-		Name:           event.ObjectMeta.Name,
-		Namespace:      event.ObjectMeta.Namespace,
-		FirstTimestamp: v1.NewTime(event.FirstTimestamp.Time),
-		LastTimestamp:  v1.NewTime(event.LastTimestamp.Time),
-		InvolvedObject: v1.ObjectReference{
-			Name:      event.InvolvedObject.Name,
-			Namespace: event.InvolvedObject.Namespace,
-			Kind:      event.InvolvedObject.Kind,
-		},
-		Source:  event.Source.Component,
 		Message: event.Message,
-		Count:   event.Count,
 		Reason:  event.Reason,
 		Type:    event.Type,
 	}
-
 	return result
 }
