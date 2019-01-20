@@ -1,7 +1,7 @@
 export CGO_ENABLED?=0
 REPO=kubermatic/api
 GO?=go
-CMD=$(filter-out OWNERS, $(notdir $(wildcard ./cmd/*)))
+CMD=$(filter-out OWNERS cloud-cleanup, $(notdir $(wildcard ./cmd/*)))
 GOBUILDFLAGS?=-v
 GITTAG=$(shell git describe --tags --always)
 TAGS?=$(GITTAG)

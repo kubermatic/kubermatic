@@ -104,7 +104,7 @@
   version = "v9"
 
 [[projects]]
-  digest = "1:3a0f1f257d0bc75c8c00646614161d24eccd878ccb698302d07236d600cd3b5a"
+  digest = "1:b1f4825dddf91c3c30a9cd35fbd6fc72716cabf3917a75fb670496a040e84f01"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -136,6 +136,7 @@
     "private/protocol/rest",
     "private/protocol/xml/xmlutil",
     "service/ec2",
+    "service/elb",
     "service/iam",
     "service/sts",
   ]
@@ -1690,6 +1691,7 @@
     "github.com/aws/aws-sdk-go/aws/credentials",
     "github.com/aws/aws-sdk-go/aws/session",
     "github.com/aws/aws-sdk-go/service/ec2",
+    "github.com/aws/aws-sdk-go/service/elb",
     "github.com/aws/aws-sdk-go/service/iam",
     "github.com/coreos/go-oidc",
     "github.com/digitalocean/godo",
