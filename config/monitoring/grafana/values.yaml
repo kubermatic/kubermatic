@@ -3,7 +3,7 @@ grafana:
   password: bG9vZHNlMTIz # loodse123
   image:
     repository: grafana/grafana
-    tag: 5.2.1
+    tag: 5.4.3
 
   # Control where the provisioning files are located.
   # If you want to *not* use the predefined ones, this
