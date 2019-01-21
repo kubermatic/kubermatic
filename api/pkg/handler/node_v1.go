@@ -22,7 +22,6 @@ import (
 	machineconversions "github.com/kubermatic/kubermatic/api/pkg/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
-	apierrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -203,7 +202,7 @@ func getNodeForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoi
 			return nil, err
 		}
 		if machine == nil && node == nil {
-			return nil, apierrors.NewNotFound("Node", req.NodeID)
+			return nil, k8cerrors.NewNotFound("Node", req.NodeID)
 		}
 
 		if machine == nil {
