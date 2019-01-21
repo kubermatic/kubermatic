@@ -1,4 +1,4 @@
 nodeExporter:
   image:
     repository: quay.io/prometheus/node-exporter
-    tag: v0.15.2
+    tag: v0.17.0

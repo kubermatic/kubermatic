@@ -5,14 +5,14 @@ groups:
     expr: |
       count by (instance) (
         sum by (instance, cpu) (
-          node_cpu{app="node-exporter"}
+          node_cpu_seconds_total{app="node-exporter"}
         )
       )
 
   - record: instance:node_cpu_utilisation:avg1m
     expr: |
       1 - avg by (instance) (
-        rate(node_cpu{app="node-exporter",mode="idle"}[1m])
+        rate(node_cpu_seconds_total{app="node-exporter",mode="idle"}[1m])
       )
 
   - record: 'instance:node_cpu_saturation_load1:'
@@ -24,15 +24,15 @@ groups:
   - record: instance:node_memory_bytes_total:sum
     expr: |
       sum by (instance) (
-        node_memory_MemTotal{app="node-exporter"}
+        node_memory_MemTotal_bytes{app="node-exporter"}
       )
 
   - record: instance:node_memory_utilisation:ratio
     expr: |
       1 - (
-          node_memory_MemAvailable{app="node-exporter"}
+          node_memory_MemAvailable_bytes{app="node-exporter"}
         /
-          node_memory_MemTotal{app="node-exporter"}
+          node_memory_MemTotal_bytes{app="node-exporter"}
       )
 
   - record: instance:node_memory_swap_io_bytes:sum_rate
@@ -45,25 +45,25 @@ groups:
   - record: instance:node_disk_utilisation:sum_irate
     expr: |
       sum by (instance) (
-        irate(node_disk_io_time_ms{app="node-exporter",device=~"(sd|xvd).+"}[1m]) / 1e3
+        irate(node_disk_io_time_seconds_total{app="node-exporter",device=~"(sd|xvd).+"}[1m])
       )
 
   - record: instance:node_disk_saturation:sum_irate
     expr: |
       sum by (instance) (
-        irate(node_disk_io_time_weighted{app="node-exporter",device=~"(sd|xvd).+"}[1m]) / 1e3
+        irate(node_disk_io_time_weighted_seconds_total{app="node-exporter",device=~"(sd|xvd).+"}[1m])
       )
 
   - record: instance:node_net_utilisation:sum_irate
     expr: |
       sum by (instance) (
-        (irate(node_network_receive_bytes{app="node-exporter",device=~"eth[0-9]+"}[1m]) +
-          irate(node_network_transmit_bytes{app="node-exporter",device=~"eth[0-9]+"}[1m]))
+        (irate(node_network_receive_bytes_total{app="node-exporter",device=~"eth[0-9]+"}[1m]) +
+          irate(node_network_transmit_bytes_total{app="node-exporter",device=~"eth[0-9]+"}[1m]))
       )
 
   - record: instance:node_net_saturation:sum_irate
     expr: |
       sum by (instance) (
-        (irate(node_network_receive_drop{app="node-exporter",device=~"eth[0-9]+"}[1m]) +
-          irate(node_network_transmit_drop{app="node-exporter",device=~"eth[0-9]+"}[1m]))
+        (irate(node_network_receive_drop_total{app="node-exporter",device=~"eth[0-9]+"}[1m]) +
+          irate(node_network_transmit_drop_total{app="node-exporter",device=~"eth[0-9]+"}[1m]))
       )

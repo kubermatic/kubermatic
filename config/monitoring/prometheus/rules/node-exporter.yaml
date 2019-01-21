@@ -7,11 +7,11 @@ groups:
         Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
         to run out of space within the next 24 hours.
     expr: |
-      predict_linear(node_filesystem_avail{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"}[6h], 24*60*60) < 0
+      predict_linear(node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"}[6h], 24*60*60) < 0
       and
-      node_filesystem_avail{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} / node_filesystem_size{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} < 0.4
+      node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} < 0.4
       and
-      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} == 0
+      node_filesystem_readonly_bytes{app="node-exporter",fstype=~"ext.|xfs"} == 0
     for: 1h
     labels:
       severity: warning
@@ -22,11 +22,11 @@ groups:
         Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
         to run out of space within the next 4 hours.
     expr: |
-      predict_linear(node_filesystem_avail{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"}[6h], 4*60*60) < 0
+      predict_linear(node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"}[6h], 4*60*60) < 0
       and
-      node_filesystem_avail{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} / node_filesystem_size{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} < 0.2
+      node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} < 0.2
       and
-      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} == 0
+      node_filesystem_readonly_bytes{app="node-exporter",fstype=~"ext.|xfs"} == 0
     for: 1h
     labels:
       severity: critical
@@ -37,9 +37,9 @@ groups:
         Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
         {{ $value }}% available space left.
     expr: |
-      node_filesystem_avail{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} / node_filesystem_size{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} * 100 < 5
+      node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 5
       and
-      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} == 0
+      node_filesystem_readonly_bytes{app="node-exporter",fstype=~"ext.|xfs"} == 0
     for: 1h
     labels:
       severity: warning
@@ -50,9 +50,9 @@ groups:
         Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
         {{ $value }}% available space left.
     expr: |
-      node_filesystem_avail{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} / node_filesystem_size{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} * 100 < 3
+      node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 3
       and
-      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} == 0
+      node_filesystem_readonly_bytes{app="node-exporter",fstype=~"ext.|xfs"} == 0
     for: 1h
     labels:
       severity: critical
@@ -63,11 +63,11 @@ groups:
         Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
         to run out of files within the next 24 hours.
     expr: |
-      predict_linear(node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"}[6h], 24*60*60) < 0
+      predict_linear(node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"}[6h], 24*60*60) < 0
       and
-      node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} < 0.4
+      node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} < 0.4
       and
-      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} == 0
+      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
     for: 1h
     labels:
       severity: warning
@@ -78,11 +78,11 @@ groups:
         Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
         to run out of files within the next 4 hours.
     expr: |
-      predict_linear(node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"}[6h], 4*60*60) < 0
+      predict_linear(node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"}[6h], 4*60*60) < 0
       and
-      node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} < 0.2
+      node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} < 0.2
       and
-      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} == 0
+      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
     for: 1h
     labels:
       severity: warning
@@ -93,9 +93,9 @@ groups:
         Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
         {{ $value }}% available inodes left.
     expr: |
-      node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} * 100 < 5
+      node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 5
       and
-      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} == 0
+      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
     for: 1h
     labels:
       severity: warning
@@ -106,9 +106,9 @@ groups:
         Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
         {{ $value }}% available space left.
     expr: |
-      node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} * 100 < 3
+      node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 3
       and
-      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs",mountpoint!="/var/lib/docker/aufs"} == 0
+      node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
     for: 1h
     labels:
       severity: critical
@@ -118,7 +118,7 @@ groups:
       message: >
         {{ $labels.instance }} interface {{ $labels.device }} shows errors
         while receiving packets ({{ $value }} errors in two minutes).
-    expr: increase(node_network_receive_errs[2m]) > 10
+    expr: increase(node_network_receive_errs_total[2m]) > 10
     for: 1h
     labels:
       severity: critical
@@ -128,7 +128,7 @@ groups:
       message: >
         {{ $labels.instance }} interface {{ $labels.device }} shows errors
         while transmitting packets ({{ $value }} errors in two minutes).
-    expr: increase(node_network_transmit_errs[2m]) > 10
+    expr: increase(node_network_transmit_errs_total[2m]) > 10
     for: 1h
     labels:
       severity: critical
