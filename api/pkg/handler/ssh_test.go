@@ -1,8 +1,9 @@
-package handler
+package handler_test
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -37,16 +38,16 @@ func TestDeleteSSHKey(t *testing.T) {
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
-				genBinding("my-first-project-ID", "john@acme.com", "owners"),
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
 				/*add users*/
-				genUser("", "john", "john@acme.com"),
+				test.GenUser("", "john", "john@acme.com"),
 				/*add cluster*/
 				test.GenDefaultCluster(),
 				/*add ssh keys*/
 				genSSHKey(test.DefaultCreationTimestamp(), "c08aa5c7abf34504f18552846485267d", "first-key", "my-first-project-ID", test.GenDefaultCluster().Name),
 				genSSHKey(test.DefaultCreationTimestamp(), "abc", "second-key", "my-first-project-ID", "abcd-ID"),
 			},
-			ExistingAPIUser: genAPIUser("john", "john@acme.com"),
+			ExistingAPIUser: test.GenAPIUser("john", "john@acme.com"),
 		},
 	}
 
@@ -57,7 +58,7 @@ func TestDeleteSSHKey(t *testing.T) {
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, clients, err := createTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil)
+			ep, clients, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -68,7 +69,7 @@ func TestDeleteSSHKey(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			kubermaticFakeClient := clients.fakeKubermaticClient
+			kubermaticFakeClient := clients.FakeKubermaticClient
 			{
 				// check only if ssh key was delteted
 				if tc.HTTPStatus == http.StatusOK {
@@ -136,16 +137,16 @@ func TestListSSHKeys(t *testing.T) {
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
-				genBinding("my-first-project-ID", "john@acme.com", "owners"),
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
 				/*add users*/
-				genUser("", "john", "john@acme.com"),
+				test.GenUser("", "john", "john@acme.com"),
 				/*add cluster*/
 				test.GenDefaultCluster(),
 				/*add ssh keys*/
 				genSSHKey(creationTime, "c08aa5c7abf34504f18552846485267d", "first-key", "my-first-project-ID", test.GenDefaultCluster().Name),
 				genSSHKey(creationTime.Add(time.Minute), "abc", "second-key", "my-first-project-ID", "abcd-ID"),
 			},
-			ExistingAPIUser: genAPIUser("john", "john@acme.com"),
+			ExistingAPIUser: test.GenAPIUser("john", "john@acme.com"),
 		},
 	}
 
@@ -155,7 +156,7 @@ func TestListSSHKeys(t *testing.T) {
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := createTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -166,10 +167,10 @@ func TestListSSHKeys(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			actualKeys := newSSHKeyV1SliceWrapper{}
+			actualKeys := test.NewSSHKeyV1SliceWrapper{}
 			actualKeys.DecodeOrDie(res.Body, t).Sort()
 
-			wrappedExpectedKeys := newSSHKeyV1SliceWrapper(tc.ExpectedKeys)
+			wrappedExpectedKeys := test.NewSSHKeyV1SliceWrapper(tc.ExpectedKeys)
 			wrappedExpectedKeys.Sort()
 			actualKeys.EqualOrDie(wrappedExpectedKeys, t)
 		})
@@ -201,13 +202,13 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
-				genBinding("my-first-project-ID", "john@acme.com", "owners"),
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
 				/*add users*/
-				genUser("", "john", "john@acme.com"),
+				test.GenUser("", "john", "john@acme.com"),
 				/*add cluster*/
 				test.GenDefaultCluster(),
 			},
-			ExistingAPIUser: genAPIUser("john", "john@acme.com"),
+			ExistingAPIUser: test.GenAPIUser("john", "john@acme.com"),
 		},
 		// scenario 2
 		{
@@ -220,15 +221,15 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
-				genBinding("my-first-project-ID", "john@acme.com", "owners"),
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
 				/*add users*/
-				genUser("", "john", "john@acme.com"),
+				test.GenUser("", "john", "john@acme.com"),
 				/*add cluster*/
 				test.GenDefaultCluster(),
 				/*add sshkeys*/
 				genSSHKey(test.DefaultCreationTimestamp(), "d08aa5d7bce34504f18552846485267c", "my-second-ssh-key", "my-first-project-ID", test.GenDefaultCluster().Name),
 			},
-			ExistingAPIUser: genAPIUser("john", "john@acme.com"),
+			ExistingAPIUser: test.GenAPIUser("john", "john@acme.com"),
 		},
 	}
 
@@ -238,7 +239,7 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := createTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -260,7 +261,7 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 				expectedResponse = fmt.Sprintf(tc.ExpectedResponse, actualSSHKey.ID)
 			}
 
-			compareWithResult(t, res, expectedResponse)
+			test.CompareWithResult(t, res, expectedResponse)
 		})
 	}
 }
