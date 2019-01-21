@@ -985,6 +985,15 @@ func patchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 			return nil, fmt.Errorf("cannot decode patched cluster: %v", err)
 		}
 
+		//TODO: We need to make the kubelet version configurable but restrict it to versions supported by the control plane
+		kversion, err := semver.NewVersion(patchedNodeDeployment.Spec.Template.Versions.Kubelet)
+		if err != nil {
+			return nil, k8cerrors.NewBadRequest("failed to parse kubelet version: %v", err)
+		}
+		if err = ensureVersionCompatible(cluster.Spec.Version.Semver(), kversion); err != nil {
+			return nil, k8cerrors.NewBadRequest(err.Error())
+		}
+
 		dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
 		if !found {
 			return nil, fmt.Errorf("unknown cluster datacenter %s", cluster.Spec.Cloud.DatacenterName)
