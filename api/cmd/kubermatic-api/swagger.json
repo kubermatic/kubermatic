@@ -992,6 +992,74 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/events": {
+      "get": {
+        "description": "If the value is 'normal' then normal events are returned. If the query parameter is missing method returns all events.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Lists node deployment events. If query parameter `type` is set to `warning` then only warning events are retrieved.",
+        "operationId": "listNodeDeploymentNodesEvents",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "Type",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "x-go-name": "NodeDeploymentID",
+            "name": "nodedeployment_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Event"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes": {
       "get": {
         "description": "Lists nodes that belong to the given cluster",
@@ -3326,6 +3394,43 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
+    },
+    "Event": {
+      "type": "object",
+      "title": "Event is a report of an event somewhere in the cluster.",
+      "properties": {
+        "message": {
+          "description": "A human-readable description of the status of this operation.",
+          "type": "string",
+          "x-go-name": "Message"
+        },
+        "type": {
+          "description": "Type of this event (normal, warning), new types could be added in the future",
+          "type": "string",
+          "x-go-name": "Type"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "EventList": {
+      "type": "object",
+      "title": "EventList is an events response structure.",
+      "properties": {
+        "events": {
+          "description": "List of events",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Event"
+          },
+          "x-go-name": "Events"
+        },
+        "name": {
+          "description": "The object name that those events are about.",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "ExecConfig": {
       "description": "See the client.authentiction.k8s.io API group for specifications of the exact input\nand output format",

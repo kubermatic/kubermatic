@@ -10,12 +10,15 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/runtime"
+
 	"github.com/Masterminds/semver"
 	"github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
@@ -851,6 +854,26 @@ func decodeListNodeDeploymentNodes(c context.Context, r *http.Request) (interfac
 	return req, nil
 }
 
+func getMachinesForNodeDeployment(clusterProvider provider.ClusterProvider, cluster *v1.Cluster, nodeDeploymentID string) (*clusterv1alpha1.MachineList, error) {
+
+	machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(cluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	machineDeployment, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Get(nodeDeploymentID, metav1.GetOptions{})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	listOptions := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels).String()}
+	machines, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(listOptions)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	return machines, nil
+}
+
 func listNodeDeploymentNodes(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NodeDeploymentNodesReq)
@@ -867,18 +890,7 @@ func listNodeDeploymentNodes(projectProvider provider.ProjectProvider) endpoint.
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		machineDeployment, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Get(req.NodeDeploymentID, metav1.GetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		listOptions := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels).String()}
-		machines, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(listOptions)
+		machines, err := getMachinesForNodeDeployment(clusterProvider, cluster, req.NodeDeploymentID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -1075,5 +1087,125 @@ func deleteNodeDeployment(projectProvider provider.ProjectProvider) endpoint.End
 		}
 
 		return nil, common.KubernetesErrorToHTTPError(machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Delete(req.NodeDeploymentID, nil))
+	}
+}
+
+const (
+	warningType = "warning"
+	normalType  = "normal"
+)
+
+// NodeDeploymentNodesEventsReq defines HTTP request for listNodeDeploymentNodesEvents endpoint
+// swagger:parameters listNodeDeploymentNodesEvents
+type NodeDeploymentNodesEventsReq struct {
+	common.GetClusterReq
+	// in: query
+	Type string
+
+	// in: path
+	NodeDeploymentID string `json:"nodedeployment_id"`
+}
+
+func decodeListNodeDeploymentNodesEvents(c context.Context, r *http.Request) (interface{}, error) {
+
+	var req NodeDeploymentNodesEventsReq
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	dcr, err := common.DecodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ClusterID = clusterID
+	req.NodeDeploymentID = nodeDeploymentID
+	req.DCReq = dcr.(common.DCReq)
+
+	req.Type = r.URL.Query().Get("type")
+	if len(req.Type) > 0 {
+		if req.Type == warningType || req.Type == normalType {
+			return req, nil
+		}
+		return nil, fmt.Errorf("wrong query paramater, unsupported type: %s", req.Type)
+	}
+
+	return req, nil
+}
+
+func listNodeDeploymentNodesEvents() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		apiv1Events := make([]apiv1.EventList, 0)
+		req := request.(NodeDeploymentNodesEventsReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		customerClusterClient, err := clusterProvider.GetKubernetesClientForCustomerCluster(cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		machines, err := getMachinesForNodeDeployment(clusterProvider, cluster, req.NodeDeploymentID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		for _, machine := range machines.Items {
+			eventList, err := getMachineEvents(customerClusterClient, machine)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+
+			if len(eventList.Events) > 0 {
+				if len(req.Type) > 0 {
+					if req.Type == warningType {
+						eventList = FilterEventsByType(eventList, corev1.EventTypeWarning)
+					}
+					if req.Type == normalType {
+						eventList = FilterEventsByType(eventList, corev1.EventTypeNormal)
+					}
+				}
+				apiv1Events = append(apiv1Events, eventList)
+			}
+		}
+
+		return apiv1Events, nil
+	}
+}
+
+// GetMachineEvents returns kubernetes API event objects assigned to the machine.
+func getMachineEvents(client kubernetes.Interface, machine clusterv1alpha1.Machine) (apiv1.EventList, error) {
+	events, err := client.CoreV1().Events(metav1.NamespaceSystem).Search(runtime.NewScheme(), &machine)
+	if err != nil {
+		return apiv1.EventList{}, err
+	}
+
+	return createMachineEventList(events.Items, machine), nil
+}
+
+// createMachineEventList converts array of api events to kubermatic EventList
+func createMachineEventList(events []corev1.Event, machine clusterv1alpha1.Machine) apiv1.EventList {
+	kubermaticEvents := make([]apiv1.Event, 0)
+
+	for _, event := range events {
+		kubermaticEvent := toEvent(event)
+		kubermaticEvents = append(kubermaticEvents, kubermaticEvent)
+	}
+
+	return apiv1.EventList{
+		Name:   machine.Name,
+		Events: kubermaticEvents,
 	}
 }
