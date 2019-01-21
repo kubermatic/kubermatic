@@ -874,6 +874,130 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 	}
 }
 
+func TestListNodeDeploymentNodesEvents(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                       string
+		HTTPStatus                 int
+		ExpectedResult             string
+		ProjectIDToSync            string
+		ClusterIDToSync            string
+		ExistingProject            *kubermaticv1.Project
+		ExistingKubermaticUser     *kubermaticv1.User
+		ExistingAPIUser            *apiv1.User
+		ExistingCluster            *kubermaticv1.Cluster
+		ExistingNodes              []*corev1.Node
+		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
+		ExistingMachines           []*clusterv1alpha1.Machine
+		ExistingKubermaticObjs     []runtime.Object
+		ExistingEvents             []*corev1.Event
+		NodeDeploymentID           string
+		QueryParams                string
+	}{
+		// scenario 1
+		{
+			Name:                   "scenario 1: list all events",
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123"}),
+			},
+			NodeDeploymentID: "venus",
+			ExistingMachines: []*clusterv1alpha1.Machine{
+				genTestMachine("venus-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+			},
+			ExistingEvents: []*corev1.Event{
+				genTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started"),
+				genTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed"),
+			},
+			ExpectedResult: `[{"name":"venus-1","events":[{"message":"message started","type":"Normal"},{"message":"message killed","type":"Warning"}]}]`,
+		},
+		// scenario 2
+		{
+			Name:                   "scenario 2: list all warning events",
+			QueryParams:            "?type=warning",
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123"}),
+			},
+			NodeDeploymentID: "venus",
+			ExistingMachines: []*clusterv1alpha1.Machine{
+				genTestMachine("venus-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+			},
+			ExistingEvents: []*corev1.Event{
+				genTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started"),
+				genTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed"),
+			},
+			ExpectedResult: `[{"name":"venus-1","events":[{"message":"message killed","type":"Warning"}]}]`,
+		},
+		// scenario 3
+		{
+			Name:                   "scenario 3: list all normal events",
+			QueryParams:            "?type=normal",
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123"}),
+			},
+			NodeDeploymentID: "venus",
+			ExistingMachines: []*clusterv1alpha1.Machine{
+				genTestMachine("venus-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+			},
+			ExistingEvents: []*corev1.Event{
+				genTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started"),
+				genTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed"),
+			},
+			ExpectedResult: `[{"name":"venus-1","events":[{"message":"message started","type":"Normal"}]}]`,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodedeployments/%s/nodes/events%s", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.NodeDeploymentID, tc.QueryParams), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			machineObj := []runtime.Object{}
+			kubernetesObj := []runtime.Object{}
+			for _, existingNode := range tc.ExistingNodes {
+				kubernetesObj = append(kubernetesObj, existingNode)
+			}
+			for _, existingEvents := range tc.ExistingEvents {
+				kubernetesObj = append(kubernetesObj, existingEvents)
+			}
+			for _, existingMachineDeployment := range tc.ExistingMachineDeployments {
+				machineObj = append(machineObj, existingMachineDeployment)
+			}
+			for _, existingMachine := range tc.ExistingMachines {
+				machineObj = append(machineObj, existingMachine)
+			}
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.ExpectedResult)
+		})
+	}
+}
+
 func TestPatchNodeDeployment(t *testing.T) {
 	t.Parallel()
 
@@ -1166,4 +1290,21 @@ func genTestCluster(isControllerReady bool) *kubermaticv1.Cluster {
 		},
 	}
 	return cluster
+}
+
+func genTestEvent(eventName, eventType, eventReason, eventMessage string) *corev1.Event {
+	return &corev1.Event{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      eventName,
+			Namespace: metav1.NamespaceSystem,
+		},
+		InvolvedObject: corev1.ObjectReference{
+			Namespace: metav1.NamespaceSystem,
+		},
+		Reason:  eventReason,
+		Message: eventMessage,
+		Source:  corev1.EventSource{Component: "eventTest"},
+		Count:   1,
+		Type:    eventType,
+	}
 }
