@@ -34,8 +34,7 @@ import (
 )
 
 const (
-	kubeletVersionConstraint = ">= 1.8"
-	errGlue                  = " & "
+	errGlue = " & "
 
 	initialConditionParsingDelay = 5
 )
@@ -601,20 +600,17 @@ func createNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 			return nil, k8cerrors.NewBadRequest("cannot create node deployment without cloud provider")
 		}
 
-		//TODO: We need to make the kubelet version configurable but restrict it to master version
+		//TODO: We need to make the kubelet version configurable but restrict it to versions supported by the control plane
 		if nd.Spec.Template.Versions.Kubelet != "" {
 			kversion, err := semver.NewVersion(nd.Spec.Template.Versions.Kubelet)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse kubelet version: %v", err)
-			}
-			c, err := semver.NewConstraint(kubeletVersionConstraint)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse kubelet constraint version: %v", err)
+				return nil, k8cerrors.NewBadRequest("failed to parse kubelet version: %v", err)
 			}
 
-			if !c.Check(kversion) {
-				return nil, fmt.Errorf("kubelet version does not fit constraint. Allowed %s", kubeletVersionConstraint)
+			if err = ensureVersionCompatible(cluster.Spec.Version.Semver(), kversion); err != nil {
+				return nil, k8cerrors.NewBadRequest(err.Error())
 			}
+
 			nd.Spec.Template.Versions.Kubelet = kversion.String()
 		} else {
 			//TODO: rework the versions

@@ -493,6 +493,30 @@ func TestCreateNodeDeployment(t *testing.T) {
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genTestCluster(false)),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
+
+		// scenario 3
+		{
+			Name:                   "scenario 3: kubelet version is too old",
+			Body:                   `{"spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.6.0"}}}}`,
+			ExpectedResponse:       `{"error":{"code":400,"message":"kubelet version 9.6.0 is not compatible with control plane version 9.9.9"}}`,
+			HTTPStatus:             http.StatusBadRequest,
+			ProjectID:              test.GenDefaultProject().Name,
+			ClusterID:              test.GenDefaultCluster().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genTestCluster(true)),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+		},
+
+		// scenario 4
+		{
+			Name:                   "scenario 4: kubelet version is too old",
+			Body:                   `{"spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.10.0"}}}}`,
+			ExpectedResponse:       `{"error":{"code":400,"message":"kubelet version 9.10.0 is not compatible with control plane version 9.9.9"}}`,
+			HTTPStatus:             http.StatusBadRequest,
+			ProjectID:              test.GenDefaultProject().Name,
+			ClusterID:              test.GenDefaultCluster().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genTestCluster(true)),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+		},
 	}
 
 	for _, tc := range testcases {
