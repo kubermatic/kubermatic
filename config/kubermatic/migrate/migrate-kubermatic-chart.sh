@@ -71,3 +71,7 @@ helm upgrade --install --tiller-namespace=${TILLER_NAMESPACE} \
     --namespace ${KUBERMATIC_NAMESPACE} ${RELEASE_NAME} \
     --set kubermatic.checks.crd.disable=true \
     ./kubermatic/
+
+echo "Successfully reinstalled kubermatic. From now on, the Kubermatic chart does not contain any CustomResourceDefinitions."
+echo "This enables users to purge the chart without deleting all clusters as consequence."
+echo "From now on, new CRD's will be placed in the /crd folder inside the kubermatic chart."
