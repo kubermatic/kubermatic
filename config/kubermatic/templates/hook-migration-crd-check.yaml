@@ -35,7 +35,9 @@ spec:
               CHART_NAME=$(kubectl -n ${NS} get ConfigMap ${CM} -o json | jq -r '.metadata.labels.NAME')
               REVISION=$(kubectl -n ${NS} get ConfigMap ${CM} -o json | jq -r '.metadata.labels.VERSION')
               RELEASE=$(helm --tiller-namespace=${NS} get ${CHART_NAME} --revision ${REVISION})
-              if [[ ${RELEASE} == *"kubermatic-0.1.0"* ]] && [[ ${RELEASE} == *"CustomResourceDefinition"* ]] && [[ ${RELEASE} == *"clusters.kubermatic.k8s.io"* ]]; then
+              # Build the search query with a variable, otherwise the hook will match itself...
+              CRD_NAME="clusters.kubermatic.k8s.io"
+              if [[ ${RELEASE} == *"kubermatic-0.1.0"* ]] && [[ ${RELEASE} == *"CustomResourceDefinition"* ]] && [[ ${RELEASE} == *"name: ${CRD_NAME}"* ]]; then
                 echo "========================================"
                 echo "================ WARNING ==============="
                 echo "========================================"
