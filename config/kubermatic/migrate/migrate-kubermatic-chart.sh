@@ -28,5 +28,5 @@ kubectl -n ${TILLER_NAMESPACE} delete configmap -l NAME=kubermatic
 helm upgrade --install --tiller-namespace=${TILLER_NAMESPACE} \
     --values ${VALUES_FILE} \
     --namespace kubermatic kubermatic \
-    --set kubermatic.disableCRDCHeck=true \
+    --set kubermatic.checks.crd.disable=true \
     ./kubermatic/
