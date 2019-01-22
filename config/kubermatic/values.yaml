@@ -20,6 +20,15 @@ kubermatic:
   # The prefix for monitoring annotations in the user cluster. Default: monitoring.kubermatic.io -> monitoring.kubermatic.io/scrape, monitoring.kubermatic.io/path
   monitoringScrapeAnnotationPrefix: ""
   deployVPA: true
+
+  # helm hooks/checks
+  checks:
+    # Checks if the last release contains the kubermatic CRD's.
+    # We moved them out of the chart to avoid issues with helm
+    crd:
+      disable: false
+      helmVersion: "v2.11.0"
+
   etcd:
     # PV size for the etcd StatefulSet of new clusters
     diskSize: "5Gi"

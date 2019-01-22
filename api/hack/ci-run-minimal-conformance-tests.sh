@@ -141,6 +141,7 @@ helm upgrade --install --wait --timeout 300 \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.deployVPA=false \
   --set=kubermatic.ingressClass=non-existent \
+  --set=kubermatic.checks.crd.disable=true \
   --values ${VALUES_FILE} \
   --namespace $NAMESPACE \
   kubermatic-$BUILD_ID ./config/kubermatic/
