@@ -22,7 +22,7 @@ groups:
     expr: |
       sum(namespace_name:kube_pod_container_resource_requests_memory_bytes:sum)
         /
-      sum(node_memory_MemTotal)
+      sum(node_memory_MemTotal_bytes)
         >
       (count(node:node_num_cpu:sum)-1)
         /
@@ -51,7 +51,7 @@ groups:
     expr: |
       sum(kube_resourcequota{job="kube-state-metrics", type="hard", resource="requests.memory"})
         /
-      sum(node_memory_MemTotal{app="node-exporter"})
+      sum(node_memory_MemTotal_bytes{app="node-exporter"})
         > 1.5
     for: 5m
     labels:
