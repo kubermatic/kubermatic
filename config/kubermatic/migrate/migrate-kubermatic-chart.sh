@@ -50,6 +50,13 @@ then
   exit 1
 fi
 
+echo "========================================"
+echo "================ WARNING ==============="
+echo "========================================"
+echo "This script will reinstall the existing kubermatic installation"
+echo ""
+echo "Waiting 30 seconds..."
+sleep 30
 
 # Delete the kubermatic namespace to enable a clean install afterwards
 kubectl delete --ignore-not-found=true ns ${KUBERMATIC_NAMESPACE}
@@ -62,6 +69,5 @@ cd "$(dirname "$0")/../../"
 helm upgrade --install --tiller-namespace=${TILLER_NAMESPACE} \
     --values ${VALUES_FILE} \
     --namespace ${KUBERMATIC_NAMESPACE} ${RELEASE_NAME} \
-    --set kubermatic.imagePullSecretData=e30=,kubermatic.domain=kubermatic.com,dex.caBundle=e30= \
     --set kubermatic.checks.crd.disable=true \
     ./kubermatic/
