@@ -600,7 +600,6 @@ func createNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 			return nil, k8cerrors.NewBadRequest("cannot create node deployment without cloud provider")
 		}
 
-		//TODO: We need to make the kubelet version configurable but restrict it to versions supported by the control plane
 		if nd.Spec.Template.Versions.Kubelet != "" {
 			kversion, err := semver.NewVersion(nd.Spec.Template.Versions.Kubelet)
 			if err != nil {

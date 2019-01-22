@@ -508,7 +508,7 @@ func TestCreateNodeDeployment(t *testing.T) {
 
 		// scenario 4
 		{
-			Name:                   "scenario 4: kubelet version is too old",
+			Name:                   "scenario 4: kubelet version is too new",
 			Body:                   `{"spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.10.0"}}}}`,
 			ExpectedResponse:       `{"error":{"code":400,"message":"kubelet version 9.10.0 is not compatible with control plane version 9.9.9"}}`,
 			HTTPStatus:             http.StatusBadRequest,
@@ -972,7 +972,7 @@ func TestPatchNodeDeployment(t *testing.T) {
 			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil)},
 			ExistingKubermaticObjs:     test.GenDefaultKubermaticObjects(genTestCluster(true)),
 		},
-		// Scenario 4: Downgrade to too old kubelet version
+		// Scenario 5: Upgrade kubelet to a too new version
 		{
 			Name:                       "Scenario 5: Upgrade kubelet to too new",
 			Body:                       fmt.Sprintf(`{"spec":{"template":{"versions":{"kubelet":"9.10.0"}}}}`),
