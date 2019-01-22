@@ -9,10 +9,6 @@ nginx:
     scrape: true
   image:
     repository: quay.io/kubernetes-ingress-controller/nginx-ingress-controller
-    tag: 0.18.0
-  defaultBackend:
-    image:
-      repository: gcr.io/google_containers/defaultbackend
-      tag: 1.4
+    tag: 0.22.0
   config: {}
 #    load-balance: "least_conn"
