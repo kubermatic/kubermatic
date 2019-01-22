@@ -1,0 +1,48 @@
+{{ if not .Values.kubermatic.checks.crd.disable }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "check-crd-migration-{{ .Release.Name }}-{{ .Release.Revision }}"
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,pre-delete
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      name: "check-crd-migration-{{ .Release.Name }}-{{ .Release.Revision }}"
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: kubermatic
+      containers:
+      - name: check-crd-migration
+        image: "quay.io/kubermatic/helm:2.11.0-2"
+        command: ["/bin/bash"]
+        args:
+        - "-c"
+        - |
+          set -euo pipefail
+
+          curl -L https://storage.googleapis.com/kubernetes-helm/helm-{{ .Values.kubermatic.checks.crd.helmVersion }}-linux-amd64.tar.gz | tar -xvz
+          mv linux-amd64/helm /usr/bin/helm
+
+          # Iterate over all namespaces and search for ConfigMaps with the labels NAME=kubermatic&OWNER=TILLER
+          for NS in $(kubectl get ns -o json | jq -r '.items[].metadata.name');do
+            echo "Checking Namespace ${NS}"
+            CONFIGMAPS=$(kubectl -n ${NS} get ConfigMap -l "OWNER=TILLER" -o json | jq -r '.items[].metadata.name')
+            # Check all revisions
+            for CM in ${CONFIGMAPS};do
+              # Get chart name
+              CHART_NAME=$(kubectl -n ${NS} get ConfigMap ${CM} -o json | jq -r '.metadata.labels.NAME')
+              REVISION=$(kubectl -n ${NS} get ConfigMap ${CM} -o json | jq -r '.metadata.labels.VERSION')
+              RELEASE=$(helm --tiller-namespace=${NS} get ${CHART_NAME} --revision ${REVISION})
+              if [[ ${RELEASE} == *"kubermatic-0.1.0"* ]] && [[ ${RELEASE} == *"CustomResourceDefinition"* ]] && [[ ${RELEASE} == *"clusters.kubermatic.k8s.io"* ]]; then
+                echo "========================================"
+                echo "================ WARNING ==============="
+                echo "========================================"
+                echo "The last release contains CustomResourceDefinitions. Before proceeding run the migration in charts/kubermatic/migrate/migrate-kubermatic-chart.sh"
+                echo "Otherwise clusters will be deleted!"
+                exit 1
+              fi
+            done
+          done
+{{ end }}
