@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ "$#" -lt 1 ] || [ "${1}" == "--help" ]; then
+if [ "$#" -lt 2 ] || [ "${1}" == "--help" ]; then
   cat <<EOF
-Usage: $(basename $0) path/to/values.yaml tiller-namespace
+Usage: $(basename $0) path/to/values.yaml kubermatic-namespace
 EOF
   exit 0
 fi
@@ -14,19 +14,54 @@ if [[ ! -f ${1} ]]; then
 fi
 
 VALUES_FILE=$(realpath ${1})
-TILLER_NAMESPACE=${2:-'kube-system'}
-cd "$(dirname "$0")/../../"
+KUBERMATIC_NAMESPACE=${2:-'kubermatic'}
+
+TILLER_NAMESPACE=""
+RELEASE_NAME=""
+# Figure out the namespace tiller is saving the release configmaps in.
+# This is needed to figure out the correct release name + content
+# This script will reuse the old release name
+for NS in $(kubectl get ns -o json | jq -r '.items[].metadata.name');do
+  CONFIGMAPS=$(kubectl -n ${NS} get ConfigMap -l "OWNER=TILLER" -o json | jq -r '.items[].metadata.name')
+  # Check all revisions
+  for CM in ${CONFIGMAPS};do
+    # Get chart name
+    CURRENT_RELEASE_NAME=$(kubectl -n ${NS} get ConfigMap ${CM} -o json | jq -r '.metadata.labels.NAME')
+    REVISION=$(kubectl -n ${NS} get ConfigMap ${CM} -o json | jq -r '.metadata.labels.VERSION')
+    RELEASE_CONTENT=$(helm --tiller-namespace=${NS} get ${CURRENT_RELEASE_NAME} --revision ${REVISION})
+    if [[ ${RELEASE_CONTENT} == *"kubermatic-0.1.0"* ]]; then
+      TILLER_NAMESPACE=${NS}
+      RELEASE_NAME=${CURRENT_RELEASE_NAME}
+      break
+    fi
+  done
+
+  # End outer loop if we found it
+  if [[ -n "${TILLER_NAMESPACE}" ]] && [[ -n "${RELEASE_NAME}" ]];
+  then
+    break
+  fi
+done
+
+# End outer loop if we found it
+if [[ -z "${TILLER_NAMESPACE}" ]] || [[ -z "${RELEASE_NAME}" ]];
+then
+  echo "could not get tiller namespace + release name of the kubermatic chart"
+  exit 1
+fi
+
 
 # Delete the kubermatic namespace to enable a clean install afterwards
-kubectl delete --ignore-not-found=true ns kubermatic
+kubectl delete --ignore-not-found=true ns ${KUBERMATIC_NAMESPACE}
 
 # Delete a ClusterRoleBinding - which is the only thing which does not exist in the kubermatic namespace
 kubectl delete --ignore-not-found=true clusterrolebindings.rbac.authorization.k8s.io kubermatic
+kubectl -n ${TILLER_NAMESPACE} delete configmap -l NAME=${RELEASE_NAME}
 
-kubectl -n ${TILLER_NAMESPACE} delete configmap -l NAME=kubermatic
-
+cd "$(dirname "$0")/../../"
 helm upgrade --install --tiller-namespace=${TILLER_NAMESPACE} \
     --values ${VALUES_FILE} \
-    --namespace kubermatic kubermatic \
+    --namespace ${KUBERMATIC_NAMESPACE} ${RELEASE_NAME} \
+    --set kubermatic.imagePullSecretData=e30=,kubermatic.domain=kubermatic.com,dex.caBundle=e30= \
     --set kubermatic.checks.crd.disable=true \
     ./kubermatic/

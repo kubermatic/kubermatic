@@ -43,7 +43,6 @@ spec:
                 echo "Otherwise clusters will be deleted!"
                 exit 1
               fi
-              exit 0
             done
           done
 {{ end }}
