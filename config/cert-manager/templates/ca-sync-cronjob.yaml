@@ -5,7 +5,7 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: cert-manager-ca-sync
+  name: ca-sync
 spec:
   schedule: "@weekly"
   jobTemplate:
@@ -16,7 +16,7 @@ spec:
           labels:
             app: ca-helper
         spec:
-          serviceAccountName: cert-manager-ca-sync
+          serviceAccountName: ca-sync
           restartPolicy: OnFailure
           containers:
           - name: ca-helper
@@ -37,4 +37,4 @@ spec:
           volumes:
           - name: config
             configMap:
-              name: cert-manager-ca-sync
+              name: ca-sync

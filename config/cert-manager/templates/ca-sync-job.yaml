@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: cert-manager-ca-sync
+  name: ca-sync
 spec:
   backoffLimit: 20
   template:
@@ -9,7 +9,7 @@ spec:
       labels:
         app: ca-helper
     spec:
-      serviceAccountName: cert-manager-ca-sync
+      serviceAccountName: ca-sync
       restartPolicy: OnFailure
       containers:
       - name: ca-helper
@@ -30,4 +30,4 @@ spec:
       volumes:
       - name: config
         configMap:
-          name: cert-manager-ca-sync
+          name: ca-sync
