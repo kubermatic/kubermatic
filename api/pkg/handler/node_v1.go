@@ -44,7 +44,7 @@ const (
 	initialConditionParsingDelay = 5
 )
 
-func deleteNodeForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func deleteNodeForClusterLegacy(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(DeleteNodeForClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -91,7 +91,7 @@ func deleteNodeForCluster(projectProvider provider.ProjectProvider) endpoint.End
 	}
 }
 
-func listNodesForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func listNodesForClusterLegacy(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(ListNodesForClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -170,7 +170,7 @@ func getNodeList(cluster *v1.Cluster, clusterProvider provider.ClusterProvider) 
 	return kubeClient.CoreV1().Nodes().List(metav1.ListOptions{})
 }
 
-func getNodeForCluster(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func getNodeForClusterLegacy(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NodeReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -403,15 +403,15 @@ func findMachineAndNode(name string, machineClient clusterv1alpha1clientset.Inte
 	return machine, node, nil
 }
 
-// DeleteNodeForClusterReq defines HTTP request for deleteNodeForCluster
-// swagger:parameters deleteNodeForCluster
+// DeleteNodeForClusterReq defines HTTP request for deleteNodeForClusterLegacy
+// swagger:parameters deleteNodeForClusterLegacy
 type DeleteNodeForClusterReq struct {
 	common.GetClusterReq
 	// in: path
 	NodeID string `json:"node_id"`
 }
 
-func decodeDeleteNodeForCluster(c context.Context, r *http.Request) (interface{}, error) {
+func decodeDeleteNodeForClusterLegacy(c context.Context, r *http.Request) (interface{}, error) {
 	var req DeleteNodeForClusterReq
 
 	nodeID := mux.Vars(r)["node_id"]
@@ -436,15 +436,15 @@ func decodeDeleteNodeForCluster(c context.Context, r *http.Request) (interface{}
 	return req, nil
 }
 
-// ListNodesForClusterReq defines HTTP request for listNodesForCluster
-// swagger:parameters listNodesForCluster
+// ListNodesForClusterReq defines HTTP request for listNodesForClusterLegacy
+// swagger:parameters listNodesForClusterLegacy
 type ListNodesForClusterReq struct {
 	common.GetClusterReq
 	// in: query
 	HideInitialConditions bool `json:"hideInitialConditions"`
 }
 
-func decodeListNodesForCluster(c context.Context, r *http.Request) (interface{}, error) {
+func decodeListNodesForClusterLegacy(c context.Context, r *http.Request) (interface{}, error) {
 	var req ListNodesForClusterReq
 
 	clusterID, err := common.DecodeClusterID(c, r)
@@ -472,7 +472,7 @@ type CreateNodeReqLegacy struct {
 	Body apiv1.Node
 }
 
-func decodeCreateNodeForCluster(c context.Context, r *http.Request) (interface{}, error) {
+func decodeCreateNodeForClusterLegacy(c context.Context, r *http.Request) (interface{}, error) {
 	var req CreateNodeReqLegacy
 
 	clusterID, err := common.DecodeClusterID(c, r)
@@ -494,8 +494,8 @@ func decodeCreateNodeForCluster(c context.Context, r *http.Request) (interface{}
 	return req, nil
 }
 
-// NodeReq defines HTTP request for getNodeForCluster
-// swagger:parameters getNodeForCluster
+// NodeReq defines HTTP request for getNodeForClusterLegacy
+// swagger:parameters getNodeForClusterLegacy
 type NodeReq struct {
 	common.GetClusterReq
 	// in: path
@@ -504,7 +504,7 @@ type NodeReq struct {
 	HideInitialConditions bool `json:"hideInitialConditions"`
 }
 
-func decodeGetNodeForCluster(c context.Context, r *http.Request) (interface{}, error) {
+func decodeGetNodeForClusterLegacy(c context.Context, r *http.Request) (interface{}, error) {
 	var req NodeReq
 
 	clusterID, err := common.DecodeClusterID(c, r)
