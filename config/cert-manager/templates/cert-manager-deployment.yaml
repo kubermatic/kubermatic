@@ -1,0 +1,46 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: cert-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cert-manager
+  template:
+    metadata:
+      labels:
+        app: cert-manager
+    spec:
+      serviceAccountName: cert-manager
+      {{- if .Values.certManager.securityContext.enabled }}
+      securityContext:
+        fsGroup: {{ .Values.certManager.securityContext.fsGroup }}
+        runAsUser: {{ .Values.certManager.securityContext.runAsUser }}
+      {{- end }}
+      containers:
+        - name: cert-manager
+          image: "{{ .Values.certManager.image.repository }}:{{ .Values.certManager.image.tag }}"
+          imagePullPolicy: {{ .Values.certManager.image.pullPolicy }}
+          args:
+          - --cluster-resource-namespace=$(POD_NAMESPACE)
+          - --leader-election-namespace=$(POD_NAMESPACE)
+          {{- with .Values.certManager.ingressShim }}
+          {{- if .defaultIssuerName }}
+          - --default-issuer-name={{ .defaultIssuerName }}
+          {{- end }}
+          {{- if .defaultIssuerKind }}
+          - --default-issuer-kind={{ .defaultIssuerKind }}
+          {{- end }}
+          {{- if .defaultACMEChallengeType }}
+          - --default-acme-issuer-challenge-type={{ .defaultACMEChallengeType }}
+          {{- end }}
+          {{- if .defaultACMEDNS01ChallengeProvider }}
+          - --default-acme-issuer-dns01-provider-name={{ .defaultACMEDNS01ChallengeProvider }}
+          {{- end }}
+          {{- end }}
+          env:
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace

@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ca-sync
+spec:
+  backoffLimit: 20
+  template:
+    metadata:
+      labels:
+        app: ca-helper
+    spec:
+      serviceAccountName: ca-sync
+      restartPolicy: OnFailure
+      containers:
+      - name: ca-helper
+        image: {{ .Values.certManager.caSyncImage.repository }}:{{ .Values.certManager.caSyncImage.tag }}
+        imagePullPolicy: {{ .Values.certManager.caSyncImage.pullPolicy }}
+        args:
+        - -config=/config/config
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+      volumes:
+      - name: config
+        configMap:
+          name: ca-sync
