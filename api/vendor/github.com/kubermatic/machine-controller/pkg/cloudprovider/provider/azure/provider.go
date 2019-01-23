@@ -139,7 +139,7 @@ func New(configVarResolver *providerconfig.ConfigVarResolver) cloud.Provider {
 	return &provider{configVarResolver: configVarResolver}
 }
 
-func (p *provider) getConfig(s v1alpha1.ProviderConfig) (*config, *providerconfig.Config, error) {
+func (p *provider) getConfig(s v1alpha1.ProviderSpec) (*config, *providerconfig.Config, error) {
 	if s.Value == nil {
 		return nil, nil, fmt.Errorf("machine.spec.providerconfig.value is nil")
 	}
@@ -327,7 +327,7 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 }
 
 func (p *provider) Create(machine *v1alpha1.Machine, data *cloud.MachineCreateDeleteData, userdata string) (instance.Instance, error) {
-	config, providerCfg, err := p.getConfig(machine.Spec.ProviderConfig)
+	config, providerCfg, err := p.getConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return nil, cloudprovidererrors.TerminalError{
 			Reason:  common.InvalidConfigurationMachineError,
@@ -475,7 +475,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, data *cloud.MachineCreateDe
 }
 
 func (p *provider) Cleanup(machine *v1alpha1.Machine, data *cloud.MachineCreateDeleteData) (bool, error) {
-	config, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	config, _, err := p.getConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return false, fmt.Errorf("failed to parse MachineSpec: %v", err)
 	}
@@ -614,7 +614,7 @@ func getVMStatus(ctx context.Context, c *config, vmName string) (instance.Status
 }
 
 func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
-	config, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	config, _, err := p.getConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse MachineSpec: %v", err)
 	}
@@ -642,7 +642,7 @@ func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 }
 
 func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, name string, err error) {
-	c, _, err := p.getConfig(spec.ProviderConfig)
+	c, _, err := p.getConfig(spec.ProviderSpec)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -672,7 +672,7 @@ func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, nam
 }
 
 func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
-	c, providerCfg, err := p.getConfig(spec.ProviderConfig)
+	c, providerCfg, err := p.getConfig(spec.ProviderSpec)
 	if err != nil {
 		return fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -735,7 +735,7 @@ func (p *provider) MigrateUID(machine *v1alpha1.Machine, new types.UID) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	config, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	config, _, err := p.getConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return cloudprovidererrors.TerminalError{
 			Reason:  common.InvalidConfigurationMachineError,
@@ -811,7 +811,7 @@ func (p *provider) MigrateUID(machine *v1alpha1.Machine, new types.UID) error {
 func (p *provider) MachineMetricsLabels(machine *v1alpha1.Machine) (map[string]string, error) {
 	labels := make(map[string]string)
 
-	c, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	c, _, err := p.getConfig(machine.Spec.ProviderSpec)
 	if err == nil {
 		labels["size"] = c.VMSize
 		labels["location"] = c.Location

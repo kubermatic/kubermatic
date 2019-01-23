@@ -726,7 +726,7 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:0adb6e8ca43fb0137c3cd7b02b7d636fc93b41c1da4be019dfa3fe0988c345fc"
+  digest = "1:6faebb4d2bfeb9058ac712f6cfa63cc6b123bb13e9b0cb756856d39297d3a555"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/cloudprovider/cloud",
@@ -751,8 +751,8 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "d1d9a8c820076c1c1523d60fe41e8a5819b4470c"
-  version = "v0.10.6"
+  revision = "0963b638ffccc67f390e4b1540b16436b23b2f61"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:d244f8666a838fe6ad70ec8fe77f50ebc29fdc3331a2729ba5886bef8435d10d"
@@ -1636,7 +1636,7 @@
   revision = "0317810137be915b9cf888946c6e115c1bfac693"
 
 [[projects]]
-  digest = "1:9f5539b39891e1efcfc2f5e99aeaa5c31bbd6e834d3d79f8c9fdad2adb914608"
+  digest = "1:c1835a3b579c73d73f3cac2ad13a9e2432b809a491b32564d2924d473441ab28"
   name = "sigs.k8s.io/cluster-api"
   packages = [
     "pkg/apis/cluster/common",
@@ -1653,7 +1653,7 @@
     "pkg/client/listers_generated/cluster/v1alpha1",
   ]
   pruneopts = "NUT"
-  revision = "05cb1e663eb4085fbb92321dd1235377c84567f8"
+  revision = "45f1c93260140936c610e56575d7505ba3d52444"
 
 [[projects]]
   digest = "1:bc56e66394dfc776f9ba1322bbad21698d6235aec6bf5524201d1f64d4ee1915"

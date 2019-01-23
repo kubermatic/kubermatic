@@ -62,9 +62,9 @@ func (p Provider) UserData(
 		return "", fmt.Errorf("failed to get cloud config: %v", err)
 	}
 
-	pconfig, err := providerconfig.GetConfig(spec.ProviderConfig)
+	pconfig, err := providerconfig.GetConfig(spec.ProviderSpec)
 	if err != nil {
-		return "", fmt.Errorf("failed to get provider config: %v", err)
+		return "", fmt.Errorf("failed to get providerSpec: %v", err)
 	}
 
 	if pconfig.OverwriteCloudConfig != nil {
@@ -97,7 +97,7 @@ func (p Provider) UserData(
 
 	data := struct {
 		MachineSpec      clusterv1alpha1.MachineSpec
-		ProviderConfig   *providerconfig.Config
+		ProviderSpec     *providerconfig.Config
 		OSConfig         *Config
 		CloudProvider    string
 		CloudConfig      string
@@ -108,7 +108,7 @@ func (p Provider) UserData(
 		KubernetesCACert string
 	}{
 		MachineSpec:      spec,
-		ProviderConfig:   pconfig,
+		ProviderSpec:     pconfig,
 		OSConfig:         osConfig,
 		CloudProvider:    cpName,
 		CloudConfig:      cpConfig,
@@ -136,7 +136,7 @@ hostname: {{ .MachineSpec.Name }}
 ssh_pwauth: no
 
 ssh_authorized_keys:
-{{- range .ProviderConfig.SSHPublicKeys }}
+{{- range .ProviderSpec.SSHPublicKeys }}
 - "{{ . }}"
 {{- end }}
 

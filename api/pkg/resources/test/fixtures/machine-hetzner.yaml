@@ -5,7 +5,7 @@ metadata:
 spec:
   metadata:
     creationTimestamp: null
-  providerConfig:
+  providerSpec:
     value:
       cloudProvider: hetzner
       cloudProviderSpec:
