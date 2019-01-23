@@ -102,7 +102,7 @@ func (vsphereServer Server) Status() instance.Status {
 }
 
 func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec, error) {
-	cfg, _, rawCfg, err := p.getConfig(spec.ProviderConfig)
+	cfg, _, rawCfg, err := p.getConfig(spec.ProviderSpec)
 	if err != nil {
 		return spec, cloudprovidererrors.TerminalError{
 			Reason:  common.InvalidConfigurationMachineError,
@@ -148,7 +148,7 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 		}
 	}
 
-	spec.ProviderConfig.Value, err = setProviderConfig(*rawCfg, spec.ProviderConfig)
+	spec.ProviderSpec.Value, err = setProviderSpec(*rawCfg, spec.ProviderSpec)
 	if err != nil {
 		return spec, fmt.Errorf("error marshaling providerconfig: %s", err)
 	}
@@ -156,7 +156,7 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 	return spec, nil
 }
 
-func setProviderConfig(rawConfig RawConfig, s v1alpha1.ProviderConfig) (*runtime.RawExtension, error) {
+func setProviderSpec(rawConfig RawConfig, s v1alpha1.ProviderSpec) (*runtime.RawExtension, error) {
 	pconfig := providerconfig.Config{}
 	err := json.Unmarshal(s.Value.Raw, &pconfig)
 	if err != nil {
@@ -187,7 +187,7 @@ func getClient(username, password, address string, allowInsecure bool) (*govmomi
 	return govmomi.NewClient(context.TODO(), clientURL, allowInsecure)
 }
 
-func (p *provider) getConfig(s v1alpha1.ProviderConfig) (*Config, *providerconfig.Config, *RawConfig, error) {
+func (p *provider) getConfig(s v1alpha1.ProviderSpec) (*Config, *providerconfig.Config, *RawConfig, error) {
 	if s.Value == nil {
 		return nil, nil, nil, fmt.Errorf("machine.spec.providerconfig.value is nil")
 	}
@@ -268,7 +268,7 @@ func (p *provider) getConfig(s v1alpha1.ProviderConfig) (*Config, *providerconfi
 func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	config, _, _, err := p.getConfig(spec.ProviderConfig)
+	config, _, _, err := p.getConfig(spec.ProviderSpec)
 	if err != nil {
 		return fmt.Errorf("failed to get config: %v", err)
 	}
@@ -318,7 +318,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, _ *cloud.MachineCreateDelet
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	config, pc, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	config, pc, _, err := p.getConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -396,7 +396,7 @@ func (p *provider) Cleanup(machine *v1alpha1.Machine, data *cloud.MachineCreateD
 		return false, fmt.Errorf("failed to get instance: %v", err)
 	}
 
-	config, pc, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	config, pc, _, err := p.getConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return false, fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -496,7 +496,7 @@ func (p *provider) Cleanup(machine *v1alpha1.Machine, data *cloud.MachineCreateD
 
 func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 
-	config, _, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	config, _, _, err := p.getConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -568,7 +568,7 @@ func (p *provider) MigrateUID(machine *v1alpha1.Machine, new ktypes.UID) error {
 }
 
 func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, name string, err error) {
-	c, _, _, err := p.getConfig(spec.ProviderConfig)
+	c, _, _, err := p.getConfig(spec.ProviderSpec)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -627,7 +627,7 @@ func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, nam
 func (p *provider) MachineMetricsLabels(machine *v1alpha1.Machine) (map[string]string, error) {
 	labels := make(map[string]string)
 
-	c, _, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	c, _, _, err := p.getConfig(machine.Spec.ProviderSpec)
 	if err == nil {
 		labels["size"] = fmt.Sprintf("%d-cpus-%d-mb", c.CPUs, c.MemoryMB)
 		labels["dc"] = c.Datacenter

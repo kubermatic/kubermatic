@@ -186,7 +186,7 @@ func (c *Controller) getUsedIPs() ([]net.IP, error) {
 			continue
 		}
 
-		cfg, err := providerconfig.GetConfig(m.Spec.ProviderConfig)
+		cfg, err := providerconfig.GetConfig(m.Spec.ProviderSpec)
 		if err != nil {
 			return nil, err
 		}
@@ -216,7 +216,7 @@ func (c *Controller) initMachineIfNeeded(machine *clusterv1alpha1.Machine) error
 		return nil
 	}
 
-	cfg, err := providerconfig.GetConfig(machine.Spec.ProviderConfig)
+	cfg, err := providerconfig.GetConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return err
 	}
@@ -250,7 +250,7 @@ func (c *Controller) initMachineIfNeeded(machine *clusterv1alpha1.Machine) error
 		return err
 	}
 
-	machine.Spec.ProviderConfig.Value = &runtime.RawExtension{Raw: cfgSerialized}
+	machine.Spec.ProviderSpec.Value = &runtime.RawExtension{Raw: cfgSerialized}
 	pendingInitializers := machine.ObjectMeta.GetInitializers().Pending
 
 	// Remove self from the list of pending Initializers while preserving ordering.
@@ -278,7 +278,7 @@ func (c *Controller) awaitIPSync(machine *clusterv1alpha1.Machine, cidr string) 
 			return false, fmt.Errorf("error while retrieving machine %s from lister, see: %v", machine.Name, err)
 		}
 
-		cfg2, err := providerconfig.GetConfig(m2.Spec.ProviderConfig)
+		cfg2, err := providerconfig.GetConfig(m2.Spec.ProviderSpec)
 		if err != nil {
 			return false, fmt.Errorf("couldn't get providerconfig for machine %s, see: %v", m2.Name, err)
 		}

@@ -322,9 +322,9 @@ func NewConfigVarResolver(kubeClient kubernetes.Interface) *ConfigVarResolver {
 	return &ConfigVarResolver{kubeClient: kubeClient}
 }
 
-func GetConfig(r clusterv1alpha1.ProviderConfig) (*Config, error) {
+func GetConfig(r clusterv1alpha1.ProviderSpec) (*Config, error) {
 	if r.Value == nil {
-		return nil, fmt.Errorf("machine.spec.providerconfig.value is nil")
+		return nil, fmt.Errorf("machine.spec.providerSpec.value is nil")
 	}
 	p := new(Config)
 	if len(r.Value.Raw) == 0 {

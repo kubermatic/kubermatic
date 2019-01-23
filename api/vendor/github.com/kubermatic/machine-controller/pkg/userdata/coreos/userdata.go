@@ -61,7 +61,7 @@ func (p Provider) UserData(
 		return "", fmt.Errorf("failed to get cloud config: %v", err)
 	}
 
-	pconfig, err := providerconfig.GetConfig(spec.ProviderConfig)
+	pconfig, err := providerconfig.GetConfig(spec.ProviderSpec)
 	if err != nil {
 		return "", fmt.Errorf("failed to get provider config: %v", err)
 	}
@@ -87,7 +87,7 @@ func (p Provider) UserData(
 
 	data := struct {
 		MachineSpec       clusterv1alpha1.MachineSpec
-		ProviderConfig    *providerconfig.Config
+		ProviderSpec      *providerconfig.Config
 		CoreOSConfig      *Config
 		Kubeconfig        string
 		CloudProvider     string
@@ -98,7 +98,7 @@ func (p Provider) UserData(
 		KubeletVersion    string
 	}{
 		MachineSpec:       spec,
-		ProviderConfig:    pconfig,
+		ProviderSpec:      pconfig,
 		CoreOSConfig:      coreosConfig,
 		Kubeconfig:        kubeconfigString,
 		CloudProvider:     cpName,
@@ -122,10 +122,10 @@ passwd:
   users:
     - name: core
       ssh_authorized_keys:
-        {{range .ProviderConfig.SSHPublicKeys}}- {{.}}
+        {{range .ProviderSpec.SSHPublicKeys}}- {{.}}
         {{end}}
 
-{{- if .ProviderConfig.Network }}
+{{- if .ProviderSpec.Network }}
 networkd:
   units:
     - name: static-nic.network
@@ -138,9 +138,9 @@ networkd:
 
         [Network]
         DHCP=no
-        Address={{ .ProviderConfig.Network.CIDR }}
-        Gateway={{ .ProviderConfig.Network.Gateway }}
-        {{range .ProviderConfig.Network.DNS.Servers}}DNS={{.}}
+        Address={{ .ProviderSpec.Network.CIDR }}
+        Gateway={{ .ProviderSpec.Network.Gateway }}
+        {{range .ProviderSpec.Network.DNS.Servers}}DNS={{.}}
         {{end}}
 {{- end }}
 

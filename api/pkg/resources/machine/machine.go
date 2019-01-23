@@ -128,7 +128,7 @@ func Machine(c *kubermaticv1.Cluster, node *apiv1.Node, dc provider.DatacenterMe
 		return nil, err
 	}
 
-	m.Spec.ProviderConfig.Value = &runtime.RawExtension{Raw: b}
+	m.Spec.ProviderSpec.Value = &runtime.RawExtension{Raw: b}
 
 	return &m, nil
 }

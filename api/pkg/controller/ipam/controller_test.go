@@ -175,7 +175,7 @@ func createMachine(name string) *clusterv1alpha1.Machine {
 			},
 		},
 		Spec: clusterv1alpha1.MachineSpec{
-			ProviderConfig: clusterv1alpha1.ProviderConfig{
+			ProviderSpec: clusterv1alpha1.ProviderSpec{
 				Value: &runtime.RawExtension{Raw: []byte(`{}`)},
 			},
 		},
@@ -243,7 +243,7 @@ func assertNetworkEquals(t *testing.T, m *clusterv1alpha1.Machine, ip string, gw
 }
 
 func getNetworkForMachine(m *clusterv1alpha1.Machine) (*providerconfig.NetworkConfig, error) {
-	cfg, err := providerconfig.GetConfig(m.Spec.ProviderConfig)
+	cfg, err := providerconfig.GetConfig(m.Spec.ProviderSpec)
 	if err != nil {
 		return nil, err
 	}

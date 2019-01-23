@@ -6,8 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
-
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
 	osavailabilityzones "github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/availabilityzones"
@@ -326,66 +324,6 @@ func getFreeFloatingIPs(client *gophercloud.ProviderClient, region string, float
 	}
 
 	return freeFIPs, nil
-}
-
-func assignFloatingIPToInstance(client *gophercloud.ProviderClient, instanceID, floatingIPPoolName, region string, network *osnetworks.Network) error {
-	port, err := getInstancePort(client, region, instanceID, network.ID)
-	if err != nil {
-		return fmt.Errorf("failed to get instance port for network %s in region %s: %v", network.ID, region, err)
-	}
-
-	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Region: region})
-	if err != nil {
-		return fmt.Errorf("failed to create the networkv2 client for region %s: %v", region, err)
-	}
-
-	floatingIPPool, err := getNetwork(client, region, floatingIPPoolName)
-	if err != nil {
-		return osErrorToTerminalError(err, fmt.Sprintf("failed to get floating ip pool %q", floatingIPPoolName))
-	}
-
-	// We're only interested in the part which is vulnerable to concurrent access
-	started := time.Now()
-	glog.V(2).Infof("Assigning a floating IP to instance %s", instanceID)
-
-	floatingIPAssignLock.Lock()
-	defer floatingIPAssignLock.Unlock()
-
-	freeFloatingIps, err := getFreeFloatingIPs(client, region, floatingIPPool)
-	if err != nil {
-		return osErrorToTerminalError(err, "failed to get free floating ips")
-	}
-
-	var ip *osfloatingips.FloatingIP
-	if len(freeFloatingIps) < 1 {
-		if ip, err = createFloatingIP(client, region, port.ID, floatingIPPool); err != nil {
-			return osErrorToTerminalError(err, "failed to allocate a floating ip")
-		}
-	} else {
-		freeIP := freeFloatingIps[0]
-		ip, err = osfloatingips.Update(netClient, freeIP.ID, osfloatingips.UpdateOpts{
-			PortID: &port.ID,
-		}).Extract()
-		if err != nil {
-			return fmt.Errorf("failed to update FloatingIP %s(%s): %v", freeIP.ID, freeIP.FloatingIP, err)
-		}
-
-		// We're now going to wait 3 seconds and check if the IP is still ours. If not, we're going to fail
-		// On our reference system it took ~3 seconds for a full FloatingIP allocation (Including creating a new one). It took ~600ms just for assigning one.
-		time.Sleep(floatingReassignIPCheckPeriod)
-		currentIP, err := osfloatingips.Get(netClient, ip.ID).Extract()
-		if err != nil {
-			return fmt.Errorf("failed to load FloatingIP %s after assignment has been done: %v", ip.FloatingIP, err)
-		}
-		// Verify if the port is still the one we set it to
-		if currentIP.PortID != port.ID {
-			return fmt.Errorf("floatingIP %s got reassigned", currentIP.FloatingIP)
-		}
-	}
-	secondsTook := time.Since(started).Seconds()
-
-	glog.V(2).Infof("Successfully assigned the FloatingIP %s to instance %s. Took %f seconds(without the recheck wait period %f seconds). ", ip.FloatingIP, instanceID, secondsTook, floatingReassignIPCheckPeriod.Seconds())
-	return nil
 }
 
 func createFloatingIP(client *gophercloud.ProviderClient, region, portID string, floatingIPPool *osnetworks.Network) (*osfloatingips.FloatingIP, error) {

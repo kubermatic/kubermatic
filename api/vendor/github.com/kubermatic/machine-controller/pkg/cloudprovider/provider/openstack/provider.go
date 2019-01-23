@@ -14,6 +14,8 @@ import (
 	osextendedstatus "github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/extendedstatus"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
 	osservers "github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
+	osfloatingips "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/floatingips"
+	osnetworks "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	"github.com/gophercloud/gophercloud/pagination"
 
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/cloud"
@@ -24,10 +26,16 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
 	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+)
+
+const (
+	floatingIPReleaseFinalizer = "kubermatic.io/release-openstack-floating-ip"
+	floatingIPIDAnnotationKey  = "kubermatic.io/release-openstack-floating-ip"
 )
 
 type provider struct {
@@ -93,7 +101,7 @@ const (
 // Protects floating ip assignment
 var floatingIPAssignLock = &sync.Mutex{}
 
-func (p *provider) getConfig(s v1alpha1.ProviderConfig) (*Config, *providerconfig.Config, *RawConfig, error) {
+func (p *provider) getConfig(s v1alpha1.ProviderSpec) (*Config, *providerconfig.Config, *RawConfig, error) {
 	if s.Value == nil {
 		return nil, nil, nil, fmt.Errorf("machine.spec.providerconfig.value is nil")
 	}
@@ -175,7 +183,7 @@ func (p *provider) getConfig(s v1alpha1.ProviderConfig) (*Config, *providerconfi
 	return &c, &pconfig, &rawConfig, err
 }
 
-func setProviderConfig(rawConfig RawConfig, s v1alpha1.ProviderConfig) (*runtime.RawExtension, error) {
+func setProviderSpec(rawConfig RawConfig, s v1alpha1.ProviderSpec) (*runtime.RawExtension, error) {
 	if s.Value == nil {
 		return nil, fmt.Errorf("machine.spec.providerconfig.value is nil")
 	}
@@ -211,7 +219,7 @@ func getClient(c *Config) (*gophercloud.ProviderClient, error) {
 }
 
 func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec, error) {
-	c, _, rawConfig, err := p.getConfig(spec.ProviderConfig)
+	c, _, rawConfig, err := p.getConfig(spec.ProviderSpec)
 	if err != nil {
 		return spec, cloudprovidererrors.TerminalError{
 			Reason:  common.InvalidConfigurationMachineError,
@@ -283,7 +291,7 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 		}
 	}
 
-	spec.ProviderConfig.Value, err = setProviderConfig(*rawConfig, spec.ProviderConfig)
+	spec.ProviderSpec.Value, err = setProviderSpec(*rawConfig, spec.ProviderSpec)
 	if err != nil {
 		return spec, osErrorToTerminalError(err, "error marshaling providerconfig")
 	}
@@ -291,7 +299,7 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 }
 
 func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
-	c, _, _, err := p.getConfig(spec.ProviderConfig)
+	c, _, _, err := p.getConfig(spec.ProviderSpec)
 	if err != nil {
 		return fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -349,8 +357,8 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 	return nil
 }
 
-func (p *provider) Create(machine *v1alpha1.Machine, _ *cloud.MachineCreateDeleteData, userdata string) (instance.Instance, error) {
-	c, _, _, err := p.getConfig(machine.Spec.ProviderConfig)
+func (p *provider) Create(machine *v1alpha1.Machine, machineCreateDeleteData *cloud.MachineCreateDeleteData, userdata string) (instance.Instance, error) {
+	c, _, _, err := p.getConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return nil, cloudprovidererrors.TerminalError{
 			Reason:  common.InvalidConfigurationMachineError,
@@ -423,7 +431,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, _ *cloud.MachineCreateDelet
 
 	// Find a free FloatingIP or allocate a new one
 	if c.FloatingIPPool != "" {
-		if err := assignFloatingIPToInstance(client, server.ID, c.FloatingIPPool, c.Region, network); err != nil {
+		if err := assignFloatingIPToInstance(machineCreateDeleteData.Updater, machine, client, server.ID, c.FloatingIPPool, c.Region, network); err != nil {
 			defer deleteInstanceDueToFatalLogged(computeClient, server.ID)
 			return nil, fmt.Errorf("failed to assign a floating ip to instance %s: %v", server.ID, err)
 		}
@@ -475,16 +483,26 @@ func deleteInstanceDueToFatalLogged(computeClient *gophercloud.ServiceClient, se
 	glog.V(0).Infof("Instance %s got deleted", serverID)
 }
 
-func (p *provider) Cleanup(machine *v1alpha1.Machine, _ *cloud.MachineCreateDeleteData) (bool, error) {
+func (p *provider) Cleanup(machine *v1alpha1.Machine, machineCreateDeleteData *cloud.MachineCreateDeleteData) (bool, error) {
+	var hasFloatingIPReleaseFinalizer bool
+	if finalizers := sets.NewString(machine.Finalizers...); finalizers.Has(floatingIPReleaseFinalizer) {
+		hasFloatingIPReleaseFinalizer = true
+	}
+
 	instance, err := p.Get(machine)
 	if err != nil {
 		if err == cloudprovidererrors.ErrInstanceNotFound {
+			if hasFloatingIPReleaseFinalizer {
+				if err := p.cleanupFloatingIP(machine, machineCreateDeleteData.Updater); err != nil {
+					return false, fmt.Errorf("failed to clean up floating ip: %v", err)
+				}
+			}
 			return true, nil
 		}
 		return false, err
 	}
 
-	c, _, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	c, _, _, err := p.getConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return false, cloudprovidererrors.TerminalError{
 			Reason:  common.InvalidConfigurationMachineError,
@@ -502,15 +520,19 @@ func (p *provider) Cleanup(machine *v1alpha1.Machine, _ *cloud.MachineCreateDele
 		return false, osErrorToTerminalError(err, "failed to get compute client")
 	}
 
-	if err := osservers.Delete(computeClient, instance.ID()).ExtractErr(); err != nil {
+	if err := osservers.Delete(computeClient, instance.ID()).ExtractErr(); err != nil && err.Error() != "Resource not found" {
 		return false, osErrorToTerminalError(err, "failed to delete instance")
+	}
+
+	if hasFloatingIPReleaseFinalizer {
+		return false, p.cleanupFloatingIP(machine, machineCreateDeleteData.Updater)
 	}
 
 	return false, nil
 }
 
 func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
-	c, _, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	c, _, _, err := p.getConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return nil, cloudprovidererrors.TerminalError{
 			Reason:  common.InvalidConfigurationMachineError,
@@ -553,7 +575,7 @@ func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
 }
 
 func (p *provider) MigrateUID(machine *v1alpha1.Machine, new types.UID) error {
-	c, _, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	c, _, _, err := p.getConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return cloudprovidererrors.TerminalError{
 			Reason:  common.InvalidConfigurationMachineError,
@@ -601,7 +623,7 @@ func (p *provider) MigrateUID(machine *v1alpha1.Machine, new types.UID) error {
 }
 
 func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, name string, err error) {
-	c, _, _, err := p.getConfig(spec.ProviderConfig)
+	c, _, _, err := p.getConfig(spec.ProviderSpec)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to parse config: %v", err)
 	}
@@ -636,7 +658,7 @@ func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, nam
 func (p *provider) MachineMetricsLabels(machine *v1alpha1.Machine) (map[string]string, error) {
 	labels := make(map[string]string)
 
-	c, _, _, err := p.getConfig(machine.Spec.ProviderConfig)
+	c, _, _, err := p.getConfig(machine.Spec.ProviderSpec)
 	if err == nil {
 		labels["size"] = c.Flavor
 		labels["image"] = c.Image
@@ -732,4 +754,110 @@ type forbiddenResponse struct {
 		Message string `json:"message"`
 		Code    int    `json:"code"`
 	} `json:"forbidden"`
+}
+
+func (p *provider) cleanupFloatingIP(machine *v1alpha1.Machine, updater cloud.MachineUpdater) error {
+	floatingIPID, exists := machine.Annotations[floatingIPIDAnnotationKey]
+	if !exists {
+		return osErrorToTerminalError(fmt.Errorf("failed to release floating ip"),
+			fmt.Sprintf("%s finalizer exists but %s annotation does not", floatingIPReleaseFinalizer, floatingIPIDAnnotationKey))
+	}
+
+	c, _, _, err := p.getConfig(machine.Spec.ProviderSpec)
+	if err != nil {
+		return cloudprovidererrors.TerminalError{
+			Reason:  common.InvalidConfigurationMachineError,
+			Message: fmt.Sprintf("Failed to parse MachineSpec, due to %v", err),
+		}
+	}
+
+	client, err := getClient(c)
+	if err != nil {
+		return osErrorToTerminalError(err, "failed to get a openstack client")
+	}
+	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Region: c.Region})
+	if err != nil {
+		return fmt.Errorf("failed to create the networkv2 client for region %s: %v", c.Region, err)
+	}
+	if err := osfloatingips.Delete(netClient, floatingIPID).ExtractErr(); err != nil && err.Error() != "Resource not found" {
+		return fmt.Errorf("failed to delete floating ip %s: %v", floatingIPID, err)
+	}
+	if _, err := updater(machine, func(m *v1alpha1.Machine) {
+		finalizers := sets.NewString(m.Finalizers...)
+		finalizers.Delete(floatingIPReleaseFinalizer)
+		m.Finalizers = finalizers.List()
+	}); err != nil {
+		return fmt.Errorf("failed to delete %s finalizer from Machine: %v", floatingIPReleaseFinalizer, err)
+	}
+
+	return nil
+}
+
+func assignFloatingIPToInstance(machineUpdater cloud.MachineUpdater, machine *v1alpha1.Machine, client *gophercloud.ProviderClient, instanceID, floatingIPPoolName, region string, network *osnetworks.Network) error {
+	port, err := getInstancePort(client, region, instanceID, network.ID)
+	if err != nil {
+		return fmt.Errorf("failed to get instance port for network %s in region %s: %v", network.ID, region, err)
+	}
+
+	netClient, err := goopenstack.NewNetworkV2(client, gophercloud.EndpointOpts{Region: region})
+	if err != nil {
+		return fmt.Errorf("failed to create the networkv2 client for region %s: %v", region, err)
+	}
+
+	floatingIPPool, err := getNetwork(client, region, floatingIPPoolName)
+	if err != nil {
+		return osErrorToTerminalError(err, fmt.Sprintf("failed to get floating ip pool %q", floatingIPPoolName))
+	}
+
+	// We're only interested in the part which is vulnerable to concurrent access
+	started := time.Now()
+	glog.V(2).Infof("Assigning a floating IP to instance %s", instanceID)
+
+	floatingIPAssignLock.Lock()
+	defer floatingIPAssignLock.Unlock()
+
+	freeFloatingIps, err := getFreeFloatingIPs(client, region, floatingIPPool)
+	if err != nil {
+		return osErrorToTerminalError(err, "failed to get free floating ips")
+	}
+
+	var ip *osfloatingips.FloatingIP
+	if len(freeFloatingIps) < 1 {
+		if ip, err = createFloatingIP(client, region, port.ID, floatingIPPool); err != nil {
+			return osErrorToTerminalError(err, "failed to allocate a floating ip")
+		}
+		if _, err = machineUpdater(machine, func(m *v1alpha1.Machine) {
+			m.Finalizers = append(m.Finalizers, floatingIPReleaseFinalizer)
+			if m.Annotations == nil {
+				m.Annotations = map[string]string{}
+			}
+			m.Annotations[floatingIPIDAnnotationKey] = ip.ID
+		}); err != nil {
+			return fmt.Errorf("failed to add floating ip release finalizer after allocating floating ip: %v", err)
+		}
+	} else {
+		freeIP := freeFloatingIps[0]
+		ip, err = osfloatingips.Update(netClient, freeIP.ID, osfloatingips.UpdateOpts{
+			PortID: &port.ID,
+		}).Extract()
+		if err != nil {
+			return fmt.Errorf("failed to update FloatingIP %s(%s): %v", freeIP.ID, freeIP.FloatingIP, err)
+		}
+
+		// We're now going to wait 3 seconds and check if the IP is still ours. If not, we're going to fail
+		// On our reference system it took ~3 seconds for a full FloatingIP allocation (Including creating a new one). It took ~600ms just for assigning one.
+		time.Sleep(floatingReassignIPCheckPeriod)
+		currentIP, err := osfloatingips.Get(netClient, ip.ID).Extract()
+		if err != nil {
+			return fmt.Errorf("failed to load FloatingIP %s after assignment has been done: %v", ip.FloatingIP, err)
+		}
+		// Verify if the port is still the one we set it to
+		if currentIP.PortID != port.ID {
+			return fmt.Errorf("floatingIP %s got reassigned", currentIP.FloatingIP)
+		}
+	}
+	secondsTook := time.Since(started).Seconds()
+
+	glog.V(2).Infof("Successfully assigned the FloatingIP %s to instance %s. Took %f seconds(without the recheck wait period %f seconds). ", ip.FloatingIP, instanceID, secondsTook, floatingReassignIPCheckPeriod.Seconds())
+	return nil
 }
