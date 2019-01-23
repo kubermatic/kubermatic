@@ -4,6 +4,11 @@ certManager:
     tag: v0.6.0
     pullPolicy: IfNotPresent
 
+  caSyncImage:
+    repository: quay.io/munnerz/apiextensions-ca-helper
+    tag: v0.1.0
+    pullPolicy: IfNotPresent
+
   securityContext:
     enabled: false
     fsGroup: 1001
