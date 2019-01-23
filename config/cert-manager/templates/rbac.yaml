@@ -4,7 +4,7 @@ metadata:
   name: cert-manager
 rules:
   - apiGroups: ["certmanager.k8s.io"]
-    resources: ["certificates", "issuers", "clusterissuers"]
+    resources: ["certificates", "issuers", "clusterissuers", "orders", "challenges"]
     verbs: ["*"]
   - apiGroups: [""]
     resources: ["configmaps", "secrets", "events", "services", "pods"]
@@ -26,3 +26,30 @@ subjects:
   - name: cert-manager
     namespace: cert-manager
     kind: ServiceAccount
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cert-manager-view
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+rules:
+  - apiGroups: ["certmanager.k8s.io"]
+    resources: ["certificates", "issuers"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cert-manager-edit
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+rules:
+  - apiGroups: ["certmanager.k8s.io"]
+    resources: ["certificates", "issuers"]
+    verbs: ["create", "delete", "deletecollection", "patch", "update"]
