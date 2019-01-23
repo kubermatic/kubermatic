@@ -8,4 +8,5 @@ spec:
   versionPriority: 15
   service:
     name: webhook
+    namespace: cert-manager
   version: v1beta1
