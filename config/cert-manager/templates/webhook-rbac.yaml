@@ -3,7 +3,7 @@
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
-  name: webhook:auth-delegator
+  name: cert-manager-webhook:auth-delegator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -37,7 +37,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: webhook:webhook-requester
+  name: cert-manager-webhook:webhook-requester
 rules:
 - apiGroups:
   - admission.certmanager.k8s.io

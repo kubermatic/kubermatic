@@ -17,7 +17,7 @@ data:
         ],
         "validatingWebhookConfigurations": [
             {
-                "name": "cert-manager",
+                "name": "webhook",
                 "file": {
                     "path": "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
                 }
