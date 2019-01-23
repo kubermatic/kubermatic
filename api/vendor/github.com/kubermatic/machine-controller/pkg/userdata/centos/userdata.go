@@ -61,7 +61,7 @@ func (p Provider) UserData(
 		return "", fmt.Errorf("failed to get cloud config: %v", err)
 	}
 
-	pconfig, err := providerconfig.GetConfig(spec.ProviderConfig)
+	pconfig, err := providerconfig.GetConfig(spec.ProviderSpec)
 	if err != nil {
 		return "", fmt.Errorf("failed to get provider config: %v", err)
 	}
@@ -96,7 +96,7 @@ func (p Provider) UserData(
 
 	data := struct {
 		MachineSpec      clusterv1alpha1.MachineSpec
-		ProviderConfig   *providerconfig.Config
+		ProviderSpec     *providerconfig.Config
 		OSConfig         *Config
 		CloudProvider    string
 		CloudConfig      string
@@ -107,7 +107,7 @@ func (p Provider) UserData(
 		KubernetesCACert string
 	}{
 		MachineSpec:      spec,
-		ProviderConfig:   pconfig,
+		ProviderSpec:     pconfig,
 		OSConfig:         osConfig,
 		CloudProvider:    cpName,
 		CloudConfig:      cpConfig,
@@ -138,9 +138,9 @@ package_reboot_if_required: true
 
 ssh_pwauth: no
 
-{{- if ne (len .ProviderConfig.SSHPublicKeys) 0 }}
+{{- if ne (len .ProviderSpec.SSHPublicKeys) 0 }}
 ssh_authorized_keys:
-{{- range .ProviderConfig.SSHPublicKeys }}
+{{- range .ProviderSpec.SSHPublicKeys }}
   - "{{ . }}"
 {{- end }}
 {{- end }}
@@ -184,7 +184,7 @@ write_files:
     systemctl restart systemd-modules-load.service
     sysctl --system
 
-    {{ if ne .CloudProvider "aws" }} 
+    {{ if ne .CloudProvider "aws" }}
     # The normal way of setting it via cloud-init is broken:
     # https://bugs.launchpad.net/cloud-init/+bug/1662542
     hostnamectl set-hostname {{ .MachineSpec.Name }}

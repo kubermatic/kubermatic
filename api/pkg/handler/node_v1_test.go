@@ -1222,7 +1222,7 @@ func (k nodeDeploymentSliceWrapper) EqualOrDie(expected nodeDeploymentSliceWrapp
 	}
 }
 
-func genTestMachine(name, rawProviderConfig string, labels map[string]string, ownerRef []metav1.OwnerReference) *clusterv1alpha1.Machine {
+func genTestMachine(name, rawProviderSpec string, labels map[string]string, ownerRef []metav1.OwnerReference) *clusterv1alpha1.Machine {
 	return &clusterv1alpha1.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            name,
@@ -1231,9 +1231,9 @@ func genTestMachine(name, rawProviderConfig string, labels map[string]string, ow
 			OwnerReferences: ownerRef,
 		},
 		Spec: clusterv1alpha1.MachineSpec{
-			ProviderConfig: clusterv1alpha1.ProviderConfig{
+			ProviderSpec: clusterv1alpha1.ProviderSpec{
 				Value: &runtime.RawExtension{
-					Raw: []byte(rawProviderConfig),
+					Raw: []byte(rawProviderSpec),
 				},
 			},
 			Versions: clusterv1alpha1.MachineVersionInfo{
@@ -1243,7 +1243,7 @@ func genTestMachine(name, rawProviderConfig string, labels map[string]string, ow
 	}
 }
 
-func genTestMachineDeployment(name, rawProviderConfig string, selector map[string]string) *clusterv1alpha1.MachineDeployment {
+func genTestMachineDeployment(name, rawProviderSpec string, selector map[string]string) *clusterv1alpha1.MachineDeployment {
 	var replicas int32 = 1
 	return &clusterv1alpha1.MachineDeployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1257,9 +1257,9 @@ func genTestMachineDeployment(name, rawProviderConfig string, selector map[strin
 			Replicas: &replicas,
 			Template: clusterv1alpha1.MachineTemplateSpec{
 				Spec: clusterv1alpha1.MachineSpec{
-					ProviderConfig: clusterv1alpha1.ProviderConfig{
+					ProviderSpec: clusterv1alpha1.ProviderSpec{
 						Value: &runtime.RawExtension{
-							Raw: []byte(rawProviderConfig),
+							Raw: []byte(rawProviderSpec),
 						},
 					},
 					Versions: clusterv1alpha1.MachineVersionInfo{
