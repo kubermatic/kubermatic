@@ -143,7 +143,7 @@ func (r *testRunner) testLB(log *logrus.Entry, kubeClient kubernetes.Interface) 
 
 	defer func() {
 		if err := deleteAllNonDefaultNamespaces(log, kubeClient); err != nil {
-			log.Errorf("Failed to cleanup namespaces after the PVC test: %v", err)
+			log.Errorf("Failed to cleanup namespaces after the LB test: %v", err)
 		}
 	}()
 
