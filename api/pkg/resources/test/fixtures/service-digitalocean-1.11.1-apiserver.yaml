@@ -11,11 +11,12 @@ metadata:
     name: de-test-01
     uid: "1234567890"
 spec:
+  clusterIP: None
   ports:
   - name: insecure
-    port: 8080
+    port: 6443
     protocol: TCP
-    targetPort: 8080
+    targetPort: https
   selector:
     app: apiserver
   type: ClusterIP

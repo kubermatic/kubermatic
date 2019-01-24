@@ -24,7 +24,7 @@ spec:
     metadata:
       annotations:
         prometheus.io/path: /metrics
-        prometheus.io/port: "30000"
+        prometheus.io/port: "6443"
         prometheus.io/scrape_with_kube_cert: "true"
       creationTimestamp: null
       labels:
@@ -145,9 +145,7 @@ spec:
         - --advertise-address
         - 35.198.93.90
         - --secure-port
-        - "30000"
-        - --kubernetes-service-node-port
-        - "30000"
+        - "6443"
         - --etcd-servers
         - https://etcd-0.etcd.cluster-de-test-01.svc.cluster.local.:2379,https://etcd-1.etcd.cluster-de-test-01.svc.cluster.local.:2379,https://etcd-2.etcd.cluster-de-test-01.svc.cluster.local.:2379
         - --etcd-cafile
@@ -209,6 +207,8 @@ spec:
         - X-Remote-User
         - --kubelet-preferred-address-types
         - ExternalIP,InternalIP
+        - --endpoint-reconciler-type
+        - none
         - --runtime-config
         - admissionregistration.k8s.io/v1alpha1
         - --feature-gates
@@ -226,7 +226,7 @@ spec:
           failureThreshold: 8
           httpGet:
             path: /healthz
-            port: 30000
+            port: https
             scheme: HTTPS
           initialDelaySeconds: 15
           periodSeconds: 10
@@ -234,13 +234,14 @@ spec:
           timeoutSeconds: 15
         name: apiserver
         ports:
-        - containerPort: 30000
+        - containerPort: 6443
+          name: https
           protocol: TCP
         readinessProbe:
           failureThreshold: 3
           httpGet:
             path: /healthz
-            port: 30000
+            port: https
             scheme: HTTPS
           periodSeconds: 5
           successThreshold: 1

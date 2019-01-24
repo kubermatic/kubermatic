@@ -51,16 +51,23 @@ spec:
         - --kubelet-port
         - "10250"
         - --kubelet-insecure-tls
+        - --enable-swagger-ui
         - --kubelet-preferred-address-types
         - ExternalIP,InternalIP
-        - --v
-        - "1"
+        - --metric-resolution
+        - 10s
         - --logtostderr
+        - --secure-port
+        - "443"
         command:
         - /metrics-server
         image: gcr.io/google_containers/metrics-server-amd64:v0.3.1
         imagePullPolicy: IfNotPresent
         name: metrics-server
+        ports:
+        - containerPort: 443
+          name: https
+          protocol: TCP
         resources:
           limits:
             cpu: 150m
@@ -166,7 +173,7 @@ spec:
       initContainers:
       - args:
         - -endpoint
-        - https://apiserver-external.cluster-de-test-01.svc.cluster.local.:30000/healthz
+        - https://apiserver.cluster-de-test-01.svc.cluster.local.:6443/healthz
         - -insecure
         - -retries
         - "100"

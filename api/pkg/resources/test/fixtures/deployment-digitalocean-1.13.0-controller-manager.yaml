@@ -193,7 +193,7 @@ spec:
       initContainers:
       - args:
         - -endpoint
-        - https://apiserver-external.cluster-de-test-01.svc.cluster.local.:30000/healthz
+        - https://apiserver.cluster-de-test-01.svc.cluster.local.:6443/healthz
         - -insecure
         - -retries
         - "100"

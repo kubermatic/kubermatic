@@ -38,7 +38,7 @@ data:
 
       kubernetes_sd_configs:
       - role: node
-        api_server: 'apiserver-external.cluster-de-test-01.svc.cluster.local.:30000'
+        api_server: 'apiserver.cluster-de-test-01.svc.cluster.local.:6443'
         tls_config:
           ca_file: /etc/kubernetes/ca.crt
           cert_file: /etc/kubernetes/prometheus-client.crt
@@ -48,7 +48,7 @@ data:
       - action: labelmap
         regex: __meta_kubernetes_node_label_(.+)
       - target_label: __address__
-        replacement: 'apiserver-external.cluster-de-test-01.svc.cluster.local.:30000'
+        replacement: 'apiserver.cluster-de-test-01.svc.cluster.local.:6443'
       - source_labels: [__meta_kubernetes_node_name]
         regex: (.+)
         target_label: __metrics_path__
@@ -100,7 +100,7 @@ data:
         key_file: /etc/kubernetes/prometheus-client.key
       kubernetes_sd_configs:
       - role: pod
-        api_server: 'apiserver-external.cluster-de-test-01.svc.cluster.local.:30000'
+        api_server: 'apiserver.cluster-de-test-01.svc.cluster.local.:6443'
         tls_config:
           ca_file: /etc/kubernetes/ca.crt
           cert_file: /etc/kubernetes/prometheus-client.crt
@@ -119,7 +119,7 @@ data:
         target_label: __metrics_path__
         replacement: /api/v1/namespaces/${1}/pods/${2}:${3}/proxy${4}
       - target_label: __address__
-        replacement: 'apiserver-external.cluster-de-test-01.svc.cluster.local.:30000'
+        replacement: 'apiserver.cluster-de-test-01.svc.cluster.local.:6443'
       - source_labels: [__meta_kubernetes_namespace]
         action: replace
         target_label: namespace
