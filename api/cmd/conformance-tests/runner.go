@@ -18,6 +18,7 @@ import (
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
+	clustercontroller "github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -32,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/util/retry"
 )
 
 type testScenario interface {
@@ -530,6 +532,22 @@ func (r *testRunner) setupCluster(log *logrus.Entry, scenario testScenario) (*ku
 	cluster, err = r.waitForControlPlane(log, cluster.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed waiting for control plane to become ready: %v", err)
+	}
+
+	// We must store the name here because the cluster object may be nil on error
+	clusterName := cluster.Name
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		cluster, err = r.kubermaticClient.KubermaticV1().Clusters().Get(clusterName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		cluster.Finalizers = append(cluster.Finalizers, clustercontroller.InClusterPVCleanupFinalizer, clustercontroller.InClusterLBCleanupFinalizer)
+		cluster, err = r.kubermaticClient.KubermaticV1().Clusters().Update(cluster)
+		return err
+
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to add PV and LB cleanup finalizers: %v", err)
 	}
 
 	return cluster, nil
