@@ -25,7 +25,6 @@ import (
 	machineconversions "github.com/kubermatic/kubermatic/api/pkg/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
-	apierrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -38,8 +37,7 @@ import (
 )
 
 const (
-	kubeletVersionConstraint = ">= 1.8"
-	errGlue                  = " & "
+	errGlue = " & "
 
 	initialConditionParsingDelay = 5
 )
@@ -206,7 +204,7 @@ func getNodeForClusterLegacy(projectProvider provider.ProjectProvider) endpoint.
 			return nil, err
 		}
 		if machine == nil && node == nil {
-			return nil, apierrors.NewNotFound("Node", req.NodeID)
+			return nil, k8cerrors.NewNotFound("Node", req.NodeID)
 		}
 
 		if machine == nil {
@@ -605,20 +603,16 @@ func createNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 			return nil, k8cerrors.NewBadRequest("cannot create node deployment without cloud provider")
 		}
 
-		//TODO: We need to make the kubelet version configurable but restrict it to master version
 		if nd.Spec.Template.Versions.Kubelet != "" {
 			kversion, err := semver.NewVersion(nd.Spec.Template.Versions.Kubelet)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse kubelet version: %v", err)
-			}
-			c, err := semver.NewConstraint(kubeletVersionConstraint)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse kubelet constraint version: %v", err)
+				return nil, k8cerrors.NewBadRequest("failed to parse kubelet version: %v", err)
 			}
 
-			if !c.Check(kversion) {
-				return nil, fmt.Errorf("kubelet version does not fit constraint. Allowed %s", kubeletVersionConstraint)
+			if err = ensureVersionCompatible(cluster.Spec.Version.Semver(), kversion); err != nil {
+				return nil, k8cerrors.NewBadRequest(err.Error())
 			}
+
 			nd.Spec.Template.Versions.Kubelet = kversion.String()
 		} else {
 			//TODO: rework the versions
@@ -1000,6 +994,15 @@ func patchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 		err = json.Unmarshal(patchedNodeDeploymentJSON, &patchedNodeDeployment)
 		if err != nil {
 			return nil, fmt.Errorf("cannot decode patched cluster: %v", err)
+		}
+
+		//TODO: We need to make the kubelet version configurable but restrict it to versions supported by the control plane
+		kversion, err := semver.NewVersion(patchedNodeDeployment.Spec.Template.Versions.Kubelet)
+		if err != nil {
+			return nil, k8cerrors.NewBadRequest("failed to parse kubelet version: %v", err)
+		}
+		if err = ensureVersionCompatible(cluster.Spec.Version.Semver(), kversion); err != nil {
+			return nil, k8cerrors.NewBadRequest(err.Error())
 		}
 
 		dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
