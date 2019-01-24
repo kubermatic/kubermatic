@@ -332,14 +332,14 @@ func (d *TemplateData) GetApiserverExternalNodePort() (int32, error) {
 // and returns them joined by a `:`.
 // Service lookup happens within `Cluster.Status.NamespaceName`.
 func (d *TemplateData) InClusterApiserverAddress() (string, error) {
-	return GetClusterApiserverAddress(d.cluster, d.serviceLister)
+	return GetClusterApiserverAddress(d.cluster)
 }
 
 // InClusterApiserverURL takes the ClusterIP and node-port of the external/secure apiserver service
 // and returns them joined by a `:` and the used protocol.
 // Service lookup happens within `Cluster.Status.NamespaceName`.
 func (d *TemplateData) InClusterApiserverURL() (*url.URL, error) {
-	return GetClusterApiserverURL(d.cluster, d.serviceLister)
+	return GetClusterApiserverURL(d.cluster)
 }
 
 // ImageRegistry returns the image registry to use or the passed in default if no override is specified

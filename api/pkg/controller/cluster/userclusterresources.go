@@ -601,3 +601,68 @@ func (cc *Controller) userClusterEnsureServices(c *kubermaticv1.Cluster) error {
 
 	return nil
 }
+
+func (cc *Controller) reconcileAPIServerEndpoints(c *kubermaticv1.Cluster) error {
+	const endpointsName = "kubernetes"
+	if !c.Status.Health.Apiserver {
+		return nil
+	}
+
+	s, err := cc.serviceLister.Services(c.Status.NamespaceName).Get(resources.ApiserverExternalServiceName)
+	if err != nil {
+		return fmt.Errorf("failed to get service '%s': %v", resources.ApiserverExternalServiceName, err)
+	}
+
+	ipSet, err := getExternalIPv4Set(c.Address.ExternalName)
+	if err != nil {
+		return err
+	}
+
+	endpoints := &corev1.Endpoints{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: endpointsName,
+		},
+		Subsets: []corev1.EndpointSubset{
+			{
+				Ports: []corev1.EndpointPort{
+					{
+						Name:     "https",
+						Port:     s.Spec.Ports[0].NodePort,
+						Protocol: corev1.ProtocolTCP,
+					},
+				},
+			},
+		},
+	}
+
+	for _, ip := range ipSet.List() {
+		endpoints.Subsets[0].Addresses = append(endpoints.Subsets[0].Addresses, corev1.EndpointAddress{
+			IP: ip,
+		})
+	}
+
+	client, err := cc.userClusterConnProvider.GetClient(c)
+	if err != nil {
+		return fmt.Errorf("failed to get client for cluster: %v", err)
+	}
+	epClient := client.CoreV1().Endpoints(corev1.NamespaceDefault)
+
+	existing, err := epClient.Get(endpointsName, metav1.GetOptions{})
+	if errors.IsNotFound(err) {
+		if _, err := epClient.Create(endpoints); err != nil {
+			return fmt.Errorf("failed to create kubernetes Endpoints inside user cluster: %v", err)
+		}
+		return nil
+	}
+
+	if equality.Semantic.DeepEqual(existing.Subsets, endpoints.Subsets) {
+		return nil
+	}
+
+	existing.Subsets = endpoints.Subsets
+	if _, err := epClient.Update(existing); err != nil {
+		return fmt.Errorf("failed to update kubernetes endpoints: %v", err)
+	}
+
+	return nil
+}

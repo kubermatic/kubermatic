@@ -418,11 +418,11 @@ func (d *secretData) GetFrontProxyCA() (*triple.KeyPair, error) {
 }
 
 func (d *secretData) InClusterApiserverURL() (*url.URL, error) {
-	return resources.GetClusterApiserverURL(d.cluster, d.serviceLister)
+	return resources.GetClusterApiserverURL(d.cluster)
 }
 
 func (d *secretData) InClusterApiserverAddress() (string, error) {
-	return resources.GetClusterApiserverAddress(d.cluster, d.serviceLister)
+	return resources.GetClusterApiserverAddress(d.cluster)
 }
 
 func (c *Controller) getEtcdSecretName(cluster *kubermaticv1.Cluster) string {

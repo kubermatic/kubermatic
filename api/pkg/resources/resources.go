@@ -411,23 +411,14 @@ type ObjectCreator = func(existing runtime.Object) (runtime.Object, error)
 type ObjectModifier func(create ObjectCreator) ObjectCreator
 
 // GetClusterApiserverAddress returns the apiserver address for the given Cluster
-func GetClusterApiserverAddress(cluster *kubermaticv1.Cluster, lister corev1lister.ServiceLister) (string, error) {
-	service, err := lister.Services(cluster.Status.NamespaceName).Get(ApiserverExternalServiceName)
-	if err != nil {
-		return "", fmt.Errorf("could not get service %s from lister for cluster %s: %v", ApiserverExternalServiceName, cluster.Name, err)
-	}
-
-	if len(service.Spec.Ports) != 1 {
-		return "", errors.New("apiserver service does not have exactly one port")
-	}
-
-	dnsName := GetAbsoluteServiceDNSName(ApiserverExternalServiceName, cluster.Status.NamespaceName)
-	return fmt.Sprintf("%s:%d", dnsName, service.Spec.Ports[0].NodePort), nil
+func GetClusterApiserverAddress(cluster *kubermaticv1.Cluster) (string, error) {
+	dnsName := GetAbsoluteServiceDNSName(ApiserverInternalServiceName, cluster.Status.NamespaceName)
+	return fmt.Sprintf("%s:%d", dnsName, 6443), nil
 }
 
 // GetClusterApiserverURL returns the apiserver url for the given Cluster
-func GetClusterApiserverURL(cluster *kubermaticv1.Cluster, lister corev1lister.ServiceLister) (*url.URL, error) {
-	addr, err := GetClusterApiserverAddress(cluster, lister)
+func GetClusterApiserverURL(cluster *kubermaticv1.Cluster) (*url.URL, error) {
+	addr, err := GetClusterApiserverAddress(cluster)
 	if err != nil {
 		return nil, err
 	}

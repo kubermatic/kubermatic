@@ -20,15 +20,16 @@ func Service(data resources.ServiceDataProvider, existing *corev1.Service) (*cor
 	se.Labels = resources.BaseAppLabel(name, nil)
 
 	se.Spec.Type = corev1.ServiceTypeClusterIP
+	se.Spec.ClusterIP = corev1.ClusterIPNone
 	se.Spec.Selector = map[string]string{
 		resources.AppLabelKey: name,
 	}
 	se.Spec.Ports = []corev1.ServicePort{
 		{
 			Name:       "insecure",
-			Port:       8080,
+			Port:       6443,
 			Protocol:   corev1.ProtocolTCP,
-			TargetPort: intstr.FromInt(8080),
+			TargetPort: intstr.FromString("https"),
 		},
 	}
 
@@ -60,7 +61,7 @@ func ExternalService(data resources.ServiceDataProvider, existing *corev1.Servic
 				Name:       "secure",
 				Port:       443,
 				Protocol:   corev1.ProtocolTCP,
-				TargetPort: intstr.FromInt(443),
+				TargetPort: intstr.FromString("https"),
 			},
 		}
 
@@ -69,7 +70,7 @@ func ExternalService(data resources.ServiceDataProvider, existing *corev1.Servic
 
 	se.Spec.Ports[0].Name = "secure"
 	se.Spec.Ports[0].Port = se.Spec.Ports[0].NodePort
-	se.Spec.Ports[0].TargetPort = intstr.FromInt(int(se.Spec.Ports[0].NodePort))
+	se.Spec.Ports[0].TargetPort = intstr.FromString("https")
 	se.Spec.Ports[0].Protocol = corev1.ProtocolTCP
 
 	return se, nil

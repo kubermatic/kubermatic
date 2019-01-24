@@ -13,10 +13,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-func getExternalIPv4(hostname string) (string, error) {
+func getExternalIPv4Set(hostname string) (sets.String, error) {
 	resolvedIPs, err := net.LookupIP(hostname)
 	if err != nil {
-		return "", fmt.Errorf("failed to lookup ip for %s: %v", hostname, err)
+		return nil, fmt.Errorf("failed to lookup ip for %s: %v", hostname, err)
 	}
 	ipList := sets.NewString()
 	for _, ip := range resolvedIPs {
@@ -24,16 +24,8 @@ func getExternalIPv4(hostname string) (string, error) {
 			ipList.Insert(ip.String())
 		}
 	}
-	ips := ipList.List()
-	if len(ips) == 0 {
-		return "", fmt.Errorf("no ip addresses found for %s: %v", hostname, err)
-	}
 
-	//Just one ipv4
-	if len(ips) > 1 {
-		glog.V(6).Infof("lookup of %s returned multiple ipv4 addresses (%v). Picking the first one after sorting: %s", hostname, ips, ips[0])
-	}
-	return ips[0], nil
+	return ipList, nil
 }
 
 // syncAddress will set the all address relevant fields on the cluster
@@ -72,10 +64,17 @@ func (cc *Controller) syncAddress(c *kubermaticv1.Cluster) (*kubermaticv1.Cluste
 	}
 
 	// Always lookup IP address, c case it changes (IP's on AWS LB's change)
-	ip, err := getExternalIPv4(c.Address.ExternalName)
+	ipSet, err := getExternalIPv4Set(c.Address.ExternalName)
 	if err != nil {
 		return nil, err
 	}
+
+	ips := ipSet.List()
+	if len(ips) == 0 {
+		return nil, fmt.Errorf("failed to get IP for cluster. No IP's found. Check if DNS has been configured correctly")
+	}
+	ip := ips[0]
+
 	if c.Address.IP != ip {
 		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
 			c.Address.IP = ip

@@ -17,11 +17,16 @@ import (
 // - 192.168.1.2
 // - 2001:16B8:6844:D700:A1B9:D94B:FDC3:1C33
 func TestGetExternalIPv4(t *testing.T) {
-	ip, err := getExternalIPv4("dns-test.kubermatic.io")
+	ipSet, err := getExternalIPv4Set("dns-test.kubermatic.io")
 	if err != nil {
 		t.Fatal(err)
 	}
+	ips := ipSet.List()
+	if len(ips) != 2 {
+		t.Fatalf("expected to get exactly 2 IPs. But got %d: %v", len(ips), ips)
+	}
 
+	ip := ips[0]
 	if ip != "192.168.1.1" {
 		t.Fatalf("expected to get 192.168.1.1. Got: %s", ip)
 	}

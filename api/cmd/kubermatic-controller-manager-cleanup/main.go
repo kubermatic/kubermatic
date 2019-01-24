@@ -201,6 +201,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
 		cleanupHeapsterAddon,
 		cleanupMetricsServerAddon,
 		migrateClusterUserLabel,
+		migrateInternalAPIserverService,
 	}
 
 	w := sync.WaitGroup{}
@@ -506,6 +507,22 @@ func migrateUserID(user *kubermaticv1.User, ctx *cleanupContext) error {
 		if _, err := ctx.kubermaticClient.KubermaticV1().Users().Update(user); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func migrateInternalAPIserverService(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	service, err := ctx.kubeClient.CoreV1().Services(cluster.Status.NamespaceName).Get(resources.ApiserverInternalServiceName, metav1.GetOptions{})
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return nil
+		}
+
+		return fmt.Errorf("failed to get service '%s': %v", resources.ApiserverInternalServiceName, err)
+	}
+
+	if service.Spec.ClusterIP != corev1.ClusterIPNone {
+		return ctx.kubeClient.CoreV1().Services(cluster.Status.NamespaceName).Delete(service.Name, nil)
 	}
 	return nil
 }

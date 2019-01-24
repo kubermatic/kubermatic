@@ -2,7 +2,6 @@ package apiserver
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -87,17 +86,12 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 		return nil, err
 	}
 
-	externalNodePort, err := data.GetApiserverExternalNodePort()
-	if err != nil {
-		return nil, err
-	}
-
 	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 		Labels: podLabels,
 		Annotations: map[string]string{
 			"prometheus.io/scrape_with_kube_cert": "true",
 			"prometheus.io/path":                  "/metrics",
-			"prometheus.io/port":                  strconv.Itoa(int(externalNodePort)),
+			"prometheus.io/port":                  "6443",
 		},
 	}
 
@@ -141,7 +135,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 		return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
 	}
 
-	flags, err := getApiserverFlags(data, externalNodePort, etcdEndpoints)
+	flags, err := getApiserverFlags(data, etcdEndpoints)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +160,8 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			Resources:                *resourceRequirements,
 			Ports: []corev1.ContainerPort{
 				{
-					ContainerPort: externalNodePort,
+					ContainerPort: 6443,
+					Name:          "https",
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},
@@ -174,7 +169,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Path:   "/healthz",
-						Port:   intstr.FromInt(int(externalNodePort)),
+						Port:   intstr.FromString("https"),
 						Scheme: "HTTPS",
 					},
 				},
@@ -187,7 +182,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Path:   "/healthz",
-						Port:   intstr.FromInt(int(externalNodePort)),
+						Port:   intstr.FromString("https"),
 						Scheme: "HTTPS",
 					},
 				},
@@ -206,7 +201,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 	return dep, nil
 }
 
-func getApiserverFlags(data resources.DeploymentDataProvider, externalNodePort int32, etcdEndpoints []string) ([]string, error) {
+func getApiserverFlags(data resources.DeploymentDataProvider, etcdEndpoints []string) ([]string, error) {
 	nodePortRange := data.NodePortRange()
 	if nodePortRange == "" {
 		nodePortRange = defaultNodePortRange
@@ -216,8 +211,7 @@ func getApiserverFlags(data resources.DeploymentDataProvider, externalNodePort i
 
 	flags := []string{
 		"--advertise-address", data.Cluster().Address.IP,
-		"--secure-port", fmt.Sprintf("%d", externalNodePort),
-		"--kubernetes-service-node-port", fmt.Sprintf("%d", externalNodePort),
+		"--secure-port", "6443",
 		"--etcd-servers", strings.Join(etcdEndpoints, ","),
 		"--etcd-cafile", "/etc/etcd/pki/client/ca.crt",
 		"--etcd-certfile", "/etc/etcd/pki/client/apiserver-etcd-client.crt",
@@ -250,6 +244,7 @@ func getApiserverFlags(data resources.DeploymentDataProvider, externalNodePort i
 		"--requestheader-group-headers", "X-Remote-Group",
 		"--requestheader-username-headers", "X-Remote-User",
 		"--kubelet-preferred-address-types", "ExternalIP,InternalIP",
+		"--endpoint-reconciler-type", "none",
 	}
 	var featureGates []string
 

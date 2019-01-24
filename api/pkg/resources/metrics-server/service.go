@@ -25,7 +25,7 @@ func Service(data resources.ServiceDataProvider, existing *corev1.Service) (*cor
 		{
 			Port:       443,
 			Protocol:   corev1.ProtocolTCP,
-			TargetPort: intstr.FromInt(443),
+			TargetPort: intstr.FromString("https"),
 		},
 	}
 

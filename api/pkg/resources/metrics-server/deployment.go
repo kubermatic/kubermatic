@@ -104,10 +104,12 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 				"--authorization-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 				"--kubelet-port", "10250",
 				"--kubelet-insecure-tls",
+				"--enable-swagger-ui",
 				// We use the same as the API server as we use the same dnat-controller
 				"--kubelet-preferred-address-types", "ExternalIP,InternalIP",
-				"--v", "1",
+				"--metric-resolution", "10s",
 				"--logtostderr",
+				"--secure-port", "443",
 			},
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -117,6 +119,13 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 					Name:      resources.MetricsServerKubeconfigSecretName,
 					MountPath: "/etc/kubernetes/kubeconfig",
 					ReadOnly:  true,
+				},
+			},
+			Ports: []corev1.ContainerPort{
+				{
+					Name:          "https",
+					ContainerPort: 443,
+					Protocol:      corev1.ProtocolTCP,
 				},
 			},
 		},

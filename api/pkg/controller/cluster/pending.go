@@ -16,6 +16,12 @@ const (
 
 func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	var err error
+
+	if err = cc.reconcileAPIServerEndpoints(cluster); err != nil {
+		// Accept it and proceed
+		glog.Errorf("failed to reconcile the APIServer endpoints: %v", err)
+		cc.enqueueAfter(cluster, 1*time.Second)
+	}
 	// Create the namespace
 	if cluster, err = cc.ensureNamespaceExists(cluster); err != nil {
 		return nil, err
