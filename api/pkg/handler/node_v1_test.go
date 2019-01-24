@@ -178,7 +178,7 @@ func TestListNodesForCluster(t *testing.T) {
 							},
 						},
 						Versions: apiv1.NodeVersionInfo{
-							Kubelet: "v1.9.9",
+							Kubelet: "v9.9.9",
 						},
 					},
 					Status: apiv1.NodeStatus{
@@ -211,7 +211,7 @@ func TestListNodesForCluster(t *testing.T) {
 							},
 						},
 						Versions: apiv1.NodeVersionInfo{
-							Kubelet: "v1.9.9",
+							Kubelet: "v9.9.9",
 						},
 					},
 					Status: apiv1.NodeStatus{
@@ -263,7 +263,7 @@ func TestListNodesForCluster(t *testing.T) {
 							},
 						},
 						Versions: apiv1.NodeVersionInfo{
-							Kubelet: "v1.9.9",
+							Kubelet: "v9.9.9",
 						},
 					},
 					Status: apiv1.NodeStatus{
@@ -335,7 +335,7 @@ func TestGetNodeForCluster(t *testing.T) {
 		// scenario 1
 		{
 			Name:                   "scenario 1: get a node that belongs to the given cluster",
-			ExpectedResponse:       `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":null}},"operatingSystem":{},"versions":{"kubelet":"v1.9.9"}},"status":{"machineName":"venus","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
+			ExpectedResponse:       `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":null}},"operatingSystem":{},"versions":{"kubelet":"v9.9.9"}},"status":{"machineName":"venus","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
 			HTTPStatus:             http.StatusOK,
 			NodeIDToSync:           "venus",
 			ClusterIDToSync:        test.GenDefaultCluster().Name,
@@ -474,7 +474,7 @@ func TestCreateNodeDeployment(t *testing.T) {
 		{
 			Name:                   "scenario 1: create a node deployment that match the given spec",
 			Body:                   `{"spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}}`,
-			ExpectedResponse:       `{"id":"%s","name":"%s","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":""}},"paused":false},"status":{}}`,
+			ExpectedResponse:       `{"id":"%s","name":"%s","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"}},"paused":false},"status":{}}`,
 			HTTPStatus:             http.StatusCreated,
 			ProjectID:              test.GenDefaultProject().Name,
 			ClusterID:              test.GenDefaultCluster().Name,
@@ -491,6 +491,30 @@ func TestCreateNodeDeployment(t *testing.T) {
 			ProjectID:              test.GenDefaultProject().Name,
 			ClusterID:              test.GenDefaultCluster().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genTestCluster(false)),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+		},
+
+		// scenario 3
+		{
+			Name:                   "scenario 3: kubelet version is too old",
+			Body:                   `{"spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.6.0"}}}}`,
+			ExpectedResponse:       `{"error":{"code":400,"message":"kubelet version 9.6.0 is not compatible with control plane version 9.9.9"}}`,
+			HTTPStatus:             http.StatusBadRequest,
+			ProjectID:              test.GenDefaultProject().Name,
+			ClusterID:              test.GenDefaultCluster().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genTestCluster(true)),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+		},
+
+		// scenario 4
+		{
+			Name:                   "scenario 4: kubelet version is too new",
+			Body:                   `{"spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.10.0"}}}}`,
+			ExpectedResponse:       `{"error":{"code":400,"message":"kubelet version 9.10.0 is not compatible with control plane version 9.9.9"}}`,
+			HTTPStatus:             http.StatusBadRequest,
+			ProjectID:              test.GenDefaultProject().Name,
+			ClusterID:              test.GenDefaultCluster().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genTestCluster(true)),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
 	}
@@ -578,7 +602,7 @@ func TestListNodeDeployments(t *testing.T) {
 								},
 							},
 							Versions: apiv1.NodeVersionInfo{
-								Kubelet: "v1.9.9",
+								Kubelet: "v9.9.9",
 							},
 						},
 						Replicas: replicas,
@@ -605,7 +629,7 @@ func TestListNodeDeployments(t *testing.T) {
 								},
 							},
 							Versions: apiv1.NodeVersionInfo{
-								Kubelet: "v1.9.9",
+								Kubelet: "v9.9.9",
 							},
 						},
 						Replicas: replicas,
@@ -697,7 +721,7 @@ func TestGetNodeDeployment(t *testing.T) {
 							},
 						},
 						Versions: apiv1.NodeVersionInfo{
-							Kubelet: "v1.9.9",
+							Kubelet: "v9.9.9",
 						},
 					},
 					Replicas: replicas,
@@ -796,7 +820,7 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 							},
 						},
 						Versions: apiv1.NodeVersionInfo{
-							Kubelet: "v1.9.9",
+							Kubelet: "v9.9.9",
 						},
 					},
 					Status: apiv1.NodeStatus{
@@ -822,7 +846,7 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 							},
 						},
 						Versions: apiv1.NodeVersionInfo{
-							Kubelet: "v1.9.9",
+							Kubelet: "v9.9.9",
 						},
 					},
 					Status: apiv1.NodeStatus{
@@ -1003,7 +1027,7 @@ func TestPatchNodeDeployment(t *testing.T) {
 
 	var replicas int32 = 1
 	var replicasUpdated int32 = 3
-	var kubeletVerUpdated = "v1.2.3"
+	var kubeletVerUpdated = "v9.8.0"
 
 	// Mock timezone to keep creation timestamp always the same.
 	time.Local = time.UTC
@@ -1024,7 +1048,7 @@ func TestPatchNodeDeployment(t *testing.T) {
 		{
 			Name:                       "Scenario 1: Update replicas count",
 			Body:                       fmt.Sprintf(`{"spec":{"replicas":%v}}`, replicasUpdated),
-			ExpectedResponse:           fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v1.9.9"}},"paused":false},"status":{}}`, replicasUpdated),
+			ExpectedResponse:           fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"}},"paused":false},"status":{}}`, replicasUpdated),
 			cluster:                    "keen-snyder",
 			HTTPStatus:                 http.StatusOK,
 			project:                    test.GenDefaultProject().Name,
@@ -1050,9 +1074,35 @@ func TestPatchNodeDeployment(t *testing.T) {
 		{
 			Name:                       "Scenario 3: Change to paused",
 			Body:                       `{"spec":{"paused":true}}`,
-			ExpectedResponse:           `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v1.9.9"}},"paused":true},"status":{}}`,
+			ExpectedResponse:           `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"}},"paused":true},"status":{}}`,
 			cluster:                    "keen-snyder",
 			HTTPStatus:                 http.StatusOK,
+			project:                    test.GenDefaultProject().Name,
+			ExistingAPIUser:            test.GenDefaultAPIUser(),
+			NodeDeploymentID:           "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil)},
+			ExistingKubermaticObjs:     test.GenDefaultKubermaticObjects(genTestCluster(true)),
+		},
+		// Scenario 4: Downgrade to too old kubelet version
+		{
+			Name:                       "Scenario 4: Downgrade kubelet to too old",
+			Body:                       fmt.Sprintf(`{"spec":{"template":{"versions":{"kubelet":"9.6.0"}}}}`),
+			ExpectedResponse:           fmt.Sprintf(`{"error":{"code":400,"message":"kubelet version 9.6.0 is not compatible with control plane version 9.9.9"}}`),
+			cluster:                    "keen-snyder",
+			HTTPStatus:                 http.StatusBadRequest,
+			project:                    test.GenDefaultProject().Name,
+			ExistingAPIUser:            test.GenDefaultAPIUser(),
+			NodeDeploymentID:           "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil)},
+			ExistingKubermaticObjs:     test.GenDefaultKubermaticObjects(genTestCluster(true)),
+		},
+		// Scenario 5: Upgrade kubelet to a too new version
+		{
+			Name:                       "Scenario 5: Upgrade kubelet to too new",
+			Body:                       fmt.Sprintf(`{"spec":{"template":{"versions":{"kubelet":"9.10.0"}}}}`),
+			ExpectedResponse:           fmt.Sprintf(`{"error":{"code":400,"message":"kubelet version 9.10.0 is not compatible with control plane version 9.9.9"}}`),
+			cluster:                    "keen-snyder",
+			HTTPStatus:                 http.StatusBadRequest,
 			project:                    test.GenDefaultProject().Name,
 			ExistingAPIUser:            test.GenDefaultAPIUser(),
 			NodeDeploymentID:           "venus",
@@ -1237,7 +1287,7 @@ func genTestMachine(name, rawProviderSpec string, labels map[string]string, owne
 				},
 			},
 			Versions: clusterv1alpha1.MachineVersionInfo{
-				Kubelet: "v1.9.9",
+				Kubelet: "v9.9.9",
 			},
 		},
 	}
@@ -1263,7 +1313,7 @@ func genTestMachineDeployment(name, rawProviderSpec string, selector map[string]
 						},
 					},
 					Versions: clusterv1alpha1.MachineVersionInfo{
-						Kubelet: "v1.9.9",
+						Kubelet: "v9.9.9",
 					},
 				},
 			},
@@ -1284,10 +1334,8 @@ func genTestCluster(isControllerReady bool) *kubermaticv1.Cluster {
 			},
 		},
 	}
-	cluster.Spec = kubermaticv1.ClusterSpec{
-		Cloud: kubermaticv1.CloudSpec{
-			DatacenterName: "us-central1",
-		},
+	cluster.Spec.Cloud = kubermaticv1.CloudSpec{
+		DatacenterName: "us-central1",
 	}
 	return cluster
 }
