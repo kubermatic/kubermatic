@@ -41,7 +41,7 @@ func (p *Provider) GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
 	return d, nil
 }
 
-// ClientConfigOptions defines a function that applies additional configuration to restclient.Config in a generic way.
+// ConfigOption defines a function that applies additional configuration to restclient.Config in a generic way.
 type ConfigOption func(*restclient.Config) *restclient.Config
 
 // GetClientConfig returns the client config used for initiating a connection for the given cluster

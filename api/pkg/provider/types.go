@@ -112,7 +112,7 @@ type ClusterProvider interface {
 	// Note that the client you will get has admin privileges
 	GetAdminMachineClientForCustomerCluster(cluster *kubermaticv1.Cluster) (clusterv1alpha1clientset.Interface, error)
 
-	// GetClientForCustomerCluster returns a client to interact with the given cluster
+	// GetAdminKubernetesClientForCustomerCluster returns a client to interact with the given cluster
 	//
 	// Note that the client you will get has admin privileges
 	GetAdminKubernetesClientForCustomerCluster(cluster *kubermaticv1.Cluster) (kubernetes.Interface, error)
