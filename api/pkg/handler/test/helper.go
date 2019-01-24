@@ -200,11 +200,11 @@ func (f *fakeUserClusterConnection) GetAdminKubeconfig(c *kubermaticapiv1.Cluste
 	return []byte(generateTestKubeconfig(ClusterID, IDToken)), nil
 }
 
-func (f *fakeUserClusterConnection) GetMachineClient(c *kubermaticapiv1.Cluster, options ...k8cuserclusterclient.ClientConfigOption) (clusterclientset.Interface, error) {
+func (f *fakeUserClusterConnection) GetMachineClient(c *kubermaticapiv1.Cluster, options ...k8cuserclusterclient.ConfigOption) (clusterclientset.Interface, error) {
 	return f.fakeMachineClient, nil
 }
 
-func (f *fakeUserClusterConnection) GetClient(c *kubermaticapiv1.Cluster, options ...k8cuserclusterclient.ClientConfigOption) (kubernetesclient.Interface, error) {
+func (f *fakeUserClusterConnection) GetClient(c *kubermaticapiv1.Cluster, options ...k8cuserclusterclient.ConfigOption) (kubernetesclient.Interface, error) {
 	return f.fakeKubernetesClient, nil
 }
 

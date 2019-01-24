@@ -22,8 +22,8 @@ import (
 
 // UserClusterConnectionProvider offers functions to interact with a user cluster
 type UserClusterConnectionProvider interface {
-	GetClient(*kubermaticapiv1.Cluster, ...k8cuserclusterclient.ClientConfigOption) (kubernetes.Interface, error)
-	GetMachineClient(*kubermaticapiv1.Cluster, ...k8cuserclusterclient.ClientConfigOption) (clusterv1alpha1clientset.Interface, error)
+	GetClient(*kubermaticapiv1.Cluster, ...k8cuserclusterclient.ConfigOption) (kubernetes.Interface, error)
+	GetMachineClient(*kubermaticapiv1.Cluster, ...k8cuserclusterclient.ConfigOption) (clusterv1alpha1clientset.Interface, error)
 	GetAdminKubeconfig(*kubermaticapiv1.Cluster) ([]byte, error)
 }
 

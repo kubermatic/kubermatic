@@ -42,10 +42,10 @@ func (p *Provider) GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
 }
 
 // ClientConfigOptions defines a function that applies additional configuration to restclient.Config in a generic way.
-type ClientConfigOption func(*restclient.Config) *restclient.Config
+type ConfigOption func(*restclient.Config) *restclient.Config
 
 // GetClientConfig returns the client config used for initiating a connection for the given cluster
-func (p *Provider) GetClientConfig(c *kubermaticv1.Cluster, options ...ClientConfigOption) (*restclient.Config, error) {
+func (p *Provider) GetClientConfig(c *kubermaticv1.Cluster, options ...ConfigOption) (*restclient.Config, error) {
 	b, err := p.GetAdminKubeconfig(c)
 	if err != nil {
 		return nil, err
@@ -81,7 +81,7 @@ func (p *Provider) GetClientConfig(c *kubermaticv1.Cluster, options ...ClientCon
 }
 
 // GetClient returns a kubernetes client to interact with the given cluster
-func (p *Provider) GetClient(c *kubermaticv1.Cluster, options ...ClientConfigOption) (kubernetes.Interface, error) {
+func (p *Provider) GetClient(c *kubermaticv1.Cluster, options ...ConfigOption) (kubernetes.Interface, error) {
 	config, err := p.GetClientConfig(c, options...)
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func (p *Provider) GetClient(c *kubermaticv1.Cluster, options ...ClientConfigOpt
 }
 
 // GetMachineClient returns a client to interact with machine resources for the given cluster
-func (p *Provider) GetMachineClient(c *kubermaticv1.Cluster, options ...ClientConfigOption) (clusterv1alpha1clientset.Interface, error) {
+func (p *Provider) GetMachineClient(c *kubermaticv1.Cluster, options ...ConfigOption) (clusterv1alpha1clientset.Interface, error) {
 	config, err := p.GetClientConfig(c, options...)
 	if err != nil {
 		return nil, err
@@ -110,7 +110,7 @@ func (p *Provider) GetMachineClient(c *kubermaticv1.Cluster, options ...ClientCo
 }
 
 // GetApiextensionsClient returns a client to interact with apiextension resources for the given cluster
-func (p *Provider) GetApiextensionsClient(c *kubermaticv1.Cluster, options ...ClientConfigOption) (apiextensionsclientset.Interface, error) {
+func (p *Provider) GetApiextensionsClient(c *kubermaticv1.Cluster, options ...ConfigOption) (apiextensionsclientset.Interface, error) {
 	config, err := p.GetClientConfig(c, options...)
 	if err != nil {
 		return nil, err
@@ -119,7 +119,7 @@ func (p *Provider) GetApiextensionsClient(c *kubermaticv1.Cluster, options ...Cl
 }
 
 // GetAdmissionRegistrationClient returns a client to interact with admissionregistration resources
-func (p *Provider) GetAdmissionRegistrationClient(c *kubermaticv1.Cluster, options ...ClientConfigOption) (admissionregistrationclientset.AdmissionregistrationV1beta1Interface, error) {
+func (p *Provider) GetAdmissionRegistrationClient(c *kubermaticv1.Cluster, options ...ConfigOption) (admissionregistrationclientset.AdmissionregistrationV1beta1Interface, error) {
 	config, err := p.GetClientConfig(c, options...)
 	if err != nil {
 		return nil, err
@@ -128,7 +128,7 @@ func (p *Provider) GetAdmissionRegistrationClient(c *kubermaticv1.Cluster, optio
 }
 
 // GetKubeAggregatorClient returns a client to interact with the aggregation API for the given cluster
-func (p *Provider) GetKubeAggregatorClient(c *kubermaticv1.Cluster, options ...ClientConfigOption) (aggregationclientset.Interface, error) {
+func (p *Provider) GetKubeAggregatorClient(c *kubermaticv1.Cluster, options ...ConfigOption) (aggregationclientset.Interface, error) {
 	config, err := p.GetClientConfig(c, options...)
 	if err != nil {
 		return nil, err
