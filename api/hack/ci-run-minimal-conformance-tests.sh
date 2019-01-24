@@ -135,9 +135,9 @@ rm -f config/kubermatic/templates/cluster-role-binding.yaml
 helm upgrade --install --wait --timeout 300 \
   --tiller-namespace=$NAMESPACE \
   --set=kubermatic.isMaster=true \
-  --set=kubermatic.controller.image.tag=$BUILD_ID \
-  --set=kubermatic.api.image.tag=$BUILD_ID \
-  --set=kubermatic.rbac.image.tag=$BUILD_ID \
+  --set-string=kubermatic.controller.image.tag=$BUILD_ID \
+  --set-string=kubermatic.api.image.tag=$BUILD_ID \
+  --set-string=kubermatic.rbac.image.tag=$BUILD_ID \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.deployVPA=false \
   --set=kubermatic.ingressClass=non-existent \
