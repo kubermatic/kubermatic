@@ -148,7 +148,7 @@ helm upgrade --install --wait --timeout 300 \
 echo "Finished installing Kubermatic"
 
 echo "Starting conformance tests"
-./conformance-tests \
+timeout -s 9 90m ./conformance-tests \
   -debug \
   -worker-name=$BUILD_ID \
   -kubeconfig=$KUBECONFIG \
