@@ -90,10 +90,10 @@ spec:
         resources:
           limits:
             cpu: 100m
-            memory: 256Mi
+            memory: 32Mi
           requests:
             cpu: 5m
-            memory: 16Mi
+            memory: 5Mi
         securityContext:
           privileged: true
         terminationMessagePath: /dev/termination-log
