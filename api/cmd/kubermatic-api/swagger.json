@@ -1062,14 +1062,15 @@
     },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes": {
       "get": {
-        "description": "Lists nodes that belong to the given cluster",
+        "description": "This endpoint is deprecated, please create a Node Deployment instead.",
         "produces": [
           "application/json"
         ],
         "tags": [
           "project"
         ],
-        "operationId": "listNodesForCluster",
+        "summary": "Deprecated:\nLists nodes that belong to the given cluster",
+        "operationId": "listNodesForClusterLegacy",
         "parameters": [
           {
             "type": "string",
@@ -1184,6 +1185,7 @@
     },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}": {
       "get": {
+        "description": "This endpoint is deprecated, please create a Node Deployment instead.",
         "consumes": [
           "application/json"
         ],
@@ -1193,8 +1195,8 @@
         "tags": [
           "project"
         ],
-        "summary": "Gets a node that is assigned to the given cluster.",
-        "operationId": "getNodeForCluster",
+        "summary": "Deprecated:\nGets a node that is assigned to the given cluster.",
+        "operationId": "getNodeForClusterLegacy",
         "parameters": [
           {
             "type": "string",
@@ -1250,14 +1252,15 @@
         }
       },
       "delete": {
+        "description": "This endpoint is deprecated, please create a Node Deployment instead.",
         "produces": [
           "application/json"
         ],
         "tags": [
           "project"
         ],
-        "summary": "Deletes the given node that belongs to the cluster.",
-        "operationId": "deleteNodeForCluster",
+        "summary": "Deprecated:\nDeletes the given node that belongs to the cluster.",
+        "operationId": "deleteNodeForClusterLegacy",
         "parameters": [
           {
             "type": "string",
