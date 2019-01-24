@@ -13,6 +13,7 @@ import (
 	prometheusapi "github.com/prometheus/client_golang/api"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
@@ -199,11 +200,11 @@ func (f *fakeUserClusterConnection) GetAdminKubeconfig(c *kubermaticapiv1.Cluste
 	return []byte(generateTestKubeconfig(ClusterID, IDToken)), nil
 }
 
-func (f *fakeUserClusterConnection) GetMachineClient(c *kubermaticapiv1.Cluster) (clusterclientset.Interface, error) {
+func (f *fakeUserClusterConnection) GetMachineClient(c *kubermaticapiv1.Cluster, options ...k8cuserclusterclient.ClientConfigOption) (clusterclientset.Interface, error) {
 	return f.fakeMachineClient, nil
 }
 
-func (f *fakeUserClusterConnection) GetClient(c *kubermaticapiv1.Cluster) (kubernetesclient.Interface, error) {
+func (f *fakeUserClusterConnection) GetClient(c *kubermaticapiv1.Cluster, options ...k8cuserclusterclient.ClientConfigOption) (kubernetesclient.Interface, error) {
 	return f.fakeKubernetesClient, nil
 }
 
