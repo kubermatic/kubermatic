@@ -155,7 +155,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, userProvider provide
 	}
 }
 
-// AddEndpoint adds the given user to the given group withing the given project
+// AddEndpoint adds the given user to the given group within the given project
 func AddEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AddReq)
@@ -200,7 +200,7 @@ func AddEndpoint(projectProvider provider.ProjectProvider, userProvider provider
 }
 
 // GetEndpoint returns info about the current user
-func GetEndpoint(users provider.UserProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
+func GetEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
 
@@ -323,14 +323,14 @@ func DecodeAddReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// UserIDReq represents a request that contains userID in the path
-type UserIDReq struct {
+// IDReq represents a request that contains userID in the path
+type IDReq struct {
 	// in: path
 	UserID string `json:"user_id"`
 }
 
-func decodeUserIDReq(c context.Context, r *http.Request) (UserIDReq, error) {
-	var req UserIDReq
+func decodeUserIDReq(c context.Context, r *http.Request) (IDReq, error) {
+	var req IDReq
 
 	userID, ok := mux.Vars(r)["user_id"]
 	if !ok {
@@ -345,7 +345,7 @@ func decodeUserIDReq(c context.Context, r *http.Request) (UserIDReq, error) {
 // swagger:parameters editUserInProject
 type EditReq struct {
 	AddReq
-	UserIDReq
+	IDReq
 }
 
 // Validate validates EditUserToProject request
@@ -388,7 +388,7 @@ func DecodeEditReq(c context.Context, r *http.Request) (interface{}, error) {
 // swagger:parameters deleteUserFromProject
 type DeleteReq struct {
 	common.ProjectReq
-	UserIDReq
+	IDReq
 }
 
 // DecodeDeleteReq  decodes an HTTP request into DeleteReq

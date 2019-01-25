@@ -1297,7 +1297,7 @@ func (r Routing) getCurrentUser() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			middleware.UserSaver(r.userProvider),
-		)(user.GetEndpoint(r.userProvider, r.userProjectMapper)),
+		)(user.GetEndpoint(r.userProjectMapper)),
 		decodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
