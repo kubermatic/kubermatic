@@ -88,6 +88,7 @@ time go build -v github.com/kubermatic/kubermatic/api/cmd/conformance-tests
 echodate "Finished building conformance-tests cli"
 
 if [[ ! -f $HOME/.docker/config.json ]]; then
+  docker ps &>/dev/null || start-docker.sh
   mkdir  -p $HOME/.docker
   echo '{"experimental": "enabled"}' > ~/.docker/config.json
   echodate "Logging into dockerhub"
@@ -99,7 +100,6 @@ fi
 # We use dockerhub because docker manifest inspect doesn't seem to work on quay
 if ! docker manifest inspect docker.io/kubermatic/api:$GIT_HEAD_HASH &>/dev/null; then
   echodate "Building binaries"
-  docker ps &>/dev/null || start-docker.sh
   time make -C api build
   cd api
   echodate "Building docker image"
