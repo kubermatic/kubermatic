@@ -264,11 +264,6 @@ func decodeGetClusterKubeconfig(c context.Context, r *http.Request) (interface{}
 	return req, nil
 }
 
-// UserIDGetter knows how to get user ID from the request
-type UserIDGetter interface {
-	GetUserID() string
-}
-
 const (
 	initialPhase        = iota
 	exchangeCodePhase   = iota

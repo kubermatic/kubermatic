@@ -35,9 +35,9 @@ func (r Routing) getClusterMetrics() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
-			r.userSaverMiddleware(),
+			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			r.userInfoMiddleware(),
+			middleware.UserInfo(r.userProjectMapper),
 		)(getClusterMetrics(r.projectProvider, r.prometheusClient)),
 		common.DecodeGetClusterReq,
 		EncodeJSON,
