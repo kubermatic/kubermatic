@@ -107,6 +107,7 @@ type ClusterProvider interface {
 	// GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster
 	GetAdminKubeconfigForCustomerCluster(cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
 
+	// Deprecated use GetMachineClientForCustomerCluster instead
 	// GetAdminMachineClientForCustomerCluster returns a client to interact with machine resources in the given cluster
 	//
 	// Note that the client you will get has admin privileges
@@ -116,6 +117,11 @@ type ClusterProvider interface {
 	//
 	// Note that the client you will get has admin privileges
 	GetAdminKubernetesClientForCustomerCluster(cluster *kubermaticv1.Cluster) (kubernetes.Interface, error)
+
+	// GetMachineClientForCustomerCluster returns a client to interact with machine resources in the given cluster
+	//
+	// Note that the client doesn't use admin account instead it authn/authz as userInfo(email, group)
+	GetMachineClientForCustomerCluster(userInfo *UserInfo, c *kubermaticv1.Cluster) (clusterv1alpha1clientset.Interface, error)
 }
 
 // SSHKeyListOptions allows to set filters that will be applied to filter the result.
