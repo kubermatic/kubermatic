@@ -83,9 +83,6 @@ export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
 echodate "Successfully got secrets from Vault"
 
-echodate "Building conformance-tests cli"
-time go build -v github.com/kubermatic/kubermatic/api/cmd/conformance-tests
-echodate "Finished building conformance-tests cli"
 
 if [[ ! -f $HOME/.docker/config.json ]]; then
   docker ps &>/dev/null || start-docker.sh
@@ -163,12 +160,12 @@ helm init --wait --service-account=tiller --tiller-namespace=$NAMESPACE
 
 echodate "Installing Kubermatic via Helm"
 rm -f config/kubermatic/templates/cluster-role-binding.yaml
-retry 5 helm upgrade --install --wait --timeout 300 \
+helm upgrade --install --wait --timeout 900 \
   --tiller-namespace=$NAMESPACE \
   --set=kubermatic.isMaster=true \
-  --set-string=kubermatic.controller.image.tag=$BUILD_ID \
-  --set-string=kubermatic.api.image.tag=$BUILD_ID \
-  --set-string=kubermatic.rbac.image.tag=$BUILD_ID \
+  --set-string=kubermatic.controller.image.tag=$GIT_HEAD_HASH \
+  --set-string=kubermatic.api.image.tag=$GIT_HEAD_HASH \
+  --set-string=kubermatic.rbac.image.tag=$GIT_HEAD_HASH \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.deployVPA=false \
   --set=kubermatic.ingressClass=non-existent \
@@ -177,6 +174,11 @@ retry 5 helm upgrade --install --wait --timeout 300 \
   --namespace $NAMESPACE \
   kubermatic-$BUILD_ID ./config/kubermatic/
 echodate "Finished installing Kubermatic"
+
+# We build the CLI after deploying to make sure we fail fast if the helm deployment fails
+echodate "Building conformance-tests cli"
+time go build -v github.com/kubermatic/kubermatic/api/cmd/conformance-tests
+echodate "Finished building conformance-tests cli"
 
 echodate "Starting conformance tests"
 timeout -s 9 90m ./conformance-tests \
