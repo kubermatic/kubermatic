@@ -107,7 +107,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 			Resources:                controllerResourceRequirements,
-			ReadinessProbe: &corev1.Probe{
+			LivenessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Path:   "/ready",
@@ -115,20 +115,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 						Scheme: corev1.URISchemeHTTP,
 					},
 				},
-				FailureThreshold: 3,
-				PeriodSeconds:    10,
-				SuccessThreshold: 1,
-				TimeoutSeconds:   15,
-			},
-			LivenessProbe: &corev1.Probe{
-				FailureThreshold: 8,
-				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Path:   "/live",
-						Port:   intstr.FromInt(8085),
-						Scheme: corev1.URISchemeHTTP,
-					},
-				},
+				FailureThreshold:    3,
 				InitialDelaySeconds: 15,
 				PeriodSeconds:       10,
 				SuccessThreshold:    1,

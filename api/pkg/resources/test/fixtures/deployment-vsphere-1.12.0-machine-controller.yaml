@@ -53,9 +53,9 @@ spec:
         image: docker.io/kubermatic/machine-controller:v1.0.1
         imagePullPolicy: IfNotPresent
         livenessProbe:
-          failureThreshold: 8
+          failureThreshold: 3
           httpGet:
-            path: /live
+            path: /ready
             port: 8085
             scheme: HTTP
           initialDelaySeconds: 15
@@ -63,15 +63,6 @@ spec:
           successThreshold: 1
           timeoutSeconds: 15
         name: machine-controller
-        readinessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /ready
-            port: 8085
-            scheme: HTTP
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 15
         resources:
           limits:
             cpu: "2"
