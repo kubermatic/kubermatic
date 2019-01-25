@@ -364,8 +364,8 @@ func (r *testRunner) testCluster(
 		return nil, fmt.Errorf("failed to marshal combined report file: %v", err)
 	}
 
-	if err := ioutil.WriteFile(path.Join(scenarioFolder, "junit.xml"), b, 0644); err != nil {
-		return nil, fmt.Errorf("failed to wrte combined report file: %v", err)
+	if err := ioutil.WriteFile(path.Join(r.reportsRoot, fmt.Sprintf("junit.%s.xml", scenarioName)), b, 0644); err != nil {
+		return nil, fmt.Errorf("failed to write combined report file: %v", err)
 	}
 
 	return report, nil
