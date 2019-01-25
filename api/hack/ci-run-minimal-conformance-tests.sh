@@ -33,6 +33,9 @@ function cleanup {
   # Delete the Helm installation
   kubectl delete clusterrolebinding -l prowjob=$BUILD_ID
   kubectl delete namespace $NAMESPACE
+
+  # Upload the JUNIT files
+  mv /reports/* ${ARTIFACTS}/
   echo "Finished cleanup"
 }
 trap cleanup EXIT
