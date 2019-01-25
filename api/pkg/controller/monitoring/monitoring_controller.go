@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/glog"
 
+	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -39,7 +40,7 @@ const (
 
 // userClusterConnectionProvider offers functions to retrieve clients for the given user clusters
 type userClusterConnectionProvider interface {
-	GetClient(*kubermaticv1.Cluster) (kubernetes.Interface, error)
+	GetClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (kubernetes.Interface, error)
 }
 
 // Controller stores all components required for monitoring
