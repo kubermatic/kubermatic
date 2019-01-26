@@ -66,6 +66,13 @@ func ClusterRole(_ resources.ClusterRoleDataProvider, existing *rbacv1.ClusterRo
 			},
 			Verbs: []string{"list", "watch"},
 		},
+		{
+			APIGroups: []string{"policy"},
+			Resources: []string{
+				"poddisruptionbudgets",
+			},
+			Verbs: []string{"list", "watch"},
+		},
 	}
 	return r, nil
 }
