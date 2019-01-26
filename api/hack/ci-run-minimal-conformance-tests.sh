@@ -9,6 +9,9 @@ export NAMESPACE="prow-kubermatic-${BUILD_ID}"
 echo "Testing versions: ${VERSIONS}"
 cd $(dirname $0)/../..
 
+echo "starting sleep"
+sleep 30s
+echo "finished sleeping"
 echodate "I don't want to run :/"
 exit 1
 
