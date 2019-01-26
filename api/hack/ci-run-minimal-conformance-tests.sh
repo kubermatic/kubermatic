@@ -9,6 +9,9 @@ export NAMESPACE="prow-kubermatic-${BUILD_ID}"
 echo "Testing versions: ${VERSIONS}"
 cd $(dirname $0)/../..
 
+echodate "I don't want to run :/"
+exit 1
+
 function cleanup {
   echo "Starting cleanup"
   set +e
