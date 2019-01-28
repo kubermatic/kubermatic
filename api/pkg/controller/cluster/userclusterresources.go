@@ -3,19 +3,17 @@ package cluster
 import (
 	"fmt"
 
-	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
-
-	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
-
 	"github.com/go-test/deep"
 	"github.com/golang/glog"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
@@ -441,7 +439,7 @@ func (cc *Controller) userClusterEnsureCustomResourceDefinitions(c *kubermaticv1
 			return fmt.Errorf("failed to build CustomResourceDefinition: %v", err)
 		}
 
-		if equality.Semantic.DeepEqual(crd, existing) {
+		if resources.DeepEqual(crd, existing) {
 			continue
 		}
 
@@ -482,6 +480,7 @@ func (cc *Controller) userClusterEnsureMutatingWebhookConfigurations(c *kubermat
 				return fmt.Errorf("failed to create MutatingWebhookConfiguration: %v", err)
 			}
 			glog.V(4).Infof("Created MutatingWebhookConfiguration %s inside user cluster %s", mutatingWebhookConfiguration.Name, c.Name)
+			continue
 		}
 
 		mutatingWebhookConfiguration, err = creator(c, data, existing.DeepCopy())
