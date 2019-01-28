@@ -90,6 +90,7 @@ groups:
       message:
         Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }}
         has been OOMKilled {{ $value }} times in the last 30 minutes.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubepodoomkilled
     expr: |
       (kube_pod_container_status_restarts_total - kube_pod_container_status_restarts_total offset 30m >= 2)
       and
