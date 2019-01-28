@@ -37,7 +37,6 @@ func MachineSetCRD(clusterVersion semver.Semver, existing *apiextensionsv1beta1.
 	}
 
 	existing.Name = resources.MachineSetCRDName
-	existing.Spec = apiextensionsv1beta1.CustomResourceDefinitionSpec{}
 	existing.Spec.Group = clusterAPIGroup
 	existing.Spec.Version = clusterAPIVersion
 	existing.Spec.Scope = apiextensionsv1beta1.NamespaceScoped
@@ -59,7 +58,6 @@ func MachineDeploymentCRD(clusterVersion semver.Semver, existing *apiextensionsv
 	}
 
 	existing.Name = resources.MachineDeploymentCRDName
-	existing.Spec = apiextensionsv1beta1.CustomResourceDefinitionSpec{}
 	existing.Spec.Group = clusterAPIGroup
 	existing.Spec.Version = clusterAPIVersion
 	existing.Spec.Scope = apiextensionsv1beta1.NamespaceScoped
@@ -81,7 +79,6 @@ func ClusterCRD(clusterVersion semver.Semver, existing *apiextensionsv1beta1.Cus
 	}
 
 	existing.Name = resources.ClusterCRDName
-	existing.Spec = apiextensionsv1beta1.CustomResourceDefinitionSpec{}
 	existing.Spec.Group = clusterAPIGroup
 	existing.Spec.Version = clusterAPIVersion
 	existing.Spec.Scope = apiextensionsv1beta1.NamespaceScoped
