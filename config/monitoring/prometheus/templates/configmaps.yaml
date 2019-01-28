@@ -12,7 +12,7 @@ metadata:
   labels:
     role: prometheus-rulefiles
 data:
-{{ (.Files.Glob "rules/*").AsConfig | indent 4 }}
+{{ (.Files.Glob "rules/*.yaml").AsConfig | indent 4 }}
 {{- if .Values.prometheus.rules }}
   _customrules.yaml: |
 {{ toYaml .Values.prometheus.rules | indent 6 }}
