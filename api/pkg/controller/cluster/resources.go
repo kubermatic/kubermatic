@@ -284,6 +284,7 @@ func GetPodDisruptionBudgetCreators() []resources.PodDisruptionBudgetCreator {
 	return []resources.PodDisruptionBudgetCreator{
 		etcd.PodDisruptionBudget,
 		apiserver.PodDisruptionBudget,
+		metricsserver.PodDisruptionBudget,
 	}
 }
 
