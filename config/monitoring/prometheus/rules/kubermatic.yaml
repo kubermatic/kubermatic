@@ -9,6 +9,9 @@ groups:
     for: 10m
     labels:
       severity: warning
+    runbook:
+      steps:
+      - Ensure that the controller-manager pod's logs.
 
   - alert: KubermaticClusterDeletionTakesTooLong
     annotations:
@@ -18,6 +21,13 @@ groups:
     for: 0m
     labels:
       severity: warning
+    runbook:
+      steps:
+      - Check the machine-controller's logs via `kubectl -n cluster-XYZ logs -l 'app=machine-controller'` for errors related to cloud provider integrations.
+        Expired credentials or manually deleted cloud provider resources are common reasons for failing deletions.
+      - Check the cluster's status itself via `kubectl describe cluster XYZ`.
+      - If all resources have been cleaned up, remove the blocking finalizer (e.g. `kubermatic.io/delete-nodes`) from the cluster resource.
+      - If nothing else helps, manually delete the cluster namespace as a last resort.
 
   - alert: KubermaticAPIDown
     annotations:
@@ -27,6 +37,10 @@ groups:
     for: 15m
     labels:
       severity: critical
+    runbook:
+      steps:
+      - Check the Prometheus Service Discovery page to find out why the target is unreachable.
+      - Ensure that the API pod's logs and that it is not crashlooping.
 
   - alert: KubermaticControllerManagerDown
     annotations:
@@ -36,3 +50,7 @@ groups:
     for: 15m
     labels:
       severity: critical
+    runbook:
+      steps:
+      - Check the Prometheus Service Discovery page to find out why the target is unreachable.
+      - Ensure that the controller-manager pod's logs and that it is not crashlooping.

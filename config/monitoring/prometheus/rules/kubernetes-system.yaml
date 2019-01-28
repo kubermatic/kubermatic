@@ -22,7 +22,7 @@ groups:
   # a dedicated rule for pods to include more helpful labels in the message like the instance and job name
   - alert: KubeClientErrors
     annotations:
-      message: >
+      message:
         The pod {{ $labels.namespace }}/{{ $labels.pod }} is experiencing {{ printf "%0.0f" $value }}% errors.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclienterrors
     expr: |
@@ -36,7 +36,7 @@ groups:
 
   - alert: KubeClientErrors
     annotations:
-      message: >
+      message:
         The kubelet on {{ $labels.instance }} is experiencing {{ printf "%0.0f" $value }}% errors.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclienterrors
     expr: |
@@ -59,7 +59,7 @@ groups:
 
   - alert: KubeAPILatencyHigh
     annotations:
-      message: >
+      message:
         The API server has a 99th percentile latency of {{ $value }} seconds
         for {{ $labels.verb }} {{ $labels.resource }}.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeapilatencyhigh
@@ -70,7 +70,7 @@ groups:
 
   - alert: KubeAPILatencyHigh
     annotations:
-      message: >
+      message:
         The API server has a 99th percentile latency of {{ $value }} seconds
         for {{ $labels.verb }} {{ $labels.resource }}.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeapilatencyhigh

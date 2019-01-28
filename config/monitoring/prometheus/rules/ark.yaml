@@ -9,6 +9,11 @@ groups:
     for: 60m
     labels:
       severity: warning
+    runbook:
+      steps:
+      - Check if a backup is really in "InProgress" state via `ark -n ark backup get`.
+      - Check the backup logs via `ark -n ark backup logs [BACKUP_NAME]`.
+      - Depending on the backup, find the pod and check the processes inside that pod or any sidecar containers.
 
   - alert: ArkNoRecentBackup
     annotations:
@@ -17,3 +22,8 @@ groups:
     expr: changes(ark_backup_success_total{schedule!=""}[25h]) < 1
     labels:
       severity: warning
+    runbook:
+      steps:
+      - Check if really no backups happened via `ark -n ark backup get`.
+      - If a backup failed, check its logs via `ark -n ark backup logs [BACKUP_NAME]`.
+      - If a backup was not even triggered, check the Ark server's logs via `kubectl -n ark logs -l 'name=ark-server'`.
