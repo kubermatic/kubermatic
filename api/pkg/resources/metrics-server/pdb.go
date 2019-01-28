@@ -25,7 +25,6 @@ func PodDisruptionBudget(data *resources.TemplateData, existing *policyv1beta1.P
 		Selector: &metav1.LabelSelector{
 			MatchLabels: resources.BaseAppLabel(name, nil),
 		},
-		// we can only specify maxUnavailable as minAvailable would block in case we have replicas=1. See https://github.com/kubernetes/kubernetes/issues/66811
 		MaxUnavailable: &maxUnavailable,
 	}
 
