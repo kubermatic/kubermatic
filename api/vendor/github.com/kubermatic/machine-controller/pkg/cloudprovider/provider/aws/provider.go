@@ -8,6 +8,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/golang/glog"
+	gocache "github.com/patrickmn/go-cache"
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/cloud"
 	cloudprovidererrors "github.com/kubermatic/machine-controller/pkg/cloudprovider/errors"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
@@ -18,18 +28,22 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/iam"
-	"github.com/golang/glog"
-	gocache "github.com/patrickmn/go-cache"
-
 	"sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
 	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
+
+var (
+	prometheusRegisterer       = &sync.Once{}
+	metricInstancesForMachines = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "machine_controller_aws_instances_for_machine",
+		Help: "The number of instances at aws for a given machine"}, []string{"machine"})
+)
+
+func init() {
+	prometheusRegisterer.Do(func() {
+		prometheus.MustRegister(metricInstancesForMachines)
+	})
+}
 
 type provider struct {
 	configVarResolver *providerconfig.ConfigVarResolver
@@ -765,4 +779,85 @@ func setProviderSpec(rawConfig RawConfig, s v1alpha1.ProviderSpec) (*runtime.Raw
 	}
 
 	return &runtime.RawExtension{Raw: rawPconfig}, nil
+}
+
+func (p *provider) SetMetricsForMachines(machines v1alpha1.MachineList) error {
+	if len(machines.Items) < 1 {
+		return nil
+	}
+
+	type ec2Credentials struct {
+		acccessKeyID    string
+		secretAccessKey string
+		region          string
+	}
+
+	var errors []error
+	credentials := map[string]ec2Credentials{}
+	for _, machine := range machines.Items {
+		config, _, _, err := p.getConfig(machines.Items[0].Spec.ProviderSpec)
+		if err != nil {
+			errors = append(errors, fmt.Errorf("failed to parse MachineSpec of machine %s/%s, due to %v", machine.Namespace, machine.Name, err))
+			continue
+		}
+
+		// Very simple and very stupid
+		credentials[fmt.Sprintf("%s/%s/%s", config.AccessKeyID, config.SecretAccessKey, config.Region)] = ec2Credentials{
+			acccessKeyID:    config.AccessKeyID,
+			secretAccessKey: config.SecretAccessKey,
+			region:          config.Region,
+		}
+
+	}
+
+	allReservations := []*ec2.Reservation{}
+	for _, cred := range credentials {
+		ec2Client, err := getEC2client(cred.acccessKeyID, cred.secretAccessKey, cred.region)
+		if err != nil {
+			errors = append(errors, fmt.Errorf("failed to get EC2 client: %v", err))
+			continue
+		}
+		inOut, err := ec2Client.DescribeInstances(&ec2.DescribeInstancesInput{})
+		if err != nil {
+			errors = append(errors, fmt.Errorf("failed to get EC2 instances: %v", err))
+			continue
+		}
+		allReservations = append(allReservations, inOut.Reservations...)
+	}
+
+	for _, machine := range machines.Items {
+		metricInstancesForMachines.WithLabelValues(fmt.Sprintf("%s/%s", machine.Namespace, machine.Name)).Set(
+			getIntanceCountForMachine(machine, allReservations))
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf("errors: %v", errors)
+	}
+
+	return nil
+}
+
+func getIntanceCountForMachine(machine v1alpha1.Machine, reservations []*ec2.Reservation) float64 {
+	var count float64
+	for _, reservation := range reservations {
+		for _, i := range reservation.Instances {
+			if i.State == nil ||
+				i.State.Name == nil ||
+				*i.State.Name == ec2.InstanceStateNameTerminated {
+				continue
+			}
+
+			for _, tag := range i.Tags {
+				if *tag.Key != machineUIDTag {
+					continue
+				}
+
+				if *tag.Value == string(machine.UID) {
+					count = count + 1
+				}
+				break
+			}
+		}
+	}
+	return count
 }

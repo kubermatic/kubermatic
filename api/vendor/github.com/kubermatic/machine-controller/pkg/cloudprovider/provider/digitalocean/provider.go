@@ -495,3 +495,7 @@ func doStatusAndErrToTerminalError(status int, err error) error {
 		return err
 	}
 }
+
+func (p *provider) SetMetricsForMachines(machines v1alpha1.MachineList) error {
+	return nil
+}

@@ -401,3 +401,7 @@ func hzErrorToTerminalError(err error, msg string) error {
 
 	return err
 }
+
+func (p *provider) SetMetricsForMachines(machines v1alpha1.MachineList) error {
+	return nil
+}
