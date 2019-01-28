@@ -819,3 +819,7 @@ func (p *provider) MachineMetricsLabels(machine *v1alpha1.Machine) (map[string]s
 
 	return labels, err
 }
+
+func (p *provider) SetMetricsForMachines(machines v1alpha1.MachineList) error {
+	return nil
+}

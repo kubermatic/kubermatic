@@ -45,11 +45,16 @@ type Provider interface {
 	// about created machines, e.g. instance type, instance size, region
 	// or whatever the provider deems interesting. Should always return
 	// a "size" label.
+	// This should not do any api calls to the cloud provider
 	MachineMetricsLabels(machine *clusterv1alpha1.Machine) (map[string]string, error)
 
 	// MigrateUID is called when the controller migrates types and the UID of the machine object changes
 	// All cloud providers that use Machine.UID to uniquely identify resources must implement this
 	MigrateUID(machine *clusterv1alpha1.Machine, new types.UID) error
+
+	// SetMetricsForMachines allows providers to provide provider-specific metrics. This may be implemented
+	// as no-op
+	SetMetricsForMachines(machines clusterv1alpha1.MachineList) error
 }
 
 // MachineUpdater defines a function to persist an update to a machine
