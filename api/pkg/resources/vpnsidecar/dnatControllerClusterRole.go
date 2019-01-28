@@ -4,7 +4,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DnatControllerClusterRole returns a cluster role for the kubeletdnat controller
@@ -15,7 +14,6 @@ func DnatControllerClusterRole(data resources.ClusterRoleDataProvider, existing 
 	}
 
 	r.Name = resources.KubeletDnatControllerClusterRoleName
-	r.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	r.Rules = []rbacv1.PolicyRule{
 		{
 			APIGroups: []string{""},
