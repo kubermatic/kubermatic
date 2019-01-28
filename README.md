@@ -17,6 +17,7 @@ This covers the existing, developer focusing, documentation:
   - [Logging guideline](docs/logging.md)
   - [Events guideline](docs/events.md)
 - [Proposals](docs/proposals)
+- [Things that break](docs/things-that-break.md)
 
 
 Customer facing documentation can be found at https://github.com/kubermatic/docs which gets published at https://docs.kubermatic.io 
