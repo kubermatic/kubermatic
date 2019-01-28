@@ -17,7 +17,6 @@ func ExternalNameService(data resources.ServiceDataProvider, existing *corev1.Se
 
 	se.Name = resources.MetricsServerExternalNameServiceName
 	se.Namespace = metav1.NamespaceSystem
-	se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	labels := resources.BaseAppLabel(name, nil)
 	se.Labels = labels
 
