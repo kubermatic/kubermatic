@@ -3,14 +3,36 @@
 set -euo pipefail
 
 export BUILD_ID=${BUILD_ID:-BUILD_ID_UNDEF}
-echo "Build ID is $BUILD_ID"
+echodate() { echo "$(date) $@"; }
+echodate "Build ID is $BUILD_ID"
 export VERSIONS=${VERSIONS_TO_TEST:-"v1.12.4"}
 export NAMESPACE="prow-kubermatic-${BUILD_ID}"
-echo "Testing versions: ${VERSIONS}"
+echodate "Testing versions: ${VERSIONS}"
 cd $(dirname $0)/../..
+export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
+
+function retry {
+  local retries=$1
+  shift
+
+  local count=0
+  until "$@"; do
+    exit=$?
+    wait=$((2 ** $count))
+    count=$(($count + 1))
+    if [ $count -lt $retries ]; then
+      echo "Retry $count/$retries exited $exit, retrying in $wait seconds..."
+      sleep $wait
+    else
+      echo "Retry $count/$retries exited $exit, no more retries left."
+      return $exit
+    fi
+  done
+  return 0
+}
 
 function cleanup {
-  echo "Starting cleanup"
+  echodate "Starting cleanup"
   set +e
   # Delete addons from all clusters that have our worker-name label
   kubectl get cluster -l worker-name=$BUILD_ID \
@@ -33,20 +55,21 @@ function cleanup {
   # Delete the Helm installation
   kubectl delete clusterrolebinding -l prowjob=$BUILD_ID
   kubectl delete namespace $NAMESPACE
-  echo "Finished cleanup"
+
+  # Upload the JUNIT files
+  mv /reports/* ${ARTIFACTS}/
+  echodate "Finished cleanup"
 }
 trap cleanup EXIT
 
-docker ps &>/dev/null || start-docker.sh
-
-echo "Unlocking secrets repo"
+echodate "Unlocking secrets repo"
 cd $(go env GOPATH)/src/github.com/kubermatic/secrets
 echo $KUBERMATIC_SECRETS_GPG_KEY_BASE64 | base64 -d > /tmp/git-crypt-key
 git-crypt unlock /tmp/git-crypt-key
 cd -
-echo "Successfully unlocked secrets repo"
+echodate "Successfully unlocked secrets repo"
 
-echo "Getting secrets from Vault"
+echodate "Getting secrets from Vault"
 export VAULT_ADDR=https://vault.loodse.com/
 export VAULT_TOKEN=$(vault write \
   --format=json auth/approle/login \
@@ -58,26 +81,31 @@ vault kv get -field=values.yaml \
   dev/seed-clusters/dev.kubermatic.io > /tmp/values.yaml
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
-echo "Successfully got secrets from Vault"
+echodate "Successfully got secrets from Vault"
 
 
 if [[ ! -f $HOME/.docker/config.json ]]; then
-  echo "Logging into quay.io"
-  docker login -u $QUAY_IO_USERNAME -p $QUAY_IO_PASSWORD quay.io
-  echo "Logging into dockerhub"
+  docker ps &>/dev/null || start-docker.sh
+  mkdir  -p $HOME/.docker
+  echo '{"experimental": "enabled"}' > ~/.docker/config.json
+  echodate "Logging into dockerhub"
   docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-  echo "Successfully logged into all registries"
+  echodate "Successfully logged into all registries"
 fi
 
-echo "Building conformance-tests cli"
-time go build -v github.com/kubermatic/kubermatic/api/cmd/conformance-tests
-echo "Building kubermatic-controller-manager"
-time make -C api build
-echo "Finished building conformance-tests and kubermatic-controller-manager"
-
-echo "Building docker image"
-./api/hack/push_image.sh ${BUILD_ID}
-echo "Finished building and pushing docker images"
+# Only build kubermatic binaries and docker image if it doesn't exist yet
+# We use dockerhub because docker manifest inspect doesn't seem to work on quay
+if ! docker manifest inspect docker.io/kubermatic/api:$GIT_HEAD_HASH &>/dev/null; then
+  echodate "Building binaries"
+  time make -C api build
+  cd api
+  echodate "Building docker image"
+  docker build -t docker.io/kubermatic/api:${GIT_HEAD_HASH} .
+  echodate "Pushing docker image"
+  retry 5 docker push docker.io/kubermatic/api:${GIT_HEAD_HASH}
+  echodate "Finished building and pushing docker image"
+  cd -
+fi
 
 INITIAL_MANIFESTS=$(cat <<EOF
 apiVersion: v1
@@ -124,20 +152,25 @@ roleRef:
   name: cluster-admin
 EOF
 )
-echo "Creating namespace $NAMESPACE to deploy kubermatic in"
+echodate "Creating namespace $NAMESPACE to deploy kubermatic in"
 echo "$INITIAL_MANIFESTS"|kubectl apply -f -
 
-echo "Deploying tiller"
+echodate "Deploying tiller"
 helm init --wait --service-account=tiller --tiller-namespace=$NAMESPACE
 
-echo "Installing Kubermatic via Helm"
+echodate "Installing Kubermatic via Helm"
 rm -f config/kubermatic/templates/cluster-role-binding.yaml
-helm upgrade --install --wait --timeout 300 \
+# --force is needed in case the first attempt at installing didn't succeed
+# see https://github.com/helm/helm/pull/3597
+retry 3 helm upgrade --install --force --wait --timeout 300 \
   --tiller-namespace=$NAMESPACE \
   --set=kubermatic.isMaster=true \
-  --set-string=kubermatic.controller.image.tag=$BUILD_ID \
-  --set-string=kubermatic.api.image.tag=$BUILD_ID \
-  --set-string=kubermatic.rbac.image.tag=$BUILD_ID \
+  --set-string=kubermatic.controller.image.repository=docker.io/kubermatic/api \
+  --set-string=kubermatic.controller.image.tag=$GIT_HEAD_HASH \
+  --set-string=kubermatic.api.image.repository=docker.io/kubermatic/api \
+  --set-string=kubermatic.api.image.tag=$GIT_HEAD_HASH \
+  --set-string=kubermatic.rbac.image.repository=docker.io/kubermatic/api \
+  --set-string=kubermatic.rbac.image.tag=$GIT_HEAD_HASH \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.deployVPA=false \
   --set=kubermatic.ingressClass=non-existent \
@@ -145,9 +178,14 @@ helm upgrade --install --wait --timeout 300 \
   --values ${VALUES_FILE} \
   --namespace $NAMESPACE \
   kubermatic-$BUILD_ID ./config/kubermatic/
-echo "Finished installing Kubermatic"
+echodate "Finished installing Kubermatic"
 
-echo "Starting conformance tests"
+# We build the CLI after deploying to make sure we fail fast if the helm deployment fails
+echodate "Building conformance-tests cli"
+time go build -v github.com/kubermatic/kubermatic/api/cmd/conformance-tests
+echodate "Finished building conformance-tests cli"
+
+echodate "Starting conformance tests"
 timeout -s 9 90m ./conformance-tests \
   -debug \
   -worker-name=$BUILD_ID \

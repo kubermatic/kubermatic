@@ -296,41 +296,6 @@ func (r *testRunner) testCluster(
 	report := &reporters.JUnitTestSuite{
 		Name: scenarioName,
 	}
-	// Do a simple PVC test - with retries
-	if supportsStorage(cluster) {
-		testStart := time.Now()
-		testCase := reporters.JUnitTestCase{
-			Name:      "[CloudProvider] Test PVC support with the existing StorageClass",
-			ClassName: "Kubermatic custom tests",
-		}
-		err := retryNAttempts(maxTestAttempts, func(attempt int) error { return r.testPVC(log, clusterKubeClient) })
-		if err != nil {
-			report.Errors++
-			testCase.FailureMessage = &reporters.JUnitFailureMessage{Message: err.Error()}
-			log.Errorf("Failed to verify that PVC's work: %v", err)
-		}
-		testCase.Time = time.Since(testStart).Seconds()
-		report.TestCases = append(report.TestCases, testCase)
-		report.Tests++
-	}
-
-	// Do a simple LB test - with retries
-	if supportsLBs(cluster) {
-		testStart := time.Now()
-		testCase := reporters.JUnitTestCase{
-			Name:      "[CloudProvider] Test LB support",
-			ClassName: "Kubermatic custom tests",
-		}
-		err := retryNAttempts(maxTestAttempts, func(attempt int) error { return r.testLB(log, clusterKubeClient) })
-		if err != nil {
-			report.Errors++
-			testCase.FailureMessage = &reporters.JUnitFailureMessage{Message: err.Error()}
-			log.Errorf("Failed to verify that LB's work: %v", err)
-		}
-		testCase.Time = time.Since(testStart).Seconds()
-		report.TestCases = append(report.TestCases, testCase)
-		report.Tests++
-	}
 
 	ginkgoRuns, err := r.getGinkgoRuns(log, scenarioName, kubeconfigFilename, cloudConfigFilename, cluster, apiNodes, dc)
 	if err != nil {
@@ -357,14 +322,50 @@ func (r *testRunner) testCluster(
 		report = combineReports("Kubernetes Conformance tests", report, ginkgoRes.report)
 	}
 
+	// Do a simple PVC test - with retries
+	if supportsStorage(cluster) {
+		testStart := time.Now()
+		testCase := reporters.JUnitTestCase{
+			Name:      "[CloudProvider] Test PVC support with the existing StorageClass",
+			ClassName: "Kubermatic custom tests",
+		}
+		err := retryNAttempts(maxTestAttempts, func(attempt int) error { return r.testPVC(log, clusterKubeClient, attempt) })
+		if err != nil {
+			report.Errors++
+			testCase.FailureMessage = &reporters.JUnitFailureMessage{Message: err.Error()}
+			log.Errorf("Failed to verify that PVC's work: %v", err)
+		}
+		testCase.Time = time.Since(testStart).Seconds()
+		report.TestCases = append(report.TestCases, testCase)
+		report.Tests++
+	}
+
+	// Do a simple LB test - with retries
+	if supportsLBs(cluster) {
+		testStart := time.Now()
+		testCase := reporters.JUnitTestCase{
+			Name:      "[CloudProvider] Test LB support",
+			ClassName: "Kubermatic custom tests",
+		}
+		err := retryNAttempts(maxTestAttempts, func(attempt int) error { return r.testLB(log, clusterKubeClient, attempt) })
+		if err != nil {
+			report.Errors++
+			testCase.FailureMessage = &reporters.JUnitFailureMessage{Message: err.Error()}
+			log.Errorf("Failed to verify that LB's work: %v", err)
+		}
+		testCase.Time = time.Since(testStart).Seconds()
+		report.TestCases = append(report.TestCases, testCase)
+		report.Tests++
+	}
+
 	report.Time = time.Since(totalStart).Seconds()
 	b, err := xml.Marshal(report)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal combined report file: %v", err)
 	}
 
-	if err := ioutil.WriteFile(path.Join(scenarioFolder, "junit.xml"), b, 0644); err != nil {
-		return nil, fmt.Errorf("failed to wrte combined report file: %v", err)
+	if err := ioutil.WriteFile(path.Join(r.reportsRoot, fmt.Sprintf("junit.%s.xml", scenarioName)), b, 0644); err != nil {
+		return nil, fmt.Errorf("failed to write combined report file: %v", err)
 	}
 
 	return report, nil
