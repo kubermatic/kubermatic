@@ -157,6 +157,14 @@ groups:
     labels:
       severity: warning
 
+  - alert: AWSInstanceCountTooHigh
+    annotations:
+      message: '{{ $labels.machine }} has more than one instance at AWS'
+    expr: machine_controller_aws_instances_for_machine > 1
+    for: 30m
+    labels:
+      severity: warning
+
   - record: job:machine_controller_errors_total:rate5m
     expr: rate(machine_controller_errors_total[5m])
     labels:

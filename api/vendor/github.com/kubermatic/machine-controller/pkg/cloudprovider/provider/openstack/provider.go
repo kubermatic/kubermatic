@@ -861,3 +861,7 @@ func assignFloatingIPToInstance(machineUpdater cloud.MachineUpdater, machine *v1
 	glog.V(2).Infof("Successfully assigned the FloatingIP %s to instance %s. Took %f seconds(without the recheck wait period %f seconds). ", ip.FloatingIP, instanceID, secondsTook, floatingReassignIPCheckPeriod.Seconds())
 	return nil
 }
+
+func (p *provider) SetMetricsForMachines(machines v1alpha1.MachineList) error {
+	return nil
+}
