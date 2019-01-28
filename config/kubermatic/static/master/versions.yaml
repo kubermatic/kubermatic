@@ -1,19 +1,22 @@
 versions:
-# Kubernetes 1.10
-- version: "1.10.11"
-  default: false
 # Kubernetes 1.11
 - version: "1.11.5"
   default: false
 - version: "1.11.6"
-  default: true
+  default: false
+- version: "1.11.7"
+  default: false
 # Kubernetes 1.12
 - version: "1.12.3"
   default: false
 - version: "1.12.4"
   default: false
+- version: "1.12.5"
+  default: true
 # Kubernetes 1.13
 - version: "1.13.0"
   default: false
 - version: "1.13.1"
+  default: false
+- version: "1.13.2"
   default: false
