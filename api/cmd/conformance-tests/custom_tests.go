@@ -18,11 +18,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func (r *testRunner) testPVC(log *logrus.Entry, kubeClient kubernetes.Interface) error {
+func (r *testRunner) testPVC(log *logrus.Entry, kubeClient kubernetes.Interface, attempt int) error {
 	log.Info("Testing support for PVC's...")
 
-	// We're creating a own namespace, so the cleanup routine will take care as fallback
-	const nsName = "pvc-test"
+	nsName := fmt.Sprintf("pvc-test-%d", attempt)
 	ns, err := kubeClient.CoreV1().Namespaces().Create(&corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: nsName,
@@ -31,12 +30,6 @@ func (r *testRunner) testPVC(log *logrus.Entry, kubeClient kubernetes.Interface)
 	if err != nil {
 		return fmt.Errorf("failed to create namespace: %v", err)
 	}
-
-	defer func() {
-		if err := deleteAllNonDefaultNamespaces(log, kubeClient); err != nil {
-			log.Errorf("Failed to cleanup namespaces after the PVC test: %v", err)
-		}
-	}()
 
 	log.Info("Creating a StatefulSet with PVC...")
 	labels := map[string]string{"app": "data-writer"}
@@ -127,11 +120,10 @@ func (r *testRunner) testPVC(log *logrus.Entry, kubeClient kubernetes.Interface)
 	return nil
 }
 
-func (r *testRunner) testLB(log *logrus.Entry, kubeClient kubernetes.Interface) error {
+func (r *testRunner) testLB(log *logrus.Entry, kubeClient kubernetes.Interface, attempt int) error {
 	log.Info("Testing support for LB's...")
 
-	// We're creating a own namespace, so the cleanup routine will take care as fallback
-	const nsName = "lb-test"
+	nsName := fmt.Sprintf("lb-test-%d", attempt)
 	ns, err := kubeClient.CoreV1().Namespaces().Create(&corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: nsName,
@@ -140,12 +132,6 @@ func (r *testRunner) testLB(log *logrus.Entry, kubeClient kubernetes.Interface) 
 	if err != nil {
 		return fmt.Errorf("failed to create namespace: %v", err)
 	}
-
-	defer func() {
-		if err := deleteAllNonDefaultNamespaces(log, kubeClient); err != nil {
-			log.Errorf("Failed to cleanup namespaces after the LB test: %v", err)
-		}
-	}()
 
 	log.Info("Creating a Service of type LoadBalancer...")
 	labels := map[string]string{"app": "hello"}
