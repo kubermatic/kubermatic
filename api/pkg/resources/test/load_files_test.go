@@ -469,7 +469,13 @@ func TestLoadFiles(t *testing.T) {
 				}
 
 				tmpFilePath := tmpFile.Name()
-				_, err = tmpFile.WriteString("some test")
+				_, err = tmpFile.WriteString(`- job_name: custom-test-config
+  scheme: https
+  metrics_path: '/metrics'
+  static_configs:
+  - targets:
+    - 'foo.bar:12345'
+`)
 				if err != nil {
 					t.Fatalf("couldnt write to temp file, see: %v", err)
 				}
