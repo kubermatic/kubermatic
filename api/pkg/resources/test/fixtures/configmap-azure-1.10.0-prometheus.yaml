@@ -9,7 +9,13 @@ data:
     rule_files:
     - "/etc/prometheus/config/rules*.yaml"
     scrape_configs:
-    some test
+    - job_name: custom-test-config
+      scheme: https
+      metrics_path: '/metrics'
+      static_configs:
+      - targets:
+        - 'foo.bar:12345'
+
     - job_name: etcd
       scheme: https
       metrics_path: '/metrics'
