@@ -30,6 +30,13 @@ you will be starting in the next step manage your cluster
 * The controller runs in the foreground, meaning it will block the terminal window which is why it is suggested to use a dedicated terminal. You can stop it via `ctrl+c`
 * You can now change code, then restart the controller and watch it doing its work
 
+If you work on the API, you can run it together with the dashboard locally (the latter in a Docker container):
+
+* Clone the dashboard repo: `git clone git@github.com:kubermatic/dashboard-v2.git $(go env GOPATH)/src/github.com/kubermatic/dashboard-v2`
+* Run `./hack/run-dashboard-and-api.sh`
+* You can now reach your local copy of the API and the dashboard by navigating to http://localhost:8000/ in a web browser
+* Just like with the controllers, this runs in foregrond so it is recommended to execute this in a dedicated terminal.
+
 There are also other controllers like the `machine-controller` that do not talk to the seed cluster but to the user cluster directly. This means they need a different Kubeconfig. You can
 get them running by following the following steps:
 
