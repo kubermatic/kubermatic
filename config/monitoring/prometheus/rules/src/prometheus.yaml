@@ -1,16 +1,18 @@
-# This file has been generated, do not edit.
 groups:
 - name: prometheus
   rules:
   - alert: PromScrapeFailed
     annotations:
-      message: Prometheus failed to scrape a target {{ $labels.job }} / {{ $labels.instance
-        }}.
+      message: Prometheus failed to scrape a target {{ $labels.job }} / {{ $labels.instance }}.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-promscrapefailed
     expr: up != 1
     for: 15m
     labels:
       severity: warning
+    runbook:
+      steps:
+      - Check the Prometheus Service Discovery page to find out why the target is unreachable.
+
   - alert: PromBadConfig
     annotations:
       mesage: Prometheus failed to reload config.
@@ -19,6 +21,11 @@ groups:
     for: 15m
     labels:
       severity: critical
+    runbook:
+      steps:
+      - Check Prometheus pod's logs via `kubectl -n monitoring logs prometheus-kubermatic-0` and `-1`.
+      - Check the `prometheus-kubermatic-rules` configmap via `kubectl -n monitoring get configmap prometheus-kubermatic-rules -o yaml`.
+
   - alert: PromAlertmanagerBadConfig
     annotations:
       message: Alertmanager failed to reload config.
@@ -27,15 +34,24 @@ groups:
     for: 10m
     labels:
       severity: critical
+    runbook:
+      steps:
+      - Check Alertmanager pod's logs via `kubectl -n monitoring logs alertmanager-kubermatic-0`, `-1` and `-2`.
+      - Check the `alertmanager-kubermatic` secret via `kubectl -n monitoring get secret alertmanager-kubermatic -o yaml`.
+
   - alert: PromAlertsFailed
     annotations:
       message: Alertmanager failed to send an alert.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-promalertsfailed
-    expr: sum(increase(alertmanager_notifications_failed_total{job="alertmanager"}[5m]))
-      by (namespace) > 0
+    expr: sum(increase(alertmanager_notifications_failed_total{job="alertmanager"}[5m])) by (namespace) > 0
     for: 5m
     labels:
       severity: critical
+    runbook:
+      steps:
+      - Check Prometheus pod's logs via `kubectl -n monitoring logs prometheus-kubermatic-0` and `-1`.
+      - 'Make sure the Alertmanager StatefulSet is running: `kubectl -n monitoring get pods`.'
+
   - alert: PromRemoteStorageFailures
     annotations:
       message: Prometheus failed to send {{ printf "%.1f" $value }}% samples.
@@ -48,12 +64,20 @@ groups:
     for: 15m
     labels:
       severity: critical
+    runbook:
+      steps:
+      - Ensure that the Prometheus volume has not reached capacity.
+      - Check Prometheus pod's logs via `kubectl -n monitoring logs prometheus-kubermatic-0` and `-1`.
+
   - alert: PromRuleFailures
     annotations:
       message: Prometheus failed to evaluate {{ printf "%.1f" $value }} rules/sec.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-promrulefailures
-    expr: rate(prometheus_rule_evaluation_failures_total{job="prometheus"}[1m]) >
-      0
+    expr: rate(prometheus_rule_evaluation_failures_total{job="prometheus"}[1m]) > 0
     for: 15m
     labels:
       severity: critical
+    runbook:
+      steps:
+      - Check Prometheus pod's logs via `kubectl -n monitoring logs prometheus-kubermatic-0` and `-1`.
+      - Check CPU/memory pressure on the node.

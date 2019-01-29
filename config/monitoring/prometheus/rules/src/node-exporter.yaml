@@ -1,10 +1,10 @@
-# This file has been generated, do not edit.
 groups:
 - name: node-exporter
   rules:
   - alert: NodeFilesystemSpaceFillingUp
     annotations:
-      message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
+      message:
+        Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
         to run out of space within the next 24 hours.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-nodefilesystemspacefillingup
     expr: |
@@ -16,9 +16,11 @@ groups:
     for: 1h
     labels:
       severity: warning
+
   - alert: NodeFilesystemSpaceFillingUp
     annotations:
-      message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
+      message:
+        Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
         to run out of space within the next 4 hours.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-nodefilesystemspacefillingup
     expr: |
@@ -30,9 +32,11 @@ groups:
     for: 1h
     labels:
       severity: critical
+
   - alert: NodeFilesystemOutOfSpace
     annotations:
-      message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
+      message:
+        Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
         {{ $value }}% available space left.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-nodefilesystemoutofspace
     expr: |
@@ -42,9 +46,11 @@ groups:
     for: 1h
     labels:
       severity: warning
+
   - alert: NodeFilesystemOutOfSpace
     annotations:
-      message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
+      message:
+        Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
         {{ $value }}% available space left.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-nodefilesystemoutofspace
     expr: |
@@ -54,9 +60,11 @@ groups:
     for: 1h
     labels:
       severity: critical
+
   - alert: NodeFilesystemFilesFillingUp
     annotations:
-      message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
+      message:
+        Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
         to run out of files within the next 24 hours.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-nodefilesystemfilesfillingup
     expr: |
@@ -68,9 +76,11 @@ groups:
     for: 1h
     labels:
       severity: warning
+
   - alert: NodeFilesystemFilesFillingUp
     annotations:
-      message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
+      message:
+        Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
         to run out of files within the next 4 hours.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-nodefilesystemfilesfillingup
     expr: |
@@ -82,9 +92,11 @@ groups:
     for: 1h
     labels:
       severity: warning
+
   - alert: NodeFilesystemOutOfFiles
     annotations:
-      message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
+      message:
+        Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
         {{ $value }}% available inodes left.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-nodefilesystemoutoffiles
     expr: |
@@ -94,9 +106,11 @@ groups:
     for: 1h
     labels:
       severity: warning
+
   - alert: NodeFilesystemOutOfSpace
     annotations:
-      message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
+      message:
+        Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
         {{ $value }}% available space left.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-nodefilesystemoutofspace
     expr: |
@@ -106,18 +120,22 @@ groups:
     for: 1h
     labels:
       severity: critical
+
   - alert: NodeNetworkReceiveErrs
     annotations:
-      message: '{{ $labels.instance }} interface {{ $labels.device }} shows errors
+      message:
+        '{{ $labels.instance }} interface {{ $labels.device }} shows errors
         while receiving packets ({{ $value }} errors in two minutes).'
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-nodenetworkreceiveerrs
     expr: increase(node_network_receive_errs_total[2m]) > 10
     for: 1h
     labels:
       severity: critical
+
   - alert: NodeNetworkTransmitErrs
     annotations:
-      message: '{{ $labels.instance }} interface {{ $labels.device }} shows errors
+      message:
+        '{{ $labels.instance }} interface {{ $labels.device }} shows errors
         while transmitting packets ({{ $value }} errors in two minutes).'
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-nodenetworktransmiterrs
     expr: increase(node_network_transmit_errs_total[2m]) > 10

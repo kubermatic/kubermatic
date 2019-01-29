@@ -1,4 +1,3 @@
-# This file has been generated, do not edit.
 groups:
 - name: kubernetes-system
   rules:
@@ -6,24 +5,25 @@ groups:
     annotations:
       message: '{{ $labels.node }} has been unready for more than an hour.'
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubenodenotready
-    expr: kube_node_status_condition{job="kube-state-metrics",condition="Ready",status="true"}
-      == 0
+    expr: kube_node_status_condition{job="kube-state-metrics",condition="Ready",status="true"} == 0
     for: 1h
     labels:
       severity: warning
+
   - alert: KubeVersionMismatch
     annotations:
-      message: There are {{ $value }} different versions of Kubernetes components
-        running.
+      message: There are {{ $value }} different versions of Kubernetes components running.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeversionmismatch
     expr: count(count(kubernetes_build_info{job!="dns"}) by (gitVersion)) > 1
     for: 1h
     labels:
       severity: warning
+
+  # a dedicated rule for pods to include more helpful labels in the message like the instance and job name
   - alert: KubeClientErrors
     annotations:
-      message: The pod {{ $labels.namespace }}/{{ $labels.pod }} is experiencing {{
-        printf "%0.0f" $value }}% errors.
+      message:
+        The pod {{ $labels.namespace }}/{{ $labels.pod }} is experiencing {{ printf "%0.0f" $value }}% errors.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclienterrors
     expr: |
       (sum(rate(rest_client_requests_total{code=~"5..",job="pods"}[5m])) by (namespace, pod)
@@ -33,10 +33,11 @@ groups:
     for: 15m
     labels:
       severity: warning
+
   - alert: KubeClientErrors
     annotations:
-      message: The kubelet on {{ $labels.instance }} is experiencing {{ printf "%0.0f"
-        $value }}% errors.
+      message:
+        The kubelet on {{ $labels.instance }} is experiencing {{ printf "%0.0f" $value }}% errors.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclienterrors
     expr: |
       (sum(rate(rest_client_requests_total{code=~"5..",job="kubelet"}[5m])) by (instance)
@@ -46,35 +47,38 @@ groups:
     for: 15m
     labels:
       severity: warning
+
   - alert: KubeletTooManyPods
     annotations:
-      message: Kubelet {{ $labels.instance }} is running {{ $value }} pods, close
-        to the limit of 110.
+      message: Kubelet {{ $labels.instance }} is running {{ $value }} pods, close to the limit of 110.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubelettoomanypods
     expr: kubelet_running_pod_count{job="kubelet"} > 110 * 0.9
     for: 15m
     labels:
       severity: warning
+
   - alert: KubeAPILatencyHigh
     annotations:
-      message: The API server has a 99th percentile latency of {{ $value }} seconds
+      message:
+        The API server has a 99th percentile latency of {{ $value }} seconds
         for {{ $labels.verb }} {{ $labels.resource }}.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeapilatencyhigh
-    expr: cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"}
-      > 1
+    expr: cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 1
     for: 10m
     labels:
       severity: warning
+
   - alert: KubeAPILatencyHigh
     annotations:
-      message: The API server has a 99th percentile latency of {{ $value }} seconds
+      message:
+        The API server has a 99th percentile latency of {{ $value }} seconds
         for {{ $labels.verb }} {{ $labels.resource }}.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeapilatencyhigh
-    expr: cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"}
-      > 4
+    expr: cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 4
     for: 10m
     labels:
       severity: critical
+
   - alert: KubeAPIErrorsHigh
     annotations:
       message: API server is returning errors for {{ $value }}% of requests.
@@ -86,6 +90,7 @@ groups:
     for: 10m
     labels:
       severity: critical
+
   - alert: KubeAPIErrorsHigh
     annotations:
       message: API server is returning errors for {{ $value }}% of requests.
@@ -97,6 +102,7 @@ groups:
     for: 10m
     labels:
       severity: warning
+
   - alert: KubeClientCertificateExpiration
     annotations:
       message: Kubernetes API certificate is expiring in less than 7 days.
@@ -105,6 +111,7 @@ groups:
       histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 604800
     labels:
       severity: warning
+
   - alert: KubeClientCertificateExpiration
     annotations:
       message: Kubernetes API certificate is expiring in less than 24 hours.
