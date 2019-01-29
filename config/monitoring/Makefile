@@ -3,7 +3,7 @@ prometheus: build-rules check-rules
 
 build-rules:
 	cd prometheus/rules/src; \
-	for file in *.yaml; do echo $$file; yq r $$file -j | jq 'del(.groups[].rules[].runbook)' | yq r - > ../$$file; done
+	for file in *.yaml; do echo $$file; yq r $$file -j | jq 'del(.groups[].rules[].runbook)' | (echo "# This file has been generated, do not edit."; yq r -) > ../$$file; done
 
 check-rules:
 	promtool check rules prometheus/rules/*.yaml

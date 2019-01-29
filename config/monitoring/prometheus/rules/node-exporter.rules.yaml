@@ -1,3 +1,4 @@
+# This file has been generated, do not edit.
 groups:
 - name: node-exporter.rules
   rules:
