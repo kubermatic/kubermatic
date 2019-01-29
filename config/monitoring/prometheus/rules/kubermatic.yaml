@@ -1,15 +1,16 @@
+# This file has been generated, do not edit.
 groups:
 - name: kubermatic
   rules:
   - alert: KubermaticTooManyUnhandledErrors
     annotations:
-      message: Kubermatic controller manager in {{ $labels.namespace }} is experiencing too many errors.
+      message: Kubermatic controller manager in {{ $labels.namespace }} is experiencing
+        too many errors.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubermatictoomanyunhandlederrors
     expr: sum(rate(kubermatic_controller_manager_unhandled_errors_total[5m])) > 0.01
     for: 10m
     labels:
       severity: warning
-
   - alert: KubermaticClusterDeletionTakesTooLong
     annotations:
       message: Cluster {{ $labels.cluster }} is stuck in deletion for more than 30min.
@@ -18,7 +19,6 @@ groups:
     for: 0m
     labels:
       severity: warning
-
   - alert: KubermaticAPIDown
     annotations:
       message: KubermaticAPI has disappeared from Prometheus target discovery.
@@ -27,12 +27,13 @@ groups:
     for: 15m
     labels:
       severity: critical
-
   - alert: KubermaticControllerManagerDown
     annotations:
-      message: KubermaticControllerManager has disappeared from Prometheus target discovery.
+      message: KubermaticControllerManager has disappeared from Prometheus target
+        discovery.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubermaticcontrollermanagerdown
-    expr: absent(up{job="pods",namespace="kubermatic",role="controller-manager"} == 1)
+    expr: absent(up{job="pods",namespace="kubermatic",role="controller-manager"} ==
+      1)
     for: 15m
     labels:
       severity: critical

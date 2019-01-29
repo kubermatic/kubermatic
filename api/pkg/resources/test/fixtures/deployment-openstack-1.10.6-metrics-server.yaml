@@ -11,7 +11,7 @@ metadata:
     name: de-test-01
     uid: "1234567890"
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: metrics-server
@@ -30,6 +30,16 @@ spec:
         metrics-server-secret-revision: "123456"
         openvpn-client-certificates-secret-revision: "123456"
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: metrics-server
+                  cluster: de-test-01
+              topologyKey: kubernetes.io/hostname
+            weight: 100
       containers:
       - args:
         - --kubeconfig

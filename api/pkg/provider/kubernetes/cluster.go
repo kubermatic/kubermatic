@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -21,9 +22,9 @@ import (
 
 // UserClusterConnectionProvider offers functions to interact with a user cluster
 type UserClusterConnectionProvider interface {
-	GetClient(*kubermaticapiv1.Cluster) (kubernetes.Interface, error)
-	GetMachineClient(*kubermaticapiv1.Cluster) (clusterv1alpha1clientset.Interface, error)
-	GetAdminKubeconfig(c *kubermaticapiv1.Cluster) ([]byte, error)
+	GetClient(*kubermaticapiv1.Cluster, ...k8cuserclusterclient.ConfigOption) (kubernetes.Interface, error)
+	GetMachineClient(*kubermaticapiv1.Cluster, ...k8cuserclusterclient.ConfigOption) (clusterv1alpha1clientset.Interface, error)
+	GetAdminKubeconfig(*kubermaticapiv1.Cluster) ([]byte, error)
 }
 
 // NewClusterProvider returns a new cluster provider that respects RBAC policies
@@ -194,16 +195,16 @@ func (p *ClusterProvider) GetAdminKubeconfigForCustomerCluster(c *kubermaticapiv
 	return clientcmd.Load(b)
 }
 
-// GetMachineClientForCustomerCluster returns a client to interact with machine resources in the given cluster
+// GetAdminMachineClientForCustomerCluster returns a client to interact with machine resources in the given cluster
 //
 // Note that the client you will get has admin privileges
-func (p *ClusterProvider) GetMachineClientForCustomerCluster(c *kubermaticapiv1.Cluster) (clusterv1alpha1clientset.Interface, error) {
+func (p *ClusterProvider) GetAdminMachineClientForCustomerCluster(c *kubermaticapiv1.Cluster) (clusterv1alpha1clientset.Interface, error) {
 	return p.userClusterConnProvider.GetMachineClient(c)
 }
 
-// GetKubernetesClientForCustomerCluster returns a client to interact with the given cluster
+// GetAdminKubernetesClientForCustomerCluster returns a client to interact with the given cluster
 //
 // Note that the client you will get has admin privileges
-func (p *ClusterProvider) GetKubernetesClientForCustomerCluster(c *kubermaticapiv1.Cluster) (kubernetes.Interface, error) {
+func (p *ClusterProvider) GetAdminKubernetesClientForCustomerCluster(c *kubermaticapiv1.Cluster) (kubernetes.Interface, error) {
 	return p.userClusterConnProvider.GetClient(c)
 }

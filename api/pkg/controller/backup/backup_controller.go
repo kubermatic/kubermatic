@@ -581,6 +581,7 @@ func (c *Controller) cronJob(cluster *kubermaticv1.Cluster, existing *batchv1bet
 				},
 			},
 			Command: []string{
+				"/usr/bin/time",
 				"/usr/local/bin/etcdctl",
 				"--endpoints", strings.Join(endpoints, ","),
 				"--cacert", "/etc/etcd/client/ca.crt",

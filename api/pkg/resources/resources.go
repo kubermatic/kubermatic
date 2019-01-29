@@ -242,6 +242,8 @@ const (
 	EtcdPodDisruptionBudgetName = "etcd"
 	// ApiserverPodDisruptionBudgetName is the name of the PDB for the apiserver deployment
 	ApiserverPodDisruptionBudgetName = "apiserver"
+	// MetricsServerPodDisruptionBudgetName is the name of the PDB for the metrics-server deployment
+	MetricsServerPodDisruptionBudgetName = "metrics-server"
 
 	// DefaultOwnerReadOnlyMode represents file mode with read permission for owner only
 	DefaultOwnerReadOnlyMode = 0400

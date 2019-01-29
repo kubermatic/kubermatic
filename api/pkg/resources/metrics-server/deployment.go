@@ -47,7 +47,7 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 
 	dep.Labels = resources.BaseAppLabel(name, nil)
 
-	dep.Spec.Replicas = resources.Int32(1)
+	dep.Spec.Replicas = resources.Int32(2)
 	dep.Spec.Selector = &metav1.LabelSelector{
 		MatchLabels: resources.BaseAppLabel(name, nil),
 	}
@@ -123,6 +123,8 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 		*openvpnSidecar,
 		*dnatControllerSidecar,
 	}
+
+	dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(name, data.Cluster().Name, nil))
 
 	return dep, nil
 }

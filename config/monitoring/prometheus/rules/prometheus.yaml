@@ -1,41 +1,45 @@
+# This file has been generated, do not edit.
 groups:
 - name: prometheus
   rules:
   - alert: PromScrapeFailed
     annotations:
-      message: Prometheus failed to scrape a target {{ $labels.job }} / {{ $labels.instance }}.
+      message: Prometheus failed to scrape a target {{ $labels.job }} / {{ $labels.instance
+        }}.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-promscrapefailed
     expr: up != 1
     for: 15m
     labels:
       severity: warning
-
   - alert: PromBadConfig
     annotations:
-      mesage: Prometheus failed to reload config, see container logs.
+      mesage: Prometheus failed to reload config.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-prombadconfig
     expr: prometheus_config_last_reload_successful{job="prometheus"} == 0
     for: 15m
     labels:
       severity: critical
-
   - alert: PromAlertmanagerBadConfig
     annotations:
-      message: Alertmanager failed to reload config, see container logs.
+      message: Alertmanager failed to reload config.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-promalertmanagerbadconfig
     expr: alertmanager_config_last_reload_successful{job="alertmanager"} == 0
     for: 10m
     labels:
       severity: critical
-
   - alert: PromAlertsFailed
     annotations:
       message: Alertmanager failed to send an alert.
-    expr: sum(increase(alertmanager_notifications_failed_total{job="alertmanager"}[5m])) by (namespace) > 0
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-promalertsfailed
+    expr: sum(increase(alertmanager_notifications_failed_total{job="alertmanager"}[5m]))
+      by (namespace) > 0
     for: 5m
     labels:
       severity: critical
-
   - alert: PromRemoteStorageFailures
     annotations:
       message: Prometheus failed to send {{ printf "%.1f" $value }}% samples.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-promremotestoragefailures
     expr: |
       (rate(prometheus_remote_storage_failed_samples_total{job="prometheus"}[1m]) * 100)
         /
@@ -44,11 +48,12 @@ groups:
     for: 15m
     labels:
       severity: critical
-
   - alert: PromRuleFailures
     annotations:
       message: Prometheus failed to evaluate {{ printf "%.1f" $value }} rules/sec.
-    expr: rate(prometheus_rule_evaluation_failures_total{job="prometheus"}[1m]) > 0
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-promrulefailures
+    expr: rate(prometheus_rule_evaluation_failures_total{job="prometheus"}[1m]) >
+      0
     for: 15m
     labels:
       severity: critical

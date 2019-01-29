@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/glog"
 
+	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticscheme "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
@@ -50,11 +51,11 @@ import (
 
 // userClusterConnectionProvider offers functions to retrieve clients for the given user clusters
 type userClusterConnectionProvider interface {
-	GetClient(*kubermaticv1.Cluster) (kubernetes.Interface, error)
-	GetMachineClient(*kubermaticv1.Cluster) (clusterv1alpha1clientset.Interface, error)
-	GetApiextensionsClient(*kubermaticv1.Cluster) (apiextensionsclientset.Interface, error)
-	GetAdmissionRegistrationClient(*kubermaticv1.Cluster) (admissionregistrationclientset.AdmissionregistrationV1beta1Interface, error)
-	GetKubeAggregatorClient(*kubermaticv1.Cluster) (aggregationclientset.Interface, error)
+	GetClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (kubernetes.Interface, error)
+	GetMachineClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (clusterv1alpha1clientset.Interface, error)
+	GetApiextensionsClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (apiextensionsclientset.Interface, error)
+	GetAdmissionRegistrationClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (admissionregistrationclientset.AdmissionregistrationV1beta1Interface, error)
+	GetKubeAggregatorClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (aggregationclientset.Interface, error)
 }
 
 // Controller is a controller which is responsible for managing clusters

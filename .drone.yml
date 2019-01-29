@@ -12,7 +12,7 @@ pipeline:
     - cd api
     - make build
     group: build
-    image: golang:1.11.4
+    image: quay.io/kubermatic/go-111-docker:11.2-1806-0
   docker:
     commands:
     - export VAULT_ADDR=https://vault.loodse.com/
@@ -333,6 +333,7 @@ pipeline:
     - xmudrii=marko
     - maciaszczykm=marcin
     - floreks=sebastian.florek
+    - lindtdev=irina
     group: slack
     icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
     image: kubermaticbot/drone-slack
