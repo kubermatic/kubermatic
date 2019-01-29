@@ -1,0 +1,56 @@
+groups:
+- name: kubermatic
+  rules:
+  - alert: KubermaticTooManyUnhandledErrors
+    annotations:
+      message: Kubermatic controller manager in {{ $labels.namespace }} is experiencing too many errors.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubermatictoomanyunhandlederrors
+    expr: sum(rate(kubermatic_controller_manager_unhandled_errors_total[5m])) > 0.01
+    for: 10m
+    labels:
+      severity: warning
+    runbook:
+      steps:
+      - Ensure that the controller-manager pod's logs.
+
+  - alert: KubermaticClusterDeletionTakesTooLong
+    annotations:
+      message: Cluster {{ $labels.cluster }} is stuck in deletion for more than 30min.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubermaticclusterdeletiontakestoolong
+    expr: (time() - max by (cluster) (kubermatic_cluster_deleted)) > 30*60
+    for: 0m
+    labels:
+      severity: warning
+    runbook:
+      steps:
+      - Check the machine-controller's logs via `kubectl -n cluster-XYZ logs -l 'app=machine-controller'` for errors related to cloud provider integrations.
+        Expired credentials or manually deleted cloud provider resources are common reasons for failing deletions.
+      - Check the cluster's status itself via `kubectl describe cluster XYZ`.
+      - If all resources have been cleaned up, remove the blocking finalizer (e.g. `kubermatic.io/delete-nodes`) from the cluster resource.
+      - If nothing else helps, manually delete the cluster namespace as a last resort.
+
+  - alert: KubermaticAPIDown
+    annotations:
+      message: KubermaticAPI has disappeared from Prometheus target discovery.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubermaticapidown
+    expr: absent(up{job="pods",namespace="kubermatic",role="kubermatic-api"} == 1)
+    for: 15m
+    labels:
+      severity: critical
+    runbook:
+      steps:
+      - Check the Prometheus Service Discovery page to find out why the target is unreachable.
+      - Ensure that the API pod's logs and that it is not crashlooping.
+
+  - alert: KubermaticControllerManagerDown
+    annotations:
+      message: KubermaticControllerManager has disappeared from Prometheus target discovery.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubermaticcontrollermanagerdown
+    expr: absent(up{job="pods",namespace="kubermatic",role="controller-manager"} == 1)
+    for: 15m
+    labels:
+      severity: critical
+    runbook:
+      steps:
+      - Check the Prometheus Service Discovery page to find out why the target is unreachable.
+      - Ensure that the controller-manager pod's logs and that it is not crashlooping.

@@ -1,12 +1,11 @@
-# This file has been generated, do not edit.
 groups:
 - name: kubernetes-storage
   rules:
   - alert: KubePersistentVolumeUsageCritical
     annotations:
-      message: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }}
-        in namespace {{ $labels.namespace }} is only {{ printf "%0.0f" $value }}%
-        free.
+      message:
+        The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in namespace
+        {{ $labels.namespace }} is only {{ printf "%0.0f" $value }}% free.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubepersistentvolumeusagecritical
     expr: |
       100 * kubelet_volume_stats_available_bytes{job="kubelet"}
@@ -16,11 +15,13 @@ groups:
     for: 1m
     labels:
       severity: critical
+
   - alert: KubePersistentVolumeFullInFourDays
     annotations:
-      message: Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim
-        }} in namespace {{ $labels.namespace }} is expected to fill up within four
-        days. Currently {{ $value }} bytes are available.
+      message:
+        Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim }}
+        in namespace {{ $labels.namespace }} is expected to fill up within four days.
+        Currently {{ $value }} bytes are available.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubepersistentvolumefullinfourdays
     expr: |
       (
