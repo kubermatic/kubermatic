@@ -9,6 +9,7 @@ groups:
     for: 15m
     labels:
       severity: critical
+
   - alert: KubernetesApiserverDown
     annotations:
       message: KubernetesApiserver has disappeared from Prometheus target discovery.
@@ -17,6 +18,7 @@ groups:
     for: 15m
     labels:
       severity: critical
+
   - alert: KubeControllerManagerDown
     annotations:
       message: KubeControllerManager has disappeared from Prometheus target discovery.
@@ -25,6 +27,7 @@ groups:
     for: 15m
     labels:
       severity: critical
+
   - alert: KubeSchedulerDown
     annotations:
       message: KubeScheduler has disappeared from Prometheus target discovery.
@@ -33,6 +36,7 @@ groups:
     for: 15m
     labels:
       severity: critical
+
   - alert: KubeStateMetricsDown
     annotations:
       message: KubeStateMetrics has disappeared from Prometheus target discovery.
@@ -41,6 +45,7 @@ groups:
     for: 15m
     labels:
       severity: critical
+
   - alert: KubeletDown
     annotations:
       message: Kubelet has disappeared from Prometheus target discovery.
