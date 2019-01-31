@@ -56,6 +56,7 @@ spec:
           - -addons-path=/opt/addons
           - -backup-container=/opt/backup/store-container.yaml
           - -cleanup-container=/opt/backup/cleanup-container.yaml
+          - -nodeport-range={{ .Values.kubermatic.controller.nodeportRange }}
           - -docker-pull-config-json-file=/opt/docker/.dockerconfigjson
           {{- if .Values.kubermatic.clusterNamespacePrometheus.disableDefaultRules }}
           - -in-cluster-prometheus-disable-default-rules=true
