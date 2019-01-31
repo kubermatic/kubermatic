@@ -158,33 +158,6 @@ func ServiceCreator() resources.ServiceCreator {
 	}
 }
 
-// Service returns the internal service for the machine-controller webhook
-func Service(data resources.ServiceDataProvider, existing *corev1.Service) (*corev1.Service, error) {
-	se := existing
-	if se == nil {
-		se = &corev1.Service{}
-	}
-
-	se.Name = resources.MachineControllerWebhookServiceName
-	se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	se.Labels = resources.BaseAppLabel(resources.MachineControllerWebhookDeploymentName, nil)
-
-	se.Spec.Type = corev1.ServiceTypeClusterIP
-	se.Spec.Selector = map[string]string{
-		resources.AppLabelKey: resources.MachineControllerWebhookDeploymentName,
-	}
-	se.Spec.Ports = []corev1.ServicePort{
-		{
-			Name:       "",
-			Port:       443,
-			Protocol:   corev1.ProtocolTCP,
-			TargetPort: intstr.FromInt(9876),
-		},
-	}
-
-	return se, nil
-}
-
 func getServingCertVolume() corev1.Volume {
 	return corev1.Volume{
 		Name: resources.MachineControllerWebhookServingCertSecretName,
