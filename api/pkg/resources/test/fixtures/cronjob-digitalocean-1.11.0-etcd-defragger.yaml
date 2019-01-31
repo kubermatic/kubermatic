@@ -63,4 +63,5 @@ spec:
               defaultMode: 256
               secretName: apiserver-etcd-client-certificate
   schedule: '@every 3h'
+  successfulJobsHistoryLimit: 0
 status: {}
