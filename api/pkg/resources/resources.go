@@ -77,10 +77,6 @@ const (
 	ApiserverExternalServiceName = "apiserver-external"
 	//ApiserverInternalServiceName is the name for the internal apiserver service
 	ApiserverInternalServiceName = "apiserver"
-	//PrometheusServiceName is the name for the prometheus service
-	PrometheusServiceName = "prometheus"
-	// KubeStateMetricsServiceName is the name for the kube-state-metrics service
-	KubeStateMetricsServiceName = "kube-state-metrics"
 	// MetricsServerServiceName is the name for the metrics-server service
 	MetricsServerServiceName = "metrics-server"
 	// MetricsServerExternalNameServiceName is the name for the metrics-server service inside the user cluster
@@ -366,7 +362,7 @@ type StatefulSetCreator = func(existing *appsv1.StatefulSet) (*appsv1.StatefulSe
 type VerticalPodAutoscalerCreator = func(existing *autoscalingv1beta.VerticalPodAutoscaler) (*autoscalingv1beta.VerticalPodAutoscaler, error)
 
 // ServiceCreator defines an interface to create/update Services
-type ServiceCreator = func(data ServiceDataProvider, existing *corev1.Service) (*corev1.Service, error)
+type ServiceCreator = func(existing *corev1.Service) (*corev1.Service, error)
 
 // ServiceAccountCreator defines an interface to create/update ServiceAccounts
 type ServiceAccountCreator = func(data ServiceAccountDataProvider, existing *corev1.ServiceAccount) (*corev1.ServiceAccount, error)
@@ -750,6 +746,17 @@ func StatefulSetObjectWrapper(create StatefulSetCreator) ObjectCreator {
 			return create(existing.(*appsv1.StatefulSet))
 		}
 		return create(&appsv1.StatefulSet{})
+	}
+}
+
+// ServiceObjectWrapper adds a wrapper so the ServiceCreator matches ObjectCreator
+// This is needed as golang does not support function interface matching
+func ServiceObjectWrapper(create ServiceCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*corev1.Service))
+		}
+		return create(&corev1.Service{})
 	}
 }
 

@@ -135,28 +135,22 @@ func (cc *Controller) ensureNamespaceExists(c *kubermaticv1.Cluster) (*kubermati
 }
 
 // GetServiceCreators returns all service creators that are currently in use
-func GetServiceCreators() []resources.ServiceCreator {
+func GetServiceCreators(data *resources.TemplateData) []resources.ServiceCreator {
 	return []resources.ServiceCreator{
-		apiserver.Service,
-		apiserver.ExternalService,
-		openvpn.Service,
-		etcd.Service,
-		dns.Service,
-		machinecontroller.Service,
-		metricsserver.Service,
+		apiserver.InternalServiceCreator(),
+		apiserver.ExternalServiceCreator(),
+		openvpn.ServiceCreator(),
+		etcd.ServiceCreator(data),
+		dns.ServiceCreator(),
+		machinecontroller.ServiceCreator(),
+		metricsserver.ServiceCreator(),
 	}
 }
 
 func (cc *Controller) ensureServices(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := GetServiceCreators()
+	creators := GetServiceCreators(data)
 
-	for _, create := range creators {
-		if err := resources.EnsureService(data, create, cc.serviceLister.Services(c.Status.NamespaceName), cc.kubeClient.CoreV1().Services(c.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the service exists: %v", err)
-		}
-	}
-
-	return nil
+	return resources.EnsureServices(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(c))
 }
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
@@ -362,7 +356,6 @@ func (cc *Controller) ensureVerticalPodAutoscalers(c *kubermaticv1.Cluster, data
 }
 
 func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	data.GetClusterRef()
 	creators := GetStatefulSetCreators(data)
 
 	return resources.EnsureStatefulSets(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(c))

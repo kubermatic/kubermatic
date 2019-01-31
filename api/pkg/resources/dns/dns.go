@@ -26,26 +26,22 @@ var (
 	}
 )
 
-// Service returns the service for the dns resolver
-func Service(data resources.ServiceDataProvider, existing *corev1.Service) (*corev1.Service, error) {
-	svc := existing
-	if svc == nil {
-		svc = &corev1.Service{}
-	}
+// ServiceCreator returns the function to reconcile the DNS service
+func ServiceCreator() resources.ServiceCreator {
+	return func(se *corev1.Service) (*corev1.Service, error) {
+		se.Name = resources.DNSResolverServiceName
+		se.Spec.Selector = resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil)
+		se.Spec.Ports = []corev1.ServicePort{
+			{
+				Name:       "dns",
+				Protocol:   corev1.ProtocolUDP,
+				Port:       int32(53),
+				TargetPort: intstr.FromInt(53),
+			},
+		}
 
-	svc.Name = resources.DNSResolverServiceName
-	svc.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	svc.Spec.Selector = resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil)
-	svc.Spec.Ports = []corev1.ServicePort{
-		{
-			Name:       "dns",
-			Protocol:   corev1.ProtocolUDP,
-			Port:       int32(53),
-			TargetPort: intstr.FromInt(53),
-		},
+		return se, nil
 	}
-
-	return svc, nil
 }
 
 // Deployment returns the deployment for the dns resolver

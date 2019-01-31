@@ -550,9 +550,9 @@ func (cc *Controller) userClusterEnsureAPIServices(c *kubermaticv1.Cluster) erro
 }
 
 // GetUserClusterServiceCreators returns a list of ServiceCreator's used for the user cluster
-func GetUserClusterServiceCreators() []resources.ServiceCreator {
+func GetUserClusterServiceCreators(data resources.ServiceDataProvider) []resources.ServiceCreator {
 	return []resources.ServiceCreator{
-		metricsserver.ExternalNameService,
+		metricsserver.ExternalNameServiceCreator(data),
 	}
 }
 
@@ -567,9 +567,9 @@ func (cc *Controller) userClusterEnsureServices(c *kubermaticv1.Cluster) error {
 		return err
 	}
 
-	for _, create := range GetUserClusterServiceCreators() {
+	for _, create := range GetUserClusterServiceCreators(data) {
 		var existing *corev1.Service
-		service, err := create(data, nil)
+		service, err := create(&corev1.Service{})
 		if err != nil {
 			return fmt.Errorf("failed to build Service: %v", err)
 		}
@@ -584,7 +584,7 @@ func (cc *Controller) userClusterEnsureServices(c *kubermaticv1.Cluster) error {
 			continue
 		}
 
-		service, err = create(data, existing.DeepCopy())
+		service, err = create(existing.DeepCopy())
 		if err != nil {
 			return fmt.Errorf("failed to build Service: %v", err)
 		}

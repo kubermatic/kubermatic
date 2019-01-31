@@ -135,6 +135,29 @@ func WebhookDeployment(data resources.DeploymentDataProvider, existing *appsv1.D
 	return dep, nil
 }
 
+// ServiceCreator returns the function to reconcile the DNS service
+func ServiceCreator() resources.ServiceCreator {
+	return func(se *corev1.Service) (*corev1.Service, error) {
+		se.Name = resources.MachineControllerWebhookServiceName
+		se.Labels = resources.BaseAppLabel(resources.MachineControllerWebhookDeploymentName, nil)
+
+		se.Spec.Type = corev1.ServiceTypeClusterIP
+		se.Spec.Selector = map[string]string{
+			resources.AppLabelKey: resources.MachineControllerWebhookDeploymentName,
+		}
+		se.Spec.Ports = []corev1.ServicePort{
+			{
+				Name:       "",
+				Port:       443,
+				Protocol:   corev1.ProtocolTCP,
+				TargetPort: intstr.FromInt(9876),
+			},
+		}
+
+		return se, nil
+	}
+}
+
 // Service returns the internal service for the machine-controller webhook
 func Service(data resources.ServiceDataProvider, existing *corev1.Service) (*corev1.Service, error) {
 	se := existing

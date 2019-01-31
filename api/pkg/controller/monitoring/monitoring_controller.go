@@ -351,11 +351,6 @@ func (c *Controller) sync(key string) error {
 		return err
 	}
 
-	// check that all services are available
-	if err := c.ensureServices(cluster, data); err != nil {
-		return err
-	}
-
 	// check that all ConfigMaps are available
 	if err := c.ensureConfigMaps(cluster, data); err != nil {
 		return err
