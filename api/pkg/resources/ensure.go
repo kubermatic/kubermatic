@@ -512,7 +512,7 @@ func EnsureObject(namespace string, rawcreate ObjectCreator, store cache.Store, 
 	// Create a copy to ensure we don't modify any lister state
 	existing = existing.DeepCopyObject()
 
-	obj, err = create(existing)
+	obj, err = create(existing.DeepCopyObject())
 	if err != nil {
 		return fmt.Errorf("failed to build Object(%T) '%s': %v", existing, key, err)
 	}
