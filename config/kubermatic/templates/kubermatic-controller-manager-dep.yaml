@@ -65,6 +65,7 @@ spec:
           - -addons-path=/opt/addons
           - -backup-container=/opt/backup/store-container.yaml
           - -cleanup-container=/opt/backup/cleanup-container.yaml
+          - -nodeport-range={{ .Values.kubermatic.controller.nodeportRange }}
           - -docker-pull-config-json-file=/opt/docker/.dockerconfigjson
           {{- if regexMatch ".*OpenIDAuthPlugin=true.*" (default "" .Values.kubermatic.controller.featureGates) }}
           # the following flags enable oidc auth plugin on kube-API servers
