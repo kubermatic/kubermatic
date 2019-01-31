@@ -24,6 +24,8 @@ kubermatic:
     diskSize: "5Gi"
   controller:
     datacenterName: ""
+    # Specifies the NodePort range for customer clusters - this must match the NodePort range of the seed cluster.
+    nodeportRange: "30000-32767"
     replicas: 2
     image:
       repository: "quay.io/kubermatic/api"
