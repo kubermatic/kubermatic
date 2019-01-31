@@ -30,7 +30,7 @@ func CronJob(data *resources.TemplateData, existing *batchv1beta1.CronJob) (*bat
 	job.Name = resources.EtcdDefragCronJobName
 	job.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 	job.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
-	var historyLimit int32 = 0
+	var historyLimit int32
 	job.Spec.SuccessfulJobsHistoryLimit = &historyLimit
 	job.Spec.Schedule = "@every 3h"
 	job.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
