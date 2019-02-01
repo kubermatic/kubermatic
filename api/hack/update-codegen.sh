@@ -25,3 +25,5 @@ GOPATH=$(go env GOPATH) $(go env GOPATH)/bin/deepcopy-gen \
     --go-header-file /tmp/headerfile
 
 rm /tmp/headerfile
+
+go generate pkg/resources/ensure.go

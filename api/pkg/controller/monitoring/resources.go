@@ -166,7 +166,7 @@ func (c *Controller) ensureStatefulSets(cluster *kubermaticv1.Cluster, data *res
 	data.GetClusterRef()
 	creators := GetStatefulSetCreators(data)
 
-	return resources.EnsureStatefulSets(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.ClusterRefWrapper(cluster))
+	return resources.ReconcileStatefulSets(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.ClusterRefWrapper(cluster))
 }
 
 func (c *Controller) ensureVerticalPodAutoscalers(cluster *kubermaticv1.Cluster) error {
@@ -180,5 +180,5 @@ func (c *Controller) ensureVerticalPodAutoscalers(cluster *kubermaticv1.Cluster)
 	if err != nil {
 		return fmt.Errorf("failed to create the functions to handle VPA resources: %v", err)
 	}
-	return resources.EnsureVerticalPodAutoscalers(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache)
+	return resources.ReconcileVerticalPodAutoscalers(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache)
 }
