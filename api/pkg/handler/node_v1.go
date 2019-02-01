@@ -58,10 +58,8 @@ func deleteNodeForClusterLegacy(projectProvider provider.ProjectProvider) endpoi
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		// TODO:
-		// normally we have project, user and sshkey providers
-		// but here we decided to use machineClient and kubeClient directly to access the user cluster.
-		//
+		// TODO: change to
+		// machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(userInfo, cluster)
 		machineClient, err := clusterProvider.GetAdminMachineClientForCustomerCluster(cluster)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create a machine client: %v", err)
