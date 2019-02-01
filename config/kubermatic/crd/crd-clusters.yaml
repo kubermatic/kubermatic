@@ -27,3 +27,6 @@ spec:
   - JSONPath: .status.userEmail
     name: Owner
     type: string
+  - JSONPath: .spec.version
+    name: Version
+    type: string
