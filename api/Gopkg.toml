@@ -28,19 +28,19 @@ required = [
 
 [[constraint]]
   name = "github.com/Masterminds/semver"
-  version = "v1.4.0"
+  version = "v1.4.2"
 
 [[constraint]]
   name = "github.com/Masterminds/sprig"
-  version = "v2.14.1"
+  version = "v2.17.1"
 
 [[constraint]]
   name = "github.com/coreos/go-oidc"
-  revision = "a4973d9a4225417aecf5d450a9522f00c1f7130f"
+  version = "v2.0.0"
 
 [[constraint]]
   name = "github.com/digitalocean/godo"
-  version = "1.0.0"
+  version = "1.7.3"
 
 [[constraint]]
   name = "github.com/go-kit/kit"
@@ -124,7 +124,7 @@ required = [
 
 [[constraint]]
   name = "github.com/prometheus/client_golang"
-  branch = "master"
+  version = "v0.9.2"
 
 # For container-linux-config-transpiler
 [[override]]
@@ -161,7 +161,7 @@ required = [
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"
-  version = "v1.1.1"
+  version = "v1.3.0"
 
 # Otherwise dep panics: https://github.com/golang/dep/issues/1799
 [[override]]

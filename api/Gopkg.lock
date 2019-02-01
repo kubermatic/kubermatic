@@ -41,12 +41,12 @@
   version = "v1.4.2"
 
 [[projects]]
-  digest = "1:f89a071e9ba5a038f0378960d4343b88e145f5791355bbd0769826d158fc448e"
+  digest = "1:1e1e762ac4dd13e354773be80fbd59cc99cf44fbff5865ea73776f2a0e109f8b"
   name = "github.com/Masterminds/sprig"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "15f9564e7e9cf0da02a48e0d25f12a7b83559aa6"
-  version = "v2.16.0"
+  revision = "544a9b1d90f323f6509491b389714fbbd126bee3"
+  version = "v2.17.1"
 
 [[projects]]
   digest = "1:d8ebbd207f3d3266d4423ce4860c9f3794956306ded6c7ba312ecc69cdfbf04c"
@@ -168,11 +168,12 @@
   version = "v0.6.1"
 
 [[projects]]
-  digest = "1:8971ecb1f298af578992bccbc7e68f614fe8a2d00d2264b7261e52119c0074a4"
+  digest = "1:c91a5363a19174cb0181832821a7bb9da0aeefb5e2180724614b1005c2269712"
   name = "github.com/coreos/go-oidc"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "a4973d9a4225417aecf5d450a9522f00c1f7130f"
+  revision = "1180514eaf4d9f38d0d19eef639a1d695e066e72"
+  version = "v2.0.0"
 
 [[projects]]
   digest = "1:0ef770954bca104ee99b3b6b7f9b240605ac03517d9f98cbc1893daa03f3c038"
@@ -223,12 +224,12 @@
   version = "v3.2.0"
 
 [[projects]]
-  digest = "1:0a91fbdad27eed4d21fb2e716fc63249e33527a9120638189817742f00eb3b17"
+  digest = "1:ea3b7e0433c21fd9d3db5ab2a3c55359835aecd5f83e3d514bc3f47e84933113"
   name = "github.com/digitalocean/godo"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "890c05eebffff27adf6de556949a3dc0813f87a4"
-  version = "v1.7.1"
+  revision = "360ee5cab86ffe07b3d5009a3bbb658862c55cf8"
+  version = "v1.7.3"
 
 [[projects]]
   branch = "master"
@@ -280,14 +281,6 @@
   ]
   pruneopts = "NUT"
   revision = "eeefdecb41b842af6dc652aaea4026e8403e62df"
-
-[[projects]]
-  digest = "1:c204ec81f754234f2c3c4093cc8cc42151aadedd1129b32539a472fd7881e689"
-  name = "github.com/go-ini/ini"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "9c8236e659b76e87bf02044d06fde8683008ff3e"
-  version = "v1.39.0"
 
 [[projects]]
   branch = "master"
@@ -783,7 +776,7 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:2ff810d7e2a909339a84b1b031e71b4f80526932773efecb73a58e47fa439668"
+  digest = "1:9573623a7c4893a4e38dae739cb47db087bf7cef971485a15b7f5f87353755a1"
   name = "github.com/minio/minio-go"
   packages = [
     ".",
@@ -794,8 +787,8 @@
     "pkg/set",
   ]
   pruneopts = "NUT"
-  revision = "39381cf62425050629c7264228fc2f9e0c6616f6"
-  version = "v6.0.11"
+  revision = "3a5de8b1cf046bb419d1e35a1e725945603ff70c"
+  version = "v6.0.15"
 
 [[projects]]
   digest = "1:a4df73029d2c42fabcb6b41e327d2f87e685284ec03edf76921c267d9cfc9c23"
@@ -910,8 +903,7 @@
   revision = "1555304b9b35fdd2b425bccf1a5613677705e7d0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:c2a6b23e47ca227d2033403fc91e20f41f9dccfd8f68f2b54ee592ac20e8a2d9"
+  digest = "1:e411054f54a332ecadd5fe5a4a68d092f36583e554037587da86da298cffc72d"
   name = "github.com/prometheus/client_golang"
   packages = [
     "api",
@@ -921,7 +913,8 @@
     "prometheus/promhttp",
   ]
   pruneopts = "NUT"
-  revision = "32b1bb4674c4db541df5b547bb1a325337522022"
+  revision = "505eaef017263e299324067d40ca2c48f6a2cf50"
+  version = "v0.9.2"
 
 [[projects]]
   branch = "master"
@@ -965,12 +958,12 @@
   version = "v1.1"
 
 [[projects]]
-  digest = "1:d848e2bdc690ea54c4b49894b67a05db318a97ee6561879b814c2c1f82f61406"
+  digest = "1:e256b859ab89f005f2f639f5ed9807d0873d9135e27c6382f419b840ff9abe71"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "bcd833dfe83d3cebad139e4a29ed79cb2318bf95"
-  version = "v1.2.0"
+  revision = "e1e72e9de974bd926e5c56f83753fba2df402ce5"
+  version = "v1.3.0"
 
 [[projects]]
   digest = "1:330e9062b308ac597e28485699c02223bd052437a6eed32a173c9227dcb9d95a"
@@ -1155,7 +1148,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b9e5fcdf9a437b4983d949757a762afd4c9634b776ca42b9d94ba9557a0200c4"
+  digest = "1:6e0f981c5a0413f33fc37c763d72750d4b246b9b96a75f71b6cbb5621f4f1b5f"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -1164,6 +1157,7 @@
     "http2",
     "http2/hpack",
     "idna",
+    "publicsuffix",
   ]
   pruneopts = "NUT"
   revision = "fae4c4e3ad76c295c3d6d259f898136b4bf833a8"
@@ -1262,6 +1256,14 @@
   pruneopts = "NUT"
   revision = "d2d2541c53f18d2a059457998ce2876cc8e67cbf"
   version = "v0.9.1"
+
+[[projects]]
+  digest = "1:5e92676b56ce4c69edf9ee1f6343c56f637e30af11b9d8b5edd1b6530f3fbc3d"
+  name = "gopkg.in/ini.v1"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "6ed8d5f64cd79a498d1f3fab5880cc376ce41bbe"
+  version = "v1.41.0"
 
 [[projects]]
   digest = "1:f3fb9399fec4a7bf9f129d91c0d1f2916016f2655eda8bc4f6549814cb44796e"
