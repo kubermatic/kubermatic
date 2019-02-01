@@ -1,5 +1,5 @@
 alertmanager:
-  version: v0.16.0
+  version: v0.16.1
   host: ""
   config:
     global:
