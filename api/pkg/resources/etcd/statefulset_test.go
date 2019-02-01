@@ -1,37 +1,48 @@
 package etcd
 
 import (
+	"flag"
+	"fmt"
 	"testing"
+
+	testhelper "github.com/kubermatic/kubermatic/api/pkg/test"
 )
+
+var update = flag.Bool("update", false, "update .golden files")
 
 func TestGetEtcdCommand(t *testing.T) {
 
 	tests := []struct {
-		name             string
-		clusterName      string
-		clusterNamespace string
-		migrate          bool
-		expected         string
+		name                  string
+		clusterName           string
+		clusterNamespace      string
+		migrate               bool
+		enableCorruptionCheck bool
 	}{
 		{
-			name:             "test new cluster without migration",
+			name:             "no-migration",
 			clusterName:      "lg69pmx8wf",
 			clusterNamespace: "cluster-lg69pmx8wf",
 			migrate:          false,
-			expected:         noMigration,
 		},
 		{
-			name:             "test existing cluster with migration",
+			name:             "with-migration",
 			clusterName:      "62m9k9tqlm",
 			clusterNamespace: "cluster-62m9k9tqlm",
 			migrate:          true,
-			expected:         migration,
+		},
+		{
+			name:                  "with-corruption-flags",
+			clusterName:           "lg69pmx8wf",
+			clusterNamespace:      "cluster-lg69pmx8wf",
+			migrate:               false,
+			enableCorruptionCheck: true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			args, err := getEtcdCommand(test.clusterName, test.clusterNamespace, test.migrate)
+			args, err := getEtcdCommand(test.clusterName, test.clusterNamespace, test.migrate, test.enableCorruptionCheck)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -40,110 +51,8 @@ func TestGetEtcdCommand(t *testing.T) {
 				t.Fatalf("got less arguments than expected. got %d expected %d", len(args), 3)
 			}
 			cmd := args[2]
-			if cmd != test.expected {
-				t.Errorf("expected \n%s \n\nGot:\n\n%s", test.expected, cmd)
-			}
+
+			testhelper.CompareOutput(t, fmt.Sprintf("etcd-command-%s", test.name), cmd, *update)
 		})
 	}
 }
-
-var (
-	noMigration = `export MASTER_ENDPOINT="https://etcd-0.etcd.cluster-lg69pmx8wf.svc.cluster.local:2379"
-
-
-export INITIAL_STATE="new"
-export INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-lg69pmx8wf.svc.cluster.local:2380,etcd-1=http://etcd-1.etcd.cluster-lg69pmx8wf.svc.cluster.local:2380,etcd-2=http://etcd-2.etcd.cluster-lg69pmx8wf.svc.cluster.local:2380"
-
-
-echo "initial-state: ${INITIAL_STATE}"
-echo "initial-cluster: ${INITIAL_CLUSTER}"
-
-exec /usr/local/bin/etcd \
-    --name=${POD_NAME} \
-    --data-dir="/var/run/etcd/pod_${POD_NAME}/" \
-    --initial-cluster=${INITIAL_CLUSTER} \
-    --initial-cluster-token="lg69pmx8wf" \
-    --initial-cluster-state=${INITIAL_STATE} \
-    --advertise-client-urls "https://${POD_NAME}.etcd.cluster-lg69pmx8wf.svc.cluster.local:2379,https://${POD_IP}:2379" \
-    --listen-client-urls "https://${POD_IP}:2379,https://127.0.0.1:2379" \
-    --listen-peer-urls "http://${POD_IP}:2380" \
-    --initial-advertise-peer-urls "http://${POD_NAME}.etcd.cluster-lg69pmx8wf.svc.cluster.local:2380" \
-    --trusted-ca-file /etc/etcd/pki/ca/ca.crt \
-    --client-cert-auth \
-    --cert-file /etc/etcd/pki/tls/etcd-tls.crt \
-    --key-file /etc/etcd/pki/tls/etcd-tls.key \
-    --auto-compaction-retention=8
-`
-
-	migration = `export MASTER_ENDPOINT="https://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2379"
-
-
-# If we're already initialized
-if [ -d "/var/run/etcd/pod_${POD_NAME}/" ]; then
-    echo "we're already initialized"
-    export INITIAL_STATE="existing"
-    if [ "${POD_NAME}" = "etcd-0" ]; then
-        export INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380"
-    fi
-    if [ "${POD_NAME}" = "etcd-1" ]; then
-        export INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380,etcd-1=http://etcd-1.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380"
-    fi
-    if [ "${POD_NAME}" = "etcd-2" ]; then
-        export INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380,etcd-1=http://etcd-1.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380,etcd-2=http://etcd-2.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380"
-    fi
-else
-    if [ "${POD_NAME}" = "etcd-0" ]; then
-        echo "i'm etcd-0. I do the restore"
-        etcdctl --endpoints http://etcd-cluster-client:2379 snapshot save snapshot.db
-        etcdctl snapshot restore snapshot.db \
-            --name etcd-0 \
-            --data-dir="/var/run/etcd/pod_${POD_NAME}/" \
-            --initial-cluster="etcd-0=http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380" \
-            --initial-cluster-token="62m9k9tqlm" \
-            --initial-advertise-peer-urls http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380
-        echo "restored from snapshot"
-        export INITIAL_STATE="new"
-        export INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380"
-    fi
-
-    export ETCD_CERT_ARGS="--cacert /etc/etcd/pki/ca/ca.crt --cert /etc/etcd/pki/client/apiserver-etcd-client.crt --key /etc/etcd/pki/client/apiserver-etcd-client.key"
-    if [ "${POD_NAME}" = "etcd-1" ]; then
-        echo "i'm etcd-1. I join as new member as soon as etcd-0 comes up"
-        etcdctl ${ETCD_CERT_ARGS} --endpoints ${MASTER_ENDPOINT} member add etcd-1 --peer-urls=http://etcd-1.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380
-        echo "added etcd-1 to members"
-        export INITIAL_STATE="existing"
-        export INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380,etcd-1=http://etcd-1.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380"
-    fi
-
-    if [ "${POD_NAME}" = "etcd-2" ]; then
-        echo "i'm etcd-2. I join as new member as soon as we have 2 existing & healthy members"
-        until etcdctl ${ETCD_CERT_ARGS} --endpoints ${MASTER_ENDPOINT} member list | grep -q etcd-1; do sleep 1; echo "Waiting for etcd-1"; done
-        etcdctl ${ETCD_CERT_ARGS} --endpoints ${MASTER_ENDPOINT} member add etcd-2 --peer-urls=http://etcd-2.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380
-        echo "added etcd-2 to members"
-        export INITIAL_STATE="existing"
-        export INITIAL_CLUSTER="etcd-0=http://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380,etcd-1=http://etcd-1.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380,etcd-2=http://etcd-2.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380"
-    fi
-fi
-
-
-
-echo "initial-state: ${INITIAL_STATE}"
-echo "initial-cluster: ${INITIAL_CLUSTER}"
-
-exec /usr/local/bin/etcd \
-    --name=${POD_NAME} \
-    --data-dir="/var/run/etcd/pod_${POD_NAME}/" \
-    --initial-cluster=${INITIAL_CLUSTER} \
-    --initial-cluster-token="62m9k9tqlm" \
-    --initial-cluster-state=${INITIAL_STATE} \
-    --advertise-client-urls "https://${POD_NAME}.etcd.cluster-62m9k9tqlm.svc.cluster.local:2379,https://${POD_IP}:2379" \
-    --listen-client-urls "https://${POD_IP}:2379,https://127.0.0.1:2379" \
-    --listen-peer-urls "http://${POD_IP}:2380" \
-    --initial-advertise-peer-urls "http://${POD_NAME}.etcd.cluster-62m9k9tqlm.svc.cluster.local:2380" \
-    --trusted-ca-file /etc/etcd/pki/ca/ca.crt \
-    --client-cert-auth \
-    --cert-file /etc/etcd/pki/tls/etcd-tls.crt \
-    --key-file /etc/etcd/pki/tls/etcd-tls.key \
-    --auto-compaction-retention=8
-`
-)

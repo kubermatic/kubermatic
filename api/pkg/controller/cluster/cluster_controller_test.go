@@ -75,6 +75,7 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 		"",
 		"",
 		true,
+		false,
 	)
 	if err != nil {
 		log.Fatal(err)

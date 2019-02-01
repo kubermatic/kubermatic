@@ -102,6 +102,7 @@ func (cc *Controller) getClusterTemplateData(c *kubermaticv1.Cluster) (*resource
 		cc.oidcCAFile,
 		cc.oidcIssuerURL,
 		cc.oidcIssuerClientID,
+		cc.enableEtcdDataCorruptionChecks,
 	), nil
 }
 
