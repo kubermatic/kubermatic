@@ -17,28 +17,115 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-var NewSizeClient = func(subscriptionID, clientID, clientSecret, tenantID string) (SizeClient, error) {
+var NewAzureClientSet = func(subscriptionID, clientID, clientSecret, tenantID string) (AzureClientSet, error) {
 	var err error
 	sizesClient := compute.NewVirtualMachineSizesClient(subscriptionID)
 	sizesClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
 	if err != nil {
 		return nil, err
 	}
-	return &sizeClientImpl{
+	skusClient := compute.NewResourceSkusClient(subscriptionID)
+	skusClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
+	if err != nil {
+		return nil, err
+	}
+
+	return &azureClientSetImpl{
 		vmSizeClient: sizesClient,
+		skusClient:   skusClient,
 	}, nil
 }
 
-type sizeClientImpl struct {
+type azureClientSetImpl struct {
 	vmSizeClient compute.VirtualMachineSizesClient
+	skusClient   compute.ResourceSkusClient
 }
 
-type SizeClient interface {
-	List(ctx context.Context, location string) (compute.VirtualMachineSizeListResult, error)
+type AzureClientSet interface {
+	ListVMSize(ctx context.Context, location string) ([]compute.VirtualMachineSize, error)
+	ListSKU(ctx context.Context, location string) ([]compute.ResourceSku, error)
 }
 
-func (s *sizeClientImpl) List(ctx context.Context, location string) (compute.VirtualMachineSizeListResult, error) {
-	return s.vmSizeClient.List(ctx, location)
+func (s *azureClientSetImpl) ListSKU(ctx context.Context, location string) ([]compute.ResourceSku, error) {
+	skuList, err := s.skusClient.List(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list SKU resource: %v", err)
+	}
+	return skuList.Values(), nil
+}
+
+func (s *azureClientSetImpl) ListVMSize(ctx context.Context, location string) ([]compute.VirtualMachineSize, error) {
+	sizesResult, err := s.vmSizeClient.List(ctx, location)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list sizes: %v", err)
+	}
+	return *sizesResult.Value, nil
+}
+
+func isTierStandard(sku compute.ResourceSku) bool {
+	tier := sku.Tier
+	if tier != nil {
+		if *tier == "Standard" {
+			return true
+		}
+	}
+	return false
+}
+
+func isVirtualMachinesType(sku compute.ResourceSku) bool {
+	resourceType := sku.ResourceType
+	if resourceType != nil {
+		if *resourceType == "virtualMachines" {
+			return true
+		}
+	}
+	return false
+}
+
+func isLocation(sku compute.ResourceSku, location string) bool {
+	if sku.Locations != nil {
+		for _, l := range *sku.Locations {
+			if l == location {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// isValidVM checks all constrains for VM
+func isValidVM(sku compute.ResourceSku, location string) bool {
+
+	if !isLocation(sku, location) {
+		return false
+	}
+
+	if !isTierStandard(sku) {
+		return false
+	}
+
+	if !isVirtualMachinesType(sku) {
+		return false
+	}
+
+	// check restricted locations
+	restrictions := sku.Restrictions
+	if restrictions != nil {
+		for _, r := range *restrictions {
+			restrictionInfo := r.RestrictionInfo
+			if restrictionInfo != nil {
+				if restrictionInfo.Locations != nil {
+					for _, l := range *restrictionInfo.Locations {
+						if l == location {
+							return false
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return true
 }
 
 func AzureSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
@@ -81,33 +168,44 @@ func AzureSizeEndpoint() endpoint.Endpoint {
 }
 
 func azureSize(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location string) (apiv1.AzureSizeList, error) {
-	sizesClient, err := NewSizeClient(subscriptionID, clientID, clientSecret, tenantID)
+	sizesClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create authorizer for size client: %v", err)
 	}
 
+	skuList, err := sizesClient.ListSKU(ctx, location)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list SKU resource: %v", err)
+	}
+
+	// prepare set of valid VM size types from SKU resources
+	validSKUSet := make(map[string]struct{}, len(skuList))
+	for _, v := range skuList {
+		if isValidVM(v, location) {
+			validSKUSet[*v.Name] = struct{}{}
+		}
+	}
+
+	// prepare set of valid VM size types for container purpose
+	validVMSizeList := compute.PossibleContainerServiceVMSizeTypesValues()
+	validVMContainerSet := make(map[string]struct{}, len(validVMSizeList))
+	for _, s := range validVMSizeList {
+		validVMContainerSet[string(s)] = struct{}{}
+	}
+
 	// get all available VM size types for given location
-	sizesResult, err := sizesClient.List(ctx, location)
+	listVMSize, err := sizesClient.ListVMSize(ctx, location)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list sizes: %v", err)
 	}
 
-	if sizesResult.Value == nil {
-		return nil, fmt.Errorf("failed to list sizes: Azure return a nil result")
-	}
-
-	// prepare set of valid VM size types
-	validVMSizeList := compute.PossibleContainerServiceVMSizeTypesValues()
-	validVMSizeSet := make(map[string]struct{}, len(validVMSizeList))
-	for _, s := range validVMSizeList {
-		validVMSizeSet[string(s)] = struct{}{}
-	}
-
 	var sizeList apiv1.AzureSizeList
-	for _, v := range *sizesResult.Value {
-		// add only valid VM size types
+	for _, v := range listVMSize {
 		if v.Name != nil {
-			if _, ok := validVMSizeSet[*v.Name]; ok {
+			_, okSKU := validSKUSet[*v.Name]
+			_, okVMContainer := validVMContainerSet[*v.Name]
+
+			if okSKU && okVMContainer {
 				s := apiv1.AzureSize{
 					Name:                 *v.Name,
 					NumberOfCores:        *v.NumberOfCores,
@@ -116,7 +214,6 @@ func azureSize(ctx context.Context, subscriptionID, clientID, clientSecret, tena
 					MemoryInMB:           *v.MemoryInMB,
 					MaxDataDiskCount:     *v.MaxDataDiskCount,
 				}
-
 				sizeList = append(sizeList, s)
 			}
 		}
