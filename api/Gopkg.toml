@@ -32,7 +32,7 @@ required = [
 
 [[constraint]]
   name = "github.com/Masterminds/sprig"
-  version = "v2.14.1"
+  version = "v2.17.1"
 
 [[constraint]]
   name = "github.com/coreos/go-oidc"
