@@ -28,7 +28,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -507,21 +506,6 @@ func (r *testRunner) setupCluster(log *logrus.Entry, scenario testScenario) (*ku
 	if r.workerName != "" {
 		cluster.Labels[kubermaticv1.WorkerNameLabelKey] = r.workerName
 	}
-
-	// We setting higher resource requests to avoid running into issues due to throttling
-	cluster.Spec.ComponentsOverride.Apiserver.Resources = &corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("512Mi"),
-			corev1.ResourceCPU:    resource.MustParse("250m"),
-		},
-	}
-
-	// We set the replicas for the control plane to 2 to avoid issues with "bind: address already in use" on control plane components.
-	// Somehow this happens for <1% of the pods - though this seems to be a GKE specific issue: https://github.com/kubernetes/kubernetes/issues/69364
-	var replicas int32 = 2
-	cluster.Spec.ComponentsOverride.Apiserver.Replicas = &replicas
-	cluster.Spec.ComponentsOverride.ControllerManager.Replicas = &replicas
-	cluster.Spec.ComponentsOverride.Scheduler.Replicas = &replicas
 
 	log.Info("Creating cluster...")
 	cluster, err := r.kubermaticClient.KubermaticV1().Clusters().Create(cluster)
