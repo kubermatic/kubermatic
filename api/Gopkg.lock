@@ -168,11 +168,12 @@
   version = "v0.6.1"
 
 [[projects]]
-  digest = "1:8971ecb1f298af578992bccbc7e68f614fe8a2d00d2264b7261e52119c0074a4"
+  digest = "1:c91a5363a19174cb0181832821a7bb9da0aeefb5e2180724614b1005c2269712"
   name = "github.com/coreos/go-oidc"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "a4973d9a4225417aecf5d450a9522f00c1f7130f"
+  revision = "1180514eaf4d9f38d0d19eef639a1d695e066e72"
+  version = "v2.0.0"
 
 [[projects]]
   digest = "1:0ef770954bca104ee99b3b6b7f9b240605ac03517d9f98cbc1893daa03f3c038"
