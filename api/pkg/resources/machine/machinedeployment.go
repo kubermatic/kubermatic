@@ -26,6 +26,7 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 	md := clusterv1alpha1.MachineDeployment{}
 
 	md.Namespace = metav1.NamespaceSystem
+	md.Name = nd.Name
 	md.GenerateName = fmt.Sprintf("kubermatic-%s-", c.Name)
 
 	md.Spec.Selector.MatchLabels = map[string]string{
