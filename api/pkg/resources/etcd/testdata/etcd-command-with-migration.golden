@@ -1,4 +1,3 @@
-
 export MASTER_ENDPOINT="https://etcd-0.etcd.cluster-62m9k9tqlm.svc.cluster.local:2379"
 
 

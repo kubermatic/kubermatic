@@ -1,4 +1,3 @@
-
 export MASTER_ENDPOINT="https://etcd-0.etcd.cluster-lg69pmx8wf.svc.cluster.local:2379"
 
 
@@ -23,4 +22,4 @@ exec /usr/local/bin/etcd \
     --client-cert-auth \
     --cert-file /etc/etcd/pki/tls/etcd-tls.crt \
     --key-file /etc/etcd/pki/tls/etcd-tls.key \
-    --auto-compaction-retention=8 
+    --auto-compaction-retention=8
