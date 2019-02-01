@@ -34,7 +34,7 @@ spec:
         - --storage.tsdb.path=/var/prometheus/data
         - --storage.tsdb.min-block-duration=15m
         - --storage.tsdb.max-block-duration=30m
-        - --storage.tsdb.retention=1h
+        - --storage.tsdb.retention.time=1h
         - --web.enable-lifecycle
         - --storage.tsdb.no-lockfile
         - --web.route-prefix=/
