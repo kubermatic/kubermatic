@@ -9,6 +9,8 @@ spec:
     listKind: ClusterList
     plural: clusters
     singular: cluster
+    shortNames:
+      - cl
   scope: Cluster
   version: v1
   additionalPrinterColumns:
