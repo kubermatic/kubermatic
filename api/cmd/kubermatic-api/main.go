@@ -32,6 +32,7 @@ import (
 	prometheusapi "github.com/prometheus/client_golang/api"
 
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/handler"
@@ -118,6 +119,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 				client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
 				kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(),
 				options.workerName,
+				rbac.ExtractGroupPrefix,
 			)
 
 			kubeInformerFactory.Start(wait.NeverStop)

@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes"
+	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
@@ -27,18 +28,24 @@ type UserClusterConnectionProvider interface {
 	GetAdminKubeconfig(*kubermaticapiv1.Cluster) ([]byte, error)
 }
 
+// extractGroupPrefixFunc is a function that knows how to extract a prefix (owners, editors) from "projectID-owners" group,
+// group names inside leaf/user clusters don't have projectID in their names
+type extractGroupPrefixFunc func(groupName string) string
+
 // NewClusterProvider returns a new cluster provider that respects RBAC policies
 // it uses createSeedImpersonatedClient to create a connection that uses user impersonation
 func NewClusterProvider(
 	createSeedImpersonatedClient kubermaticImpersonationClient,
 	userClusterConnProvider UserClusterConnectionProvider,
 	clusterLister kubermaticv1lister.ClusterLister,
-	workerName string) *ClusterProvider {
+	workerName string,
+	extractGroupPrefix extractGroupPrefixFunc) *ClusterProvider {
 	return &ClusterProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
 		userClusterConnProvider:      userClusterConnProvider,
 		clusterLister:                clusterLister,
 		workerName:                   workerName,
+		extractGroupPrefix:           extractGroupPrefix,
 	}
 }
 
@@ -55,7 +62,8 @@ type ClusterProvider struct {
 	// clusterLister provide access to local cache that stores cluster objects
 	clusterLister kubermaticv1lister.ClusterLister
 
-	workerName string
+	workerName         string
+	extractGroupPrefix extractGroupPrefixFunc
 }
 
 // New creates a brand new cluster that is bound to the given project
@@ -195,6 +203,7 @@ func (p *ClusterProvider) GetAdminKubeconfigForCustomerCluster(c *kubermaticapiv
 	return clientcmd.Load(b)
 }
 
+// Deprecated use GetMachineClientForCustomerCluster instead
 // GetAdminMachineClientForCustomerCluster returns a client to interact with machine resources in the given cluster
 //
 // Note that the client you will get has admin privileges
@@ -207,4 +216,21 @@ func (p *ClusterProvider) GetAdminMachineClientForCustomerCluster(c *kubermatica
 // Note that the client you will get has admin privileges
 func (p *ClusterProvider) GetAdminKubernetesClientForCustomerCluster(c *kubermaticapiv1.Cluster) (kubernetes.Interface, error) {
 	return p.userClusterConnProvider.GetClient(c)
+}
+
+// GetMachineClientForCustomerCluster returns a client to interact with machine resources in the given cluster
+//
+// Note that the client doesn't use admin account instead it authn/authz as userInfo(email, group)
+func (p *ClusterProvider) GetMachineClientForCustomerCluster(userInfo *provider.UserInfo, c *kubermaticapiv1.Cluster) (clusterv1alpha1clientset.Interface, error) {
+	return p.userClusterConnProvider.GetMachineClient(c, p.withImpersonation(userInfo))
+}
+
+func (p *ClusterProvider) withImpersonation(userInfo *provider.UserInfo) k8cuserclusterclient.ConfigOption {
+	return func(cfg *restclient.Config) *restclient.Config {
+		cfg.Impersonate = restclient.ImpersonationConfig{
+			UserName: userInfo.Email,
+			Groups:   []string{p.extractGroupPrefix(userInfo.Group)},
+		}
+		return cfg
+	}
 }
