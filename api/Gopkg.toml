@@ -161,7 +161,7 @@ required = [
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"
-  version = "v1.1.1"
+  version = "v1.3.0"
 
 # Otherwise dep panics: https://github.com/golang/dep/issues/1799
 [[override]]
