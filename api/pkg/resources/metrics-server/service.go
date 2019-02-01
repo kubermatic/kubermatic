@@ -7,7 +7,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// ServiceCreator returns the function to reconcile the DNS service
+// ServiceCreator returns the function to reconcile the seed cluster internal metrics-server service
 func ServiceCreator() resources.ServiceCreator {
 	return func(se *corev1.Service) (*corev1.Service, error) {
 		se.Name = resources.MetricsServerServiceName
