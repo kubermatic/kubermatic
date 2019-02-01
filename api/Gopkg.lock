@@ -224,12 +224,12 @@
   version = "v3.2.0"
 
 [[projects]]
-  digest = "1:0a91fbdad27eed4d21fb2e716fc63249e33527a9120638189817742f00eb3b17"
+  digest = "1:ea3b7e0433c21fd9d3db5ab2a3c55359835aecd5f83e3d514bc3f47e84933113"
   name = "github.com/digitalocean/godo"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "890c05eebffff27adf6de556949a3dc0813f87a4"
-  version = "v1.7.1"
+  revision = "360ee5cab86ffe07b3d5009a3bbb658862c55cf8"
+  version = "v1.7.3"
 
 [[projects]]
   branch = "master"
