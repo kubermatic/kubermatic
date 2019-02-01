@@ -78,6 +78,7 @@ kubermatic:
       pullPolicy: "IfNotPresent"
     config: |
       {
+        "default_node_count": 3,
         "share_kubeconfig": false,
         "show_demo_info": false,
         "show_terms_of_service": false,
