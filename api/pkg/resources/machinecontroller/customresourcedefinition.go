@@ -26,6 +26,7 @@ func MachineCRD(_ semver.Semver, existing *apiextensionsv1beta1.CustomResourceDe
 	existing.Spec.Names.ListKind = "MachineList"
 	existing.Spec.Names.Plural = "machines"
 	existing.Spec.Names.Singular = "machine"
+	existing.Spec.Names.ShortNames = []string{"ma"}
 
 	return existing, nil
 }
@@ -44,6 +45,8 @@ func MachineSetCRD(clusterVersion semver.Semver, existing *apiextensionsv1beta1.
 	existing.Spec.Names.ListKind = "MachineSetList"
 	existing.Spec.Names.Plural = "machinesets"
 	existing.Spec.Names.Singular = "machineset"
+	existing.Spec.Names.ShortNames = []string{"ms"}
+
 	if clusterVersion.Semver().Minor() > 9 {
 		existing.Spec.Subresources = &apiextensionsv1beta1.CustomResourceSubresources{Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{}}
 	}
@@ -65,6 +68,8 @@ func MachineDeploymentCRD(clusterVersion semver.Semver, existing *apiextensionsv
 	existing.Spec.Names.ListKind = "MachineDeploymentList"
 	existing.Spec.Names.Plural = "machinedeployments"
 	existing.Spec.Names.Singular = "machinedeployment"
+	existing.Spec.Names.ShortNames = []string{"md"}
+
 	if clusterVersion.Semver().Minor() > 9 {
 		existing.Spec.Subresources = &apiextensionsv1beta1.CustomResourceSubresources{Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{}}
 	}
@@ -86,6 +91,8 @@ func ClusterCRD(clusterVersion semver.Semver, existing *apiextensionsv1beta1.Cus
 	existing.Spec.Names.ListKind = "ClusterList"
 	existing.Spec.Names.Plural = "clusters"
 	existing.Spec.Names.Singular = "cluster"
+	existing.Spec.Names.ShortNames = []string{"cl"}
+
 	if clusterVersion.Semver().Minor() > 9 {
 		existing.Spec.Subresources = &apiextensionsv1beta1.CustomResourceSubresources{Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{}}
 	}
