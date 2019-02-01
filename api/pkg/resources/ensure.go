@@ -268,38 +268,22 @@ func EnsureDeployment(data DeploymentDataProvider, create DeploymentCreator, lis
 	return nil
 }
 
-// EnsureService will create the Service with the passed create function & create or update it if necessary.
-// To check if it's necessary it will do a lookup of the resource at the lister & compare the existing Service with the created one
-func EnsureService(data ServiceDataProvider, create ServiceCreator, lister corev1lister.ServiceNamespaceLister, client corev1client.ServiceInterface) error {
-	var existing *corev1.Service
-	service, err := create(data, nil)
+// EnsureServices will create and update the Services coming from the passed ServiceCreator slice
+func EnsureServices(creators []ServiceCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, wrapper ...ObjectModifier) error {
+	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &corev1.Service{})
 	if err != nil {
-		return fmt.Errorf("failed to build Service: %v", err)
+		return fmt.Errorf("failed to get Service informer: %v", err)
 	}
 
-	if existing, err = lister.Get(service.Name); err != nil {
-		if !kubeerrors.IsNotFound(err) {
-			return err
+	for _, create := range creators {
+		createObject := ServiceObjectWrapper(create)
+		for _, wrap := range wrapper {
+			createObject = wrap(createObject)
 		}
 
-		if _, err = client.Create(service); err != nil {
-			return fmt.Errorf("failed to create Service %s: %v", service.Name, err)
+		if err := EnsureObject(namespace, createObject, store, client); err != nil {
+			return fmt.Errorf("failed to ensure Service: %v", err)
 		}
-		return nil
-	}
-	existing = existing.DeepCopy()
-
-	service, err = create(data, existing.DeepCopy())
-	if err != nil {
-		return fmt.Errorf("failed to build Service: %v", err)
-	}
-
-	if DeepEqual(service, existing) {
-		return nil
-	}
-
-	if _, err = client.Update(service); err != nil {
-		return fmt.Errorf("failed to update Service %s: %v", service.Name, err)
 	}
 
 	return nil

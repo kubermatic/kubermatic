@@ -201,6 +201,8 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
 		cleanupHeapsterAddon,
 		cleanupMetricsServerAddon,
 		migrateClusterUserLabel,
+		cleanupPrometheusService,
+		cleanupKubeStateMetricsService,
 	}
 
 	w := sync.WaitGroup{}
@@ -507,5 +509,29 @@ func migrateUserID(user *kubermaticv1.User, ctx *cleanupContext) error {
 			return err
 		}
 	}
+	return nil
+}
+
+// We removed the Prometheus services as its no longer in use
+func cleanupPrometheusService(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	ns := cluster.Status.NamespaceName
+
+	err := ctx.kubeClient.CoreV1().Services(ns).Delete("prometheus", nil)
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return err
+	}
+
+	return nil
+}
+
+// We removed the Kube-State-Metrics services as its no longer in use
+func cleanupKubeStateMetricsService(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	ns := cluster.Status.NamespaceName
+
+	err := ctx.kubeClient.CoreV1().Services(ns).Delete("kube-state-metrics", nil)
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return err
+	}
+
 	return nil
 }

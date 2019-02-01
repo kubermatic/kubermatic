@@ -169,26 +169,6 @@ func (c *Controller) ensureStatefulSets(cluster *kubermaticv1.Cluster, data *res
 	return resources.EnsureStatefulSets(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.ClusterRefWrapper(cluster))
 }
 
-// GetServiceCreators returns all service creators that are currently in use
-func GetServiceCreators() []resources.ServiceCreator {
-	return []resources.ServiceCreator{
-		prometheus.Service,
-		kubestatemetrics.Service,
-	}
-}
-
-func (c *Controller) ensureServices(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := GetServiceCreators()
-
-	for _, create := range creators {
-		if err := resources.EnsureService(data, create, c.serviceLister.Services(cluster.Status.NamespaceName), c.kubeClient.CoreV1().Services(cluster.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the service exists: %v", err)
-		}
-	}
-
-	return nil
-}
-
 func (c *Controller) ensureVerticalPodAutoscalers(cluster *kubermaticv1.Cluster) error {
 	creators, err := resources.GetVerticalPodAutoscalersForAll([]string{
 		"kube-state-metrics",
