@@ -38,6 +38,8 @@ kubermatic:
     #   If enabled configures the flags on the API server to use OAuth2 identity providers.
     # - VerticalPodAutoscaler
     #   If enabled the cluster-controller will enable the VerticalPodAutoscaler for all control plane components
+    # - EtcdDataCorruptionChecks
+    #   If enabled the all etcd clusters will be started with --experimental-initial-corrupt-check=true --experimental-corrupt-check-time=10m
     # For example:
     # featureGates: "OpenIDAuthPlugin=true,VerticalPodAutoscaler=true"
     featureGates: ""
