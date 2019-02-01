@@ -17,6 +17,8 @@ HELM_EXTRA_ARGS=${3:-""}
 VALUES_FILE=$(realpath ${2})
 cd "$(dirname "$0")/../../"
 
+kubectl apply -f ./config/kubermatic/crd/
+
 helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace nginx-ingress-controller nginx-ingress-controller ./config/nginx-ingress-controller/
 helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace cert-manager cert-manager ./config/cert-manager/
 helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace default certs ./config/certs/
