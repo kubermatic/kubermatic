@@ -54,7 +54,6 @@ func StatefulSetCreator(data *resources.TemplateData) resources.StatefulSetCreat
 
 		set.Spec.Replicas = resources.Int32(1)
 		set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
-		set.Spec.ServiceName = resources.PrometheusServiceName
 
 		volumes := getVolumes()
 		podLabels, err := data.GetPodTemplateLabels(name, volumes, requiredBaseLabels)
