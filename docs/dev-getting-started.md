@@ -5,11 +5,19 @@ environment, then configuring that cluster to be managed by a locally running co
 
 The basic steps to get started on this are these:
 
-* Create a new cluster via the UI on https://dev.kubermatic.io in your browser, it does not matter which provider you use
 * Clone the [secrets](https://github.com/kubermatic/secrets/) repo onto your `GOPATH`: `git clone git@github.com:kubermatic/secrets.git $(go env GOPATH)/src/github.com/kubermatic/secrets`
 * Decrypt it: `cd $(go env GOPATH)/src/github.com/kubermatic/secrets && git-crypt unlock`
     * Note: This requires `git-crypt` to be installed on your computer
-* For convenience, add an alias to access the `dev.kubermatic` kubeconfig to your `~/.bashrc`: `echo "dev='export KUBECONFIG=$(go env GOPATH)/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig'" >> ~/.bashrc`
+* Clone the dashboard repo onto your `GOPATH`: `git clone git@github.com:kubermatic/dashboard-v2.git $(go env GOPATH)/src/github.com/kubermatic/dashboard-v2`
+* Start all the components via the respective scripts. All of them are blocking so it is suggested to start a termial instance for each:
+    * API: `$(go env GOPATH)/src/github.com/kubermatic/kubermatic/api/hack/run-api.sh`
+    * Dashboard: `$(go env GOPATH)/src/github.com/kubermatic/dashboard-v2/hack/run-local-dashboard.sh`
+    * RBAC-Controller: `$(go env GOPATH)/src/github.com/kubermatic/kubermatic/api/hack/run-rbac-generator.sh`
+    * Controller-Manager: `$(go env GOPATH)/src/github.com/kubermatic/kubermatic/api/hack/run-controller.sh`
+
+Now you can visit http://localhost:8000 in your webbrowser, log in and create a cluster at a provider of your choice. The result can then be viewed by looking into the respective seed cluster:
+
+* For convenience, add an alias to access the `dev.kubermatic` seed clusters kubeconfig to your `~/.bashrc`: `echo "dev='export KUBECONFIG=$(go env GOPATH)/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig'" >> ~/.bashrc`
 * Test if access to the seed works: `source ~/.bashrc && dev && kubectl get cluster`, you should see an output like this:
 
 ```
@@ -21,21 +29,10 @@ fp5lzdp6kx            3h        objective-hopper             lukasz@loodse.com
 ```
 
 * Every time you use the `dev` alias in your terminal, your `kubectl` command will now be configured to point at the `dev.kubermatic.io` seed cluster :)
-* Find out the hostname of your computer by running `uname -n`
-* Execute a `kubectl edit $NAME_OF_YOUR_CLUSTER`, replacing `NAME_OF_YOUR_CLUSTER` with the name of the cluster you created in step one, you can see it by using the `kubectl get clsuter`
-* Add a label `worker-name: $YOUR_HOSTNAME_FROM_uname -n` to your cluster. This makes the main Kubermatic controller running on dev.kubermatic.io ignore your cluster and the local controller
-you will be starting in the next step manage your cluster
-* Change your working dir to the `api` subfolder of the Kubermatic repository: `cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api`
-* If you execute `./hack/run-controller.sh`, a local controller will be built and started in order to manage your cluster :)
-* The controller runs in the foreground, meaning it will block the terminal window which is why it is suggested to use a dedicated terminal. You can stop it via `ctrl+c`
-* You can now change code, then restart the controller and watch it doing its work
+* You can now change code, then restart the controller(s) and watch them doing their work
 
-If you work on the API, you can run it together with the dashboard locally (the latter in a Docker container):
-
-* Clone the dashboard repo: `git clone git@github.com:kubermatic/dashboard-v2.git $(go env GOPATH)/src/github.com/kubermatic/dashboard-v2`
-* Run `./hack/run-dashboard-and-api.sh`
-* You can now reach your local copy of the API and the dashboard by navigating to http://localhost:8000/ in a web browser
-* Just like with the controllers, this runs in foregrond so it is recommended to execute this in a dedicated terminal.
+*Hint:* If you only work on the API you can skip starting the controllers. If you only work on controllers, you can skip starting the UI and API and instead create a cluster at `https://dev.kubermatic.io`,
+and add a label `worker-name:` to it with the output of `uname -n` as value. This will make the controllers running in that seed cluster ignore your cluster and make the local controllers take care of it.
 
 There are also other controllers like the `machine-controller` that do not talk to the seed cluster but to the user cluster directly. This means they need a different Kubeconfig. You can
 get them running by following the following steps:
