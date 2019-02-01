@@ -282,14 +282,6 @@
   revision = "eeefdecb41b842af6dc652aaea4026e8403e62df"
 
 [[projects]]
-  digest = "1:c204ec81f754234f2c3c4093cc8cc42151aadedd1129b32539a472fd7881e689"
-  name = "github.com/go-ini/ini"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "9c8236e659b76e87bf02044d06fde8683008ff3e"
-  version = "v1.39.0"
-
-[[projects]]
   branch = "master"
   digest = "1:739774497d3bb8ac022f9e6c025e16a742980fe1a8acc8f1f442e02fd3981f02"
   name = "github.com/go-kit/kit"
@@ -783,7 +775,7 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:2ff810d7e2a909339a84b1b031e71b4f80526932773efecb73a58e47fa439668"
+  digest = "1:9573623a7c4893a4e38dae739cb47db087bf7cef971485a15b7f5f87353755a1"
   name = "github.com/minio/minio-go"
   packages = [
     ".",
@@ -794,8 +786,8 @@
     "pkg/set",
   ]
   pruneopts = "NUT"
-  revision = "39381cf62425050629c7264228fc2f9e0c6616f6"
-  version = "v6.0.11"
+  revision = "3a5de8b1cf046bb419d1e35a1e725945603ff70c"
+  version = "v6.0.15"
 
 [[projects]]
   digest = "1:a4df73029d2c42fabcb6b41e327d2f87e685284ec03edf76921c267d9cfc9c23"
@@ -1155,7 +1147,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b9e5fcdf9a437b4983d949757a762afd4c9634b776ca42b9d94ba9557a0200c4"
+  digest = "1:6e0f981c5a0413f33fc37c763d72750d4b246b9b96a75f71b6cbb5621f4f1b5f"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -1164,6 +1156,7 @@
     "http2",
     "http2/hpack",
     "idna",
+    "publicsuffix",
   ]
   pruneopts = "NUT"
   revision = "fae4c4e3ad76c295c3d6d259f898136b4bf833a8"
@@ -1262,6 +1255,14 @@
   pruneopts = "NUT"
   revision = "d2d2541c53f18d2a059457998ce2876cc8e67cbf"
   version = "v0.9.1"
+
+[[projects]]
+  digest = "1:5e92676b56ce4c69edf9ee1f6343c56f637e30af11b9d8b5edd1b6530f3fbc3d"
+  name = "gopkg.in/ini.v1"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "6ed8d5f64cd79a498d1f3fab5880cc376ce41bbe"
+  version = "v1.41.0"
 
 [[projects]]
   digest = "1:f3fb9399fec4a7bf9f129d91c0d1f2916016f2655eda8bc4f6549814cb44796e"
