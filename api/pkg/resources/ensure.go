@@ -31,7 +31,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-//go:generate go run ../../cmd/codegen/reconcile/main.go
+//go:generate go run ../../codegen/reconcile/main.go
 
 const (
 	annotationPrefix   = "kubermatic.io/"
