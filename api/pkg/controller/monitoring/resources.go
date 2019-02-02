@@ -83,24 +83,18 @@ func (c *Controller) ensureRoleBindings(cluster *kubermaticv1.Cluster, data *res
 }
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
-func GetDeploymentCreators(c *kubermaticv1.Cluster) []resources.DeploymentCreator {
+func GetDeploymentCreators(data resources.DeploymentDataProvider) []resources.DeploymentCreator {
 	creators := []resources.DeploymentCreator{
-		kubestatemetrics.Deployment,
+		kubestatemetrics.DeploymentCreator(data),
 	}
 
 	return creators
 }
 
 func (c *Controller) ensureDeployments(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := GetDeploymentCreators(cluster)
+	creators := GetDeploymentCreators(data)
 
-	for _, create := range creators {
-		if err := resources.EnsureDeployment(data, create, c.deploymentLister.Deployments(cluster.Status.NamespaceName), c.kubeClient.AppsV1().Deployments(cluster.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the Deployment exists: %v", err)
-		}
-	}
-
-	return nil
+	return resources.ReconcileDeployments(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.ClusterRefWrapper(cluster))
 }
 
 // SecretOperation returns a wrapper struct to utilize a sorted slice instead of an unsorted map
@@ -164,7 +158,6 @@ func GetStatefulSetCreators(data *resources.TemplateData) []resources.StatefulSe
 }
 
 func (c *Controller) ensureStatefulSets(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	data.GetClusterRef()
 	creators := GetStatefulSetCreators(data)
 
 	return resources.ReconcileStatefulSets(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.ClusterRefWrapper(cluster))

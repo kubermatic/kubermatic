@@ -34,150 +34,144 @@ const (
 	name = "controller-manager"
 )
 
-// Deployment returns the kubernetes Controller-Manager Deployment
-func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
-	var dep *appsv1.Deployment
-	if existing != nil {
-		dep = existing
-	} else {
-		dep = &appsv1.Deployment{}
-	}
+// DeploymentCreator returns the function to create and update the controller manager deployment
+func DeploymentCreator(data resources.DeploymentDataProvider) resources.DeploymentCreator {
+	return func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+		dep.Name = resources.ControllerManagerDeploymentName
+		dep.Labels = resources.BaseAppLabel(name, nil)
 
-	dep.Name = resources.ControllerManagerDeploymentName
-	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	dep.Labels = resources.BaseAppLabel(name, nil)
-
-	flags, err := getFlags(data.Cluster())
-	if err != nil {
-		return nil, err
-	}
-
-	dep.Spec.Replicas = resources.Int32(1)
-	if data.Cluster().Spec.ComponentsOverride.ControllerManager.Replicas != nil {
-		dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.ControllerManager.Replicas
-	}
-
-	dep.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: resources.BaseAppLabel(name, nil),
-	}
-	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
-	dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
-		MaxSurge: &intstr.IntOrString{
-			Type:   intstr.Int,
-			IntVal: 1,
-		},
-		MaxUnavailable: &intstr.IntOrString{
-			Type:   intstr.Int,
-			IntVal: 0,
-		},
-	}
-	dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
-
-	volumes := getVolumes()
-	podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-		Labels:      podLabels,
-		Annotations: getPodAnnotations(data),
-	}
-
-	// Configure user cluster DNS resolver for this pod.
-	dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
-	if err != nil {
-		return nil, err
-	}
-
-	dep.Spec.Template.Spec.Volumes = volumes
-
-	apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
-	if err != nil {
-		return nil, err
-	}
-	dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
-
-	openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
-	}
-
-	controllerManagerMounts := []corev1.VolumeMount{
-		{
-			Name:      resources.CASecretName,
-			MountPath: "/etc/kubernetes/pki/ca",
-			ReadOnly:  true,
-		},
-		{
-			Name:      resources.ServiceAccountKeySecretName,
-			MountPath: "/etc/kubernetes/service-account-key",
-			ReadOnly:  true,
-		},
-		{
-			Name:      resources.CloudConfigConfigMapName,
-			MountPath: "/etc/kubernetes/cloud",
-			ReadOnly:  true,
-		},
-		{
-			Name:      resources.ControllerManagerKubeconfigSecretName,
-			MountPath: "/etc/kubernetes/kubeconfig",
-			ReadOnly:  true,
-		},
-	}
-	if data.Cluster().Spec.Cloud.VSphere != nil {
-		fakeVMWareUUIDMount := corev1.VolumeMount{
-			Name:      resources.CloudConfigConfigMapName,
-			SubPath:   cloudconfig.FakeVMWareUUIDKeyName,
-			MountPath: "/sys/class/dmi/id/product_serial",
-			ReadOnly:  true,
+		flags, err := getFlags(data.Cluster())
+		if err != nil {
+			return nil, err
 		}
-		// Required because of https://github.com/kubernetes/kubernetes/issues/65145
-		controllerManagerMounts = append(controllerManagerMounts, fakeVMWareUUIDMount)
-	}
 
-	resourceRequirements := defaultResourceRequirements
-	if data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources != nil {
-		resourceRequirements = *data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources
-	}
-	dep.Spec.Template.Spec.Containers = []corev1.Container{
-		*openvpnSidecar,
-		{
-			Name:                     name,
-			Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
-			ImagePullPolicy:          corev1.PullIfNotPresent,
-			Command:                  []string{"/hyperkube", "controller-manager"},
-			Args:                     flags,
-			Env:                      getEnvVars(data.Cluster()),
-			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-			Resources:                resourceRequirements,
-			ReadinessProbe: &corev1.Probe{
-				Handler: corev1.Handler{
-					HTTPGet: getHealthGetAction(data),
-				},
-				FailureThreshold: 3,
-				PeriodSeconds:    10,
-				SuccessThreshold: 1,
-				TimeoutSeconds:   15,
+		dep.Spec.Replicas = resources.Int32(1)
+		if data.Cluster().Spec.ComponentsOverride.ControllerManager.Replicas != nil {
+			dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.ControllerManager.Replicas
+		}
+
+		dep.Spec.Selector = &metav1.LabelSelector{
+			MatchLabels: resources.BaseAppLabel(name, nil),
+		}
+		dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
+		dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
+			MaxSurge: &intstr.IntOrString{
+				Type:   intstr.Int,
+				IntVal: 1,
 			},
-			LivenessProbe: &corev1.Probe{
-				FailureThreshold: 8,
-				Handler: corev1.Handler{
-					HTTPGet: getHealthGetAction(data),
-				},
-				InitialDelaySeconds: 15,
-				PeriodSeconds:       10,
-				SuccessThreshold:    1,
-				TimeoutSeconds:      15,
+			MaxUnavailable: &intstr.IntOrString{
+				Type:   intstr.Int,
+				IntVal: 0,
 			},
-			VolumeMounts: controllerManagerMounts,
-		},
+		}
+		dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
+
+		volumes := getVolumes()
+		podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
+			Labels:      podLabels,
+			Annotations: getPodAnnotations(data),
+		}
+
+		// Configure user cluster DNS resolver for this pod.
+		dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
+		if err != nil {
+			return nil, err
+		}
+
+		dep.Spec.Template.Spec.Volumes = volumes
+
+		apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
+		if err != nil {
+			return nil, err
+		}
+		dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
+
+		openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
+		if err != nil {
+			return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
+		}
+
+		controllerManagerMounts := []corev1.VolumeMount{
+			{
+				Name:      resources.CASecretName,
+				MountPath: "/etc/kubernetes/pki/ca",
+				ReadOnly:  true,
+			},
+			{
+				Name:      resources.ServiceAccountKeySecretName,
+				MountPath: "/etc/kubernetes/service-account-key",
+				ReadOnly:  true,
+			},
+			{
+				Name:      resources.CloudConfigConfigMapName,
+				MountPath: "/etc/kubernetes/cloud",
+				ReadOnly:  true,
+			},
+			{
+				Name:      resources.ControllerManagerKubeconfigSecretName,
+				MountPath: "/etc/kubernetes/kubeconfig",
+				ReadOnly:  true,
+			},
+		}
+		if data.Cluster().Spec.Cloud.VSphere != nil {
+			fakeVMWareUUIDMount := corev1.VolumeMount{
+				Name:      resources.CloudConfigConfigMapName,
+				SubPath:   cloudconfig.FakeVMWareUUIDKeyName,
+				MountPath: "/sys/class/dmi/id/product_serial",
+				ReadOnly:  true,
+			}
+			// Required because of https://github.com/kubernetes/kubernetes/issues/65145
+			controllerManagerMounts = append(controllerManagerMounts, fakeVMWareUUIDMount)
+		}
+
+		resourceRequirements := defaultResourceRequirements
+		if data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources != nil {
+			resourceRequirements = *data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources
+		}
+		dep.Spec.Template.Spec.Containers = []corev1.Container{
+			*openvpnSidecar,
+			{
+				Name:                     name,
+				Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
+				ImagePullPolicy:          corev1.PullIfNotPresent,
+				Command:                  []string{"/hyperkube", "controller-manager"},
+				Args:                     flags,
+				Env:                      getEnvVars(data.Cluster()),
+				TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+				TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+				Resources:                resourceRequirements,
+				ReadinessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						HTTPGet: getHealthGetAction(data),
+					},
+					FailureThreshold: 3,
+					PeriodSeconds:    10,
+					SuccessThreshold: 1,
+					TimeoutSeconds:   15,
+				},
+				LivenessProbe: &corev1.Probe{
+					FailureThreshold: 8,
+					Handler: corev1.Handler{
+						HTTPGet: getHealthGetAction(data),
+					},
+					InitialDelaySeconds: 15,
+					PeriodSeconds:       10,
+					SuccessThreshold:    1,
+					TimeoutSeconds:      15,
+				},
+				VolumeMounts: controllerManagerMounts,
+			},
+		}
+
+		dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(name, data.Cluster().Name, nil))
+
+		return dep, nil
 	}
-
-	dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(name, data.Cluster().Name, nil))
-
-	return dep, nil
 }
 
 func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {

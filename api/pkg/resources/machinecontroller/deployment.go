@@ -32,106 +32,99 @@ const (
 	tag = "v1.0.3"
 )
 
-// Deployment returns the machine-controller Deployment
-func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
-	var dep *appsv1.Deployment
-	if existing != nil {
-		dep = existing
-	} else {
-		dep = &appsv1.Deployment{}
-	}
+// DeploymentCreator returns the function to create and update the machine controller deployment
+func DeploymentCreator(data resources.DeploymentDataProvider) resources.DeploymentCreator {
+	return func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+		dep.Name = resources.MachineControllerDeploymentName
+		dep.Labels = resources.BaseAppLabel(name, nil)
 
-	dep.Name = resources.MachineControllerDeploymentName
-	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-
-	dep.Labels = resources.BaseAppLabel(name, nil)
-
-	dep.Spec.Replicas = resources.Int32(1)
-	dep.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: resources.BaseAppLabel(name, nil),
-	}
-	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
-	dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
-		MaxSurge: &intstr.IntOrString{
-			Type:   intstr.Int,
-			IntVal: 1,
-		},
-		MaxUnavailable: &intstr.IntOrString{
-			Type:   intstr.Int,
-			IntVal: 0,
-		},
-	}
-	dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
-
-	volumes := []corev1.Volume{getKubeconfigVolume()}
-	podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create pod labels: %v", err)
-	}
-
-	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-		Labels: podLabels,
-		Annotations: map[string]string{
-			"prometheus.io/scrape": "true",
-			"prometheus.io/path":   "/metrics",
-			"prometheus.io/port":   "8085",
-		},
-	}
-
-	dep.Spec.Template.Spec.Volumes = volumes
-
-	apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
-	if err != nil {
-		return nil, err
-	}
-	dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
-
-	clusterDNSIP, err := resources.UserClusterDNSResolverIP(data.Cluster())
-	if err != nil {
-		return nil, err
-	}
-	dep.Spec.Template.Spec.Containers = []corev1.Container{
-		{
-			Name:            name,
-			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command:         []string{"/usr/local/bin/machine-controller"},
-			Args: []string{
-				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-				"-logtostderr",
-				"-v", "4",
-				"-cluster-dns", clusterDNSIP,
-				"-internal-listen-address", "0.0.0.0:8085",
+		dep.Spec.Replicas = resources.Int32(1)
+		dep.Spec.Selector = &metav1.LabelSelector{
+			MatchLabels: resources.BaseAppLabel(name, nil),
+		}
+		dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
+		dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
+			MaxSurge: &intstr.IntOrString{
+				Type:   intstr.Int,
+				IntVal: 1,
 			},
-			Env:                      getEnvVars(data),
-			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-			Resources:                controllerResourceRequirements,
-			LivenessProbe: &corev1.Probe{
-				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Path:   "/ready",
-						Port:   intstr.FromInt(8085),
-						Scheme: corev1.URISchemeHTTP,
+			MaxUnavailable: &intstr.IntOrString{
+				Type:   intstr.Int,
+				IntVal: 0,
+			},
+		}
+		dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
+
+		volumes := []corev1.Volume{getKubeconfigVolume()}
+		podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create pod labels: %v", err)
+		}
+
+		dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
+			Labels: podLabels,
+			Annotations: map[string]string{
+				"prometheus.io/scrape": "true",
+				"prometheus.io/path":   "/metrics",
+				"prometheus.io/port":   "8085",
+			},
+		}
+
+		dep.Spec.Template.Spec.Volumes = volumes
+
+		apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
+		if err != nil {
+			return nil, err
+		}
+		dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
+
+		clusterDNSIP, err := resources.UserClusterDNSResolverIP(data.Cluster())
+		if err != nil {
+			return nil, err
+		}
+		dep.Spec.Template.Spec.Containers = []corev1.Container{
+			{
+				Name:            name,
+				Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
+				ImagePullPolicy: corev1.PullIfNotPresent,
+				Command:         []string{"/usr/local/bin/machine-controller"},
+				Args: []string{
+					"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+					"-logtostderr",
+					"-v", "4",
+					"-cluster-dns", clusterDNSIP,
+					"-internal-listen-address", "0.0.0.0:8085",
+				},
+				Env:                      getEnvVars(data),
+				TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+				TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+				Resources:                controllerResourceRequirements,
+				LivenessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path:   "/ready",
+							Port:   intstr.FromInt(8085),
+							Scheme: corev1.URISchemeHTTP,
+						},
+					},
+					FailureThreshold:    3,
+					InitialDelaySeconds: 15,
+					PeriodSeconds:       10,
+					SuccessThreshold:    1,
+					TimeoutSeconds:      15,
+				},
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      resources.MachineControllerKubeconfigSecretName,
+						MountPath: "/etc/kubernetes/kubeconfig",
+						ReadOnly:  true,
 					},
 				},
-				FailureThreshold:    3,
-				InitialDelaySeconds: 15,
-				PeriodSeconds:       10,
-				SuccessThreshold:    1,
-				TimeoutSeconds:      15,
 			},
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      resources.MachineControllerKubeconfigSecretName,
-					MountPath: "/etc/kubernetes/kubeconfig",
-					ReadOnly:  true,
-				},
-			},
-		},
-	}
+		}
 
-	return dep, nil
+		return dep, nil
+	}
 }
 
 func getKubeconfigVolume() corev1.Volume {

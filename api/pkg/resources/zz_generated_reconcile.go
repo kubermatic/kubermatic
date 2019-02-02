@@ -79,6 +79,38 @@ func ReconcileStatefulSets(creators []StatefulSetCreator, namespace string, clie
 	return nil
 }
 
+// DeploymentObjectWrapper adds a wrapper so the DeploymentCreator matches ObjectCreator
+// This is needed as golang does not support function interface matching
+func DeploymentObjectWrapper(create DeploymentCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*appsv1.Deployment))
+		}
+		return create(&appsv1.Deployment{})
+	}
+}
+
+// ReconcileDeployments will create and update the Deployments coming from the passed DeploymentCreator slice
+func ReconcileDeployments(creators []DeploymentCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, wrapper ...ObjectModifier) error {
+	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &appsv1.Deployment{})
+	if err != nil {
+		return fmt.Errorf("failed to get Deployment informer: %v", err)
+	}
+
+	for _, create := range creators {
+		createObject := DeploymentObjectWrapper(create)
+		for _, wrap := range wrapper {
+			createObject = wrap(createObject)
+		}
+
+		if err := EnsureObject(namespace, createObject, store, client); err != nil {
+			return fmt.Errorf("failed to ensure Deployment: %v", err)
+		}
+	}
+
+	return nil
+}
+
 // VerticalPodAutoscalerObjectWrapper adds a wrapper so the VerticalPodAutoscalerCreator matches ObjectCreator
 // This is needed as golang does not support function interface matching
 func VerticalPodAutoscalerObjectWrapper(create VerticalPodAutoscalerCreator) ObjectCreator {

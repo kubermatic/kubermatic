@@ -7,21 +7,17 @@ import (
 	"hash/crc32"
 	"sort"
 
-	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	appsv1client "k8s.io/client-go/kubernetes/typed/apps/v1"
 	batchv1beta1client "k8s.io/client-go/kubernetes/typed/batch/v1beta1"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	policyv1beta1client "k8s.io/client-go/kubernetes/typed/policy/v1beta1"
 	rbacv1client "k8s.io/client-go/kubernetes/typed/rbac/v1"
-	appsv1lister "k8s.io/client-go/listers/apps/v1"
 	batchv1beta1lister "k8s.io/client-go/listers/batch/v1beta1"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	policyv1beta1lister "k8s.io/client-go/listers/policy/v1beta1"
@@ -218,49 +214,6 @@ func EnsureCronJob(data *TemplateData, create CronJobCreator, cronJobLister batc
 
 	if _, err = cronJobClient.Update(cronjob); err != nil {
 		return fmt.Errorf("failed to update CronJob %s: %v", cronjob.Name, err)
-	}
-
-	return nil
-}
-
-// EnsureDeployment will create the Deployment with the passed create function & create or update it if necessary.
-// To check if it's necessary it will do a lookup of the resource at the lister & compare the existing Deployment with the created one
-func EnsureDeployment(data DeploymentDataProvider, create DeploymentCreator, lister appsv1lister.DeploymentNamespaceLister, client appsv1client.DeploymentInterface) error {
-	var existing *appsv1.Deployment
-	dep, err := create(data, nil)
-	if err != nil {
-		return fmt.Errorf("failed to build Deployment: %v", err)
-	}
-
-	if existing, err = lister.Get(dep.Name); err != nil {
-		if !kubeerrors.IsNotFound(err) {
-			return err
-		}
-
-		if _, err = client.Create(dep); err != nil {
-			return fmt.Errorf("failed to create Deployment %s: %v", dep.Name, err)
-		}
-		return nil
-	}
-	existing = existing.DeepCopy()
-
-	dep, err = create(data, existing.DeepCopy())
-	if err != nil {
-		return fmt.Errorf("failed to build Deployment: %v", err)
-	}
-
-	if DeepEqual(dep, existing) {
-		return nil
-	}
-
-	// In case we update something immutable we need to delete&recreate. Creation happens on next sync
-	if !equality.Semantic.DeepEqual(dep.Spec.Selector.MatchLabels, existing.Spec.Selector.MatchLabels) {
-		propagation := metav1.DeletePropagationForeground
-		return client.Delete(dep.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation})
-	}
-
-	if _, err = client.Update(dep); err != nil {
-		return fmt.Errorf("failed to update Deployment %s: %v", dep.Name, err)
 	}
 
 	return nil

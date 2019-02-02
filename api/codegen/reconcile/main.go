@@ -28,6 +28,11 @@ func main() {
 				ResourceImportPath: "k8s.io/api/apps/v1",
 			},
 			{
+				ResourceName: "Deployment",
+				ImportAlias:  "appsv1",
+				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
+			},
+			{
 				ResourceName:       "VerticalPodAutoscaler",
 				ImportAlias:        "autoscalingv1beta1",
 				ResourceImportPath: "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1",

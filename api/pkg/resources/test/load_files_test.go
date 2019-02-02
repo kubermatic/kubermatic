@@ -211,6 +211,9 @@ func TestLoadFiles(t *testing.T) {
 							},
 							DNSDomain: "cluster.local",
 						},
+						MachineNetworks: []kubermaticv1.MachineNetworkingConfig{
+							{},
+						},
 					},
 					Address: kubermaticv1.ClusterAddress{
 						ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",
@@ -512,19 +515,11 @@ func TestLoadFiles(t *testing.T) {
 				kubeInformerFactory.Start(wait.NeverStop)
 				kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
 
-				dummyCluster := &kubermaticv1.Cluster{
-					Spec: kubermaticv1.ClusterSpec{
-						MachineNetworks: []kubermaticv1.MachineNetworkingConfig{
-							{},
-						},
-					},
-				}
-
 				var deploymentCreators []resources.DeploymentCreator
-				deploymentCreators = append(deploymentCreators, clustercontroller.GetDeploymentCreators(dummyCluster)...)
-				deploymentCreators = append(deploymentCreators, monitoringcontroller.GetDeploymentCreators(dummyCluster)...)
+				deploymentCreators = append(deploymentCreators, clustercontroller.GetDeploymentCreators(data)...)
+				deploymentCreators = append(deploymentCreators, monitoringcontroller.GetDeploymentCreators(data)...)
 				for _, create := range deploymentCreators {
-					res, err := create(data, nil)
+					res, err := create(&appsv1.Deployment{})
 					if err != nil {
 						t.Fatalf("failed to create Deployment: %v", err)
 					}
