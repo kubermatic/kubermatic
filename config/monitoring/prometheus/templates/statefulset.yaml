@@ -28,7 +28,7 @@ spec:
         - --config.file=/etc/prometheus/config/prometheus.yaml
         - --storage.tsdb.no-lockfile
         - --storage.tsdb.path=/prometheus
-        - --storage.tsdb.retention=360h
+        - --storage.tsdb.retention.time=360h
         - --web.enable-lifecycle
         - --web.external-url=https://{{ .Values.prometheus.host | trim }}
         - --web.route-prefix=/
@@ -67,7 +67,7 @@ spec:
         - mountPath: /etc/prometheus/rules/
           name: prometheus-kubermatic-rules
           readOnly: false
-        - mountPath: /prometheus
+        - mountPath: /var/prometheus/data
           name: prometheus-kubermatic-db
           readOnly: false
           subPath: prometheus-db
