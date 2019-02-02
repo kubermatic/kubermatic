@@ -7,8 +7,6 @@ import (
 	"hash/crc32"
 	"sort"
 
-	informerutil "github.com/kubermatic/kubermatic/api/pkg/util/informer"
-
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -18,7 +16,6 @@ import (
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"
 	appsv1client "k8s.io/client-go/kubernetes/typed/apps/v1"
 	batchv1beta1client "k8s.io/client-go/kubernetes/typed/batch/v1beta1"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -31,9 +28,10 @@ import (
 	rbacv1lister "k8s.io/client-go/listers/rbac/v1"
 	"k8s.io/client-go/tools/cache"
 
-	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+//go:generate go run ../../codegen/reconcile/main.go
 
 const (
 	annotationPrefix   = "kubermatic.io/"
@@ -268,27 +266,6 @@ func EnsureDeployment(data DeploymentDataProvider, create DeploymentCreator, lis
 	return nil
 }
 
-// EnsureServices will create and update the Services coming from the passed ServiceCreator slice
-func EnsureServices(creators []ServiceCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, wrapper ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &corev1.Service{})
-	if err != nil {
-		return fmt.Errorf("failed to get Service informer: %v", err)
-	}
-
-	for _, create := range creators {
-		createObject := ServiceObjectWrapper(create)
-		for _, wrap := range wrapper {
-			createObject = wrap(createObject)
-		}
-
-		if err := EnsureObject(namespace, createObject, store, client); err != nil {
-			return fmt.Errorf("failed to ensure Service: %v", err)
-		}
-	}
-
-	return nil
-}
-
 // EnsureServiceAccount will create the ServiceAccount with the passed create function & create or update it if necessary.
 // To check if it's necessary it will do a lookup of the resource at the lister & compare the existing ServiceAccount with the created one
 func EnsureServiceAccount(data ServiceAccountDataProvider, create ServiceAccountCreator, lister corev1lister.ServiceAccountNamespaceLister, client corev1client.ServiceAccountInterface) error {
@@ -507,48 +484,6 @@ func EnsureObject(namespace string, rawcreate ObjectCreator, store cache.Store, 
 
 	if err = client.Update(ctx, obj); err != nil {
 		return fmt.Errorf("failed to update object %T '%s': %v", obj, key, err)
-	}
-
-	return nil
-}
-
-// EnsureVerticalPodAutoscalers will create and update the VerticalPodAutoscalers coming from the passed VerticalPodAutoscalerCreator slice
-func EnsureVerticalPodAutoscalers(creators []VerticalPodAutoscalerCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, wrapper ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &v1beta1.VerticalPodAutoscaler{})
-	if err != nil {
-		return fmt.Errorf("failed to get VerticalPodAutoscaler informer: %v", err)
-	}
-
-	for _, create := range creators {
-		createObject := VerticalPodAutocalerObjectWrapper(create)
-		for _, wrap := range wrapper {
-			createObject = wrap(createObject)
-		}
-
-		if err := EnsureObject(namespace, createObject, store, client); err != nil {
-			return fmt.Errorf("failed to ensure VerticalPodAutoscaler: %v", err)
-		}
-	}
-
-	return nil
-}
-
-// EnsureStatefulSets will create and update the StatefulSets coming from the passed StatefulSetCreator slice
-func EnsureStatefulSets(creators []StatefulSetCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, wrapper ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &appsv1.StatefulSet{})
-	if err != nil {
-		return fmt.Errorf("failed to get StatefulSet informer: %v", err)
-	}
-
-	for _, create := range creators {
-		createObject := StatefulSetObjectWrapper(create)
-		for _, wrap := range wrapper {
-			createObject = wrap(createObject)
-		}
-
-		if err := EnsureObject(namespace, createObject, store, client); err != nil {
-			return fmt.Errorf("failed to ensure StatefulSet: %v", err)
-		}
 	}
 
 	return nil

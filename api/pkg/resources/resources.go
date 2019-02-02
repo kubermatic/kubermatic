@@ -737,36 +737,3 @@ func ClusterIPForService(name, namespace string, serviceLister corev1lister.Serv
 func GetAbsoluteServiceDNSName(service, namespace string) string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local.", service, namespace)
 }
-
-// StatefulSetObjectWrapper adds a wrapper so the StatefulSetCreator matches ObjectCreator
-// This is needed as golang does not support function interface matching
-func StatefulSetObjectWrapper(create StatefulSetCreator) ObjectCreator {
-	return func(existing runtime.Object) (runtime.Object, error) {
-		if existing != nil {
-			return create(existing.(*appsv1.StatefulSet))
-		}
-		return create(&appsv1.StatefulSet{})
-	}
-}
-
-// ServiceObjectWrapper adds a wrapper so the ServiceCreator matches ObjectCreator
-// This is needed as golang does not support function interface matching
-func ServiceObjectWrapper(create ServiceCreator) ObjectCreator {
-	return func(existing runtime.Object) (runtime.Object, error) {
-		if existing != nil {
-			return create(existing.(*corev1.Service))
-		}
-		return create(&corev1.Service{})
-	}
-}
-
-// VerticalPodAutocalerObjectWrapper adds a wrapper so the VerticalPodAutoscalerCreator matches ObjectCreator
-// This is needed as golang does not support function interface matching
-func VerticalPodAutocalerObjectWrapper(create VerticalPodAutoscalerCreator) ObjectCreator {
-	return func(existing runtime.Object) (runtime.Object, error) {
-		if existing != nil {
-			return create(existing.(*autoscalingv1beta.VerticalPodAutoscaler))
-		}
-		return create(nil)
-	}
-}
