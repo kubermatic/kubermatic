@@ -24,6 +24,11 @@ func GetSyncedStoreFromDynamicFactory(factory ctrlruntimecache.Cache, obj runtim
 	}
 
 	store := informer.GetStore()
+	// If possible, we avoid the WaitForCacheSync block as it creates some noise in the logs
+	if informer.GetController().HasSynced() {
+		return store, nil
+	}
+
 	if !cache.WaitForCacheSync(getDefaultInformerSyncStopCh(), informer.GetController().HasSynced) {
 		return nil, fmt.Errorf("timed out while waiting for the Informer to sync")
 	}
