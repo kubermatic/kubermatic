@@ -3,13 +3,6 @@ metadata:
   labels:
     app: metrics-server
   name: metrics-server
-  ownerReferences:
-  - apiVersion: kubermatic.k8s.io/v1
-    blockOwnerDeletion: true
-    controller: true
-    kind: Cluster
-    name: de-test-01
-    uid: "1234567890"
 spec:
   replicas: 2
   selector:
