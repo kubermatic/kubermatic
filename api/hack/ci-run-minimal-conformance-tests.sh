@@ -202,4 +202,5 @@ timeout -s 9 90m ./conformance-tests \
   -aws-secret-access-key="$AWS_E2E_TESTS_SECRET" \
   -versions="$VERSIONS" \
   -providers=aws \
-  -exclude-distributions="ubuntu,centos"
+  -exclude-distributions="ubuntu,centos" \
+  -kubermatic-delete-cluster=false
