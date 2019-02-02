@@ -14,7 +14,7 @@ import (
 
 const (
 	name = "prometheus"
-	tag  = "v2.7.1"
+	tag  = "v2.6.0"
 
 	volumeConfigName = "config"
 	volumeDataName   = "data"
@@ -89,7 +89,7 @@ func StatefulSetCreator(data *resources.TemplateData) resources.StatefulSetCreat
 					"--storage.tsdb.path=/var/prometheus/data",
 					"--storage.tsdb.min-block-duration=15m",
 					"--storage.tsdb.max-block-duration=30m",
-					"--storage.tsdb.retention.time=1h",
+					"--storage.tsdb.retention=1h",
 					"--web.enable-lifecycle",
 					"--storage.tsdb.no-lockfile",
 					"--web.route-prefix=/",
