@@ -27,7 +27,7 @@ spec:
       - args:
         - --config.file=/etc/prometheus/config/prometheus.yaml
         - --storage.tsdb.no-lockfile
-        - --storage.tsdb.path=/prometheus
+        - --storage.tsdb.path=/var/prometheus/data
         - --storage.tsdb.retention.time=360h
         - --web.enable-lifecycle
         - --web.external-url=https://{{ .Values.prometheus.host | trim }}
