@@ -1,18 +1,18 @@
 pipeline:
-  verify-addons-up-to-date:
-    commands:
-    - ./api/hack/verify-addon-version.sh
-    group: lint
-    image: docker:dind
-    pull: true
-    volumes:
-    - /var/run/docker.sock:/var/run/docker.sock
   build:
     commands:
     - cd api
     - make build
     group: build
-    image: quay.io/kubermatic/go-111-docker:11.2-1806-0
+    image: quay.io/kubermatic/go-111-docker:11.5-1806-0
+    when:
+      branch:
+        exclude:
+        - release/v1.*
+        - release/*cherry*
+        include:
+        - release/*
+        - master
   docker:
     commands:
     - export VAULT_ADDR=https://vault.loodse.com/
