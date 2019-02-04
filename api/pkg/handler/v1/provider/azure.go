@@ -62,16 +62,6 @@ func (s *azureClientSetImpl) ListVMSize(ctx context.Context, location string) ([
 	return *sizesResult.Value, nil
 }
 
-func isTierStandard(sku compute.ResourceSku) bool {
-	tier := sku.Tier
-	if tier != nil {
-		if *tier == "Standard" {
-			return true
-		}
-	}
-	return false
-}
-
 func isVirtualMachinesType(sku compute.ResourceSku) bool {
 	resourceType := sku.ResourceType
 	if resourceType != nil {
@@ -97,10 +87,6 @@ func isLocation(sku compute.ResourceSku, location string) bool {
 func isValidVM(sku compute.ResourceSku, location string) bool {
 
 	if !isLocation(sku, location) {
-		return false
-	}
-
-	if !isTierStandard(sku) {
 		return false
 	}
 
