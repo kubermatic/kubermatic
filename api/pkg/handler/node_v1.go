@@ -1028,7 +1028,7 @@ func patchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 
 		machineDeployment, err = machineClient.ClusterV1alpha1().MachineDeployments(machineDeployment.Namespace).Update(machineDeployment)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create machine deployment: %v", err)
+			return nil, fmt.Errorf("failed to update machine deployment: %v", err)
 		}
 
 		return outputMachineDeployment(machineDeployment)
