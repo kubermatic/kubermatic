@@ -25,8 +25,15 @@ import (
 func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.MachineDeployment, error) {
 	md := clusterv1alpha1.MachineDeployment{}
 
+	if nd.Name != "" {
+		md.Name = nd.Name
+	} else {
+		// GenerateName can be set only if Name is empty to avoid confusing error:
+		// https://github.com/kubernetes/kubernetes/issues/32220
+		md.GenerateName = fmt.Sprintf("kubermatic-%s-", c.Name)
+	}
+
 	md.Namespace = metav1.NamespaceSystem
-	md.GenerateName = fmt.Sprintf("kubermatic-%s-", c.Name)
 
 	md.Spec.Selector.MatchLabels = map[string]string{
 		"machine": fmt.Sprintf("md-%s-%s", c.Name, rand.String(10)),
