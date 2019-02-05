@@ -19,9 +19,11 @@ import (
 )
 
 const (
-	testID     = "test"
-	locationUS = "US"
-	locationEU = "EU"
+	testID      = "test"
+	locationUS  = "US"
+	locationEU  = "EU"
+	standardGS3 = "Standard_GS3"
+	standardA5  = "Standard_A5"
 )
 
 type mockSizeClientImpl struct {
@@ -74,7 +76,7 @@ func TestAzureSizeEndpoint(t *testing.T) {
 			req.Header.Add("TenantID", testID)
 			req.Header.Add("Location", tc.location)
 
-			azure.NewSizeClient = MockNewSizeClient
+			azure.NewAzureClientSet = MockNewSizeClient
 
 			apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName, false)
 
@@ -113,7 +115,7 @@ func buildAzureDatacenterMeta() map[string]provider.DatacenterMeta {
 	}
 }
 
-func MockNewSizeClient(subscriptionID, clientID, clientSecret, tenantID string) (azure.SizeClient, error) {
+func MockNewSizeClient(subscriptionID, clientID, clientSecret, tenantID string) (azure.AzureClientSet, error) {
 
 	if len(clientSecret) == 0 || len(subscriptionID) == 0 || len(clientID) == 0 || len(tenantID) == 0 {
 		return nil, fmt.Errorf("")
@@ -122,7 +124,38 @@ func MockNewSizeClient(subscriptionID, clientID, clientSecret, tenantID string) 
 	return &mockSizeClientImpl{}, nil
 }
 
-func (s *mockSizeClientImpl) List(ctx context.Context, location string) (compute.VirtualMachineSizeListResult, error) {
+func (s *mockSizeClientImpl) ListSKU(ctx context.Context, location string) ([]compute.ResourceSku, error) {
+
+	standardGS3 := standardGS3
+	standardA5 := standardA5
+	resourceType := "virtualMachines"
+	tier := "Standard"
+
+	resultList := []compute.ResourceSku{
+		{
+			Locations:    &[]string{locationEU},
+			Name:         &standardGS3,
+			ResourceType: &resourceType,
+			Tier:         &tier,
+		},
+		{
+			Locations:    &[]string{locationUS},
+			Name:         &standardGS3,
+			ResourceType: &resourceType,
+			Tier:         &tier,
+		},
+		{
+			Locations:    &[]string{locationUS},
+			Name:         &standardA5,
+			ResourceType: &resourceType,
+			Tier:         &tier,
+		},
+	}
+
+	return resultList, nil
+}
+
+func (s *mockSizeClientImpl) ListVMSize(ctx context.Context, location string) ([]compute.VirtualMachineSize, error) {
 
 	standardFake := "Fake"
 	standardGS3 := "Standard_GS3"
@@ -158,5 +191,5 @@ func (s *mockSizeClientImpl) List(ctx context.Context, location string) (compute
 		}
 	}
 
-	return s.machineSizeList, nil
+	return *s.machineSizeList.Value, nil
 }
