@@ -102,3 +102,8 @@ func DecodeClusterID(c context.Context, r *http.Request) (string, error) {
 
 	return clusterID, nil
 }
+
+// UserIDGetter knows how to get user ID from the request
+type UserIDGetter interface {
+	GetUserID() string
+}

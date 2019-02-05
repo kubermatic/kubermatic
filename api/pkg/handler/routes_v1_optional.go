@@ -54,7 +54,7 @@ func (r Routing) createOIDCKubeconfig(oidcCfg OIDCConfiguration) http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			r.userInfoMiddlewareUnauthorized(),
+			middleware.UserInfoUnauthorized(r.userProjectMapper, r.userProvider),
 		)(createOIDCKubeconfig(r.projectProvider, r.oidcIssuer, oidcCfg)),
 		decodeCreateOIDCKubeconfig,
 		encodeOIDCKubeconfig,

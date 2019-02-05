@@ -1,4 +1,4 @@
-package handler_test
+package user_test
 
 import (
 	"crypto/sha256"
