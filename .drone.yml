@@ -310,7 +310,7 @@ pipeline:
     pull: true
     template: |
       :heart: A new API & controller version has been deployed to dev & cloud.
-      <https://github.com/kubermatic/kubermatic/pull/${DRONE_PULL_REQUEST}|PR #${DRONE_PULL_REQUEST}>: ${DRONE_COMMIT_MESSAGE}
+      <${DRONE_COMMIT_LINK}|:github:>: ${DRONE_COMMIT_MESSAGE}
     username: drone
     webhook: https://hooks.slack.com/services/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
     when:
@@ -325,7 +325,7 @@ pipeline:
     pull: true
     template: |
       :seemssadman: I failed to deploy a new API & controller to dev/cloud.
-      <${DRONE_BUILD_LINK}|Drone build #${DRONE_BUILD_NUMBER}> <${DRONE_COMMIT_LINK}|GitHub>
+      <${DRONE_BUILD_LINK}|:drone: build #${DRONE_BUILD_NUMBER}> <${DRONE_COMMIT_LINK}|:github:>
     username: drone
     webhook: https://hooks.slack.com/services/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
     when:
