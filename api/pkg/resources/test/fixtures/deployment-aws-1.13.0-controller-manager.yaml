@@ -130,10 +130,14 @@ spec:
         - /etc/kubernetes/cloud/config
         - --authentication-kubeconfig
         - /etc/kubernetes/kubeconfig/kubeconfig
+        - --authentication-kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
         - --authorization-kubeconfig
         - /etc/kubernetes/kubeconfig/kubeconfig
         - --port
         - "0"
+        - --authentication-tolerate-lookup-failure
+        - "false"
         command:
         - /hyperkube
         - controller-manager

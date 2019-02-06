@@ -233,9 +233,12 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 
 	// With 1.13 we're using the secure port for scraping metrics as the insecure port got marked deprecated
 	if cluster.Spec.Version.Semver().Minor() >= 13 {
+		flags = append(flags, "--authentication-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
 		flags = append(flags, "--authorization-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
 		// We're going to use the https endpoints for scraping the metrics starting from 1.12. Thus we can deactivate the http endpoint
 		flags = append(flags, "--port", "0")
+		// Force the authentication lookup to succeed, otherwise if it fails all requests will be treated as anonymous and thus fail
+		flags = append(flags, "--authentication-tolerate-lookup-failure", "false")
 	}
 
 	// This is required in 1.12.0 as a workaround for
