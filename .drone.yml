@@ -308,8 +308,9 @@ pipeline:
     icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
     image: kubermaticbot/drone-slack
     pull: true
-    template: '${DRONE_COMMIT_AUTHOR} deployed a new API & Controller to dev & cloud.
-      :heart:'
+    template: |
+      :heart: A new API & controller version has been deployed to dev & cloud.
+      <${DRONE_COMMIT_LINK}|${DRONE_COMMIT_SHA}>: ${DRONE_COMMIT_MESSAGE}
     username: drone
     webhook: https://hooks.slack.com/services/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
     when:
@@ -317,35 +318,18 @@ pipeline:
       status:
       - success
   slack-failure:
-    author_recipient_mapping:
-    - alvaroaleman=alvaro
-    - glower=igor.komlew
-    - guusvw=guus
-    - kdomanski=kamil
-    - kgroschoff=kristin.groschoff
-    - kron4eg=artiom
-    - mrIncompetent=henrik
-    - p0lyn0mial=lukasz
-    - scheeles=sebastian
-    - thz=tobias.hintze
-    - toschneck=tobias.schneck
-    - xrstf=christoph
-    - xmudrii=marko
-    - maciaszczykm=marcin
-    - floreks=sebastian.florek
-    - lindtdev=irina
+    channel: dev
     group: slack
     icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
     image: kubermaticbot/drone-slack
-    image_url: https://media.giphy.com/media/m6tmCnGCNvTby/giphy-downsized.gif
     pull: true
-    recipient: ${DRONE_COMMIT_AUTHOR}
-    template: |-
-      Your build failed! Shame. Shame. Shame.
-            ${DRONE_BUILD_LINK}
+    template: |
+      :seemssadman: I failed to deploy a new API & controller to dev/cloud.
+      <${DRONE_BUILD_LINK}|Drone build #${DRONE_BUILD_NUMBER}> <${DRONE_COMMIT_LINK}|GitHub>
     username: drone
     webhook: https://hooks.slack.com/services/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
     when:
+      branch: master
       status:
       - failure
 workspace:
