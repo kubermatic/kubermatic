@@ -26,6 +26,7 @@ function retry {
 }
 
 echodate "Logging into Docker registries"
+docker ps &>/dev/null || start-docker.sh
 retry 5 docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
 retry 5 docker login -u $QUAY_IO_USERNAME -p $QUAY_IO_PASSWORD
 echodate "Successfully logged into all registries"
@@ -35,7 +36,6 @@ make -C api build
 echodate "Successfully finished building binaries"
 
 echodate "Building and pushing docker images"
-docker ps &>/dev/null || start-docker.sh
 retry 5 ./api/hack/push_image.sh $GIT_HEAD_HASH $(git tag -l --points-at HEAD)
 echodate "Sucessfully finished building and pushing docker images"
 
