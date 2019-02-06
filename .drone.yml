@@ -310,7 +310,7 @@ pipeline:
     pull: true
     template: |
       :heart: A new API & controller version has been deployed to dev & cloud.
-      <${DRONE_COMMIT_LINK}|${DRONE_COMMIT_SHA}>: ${DRONE_COMMIT_MESSAGE}
+      <https://github.com/kubermatic/kubermatic/pull/${DRONE_PULL_REQUEST}|PR #${DRONE_PULL_REQUEST}>: ${DRONE_COMMIT_MESSAGE}
     username: drone
     webhook: https://hooks.slack.com/services/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
     when:
