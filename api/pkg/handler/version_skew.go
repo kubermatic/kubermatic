@@ -89,8 +89,8 @@ func checkClusterVersionSkew(userInfo *provider.UserInfo, clusterProvider provid
 		}
 	}
 
-	// deduplicate
-	incompatibleVersionsList := []string{}
+	// collect the deduplicated map entries into a slice
+	var incompatibleVersionsList []string
 	for ver := range incompatibleVersionsSet {
 		incompatibleVersionsList = append(incompatibleVersionsList, ver)
 	}
@@ -114,13 +114,11 @@ func getKubeletVersions(machineClient clusterv1alpha1clientset.Interface) ([]str
 
 	// first let's go through the legacy non-MD nodes
 	for _, m := range machineList.Items {
-		// Do not list Machines that are controlled, i.e. by Machine Set.
-		if len(m.ObjectMeta.OwnerReferences) != 0 {
-			continue
+		// Only list Machines that are not controlled, i.e. by Machine Set.
+		if len(m.ObjectMeta.OwnerReferences) == 0 {
+			ver := strings.TrimSpace(m.Spec.Versions.Kubelet)
+			kubeletVersionsSet[ver] = true
 		}
-
-		ver := strings.TrimSpace(m.Spec.Versions.Kubelet)
-		kubeletVersionsSet[ver] = true
 	}
 
 	// now the deployments
