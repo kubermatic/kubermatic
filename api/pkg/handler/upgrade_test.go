@@ -131,7 +131,7 @@ func TestGetClusterVersions(t *testing.T) {
 		apiUser                apiv1.User
 		versions               []*version.MasterVersion
 		updates                []*version.MasterUpdate
-		compatible            []*apiv1.MasterVersion
+		compatible             []*apiv1.MasterVersion
 	}{
 		{
 			name: "only the same major version and no more than 2 minor versions behind the control plane",
