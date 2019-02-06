@@ -62,25 +62,21 @@ function cleanup {
 }
 trap cleanup EXIT
 
-echodate "Unlocking secrets repo"
-cd $(go env GOPATH)/src/github.com/kubermatic/secrets
-echo $KUBERMATIC_SECRETS_GPG_KEY_BASE64 | base64 -d > /tmp/git-crypt-key
-git-crypt unlock /tmp/git-crypt-key
-cd -
-echodate "Successfully unlocked secrets repo"
-
 echodate "Getting secrets from Vault"
 export VAULT_ADDR=https://vault.loodse.com/
 export VAULT_TOKEN=$(vault write \
   --format=json auth/approle/login \
   role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID \
   | jq .auth.client_token -r)
-vault kv get -field=kubeconfig \
-  dev/seed-clusters/dev.kubermatic.io > /tmp/kubeconfig
-vault kv get -field=values.yaml \
-  dev/seed-clusters/dev.kubermatic.io > /tmp/values.yaml
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
+export DATACENTERS_FILE=/tmp/datacenters.yaml
+vault kv get -field=kubeconfig \
+  dev/seed-clusters/ci.kubermatic.io > $KUBECONFIG
+vault kv get -field=values.yaml \
+  dev/seed-clusters/ci.kubermatic.io > $VALUES_FILE
+vault kv get -field=datacenters.yaml \
+  dev/seed-clusters/ci.kubermatic.io > $DATACENTERS_FILE
 echodate "Successfully got secrets from Vault"
 
 
@@ -190,7 +186,7 @@ timeout -s 9 90m ./conformance-tests \
   -debug \
   -worker-name=$BUILD_ID \
   -kubeconfig=$KUBECONFIG \
-  -datacenters=$(go env GOPATH)/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+  -datacenters=$DATACENTERS_FILE \
   -kubermatic-nodes=3 \
   -kubermatic-parallel-clusters=11 \
   -kubermatic-delete-cluster=true \
