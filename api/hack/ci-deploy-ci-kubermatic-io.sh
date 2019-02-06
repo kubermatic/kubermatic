@@ -25,6 +25,20 @@ function retry {
   return 0
 }
 
+echodate "Getting secrets from Vault"
+export VAULT_ADDR=https://vault.loodse.com/
+export VAULT_TOKEN=$(vault write \
+  --format=json auth/approle/login \
+  role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID \
+  | jq .auth.client_token -r)
+export KUBECONFIG=/tmp/kubeconfig
+export VALUES_FILE=/tmp/values.yaml
+vault kv get -field=kubeconfig \
+  dev/seed-clusters/ci.kubermatic.io > $KUBECONFIG
+vault kv get -field=values.yaml \
+  dev/seed-clusters/ci.kubermatic.io > $VALUES_FILE
+echodate "Successfully got secrets from Vault"
+
 echodate "Logging into Docker registries"
 docker ps &>/dev/null || start-docker.sh
 retry 5 docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
@@ -32,7 +46,7 @@ retry 5 docker login -u $QUAY_IO_USERNAME -p $QUAY_IO_PASSWORD quay.io
 echodate "Successfully logged into all registries"
 
 echodate "Building binaries"
-make -C api build
+time make -C api build
 echodate "Successfully finished building binaries"
 
 echodate "Building and pushing docker images"
@@ -49,9 +63,11 @@ chartNamespaces=(
 ["oauth"]="oauth"
 )
 
+retry 5 kubectl apply -f ./config/kubermatic/crd/
 for chart in "${!chartNamespaces[@]}"; do
   retry 5 helm upgrade --install --force --wait --timeout 300 --tiller-namespace=kubermatic \
     --namespace=${chartNamespaces[$chart]} \
+    --values $VALUES_FILE \
     --set=kubermatic.isMaster=true \
     --set=kubermatic.controller.image.tag=$GIT_HEAD_HASH \
     --set=kubermatic.api.image.tag=$GIT_HEAD_HASH \
