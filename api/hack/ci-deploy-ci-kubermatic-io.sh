@@ -27,10 +27,10 @@ function retry {
 
 echodate "Getting secrets from Vault"
 export VAULT_ADDR=https://vault.loodse.com/
-export VAULT_TOKEN=$(vault write \
+retry 5 vault write \
   --format=json auth/approle/login \
-  role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID \
-  | jq .auth.client_token -r)
+  role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID > /tmp/vault-token-response.json
+export VAULT_TOKEN="$(cat /tmp/vault-token-response.json| jq .auth.client_token -r)"
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
 vault kv get -field=kubeconfig \
