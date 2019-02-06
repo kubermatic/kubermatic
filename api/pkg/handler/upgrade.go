@@ -74,31 +74,23 @@ func getClusterVersions(updateManager UpdateManager, projectProvider provider.Pr
 			return nil, fmt.Errorf("failed to get master versions: %v", err)
 		}
 
-		var compatibleVersions []version.MasterVersion
+		var compatibleVersions []*version.MasterVersion
 		clusterVersion := cluster.Spec.Version.Semver()
 		for _, v := range versions {
 			if err = ensureVersionCompatible(clusterVersion, v.Version); err == nil {
-				compatibleVersions = append(compatibleVersions, *v)
+				compatibleVersions = append(compatibleVersions, v)
 			} else {
 				if _, ok := err.(errVersionSkew); ok {
 					// errVersionSkew says it's incompatible, we can continue.
 					continue
 				} else {
-					return nil, fmt.Errorf("failed to check compatibility between kubelet %q and control plane %q: %v", v.Version, clusterVersion, err)
-
+					return nil, fmt.Errorf("failed to check compatibility between kubelet %q and control plane %q: %v",
+						v.Version, clusterVersion, err)
 				}
 			}
 		}
 
-		sv := make([]*apiv1.MasterVersion, len(compatibleVersions))
-		for v := range compatibleVersions {
-			sv[v] = &apiv1.MasterVersion{
-				Version: versions[v].Version,
-				Default: versions[v].Default,
-			}
-		}
-
-		return sv, nil
+		return convertVersionsToExternal(compatibleVersions), nil
 	}
 }
 
@@ -108,15 +100,17 @@ func getMasterVersions(updateManager UpdateManager) endpoint.Endpoint {
 		if err != nil {
 			return nil, fmt.Errorf("failed to get master versions: %v", err)
 		}
-
-		sv := make([]*apiv1.MasterVersion, len(versions))
-		for v := range versions {
-			sv[v] = &apiv1.MasterVersion{
-				Version: versions[v].Version,
-				Default: versions[v].Default,
-			}
-		}
-
-		return sv, nil
+		return convertVersionsToExternal(versions), nil
 	}
+}
+
+func convertVersionsToExternal(versions []*version.MasterVersion) []*apiv1.MasterVersion {
+	sv := make([]*apiv1.MasterVersion, len(versions))
+	for v := range versions {
+		sv[v] = &apiv1.MasterVersion{
+			Version: versions[v].Version,
+			Default: versions[v].Default,
+		}
+	}
+	return sv
 }
