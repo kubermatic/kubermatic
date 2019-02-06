@@ -55,8 +55,8 @@ func ensureVersionCompatible(controlPlane *semver.Version, kubelet *semver.Versi
 
 // checkClusterVersionSkew returns a list of machines and/or machine deployments
 // that are running kubelet at a version incompatible with the cluster's control plane.
-func checkClusterVersionSkew(userInfo *provider.UserInfo, clusterProvider provider.ClusterProvider, cluster *kubermaticapiv1.Cluster) ([]string, error) {
-	machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(userInfo, cluster)
+func checkClusterVersionSkew(_ *provider.UserInfo, clusterProvider provider.ClusterProvider, cluster *kubermaticapiv1.Cluster) ([]string, error) {
+	machineClient, err := clusterProvider.GetAdminMachineClientForCustomerCluster(cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a machine client: %v", err)
 	}

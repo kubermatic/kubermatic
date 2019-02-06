@@ -36,3 +36,4 @@ issues:
   - "`data` can be `github.com/kubermatic/kubermatic/api/pkg/resources.ClusterRoleBindingDataProvider`"
   - "`updateManager` can be `github.com/kubermatic/kubermatic/api/pkg/handler.UpdateManager`"
   - "`store` can be `github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/cache.KeyGetter`"
+  - 'func `\(\*ClusterProvider\)\.withImpersonation` is unused'
