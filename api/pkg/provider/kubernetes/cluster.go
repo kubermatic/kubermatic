@@ -225,7 +225,9 @@ func (p *ClusterProvider) GetAdminKubernetesClientForCustomerCluster(c *kubermat
 // don't know anything about RBAC
 func (p *ClusterProvider) GetMachineClientForCustomerCluster(userInfo *provider.UserInfo, c *kubermaticapiv1.Cluster) (clusterv1alpha1clientset.Interface, error) {
 	return nil, errors.New("Not fully implemented")
-	return p.userClusterConnProvider.GetMachineClient(c, p.withImpersonation(userInfo))
+	// TODO when this is fully implemented and deactivated: Remove
+	// `func `(*ClusterProvider).withImpersonation` is unused"` linting exception
+	//return p.userClusterConnProvider.GetMachineClient(c, p.withImpersonation(userInfo))
 }
 
 func (p *ClusterProvider) withImpersonation(userInfo *provider.UserInfo) k8cuserclusterclient.ConfigOption {
