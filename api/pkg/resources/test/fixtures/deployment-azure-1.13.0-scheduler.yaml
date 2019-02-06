@@ -111,6 +111,8 @@ spec:
         - /etc/kubernetes/kubeconfig/kubeconfig
         - --port
         - "0"
+        - --authentication-tolerate-lookup-failure
+        - "false"
         - --feature-gates
         - ScheduleDaemonSetPods=false
         command:
