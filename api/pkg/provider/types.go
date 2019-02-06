@@ -107,7 +107,6 @@ type ClusterProvider interface {
 	// GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster
 	GetAdminKubeconfigForCustomerCluster(cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
 
-	// Deprecated use GetMachineClientForCustomerCluster instead
 	// GetAdminMachineClientForCustomerCluster returns a client to interact with machine resources in the given cluster
 	//
 	// Note that the client you will get has admin privileges
