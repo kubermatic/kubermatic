@@ -28,7 +28,7 @@ function retry {
 echodate "Logging into Docker registries"
 docker ps &>/dev/null || start-docker.sh
 retry 5 docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-retry 5 docker login -u $QUAY_IO_USERNAME -p $QUAY_IO_PASSWORD
+retry 5 docker login -u $QUAY_IO_USERNAME -p $QUAY_IO_PASSWORD quay.io
 echodate "Successfully logged into all registries"
 
 echodate "Building binaries"
