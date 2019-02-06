@@ -380,12 +380,8 @@ func getChecksumForStringSlice(stringSlice []string) string {
 	return fmt.Sprintf("%v", crc32.ChecksumIEEE(buffer.Bytes()))
 }
 
-// EnsureObject will generate the Object with the passed create function & create or update it in Kubernetes if necessary.
-func EnsureObject(namespace string, rawcreate ObjectCreator, store cache.Store, client ctrlruntimeclient.Client) error {
-	ctx := context.Background()
-
-	// A wrapper to ensure we always set the ownerRef and the Namespace. This is useful as we call create twice
-	create := func(existing runtime.Object) (runtime.Object, error) {
+func createWithNamespace(rawcreate ObjectCreator, namespace string) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
 		obj, err := rawcreate(existing)
 		if err != nil {
 			return nil, err
@@ -393,6 +389,20 @@ func EnsureObject(namespace string, rawcreate ObjectCreator, store cache.Store, 
 		obj.(metav1.Object).SetNamespace(namespace)
 		return obj, nil
 	}
+}
+
+// informerStore is the minimal informer interface we need.
+// We're using to ease testing
+type informerStore interface {
+	GetByKey(key string) (item interface{}, exists bool, err error)
+}
+
+// EnsureObject will generate the Object with the passed create function & create or update it in Kubernetes if necessary.
+func EnsureObject(namespace string, rawcreate ObjectCreator, store informerStore, client ctrlruntimeclient.Client) error {
+	ctx := context.Background()
+
+	// A wrapper to ensure we always set the Namespace. This is useful as we call create twice
+	create := createWithNamespace(rawcreate, namespace)
 
 	obj, err := create(nil)
 	if err != nil {
