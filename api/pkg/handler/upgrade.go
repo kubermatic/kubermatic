@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	"github.com/go-kit/kit/endpoint"
 
@@ -27,6 +28,7 @@ func getClusterUpgrades(updateManager UpdateManager, projectProvider provider.Pr
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
+
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -44,6 +46,59 @@ func getClusterUpgrades(updateManager UpdateManager, projectProvider provider.Pr
 		}
 
 		return upgrades, nil
+	}
+}
+
+func getClusterVersions(updateManager UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		req, ok := request.(common.GetClusterReq)
+		if !ok {
+			return nil, errors.NewWrongRequest(request, common.GetClusterReq{})
+		}
+
+		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		versions, err := updateManager.GetMasterVersions()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get master versions: %v", err)
+		}
+
+		var compatibleVersions []version.MasterVersion
+		clusterVersion := cluster.Spec.Version.Semver()
+		for _, v := range versions {
+			if err = ensureVersionCompatible(clusterVersion, v.Version); err == nil {
+				compatibleVersions = append(compatibleVersions, *v)
+			} else {
+				if _, ok := err.(errVersionSkew); ok {
+					// errVersionSkew says it's incompatible, we can continue.
+					continue
+				} else {
+					return nil, fmt.Errorf("failed to check compatibility between kubelet %q and control plane %q: %v", v.Version, clusterVersion, err)
+
+				}
+			}
+		}
+
+		sv := make([]*apiv1.MasterVersion, len(compatibleVersions))
+		for v := range compatibleVersions {
+			sv[v] = &apiv1.MasterVersion{
+				Version: versions[v].Version,
+				Default: versions[v].Default,
+			}
+		}
+
+		return sv, nil
 	}
 }
 
