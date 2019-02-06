@@ -109,6 +109,14 @@ func patchCluster(cloudProviders map[string]provider.CloudProvider, projectProvi
 			return nil, errors.NewBadRequest("cannot decode patched cluster: %v", err)
 		}
 
+		incompatibleKubelets, err := checkClusterVersionSkew(userInfo, clusterProvider, patchedCluster)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check existing nodes' version skew: %v", err)
+		}
+		if len(incompatibleKubelets) > 0 {
+			return nil, errors.NewBadRequest("Cluster contains nodes running the following incompatible kubelet versions: %v. Upgrade your nodes before you upgrade the cluster.", incompatibleKubelets)
+		}
+
 		dc, found := dcs[patchedCluster.Spec.Cloud.DatacenterName]
 		if !found {
 			return nil, fmt.Errorf("unknown cluster datacenter %s", patchedCluster.Spec.Cloud.DatacenterName)
