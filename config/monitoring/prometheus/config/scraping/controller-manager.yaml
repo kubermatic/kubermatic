@@ -1,0 +1,31 @@
+job_name: controller-manager
+tls_config:
+  ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+kubernetes_sd_configs:
+- role: pod
+relabel_configs:
+# drop everything within test clusters
+- source_labels: [__meta_kubernetes_namespace]
+  regex: prow-kubermatic-.*
+  action: drop
+- source_labels: [__meta_kubernetes_pod_label_component]
+  regex: kube-controller-manager
+  action: keep
+- source_labels: [__address__]
+  regex: (.*)
+  action: replace
+  replacement: $1:10252
+  target_label: __address__
+- regex: __meta_kubernetes_pod_label_(.+)
+  action: labelmap
+- source_labels: [__meta_kubernetes_namespace]
+  regex: (.*)
+  replacement: $1
+  action: replace
+  target_label: namespace
+- source_labels: [__meta_kubernetes_pod_name]
+  regex: (.*)
+  replacement: $1
+  action: replace
+  target_label: pod
