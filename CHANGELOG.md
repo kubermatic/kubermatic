@@ -1,3 +1,10 @@
+### [v2.8.5]()
+
+- Added `1.11.6` and `1.12.4` to supported versions [#2538](https://github.com/kubermatic/kubermatic/issues/2538) ([mrIncompetent](https://github.com/mrIncompetent))
+
+
+
+
 ### [v2.8.4]()
 
 - Fixed an issue with kubelets being unreachable by the apiserver on some OS configurations. [#2522](https://github.com/kubermatic/kubermatic/issues/2522) ([mrIncompetent](https://github.com/mrIncompetent))
