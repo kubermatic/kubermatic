@@ -1,0 +1,12 @@
+# This file has been generated, do not edit.
+groups:
+- name: kube-controller-manager
+  rules:
+  - alert: KubeControllerManagerDown
+    annotations:
+      message: KubeControllerManager has disappeared from Prometheus target discovery.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubecontrollermanagerdown
+    expr: absent(up{job="controller-manager"} == 1)
+    for: 15m
+    labels:
+      severity: critical
