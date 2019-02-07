@@ -37,6 +37,7 @@ spec:
         command:
         - rbac-generator
         args:
+        - -internal-address=0.0.0.0:8085
         - -v=4
         - -logtostderr
         - -kubeconfig=/opt/.kube/kubeconfig
