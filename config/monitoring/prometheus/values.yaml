@@ -1,8 +1,6 @@
 prometheus:
-  # admin:loodse123
-  auth: 'YWRtaW46JGFwcjEkUFR0Y3lQc0MkWVZFTk9nZmpiVE52RWtSeVk1ZjJULgo='
   version: 'v2.7.1'
-  host: ""
+  host: ''
   storageSize: 100Gi
   backups: true
 
@@ -45,7 +43,7 @@ prometheus:
 
   # Optionally add some more recording/alerting rules; the structure
   # beneath `rules` is identical to regular rules files as documented
-  # in https://prometheus.io/docs/prometheus/2.2/getting_started/
+  # in https://prometheus.io/docs/prometheus/2.7/getting_started/
   # For larger collections of rules, consider using the custom volume
   # approach shown further down in the `volumes` section.
   #rules:
