@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -10,7 +9,6 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/oklog/run"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
@@ -54,7 +52,7 @@ func main() {
 	flag.StringVar(&ctrlCtx.runOptions.masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&ctrlCtx.runOptions.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.IntVar(&ctrlCtx.runOptions.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
-	flag.StringVar(&ctrlCtx.runOptions.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal server is running on")
+	flag.StringVar(&ctrlCtx.runOptions.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served")
 	flag.Parse()
 
 	config, err := clientcmd.BuildConfigFromFlags(ctrlCtx.runOptions.masterURL, ctrlCtx.runOptions.kubeconfig)
@@ -67,12 +65,11 @@ func main() {
 		glog.Fatal(err)
 	}
 
-	//Register the global error metric. Ensures that runtime.HandleError() increases the error metric
+	// register the global error metric. Ensures that runtime.HandleError() increases the error metric
 	metrics.RegisterRuntimErrorMetricCounter("kubermatic_rbac_generator", prometheus.DefaultRegisterer)
 
+	// register an operating system signals on which we will gracefully close the app
 	ctrlCtx.stopCh = signals.SetupSignalHandler()
-	ctx, ctxDone := context.WithCancel(context.Background())
-	defer ctxDone()
 
 	ctrlCtx.kubeMasterClient = kubernetes.NewForConfigOrDie(config)
 	ctrlCtx.kubermaticMasterClient = kubermaticclientset.NewForConfigOrDie(config)
@@ -142,7 +139,7 @@ func main() {
 	for _, seedClusterProvider := range ctrlCtx.allClusterProviders {
 		seedClusterProvider.StartInformers(ctrlCtx.stopCh)
 		if err := seedClusterProvider.WaitForCachesToSync(ctrlCtx.stopCh); err != nil {
-			glog.Fatalf("failed to sync cache: %v", err)
+			glog.Fatalf("Closing the controller, failed to sync cache: %v", err)
 		}
 	}
 
@@ -150,14 +147,14 @@ func main() {
 	{
 		g.Add(func() error {
 			<-ctrlCtx.stopCh
-			return errors.New("user requested to stop the application")
-
+			glog.Info("A user has requested to stop the controller")
+			return nil
 		}, func(err error) {
-			ctxDone()
+			/*an empty body*/
 		})
 	}
 
-	// This group is running an internal http server with metrics and other debug information
+	// This group is running an internal http metrics server with metrics
 	{
 		m := http.NewServeMux()
 		m.Handle("/metrics", promhttp.Handler())
@@ -170,21 +167,15 @@ func main() {
 		}
 
 		g.Add(func() error {
-			glog.Infof("Starting the internal http server: %s\n", ctrlCtx.runOptions.internalAddr)
-			err := s.ListenAndServe()
-			if err != nil {
-				return fmt.Errorf("internal http server failed: %v", err)
-			}
-			return nil
+			glog.Infof("Starting the internal HTTP metrics server at %s/metrics\n", ctrlCtx.runOptions.internalAddr)
+			return s.ListenAndServe()
 		}, func(err error) {
-
-			glog.Errorf("Stopping internal http server: %v", err)
-			timeoutCtx, cancel := context.WithTimeout(ctx, time.Second)
+			glog.Infof("Stopping internal HTTP metrics server, err = %v", err)
+			timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
-			glog.Info("Shutting down the internal http server")
 			if err := s.Shutdown(timeoutCtx); err != nil {
-				glog.Error("failed to shutdown the internal http server gracefully:", err)
+				glog.Errorf("Failed to shutdown the internal HTTP server gracefully, err = %v", err)
 			}
 		})
 	}
@@ -192,17 +183,15 @@ func main() {
 	// This group is running the actual controller logic
 	{
 		g.Add(func() error {
-			go ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
-			<-ctrlCtx.stopCh
+			// controller will return iff ctrlCtx is stopped
+			ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
 			return nil
 		}, func(err error) {
-			glog.Errorf("Stopping controller: %v", err)
-			ctxDone()
+			glog.Infof("Stopping RBACGenerator controller, err = %v", err)
 		})
 	}
 
 	if err := g.Run(); err != nil {
 		glog.Fatal(err)
 	}
-
 }
