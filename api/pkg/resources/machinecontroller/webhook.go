@@ -30,109 +30,102 @@ var (
 	}
 )
 
-// WebhookDeployment returns the deployment for the machine-controllers MutatignAdmissionWebhook
-func WebhookDeployment(data resources.DeploymentDataProvider, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
-	var dep *appsv1.Deployment
-	if existing != nil {
-		dep = existing
-	} else {
-		dep = &appsv1.Deployment{}
-	}
-
-	dep.Name = resources.MachineControllerWebhookDeploymentName
-	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-
-	dep.Labels = resources.BaseAppLabel(resources.MachineControllerWebhookDeploymentName, nil)
-	dep.Spec.Replicas = resources.Int32(1)
-	dep.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: resources.BaseAppLabel(resources.MachineControllerWebhookDeploymentName, nil),
-	}
-	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
-	dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
-		MaxSurge: &intstr.IntOrString{
-			Type:   intstr.Int,
-			IntVal: 1,
-		},
-		MaxUnavailable: &intstr.IntOrString{
-			Type:   intstr.Int,
-			IntVal: 0,
-		},
-	}
-	dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
-
-	volumes := []corev1.Volume{getKubeconfigVolume(), getServingCertVolume()}
-	dep.Spec.Template.Spec.Volumes = volumes
-	podLabels, err := data.GetPodTemplateLabels(resources.MachineControllerWebhookDeploymentName, volumes, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create pod labels: %v", err)
-	}
-	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{Labels: podLabels}
-
-	apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
-	if err != nil {
-		return nil, err
-	}
-	dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
-
-	dep.Spec.Template.Spec.Containers = []corev1.Container{
-		{
-			Name:            name,
-			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command:         []string{"/usr/local/bin/webhook"},
-			Args: []string{
-				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-				"-logtostderr",
-				"-v", "4",
-				"-listen-address", "0.0.0.0:9876",
+// WebhookDeploymentCreator returns the function to create and update the machine controller webhook deployment
+func WebhookDeploymentCreator(data resources.DeploymentDataProvider) resources.DeploymentCreator {
+	return func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+		dep.Name = resources.MachineControllerWebhookDeploymentName
+		dep.Labels = resources.BaseAppLabel(resources.MachineControllerWebhookDeploymentName, nil)
+		dep.Spec.Replicas = resources.Int32(1)
+		dep.Spec.Selector = &metav1.LabelSelector{
+			MatchLabels: resources.BaseAppLabel(resources.MachineControllerWebhookDeploymentName, nil),
+		}
+		dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
+		dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
+			MaxSurge: &intstr.IntOrString{
+				Type:   intstr.Int,
+				IntVal: 1,
 			},
-			Env:                      getEnvVars(data),
-			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-			Resources:                webhookResourceRequirements,
-			ReadinessProbe: &corev1.Probe{
-				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Path:   "/healthz",
-						Port:   intstr.FromInt(9876),
-						Scheme: corev1.URISchemeHTTPS,
+			MaxUnavailable: &intstr.IntOrString{
+				Type:   intstr.Int,
+				IntVal: 0,
+			},
+		}
+		dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
+
+		volumes := []corev1.Volume{getKubeconfigVolume(), getServingCertVolume()}
+		dep.Spec.Template.Spec.Volumes = volumes
+		podLabels, err := data.GetPodTemplateLabels(resources.MachineControllerWebhookDeploymentName, volumes, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create pod labels: %v", err)
+		}
+		dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{Labels: podLabels}
+
+		apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
+		if err != nil {
+			return nil, err
+		}
+		dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
+
+		dep.Spec.Template.Spec.Containers = []corev1.Container{
+			{
+				Name:            name,
+				Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
+				ImagePullPolicy: corev1.PullIfNotPresent,
+				Command:         []string{"/usr/local/bin/webhook"},
+				Args: []string{
+					"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+					"-logtostderr",
+					"-v", "4",
+					"-listen-address", "0.0.0.0:9876",
+				},
+				Env:                      getEnvVars(data),
+				TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+				TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+				Resources:                webhookResourceRequirements,
+				ReadinessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path:   "/healthz",
+							Port:   intstr.FromInt(9876),
+							Scheme: corev1.URISchemeHTTPS,
+						},
+					},
+					FailureThreshold: 3,
+					PeriodSeconds:    10,
+					SuccessThreshold: 1,
+					TimeoutSeconds:   15,
+				},
+				LivenessProbe: &corev1.Probe{
+					FailureThreshold: 8,
+					Handler: corev1.Handler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path:   "/healthz",
+							Port:   intstr.FromInt(9876),
+							Scheme: corev1.URISchemeHTTPS,
+						},
+					},
+					InitialDelaySeconds: 15,
+					PeriodSeconds:       10,
+					SuccessThreshold:    1,
+					TimeoutSeconds:      15,
+				},
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      resources.MachineControllerKubeconfigSecretName,
+						MountPath: "/etc/kubernetes/kubeconfig",
+						ReadOnly:  true,
+					},
+					{
+						Name:      resources.MachineControllerWebhookServingCertSecretName,
+						MountPath: "/tmp/cert",
+						ReadOnly:  true,
 					},
 				},
-				FailureThreshold: 3,
-				PeriodSeconds:    10,
-				SuccessThreshold: 1,
-				TimeoutSeconds:   15,
 			},
-			LivenessProbe: &corev1.Probe{
-				FailureThreshold: 8,
-				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Path:   "/healthz",
-						Port:   intstr.FromInt(9876),
-						Scheme: corev1.URISchemeHTTPS,
-					},
-				},
-				InitialDelaySeconds: 15,
-				PeriodSeconds:       10,
-				SuccessThreshold:    1,
-				TimeoutSeconds:      15,
-			},
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      resources.MachineControllerKubeconfigSecretName,
-					MountPath: "/etc/kubernetes/kubeconfig",
-					ReadOnly:  true,
-				},
-				{
-					Name:      resources.MachineControllerWebhookServingCertSecretName,
-					MountPath: "/tmp/cert",
-					ReadOnly:  true,
-				},
-			},
-		},
-	}
+		}
 
-	return dep, nil
+		return dep, nil
+	}
 }
 
 // ServiceCreator returns the function to reconcile the DNS service

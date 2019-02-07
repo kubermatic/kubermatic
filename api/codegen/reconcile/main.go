@@ -7,6 +7,7 @@ import (
 	"go/format"
 	"io/ioutil"
 	"log"
+	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
@@ -26,6 +27,11 @@ func main() {
 				ResourceName:       "StatefulSet",
 				ImportAlias:        "appsv1",
 				ResourceImportPath: "k8s.io/api/apps/v1",
+			},
+			{
+				ResourceName: "Deployment",
+				ImportAlias:  "appsv1",
+				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
 			},
 			{
 				ResourceName:       "VerticalPodAutoscaler",
@@ -50,11 +56,15 @@ func main() {
 	}
 }
 
+func lowercaseFirst(str string) string {
+	return strings.ToLower(string(str[0])) + str[1:]
+}
+
 var (
-	tplFuncs = map[string]interface{}{
+	reconcileAllTplFuncs = map[string]interface{}{
 		"reconcileFunc": reconcileFunc,
 	}
-	reconcileAllTemplate = template.Must(template.New("").Funcs(tplFuncs).Funcs(sprig.TxtFuncMap()).Parse(`// This file is generated. DO NOT EDIT.
+	reconcileAllTemplate = template.Must(template.New("").Funcs(reconcileAllTplFuncs).Funcs(sprig.TxtFuncMap()).Parse(`// This file is generated. DO NOT EDIT.
 package resources
 
 import (
@@ -101,9 +111,14 @@ func reconcileFunc(resourceName, importAlias string) (string, error) {
 	return b.String(), nil
 }
 
-var reconcileFunctionTemplate = template.Must(template.New("").Parse(`// {{ .ResourceName }}ObjectWrapper adds a wrapper so the {{ .ResourceName }}Creator matches ObjectCreator
+var (
+	reconcileFunctionTplFuncs = map[string]interface{}{
+		"lowercaseFirst": lowercaseFirst,
+	}
+
+	reconcileFunctionTemplate = template.Must(template.New("").Funcs(reconcileFunctionTplFuncs).Parse(`// {{ .ResourceName }}ObjectWrapper adds a wrapper so the {{ .ResourceName }}Creator matches ObjectCreator
 // This is needed as golang does not support function interface matching
-func {{ .ResourceName }}ObjectWrapper(create {{ .ResourceName }}Creator) ObjectCreator {
+func {{ lowercaseFirst .ResourceName }}ObjectWrapper(create {{ .ResourceName }}Creator) ObjectCreator {
 	return func(existing runtime.Object) (runtime.Object, error) {
 		if existing != nil {
 			return create(existing.(*{{ .ImportAlias }}.{{ .ResourceName }}))
@@ -113,16 +128,16 @@ func {{ .ResourceName }}ObjectWrapper(create {{ .ResourceName }}Creator) ObjectC
 }
 
 // Reconcile{{ .ResourceName }}s will create and update the {{ .ResourceName }}s coming from the passed {{ .ResourceName }}Creator slice
-func Reconcile{{ .ResourceName }}s(creators []{{ .ResourceName }}Creator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, wrapper ...ObjectModifier) error {
+func Reconcile{{ .ResourceName }}s(creators []{{ .ResourceName }}Creator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
 	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &{{ .ImportAlias }}.{{ .ResourceName }}{})
 	if err != nil {
 		return fmt.Errorf("failed to get {{ .ResourceName }} informer: %v", err)
 	}
 
 	for _, create := range creators {
-		createObject := {{ .ResourceName }}ObjectWrapper(create)
-		for _, wrap := range wrapper {
-			createObject = wrap(createObject)
+		createObject := {{ lowercaseFirst .ResourceName }}ObjectWrapper(create)
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
 		}
 
 		if err := EnsureObject(namespace, createObject, store, client); err != nil {
@@ -134,3 +149,4 @@ func Reconcile{{ .ResourceName }}s(creators []{{ .ResourceName }}Creator, namesp
 }
 
 `))
+)

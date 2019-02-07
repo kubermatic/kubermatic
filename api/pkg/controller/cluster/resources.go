@@ -155,35 +155,29 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster, data *resources.Te
 }
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
-func GetDeploymentCreators(c *kubermaticv1.Cluster) []resources.DeploymentCreator {
+func GetDeploymentCreators(data resources.DeploymentDataProvider) []resources.DeploymentCreator {
 	creators := []resources.DeploymentCreator{
-		machinecontroller.Deployment,
-		machinecontroller.WebhookDeployment,
-		openvpn.Deployment,
-		apiserver.Deployment,
-		scheduler.Deployment,
-		controllermanager.Deployment,
-		dns.Deployment,
-		metricsserver.Deployment,
+		machinecontroller.DeploymentCreator(data),
+		machinecontroller.WebhookDeploymentCreator(data),
+		openvpn.DeploymentCreator(data),
+		apiserver.DeploymentCreator(data),
+		scheduler.DeploymentCreator(data),
+		controllermanager.DeploymentCreator(data),
+		dns.DeploymentCreator(data),
+		metricsserver.DeploymentCreator(data),
 	}
 
-	if c != nil && len(c.Spec.MachineNetworks) > 0 {
-		creators = append(creators, ipamcontroller.Deployment)
+	if data.Cluster() != nil && len(data.Cluster().Spec.MachineNetworks) > 0 {
+		creators = append(creators, ipamcontroller.DeploymentCreator(data))
 	}
 
 	return creators
 }
 
-func (cc *Controller) ensureDeployments(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := GetDeploymentCreators(c)
+func (cc *Controller) ensureDeployments(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	creators := GetDeploymentCreators(data)
 
-	for _, create := range creators {
-		if err := resources.EnsureDeployment(data, create, cc.deploymentLister.Deployments(c.Status.NamespaceName), cc.kubeClient.AppsV1().Deployments(c.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the Deployment exists: %v", err)
-		}
-	}
-
-	return nil
+	return resources.ReconcileDeployments(creators, cluster.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(cluster))
 }
 
 // SecretOperation returns a wrapper struct to utilize a sorted slice instead of an unsorted map

@@ -44,85 +44,81 @@ func ServiceCreator() resources.ServiceCreator {
 	}
 }
 
-// Deployment returns the deployment for the dns resolver
-func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
-	dep := existing
-	if dep == nil {
-		dep = &appsv1.Deployment{}
-	}
+// DeploymentCreator returns the function to create and update the DNS resolver deployment
+func DeploymentCreator(data resources.DeploymentDataProvider) resources.DeploymentCreator {
+	return func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+		dep.Name = resources.DNSResolverDeploymentName
+		dep.Labels = resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil)
+		dep.Spec.Replicas = resources.Int32(2)
 
-	dep.Name = resources.DNSResolverDeploymentName
-	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	dep.Labels = resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil)
-	dep.Spec.Replicas = resources.Int32(2)
-
-	dep.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil),
-	}
-	dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
-	dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
-		MaxSurge: &intstr.IntOrString{
-			Type:   intstr.Int,
-			IntVal: 1,
-		},
-		MaxUnavailable: &intstr.IntOrString{
-			Type:   intstr.Int,
-			IntVal: 0,
-		},
-	}
-	dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
-
-	volumes := getVolumes()
-	podLabels, err := data.GetPodTemplateLabels(resources.DNSResolverDeploymentName, volumes, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get podlabels: %v", err)
-	}
-
-	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{Labels: podLabels}
-	openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get openvpn sidecar for dns resolver: %v", err)
-	}
-
-	dep.Spec.Template.Spec.Containers = []corev1.Container{
-		*openvpnSidecar,
-		{
-			Name:                     resources.DNSResolverDeploymentName,
-			Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/coredns:1.1.3",
-			ImagePullPolicy:          corev1.PullIfNotPresent,
-			Args:                     []string{"-conf", "/etc/coredns/Corefile"},
-			Resources:                defaultResourceRequirements,
-			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      resources.DNSResolverConfigMapName,
-					MountPath: "/etc/coredns",
-					ReadOnly:  true,
-				},
+		dep.Spec.Selector = &metav1.LabelSelector{
+			MatchLabels: resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil),
+		}
+		dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
+		dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
+			MaxSurge: &intstr.IntOrString{
+				Type:   intstr.Int,
+				IntVal: 1,
 			},
-			ReadinessProbe: &corev1.Probe{
-				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Path:   "/health",
-						Port:   intstr.FromInt(8080),
-						Scheme: corev1.URISchemeHTTP,
+			MaxUnavailable: &intstr.IntOrString{
+				Type:   intstr.Int,
+				IntVal: 0,
+			},
+		}
+		dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
+
+		volumes := getVolumes()
+		podLabels, err := data.GetPodTemplateLabels(resources.DNSResolverDeploymentName, volumes, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get podlabels: %v", err)
+		}
+
+		dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{Labels: podLabels}
+		openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
+		if err != nil {
+			return nil, fmt.Errorf("failed to get openvpn sidecar for dns resolver: %v", err)
+		}
+
+		dep.Spec.Template.Spec.Containers = []corev1.Container{
+			*openvpnSidecar,
+			{
+				Name:                     resources.DNSResolverDeploymentName,
+				Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/coredns:1.1.3",
+				ImagePullPolicy:          corev1.PullIfNotPresent,
+				Args:                     []string{"-conf", "/etc/coredns/Corefile"},
+				Resources:                defaultResourceRequirements,
+				TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+				TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      resources.DNSResolverConfigMapName,
+						MountPath: "/etc/coredns",
+						ReadOnly:  true,
 					},
 				},
-				InitialDelaySeconds: 2,
-				FailureThreshold:    3,
-				PeriodSeconds:       10,
-				SuccessThreshold:    1,
-				TimeoutSeconds:      15,
+				ReadinessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path:   "/health",
+							Port:   intstr.FromInt(8080),
+							Scheme: corev1.URISchemeHTTP,
+						},
+					},
+					InitialDelaySeconds: 2,
+					FailureThreshold:    3,
+					PeriodSeconds:       10,
+					SuccessThreshold:    1,
+					TimeoutSeconds:      15,
+				},
 			},
-		},
+		}
+
+		dep.Spec.Template.Spec.Volumes = volumes
+
+		dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(resources.DNSResolverDeploymentName, data.Cluster().Name, nil))
+
+		return dep, nil
 	}
-
-	dep.Spec.Template.Spec.Volumes = volumes
-
-	dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(resources.DNSResolverDeploymentName, data.Cluster().Name, nil))
-
-	return dep, nil
 }
 
 func getVolumes() []corev1.Volume {
