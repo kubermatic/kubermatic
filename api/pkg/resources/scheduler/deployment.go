@@ -122,6 +122,11 @@ func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployme
 					MountPath: "/etc/kubernetes/kubeconfig",
 					ReadOnly:  true,
 				},
+				{
+					Name:      resources.CASecretName,
+					MountPath: "/etc/kubernetes/pki/ca",
+					ReadOnly:  true,
+				},
 			},
 			Resources: resourceRequirements,
 			ReadinessProbe: &corev1.Probe{
@@ -196,8 +201,11 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 
 	// With 1.13 we're using the secure port for scraping metrics as the insecure port got marked deprecated
 	if cluster.Spec.Version.Semver().Minor() >= 13 {
+		// These are used to validate tokens
 		flags = append(flags, "--authentication-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
 		flags = append(flags, "--authorization-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
+		// This is used to validate certs
+		flags = append(flags, "--client-ca-file", "/etc/kubernetes/pki/ca/ca.crt")
 		// We're going to use the https endpoints for scraping the metrics starting from 1.13. Thus we can deactivate the http endpoint
 		flags = append(flags, "--port", "0")
 		if cluster.Spec.Version.Semver().Patch() > 0 {
