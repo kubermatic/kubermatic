@@ -123,6 +123,8 @@ spec:
         - /etc/kubernetes/cloud/config
         - --authentication-kubeconfig
         - /etc/kubernetes/kubeconfig/kubeconfig
+        - --client-ca-file
+        - /etc/kubernetes/pki/ca/ca.crt
         - --authentication-skip-lookup=true
         command:
         - /hyperkube

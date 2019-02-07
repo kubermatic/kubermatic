@@ -119,6 +119,8 @@ spec:
         - RotateKubeletClientCertificate=true,RotateKubeletServerCertificate=true,ScheduleDaemonSetPods=false
         - --authentication-kubeconfig
         - /etc/kubernetes/kubeconfig/kubeconfig
+        - --client-ca-file
+        - /etc/kubernetes/pki/ca/ca.crt
         - --authentication-kubeconfig
         - /etc/kubernetes/kubeconfig/kubeconfig
         - --authorization-kubeconfig
