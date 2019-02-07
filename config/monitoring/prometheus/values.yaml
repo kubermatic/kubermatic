@@ -17,22 +17,7 @@ prometheus:
   # support it.
   scraping:
     files:
-    - config/scraping/apiserver.yaml
-    - config/scraping/cadvisor.yaml
-    - config/scraping/clusters.yaml
-    - config/scraping/kube-state-metrics.yaml
-    - config/scraping/kubelet.yaml
-    - config/scraping/pods.yaml
-
-    # These two configs require that controller-manager and scheduler
-    # are reachable and configured to be scraped by Prometheus.
-    # On managed Kubernetes environments like GKE/AKS, they are not
-    # accessible and you should remove the following two imports.
-    # Consult the Kubermatic documentation at
-    # https://docs.kubermatic.io/installation/install_kubermatic/
-    # for more information about making the components accessible.
-    - config/scraping/controller-manager.yaml
-    - config/scraping/scheduler.yaml
+    - config/scraping/*.yaml
 
     #configs:
     #- job_name: myscrapejob
