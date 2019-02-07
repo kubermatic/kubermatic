@@ -1,3 +1,11 @@
+### [v2.8.6]()
+
+- Added support for Kubernetes `v1.13` [#2628](https://github.com/kubermatic/kubermatic/issues/2628) ([mrIncompetent](https://github.com/mrIncompetent))
+- Fixed reconciling of deep objects [#2630](https://github.com/kubermatic/kubermatic/issues/2630) ([mrIncompetent](https://github.com/mrIncompetent))
+
+
+
+
 ### [v2.8.5]()
 
 - Added `1.11.6` and `1.12.4` to supported versions [#2538](https://github.com/kubermatic/kubermatic/issues/2538) ([mrIncompetent](https://github.com/mrIncompetent))
