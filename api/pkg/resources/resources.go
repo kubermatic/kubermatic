@@ -380,7 +380,7 @@ type ClusterRoleCreator = func(data ClusterRoleDataProvider, existing *rbacv1.Cl
 type ClusterRoleBindingCreator = func(data ClusterRoleBindingDataProvider, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error)
 
 // DeploymentCreator defines an interface to create/update Deployment's
-type DeploymentCreator = func(data DeploymentDataProvider, existing *appsv1.Deployment) (*appsv1.Deployment, error)
+type DeploymentCreator = func(existing *appsv1.Deployment) (*appsv1.Deployment, error)
 
 // InitializerConfigurationCreator defines an interface to create/update InitializerConfigurations
 type InitializerConfigurationCreator = func(data *TemplateData, existing *admissionv1alpha1.InitializerConfiguration) (*admissionv1alpha1.InitializerConfiguration, error)

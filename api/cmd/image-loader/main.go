@@ -162,8 +162,8 @@ func getImagesFromCreators(templateData *resources.TemplateData) (images []strin
 	statefulsetCreators := cluster.GetStatefulSetCreators(templateData)
 	statefulsetCreators = append(statefulsetCreators, monitoring.GetStatefulSetCreators(templateData)...)
 
-	deploymentCreators := cluster.GetDeploymentCreators(nil)
-	deploymentCreators = append(deploymentCreators, monitoring.GetDeploymentCreators(nil)...)
+	deploymentCreators := cluster.GetDeploymentCreators(templateData)
+	deploymentCreators = append(deploymentCreators, monitoring.GetDeploymentCreators(templateData)...)
 
 	cronjobCreators := cluster.GetCronJobCreators()
 
@@ -176,7 +176,7 @@ func getImagesFromCreators(templateData *resources.TemplateData) (images []strin
 	}
 
 	for _, createFunc := range deploymentCreators {
-		deployment, err := createFunc(templateData, nil)
+		deployment, err := createFunc(&appsv1.Deployment{})
 		if err != nil {
 			return nil, err
 		}

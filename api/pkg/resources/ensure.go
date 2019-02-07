@@ -7,21 +7,17 @@ import (
 	"hash/crc32"
 	"sort"
 
-	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	appsv1client "k8s.io/client-go/kubernetes/typed/apps/v1"
 	batchv1beta1client "k8s.io/client-go/kubernetes/typed/batch/v1beta1"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	policyv1beta1client "k8s.io/client-go/kubernetes/typed/policy/v1beta1"
 	rbacv1client "k8s.io/client-go/kubernetes/typed/rbac/v1"
-	appsv1lister "k8s.io/client-go/listers/apps/v1"
 	batchv1beta1lister "k8s.io/client-go/listers/batch/v1beta1"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	policyv1beta1lister "k8s.io/client-go/listers/policy/v1beta1"
@@ -223,49 +219,6 @@ func EnsureCronJob(data *TemplateData, create CronJobCreator, cronJobLister batc
 	return nil
 }
 
-// EnsureDeployment will create the Deployment with the passed create function & create or update it if necessary.
-// To check if it's necessary it will do a lookup of the resource at the lister & compare the existing Deployment with the created one
-func EnsureDeployment(data DeploymentDataProvider, create DeploymentCreator, lister appsv1lister.DeploymentNamespaceLister, client appsv1client.DeploymentInterface) error {
-	var existing *appsv1.Deployment
-	dep, err := create(data, nil)
-	if err != nil {
-		return fmt.Errorf("failed to build Deployment: %v", err)
-	}
-
-	if existing, err = lister.Get(dep.Name); err != nil {
-		if !kubeerrors.IsNotFound(err) {
-			return err
-		}
-
-		if _, err = client.Create(dep); err != nil {
-			return fmt.Errorf("failed to create Deployment %s: %v", dep.Name, err)
-		}
-		return nil
-	}
-	existing = existing.DeepCopy()
-
-	dep, err = create(data, existing.DeepCopy())
-	if err != nil {
-		return fmt.Errorf("failed to build Deployment: %v", err)
-	}
-
-	if DeepEqual(dep, existing) {
-		return nil
-	}
-
-	// In case we update something immutable we need to delete&recreate. Creation happens on next sync
-	if !equality.Semantic.DeepEqual(dep.Spec.Selector.MatchLabels, existing.Spec.Selector.MatchLabels) {
-		propagation := metav1.DeletePropagationForeground
-		return client.Delete(dep.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation})
-	}
-
-	if _, err = client.Update(dep); err != nil {
-		return fmt.Errorf("failed to update Deployment %s: %v", dep.Name, err)
-	}
-
-	return nil
-}
-
 // EnsureServiceAccount will create the ServiceAccount with the passed create function & create or update it if necessary.
 // To check if it's necessary it will do a lookup of the resource at the lister & compare the existing ServiceAccount with the created one
 func EnsureServiceAccount(data ServiceAccountDataProvider, create ServiceAccountCreator, lister corev1lister.ServiceAccountNamespaceLister, client corev1client.ServiceAccountInterface) error {
@@ -427,12 +380,8 @@ func getChecksumForStringSlice(stringSlice []string) string {
 	return fmt.Sprintf("%v", crc32.ChecksumIEEE(buffer.Bytes()))
 }
 
-// EnsureObject will generate the Object with the passed create function & create or update it in Kubernetes if necessary.
-func EnsureObject(namespace string, rawcreate ObjectCreator, store cache.Store, client ctrlruntimeclient.Client) error {
-	ctx := context.Background()
-
-	// A wrapper to ensure we always set the ownerRef and the Namespace. This is useful as we call create twice
-	create := func(existing runtime.Object) (runtime.Object, error) {
+func createWithNamespace(rawcreate ObjectCreator, namespace string) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
 		obj, err := rawcreate(existing)
 		if err != nil {
 			return nil, err
@@ -440,6 +389,20 @@ func EnsureObject(namespace string, rawcreate ObjectCreator, store cache.Store, 
 		obj.(metav1.Object).SetNamespace(namespace)
 		return obj, nil
 	}
+}
+
+// informerStore is the minimal informer interface we need.
+// We're using to ease testing
+type informerStore interface {
+	GetByKey(key string) (item interface{}, exists bool, err error)
+}
+
+// EnsureObject will generate the Object with the passed create function & create or update it in Kubernetes if necessary.
+func EnsureObject(namespace string, rawcreate ObjectCreator, store informerStore, client ctrlruntimeclient.Client) error {
+	ctx := context.Background()
+
+	// A wrapper to ensure we always set the Namespace. This is useful as we call create twice
+	create := createWithNamespace(rawcreate, namespace)
 
 	obj, err := create(nil)
 	if err != nil {

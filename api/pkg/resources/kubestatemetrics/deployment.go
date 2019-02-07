@@ -31,93 +31,87 @@ const (
 	version = "v1.5.0"
 )
 
-// Deployment returns the kube-state-metrics Deployment
-func Deployment(data resources.DeploymentDataProvider, existing *appsv1.Deployment) (*appsv1.Deployment, error) {
-	var dep *appsv1.Deployment
-	if existing != nil {
-		dep = existing
-	} else {
-		dep = &appsv1.Deployment{}
-	}
+// DeploymentCreator returns the function to create and update the kube-state-metrics deployment
+func DeploymentCreator(data resources.DeploymentDataProvider) resources.DeploymentCreator {
+	return func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+		dep.Name = resources.KubeStateMetricsDeploymentName
+		dep.Labels = resources.BaseAppLabel(name, nil)
 
-	dep.Name = resources.KubeStateMetricsDeploymentName
-	dep.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	dep.Labels = resources.BaseAppLabel(name, nil)
+		dep.Spec.Replicas = resources.Int32(1)
+		dep.Spec.Selector = &metav1.LabelSelector{
+			MatchLabels: resources.BaseAppLabel(name, nil),
+		}
+		dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-	dep.Spec.Replicas = resources.Int32(1)
-	dep.Spec.Selector = &metav1.LabelSelector{
-		MatchLabels: resources.BaseAppLabel(name, nil),
-	}
-	dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
+		volumes := getVolumes()
+		podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create pod labels: %v", err)
+		}
 
-	volumes := getVolumes()
-	podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create pod labels: %v", err)
-	}
+		dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
+			Labels: podLabels,
+		}
 
-	dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-		Labels: podLabels,
-	}
+		dep.Spec.Template.Spec.Volumes = volumes
 
-	dep.Spec.Template.Spec.Volumes = volumes
+		apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
+		if err != nil {
+			return nil, err
+		}
+		dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
 
-	apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
-	if err != nil {
-		return nil, err
-	}
-	dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
-
-	dep.Spec.Template.Spec.Containers = []corev1.Container{
-		{
-			Name:            name,
-			Image:           data.ImageRegistry(resources.RegistryQuay) + "/coreos/kube-state-metrics:" + version,
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command:         []string{"/kube-state-metrics"},
-			Args: []string{
-				"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-				"--port", "8080",
-				"--telemetry-port", "8081",
-			},
-			TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-			TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      resources.KubeStateMetricsKubeconfigSecretName,
-					MountPath: "/etc/kubernetes/kubeconfig",
-					ReadOnly:  true,
+		dep.Spec.Template.Spec.Containers = []corev1.Container{
+			{
+				Name:            name,
+				Image:           data.ImageRegistry(resources.RegistryQuay) + "/coreos/kube-state-metrics:" + version,
+				ImagePullPolicy: corev1.PullIfNotPresent,
+				Command:         []string{"/kube-state-metrics"},
+				Args: []string{
+					"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+					"--port", "8080",
+					"--telemetry-port", "8081",
 				},
-			},
-			Ports: []corev1.ContainerPort{
-				{
-					Name:          "metrics",
-					ContainerPort: 8080,
-					Protocol:      corev1.ProtocolTCP,
-				},
-				{
-					Name:          "telemetry",
-					ContainerPort: 8081,
-					Protocol:      corev1.ProtocolTCP,
-				},
-			},
-			Resources: defaultResourceRequirements,
-			ReadinessProbe: &corev1.Probe{
-				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Path:   "/healthz",
-						Port:   intstr.FromInt(8080),
-						Scheme: corev1.URISchemeHTTP,
+				TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+				TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      resources.KubeStateMetricsKubeconfigSecretName,
+						MountPath: "/etc/kubernetes/kubeconfig",
+						ReadOnly:  true,
 					},
 				},
-				FailureThreshold: 3,
-				PeriodSeconds:    10,
-				SuccessThreshold: 1,
-				TimeoutSeconds:   15,
+				Ports: []corev1.ContainerPort{
+					{
+						Name:          "metrics",
+						ContainerPort: 8080,
+						Protocol:      corev1.ProtocolTCP,
+					},
+					{
+						Name:          "telemetry",
+						ContainerPort: 8081,
+						Protocol:      corev1.ProtocolTCP,
+					},
+				},
+				Resources: defaultResourceRequirements,
+				ReadinessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path:   "/healthz",
+							Port:   intstr.FromInt(8080),
+							Scheme: corev1.URISchemeHTTP,
+						},
+					},
+					FailureThreshold: 3,
+					PeriodSeconds:    10,
+					SuccessThreshold: 1,
+					TimeoutSeconds:   15,
+				},
 			},
-		},
-	}
+		}
 
-	return dep, nil
+		return dep, nil
+	}
 }
 
 func getVolumes() []corev1.Volume {
