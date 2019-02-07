@@ -200,7 +200,11 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 		flags = append(flags, "--authorization-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
 		// We're going to use the https endpoints for scraping the metrics starting from 1.13. Thus we can deactivate the http endpoint
 		flags = append(flags, "--port", "0")
-
+		if cluster.Spec.Version.Semver().Patch() > 0 {
+			// Force the authentication lookup to succeed, otherwise if it fails all requests will be treated as anonymous and thus fail
+			// Both the flag and the issue only exist in 1.13.1 and above
+			flags = append(flags, "--authentication-tolerate-lookup-failure", "false")
+		}
 	}
 
 	var featureGates []string

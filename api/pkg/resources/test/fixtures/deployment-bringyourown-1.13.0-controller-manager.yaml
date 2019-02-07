@@ -126,6 +126,8 @@ spec:
         - RotateKubeletClientCertificate=true,RotateKubeletServerCertificate=true,ScheduleDaemonSetPods=false
         - --authentication-kubeconfig
         - /etc/kubernetes/kubeconfig/kubeconfig
+        - --authentication-kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
         - --authorization-kubeconfig
         - /etc/kubernetes/kubeconfig/kubeconfig
         - --port
