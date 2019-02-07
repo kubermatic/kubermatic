@@ -102,6 +102,8 @@ spec:
         - /etc/kubernetes/kubeconfig/kubeconfig
         - --authorization-kubeconfig
         - /etc/kubernetes/kubeconfig/kubeconfig
+        - --client-ca-file
+        - /etc/kubernetes/pki/ca/ca.crt
         - --port
         - "0"
         - --feature-gates
@@ -143,6 +145,9 @@ spec:
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
           name: scheduler-kubeconfig
+          readOnly: true
+        - mountPath: /etc/kubernetes/pki/ca
+          name: ca
           readOnly: true
       dnsConfig:
         nameservers:

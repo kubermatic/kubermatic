@@ -138,6 +138,9 @@ spec:
         - mountPath: /etc/kubernetes/kubeconfig
           name: scheduler-kubeconfig
           readOnly: true
+        - mountPath: /etc/kubernetes/pki/ca
+          name: ca
+          readOnly: true
       dnsConfig:
         nameservers:
         - 192.0.2.14
