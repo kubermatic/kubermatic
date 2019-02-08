@@ -41,6 +41,7 @@ prometheus:
   # effectively disable the stock recordings and alerts.
   ruleFiles:
   - /etc/prometheus/rules/general-*.yaml
+  - /etc/prometheus/rules/kubermatic-*.yaml
   # If you run in an environment where access to Kubernetes
   # scheduler and controller-manager is not possible (like GKE),
   # disable the expression below to not create false alerts
