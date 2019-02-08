@@ -58,9 +58,9 @@ type NetworkWithExternalExt struct {
 	osextnetwork.NetworkExternalExt
 }
 
-func getAllNetworks(netClient *gophercloud.ServiceClient) ([]NetworkWithExternalExt, error) {
+func getAllNetworks(netClient *gophercloud.ServiceClient, opts osnetworks.ListOpts) ([]NetworkWithExternalExt, error) {
 	var allNetworks []NetworkWithExternalExt
-	allPages, err := osnetworks.List(netClient, nil).AllPages()
+	allPages, err := osnetworks.List(netClient, opts).AllPages()
 	if err != nil {
 		return nil, err
 	}
@@ -72,14 +72,14 @@ func getAllNetworks(netClient *gophercloud.ServiceClient) ([]NetworkWithExternal
 	return allNetworks, nil
 }
 
-func getNetworkByName(netClient *gophercloud.ServiceClient, network string, isExternal bool) (*NetworkWithExternalExt, error) {
-	existingNetworks, err := getAllNetworks(netClient)
+func getNetworkByName(netClient *gophercloud.ServiceClient, name string, isExternal bool) (*NetworkWithExternalExt, error) {
+	existingNetworks, err := getAllNetworks(netClient, osnetworks.ListOpts{Name: name})
 	if err != nil {
 		return nil, err
 	}
 
 	for _, n := range existingNetworks {
-		if n.Name == network && n.External == isExternal {
+		if n.External == isExternal {
 			return &n, nil
 		}
 	}
@@ -88,7 +88,7 @@ func getNetworkByName(netClient *gophercloud.ServiceClient, network string, isEx
 }
 
 func getExternalNetwork(netClient *gophercloud.ServiceClient) (*NetworkWithExternalExt, error) {
-	existingNetworks, err := getAllNetworks(netClient)
+	existingNetworks, err := getAllNetworks(netClient, osnetworks.ListOpts{})
 	if err != nil {
 		return nil, err
 	}
@@ -362,8 +362,18 @@ func getTenants(authClient *gophercloud.ProviderClient, region string) ([]osproj
 	return allProjects, nil
 }
 
-func getSubnetForNetwork(netClient *gophercloud.ServiceClient, networkID string) ([]ossubnets.Subnet, error) {
+func getSubnetForNetwork(netClient *gophercloud.ServiceClient, networkIDOrName string) ([]ossubnets.Subnet, error) {
 	var allSubnets []ossubnets.Subnet
+
+	networks, err := getAllNetworks(netClient, osnetworks.ListOpts{Name: networkIDOrName})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list networks: %v", err)
+	}
+
+	networkID := networkIDOrName
+	if len(networks) == 1 {
+		networkID = networks[0].ID
+	}
 
 	allPages, err := ossubnets.List(netClient, ossubnets.ListOpts{NetworkID: networkID}).AllPages()
 	if err != nil {
