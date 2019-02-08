@@ -1175,7 +1175,7 @@ func (r Routing) getClusterUpgrades() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades project getClusterNodeUpgrades
 //
-//    Gets possible node versions for a cluster
+//    Gets possible node upgrades for a cluster
 //
 //     Produces:
 //     - application/json
