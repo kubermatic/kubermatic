@@ -1185,7 +1185,7 @@
     },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades": {
       "get": {
-        "description": "Gets possible node versions for a cluster",
+        "description": "Gets possible node upgrades for a cluster",
         "produces": [
           "application/json"
         ],
