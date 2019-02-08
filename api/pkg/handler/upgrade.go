@@ -49,7 +49,7 @@ func getClusterUpgrades(updateManager UpdateManager, projectProvider provider.Pr
 	}
 }
 
-func getClusterVersions(updateManager UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func getClusterNodeUpgrades(updateManager UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
@@ -80,12 +80,9 @@ func getClusterVersions(updateManager UpdateManager, projectProvider provider.Pr
 			if err = ensureVersionCompatible(clusterVersion, v.Version); err == nil {
 				compatibleVersions = append(compatibleVersions, v)
 			} else {
-				if _, ok := err.(errVersionSkew); ok {
-					// errVersionSkew says it's incompatible, we can continue.
-					continue
-				} else {
-					return nil, fmt.Errorf("failed to check compatibility between kubelet %q and control plane %q: %v",
-						v.Version, clusterVersion, err)
+				_, ok := err.(errVersionSkew)
+				if !ok {
+					return nil, fmt.Errorf("failed to check compatibility between kubelet %q and control plane %q: %v", v.Version, clusterVersion, err)
 				}
 			}
 		}

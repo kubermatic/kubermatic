@@ -122,16 +122,17 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 	}
 }
 
-func TestGetClusterVersions(t *testing.T) {
+func TestGetClusterNodeUpgrades(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name                   string
 		cluster                *kubermaticv1.Cluster
-		existingKubermaticObjs []runtime.Object
 		apiUser                apiv1.User
-		versions               []*version.MasterVersion
-		updates                []*version.MasterUpdate
-		compatible             []*apiv1.MasterVersion
+		existingKubermaticObjs []runtime.Object
+
+		existingUpdates  []*version.MasterUpdate
+		existingVersions []*version.MasterVersion
+		expectedOutput   []*apiv1.MasterVersion
 	}{
 		{
 			name: "only the same major version and no more than 2 minor versions behind the control plane",
@@ -142,29 +143,21 @@ func TestGetClusterVersions(t *testing.T) {
 				},
 				Spec: kubermaticv1.ClusterSpec{Version: *ksemver.NewSemverOrDie("1.6.0")},
 			},
-			existingKubermaticObjs: test.GenDefaultKubermaticObjects(),
 			apiUser:                *test.GenDefaultAPIUser(),
-			compatible: []*apiv1.MasterVersion{
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(),
+			existingUpdates: []*version.MasterUpdate{
 				{
-					Version: semver.MustParse("1.6.0"),
+					From:      "1.6.0",
+					To:        "1.6.1",
+					Automatic: false,
 				},
 				{
-					Version: semver.MustParse("1.6.1"),
-				},
-				{
-					Version: semver.MustParse("1.4.0"),
-				},
-				{
-					Version: semver.MustParse("1.4.1"),
-				},
-				{
-					Version: semver.MustParse("1.5.0"),
-				},
-				{
-					Version: semver.MustParse("1.5.1"),
+					From:      "1.6.x",
+					To:        "1.7.0",
+					Automatic: false,
 				},
 			},
-			versions: []*version.MasterVersion{
+			existingVersions: []*version.MasterVersion{
 				{
 					Version: semver.MustParse("0.0.1"),
 				},
@@ -202,27 +195,36 @@ func TestGetClusterVersions(t *testing.T) {
 					Version: semver.MustParse("2.0.0"),
 				},
 			},
-			updates: []*version.MasterUpdate{
+			expectedOutput: []*apiv1.MasterVersion{
 				{
-					From:      "1.6.0",
-					To:        "1.6.1",
-					Automatic: false,
+					Version: semver.MustParse("1.6.0"),
 				},
 				{
-					From:      "1.6.x",
-					To:        "1.7.0",
-					Automatic: false,
+					Version: semver.MustParse("1.6.1"),
+				},
+				{
+					Version: semver.MustParse("1.4.0"),
+				},
+				{
+					Version: semver.MustParse("1.4.1"),
+				},
+				{
+					Version: semver.MustParse("1.5.0"),
+				},
+				{
+					Version: semver.MustParse("1.5.1"),
 				},
 			},
 		},
 	}
 	for _, testStruct := range tests {
 		t.Run(testStruct.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/foo/versions", test.ProjectName), nil)
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/foo/nodes/upgrades", test.ProjectName), nil)
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{testStruct.cluster}
 			kubermaticObj = append(kubermaticObj, testStruct.existingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(testStruct.apiUser, []runtime.Object{}, kubermaticObj, testStruct.versions, testStruct.updates, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(testStruct.apiUser, []runtime.Object{}, kubermaticObj,
+				testStruct.existingVersions, testStruct.existingUpdates, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create testStruct endpoint due to %v", err)
 			}
@@ -231,13 +233,13 @@ func TestGetClusterVersions(t *testing.T) {
 				t.Fatalf("Expected status code to be 200, got %d\nResponse body: %q", res.Code, res.Body.String())
 			}
 
-			var gotUpdates []*apiv1.MasterVersion
-			err = json.Unmarshal(res.Body.Bytes(), &gotUpdates)
+			var response []*apiv1.MasterVersion
+			err = json.Unmarshal(res.Body.Bytes(), &response)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if diff := deep.Equal(gotUpdates, testStruct.compatible); diff != nil {
+			if diff := deep.Equal(response, testStruct.expectedOutput); diff != nil {
 				t.Fatalf("got different versions response than expected. Diff: %v", diff)
 			}
 		})
