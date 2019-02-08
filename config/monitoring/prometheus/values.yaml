@@ -39,21 +39,13 @@ prometheus:
   # Prometheus, you will want to extend this list to laod your
   # own rule files. You can remove the predefined path to
   # effectively disable the stock recordings and alerts.
-  # Like with the scraping configuration above, disable files
-  # for components you don't deploy or have not prepared to
-  # be accessible by Prometheus, or else you will experience
-  # false alerts.
   ruleFiles:
-  - /etc/prometheus/rules/ark.yaml
-  - /etc/prometheus/rules/cadvisor.yaml
-  - /etc/prometheus/rules/kube-apiserver.yaml
-  - /etc/prometheus/rules/kube-controller-manager.yaml
-  - /etc/prometheus/rules/kube-kubelet.yaml
-  - /etc/prometheus/rules/kube-scheduler.yaml
-  - /etc/prometheus/rules/kube-state-metrics.yaml
-  - /etc/prometheus/rules/kubermatic.yaml
-  - /etc/prometheus/rules/node-exporter.yaml
-  - /etc/prometheus/rules/prometheus.yaml
+  - /etc/prometheus/rules/general/*.yaml
+  # If you run in an environment where access to Kubernetes
+  # scheduler and controller-manager is not possible (like GKE),
+  # disable the expression below to not create false alerts
+  # for missing/unhealthy components.
+  - /etc/prometheus/rules/managed/*.yaml
 
   # Optionally add some more recording/alerting rules; the structure
   # beneath `rules` is identical to regular rules files as documented
