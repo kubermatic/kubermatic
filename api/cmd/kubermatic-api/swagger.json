@@ -1183,6 +1183,61 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades": {
+      "get": {
+        "description": "Gets possible node upgrades for a cluster",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "getClusterNodeUpgrades",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MasterVersion",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MasterVersion"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}": {
       "get": {
         "description": "This endpoint is deprecated, please create a Node Deployment instead.",

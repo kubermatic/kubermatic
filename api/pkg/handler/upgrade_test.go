@@ -121,3 +121,127 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 		})
 	}
 }
+
+func TestGetClusterNodeUpgrades(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name                   string
+		cluster                *kubermaticv1.Cluster
+		apiUser                apiv1.User
+		existingKubermaticObjs []runtime.Object
+
+		existingUpdates  []*version.MasterUpdate
+		existingVersions []*version.MasterVersion
+		expectedOutput   []*apiv1.MasterVersion
+	}{
+		{
+			name: "only the same major version and no more than 2 minor versions behind the control plane",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "foo",
+					Labels: map[string]string{"user": test.UserName},
+				},
+				Spec: kubermaticv1.ClusterSpec{Version: *ksemver.NewSemverOrDie("1.6.0")},
+			},
+			apiUser:                *test.GenDefaultAPIUser(),
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(),
+			existingUpdates: []*version.MasterUpdate{
+				{
+					From:      "1.6.0",
+					To:        "1.6.1",
+					Automatic: false,
+				},
+				{
+					From:      "1.6.x",
+					To:        "1.7.0",
+					Automatic: false,
+				},
+			},
+			existingVersions: []*version.MasterVersion{
+				{
+					Version: semver.MustParse("0.0.1"),
+				},
+				{
+					Version: semver.MustParse("0.1.0"),
+				},
+				{
+					Version: semver.MustParse("1.0.0"),
+				},
+				{
+					Version: semver.MustParse("1.4.0"),
+				},
+				{
+					Version: semver.MustParse("1.4.1"),
+				},
+				{
+					Version: semver.MustParse("1.5.0"),
+				},
+				{
+					Version: semver.MustParse("1.5.1"),
+				},
+				{
+					Version: semver.MustParse("1.6.0"),
+				},
+				{
+					Version: semver.MustParse("1.6.1"),
+				},
+				{
+					Version: semver.MustParse("1.7.0"),
+				},
+				{
+					Version: semver.MustParse("1.7.1"),
+				},
+				{
+					Version: semver.MustParse("2.0.0"),
+				},
+			},
+			expectedOutput: []*apiv1.MasterVersion{
+				{
+					Version: semver.MustParse("1.6.0"),
+				},
+				{
+					Version: semver.MustParse("1.6.1"),
+				},
+				{
+					Version: semver.MustParse("1.4.0"),
+				},
+				{
+					Version: semver.MustParse("1.4.1"),
+				},
+				{
+					Version: semver.MustParse("1.5.0"),
+				},
+				{
+					Version: semver.MustParse("1.5.1"),
+				},
+			},
+		},
+	}
+	for _, testStruct := range tests {
+		t.Run(testStruct.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/foo/nodes/upgrades", test.ProjectName), nil)
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{testStruct.cluster}
+			kubermaticObj = append(kubermaticObj, testStruct.existingKubermaticObjs...)
+			ep, err := test.CreateTestEndpoint(testStruct.apiUser, []runtime.Object{}, kubermaticObj,
+				testStruct.existingVersions, testStruct.existingUpdates, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create testStruct endpoint due to %v", err)
+			}
+			ep.ServeHTTP(res, req)
+			if res.Code != http.StatusOK {
+				t.Fatalf("Expected status code to be 200, got %d\nResponse body: %q", res.Code, res.Body.String())
+			}
+
+			var response []*apiv1.MasterVersion
+			err = json.Unmarshal(res.Body.Bytes(), &response)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := deep.Equal(response, testStruct.expectedOutput); diff != nil {
+				t.Fatalf("got different versions response than expected. Diff: %v", diff)
+			}
+		})
+	}
+}
