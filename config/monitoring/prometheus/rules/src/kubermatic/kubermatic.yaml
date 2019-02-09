@@ -11,7 +11,7 @@ groups:
       severity: warning
     runbook:
       steps:
-      - Ensure that the controller-manager pod's logs.
+      - Check the controller-manager pod's logs.
 
   - alert: KubermaticClusterDeletionTakesTooLong
     annotations:

@@ -1,0 +1,12 @@
+# This file has been generated, do not edit.
+groups:
+- name: cadvisor
+  rules:
+  - alert: CadvisorDown
+    annotations:
+      message: Cadvisor has disappeared from Prometheus target discovery.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-cadvisordown
+    expr: absent(up{job="cadvisor"} == 1)
+    for: 15m
+    labels:
+      severity: critical
