@@ -1,60 +1,30 @@
 # This file has been generated, do not edit.
 groups:
-- name: kubernetes-system
+- name: kube-apiserver
   rules:
-  - alert: KubeNodeNotReady
-    annotations:
-      message: '{{ $labels.node }} has been unready for more than an hour.'
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubenodenotready
-    expr: kube_node_status_condition{job="kube-state-metrics",condition="Ready",status="true"}
-      == 0
-    for: 1h
+  - expr: |
+      histogram_quantile(0.99, sum(rate(apiserver_request_latencies_bucket{job="apiserver"}[5m])) without(instance, pod)) / 1e+06
     labels:
-      severity: warning
-  - alert: KubeVersionMismatch
-    annotations:
-      message: There are {{ $value }} different versions of Kubernetes components
-        running.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeversionmismatch
-    expr: count(count(kubernetes_build_info{job!="dns"}) by (gitVersion)) > 1
-    for: 1h
+      quantile: "0.99"
+    record: cluster_quantile:apiserver_request_latencies:histogram_quantile
+  - expr: |
+      histogram_quantile(0.9, sum(rate(apiserver_request_latencies_bucket{job="apiserver"}[5m])) without(instance, pod)) / 1e+06
     labels:
-      severity: warning
-  - alert: KubeClientErrors
+      quantile: "0.9"
+    record: cluster_quantile:apiserver_request_latencies:histogram_quantile
+  - expr: |
+      histogram_quantile(0.5, sum(rate(apiserver_request_latencies_bucket{job="apiserver"}[5m])) without(instance, pod)) / 1e+06
+    labels:
+      quantile: "0.5"
+    record: cluster_quantile:apiserver_request_latencies:histogram_quantile
+  - alert: KubernetesApiserverDown
     annotations:
-      message: The pod {{ $labels.namespace }}/{{ $labels.pod }} is experiencing {{
-        printf "%0.0f" $value }}% errors.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclienterrors
-    expr: |
-      (sum(rate(rest_client_requests_total{code=~"5..",job="pods"}[5m])) by (namespace, pod)
-        /
-      sum(rate(rest_client_requests_total{job="pods"}[5m])) by (namespace, pod))
-      * 100 > 1
+      message: KubernetesApiserver has disappeared from Prometheus target discovery.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubernetesapiserverdown
+    expr: absent(up{job="apiserver"} == 1)
     for: 15m
     labels:
-      severity: warning
-  - alert: KubeClientErrors
-    annotations:
-      message: The kubelet on {{ $labels.instance }} is experiencing {{ printf "%0.0f"
-        $value }}% errors.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclienterrors
-    expr: |
-      (sum(rate(rest_client_requests_total{code=~"5..",job="kubelet"}[5m])) by (instance)
-        /
-      sum(rate(rest_client_requests_total{job="kubelet"}[5m])) by (instance))
-      * 100 > 1
-    for: 15m
-    labels:
-      severity: warning
-  - alert: KubeletTooManyPods
-    annotations:
-      message: Kubelet {{ $labels.instance }} is running {{ $value }} pods, close
-        to the limit of 110.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubelettoomanypods
-    expr: kubelet_running_pod_count{job="kubelet"} > 110 * 0.9
-    for: 15m
-    labels:
-      severity: warning
+      severity: critical
   - alert: KubeAPILatencyHigh
     annotations:
       message: The API server has a 99th percentile latency of {{ $value }} seconds

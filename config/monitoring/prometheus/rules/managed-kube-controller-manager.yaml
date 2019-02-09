@@ -1,0 +1,20 @@
+# This file has been generated, do not edit.
+groups:
+- name: kube-controller-manager
+  rules:
+  - expr: |
+      sum (
+        (sum by (pod) (kube_pod_labels{label_component="kube-controller-manager"}))
+        * on (pod)
+        (sum by (pod) (kube_pod_status_ready{condition="true"}))
+      )
+    record: :ready_kube_controller_managers:sum
+  - alert: KubeControllerManagerDown
+    annotations:
+      message: No healthy controller-manager pods exist inside the cluster.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubecontrollermanagerdown
+    expr: absent(:ready_kube_controller_managers:sum) or :ready_kube_controller_managers:sum
+      == 0
+    for: 10m
+    labels:
+      severity: critical
