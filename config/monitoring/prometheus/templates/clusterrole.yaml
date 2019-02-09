@@ -11,7 +11,6 @@ rules:
   - services
   - endpoints
   - pods
-  - pods/proxy
   verbs:
   - get
   - list
