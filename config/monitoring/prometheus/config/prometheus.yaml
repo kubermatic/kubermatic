@@ -9,9 +9,14 @@ global:
     {{- end }}
   {{- end }}
 
-{{- if .Values.prometheus.ruleFiles }}
+{{- if (or .Values.prometheus.ruleFiles .Values.prometheus.rules) }}
 rule_files:
+{{- if .Values.prometheus.ruleFiles }}
 {{- toYaml .Values.prometheus.ruleFiles | nindent 2 }}
+{{- end }}
+{{- if .Values.prometheus.rules }}
+- /etc/prometheus/rules/_customrules.yaml
+{{- end }}
 {{- end }}
 
 {{ if or .Values.prometheus.alertmanagers.files .Values.prometheus.alertmanagers.configs }}

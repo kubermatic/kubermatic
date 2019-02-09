@@ -1,5 +1,5 @@
 name: prometheus
-version: 0.1.0
+version: 1.1.0
 description: Prometheus for Kubermatic
 keywords:
   - k8s
@@ -9,5 +9,5 @@ home: http://www.kubermatic.io/
 sources:
   - https://github.com/kubermatic/kubermatic/config
 maintainers:
-  - name: Sebastian Scheele
-    email: sebastian@loodse.com
+  - name: Christoph Mewes
+    email: christoph@loodse.com
