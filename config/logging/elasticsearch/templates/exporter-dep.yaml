@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch-exporter
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: elasticsearch-exporter
+      annotations:
+        kubermatic/scrape: "true"
+        kubermatic/scrape_port: "9108"
+    spec:
+      containers:
+      - name: exporter
+        image: "{{ .Values.logging.elasticsearch.exporter.image.repository }}:{{ .Values.logging.elasticsearch.exporter.image.tag }}"
+        imagePullPolicy: {{ .Values.logging.elasticsearch.exporter.image.pullPolicy }}
+        command:
+        - elasticsearch_exporter
+        args:
+        - '-es.uri=http://es-data:9200'
+        - '-es.all={{ .Values.logging.elasticsearch.exporter.all }}'
+        - '-es.indices={{ .Values.logging.elasticsearch.exporter.indices }}'
+        resources:
+{{ toYaml .Values.logging.elasticsearch.exporter.resources | indent 10 }}
+        ports:
+        - containerPort: 9108
+          name: http
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          timeoutSeconds: 10
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
