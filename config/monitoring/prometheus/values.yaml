@@ -1,8 +1,6 @@
 prometheus:
-  # admin:loodse123
-  auth: 'YWRtaW46JGFwcjEkUFR0Y3lQc0MkWVZFTk9nZmpiVE52RWtSeVk1ZjJULgo='
-  version: 'v2.6.0'
-  host: ""
+  version: v2.7.1
+  host: ''
   storageSize: 100Gi
   backups: true
 
@@ -19,7 +17,8 @@ prometheus:
   # support it.
   scraping:
     files:
-    - 'config/scraping/*.yaml'
+    - config/scraping/*.yaml
+
     #configs:
     #- job_name: myscrapejob
     #  honor_labels: true
@@ -29,7 +28,7 @@ prometheus:
   # target alertmanagers here.
   alertmanagers:
     files:
-    - 'config/alertmanagers/*.yaml'
+    - config/alertmanagers/*.yaml
     #configs:
     #- scheme: http
     #  path_prefix: /
@@ -41,11 +40,17 @@ prometheus:
   # own rule files. You can remove the predefined path to
   # effectively disable the stock recordings and alerts.
   ruleFiles:
-  - '/etc/prometheus/rules/*.yaml'
+  - /etc/prometheus/rules/general-*.yaml
+  - /etc/prometheus/rules/kubermatic-*.yaml
+  # If you run in an environment where access to Kubernetes
+  # scheduler and controller-manager is not possible (like GKE),
+  # disable the expression below to not create false alerts
+  # for missing/unhealthy components.
+  - /etc/prometheus/rules/managed-*.yaml
 
   # Optionally add some more recording/alerting rules; the structure
   # beneath `rules` is identical to regular rules files as documented
-  # in https://prometheus.io/docs/prometheus/2.2/getting_started/
+  # in https://prometheus.io/docs/prometheus/2.7/getting_started/
   # For larger collections of rules, consider using the custom volume
   # approach shown further down in the `volumes` section.
   #rules:
