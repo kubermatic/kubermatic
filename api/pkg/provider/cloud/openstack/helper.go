@@ -58,9 +58,9 @@ type NetworkWithExternalExt struct {
 	osextnetwork.NetworkExternalExt
 }
 
-func getAllNetworks(netClient *gophercloud.ServiceClient) ([]NetworkWithExternalExt, error) {
+func getAllNetworks(netClient *gophercloud.ServiceClient, opts osnetworks.ListOpts) ([]NetworkWithExternalExt, error) {
 	var allNetworks []NetworkWithExternalExt
-	allPages, err := osnetworks.List(netClient, nil).AllPages()
+	allPages, err := osnetworks.List(netClient, opts).AllPages()
 	if err != nil {
 		return nil, err
 	}
@@ -72,23 +72,31 @@ func getAllNetworks(netClient *gophercloud.ServiceClient) ([]NetworkWithExternal
 	return allNetworks, nil
 }
 
-func getNetworkByName(netClient *gophercloud.ServiceClient, network string, isExternal bool) (*NetworkWithExternalExt, error) {
-	existingNetworks, err := getAllNetworks(netClient)
+func getNetworkByName(netClient *gophercloud.ServiceClient, name string, isExternal bool) (*NetworkWithExternalExt, error) {
+	existingNetworks, err := getAllNetworks(netClient, osnetworks.ListOpts{Name: name})
 	if err != nil {
 		return nil, err
 	}
 
+	candidates := []*NetworkWithExternalExt{}
 	for _, n := range existingNetworks {
-		if n.Name == network && n.External == isExternal {
-			return &n, nil
+		if n.External == isExternal {
+			candidates = append(candidates, &n)
 		}
 	}
 
-	return nil, errNotFound
+	switch len(candidates) {
+	case 1:
+		return candidates[0], nil
+	case 0:
+		return nil, errNotFound
+	default:
+		return nil, fmt.Errorf("found %d external networks for name '%s', expected one at most", len(candidates), name)
+	}
 }
 
 func getExternalNetwork(netClient *gophercloud.ServiceClient) (*NetworkWithExternalExt, error) {
-	existingNetworks, err := getAllNetworks(netClient)
+	existingNetworks, err := getAllNetworks(netClient, osnetworks.ListOpts{})
 	if err != nil {
 		return nil, err
 	}
@@ -362,8 +370,20 @@ func getTenants(authClient *gophercloud.ProviderClient, region string) ([]osproj
 	return allProjects, nil
 }
 
-func getSubnetForNetwork(netClient *gophercloud.ServiceClient, networkID string) ([]ossubnets.Subnet, error) {
+func getSubnetForNetwork(netClient *gophercloud.ServiceClient, networkIDOrName string) ([]ossubnets.Subnet, error) {
 	var allSubnets []ossubnets.Subnet
+
+	networks, err := getAllNetworks(netClient, osnetworks.ListOpts{Name: networkIDOrName})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list networks: %v", err)
+	}
+
+	networkID := networkIDOrName
+	if len(networks) == 1 {
+		networkID = networks[0].ID
+	} else if len(networks) > 1 {
+		return nil, fmt.Errorf("got %d networks for idOrName '%s', expected one at most", len(networks), networkIDOrName)
+	}
 
 	allPages, err := ossubnets.List(netClient, ossubnets.ListOpts{NetworkID: networkID}).AllPages()
 	if err != nil {

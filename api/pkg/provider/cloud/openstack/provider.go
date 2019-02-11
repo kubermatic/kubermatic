@@ -10,6 +10,7 @@ import (
 	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	osprojects "github.com/gophercloud/gophercloud/openstack/identity/v3/projects"
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
+	osnetworks "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 	"github.com/gophercloud/gophercloud/pagination"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -385,7 +386,7 @@ func (os *Provider) GetNetworks(cloud kubermaticv1.CloudSpec) ([]NetworkWithExte
 		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
 	}
 
-	networks, err := getAllNetworks(authClient)
+	networks, err := getAllNetworks(authClient, osnetworks.ListOpts{})
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get networks: %v", err)
 	}
