@@ -1,3 +1,137 @@
+### [v2.9.0]()
+
+
+Supported Kubernetes versions:
+- `1.11.5-7`
+- `1.12.3-5`
+- `1.13.0-2`
+
+
+**Cloud Provider:**
+
+- Added support for PersistentVolumes on **Hetzner Cloud** [#2613](https://github.com/kubermatic/kubermatic/issues/2613) ([alvaroaleman](https://github.com/alvaroaleman))
+- Openstack Floating IPs will now be de-allocated from your project if they were allocated during node creation [#2675](https://github.com/kubermatic/kubermatic/issues/2675) ([alvaroaleman](https://github.com/alvaroaleman))
+
+
+**Misc:**
+
+- Added support for Kubernetes `v1.13`
+- Kubermatic now supports Kubernetes 1.12 [#2132](https://github.com/kubermatic/kubermatic/issues/2132) ([alvaroaleman](https://github.com/alvaroaleman))
+- The startup time for new clusters was improved [#2148](https://github.com/kubermatic/kubermatic/issues/2148) ([alvaroaleman](https://github.com/alvaroaleman))
+- API endpoints for clusters not separated into projects have been deprecated. [#2244](https://github.com/kubermatic/kubermatic/issues/2244) ([p0lyn0mial](https://github.com/p0lyn0mial))
+- The EOL Kubernetes 1.9 is no longer supported [#2252](https://github.com/kubermatic/kubermatic/issues/2252) ([kdomanski](https://github.com/kdomanski))
+- S3 metrics exporter has been moved out of the kubermatic chart into its own chart [#2256](https://github.com/kubermatic/kubermatic/issues/2256) ([xrstf](https://github.com/xrstf))
+- Displaying the terms of service can now be toggled in values.yaml [#2277](https://github.com/kubermatic/kubermatic/issues/2277) ([kgroschoff](https://github.com/kgroschoff))
+- [ACTION REQUIRED] added a new command line flag to API server that accepts a set of key=value pairs that enables/disables various features. Existing `enable-prometheus-endpoint` flag is deprecated, the users should use `-feature-gates=PrometheusEndpoint=true` instead.  [#2278](https://github.com/kubermatic/kubermatic/issues/2278) ([p0lyn0mial](https://github
+.com/p0lyn0mial))
+- etcd readiness check timeouts have been increased [#2312](https://github.com/kubermatic/kubermatic/issues/2312) ([mrIncompetent](https://github.com/mrIncompetent))
+- Removed unused fields from cloud specs exposed in the API [#2314](https://github.com/kubermatic/kubermatic/issues/2314) ([maciaszczykm](https://github.com/maciaszczykm))
+- Added a new HTTP endpoint for generating kubeconfig with OIDC tokens. The path of the endpoint is `api/v1/kubeconfig`[Action required] users need to add redirection to api/v1/kubeconfig to dex installation[Action required] kubermatic API command line args were changed:`token-issuer` to `oidc-token-issuer`, `token-issuer-skip-tls-verify` to `oidc-skip-tls-ver
+ify`, `client-id` to `oidc-client-id`[Action required] to enable the endpoint the users must set `-feature-gates=OIDCKubeCfgEndpoint=true` and provide `-oidc-client-secret`, `-oidc-redirect-uri` when running the server. If the provider they are working with doesn&#39;t accept `refresh_token` as a scope, setting `-oidc-offline-access-as-scope=false` will pass a
+ppropriate query parameter instead. [#2315](https://github.com/kubermatic/kubermatic/issues/2315) ([p0lyn0mial](https://github.com/p0lyn0mial))
+- [ACTION REQUIRED] kubermatic API command line args were changed: `oidc-issuer-url` to `oidc-url`, `oidc-client-id` to `oidc-authenticator-client-id`, `oidc-offline-access-as-scope` to `oidc-issuer-offline-access-as-scope`, `oidc-redirect-uri` to `oidc-issuer-redirect-uri` and new was added: `oidc-issuer-client-id` [#2338](https://github.com/kubermatic/kuberm
+atic/issues/2338) ([zreigz](https://github.com/zreigz))
+- Kubermatic now validates nodes synchronously [#2340](https://github.com/kubermatic/kubermatic/issues/2340) ([alvaroaleman](https://github.com/alvaroaleman))
+- Added endpoints to manage Machine Deployments [#2357](https://github.com/kubermatic/kubermatic/issues/2357) ([maciaszczykm](https://github.com/maciaszczykm))
+- Components will no longer be shown as as unhealthy when only some replicas are up [#2358](https://github.com/kubermatic/kubermatic/issues/2358) ([mrIncompetent](https://github.com/mrIncompetent))
+- Kubernetes API servers can now be used with OpenID authentication[ACTION REQUIRED] to enable the OpenID for kubernetes API server the users must set `-feature-gates=OpenIDConnectTokens=true` and provide `-oidc-issuer-url`, `-oidc-issuer-client-id` when running the controller. [#2370](https://github.com/kubermatic/kubermatic/issues/2370) ([zreigz](https://git
+hub.com/zreigz))
+- [ACTION REQUIRED] Resource limits for control plane containers have been increased. This might require additional resources for the seed cluster [#2395](https://github.com/kubermatic/kubermatic/issues/2395) ([mrIncompetent](https://github.com/mrIncompetent))
+- Kubermatic controller can now use TLS verification[Action required] to enable the TLS verification for kubermatic-controller-manager the users must set `-feature-gates=OpenIDAuthPlugin=true` and provide `-oidc-issuer-url`, `-oidc-issuer-client-id` and `--oidc-ca-file` when running the controller.[Action required] user need CA bundle file with a correct chain
+ of certificates [#2403](https://github.com/kubermatic/kubermatic/issues/2403) ([zreigz](https://github.com/zreigz))
+- [ACTION_REQUIRED] Kubermatic CustomResourceDefinitions have been extracted out of the helm chart. This requires the execution of the `charts/kubermatic/migrate/migrate-kubermatic-chart.sh` script in case the CRD&#39;s where installed without the `&#34;helm.sh/resource-policy&#34;: keep` annotation. [#2459](https://github.com/kubermatic/kubermatic/issues/2459
+) ([mrIncompetent](https://github.com/mrIncompetent))
+- Control plane components are no longer logging at debug level [#2471](https://github.com/kubermatic/kubermatic/issues/2471) ([mrIncompetent](https://github.com/mrIncompetent))
+- Experimantal support for VerticalPodAutoscaler has been added. The VPA resources use the PodUpdatePolicy=initial [#2505](https://github.com/kubermatic/kubermatic/issues/2505) ([mrIncompetent](https://github.com/mrIncompetent))
+- Added 1.11.6 &amp; 1.12.4 to supported Kubernetes versions [#2537](https://github.com/kubermatic/kubermatic/issues/2537) ([mrIncompetent](https://github.com/mrIncompetent))
+- Setting CA bundle with the `oidc-ca-file flag` is now optional [#2562](https://github.com/kubermatic/kubermatic/issues/2562) ([kgroschoff](https://github.com/kgroschoff))
+- Endpoint PUT /api/v1/projects/{project_id} for a renaming of the project is implemented [#2588](https://github.com/kubermatic/kubermatic/issues/2588) ([glower](https://github.com/glower))
+- New header params added to delete cluster operation: `DeleteVolumes` and `DeleteLoadBalancers`. Setting `DeleteVolumes` for `true` adds `kubermatic.io/cleanup-in-cluster-pv` finilizer. Setting `DeleteLoadBalancers` for `true` adds `kubermatic.io/cleanup-in-cluster-lb` finilizer. [#2604](https://github.com/kubermatic/kubermatic/issues/2604) ([zreigz](https://
+github.com/zreigz))
+- Credentials for Docker Hub are no longer necessary. [#2605](https://github.com/kubermatic/kubermatic/issues/2605) ([kdomanski](https://github.com/kdomanski))
+- Added support for Heptio Ark-based backups [#2617](https://github.com/kubermatic/kubermatic/issues/2617) ([xrstf](https://github.com/xrstf))
+- Running `kubectl get cluster` in a seed now shows some more details [#2622](https://github.com/kubermatic/kubermatic/issues/2622) ([alvaroaleman](https://github.com/alvaroaleman))
+- Added new edpoint: `/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/events` with query parameter `type`. When `?type=warning` then endpoint returns only warning type events. When `?type=normal` then endpoint returns only normal type events. Without query parameters the endpoint returns all events. [#2647]
+(https://github.com/kubermatic/kubermatic/issues/2647) ([zreigz](https://github.com/zreigz))
+- Kubernetes 1.10 was removed as officially supported version from Kubermatic as its EOL [#2712](https://github.com/kubermatic/kubermatic/issues/2712) ([alvaroaleman](https://github.com/alvaroaleman))
+- Updated machine controller to `v0.10.5` [#2490](https://github.com/kubermatic/kubermatic/issues/2490) ([mrIncompetent](https://github.com/mrIncompetent))
+- Updated dex to 2.12.0 [#2318](https://github.com/kubermatic/kubermatic/issues/2318) ([bashofmann](https://github.com/bashofmann))
+- Updated Ark to 0.10 [requires manual configuration update] [#2615](https://github.com/kubermatic/kubermatic/issues/2615) ([xrstf](https://github.com/xrstf))
+- Updated nginx-ingress-controller to `v0.22.0` [#2668](https://github.com/kubermatic/kubermatic/issues/2668) ([xrstf](https://github.com/xrstf))
+- [ACTION REQUIRED] Updated cert-manager to `v0.6.0` (see https://cert-manager.readthedocs.io/en/latest/admin/upgrading/index.html) [#2674](https://github.com/kubermatic/kubermatic/issues/2674) ([xrstf](https://github.com/xrstf))
+
+
+**Dashboard**:
+- Updated Kubermatic dashboard to `v1.1.0` [#2683](https://github.com/kubermatic/kubermatic/issues/2683) ([mrIncompetent](https://github.com/mrIncompetent))
+    - It is now possible to edit the project name in UI. [#1003](https://github.com/kubermatic/dashboard-v2/issues/1003) ([kgroschoff](https://github.com/kgroschoff))
+    - Machine Networks for VSphere can now be set in the UI [#829](https://github.com/kubermatic/dashboard-v2/issues/829) ([kgroschoff](https://github.com/kgroschoff))
+    - VSphere: Setting a dedicated VSphere user for cloud provider functionalities is now possible. [#834](https://github.com/kubermatic/dashboard-v2/issues/834) ([kgroschoff](https://github.com/kgroschoff))
+    - Fixed that the cluster upgrade link did not appear directly when the details page is loaded [#836](https://github.com/kubermatic/dashboard-v2/issues/836) ([bashofmann](https://github.com/bashofmann))
+    - Kubeconfig can now be shared via a generated link from the UI [#857](https://github.com/kubermatic/dashboard-v2/issues/857) ([kgroschoff](https://github.com/kgroschoff))
+    - Fixed duplicated SSH keys in summary view during cluster creation. [#879](https://github.com/kubermatic/dashboard-v2/issues/879) ([kgroschoff](https://github.com/kgroschoff))
+    - On project change, the user will stay on the same page, if he has the corresponding rights. [#889](https://github.com/kubermatic/dashboard-v2/issues/889) ([kgroschoff](https://github.com/kgroschoff))
+    - Fixed issues with caching the main page. [#893](https://github.com/kubermatic/dashboard-v2/issues/893) ([maciaszczykm](https://github.com/maciaszczykm))
+    - Added support for creating, viewing, updating and deleting node deployments. [#949](https://github.com/kubermatic/dashboard-v2/issues/949) ([maciaszczykm](https://github.com/maciaszczykm))
+    - Added Node Deployment details view [#973](https://github.com/kubermatic/dashboard-v2/issues/973) ([maciaszczykm](https://github.com/maciaszczykm))
+    - Removed Container Runtime selection, which is no longer supported. [#828](https://github.com/kubermatic/dashboard-v2/issues/828) ([bashofmann](https://github.com/bashofmann))
+    - Menu entries will be disabled as long as selected project is not in active state.
+    - Selected project state icon was added in the project selector and in the list view.
+    - Input field inside add project dialog will be automatically focused after opening dialog.
+    - After adding new project user will be redirected to project list [#808](https://github.com/kubermatic/dashboard-v2/issues/808) ([maciaszczykm](https://github.com/maciaszczykm))
+    - Notifications timeout is now 10s.
+    - Close and copy to clipboard actions are available on notifications. [#798](https://github.com/kubermatic/dashboard-v2/issues/798) ([maciaszczykm](https://github.com/maciaszczykm))
+    - Provider-specific data will now be fetched without re-sending credentials. [#814](https://github.com/kubermatic/dashboard-v2/issues/814) ([maciaszczykm](https://github.com/maciaszczykm))
+    - Various minor visual improvements
+
+
+**Monitoring:**
+
+- Version v1.11.0 - 1.11.3 Clusters will no longer gather `rest_*` metrics from the controller-manager due to a [bug in kubernetes](https://github.com/kubernetes/kubernetes/pull/68530) [#2020](https://github.com/kubermatic/kubermatic/issues/2020) ([cbeneke](https://github.com/cbeneke))
+- Enabled scraping of user cluster resources [#2149](https://github.com/kubermatic/kubermatic/issues/2149) ([thetechnick](https://github.com/thetechnick))
+- Prometheus is now scraping user clustersNew `kubermatic-controller-manager` flag `monitoring-scrape-annotation-prefix` [#2219](https://github.com/kubermatic/kubermatic/issues/2219) ([thetechnick](https://github.com/thetechnick))
+- UserCluster Prometheus: decreased storage.tsdb.retention to 1h [#2246](https://github.com/kubermatic/kubermatic/issues/2246) ([thetechnick](https://github.com/thetechnick))
+- Add datacenter label to kubermatic_cluster_info metric [#2248](https://github.com/kubermatic/kubermatic/issues/2248) ([kron4eg](https://github.com/kron4eg))
+- Fixed the trigger condition for `EtcdInsufficientMembers` alert [#2262](https://github.com/kubermatic/kubermatic/issues/2262) ([cbeneke](https://github.com/cbeneke))
+- [ACTION REQUIRED] move the metrics-server into the seed cluster. The metrics-server addon must be removed from the list of addons to install. [#2320](https://github.com/kubermatic/kubermatic/issues/2320) ([mrIncompetent](https://github.com/mrIncompetent))
+- ArkNoRecentBackup alert does not trigger on backups that are not part of a schedule [#2351](https://github.com/kubermatic/kubermatic/issues/2351) ([bashofmann](https://github.com/bashofmann))
+- fluentd has been replaced with fluentbit [#2469](https://github.com/kubermatic/kubermatic/issues/2469) ([mrIncompetent](https://github.com/mrIncompetent))
+- Cluster Prometheus resource requests and limits are now configurable in cluster resource [#2576](https://github.com/kubermatic/kubermatic/issues/2576) ([bashofmann](https://github.com/bashofmann))
+- Alerts for for control-plane components now reside in cluster namespaces [#2583](https://github.com/kubermatic/kubermatic/issues/2583) ([xrstf](https://github.com/xrstf))
+- Updated kube-state-metrics to 1.5.0 [#2627](https://github.com/kubermatic/kubermatic/issues/2627) ([xrstf](https://github.com/xrstf))
+- Updated Prometheus to `v2.6.0` [#2597](https://github.com/kubermatic/kubermatic/issues/2597) ([xrstf](https://github.com/xrstf))
+- Updated alertmanager to `v0.16` [#2661](https://github.com/kubermatic/kubermatic/issues/2661) ([xrstf](https://github.com/xrstf))
+- Updated Grafana to `v5.4.3` [#2662](https://github.com/kubermatic/kubermatic/issues/2662) ([xrstf](https://github.com/xrstf))
+- Updated node-exporter to `v0.17` (**note: breaking changes to metric names might require updates to customized dashboards**) [#2666](https://github.com/kubermatic/kubermatic/issues/2666) ([xrstf](https://github.com/xrstf))
+- Updated Minio to `RELEASE.2019-01-16T21-44-08Z` [#2667](https://github.com/kubermatic/kubermatic/issues/2667) ([xrstf](https://github.com/xrstf))
+- metrics-server will use 2 replicas [#2707](https://github.com/kubermatic/kubermatic/issues/2707) ([mrIncompetent](https://github.com/mrIncompetent))
+
+
+**Security:**
+
+- The admin token can no longer be read through the Kubermatic API. [#2105](https://github.com/kubermatic/kubermatic/issues/2105) ([p0lyn0mial](https://github.com/p0lyn0mial))
+- Communicating with cloud providers through the project APIs no longer requires providing additional credentials. [#2180](https://github.com/kubermatic/kubermatic/issues/2180) ([p0lyn0mial](https://github.com/p0lyn0mial))
+- [ACTION REQUIRED] to enable the Double Submit Cookies solution the users must set `-feature-gates=OIDCKubeCfgEndpoint=true` and provide settings for cookie `oidc-issuer-cookie-hash-key` and`oidc-issuer-cookie-secure-mode`  [#2360](https://github.com/kubermatic/kubermatic/issues/2360) ([zreigz](https://github.com/zreigz))
+- Kubernetes will be automatically updated to versions that contain a fix for CVE-2018-1002105 [#2478](https://github.com/kubermatic/kubermatic/issues/2478) ([alvaroaleman](https://github.com/alvaroaleman))
+
+
+**Bugfix:**
+
+- Missing upgrade paths for K8S 1.10 and 1.11 have been addded. [#2159](https://github.com/kubermatic/kubermatic/issues/2159) ([mrIncompetent](https://github.com/mrIncompetent))
+- Fixed migration of users from older versions of Kubermatic [#2294](https://github.com/kubermatic/kubermatic/issues/2294) ([mrIncompetent](https://github.com/mrIncompetent))
+- Updated machine-controller to `v0.9.9`Fixed a bug in the machine-migration that caused cloud provider instances to not be properly identified anymore [#2307](https://github.com/kubermatic/kubermatic/issues/2307) ([alvaroaleman](https://github.com/alvaroaleman))
+- Fixd missing permissions in kube-state-metrics ClusterRole [#2366](https://github.com/kubermatic/kubermatic/issues/2366) ([bashofmann](https://github.com/bashofmann))
+- Missing ca-certificates have been added to s3-exporter image [#2464](https://github.com/kubermatic/kubermatic/issues/2464) ([bashofmann](https://github.com/bashofmann))
+- Adedd missing configmap checksums to kubermatic-controller-manager chart [#2492](https://github.com/kubermatic/kubermatic/issues/2492) ([bashofmann](https://github.com/bashofmann))
+- cloud-config files are now properly escaped [#2498](https://github.com/kubermatic/kubermatic/issues/2498) ([alvaroaleman](https://github.com/alvaroaleman))
+- SSH keys can no longer be added with duplicate names [#2499](https://github.com/kubermatic/kubermatic/issues/2499) ([kgroschoff](https://github.com/kgroschoff))
+- Fixed an issue with kubelets being unreachable by the apiserver on some OS configurations. [#2522](https://github.com/kubermatic/kubermatic/issues/2522) ([mrIncompetent](https://github.com/mrIncompetent))
+- Timestamp format has been unified throughout the Kubermatic API. [#2534](https://github.com/kubermatic/kubermatic/issues/2534) ([zreigz](https://github.com/zreigz))
+- Updated cert-manager to fix an issue which caused re-issuing of a certficate via the http01 challenge to fail [#2658](https://github.com/kubermatic/kubermatic/issues/2658) ([alvaroaleman](https://github.com/alvaroaleman))
+- NodeDeployments can no longer be configured to provision kubelets at versions incompatible with the control plane. [#2665](https://github.com/kubermatic/kubermatic/issues/2665) ([kdomanski](https://github.com/kdomanski))
+
+
+
+
 ### [v2.8.6]()
 
 - Added support for Kubernetes `v1.13` [#2628](https://github.com/kubermatic/kubermatic/issues/2628) ([mrIncompetent](https://github.com/mrIncompetent))
