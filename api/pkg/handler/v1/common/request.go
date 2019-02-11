@@ -69,7 +69,7 @@ func DecodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
 }
 
 // GetClusterReq defines HTTP request for deleteCluster and getClusterKubeconfig endpoints
-// swagger:parameters getCluster deleteCluster getClusterKubeconfig getClusterHealth getClusterUpgrades getClusterMetrics
+// swagger:parameters getCluster deleteCluster getClusterKubeconfig getClusterHealth getClusterUpgrades getClusterMetrics getClusterNodeUpgrades
 type GetClusterReq struct {
 	DCReq
 	// in: path
@@ -101,4 +101,9 @@ func DecodeClusterID(c context.Context, r *http.Request) (string, error) {
 	}
 
 	return clusterID, nil
+}
+
+// UserIDGetter knows how to get user ID from the request
+type UserIDGetter interface {
+	GetUserID() string
 }
