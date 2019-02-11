@@ -681,6 +681,6 @@ type Event struct {
 	// Type of this event (i.e. normal or warning). New types could be added in the future.
 	Type string `json:"type,omitempty"`
 
-	// The object name that those events are about.
+	// The object reference that those events are about.
 	InvolvedObject ObjectReference `json:"involvedObject"`
 }
