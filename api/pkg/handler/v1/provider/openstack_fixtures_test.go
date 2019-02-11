@@ -340,20 +340,6 @@ const GetNetworks = `
     "networks": [
         {
             "admin_state_up": true,
-            "id": "396f12f8-521e-4b91-8e21-2e003500433a",
-            "name": "net3",
-            "provider:network_type": "vlan",
-            "provider:physical_network": "physnet1",
-            "provider:segmentation_id": 1002,
-            "router:external": false,
-            "shared": false,
-            "status": "ACTIVE",
-            "subnets": [],
-            "tenant_id": "20bd52ff3e1b40039c312395b04683cf",
-            "project_id": "20bd52ff3e1b40039c312395b04683cf"
-        },
-        {
-            "admin_state_up": true,
             "id": "71c1e68c-171a-4aa2-aca5-50ea153a3718",
             "name": "net2",
             "provider:network_type": "vlan",
