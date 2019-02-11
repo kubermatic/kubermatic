@@ -78,13 +78,21 @@ func getNetworkByName(netClient *gophercloud.ServiceClient, name string, isExter
 		return nil, err
 	}
 
+	candidates := []*NetworkWithExternalExt{}
 	for _, n := range existingNetworks {
 		if n.External == isExternal {
-			return &n, nil
+			candidates = append(candidates, &n)
 		}
 	}
 
-	return nil, errNotFound
+	switch len(candidates) {
+	case 1:
+		return candidates[0], nil
+	case 0:
+		return nil, errNotFound
+	default:
+		return nil, fmt.Errorf("found %d external networks for name '%s', expected one at most", len(candidates), name)
+	}
 }
 
 func getExternalNetwork(netClient *gophercloud.ServiceClient) (*NetworkWithExternalExt, error) {
@@ -373,6 +381,8 @@ func getSubnetForNetwork(netClient *gophercloud.ServiceClient, networkIDOrName s
 	networkID := networkIDOrName
 	if len(networks) == 1 {
 		networkID = networks[0].ID
+	} else if len(networks) > 1 {
+		return nil, fmt.Errorf("got %d networks for idOrName '%s', expected one at most", len(networks), networkIDOrName)
 	}
 
 	allPages, err := ossubnets.List(netClient, ossubnets.ListOpts{NetworkID: networkID}).AllPages()
