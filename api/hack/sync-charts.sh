@@ -110,6 +110,24 @@ for CHART in ${BACKUP_CHARTS}; do
   echo "" >> ${TARGET_VALUES_FILE}
 done
 
+# merge duplicate top-level keys
+KNOWN_KEYS=()
+
+while IFS= read LINE; do
+  MATCH=$(echo "${LINE}" | grep -oE "^[a-zA-Z0-9]+" || true)
+
+  if [ -z "${MATCH}" ]; then
+    echo "${LINE}"
+  else
+    if ! [[ " ${KNOWN_KEYS[@]} " =~ " ${MATCH} " ]]; then
+      KNOWN_KEYS+=("${MATCH}")
+      echo "${LINE}"
+    fi
+  fi
+done < ${TARGET_VALUES_FILE} > ${TARGET_DIR}/values.example.tmp.yaml
+
+mv ${TARGET_DIR}/values.example.{tmp.,}yaml
+
 # commit and push
 cd ${TARGET_DIR}
 git add .
