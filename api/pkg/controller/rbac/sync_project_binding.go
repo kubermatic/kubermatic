@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/glog"
 
+	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
@@ -35,6 +36,9 @@ func (c *Controller) syncProjectBindings(key string) error {
 func (c *Controller) ensureProjectOwnerForBinding(projectBinding *kubermaticv1.UserProjectBinding) error {
 	project, err := getProjectForBinding(c.projectLister, projectBinding)
 	if err != nil {
+		if kerrors.IsNotFound(err) {
+			return removeFinalizerFromBinding(projectBinding, c.masterClusterProvider.kubermaticClient)
+		}
 		return err
 	}
 
@@ -69,6 +73,9 @@ func (c *Controller) ensureProjectOwnerForBinding(projectBinding *kubermaticv1.U
 func (c *Controller) ensureNotProjectOwnerForBinding(projectBinding *kubermaticv1.UserProjectBinding) error {
 	project, err := getProjectForBinding(c.projectLister, projectBinding)
 	if err != nil {
+		if kerrors.IsNotFound(err) {
+			return removeFinalizerFromBinding(projectBinding, c.masterClusterProvider.kubermaticClient)
+		}
 		return err
 	}
 
@@ -94,12 +101,15 @@ func (c *Controller) ensureNotProjectOwnerForBinding(projectBinding *kubermaticv
 	if err != nil {
 		return err
 	}
+	return removeFinalizerFromBinding(projectBinding, c.masterClusterProvider.kubermaticClient)
+}
 
+func removeFinalizerFromBinding(projectBinding *kubermaticv1.UserProjectBinding, client kubermaticclientset.Interface) error {
 	if sets.NewString(projectBinding.Finalizers...).Has(CleanupFinalizerName) {
 		finalizers := sets.NewString(projectBinding.Finalizers...)
 		finalizers.Delete(CleanupFinalizerName)
 		projectBinding.Finalizers = finalizers.List()
-		_, err = c.masterClusterProvider.kubermaticClient.KubermaticV1().UserProjectBindings().Update(projectBinding)
+		_, err := client.KubermaticV1().UserProjectBindings().Update(projectBinding)
 		return err
 
 	}
