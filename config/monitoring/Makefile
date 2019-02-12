@@ -10,4 +10,4 @@ check-rules:
 
 .PHONY: format-dashboards
 format-dashboards:
-	find grafana/dashboards -name '*.json' -exec sh -c "jq --sort-keys '.' {} > {}.tmp && mv {}.tmp {}" \;
+	./grafana/dashboards/cleanup.sh
