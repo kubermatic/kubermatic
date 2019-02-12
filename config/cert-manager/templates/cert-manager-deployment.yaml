@@ -11,6 +11,9 @@ spec:
     metadata:
       labels:
         app: cert-manager
+      annotations:
+        kubermatic/scrape: "true"
+        kubermatic/scrape_port: "9402"
     spec:
       serviceAccountName: cert-manager
       {{- if .Values.certManager.securityContext.enabled }}
@@ -44,3 +47,6 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+          ports:
+          - name: metrics
+            containerPort: 9402
