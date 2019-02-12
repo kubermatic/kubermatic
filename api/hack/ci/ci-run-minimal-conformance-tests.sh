@@ -10,7 +10,7 @@ export NAMESPACE="prow-kubermatic-${BUILD_ID}"
 echodate "Testing versions: ${VERSIONS}"
 cd $(dirname $0)/../..
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
-export EXCLUDE_DISRIBUTIONS=${EXCLUDE_DISRIBUTIONS:-ubuntu,centos}
+export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos}
 
 function retry {
   local retries=$1
@@ -199,5 +199,5 @@ timeout -s 9 90m ./conformance-tests \
   -aws-secret-access-key="$AWS_E2E_TESTS_SECRET" \
   -versions="$VERSIONS" \
   -providers=aws \
-  -exclude-distributions="${EXCLUDE_DISRIBUTIONS}" \
+  -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
   -kubermatic-delete-cluster=false

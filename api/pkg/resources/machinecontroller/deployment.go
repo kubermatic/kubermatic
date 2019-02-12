@@ -85,7 +85,7 @@ func DeploymentCreator(data resources.DeploymentDataProvider) resources.Deployme
 		dep.Spec.Template.Spec.Containers = []corev1.Container{
 			{
 				Name:            name,
-				Image:           data.ImageRegistry(resources.RegistryDocker) + "alvaroaleman/machine-controller:ca4e9f31c60eed356bfeaecb41d842b95b3e6db4",
+				Image:           data.ImageRegistry(resources.RegistryDocker) + "/alvaroaleman/machine-controller:ca4e9f31c60eed356bfeaecb41d842b95b3e6db4",
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command:         []string{"/usr/local/bin/machine-controller"},
 				Args: []string{
