@@ -877,7 +877,7 @@
       }
     }
   ],
-  "refresh": "30s",
+  "refresh": "<< refresh | default `30s` | toJson >>",
   "schemaVersion": 16,
   "style": "dark",
   "tags": [],
@@ -899,58 +899,16 @@
       },
       {
         "allValue": null,
-        "current": {
-          "tags": [],
-          "text": "All",
-          "value": [
-            "$__all"
-          ]
-        },
+        "current": {},
         "datasource": "$datasource",
         "hide": 0,
         "includeAll": true,
         "label": "Node",
         "multi": true,
         "name": "node",
-        "options": [
-          {
-            "selected": true,
-            "text": "All",
-            "value": "$__all"
-          },
-          {
-            "selected": false,
-            "text": "gke-kubermatic-dev-stable-aaa4c0f0-b8t0",
-            "value": "gke-kubermatic-dev-stable-aaa4c0f0-b8t0"
-          },
-          {
-            "selected": false,
-            "text": "gke-kubermatic-dev-stable-aaa4c0f0-d4tm",
-            "value": "gke-kubermatic-dev-stable-aaa4c0f0-d4tm"
-          },
-          {
-            "selected": false,
-            "text": "gke-kubermatic-dev-stable-aaa4c0f0-fpmz",
-            "value": "gke-kubermatic-dev-stable-aaa4c0f0-fpmz"
-          },
-          {
-            "selected": false,
-            "text": "gke-kubermatic-dev-stable-aaa4c0f0-fwb5",
-            "value": "gke-kubermatic-dev-stable-aaa4c0f0-fwb5"
-          },
-          {
-            "selected": false,
-            "text": "gke-kubermatic-dev-stable-aaa4c0f0-kc0c",
-            "value": "gke-kubermatic-dev-stable-aaa4c0f0-kc0c"
-          },
-          {
-            "selected": false,
-            "text": "gke-kubermatic-dev-stable-aaa4c0f0-w23x",
-            "value": "gke-kubermatic-dev-stable-aaa4c0f0-w23x"
-          }
-        ],
+        "options": [],
         "query": "label_values(kube_node_info, node)",
-        "refresh": 0,
+        "refresh": 2,
         "regex": "",
         "sort": 1,
         "tagValuesQuery": "",
@@ -962,7 +920,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "<< defaultRange | toJson >>",
     "to": "now"
   },
   "timepicker": {

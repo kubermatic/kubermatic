@@ -641,10 +641,7 @@
       },
       {
         "allValue": null,
-        "current": {
-          "text": "",
-          "value": ""
-        },
+        "current": {},
         "datasource": "$datasource",
         "hide": 0,
         "includeAll": false,
@@ -694,7 +691,7 @@
       "30d"
     ]
   },
-  "timezone": "browser",
+  "timezone": "",
   "title": "Nodes",
   "uid": "9799befff62f",
   "version": 1
