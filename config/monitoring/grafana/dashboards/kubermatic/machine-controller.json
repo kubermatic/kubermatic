@@ -436,7 +436,7 @@
       "30d"
     ]
   },
-  "timezone": "browser",
+  "timezone": "",
   "title": "Machine Controller",
   "uid": "4b5fd6810d5c",
   "version": 1

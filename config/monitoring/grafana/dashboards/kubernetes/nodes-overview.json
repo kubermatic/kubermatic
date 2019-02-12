@@ -749,7 +749,7 @@
       }
     }
   ],
-  "refresh": "30s",
+  "refresh": "<< refresh | default `30s` | toJson >>",
   "schemaVersion": 16,
   "style": "dark",
   "tags": [],
@@ -771,10 +771,7 @@
       },
       {
         "allValue": null,
-        "current": {
-          "text": "",
-          "value": ""
-        },
+        "current": {},
         "datasource": "$datasource",
         "hide": 0,
         "includeAll": true,
@@ -795,7 +792,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "<< defaultRange | toJson >>",
     "to": "now"
   },
   "timepicker": {
@@ -823,7 +820,7 @@
       "30d"
     ]
   },
-  "timezone": "browser",
+  "timezone": "",
   "title": "Nodes Overview",
   "uid": "13yQpUxiz",
   "version": 1

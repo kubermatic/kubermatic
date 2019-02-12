@@ -4,7 +4,7 @@
   },
   "editable": "<< editable | default false | toJson >>",
   "gnetId": null,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "hideControls": "<< hideControls | default false | toJson >>",
   "iteration": 1534359654832,
   "links": [],
@@ -1080,10 +1080,7 @@
       },
       {
         "allValue": ".*",
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        },
+        "current": {},
         "datasource": "$datasource",
         "hide": 0,
         "includeAll": true,
@@ -1092,7 +1089,7 @@
         "name": "namespace",
         "options": [],
         "query": "label_values(nginx_ingress_controller_config_hash, controller_namespace)",
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
         "sort": 0,
         "tagValuesQuery": "",
@@ -1103,10 +1100,7 @@
       },
       {
         "allValue": ".*",
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        },
+        "current": {},
         "datasource": "$datasource",
         "hide": 0,
         "includeAll": true,
@@ -1115,7 +1109,7 @@
         "name": "controller_class",
         "options": [],
         "query": "label_values(nginx_ingress_controller_config_hash{namespace=~\"$namespace\"}, controller_class) ",
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
         "sort": 0,
         "tagValuesQuery": "",
@@ -1126,10 +1120,7 @@
       },
       {
         "allValue": ".*",
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        },
+        "current": {},
         "datasource": "$datasource",
         "hide": 0,
         "includeAll": true,
@@ -1138,7 +1129,7 @@
         "name": "controller",
         "options": [],
         "query": "label_values(nginx_ingress_controller_config_hash{namespace=~\"$namespace\",controller_class=~\"$controller_class\"}, controller_pod) ",
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
         "sort": 0,
         "tagValuesQuery": "",
@@ -1178,7 +1169,7 @@
       "30d"
     ]
   },
-  "timezone": "browser",
+  "timezone": "",
   "title": "NGINX Ingress controller",
   "uid": "4ecf28ac7c24",
   "version": 1

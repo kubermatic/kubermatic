@@ -1765,7 +1765,7 @@
       "30d"
     ]
   },
-  "timezone": "browser",
+  "timezone": "",
   "title": "etcd (cluster overview)",
   "uid": "aa6e22781c60",
   "version": 2
