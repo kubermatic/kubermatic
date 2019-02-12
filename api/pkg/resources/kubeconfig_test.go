@@ -11,6 +11,7 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/cert/triple"
 )
@@ -98,14 +99,14 @@ func checkKubeConfigRegeneration(t *testing.T, orgs []string) {
 	data := &fakeDataProvider{caPair: ca}
 	assert.NotNil(t, data)
 
-	create := GetInternalKubeconfigCreator("test-creator", "test-creator-cn", orgs)
-	secret, err := create(data, nil)
+	create := GetInternalKubeconfigCreator("test-creator-cn", orgs, data)
+	secret, err := create(&corev1.Secret{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.NotNil(t, secret)
 
-	secret2, err := create(data, secret.DeepCopy())
+	secret2, err := create(secret.DeepCopy())
 	if err != nil {
 		t.Fatal(err)
 	}

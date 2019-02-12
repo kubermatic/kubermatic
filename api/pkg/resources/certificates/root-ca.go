@@ -6,23 +6,13 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/cert/triple"
 )
 
 // GetCACreator returns a function to create a secret containing a CA with the specified name
-func getCACreator(name, commonName string) func(resources.SecretDataProvider, *corev1.Secret) (*corev1.Secret, error) {
-	return func(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
-		var se *corev1.Secret
-		if existing != nil {
-			se = existing
-		} else {
-			se = &corev1.Secret{}
-		}
-		se.Name = name
-		se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-
+func getCACreator(commonName string) resources.SecretCreator {
+	return func(se *corev1.Secret) (*corev1.Secret, error) {
 		if se.Data == nil {
 			se.Data = map[string][]byte{}
 		}
@@ -43,16 +33,12 @@ func getCACreator(name, commonName string) func(resources.SecretDataProvider, *c
 	}
 }
 
-// RootCA returns a function to create a secret with the root ca
-func RootCA(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
-	create := getCACreator(resources.CASecretName, fmt.Sprintf("root-ca.%s", data.Cluster().Address.ExternalName))
-
-	return create(data, existing)
+// RootCACreator returns a function to create a secret with the root ca
+func RootCACreator(data resources.SecretDataProvider) resources.SecretCreator {
+	return getCACreator(fmt.Sprintf("root-ca.%s", data.Cluster().Address.ExternalName))
 }
 
-// FrontProxyCA returns a function to create a secret with front proxy ca
-func FrontProxyCA(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
-	create := getCACreator(resources.FrontProxyCASecretName, resources.FrontProxyCASecretName)
-
-	return create(data, existing)
+// FrontProxyCACreator returns a function to create a secret with front proxy ca
+func FrontProxyCACreator() resources.SecretCreator {
+	return getCACreator("front-proxy-ca")
 }

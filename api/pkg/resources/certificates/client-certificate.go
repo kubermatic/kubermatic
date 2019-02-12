@@ -6,33 +6,23 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/cert/triple"
 )
 
-type templateDataProvider interface {
-	GetClusterRef() metav1.OwnerReference
-}
-
 type caGetter func() (*triple.KeyPair, error)
 
 // GetClientCertificateCreator is a generic function to return a secret generator to create a client certificate signed by the cluster CA
-func GetClientCertificateCreator(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA caGetter) func(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
-	return func(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
-		var se *corev1.Secret
-		if existing != nil {
-			se = existing
-		} else {
+func GetClientCertificateCreator(commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA caGetter) resources.SecretCreator {
+	return func(se *corev1.Secret) (*corev1.Secret, error) {
+		// TODO: Remove this after the backup controller has been adapter to the new reconciling behaviour
+		if se == nil {
 			se = &corev1.Secret{}
 		}
 
-		se.Name = name
-		se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-
 		ca, err := getCA()
 		if err != nil {
-			return nil, fmt.Errorf("failed to get cluster ca: %v", err)
+			return nil, fmt.Errorf("failed to get CA: %v", err)
 		}
 
 		if se.Data == nil {
@@ -42,7 +32,7 @@ func GetClientCertificateCreator(name, commonName string, organizations []string
 		if b, exists := se.Data[dataCertKey]; exists {
 			certs, err := certutil.ParseCertsPEM(b)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret %s: %v", name, dataCertKey, err)
+				return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %v", dataCertKey, err)
 			}
 
 			if resources.IsClientCertificateValidForAllOf(certs[0], commonName, organizations, ca.Cert) {
@@ -52,7 +42,7 @@ func GetClientCertificateCreator(name, commonName string, organizations []string
 
 		newKP, err := triple.NewClientKeyPair(ca, commonName, organizations)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create %s key pair: %v", name, err)
+			return nil, fmt.Errorf("failed to create key pair: %v", err)
 		}
 
 		se.Data[dataKeyKey] = certutil.EncodePrivateKeyPEM(newKP.Key)

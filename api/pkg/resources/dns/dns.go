@@ -163,22 +163,17 @@ func getVolumes() []corev1.Volume {
 
 // ConfigMapCreator returns a ConfigMap containing the cloud-config for the supplied data
 func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapCreator {
-	return func(existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-		cm := existing
-		if cm == nil {
-			cm = &corev1.ConfigMap{}
-		}
-		if cm.Data == nil {
-			cm.Data = map[string]string{}
-		}
-
+	return func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 		dnsIP, err := resources.UserClusterDNSResolverIP(data.Cluster())
 		if err != nil {
 			return nil, err
 		}
-		cm.Name = resources.DNSResolverConfigMapName
-		cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 		seedClusterNamespaceDNS := fmt.Sprintf("%s.svc.cluster.local.", data.Cluster().Status.NamespaceName)
+
+		if cm.Data == nil {
+			cm.Data = map[string]string{}
+		}
+
 		cm.Data["Corefile"] = fmt.Sprintf(`
 %s {
     forward . /etc/resolv.conf

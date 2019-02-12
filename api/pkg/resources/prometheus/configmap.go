@@ -10,7 +10,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type promTplModel struct {
@@ -20,13 +19,7 @@ type promTplModel struct {
 
 // ConfigMapCreator returns a ConfigMapCreator containing the prometheus config for the supplied data
 func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapCreator {
-	return func(existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-		var cm *corev1.ConfigMap
-		if existing != nil {
-			cm = existing
-		} else {
-			cm = &corev1.ConfigMap{}
-		}
+	return func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 		if cm.Data == nil {
 			cm.Data = map[string]string{}
 		}
@@ -51,8 +44,6 @@ func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapC
 			return nil, fmt.Errorf("failed to render prometheus config template: %v", err)
 		}
 
-		cm.Name = resources.PrometheusConfigConfigMapName
-		cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 		cm.Labels = resources.BaseAppLabel(name, nil)
 		cm.Data["prometheus.yaml"] = configBuffer.String()
 

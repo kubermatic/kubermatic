@@ -13,17 +13,7 @@ import (
 
 // ServerClientConfigsConfigMapCreator returns a ConfigMap containing the ClientConfig for the OpenVPN server. It lives inside the seed-cluster
 func ServerClientConfigsConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapCreator {
-	return func(existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-		cm := existing
-		if cm == nil {
-			cm = &corev1.ConfigMap{}
-		}
-		if cm.Data == nil {
-			cm.Data = map[string]string{}
-		}
-
-		cm.Name = resources.OpenVPNClientConfigsConfigMapName
-		cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+	return func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 		cm.Labels = resources.BaseAppLabel(name, nil)
 
 		var iroutes []string
@@ -59,6 +49,10 @@ func ServerClientConfigsConfigMapCreator(data resources.ConfigMapDataProvider) r
 		iroutes = append(iroutes, fmt.Sprintf("iroute %s %s",
 			nodeAccessNetwork.IP.String(),
 			net.IP(nodeAccessNetwork.Mask).String()))
+
+		if cm.Data == nil {
+			cm.Data = map[string]string{}
+		}
 
 		// trailing newline
 		iroutes = append(iroutes, "")

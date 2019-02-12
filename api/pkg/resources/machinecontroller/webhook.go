@@ -163,62 +163,55 @@ func getServingCertVolume() corev1.Volume {
 	}
 }
 
-// TLSServingCertificate returns a secret with the machine-controller-webhook tls certificate
-func TLSServingCertificate(data resources.SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
-	var se *corev1.Secret
-	if existing != nil {
-		se = existing
-	} else {
-		se = &corev1.Secret{}
-	}
-	se.Name = resources.MachineControllerWebhookServingCertSecretName
-	se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+// TLSServingCertificateCreator returns a function to create/update the secret with the machine-controller-webhook tls certificate
+func TLSServingCertificateCreator(data resources.SecretDataProvider) resources.SecretCreator {
+	return func(se *corev1.Secret) (*corev1.Secret, error) {
+		if se.Data == nil {
+			se.Data = map[string][]byte{}
+		}
 
-	if se.Data == nil {
-		se.Data = map[string][]byte{}
-	}
-
-	ca, err := data.GetRootCA()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get root ca: %v", err)
-	}
-	commonName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.MachineControllerWebhookServiceName, data.Cluster().Status.NamespaceName)
-	altNames := certutil.AltNames{
-		DNSNames: []string{
-			resources.MachineControllerWebhookServiceName,
-			fmt.Sprintf("%s.%s", resources.MachineControllerWebhookServiceName, data.Cluster().Status.NamespaceName),
-			commonName,
-			fmt.Sprintf("%s.%s.svc", resources.MachineControllerWebhookServiceName, data.Cluster().Status.NamespaceName),
-			fmt.Sprintf("%s.%s.svc.", resources.MachineControllerWebhookServiceName, data.Cluster().Status.NamespaceName),
-		},
-	}
-	if b, exists := se.Data[resources.MachineControllerWebhookServingCertCertKeyName]; exists {
-		certs, err := certutil.ParseCertsPEM(b)
+		ca, err := data.GetRootCA()
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %v", resources.MachineControllerWebhookServingCertCertKeyName, err)
+			return nil, fmt.Errorf("failed to get root ca: %v", err)
 		}
-		if resources.IsServerCertificateValidForAllOf(certs[0], commonName, altNames, ca.Cert) {
-			return se, nil
+		commonName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.MachineControllerWebhookServiceName, data.Cluster().Status.NamespaceName)
+		altNames := certutil.AltNames{
+			DNSNames: []string{
+				resources.MachineControllerWebhookServiceName,
+				fmt.Sprintf("%s.%s", resources.MachineControllerWebhookServiceName, data.Cluster().Status.NamespaceName),
+				commonName,
+				fmt.Sprintf("%s.%s.svc", resources.MachineControllerWebhookServiceName, data.Cluster().Status.NamespaceName),
+				fmt.Sprintf("%s.%s.svc.", resources.MachineControllerWebhookServiceName, data.Cluster().Status.NamespaceName),
+			},
 		}
-	}
+		if b, exists := se.Data[resources.MachineControllerWebhookServingCertCertKeyName]; exists {
+			certs, err := certutil.ParseCertsPEM(b)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %v", resources.MachineControllerWebhookServingCertCertKeyName, err)
+			}
+			if resources.IsServerCertificateValidForAllOf(certs[0], commonName, altNames, ca.Cert) {
+				return se, nil
+			}
+		}
 
-	newKP, err := triple.NewServerKeyPair(ca,
-		commonName,
-		resources.MachineControllerWebhookServiceName,
-		data.Cluster().Status.NamespaceName,
-		"",
-		nil,
-		// For some reason the name the APIServer validates against must be in the SANs, having it as CN is not enough
-		[]string{commonName})
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate serving cert: %v", err)
-	}
-	se.Data[resources.MachineControllerWebhookServingCertCertKeyName] = certutil.EncodeCertPEM(newKP.Cert)
-	se.Data[resources.MachineControllerWebhookServingCertKeyKeyName] = certutil.EncodePrivateKeyPEM(newKP.Key)
-	// Include the CA for simplicity
-	se.Data[resources.CACertSecretKey] = certutil.EncodeCertPEM(ca.Cert)
+		newKP, err := triple.NewServerKeyPair(ca,
+			commonName,
+			resources.MachineControllerWebhookServiceName,
+			data.Cluster().Status.NamespaceName,
+			"",
+			nil,
+			// For some reason the name the APIServer validates against must be in the SANs, having it as CN is not enough
+			[]string{commonName})
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate serving cert: %v", err)
+		}
+		se.Data[resources.MachineControllerWebhookServingCertCertKeyName] = certutil.EncodeCertPEM(newKP.Cert)
+		se.Data[resources.MachineControllerWebhookServingCertKeyKeyName] = certutil.EncodePrivateKeyPEM(newKP.Key)
+		// Include the CA for simplicity
+		se.Data[resources.CACertSecretKey] = certutil.EncodeCertPEM(ca.Cert)
 
-	return se, nil
+		return se, nil
+	}
 }
 
 // MutatingwebhookConfiguration returns the MutatingwebhookConfiguration for the machine controler

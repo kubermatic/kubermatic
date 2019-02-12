@@ -542,16 +542,17 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				var configmapCreators []resources.ConfigMapCreator
-				configmapCreators = append(configmapCreators, clustercontroller.GetConfigMapCreators(data)...)
-				configmapCreators = append(configmapCreators, monitoringcontroller.GetConfigMapCreators(data)...)
-				for _, create := range configmapCreators {
-					res, err := create(nil)
+				var namedConfigMapCreatorGetters []resources.NamedConfigMapCreatorGetter
+				namedConfigMapCreatorGetters = append(namedConfigMapCreatorGetters, clustercontroller.GetConfigMapCreators(data)...)
+				namedConfigMapCreatorGetters = append(namedConfigMapCreatorGetters, monitoringcontroller.GetConfigMapCreators(data)...)
+				for _, namedGetter := range namedConfigMapCreatorGetters {
+					name, create := namedGetter()
+					res, err := create(&corev1.ConfigMap{})
 					if err != nil {
 						t.Fatalf("failed to create ConfigMap: %v", err)
 					}
 
-					fixturePath := fmt.Sprintf("configmap-%s-%s-%s", prov, ver.Version.String(), res.Name)
+					fixturePath := fmt.Sprintf("configmap-%s-%s-%s", prov, ver.Version.String(), name)
 					checkTestResult(t, fixturePath, res)
 				}
 
