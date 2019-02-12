@@ -2029,10 +2029,14 @@ func TestEnsureProjectOwner(t *testing.T) {
 		existingBinding *kubermaticv1.UserProjectBinding
 	}{
 		{
-			name:            "scenario 1: make sure, that the owner of the newly created project is set properly.",
-			projectToSync:   createProject("thunderball", createUser("James Bond")),
-			existingUser:    createUser("James Bond"),
-			expectedBinding: createExpectedOwnerBinding("James Bond", createProject("thunderball", createUser("James Bond"))),
+			name:          "scenario 1: make sure, that the owner of the newly created project is set properly.",
+			projectToSync: createProject("thunderball", createUser("James Bond")),
+			existingUser:  createUser("James Bond"),
+			expectedBinding: func() *kubermaticv1.UserProjectBinding {
+				binding := createExpectedOwnerBinding("James Bond", createProject("thunderball", createUser("James Bond")))
+				binding.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
+				return binding
+			}(),
 		},
 		{
 			name:            "scenario 2: no op when the owner of the project was set.",
@@ -2137,7 +2141,8 @@ func createProject(name string, owner *kubermaticv1.User) *kubermaticv1.Project 
 func createUser(name string) *kubermaticv1.User {
 	return &kubermaticv1.User{
 		TypeMeta: metav1.TypeMeta{
-			Kind: kubermaticv1.UserKindName,
+			Kind:       kubermaticv1.UserKindName,
+			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			UID:  "",
@@ -2149,10 +2154,11 @@ func createUser(name string) *kubermaticv1.User {
 	}
 }
 
-func createExpectedOwnerBinding(userName string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
+func createExpectedBindingFor(userName string, userGroup string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
 	user := createUser(userName)
 	return &kubermaticv1.UserProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("binding-for-%s", userName),
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -2165,7 +2171,15 @@ func createExpectedOwnerBinding(userName string, project *kubermaticv1.Project) 
 		Spec: kubermaticv1.UserProjectBindingSpec{
 			UserEmail: user.Spec.Email,
 			ProjectID: project.Name,
-			Group:     fmt.Sprintf("owners-%s", project.Name),
+			Group:     fmt.Sprintf("%s-%s", userGroup, project.Name),
 		},
 	}
+}
+
+func createExpectedOwnerBinding(userName string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
+	return createExpectedBindingFor(userName, "owners", project)
+}
+
+func createExpectedEditorBinding(userName string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
+	return createExpectedBindingFor(userName, "editors", project)
 }
