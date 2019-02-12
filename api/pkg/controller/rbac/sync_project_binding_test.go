@@ -63,7 +63,7 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 			expectedProject: func() *kubermaticv1.Project {
 				prj := createProject("thunderball", createUser("James Bond"))
 				prj.OwnerReferences = []metav1.OwnerReference{
-					metav1.OwnerReference{
+					{
 						APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 						Kind:       kubermaticv1.UserKindName,
 						UID:        "",
