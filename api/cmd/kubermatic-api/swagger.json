@@ -3457,35 +3457,20 @@
       "type": "object",
       "title": "Event is a report of an event somewhere in the cluster.",
       "properties": {
+        "involvedObjectName": {
+          "description": "The object name that those events are about.",
+          "type": "string",
+          "x-go-name": "InvolvedObjectName"
+        },
         "message": {
           "description": "A human-readable description of the status of this operation.",
           "type": "string",
           "x-go-name": "Message"
         },
         "type": {
-          "description": "Type of this event (normal, warning), new types could be added in the future",
+          "description": "Type of this event (i.e. normal or warning). New types could be added in the future.",
           "type": "string",
           "x-go-name": "Type"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "EventList": {
-      "type": "object",
-      "title": "EventList is an events response structure.",
-      "properties": {
-        "events": {
-          "description": "List of events",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Event"
-          },
-          "x-go-name": "Events"
-        },
-        "name": {
-          "description": "The object name that those events are about.",
-          "type": "string",
-          "x-go-name": "Name"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"

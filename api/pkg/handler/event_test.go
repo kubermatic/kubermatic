@@ -15,7 +15,7 @@ func TestFilterEventsByType(t *testing.T) {
 		Name           string
 		Filter         string
 		ExpectedEvents []v1.Event
-		InputEvents    v1.EventList
+		InputEvents    []v1.Event
 	}{
 		{
 			Name:   "scenario 1, filter out warning event types",
@@ -24,14 +24,11 @@ func TestFilterEventsByType(t *testing.T) {
 				genEvent("test1", corev1.EventTypeWarning),
 				genEvent("test2", corev1.EventTypeWarning),
 			},
-			InputEvents: v1.EventList{
-				Name: "machine",
-				Events: []v1.Event{
-					genEvent("test1", corev1.EventTypeWarning),
-					genEvent("test2", corev1.EventTypeWarning),
-					genEvent("test3", corev1.EventTypeNormal),
-					genEvent("test4", corev1.EventTypeNormal),
-				},
+			InputEvents: []v1.Event{
+				genEvent("test1", corev1.EventTypeWarning),
+				genEvent("test2", corev1.EventTypeWarning),
+				genEvent("test3", corev1.EventTypeNormal),
+				genEvent("test4", corev1.EventTypeNormal),
 			},
 		},
 		{
@@ -41,14 +38,11 @@ func TestFilterEventsByType(t *testing.T) {
 				genEvent("test3", corev1.EventTypeNormal),
 				genEvent("test4", corev1.EventTypeNormal),
 			},
-			InputEvents: v1.EventList{
-				Name: "machine",
-				Events: []v1.Event{
-					genEvent("test1", corev1.EventTypeWarning),
-					genEvent("test2", corev1.EventTypeWarning),
-					genEvent("test3", corev1.EventTypeNormal),
-					genEvent("test4", corev1.EventTypeNormal),
-				},
+			InputEvents: []v1.Event{
+				genEvent("test1", corev1.EventTypeWarning),
+				genEvent("test2", corev1.EventTypeWarning),
+				genEvent("test3", corev1.EventTypeNormal),
+				genEvent("test4", corev1.EventTypeNormal),
 			},
 		},
 	}
@@ -56,7 +50,7 @@ func TestFilterEventsByType(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 
 			result := handler.FilterEventsByType(tc.InputEvents, tc.Filter)
-			if !equal(result.Events, tc.ExpectedEvents) {
+			if !equal(result, tc.ExpectedEvents) {
 				t.Fatalf("event list %v is not the same as expected %v", result, tc.ExpectedEvents)
 			}
 

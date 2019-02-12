@@ -937,7 +937,7 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 				genTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started"),
 				genTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed"),
 			},
-			ExpectedResult: `[{"name":"venus-1","events":[{"message":"message started","type":"Normal"},{"message":"message killed","type":"Warning"}]}]`,
+			ExpectedResult: `[{"message":"message started","type":"Normal","involvedObjectName":"testMachine"},{"message":"message killed","type":"Warning","involvedObjectName":"testMachine"}]`,
 		},
 		// scenario 2
 		{
@@ -959,7 +959,7 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 				genTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started"),
 				genTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed"),
 			},
-			ExpectedResult: `[{"name":"venus-1","events":[{"message":"message killed","type":"Warning"}]}]`,
+			ExpectedResult: `[{"message":"message killed","type":"Warning","involvedObjectName":"testMachine"}]`,
 		},
 		// scenario 3
 		{
@@ -981,7 +981,7 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 				genTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started"),
 				genTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed"),
 			},
-			ExpectedResult: `[{"name":"venus-1","events":[{"message":"message started","type":"Normal"}]}]`,
+			ExpectedResult: `[{"message":"message started","type":"Normal","involvedObjectName":"testMachine"}]`,
 		},
 	}
 
@@ -1347,6 +1347,7 @@ func genTestEvent(eventName, eventType, eventReason, eventMessage string) *corev
 			Namespace: metav1.NamespaceSystem,
 		},
 		InvolvedObject: corev1.ObjectReference{
+			Name:      "testMachine",
 			Namespace: metav1.NamespaceSystem,
 		},
 		Reason:  eventReason,
