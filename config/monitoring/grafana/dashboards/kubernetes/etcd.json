@@ -1941,10 +1941,7 @@
       },
       {
         "allValue": null,
-        "current": {
-          "text": "",
-          "value": ""
-        },
+        "current": {},
         "datasource": "$datasource",
         "hide": 0,
         "includeAll": false,
@@ -1953,7 +1950,7 @@
         "name": "cluster",
         "options": [],
         "query": "label_values(job:etcd_server_has_leader:sum, cluster)",
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
         "sort": 1,
         "tagValuesQuery": "",
@@ -1994,7 +1991,7 @@
       "30d"
     ]
   },
-  "timezone": "browser",
+  "timezone": "",
   "title": "etcd",
   "uid": "df15188d34cc",
   "version": 1

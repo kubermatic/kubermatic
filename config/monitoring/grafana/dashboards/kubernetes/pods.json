@@ -415,10 +415,7 @@
       },
       {
         "allValue": null,
-        "current": {
-          "text": "",
-          "value": ""
-        },
+        "current": {},
         "datasource": "$datasource",
         "hide": 0,
         "includeAll": false,
@@ -438,10 +435,7 @@
       },
       {
         "allValue": null,
-        "current": {
-          "text": "",
-          "value": ""
-        },
+        "current": {},
         "datasource": "$datasource",
         "hide": 0,
         "includeAll": false,
@@ -461,10 +455,7 @@
       },
       {
         "allValue": null,
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        },
+        "current": {},
         "datasource": "$datasource",
         "hide": 0,
         "includeAll": true,
@@ -513,7 +504,7 @@
       "30d"
     ]
   },
-  "timezone": "browser",
+  "timezone": "",
   "title": "Pods",
   "uid": "c2438b9deadd",
   "version": 1
