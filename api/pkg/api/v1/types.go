@@ -664,15 +664,6 @@ type NodeDeploymentSpec struct {
 	Paused *bool `json:"paused,omitempty"`
 }
 
-type ObjectReference struct {
-	// Kind of the referent.
-	Kind string `json:"kind,omitempty"`
-	// Namespace of the referent.
-	Namespace string `json:"namespace,omitempty"`
-	// Name of the referent.
-	Name string `json:"name,omitempty"`
-}
-
 // Event is a report of an event somewhere in the cluster.
 type Event struct {
 	// A human-readable description of the status of this operation.
@@ -681,6 +672,6 @@ type Event struct {
 	// Type of this event (i.e. normal or warning). New types could be added in the future.
 	Type string `json:"type,omitempty"`
 
-	// The object reference that those events are about.
-	InvolvedObject ObjectReference `json:"involvedObject"`
+	// The object name that those events are about.
+	InvolvedObjectName string `json:"involvedObjectName"`
 }
