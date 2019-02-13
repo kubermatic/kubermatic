@@ -292,15 +292,6 @@ storage:
         inline: |
 {{ .KubernetesCACert | indent 10 }}
 
-{{- if semverCompare "<=1.11.*" .KubeletVersion }}
-    - path: /etc/coreos/docker-1.12
-      mode: 0644
-      filesystem: root
-      contents:
-        inline: |
-          yes
-{{ end }}
-
 {{ if ne .CloudProvider "aws" }}
     - path: /etc/hostname
       filesystem: root
