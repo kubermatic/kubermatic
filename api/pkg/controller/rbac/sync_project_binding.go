@@ -26,6 +26,9 @@ func (c *Controller) syncProjectBindings(key string) error {
 		return err
 	}
 	projectBinding := projectBindingFromCache.DeepCopy()
+	if projectBinding.DeletionTimestamp != nil {
+		return removeFinalizerFromBinding(projectBinding, c.masterClusterProvider.kubermaticClient)
+	}
 	if ExtractGroupPrefix(projectBinding.Spec.Group) == OwnerGroupNamePrefix {
 		return c.ensureProjectOwnerForBinding(projectBinding)
 	}
