@@ -3,7 +3,6 @@ package v1
 import (
 	"encoding/json"
 	"github.com/Masterminds/semver"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 
@@ -665,20 +664,14 @@ type NodeDeploymentSpec struct {
 	Paused *bool `json:"paused,omitempty"`
 }
 
-// EventList is an events response structure.
-type EventList struct {
-	// The object name that those events are about.
-	Name string `json:"name"`
-
-	// List of events
-	Events []Event `json:"events"`
-}
-
 // Event is a report of an event somewhere in the cluster.
 type Event struct {
 	// A human-readable description of the status of this operation.
 	Message string `json:"message,omitempty"`
 
-	// Type of this event (normal, warning), new types could be added in the future
+	// Type of this event (i.e. normal or warning). New types could be added in the future.
 	Type string `json:"type,omitempty"`
+
+	// The object name that those events are about.
+	InvolvedObjectName string `json:"involvedObjectName"`
 }

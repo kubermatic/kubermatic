@@ -6,30 +6,27 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// FilterEventsByType filters kubernetes API event objects based on event type.
-// Empty string will return all events.
-func FilterEventsByType(eventList v1.EventList, eventType string) v1.EventList {
-	if len(eventType) == 0 || len(eventList.Events) == 0 {
-		return eventList
+// FilterEventsByType filters Kubernetes Events based on their type. Empty type string will return all of them.
+func FilterEventsByType(events []v1.Event, eventType string) []v1.Event {
+	if len(eventType) == 0 || len(events) == 0 {
+		return events
 	}
 
 	resultEvents := make([]v1.Event, 0)
-	for _, event := range eventList.Events {
+	for _, event := range events {
 		if event.Type == eventType {
 			resultEvents = append(resultEvents, event)
 		}
 	}
-	return v1.EventList{
-		Name:   eventList.Name,
-		Events: resultEvents,
-	}
+	return resultEvents
 }
 
-// toEvent converts event api Event to Event model object.
+// toEvent converts Kubernetes Events to Kubermatic ones (used in the API).
 func toEvent(event corev1.Event) v1.Event {
 	result := v1.Event{
-		Message: event.Message,
-		Type:    event.Type,
+		Message:            event.Message,
+		Type:               event.Type,
+		InvolvedObjectName: event.InvolvedObject.Name,
 	}
 	return result
 }

@@ -1110,7 +1110,6 @@ type NodeDeploymentNodesEventsReq struct {
 }
 
 func decodeListNodeDeploymentNodesEvents(c context.Context, r *http.Request) (interface{}, error) {
-
 	var req NodeDeploymentNodesEventsReq
 
 	clusterID, err := common.DecodeClusterID(c, r)
@@ -1145,7 +1144,6 @@ func decodeListNodeDeploymentNodesEvents(c context.Context, r *http.Request) (in
 
 func listNodeDeploymentNodesEvents() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		apiv1Events := make([]apiv1.EventList, 0)
 		req := request.(NodeDeploymentNodesEventsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
@@ -1165,50 +1163,43 @@ func listNodeDeploymentNodesEvents() endpoint.Endpoint {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
+		events := make([]apiv1.Event, 0)
 		for _, machine := range machines.Items {
-			eventList, err := getMachineEvents(customerClusterClient, machine)
+			machineEvents, err := getMachineEvents(customerClusterClient, machine)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 
-			if len(eventList.Events) > 0 {
+			if len(machineEvents) > 0 {
 				if len(req.Type) > 0 {
 					if req.Type == warningType {
-						eventList = FilterEventsByType(eventList, corev1.EventTypeWarning)
+						machineEvents = FilterEventsByType(machineEvents, corev1.EventTypeWarning)
 					}
 					if req.Type == normalType {
-						eventList = FilterEventsByType(eventList, corev1.EventTypeNormal)
+						machineEvents = FilterEventsByType(machineEvents, corev1.EventTypeNormal)
 					}
 				}
-				apiv1Events = append(apiv1Events, eventList)
+
+				events = append(events, machineEvents...)
 			}
 		}
 
-		return apiv1Events, nil
+		return events, nil
 	}
 }
 
-// GetMachineEvents returns kubernetes API event objects assigned to the machine.
-func getMachineEvents(client kubernetes.Interface, machine clusterv1alpha1.Machine) (apiv1.EventList, error) {
+// getMachineEvents returns Kubernetes API event objects assigned to the Machine.
+func getMachineEvents(client kubernetes.Interface, machine clusterv1alpha1.Machine) ([]apiv1.Event, error) {
 	events, err := client.CoreV1().Events(metav1.NamespaceSystem).Search(runtime.NewScheme(), &machine)
 	if err != nil {
-		return apiv1.EventList{}, err
+		return nil, err
 	}
 
-	return createMachineEventList(events.Items, machine), nil
-}
-
-// createMachineEventList converts array of api events to kubermatic EventList
-func createMachineEventList(events []corev1.Event, machine clusterv1alpha1.Machine) apiv1.EventList {
 	kubermaticEvents := make([]apiv1.Event, 0)
-
-	for _, event := range events {
+	for _, event := range events.Items {
 		kubermaticEvent := toEvent(event)
 		kubermaticEvents = append(kubermaticEvents, kubermaticEvent)
 	}
 
-	return apiv1.EventList{
-		Name:   machine.Name,
-		Events: kubermaticEvents,
-	}
+	return kubermaticEvents, nil
 }
