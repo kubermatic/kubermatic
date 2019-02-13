@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	cleanupFinalizerName = "kubermatic.io/controller-manager-rbac-cleanup"
+	CleanupFinalizerName = "kubermatic.io/controller-manager-rbac-cleanup"
 )
 
 func (c *Controller) sync(key string) error {
@@ -68,9 +68,9 @@ func (c *Controller) sync(key string) error {
 
 func (c *Controller) ensureCleanupFinalizerExists(project *kubermaticv1.Project) error {
 	var err error
-	if !sets.NewString(project.Finalizers...).Has(cleanupFinalizerName) {
+	if !sets.NewString(project.Finalizers...).Has(CleanupFinalizerName) {
 		finalizers := sets.NewString(project.Finalizers...)
-		finalizers.Insert(cleanupFinalizerName)
+		finalizers.Insert(CleanupFinalizerName)
 		project.Finalizers = finalizers.List()
 		project, err = c.masterClusterProvider.kubermaticClient.KubermaticV1().Projects().Update(project)
 		if err != nil {
@@ -128,7 +128,8 @@ func (c *Controller) ensureProjectOwner(project *kubermaticv1.Project) error {
 					Name:       project.Name,
 				},
 			},
-			Name: rand.String(10),
+			Name:       rand.String(10),
+			Finalizers: []string{CleanupFinalizerName},
 		},
 		Spec: kubermaticv1.UserProjectBindingSpec{
 			UserEmail: owner.Spec.Email,
@@ -321,7 +322,7 @@ func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
 	}
 
 	finalizers := sets.NewString(project.Finalizers...)
-	finalizers.Delete(cleanupFinalizerName)
+	finalizers.Delete(CleanupFinalizerName)
 	project.Finalizers = finalizers.List()
 	_, err := c.masterClusterProvider.kubermaticClient.KubermaticV1().Projects().Update(project)
 	return err
@@ -355,7 +356,7 @@ func cleanUpRBACRoleBindingFor(kubeClient kubernetes.Interface, groupName, resou
 }
 
 func (c *Controller) shouldDeleteProject(project *kubermaticv1.Project) bool {
-	return project.DeletionTimestamp != nil && sets.NewString(project.Finalizers...).Has(cleanupFinalizerName)
+	return project.DeletionTimestamp != nil && sets.NewString(project.Finalizers...).Has(CleanupFinalizerName)
 }
 
 // for some groups we actually don't create ClusterRole
