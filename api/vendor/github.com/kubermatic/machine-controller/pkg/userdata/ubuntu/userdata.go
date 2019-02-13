@@ -240,11 +240,7 @@ write_files:
     systemctl mask swap.target
     swapoff -a
 
-{{- if semverCompare "<1.12.0" .KubeletVersion }}
-    export CR_PKG='docker.io=17.12.1-0ubuntu1'
-{{- else }}
-    export CR_PKG='docker-ce=18.06.0~ce~3-0~ubuntu'
-{{- end }}
+    export CR_PKG='docker-ce=5:18.09.2~3-0~ubuntu-bionic'
 
     DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y \
       curl \
