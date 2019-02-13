@@ -74,7 +74,7 @@ kubermatic:
     replicas: 2
     image:
       repository: "quay.io/kubermatic/ui-v2"
-      tag: "v1.1.0"
+      tag: "v1.1.1"
       pullPolicy: "IfNotPresent"
     config: |
       {
