@@ -29,7 +29,7 @@ var (
 const (
 	name = "machine-controller"
 
-	tag = "v1.0.3"
+	tag = "v1.0.4"
 )
 
 // DeploymentCreator returns the function to create and update the machine controller deployment
