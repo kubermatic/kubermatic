@@ -937,7 +937,7 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 				genTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started"),
 				genTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed"),
 			},
-			ExpectedResult: `[{"message":"message started","type":"Normal","involvedObjectName":"testMachine"},{"message":"message killed","type":"Warning","involvedObjectName":"testMachine"}]`,
+			ExpectedResult: `[{"id":"","name":"event-1","creationTimestamp":"0001-01-01T00:00:00Z","message":"message started","type":"Normal","involvedObjectName":"testMachine","lastTimestamp":"0001-01-01T00:00:00Z","count":1},{"id":"","name":"event-2","creationTimestamp":"0001-01-01T00:00:00Z","message":"message killed","type":"Warning","involvedObjectName":"testMachine","lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
 		},
 		// scenario 2
 		{
@@ -959,7 +959,7 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 				genTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started"),
 				genTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed"),
 			},
-			ExpectedResult: `[{"message":"message killed","type":"Warning","involvedObjectName":"testMachine"}]`,
+			ExpectedResult: `[{"id":"","name":"event-2","creationTimestamp":"0001-01-01T00:00:00Z","message":"message killed","type":"Warning","involvedObjectName":"testMachine","lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
 		},
 		// scenario 3
 		{
@@ -981,7 +981,7 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 				genTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started"),
 				genTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed"),
 			},
-			ExpectedResult: `[{"message":"message started","type":"Normal","involvedObjectName":"testMachine"}]`,
+			ExpectedResult: `[{"id":"","name":"event-1","creationTimestamp":"0001-01-01T00:00:00Z","message":"message started","type":"Normal","involvedObjectName":"testMachine","lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
 		},
 	}
 
