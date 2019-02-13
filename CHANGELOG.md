@@ -26,15 +26,13 @@ Supported Kubernetes versions:
 .com/p0lyn0mial))
 - etcd readiness check timeouts have been increased [#2312](https://github.com/kubermatic/kubermatic/issues/2312) ([mrIncompetent](https://github.com/mrIncompetent))
 - Removed unused fields from cloud specs exposed in the API [#2314](https://github.com/kubermatic/kubermatic/issues/2314) ([maciaszczykm](https://github.com/maciaszczykm))
-- Added a new HTTP endpoint for generating kubeconfig with OIDC tokens. The path of the endpoint is `api/v1/kubeconfig`[Action required] users need to add redirection to api/v1/kubeconfig to dex installation[Action required] kubermatic API command line args were changed:`token-issuer` to `oidc-token-issuer`, `token-issuer-skip-tls-verify` to `oidc-skip-tls-ver
-ify`, `client-id` to `oidc-client-id`[Action required] to enable the endpoint the users must set `-feature-gates=OIDCKubeCfgEndpoint=true` and provide `-oidc-client-secret`, `-oidc-redirect-uri` when running the server. If the provider they are working with doesn&#39;t accept `refresh_token` as a scope, setting `-oidc-offline-access-as-scope=false` will pass a
-ppropriate query parameter instead. [#2315](https://github.com/kubermatic/kubermatic/issues/2315) ([p0lyn0mial](https://github.com/p0lyn0mial))
 - [ACTION REQUIRED] kubermatic API command line args were changed: `oidc-issuer-url` to `oidc-url`, `oidc-client-id` to `oidc-authenticator-client-id`, `oidc-offline-access-as-scope` to `oidc-issuer-offline-access-as-scope`, `oidc-redirect-uri` to `oidc-issuer-redirect-uri` and new was added: `oidc-issuer-client-id` [#2338](https://github.com/kubermatic/kuberm
 atic/issues/2338) ([zreigz](https://github.com/zreigz))
 - Kubermatic now validates nodes synchronously [#2340](https://github.com/kubermatic/kubermatic/issues/2340) ([alvaroaleman](https://github.com/alvaroaleman))
 - Kubermatic now manages Nodes as group via the NodeGroup feature [#2357](https://github.com/kubermatic/kubermatic/issues/2357) ([maciaszczykm](https://github.com/maciaszczykm))
 - Components will no longer be shown as as unhealthy when only some replicas are up [#2358](https://github.com/kubermatic/kubermatic/issues/2358) ([mrIncompetent](https://github.com/mrIncompetent))
-- Kubernetes API servers can now be used with OpenID authentication[ACTION REQUIRED] to enable the OpenID for kubernetes API server the users must set `-feature-gates=OpenIDConnectTokens=true` and provide `-oidc-issuer-url`, `-oidc-issuer-client-id` when running the controller. [#2370](https://github.com/kubermatic/kubermatic/issues/2370) ([zreigz](https://git
+- Kubernetes API servers can now be used with OpenID authentication
+  - [ACTION REQUIRED] to enable the OpenID for kubernetes API server the users must set `-feature-gates=OpenIDConnectTokens=true` and provide `-oidc-issuer-url`, `-oidc-issuer-client-id` when running the controller. [#2370](https://github.com/kubermatic/kubermatic/issues/2370) ([zreigz](https://git
 hub.com/zreigz))
 - [ACTION REQUIRED] Resource limits for control plane containers have been increased. This might require additional resources for the seed cluster [#2395](https://github.com/kubermatic/kubermatic/issues/2395) ([mrIncompetent](https://github.com/mrIncompetent))
   - Kubernetes API server: 4Gi RAM, 2 CPU
@@ -116,7 +114,6 @@ github.com/zreigz))
 
 - The admin token can no longer be read through the Kubermatic API. [#2105](https://github.com/kubermatic/kubermatic/issues/2105) ([p0lyn0mial](https://github.com/p0lyn0mial))
 - Communicating with cloud providers through the project APIs no longer requires providing additional credentials. [#2180](https://github.com/kubermatic/kubermatic/issues/2180) ([p0lyn0mial](https://github.com/p0lyn0mial))
-- [ACTION REQUIRED] to enable the Double Submit Cookies solution the users must set `-feature-gates=OIDCKubeCfgEndpoint=true` and provide settings for cookie `oidc-issuer-cookie-hash-key` and`oidc-issuer-cookie-secure-mode`  [#2360](https://github.com/kubermatic/kubermatic/issues/2360) ([zreigz](https://github.com/zreigz))
 - Kubernetes will be automatically updated to versions that contain a fix for CVE-2018-1002105 [#2478](https://github.com/kubermatic/kubermatic/issues/2478) ([alvaroaleman](https://github.com/alvaroaleman))
 
 
