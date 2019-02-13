@@ -392,7 +392,7 @@ func TestEditUserInProject(t *testing.T) {
 		{
 			Name:          "scenario 3: john the owner of the plan9 project changes the group for bob from viewers to owners",
 			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"owners"}]}`,
-			HTTPStatus:    http.StatusForbidden,
+			HTTPStatus:    http.StatusOK,
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
@@ -408,7 +408,7 @@ func TestEditUserInProject(t *testing.T) {
 			},
 			UserIDToUpdate:   genDefaultUser().Name,
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"error":{"code":403,"message":"the given user cannot be assigned to owners group"}}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"owners"}]}`,
 		},
 
 		// scenario 4
@@ -604,9 +604,9 @@ func TestAddUserToProject(t *testing.T) {
 		},
 
 		{
-			Name:          "scenario 4: john the owner of the plan9 project tries to invite bob to the project as an owner",
+			Name:          "scenario 4: john the owner of the plan9 project invites bob to the project as an owner",
 			Body:          `{"email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"owners"}]}`,
-			HTTPStatus:    http.StatusForbidden,
+			HTTPStatus:    http.StatusCreated,
 			ProjectToSync: "plan9-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
@@ -622,7 +622,7 @@ func TestAddUserToProject(t *testing.T) {
 				genDefaultUser(), /*bob*/
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse: `{"error":{"code":403,"message":"the given user cannot be assigned to owners group"}}`,
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"owners"}]}`,
 		},
 
 		{

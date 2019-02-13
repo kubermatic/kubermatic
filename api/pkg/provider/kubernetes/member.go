@@ -4,15 +4,17 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // NewProjectMemberProvider returns a project members provider
@@ -36,6 +38,11 @@ type ProjectMemberProvider struct {
 
 // Create creates a binding for the given member and the given project
 func (p *ProjectMemberProvider) Create(userInfo *provider.UserInfo, project *kubermaticapiv1.Project, memberEmail, group string) (*kubermaticapiv1.UserProjectBinding, error) {
+	finalizers := []string{}
+	if rbac.ExtractGroupPrefix(group) == rbac.OwnerGroupNamePrefix {
+		finalizers = append(finalizers, rbac.CleanupFinalizerName)
+	}
+
 	binding := &kubermaticapiv1.UserProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			OwnerReferences: []metav1.OwnerReference{
@@ -46,7 +53,8 @@ func (p *ProjectMemberProvider) Create(userInfo *provider.UserInfo, project *kub
 					Name:       project.Name,
 				},
 			},
-			Name: rand.String(10),
+			Name:       rand.String(10),
+			Finalizers: finalizers,
 		},
 		Spec: kubermaticapiv1.UserProjectBindingSpec{
 			ProjectID: project.Name,
@@ -121,6 +129,11 @@ func (p *ProjectMemberProvider) Delete(userInfo *provider.UserInfo, bindingName 
 
 // Update simply updates the given binding
 func (p *ProjectMemberProvider) Update(userInfo *provider.UserInfo, binding *kubermaticapiv1.UserProjectBinding) (*kubermaticapiv1.UserProjectBinding, error) {
+	if rbac.ExtractGroupPrefix(binding.Spec.Group) == rbac.OwnerGroupNamePrefix && !sets.NewString(binding.Finalizers...).Has(rbac.CleanupFinalizerName) {
+		finalizers := sets.NewString(binding.Finalizers...)
+		finalizers.Insert(rbac.CleanupFinalizerName)
+		binding.Finalizers = finalizers.List()
+	}
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
