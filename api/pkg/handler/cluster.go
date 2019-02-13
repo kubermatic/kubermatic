@@ -27,6 +27,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
+
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 func createClusterEndpoint(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
@@ -177,9 +179,14 @@ func deleteCluster(sshKeyProvider provider.SSHKeyProvider, projectProvider provi
 			}
 		}
 
+		existingCluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if req.DeleteVolumes || req.DeleteLoadBalancers {
-			existingCluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 			if err != nil {
+				if kerrors.IsServiceUnavailable(err) {
+					return nil, errors.NewWithDetails(http.StatusServiceUnavailable,
+						"the cluster must be healthy when cleanup of additional resources (e.g. volumes) was requested, try one more time",
+						err.Error())
+				}
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 			if req.DeleteLoadBalancers {

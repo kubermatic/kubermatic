@@ -87,6 +87,44 @@ func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
 			HeaderParams:    map[string]string{},
 			ExpectedUpdates: 0,
 		},
+		{
+			Name:             "scenario 4: deletion of a cluster fails for an unhealthy cluster with finalizers",
+			Body:             ``,
+			ExpectedResponse: `{"error":{"code":503,"message":"the cluster must be healthy when cleanup of additional resources (e.g. volumes) was requested, try one more time","details":"Cluster components are not ready yet"}}`,
+			HTTPStatus:       http.StatusServiceUnavailable,
+			ProjectToSync:    test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				// add a cluster
+				func() *kubermaticv1.Cluster {
+					cluster := test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
+					cluster.Status.Health.MachineController = false
+					return cluster
+				}(),
+			),
+			ClusterToSync:   "clusterAbcID",
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+			HeaderParams:    map[string]string{"DeleteVolumes": "true", "DeleteLoadBalancers": "true"},
+			ExpectedUpdates: 0,
+		},
+		{
+			Name:             "scenario 5: deletion of a cluster \"works\" for an unhealthy cluster without finalizers",
+			Body:             ``,
+			ExpectedResponse: `{}`,
+			HTTPStatus:       http.StatusOK,
+			ProjectToSync:    test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				// add a cluster
+				func() *kubermaticv1.Cluster {
+					cluster := test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
+					cluster.Status.Health.MachineController = false
+					return cluster
+				}(),
+			),
+			ClusterToSync:   "clusterAbcID",
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+			HeaderParams:    map[string]string{},
+			ExpectedUpdates: 0,
+		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
