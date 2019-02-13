@@ -666,6 +666,8 @@ type NodeDeploymentSpec struct {
 
 // Event is a report of an event somewhere in the cluster.
 type Event struct {
+	ObjectMeta `json:",inline"`
+
 	// A human-readable description of the status of this operation.
 	Message string `json:"message,omitempty"`
 
@@ -674,4 +676,11 @@ type Event struct {
 
 	// The object name that those events are about.
 	InvolvedObjectName string `json:"involvedObjectName"`
+
+	// The time at which the most recent occurrence of this event was recorded.
+	// swagger:strfmt date-time
+	LastTimestamp Time `json:"lastTimestamp,omitempty"`
+
+	// The number of times this event has occurred.
+	Count int32 `json:"count,omitempty"`
 }
