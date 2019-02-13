@@ -24,9 +24,16 @@ func FilterEventsByType(events []v1.Event, eventType string) []v1.Event {
 // toEvent converts Kubernetes Events to Kubermatic ones (used in the API).
 func toEvent(event corev1.Event) v1.Event {
 	result := v1.Event{
+		ObjectMeta: v1.ObjectMeta{
+			ID:                string(event.ObjectMeta.UID),
+			Name:              event.ObjectMeta.Name,
+			CreationTimestamp: v1.NewTime(event.ObjectMeta.CreationTimestamp.Time),
+		},
 		Message:            event.Message,
 		Type:               event.Type,
 		InvolvedObjectName: event.InvolvedObject.Name,
+		LastTimestamp:      v1.NewTime(event.LastTimestamp.Time),
+		Count:              event.Count,
 	}
 	return result
 }
