@@ -744,7 +744,8 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "ca4e9f31c60eed356bfeaecb41d842b95b3e6db4"
+  revision = "fad960933a960f456859cb55dbbfe640468805d5"
+  version = "v1.0.4"
 
 [[projects]]
   digest = "1:d244f8666a838fe6ad70ec8fe77f50ebc29fdc3331a2729ba5886bef8435d10d"

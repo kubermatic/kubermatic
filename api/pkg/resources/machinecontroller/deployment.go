@@ -29,7 +29,7 @@ var (
 const (
 	name = "machine-controller"
 
-	tag = "v1.0.3"
+	tag = "v1.0.4"
 )
 
 // DeploymentCreator returns the function to create and update the machine controller deployment
@@ -85,7 +85,7 @@ func DeploymentCreator(data resources.DeploymentDataProvider) resources.Deployme
 		dep.Spec.Template.Spec.Containers = []corev1.Container{
 			{
 				Name:            name,
-				Image:           data.ImageRegistry(resources.RegistryDocker) + "/alvaroaleman/machine-controller:ca4e9f31c60eed356bfeaecb41d842b95b3e6db4",
+				Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command:         []string{"/usr/local/bin/machine-controller"},
 				Args: []string{
