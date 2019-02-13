@@ -59,8 +59,6 @@ github.com/zreigz))
 - Credentials for Docker Hub are no longer necessary. [#2605](https://github.com/kubermatic/kubermatic/issues/2605) ([kdomanski](https://github.com/kdomanski))
 - Added support for Heptio Ark-based backups [#2617](https://github.com/kubermatic/kubermatic/issues/2617) ([xrstf](https://github.com/xrstf))
 - Running `kubectl get cluster` in a seed now shows some more details [#2622](https://github.com/kubermatic/kubermatic/issues/2622) ([alvaroaleman](https://github.com/alvaroaleman))
-- Added new edpoint: `/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/events` with query parameter `type`. When `?type=warning` then endpoint returns only warning type events. When `?type=normal` then endpoint returns only normal type events. Without query parameters the endpoint returns all events. [#2647]
-(https://github.com/kubermatic/kubermatic/issues/2647) ([zreigz](https://github.com/zreigz))
 - Kubernetes 1.10 was removed as officially supported version from Kubermatic as its EOL [#2712](https://github.com/kubermatic/kubermatic/issues/2712) ([alvaroaleman](https://github.com/alvaroaleman))
 - Updated machine controller to `v0.10.5` [#2490](https://github.com/kubermatic/kubermatic/issues/2490) ([mrIncompetent](https://github.com/mrIncompetent))
 - Updated dex to 2.12.0 [#2318](https://github.com/kubermatic/kubermatic/issues/2318) ([bashofmann](https://github.com/bashofmann))
@@ -81,7 +79,6 @@ github.com/zreigz))
     - On project change, the user will stay on the same page, if he has the corresponding rights. [#889](https://github.com/kubermatic/dashboard-v2/issues/889) ([kgroschoff](https://github.com/kgroschoff))
     - Fixed issues with caching the main page. [#893](https://github.com/kubermatic/dashboard-v2/issues/893) ([maciaszczykm](https://github.com/maciaszczykm))
     - Added support for creating, viewing, updating and deleting node deployments. [#949](https://github.com/kubermatic/dashboard-v2/issues/949) ([maciaszczykm](https://github.com/maciaszczykm))
-    - Added Node Deployment details view [#973](https://github.com/kubermatic/dashboard-v2/issues/973) ([maciaszczykm](https://github.com/maciaszczykm))
     - Removed Container Runtime selection, which is no longer supported. [#828](https://github.com/kubermatic/dashboard-v2/issues/828) ([bashofmann](https://github.com/bashofmann))
     - Menu entries will be disabled as long as selected project is not in active state.
     - Selected project state icon was added in the project selector and in the list view.
@@ -136,7 +133,7 @@ github.com/zreigz))
 - Fixed an issue with kubelets being unreachable by the apiserver on some OS configurations. [#2522](https://github.com/kubermatic/kubermatic/issues/2522) ([mrIncompetent](https://github.com/mrIncompetent))
 - Timestamp format has been unified throughout the Kubermatic API. [#2534](https://github.com/kubermatic/kubermatic/issues/2534) ([zreigz](https://github.com/zreigz))
 - Updated cert-manager to fix an issue which caused re-issuing of a certficate via the http01 challenge to fail [#2658](https://github.com/kubermatic/kubermatic/issues/2658) ([alvaroaleman](https://github.com/alvaroaleman))
-- NodeDeployments can no longer be configured to provision kubelets at versions incompatible with the control plane. [#2665](https://github.com/kubermatic/kubermatic/issues/2665) ([kdomanski](https://github.com/kdomanski))
+- Nodes and NodeDeployments can no longer be configured to provision kubelets at versions incompatible with the control plane. [#2665](https://github.com/kubermatic/kubermatic/issues/2665) ([kdomanski](https://github.com/kdomanski))
 
 
 
