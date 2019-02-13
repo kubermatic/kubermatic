@@ -40,7 +40,7 @@ spec:
         - 0.0.0.0:9876
         command:
         - /usr/local/bin/webhook
-        image: docker.io/kubermatic/machine-controller:v0.10.3
+        image: docker.io/kubermatic/machine-controller:v0.10.9
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 8
