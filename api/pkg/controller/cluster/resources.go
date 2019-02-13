@@ -16,6 +16,7 @@ import (
 	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/usercluster"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -165,6 +166,7 @@ func GetDeploymentCreators(data resources.DeploymentDataProvider) []resources.De
 		controllermanager.DeploymentCreator(data),
 		dns.DeploymentCreator(data),
 		metricsserver.DeploymentCreator(data),
+		usercluster.DeploymentCreator(data),
 	}
 
 	if data.Cluster() != nil && len(data.Cluster().Spec.MachineNetworks) > 0 {
@@ -210,6 +212,7 @@ func GetSecretCreatorOperations(c *kubermaticv1.Cluster, dockerPullConfigJSON []
 		{resources.KubeStateMetricsKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil)},
 		{resources.MachineControllerWebhookServingCertSecretName, machinecontroller.TLSServingCertificate},
 		{resources.MetricsServerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil)},
+		{resources.UserClusterControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.UserClusterControllerKubeconfigSecretName, resources.UserClusterControllerCertUsername, []string{"system:masters"})},
 	}
 
 	if enableDexCA {

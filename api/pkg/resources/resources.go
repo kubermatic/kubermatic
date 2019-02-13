@@ -67,6 +67,8 @@ const (
 	DNSResolverVPAName = "dns-resolver"
 	//KubeStateMetricsDeploymentName is the name for the kube-state-metrics deployment
 	KubeStateMetricsDeploymentName = "kube-state-metrics"
+	// UserClusterControllerDeploymentName is the name of the usercluster-controller deployment
+	UserClusterControllerDeploymentName = "usercluster-controller"
 
 	//PrometheusStatefulSetName is the name for the prometheus StatefulSet
 	PrometheusStatefulSetName = "prometheus"
@@ -275,6 +277,11 @@ const (
 	// MachineControllerMutatingWebhookConfigurationName is the name of the machine-controllers mutating webhook
 	// configuration
 	MachineControllerMutatingWebhookConfigurationName = "machine-controller.kubermatic.io"
+
+	// UserClusterControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the user cluster controller
+	UserClusterControllerKubeconfigSecretName = "usercluster-controller"
+	// UserClusterControllerCertUsername is the name of the user coming from kubeconfig cert
+	UserClusterControllerCertUsername = "usercluster-controller"
 )
 
 const (
