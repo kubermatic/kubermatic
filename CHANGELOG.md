@@ -32,7 +32,7 @@ ppropriate query parameter instead. [#2315](https://github.com/kubermatic/kuberm
 - [ACTION REQUIRED] kubermatic API command line args were changed: `oidc-issuer-url` to `oidc-url`, `oidc-client-id` to `oidc-authenticator-client-id`, `oidc-offline-access-as-scope` to `oidc-issuer-offline-access-as-scope`, `oidc-redirect-uri` to `oidc-issuer-redirect-uri` and new was added: `oidc-issuer-client-id` [#2338](https://github.com/kubermatic/kuberm
 atic/issues/2338) ([zreigz](https://github.com/zreigz))
 - Kubermatic now validates nodes synchronously [#2340](https://github.com/kubermatic/kubermatic/issues/2340) ([alvaroaleman](https://github.com/alvaroaleman))
-- Added endpoints to manage Machine Deployments [#2357](https://github.com/kubermatic/kubermatic/issues/2357) ([maciaszczykm](https://github.com/maciaszczykm))
+- Kubermatic now manages Nodes as group via the NodeGroup feature [#2357](https://github.com/kubermatic/kubermatic/issues/2357) ([maciaszczykm](https://github.com/maciaszczykm))
 - Components will no longer be shown as as unhealthy when only some replicas are up [#2358](https://github.com/kubermatic/kubermatic/issues/2358) ([mrIncompetent](https://github.com/mrIncompetent))
 - Kubernetes API servers can now be used with OpenID authentication[ACTION REQUIRED] to enable the OpenID for kubernetes API server the users must set `-feature-gates=OpenIDConnectTokens=true` and provide `-oidc-issuer-url`, `-oidc-issuer-client-id` when running the controller. [#2370](https://github.com/kubermatic/kubermatic/issues/2370) ([zreigz](https://git
 hub.com/zreigz))
