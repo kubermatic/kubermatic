@@ -37,6 +37,14 @@ atic/issues/2338) ([zreigz](https://github.com/zreigz))
 - Kubernetes API servers can now be used with OpenID authentication[ACTION REQUIRED] to enable the OpenID for kubernetes API server the users must set `-feature-gates=OpenIDConnectTokens=true` and provide `-oidc-issuer-url`, `-oidc-issuer-client-id` when running the controller. [#2370](https://github.com/kubermatic/kubermatic/issues/2370) ([zreigz](https://git
 hub.com/zreigz))
 - [ACTION REQUIRED] Resource limits for control plane containers have been increased. This might require additional resources for the seed cluster [#2395](https://github.com/kubermatic/kubermatic/issues/2395) ([mrIncompetent](https://github.com/mrIncompetent))
+  - Kubernetes API server: 4Gi RAM, 2 CPU
+  - Kubernetes Controller Manager: 2Gi RAM, 2 CPU
+  - Kubernetes scheduler: 512Mi RAM, 1 CPU
+  - CoreDNS: 128Mi RAM, 0.1 CPU
+  - etcd: 2Gi RAM, 2 CPU
+  - kube state metrics: 1Gi, 0.1 CPU
+  - OpenVPN: 128Mi RAM, 0.1 CPU
+  - Prometheus: 1Gi RAM, 0.1 CPU
 - Kubermatic controller can now use TLS verification[Action required] to enable the TLS verification for kubermatic-controller-manager the users must set `-feature-gates=OpenIDAuthPlugin=true` and provide `-oidc-issuer-url`, `-oidc-issuer-client-id` and `--oidc-ca-file` when running the controller.[Action required] user need CA bundle file with a correct chain
  of certificates [#2403](https://github.com/kubermatic/kubermatic/issues/2403) ([zreigz](https://github.com/zreigz))
 - [ACTION_REQUIRED] Kubermatic CustomResourceDefinitions have been extracted out of the helm chart. This requires the execution of the `charts/kubermatic/migrate/migrate-kubermatic-chart.sh` script in case the CRD&#39;s where installed without the `&#34;helm.sh/resource-policy&#34;: keep` annotation. [#2459](https://github.com/kubermatic/kubermatic/issues/2459
