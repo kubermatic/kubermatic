@@ -54,7 +54,7 @@ hub.com/zreigz))
 - Added 1.11.6 &amp; 1.12.4 to supported Kubernetes versions [#2537](https://github.com/kubermatic/kubermatic/issues/2537) ([mrIncompetent](https://github.com/mrIncompetent))
 - Setting CA bundle with the `oidc-ca-file flag` is now optional [#2562](https://github.com/kubermatic/kubermatic/issues/2562) ([kgroschoff](https://github.com/kgroschoff))
 - It's now possible to rename a project [#2588](https://github.com/kubermatic/kubermatic/issues/2588) ([glower](https://github.com/glower))
-- New header params added to delete cluster operation: `DeleteVolumes` and `DeleteLoadBalancers`. Setting `DeleteVolumes` for `true` adds `kubermatic.io/cleanup-in-cluster-pv` finilizer. Setting `DeleteLoadBalancers` for `true` adds `kubermatic.io/cleanup-in-cluster-lb` finilizer. [#2604](https://github.com/kubermatic/kubermatic/issues/2604) ([zreigz](https://
+- It is now possible for a user to select whether PVCs/PVs and/or LBs should be cleaned up when deleting the cluster. [#2604](https://github.com/kubermatic/kubermatic/issues/2604) ([zreigz](https://
 github.com/zreigz))
 - Credentials for Docker Hub are no longer necessary. [#2605](https://github.com/kubermatic/kubermatic/issues/2605) ([kdomanski](https://github.com/kdomanski))
 - Added support for Heptio Ark-based backups [#2617](https://github.com/kubermatic/kubermatic/issues/2617) ([xrstf](https://github.com/xrstf))
