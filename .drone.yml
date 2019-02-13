@@ -301,7 +301,7 @@ pipeline:
     values:
     - values
     when:
-      branch: release/v2.8
+      branch: release/v2.9
   slack:
     channel: dev
     group: slack
