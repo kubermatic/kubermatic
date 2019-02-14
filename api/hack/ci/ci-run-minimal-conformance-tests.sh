@@ -80,31 +80,13 @@ vault kv get -field=datacenters.yaml \
 echodate "Successfully got secrets from Vault"
 
 
-if [[ ! -f $HOME/.docker/config.json ]]; then
-  docker ps &>/dev/null || start-docker.sh
-  mkdir  -p $HOME/.docker
-  echo '{"experimental": "enabled"}' > ~/.docker/config.json
-  echodate "Logging into dockerhub"
-  docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-  docker login -u $QUAY_IO_USERNAME -p $QUAY_IO_PASSWORD quay.io
-  echodate "Successfully logged into all registries"
-fi
+# Build kubermatic binaries and push the image to quay
+echodate "Logging into quay"
+docker login -u $QUAY_IO_USERNAME -p $QUAY_IO_PASSWORD quay.io
+echodate "Successfully logged into quay"
 
-# Only build kubermatic binaries and docker image if it doesn't exist yet
-# We use dockerhub because docker manifest inspect doesn't seem to work on quay
-if ! docker manifest inspect docker.io/kubermatic/api:$GIT_HEAD_HASH &>/dev/null; then
-  echodate "Building binaries"
-  time make -C api build
-  cd api
-  echodate "Building docker image"
-  docker build -t docker.io/kubermatic/api:${GIT_HEAD_HASH} .
-  echodate "Pushing docker image"
-  retry 5 docker push docker.io/kubermatic/api:${GIT_HEAD_HASH}
-  echodate "Finished building and pushing docker image"
-  cd -
-fi
-
-# push to quay
+echodate "Building binaries"
+time make -C api build
 cd api
 echodate "Building quay image"
 docker build -t quay.io/kubermatic/api:${GIT_HEAD_HASH} .
