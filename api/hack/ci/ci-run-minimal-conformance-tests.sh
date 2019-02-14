@@ -86,6 +86,7 @@ if [[ ! -f $HOME/.docker/config.json ]]; then
   echo '{"experimental": "enabled"}' > ~/.docker/config.json
   echodate "Logging into dockerhub"
   docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+  docker login -u $QUAY_IO_USERNAME -p $QUAY_IO_PASSWORD quay.io
   echodate "Successfully logged into all registries"
 fi
 
@@ -102,6 +103,15 @@ if ! docker manifest inspect docker.io/kubermatic/api:$GIT_HEAD_HASH &>/dev/null
   echodate "Finished building and pushing docker image"
   cd -
 fi
+
+# push to quay
+cd api
+echodate "Building quay image"
+docker build -t quay.io/kubermatic/api:${GIT_HEAD_HASH} .
+echodate "Pushing quay image"
+retry 5 docker push quay.io/kubermatic/api:${GIT_HEAD_HASH}
+echodate "Finished building and pushing quay image"
+cd -
 
 INITIAL_MANIFESTS=$(cat <<EOF
 apiVersion: v1
