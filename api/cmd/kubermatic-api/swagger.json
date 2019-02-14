@@ -4414,6 +4414,14 @@
           "type": "string",
           "x-go-name": "Name"
         },
+        "owners": {
+          "description": "Owners an optional owners list for the given project",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/User"
+          },
+          "x-go-name": "Owners"
+        },
         "status": {
           "type": "string",
           "x-go-name": "Status"
