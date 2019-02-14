@@ -154,11 +154,11 @@ rm -f config/kubermatic/templates/cluster-role-binding.yaml
 retry 3 helm upgrade --install --force --wait --timeout 300 \
   --tiller-namespace=$NAMESPACE \
   --set=kubermatic.isMaster=true \
-  --set-string=kubermatic.controller.image.repository=docker.io/kubermatic/api \
+  --set-string=kubermatic.controller.image.repository=quay.io/kubermatic/api \
   --set-string=kubermatic.controller.image.tag=$GIT_HEAD_HASH \
-  --set-string=kubermatic.api.image.repository=docker.io/kubermatic/api \
+  --set-string=kubermatic.api.image.repository=quay.io/kubermatic/api \
   --set-string=kubermatic.api.image.tag=$GIT_HEAD_HASH \
-  --set-string=kubermatic.rbac.image.repository=docker.io/kubermatic/api \
+  --set-string=kubermatic.rbac.image.repository=quay.io/kubermatic/api \
   --set-string=kubermatic.rbac.image.tag=$GIT_HEAD_HASH \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.deployVPA=false \
