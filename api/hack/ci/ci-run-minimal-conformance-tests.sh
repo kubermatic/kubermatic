@@ -81,6 +81,7 @@ echodate "Successfully got secrets from Vault"
 
 
 # Build kubermatic binaries and push the image to quay
+docker ps &>/dev/null || start-docker.sh
 echodate "Logging into quay"
 docker login -u $QUAY_IO_USERNAME -p $QUAY_IO_PASSWORD quay.io
 echodate "Successfully logged into quay"
