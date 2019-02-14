@@ -1,0 +1,52 @@
+{{ if .Values.logging.elasticsearch.cerebro.deploy }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cerebro
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cerebro
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: cerebro
+    spec:
+      containers:
+      - name: cerebro
+        image: "{{ .Values.logging.elasticsearch.cerebro.image.repository }}:{{ .Values.logging.elasticsearch.cerebro.image.tag }}"
+        imagePullPolicy: {{ .Values.logging.elasticsearch.cerebro.image.pullPolicy }}
+        command:
+        - bin/cerebro
+        args:
+        - '-Dconfig.file=/cerebro/application.conf'
+        ports:
+        - containerPort: 9000
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 10
+          timeoutSeconds: 10
+        resources:
+          requests:
+            cpu: 50m
+            memory: 400Mi
+        volumeMounts:
+          - name: config
+            mountPath: /cerebro
+      volumes:
+        - name: config
+          configMap:
+            name: cerebro-config
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+{{ end }}

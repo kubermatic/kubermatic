@@ -33,3 +33,9 @@ logging:
         # limits:
         #   cpu: 100m
         #   memory: 128Mi
+    cerebro:
+      image:
+        repository: yannart/cerebro
+        tag: "0.8.1"
+        pullPolicy: IfNotPresent
+      deploy: false

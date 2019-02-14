@@ -1,0 +1,17 @@
+{{ if .Values.logging.elasticsearch.cerebro.deploy }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cerebro-config
+data:
+  # replace randAlphaNum with cryptoRandAlphaNum once more
+  # recent Helm versions are available
+  application.conf: |
+    secret = "{{ randAlphaNum 30 }}"
+    hosts = [
+      {
+        host = "http://es-data:9200"
+        name = "Logging Cluster"
+      }
+    ]
+{{ end }}
