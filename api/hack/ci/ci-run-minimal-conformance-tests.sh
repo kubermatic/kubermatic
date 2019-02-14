@@ -169,7 +169,6 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set-string=kubermatic.rbac.image.repository=docker.io/kubermatic/api \
   --set-string=kubermatic.rbac.image.tag=$GIT_HEAD_HASH \
   --set-string=kubermatic.worker_name=$BUILD_ID \
-  --set=kubermatic.deployVPA=false \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
   --values ${VALUES_FILE} \

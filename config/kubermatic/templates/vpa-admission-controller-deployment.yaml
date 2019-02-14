@@ -1,4 +1,4 @@
-{{ if .Values.kubermatic.deployVPA }}
+{{ if (contains "VerticalPodAutoscaler=true" .Values.kubermatic.controller.featureGates) }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
