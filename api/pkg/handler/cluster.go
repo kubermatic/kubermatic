@@ -27,6 +27,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
+
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 func createClusterEndpoint(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
@@ -178,18 +180,29 @@ func deleteCluster(sshKeyProvider provider.SSHKeyProvider, projectProvider provi
 		}
 
 		if req.DeleteVolumes || req.DeleteLoadBalancers {
-			existingCluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-			if req.DeleteLoadBalancers {
-				existingCluster.Finalizers = kuberneteshelper.AddFinalizer(existingCluster.Finalizers, finalizer.InClusterLBCleanupFinalizer)
-			}
-			if req.DeleteVolumes {
-				existingCluster.Finalizers = kuberneteshelper.AddFinalizer(existingCluster.Finalizers, finalizer.InClusterPVCleanupFinalizer)
+			addFinalizersFunc := func() error {
+				existingCluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+				if err != nil {
+					if kerrors.IsServiceUnavailable(err) {
+						return nil
+					}
+					return common.KubernetesErrorToHTTPError(err)
+				}
+				if req.DeleteLoadBalancers {
+					existingCluster.Finalizers = kuberneteshelper.AddFinalizer(existingCluster.Finalizers, finalizer.InClusterLBCleanupFinalizer)
+				}
+				if req.DeleteVolumes {
+					existingCluster.Finalizers = kuberneteshelper.AddFinalizer(existingCluster.Finalizers, finalizer.InClusterPVCleanupFinalizer)
+				}
+
+				if _, err = clusterProvider.Update(userInfo, existingCluster); err != nil {
+					return common.KubernetesErrorToHTTPError(err)
+				}
+
+				return nil
 			}
 
-			if _, err = clusterProvider.Update(userInfo, existingCluster); err != nil {
+			if err := addFinalizersFunc(); err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 		}
