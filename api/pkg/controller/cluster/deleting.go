@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
@@ -76,13 +77,8 @@ func (cc *Controller) cleanupInClusterResources(c *kubermaticv1.Cluster) (*kuber
 	// We'll set this to true in case we deleted something. This is meant to requeue as long as all resources are really gone
 	// We'll use it for LB's and PV's as well, so the Kubernetes controller manager does the cleanup of all resources in parallel
 	var deletedSomeResource bool
-	_, hasDeleteLBAnnotation := c.Annotations[deletedLBAnnotationName]
 
-	// Don't enter again, because if deletion takes some time and some but not all
-	// of the services of type LoadBalancer were deleted we lose track of those that
-	// are already gone
-	if shouldDeleteLBs && !hasDeleteLBAnnotation {
-		var deletedLBs []string
+	if shouldDeleteLBs {
 		serviceList, err := client.CoreV1().Services(metav1.NamespaceAll).List(metav1.ListOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("failed to list Service's from user cluster: %v", err)
@@ -93,19 +89,16 @@ func (cc *Controller) cleanupInClusterResources(c *kubermaticv1.Cluster) (*kuber
 				if err := client.CoreV1().Services(service.Namespace).Delete(service.Name, &metav1.DeleteOptions{}); err != nil {
 					return nil, fmt.Errorf("failed to delete Service '%s/%s' from user cluster: %v", service.Namespace, service.Name, err)
 				}
-				deletedLBs = append(deletedLBs, fmt.Sprintf("%s/%s", service.Namespace, service.Name))
-			}
-		}
-		if len(deletedLBs) > 0 {
-			deletedSomeResource = true
-			c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
-				if c.Annotations == nil {
-					c.Annotations = map[string]string{}
+				deletedSomeResource = true
+				c, err = cc.updateCluster(c.Name, func(cluster *kubermaticv1.Cluster) {
+					if cluster.Annotations == nil {
+						cluster.Annotations = map[string]string{}
+					}
+					cluster.Annotations[deletedLBAnnotationName] = cluster.Annotations[deletedLBAnnotationName] + fmt.Sprintf(",%s", string(service.UID))
+				})
+				if err != nil {
+					return nil, fmt.Errorf("failed to update cluster when trying to add UID of deleted LoadBalancer: %v", err)
 				}
-				c.Annotations[deletedLBAnnotationName] = strings.Join(deletedLBs, ",")
-			})
-			if err != nil {
-				return c, fmt.Errorf("failed to update cluster with annotations about deleted svcs: %v", err)
 			}
 		}
 	}
@@ -138,59 +131,21 @@ func (cc *Controller) cleanupInClusterResources(c *kubermaticv1.Cluster) (*kuber
 		}
 	}
 
+	// If we deleted something it is implied that there was still something left. Just return
+	// here so the finalizers stay, it will make the cluster controller requeue us after a delay
+	// This also means that we may end up issuing multiple DELETE calls against the same ressource
+	// if cleaning up takes some time, but that shouldn't cause any harm
 	if deletedSomeResource {
 		return c, nil
 	}
 
-	// Check for the event, as that is the only way we can safely know the Loadbalancer is actually gone
-	if val, exists := c.Annotations[deletedLBAnnotationName]; exists {
-		deletedLBsFromAnnotationSlice := strings.Split(val, ",")
-		deletedLBsFromAnnotation := sets.NewString(deletedLBsFromAnnotationSlice...)
-
-		userClusterDynamicClient, err := cc.userClusterConnProvider.GetDynamicClient(c)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get dynamic client for user cluster: %v", err)
-		}
-
-		for deletedLB := range deletedLBsFromAnnotation {
-			nameParts := strings.Split(deletedLB, "/")
-			if len(nameParts) != 2 {
-				return nil, fmt.Errorf("service name '%s' from annotation %s split by '/' doesnt yielt two parts but %d", deletedLB, deletedLBAnnotationName, len(nameParts))
-			}
-			selector := fields.AndSelectors(fields.OneTermEqualSelector("involvedObject.kind", "Service"),
-				fields.OneTermEqualSelector("involvedObject.namespace", nameParts[0]),
-				fields.OneTermEqualSelector("involvedObject.name", nameParts[1]))
-			events := &corev1.EventList{}
-			if err := userClusterDynamicClient.List(context.Background(), &controllerruntimeclient.ListOptions{FieldSelector: selector}, events); err != nil {
-				return nil, fmt.Errorf("failed to get service events: %v", err)
-			}
-			for _, event := range events.Items {
-				if event.Reason == "DeletedLoadBalancer" {
-					deletedLBsFromAnnotation.Delete(deletedLB)
-				}
-			}
-
-		}
-		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
-			if deletedLBsFromAnnotation.Len() > 0 {
-				c.Annotations[deletedLBAnnotationName] = strings.Join(deletedLBsFromAnnotation.List(), ",")
-			} else {
-				newAnnotations := map[string]string{}
-				for k, v := range c.Annotations {
-					if k != deletedLBAnnotationName {
-						newAnnotations[k] = v
-					}
-				}
-				c.Annotations = newAnnotations
-			}
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to update cluster: %v", err)
-		}
-		// Return and check again a moment later
-		if deletedLBsFromAnnotation.Len() > 0 {
-			return c, nil
-		}
+	lbsAreGone, err := cc.checkIfAllLoadbalancersAreGone(c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if all Loadbalancers are gone: %v", err)
+	}
+	// Return so we check again later
+	if !lbsAreGone {
+		return c, nil
 	}
 
 	c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
@@ -329,4 +284,61 @@ func (cc *Controller) deletingCloudProviderCleanup(c *kubermaticv1.Cluster) (*ku
 	}
 
 	return c, nil
+}
+
+// checkIfAllLoadbalancersAreGone checks if all the services of type LoadBalancer were successfully
+// deleted. The in-tree cloud providers do this without a finalizer and only after the service
+// object is gone from the API, the only way to check is to wait for the relevant event
+func (cc *Controller) checkIfAllLoadbalancersAreGone(c *kubermaticv1.Cluster) (bool, error) {
+	// This check is only required for in-tree cloud provider that support LoadBalancers
+	if c.Spec.Cloud.AWS == nil && c.Spec.Cloud.Azure == nil && c.Spec.Cloud.Openstack == nil {
+		return true, nil
+	}
+
+	// We only need to wait for this if there were actually services of type Loadbalancer deleted
+	loadBalancerAnnotationValue, annotationExists := c.Annotations[deletedLBAnnotationName]
+	if !annotationExists || loadBalancerAnnotationValue == "" {
+		return true, nil
+	}
+
+	// Kubernetes gives no guarantees at all about events, it is possible we don't get the event
+	// so bail out after 2h
+	if c.DeletionTimestamp.UTC().Add(2 * time.Hour).Before(time.Now().UTC()) {
+		//TODO: Add a metric for this
+		return true, nil
+	}
+
+	userClusterDynamicClient, err := cc.userClusterConnProvider.GetDynamicClient(c)
+	if err != nil {
+		return false, fmt.Errorf("failed to get dynamic client for user cluster: %v", err)
+	}
+	deletedLoadBalancers := sets.NewString(strings.Split(strings.TrimPrefix(loadBalancerAnnotationValue, ","), ",")...)
+	for deletedLB := range deletedLoadBalancers {
+		selector := fields.OneTermEqualSelector("involvedObject.uid", deletedLB)
+		events := &corev1.EventList{}
+		if err := userClusterDynamicClient.List(context.Background(), &controllerruntimeclient.ListOptions{FieldSelector: selector}, events); err != nil {
+			return false, fmt.Errorf("failed to get service events: %v", err)
+		}
+		for _, event := range events.Items {
+			if event.Reason == "DeletedLoadBalancer" {
+				deletedLoadBalancers.Delete(deletedLB)
+			}
+		}
+
+	}
+	c, err = cc.updateCluster(c.Name, func(cluster *kubermaticv1.Cluster) {
+		if deletedLoadBalancers.Len() > 0 {
+			cluster.Annotations[deletedLBAnnotationName] = strings.Join(deletedLoadBalancers.List(), ",")
+		} else {
+			cc.recorder.Event(cluster, corev1.EventTypeNormal, "deleting lb map key", "deleting lb map key")
+			delete(cluster.Annotations, deletedLBAnnotationName)
+		}
+	})
+	if err != nil {
+		return false, fmt.Errorf("failed to update cluster: %v", err)
+	}
+	if deletedLoadBalancers.Len() > 0 {
+		return false, nil
+	}
+	return false, nil
 }

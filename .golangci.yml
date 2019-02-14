@@ -37,4 +37,3 @@ issues:
   - "`updateManager` can be `github.com/kubermatic/kubermatic/api/pkg/handler.UpdateManager`"
   - "`store` can be `github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/cache.KeyGetter`"
   - 'func `\(\*ClusterProvider\)\.withImpersonation` is unused'
-  - 'cyclomatic complexity 36 of func `\(\*Controller\)\.cleanupInClusterResources`'
