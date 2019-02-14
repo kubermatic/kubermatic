@@ -1,4 +1,4 @@
-{{ if .Values.kubermatic.deployVPA }}
+{{ if (contains "VerticalPodAutoscaler=true" .Values.kubermatic.controller.featureGates) }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:

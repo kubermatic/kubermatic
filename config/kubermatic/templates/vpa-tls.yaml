@@ -1,4 +1,4 @@
-{{ if .Values.kubermatic.deployVPA }}
+{{ if (contains "VerticalPodAutoscaler=true" .Values.kubermatic.controller.featureGates) }}
 {{- $ca := genCA "deployment-admission-controller" 3650 -}}
 {{- $cn := "vpa-webhook" -}}
 {{- $altName1 := "vpa-webhook.kube-system" -}}
