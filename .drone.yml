@@ -332,7 +332,7 @@ pipeline:
       branch: release/v2.9
       status:
       - success
-  slack-failure:
+  slack-failure-master:
     channel: dev
     group: slack
     icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
@@ -345,6 +345,21 @@ pipeline:
     webhook: https://hooks.slack.com/services/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
     when:
       branch: master
+      status:
+      - failure
+  slack-failure-branch:
+    channel: dev
+    group: slack
+    icon_url: https://avatars2.githubusercontent.com/u/2181346?v=4&s=200
+    image: kubermaticbot/drone-slack
+    pull: true
+    template: |
+      :seemssadman: I failed to deploy a new API & controller to run.kubermatic.io
+      <${DRONE_BUILD_LINK}|:drone: build #${DRONE_BUILD_NUMBER}> <${DRONE_COMMIT_LINK}|:github:>
+    username: drone
+    webhook: https://hooks.slack.com/services/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
+    when:
+      branch: release/v2.9
       status:
       - failure
 workspace:
