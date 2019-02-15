@@ -110,10 +110,8 @@ func (cc *Controller) cleanupInClusterResources(c *kubermaticv1.Cluster) (*kuber
 					if err != nil {
 						return false, err
 					}
-					if deletedLBAnnotationValue, annotationExists := clusterFromLister.DeepCopy().Annotations[deletedLBAnnotationName]; annotationExists {
-						if strings.Contains(deletedLBAnnotationValue, string(service.UID)) {
-							return true, nil
-						}
+					if strings.Contains(clusterFromLister.Annotations[deletedLBAnnotationName], string(service.UID)) {
+						return true, nil
 					}
 					return false, nil
 				}); err != nil {
@@ -320,12 +318,11 @@ func (cc *Controller) checkIfAllLoadbalancersAreGone(c *kubermaticv1.Cluster) (b
 	}
 
 	// We only need to wait for this if there were actually services of type Loadbalancer deleted
-	loadBalancerAnnotationValue, annotationExists := c.Annotations[deletedLBAnnotationName]
-	if !annotationExists || loadBalancerAnnotationValue == "" {
+	if c.Annotations[deletedLBAnnotationName] == "" {
 		return true, nil
 	}
 
-	deletedLoadBalancers := sets.NewString(strings.Split(strings.TrimPrefix(loadBalancerAnnotationValue, ","), ",")...)
+	deletedLoadBalancers := sets.NewString(strings.Split(strings.TrimPrefix(c.Annotations[deletedLBAnnotationName], ","), ",")...)
 
 	// Kubernetes gives no guarantees at all about events, it is possible we don't get the event
 	// so bail out after 2h
@@ -364,5 +361,5 @@ func (cc *Controller) checkIfAllLoadbalancersAreGone(c *kubermaticv1.Cluster) (b
 	if deletedLoadBalancers.Len() > 0 {
 		return false, nil
 	}
-	return false, nil
+	return true, nil
 }
