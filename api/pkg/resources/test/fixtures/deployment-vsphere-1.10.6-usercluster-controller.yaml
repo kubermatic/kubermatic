@@ -28,7 +28,7 @@ spec:
         - -internal-listen-address
         - 0.0.0.0:8085
         command:
-        - /usr/local/bin/usercluster-controller-manager
+        - /usr/local/bin/user-cluster-controller-manager
         image: 'quay.io/kubermatic/api:'
         imagePullPolicy: IfNotPresent
         name: usercluster-controller
