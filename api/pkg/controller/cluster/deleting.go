@@ -18,7 +18,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
+
 	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -85,6 +87,8 @@ func (cc *Controller) cleanupInClusterResources(c *kubermaticv1.Cluster) (*kuber
 		}
 
 		for _, service := range serviceList.Items {
+			// Need to change the scope so the inline func in the updateCluster call always has the service from the current iteration
+			service := service
 			if service.Spec.Type == corev1.ServiceTypeLoadBalancer {
 				if err := client.CoreV1().Services(service.Namespace).Delete(service.Name, &metav1.DeleteOptions{}); err != nil {
 					return nil, fmt.Errorf("failed to delete Service '%s/%s' from user cluster: %v", service.Namespace, service.Name, err)
@@ -98,6 +102,22 @@ func (cc *Controller) cleanupInClusterResources(c *kubermaticv1.Cluster) (*kuber
 				})
 				if err != nil {
 					return nil, fmt.Errorf("failed to update cluster when trying to add UID of deleted LoadBalancer: %v", err)
+				}
+				// Wait for the update to appear in the lister as we use the data from the lister later on to verify if the LoadBalancers
+				// are gone
+				if err := wait.Poll(10*time.Millisecond, 5*time.Second, func() (bool, error) {
+					clusterFromLister, err := cc.clusterLister.Get(c.Name)
+					if err != nil {
+						return false, err
+					}
+					if deletedLBAnnotationValue, annotationExists := clusterFromLister.DeepCopy().Annotations[deletedLBAnnotationName]; annotationExists {
+						if strings.Contains(deletedLBAnnotationValue, string(service.UID)) {
+							return true, nil
+						}
+					}
+					return false, nil
+				}); err != nil {
+					return nil, fmt.Errorf("failed to wait for deletedLBAnnotation to appear in the lister: %v", err)
 				}
 			}
 		}
@@ -135,6 +155,8 @@ func (cc *Controller) cleanupInClusterResources(c *kubermaticv1.Cluster) (*kuber
 	// here so the finalizers stay, it will make the cluster controller requeue us after a delay
 	// This also means that we may end up issuing multiple DELETE calls against the same ressource
 	// if cleaning up takes some time, but that shouldn't cause any harm
+	// We also need to return when something was deleted so the checkIfAllLoadbalancersAreGone
+	// call gets an updated version of the cluster from the lister
 	if deletedSomeResource {
 		return c, nil
 	}
@@ -291,6 +313,8 @@ func (cc *Controller) deletingCloudProviderCleanup(c *kubermaticv1.Cluster) (*ku
 // object is gone from the API, the only way to check is to wait for the relevant event
 func (cc *Controller) checkIfAllLoadbalancersAreGone(c *kubermaticv1.Cluster) (bool, error) {
 	// This check is only required for in-tree cloud provider that support LoadBalancers
+	// TODO once we start external cloud controllers for one of these three: Make this check
+	// a bit smarter, external cloud controllers will most likely not emit the event we wait for
 	if c.Spec.Cloud.AWS == nil && c.Spec.Cloud.Azure == nil && c.Spec.Cloud.Openstack == nil {
 		return true, nil
 	}
@@ -301,10 +325,12 @@ func (cc *Controller) checkIfAllLoadbalancersAreGone(c *kubermaticv1.Cluster) (b
 		return true, nil
 	}
 
+	deletedLoadBalancers := sets.NewString(strings.Split(strings.TrimPrefix(loadBalancerAnnotationValue, ","), ",")...)
+
 	// Kubernetes gives no guarantees at all about events, it is possible we don't get the event
 	// so bail out after 2h
 	if c.DeletionTimestamp.UTC().Add(2 * time.Hour).Before(time.Now().UTC()) {
-		//TODO: Add a metric for this
+		staleLBs.WithLabelValues(c.Name).Set(float64(deletedLoadBalancers.Len()))
 		return true, nil
 	}
 
@@ -312,7 +338,6 @@ func (cc *Controller) checkIfAllLoadbalancersAreGone(c *kubermaticv1.Cluster) (b
 	if err != nil {
 		return false, fmt.Errorf("failed to get dynamic client for user cluster: %v", err)
 	}
-	deletedLoadBalancers := sets.NewString(strings.Split(strings.TrimPrefix(loadBalancerAnnotationValue, ","), ",")...)
 	for deletedLB := range deletedLoadBalancers {
 		selector := fields.OneTermEqualSelector("involvedObject.uid", deletedLB)
 		events := &corev1.EventList{}
