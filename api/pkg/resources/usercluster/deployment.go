@@ -76,7 +76,7 @@ func DeploymentCreator(data resources.DeploymentDataProvider) resources.Deployme
 				Name:            name,
 				Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
 				ImagePullPolicy: corev1.PullIfNotPresent,
-				Command:         []string{"/usr/local/bin/usercluster-controller-manager"},
+				Command:         []string{"/usr/local/bin/user-cluster-controller-manager"},
 				Args: []string{
 					"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 					"-internal-listen-address", "0.0.0.0:8085",
