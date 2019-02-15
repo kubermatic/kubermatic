@@ -35,6 +35,17 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
+var (
+	podIsReady = func(p *corev1.Pod) bool {
+		for _, c := range p.Status.Conditions {
+			if c.Type == corev1.PodReady && c.Status == corev1.ConditionTrue {
+				return true
+			}
+		}
+		return false
+	}
+)
+
 type testScenario interface {
 	Name() string
 	Cluster(secrets secrets) *kubermaticv1.Cluster
@@ -593,8 +604,22 @@ func (r *testRunner) waitForControlPlane(log *logrus.Entry, clusterName string) 
 			}
 			return false, fmt.Errorf("failed to get the cluster %s from the lister: %v", clusterName, err)
 		}
+		// Check for this first, because otherwise we instantly return as the cluster-controller did not
+		// create any pods yet
+		if !cluster.Status.Health.AllHealthy() {
+			return false, nil
+		}
+		controlPlanePods, err := r.seedKubeClient.CoreV1().Pods(cluster.Status.NamespaceName).List(metav1.ListOptions{})
+		if err != nil {
+			return false, fmt.Errorf("failed to list controlplane pods: %v", err)
+		}
+		for _, pod := range controlPlanePods.Items {
+			if !podIsReady(&pod) {
+				return false, nil
+			}
+		}
 
-		return cluster.Status.Health.AllHealthy(), nil
+		return true, nil
 	})
 	// Timeout or other error
 	if err != nil {
@@ -614,15 +639,6 @@ func (r *testRunner) waitForControlPlane(log *logrus.Entry, clusterName string) 
 func (r *testRunner) waitUntilAllPodsAreReady(log *logrus.Entry, client kubernetes.Interface) error {
 	log.Debug("Waiting for all pods to be ready...")
 	started := time.Now()
-
-	podIsReady := func(p *corev1.Pod) bool {
-		for _, c := range p.Status.Conditions {
-			if c.Type == corev1.PodReady && c.Status == corev1.ConditionTrue {
-				return true
-			}
-		}
-		return false
-	}
 
 	err := wait.Poll(defaultUserClusterPollInterval, defaultTimeout, func() (done bool, err error) {
 		podList, err := client.CoreV1().Pods(metav1.NamespaceAll).List(metav1.ListOptions{})
