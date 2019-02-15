@@ -129,7 +129,7 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.externalURL,
 		ctrlCtx.runOptions.dc,
 		dcs,
-		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
+		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister(), false),
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodePortRange,
 		ctrlCtx.runOptions.nodeAccessNetwork,
@@ -208,7 +208,7 @@ func createMonitoringController(ctrlCtx *controllerContext) (runner, error) {
 	return monitoring.New(
 		ctrlCtx.kubeClient,
 		ctrlCtx.dynamicClient,
-		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
+		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister(), false),
 
 		ctrlCtx.runOptions.dc,
 		dcs,
@@ -285,7 +285,7 @@ func createAddonController(ctrlCtx *controllerContext) (runner, error) {
 		},
 		ctrlCtx.runOptions.addonsPath,
 		ctrlCtx.runOptions.overwriteRegistry,
-		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
+		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister(), false),
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Addons(),
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),

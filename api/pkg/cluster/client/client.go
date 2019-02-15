@@ -6,6 +6,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -22,19 +23,30 @@ import (
 )
 
 // New returns a new instance of the client connection provider
-func New(secretLister corev1lister.SecretLister) *Provider {
-	return &Provider{secretLister: secretLister}
+// useExternalAddress describes whether we are going to access the user cluster from outside
+// of the seed cluster
+func New(secretLister corev1lister.SecretLister, useExternalAddress bool) *Provider {
+	return &Provider{secretLister: secretLister, useExternalAddress: useExternalAddress}
 }
 
 // Provider offers functions to interact with a user cluster
 type Provider struct {
-	secretLister corev1lister.SecretLister
+	secretLister       corev1lister.SecretLister
+	useExternalAddress bool
 }
 
 // GetAdminKubeconfig returns the admin kubeconfig for the given cluster
 func (p *Provider) GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
-	//Load the admin kubeconfig secret
-	s, err := p.secretLister.Secrets(c.Status.NamespaceName).Get(resources.AdminKubeconfigSecretName)
+	var s *corev1.Secret
+	var err error
+	if p.useExternalAddress {
+		// Load the admin kubeconfig secret, it uses the external apiserver address
+		s, err = p.secretLister.Secrets(c.Status.NamespaceName).Get(resources.AdminKubeconfigSecretName)
+	} else {
+		// Load the UserClusterControllerKubeconfigSecret, it has cluster-admin privileges
+		// and uses the internal apiserver address
+		s, err = p.secretLister.Secrets(c.Status.NamespaceName).Get(resources.UserClusterControllerKubeconfigSecretName)
+	}
 	if err != nil {
 		return nil, err
 	}

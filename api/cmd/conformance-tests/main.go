@@ -283,7 +283,7 @@ func main() {
 
 	opts.clusterLister = kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister()
 
-	clusterClientProvider := clusterclient.New(kubeInformerFactory.Core().V1().Secrets().Lister())
+	clusterClientProvider := clusterclient.New(kubeInformerFactory.Core().V1().Secrets().Lister(), true)
 	opts.clusterClientProvider = clusterClientProvider
 
 	kubermaticInformerFactory.Start(rootCtx.Done())

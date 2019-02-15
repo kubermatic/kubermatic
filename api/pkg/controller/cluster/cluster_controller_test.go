@@ -40,7 +40,7 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 		TestExternalURL,
 		TestDC,
 		dcs,
-		client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
+		client.New(kubeInformerFactory.Core().V1().Secrets().Lister(), false),
 		"",
 		"",
 		"192.0.2.0/24",
