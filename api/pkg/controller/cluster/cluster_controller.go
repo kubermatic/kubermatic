@@ -56,6 +56,7 @@ type userClusterConnectionProvider interface {
 	GetApiextensionsClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (apiextensionsclientset.Interface, error)
 	GetAdmissionRegistrationClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (admissionregistrationclientset.AdmissionregistrationV1beta1Interface, error)
 	GetKubeAggregatorClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (aggregationclientset.Interface, error)
+	GetDynamicClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
 
 // Controller is a controller which is responsible for managing clusters
