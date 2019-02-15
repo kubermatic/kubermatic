@@ -8,6 +8,7 @@ import (
 
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	admissionregistrationclientset "k8s.io/client-go/kubernetes/typed/admissionregistration/v1beta1"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	restclient "k8s.io/client-go/rest"
@@ -15,6 +16,9 @@ import (
 	aggregationclientset "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 
 	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 // New returns a new instance of the client connection provider
@@ -134,4 +138,22 @@ func (p *Provider) GetKubeAggregatorClient(c *kubermaticv1.Cluster, options ...C
 		return nil, err
 	}
 	return aggregationclientset.NewForConfig(config)
+}
+
+// GetDynamicClient returns a dynamic client
+func (p *Provider) GetDynamicClient(c *kubermaticv1.Cluster, options ...ConfigOption) (ctrlruntimeclient.Client, error) {
+	config, err := p.GetClientConfig(c, options...)
+	if err != nil {
+		return nil, err
+	}
+	combinedScheme := scheme.Scheme
+	mapper, err := apiutil.NewDiscoveryRESTMapper(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create rest mapper: %v", err)
+	}
+	dynamicClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{Scheme: combinedScheme, Mapper: mapper})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create dynamic client: %v", err)
+	}
+	return dynamicClient, nil
 }
