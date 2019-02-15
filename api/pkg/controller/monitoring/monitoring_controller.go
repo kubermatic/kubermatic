@@ -297,37 +297,21 @@ func (c *Controller) sync(key string) error {
 		return nil
 	}
 
-	glog.V(4).Infof("syncing cluster %s", key)
-	cluster := clusterFromCache.DeepCopy()
-
-	if !clusterFromCache.Status.Health.AllHealthy() {
-		glog.V(6).Infof("waiting for cluster %s to become healthy", key)
-		c.enqueueAfter(cluster, healthCheckPeriod)
-		return nil
-	}
-
-	if cluster.DeletionTimestamp != nil {
+	if clusterFromCache.DeletionTimestamp != nil {
 		// Cluster got deleted - all monitoring components will die soon
 		return nil
 	}
 
+	if clusterFromCache.Status.NamespaceName == "" {
+		glog.V(6).Infof("skipping cluster %s because it has no namespace yet", key)
+		c.enqueueAfter(clusterFromCache, healthCheckPeriod)
+	}
+
+	glog.V(4).Infof("syncing cluster %s", key)
+	cluster := clusterFromCache.DeepCopy()
+
 	data, err := c.getClusterTemplateData(cluster)
 	if err != nil {
-		return err
-	}
-
-	client, err := c.userClusterConnProvider.GetClient(cluster)
-	if err != nil {
-		return err
-	}
-
-	// check that all cluster roles in the user cluster are created
-	if err = c.userClusterEnsureClusterRoles(cluster, data, client); err != nil {
-		return err
-	}
-
-	// check that all cluster role bindings in the user cluster are created
-	if err = c.userClusterEnsureClusterRoleBindings(cluster, data, client); err != nil {
 		return err
 	}
 
@@ -367,5 +351,26 @@ func (c *Controller) sync(key string) error {
 	}
 
 	// check that all VerticalPodAutoscaler's are created
-	return c.ensureVerticalPodAutoscalers(cluster)
+	if err := c.ensureVerticalPodAutoscalers(cluster); err != nil {
+		return err
+	}
+
+	if !clusterFromCache.Status.Health.AllHealthy() {
+		glog.V(6).Infof("waiting for cluster %s to become healthy", key)
+		c.enqueueAfter(cluster, healthCheckPeriod)
+		return nil
+	}
+
+	client, err := c.userClusterConnProvider.GetClient(cluster)
+	if err != nil {
+		return err
+	}
+
+	// check that all cluster roles in the user cluster are created
+	if err = c.userClusterEnsureClusterRoles(cluster, data, client); err != nil {
+		return err
+	}
+
+	// check that all cluster role bindings in the user cluster are created
+	return c.userClusterEnsureClusterRoleBindings(cluster, data, client)
 }
