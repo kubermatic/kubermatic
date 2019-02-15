@@ -79,7 +79,7 @@ func DeploymentCreator(data resources.DeploymentDataProvider) resources.Deployme
 				Command:         []string{"/usr/local/bin/user-cluster-controller-manager"},
 				Args: []string{
 					"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-					"-internal-listen-address", "0.0.0.0:8085",
+					"-internal-address", "0.0.0.0:8085",
 				},
 				TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 				TerminationMessagePolicy: corev1.TerminationMessageReadFile,
