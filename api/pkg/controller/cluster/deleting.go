@@ -355,7 +355,6 @@ func (cc *Controller) checkIfAllLoadbalancersAreGone(c *kubermaticv1.Cluster) (b
 		if deletedLoadBalancers.Len() > 0 {
 			cluster.Annotations[deletedLBAnnotationName] = strings.Join(deletedLoadBalancers.List(), ",")
 		} else {
-			cc.recorder.Event(cluster, corev1.EventTypeNormal, "deleting lb map key", "deleting lb map key")
 			delete(cluster.Annotations, deletedLBAnnotationName)
 		}
 	})
