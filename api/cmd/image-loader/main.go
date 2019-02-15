@@ -323,6 +323,7 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		resources.PrometheusApiserverClientCertificateSecretName,
 		resources.MetricsServerKubeconfigSecretName,
 		resources.MachineControllerWebhookServingCertSecretName,
+		resources.UserClusterControllerKubeconfigSecretName,
 	})
 	objects := []runtime.Object{configMapList, secretList, serviceList}
 	client := kubefake.NewSimpleClientset(objects...)

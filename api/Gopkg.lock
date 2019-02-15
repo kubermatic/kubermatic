@@ -768,6 +768,14 @@
   revision = "60711f1a8329503b04e1c88535f419d0bb440bff"
 
 [[projects]]
+  branch = "master"
+  digest = "1:0e9bfc47ab9941ecc3344e580baca5deb4091177e84dd9773b48b38ec26b93d5"
+  name = "github.com/mattbaird/jsonpatch"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "81af80346b1a01caae0cbc27fd3c1ba5b11e189f"
+
+[[projects]]
   digest = "1:5985ef4caf91ece5d54817c11ea25f182697534f8ae6521eadcd628c142ac4b6"
   name = "github.com/matttproud/golang_protobuf_extensions"
   packages = ["pbutil"]
@@ -1287,9 +1295,10 @@
 
 [[projects]]
   branch = "release-1.11"
-  digest = "1:66dba704ec98aef0d6485f4fcfe544c906a7319fb2b20e0de4181b46a3b24c8a"
+  digest = "1:6dd53537a34d9b612e66acd39859953cf7ad70e5b5953937bed5ea998355e7b8"
   name = "k8s.io/api"
   packages = [
+    "admission/v1beta1",
     "admissionregistration/v1alpha1",
     "admissionregistration/v1beta1",
     "apps/v1",
@@ -1339,7 +1348,7 @@
 
 [[projects]]
   branch = "release-1.11"
-  digest = "1:1176bb07ecd15bd1650f99c699130f01455c3cf377fea021c7645810c82c7fe3"
+  digest = "1:6e051651fe558b436c24912f3555b28fca9bcdf71ce80bed0ee35c432d691d00"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/equality",
@@ -1378,6 +1387,7 @@
     "pkg/util/runtime",
     "pkg/util/sets",
     "pkg/util/strategicpatch",
+    "pkg/util/uuid",
     "pkg/util/validation",
     "pkg/util/validation/field",
     "pkg/util/wait",
@@ -1658,7 +1668,7 @@
   revision = "45f1c93260140936c610e56575d7505ba3d52444"
 
 [[projects]]
-  digest = "1:bc56e66394dfc776f9ba1322bbad21698d6235aec6bf5524201d1f64d4ee1915"
+  digest = "1:bb6a2d48c6f1130f72d56eee7d0fb04da213e40ef7fef0c2e28f0f29e2d88c69"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
     "pkg/cache",
@@ -1666,10 +1676,29 @@
     "pkg/cache/internal",
     "pkg/client",
     "pkg/client/apiutil",
+    "pkg/client/config",
     "pkg/client/fake",
+    "pkg/controller",
     "pkg/controller/controllertest",
+    "pkg/event",
+    "pkg/handler",
+    "pkg/internal/controller",
+    "pkg/internal/recorder",
+    "pkg/leaderelection",
+    "pkg/manager",
+    "pkg/patch",
+    "pkg/predicate",
+    "pkg/reconcile",
+    "pkg/recorder",
+    "pkg/runtime/inject",
     "pkg/runtime/log",
     "pkg/runtime/scheme",
+    "pkg/runtime/signals",
+    "pkg/source",
+    "pkg/source/internal",
+    "pkg/webhook/admission",
+    "pkg/webhook/admission/types",
+    "pkg/webhook/types",
   ]
   pruneopts = "NUT"
   revision = "5fd1e9e9fac5261e9ad9d47c375afc014fc31d21"
@@ -1843,7 +1872,14 @@
     "sigs.k8s.io/controller-runtime/pkg/cache/informertest",
     "sigs.k8s.io/controller-runtime/pkg/client",
     "sigs.k8s.io/controller-runtime/pkg/client/apiutil",
+    "sigs.k8s.io/controller-runtime/pkg/client/config",
     "sigs.k8s.io/controller-runtime/pkg/client/fake",
+    "sigs.k8s.io/controller-runtime/pkg/controller",
+    "sigs.k8s.io/controller-runtime/pkg/handler",
+    "sigs.k8s.io/controller-runtime/pkg/manager",
+    "sigs.k8s.io/controller-runtime/pkg/reconcile",
+    "sigs.k8s.io/controller-runtime/pkg/runtime/signals",
+    "sigs.k8s.io/controller-runtime/pkg/source",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -81,28 +81,21 @@ vault kv get -field=datacenters.yaml \
 echodate "Successfully got secrets from Vault"
 
 
-if [[ ! -f $HOME/.docker/config.json ]]; then
-  docker ps &>/dev/null || start-docker.sh
-  mkdir  -p $HOME/.docker
-  echo '{"experimental": "enabled"}' > ~/.docker/config.json
-  echodate "Logging into dockerhub"
-  docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-  echodate "Successfully logged into all registries"
-fi
+# Build kubermatic binaries and push the image to quay
+docker ps &>/dev/null || start-docker.sh
+echodate "Logging into quay"
+docker login -u $QUAY_IO_USERNAME -p $QUAY_IO_PASSWORD quay.io
+echodate "Successfully logged into quay"
 
-# Only build kubermatic binaries and docker image if it doesn't exist yet
-# We use dockerhub because docker manifest inspect doesn't seem to work on quay
-if ! docker manifest inspect docker.io/kubermatic/api:$GIT_HEAD_HASH &>/dev/null; then
-  echodate "Building binaries"
-  time make -C api build
-  cd api
-  echodate "Building docker image"
-  docker build -t docker.io/kubermatic/api:${GIT_HEAD_HASH} .
-  echodate "Pushing docker image"
-  retry 5 docker push docker.io/kubermatic/api:${GIT_HEAD_HASH}
-  echodate "Finished building and pushing docker image"
-  cd -
-fi
+echodate "Building binaries"
+time make -C api build
+cd api
+echodate "Building quay image"
+docker build -t quay.io/kubermatic/api:${GIT_HEAD_HASH} .
+echodate "Pushing quay image"
+retry 5 docker push quay.io/kubermatic/api:${GIT_HEAD_HASH}
+echodate "Finished building and pushing quay image"
+cd -
 
 INITIAL_MANIFESTS=$(cat <<EOF
 apiVersion: v1
@@ -162,11 +155,11 @@ rm -f config/kubermatic/templates/cluster-role-binding.yaml
 retry 3 helm upgrade --install --force --wait --timeout 300 \
   --tiller-namespace=$NAMESPACE \
   --set=kubermatic.isMaster=true \
-  --set-string=kubermatic.controller.image.repository=docker.io/kubermatic/api \
+  --set-string=kubermatic.controller.image.repository=quay.io/kubermatic/api \
   --set-string=kubermatic.controller.image.tag=$GIT_HEAD_HASH \
-  --set-string=kubermatic.api.image.repository=docker.io/kubermatic/api \
+  --set-string=kubermatic.api.image.repository=quay.io/kubermatic/api \
   --set-string=kubermatic.api.image.tag=$GIT_HEAD_HASH \
-  --set-string=kubermatic.rbac.image.repository=docker.io/kubermatic/api \
+  --set-string=kubermatic.rbac.image.repository=quay.io/kubermatic/api \
   --set-string=kubermatic.rbac.image.tag=$GIT_HEAD_HASH \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
