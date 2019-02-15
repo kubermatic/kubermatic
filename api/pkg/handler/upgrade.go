@@ -91,6 +91,27 @@ func getClusterNodeUpgrades(updateManager UpdateManager, projectProvider provide
 	}
 }
 
+func upgradeClusterNodeDeployments(updateManager UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		req, ok := request.(common.GetClusterReq)
+		if !ok {
+			return nil, errors.NewWrongRequest(request, common.GetClusterReq{})
+		}
+
+		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		// TODO Upgrade all Node Deployments to version from request.
+
+		return nil, nil
+	}
+}
+
 func getMasterVersions(updateManager UpdateManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		versions, err := updateManager.GetMasterVersions()
