@@ -25,7 +25,7 @@ spec:
       - args:
         - -kubeconfig
         - /etc/kubernetes/kubeconfig/kubeconfig
-        - -internal-listen-address
+        - -internal-address
         - 0.0.0.0:8085
         command:
         - /usr/local/bin/user-cluster-controller-manager
