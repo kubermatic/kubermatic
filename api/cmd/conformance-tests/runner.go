@@ -60,7 +60,7 @@ func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
 		PublicKeys:                   opts.publicKeys,
 		workerName:                   opts.workerName,
 		homeDir:                      opts.homeDir,
-		kubeClient:                   opts.kubeClient,
+		seedKubeClient:               opts.seedKubeClient,
 		log:                          opts.log,
 	}
 }
@@ -83,7 +83,7 @@ type testRunner struct {
 	clusterParallelCount         int
 
 	kubermaticClient      kubermaticclientset.Interface
-	kubeClient            kubernetes.Interface
+	seedKubeClient        kubernetes.Interface
 	clusterLister         kubermaticv1lister.ClusterLister
 	clusterClientProvider *clusterclient.Provider
 	dcs                   map[string]provider.DatacenterMeta
@@ -471,7 +471,7 @@ func (r *testRunner) getCloudConfig(log *logrus.Entry, cluster *kubermaticv1.Clu
 
 	var cmData string
 	err := retryNAttempts(defaultAPIRetries, func(attempt int) error {
-		cm, err := r.kubeClient.CoreV1().ConfigMaps(cluster.Status.NamespaceName).Get(resources.CloudConfigConfigMapName, metav1.GetOptions{})
+		cm, err := r.seedKubeClient.CoreV1().ConfigMaps(cluster.Status.NamespaceName).Get(resources.CloudConfigConfigMapName, metav1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to load cloud-config: %v", err)
 		}
