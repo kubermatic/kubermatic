@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
@@ -46,6 +47,9 @@ func main() {
 
 	glog.Info("registering components")
 	if err := apiextensionv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
+		glog.Fatal(err)
+	}
+	if err := apiregistrationv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
 		glog.Fatal(err)
 	}
 
