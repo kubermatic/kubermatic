@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -77,6 +78,13 @@ func StatefulSetCreator(data *resources.TemplateData) resources.StatefulSetCreat
 		if data.Cluster().Spec.ComponentsOverride.Prometheus.Resources != nil {
 			resourceRequirements = *data.Cluster().Spec.ComponentsOverride.Prometheus.Resources
 		}
+
+		apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
+		if err != nil {
+			return nil, err
+		}
+		set.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
+
 		set.Spec.Template.Spec.Containers = []corev1.Container{
 			{
 				Name:                     name,
