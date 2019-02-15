@@ -474,7 +474,7 @@ func TestCreateNodeDeployment(t *testing.T) {
 		{
 			Name:                   "scenario 1: create a node deployment that match the given spec",
 			Body:                   `{"spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}}`,
-			ExpectedResponse:       `{"id":"%s","name":"%s","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"}},"paused":false},"status":{}}`,
+			ExpectedResponse:       `{"name":"%s","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":["kubermatic","kubermatic-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"}},"paused":false},"status":{}}`,
 			HTTPStatus:             http.StatusCreated,
 			ProjectID:              test.GenDefaultProject().Name,
 			ClusterID:              test.GenDefaultCluster().Name,
@@ -546,7 +546,7 @@ func TestCreateNodeDeployment(t *testing.T) {
 			if tc.HTTPStatus > 399 {
 				expectedResponse = tc.ExpectedResponse
 			} else {
-				expectedResponse = fmt.Sprintf(tc.ExpectedResponse, nd.ID, nd.Name)
+				expectedResponse = fmt.Sprintf(tc.ExpectedResponse, nd.Name)
 			}
 
 			test.CompareWithResult(t, res, expectedResponse)
@@ -937,7 +937,7 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 				genTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started"),
 				genTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed"),
 			},
-			ExpectedResult: `[{"id":"","name":"event-1","creationTimestamp":"0001-01-01T00:00:00Z","message":"message started","type":"Normal","involvedObjectName":"testMachine","lastTimestamp":"0001-01-01T00:00:00Z","count":1},{"id":"","name":"event-2","creationTimestamp":"0001-01-01T00:00:00Z","message":"message killed","type":"Warning","involvedObjectName":"testMachine","lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
+			ExpectedResult: `[{"name":"event-1","creationTimestamp":"0001-01-01T00:00:00Z","message":"message started","type":"Normal","involvedObjectName":"testMachine","lastTimestamp":"0001-01-01T00:00:00Z","count":1},{"name":"event-2","creationTimestamp":"0001-01-01T00:00:00Z","message":"message killed","type":"Warning","involvedObjectName":"testMachine","lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
 		},
 		// scenario 2
 		{
@@ -959,7 +959,7 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 				genTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started"),
 				genTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed"),
 			},
-			ExpectedResult: `[{"id":"","name":"event-2","creationTimestamp":"0001-01-01T00:00:00Z","message":"message killed","type":"Warning","involvedObjectName":"testMachine","lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
+			ExpectedResult: `[{"name":"event-2","creationTimestamp":"0001-01-01T00:00:00Z","message":"message killed","type":"Warning","involvedObjectName":"testMachine","lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
 		},
 		// scenario 3
 		{
@@ -981,7 +981,7 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 				genTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started"),
 				genTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed"),
 			},
-			ExpectedResult: `[{"id":"","name":"event-1","creationTimestamp":"0001-01-01T00:00:00Z","message":"message started","type":"Normal","involvedObjectName":"testMachine","lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
+			ExpectedResult: `[{"name":"event-1","creationTimestamp":"0001-01-01T00:00:00Z","message":"message started","type":"Normal","involvedObjectName":"testMachine","lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
 		},
 	}
 

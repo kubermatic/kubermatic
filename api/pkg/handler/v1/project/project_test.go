@@ -50,7 +50,7 @@ func TestRenameProjectEndpoint(t *testing.T) {
 				test.GenDefaultOwnerBinding(),
 			},
 			ExistingAPIUser:  *test.GenDefaultAPIUser(),
-			ExpectedResponse: `{"id":"my-first-project-ID","name":"Super-Project","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active"}`,
+			ExpectedResponse: `{"id":"my-first-project-ID","name":"Super-Project","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active","owners":[{"name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com"}]}`,
 		},
 		{
 			Name:            "scenario 2: rename existing project with existing name",
@@ -89,7 +89,7 @@ func TestRenameProjectEndpoint(t *testing.T) {
 				test.GenBinding("my-third-project-ID", "john@acme.com", "owners"),
 			},
 			ExistingAPIUser:  *test.GenAPIUser("John", "john@acme.com"),
-			ExpectedResponse: `{"id":"my-first-project-ID","name":"my-second-project","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active"}`,
+			ExpectedResponse: `{"id":"my-first-project-ID","name":"my-second-project","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active","owners":[{"name":"John","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com"}]}`,
 		},
 
 		{
@@ -179,6 +179,14 @@ func TestListProjectEndpoint(t *testing.T) {
 						Name:              "my-first-project",
 						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
 					},
+					Owners: []apiv1.User{
+						{
+							ObjectMeta: apiv1.ObjectMeta{
+								Name: "John",
+							},
+							Email: "john@acme.com",
+						},
+					},
 				},
 				{
 					Status: "Active",
@@ -237,7 +245,7 @@ func TestGetProjectEndpoint(t *testing.T) {
 			Name:                      "scenario 1: get an existing project assigned to the given user",
 			Body:                      ``,
 			ProjectToSync:             test.GenDefaultProject().Name,
-			ExpectedResponse:          `{"id":"my-first-project-ID","name":"my-first-project","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active"}`,
+			ExpectedResponse:          `{"id":"my-first-project-ID","name":"my-first-project","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active","owners":[{"name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com"}]}`,
 			HTTPStatus:                http.StatusOK,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(),
 			ExistingAPIUser:           test.GenDefaultAPIUser(),
@@ -281,7 +289,7 @@ func TestCreateProjectEndpoint(t *testing.T) {
 			Name:             "scenario 1: a user doesn't have any projects, thus creating one succeeds",
 			Body:             `{"name":"my-first-project"}`,
 			RewriteProjectID: true,
-			ExpectedResponse: `{"id":"%s","name":"my-first-project","creationTimestamp":"0001-01-01T00:00:00Z","status":"Inactive"}`,
+			ExpectedResponse: `{"id":"%s","name":"my-first-project","creationTimestamp":"0001-01-01T00:00:00Z","status":"Inactive","owners":[{"name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com"}]}`,
 			HTTPStatus:       http.StatusCreated,
 			ExistingKubermaticObjects: []runtime.Object{
 				test.GenDefaultUser(),
