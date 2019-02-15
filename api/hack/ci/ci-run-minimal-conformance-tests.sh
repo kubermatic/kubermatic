@@ -149,7 +149,11 @@ echodate "Deploying tiller"
 helm init --wait --service-account=tiller --tiller-namespace=$NAMESPACE
 
 echodate "Installing Kubermatic via Helm"
+# We must delete all templates for cluster-scoped resources
+# because those already exist because of the main Kubermatic installation
+# otherwise the helm upgrade --install fails
 rm -f config/kubermatic/templates/cluster-role-binding.yaml
+rm -f config/kubermatic/templates/vpa-*
 # --force is needed in case the first attempt at installing didn't succeed
 # see https://github.com/helm/helm/pull/3597
 retry 3 helm upgrade --install --force --wait --timeout 300 \
