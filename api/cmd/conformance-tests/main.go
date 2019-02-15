@@ -58,7 +58,7 @@ type Opts struct {
 	reportsRoot                    string
 	clusterLister                  kubermaticv1lister.ClusterLister
 	kubermaticClient               kubermaticclientset.Interface
-	kubeClient                     kubernetes.Interface
+	seedKubeClient                 kubernetes.Interface
 	clusterClientProvider          *clusterclient.Provider
 	dcFile                         string
 	repoRoot                       string
@@ -275,11 +275,11 @@ func main() {
 
 	kubermaticClient := kubermaticclientset.NewForConfigOrDie(config)
 	opts.kubermaticClient = kubermaticClient
-	kubeClient := kubernetes.NewForConfigOrDie(config)
-	opts.kubeClient = kubeClient
+	seedKubeClient := kubernetes.NewForConfigOrDie(config)
+	opts.seedKubeClient = seedKubeClient
 
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, informer.DefaultInformerResyncPeriod)
-	kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, informer.DefaultInformerResyncPeriod)
+	kubeInformerFactory := informers.NewSharedInformerFactory(seedKubeClient, informer.DefaultInformerResyncPeriod)
 
 	opts.clusterLister = kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister()
 
