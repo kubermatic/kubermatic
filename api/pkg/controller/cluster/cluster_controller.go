@@ -70,7 +70,6 @@ type Controller struct {
 	externalURL string
 	dcs         map[string]provider.DatacenterMeta
 	dc          string
-	cps         map[string]provider.CloudProvider
 
 	queue    workqueue.RateLimitingInterface
 	recorder record.EventRecorder
@@ -119,7 +118,6 @@ func NewController(
 	externalURL string,
 	dc string,
 	dcs map[string]provider.DatacenterMeta,
-	cps map[string]provider.CloudProvider,
 	userClusterConnProvider userClusterConnectionProvider,
 	overwriteRegistry string,
 	nodePortRange string,
@@ -183,7 +181,6 @@ func NewController(
 		externalURL: externalURL,
 		dc:          dc,
 		dcs:         dcs,
-		cps:         cps,
 
 		oidcCAFile:         oidcCAFile,
 		oidcIssuerURL:      oidcIssuerURL,
