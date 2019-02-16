@@ -22,17 +22,13 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
-	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
-	"k8s.io/client-go/tools/record"
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -64,10 +60,6 @@ func main() {
 
 	kubeClient := kubernetes.NewForConfigOrDie(config)
 	kubermaticClient := kubermaticclientset.NewForConfigOrDie(config)
-	recorder, err := getEventRecorder(kubeClient)
-	if err != nil {
-		glog.Fatalf("failed to get event recorder: %v", err)
-	}
 
 	// Create a manager
 	mgr, err := manager.New(config, manager.Options{})
@@ -84,6 +76,7 @@ func main() {
 
 	dynamicClient := mgr.GetClient()
 	dynamicCache := mgr.GetCache()
+	recorder := mgr.GetRecorder(controllerName)
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
 	if _, err := informer.GetSyncedStoreFromDynamicFactory(dynamicCache, &autoscalingv1beta1.VerticalPodAutoscaler{}); err != nil {
@@ -213,21 +206,6 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	if err := g.Run(); err != nil {
 		glog.Fatal(err)
 	}
-}
-
-func getEventRecorder(masterKubeClient *kubernetes.Clientset) (record.EventRecorder, error) {
-	// Create event broadcaster
-	// Add kubermatic types to the default Kubernetes Scheme so Events can be
-	// logged properly
-	if err := kubermaticv1.AddToScheme(scheme.Scheme); err != nil {
-		return nil, err
-	}
-	glog.V(4).Info("Creating event broadcaster")
-	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartLogging(glog.V(4).Infof)
-	eventBroadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: masterKubeClient.CoreV1().Events("")})
-	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: controllerName})
-	return recorder, nil
 }
 
 func newControllerContext(
