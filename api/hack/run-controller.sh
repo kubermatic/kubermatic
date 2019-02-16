@@ -5,6 +5,9 @@ set -o nounset
 set -o pipefail
 
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
+# Deploy a user-cluster/ipam-controller for which we actuallly
+# have a pushed image
+export KUBERMATICCOMMIT="${KUBERMATICCOMMIT:-$(git rev-parse master)}"
 make kubermatic-controller-manager
 
 KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
