@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if ! git describe --exact-match --tags HEAD &>/dev/null; then
+  echo "No tag matches current HEAD, exitting..."
+  exit 0
+fi
+
 if [ "$#" -lt 2 ] || [ "${1}" == "--help" ]; then
   cat <<EOF
 Usage: $(basename $0) <branch-name> <path-to-charts>
@@ -132,7 +137,7 @@ mv ${TARGET_DIR}/values.example.{tmp.,}yaml
 cd ${TARGET_DIR}
 git add .
 if ! git status|grep 'nothing to commit'; then
-  git commit -m "Syncing charts from commit ${COMMIT}"
+  git commit -m "Syncing charts from release $(git describe --exact-match --tags HEAD)"
   git push origin ${INSTALLER_BRANCH}
 fi
 
