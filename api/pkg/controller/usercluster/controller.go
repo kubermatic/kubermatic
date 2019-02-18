@@ -2,7 +2,6 @@ package usercluster
 
 import (
 	"context"
-	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -12,13 +11,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/types"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 )
 
 const (
-	controllerName   = "user-cluster-controller"
-	requeueAfter1sec = time.Second
+	controllerName = "user-cluster-controller"
 )
+
+var mapFn = handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request {
+	return []reconcile.Request{
+		{NamespacedName: types.NamespacedName{
+			Name:      "reconcile-user-cluster-resources",
+			Namespace: "",
+		}},
+	}
+})
 
 // Add creates a new user cluster controller.
 func Add(mgr manager.Manager) (string, error) {
@@ -33,19 +41,19 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	if err = c.Watch(&source.Kind{Type: &apiregistrationv1beta1.APIService{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err = c.Watch(&source.Kind{Type: &apiregistrationv1beta1.APIService{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
 		return err
 	}
-	if err = c.Watch(&source.Kind{Type: &rbacv1.Role{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err = c.Watch(&source.Kind{Type: &rbacv1.Role{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
 		return err
 	}
-	if err = c.Watch(&source.Kind{Type: &rbacv1.RoleBinding{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err = c.Watch(&source.Kind{Type: &rbacv1.RoleBinding{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
 		return err
 	}
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
 		return err
 	}
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRoleBinding{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRoleBinding{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
 		return err
 	}
 
@@ -64,11 +72,7 @@ func (r *reconcileUserCluster) Reconcile(request reconcile.Request) (reconcile.R
 	rUserCluster := reconciler{client: r.Client, ctx: r.ctx}
 	err := rUserCluster.Reconcile()
 	if err != nil {
-		return reconcile.Result{
-			// there is no need to set Requeue to true at the same time as RequeueAfter
-			// TODO: figure out how to requeue in exponential manner
-			RequeueAfter: requeueAfter1sec,
-		}, err
+		return reconcile.Result{}, err
 	}
 
 	return reconcile.Result{}, nil
