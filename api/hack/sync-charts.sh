@@ -6,11 +6,13 @@ if ! git describe --exact-match --tags HEAD &>/dev/null; then
   exit 0
 fi
 
-if [ "$#" -lt 2 ] || [ "${1}" == "--help" ]; then
+export INSTALLER_BRANCH="$(git branch --contains HEAD --all \
+  |tr -d ' '|grep -E 'remotes/origin/release/v2.[0-9]+$'|cut -d '/' -f3-)"
+
+if [ "$#" -lt 1 ] || [ "${1}" == "--help" ]; then
   cat <<EOF
 Usage: $(basename $0) <branch-name> <path-to-charts>
 
-  <branch-name>                  Name of the target branch in the kubermatic-installer repository
   <path-to-charts>               The path to the kubermatic charts to sync
 
 Example:
@@ -23,7 +25,6 @@ export CHARTS='kubermatic cert-manager certs nginx-ingress-controller nodeport-p
 export MONITORING_CHARTS='alertmanager grafana kube-state-metrics node-exporter prometheus'
 export LOGGING_CHARTS='elasticsearch kibana fluentbit'
 export BACKUP_CHARTS='ark ark-config'
-export INSTALLER_BRANCH=$1
 export CHARTS_DIR=$2
 export TARGET_DIR='sync_target'
 export TARGET_VALUES_FILE=${TARGET_DIR}/values.example.yaml
