@@ -44,7 +44,7 @@ pipeline:
     - sed -i "s/__KUBERMATIC_TAG__/$LATEST_VERSION/g" config/kubermatic/values.yaml
     - git config --global user.email "dev@loodse.com"
     - git config --global user.name "drone"
-    - cd api && ./hack/sync-charts.sh ${DRONE_BRANCH} ../config
+    - cd api && ./hack/sync-charts.sh ../config
     image: alpine:3.8
     pull: true
     when:
