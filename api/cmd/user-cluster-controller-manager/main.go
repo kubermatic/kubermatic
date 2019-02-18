@@ -11,8 +11,10 @@ import (
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
+
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
@@ -50,6 +52,9 @@ func main() {
 		glog.Fatal(err)
 	}
 	if err := apiregistrationv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
+		glog.Fatal(err)
+	}
+	if err := rbacv1.AddToScheme(mgr.GetScheme()); err != nil {
 		glog.Fatal(err)
 	}
 
