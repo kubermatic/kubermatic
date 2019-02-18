@@ -61,6 +61,15 @@ func DeploymentCreator(data resources.DeploymentDataProvider) resources.Deployme
 
 		dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 			Labels: podLabels,
+			Annotations: map[string]string{
+				"prometheus.io/scrape": "true",
+				"prometheus.io/path":   "/metrics",
+				"prometheus.io/port":   "8085",
+			},
+		}
+
+		dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
+			Labels: podLabels,
 		}
 
 		dep.Spec.Template.Spec.Volumes = volumes
