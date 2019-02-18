@@ -68,10 +68,6 @@ func DeploymentCreator(data resources.DeploymentDataProvider) resources.Deployme
 			},
 		}
 
-		dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-			Labels: podLabels,
-		}
-
 		dep.Spec.Template.Spec.Volumes = volumes
 
 		apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
