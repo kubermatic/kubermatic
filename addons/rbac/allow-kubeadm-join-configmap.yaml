@@ -9,6 +9,7 @@ rules:
   resourceNames:
   - kubelet-config-1.11
   - kubelet-config-1.12
+  - kubeadm-config
   resources:
   - configmaps
   verbs:
@@ -29,4 +30,4 @@ subjects:
   name: system:nodes
 - apiGroup: rbac.authorization.k8s.io
   kind: Group
-  name: system:bootstrappers:machine-controller:default-node-token
+  name: system:bootstrappers:kubeadm:default-node-token
