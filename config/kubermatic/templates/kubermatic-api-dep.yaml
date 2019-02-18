@@ -1,3 +1,4 @@
+{{ if .Values.kubermatic.isMaster }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -97,3 +98,4 @@ spec:
         - name: master-files
           secret:
             secretName: master-files
+{{ end }}

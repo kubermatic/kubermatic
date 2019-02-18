@@ -1,3 +1,4 @@
+{{ if .Values.kubermatic.isMaster }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -51,3 +52,4 @@ spec:
         - name: config
           configMap:
             name: ui-config
+{{ end }}
