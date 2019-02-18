@@ -373,10 +373,26 @@ func (in *ClusterStatus) DeepCopyInto(out *ClusterStatus) {
 	*out = *in
 	in.LastUpdated.DeepCopyInto(&out.LastUpdated)
 	in.Health.DeepCopyInto(&out.Health)
-	in.RootCA.DeepCopyInto(&out.RootCA)
-	in.ApiserverCert.DeepCopyInto(&out.ApiserverCert)
-	in.KubeletCert.DeepCopyInto(&out.KubeletCert)
-	in.ApiserverSSHKey.DeepCopyInto(&out.ApiserverSSHKey)
+	if in.RootCA != nil {
+		in, out := &in.RootCA, &out.RootCA
+		*out = new(KeyCert)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.ApiserverCert != nil {
+		in, out := &in.ApiserverCert, &out.ApiserverCert
+		*out = new(KeyCert)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.KubeletCert != nil {
+		in, out := &in.KubeletCert, &out.KubeletCert
+		*out = new(KeyCert)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.ApiserverSSHKey != nil {
+		in, out := &in.ApiserverSSHKey, &out.ApiserverSSHKey
+		*out = new(RSAKeys)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.ServiceAccountKey != nil {
 		in, out := &in.ServiceAccountKey, &out.ServiceAccountKey
 		*out = make(Bytes, len(*in))
