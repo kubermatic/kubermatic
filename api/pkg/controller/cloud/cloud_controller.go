@@ -13,6 +13,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -70,7 +71,9 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	result, err := r.reconcile(ctx, cluster)
 	if err != nil {
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
+		return result, err
 	}
+	err = r.ensureClusterConditionCloudProviderInfrastractureReady(cluster, corev1.ConditionTrue)
 	return result, err
 }
 
@@ -99,6 +102,38 @@ func (r *Reconciler) reconcile(_ context.Context, cluster *kubermaticv1.Cluster)
 
 	_, err = prov.InitializeCloudProvider(cluster, r.updateCluster)
 	return reconcile.Result{}, err
+}
+
+func (r *Reconciler) ensureClusterCondition(
+	cluster *kubermaticv1.Cluster, condition kubermaticv1.ClusterCondition, conditionState corev1.ConditionStatus) error {
+	for idx, _ := range cluster.Status.Conditions {
+		if cluster.Status.Conditions[idx].Type == condition {
+			if cluster.Status.Conditions[idx].Status == conditionState {
+				return nil
+			}
+		}
+	}
+
+	// Iterate always over the current cluster object to avoid issues when someone else modified conditions in the meantime
+	_, err := r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+		var existingConditionIdx *int
+		for idx, _ := range c.Status.Conditions {
+			if cluster.Status.Conditions[idx].Type == kubermaticv1.condition {
+				*existingConditionIdx = idx
+				break
+			}
+		}
+		if existingConditionIdx != nil {
+			cluster.Status.Conditions = append(cluster.Status.Conditions, kubermaticv1.ClusterCondition{
+				Type:               condition,
+				Status:             corev1.ConditionTrue,
+				LastTransitionTime: metav1.Now()})
+		} else {
+			cluster.Status.Conditions[*existingConditionIdx].Status = conditionState
+			cluster.Status.Conditions[*existingConditionIdx].LastTransitionTime = metav1.Now()
+		}
+	})
+	return err
 }
 
 func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluster)) (updatedCluster *kubermaticv1.Cluster, err error) {

@@ -9,6 +9,7 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -161,12 +162,22 @@ func (p *ClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, o
 			cluster.Status.Health.Scheduler &&
 			cluster.Status.Health.Controller &&
 			cluster.Status.Health.MachineController &&
-			cluster.Status.Health.Etcd
+			cluster.Status.Health.Etcd &&
+			clusterHasTrueCondition(cluster, kubermaticapiv1.ClusterConditionCloudProviderInfrastractureReady)
 		if !isHealthy {
 			return nil, kerrors.NewServiceUnavailable("Cluster components are not ready yet")
 		}
 	}
 	return cluster, nil
+}
+
+func clusterHasTrueCondition(cluster *kubermaticapiv1.Cluster, conditionType kubermaticapiv1.ClusterConditionType) bool {
+	for _, condition := range cluster.Status.Conditions {
+		if condition.Type == conditionType && condition.Status == corev1.ConditionTrue {
+			return true
+		}
+	}
+	return false
 }
 
 // Delete deletes the given cluster
