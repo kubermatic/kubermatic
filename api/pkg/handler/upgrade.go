@@ -2,7 +2,9 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
 
@@ -12,6 +14,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func getClusterUpgrades(updateManager UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
@@ -91,12 +94,37 @@ func getClusterNodeUpgrades(updateManager UpdateManager, projectProvider provide
 	}
 }
 
-func upgradeClusterNodeDeployments(updateManager UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+// UpgradeClusterNodeDeploymentsReq defines HTTP request for upgradeClusterNodeDeployments endpoint
+// swagger:parameters upgradeClusterNodeDeployments
+type UpgradeClusterNodeDeploymentsReq struct {
+	common.GetClusterReq
+
+	// in: body
+	Body []byte
+}
+
+func DecodeUpgradeClusterNodeDeploymentsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req UpgradeClusterNodeDeploymentsReq
+	cr, err := common.DecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.GetClusterReq = cr.(common.GetClusterReq)
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func upgradeClusterNodeDeployments(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
-		req, ok := request.(common.GetClusterReq)
+		req, ok := request.(UpgradeClusterNodeDeploymentsReq)
 		if !ok {
 			return nil, errors.NewWrongRequest(request, common.GetClusterReq{})
 		}
@@ -106,7 +134,34 @@ func upgradeClusterNodeDeployments(updateManager UpdateManager, projectProvider 
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		// TODO Upgrade all Node Deployments to version from request.
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		machineClient, err := clusterProvider.GetAdminMachineClientForCustomerCluster(cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		machineDeployments, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).List(metav1.ListOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		kubeletVersion := string(req.Body)
+		var updateErrors []error
+		for _, machineDeployment := range machineDeployments.Items {
+			machineDeployment.Spec.Template.Spec.Versions.Kubelet = kubeletVersion
+			_, err = machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Update(&machineDeployment)
+			if err != nil {
+				updateErrors = append(updateErrors, err)
+			}
+		}
+
+		if len(updateErrors) > 0 {
+			return nil, fmt.Errorf("failed to update some node deployments: %v", updateErrors)
+		}
 
 		return nil, nil
 	}

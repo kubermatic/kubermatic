@@ -1222,8 +1222,8 @@ func (r Routing) upgradeClusterNodeDeployments() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(upgradeClusterNodeDeployments(r.updateManager, r.projectProvider)),
-		common.DecodeGetClusterReq,
+		)(upgradeClusterNodeDeployments(r.projectProvider)),
+		DecodeUpgradeClusterNodeDeploymentsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
