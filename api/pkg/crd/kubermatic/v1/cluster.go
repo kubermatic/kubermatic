@@ -76,7 +76,7 @@ type ClusterSpec struct {
 	// Version defines the wanted version of the control plane
 	Version semver.Semver `json:"version"`
 	// MasterVersion is Deprecated
-	MasterVersion string `json:"masterVersion"`
+	MasterVersion string `json:"masterVersion,omitempty"`
 
 	// HumanReadableName is the cluster name provided by the user
 	HumanReadableName string `json:"humanReadableName"`
@@ -154,20 +154,20 @@ type ClusterStatus struct {
 	Health ClusterHealth `json:"health,omitempty"`
 
 	// Deprecated
-	RootCA KeyCert `json:"rootCA"`
+	RootCA *KeyCert `json:"rootCA,omitempty"`
 	// Deprecated
-	ApiserverCert KeyCert `json:"apiserverCert"`
+	ApiserverCert *KeyCert `json:"apiserverCert,omitempty"`
 	// Deprecated
-	KubeletCert KeyCert `json:"kubeletCert"`
+	KubeletCert *KeyCert `json:"kubeletCert,omitempty"`
 	// Deprecated
-	ApiserverSSHKey RSAKeys `json:"apiserverSshKey"`
+	ApiserverSSHKey *RSAKeys `json:"apiserverSshKey,omitempty"`
 	// Deprecated
-	ServiceAccountKey Bytes `json:"serviceAccountKey"`
+	ServiceAccountKey Bytes `json:"serviceAccountKey,omitempty"`
 	// NamespaceName defines the namespace the control plane of this cluster is deployed in
 	NamespaceName string `json:"namespaceName"`
 
 	// UserName contains the name of the owner of this cluster
-	UserName string `json:"userName"`
+	UserName string `json:"userName,omitempty"`
 	// UserEmail contains the email of the owner of this cluster
 	UserEmail string `json:"userEmail"`
 
@@ -203,7 +203,7 @@ type CloudSpec struct {
 // ClusterHealth stores health information of a cluster and the timestamp of the last change.
 type ClusterHealth struct {
 	ClusterHealthStatus `json:",inline"`
-	LastTransitionTime  metav1.Time `json:"lastTransitionTime"`
+	LastTransitionTime  metav1.Time `json:"lastTransitionTime,omitempty"`
 }
 
 // KeyCert is a pair of key and cert.
