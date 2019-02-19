@@ -3,7 +3,7 @@ alertmanager:
   host: ""
   config:
     global:
-      slack_api_url: https://
+      slack_api_url: https://hooks.slack.com/services/YOUR_KEYS_HERE
     route:
       receiver: 'default'
       repeat_interval: 1h
