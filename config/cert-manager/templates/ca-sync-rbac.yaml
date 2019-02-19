@@ -12,7 +12,7 @@ rules:
     resources: ["validatingwebhookconfigurations", "mutatingwebhookconfigurations"]
     verbs: ["get", "update"]
     resourceNames:
-    - webhook
+    - cert-manager-webhook
   - apiGroups: ["apiregistration.k8s.io"]
     resources: ["apiservices"]
     verbs: ["get", "update"]
