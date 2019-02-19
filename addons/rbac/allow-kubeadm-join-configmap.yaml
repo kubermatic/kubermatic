@@ -9,6 +9,8 @@ rules:
   resourceNames:
   - kubelet-config-1.11
   - kubelet-config-1.12
+  - kubelet-config-1.13
+  - kube-proxy
   - kubeadm-config
   resources:
   - configmaps
