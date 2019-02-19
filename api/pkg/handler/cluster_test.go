@@ -1127,6 +1127,95 @@ func TestListClusters(t *testing.T) {
 	}
 }
 
+func TestListClustersForProject(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                   string
+		ExpectedClusters       []apiv1.Cluster
+		HTTPStatus             int
+		ExistingAPIUser        *apiv1.User
+		ExistingKubermaticObjs []runtime.Object
+	}{
+		// scenario 1
+		{
+			Name: "scenario 1: list clusters that belong to the given project",
+			ExpectedClusters: []apiv1.Cluster{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "clusterAbcID",
+						Name:              "clusterAbc",
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
+					},
+					Spec: apiv1.ClusterSpec{
+						Cloud: kubermaticv1.CloudSpec{
+							DatacenterName: "FakeDatacenter",
+							Fake:           &kubermaticv1.FakeCloudSpec{},
+						},
+						Version: *semver.NewSemverOrDie("9.9.9"),
+					},
+					Status: apiv1.ClusterStatus{
+						Version: *semver.NewSemverOrDie("9.9.9"),
+						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
+					},
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "clusterOpenstackID",
+						Name:              "clusterOpenstack",
+						CreationTimestamp: apiv1.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC),
+					},
+					Spec: apiv1.ClusterSpec{
+						Cloud: kubermaticv1.CloudSpec{
+							DatacenterName: "OpenstackDatacenter",
+							Openstack: &kubermaticv1.OpenstackCloudSpec{
+								FloatingIPPool: "floatingIPPool",
+							},
+						},
+						Version: *semver.NewSemverOrDie("9.9.9"),
+					},
+					Status: apiv1.ClusterStatus{
+						Version: *semver.NewSemverOrDie("9.9.9"),
+						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
+					},
+				},
+			},
+			HTTPStatus: http.StatusOK,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
+				genClusterWithOpenstack(test.GenCluster("clusterOpenstackID", "clusterOpenstack", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC))),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/clusters", test.ProjectName), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			actualClusters := test.NewClusterV1SliceWrapper{}
+			actualClusters.DecodeOrDie(res.Body, t).Sort()
+
+			wrappedExpectedClusters := test.NewClusterV1SliceWrapper(tc.ExpectedClusters)
+			wrappedExpectedClusters.Sort()
+
+			actualClusters.EqualOrDie(wrappedExpectedClusters, t)
+		})
+	}
+}
+
 func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 	t.Parallel()
 	// setup world view

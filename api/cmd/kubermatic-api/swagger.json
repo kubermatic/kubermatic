@@ -320,7 +320,7 @@
         }
       }
     },
-    "/api/v1/projects/{project_id}/dc/{dc}/clusters": {
+    "/api/v1/projects/{project_id}/clusters": {
       "get": {
         "produces": [
           "application/json"
@@ -329,6 +329,44 @@
           "project"
         ],
         "summary": "Lists clusters for the specified project.",
+        "operationId": "listClustersForProject",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterList",
+            "schema": {
+              "$ref": "#/definitions/ClusterList"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Lists clusters for the specified project and data center.",
         "operationId": "listClusters",
         "parameters": [
           {
