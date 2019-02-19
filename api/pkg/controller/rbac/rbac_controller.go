@@ -51,9 +51,8 @@ func NewMetrics() *Metrics {
 
 // Controller stores necessary components that are required to implement RBACGenerator
 type Controller struct {
-	projectQueue         workqueue.RateLimitingInterface
-	projectBindingsQueue workqueue.RateLimitingInterface
-	metrics              *Metrics
+	projectQueue workqueue.RateLimitingInterface
+	metrics      *Metrics
 
 	projectLister            kubermaticv1lister.ProjectLister
 	userLister               kubermaticv1lister.UserLister
@@ -81,7 +80,6 @@ type projectResource struct {
 func New(metrics *Metrics, allClusterProviders []*ClusterProvider) (*Controller, error) {
 	c := &Controller{
 		projectQueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_project"),
-		projectBindingsQueue:  workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_project_bindings"),
 		projectResourcesQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_project_resources"),
 		metrics:               metrics,
 	}
@@ -96,7 +94,6 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider) (*Controller,
 		return nil, errors.New("cannot create controller because master cluster provider has not been found")
 	}
 
-	// sets up an informer for project resources
 	projectInformer := c.masterClusterProvider.kubermaticInformerFactory.Kubermatic().V1().Projects()
 	prometheus.MustRegister(metrics.Workers)
 
@@ -130,34 +127,6 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider) (*Controller,
 	c.userLister = userInformer.Lister()
 	c.userProjectBindingLister = c.masterClusterProvider.kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister()
 
-	// sets up an informer for project binding resources
-	projectBindingsInformer := c.masterClusterProvider.kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings()
-	projectBindingsInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			c.enqueueProjectBinding(obj.(*kubermaticv1.UserProjectBinding))
-		},
-		UpdateFunc: func(old, cur interface{}) {
-			c.enqueueProjectBinding(cur.(*kubermaticv1.UserProjectBinding))
-		},
-		DeleteFunc: func(obj interface{}) {
-			projectBinding, ok := obj.(*kubermaticv1.UserProjectBinding)
-			if !ok {
-				tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
-				if !ok {
-					runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
-					return
-				}
-				projectBinding, ok = tombstone.Obj.(*kubermaticv1.UserProjectBinding)
-				if !ok {
-					runtime.HandleError(fmt.Errorf("tombstone contained object that is not a UserProjectBinding %#v", obj))
-					return
-				}
-			}
-			c.enqueueProjectBinding(projectBinding)
-		},
-	})
-
-	// sets up informers for project resources
 	// a list of dependent resources that we would like to watch/monitor
 	c.projectResources = []projectResource{
 		{
@@ -222,9 +191,16 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider) (*Controller,
 func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 	defer runtime.HandleCrash()
 
+	for _, seedClusterProvider := range c.seedClusterProviders {
+		err := seedClusterProvider.WaitForCachesToSync(stopCh)
+		if err != nil {
+			runtime.HandleError(err)
+			return
+		}
+	}
+
 	for i := 0; i < workerCount; i++ {
 		go wait.Until(c.runProjectWorker, time.Second, stopCh)
-		go wait.Until(c.runProjectBindingsWorker, time.Second, stopCh)
 		go wait.Until(c.runProjectResourcesWorker, time.Second, stopCh)
 	}
 
@@ -247,25 +223,25 @@ func (c *Controller) processProjectNextItem() bool {
 
 	err := c.sync(key.(string))
 
-	c.handleErr(err, key, c.projectQueue)
+	c.handleProjectErr(err, key)
 	return true
 }
 
-// handleErr checks if an error happened and makes sure we will retry later.
-func (c *Controller) handleErr(err error, key interface{}, queue workqueue.RateLimitingInterface) {
+// handleProjectErr checks if an error happened and makes sure we will retry later.
+func (c *Controller) handleProjectErr(err error, key interface{}) {
 	if err == nil {
 		// Forget about the #AddRateLimited history of the key on every successful synchronization.
 		// This ensures that future processing of updates for this key is not delayed because of
 		// an outdated error history.
-		queue.Forget(key)
+		c.projectQueue.Forget(key)
 		return
 	}
 
 	glog.V(0).Infof("Error syncing %v: %v", key, err)
 
-	// Re-enqueue an item, based on the rate limiter on the
-	// queue and the re-enqueueProject history, the key will be processed later again.
-	queue.AddRateLimited(key)
+	// Re-enqueueProject the key rate limited. Based on the rate limiter on the
+	// projectQueue and the re-enqueueProject history, the key will be processed later again.
+	c.projectQueue.AddRateLimited(key)
 }
 
 func (c *Controller) enqueueProject(project *kubermaticv1.Project) {
@@ -293,8 +269,25 @@ func (c *Controller) processProjectResourcesNextItem() bool {
 
 	err := c.syncProjectResource(queueItem)
 
-	c.handleErr(err, queueItem, c.projectResourcesQueue)
+	c.handleProjectResourcesErr(err, queueItem)
 	return true
+}
+
+// handleProjectResourcesErr checks if an error happened and makes sure we will retry later.
+func (c *Controller) handleProjectResourcesErr(err error, item *projectResourceQueueItem) {
+	if err == nil {
+		// Forget about the #AddRateLimited history of the key on every successful synchronization.
+		// This ensures that future processing of updates for this key is not delayed because of
+		// an outdated error history.
+		c.projectResourcesQueue.Forget(item)
+		return
+	}
+
+	glog.V(0).Infof("Error syncing gvr %s, kind %s, err %v", item.gvr.String(), item.kind, err)
+
+	// Re-enqueueProject the key rate limited. Based on the rate limiter on the
+	// projectQueue and the re-enqueueProject history, the key will be processed later again.
+	c.projectResourcesQueue.AddRateLimited(item)
 }
 
 func (c *Controller) enqueueProjectResource(obj interface{}, gvr schema.GroupVersionResource, kind string, clusterProvider *ClusterProvider) {
@@ -309,34 +302,6 @@ func (c *Controller) enqueueProjectResource(obj interface{}, gvr schema.GroupVer
 		clusterProvider: clusterProvider,
 	}
 	c.projectResourcesQueue.Add(item)
-}
-
-func (c *Controller) runProjectBindingsWorker() {
-	for c.processProjectBindingNextItem() {
-	}
-}
-
-func (c *Controller) processProjectBindingNextItem() bool {
-	key, quit := c.projectBindingsQueue.Get()
-	if quit {
-		return false
-	}
-	defer c.projectBindingsQueue.Done(key)
-
-	err := c.syncProjectBindings(key.(string))
-
-	c.handleErr(err, key, c.projectQueue)
-	return true
-}
-
-func (c *Controller) enqueueProjectBinding(projectBinding *kubermaticv1.UserProjectBinding) {
-	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(projectBinding)
-	if err != nil {
-		runtime.HandleError(fmt.Errorf("couldn't get key for object %#v: %v", projectBinding, err))
-		return
-	}
-
-	c.projectBindingsQueue.Add(key)
 }
 
 const projectResourcesResyncTime time.Duration = 5 * time.Minute
