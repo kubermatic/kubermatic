@@ -132,6 +132,7 @@ func main() {
 
 	ctrlCtx.kubermaticMasterInformerFactory.Start(ctrlCtx.stopCh)
 	ctrlCtx.kubeMasterInformerFactory.Start(ctrlCtx.stopCh)
+
 	ctrlCtx.kubermaticMasterInformerFactory.WaitForCacheSync(ctrlCtx.stopCh)
 	ctrlCtx.kubeMasterInformerFactory.WaitForCacheSync(ctrlCtx.stopCh)
 
