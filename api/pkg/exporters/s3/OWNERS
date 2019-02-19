@@ -6,5 +6,8 @@ approvers:
 reviewers:
   - team-lifecycle
 
+labels:
+  - team/lifecycle
+
 options:
   no_parent_owners: true

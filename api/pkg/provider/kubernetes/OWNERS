@@ -6,5 +6,8 @@ approvers:
 reviewers:
   - team-ui
 
+labels:
+  - team/ui
+
 options:
   no_parent_owners: true
