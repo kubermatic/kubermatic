@@ -3,6 +3,8 @@ kind: DaemonSet
 metadata:
   name: node-exporter
 spec:
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       name: node-exporter
