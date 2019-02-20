@@ -84,22 +84,28 @@ func (p *ProjectMemberProvider) List(userInfo *provider.UserInfo, project *kuber
 		}
 	}
 
+	if options == nil {
+		options = &provider.ProjectMemberListOptions{}
+	}
+
 	// Note:
 	// After we get the list of members we try to get at least one item using unprivileged account to see if the user have read access
 	if len(projectMembers) > 0 {
-		masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
-		if err != nil {
-			return nil, err
-		}
+		if !options.SkipPrivilegeVerification {
+			masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+			if err != nil {
+				return nil, err
+			}
 
-		memberToGet := projectMembers[0]
-		_, err = masterImpersonatedClient.UserProjectBindings().Get(memberToGet.Name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
+			memberToGet := projectMembers[0]
+			_, err = masterImpersonatedClient.UserProjectBindings().Get(memberToGet.Name, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
-	if options == nil {
+	if len(options.MemberEmail) == 0 {
 		return projectMembers, nil
 	}
 
