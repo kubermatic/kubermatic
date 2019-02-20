@@ -112,19 +112,9 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, memberProvider pro
 		}
 
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		user := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
-
 		kubermaticProject, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		alreadyExistingProjects, err := projectProvider.List(&provider.ProjectListOptions{ProjectName: req.Name, OwnerUID: user.UID})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		if len(alreadyExistingProjects) > 0 {
-			return nil, errors.NewAlreadyExists("project name", req.Name)
 		}
 
 		kubermaticProject.Spec.Name = req.Name

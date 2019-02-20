@@ -55,7 +55,7 @@ func TestRenameProjectEndpoint(t *testing.T) {
 		{
 			Name:            "scenario 2: rename existing project with existing name",
 			Body:            `{"Name": "my-second-project"}`,
-			HTTPStatus:      http.StatusConflict,
+			HTTPStatus:      http.StatusOK,
 			ProjectToRename: "my-first-project-ID",
 			ExistingKubermaticObjects: []runtime.Object{
 				// add some projects
@@ -68,7 +68,7 @@ func TestRenameProjectEndpoint(t *testing.T) {
 				test.GenBinding("my-third-project-ID", test.GenDefaultUser().Spec.Email, "owners"),
 			},
 			ExistingAPIUser:  *test.GenDefaultAPIUser(),
-			ExpectedResponse: `{"error":{"code":409,"message":"project name \"my-second-project\" already exists"}}`,
+			ExpectedResponse: `{"id":"my-first-project-ID","name":"my-second-project","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active","owners":[{"name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com"}]}`,
 		},
 		{
 			Name:            "scenario 3: rename existing project with existing name where user is not the owner",
@@ -298,10 +298,11 @@ func TestCreateProjectEndpoint(t *testing.T) {
 		},
 
 		{
-			Name:                      "scenario 2: a user has a project with the given name, thus creating one fails",
+			Name:                      "scenario 2: having more than one project with the same name is allowed",
 			Body:                      fmt.Sprintf(`{"name":"%s"}`, test.GenDefaultProject().Spec.Name),
-			ExpectedResponse:          `{"error":{"code":409,"message":"projects.kubermatic.k8s.io \"my-first-project\" already exists"}}`,
-			HTTPStatus:                http.StatusConflict,
+			RewriteProjectID:          true,
+			ExpectedResponse:          `{"id":"%s","name":"my-first-project","creationTimestamp":"0001-01-01T00:00:00Z","status":"Inactive","owners":[{"name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com"}]}`,
+			HTTPStatus:                http.StatusCreated,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(),
 			ExistingAPIUser:           test.GenDefaultAPIUser(),
 		},

@@ -11,7 +11,6 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/rand"
 	restclient "k8s.io/client-go/rest"
 )
@@ -54,14 +53,6 @@ type ProjectProvider struct {
 func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*kubermaticapiv1.Project, error) {
 	if user == nil {
 		return nil, errors.New("a user is missing but required")
-	}
-
-	alreadyExistingProjects, err := p.List(&provider.ProjectListOptions{ProjectName: projectName, OwnerUID: user.UID})
-	if err != nil {
-		return nil, err
-	}
-	if len(alreadyExistingProjects) > 0 {
-		return nil, kerrors.NewAlreadyExists(schema.GroupResource{Group: kubermaticapiv1.SchemeGroupVersion.Group, Resource: kubermaticapiv1.ProjectResourceName}, projectName)
 	}
 
 	project := &kubermaticapiv1.Project{
