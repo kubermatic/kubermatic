@@ -147,8 +147,6 @@ type ClusterAddress struct {
 
 type ClusterConditionType string
 
-const ClusterConditionCloudProviderInfrastractureReady ClusterConditionType = "cloudProviderInfrastructureReady"
-
 type ClusterCondition struct {
 	// Type of cluster condition.
 	Type ClusterConditionType `json:"type"`
@@ -336,12 +334,13 @@ type OpenstackCloudSpec struct {
 
 // ClusterHealthStatus stores health information of the components of a cluster.
 type ClusterHealthStatus struct {
-	Apiserver         bool `json:"apiserver"`
-	Scheduler         bool `json:"scheduler"`
-	Controller        bool `json:"controller"`
-	MachineController bool `json:"machineController"`
-	Etcd              bool `json:"etcd"`
-	OpenVPN           bool `json:"openvpn"`
+	Apiserver                   bool `json:"apiserver"`
+	Scheduler                   bool `json:"scheduler"`
+	Controller                  bool `json:"controller"`
+	MachineController           bool `json:"machineController"`
+	Etcd                        bool `json:"etcd"`
+	OpenVPN                     bool `json:"openvpn"`
+	CloudProviderInfrastructure bool `json:"cloudProviderInfrastructure"`
 }
 
 // AllHealthy returns if all components are healthy
