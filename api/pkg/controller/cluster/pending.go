@@ -30,9 +30,11 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 		return nil, err
 	}
 
-	// Deploy & Update master components
-	if err = cc.ensureResourcesAreDeployed(cluster); err != nil {
-		return nil, err
+	// Deploy & Update master components for Kubernetes
+	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		if err = cc.ensureResourcesAreDeployed(cluster); err != nil {
+			return nil, err
+		}
 	}
 
 	// synchronize cluster.status.health

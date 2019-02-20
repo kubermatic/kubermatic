@@ -161,12 +161,15 @@ func GetDeploymentCreators(data resources.DeploymentDataProvider) []resources.De
 		machinecontroller.DeploymentCreator(data),
 		machinecontroller.WebhookDeploymentCreator(data),
 		openvpn.DeploymentCreator(data),
-		apiserver.DeploymentCreator(data),
-		scheduler.DeploymentCreator(data),
-		controllermanager.DeploymentCreator(data),
 		dns.DeploymentCreator(data),
 		metricsserver.DeploymentCreator(data),
 		usercluster.DeploymentCreator(data),
+	}
+
+	if cluster := data.Cluster(); cluster != nil && cluster.Annotations["kubermatic.io/openshift"] == "" {
+		creators = append(apiserver.DeploymentCreator(data))
+		creators = append(scheduler.DeploymentCreator(data))
+		creators = append(controllermanager.DeploymentCreator(data))
 	}
 
 	if data.Cluster() != nil && len(data.Cluster().Spec.MachineNetworks) > 0 {
