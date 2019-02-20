@@ -100,7 +100,7 @@ type UpgradeClusterNodeDeploymentsReq struct {
 	common.GetClusterReq
 
 	// in: body
-	Body []byte
+	Body apiv1.MasterVersion
 }
 
 func DecodeUpgradeClusterNodeDeploymentsReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -149,10 +149,9 @@ func upgradeClusterNodeDeployments(projectProvider provider.ProjectProvider) end
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		kubeletVersion := string(req.Body)
 		var updateErrors []error
 		for _, machineDeployment := range machineDeployments.Items {
-			machineDeployment.Spec.Template.Spec.Versions.Kubelet = kubeletVersion
+			machineDeployment.Spec.Template.Spec.Versions.Kubelet = req.Body.Version.String()
 			_, err = machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Update(&machineDeployment)
 			if err != nil {
 				updateErrors = append(updateErrors, err)
@@ -160,7 +159,7 @@ func upgradeClusterNodeDeployments(projectProvider provider.ProjectProvider) end
 		}
 
 		if len(updateErrors) > 0 {
-			return nil, fmt.Errorf("failed to update some node deployments: %v", updateErrors)
+			return nil, fmt.Errorf("failed to update some node deployments: %+q", updateErrors)
 		}
 
 		return nil, nil
