@@ -1,0 +1,27 @@
+logging:
+  loki:
+    image:
+      repository: grafana/loki
+      tag: master
+      pullPolicy: Always # Always pull while in BETA
+
+    config:
+      auth_enabled: false
+      ingester:
+        lifecycler:
+          ring:
+            store: inmemory
+            replication_factor: 1
+      schema_configs:
+        - from: 0
+          store: boltdb
+          object_store: filesystem
+          schema: v9
+          index:
+            prefix: index_
+            period: 168h
+      storage_configs:
+        - name: boltdb
+          directory: /data/loki/index
+        - name: filesystem
+          directory: /data/loki/chunks

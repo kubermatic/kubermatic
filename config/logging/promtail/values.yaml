@@ -1,0 +1,6 @@
+logging:
+  promtail:
+    image:
+      repository: grafana/promtail
+      tag: master
+      pullPolicy: Always # Always pull while in BETA

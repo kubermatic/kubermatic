@@ -1,0 +1,11 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: promtail
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: promtail
+subjects:
+- kind: ServiceAccount
+  name: promtail-service-account

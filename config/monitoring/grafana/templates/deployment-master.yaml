@@ -1,0 +1,88 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  labels:
+    app: grafana-master
+  name: grafana-master
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana-master
+  template:
+    metadata:
+      labels:
+        app: grafana-master
+    spec:
+      containers:
+      - image: '{{ .Values.grafana.image.repository }}:master'
+        name: grafana
+        ports:
+        - containerPort: 3000
+          name: http
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - mountPath: /var/lib/grafana
+          name: grafana-storage
+          readOnly: false
+        - mountPath: /etc/grafana
+          name: grafana-config
+          readOnly: true
+        - mountPath: /etc/grafana/provisioning/datasources
+          name: grafana-datasources
+          readOnly: true
+        - mountPath: /etc/grafana/provisioning/dashboards
+          name: grafana-dashboards
+          readOnly: true
+        - mountPath: /grafana-dashboard-definitions
+          name: grafana-dashboard-definitions
+          readOnly: true
+        {{- if .Values.grafana.volumes }}
+        {{- range .Values.grafana.volumes }}
+        - mountPath: {{ .mountPath }}
+          name: {{ .name }}
+          readOnly: true
+        {{- end }}
+        {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      serviceAccountName: grafana
+      volumes:
+      - emptyDir: {}
+        name: grafana-storage
+      - name: grafana-config
+        secret:
+          secretName: grafana-config
+      - name: grafana-datasources
+        configMap:
+          name: grafana-datasources
+      - name: grafana-dashboards
+        configMap:
+          name: grafana-dashboards
+      - name: grafana-dashboard-definitions
+        configMap:
+          name: grafana-dashboard-definitions
+          items:
+          {{- range $file, $content := (.Files.Glob "dashboards/**") }}
+          - key: {{ $file | replace "dashboards/" "" | replace "/" "-" }}
+            path: {{ $file | replace "dashboards/" "" }}
+          {{- end }}
+      {{- if .Values.grafana.volumes }}
+      {{- range .Values.grafana.volumes }}
+      - name: {{ .name }}
+        {{- if .configMap }}
+        configMap:
+          name: {{ .configMap }}
+        {{- else }}
+        secret:
+          secretName: {{ .secretName }}
+        {{- end }}
+      {{- end }}
+      {{- end }}

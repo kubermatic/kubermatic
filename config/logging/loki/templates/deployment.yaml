@@ -1,0 +1,37 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: loki
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loki
+  template:
+    metadata:
+      labels:
+        app: loki
+    spec:
+      serviceAccountName: loki-service-account
+      containers:
+      - name: loki
+        image: '{{ .Values.logging.loki.image.repository }}:{{ .Values.logging.loki.image.tag }}'
+        imagePullPolicy: {{ .Values.logging.loki.image.pullPolicy }}
+        args:
+        - '-config.file=/etc/loki/loki.yaml'
+        volumeMounts:
+        - name: config
+          mountPath: /etc/loki
+        - name: storage
+          mountPath: '/data'
+        ports:
+        - name: loki
+          containerPort: 3100
+          protocol: TCP
+      volumes:
+      - name: config
+        configMap:
+          name: loki
+      - name: storage
+        persistentVolumeClaim:
+          claimName: loki

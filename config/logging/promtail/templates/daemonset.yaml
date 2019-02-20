@@ -1,0 +1,55 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: promtail
+spec:
+  selector:
+    matchLabels:
+      app: promtail
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: promtail
+    spec:
+      serviceAccountName: promtail-service-account
+      containers:
+        - name: promtail
+          image: '{{ .Values.logging.promtail.image.repository }}:{{ .Values.logging.promtail.image.tag }}'
+          imagePullPolicy: {{ .Values.logging.promtail.image.pullPolicy }}
+          args:
+          - '-config.file=/etc/promtail/promtail.yaml'
+          - '-client.url=http://loki:3100/api/prom/push'
+          volumeMounts:
+          - name: config
+            mountPath: /etc/promtail
+          - name: varlog
+            mountPath: /var/log
+          - name: varlibdockercontainers
+            mountPath: /var/lib/docker/containers
+            readOnly: true
+          env:
+          - name: HOSTNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          ports:
+          - containerPort: 80
+            name: http-metrics
+          securityContext:
+            privileged: true
+            runAsUser: 0
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      volumes:
+      - name: config
+        configMap:
+          name: promtail
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
