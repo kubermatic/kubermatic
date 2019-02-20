@@ -289,9 +289,6 @@ func (r AddReq) Validate(authenticatesUserInfo *provider.UserInfo) error {
 	if strings.EqualFold(apiUserFromRequest.Email, authenticatesUserInfo.Email) {
 		return k8cerrors.New(http.StatusForbidden, "you cannot assign yourself to a different group")
 	}
-	if projectFromRequest.GroupPrefix == rbac.OwnerGroupNamePrefix {
-		return k8cerrors.New(http.StatusForbidden, fmt.Sprintf("the given user cannot be assigned to %s group", projectFromRequest.GroupPrefix))
-	}
 	isRequestedGroupPrefixValid := false
 	for _, existingGroupPrefix := range rbac.AllGroupsPrefixes {
 		if existingGroupPrefix == projectFromRequest.GroupPrefix {

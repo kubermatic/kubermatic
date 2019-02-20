@@ -184,7 +184,7 @@ func convertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project
 }
 
 func getOwnersForProject(userInfo *provider.UserInfo, project *kubermaticapiv1.Project, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) ([]apiv1.User, error) {
-	allProjectMembers, err := memberProvider.List(userInfo, project, nil)
+	allProjectMembers, err := memberProvider.List(userInfo, project, &provider.ProjectMemberListOptions{SkipPrivilegeVerification: true})
 	if err != nil {
 		return nil, err
 	}

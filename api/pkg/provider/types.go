@@ -196,6 +196,9 @@ type UserInfo struct {
 type ProjectMemberListOptions struct {
 	// MemberEmail set the email address of a member for the given project
 	MemberEmail string
+
+	// SkipPrivilegeVerification if set will not check if the user that wants to list members of the given project has sufficient privileges.
+	SkipPrivilegeVerification bool
 }
 
 // ProjectMemberProvider binds users with projects
