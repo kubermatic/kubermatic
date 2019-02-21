@@ -25,8 +25,6 @@ Supported Kubernetes versions:
 .com/p0lyn0mial))
 - etcd readiness check timeouts have been increased [#2312](https://github.com/kubermatic/kubermatic/issues/2312) ([mrIncompetent](https://github.com/mrIncompetent))
 - Removed unused fields from cloud specs exposed in the API [#2314](https://github.com/kubermatic/kubermatic/issues/2314) ([maciaszczykm](https://github.com/maciaszczykm))
-- [ACTION REQUIRED] kubermatic API command line args were changed: `oidc-issuer-url` to `oidc-url`, `oidc-client-id` to `oidc-authenticator-client-id`, `oidc-offline-access-as-scope` to `oidc-issuer-offline-access-as-scope`, `oidc-redirect-uri` to `oidc-issuer-redirect-uri` and new was added: `oidc-issuer-client-id` [#2338](https://github.com/kubermatic/kuberm
-atic/issues/2338) ([zreigz](https://github.com/zreigz))
 - Kubermatic now validates nodes synchronously [#2340](https://github.com/kubermatic/kubermatic/issues/2340) ([alvaroaleman](https://github.com/alvaroaleman))
 - Kubermatic now manages Nodes as group via the NodeGroup feature [#2357](https://github.com/kubermatic/kubermatic/issues/2357) ([maciaszczykm](https://github.com/maciaszczykm))
 - Components will no longer be shown as as unhealthy when only some replicas are up [#2358](https://github.com/kubermatic/kubermatic/issues/2358) ([mrIncompetent](https://github.com/mrIncompetent))
