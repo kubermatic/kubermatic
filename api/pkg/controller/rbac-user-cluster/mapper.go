@@ -1,7 +1,10 @@
 package rbacusercluster
 
 import (
+	"errors"
 	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 
@@ -14,6 +17,8 @@ const (
 
 	machinedeployments = "machinedeployments"
 	machines           = "machines"
+
+	resourceNameIndex = 2
 )
 
 // generateVerbsForGroup generates a set of verbs for a group
@@ -31,8 +36,13 @@ func generateVerbsForGroup(groupName string) ([]string, error) {
 	return []string{}, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s", groupName)
 }
 
-// GenerateRBACClusterRole creates role for specific group
-func GenerateRBACClusterRole(groupName string) (*rbacv1.ClusterRole, error) {
+// generateRBACClusterRole creates role for specific group
+func generateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
+
+	groupName, err := getGroupName(resourceName)
+	if err != nil {
+		return nil, err
+	}
 	verbs, err := generateVerbsForGroup(groupName)
 	if err != nil {
 		return nil, err
@@ -40,7 +50,7 @@ func GenerateRBACClusterRole(groupName string) (*rbacv1.ClusterRole, error) {
 
 	clusterRole := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("system:%s:%s", rbac.RBACResourcesNamePrefix, groupName),
+			Name: resourceName,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -53,12 +63,15 @@ func GenerateRBACClusterRole(groupName string) (*rbacv1.ClusterRole, error) {
 	return clusterRole, nil
 }
 
-// GenerateRBACClusterRoleBinding creates role binding for specific group
-func GenerateRBACClusterRoleBinding(groupName string) *rbacv1.ClusterRoleBinding {
-	name := fmt.Sprintf("system:%s:%s", rbac.RBACResourcesNamePrefix, groupName)
+// generateRBACClusterRoleBinding creates role binding for specific group
+func generateRBACClusterRoleBinding(resourceName string) (*rbacv1.ClusterRoleBinding, error) {
+	groupName, err := getGroupName(resourceName)
+	if err != nil {
+		return nil, err
+	}
 	binding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name: resourceName,
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -70,8 +83,20 @@ func GenerateRBACClusterRoleBinding(groupName string) *rbacv1.ClusterRoleBinding
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: rbacv1.GroupName,
 			Kind:     "ClusterRole",
-			Name:     name,
+			Name:     resourceName,
 		},
 	}
-	return binding
+	return binding, nil
+}
+
+func getGroupName(resourceName string) (string, error) {
+	match, err := regexp.MatchString("system:kubermatic:[owners|editors|vievers]", resourceName)
+	if err != nil {
+		return "", err
+	}
+	if match {
+		parts := strings.Split(resourceName, ":")
+		return parts[resourceNameIndex], nil
+	}
+	return "", errors.New("can't get group name from resource name")
 }
