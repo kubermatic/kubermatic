@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/json"
+
 	"github.com/Masterminds/semver"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
@@ -685,4 +686,11 @@ type Event struct {
 
 	// The number of times this event has occurred.
 	Count int32 `json:"count,omitempty"`
+}
+
+// KubermaticVersions describes the versions of running Kubermatic components.
+// swagger:model KubermaticVersions
+type KubermaticVersions struct {
+	// Version of the Kubermatic API server.
+	API string `json:"api"`
 }
