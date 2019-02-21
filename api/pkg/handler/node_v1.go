@@ -58,9 +58,7 @@ func deleteNodeForClusterLegacy(projectProvider provider.ProjectProvider) endpoi
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		// TODO: change to
-		// machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(userInfo, cluster)
-		machineClient, err := clusterProvider.GetAdminMachineClientForCustomerCluster(cluster)
+		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(userInfo, cluster)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create a machine client: %v", err)
 		}
@@ -575,12 +573,7 @@ func createNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		// TODO:
-		// normally we have project, user and sshkey providers
-		// but here we decided to use machineClient and kubeClient directly to access the user cluster.
-		//
-		// how about moving machineClient and kubeClient to their own provider ?
-		machineClient, err := clusterProvider.GetAdminMachineClientForCustomerCluster(cluster)
+		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(userInfo, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -715,7 +708,7 @@ func listNodeDeployments(projectProvider provider.ProjectProvider) endpoint.Endp
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineClient, err := clusterProvider.GetAdminMachineClientForCustomerCluster(cluster)
+		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(userInfo, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -797,7 +790,7 @@ func getNodeDeployment(projectProvider provider.ProjectProvider) endpoint.Endpoi
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineClient, err := clusterProvider.GetAdminMachineClientForCustomerCluster(cluster)
+		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(userInfo, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -846,9 +839,9 @@ func decodeListNodeDeploymentNodes(c context.Context, r *http.Request) (interfac
 	return req, nil
 }
 
-func getMachinesForNodeDeployment(clusterProvider provider.ClusterProvider, cluster *v1.Cluster, nodeDeploymentID string) (*clusterv1alpha1.MachineList, error) {
+func getMachinesForNodeDeployment(clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, cluster *v1.Cluster, nodeDeploymentID string) (*clusterv1alpha1.MachineList, error) {
 
-	machineClient, err := clusterProvider.GetAdminMachineClientForCustomerCluster(cluster)
+	machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(userInfo, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -882,7 +875,7 @@ func listNodeDeploymentNodes(projectProvider provider.ProjectProvider) endpoint.
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machines, err := getMachinesForNodeDeployment(clusterProvider, cluster, req.NodeDeploymentID)
+		machines, err := getMachinesForNodeDeployment(clusterProvider, userInfo, cluster, req.NodeDeploymentID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -961,7 +954,7 @@ func patchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineClient, err := clusterProvider.GetAdminMachineClientForCustomerCluster(cluster)
+		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(userInfo, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -1082,7 +1075,7 @@ func deleteNodeDeployment(projectProvider provider.ProjectProvider) endpoint.End
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineClient, err := clusterProvider.GetAdminMachineClientForCustomerCluster(cluster)
+		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(userInfo, cluster)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create a machine client: %v", err)
 		}
@@ -1156,7 +1149,7 @@ func listNodeDeploymentNodesEvents() endpoint.Endpoint {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machines, err := getMachinesForNodeDeployment(clusterProvider, cluster, req.NodeDeploymentID)
+		machines, err := getMachinesForNodeDeployment(clusterProvider, userInfo, cluster, req.NodeDeploymentID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
