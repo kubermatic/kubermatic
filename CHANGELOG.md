@@ -18,7 +18,6 @@ Supported Kubernetes versions:
 - Added support for Kubernetes `v1.13`
 - Kubermatic now supports Kubernetes 1.12 [#2132](https://github.com/kubermatic/kubermatic/issues/2132) ([alvaroaleman](https://github.com/alvaroaleman))
 - The startup time for new clusters was improved [#2148](https://github.com/kubermatic/kubermatic/issues/2148) ([alvaroaleman](https://github.com/alvaroaleman))
-- API endpoints for clusters not separated into projects have been deprecated. [#2244](https://github.com/kubermatic/kubermatic/issues/2244) ([p0lyn0mial](https://github.com/p0lyn0mial))
 - The EOL Kubernetes 1.9 is no longer supported [#2252](https://github.com/kubermatic/kubermatic/issues/2252) ([kdomanski](https://github.com/kdomanski))
 - S3 metrics exporter has been moved out of the kubermatic chart into its own chart [#2256](https://github.com/kubermatic/kubermatic/issues/2256) ([xrstf](https://github.com/xrstf))
 - Displaying the terms of service can now be toggled in values.yaml [#2277](https://github.com/kubermatic/kubermatic/issues/2277) ([kgroschoff](https://github.com/kgroschoff))
