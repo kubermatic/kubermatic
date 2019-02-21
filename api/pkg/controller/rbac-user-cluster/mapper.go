@@ -14,7 +14,6 @@ const (
 
 	machinedeployments = "machinedeployments"
 	machines           = "machines"
-	nodes              = "nodes"
 )
 
 // generateVerbsForGroup generates a set of verbs for a group
@@ -41,17 +40,12 @@ func GenerateRBACClusterRole(groupName string) (*rbacv1.ClusterRole, error) {
 
 	clusterRole := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("%s:%s", rbac.RBACResourcesNamePrefix, groupName),
+			Name: fmt.Sprintf("system:%s:%s", rbac.RBACResourcesNamePrefix, groupName),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{clusterPolicyAPIGroup},
 				Resources: []string{machinedeployments, machines},
-				Verbs:     verbs,
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{nodes},
 				Verbs:     verbs,
 			},
 		},
@@ -61,7 +55,7 @@ func GenerateRBACClusterRole(groupName string) (*rbacv1.ClusterRole, error) {
 
 // GenerateRBACClusterRoleBinding creates role binding for specific group
 func GenerateRBACClusterRoleBinding(groupName string) *rbacv1.ClusterRoleBinding {
-	name := fmt.Sprintf("%s:%s", rbac.RBACResourcesNamePrefix, groupName)
+	name := fmt.Sprintf("system:%s:%s", rbac.RBACResourcesNamePrefix, groupName)
 	binding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,

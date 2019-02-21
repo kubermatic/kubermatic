@@ -4,8 +4,6 @@ import (
 	"context"
 
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -56,10 +54,7 @@ func (r *reconcileClusterRole) Reconcile(request reconcile.Request) (reconcile.R
 	cr := &rbacv1.ClusterRole{}
 	err = r.Get(r.ctx, request.NamespacedName, cr)
 	if err != nil {
-		if errors.IsNotFound(err) {
-			err = rdr.Reconcile()
-			return reconcile.Result{}, err
-		}
+		err = rdr.Reconcile()
 		return reconcile.Result{}, err
 	}
 
