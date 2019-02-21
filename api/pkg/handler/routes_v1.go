@@ -69,6 +69,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.getMasterVersions())
 
 	mux.Methods(http.MethodGet).
+		Path("/version").
+		Handler(r.getKubermaticVersion())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/vsphere/networks").
 		Handler(r.listVSphereNetworks())
 
@@ -588,6 +592,28 @@ func (r Routing) getMasterVersions() http.Handler {
 			r.oidcAuthenticator.Verifier(),
 			middleware.UserSaver(r.userProvider),
 		)(getMasterVersions(r.updateManager)),
+		decodeEmptyReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/version versions getKubermaticVersion
+//
+// Get versions of running Kubermatic components.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: KubermaticVersions
+func (r Routing) getKubermaticVersion() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.oidcAuthenticator.Verifier(),
+			middleware.UserSaver(r.userProvider),
+		)(getKubermaticVersion()),
 		decodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,

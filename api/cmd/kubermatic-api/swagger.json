@@ -2617,6 +2617,29 @@
         }
       }
     },
+    "/api/v1/version": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "versions"
+        ],
+        "summary": "Get versions of running Kubermatic components.",
+        "operationId": "getKubermaticVersion",
+        "responses": {
+          "200": {
+            "description": "KubermaticVersions",
+            "schema": {
+              "$ref": "#/definitions/KubermaticVersions"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/versions": {
       "get": {
         "description": "Lists all versions which don't result in automatic updates",
@@ -3709,6 +3732,18 @@
             "$ref": "#/definitions/NamedAuthInfo"
           },
           "x-go-name": "AuthInfos"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "KubermaticVersions": {
+      "type": "object",
+      "title": "KubermaticVersions describes the versions of running Kubermatic components.",
+      "properties": {
+        "api": {
+          "description": "Version of the Kubermatic API server.",
+          "type": "string",
+          "x-go-name": "API"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
