@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -60,6 +61,10 @@ func (s *awsScenario) Name() string {
 }
 
 func (s *awsScenario) Cluster(secrets secrets) *v1.Cluster {
+	dcName := os.Getenv("AWS_DATACENTER_NAME")
+	if dcName == "" {
+		dcName = "aws-eu-central-1a"
+	}
 	return &v1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{},
 		Spec: v1.ClusterSpec{
@@ -75,7 +80,7 @@ func (s *awsScenario) Cluster(secrets secrets) *v1.Cluster {
 				DNSDomain: "cluster.local",
 			},
 			Cloud: v1.CloudSpec{
-				DatacenterName: "aws-eu-central-1a",
+				DatacenterName: dcName,
 				AWS: &v1.AWSCloudSpec{
 					SecretAccessKey: secrets.AWS.SecretAccessKey,
 					AccessKeyID:     secrets.AWS.AccessKeyID,

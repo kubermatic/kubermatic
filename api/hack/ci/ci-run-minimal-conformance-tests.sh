@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+export AWS_DATACENTER_NAME="${AWS_DATACENTER_NAME:-aws-eu-west-1a}"
+
 export BUILD_ID=${BUILD_ID:-BUILD_ID_UNDEF}
 echodate() { echo "$(date) $@"; }
 echodate "Build ID is $BUILD_ID"
