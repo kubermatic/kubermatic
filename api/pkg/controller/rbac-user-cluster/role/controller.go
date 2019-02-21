@@ -48,20 +48,9 @@ type reconcileClusterRole struct {
 
 // Reconcile makes changes in response to Cluster Role related changes
 func (r *reconcileClusterRole) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	var err error
-
 	rdr := reconciler{client: r.Client, ctx: r.ctx}
-	cr := &rbacv1.ClusterRole{}
-	err = r.Get(r.ctx, request.NamespacedName, cr)
-	if err != nil {
-		err = rdr.Reconcile()
-		return reconcile.Result{}, err
-	}
+	r.Get(r.ctx, request.NamespacedName, &rbacv1.ClusterRole{})
+	err := rdr.Reconcile()
 
-	err = rdr.Reconcile()
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	return reconcile.Result{}, nil
+	return reconcile.Result{}, err
 }
