@@ -40,8 +40,6 @@ hub.com/zreigz))
   - kube state metrics: 1Gi, 0.1 CPU
   - OpenVPN: 128Mi RAM, 0.1 CPU
   - Prometheus: 1Gi RAM, 0.1 CPU
-- Kubermatic controller can now use TLS verification[Action required] to enable the TLS verification for kubermatic-controller-manager the users must set `-feature-gates=OpenIDAuthPlugin=true` and provide `-oidc-issuer-url`, `-oidc-issuer-client-id` and `--oidc-ca-file` when running the controller.[Action required] user need CA bundle file with a correct chain
- of certificates [#2403](https://github.com/kubermatic/kubermatic/issues/2403) ([zreigz](https://github.com/zreigz))
 - [ACTION_REQUIRED] Kubermatic CustomResourceDefinitions have been extracted out of the helm chart. This requires the execution of the `charts/kubermatic/migrate/migrate-kubermatic-chart.sh` script in case the CRD&#39;s where installed without the `&#34;helm.sh/resource-policy&#34;: keep` annotation. [#2459](https://github.com/kubermatic/kubermatic/issues/2459
 ) ([mrIncompetent](https://github.com/mrIncompetent))
 - Control plane components are no longer logging at debug level [#2471](https://github.com/kubermatic/kubermatic/issues/2471) ([mrIncompetent](https://github.com/mrIncompetent))
