@@ -8,33 +8,38 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/addon"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/addoninstaller"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
+	cloudcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/monitoring"
 	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/update"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
+	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+
+	"github.com/golang/glog"
 	"github.com/oklog/run"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 // allControllers stores the list of all controllers that we want to run,
 // each entry holds the name of the controller and the corresponding
 // start function that will essentially run the controller
 var allControllers = map[string]controllerCreator{
-	"Cluster":        createClusterController,
-	"Update":         createUpdateController,
-	"Addon":          createAddonController,
-	"AddonInstaller": createAddonInstallerController,
-	"Backup":         createBackupController,
-	"Monitoring":     createMonitoringController,
+	"Cluster":                      createClusterController,
+	"Update":                       createUpdateController,
+	"Addon":                        createAddonController,
+	"AddonInstaller":               createAddonInstallerController,
+	"Backup":                       createBackupController,
+	"Monitoring":                   createMonitoringController,
+	cloudcontroller.ControllerName: createCloudController,
 }
 
 type controllerCreator func(*controllerContext) (runner, error)
@@ -50,7 +55,10 @@ func createAllControllers(ctrlCtx *controllerContext) (map[string]runner, error)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create '%s' controller: %v", name, err)
 		}
-		controllers[name] = controller
+		// The controllers managed by the mgr don't have a dedicated runner
+		if controller != nil {
+			controllers[name] = controller
+		}
 	}
 	return controllers, nil
 }
@@ -72,8 +80,15 @@ func getControllerStarter(workerCnt int, done <-chan struct{}, cancel context.Ca
 	return execute, interrupt
 }
 
-func runAllControllers(workerCnt int, done <-chan struct{}, cancel context.CancelFunc, controllers map[string]runner) error {
+func runAllControllers(workerCnt int,
+	done <-chan struct{},
+	cancel context.CancelFunc,
+	mgr manager.Runnable,
+	controllers map[string]runner) error {
 	var g run.Group
+
+	// Add the manager first as other controllers may rely on its cache being ready
+	g.Add(func() error { return mgr.Start(done) }, func(_ error) { cancel() })
 
 	for name, controller := range controllers {
 		execute, interrupt := getControllerStarter(workerCnt, done, cancel, name, controller)
@@ -81,6 +96,19 @@ func runAllControllers(workerCnt int, done <-chan struct{}, cancel context.Cance
 	}
 
 	return g.Run()
+}
+
+func createCloudController(ctrlCtx *controllerContext) (runner, error) {
+	dcs, err := provider.LoadDatacentersMeta(ctrlCtx.runOptions.dcFile)
+	if err != nil {
+		return nil, err
+	}
+	cloudProvider := cloud.Providers(dcs)
+	predicates := workerlabel.Predicates(ctrlCtx.runOptions.workerName)
+	if err := cloudcontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, cloudProvider, predicates); err != nil {
+		return nil, fmt.Errorf("failed to add cloud controller to mgr: %v", err)
+	}
+	return nil, nil
 }
 
 func createClusterController(ctrlCtx *controllerContext) (runner, error) {
@@ -94,8 +122,6 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		return nil, fmt.Errorf("failed to load ImagePullSecret from %s: %v", ctrlCtx.runOptions.dockerPullConfigJSONFile, err)
 	}
 
-	cps := cloud.Providers(dcs)
-
 	return cluster.NewController(
 		ctrlCtx.kubeClient,
 		ctrlCtx.dynamicClient,
@@ -103,7 +129,6 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.externalURL,
 		ctrlCtx.runOptions.dc,
 		dcs,
-		cps,
 		client.New(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodePortRange,

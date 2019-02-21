@@ -157,12 +157,7 @@ func (p *ClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, o
 		return nil, err
 	}
 	if options.CheckInitStatus {
-		isHealthy := cluster.Status.Health.Apiserver &&
-			cluster.Status.Health.Scheduler &&
-			cluster.Status.Health.Controller &&
-			cluster.Status.Health.MachineController &&
-			cluster.Status.Health.Etcd
-		if !isHealthy {
+		if !cluster.Status.Health.AllHealthy() {
 			return nil, kerrors.NewServiceUnavailable("Cluster components are not ready yet")
 		}
 	}

@@ -22,21 +22,17 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
-	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
-	"k8s.io/client-go/tools/record"
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	autoscalingv1beta1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"
 )
@@ -64,36 +60,29 @@ func main() {
 
 	kubeClient := kubernetes.NewForConfigOrDie(config)
 	kubermaticClient := kubermaticclientset.NewForConfigOrDie(config)
-	recorder, err := getEventRecorder(kubeClient)
-	if err != nil {
-		glog.Fatalf("failed to get event recorder: %v", err)
-	}
 
-	mapper, err := apiutil.NewDiscoveryRESTMapper(config)
+	// Create a manager
+	mgr, err := manager.New(config, manager.Options{})
 	if err != nil {
-		glog.Fatalf("failed to create rest mapper: %v", err)
+		glog.Fatalf("failed to create mgr: %v", err)
 	}
-
-	combinedScheme := scheme.Scheme
 	// Add all custom type schemes to our scheme. Otherwise we won't get a informer
-	if err := autoscalingv1beta1.AddToScheme(combinedScheme); err != nil {
-		glog.Fatalf("failed to add the autoscaling.k8s.io scheme: %v", err)
+	if err := autoscalingv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
+		glog.Fatalf("failed to add the autoscaling.k8s.io scheme to mgr: %v", err)
 	}
-	dynamicClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{Scheme: combinedScheme, Mapper: mapper})
-	if err != nil {
-		glog.Fatalf("failed to create dynamic client: %v", err)
+	if err := kubermaticv1.SchemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
+		glog.Fatalf("failed to add kubermatic scheme to mgr: %v", err)
 	}
 
-	dynamicCache, err := cache.New(config, cache.Options{})
-	if err != nil {
-		glog.Fatalf("failed to create dynamic informer cache: %v", err)
-	}
+	dynamicClient := mgr.GetClient()
+	dynamicCache := mgr.GetCache()
+	recorder := mgr.GetRecorder(controllerName)
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
 	if _, err := informer.GetSyncedStoreFromDynamicFactory(dynamicCache, &autoscalingv1beta1.VerticalPodAutoscaler{}); err != nil {
 		if _, crdNotRegistered := err.(*meta.NoKindMatchError); crdNotRegistered {
 			glog.Fatal(`
-The VerticalPodAutoscaler is not installed in this seed cluster. 
+The VerticalPodAutoscaler is not installed in this seed cluster.
 Please install the VerticalPodAutoscaler according to the documentation: https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler#installation`)
 		}
 	}
@@ -113,7 +102,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		}
 	}()
 
-	ctrlCtx, err := newControllerContext(options, done, kubeClient, kubermaticClient, dynamicClient, dynamicCache)
+	ctrlCtx, err := newControllerContext(options, mgr, done, kubeClient, kubermaticClient, dynamicClient, dynamicCache)
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -179,13 +168,13 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	// This group is running the actual controller logic
 	{
 		g.Add(func() error {
-			leaderElectionClient, err := kubernetes.NewForConfig(restclient.AddUserAgent(config, "kubermatic-controller-manager-leader-election"))
+			leaderElectionClient, err := kubernetes.NewForConfig(rest.AddUserAgent(config, "kubermatic-controller-manager-leader-election"))
 			if err != nil {
 				return err
 			}
 			callbacks := kubeleaderelection.LeaderCallbacks{
 				OnStartedLeading: func(stop <-chan struct{}) {
-					if err = runAllControllers(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh, ctxDone, controllers); err != nil {
+					if err = runAllControllers(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh, ctxDone, ctrlCtx.mgr, controllers); err != nil {
 						glog.Error(err)
 						ctxDone()
 					}
@@ -219,29 +208,16 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	}
 }
 
-func getEventRecorder(masterKubeClient *kubernetes.Clientset) (record.EventRecorder, error) {
-	// Create event broadcaster
-	// Add kubermatic types to the default Kubernetes Scheme so Events can be
-	// logged properly
-	if err := kubermaticv1.AddToScheme(scheme.Scheme); err != nil {
-		return nil, err
-	}
-	glog.V(4).Info("Creating event broadcaster")
-	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartLogging(glog.V(4).Infof)
-	eventBroadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: masterKubeClient.CoreV1().Events("")})
-	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: controllerName})
-	return recorder, nil
-}
-
 func newControllerContext(
 	runOp controllerRunOptions,
+	mgr manager.Manager,
 	done <-chan struct{},
 	kubeClient kubernetes.Interface,
 	kubermaticClient kubermaticclientset.Interface,
 	dynamicClient ctrlruntimeclient.Client,
 	dynamicCache cache.Cache) (*controllerContext, error) {
 	ctrlCtx := &controllerContext{
+		mgr:              mgr,
 		runOptions:       runOp,
 		stopCh:           done,
 		kubeClient:       kubeClient,

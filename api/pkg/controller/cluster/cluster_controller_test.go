@@ -8,7 +8,6 @@ import (
 	kubermaticfakeclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -26,7 +25,6 @@ const TestExternalPort = 30000
 
 func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime.Object) *Controller {
 	dcs := buildDatacenterMeta()
-	cps := cloud.Providers(dcs)
 
 	kubeClient := kubefake.NewSimpleClientset(kubeObjects...)
 	kubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjects...)
@@ -42,7 +40,6 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 		TestExternalURL,
 		TestDC,
 		dcs,
-		cps,
 		client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
 		"",
 		"",

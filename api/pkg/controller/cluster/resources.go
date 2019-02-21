@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	nodeDeletionFinalizer = "kubermatic.io/delete-nodes"
+	NodeDeletionFinalizer = "kubermatic.io/delete-nodes"
 )
 
 func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) error {
