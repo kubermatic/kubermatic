@@ -12,10 +12,7 @@ import (
 
 func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (*kubermaticv1.ClusterHealth, error) {
 	ns := kubernetes.NamespaceName(c.Name)
-	health := kubermaticv1.ClusterHealth{
-		ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
-			CloudProviderInfrastructure: c.Status.Health.CloudProviderInfrastructure},
-	}
+	health := c.Status.Health.DeepCopy()
 
 	type depInfo struct {
 		healthy  *bool
@@ -44,7 +41,7 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (*kubermaticv1.Clus
 		return nil, fmt.Errorf("failed to get etcd health: %v", err)
 	}
 
-	return &health, nil
+	return health, nil
 }
 
 func (cc *Controller) healthyDeployment(ns, name string, minReady int32) (bool, error) {

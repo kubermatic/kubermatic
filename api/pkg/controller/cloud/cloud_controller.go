@@ -73,7 +73,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 	if err != nil {
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
-		glog.V(6).Infof("error reconciling cluster %s: %v", cluster.Name, err)
+		glog.Errorf("error reconciling cluster %s: %v", cluster.Name, err)
 		return *result, err
 	}
 	_, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
@@ -88,7 +88,7 @@ func (r *Reconciler) reconcile(_ context.Context, cluster *kubermaticv1.Cluster)
 		return nil, nil
 	}
 
-	glog.V(6).Infof("syncing cluster %s", cluster.Name)
+	glog.V(4).Infof("syncing cluster %s", cluster.Name)
 	_, prov, err := provider.ClusterCloudProvider(r.cloudProvider, cluster)
 	if err != nil {
 		return nil, err
