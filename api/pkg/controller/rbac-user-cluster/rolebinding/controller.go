@@ -42,13 +42,13 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-// reconcileClusterRoleBinding reconciles cluster role objects
+// reconcileClusterRoleBinding reconciles ClusterRoleBinding objects
 type reconcileClusterRoleBinding struct {
 	ctx context.Context
 	client.Client
 }
 
-// Reconcile makes changes in response to cluster role related changes
+// reconcile makes changes in response to Cluster Role Binding related changes
 func (r *reconcileClusterRoleBinding) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	var err error
 
@@ -58,10 +58,7 @@ func (r *reconcileClusterRoleBinding) Reconcile(request reconcile.Request) (reco
 	if err != nil {
 		if errors.IsNotFound(err) {
 			err = rdr.Reconcile()
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-			return reconcile.Result{}, nil
+			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, err
 	}

@@ -27,7 +27,7 @@ func TestReconcileCreate(t *testing.T) {
 		expectedRoles             []rbacv1.ClusterRole
 	}{
 		{
-			name: "scenario 1: test reconcile method for crating cluster roles",
+			name: "scenario 1: test Reconcile method for crating cluster roles",
 
 			expectedRoleNumber:        3,
 			expectedRoleBindingNumber: 3,
@@ -47,7 +47,7 @@ func TestReconcileCreate(t *testing.T) {
 			// create scenario
 			err := r.Reconcile()
 			if err != nil {
-				t.Fatalf("reconcile method error: %v", err)
+				t.Fatalf("Reconcile method error: %v", err)
 			}
 
 			roles := &rbacv1.ClusterRoleList{}
@@ -84,7 +84,7 @@ func TestReconcileUpdateRole(t *testing.T) {
 		expectedRole rbacv1.ClusterRole
 	}{
 		{
-			name:     "scenario 1: test reconcile method when cluster role kubermatic:editors was changed",
+			name:     "scenario 1: test Reconcile method when cluster role kubermatic:editors was changed",
 			roleName: "kubermatic:editors",
 
 			updatedRole: &rbacv1.ClusterRole{
@@ -102,7 +102,7 @@ func TestReconcileUpdateRole(t *testing.T) {
 			expectedRole: genTestClusterRole(t, rbac.EditorGroupNamePrefix),
 		},
 		{
-			name:     "scenario 2: test reconcile method when cluster role kubermatic:viewers was changed",
+			name:     "scenario 2: test Reconcile method when cluster role kubermatic:viewers was changed",
 			roleName: "kubermatic:viewers",
 			updatedRole: &rbacv1.ClusterRole{
 				ObjectMeta: metav1.ObjectMeta{
@@ -124,13 +124,13 @@ func TestReconcileUpdateRole(t *testing.T) {
 			r := reconciler{client: fake.NewFakeClient(), ctx: context.TODO()}
 
 			if err := r.client.Create(r.ctx, test.updatedRole); err != nil {
-				t.Fatalf("reconcile method error: %v", err)
+				t.Fatalf("Reconcile method error: %v", err)
 			}
 
 			// check for updates
 			err := r.Reconcile()
 			if err != nil {
-				t.Fatalf("reconcile method error: %v", err)
+				t.Fatalf("Reconcile method error: %v", err)
 			}
 
 			role := &rbacv1.ClusterRole{}

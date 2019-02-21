@@ -18,7 +18,7 @@ const (
 	controllerName = "rbac-role-user-cluster-controller"
 )
 
-// Add creates a new cluster role generator controller that is responsible for creating ClusteRole for cluster resources
+// Add creates a new Cluster Role generator controller that is responsible for creating Cluster Role for cluster resources
 // and for groups: `owners`, `editors` and `viewers``
 func Add(mgr manager.Manager) (string, error) {
 	reconcile := &reconcileClusterRole{Client: mgr.GetClient(), ctx: context.TODO()}
@@ -26,7 +26,7 @@ func Add(mgr manager.Manager) (string, error) {
 	return controllerName, add(mgr, reconcile)
 }
 
-// add adds a new Controller to mgr with r as the reconcile.reconciler
+// add adds a new Controller to mgr with r as the Reconcile.reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: r})
@@ -42,13 +42,13 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-// reconcileClusterRole reconciles cluster role objects
+// reconcileClusterRole reconciles Cluster Role objects
 type reconcileClusterRole struct {
 	ctx context.Context
 	client.Client
 }
 
-// Reconcile makes changes in response to cluster role related changes
+// Reconcile makes changes in response to Cluster Role related changes
 func (r *reconcileClusterRole) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	var err error
 
@@ -58,10 +58,7 @@ func (r *reconcileClusterRole) Reconcile(request reconcile.Request) (reconcile.R
 	if err != nil {
 		if errors.IsNotFound(err) {
 			err = rdr.Reconcile()
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-			return reconcile.Result{}, nil
+			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, err
 	}

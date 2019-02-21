@@ -35,7 +35,7 @@ func TestRolesMatches(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := rbacusercluster.RolesMatches(test.existingRole, test.requestedRole)
+			result := rbacusercluster.ClusterRoleMatches(test.existingRole, test.requestedRole)
 			if result != test.expected {
 				t.Fatalf("role comparison failed expected %v got %v", test.expected, result)
 			}
@@ -68,7 +68,7 @@ func TestRoleBindingsMatches(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := rbacusercluster.ClusterRoleBindingsMatches(test.existingRoleBinding, test.requestedRoleBiding)
+			result := rbacusercluster.ClusterRoleBindingMatches(test.existingRoleBinding, test.requestedRoleBiding)
 			if result != test.expected {
 				t.Fatalf("role binding comparison failed expected %v got %v", test.expected, result)
 			}

@@ -20,19 +20,18 @@ const (
 	debugLevel = 4
 )
 
-// reconciler creates and deletes Kubernetes resources to achieve the desired state of an RBAC Definition
+// reconciler creates and updates ClusterRoles to achieve the desired state
 type reconciler struct {
 	ctx    context.Context
 	client controllerclient.Client
 }
 
-// Reconcile creates, updates, or deletes Kubernetes resources to match
-//   the desired state defined in an RBAC Definition
+// Reconcile creates and updates ClusterRoles to achieve the desired state
 func (r *reconciler) Reconcile() error {
 
 	for _, groupName := range rbac.AllGroupsPrefixes {
 
-		err := r.ensureRBACRole(groupName)
+		err := r.ensureRBACClusterRole(groupName)
 		if err != nil {
 			return err
 		}
@@ -41,7 +40,7 @@ func (r *reconciler) Reconcile() error {
 	return nil
 }
 
-func (r *reconciler) ensureRBACRole(groupName string) error {
+func (r *reconciler) ensureRBACClusterRole(groupName string) error {
 	defaultClusterRole, err := rbacusercluster.GenerateRBACClusterRole(groupName)
 	if err != nil {
 		return fmt.Errorf("failed to generate the RBAC Cluster Role: %v", err)
@@ -50,7 +49,7 @@ func (r *reconciler) ensureRBACRole(groupName string) error {
 	clusterRole := &rbacv1.ClusterRole{}
 	err = r.client.Get(r.ctx, controllerclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: defaultClusterRole.Name}, clusterRole)
 	if err != nil {
-		// create clusterRole if not exist
+		// create Cluster Role if not exist
 		if errors.IsNotFound(err) {
 			glog.V(debugLevel).Infof("creating a new Cluster Role %s", defaultClusterRole.Name)
 			if err := r.client.Create(r.ctx, defaultClusterRole); err != nil {
@@ -60,9 +59,9 @@ func (r *reconciler) ensureRBACRole(groupName string) error {
 		}
 		return err
 	}
-	// compare rules with default. If don't match update for default
-	if !rbacusercluster.RolesMatches(clusterRole, defaultClusterRole) {
-		glog.V(debugLevel).Infof("updating the clusterRole %s because it doesn't match the expected one", defaultClusterRole.Name)
+	// compare Cluster Role with default. If don't match update for default
+	if !rbacusercluster.ClusterRoleMatches(clusterRole, defaultClusterRole) {
+		glog.V(debugLevel).Infof("updating the Cluster Role %s because it doesn't match the expected one", defaultClusterRole.Name)
 		if err := r.client.Update(r.ctx, defaultClusterRole); err != nil {
 			return fmt.Errorf("failed to update the RBAC Cluster Role: %v", err)
 		}
