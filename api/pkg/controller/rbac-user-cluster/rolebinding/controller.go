@@ -50,7 +50,7 @@ type reconcileClusterRoleBinding struct {
 // reconcile makes changes in response to Cluster Role Binding related changes
 func (r *reconcileClusterRoleBinding) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	rdr := reconciler{client: r.Client, ctx: r.ctx}
-	r.Get(r.ctx, request.NamespacedName, &rbacv1.ClusterRoleBinding{})
+	_ = r.Get(r.ctx, request.NamespacedName, &rbacv1.ClusterRoleBinding{})
 	err := rdr.Reconcile()
 
 	return reconcile.Result{}, err

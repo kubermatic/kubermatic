@@ -90,11 +90,11 @@ func TestReconcileUpdateRole(t *testing.T) {
 	}{
 		{
 			name:     "scenario 1: test reconcile method when cluster role binding kubermatic:editors was changed",
-			roleName: "kubermatic:editors",
+			roleName: "system:kubermatic:editors",
 
 			updatedRoleBinding: &rbacv1.ClusterRoleBinding{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "kubermatic:editors",
+					Name: "system:kubermatic:editors",
 				},
 				RoleRef: rbacv1.RoleRef{
 					APIGroup: "test",
@@ -106,10 +106,10 @@ func TestReconcileUpdateRole(t *testing.T) {
 		},
 		{
 			name:     "scenario 2: test reconcile method when cluster role kubermatic:viewers was changed",
-			roleName: "kubermatic:viewers",
+			roleName: "system:kubermatic:viewers",
 			updatedRoleBinding: &rbacv1.ClusterRoleBinding{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "kubermatic:viewers",
+					Name: "system:kubermatic:viewers",
 				},
 				RoleRef: rbacv1.RoleRef{
 					APIGroup: "test",

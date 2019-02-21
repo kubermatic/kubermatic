@@ -49,7 +49,7 @@ type reconcileClusterRole struct {
 // Reconcile makes changes in response to Cluster Role related changes
 func (r *reconcileClusterRole) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	rdr := reconciler{client: r.Client, ctx: r.ctx}
-	r.Get(r.ctx, request.NamespacedName, &rbacv1.ClusterRole{})
+	_ = r.Get(r.ctx, request.NamespacedName, &rbacv1.ClusterRole{})
 	err := rdr.Reconcile()
 
 	return reconcile.Result{}, err
