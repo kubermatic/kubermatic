@@ -20,6 +20,7 @@ import (
 
 	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 type controllerRunOptions struct {
@@ -199,4 +200,5 @@ type controllerContext struct {
 	kubeInformerFactory       kubeinformers.SharedInformerFactory
 	dynamicClient             ctrlruntimeclient.Client
 	dynamicCache              ctrlruntimecache.Cache
+	mgr                       manager.Manager
 }

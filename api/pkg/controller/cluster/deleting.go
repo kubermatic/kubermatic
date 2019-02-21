@@ -8,9 +8,6 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/azure"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
 
 	"github.com/kubermatic/machine-controller/pkg/node/eviction"
 
@@ -40,26 +37,12 @@ func (cc *Controller) cleanupCluster(c *kubermaticv1.Cluster) (*kubermaticv1.Clu
 	}
 
 	// If we still have nodes, we must not cleanup other infrastructure at the cloud provider
-	if kuberneteshelper.HasFinalizer(c, nodeDeletionFinalizer) {
+	if kuberneteshelper.HasFinalizer(c, NodeDeletionFinalizer) {
 		return c, nil
 	}
 
 	// Delete Volumes and LB's inside the user cluster
-	if c, err = cc.cleanupInClusterResources(c); err != nil {
-		return c, err
-	}
-
-	// Do not run the cloud provider cleanup until we finished the PV & LB cleanup.
-	// Otherwise we risk deleting those resources as well
-	if kuberneteshelper.HasFinalizer(c, InClusterLBCleanupFinalizer) || kuberneteshelper.HasFinalizer(c, InClusterPVCleanupFinalizer) {
-		return c, nil
-	}
-
-	if c, err = cc.deletingCloudProviderCleanup(c); err != nil {
-		return c, err
-	}
-
-	return c, nil
+	return cc.cleanupInClusterResources(c)
 }
 
 func (cc *Controller) cleanupInClusterResources(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
@@ -168,43 +151,14 @@ func (cc *Controller) cleanupInClusterResources(c *kubermaticv1.Cluster) (*kuber
 		return c, nil
 	}
 
-	c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
-		// In case we should keep the LB's, we must remove some cloud provider specific finalizers.
-		// Otherwise we might break the LB
-		if !shouldDeleteLBs {
-			// OpenStack
-			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, openstack.OldNetworkCleanupFinalizer)
-			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, openstack.NetworkCleanupFinalizer)
-			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, openstack.SubnetCleanupFinalizer)
-			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, openstack.RouterCleanupFinalizer)
-			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, openstack.RouterSubnetLinkCleanupFinalizer)
-
-			// Azure
-			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, azure.FinalizerRouteTable)
-			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, azure.FinalizerSubnet)
-			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, azure.FinalizerSubnet)
-			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, azure.FinalizerVNet)
-			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, azure.FinalizerResourceGroup)
-			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, azure.FinalizerAvailabilitySet)
-		}
-
-		if !shouldDeletePVs {
-			// Azure
-			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, azure.FinalizerResourceGroup)
-		}
-
+	return cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
 		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, InClusterLBCleanupFinalizer)
 		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, InClusterPVCleanupFinalizer)
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	return c, nil
 }
 
 func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	if !kuberneteshelper.HasFinalizer(c, nodeDeletionFinalizer) {
+	if !kuberneteshelper.HasFinalizer(c, NodeDeletionFinalizer) {
 		return c, nil
 	}
 
@@ -285,24 +239,11 @@ func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv
 	}
 
 	c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
-		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, nodeDeletionFinalizer)
+		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, NodeDeletionFinalizer)
 	})
 	if err != nil {
 		return nil, err
 	}
-	return c, nil
-}
-
-func (cc *Controller) deletingCloudProviderCleanup(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	_, cp, err := provider.ClusterCloudProvider(cc.cps, c)
-	if err != nil {
-		return nil, err
-	}
-
-	if c, err = cp.CleanUpCloudProvider(c, cc.updateCluster); err != nil {
-		return nil, err
-	}
-
 	return c, nil
 }
 

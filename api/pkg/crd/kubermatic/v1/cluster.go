@@ -145,6 +145,27 @@ type ClusterAddress struct {
 	IP string `json:"ip"`
 }
 
+type ClusterConditionType string
+
+type ClusterCondition struct {
+	// Type of cluster condition.
+	Type ClusterConditionType `json:"type"`
+	// Status of the condition, one of True, False, Unknown.
+	Status corev1.ConditionStatus `json:"status"`
+	// Last time we got an update on a given condition.
+	// +optional
+	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime,omitempty"`
+	// Last time the condition transit from one status to another.
+	// +optional
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+	// (brief) reason for the condition's last transition.
+	// +optional
+	Reason string `json:"reason,omitempty"`
+	// Human readable message indicating details about last transition.
+	// +optional
+	Message string `json:"message,omitempty"`
+}
+
 // ClusterStatus stores status information about a cluster.
 type ClusterStatus struct {
 	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`
@@ -175,6 +196,10 @@ type ClusterStatus struct {
 	ErrorReason *ClusterStatusError `json:"errorReason,omitempty"`
 	// ErrorMessage contains a defauled error message in case the controller encountered an error. Will be reset if the error was resolved
 	ErrorMessage *string `json:"errorMessage,omitempty"`
+
+	// Conditions contains conditions the cluster is in, its primary use case is status signaling between controllers or between
+	// controllers and the API
+	Conditions []ClusterCondition `json:"conditions,omitempty"`
 }
 
 type ClusterStatusError string
@@ -309,12 +334,13 @@ type OpenstackCloudSpec struct {
 
 // ClusterHealthStatus stores health information of the components of a cluster.
 type ClusterHealthStatus struct {
-	Apiserver         bool `json:"apiserver"`
-	Scheduler         bool `json:"scheduler"`
-	Controller        bool `json:"controller"`
-	MachineController bool `json:"machineController"`
-	Etcd              bool `json:"etcd"`
-	OpenVPN           bool `json:"openvpn"`
+	Apiserver                   bool `json:"apiserver"`
+	Scheduler                   bool `json:"scheduler"`
+	Controller                  bool `json:"controller"`
+	MachineController           bool `json:"machineController"`
+	Etcd                        bool `json:"etcd"`
+	OpenVPN                     bool `json:"openvpn"`
+	CloudProviderInfrastructure bool `json:"cloudProviderInfrastructure"`
 }
 
 // AllHealthy returns if all components are healthy
@@ -323,7 +349,8 @@ func (h *ClusterHealthStatus) AllHealthy() bool {
 		h.MachineController &&
 		h.Controller &&
 		h.Apiserver &&
-		h.Scheduler
+		h.Scheduler &&
+		h.CloudProviderInfrastructure
 }
 
 // MarshalJSON adds base64 json encoding to the Bytes type.

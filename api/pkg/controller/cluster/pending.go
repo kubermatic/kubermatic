@@ -7,7 +7,6 @@ import (
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
 const (
@@ -18,11 +17,6 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 	var err error
 	// Create the namespace
 	if cluster, err = cc.ensureNamespaceExists(cluster); err != nil {
-		return nil, err
-	}
-
-	// Setup required infrastructure at cloud provider
-	if err = cc.ensureCloudProviderIsInitialized(cluster); err != nil {
 		return nil, err
 	}
 
@@ -60,9 +54,9 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 
 		// Only add the node deletion finalizer when the cluster is actually running
 		// Otherwise we fail to delete the nodes and are stuck in a loop
-		if !kuberneteshelper.HasFinalizer(cluster, nodeDeletionFinalizer) {
+		if !kuberneteshelper.HasFinalizer(cluster, NodeDeletionFinalizer) {
 			cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
-				c.Finalizers = append(c.Finalizers, nodeDeletionFinalizer)
+				c.Finalizers = append(c.Finalizers, NodeDeletionFinalizer)
 			})
 			if err != nil {
 				return nil, err
@@ -96,22 +90,6 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 	}
 
 	return cluster, nil
-}
-
-func (cc *Controller) ensureCloudProviderIsInitialized(cluster *kubermaticv1.Cluster) error {
-	_, prov, err := provider.ClusterCloudProvider(cc.cps, cluster)
-	if err != nil {
-		return err
-	}
-	if prov == nil {
-		return fmt.Errorf("no valid provider specified")
-	}
-
-	if _, err = prov.InitializeCloudProvider(cluster, cc.updateCluster); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // ensureClusterNetworkDefaults will apply default cluster network configuration

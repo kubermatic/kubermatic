@@ -1326,11 +1326,12 @@ func genTestCluster(isControllerReady bool) *kubermaticv1.Cluster {
 	cluster.Status = kubermaticv1.ClusterStatus{
 		Health: kubermaticv1.ClusterHealth{
 			ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
-				Apiserver:         true,
-				Scheduler:         true,
-				Controller:        isControllerReady,
-				MachineController: true,
-				Etcd:              true,
+				Apiserver:                   true,
+				Scheduler:                   true,
+				Controller:                  isControllerReady,
+				MachineController:           true,
+				Etcd:                        true,
+				CloudProviderInfrastructure: true,
 			},
 		},
 	}
