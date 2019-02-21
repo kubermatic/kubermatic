@@ -13,7 +13,8 @@ import (
 func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (*kubermaticv1.ClusterHealth, error) {
 	ns := kubernetes.NamespaceName(c.Name)
 	health := kubermaticv1.ClusterHealth{
-		ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{},
+		ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
+			CloudProviderInfrastructure: c.Status.Health.CloudProviderInfrastructure},
 	}
 
 	type depInfo struct {
