@@ -89,7 +89,7 @@ func (a *amazonEc2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 			return fmt.Errorf("could not find datacenter %s", spec.DatacenterName)
 		}
 
-		_, err = getDefaultSubnet(client, vpc, dc.Spec.AWS.Region+dc.Spec.AWS.ZoneCharacter)
+		_, err = getDefaultSubnet(client, *vpc.VpcId, dc.Spec.AWS.Region+dc.Spec.AWS.ZoneCharacter)
 		if err != nil {
 			return fmt.Errorf("failed to get default subnet: %v", err)
 		}
@@ -123,10 +123,10 @@ func getDefaultVpc(client *ec2.EC2) (*ec2.Vpc, error) {
 	return vpcOut.Vpcs[0], nil
 }
 
-func getRouteTable(vpc *ec2.Vpc, client *ec2.EC2) (*ec2.RouteTable, error) {
+func getRouteTable(vpcID string, client *ec2.EC2) (*ec2.RouteTable, error) {
 	out, err := client.DescribeRouteTables(&ec2.DescribeRouteTablesInput{
 		Filters: []*ec2.Filter{
-			{Name: aws.String("vpc-id"), Values: []*string{vpc.VpcId}},
+			{Name: aws.String("vpc-id"), Values: []*string{&vpcID}},
 			{Name: aws.String("association.main"), Values: []*string{aws.String("true")}},
 		},
 	})
@@ -135,7 +135,7 @@ func getRouteTable(vpc *ec2.Vpc, client *ec2.EC2) (*ec2.RouteTable, error) {
 	}
 
 	if len(out.RouteTables) != 1 {
-		return nil, errors.New("could not get default RouteTable for vpc-id:%s. Make sure you have exact one main RouteTable for the vpc")
+		return nil, fmt.Errorf("could not get default RouteTable for vpc-id: %s. Make sure you have exact one main RouteTable for the vpc", vpcID)
 	}
 
 	return out.RouteTables[0], nil
@@ -217,8 +217,8 @@ func removeTags(cluster *kubermaticv1.Cluster, client *ec2.EC2) error {
 	return err
 }
 
-func getDefaultSubnet(client *ec2.EC2, vpc *ec2.Vpc, zone string) (*ec2.Subnet, error) {
-	glog.V(4).Infof("Looking for the default subnet for VPC %s...", *vpc.VpcId)
+func getDefaultSubnet(client *ec2.EC2, vpcID, zone string) (*ec2.Subnet, error) {
+	glog.V(4).Infof("Looking for the default subnet for VPC %s...", vpcID)
 	sOut, err := client.DescribeSubnets(&ec2.DescribeSubnetsInput{
 		Filters: []*ec2.Filter{
 			{
@@ -228,7 +228,7 @@ func getDefaultSubnet(client *ec2.EC2, vpc *ec2.Vpc, zone string) (*ec2.Subnet, 
 				Name: aws.String("defaultForAz"), Values: []*string{aws.String("true")},
 			},
 			{
-				Name: aws.String("vpc-id"), Values: []*string{vpc.VpcId},
+				Name: aws.String("vpc-id"), Values: []*string{&vpcID},
 			},
 		},
 	})
@@ -292,10 +292,10 @@ func getSecurityGroupByID(client *ec2.EC2, vpc *ec2.Vpc, id string) (*ec2.Securi
 // Create security group ("sg") with name `name` in `vpc`. The name
 // in a sg must be unique within the vpc (no pre-existing sg with
 // that name is allowed).
-func createSecurityGroup(client *ec2.EC2, vpc *ec2.Vpc, name string) (string, error) {
+func createSecurityGroup(client *ec2.EC2, vpcID, name string) (string, error) {
 	newSecurityGroupName := fmt.Sprintf("kubermatic-%s", name)
 	csgOut, err := client.CreateSecurityGroup(&ec2.CreateSecurityGroupInput{
-		VpcId:       vpc.VpcId,
+		VpcId:       &vpcID,
 		GroupName:   aws.String(newSecurityGroupName),
 		Description: aws.String(fmt.Sprintf("Security group for kubermatic cluster-%s", name)),
 	})
@@ -452,11 +452,6 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 	}
 
-	vpc, err := getVPCByID(cluster.Spec.Cloud.AWS.VPCID, client)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get vpc: %v", err)
-	}
-
 	dc, ok := a.dcs[cluster.Spec.Cloud.DatacenterName]
 	if !ok {
 		return nil, fmt.Errorf("could not find datacenter %s", cluster.Spec.Cloud.DatacenterName)
@@ -464,10 +459,10 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 
 	if cluster.Spec.Cloud.AWS.SubnetID == "" {
 		glog.V(4).Infof("No Subnet specified on cluster %s", cluster.Name)
-		subnet, err := getDefaultSubnet(client, vpc, dc.Spec.AWS.Region+dc.Spec.AWS.ZoneCharacter)
+		subnet, err := getDefaultSubnet(client, cluster.Spec.Cloud.AWS.VPCID, dc.Spec.AWS.Region+dc.Spec.AWS.ZoneCharacter)
 		if err != nil {
 
-			return nil, fmt.Errorf("failed to get default subnet for vpc %s: %v", *vpc.VpcId, err)
+			return nil, fmt.Errorf("failed to get default subnet for vpc %s: %v", cluster.Spec.Cloud.AWS.VPCID, err)
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.AWS.SubnetID = *subnet.SubnetId
@@ -491,7 +486,7 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	}
 
 	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
-		securityGroupID, err := createSecurityGroup(client, vpc, cluster.Name)
+		securityGroupID, err := createSecurityGroup(client, cluster.Spec.Cloud.AWS.VPCID, cluster.Name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add security group for cluster %s: %v", cluster.Name, err)
 		}
@@ -528,7 +523,7 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	}
 
 	if cluster.Spec.Cloud.AWS.RouteTableID == "" {
-		routeTable, err := getRouteTable(vpc, client)
+		routeTable, err := getRouteTable(cluster.Spec.Cloud.AWS.VPCID, client)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get default RouteTable: %v", err)
 		}
@@ -540,10 +535,10 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 	}
 
-	if err := tagResources(cluster, client); err != nil {
-		return nil, err
-	}
 	if !kuberneteshelper.HasFinalizer(cluster, tagCleanupFinalizer) {
+		if err := tagResources(cluster, client); err != nil {
+			return nil, err
+		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Finalizers = append(cluster.Finalizers, tagCleanupFinalizer)
 		})
