@@ -90,7 +90,8 @@ func generateRBACClusterRoleBinding(resourceName string) (*rbacv1.ClusterRoleBin
 }
 
 func getGroupName(resourceName string) (string, error) {
-	match, err := regexp.MatchString("system:kubermatic:[owners|editors|vievers]", resourceName)
+	groupNamePattern := fmt.Sprintf("system:%s:[%s|%s|%s]", rbac.RBACResourcesNamePrefix, rbac.OwnerGroupNamePrefix, rbac.EditorGroupNamePrefix, rbac.ViewerGroupNamePrefix)
+	match, err := regexp.MatchString(groupNamePattern, resourceName)
 	if err != nil {
 		return "", err
 	}

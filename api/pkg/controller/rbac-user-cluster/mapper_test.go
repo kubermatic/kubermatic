@@ -20,19 +20,19 @@ func TestGenerateVerbsForGroup(t *testing.T) {
 		// test for any named resource
 		{
 			name:          "scenario 1: generate verbs for owners",
-			resurceName:   fmt.Sprintf("system:kubermatic:%s", rbac.OwnerGroupNamePrefix),
+			resurceName:   genResourceName(rbac.OwnerGroupNamePrefix),
 			expectedVerbs: []string{"create", "list", "get", "update", "delete"},
 			expectError:   false,
 		},
 		{
 			name:          "scenario 2: generate verbs for editors",
-			resurceName:   fmt.Sprintf("system:kubermatic:%s", rbac.EditorGroupNamePrefix),
+			resurceName:   genResourceName(rbac.EditorGroupNamePrefix),
 			expectedVerbs: []string{"create", "list", "get", "update", "delete"},
 			expectError:   false,
 		},
 		{
 			name:          "scenario 3: generate verbs for viewers",
-			resurceName:   fmt.Sprintf("system:kubermatic:%s", rbac.ViewerGroupNamePrefix),
+			resurceName:   genResourceName(rbac.ViewerGroupNamePrefix),
 			expectedVerbs: []string{"list", "get"},
 			expectError:   false,
 		},
@@ -65,4 +65,64 @@ func TestGenerateVerbsForGroup(t *testing.T) {
 
 		})
 	}
+}
+
+func TestGroupName(t *testing.T) {
+
+	tests := []struct {
+		name              string
+		resurceName       string
+		expectError       bool
+		expectedGroupName string
+	}{
+		{
+			name:              "scenario 1: get group name for owners",
+			resurceName:       genResourceName(rbac.OwnerGroupNamePrefix),
+			expectError:       false,
+			expectedGroupName: rbac.OwnerGroupNamePrefix,
+		},
+		{
+			name:              "scenario 2: get group name for viewers",
+			resurceName:       genResourceName(rbac.ViewerGroupNamePrefix),
+			expectError:       false,
+			expectedGroupName: rbac.ViewerGroupNamePrefix,
+		},
+		{
+			name:              "scenario 3: get group name for editors",
+			resurceName:       genResourceName(rbac.EditorGroupNamePrefix),
+			expectError:       false,
+			expectedGroupName: rbac.EditorGroupNamePrefix,
+		},
+		{
+			name:        "scenario 4: incorrect resource name",
+			resurceName: "test:test:test",
+			expectError: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			groupName, err := getGroupName(test.resurceName)
+
+			if test.expectError {
+				if err == nil {
+					t.Fatalf("expected error")
+				}
+
+			} else {
+				if err != nil {
+					t.Fatalf("getting group name from resource name failed with error: %v", err)
+				}
+
+				if groupName != test.expectedGroupName {
+					t.Fatalf("incorrect group name was returned, got: %v, want: %v", groupName, test.expectedGroupName)
+				}
+			}
+
+		})
+	}
+}
+
+func genResourceName(groupName string) string {
+	return fmt.Sprintf("system:%s:%s", rbac.RBACResourcesNamePrefix, groupName)
 }
