@@ -19,7 +19,7 @@ data:
 
     @INCLUDE input-kubernetes.conf
     @INCLUDE filter-kubernetes.conf
-    @INCLUDE output-elasticsearch.conf
+    @INCLUDE outputs.conf
 
   input-kubernetes.conf: |
     [INPUT]
@@ -40,14 +40,11 @@ data:
         Merge_Log           On
         K8S-Logging.Parser  On
 
-  output-elasticsearch.conf: |
+  outputs.conf: |
+{{- range .Values.logging.fluentbit.configuration.outputs }}
     [OUTPUT]
-        Name            es
-        Match           *
-        Host            ${FLUENT_ELASTICSEARCH_HOST}
-        Port            ${FLUENT_ELASTICSEARCH_PORT}
-        Logstash_Format On
-        Retry_Limit     False
+{{ . | indent 6 }}
+{{- end }}
 
   parsers.conf: |
     [PARSER]
