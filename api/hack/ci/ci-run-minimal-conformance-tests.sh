@@ -33,8 +33,17 @@ function retry {
 }
 
 function cleanup {
+  testRC=$?
+
   echodate "Starting cleanup"
   set +e
+
+  # Try being a little helpful
+  if [[ ${testRC} -ne 0 ]]; then
+    echodate "tests failed, describing cluster"
+    kubectl describe cluster -l worker-name=$BUILD_ID
+  fi
+
   # Delete addons from all clusters that have our worker-name label
   kubectl get cluster -l worker-name=$BUILD_ID \
      -o go-template='{{range .items}}{{.metadata.name}}{{end}}' \
@@ -91,9 +100,9 @@ echodate "Building binaries"
 time make -C api build
 cd api
 echodate "Building quay image"
-docker build -t quay.io/kubermatic/api:${GIT_HEAD_HASH} .
+time docker build -t quay.io/kubermatic/api:${GIT_HEAD_HASH} .
 echodate "Pushing quay image"
-retry 5 docker push quay.io/kubermatic/api:${GIT_HEAD_HASH}
+time retry 5 docker push quay.io/kubermatic/api:${GIT_HEAD_HASH}
 echodate "Finished building and pushing quay image"
 cd -
 
