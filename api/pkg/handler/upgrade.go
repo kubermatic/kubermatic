@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Masterminds/semver"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -139,6 +140,15 @@ func upgradeClusterNodeDeployments(projectProvider provider.ProjectProvider) end
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
+		requestedKubeletVersion, err := semver.NewVersion(req.Body.Version.String())
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		if err = ensureVersionCompatible(cluster.Spec.Version.Version, requestedKubeletVersion); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
 		machineClient, err := clusterProvider.GetAdminMachineClientForCustomerCluster(cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -159,7 +169,8 @@ func upgradeClusterNodeDeployments(projectProvider provider.ProjectProvider) end
 		}
 
 		if len(updateErrors) > 0 {
-			return nil, fmt.Errorf("failed to update some node deployments: %+q", updateErrors)
+			return nil, errors.NewWithDetails(http.StatusInternalServerError, "failed to update some node deployments",
+				fmt.Sprintf("%+q", updateErrors))
 		}
 
 		return nil, nil

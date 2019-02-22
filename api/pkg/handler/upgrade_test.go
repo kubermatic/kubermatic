@@ -14,6 +14,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
+	k8csemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
@@ -127,6 +128,10 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 
 func TestUpgradeClusterNodeDeployments(t *testing.T) {
 	t.Parallel()
+
+	cluster := test.GenDefaultCluster()
+	cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.12.1")
+
 	testcases := []struct {
 		Name                       string
 		Body                       string
@@ -141,12 +146,25 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
 		ExistingKubermaticObjs     []runtime.Object
 	}{
-		// scenario 1
 		{
 			Name:                   "scenario 1: upgrade node deployments",
 			Body:                   `{"version":"1.11.1"}`,
 			HTTPStatus:             http.StatusOK,
 			ExpectedVersion:        "1.11.1",
+			ClusterIDToSync:        cluster.Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(cluster),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
+				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil),
+			},
+		},
+		{
+			Name:                   "scenario 2: fail to upgrade node deployments",
+			Body:                   `{"version":"1.11.1"}`,
+			HTTPStatus:             http.StatusBadRequest,
+			ExpectedVersion:        "v9.9.9",
 			ClusterIDToSync:        test.GenDefaultCluster().Name,
 			ProjectIDToSync:        test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
@@ -188,7 +206,7 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 
 			for _, md := range mds.Items {
 				if md.Spec.Template.Spec.Versions.Kubelet != tc.ExpectedVersion {
-					t.Fatalf("version does not match expected one: %v", err)
+					t.Fatalf("version %s does not match expected version %s: %v", md.Spec.Template.Spec.Versions.Kubelet, tc.ExpectedVersion, err)
 				}
 			}
 		})
