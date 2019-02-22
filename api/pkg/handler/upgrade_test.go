@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/Masterminds/semver"
@@ -13,11 +14,14 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
+	k8csemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 func TestGetClusterUpgradesV1(t *testing.T) {
@@ -117,6 +121,97 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 
 			if diff := deep.Equal(gotUpdates, testStruct.wantUpdates); diff != nil {
 				t.Fatalf("got different upgrade response than expected. Diff: %v", diff)
+			}
+		})
+	}
+}
+
+func TestUpgradeClusterNodeDeployments(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		Name                       string
+		Body                       string
+		HTTPStatus                 int
+		ExpectedVersion            string
+		ProjectIDToSync            string
+		ClusterIDToSync            string
+		ExistingProject            *kubermaticv1.Project
+		ExistingKubermaticUser     *kubermaticv1.User
+		ExistingAPIUser            *apiv1.User
+		ExistingCluster            *kubermaticv1.Cluster
+		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
+		ExistingKubermaticObjs     []runtime.Object
+	}{
+		{
+			Name:            "scenario 1: upgrade node deployments",
+			Body:            `{"version":"1.11.1"}`,
+			HTTPStatus:      http.StatusOK,
+			ExpectedVersion: "1.11.1",
+			ClusterIDToSync: test.GenDefaultCluster().Name,
+			ProjectIDToSync: test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(func() *kubermaticv1.Cluster {
+				cluster := test.GenDefaultCluster()
+				cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.12.1")
+				return cluster
+			}()),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
+				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil),
+			},
+		},
+		{
+			Name:            "scenario 2: fail to upgrade node deployments",
+			Body:            `{"version":"1.11.1"}`,
+			HTTPStatus:      http.StatusBadRequest,
+			ExpectedVersion: "v9.9.9",
+			ClusterIDToSync: test.GenDefaultCluster().Name,
+			ProjectIDToSync: test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(func() *kubermaticv1.Cluster {
+				cluster := test.GenDefaultCluster()
+				cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.1.1")
+				return cluster
+			}()), ExistingAPIUser: test.GenDefaultAPIUser(),
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
+				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil),
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodes/upgrades",
+				tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(tc.Body))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			machineObj := []runtime.Object{}
+			kubernetesObj := []runtime.Object{}
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			for _, existingMachineDeployment := range tc.ExistingMachineDeployments {
+				machineObj = append(machineObj, existingMachineDeployment)
+			}
+			ep, cs, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			mds, err := cs.FakeMachineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).List(metav1.ListOptions{})
+			if err != nil {
+				t.Fatalf("failed to list machine deployments: %v", err)
+			}
+
+			for _, md := range mds.Items {
+				if md.Spec.Template.Spec.Versions.Kubelet != tc.ExpectedVersion {
+					t.Fatalf("version %s does not match expected version %s: %v", md.Spec.Template.Spec.Versions.Kubelet, tc.ExpectedVersion, err)
+				}
 			}
 		})
 	}
