@@ -105,14 +105,14 @@ admissionConfig:
         kind: ImagePolicyConfig
 aggregatorConfig:
   proxyClientInfo:
-    certFile: {{ .CertsBasePath }}/aggregator-front-proxy.crt
-    keyFile: {{ .CertsBasePath }}/aggregator-front-proxy.key
+    certFile: /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.crt
+    keyFile: /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.key
 apiLevels:
 - v1
 apiVersion: v1
 authConfig:
   requestHeader:
-    clientCA: {{ .CertsBasePath }}/front-proxy-ca.crt
+    clientCA: /etc/kubernetes/pki/front-proxy/client/ca.crt
     clientCommonNames:
     - aggregator-front-proxy
     extraHeaderPrefixes:
@@ -126,8 +126,8 @@ controllerConfig:
     lockName: openshift-master-controllers
   serviceServingCert:
     signer:
-      certFile: {{ .CertsBasePath }}/service-signer.crt
-      keyFile: {{ .CertsBasePath }}/service-signer.key
+     # certFile: {{ .CertsBasePath }}/service-signer.crt
+     # keyFile: {{ .CertsBasePath }}/service-signer.key
 controllers: '*'
 corsAllowedOrigins:
 ## TODO: Fix up
@@ -148,9 +148,9 @@ dnsConfig:
   bindAddress: 0.0.0.0:8053
   bindNetwork: tcp4
 etcdClientInfo:
-  ca: {{ .CertsBasePath }}/master.etcd-ca.crt
-  certFile: {{ .CertsBasePath }}/master.etcd-client.crt
-  keyFile: {{ .CertsBasePath }}/master.etcd-client.key
+  ca: /etc/etcd/pki/client/ca.crt
+  certFile: /etc/etcd/pki/client/apiserver-etcd-client.crt
+  keyFile: /etc/etcd/pki/client/apiserver-etcd-client.key
   urls: {{ range .ETCDEndpoints }}
   - "{{ . }}"
 {{ end }}
@@ -166,9 +166,9 @@ imagePolicyConfig:
   internalRegistryHostname: docker-registry.default.svc:5000
 kind: MasterConfig
 kubeletClientInfo:
-  ca: {{ .CertsBasePath }}/ca-bundle.crt
-  certFile: {{ .CertsBasePath }}/master.kubelet-client.crt
-  keyFile: {{ .CertsBasePath }}/master.kubelet-client.key
+  ca: /etc/kubernetes/pki/ca/ca.crt
+  certFile: /etc/kubernetes/kubelet/kubelet-client.crt
+  keyFile: /etc/kubernetes/kubelet/kubelet-client.key
   port: 10250
 kubernetesMasterConfig:
   apiServerArguments:
@@ -178,9 +178,9 @@ kubernetesMasterConfig:
     - application/vnd.kubernetes.protobuf
   controllerArguments:
     cluster-signing-cert-file:
-    - /etc/origin/master/ca.crt
+    - /etc/kubernetes/pki/ca/ca.crt
     cluster-signing-key-file:
-    - /etc/origin/master/ca.key
+    - /etc/kubernetes/pki/ca/ca.key
     pv-recycler-pod-template-filepath-hostpath:
     - /etc/origin/master/recycler_pod.yaml
     pv-recycler-pod-template-filepath-nfs:
@@ -190,8 +190,8 @@ kubernetesMasterConfig:
   masterIP: ""
   podEvictionTimeout: null
   proxyClientInfo:
-    certFile: {{ .CertsBasePath }}/master.proxy-client.crt
-    keyFile: {{ .CertsBasePath }}/master.proxy-client.key
+    certFile: /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.crt
+    keyFile: /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.key
   schedulerArguments: null
   schedulerConfigFile: /etc/origin/master/scheduler.json
   servicesNodePortRange: ''
@@ -267,16 +267,17 @@ serviceAccountConfig:
   - default
   - builder
   - deployer
-  masterCA: {{ .CertsBasePath }}/ca-bundle.crt
-  privateKeyFile: {{ .CertsBasePath }}/serviceaccounts.private.key
-  publicKeyFiles:
-  - serviceaccounts.public.key
+  masterCA: /etc/kubernetes/pki/ca/ca.crt
+  privateKeyFile: /etc/kubernetes/service-account-key/sa.key
+  ## TODO: Put public key into secret
+  publicKeyFiles: []
+  #- serviceaccounts.public.key
 servingInfo:
   bindAddress: 0.0.0.0:8443
   bindNetwork: tcp4
-  certFile: master.server.crt
-  clientCA: {{ .CertsBasePath }}/ca.crt
-  keyFile: {{ .CertsBasePath }}/master.server.key
+  certFile: /etc/kubernetes/tls/apiserver-tls.crt
+  clientCA: /etc/kubernetes/pki/ca/ca.crt
+  keyFile: /etc/kubernetes/tls/apiserver-tls.key
   maxRequestsInFlight: 500
   requestTimeoutSeconds: 3600
 volumeConfig:

@@ -236,6 +236,10 @@ func getVolumeMounts() []corev1.VolumeMount {
 			MountPath: "/etc/kubernetes/pki/front-proxy/ca",
 			ReadOnly:  true,
 		},
+		{
+			Name:      openshiftControlPlaneConfigConfigMapName,
+			MountPath: "/etc/origin/master",
+		},
 	}
 
 	return volumesMounts
@@ -347,6 +351,14 @@ func getVolumes() []corev1.Volume {
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  resources.KubeletDnatControllerKubeconfigSecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: openshiftControlPlaneConfigConfigMapName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{Name: openshiftControlPlaneConfigConfigMapName},
 				},
 			},
 		},
