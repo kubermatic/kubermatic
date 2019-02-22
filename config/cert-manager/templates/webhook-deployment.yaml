@@ -18,7 +18,7 @@ spec:
           image: '{{ .Values.certManager.webhookImage.repository }}:{{ .Values.certManager.webhookImage.tag }}'
           imagePullPolicy: {{ .Values.certManager.webhookImage.pullPolicy }}
           args:
-          - --v=12
+          - --v=4
           - --secure-port=6443
           - --tls-cert-file=/certs/tls.crt
           - --tls-private-key-file=/certs/tls.key
