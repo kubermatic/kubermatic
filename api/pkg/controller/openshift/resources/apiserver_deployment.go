@@ -126,11 +126,6 @@ func APIDeploymentCreator(data *openshiftData) (string, resources.DeploymentCrea
 			return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
 		}
 
-		flags, err := getApiserverFlags(data, externalNodePort, etcdEndpoints)
-		if err != nil {
-			return nil, err
-		}
-
 		resourceRequirements := defaultResourceRequirements.DeepCopy()
 		if data.Cluster().Spec.ComponentsOverride.Apiserver.Resources != nil {
 			resourceRequirements = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources
@@ -141,11 +136,11 @@ func APIDeploymentCreator(data *openshiftData) (string, resources.DeploymentCrea
 			*dnatControllerSidecar,
 			{
 				Name:                     name,
-				Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
+				Image:                    data.ImageRegistry(resources.RegistryDocker) + "/openshift/origin-control-plane:v3.11",
 				ImagePullPolicy:          corev1.PullIfNotPresent,
-				Command:                  []string{"/hyperkube", "apiserver"},
+				Command:                  []string{"/usr/bin/openshift", "start", "master", "api"},
 				Env:                      getEnvVars(data.Cluster()),
-				Args:                     flags,
+				Args:                     []string{"--config=/etc/origin/master/master-config.yaml"},
 				TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 				TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 				Resources:                *resourceRequirements,

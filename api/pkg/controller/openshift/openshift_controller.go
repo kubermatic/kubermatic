@@ -13,6 +13,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -96,6 +97,10 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
+	if err := r.deployments(ctx, cluster); err != nil {
+		return nil, fmt.Errorf("failed to reconcile Deployments: %v", err)
+	}
+
 	return nil, nil
 }
 
@@ -114,13 +119,17 @@ func (r *Reconciler) deployments(ctx context.Context, cluster *kubermaticv1.Clus
 		if err := r.Create(ctx, deployment); err != nil {
 			return fmt.Errorf("failed to create initial deployment %s: %v", deploymentName, err)
 		}
+		return nil
 	}
-	deployment, err := deploymentCreator(deployment)
+	generatedDeployment, err := deploymentCreator(deployment)
 	if err != nil {
 		return fmt.Errorf("failed to get deployment %s: %v", deploymentName, err)
 	}
-	if err := r.Create(ctx, deployment); err != nil {
-		return fmt.Errorf("failed to create deployment %s: %v", deploymentName, err)
+	if equal := apiequality.Semantic.DeepEqual(generatedDeployment, deployment); equal {
+		return nil
+	}
+	if err := r.Update(ctx, generatedDeployment); err != nil {
+		return fmt.Errorf("failed to update deployment %s: %v", deploymentName, err)
 	}
 	return nil
 }
