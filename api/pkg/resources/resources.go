@@ -488,8 +488,13 @@ func InClusterApiserverIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
 	return &ip, nil
 }
 
+type userClusterDNSPolicyAndConfigData interface {
+	Cluster() *kubermaticv1.Cluster
+	ClusterIPByServiceName(name string) (string, error)
+}
+
 // UserClusterDNSPolicyAndConfig returns a DNSPolicy and DNSConfig to configure Pods to use user cluster DNS
-func UserClusterDNSPolicyAndConfig(d DeploymentDataProvider) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
+func UserClusterDNSPolicyAndConfig(d userClusterDNSPolicyAndConfigData) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
 	// DNSNone indicates that the pod should use empty DNS settings. DNS
 	// parameters such as nameservers and search paths should be defined via
 	// DNSConfig.

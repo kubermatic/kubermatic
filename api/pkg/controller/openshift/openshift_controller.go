@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	clustercontroller "github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
@@ -18,7 +17,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,7 +40,7 @@ type Reconciler struct {
 	recorder record.EventRecorder
 }
 
-func Add(mgr manager.Manager, numWorkers int, cloudProvider map[string]provider.CloudProvider, clusterPredicates predicate.Predicate) error {
+func Add(mgr manager.Manager, numWorkers int, clusterPredicates predicate.Predicate) error {
 	reconciler := &Reconciler{Client: mgr.GetClient(),
 		scheme:   mgr.GetScheme(),
 		recorder: mgr.GetRecorder(ControllerName)}
@@ -89,7 +87,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	if cluster.Status.NamespaceName == "" {
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
-	ns := corev1.Namespace{}
+	ns := &corev1.Namespace{}
 	if err := r.Get(ctx, types.NamespacedName{Name: cluster.Status.NamespaceName}, ns); err != nil {
 		if !kerrors.IsNotFound(err) {
 			return nil, err
@@ -104,15 +102,19 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return nil, nil
 }
 
+func (r *Reconciler) configmaps(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	return nil
+}
+
 func (r *Reconciler) deployments(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	deploymentName, deploymentCreator := openshiftresources.APIDeploymentCreator(
-		&openshiftData{cluster: cluster, client: r.GetClient()})
+	deploymentName, deploymentCreator := openshiftresources.APIDeploymentCreator(ctx,
+		&openshiftData{cluster: cluster, client: r.Client})
 	deployment := &appsv1.Deployment{}
 	if err := r.Client.Get(ctx, nn(cluster.Status.NamespaceName, deploymentName), deployment); err != nil {
 		if !kerrors.IsNotFound(err) {
 			return fmt.Errorf("failed to get deployment %s: %v", deploymentName, err)
 		}
-		deployment, err := deploymentCreator(&appsv1.Deployment)
+		deployment, err := deploymentCreator(&appsv1.Deployment{})
 		if err != nil {
 			return fmt.Errorf("failed to get initial deployment %s from creator: %v", deploymentName, err)
 		}

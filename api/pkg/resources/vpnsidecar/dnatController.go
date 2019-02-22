@@ -20,8 +20,13 @@ var (
 	}
 )
 
+type dnatControllerData interface {
+	ImageRegistry(string) string
+	NodeAccessNetwork() string
+}
+
 // DnatControllerContainer returns a sidecar container for running the dnat controller.
-func DnatControllerContainer(data resources.DeploymentDataProvider, name string) (*corev1.Container, error) {
+func DnatControllerContainer(data dnatControllerData, name string) (*corev1.Container, error) {
 	return &corev1.Container{
 		Name:            name,
 		Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/vpnsidecar-dnat-controller:v0.2.0",

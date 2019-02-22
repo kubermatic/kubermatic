@@ -15,6 +15,7 @@ import (
 	cloudcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/monitoring"
+	openshiftcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/openshift"
 	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/update"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
@@ -33,13 +34,14 @@ import (
 // each entry holds the name of the controller and the corresponding
 // start function that will essentially run the controller
 var allControllers = map[string]controllerCreator{
-	"Cluster":                      createClusterController,
-	"Update":                       createUpdateController,
-	"Addon":                        createAddonController,
-	"AddonInstaller":               createAddonInstallerController,
-	"Backup":                       createBackupController,
-	"Monitoring":                   createMonitoringController,
-	cloudcontroller.ControllerName: createCloudController,
+	"Cluster":                          createClusterController,
+	"Update":                           createUpdateController,
+	"Addon":                            createAddonController,
+	"AddonInstaller":                   createAddonInstallerController,
+	"Backup":                           createBackupController,
+	"Monitoring":                       createMonitoringController,
+	cloudcontroller.ControllerName:     createCloudController,
+	openshiftcontroller.ControllerName: createOpenshiftController,
 }
 
 type controllerCreator func(*controllerContext) (runner, error)
@@ -107,6 +109,14 @@ func createCloudController(ctrlCtx *controllerContext) (runner, error) {
 	predicates := workerlabel.Predicates(ctrlCtx.runOptions.workerName)
 	if err := cloudcontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, cloudProvider, predicates); err != nil {
 		return nil, fmt.Errorf("failed to add cloud controller to mgr: %v", err)
+	}
+	return nil, nil
+}
+
+func createOpenshiftController(ctrlCtx *controllerContext) (runner, error) {
+	predicates := workerlabel.Predicates(ctrlCtx.runOptions.workerName)
+	if err := openshiftcontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, predicates); err != nil {
+		return nil, fmt.Errorf("failed to add openshift controller to mgr: %v", err)
 	}
 	return nil, nil
 }

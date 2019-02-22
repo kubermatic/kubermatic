@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -31,18 +32,17 @@ var (
 )
 
 const (
-	name           = "apiserver"
-	deploymentName = "apiserver-openshift"
+	apiserverDeploymentName = "apiserver-openshift"
 
 	defaultNodePortRange = "30000-32767"
 )
 
 // DeploymentCreator returns the function to create and update the API server deployment
-func APIDeploymentCreator(data *openshiftData) (string, resources.DeploymentCreator) {
-	return deploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+func APIDeploymentCreator(ctx context.Context, data openshiftData) (string, resources.DeploymentCreator) {
+	return apiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 
-		dep.Name = deploymentName
-		dep.Labels = resources.BaseAppLabel(name, nil)
+		dep.Name = apiserverDeploymentName
+		dep.Labels = resources.BaseAppLabel(apiserverDeploymentName, nil)
 
 		dep.Spec.Replicas = resources.Int32(1)
 		if data.Cluster().Spec.ComponentsOverride.Apiserver.Replicas != nil {
@@ -50,7 +50,7 @@ func APIDeploymentCreator(data *openshiftData) (string, resources.DeploymentCrea
 		}
 
 		dep.Spec.Selector = &metav1.LabelSelector{
-			MatchLabels: resources.BaseAppLabel(name, nil),
+			MatchLabels: resources.BaseAppLabel(apiserverDeploymentName, nil),
 		}
 		dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 		dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
@@ -67,12 +67,12 @@ func APIDeploymentCreator(data *openshiftData) (string, resources.DeploymentCrea
 
 		volumes := getVolumes()
 
-		podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
+		podLabels, err := data.GetPodTemplateLabels(ctx, apiserverDeploymentName, volumes, nil)
 		if err != nil {
 			return nil, err
 		}
 
-		externalNodePort, err := data.GetApiserverExternalNodePort()
+		externalNodePort, err := data.GetApiserverExternalNodePort(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -135,7 +135,7 @@ func APIDeploymentCreator(data *openshiftData) (string, resources.DeploymentCrea
 			*openvpnSidecar,
 			*dnatControllerSidecar,
 			{
-				Name:                     name,
+				Name:                     apiserverDeploymentName,
 				Image:                    data.ImageRegistry(resources.RegistryDocker) + "/openshift/origin-control-plane:v3.11",
 				ImagePullPolicy:          corev1.PullIfNotPresent,
 				Command:                  []string{"/usr/bin/openshift", "start", "master", "api"},
@@ -177,89 +177,17 @@ func APIDeploymentCreator(data *openshiftData) (string, resources.DeploymentCrea
 					SuccessThreshold:    1,
 					TimeoutSeconds:      15,
 				},
-				VolumeMounts: getVolumeMounts(enableDexCA),
+				VolumeMounts: getVolumeMounts(),
 			},
 		}
 
-		dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(name, data.Cluster().Name, nil))
+		dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(apiserverDeploymentName, data.Cluster().Name, nil))
 
 		return dep, nil
 	}
 }
 
-func getApiserverFlags(data resources.DeploymentDataProvider, externalNodePort int32, etcdEndpoints []string) ([]string, error) {
-	nodePortRange := data.NodePortRange()
-	if nodePortRange == "" {
-		nodePortRange = defaultNodePortRange
-	}
-
-	admissionControlFlagName, admissionControlFlagValue := getAdmissionControlFlags(data)
-
-	flags := []string{
-		"--advertise-address", data.Cluster().Address.IP,
-		"--secure-port", fmt.Sprintf("%d", externalNodePort),
-		"--kubernetes-service-node-port", fmt.Sprintf("%d", externalNodePort),
-		"--etcd-servers", strings.Join(etcdEndpoints, ","),
-		"--etcd-cafile", "/etc/etcd/pki/client/ca.crt",
-		"--etcd-certfile", "/etc/etcd/pki/client/apiserver-etcd-client.crt",
-		"--etcd-keyfile", "/etc/etcd/pki/client/apiserver-etcd-client.key",
-		"--storage-backend", "etcd3",
-		admissionControlFlagName, admissionControlFlagValue,
-		"--authorization-mode", "Node,RBAC",
-		"--external-hostname", data.Cluster().Address.ExternalName,
-		"--token-auth-file", "/etc/kubernetes/tokens/tokens.csv",
-		"--enable-bootstrap-token-auth", "true",
-		"--service-account-key-file", "/etc/kubernetes/service-account-key/sa.key",
-		// There are efforts upstream adding support for multiple cidr's. Until that has landed, we'll take the first entry
-		"--service-cluster-ip-range", data.Cluster().Spec.ClusterNetwork.Services.CIDRBlocks[0],
-		"--service-node-port-range", nodePortRange,
-		"--allow-privileged",
-		"--audit-log-maxage", "30",
-		"--audit-log-maxbackup", "3",
-		"--audit-log-maxsize", "100",
-		"--audit-log-path", "/var/log/audit.log",
-		"--tls-cert-file", "/etc/kubernetes/tls/apiserver-tls.crt",
-		"--tls-private-key-file", "/etc/kubernetes/tls/apiserver-tls.key",
-		"--proxy-client-cert-file", "/etc/kubernetes/pki/front-proxy/client/" + resources.ApiserverProxyClientCertificateCertSecretKey,
-		"--proxy-client-key-file", "/etc/kubernetes/pki/front-proxy/client/" + resources.ApiserverProxyClientCertificateKeySecretKey,
-		"--client-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
-		"--kubelet-client-certificate", "/etc/kubernetes/kubelet/kubelet-client.crt",
-		"--kubelet-client-key", "/etc/kubernetes/kubelet/kubelet-client.key",
-		"--requestheader-client-ca-file", "/etc/kubernetes/pki/front-proxy/ca/ca.crt",
-		"--requestheader-allowed-names", "apiserver-aggregator",
-		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
-		"--requestheader-group-headers", "X-Remote-Group",
-		"--requestheader-username-headers", "X-Remote-User",
-		"--kubelet-preferred-address-types", "ExternalIP,InternalIP",
-	}
-	var featureGates []string
-
-	return flags, nil
-}
-
-func getAdmissionControlFlags(data resources.DeploymentDataProvider) (string, string) {
-	// We use these as default in case semver parsing fails
-	admissionControlFlagValue := "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction"
-	admissionControlFlagName := "--admission-control"
-
-	// Enable {Mutating,Validating}AdmissionWebhook for 1.9+
-	if data.Cluster().Spec.Version.Semver().Minor() >= 9 {
-		admissionControlFlagValue += ",Initializers,MutatingAdmissionWebhook,ValidatingAdmissionWebhook"
-	}
-
-	// Use the newer "--enable-admission-plugins" which doesn't care about order for 1.10+
-	if data.Cluster().Spec.Version.Semver().Minor() >= 10 {
-		admissionControlFlagName = "--enable-admission-plugins"
-	}
-
-	// Order of these flags matter pre 1.10 and MutatingAdmissionWebhook may manipulate the object, so "ResourceQuota
-	// must come last
-	admissionControlFlagValue += ",ResourceQuota"
-
-	return admissionControlFlagName, admissionControlFlagValue
-}
-
-func getVolumeMounts(enableDexCA bool) []corev1.VolumeMount {
+func getVolumeMounts() []corev1.VolumeMount {
 	volumesMounts := []corev1.VolumeMount{
 		{
 			MountPath: "/etc/kubernetes/tls",
@@ -306,14 +234,6 @@ func getVolumeMounts(enableDexCA bool) []corev1.VolumeMount {
 			MountPath: "/etc/kubernetes/pki/front-proxy/ca",
 			ReadOnly:  true,
 		},
-	}
-
-	if enableDexCA {
-		volumesMounts = append(volumesMounts, corev1.VolumeMount{
-			Name:      resources.DexCASecretName,
-			MountPath: "/etc/kubernetes/dex/ca",
-			ReadOnly:  true,
-		})
 	}
 
 	return volumesMounts
