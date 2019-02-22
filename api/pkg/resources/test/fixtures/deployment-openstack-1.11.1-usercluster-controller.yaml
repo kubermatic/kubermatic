@@ -31,6 +31,9 @@ spec:
         - /etc/kubernetes/kubeconfig/kubeconfig
         - -internal-address
         - 0.0.0.0:8085
+        - -logtostderr
+        - -v
+        - "4"
         command:
         - /usr/local/bin/user-cluster-controller-manager
         image: 'quay.io/kubermatic/api:'
