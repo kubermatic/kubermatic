@@ -129,9 +129,6 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 func TestUpgradeClusterNodeDeployments(t *testing.T) {
 	t.Parallel()
 
-	cluster := test.GenDefaultCluster()
-	cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.12.1")
-
 	testcases := []struct {
 		Name                       string
 		Body                       string
@@ -147,28 +144,35 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 		ExistingKubermaticObjs     []runtime.Object
 	}{
 		{
-			Name:                   "scenario 1: upgrade node deployments",
-			Body:                   `{"version":"1.11.1"}`,
-			HTTPStatus:             http.StatusOK,
-			ExpectedVersion:        "1.11.1",
-			ClusterIDToSync:        cluster.Name,
-			ProjectIDToSync:        test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(cluster),
-			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			Name:            "scenario 1: upgrade node deployments",
+			Body:            `{"version":"1.11.1"}`,
+			HTTPStatus:      http.StatusOK,
+			ExpectedVersion: "1.11.1",
+			ClusterIDToSync: test.GenDefaultCluster().Name,
+			ProjectIDToSync: test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(func() *kubermaticv1.Cluster {
+				cluster := test.GenDefaultCluster()
+				cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.12.1")
+				return cluster
+			}()),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
 			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
 				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
 				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil),
 			},
 		},
 		{
-			Name:                   "scenario 2: fail to upgrade node deployments",
-			Body:                   `{"version":"1.11.1"}`,
-			HTTPStatus:             http.StatusBadRequest,
-			ExpectedVersion:        "v9.9.9",
-			ClusterIDToSync:        test.GenDefaultCluster().Name,
-			ProjectIDToSync:        test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			Name:            "scenario 2: fail to upgrade node deployments",
+			Body:            `{"version":"1.11.1"}`,
+			HTTPStatus:      http.StatusBadRequest,
+			ExpectedVersion: "v9.9.9",
+			ClusterIDToSync: test.GenDefaultCluster().Name,
+			ProjectIDToSync: test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(func() *kubermaticv1.Cluster {
+				cluster := test.GenDefaultCluster()
+				cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.1.1")
+				return cluster
+			}()), ExistingAPIUser: test.GenDefaultAPIUser(),
 			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
 				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
 				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil),
