@@ -85,6 +85,8 @@ func DeploymentCreator(data resources.DeploymentDataProvider) resources.Deployme
 				Args: []string{
 					"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 					"-internal-address", "0.0.0.0:8085",
+					"-logtostderr",
+					"-v", "4",
 				},
 				TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 				TerminationMessagePolicy: corev1.TerminationMessageReadFile,
