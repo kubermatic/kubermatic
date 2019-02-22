@@ -14,14 +14,14 @@ const (
 	// OwnerGroupNamePrefix represents owners group prefix
 	OwnerGroupNamePrefix = "owners"
 
-	// editorGroupNamePrefix represents editors group prefix
-	editorGroupNamePrefix = "editors"
+	// EditorGroupNamePrefix represents editors group prefix
+	EditorGroupNamePrefix = "editors"
 
-	// viewerGroupNamePrefix represents viewers group prefix
-	viewerGroupNamePrefix = "viewers"
+	// ViewerGroupNamePrefix represents viewers group prefix
+	ViewerGroupNamePrefix = "viewers"
 
-	// rbacResourcesNamePrefix represents kubermatic group prefix
-	rbacResourcesNamePrefix = "kubermatic"
+	// RBACResourcesNamePrefix represents kubermatic group prefix
+	RBACResourcesNamePrefix = "kubermatic"
 )
 
 // AllGroupsPrefixes holds a list of groups with prefixes that we will generate RBAC Roles/Binding for.
@@ -31,8 +31,8 @@ const (
 // the actual names of groups are different see generateActualGroupNameFor function
 var AllGroupsPrefixes = []string{
 	OwnerGroupNamePrefix,
-	editorGroupNamePrefix,
-	viewerGroupNamePrefix,
+	EditorGroupNamePrefix,
+	ViewerGroupNamePrefix,
 }
 
 // GenerateActualGroupNameFor generates a group name for the given project and group prefix.
@@ -50,12 +50,12 @@ func ExtractGroupPrefix(groupName string) string {
 }
 
 func generateRBACRoleNameForNamedResource(kind, resourceName, groupName string) string {
-	return fmt.Sprintf("%s:%s-%s:%s", rbacResourcesNamePrefix, strings.ToLower(kind), resourceName, groupName)
+	return fmt.Sprintf("%s:%s-%s:%s", RBACResourcesNamePrefix, strings.ToLower(kind), resourceName, groupName)
 }
 
 func generateRBACRoleNameForResources(resourceName, groupName string) string {
 	groupPrefix := ExtractGroupPrefix(groupName)
-	return fmt.Sprintf("%s:%s:%s", rbacResourcesNamePrefix, resourceName, groupPrefix)
+	return fmt.Sprintf("%s:%s:%s", RBACResourcesNamePrefix, resourceName, groupPrefix)
 }
 
 // generateClusterRBACRoleNamedResource generates ClusterRole for a named resource.
@@ -177,16 +177,16 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 	//
 	// editors of a project
 	// special case - editors are not allowed to delete a project
-	if strings.HasPrefix(groupName, editorGroupNamePrefix) && resourceKind == kubermaticv1.ProjectKindName {
+	if strings.HasPrefix(groupName, EditorGroupNamePrefix) && resourceKind == kubermaticv1.ProjectKindName {
 		return []string{"get", "update"}, nil
 	}
 	// special case - editors are not allowed to interact with members of a project (UserProjectBinding)
-	if strings.HasPrefix(groupName, editorGroupNamePrefix) && resourceKind == kubermaticv1.UserProjectBindingKind {
+	if strings.HasPrefix(groupName, EditorGroupNamePrefix) && resourceKind == kubermaticv1.UserProjectBindingKind {
 		return []string{}, nil
 	}
 
 	// editors of a named resource
-	if strings.HasPrefix(groupName, editorGroupNamePrefix) {
+	if strings.HasPrefix(groupName, EditorGroupNamePrefix) {
 		return []string{"get", "update", "delete"}, nil
 	}
 
@@ -194,11 +194,11 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 	//
 	// viewers of a named resource
 	// special case - viewers are not allowed to interact with members of a project (UserProjectBinding)
-	if strings.HasPrefix(groupName, viewerGroupNamePrefix) && resourceKind == kubermaticv1.UserProjectBindingKind {
+	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) && resourceKind == kubermaticv1.UserProjectBindingKind {
 		return []string{}, nil
 
 	}
-	if strings.HasPrefix(groupName, viewerGroupNamePrefix) {
+	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) {
 		return []string{"get"}, nil
 	}
 
@@ -220,14 +220,14 @@ func generateVerbsForResource(groupName, resourceKind string) ([]string, error) 
 	// verbs for owners and editors
 	//
 	// owners and editors can create resources
-	if strings.HasPrefix(groupName, OwnerGroupNamePrefix) || strings.HasPrefix(groupName, editorGroupNamePrefix) {
+	if strings.HasPrefix(groupName, OwnerGroupNamePrefix) || strings.HasPrefix(groupName, EditorGroupNamePrefix) {
 		return []string{"create"}, nil
 	}
 
 	// verbs for readers
 	//
 	// viewers cannot create resources
-	if strings.HasPrefix(groupName, viewerGroupNamePrefix) {
+	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) {
 		return []string{}, nil
 	}
 

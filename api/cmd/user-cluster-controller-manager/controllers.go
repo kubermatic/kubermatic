@@ -4,6 +4,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac-user-cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -35,7 +36,7 @@ func newMetrics() *managerMetrics {
 // registerControllers adds all Controllers to the Manager
 func registerControllers(m manager.Manager) error {
 	metrics := newMetrics()
-	addToManagerFuncs := []func(manager.Manager) (string, error){usercluster.Add}
+	addToManagerFuncs := []func(manager.Manager) (string, error){usercluster.Add, rbacusercluster.Add}
 	for _, f := range addToManagerFuncs {
 		name, err := f(m)
 		if err != nil {
