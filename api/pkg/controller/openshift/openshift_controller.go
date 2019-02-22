@@ -95,43 +95,82 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
-	if err := r.deployments(ctx, cluster); err != nil {
+	osData := &openshiftData{cluster: cluster, client: r.Client}
+
+	if err := r.deployments(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Deployments: %v", err)
+	}
+
+	if err := r.configMaps(ctx, osData); err != nil {
+		return nil, fmt.Errorf("failed to reconcile ConfigMaps: %v", err)
 	}
 
 	return nil, nil
 }
 
-func (r *Reconciler) configmaps(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) getAllConfigmapCreators() []openshiftresources.NamedConfigMapCreator {
+	return []openshiftresources.NamedConfigMapCreator{openshiftresources.OpenshiftControlPlaneConfigMapCreator}
+}
+
+func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) error {
+	for _, namedConfigmapCreator := range r.getAllConfigmapCreators() {
+		configMapName, configMapCreator := namedConfigmapCreator(ctx, osData)
+		configMap := &corev1.ConfigMap{}
+		if err := r.Client.Get(ctx, nn(osData.Cluster().Status.NamespaceName, configMapName), configMap); err != nil {
+			if !kerrors.IsNotFound(err) {
+				return fmt.Errorf("failed to get configMap %s: %v", configMapName, err)
+			}
+			configMap, err := configMapCreator(&corev1.ConfigMap{})
+			if err != nil {
+				return fmt.Errorf("failed to get initial configMap %s from creator: %v", configMapName, err)
+			}
+			if err := r.Create(ctx, configMap); err != nil {
+				return fmt.Errorf("failed to create initial configmap %s: %v", configMapName, err)
+			}
+			continue
+		}
+		generatedConfigMap, err := configMapCreator(configMap)
+		if err != nil {
+			return fmt.Errorf("failed to get configMap %s: %v", configMapName, err)
+		}
+		if err := r.Update(ctx, generatedConfigMap); err != nil {
+			return fmt.Errorf("failed to update configMap %s: %v", configMapName, err)
+		}
+	}
 	return nil
 }
 
-func (r *Reconciler) deployments(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	deploymentName, deploymentCreator := openshiftresources.APIDeploymentCreator(ctx,
-		&openshiftData{cluster: cluster, client: r.Client})
-	deployment := &appsv1.Deployment{}
-	if err := r.Client.Get(ctx, nn(cluster.Status.NamespaceName, deploymentName), deployment); err != nil {
-		if !kerrors.IsNotFound(err) {
+func (r *Reconciler) getAllDeploymentCreators() []openshiftresources.NamedDeploymentCreator {
+	return []openshiftresources.NamedDeploymentCreator{openshiftresources.APIDeploymentCreator}
+}
+
+func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) error {
+	for _, namedDeploymentCreator := range r.getAllDeploymentCreators() {
+		deploymentName, deploymentCreator := namedDeploymentCreator(ctx, osData)
+		deployment := &appsv1.Deployment{}
+		if err := r.Client.Get(ctx, nn(osData.Cluster().Status.NamespaceName, deploymentName), deployment); err != nil {
+			if !kerrors.IsNotFound(err) {
+				return fmt.Errorf("failed to get deployment %s: %v", deploymentName, err)
+			}
+			deployment, err := deploymentCreator(&appsv1.Deployment{})
+			if err != nil {
+				return fmt.Errorf("failed to get initial deployment %s from creator: %v", deploymentName, err)
+			}
+			if err := r.Create(ctx, deployment); err != nil {
+				return fmt.Errorf("failed to create initial deployment %s: %v", deploymentName, err)
+			}
+			continue
+		}
+		generatedDeployment, err := deploymentCreator(deployment)
+		if err != nil {
 			return fmt.Errorf("failed to get deployment %s: %v", deploymentName, err)
 		}
-		deployment, err := deploymentCreator(&appsv1.Deployment{})
-		if err != nil {
-			return fmt.Errorf("failed to get initial deployment %s from creator: %v", deploymentName, err)
+		if equal := apiequality.Semantic.DeepEqual(generatedDeployment, deployment); equal {
+			continue
 		}
-		if err := r.Create(ctx, deployment); err != nil {
-			return fmt.Errorf("failed to create initial deployment %s: %v", deploymentName, err)
+		if err := r.Update(ctx, generatedDeployment); err != nil {
+			return fmt.Errorf("failed to update deployment %s: %v", deploymentName, err)
 		}
-		return nil
-	}
-	generatedDeployment, err := deploymentCreator(deployment)
-	if err != nil {
-		return fmt.Errorf("failed to get deployment %s: %v", deploymentName, err)
-	}
-	if equal := apiequality.Semantic.DeepEqual(generatedDeployment, deployment); equal {
-		return nil
-	}
-	if err := r.Update(ctx, generatedDeployment); err != nil {
-		return fmt.Errorf("failed to update deployment %s: %v", deploymentName, err)
 	}
 	return nil
 }

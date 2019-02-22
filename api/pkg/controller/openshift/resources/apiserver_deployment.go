@@ -37,6 +37,8 @@ const (
 	defaultNodePortRange = "30000-32767"
 )
 
+type NamedDeploymentCreator func(context.Context, openshiftData) (string, resources.DeploymentCreator)
+
 // DeploymentCreator returns the function to create and update the API server deployment
 func APIDeploymentCreator(ctx context.Context, data openshiftData) (string, resources.DeploymentCreator) {
 	return apiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {

@@ -21,6 +21,8 @@ const (
 	openshiftContolPlaneConfigKeyName        = "master-config.yaml"
 )
 
+type NamedConfigMapCreator func(context.Context, openshiftData) (string, resources.ConfigMapCreator)
+
 func OpenshiftControlPlaneConfigMapCreator(ctx context.Context,
 	data openshiftData) (string, resources.ConfigMapCreator) {
 	return openshiftControlPlaneConfigConfigMapName,
