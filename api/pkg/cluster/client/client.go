@@ -22,11 +22,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
-// New returns a new instance of the client connection provider
-// useExternalAddress describes whether we are going to access the user cluster from outside
-// of the seed cluster
-func New(secretLister corev1lister.SecretLister, useExternalAddress bool) *Provider {
-	return &Provider{secretLister: secretLister, useExternalAddress: useExternalAddress}
+// NewInternal returns a new instance of the client connection provider that
+// only works from within the seed cluster but has the advantage that it doesn't leave
+// the seed clusters network
+func NewInternal(secretLister corev1lister.SecretLister) *Provider {
+	return &Provider{secretLister: secretLister, useExternalAddress: false}
+}
+
+// NewExternal returns a new instance of the client connection provider that
+// that uses the external cluster address and hence works from everywhere.
+// Use NewInternal if possible
+func NewExternal(secretLister corev1lister.SecretLister) *Provider {
+	return &Provider{secretLister: secretLister, useExternalAddress: true}
 }
 
 // Provider offers functions to interact with a user cluster
