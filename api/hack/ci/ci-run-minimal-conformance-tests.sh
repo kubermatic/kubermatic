@@ -41,7 +41,8 @@ function cleanup {
   # Try being a little helpful
   if [[ ${testRC} -ne 0 ]]; then
     echodate "tests failed, describing cluster"
-    kubectl describe cluster -l worker-name=$BUILD_ID
+    # TODO: If this runs on something other than AWS, we need to adjust the egrep expression
+    kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Secret Access Key|Access Key Id'
   fi
 
   # Delete addons from all clusters that have our worker-name label
