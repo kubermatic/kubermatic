@@ -1,10 +1,12 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/url"
+	"strings"
 
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
@@ -173,6 +175,13 @@ func (o controllerRunOptions) validate() error {
 	if err != nil {
 		return fmt.Errorf("failed to load datacenter yaml %q: %v", o.dcFile, err)
 	}
+
+	// Validate the metrics-server addon is disabled, otherwise it creates conflicts with the resources
+	// we create for the metrics-server running in the seed and will render the latter unusable
+	if strings.Contains(o.addonsList, "metrics-server") {
+		return errors.New("The metrics-server addon must be disabled, it is now deployed inside the seed cluster")
+	}
+
 	return nil
 }
 
