@@ -93,7 +93,7 @@ func DeploymentCreator(data resources.DeploymentDataProvider) resources.Deployme
 				Resources:                defaultResourceRequirements,
 				VolumeMounts: []corev1.VolumeMount{
 					{
-						Name:      resources.UserClusterControllerKubeconfigSecretName,
+						Name:      resources.InternalUserClusterAdminKubeconfigSecretName,
 						MountPath: "/etc/kubernetes/kubeconfig",
 						ReadOnly:  true,
 					},
@@ -108,10 +108,10 @@ func DeploymentCreator(data resources.DeploymentDataProvider) resources.Deployme
 func getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name: resources.UserClusterControllerKubeconfigSecretName,
+			Name: resources.InternalUserClusterAdminKubeconfigSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.UserClusterControllerKubeconfigSecretName,
+					SecretName: resources.InternalUserClusterAdminKubeconfigSecretName,
 					// We have to make the secret readable for all for now because owner/group cannot be changed.
 					// ( upstream proposal: https://github.com/kubernetes/kubernetes/pull/28733 )
 					DefaultMode: resources.Int32(resources.DefaultAllReadOnlyMode),

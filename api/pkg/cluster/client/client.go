@@ -50,9 +50,8 @@ func (p *Provider) GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
 		// Load the admin kubeconfig secret, it uses the external apiserver address
 		s, err = p.secretLister.Secrets(c.Status.NamespaceName).Get(resources.AdminKubeconfigSecretName)
 	} else {
-		// Load the UserClusterControllerKubeconfigSecret, it has cluster-admin privileges
-		// and uses the internal apiserver address
-		s, err = p.secretLister.Secrets(c.Status.NamespaceName).Get(resources.UserClusterControllerKubeconfigSecretName)
+		// Load the internal admin kubeconfig secret
+		s, err = p.secretLister.Secrets(c.Status.NamespaceName).Get(resources.InternalUserClusterAdminKubeconfigSecretName)
 	}
 	if err != nil {
 		return nil, err
