@@ -122,6 +122,13 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		return nil, fmt.Errorf("failed to load ImagePullSecret from %s: %v", ctrlCtx.runOptions.dockerPullConfigJSONFile, err)
 	}
 
+	var clientProvider *client.Provider
+	if ctrlCtx.runOptions.runOutsideOfSeed {
+		clientProvider = client.NewExternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
+	} else {
+		clientProvider = client.NewInternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
+	}
+
 	return cluster.NewController(
 		ctrlCtx.kubeClient,
 		ctrlCtx.dynamicClient,
@@ -129,7 +136,7 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.externalURL,
 		ctrlCtx.runOptions.dc,
 		dcs,
-		client.NewInternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
+		clientProvider,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodePortRange,
 		ctrlCtx.runOptions.nodeAccessNetwork,
@@ -205,10 +212,17 @@ func createMonitoringController(ctrlCtx *controllerContext) (runner, error) {
 		return nil, fmt.Errorf("failed to load ImagePullSecret from %s: %v", ctrlCtx.runOptions.dockerPullConfigJSONFile, err)
 	}
 
+	var clientProvider *client.Provider
+	if ctrlCtx.runOptions.runOutsideOfSeed {
+		clientProvider = client.NewExternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
+	} else {
+		clientProvider = client.NewInternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
+	}
+
 	return monitoring.New(
 		ctrlCtx.kubeClient,
 		ctrlCtx.dynamicClient,
-		client.NewInternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
+		clientProvider,
 
 		ctrlCtx.runOptions.dc,
 		dcs,
@@ -276,6 +290,12 @@ func createUpdateController(ctrlCtx *controllerContext) (runner, error) {
 }
 
 func createAddonController(ctrlCtx *controllerContext) (runner, error) {
+	var clientProvider *client.Provider
+	if ctrlCtx.runOptions.runOutsideOfSeed {
+		clientProvider = client.NewExternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
+	} else {
+		clientProvider = client.NewInternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
+	}
 	return addon.New(
 		addon.NewMetrics(),
 		map[string]interface{}{ // addonVariables
@@ -285,7 +305,7 @@ func createAddonController(ctrlCtx *controllerContext) (runner, error) {
 		},
 		ctrlCtx.runOptions.addonsPath,
 		ctrlCtx.runOptions.overwriteRegistry,
-		client.NewInternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister()),
+		clientProvider,
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Addons(),
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),

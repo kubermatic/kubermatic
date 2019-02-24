@@ -28,4 +28,5 @@ KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
   -oidc-ca-file=../../secrets/seed-clusters/dev.kubermatic.io/caBundle.pem \
   -monitoring-scrape-annotation-prefix='kubermatic.io' \
   -logtostderr=1 \
+  -run-outside-of-seed=true \
   -v=6 $@ 2>&1|tee /tmp/kubermatic-controller-manager.log
