@@ -83,6 +83,12 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, nil
 	}
 
+	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		return nil, nil
+	}
+
+	glog.V(4).Infof("Reconciling cluster %s", cluster.Name)
+
 	// Wait for namespace
 	if cluster.Status.NamespaceName == "" {
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
