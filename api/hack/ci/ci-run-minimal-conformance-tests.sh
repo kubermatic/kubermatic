@@ -65,7 +65,7 @@ function cleanup {
 
   # Delete the Helm installation
   kubectl delete clusterrolebinding -l prowjob=$BUILD_ID
-  kubectl delete namespace $NAMESPACE
+  kubectl delete namespace $NAMESPACE --wait=false
 
   # Upload the JUNIT files
   mv /reports/* ${ARTIFACTS}/
