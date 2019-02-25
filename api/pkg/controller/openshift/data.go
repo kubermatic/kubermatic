@@ -2,6 +2,8 @@ package openshift
 
 import (
 	"context"
+	"crypto/rsa"
+	"errors"
 	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -9,6 +11,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/client-go/util/cert/triple"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -17,6 +21,32 @@ import (
 type openshiftData struct {
 	cluster *kubermaticv1.Cluster
 	client  client.Client
+}
+
+func (od *openshiftData) GetRootCA(ctx context.Context) (*triple.KeyPair, error) {
+	secret := &corev1.Secret{}
+	if err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, kubernetesresources.CASecretName), secret); err != nil {
+		return nil, fmt.Errorf("failed to get cluster ca: %v", err)
+	}
+	certs, err := certutil.ParseCertsPEM(secret.Data[kubernetesresources.CACertSecretKey])
+	if err != nil {
+		return nil, fmt.Errorf("got an invalid cert from the CA secret: %v", err)
+	}
+
+	if len(certs) != 1 {
+		return nil, fmt.Errorf("did not find exactly one but %v certificates in the CA secret", len(certs))
+	}
+
+	key, err := certutil.ParsePrivateKeyPEM(secret.Data[kubernetesresources.CAKeySecretKey])
+	if err != nil {
+		return nil, fmt.Errorf("got an invalid private key from the CA secret: %v", err)
+	}
+
+	rsaKey, isRSAKey := key.(*rsa.PrivateKey)
+	if !isRSAKey {
+		return nil, errors.New("key is not a RSA key")
+	}
+	return &triple.KeyPair{Cert: certs[0], Key: rsaKey}, nil
 }
 
 // TODO: Implement option to override

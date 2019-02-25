@@ -7,6 +7,7 @@ import (
 
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	"github.com/golang/glog"
 
@@ -146,13 +147,14 @@ func setNamespace(object metav1.Object, namespace string) {
 	object.SetNamespace(namespace)
 }
 
-func (r *Reconciler) getAllSecretCreators() []openshiftresources.NamedSecretCreator {
-	return []openshiftresources.NamedSecretCreator{openshiftresources.ServiceSignerCA}
+func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshiftData) []resources.NamedSecretCreatorGetter {
+	return []resources.NamedSecretCreatorGetter{openshiftresources.ServiceSignerCA(),
+		openshiftresources.GetLoopbackKubeconfigCreator(ctx, osData)}
 }
 
 func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
-	for _, namedSecretCreator := range r.getAllSecretCreators() {
-		secretName, secretCreator := namedSecretCreator(ctx, osData)
+	for _, namedSecretCreator := range r.getAllSecretCreators(ctx, osData) {
+		secretName, secretCreator := namedSecretCreator()
 		secret := &corev1.Secret{}
 		if err := r.Client.Get(ctx, nn(osData.Cluster().Status.NamespaceName, secretName), secret); err != nil {
 			if !kerrors.IsNotFound(err) {

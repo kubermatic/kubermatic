@@ -33,6 +33,9 @@ var (
 
 const (
 	apiserverDeploymentName = "apiserver-openshift"
+	// TODO: Change this to `apiserver-openshift`. Requires to mange the service
+	// with this controller first as we need to adapt its label selector
+	legacyAppLabelValue = "apiserver"
 
 	defaultNodePortRange = "30000-32767"
 )
@@ -42,7 +45,7 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) (string, reso
 	return apiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 
 		dep.Name = apiserverDeploymentName
-		dep.Labels = resources.BaseAppLabel(apiserverDeploymentName, nil)
+		dep.Labels = resources.BaseAppLabel(legacyAppLabelValue, nil)
 
 		dep.Spec.Replicas = resources.Int32(1)
 		if data.Cluster().Spec.ComponentsOverride.Apiserver.Replicas != nil {
@@ -50,7 +53,7 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) (string, reso
 		}
 
 		dep.Spec.Selector = &metav1.LabelSelector{
-			MatchLabels: resources.BaseAppLabel(apiserverDeploymentName, nil),
+			MatchLabels: resources.BaseAppLabel(legacyAppLabelValue, nil),
 		}
 		dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 		dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
@@ -67,7 +70,7 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) (string, reso
 
 		volumes := getVolumes()
 
-		podLabels, err := data.GetPodTemplateLabels(ctx, apiserverDeploymentName, volumes, nil)
+		podLabels, err := data.GetPodTemplateLabels(ctx, legacyAppLabelValue, volumes, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -239,7 +242,7 @@ func getVolumeMounts() []corev1.VolumeMount {
 			MountPath: "/etc/origin/master",
 		},
 		{
-			Name:      resources.UserClusterControllerKubeconfigSecretName,
+			Name:      apiserverLoopbackKubeconfigName,
 			MountPath: "/etc/origin/master/loopback-kubeconfig",
 		},
 		{
@@ -369,10 +372,10 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.UserClusterControllerKubeconfigSecretName,
+			Name: apiserverLoopbackKubeconfigName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.UserClusterControllerKubeconfigSecretName,
+					SecretName:  apiserverLoopbackKubeconfigName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},

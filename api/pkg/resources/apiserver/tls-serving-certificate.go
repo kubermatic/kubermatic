@@ -57,6 +57,7 @@ func TLSServingCertificateCreator(data resources.SecretDataProvider) resources.N
 				IPs: []net.IP{
 					*externalIP,
 					*inClusterIP,
+					net.ParseIP("127.0.0.1"),
 				},
 			}
 

@@ -49,6 +49,7 @@ type openshiftConfigInput struct {
 	ClusterURL    string
 	DNSDomain     string
 	CertsBasePath string
+	ListenPort    string
 }
 
 func getMasterConfig(ctx context.Context, data openshiftData) (string, error) {
@@ -57,6 +58,10 @@ func getMasterConfig(ctx context.Context, data openshiftData) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to parse openshiftControlPlaneConfigTemplate: %v", err)
 	}
+	apiserverListenPort, err := data.GetApiserverExternalNodePort(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get nodePort for apiserver: %v", err)
+	}
 	templateInput := openshiftConfigInput{
 		ETCDEndpoints: etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName),
 		ServiceCIDR:   data.Cluster().Spec.ClusterNetwork.Services.CIDRBlocks[0],
@@ -64,6 +69,7 @@ func getMasterConfig(ctx context.Context, data openshiftData) (string, error) {
 		ClusterURL:    data.Cluster().Address.URL,
 		DNSDomain:     data.Cluster().Spec.ClusterNetwork.DNSDomain,
 		CertsBasePath: openshiftControlPlaneCertsBasePath,
+		ListenPort:    fmt.Sprintf("%d", apiserverListenPort),
 	}
 	if err := tmpl.Execute(&controlPlaneConfigBuffer, templateInput); err != nil {
 		return "", fmt.Errorf("failed to execute template: %v", err)
@@ -191,8 +197,9 @@ kubernetesMasterConfig:
     - /etc/origin/master/recycler_pod.yaml
     pv-recycler-pod-template-filepath-nfs:
     - /etc/origin/master/recycler_pod.yaml
-  masterCount: 1
-  //TODO: Should we put something here?
+  # For some reason this field results in an error: Encountered config error json: unknown field "masterCount" in object *config.MasterConfig, raw JSON:
+  #masterCount: 1
+  #TODO: Should we put something here?
   masterIP: ""
   podEvictionTimeout: null
   proxyClientInfo:
@@ -277,7 +284,7 @@ serviceAccountConfig:
   publicKeyFiles: []
   #- serviceaccounts.public.key
 servingInfo:
-  bindAddress: 0.0.0.0:8443
+  bindAddress: 0.0.0.0:{{ .ListenPort }}
   bindNetwork: tcp4
   certFile: /etc/kubernetes/tls/apiserver-tls.crt
   clientCA: /etc/kubernetes/pki/ca/ca.crt
