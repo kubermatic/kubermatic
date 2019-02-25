@@ -40,7 +40,7 @@ func main() {
 	// Create Context
 	done := ctx.Done()
 
-	mgr, err := manager.New(cfg, manager.Options{LeaderElection: true})
+	mgr, err := manager.New(cfg, manager.Options{LeaderElection: true, LeaderElectionNamespace: "default"})
 	if err != nil {
 		glog.Fatal(err)
 	}
