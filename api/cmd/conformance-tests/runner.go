@@ -369,6 +369,26 @@ func (r *testRunner) testCluster(
 		report.Tests++
 	}
 
+	// Do user cluster RBAC controller test - with retries
+	{
+		testStart := time.Now()
+		testCase := reporters.JUnitTestCase{
+			Name:      "Test user cluster RBAC controller",
+			ClassName: "Kubermatic custom tests",
+		}
+		err = retryNAttempts(maxTestAttempts, func(attempt int) error {
+			return r.testUserclusterControllerRBAC(log, cluster, clusterKubeClient, r.seedKubeClient)
+		})
+		if err != nil {
+			report.Errors++
+			testCase.FailureMessage = &reporters.JUnitFailureMessage{Message: err.Error()}
+			log.Errorf("Failed to verify that user cluster RBAC controller work: %v", err)
+		}
+		testCase.Time = time.Since(testStart).Seconds()
+		report.TestCases = append(report.TestCases, testCase)
+		report.Tests++
+	}
+
 	report.Time = time.Since(totalStart).Seconds()
 	b, err := xml.Marshal(report)
 	if err != nil {

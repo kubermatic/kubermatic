@@ -39,7 +39,7 @@ func (r *reconciler) Reconcile(resourceName string) error {
 }
 
 func (r *reconciler) ensureRBACClusterRole(resourceName string) error {
-	defaultClusterRole, err := generateRBACClusterRole(resourceName)
+	defaultClusterRole, err := GenerateRBACClusterRole(resourceName)
 	if err != nil {
 		return fmt.Errorf("failed to generate the RBAC Cluster Role: %v", err)
 	}
@@ -69,7 +69,7 @@ func (r *reconciler) ensureRBACClusterRole(resourceName string) error {
 }
 
 func (r *reconciler) ensureRBACClusterRoleBinding(resourceName string) error {
-	defaultClusterBinding, err := generateRBACClusterRoleBinding(resourceName)
+	defaultClusterBinding, err := GenerateRBACClusterRoleBinding(resourceName)
 	if err != nil {
 		return fmt.Errorf("failed to generate the RBAC Cluster Role Binding: %v", err)
 	}

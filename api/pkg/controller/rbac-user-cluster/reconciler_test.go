@@ -182,7 +182,7 @@ func TestReconcileUpdateRole(t *testing.T) {
 }
 
 func genTestClusterRole(t *testing.T, resourceName string) rbacv1.ClusterRole {
-	role, err := generateRBACClusterRole(resourceName)
+	role, err := GenerateRBACClusterRole(resourceName)
 	if err != nil {
 		t.Fatalf("can't generate role for %s, error: %v", resourceName, err)
 	}
@@ -190,7 +190,7 @@ func genTestClusterRole(t *testing.T, resourceName string) rbacv1.ClusterRole {
 }
 
 func genTestClusterRoleBinding(t *testing.T, resourceName string) rbacv1.ClusterRoleBinding {
-	roleBinding, err := generateRBACClusterRoleBinding(resourceName)
+	roleBinding, err := GenerateRBACClusterRoleBinding(resourceName)
 	if err != nil {
 		t.Fatalf("can't generate role for %s, error: %v", resourceName, err)
 	}
