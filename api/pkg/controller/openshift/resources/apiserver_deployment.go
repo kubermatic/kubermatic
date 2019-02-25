@@ -242,6 +242,10 @@ func getVolumeMounts() []corev1.VolumeMount {
 			Name:      resources.UserClusterControllerKubeconfigSecretName,
 			MountPath: "/etc/origin/master/loopback-kubeconfig",
 		},
+		{
+			Name:      ServiceSignerCASecretName,
+			MountPath: "/etc/origin/master/service-signer-ca",
+		},
 	}
 
 	return volumesMounts
@@ -369,6 +373,15 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  resources.UserClusterControllerKubeconfigSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: ServiceSignerCASecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  ServiceSignerCASecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},

@@ -128,6 +128,10 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	osData := &openshiftData{cluster: cluster, client: r.Client}
 
+	if err := r.secrets(ctx, osData); err != nil {
+		return nil, fmt.Errorf("failed to reconcile Secrets: %v", err)
+	}
+
 	if err := r.configMaps(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile ConfigMaps: %v", err)
 	}
@@ -158,6 +162,8 @@ func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
 			if err != nil {
 				return fmt.Errorf("failed to get initial secret %s from creator: %v", secretName, err)
 			}
+			// TODO: This is weird, the secret doesn't have a name, check how the cluster-controller wraps this
+			secret.Name = secretName
 			setNamespace(secret, osData.Cluster().Status.NamespaceName)
 			if err := r.Create(ctx, secret); err != nil {
 				return fmt.Errorf("failed to create initial secret %s: %v", secretName, err)
@@ -167,6 +173,8 @@ func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
 		if err != nil {
 			return fmt.Errorf("failed to get secret %s from creator: %v", secret.Name, err)
 		}
+		// TODO: This is weird, the secret doesn't have a name, check how the cluster-controller wraps this
+		generatedSecret.Name = secretName
 		setNamespace(generatedSecret, osData.Cluster().Status.NamespaceName)
 		if equal := apiequality.Semantic.DeepEqual(secret, generatedSecret); equal {
 			continue

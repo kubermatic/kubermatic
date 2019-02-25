@@ -128,8 +128,12 @@ controllerConfig:
     lockName: openshift-master-controllers
   serviceServingCert:
     signer:
-     # certFile: {{ .CertsBasePath }}/service-signer.crt
-     # keyFile: {{ .CertsBasePath }}/service-signer.key
+     # CA used for signing serving certs on demand for user workloads
+     # https://github.com/openshift/service-serving-cert-signer
+     # In theory this shouldn't be required, in practise the APIServer
+     # panics on startup if not passed
+     certFile: /etc/origin/master/service-signer-ca/ca.crt
+     keyFile: /etc/origin/master/service-signer-ca/ca.key
 controllers: '*'
 corsAllowedOrigins:
 ## TODO: Fix up
