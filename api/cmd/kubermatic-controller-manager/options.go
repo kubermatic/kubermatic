@@ -54,7 +54,6 @@ type controllerRunOptions struct {
 	inClusterPrometheusScrapingConfigsFile           string
 	monitoringScrapeAnnotationPrefix                 string
 	dockerPullConfigJSONFile                         string
-	runOutsideOfSeed                                 bool
 
 	// OIDC configuration
 	oidcCAFile         string
@@ -96,7 +95,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.inClusterPrometheusScrapingConfigsFile, "in-cluster-prometheus-scraping-configs-file", "", "The file containing the custom scraping configs for the prometheus running in the cluster-foo namespaces.")
 	flag.StringVar(&c.monitoringScrapeAnnotationPrefix, "monitoring-scrape-annotation-prefix", "monitoring.kubermatic.io", "The prefix for monitoring annotations in the user cluster. Default: monitoring.kubermatic.io -> monitoring.kubermatic.io/port, monitoring.kubermatic.io/path")
 	flag.StringVar(&rawFeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for various features.")
-	flag.BoolVar(&c.runOutsideOfSeed, "run-outside-of-seed", false, "Whether the controller runs outside of the seed cluster")
 	flag.StringVar(&c.oidcCAFile, "oidc-ca-file", "", "The path to the certificate for the CA that signed your identity provider’s web certificate.")
 	flag.StringVar(&c.oidcIssuerURL, "oidc-issuer-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.StringVar(&c.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")

@@ -123,7 +123,7 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 	}
 
 	var clientProvider *client.Provider
-	if ctrlCtx.runOptions.runOutsideOfSeed {
+	if ctrlCtx.runOptions.kubeconfig != "" {
 		clientProvider = client.NewExternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
 	} else {
 		clientProvider = client.NewInternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
@@ -213,7 +213,7 @@ func createMonitoringController(ctrlCtx *controllerContext) (runner, error) {
 	}
 
 	var clientProvider *client.Provider
-	if ctrlCtx.runOptions.runOutsideOfSeed {
+	if ctrlCtx.runOptions.kubeconfig != "" {
 		clientProvider = client.NewExternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
 	} else {
 		clientProvider = client.NewInternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
@@ -291,7 +291,7 @@ func createUpdateController(ctrlCtx *controllerContext) (runner, error) {
 
 func createAddonController(ctrlCtx *controllerContext) (runner, error) {
 	var clientProvider *client.Provider
-	if ctrlCtx.runOptions.runOutsideOfSeed {
+	if ctrlCtx.runOptions.kubeconfig != "" {
 		clientProvider = client.NewExternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
 	} else {
 		clientProvider = client.NewInternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
