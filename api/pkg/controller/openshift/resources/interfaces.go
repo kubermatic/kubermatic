@@ -28,8 +28,6 @@ type openshiftData interface {
 	GetClusterRef() metav1.OwnerReference
 }
 
-type SecretCreator = func(openshiftData, *corev1.Secret) (*corev1.Secret, error)
-
-type NamedSecretCreator func(context.Context, openshiftData) (string, SecretCreator)
+type NamedSecretCreator func(context.Context, openshiftData) (string, resources.SecretCreator)
 type NamedConfigMapCreator func(context.Context, openshiftData) (string, resources.ConfigMapCreator)
 type NamedDeploymentCreator func(context.Context, openshiftData) (string, resources.DeploymentCreator)

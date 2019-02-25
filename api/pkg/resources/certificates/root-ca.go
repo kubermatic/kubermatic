@@ -11,7 +11,7 @@ import (
 )
 
 // GetCACreator returns a function to create a secret containing a CA with the specified name
-func getCACreator(commonName string) resources.SecretCreator {
+func GetCACreator(commonName string) resources.SecretCreator {
 	return func(se *corev1.Secret) (*corev1.Secret, error) {
 		if se.Data == nil {
 			se.Data = map[string][]byte{}
@@ -36,13 +36,13 @@ func getCACreator(commonName string) resources.SecretCreator {
 // RootCACreator returns a function to create a secret with the root ca
 func RootCACreator(data resources.SecretDataProvider) resources.NamedSecretCreatorGetter {
 	return func() (string, resources.SecretCreator) {
-		return resources.CASecretName, getCACreator(fmt.Sprintf("root-ca.%s", data.Cluster().Address.ExternalName))
+		return resources.CASecretName, GetCACreator(fmt.Sprintf("root-ca.%s", data.Cluster().Address.ExternalName))
 	}
 }
 
 // FrontProxyCACreator returns a function to create a secret with front proxy ca
 func FrontProxyCACreator(data resources.SecretDataProvider) resources.NamedSecretCreatorGetter {
 	return func() (string, resources.SecretCreator) {
-		return resources.FrontProxyCASecretName, getCACreator("front-proxy-ca")
+		return resources.FrontProxyCASecretName, GetCACreator("front-proxy-ca")
 	}
 }

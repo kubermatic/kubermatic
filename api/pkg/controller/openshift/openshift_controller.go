@@ -118,8 +118,8 @@ func setNamespace(object metav1.Object, namespace string) {
 	object.SetNamespace(namespace)
 }
 
-func (r *Reconciler) getAllSecretCreators(osData *openshiftData) []openshiftresources.NamedSecretCreator {
-	return []openshiftresources.NamedSecretCreator{certificates.ServiceSignerCA}
+func (r *Reconciler) getAllSecretCreators() []openshiftresources.NamedSecretCreator {
+	return []openshiftresources.NamedSecretCreator{openshiftresources.ServiceSignerCA}
 }
 
 func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
