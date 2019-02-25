@@ -54,7 +54,6 @@ github.com/zreigz))
 - Kubernetes 1.10 was removed as officially supported version from Kubermatic as its EOL [#2712](https://github.com/kubermatic/kubermatic/issues/2712) ([alvaroaleman](https://github.com/alvaroaleman))
 - Updated machine controller to `v0.10.5` [#2490](https://github.com/kubermatic/kubermatic/issues/2490) ([mrIncompetent](https://github.com/mrIncompetent))
 - Updated dex to 2.12.0 [#2318](https://github.com/kubermatic/kubermatic/issues/2318) ([bashofmann](https://github.com/bashofmann))
-- Updated Ark to 0.10 [requires manual configuration update] [#2615](https://github.com/kubermatic/kubermatic/issues/2615) ([xrstf](https://github.com/xrstf))
 - Updated nginx-ingress-controller to `v0.22.0` [#2668](https://github.com/kubermatic/kubermatic/issues/2668) ([xrstf](https://github.com/xrstf))
 - [ACTION REQUIRED] Updated cert-manager to `v0.6.0` (see https://cert-manager.readthedocs.io/en/latest/admin/upgrading/index.html) [#2674](https://github.com/kubermatic/kubermatic/issues/2674) ([xrstf](https://github.com/xrstf))
 
