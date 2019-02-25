@@ -182,70 +182,58 @@ func (cc *Controller) ensureDeployments(cluster *kubermaticv1.Cluster, data *res
 	return resources.ReconcileDeployments(creators, cluster.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(cluster))
 }
 
-// SecretOperation returns a wrapper struct to utilize a sorted slice instead of an unsorted map
-type SecretOperation struct {
-	name   string
-	create resources.SecretCreator
-}
+// GetSecretCreators returns all SecretCreators that are currently in use
+func GetSecretCreators(data *resources.TemplateData) []resources.NamedSecretCreatorGetter {
+	creators := []resources.NamedSecretCreatorGetter{
+		certificates.RootCACreator(data),
+		openvpn.CACreator(),
+		certificates.FrontProxyCACreator(data),
+		resources.ImagePullSecretCreator(data.DockerPullConfigJSON),
+		apiserver.FrontProxyClientCertificateCreator(data),
+		etcd.TLSCertificateCreator(data),
+		apiserver.EtcdClientCertificateCreator(data),
+		apiserver.TLSServingCertificateCreator(data),
+		apiserver.KubeletClientCertificateCreator(data),
+		apiserver.ServiceAccountKeyCreator(),
+		openvpn.TLSServingCertificateCreator(data),
+		openvpn.InternalClientCertificateCreator(data),
+		apiserver.TokenUsersCreator(data),
+		resources.AdminKubeconfigCreator(data),
+		machinecontroller.TLSServingCertificateCreator(data),
 
-// GetSecretCreatorOperations returns all SecretCreators that are currently in use
-func GetSecretCreatorOperations(c *kubermaticv1.Cluster, dockerPullConfigJSON []byte, enableDexCA bool) []SecretOperation {
-	secrets := []SecretOperation{
-		{resources.CASecretName, certificates.RootCA},
-		{resources.OpenVPNCASecretName, openvpn.CertificateAuthority},
-		{resources.FrontProxyCASecretName, certificates.FrontProxyCA},
-		{resources.ImagePullSecretName, resources.ImagePullSecretCreator(resources.ImagePullSecretName, dockerPullConfigJSON)},
-		{resources.ApiserverFrontProxyClientCertificateSecretName, apiserver.FrontProxyClientCertificate},
-		{resources.EtcdTLSCertificateSecretName, etcd.TLSCertificate},
-		{resources.ApiserverEtcdClientCertificateSecretName, apiserver.EtcdClientCertificate},
-		{resources.ApiserverTLSSecretName, apiserver.TLSServingCertificate},
-		{resources.KubeletClientCertificatesSecretName, apiserver.KubeletClientCertificate},
-		{resources.ServiceAccountKeySecretName, apiserver.ServiceAccountKey},
-		{resources.OpenVPNServerCertificatesSecretName, openvpn.TLSServingCertificate},
-		{resources.OpenVPNClientCertificatesSecretName, openvpn.InternalClientCertificate},
-		{resources.TokensSecretName, apiserver.TokenUsers},
-		{resources.AdminKubeconfigSecretName, resources.AdminKubeconfig},
-		{resources.SchedulerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil)},
-		{resources.KubeletDnatControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil)},
-		{resources.MachineControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername, nil)},
-		{resources.ControllerManagerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername, nil)},
-		{resources.KubeStateMetricsKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil)},
-		{resources.MachineControllerWebhookServingCertSecretName, machinecontroller.TLSServingCertificate},
-		{resources.MetricsServerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil)},
-		{resources.UserClusterControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.UserClusterControllerKubeconfigSecretName, resources.UserClusterControllerCertUsername, []string{"system:masters"})},
+		// Kubeconfigs
+		resources.GetInternalKubeconfigCreator(resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, data),
+		resources.GetInternalKubeconfigCreator(resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil, data),
+		resources.GetInternalKubeconfigCreator(resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername, nil, data),
+		resources.GetInternalKubeconfigCreator(resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername, nil, data),
+		resources.GetInternalKubeconfigCreator(resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil, data),
+		resources.GetInternalKubeconfigCreator(resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil, data),
+		resources.GetInternalKubeconfigCreator(resources.UserClusterControllerKubeconfigSecretName, resources.UserClusterControllerCertUsername, []string{"system:masters"}, data),
 	}
 
-	if enableDexCA {
-		secrets = append(secrets, SecretOperation{name: resources.DexCASecretName, create: apiserver.DexCACertificate})
+	if len(data.OIDCCAFile()) > 0 {
+		creators = append(creators, apiserver.DexCACertificateCreator(data))
 	}
 
-	if len(c.Spec.MachineNetworks) > 0 {
-		secrets = append(secrets, SecretOperation{resources.IPAMControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.IPAMControllerKubeconfigSecretName, resources.IPAMControllerCertUsername, nil)})
+	if len(data.Cluster().Spec.MachineNetworks) > 0 {
+		creators = append(creators, resources.GetInternalKubeconfigCreator(resources.IPAMControllerKubeconfigSecretName, resources.IPAMControllerCertUsername, nil, data))
 	}
-	return secrets
+	return creators
 }
 
 func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	namedSecretCreatorGetters := GetSecretCreators(data)
 
-	var enableDexCA bool
-	if len(data.OIDCCAFile()) > 0 {
-		enableDexCA = true
-	}
-
-	operations := GetSecretCreatorOperations(c, cc.dockerPullConfigJSON, enableDexCA)
-
-	for _, op := range operations {
-		if err := resources.EnsureSecret(op.name, data, op.create, cc.secretLister.Secrets(c.Status.NamespaceName), cc.kubeClient.CoreV1().Secrets(c.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the Secret exists: %v", err)
-		}
+	if err := resources.ReconcileSecrets(namedSecretCreatorGetters, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache); err != nil {
+		return fmt.Errorf("failed to ensure that the Secret exists: %v", err)
 	}
 
 	return nil
 }
 
 // GetConfigMapCreators returns all ConfigMapCreators that are currently in use
-func GetConfigMapCreators(data *resources.TemplateData) []resources.ConfigMapCreator {
-	return []resources.ConfigMapCreator{
+func GetConfigMapCreators(data *resources.TemplateData) []resources.NamedConfigMapCreatorGetter {
+	return []resources.NamedConfigMapCreatorGetter{
 		cloudconfig.ConfigMapCreator(data),
 		openvpn.ServerClientConfigsConfigMapCreator(data),
 		dns.ConfigMapCreator(data),
@@ -255,10 +243,8 @@ func GetConfigMapCreators(data *resources.TemplateData) []resources.ConfigMapCre
 func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetConfigMapCreators(data)
 
-	for _, create := range creators {
-		if err := resources.EnsureConfigMap(create, cc.configMapLister.ConfigMaps(c.Status.NamespaceName), cc.kubeClient.CoreV1().ConfigMaps(c.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)
-		}
+	if err := resources.ReconcileConfigMaps(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache); err != nil {
+		return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)
 	}
 
 	return nil

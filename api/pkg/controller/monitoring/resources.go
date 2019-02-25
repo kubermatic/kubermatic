@@ -97,43 +97,32 @@ func (c *Controller) ensureDeployments(cluster *kubermaticv1.Cluster, data *reso
 	return resources.ReconcileDeployments(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.ClusterRefWrapper(cluster))
 }
 
-// SecretOperation returns a wrapper struct to utilize a sorted slice instead of an unsorted map
-type SecretOperation struct {
-	name   string
-	create resources.SecretCreator
-}
-
 // GetSecretCreatorOperations returns all SecretCreators that are currently in use
-func GetSecretCreatorOperations(data *resources.TemplateData) []SecretOperation {
-	return []SecretOperation{
-		{
+func GetSecretCreatorOperations(data *resources.TemplateData) []resources.NamedSecretCreatorGetter {
+	return []resources.NamedSecretCreatorGetter{
+		certificates.GetClientCertificateCreator(
 			resources.PrometheusApiserverClientCertificateSecretName,
-			certificates.GetClientCertificateCreator(
-				resources.PrometheusApiserverClientCertificateSecretName,
-				resources.PrometheusCertUsername, nil,
-				resources.PrometheusClientCertificateCertSecretKey,
-				resources.PrometheusClientCertificateKeySecretKey,
-				data.GetRootCA,
-			),
-		},
+			resources.PrometheusCertUsername, nil,
+			resources.PrometheusClientCertificateCertSecretKey,
+			resources.PrometheusClientCertificateKeySecretKey,
+			data.GetRootCA,
+		),
 	}
 }
 
 func (c *Controller) ensureSecrets(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	operations := GetSecretCreatorOperations(data)
+	namedSecretCreatorGetters := GetSecretCreatorOperations(data)
 
-	for _, op := range operations {
-		if err := resources.EnsureSecret(op.name, data, op.create, c.secretLister.Secrets(cluster.Status.NamespaceName), c.kubeClient.CoreV1().Secrets(cluster.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the Secret exists: %v", err)
-		}
+	if err := resources.ReconcileSecrets(namedSecretCreatorGetters, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache); err != nil {
+		return fmt.Errorf("failed to ensure that the Secret exists: %v", err)
 	}
 
 	return nil
 }
 
 // GetConfigMapCreators returns all ConfigMapCreators that are currently in use
-func GetConfigMapCreators(data *resources.TemplateData) []resources.ConfigMapCreator {
-	return []resources.ConfigMapCreator{
+func GetConfigMapCreators(data *resources.TemplateData) []resources.NamedConfigMapCreatorGetter {
+	return []resources.NamedConfigMapCreatorGetter{
 		prometheus.ConfigMapCreator(data),
 	}
 }
@@ -141,10 +130,8 @@ func GetConfigMapCreators(data *resources.TemplateData) []resources.ConfigMapCre
 func (c *Controller) ensureConfigMaps(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetConfigMapCreators(data)
 
-	for _, create := range creators {
-		if err := resources.EnsureConfigMap(create, c.configMapLister.ConfigMaps(cluster.Status.NamespaceName), c.kubeClient.CoreV1().ConfigMaps(cluster.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)
-		}
+	if err := resources.ReconcileConfigMaps(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache); err != nil {
+		return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)
 	}
 
 	return nil

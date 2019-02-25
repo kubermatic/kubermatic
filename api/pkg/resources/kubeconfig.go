@@ -7,95 +7,80 @@ import (
 	"github.com/golang/glog"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/cert/triple"
 )
 
-// AdminKubeconfig returns a secret with the AdminKubeconfig key
-func AdminKubeconfig(data SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
-	var se *corev1.Secret
-	if existing != nil {
-		se = existing
-	} else {
-		se = &corev1.Secret{}
+// AdminKubeconfigCreator returns a function to create/update the secret with the admin kubeconfig
+func AdminKubeconfigCreator(data SecretDataProvider) NamedSecretCreatorGetter {
+	return func() (string, SecretCreator) {
+		return AdminKubeconfigSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
+			if se.Data == nil {
+				se.Data = map[string][]byte{}
+			}
+
+			ca, err := data.GetRootCA()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get cluster ca: %v", err)
+			}
+
+			config := getBaseKubeconfig(ca.Cert, data.Cluster().Address.URL, data.Cluster().Name)
+			config.AuthInfos = map[string]*clientcmdapi.AuthInfo{
+				KubeconfigDefaultContextKey: {
+					Token: data.Cluster().Address.AdminToken,
+				},
+			}
+
+			b, err := clientcmd.Write(*config)
+			if err != nil {
+				return nil, err
+			}
+
+			se.Data[KubeconfigSecretKey] = b
+
+			return se, nil
+		}
 	}
-
-	se.Name = AdminKubeconfigSecretName
-	se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-
-	if se.Data == nil {
-		se.Data = map[string][]byte{}
-	}
-
-	ca, err := data.GetRootCA()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get cluster ca: %v", err)
-	}
-
-	config := getBaseKubeconfig(ca.Cert, data.Cluster().Address.URL, data.Cluster().Name)
-	config.AuthInfos = map[string]*clientcmdapi.AuthInfo{
-		KubeconfigDefaultContextKey: {
-			Token: data.Cluster().Address.AdminToken,
-		},
-	}
-
-	b, err := clientcmd.Write(*config)
-	if err != nil {
-		return nil, err
-	}
-
-	se.Data[KubeconfigSecretKey] = b
-
-	return se, nil
 }
 
 // GetInternalKubeconfigCreator is a generic function to return a secret generator to create a kubeconfig which must only be used within the seed-cluster as it uses the ClusterIP of the apiserver.
-func GetInternalKubeconfigCreator(name, commonName string, organizations []string) func(data SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
-	return func(data SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
-		var se *corev1.Secret
-		if existing != nil {
-			se = existing
-		} else {
-			se = &corev1.Secret{}
-		}
-
-		se.Name = name
-		se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-
-		if se.Data == nil {
-			se.Data = map[string][]byte{}
-		}
-
-		ca, err := data.GetRootCA()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get cluster ca: %v", err)
-		}
-
-		url, err := data.InClusterApiserverURL()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get internal apiserver url: %v", err)
-		}
-
-		b := se.Data[KubeconfigSecretKey]
-		valid, err := isValidKubeconfig(b, ca.Cert, url.String(), commonName, organizations, data.Cluster().Name)
-		if err != nil || !valid {
-			if err != nil {
-				glog.V(2).Infof("failed to validate existing kubeconfig from %s/%s %v. Regenerating it...", se.Namespace, se.Name, err)
-			} else {
-				glog.V(2).Infof("invalid/outdated kubeconfig found in %s/%s. Regenerating it...", se.Namespace, se.Name)
+func GetInternalKubeconfigCreator(name, commonName string, organizations []string, data SecretDataProvider) NamedSecretCreatorGetter {
+	return func() (string, SecretCreator) {
+		return name, func(se *corev1.Secret) (*corev1.Secret, error) {
+			if se.Data == nil {
+				se.Data = map[string][]byte{}
 			}
 
-			se.Data[KubeconfigSecretKey], err = buildNewKubeconfigAsByte(ca, url.String(), commonName, organizations, data.Cluster().Name)
+			ca, err := data.GetRootCA()
 			if err != nil {
-				return nil, fmt.Errorf("failed to create new kubeconfig: %v", err)
+				return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 			}
+
+			url, err := data.InClusterApiserverURL()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get internal apiserver url: %v", err)
+			}
+
+			b := se.Data[KubeconfigSecretKey]
+			valid, err := isValidKubeconfig(b, ca.Cert, url.String(), commonName, organizations, data.Cluster().Name)
+			if err != nil || !valid {
+				if err != nil {
+					glog.V(2).Infof("failed to validate existing kubeconfig from %s/%s %v. Regenerating it...", se.Namespace, se.Name, err)
+				} else {
+					glog.V(2).Infof("invalid/outdated kubeconfig found in %s/%s. Regenerating it...", se.Namespace, se.Name)
+				}
+
+				se.Data[KubeconfigSecretKey], err = buildNewKubeconfigAsByte(ca, url.String(), commonName, organizations, data.Cluster().Name)
+				if err != nil {
+					return nil, fmt.Errorf("failed to create new kubeconfig: %v", err)
+				}
+				return se, nil
+			}
+
 			return se, nil
 		}
-
-		return se, nil
 	}
 }
 

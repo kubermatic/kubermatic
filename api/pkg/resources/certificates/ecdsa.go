@@ -16,7 +16,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	certutil "k8s.io/client-go/util/cert"
 )
 
@@ -25,37 +24,16 @@ const Duration365d = time.Hour * 24 * 365
 
 type ecdsaCAGetter func() (*resources.ECDSAKeyPair, error)
 
-// GetECDSAClientCertificateCreatorWithOwnerRef is a generic function to return a secret generator to create a client certificate
-// signed by the cert returned by the passed getCA func. The resulting secret has an ownerRef
-// pointing to the cluster object in data.GetClusterRef
-func GetECDSAClientCertificateCreatorWithOwnerRef(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA ecdsaCAGetter) func(data templateDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
-
-	return func(data templateDataProvider, existing *corev1.Secret) (*corev1.Secret, error) {
-		ca, err := getCA()
-		if err != nil {
-			return nil, err
-		}
-		secret, err := GetECDSAClientCertificateCreator(name, commonName, organizations, dataCertKey, dataKeyKey, ca)(existing)
-		if err != nil {
-			secret.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-		}
-		return secret, err
-	}
-}
-
 // GetECDSAClientCertificateCreator is a generic function to return a secret generator to create a client certificate
 // signed by the cert returned by the passed getCA func. The resulting secret has no ownerRef
-func GetECDSAClientCertificateCreator(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, ca *resources.ECDSAKeyPair) func(existing *corev1.Secret) (*corev1.Secret, error) {
-	return func(existing *corev1.Secret) (*corev1.Secret, error) {
-		var se *corev1.Secret
-		if existing != nil {
-			se = existing
-		} else {
-			se = &corev1.Secret{}
+func GetECDSAClientCertificateCreator(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA ecdsaCAGetter) resources.SecretCreator {
+	return func(se *corev1.Secret) (*corev1.Secret, error) {
+		ca, err := getCA()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get CA: %v", err)
 		}
 
 		se.Name = name
-
 		if se.Data == nil {
 			se.Data = map[string][]byte{}
 		}

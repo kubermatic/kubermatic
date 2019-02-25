@@ -11,7 +11,6 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -19,30 +18,24 @@ const (
 )
 
 // ConfigMapCreator returns a function to create the ConfigMap containing the cloud-config
-func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapCreator {
-	return func(existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-		var cm *corev1.ConfigMap
-		if existing != nil {
-			cm = existing
-		} else {
-			cm = &corev1.ConfigMap{}
-		}
-		if cm.Data == nil {
-			cm.Data = map[string]string{}
-		}
+func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.NamedConfigMapCreatorGetter {
+	return func() (string, resources.ConfigMapCreator) {
+		return resources.CloudConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			if cm.Data == nil {
+				cm.Data = map[string]string{}
+			}
 
-		cloudConfig, err := CloudConfig(data)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create cloud-config: %v", err)
+			cloudConfig, err := CloudConfig(data)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create cloud-config: %v", err)
+			}
+
+			cm.Labels = resources.BaseAppLabel(name, nil)
+			cm.Data["config"] = cloudConfig
+			cm.Data[FakeVMWareUUIDKeyName] = fakeVMWareUUID
+
+			return cm, nil
 		}
-
-		cm.Name = resources.CloudConfigConfigMapName
-		cm.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-		cm.Labels = resources.BaseAppLabel(name, nil)
-		cm.Data["config"] = cloudConfig
-		cm.Data[FakeVMWareUUIDKeyName] = fakeVMWareUUID
-
-		return cm, nil
 	}
 }
 

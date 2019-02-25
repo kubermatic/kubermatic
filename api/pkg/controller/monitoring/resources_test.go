@@ -1,7 +1,10 @@
 package monitoring
 
 import (
+	"context"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/types"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -10,15 +13,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestCreateConfigMap(t *testing.T) {
 	tests := []struct {
-		name    string
-		cluster *kubermaticv1.Cluster
-		err     error
-		cfgm    *corev1.ConfigMap
+		name      string
+		cluster   *kubermaticv1.Cluster
+		err       error
+		configMap *corev1.ConfigMap
 	}{
 		{
 			name: "successfully created",
@@ -57,7 +59,15 @@ func TestCreateConfigMap(t *testing.T) {
 					NamespaceName: "cluster-nico1",
 				},
 			},
-			cfgm: &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "prometheus", Namespace: "cluster-nico1"}},
+			configMap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      resources.PrometheusConfigConfigMapName,
+					Namespace: "cluster-nico1",
+				},
+				Data: map[string]string{
+					"foo": "bar",
+				},
+			},
 		},
 	}
 
@@ -75,11 +85,10 @@ func TestCreateConfigMap(t *testing.T) {
 					},
 				},
 			}
-			if test.cfgm != nil {
-				objects = append(objects, test.cfgm)
+			if test.configMap != nil {
+				objects = append(objects, test.configMap)
 			}
 			controller := newTestController(objects, []runtime.Object{test.cluster})
-			beforeActionCount := len(controller.kubeClient.(*fake.Clientset).Actions())
 
 			data, err := controller.getClusterTemplateData(test.cluster)
 			if err != nil {
@@ -90,17 +99,17 @@ func TestCreateConfigMap(t *testing.T) {
 			if err := controller.ensureConfigMaps(test.cluster, data); err != nil {
 				t.Errorf("failed to ensure ConfigMap: %v", err)
 			}
-			if test.cfgm != nil {
-				if len(controller.kubeClient.(*fake.Clientset).Actions()) != beforeActionCount+1 ||
-					controller.kubeClient.(*fake.Clientset).Actions()[beforeActionCount].GetVerb() != "update" {
-					t.Error("client made a unknown call/calls when updating a ConfigMap", controller.kubeClient.(*fake.Clientset).Actions()[beforeActionCount:])
-				}
-			} else {
-				if len(controller.kubeClient.(*fake.Clientset).Actions()) != beforeActionCount+1 {
-					t.Error("client made more or less than 1 call to create a ConfigMap", controller.kubeClient.(*fake.Clientset).Actions()[beforeActionCount:])
-				}
+
+			keyName := types.NamespacedName{Namespace: test.cluster.Status.NamespaceName, Name: resources.PrometheusConfigConfigMapName}
+			gotConfigMap := &corev1.ConfigMap{}
+			if err := controller.dynamicClient.Get(context.Background(), keyName, gotConfigMap); err != nil {
+				t.Fatalf("failed to get the ConfigMap from the dynamic client: %v", err)
 			}
 
+			// Simply check if it has been overwritten. Doing a full comparison is not helpful here as we do that already in pkg/resources/test
+			if gotConfigMap.Data["prometheus.yaml"] == "foo" {
+				t.Error("expected key 'prometheus.yaml' did not get overwritten when it should have been")
+			}
 		})
 	}
 }

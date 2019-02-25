@@ -9,6 +9,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 
+	corev1 "k8s.io/api/core/v1"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -40,6 +41,8 @@ func (cc *Controller) launchingCreateOpenVPNClientCertificates(c *kubermaticv1.C
 		return err
 	}
 
+	createCertificate := openvpn.UserClusterClientCertificateCreator(caKp)
+
 	existing, err := client.CoreV1().Secrets(metav1.NamespaceSystem).Get(resources.OpenVPNClientCertificatesSecretName, metav1.GetOptions{})
 	if err != nil {
 		if !kubeerrors.IsNotFound(err) {
@@ -47,7 +50,7 @@ func (cc *Controller) launchingCreateOpenVPNClientCertificates(c *kubermaticv1.C
 		}
 
 		// Secret does not exist -> Create it
-		secret, err := openvpn.UserClusterClientCertificate(nil, caKp)
+		secret, err := createCertificate(&corev1.Secret{})
 		if err != nil {
 			return fmt.Errorf("failed to build Secret %s: %v", secret.Name, err)
 		}
@@ -59,7 +62,7 @@ func (cc *Controller) launchingCreateOpenVPNClientCertificates(c *kubermaticv1.C
 	}
 
 	// Secret already exists, see if we need to update it
-	secret, err := openvpn.UserClusterClientCertificate(existing.DeepCopy(), caKp)
+	secret, err := createCertificate(existing.DeepCopy())
 	if err != nil {
 		return fmt.Errorf("failed to build Secret: %v", err)
 	}
