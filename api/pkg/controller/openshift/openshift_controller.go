@@ -66,10 +66,13 @@ func Add(mgr manager.Manager, numWorkers int, clusterPredicates predicate.Predic
 		return []reconcile.Request{}
 	})}
 	if err := c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, enqueueClusterForNamespacedObject, clusterPredicates); err != nil {
-		return fmt.Errorf("failed to create  watch for ConfigMaps: %v", err)
+		return fmt.Errorf("failed to create watch for ConfigMaps: %v", err)
 	}
 	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, enqueueClusterForNamespacedObject, clusterPredicates); err != nil {
-		return fmt.Errorf("failed to create  watch for Secrets: %v", err)
+		return fmt.Errorf("failed to create watch for Secrets: %v", err)
+	}
+	if err := c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, enqueueClusterForNamespacedObject, clusterPredicates); err != nil {
+		return fmt.Errorf("failed to create watch for Deployments: %v", err)
 	}
 
 	//TODO: Ensure only openshift clusters are handled via a predicate
