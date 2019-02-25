@@ -38,6 +38,7 @@ func OpenshiftControlPlaneConfigMapCreator(ctx context.Context,
 			cm.Labels = resources.BaseAppLabel(openshiftControlPlaneConfigConfigMapName, nil)
 			cm.Data[openshiftContolPlaneConfigKeyName] = masterConfig
 			cm.Data["policy.json"] = policyJSON
+			cm.Data["scheduler.json"] = schedulerJSON
 
 			return cm, nil
 		}
@@ -71,6 +72,9 @@ func getMasterConfig(ctx context.Context, data openshiftData) (string, error) {
 	}
 	return controlPlaneConfigBuffer.String(), nil
 }
+
+const schedulerJSON = `
+{"apiVersion":"v1","kind":"Policy","predicates":[{"name":"NoVolumeZoneConflict"},{"name":"MaxEBSVolumeCount"},{"name":"MaxGCEPDVolumeCount"},{"name":"MaxAzureDiskVolumeCount"},{"name":"MatchInterPodAffinity"},{"name":"NoDiskConflict"},{"name":"GeneralPredicates"},{"name":"PodToleratesNodeTaints"},{"name":"CheckNodeMemoryPressure"},{"name":"CheckNodeDiskPressure"},{"name":"CheckVolumeBinding"},{"argument":{"serviceAffinity":{"labels":["region"]}},"name":"Region"}],"priorities":[{"name":"SelectorSpreadPriority","weight":1},{"name":"InterPodAffinityPriority","weight":1},{"name":"LeastRequestedPriority","weight":1},{"name":"BalancedResourceAllocation","weight":1},{"name":"NodePreferAvoidPodsPriority","weight":10000},{"name":"NodeAffinityPriority","weight":1},{"name":"TaintTolerationPriority","weight":1},{"argument":{"serviceAntiAffinity":{"label":"zone"}},"name":"Zone","weight":2}]}`
 
 //TODO: Replace template with actual types in
 // https://github.com/openshift/origin/pkg/cmd/server/apis/config/v1/types.go
