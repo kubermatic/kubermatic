@@ -103,15 +103,18 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	osData := &openshiftData{cluster: cluster, client: r.Client}
 
+	if err := r.configMaps(ctx, osData); err != nil {
+		return nil, fmt.Errorf("failed to reconcile ConfigMaps: %v", err)
+	}
 	if err := r.deployments(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Deployments: %v", err)
 	}
 
-	if err := r.configMaps(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to reconcile ConfigMaps: %v", err)
-	}
-
 	return nil, nil
+}
+
+func setNamespace(object metav1.Object, namespace string) {
+	object.SetNamespace(namespace)
 }
 
 func (r *Reconciler) getAllConfigmapCreators() []openshiftresources.NamedConfigMapCreator {
@@ -130,6 +133,7 @@ func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) erro
 			if err != nil {
 				return fmt.Errorf("failed to get initial configMap %s from creator: %v", configMapName, err)
 			}
+			setNamespace(configMap, osData.Cluster().Status.NamespaceName)
 			if err := r.Create(ctx, configMap); err != nil {
 				return fmt.Errorf("failed to create initial configmap %s: %v", configMapName, err)
 			}
@@ -138,6 +142,10 @@ func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) erro
 		generatedConfigMap, err := configMapCreator(configMap)
 		if err != nil {
 			return fmt.Errorf("failed to get configMap %s: %v", configMapName, err)
+		}
+		setNamespace(generatedConfigMap, osData.Cluster().Status.NamespaceName)
+		if equal := apiequality.Semantic.DeepEqual(configMap.Data, generatedConfigMap.Data); equal {
+			return nil
 		}
 		if err := r.Update(ctx, generatedConfigMap); err != nil {
 			return fmt.Errorf("failed to update configMap %s: %v", configMapName, err)
@@ -162,6 +170,7 @@ func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) err
 			if err != nil {
 				return fmt.Errorf("failed to get initial deployment %s from creator: %v", deploymentName, err)
 			}
+			setNamespace(deployment, osData.Cluster().Status.NamespaceName)
 			if err := r.Create(ctx, deployment); err != nil {
 				return fmt.Errorf("failed to create initial deployment %s: %v", deploymentName, err)
 			}
@@ -171,6 +180,7 @@ func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) err
 		if err != nil {
 			return fmt.Errorf("failed to get deployment %s: %v", deploymentName, err)
 		}
+		setNamespace(generatedDeployment, osData.Cluster().Status.NamespaceName)
 		if equal := apiequality.Semantic.DeepEqual(generatedDeployment, deployment); equal {
 			continue
 		}
