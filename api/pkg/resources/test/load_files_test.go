@@ -11,8 +11,6 @@ import (
 	"testing"
 	"time"
 
-	appsv1 "k8s.io/api/apps/v1"
-
 	"github.com/Masterminds/semver"
 	"github.com/ghodss/yaml"
 	"github.com/pmezard/go-difflib/difflib"
@@ -27,6 +25,7 @@ import (
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"

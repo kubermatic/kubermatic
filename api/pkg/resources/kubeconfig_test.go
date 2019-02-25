@@ -99,7 +99,7 @@ func checkKubeConfigRegeneration(t *testing.T, orgs []string) {
 	data := &fakeDataProvider{caPair: ca}
 	assert.NotNil(t, data)
 
-	create := GetInternalKubeconfigCreator("test-creator-cn", orgs, data)
+	_, create := GetInternalKubeconfigCreator("some-name", "test-creator-cn", orgs, data)()
 	secret, err := create(&corev1.Secret{})
 	if err != nil {
 		t.Fatal(err)

@@ -56,13 +56,6 @@ type SecretCreator = func(existing *corev1.Secret) (*corev1.Secret, error)
 // NamedSecretCreatorGetter returns the name of the resource and the corresponding creator function
 type NamedSecretCreatorGetter = func() (name string, create SecretCreator)
 
-// NewNamedSecretCreatorGetter is a convenience function to create a NamedSecretCreatorGetter
-func NewNamedSecretCreatorGetter(name string, create SecretCreator) NamedSecretCreatorGetter {
-	return func() (string, SecretCreator) {
-		return name, create
-	}
-}
-
 // secretObjectWrapper adds a wrapper so the SecretCreator matches ObjectCreator
 // This is needed as golang does not support function interface matching
 func SecretObjectWrapper(create SecretCreator) ObjectCreator {
@@ -101,13 +94,6 @@ type ConfigMapCreator = func(existing *corev1.ConfigMap) (*corev1.ConfigMap, err
 
 // NamedConfigMapCreatorGetter returns the name of the resource and the corresponding creator function
 type NamedConfigMapCreatorGetter = func() (name string, create ConfigMapCreator)
-
-// NewNamedConfigMapCreatorGetter is a convenience function to create a NamedConfigMapCreatorGetter
-func NewNamedConfigMapCreatorGetter(name string, create ConfigMapCreator) NamedConfigMapCreatorGetter {
-	return func() (string, ConfigMapCreator) {
-		return name, create
-	}
-}
 
 // configMapObjectWrapper adds a wrapper so the ConfigMapCreator matches ObjectCreator
 // This is needed as golang does not support function interface matching

@@ -12,25 +12,28 @@ import (
 )
 
 // ServiceAccountKeyCreator returns a function to create/update a secret with the ServiceAccount key
-func ServiceAccountKeyCreator() resources.SecretCreator {
-	return func(se *corev1.Secret) (*corev1.Secret, error) {
-		if _, exists := se.Data[resources.ServiceAccountKeySecretKey]; exists {
+func ServiceAccountKeyCreator() resources.NamedSecretCreatorGetter {
+	return func() (string, resources.SecretCreator) {
+		return resources.ServiceAccountKeySecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
+			if _, exists := se.Data[resources.ServiceAccountKeySecretKey]; exists {
+				return se, nil
+			}
+			priv, err := rsa.GenerateKey(cryptorand.Reader, 2048)
+			if err != nil {
+				return nil, err
+			}
+			saKey := x509.MarshalPKCS1PrivateKey(priv)
+			block := pem.Block{
+				Type:  "RSA PRIVATE KEY",
+				Bytes: saKey,
+			}
+			if se.Data == nil {
+				se.Data = map[string][]byte{}
+			}
+			se.Data[resources.ServiceAccountKeySecretKey] = pem.EncodeToMemory(&block)
 			return se, nil
-		}
-		priv, err := rsa.GenerateKey(cryptorand.Reader, 2048)
-		if err != nil {
-			return nil, err
-		}
-		saKey := x509.MarshalPKCS1PrivateKey(priv)
-		block := pem.Block{
-			Type:  "RSA PRIVATE KEY",
-			Bytes: saKey,
-		}
-		if se.Data == nil {
-			se.Data = map[string][]byte{}
-		}
-		se.Data[resources.ServiceAccountKeySecretKey] = pem.EncodeToMemory(&block)
-		return se, nil
 
+		}
 	}
+
 }

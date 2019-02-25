@@ -191,13 +191,6 @@ type {{ .ResourceName }}Creator = func(existing *{{ .ImportAlias }}.{{ .Resource
 // Named{{ .ResourceName }}CreatorGetter returns the name of the resource and the corresponding creator function
 type Named{{ .ResourceName }}CreatorGetter = func() (name string, create {{ .ResourceName }}Creator)
 
-// NewNamed{{ .ResourceName }}CreatorGetter is a convenience function to create a Named{{ .ResourceName }}CreatorGetter
-func NewNamed{{ .ResourceName }}CreatorGetter(name string, create {{ .ResourceName }}Creator) Named{{ .ResourceName }}CreatorGetter {
-	return func() (string, {{ .ResourceName }}Creator) {
-		return name, create
-	}
-}
-
 // {{ lowercaseFirst .ResourceName }}ObjectWrapper adds a wrapper so the {{ .ResourceName }}Creator matches ObjectCreator
 // This is needed as golang does not support function interface matching
 func {{ .ResourceName }}ObjectWrapper(create {{ .ResourceName }}Creator) ObjectCreator {

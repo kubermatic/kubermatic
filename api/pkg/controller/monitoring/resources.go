@@ -100,12 +100,13 @@ func (c *Controller) ensureDeployments(cluster *kubermaticv1.Cluster, data *reso
 // GetSecretCreatorOperations returns all SecretCreators that are currently in use
 func GetSecretCreatorOperations(data *resources.TemplateData) []resources.NamedSecretCreatorGetter {
 	return []resources.NamedSecretCreatorGetter{
-		resources.NewNamedSecretCreatorGetter(resources.PrometheusApiserverClientCertificateSecretName, certificates.GetClientCertificateCreator(
+		certificates.GetClientCertificateCreator(
+			resources.PrometheusApiserverClientCertificateSecretName,
 			resources.PrometheusCertUsername, nil,
 			resources.PrometheusClientCertificateCertSecretKey,
 			resources.PrometheusClientCertificateKeySecretKey,
 			data.GetRootCA,
-		)),
+		),
 	}
 }
 
@@ -122,7 +123,7 @@ func (c *Controller) ensureSecrets(cluster *kubermaticv1.Cluster, data *resource
 // GetConfigMapCreators returns all ConfigMapCreators that are currently in use
 func GetConfigMapCreators(data *resources.TemplateData) []resources.NamedConfigMapCreatorGetter {
 	return []resources.NamedConfigMapCreatorGetter{
-		resources.NewNamedConfigMapCreatorGetter(resources.PrometheusConfigConfigMapName, prometheus.ConfigMapCreator(data)),
+		prometheus.ConfigMapCreator(data),
 	}
 }
 

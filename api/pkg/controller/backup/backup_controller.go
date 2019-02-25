@@ -431,9 +431,9 @@ func (c *Controller) getEtcdSecretName(cluster *kubermaticv1.Cluster) string {
 
 // TODO: Migrate this to the same pattern as the cluster controller.
 func (c *Controller) ensureCronJobSecret(cluster *kubermaticv1.Cluster) error {
-	name := c.getEtcdSecretName(cluster)
+	secretName := c.getEtcdSecretName(cluster)
 
-	existing, err := c.secretLister.Secrets(metav1.NamespaceSystem).Get(name)
+	existing, err := c.secretLister.Secrets(metav1.NamespaceSystem).Get(secretName)
 	if err != nil && !kerrors.IsNotFound(err) {
 		return err
 	}
@@ -445,20 +445,21 @@ func (c *Controller) ensureCronJobSecret(cluster *kubermaticv1.Cluster) error {
 		serviceLister: c.serviceLister,
 	}
 
-	create := certificates.GetClientCertificateCreator(
+	_, create := certificates.GetClientCertificateCreator(
+		secretName,
 		"backup",
 		nil,
 		resources.BackupEtcdClientCertificateCertSecretKey,
 		resources.BackupEtcdClientCertificateKeySecretKey,
 		data.GetRootCA,
-	)
+	)()
 
 	se, err := create(existing.DeepCopy())
 	if err != nil {
 		return fmt.Errorf("failed to build Secret: %v", err)
 	}
 	// This is required as we don't use the ReconcileSecrets functions which have correct wrappers.
-	se.Name = name
+	se.Name = secretName
 
 	if equality.Semantic.DeepEqual(se, existing) {
 		return nil

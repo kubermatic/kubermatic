@@ -162,19 +162,20 @@ func getVolumes() []corev1.Volume {
 }
 
 // ConfigMapCreator returns a ConfigMap containing the cloud-config for the supplied data
-func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapCreator {
-	return func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-		dnsIP, err := resources.UserClusterDNSResolverIP(data.Cluster())
-		if err != nil {
-			return nil, err
-		}
-		seedClusterNamespaceDNS := fmt.Sprintf("%s.svc.cluster.local.", data.Cluster().Status.NamespaceName)
+func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.NamedConfigMapCreatorGetter {
+	return func() (string, resources.ConfigMapCreator) {
+		return resources.DNSResolverConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			dnsIP, err := resources.UserClusterDNSResolverIP(data.Cluster())
+			if err != nil {
+				return nil, err
+			}
+			seedClusterNamespaceDNS := fmt.Sprintf("%s.svc.cluster.local.", data.Cluster().Status.NamespaceName)
 
-		if cm.Data == nil {
-			cm.Data = map[string]string{}
-		}
+			if cm.Data == nil {
+				cm.Data = map[string]string{}
+			}
 
-		cm.Data["Corefile"] = fmt.Sprintf(`
+			cm.Data["Corefile"] = fmt.Sprintf(`
 %s {
     forward . /etc/resolv.conf
     errors
@@ -190,6 +191,7 @@ func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapC
 }
 `, seedClusterNamespaceDNS, data.Cluster().Spec.ClusterNetwork.DNSDomain, dnsIP)
 
-		return cm, nil
+			return cm, nil
+		}
 	}
 }

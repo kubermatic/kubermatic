@@ -185,36 +185,38 @@ func (cc *Controller) ensureDeployments(cluster *kubermaticv1.Cluster, data *res
 // GetSecretCreators returns all SecretCreators that are currently in use
 func GetSecretCreators(data *resources.TemplateData) []resources.NamedSecretCreatorGetter {
 	creators := []resources.NamedSecretCreatorGetter{
-		resources.NewNamedSecretCreatorGetter(resources.CASecretName, certificates.RootCACreator(data)),
-		resources.NewNamedSecretCreatorGetter(resources.OpenVPNCASecretName, openvpn.CACreator),
-		resources.NewNamedSecretCreatorGetter(resources.FrontProxyCASecretName, certificates.FrontProxyCACreator()),
-		resources.NewNamedSecretCreatorGetter(resources.ImagePullSecretName, resources.ImagePullSecretCreator(data.DockerPullConfigJSON)),
-		resources.NewNamedSecretCreatorGetter(resources.ApiserverFrontProxyClientCertificateSecretName, apiserver.FrontProxyClientCertificateCreator(data)),
-		resources.NewNamedSecretCreatorGetter(resources.EtcdTLSCertificateSecretName, etcd.TLSCertificateCreator(data)),
-		resources.NewNamedSecretCreatorGetter(resources.ApiserverEtcdClientCertificateSecretName, apiserver.EtcdClientCertificateCreator(data)),
-		resources.NewNamedSecretCreatorGetter(resources.ApiserverTLSSecretName, apiserver.TLSServingCertificateCreator(data)),
-		resources.NewNamedSecretCreatorGetter(resources.KubeletClientCertificatesSecretName, apiserver.KubeletClientCertificateCreator(data)),
-		resources.NewNamedSecretCreatorGetter(resources.ServiceAccountKeySecretName, apiserver.ServiceAccountKeyCreator()),
-		resources.NewNamedSecretCreatorGetter(resources.OpenVPNServerCertificatesSecretName, openvpn.TLSServingCertificateCreator(data)),
-		resources.NewNamedSecretCreatorGetter(resources.OpenVPNClientCertificatesSecretName, openvpn.InternalClientCertificateCreator(data)),
-		resources.NewNamedSecretCreatorGetter(resources.TokensSecretName, apiserver.TokenUsersCreator(data)),
-		resources.NewNamedSecretCreatorGetter(resources.AdminKubeconfigSecretName, resources.AdminKubeconfigCreator(data)),
-		resources.NewNamedSecretCreatorGetter(resources.SchedulerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.SchedulerCertUsername, nil, data)),
-		resources.NewNamedSecretCreatorGetter(resources.KubeletDnatControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.KubeletDnatControllerCertUsername, nil, data)),
-		resources.NewNamedSecretCreatorGetter(resources.MachineControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.MachineControllerCertUsername, nil, data)),
-		resources.NewNamedSecretCreatorGetter(resources.ControllerManagerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.ControllerManagerCertUsername, nil, data)),
-		resources.NewNamedSecretCreatorGetter(resources.KubeStateMetricsKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.KubeStateMetricsCertUsername, nil, data)),
-		resources.NewNamedSecretCreatorGetter(resources.MachineControllerWebhookServingCertSecretName, machinecontroller.TLSServingCertificateCreator(data)),
-		resources.NewNamedSecretCreatorGetter(resources.MetricsServerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.MetricsServerCertUsername, nil, data)),
-		resources.NewNamedSecretCreatorGetter(resources.UserClusterControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.UserClusterControllerCertUsername, []string{"system:masters"}, data)),
+		certificates.RootCACreator(data),
+		openvpn.CACreator(),
+		certificates.FrontProxyCACreator(data),
+		resources.ImagePullSecretCreator(data.DockerPullConfigJSON),
+		apiserver.FrontProxyClientCertificateCreator(data),
+		etcd.TLSCertificateCreator(data),
+		apiserver.EtcdClientCertificateCreator(data),
+		apiserver.TLSServingCertificateCreator(data),
+		apiserver.KubeletClientCertificateCreator(data),
+		apiserver.ServiceAccountKeyCreator(),
+		openvpn.TLSServingCertificateCreator(data),
+		openvpn.InternalClientCertificateCreator(data),
+		apiserver.TokenUsersCreator(data),
+		resources.AdminKubeconfigCreator(data),
+		machinecontroller.TLSServingCertificateCreator(data),
+
+		// Kubeconfigs
+		resources.GetInternalKubeconfigCreator(resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, data),
+		resources.GetInternalKubeconfigCreator(resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil, data),
+		resources.GetInternalKubeconfigCreator(resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername, nil, data),
+		resources.GetInternalKubeconfigCreator(resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername, nil, data),
+		resources.GetInternalKubeconfigCreator(resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil, data),
+		resources.GetInternalKubeconfigCreator(resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil, data),
+		resources.GetInternalKubeconfigCreator(resources.UserClusterControllerKubeconfigSecretName, resources.UserClusterControllerCertUsername, []string{"system:masters"}, data),
 	}
 
 	if len(data.OIDCCAFile()) > 0 {
-		creators = append(creators, resources.NewNamedSecretCreatorGetter(resources.DexCASecretName, apiserver.DexCACertificateCreator(data)))
+		creators = append(creators, apiserver.DexCACertificateCreator(data))
 	}
 
 	if len(data.Cluster().Spec.MachineNetworks) > 0 {
-		creators = append(creators, resources.NewNamedSecretCreatorGetter(resources.IPAMControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.IPAMControllerCertUsername, nil, data)))
+		creators = append(creators, resources.GetInternalKubeconfigCreator(resources.IPAMControllerKubeconfigSecretName, resources.IPAMControllerCertUsername, nil, data))
 	}
 	return creators
 }
@@ -232,9 +234,9 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster, data *resources.Tem
 // GetConfigMapCreators returns all ConfigMapCreators that are currently in use
 func GetConfigMapCreators(data *resources.TemplateData) []resources.NamedConfigMapCreatorGetter {
 	return []resources.NamedConfigMapCreatorGetter{
-		resources.NewNamedConfigMapCreatorGetter(resources.CloudConfigConfigMapName, cloudconfig.ConfigMapCreator(data)),
-		resources.NewNamedConfigMapCreatorGetter(resources.OpenVPNClientConfigsConfigMapName, openvpn.ServerClientConfigsConfigMapCreator(data)),
-		resources.NewNamedConfigMapCreatorGetter(resources.DNSResolverConfigMapName, dns.ConfigMapCreator(data)),
+		cloudconfig.ConfigMapCreator(data),
+		openvpn.ServerClientConfigsConfigMapCreator(data),
+		dns.ConfigMapCreator(data),
 	}
 }
 
