@@ -21,8 +21,6 @@ const (
 	openshiftContolPlaneConfigKeyName        = "master-config.yaml"
 )
 
-type NamedConfigMapCreator func(context.Context, openshiftData) (string, resources.ConfigMapCreator)
-
 func OpenshiftControlPlaneConfigMapCreator(ctx context.Context,
 	data openshiftData) (string, resources.ConfigMapCreator) {
 	return openshiftControlPlaneConfigConfigMapName,
@@ -224,29 +222,30 @@ networkConfig:
   - 0.0.0.0/0
   networkPluginName: redhat/openshift-ovs-subnet
   serviceNetworkCIDR: "{{ .ServiceCIDR }}"
-oauthConfig:
-  # TODO: Could be made nicer to be something listening on 443
-  assetPublicURL: "{{ .ClusterURL }}/console"
-  grantConfig:
-    method: auto
-  identityProviders:
-  - challenge: true
-    login: true
-    mappingMethod: claim
-    name: allow_all
-    provider:
-      apiVersion: v1
-      kind: AllowAllPasswordIdentityProvider
-  masterCA: /etc/origin/master/ca-bundle.crt
-  masterPublicURL: "{{ .ClusterURL }}"
-  masterURL: "{{ .ClusterURL }}"
-  sessionConfig:
-    sessionMaxAgeSeconds: 3600
-    sessionName: ssn
-    sessionSecretsFile: /etc/origin/master/session-secrets.yaml
-  tokenConfig:
-    accessTokenMaxAgeSeconds: 86400
-    authorizeTokenMaxAgeSeconds: 500
+# TODO: Get this running with dex
+#oauthConfig:
+#  # TODO: Could be made nicer to be something listening on 443
+#  assetPublicURL: "{{ .ClusterURL }}/console"
+#  grantConfig:
+#    method: auto
+#  identityProviders:
+#  - challenge: true
+#    login: true
+#    mappingMethod: claim
+#    name: allow_all
+#    provider:
+#      apiVersion: v1
+#      kind: AllowAllPasswordIdentityProvider
+#  masterCA: /etc/kubernetes/pki/ca/ca.crt
+#  masterPublicURL: "{{ .ClusterURL }}"
+#  masterURL: "{{ .ClusterURL }}"
+#  sessionConfig:
+#    sessionMaxAgeSeconds: 3600
+#    sessionName: ssn
+#    sessionSecretsFile: /etc/origin/master/session-secrets.yaml
+#  tokenConfig:
+#    accessTokenMaxAgeSeconds: 86400
+#    authorizeTokenMaxAgeSeconds: 500
 pauseControllers: false
 policyConfig:
   bootstrapPolicyFile: /etc/origin/master/policy.json

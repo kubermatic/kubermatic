@@ -4,8 +4,14 @@ import (
 	"context"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	ServiceSignerCASecretName = "service-signer-ca"
 )
 
 // Openshift data contains all data required for Openshift control plane components
@@ -19,4 +25,11 @@ type openshiftData interface {
 	ClusterIPByServiceName(name string) (string, error)
 	ImageRegistry(string) string
 	NodeAccessNetwork() string
+	GetClusterRef() metav1.OwnerReference
 }
+
+type SecretCreator = func(openshiftData, *corev1.Secret) (*corev1.Secret, error)
+
+type NamedSecretCreator func(context.Context, openshiftData) (string, SecretCreator)
+type NamedConfigMapCreator func(context.Context, openshiftData) (string, resources.ConfigMapCreator)
+type NamedDeploymentCreator func(context.Context, openshiftData) (string, resources.DeploymentCreator)

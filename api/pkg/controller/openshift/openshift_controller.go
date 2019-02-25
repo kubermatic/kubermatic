@@ -118,6 +118,57 @@ func setNamespace(object metav1.Object, namespace string) {
 	object.SetNamespace(namespace)
 }
 
+func (r *Reconciler) getAllSecretCreators(osData *openshiftData) []openshiftresources.NamedSecretCreator {
+	return []openshiftresources.NamedSecretCreator{certificates.ServiceSignerCA}
+}
+
+func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
+	for _, namedSecretCreator := range r.getAllSecretCreators() {
+		secretName, secretCreator := namedSecretCreator(ctx, osData)
+		secret := &corev1.Secret{}
+		if err := r.Client.Get(ctx, nn(osData.Cluster().Status.NamespaceName, secretName), secret); err != nil {
+			if !kerrors.IsNotFound(err) {
+				return fmt.Errorf("failed to get secret %s: %v", secretName, err)
+			}
+			secret, err := secretCreator(&corev1.Secret{})
+			if err != nil {
+				return fmt.Errorf("failed to get initial secret %s from creator: %v", secretName, err)
+			}
+			setNamespace(secret, osData.Cluster().Status.NamespaceName)
+			if err := r.Create(ctx, secret); err != nil {
+				return fmt.Errorf("failed to create initial secret %s: %v", secretName, err)
+			}
+		}
+		generatedSecret, err := secretCreator(secret.DeepCopy())
+		if err != nil {
+			return fmt.Errorf("failed to get secret %s from creator: %v", secret.Name, err)
+		}
+		setNamespace(generatedSecret, osData.Cluster().Status.NamespaceName)
+		if equal := apiequality.Semantic.DeepEqual(secret, generatedSecret); equal {
+			continue
+		}
+		if err := r.Update(ctx, generatedSecret); err != nil {
+			return fmt.Errorf("failed to update secret %s: %v", secretName, err)
+		}
+		// Wait for change to be in lister, otherwise the Deployments may not get updated appropriately
+		// TODO: Implement this in a generic way
+		if err := wait.Poll(10*time.Millisecond, 5*time.Second, func() (bool, error) {
+			cacheSecret := &corev1.Secret{}
+			if err := r.Get(ctx, nn(generatedSecret.Namespace, generatedSecret.Name), cacheSecret); err != nil {
+				return false, err
+			}
+			if equal := apiequality.Semantic.DeepEqual(cacheSecret, generatedSecret); equal {
+				return true, nil
+			}
+			return false, nil
+		}); err != nil {
+			return fmt.Errorf("error waiting for updated secret %s to appear in the local cache: %v", generatedSecret.Name, err)
+		}
+	}
+
+	return nil
+}
+
 func (r *Reconciler) getAllConfigmapCreators() []openshiftresources.NamedConfigMapCreator {
 	return []openshiftresources.NamedConfigMapCreator{openshiftresources.OpenshiftControlPlaneConfigMapCreator}
 }
@@ -146,14 +197,14 @@ func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) erro
 		}
 		setNamespace(generatedConfigMap, osData.Cluster().Status.NamespaceName)
 		if equal := apiequality.Semantic.DeepEqual(configMap, generatedConfigMap); equal {
-			glog.Infof("Generated configmap equal existing configmap")
-			return nil
+			continue
 		}
 		if err := r.Update(ctx, generatedConfigMap); err != nil {
 			return fmt.Errorf("failed to update configMap %s: %v", configMapName, err)
 		}
 
 		// Wait for change to be in lister, otherwise the Deployments may not get updated appropriately
+		// TODO: Implement this in a generic way
 		if err := wait.Poll(10*time.Millisecond, 5*time.Second, func() (bool, error) {
 			cacheConfigMap := &corev1.ConfigMap{}
 			if err := r.Get(ctx, nn(generatedConfigMap.Namespace, generatedConfigMap.Name), cacheConfigMap); err != nil {
@@ -205,11 +256,6 @@ func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) err
 		}
 	}
 	return nil
-}
-
-func (r *Reconciler) getOwnerRefForCluster(c *kubermaticv1.Cluster) metav1.OwnerReference {
-	gv := kubermaticv1.SchemeGroupVersion
-	return *metav1.NewControllerRef(c, gv.WithKind("Cluster"))
 }
 
 func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluster)) (updatedCluster *kubermaticv1.Cluster, err error) {

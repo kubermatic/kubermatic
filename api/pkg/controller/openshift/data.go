@@ -8,6 +8,7 @@ import (
 	kubernetesresources "github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -26,6 +27,11 @@ func (od *openshiftData) ImageRegistry(registry string) string {
 // TODO: Softcode this, its an arg to the kubermatic controller manager
 func (od *openshiftData) NodeAccessNetwork() string {
 	return "10.254.0.0/16"
+}
+
+func (od *openshiftData) GetClusterRef() metav1.OwnerReference {
+	gv := kubermaticv1.SchemeGroupVersion
+	return *metav1.NewControllerRef(od.cluster, gv.WithKind("Cluster"))
 }
 
 func (od *openshiftData) ClusterIPByServiceName(name string) (string, error) {
