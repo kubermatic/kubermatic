@@ -11,8 +11,6 @@ import (
 	"testing"
 	"time"
 
-	appsv1 "k8s.io/api/apps/v1"
-
 	"github.com/Masterminds/semver"
 	"github.com/ghodss/yaml"
 	"github.com/pmezard/go-difflib/difflib"
@@ -27,6 +25,7 @@ import (
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -542,16 +541,17 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				var configmapCreators []resources.ConfigMapCreator
-				configmapCreators = append(configmapCreators, clustercontroller.GetConfigMapCreators(data)...)
-				configmapCreators = append(configmapCreators, monitoringcontroller.GetConfigMapCreators(data)...)
-				for _, create := range configmapCreators {
-					res, err := create(nil)
+				var namedConfigMapCreatorGetters []resources.NamedConfigMapCreatorGetter
+				namedConfigMapCreatorGetters = append(namedConfigMapCreatorGetters, clustercontroller.GetConfigMapCreators(data)...)
+				namedConfigMapCreatorGetters = append(namedConfigMapCreatorGetters, monitoringcontroller.GetConfigMapCreators(data)...)
+				for _, namedGetter := range namedConfigMapCreatorGetters {
+					name, create := namedGetter()
+					res, err := create(&corev1.ConfigMap{})
 					if err != nil {
 						t.Fatalf("failed to create ConfigMap: %v", err)
 					}
 
-					fixturePath := fmt.Sprintf("configmap-%s-%s-%s", prov, ver.Version.String(), res.Name)
+					fixturePath := fmt.Sprintf("configmap-%s-%s-%s", prov, ver.Version.String(), name)
 					checkTestResult(t, fixturePath, res)
 				}
 

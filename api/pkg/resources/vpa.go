@@ -71,24 +71,22 @@ func getVerticalPodAutoscalersForResource(names []string, namespace string, stor
 		}
 
 		gv := appsv1.SchemeGroupVersion
-		switch obj.(type) {
+		switch obj := obj.(type) {
 		case *appsv1.Deployment:
-			deployment := obj.(*appsv1.Deployment)
 			creators = append(creators, getVPACreatorForPodTemplate(
-				deployment.Name,
-				deployment.Namespace,
-				deployment.Spec.Selector.MatchLabels,
-				deployment.Spec.Template.Spec,
-				*metav1.NewControllerRef(deployment, gv.WithKind("Deployment"))),
+				obj.Name,
+				obj.Namespace,
+				obj.Spec.Selector.MatchLabels,
+				obj.Spec.Template.Spec,
+				*metav1.NewControllerRef(obj, gv.WithKind("Deployment"))),
 			)
 		case *appsv1.StatefulSet:
-			statefulset := obj.(*appsv1.StatefulSet)
 			creators = append(creators, getVPACreatorForPodTemplate(
-				statefulset.Name,
-				statefulset.Namespace,
-				statefulset.Spec.Selector.MatchLabels,
-				statefulset.Spec.Template.Spec,
-				*metav1.NewControllerRef(statefulset, gv.WithKind("StatefulSet"))),
+				obj.Name,
+				obj.Namespace,
+				obj.Spec.Selector.MatchLabels,
+				obj.Spec.Template.Spec,
+				*metav1.NewControllerRef(obj, gv.WithKind("StatefulSet"))),
 			)
 		default:
 			return nil, fmt.Errorf("object '%s' from store is %T instead of a expected *appsv1.Deployment or *appsv1.StatefulSet", key, obj)

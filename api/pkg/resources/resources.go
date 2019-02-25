@@ -20,7 +20,6 @@ import (
 
 	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
-	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
@@ -33,8 +32,6 @@ import (
 	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/cert/triple"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
-
-	autoscalingv1beta "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"
 )
 
 // KUBERMATICCOMMIT is a magic variable containing the git commit hash of the current (as in currently executing) kubermatic api. It gets feeded by Makefile as a ldflag.
@@ -359,21 +356,6 @@ type ECDSAKeyPair struct {
 	Cert *x509.Certificate
 }
 
-// ConfigMapCreator defines an interface to create/update ConfigMap's
-type ConfigMapCreator = func(*corev1.ConfigMap) (*corev1.ConfigMap, error)
-
-// SecretCreator defines an interface to create/update Secret's
-type SecretCreator = func(data SecretDataProvider, existing *corev1.Secret) (*corev1.Secret, error)
-
-// StatefulSetCreator defines an interface to create/update StatefulSet
-type StatefulSetCreator = func(existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error)
-
-// VerticalPodAutoscalerCreator defines an interface to create/update a VerticalPodAutoscaler
-type VerticalPodAutoscalerCreator = func(existing *autoscalingv1beta.VerticalPodAutoscaler) (*autoscalingv1beta.VerticalPodAutoscaler, error)
-
-// ServiceCreator defines an interface to create/update Services
-type ServiceCreator = func(existing *corev1.Service) (*corev1.Service, error)
-
 // ServiceAccountCreator defines an interface to create/update ServiceAccounts
 type ServiceAccountCreator = func(data ServiceAccountDataProvider, existing *corev1.ServiceAccount) (*corev1.ServiceAccount, error)
 
@@ -388,9 +370,6 @@ type ClusterRoleCreator = func(data ClusterRoleDataProvider, existing *rbacv1.Cl
 
 // ClusterRoleBindingCreator defines an interface to create/update RBAC ClusterRoleBinding's
 type ClusterRoleBindingCreator = func(data ClusterRoleBindingDataProvider, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error)
-
-// DeploymentCreator defines an interface to create/update Deployment's
-type DeploymentCreator = func(existing *appsv1.Deployment) (*appsv1.Deployment, error)
 
 // InitializerConfigurationCreator defines an interface to create/update InitializerConfigurations
 type InitializerConfigurationCreator = func(data *TemplateData, existing *admissionv1alpha1.InitializerConfiguration) (*admissionv1alpha1.InitializerConfiguration, error)
