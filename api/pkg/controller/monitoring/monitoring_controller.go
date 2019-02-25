@@ -355,6 +355,11 @@ func (c *Controller) sync(key string) error {
 		return err
 	}
 
+	// check that all Services's are created
+	if err := c.ensureServices(cluster, data); err != nil {
+		return err
+	}
+
 	if !clusterFromCache.Status.Health.AllHealthy() {
 		glog.V(6).Infof("waiting for cluster %s to become healthy", key)
 		c.enqueueAfter(cluster, healthCheckPeriod)

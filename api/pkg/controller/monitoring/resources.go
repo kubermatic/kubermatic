@@ -176,3 +176,16 @@ func (c *Controller) ensureVerticalPodAutoscalers(cluster *kubermaticv1.Cluster)
 	}
 	return resources.ReconcileVerticalPodAutoscalers(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache)
 }
+
+// GetServiceCreators returns all service creators that are currently in use
+func GetServiceCreators(data *resources.TemplateData) []resources.ServiceCreator {
+	return []resources.ServiceCreator{
+		prometheus.ServiceCreator(data),
+	}
+}
+
+func (c *Controller) ensureServices(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	creators := GetServiceCreators(data)
+
+	return resources.ReconcileServices(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.ClusterRefWrapper(cluster))
+}
