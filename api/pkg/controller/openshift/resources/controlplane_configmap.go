@@ -186,7 +186,7 @@ kubernetesMasterConfig:
     pv-recycler-pod-template-filepath-nfs:
     - /etc/origin/master/recycler_pod.yaml
   masterCount: 1
-	//TODO: Should we put something here?
+  //TODO: Should we put something here?
   masterIP: ""
   podEvictionTimeout: null
   proxyClientInfo:
@@ -210,8 +210,8 @@ masterClients:
     contentType: application/vnd.kubernetes.protobuf
     qps: 300
   # TODO: Generate this
-	# Must have: Subject: O=system:masters, CN=system:openshift-master
-	# Must have X509v3 Extended Key Usage: TLS Web Client Authentication
+  # Must have: Subject: O=system:masters, CN=system:openshift-master
+  # Must have X509v3 Extended Key Usage: TLS Web Client Authentication
   openshiftLoopbackKubeConfig: openshift-master.kubeconfig
 masterPublicURL: "{{ .ClusterURL }}"
 networkConfig:

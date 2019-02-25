@@ -17,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -139,16 +140,31 @@ func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) erro
 			}
 			continue
 		}
-		generatedConfigMap, err := configMapCreator(configMap)
+		generatedConfigMap, err := configMapCreator(configMap.DeepCopy())
 		if err != nil {
 			return fmt.Errorf("failed to get configMap %s: %v", configMapName, err)
 		}
 		setNamespace(generatedConfigMap, osData.Cluster().Status.NamespaceName)
-		if equal := apiequality.Semantic.DeepEqual(configMap.Data, generatedConfigMap.Data); equal {
+		if equal := apiequality.Semantic.DeepEqual(configMap, generatedConfigMap); equal {
+			glog.Infof("Generated configmap equal existing configmap")
 			return nil
 		}
 		if err := r.Update(ctx, generatedConfigMap); err != nil {
 			return fmt.Errorf("failed to update configMap %s: %v", configMapName, err)
+		}
+
+		// Wait for change to be in lister, otherwise the Deployments may not get updated appropriately
+		if err := wait.Poll(10*time.Millisecond, 5*time.Second, func() (bool, error) {
+			cacheConfigMap := &corev1.ConfigMap{}
+			if err := r.Get(ctx, nn(generatedConfigMap.Namespace, generatedConfigMap.Name), cacheConfigMap); err != nil {
+				return false, err
+			}
+			if equal := apiequality.Semantic.DeepEqual(cacheConfigMap, generatedConfigMap); equal {
+				return true, nil
+			}
+			return false, nil
+		}); err != nil {
+			return fmt.Errorf("error waiting for upadted configmap %s to appear in the local cache: %v", generatedConfigMap.Name, err)
 		}
 	}
 	return nil
@@ -176,7 +192,7 @@ func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) err
 			}
 			continue
 		}
-		generatedDeployment, err := deploymentCreator(deployment)
+		generatedDeployment, err := deploymentCreator(deployment.DeepCopy())
 		if err != nil {
 			return fmt.Errorf("failed to get deployment %s: %v", deploymentName, err)
 		}
