@@ -240,6 +240,10 @@ func getVolumeMounts() []corev1.VolumeMount {
 			Name:      openshiftControlPlaneConfigConfigMapName,
 			MountPath: "/etc/origin/master",
 		},
+		{
+			Name:      resources.UserClusterControllerKubeconfigSecretName,
+			MountPath: "/etc/origin/master/loopback-kubeconfig",
+		},
 	}
 
 	return volumesMounts
@@ -359,6 +363,15 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{Name: openshiftControlPlaneConfigConfigMapName},
+				},
+			},
+		},
+		{
+			Name: resources.UserClusterControllerKubeconfigSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.UserClusterControllerKubeconfigSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
 		},

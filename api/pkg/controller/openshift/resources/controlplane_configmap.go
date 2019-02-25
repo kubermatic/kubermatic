@@ -213,10 +213,7 @@ masterClients:
     burst: 600
     contentType: application/vnd.kubernetes.protobuf
     qps: 300
-  # TODO: Generate this
-  # Must have: Subject: O=system:masters, CN=system:openshift-master
-  # Must have X509v3 Extended Key Usage: TLS Web Client Authentication
-  openshiftLoopbackKubeConfig: openshift-master.kubeconfig
+  openshiftLoopbackKubeConfig: /etc/origin/master/loopback-kubeconfig/kubeconfig
 masterPublicURL: "{{ .ClusterURL }}"
 networkConfig:
   clusterNetworks:
