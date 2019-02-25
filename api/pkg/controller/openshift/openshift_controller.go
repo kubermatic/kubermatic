@@ -17,7 +17,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -172,20 +171,6 @@ func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
 		if err := r.Update(ctx, generatedSecret); err != nil {
 			return fmt.Errorf("failed to update secret %s: %v", secretName, err)
 		}
-		// Wait for change to be in lister, otherwise the Deployments may not get updated appropriately
-		// TODO: Implement this in a generic way
-		if err := wait.Poll(10*time.Millisecond, 5*time.Second, func() (bool, error) {
-			cacheSecret := &corev1.Secret{}
-			if err := r.Get(ctx, nn(generatedSecret.Namespace, generatedSecret.Name), cacheSecret); err != nil {
-				return false, err
-			}
-			if equal := apiequality.Semantic.DeepEqual(cacheSecret, generatedSecret); equal {
-				return true, nil
-			}
-			return false, nil
-		}); err != nil {
-			return fmt.Errorf("error waiting for updated secret %s to appear in the local cache: %v", generatedSecret.Name, err)
-		}
 	}
 
 	return nil
@@ -223,21 +208,6 @@ func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) erro
 		}
 		if err := r.Update(ctx, generatedConfigMap); err != nil {
 			return fmt.Errorf("failed to update configMap %s: %v", configMapName, err)
-		}
-
-		// Wait for change to be in lister, otherwise the Deployments may not get updated appropriately
-		// TODO: Implement this in a generic way
-		if err := wait.Poll(10*time.Millisecond, 5*time.Second, func() (bool, error) {
-			cacheConfigMap := &corev1.ConfigMap{}
-			if err := r.Get(ctx, nn(generatedConfigMap.Namespace, generatedConfigMap.Name), cacheConfigMap); err != nil {
-				return false, err
-			}
-			if equal := apiequality.Semantic.DeepEqual(cacheConfigMap, generatedConfigMap); equal {
-				return true, nil
-			}
-			return false, nil
-		}); err != nil {
-			return fmt.Errorf("error waiting for upadted configmap %s to appear in the local cache: %v", generatedConfigMap.Name, err)
 		}
 	}
 	return nil
