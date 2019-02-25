@@ -216,13 +216,8 @@ func (p *ClusterProvider) GetAdminKubernetesClientForCustomerCluster(c *kubermat
 //
 // Note that the client doesn't use admin account instead it authn/authz as userInfo(email, group)
 // This implies that you have to make sure the user has the appropriate permissions inside the user cluster
-// Please verify manually that all calls to this function work, this has zero end-to-end coverage and unit tests
-// don't know anything about RBAC
 func (p *ClusterProvider) GetMachineClientForCustomerCluster(userInfo *provider.UserInfo, c *kubermaticapiv1.Cluster) (clusterv1alpha1clientset.Interface, error) {
-	return nil, errors.New("Not fully implemented")
-	// TODO when this is fully implemented and deactivated: Remove
-	// `func `(*ClusterProvider).withImpersonation` is unused"` linting exception
-	//return p.userClusterConnProvider.GetMachineClient(c, p.withImpersonation(userInfo))
+	return p.userClusterConnProvider.GetMachineClient(c, p.withImpersonation(userInfo))
 }
 
 func (p *ClusterProvider) withImpersonation(userInfo *provider.UserInfo) k8cuserclusterclient.ConfigOption {
