@@ -301,20 +301,17 @@ func (cc *Controller) ensureCronJobs(c *kubermaticv1.Cluster, data *resources.Te
 }
 
 func (cc *Controller) ensureVerticalPodAutoscalers(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators, err := resources.GetVerticalPodAutoscalersForAll([]string{
-		"apiserver",
-		"controller-manager",
+	controlPlaneDeploymentNames := []string{
 		"dns-resolver",
 		"machine-controller",
 		"machine-controller-webhook",
 		"metrics-server",
 		"openvpn-server",
-		"scheduler",
-	},
-		[]string{
-			"etcd",
-		}, c.Status.NamespaceName,
-		cc.dynamicCache)
+	}
+	if c.Annotations["kubermatic.io/openshift"] == "" {
+		controlPlaneDeploymentNames = append(controlPlaneDeploymentNames, "apiserver", "controller-manager", "scheduler")
+	}
+	creators, err := resources.GetVerticalPodAutoscalersForAll(controlPlaneDeploymentNames, []string{"etcd"}, c.Status.NamespaceName, cc.dynamicCache)
 	if err != nil {
 		return fmt.Errorf("failed to create the functions to handle VPA resources: %v", err)
 	}
