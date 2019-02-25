@@ -42,7 +42,8 @@ type Reconciler struct {
 }
 
 func Add(mgr manager.Manager, numWorkers int, clusterPredicates predicate.Predicate) error {
-	reconciler := &Reconciler{Client: mgr.GetClient(),
+	dynamicClient := mgr.GetClient()
+	reconciler := &Reconciler{Client: dynamicClient,
 		scheme:   mgr.GetScheme(),
 		recorder: mgr.GetRecorder(ControllerName)}
 
@@ -51,6 +52,27 @@ func Add(mgr manager.Manager, numWorkers int, clusterPredicates predicate.Predic
 	if err != nil {
 		return err
 	}
+
+	enqueueClusterForNamespacedObject := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
+		clusterList := &kubermaticv1.ClusterList{}
+		if err := dynamicClient.List(context.Background(), &client.ListOptions{}, clusterList); err != nil {
+			// TODO: Is there a better way to handle errors that occur here?
+			glog.Errorf("failed to list Clusters: %v", err)
+		}
+		for _, cluster := range clusterList.Items {
+			if cluster.Status.NamespaceName == a.Meta.GetNamespace() {
+				return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: cluster.Name}}}
+			}
+		}
+		return []reconcile.Request{}
+	})}
+	if err := c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, enqueueClusterForNamespacedObject, clusterPredicates); err != nil {
+		return fmt.Errorf("failed to create  watch for ConfigMaps: %v", err)
+	}
+	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, enqueueClusterForNamespacedObject, clusterPredicates); err != nil {
+		return fmt.Errorf("failed to create  watch for Secrets: %v", err)
+	}
+
 	//TODO: Ensure only openshift clusters are handled via a predicate
 	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, clusterPredicates)
 }
