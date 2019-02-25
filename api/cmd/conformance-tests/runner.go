@@ -30,6 +30,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/retry"
@@ -623,6 +624,10 @@ func (r *testRunner) waitForControlPlane(log *logrus.Entry, clusterName string) 
 	})
 	// Timeout or other error
 	if err != nil {
+		// Be helpful and log which pods are not ready
+		if err := r.logNotReadyControlplanePods(clusterName); err != nil {
+			r.log.Infof("failed to log not ready controlplane pods: %v", err)
+		}
 		return nil, err
 	}
 
@@ -875,4 +880,23 @@ func supportsStorage(cluster *kubermaticv1.Cluster) bool {
 func supportsLBs(cluster *kubermaticv1.Cluster) bool {
 	return cluster.Spec.Cloud.Azure != nil ||
 		cluster.Spec.Cloud.AWS != nil
+}
+
+func (r *testRunner) logNotReadyControlplanePods(clusterName string) error {
+	cluster, err := r.clusterLister.Get(clusterName)
+	if err != nil {
+		return err
+	}
+	controlPlanePods, err := r.seedKubeClient.CoreV1().Pods(cluster.Status.NamespaceName).List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	notReadyControlPlanePods := sets.NewString()
+	for _, pod := range controlPlanePods.Items {
+		if !podIsReady(&pod) {
+			notReadyControlPlanePods.Insert(pod.Name)
+		}
+	}
+	r.log.Infof("Failed because these controlplane pods didn't get ready: %v", notReadyControlPlanePods.List())
+	return nil
 }
