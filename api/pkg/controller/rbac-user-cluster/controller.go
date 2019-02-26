@@ -15,21 +15,24 @@ import (
 )
 
 const (
-	controllerName = "rbac-user-cluster-controller"
+	controllerName     = "rbac-user-cluster-controller"
+	ResourceOwnerName  = "system:kubermatic:owners"
+	ResourceEditorName = "system:kubermatic:editors"
+	ResourceViewerName = "system:kubermatic:viewers"
 )
 
 var mapFn = handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request {
 	return []reconcile.Request{
 		{NamespacedName: types.NamespacedName{
-			Name:      "system:kubermatic:owners",
+			Name:      ResourceOwnerName,
 			Namespace: "",
 		}},
 		{NamespacedName: types.NamespacedName{
-			Name:      "system:kubermatic:editors",
+			Name:      ResourceEditorName,
 			Namespace: "",
 		}},
 		{NamespacedName: types.NamespacedName{
-			Name:      "system:kubermatic:viewers",
+			Name:      ResourceViewerName,
 			Namespace: "",
 		}},
 	}
