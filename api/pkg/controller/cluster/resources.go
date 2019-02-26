@@ -261,21 +261,19 @@ func GetStatefulSetCreators(data *resources.TemplateData) []resources.StatefulSe
 }
 
 // GetPodDisruptionBudgetCreators returns all PodDisruptionBudgetCreators that are currently in use
-func GetPodDisruptionBudgetCreators() []resources.PodDisruptionBudgetCreator {
+func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []resources.PodDisruptionBudgetCreator {
 	return []resources.PodDisruptionBudgetCreator{
-		etcd.PodDisruptionBudget,
-		apiserver.PodDisruptionBudget,
-		metricsserver.PodDisruptionBudget,
+		etcd.PodDisruptionBudgetCreator(data),
+		apiserver.PodDisruptionBudgetCreator(data),
+		metricsserver.PodDisruptionBudgetCreator(data),
 	}
 }
 
 func (cc *Controller) ensurePodDisruptionBudgets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := GetPodDisruptionBudgetCreators()
+	creators := GetPodDisruptionBudgetCreators(data)
 
-	for _, create := range creators {
-		if err := resources.EnsurePodDisruptionBudget(data, create, cc.podDisruptionBudgetLister.PodDisruptionBudgets(c.Status.NamespaceName), cc.kubeClient.PolicyV1beta1().PodDisruptionBudgets(c.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the PodDisruptionBudget exists: %v", err)
-		}
+	if err := resources.ReconcilePodDisruptionBudgets(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache); err != nil {
+		return fmt.Errorf("failed to ensure that the PodDisruptionBudget exists: %v", err)
 	}
 
 	return nil

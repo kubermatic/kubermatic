@@ -8,25 +8,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// PodDisruptionBudget returns the metrics-server PodDisruptionBudget
-func PodDisruptionBudget(data *resources.TemplateData, existing *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
-	var pdb *policyv1beta1.PodDisruptionBudget
-	if existing != nil {
-		pdb = existing
-	} else {
-		pdb = &policyv1beta1.PodDisruptionBudget{}
+// PodDisruptionBudgetCreator returns a func to create/update the metrics-server PodDisruptionBudget
+func PodDisruptionBudgetCreator(data *resources.TemplateData) resources.PodDisruptionBudgetCreator {
+	return func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
+		pdb.Name = resources.MetricsServerPodDisruptionBudgetName
+		pdb.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
+
+		maxUnavailable := intstr.FromInt(1)
+		pdb.Spec = policyv1beta1.PodDisruptionBudgetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: resources.BaseAppLabel(name, nil),
+			},
+			MaxUnavailable: &maxUnavailable,
+		}
+
+		return pdb, nil
 	}
-
-	pdb.Name = resources.MetricsServerPodDisruptionBudgetName
-	pdb.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-
-	maxUnavailable := intstr.FromInt(1)
-	pdb.Spec = policyv1beta1.PodDisruptionBudgetSpec{
-		Selector: &metav1.LabelSelector{
-			MatchLabels: resources.BaseAppLabel(name, nil),
-		},
-		MaxUnavailable: &maxUnavailable,
-	}
-
-	return pdb, nil
 }
