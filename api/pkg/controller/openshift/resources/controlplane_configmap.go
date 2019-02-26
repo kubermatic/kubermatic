@@ -138,17 +138,15 @@ controllerConfig:
      keyFile: /etc/origin/master/service-signer-ca/ca.key
 controllers: '*'
 corsAllowedOrigins:
-## TODO: Fix up
+## TODO: Fix up to contain all public addresses
 - (?i)//127\.0\.0\.1(:|\z)
 - (?i)//localhost(:|\z)
-- (?i)//116\.203\.105\.73(:|\z)
 - (?i)//kubernetes\.default(:|\z)
 - (?i)//kubernetes\.default\.svc\.cluster\.local(:|\z)
 - (?i)//kubernetes(:|\z)
 - (?i)//openshift\.default(:|\z)
 - (?i)//openshift\.default\.svc(:|\z)
 - (?i)//172\.30\.0\.1(:|\z)
-- (?i)//alvaro\-openshift\-controller(:|\z)
 - (?i)//openshift\.default\.svc\.cluster\.local(:|\z)
 - (?i)//kubernetes\.default\.svc(:|\z)
 - (?i)//openshift(:|\z)
