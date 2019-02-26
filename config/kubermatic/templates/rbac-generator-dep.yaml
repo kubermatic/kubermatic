@@ -17,6 +17,7 @@ spec:
       annotations:
         kubermatic/scrape: 'true'
         kubermatic/scrape_port: '8085'
+        checksum/kubeconfig: {{ include (print $.Template.BasePath "/kubeconfig-secret.yaml") . | sha256sum }}
     spec:
       initContainers:
       - name: projects-migrator
