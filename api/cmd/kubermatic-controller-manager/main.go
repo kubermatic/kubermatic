@@ -232,6 +232,9 @@ func newControllerContext(
 		return nil, err
 	}
 
+	ctrlCtx.kubermaticInformerFactory = kubermaticinformers.NewFilteredSharedInformerFactory(ctrlCtx.kubermaticClient, informer.DefaultInformerResyncPeriod, metav1.NamespaceAll, selector)
+	ctrlCtx.kubeInformerFactory = kubeinformers.NewSharedInformerFactory(ctrlCtx.kubeClient, informer.DefaultInformerResyncPeriod)
+
 	var clientProvider *client.Provider
 	if ctrlCtx.runOptions.kubeconfig != "" {
 		clientProvider = client.NewExternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
@@ -239,9 +242,6 @@ func newControllerContext(
 		clientProvider = client.NewInternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
 	}
 	ctrlCtx.clientProvider = clientProvider
-
-	ctrlCtx.kubermaticInformerFactory = kubermaticinformers.NewFilteredSharedInformerFactory(ctrlCtx.kubermaticClient, informer.DefaultInformerResyncPeriod, metav1.NamespaceAll, selector)
-	ctrlCtx.kubeInformerFactory = kubeinformers.NewSharedInformerFactory(ctrlCtx.kubeClient, informer.DefaultInformerResyncPeriod)
 
 	return ctrlCtx, nil
 }
