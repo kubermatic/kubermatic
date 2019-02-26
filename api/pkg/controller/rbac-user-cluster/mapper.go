@@ -36,8 +36,8 @@ func generateVerbsForGroup(groupName string) ([]string, error) {
 	return []string{}, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s", groupName)
 }
 
-// generateRBACClusterRole creates role for specific group
-func generateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
+// GenerateRBACClusterRole creates role for specific group
+func GenerateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
 
 	groupName, err := getGroupName(resourceName)
 	if err != nil {
@@ -63,8 +63,8 @@ func generateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
 	return clusterRole, nil
 }
 
-// generateRBACClusterRoleBinding creates role binding for specific group
-func generateRBACClusterRoleBinding(resourceName string) (*rbacv1.ClusterRoleBinding, error) {
+// GenerateRBACClusterRoleBinding creates role binding for specific group
+func GenerateRBACClusterRoleBinding(resourceName string) (*rbacv1.ClusterRoleBinding, error) {
 	groupName, err := getGroupName(resourceName)
 	if err != nil {
 		return nil, err

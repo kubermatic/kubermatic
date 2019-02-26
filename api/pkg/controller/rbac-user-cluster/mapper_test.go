@@ -45,7 +45,7 @@ func TestGenerateVerbsForGroup(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			role, err := generateRBACClusterRole(test.resurceName)
+			role, err := GenerateRBACClusterRole(test.resurceName)
 
 			if test.expectError {
 				if err == nil {
