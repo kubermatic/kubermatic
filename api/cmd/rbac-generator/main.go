@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -69,8 +70,12 @@ func main() {
 	metrics.RegisterRuntimErrorMetricCounter("kubermatic_rbac_generator", prometheus.DefaultRegisterer)
 
 	// register an operating system signals on which we will gracefully close the app
-	ctrlCtx.stopCh = signals.SetupSignalHandler()
+	stopCh := signals.SetupSignalHandler()
+	ctx, ctxDone := context.WithCancel(context.Background())
+	defer ctxDone()
+	done := ctx.Done()
 
+	ctrlCtx.stopCh = done
 	ctrlCtx.kubeMasterClient = kubernetes.NewForConfigOrDie(config)
 	ctrlCtx.kubermaticMasterClient = kubermaticclientset.NewForConfigOrDie(config)
 	ctrlCtx.kubermaticMasterInformerFactory = externalversions.NewFilteredSharedInformerFactory(ctrlCtx.kubermaticMasterClient, informer.DefaultInformerResyncPeriod, metav1.NamespaceAll, selector)
@@ -145,11 +150,14 @@ func main() {
 	// This group is forever waiting in a goroutine for signals to stop
 	{
 		g.Add(func() error {
-			<-ctrlCtx.stopCh
-			glog.Info("A user has requested to stop the controller")
-			return nil
+			select {
+			case <-stopCh:
+				return errors.New("a user has requested to stop the controller")
+			case <-done:
+				return errors.New("parent context has been closed - propagating the request")
+			}
 		}, func(err error) {
-			/*an empty body*/
+			ctxDone()
 		})
 	}
 
