@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"k8s.io/api/policy/v1beta1"
+
 	"github.com/Masterminds/semver"
 	"github.com/ghodss/yaml"
 	"github.com/pmezard/go-difflib/difflib"
@@ -591,8 +593,8 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				for _, create := range clustercontroller.GetPodDisruptionBudgetCreators() {
-					res, err := create(data, nil)
+				for _, create := range clustercontroller.GetPodDisruptionBudgetCreators(data) {
+					res, err := create(&v1beta1.PodDisruptionBudget{})
 					if err != nil {
 						t.Fatalf("failed to create PodDisruptionBudget: %v", err)
 					}
