@@ -149,10 +149,6 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return nil, nil
 }
 
-func setNamespace(object metav1.Object, namespace string) {
-	object.SetNamespace(namespace)
-}
-
 func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshiftData) []resources.NamedSecretCreatorGetter {
 	return []resources.NamedSecretCreatorGetter{openshiftresources.ServiceSignerCA(),
 		openshiftresources.GetLoopbackKubeconfigCreator(ctx, osData)}
@@ -198,23 +194,6 @@ func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) err
 		}
 	}
 	return nil
-}
-
-func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluster)) (updatedCluster *kubermaticv1.Cluster, err error) {
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		cluster := &kubermaticv1.Cluster{}
-		if err := r.Get(context.Background(), types.NamespacedName{Name: name}, cluster); err != nil {
-			return err
-		}
-		modify(cluster)
-		err := r.Update(context.Background(), cluster)
-		if err == nil {
-			updatedCluster = cluster
-		}
-		return err
-	})
-
-	return updatedCluster, err
 }
 
 // A cheap helper because I am too lazy to type this everytime

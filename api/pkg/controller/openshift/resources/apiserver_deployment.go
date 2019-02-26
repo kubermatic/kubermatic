@@ -400,16 +400,3 @@ func getEnvVars(cluster *kubermaticv1.Cluster) []corev1.EnvVar {
 	}
 	return vars
 }
-
-func getDexCASecretVolume() corev1.Volume {
-
-	return corev1.Volume{
-		Name: resources.DexCASecretName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName:  resources.DexCASecretName,
-				DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
-			},
-		},
-	}
-}
