@@ -98,7 +98,7 @@ import (
 {{ namedReconcileFunc .ResourceName .ImportAlias }}
 {{ else }}
 {{ reconcileFunc .ResourceName .ImportAlias }}
-{{ end }} 
+{{ end }}
 {{- end }}
 
 `))
@@ -191,7 +191,7 @@ type {{ .ResourceName }}Creator = func(existing *{{ .ImportAlias }}.{{ .Resource
 // Named{{ .ResourceName }}CreatorGetter returns the name of the resource and the corresponding creator function
 type Named{{ .ResourceName }}CreatorGetter = func() (name string, create {{ .ResourceName }}Creator)
 
-// {{ lowercaseFirst .ResourceName }}ObjectWrapper adds a wrapper so the {{ .ResourceName }}Creator matches ObjectCreator
+// {{ .ResourceName }}ObjectWrapper adds a wrapper so the {{ .ResourceName }}Creator matches ObjectCreator
 // This is needed as golang does not support function interface matching
 func {{ .ResourceName }}ObjectWrapper(create {{ .ResourceName }}Creator) ObjectCreator {
 	return func(existing runtime.Object) (runtime.Object, error) {
