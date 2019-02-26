@@ -36,8 +36,6 @@ const (
 	// TODO: Change this to `apiserver-openshift`. Requires to mange the service
 	// with this controller first as we need to adapt its label selector
 	legacyAppLabelValue = "apiserver"
-
-	defaultNodePortRange = "30000-32767"
 )
 
 // DeploymentCreator returns the function to create and update the API server deployment

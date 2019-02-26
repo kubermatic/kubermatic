@@ -16,8 +16,6 @@ import (
 
 const (
 	openshiftControlPlaneConfigConfigMapName = "openshift-config"
-	openshiftControlPlaneCertsBasePath       = "/etc/origin/certs"
-	openshiftControlPlaneConfigbasePath      = "/etc/origin/master"
 	openshiftContolPlaneConfigKeyName        = "master-config.yaml"
 )
 
@@ -48,7 +46,6 @@ type openshiftConfigInput struct {
 	ClusterCIDR   string
 	ClusterURL    string
 	DNSDomain     string
-	CertsBasePath string
 	ListenPort    string
 }
 
@@ -68,7 +65,6 @@ func getMasterConfig(ctx context.Context, data openshiftData) (string, error) {
 		ClusterCIDR:   data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0],
 		ClusterURL:    data.Cluster().Address.URL,
 		DNSDomain:     data.Cluster().Spec.ClusterNetwork.DNSDomain,
-		CertsBasePath: openshiftControlPlaneCertsBasePath,
 		ListenPort:    fmt.Sprintf("%d", apiserverListenPort),
 	}
 	if err := tmpl.Execute(&controlPlaneConfigBuffer, templateInput); err != nil {

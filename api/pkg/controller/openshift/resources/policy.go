@@ -1,4 +1,5 @@
 package resources
+
 const policyJSON = `
 {
     "kind": "List",
