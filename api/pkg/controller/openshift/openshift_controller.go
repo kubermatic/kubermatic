@@ -14,7 +14,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -162,34 +161,9 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
 	for _, namedSecretCreator := range r.getAllSecretCreators(ctx, osData) {
 		secretName, secretCreator := namedSecretCreator()
-		secret := &corev1.Secret{}
-		if err := r.Client.Get(ctx, nn(osData.Cluster().Status.NamespaceName, secretName), secret); err != nil {
-			if !kerrors.IsNotFound(err) {
-				return fmt.Errorf("failed to get secret %s: %v", secretName, err)
-			}
-			secret, err := secretCreator(&corev1.Secret{})
-			if err != nil {
-				return fmt.Errorf("failed to get initial secret %s from creator: %v", secretName, err)
-			}
-			// TODO: This is weird, the secret doesn't have a name, check how the cluster-controller wraps this
-			secret.Name = secretName
-			setNamespace(secret, osData.Cluster().Status.NamespaceName)
-			if err := r.Create(ctx, secret); err != nil {
-				return fmt.Errorf("failed to create initial secret %s: %v", secretName, err)
-			}
-		}
-		generatedSecret, err := secretCreator(secret.DeepCopy())
-		if err != nil {
-			return fmt.Errorf("failed to get secret %s from creator: %v", secret.Name, err)
-		}
-		// TODO: This is weird, the secret doesn't have a name, check how the cluster-controller wraps this
-		generatedSecret.Name = secretName
-		setNamespace(generatedSecret, osData.Cluster().Status.NamespaceName)
-		if equal := apiequality.Semantic.DeepEqual(secret, generatedSecret); equal {
-			continue
-		}
-		if err := r.Update(ctx, generatedSecret); err != nil {
-			return fmt.Errorf("failed to update secret %s: %v", secretName, err)
+		if err := resources.EnsureNamedObjectV2(ctx,
+			nn(osData.Cluster().Status.NamespaceName, secretName), resources.SecretObjectWrapper(secretCreator), r.Client, &corev1.Secret{}); err != nil {
+			return fmt.Errorf("failed to ensure Secret %s: %v", secretName, err)
 		}
 	}
 
@@ -203,31 +177,9 @@ func (r *Reconciler) getAllConfigmapCreators() []openshiftresources.NamedConfigM
 func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) error {
 	for _, namedConfigmapCreator := range r.getAllConfigmapCreators() {
 		configMapName, configMapCreator := namedConfigmapCreator(ctx, osData)
-		configMap := &corev1.ConfigMap{}
-		if err := r.Client.Get(ctx, nn(osData.Cluster().Status.NamespaceName, configMapName), configMap); err != nil {
-			if !kerrors.IsNotFound(err) {
-				return fmt.Errorf("failed to get configMap %s: %v", configMapName, err)
-			}
-			configMap, err := configMapCreator(&corev1.ConfigMap{})
-			if err != nil {
-				return fmt.Errorf("failed to get initial configMap %s from creator: %v", configMapName, err)
-			}
-			setNamespace(configMap, osData.Cluster().Status.NamespaceName)
-			if err := r.Create(ctx, configMap); err != nil {
-				return fmt.Errorf("failed to create initial configmap %s: %v", configMapName, err)
-			}
-			continue
-		}
-		generatedConfigMap, err := configMapCreator(configMap.DeepCopy())
-		if err != nil {
-			return fmt.Errorf("failed to get configMap %s: %v", configMapName, err)
-		}
-		setNamespace(generatedConfigMap, osData.Cluster().Status.NamespaceName)
-		if equal := apiequality.Semantic.DeepEqual(configMap, generatedConfigMap); equal {
-			continue
-		}
-		if err := r.Update(ctx, generatedConfigMap); err != nil {
-			return fmt.Errorf("failed to update configMap %s: %v", configMapName, err)
+		if err := resources.EnsureNamedObjectV2(ctx,
+			nn(osData.Cluster().Status.NamespaceName, configMapName), resources.ConfigMapObjectWrapper(configMapCreator), r.Client, &corev1.ConfigMap{}); err != nil {
+			return fmt.Errorf("failed to ensure ConfigMap %s: %v", configMapName, err)
 		}
 	}
 	return nil
@@ -240,31 +192,9 @@ func (r *Reconciler) getAllDeploymentCreators() []openshiftresources.NamedDeploy
 func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) error {
 	for _, namedDeploymentCreator := range r.getAllDeploymentCreators() {
 		deploymentName, deploymentCreator := namedDeploymentCreator(ctx, osData)
-		deployment := &appsv1.Deployment{}
-		if err := r.Client.Get(ctx, nn(osData.Cluster().Status.NamespaceName, deploymentName), deployment); err != nil {
-			if !kerrors.IsNotFound(err) {
-				return fmt.Errorf("failed to get deployment %s: %v", deploymentName, err)
-			}
-			deployment, err := deploymentCreator(&appsv1.Deployment{})
-			if err != nil {
-				return fmt.Errorf("failed to get initial deployment %s from creator: %v", deploymentName, err)
-			}
-			setNamespace(deployment, osData.Cluster().Status.NamespaceName)
-			if err := r.Create(ctx, deployment); err != nil {
-				return fmt.Errorf("failed to create initial deployment %s: %v", deploymentName, err)
-			}
-			continue
-		}
-		generatedDeployment, err := deploymentCreator(deployment.DeepCopy())
-		if err != nil {
-			return fmt.Errorf("failed to get deployment %s: %v", deploymentName, err)
-		}
-		setNamespace(generatedDeployment, osData.Cluster().Status.NamespaceName)
-		if equal := apiequality.Semantic.DeepEqual(generatedDeployment, deployment); equal {
-			continue
-		}
-		if err := r.Update(ctx, generatedDeployment); err != nil {
-			return fmt.Errorf("failed to update deployment %s: %v", deploymentName, err)
+		if err := resources.EnsureNamedObjectV2(ctx,
+			nn(osData.Cluster().Status.NamespaceName, deploymentName), resources.DeploymentObjectWrapper(deploymentCreator), r.Client, &appsv1.Deployment{}); err != nil {
+			return fmt.Errorf("failed to ensure Deployment %s: %v", deploymentName, err)
 		}
 	}
 	return nil
