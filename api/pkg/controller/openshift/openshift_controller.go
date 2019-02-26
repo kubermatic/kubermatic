@@ -8,6 +8,7 @@ import (
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	"github.com/golang/glog"
 
@@ -24,7 +25,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -41,7 +41,9 @@ type Reconciler struct {
 	recorder record.EventRecorder
 }
 
-func Add(mgr manager.Manager, numWorkers int, clusterPredicates predicate.Predicate) error {
+func Add(mgr manager.Manager, numWorkers int, workerName string) error {
+	clusterPredicates := workerlabel.Predicates(workerName)
+
 	dynamicClient := mgr.GetClient()
 	reconciler := &Reconciler{Client: dynamicClient,
 		scheme:   mgr.GetScheme(),
@@ -60,19 +62,24 @@ func Add(mgr manager.Manager, numWorkers int, clusterPredicates predicate.Predic
 			glog.Errorf("failed to list Clusters: %v", err)
 		}
 		for _, cluster := range clusterList.Items {
+			// Predicates are used on the watched object itself, hence we can not
+			// use them for anything other than the Cluster CR itself
+			if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != workerName {
+				continue
+			}
 			if cluster.Status.NamespaceName == a.Meta.GetNamespace() {
 				return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: cluster.Name}}}
 			}
 		}
 		return []reconcile.Request{}
 	})}
-	if err := c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, enqueueClusterForNamespacedObject, clusterPredicates); err != nil {
+	if err := c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, enqueueClusterForNamespacedObject); err != nil {
 		return fmt.Errorf("failed to create watch for ConfigMaps: %v", err)
 	}
-	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, enqueueClusterForNamespacedObject, clusterPredicates); err != nil {
+	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, enqueueClusterForNamespacedObject); err != nil {
 		return fmt.Errorf("failed to create watch for Secrets: %v", err)
 	}
-	if err := c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, enqueueClusterForNamespacedObject, clusterPredicates); err != nil {
+	if err := c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, enqueueClusterForNamespacedObject); err != nil {
 		return fmt.Errorf("failed to create watch for Deployments: %v", err)
 	}
 
