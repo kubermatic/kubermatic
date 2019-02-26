@@ -20,7 +20,7 @@ type ServiceCreator = func(existing *corev1.Service) (*corev1.Service, error)
 
 // ServiceObjectWrapper adds a wrapper so the ServiceCreator matches ObjectCreator
 // This is needed as golang does not support function interface matching
-func serviceObjectWrapper(create ServiceCreator) ObjectCreator {
+func ServiceObjectWrapper(create ServiceCreator) ObjectCreator {
 	return func(existing runtime.Object) (runtime.Object, error) {
 		if existing != nil {
 			return create(existing.(*corev1.Service))
@@ -37,7 +37,7 @@ func ReconcileServices(creators []ServiceCreator, namespace string, client ctrlr
 	}
 
 	for _, create := range creators {
-		createObject := serviceObjectWrapper(create)
+		createObject := ServiceObjectWrapper(create)
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -133,7 +133,7 @@ type StatefulSetCreator = func(existing *appsv1.StatefulSet) (*appsv1.StatefulSe
 
 // StatefulSetObjectWrapper adds a wrapper so the StatefulSetCreator matches ObjectCreator
 // This is needed as golang does not support function interface matching
-func statefulSetObjectWrapper(create StatefulSetCreator) ObjectCreator {
+func StatefulSetObjectWrapper(create StatefulSetCreator) ObjectCreator {
 	return func(existing runtime.Object) (runtime.Object, error) {
 		if existing != nil {
 			return create(existing.(*appsv1.StatefulSet))
@@ -150,7 +150,7 @@ func ReconcileStatefulSets(creators []StatefulSetCreator, namespace string, clie
 	}
 
 	for _, create := range creators {
-		createObject := statefulSetObjectWrapper(create)
+		createObject := StatefulSetObjectWrapper(create)
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -168,7 +168,7 @@ type DeploymentCreator = func(existing *appsv1.Deployment) (*appsv1.Deployment, 
 
 // DeploymentObjectWrapper adds a wrapper so the DeploymentCreator matches ObjectCreator
 // This is needed as golang does not support function interface matching
-func deploymentObjectWrapper(create DeploymentCreator) ObjectCreator {
+func DeploymentObjectWrapper(create DeploymentCreator) ObjectCreator {
 	return func(existing runtime.Object) (runtime.Object, error) {
 		if existing != nil {
 			return create(existing.(*appsv1.Deployment))
@@ -185,7 +185,7 @@ func ReconcileDeployments(creators []DeploymentCreator, namespace string, client
 	}
 
 	for _, create := range creators {
-		createObject := deploymentObjectWrapper(create)
+		createObject := DeploymentObjectWrapper(create)
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -203,7 +203,7 @@ type VerticalPodAutoscalerCreator = func(existing *autoscalingv1beta1.VerticalPo
 
 // VerticalPodAutoscalerObjectWrapper adds a wrapper so the VerticalPodAutoscalerCreator matches ObjectCreator
 // This is needed as golang does not support function interface matching
-func verticalPodAutoscalerObjectWrapper(create VerticalPodAutoscalerCreator) ObjectCreator {
+func VerticalPodAutoscalerObjectWrapper(create VerticalPodAutoscalerCreator) ObjectCreator {
 	return func(existing runtime.Object) (runtime.Object, error) {
 		if existing != nil {
 			return create(existing.(*autoscalingv1beta1.VerticalPodAutoscaler))
@@ -220,7 +220,7 @@ func ReconcileVerticalPodAutoscalers(creators []VerticalPodAutoscalerCreator, na
 	}
 
 	for _, create := range creators {
-		createObject := verticalPodAutoscalerObjectWrapper(create)
+		createObject := VerticalPodAutoscalerObjectWrapper(create)
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
