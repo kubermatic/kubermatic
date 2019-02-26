@@ -3,7 +3,6 @@ package resources
 import (
 	"context"
 	"fmt"
-	"log"
 
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -22,6 +21,7 @@ import (
 	rbacv1lister "k8s.io/client-go/listers/rbac/v1"
 	"k8s.io/client-go/tools/cache"
 
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -278,6 +278,7 @@ type informerStore interface {
 }
 
 // EnsureObject will generate the Object with the passed create function & create or update it in Kubernetes if necessary.
+// Deprecated, use EnsureNamedObject instead, it doesn't require to call the creator twice
 func EnsureObject(namespace string, rawcreate ObjectCreator, store informerStore, client ctrlruntimeclient.Client) error {
 	ctx := context.Background()
 
@@ -332,8 +333,56 @@ func EnsureObject(namespace string, rawcreate ObjectCreator, store informerStore
 	return nil
 }
 
+// EnsureNamedObjectV2 will generate the Object with the passed create function & create or update it in Kubernetes if necessary.
+// Different to EnsureObject, EnsureNamedObjectV2 requires the name of the resource being passed so the generation just for the name gets avoided.
+// It differs from EnsureNamedObject mainly in its signature and is intended to be used from a controller-runtime based controller
+func EnsureNamedObjectV2(ctx context.Context, namespacedName types.NamespacedName, rawcreate ObjectCreator, client ctrlruntimeclient.Client, emptyObject runtime.Object) error {
+	// A wrapper to ensure we always set the Namespace and Name. This is useful as we call create twice
+	create := createWithNamespace(rawcreate, namespacedName.Namespace)
+	create = createWithName(create, namespacedName.Name)
+
+	exists := true
+	existingObject := emptyObject.DeepCopyObject()
+	if err := client.Get(ctx, namespacedName, existingObject); err != nil {
+		if !kubeerrors.IsNotFound(err) {
+			return fmt.Errorf("failed to get Object(%T): %v", existingObject, err)
+		}
+		exists = false
+	}
+
+	// Object does not exist in lister -> Create the Object
+	if !exists {
+		obj, err := create(emptyObject)
+		if err != nil {
+			return fmt.Errorf("failed to generate object: %v", err)
+		}
+		if err := client.Create(ctx, obj); err != nil {
+			return fmt.Errorf("failed to create %T '%s': %v", obj, namespacedName.String(), err)
+		}
+		return nil
+	}
+
+	// Create a copy to make sure we don't compare the object onto itself
+	// in case the creator returns the same pointer it got passed in
+	obj, err := create(existingObject.DeepCopyObject())
+	if err != nil {
+		return fmt.Errorf("failed to build Object(%T) '%s': %v", existingObject, namespacedName.String(), err)
+	}
+
+	if DeepEqual(obj.(metav1.Object), existingObject.(metav1.Object)) {
+		return nil
+	}
+
+	if err = client.Update(ctx, obj); err != nil {
+		return fmt.Errorf("failed to update object %T '%s': %v", obj, namespacedName.String(), err)
+	}
+
+	return nil
+}
+
 // EnsureNamedObject will generate the Object with the passed create function & create or update it in Kubernetes if necessary.
-// Different to EnsureNamedObject, EnsureObject requires the name of the resource being passed so the generation just for the name gets avoided.
+// Different to EnsureObject, EnsureNamedObject requires the name of the resource being passed so the generation just for the name gets avoided.
+// If you are trying to use this from a controller-runtime-based controller, check out EnsureNamedObjectV2 instead
 func EnsureNamedObject(name string, namespace string, rawcreate ObjectCreator, store informerStore, client ctrlruntimeclient.Client) error {
 	ctx := context.Background()
 
@@ -354,7 +403,6 @@ func EnsureNamedObject(name string, namespace string, rawcreate ObjectCreator, s
 
 	// Object does not exist in lister -> Create the Object
 	if !exists {
-		log.Printf("Key %s does not exist in lister", key)
 		obj, err := create(nil)
 		if err != nil {
 			return fmt.Errorf("failed to generate object: %v", err)

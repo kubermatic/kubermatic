@@ -64,7 +64,7 @@ func GetInternalKubeconfigCreator(name, commonName string, organizations []strin
 			}
 
 			b := se.Data[KubeconfigSecretKey]
-			valid, err := isValidKubeconfig(b, ca.Cert, url.String(), commonName, organizations, data.Cluster().Name)
+			valid, err := IsValidKubeconfig(b, ca.Cert, url.String(), commonName, organizations, data.Cluster().Name)
 			if err != nil || !valid {
 				if err != nil {
 					glog.V(2).Infof("failed to validate existing kubeconfig from %s/%s %v. Regenerating it...", se.Namespace, se.Name, err)
@@ -72,7 +72,7 @@ func GetInternalKubeconfigCreator(name, commonName string, organizations []strin
 					glog.V(2).Infof("invalid/outdated kubeconfig found in %s/%s. Regenerating it...", se.Namespace, se.Name)
 				}
 
-				se.Data[KubeconfigSecretKey], err = buildNewKubeconfigAsByte(ca, url.String(), commonName, organizations, data.Cluster().Name)
+				se.Data[KubeconfigSecretKey], err = BuildNewKubeconfigAsByte(ca, url.String(), commonName, organizations, data.Cluster().Name)
 				if err != nil {
 					return nil, fmt.Errorf("failed to create new kubeconfig: %v", err)
 				}
@@ -84,7 +84,7 @@ func GetInternalKubeconfigCreator(name, commonName string, organizations []strin
 	}
 }
 
-func buildNewKubeconfigAsByte(ca *triple.KeyPair, server, commonName string, organizations []string, clusterName string) ([]byte, error) {
+func BuildNewKubeconfigAsByte(ca *triple.KeyPair, server, commonName string, organizations []string, clusterName string) ([]byte, error) {
 	kubeconfig, err := buildNewKubeconfig(ca, server, commonName, organizations, clusterName)
 	if err != nil {
 		return nil, err
@@ -131,7 +131,7 @@ func getBaseKubeconfig(caCert *x509.Certificate, server, clusterName string) *cl
 	}
 }
 
-func isValidKubeconfig(kubeconfigBytes []byte, caCert *x509.Certificate, server, commonName string, organizations []string, clusterName string) (bool, error) {
+func IsValidKubeconfig(kubeconfigBytes []byte, caCert *x509.Certificate, server, commonName string, organizations []string, clusterName string) (bool, error) {
 	if len(kubeconfigBytes) == 0 {
 		return false, nil
 	}

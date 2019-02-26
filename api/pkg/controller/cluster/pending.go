@@ -30,7 +30,7 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 		return nil, err
 	}
 
-	// Deploy & Update master components
+	// Deploy & Update master components for Kubernetes
 	if err = cc.ensureResourcesAreDeployed(cluster); err != nil {
 		return nil, err
 	}

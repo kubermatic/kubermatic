@@ -1,6 +1,7 @@
 package vpnsidecar
 
 import (
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -20,12 +21,17 @@ var (
 	}
 )
 
+type openvpnData interface {
+	ImageRegistry(string) string
+	Cluster() *kubermaticv1.Cluster
+}
+
 // OpenVPNSidecarContainer returns a `corev1.Container` for
 // running alongside a master component, providing vpn access
 // to user cluster networks.
 // Also required but not provided by this func:
 // * volumes: resources.OpenVPNClientCertificatesSecretName, resources.CACertSecretName
-func OpenVPNSidecarContainer(data resources.DeploymentDataProvider, name string) (*corev1.Container, error) {
+func OpenVPNSidecarContainer(data openvpnData, name string) (*corev1.Container, error) {
 	return &corev1.Container{
 		Name:            name,
 		Image:           data.ImageRegistry("docker.io") + "/kubermatic/openvpn:v0.4",
