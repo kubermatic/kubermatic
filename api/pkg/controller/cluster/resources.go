@@ -161,12 +161,15 @@ func GetDeploymentCreators(data resources.DeploymentDataProvider) []resources.De
 		machinecontroller.DeploymentCreator(data),
 		machinecontroller.WebhookDeploymentCreator(data),
 		openvpn.DeploymentCreator(data),
-		apiserver.DeploymentCreator(data),
-		scheduler.DeploymentCreator(data),
-		controllermanager.DeploymentCreator(data),
 		dns.DeploymentCreator(data),
 		metricsserver.DeploymentCreator(data),
 		usercluster.DeploymentCreator(data),
+	}
+
+	if cluster := data.Cluster(); cluster != nil && cluster.Annotations["kubermatic.io/openshift"] == "" {
+		creators = append(creators, apiserver.DeploymentCreator(data))
+		creators = append(creators, scheduler.DeploymentCreator(data))
+		creators = append(creators, controllermanager.DeploymentCreator(data))
 	}
 
 	if data.Cluster() != nil && len(data.Cluster().Spec.MachineNetworks) > 0 {
@@ -298,20 +301,17 @@ func (cc *Controller) ensureCronJobs(c *kubermaticv1.Cluster, data *resources.Te
 }
 
 func (cc *Controller) ensureVerticalPodAutoscalers(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators, err := resources.GetVerticalPodAutoscalersForAll([]string{
-		"apiserver",
-		"controller-manager",
+	controlPlaneDeploymentNames := []string{
 		"dns-resolver",
 		"machine-controller",
 		"machine-controller-webhook",
 		"metrics-server",
 		"openvpn-server",
-		"scheduler",
-	},
-		[]string{
-			"etcd",
-		}, c.Status.NamespaceName,
-		cc.dynamicCache)
+	}
+	if c.Annotations["kubermatic.io/openshift"] == "" {
+		controlPlaneDeploymentNames = append(controlPlaneDeploymentNames, "apiserver", "controller-manager", "scheduler")
+	}
+	creators, err := resources.GetVerticalPodAutoscalersForAll(controlPlaneDeploymentNames, []string{"etcd"}, c.Status.NamespaceName, cc.dynamicCache)
 	if err != nil {
 		return fmt.Errorf("failed to create the functions to handle VPA resources: %v", err)
 	}

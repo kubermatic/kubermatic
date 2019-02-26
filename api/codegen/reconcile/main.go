@@ -98,7 +98,7 @@ import (
 {{ namedReconcileFunc .ResourceName .ImportAlias }}
 {{ else }}
 {{ reconcileFunc .ResourceName .ImportAlias }}
-{{ end }} 
+{{ end }}
 {{- end }}
 
 `))
@@ -152,7 +152,7 @@ type {{ .ResourceName }}Creator = func(existing *{{ .ImportAlias }}.{{ .Resource
 
 // {{ .ResourceName }}ObjectWrapper adds a wrapper so the {{ .ResourceName }}Creator matches ObjectCreator
 // This is needed as golang does not support function interface matching
-func {{ lowercaseFirst .ResourceName }}ObjectWrapper(create {{ .ResourceName }}Creator) ObjectCreator {
+func {{ .ResourceName }}ObjectWrapper(create {{ .ResourceName }}Creator) ObjectCreator {
 	return func(existing runtime.Object) (runtime.Object, error) {
 		if existing != nil {
 			return create(existing.(*{{ .ImportAlias }}.{{ .ResourceName }}))
@@ -169,7 +169,7 @@ func Reconcile{{ .ResourceName }}s(creators []{{ .ResourceName }}Creator, namesp
 	}
 
 	for _, create := range creators {
-		createObject := {{ lowercaseFirst .ResourceName }}ObjectWrapper(create)
+		createObject := {{ .ResourceName }}ObjectWrapper(create)
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -191,7 +191,7 @@ type {{ .ResourceName }}Creator = func(existing *{{ .ImportAlias }}.{{ .Resource
 // Named{{ .ResourceName }}CreatorGetter returns the name of the resource and the corresponding creator function
 type Named{{ .ResourceName }}CreatorGetter = func() (name string, create {{ .ResourceName }}Creator)
 
-// {{ lowercaseFirst .ResourceName }}ObjectWrapper adds a wrapper so the {{ .ResourceName }}Creator matches ObjectCreator
+// {{ .ResourceName }}ObjectWrapper adds a wrapper so the {{ .ResourceName }}Creator matches ObjectCreator
 // This is needed as golang does not support function interface matching
 func {{ .ResourceName }}ObjectWrapper(create {{ .ResourceName }}Creator) ObjectCreator {
 	return func(existing runtime.Object) (runtime.Object, error) {
