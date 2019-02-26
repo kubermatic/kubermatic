@@ -6,6 +6,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -21,20 +22,37 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
-// New returns a new instance of the client connection provider
-func New(secretLister corev1lister.SecretLister) *Provider {
-	return &Provider{secretLister: secretLister}
+// NewInternal returns a new instance of the client connection provider that
+// only works from within the seed cluster but has the advantage that it doesn't leave
+// the seed clusters network
+func NewInternal(secretLister corev1lister.SecretLister) *Provider {
+	return &Provider{secretLister: secretLister, useExternalAddress: false}
+}
+
+// NewExternal returns a new instance of the client connection provider that
+// that uses the external cluster address and hence works from everywhere.
+// Use NewInternal if possible
+func NewExternal(secretLister corev1lister.SecretLister) *Provider {
+	return &Provider{secretLister: secretLister, useExternalAddress: true}
 }
 
 // Provider offers functions to interact with a user cluster
 type Provider struct {
-	secretLister corev1lister.SecretLister
+	secretLister       corev1lister.SecretLister
+	useExternalAddress bool
 }
 
 // GetAdminKubeconfig returns the admin kubeconfig for the given cluster
 func (p *Provider) GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
-	//Load the admin kubeconfig secret
-	s, err := p.secretLister.Secrets(c.Status.NamespaceName).Get(resources.AdminKubeconfigSecretName)
+	var s *corev1.Secret
+	var err error
+	if p.useExternalAddress {
+		// Load the admin kubeconfig secret, it uses the external apiserver address
+		s, err = p.secretLister.Secrets(c.Status.NamespaceName).Get(resources.AdminKubeconfigSecretName)
+	} else {
+		// Load the internal admin kubeconfig secret
+		s, err = p.secretLister.Secrets(c.Status.NamespaceName).Get(resources.InternalUserClusterAdminKubeconfigSecretName)
+	}
 	if err != nil {
 		return nil, err
 	}
