@@ -12,7 +12,6 @@ import (
 func PodDisruptionBudgetCreator(data *resources.TemplateData) resources.PodDisruptionBudgetCreator {
 	return func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
 		pdb.Name = resources.EtcdPodDisruptionBudgetName
-		pdb.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 
 		minAvailable := intstr.FromInt((resources.EtcdClusterSize / 2) + 1)
 		pdb.Spec = policyv1beta1.PodDisruptionBudgetSpec{

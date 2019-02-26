@@ -264,8 +264,8 @@ func GetStatefulSetCreators(data *resources.TemplateData) []resources.StatefulSe
 func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []resources.PodDisruptionBudgetCreator {
 	return []resources.PodDisruptionBudgetCreator{
 		etcd.PodDisruptionBudgetCreator(data),
-		apiserver.PodDisruptionBudgetCreator(data),
-		metricsserver.PodDisruptionBudgetCreator(data),
+		apiserver.PodDisruptionBudgetCreator(),
+		metricsserver.PodDisruptionBudgetCreator(),
 	}
 }
 

@@ -9,10 +9,9 @@ import (
 )
 
 // PodDisruptionBudgetCreator returns a func to create/update the apiserver PodDisruptionBudget
-func PodDisruptionBudgetCreator(data *resources.TemplateData) resources.PodDisruptionBudgetCreator {
+func PodDisruptionBudgetCreator() resources.PodDisruptionBudgetCreator {
 	return func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
 		pdb.Name = resources.ApiserverPodDisruptionBudgetName
-		pdb.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 
 		maxUnavailable := intstr.FromInt(1)
 		pdb.Spec = policyv1beta1.PodDisruptionBudgetSpec{
