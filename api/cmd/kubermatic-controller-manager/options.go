@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
@@ -210,4 +211,5 @@ type controllerContext struct {
 	dynamicClient             ctrlruntimeclient.Client
 	dynamicCache              ctrlruntimecache.Cache
 	mgr                       manager.Manager
+	clientProvider            *client.Provider
 }

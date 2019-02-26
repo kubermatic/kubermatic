@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/collectors"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
@@ -230,6 +231,14 @@ func newControllerContext(
 	if err != nil {
 		return nil, err
 	}
+
+	var clientProvider *client.Provider
+	if ctrlCtx.runOptions.kubeconfig != "" {
+		clientProvider = client.NewExternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
+	} else {
+		clientProvider = client.NewInternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
+	}
+	ctrlCtx.clientProvider = clientProvider
 
 	ctrlCtx.kubermaticInformerFactory = kubermaticinformers.NewFilteredSharedInformerFactory(ctrlCtx.kubermaticClient, informer.DefaultInformerResyncPeriod, metav1.NamespaceAll, selector)
 	ctrlCtx.kubeInformerFactory = kubeinformers.NewSharedInformerFactory(ctrlCtx.kubeClient, informer.DefaultInformerResyncPeriod)
