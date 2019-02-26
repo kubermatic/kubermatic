@@ -110,6 +110,10 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 
 	//
 	// Defines a set of HTTP endpoints for cluster that belong to a project.
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters").
+		Handler(r.listClustersForProject())
+
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters").
 		Handler(r.createCluster())
@@ -754,7 +758,7 @@ func (r Routing) createCluster() http.Handler {
 
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters project listClusters
 //
-//     Lists clusters for the specified project.
+//     Lists clusters for the specified project and data center.
 //
 //     Produces:
 //     - application/json
@@ -773,6 +777,31 @@ func (r Routing) listClusters() http.Handler {
 			middleware.UserInfo(r.userProjectMapper),
 		)(listClusters(r.projectProvider)),
 		decodeListClustersReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/clusters project listClustersForProject
+//
+//     Lists clusters for the specified project.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterList
+//       401: empty
+//       403: empty
+func (r Routing) listClustersForProject() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.oidcAuthenticator.Verifier(),
+			middleware.UserSaver(r.userProvider),
+			middleware.UserInfo(r.userProjectMapper),
+		)(listClustersForProject(r.projectProvider, r.clusterProviders)),
+		common.DecodeGetProject,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)

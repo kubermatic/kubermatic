@@ -140,18 +140,29 @@ func listClusters(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 		req := request.(ListClustersReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		apiClusters, err := getClusters(clusterProvider, userInfo, projectProvider, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		clusters, err := clusterProvider.List(project, nil)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		apiClusters := convertInternalClustersToExternal(clusters)
 		return apiClusters, nil
+	}
+}
+
+func listClustersForProject(projectProvider provider.ProjectProvider, clusterProviders map[string]provider.ClusterProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(common.GetProjectRq)
+		allClusters := make([]*apiv1.Cluster, 0)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		for _, clusterProvider := range clusterProviders {
+			apiClusters, err := getClusters(clusterProvider, userInfo, projectProvider, req.ProjectID)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			allClusters = append(allClusters, apiClusters...)
+		}
+		return allClusters, nil
 	}
 }
 
@@ -737,4 +748,19 @@ func DecodeDeleteClusterReq(c context.Context, r *http.Request) (interface{}, er
 	}
 
 	return req, nil
+}
+
+func getClusters(clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, projectProvider provider.ProjectProvider, projectID string) ([]*apiv1.Cluster, error) {
+	project, err := projectProvider.Get(userInfo, projectID, &provider.ProjectGetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	clusters, err := clusterProvider.List(project, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	apiClusters := convertInternalClustersToExternal(clusters)
+	return apiClusters, nil
 }
