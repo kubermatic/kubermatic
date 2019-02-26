@@ -1,4 +1,4 @@
-default: lint test build
+default: test build
 
 lb-updater:
 	CGO_ENABLED=0 go build -o ./_build/lb-updater -a -installsuffix cgo github.com/kubermatic/nodeport-proxy/cmd/lb-updater
@@ -18,7 +18,4 @@ docker: build
 test:
 	go test ./...
 
-lint:
-	golangci-lint run -E gosec -E interfacer -E goconst -E gofmt -E goimports -E misspell -E unparam -E prealloc ./...
-
-.PHONY: test lint envoy-manager lb-updater
+.PHONY: test envoy-manager lb-updater
