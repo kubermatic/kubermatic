@@ -248,6 +248,32 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:662e3fdfe37512e20258e01c60aac10d8b60f1ae501dbc6291930d5448c16ead"
+  name = "github.com/envoyproxy/go-control-plane"
+  packages = [
+    "envoy/api/v2",
+    "envoy/api/v2/auth",
+    "envoy/api/v2/cluster",
+    "envoy/api/v2/core",
+    "envoy/api/v2/endpoint",
+    "envoy/api/v2/listener",
+    "envoy/api/v2/route",
+    "envoy/config/filter/accesslog/v2",
+    "envoy/config/filter/http/health_check/v2",
+    "envoy/config/filter/network/http_connection_manager/v2",
+    "envoy/config/filter/network/tcp_proxy/v2",
+    "envoy/service/discovery/v2",
+    "envoy/type",
+    "pkg/cache",
+    "pkg/log",
+    "pkg/server",
+    "pkg/util",
+  ]
+  pruneopts = "NUT"
+  revision = "eb553e72ac8724721a99ed85fcb116467c7a2bac"
+  version = "v0.6.7"
+
+[[projects]]
   digest = "1:32598368f409bbee79deb9d43569fcd92b9fb27f39155f5e166b3371217f051f"
   name = "github.com/evanphx/json-patch"
   packages = ["."]
@@ -444,11 +470,26 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:8679b8a64f3613e9749c5640c3535c83399b8e69f67ce54d91dc73f6d77373af"
+  digest = "1:a1af7e6c2f41c0702957e404b1117a7938af20556e15520e11fe8ad414350248"
+  name = "github.com/gogo/googleapis"
+  packages = [
+    "google/api",
+    "google/rpc",
+  ]
+  pruneopts = "NUT"
+  revision = "8558fb44d2f1fc223118afc694129d2c2d2924d1"
+  version = "v1.1.0"
+
+[[projects]]
+  digest = "1:a35d141bba894725d1aa63523e146ab83c30475d23970ef402165eb96bd5907a"
   name = "github.com/gogo/protobuf"
   packages = [
+    "gogoproto",
+    "jsonpb",
     "proto",
+    "protoc-gen-gogo/descriptor",
     "sortkeys",
+    "types",
   ]
   pruneopts = "NUT"
   revision = "636bf0302bc95575d69441b25a2603156ffdddf1"
@@ -471,10 +512,11 @@
   revision = "c65c006176ff7ff98bb916961c7abbc6b0afc0aa"
 
 [[projects]]
-  digest = "1:63ccdfbd20f7ccd2399d0647a7d100b122f79c13bb83da9660b1598396fd9f62"
+  digest = "1:5ae5b54d7cd695bafa92bf426b7c3d046f907260ec0fcb4fe5c368d937597c00"
   name = "github.com/golang/protobuf"
   packages = [
     "proto",
+    "protoc-gen-go/descriptor",
     "ptypes",
     "ptypes/any",
     "ptypes/duration",
@@ -748,6 +790,14 @@
   version = "v1.0.4"
 
 [[projects]]
+  digest = "1:0dbba7d4d4f3eeb01acd81af338ff4a3c4b0bb814d87368ea536e616f383240d"
+  name = "github.com/lyft/protoc-gen-validate"
+  packages = ["validate"]
+  pruneopts = "NUT"
+  revision = "4349a359d42fdfee53b85dd5c89a2f169e1dc6b2"
+  version = "v0.0.13"
+
+[[projects]]
   digest = "1:d244f8666a838fe6ad70ec8fe77f50ebc29fdc3331a2729ba5886bef8435d10d"
   name = "github.com/magiconair/properties"
   packages = ["."]
@@ -890,6 +940,14 @@
   pruneopts = "NUT"
   revision = "5f041e8faa004a95c88a202771f4cc3e991971e6"
   version = "v2.0.1"
+
+[[projects]]
+  digest = "1:14715f705ff5dfe0ffd6571d7d201dd8e921030f8070321a79380d8ca4ec1a24"
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "ba968bfe8b2f7e042a574c888954fccecfa385b4"
+  version = "v0.8.1"
 
 [[projects]]
   digest = "1:0028cb19b2e4c3112225cd871870f2d9cf49b9b4276531f03438a88e94be86fe"
@@ -1156,7 +1214,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6e0f981c5a0413f33fc37c763d72750d4b246b9b96a75f71b6cbb5621f4f1b5f"
+  digest = "1:1a62a2a3c62338312c8ca6f90fa5b74a35a354d27d7c06666595b8c85f7b9721"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -1165,7 +1223,9 @@
     "http2",
     "http2/hpack",
     "idna",
+    "internal/timeseries",
     "publicsuffix",
+    "trace",
   ]
   pruneopts = "NUT"
   revision = "fae4c4e3ad76c295c3d6d259f898136b4bf833a8"
@@ -1256,6 +1316,54 @@
   pruneopts = "NUT"
   revision = "4a4468ece617fc8205e99368fa2200e9d1fad421"
   version = "v1.3.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:077c1c599507b3b3e9156d17d36e1e61928ee9b53a5b420f10f28ebd4a0b275c"
+  name = "google.golang.org/genproto"
+  packages = ["googleapis/rpc/status"]
+  pruneopts = "NUT"
+  revision = "082222b4a5c572e33e82ee9162d1352c7cf38682"
+
+[[projects]]
+  digest = "1:4837585442801f3c7ebd044a96fce852242529a73bdd96fcba2119ff74987b0b"
+  name = "google.golang.org/grpc"
+  packages = [
+    ".",
+    "balancer",
+    "balancer/base",
+    "balancer/roundrobin",
+    "binarylog/grpc_binarylog_v1",
+    "codes",
+    "connectivity",
+    "credentials",
+    "credentials/internal",
+    "encoding",
+    "encoding/proto",
+    "grpclog",
+    "internal",
+    "internal/backoff",
+    "internal/binarylog",
+    "internal/channelz",
+    "internal/envconfig",
+    "internal/grpcrand",
+    "internal/grpcsync",
+    "internal/syscall",
+    "internal/transport",
+    "keepalive",
+    "metadata",
+    "naming",
+    "peer",
+    "resolver",
+    "resolver/dns",
+    "resolver/passthrough",
+    "stats",
+    "status",
+    "tap",
+  ]
+  pruneopts = "NUT"
+  revision = "a02b0774206b209466313a0b525d2c738fe407eb"
+  version = "v1.18.0"
 
 [[projects]]
   digest = "1:2d1fbdc6777e5408cabeb02bf336305e724b925ff4546ded0fa8715a7267922a"
@@ -1724,6 +1832,18 @@
     "github.com/aws/aws-sdk-go/service/iam",
     "github.com/coreos/go-oidc",
     "github.com/digitalocean/godo",
+    "github.com/envoyproxy/go-control-plane/envoy/api/v2",
+    "github.com/envoyproxy/go-control-plane/envoy/api/v2/core",
+    "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint",
+    "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener",
+    "github.com/envoyproxy/go-control-plane/envoy/api/v2/route",
+    "github.com/envoyproxy/go-control-plane/envoy/config/filter/http/health_check/v2",
+    "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2",
+    "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2",
+    "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2",
+    "github.com/envoyproxy/go-control-plane/pkg/cache",
+    "github.com/envoyproxy/go-control-plane/pkg/server",
+    "github.com/envoyproxy/go-control-plane/pkg/util",
     "github.com/evanphx/json-patch",
     "github.com/ghodss/yaml",
     "github.com/go-kit/kit/endpoint",
@@ -1731,6 +1851,8 @@
     "github.com/go-kit/kit/transport/http",
     "github.com/go-swagger/go-swagger/cmd/swagger",
     "github.com/go-test/deep",
+    "github.com/gogo/protobuf/proto",
+    "github.com/gogo/protobuf/types",
     "github.com/golang/glog",
     "github.com/gophercloud/gophercloud",
     "github.com/gophercloud/gophercloud/openstack",
@@ -1764,6 +1886,7 @@
     "github.com/minio/minio-go",
     "github.com/oklog/run",
     "github.com/onsi/ginkgo/reporters",
+    "github.com/pkg/errors",
     "github.com/pmezard/go-difflib/difflib",
     "github.com/prometheus/client_golang/api",
     "github.com/prometheus/client_golang/api/prometheus/v1",
@@ -1781,6 +1904,7 @@
     "github.com/vmware/govmomi/vim25/types",
     "golang.org/x/crypto/ssh",
     "golang.org/x/oauth2",
+    "google.golang.org/grpc",
     "gopkg.in/yaml.v2",
     "k8s.io/api/admissionregistration/v1alpha1",
     "k8s.io/api/admissionregistration/v1beta1",
