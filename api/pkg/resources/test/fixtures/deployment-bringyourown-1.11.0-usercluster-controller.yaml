@@ -23,7 +23,7 @@ spec:
       labels:
         app: usercluster-controller
         cluster: de-test-01
-        usercluster-controller-secret-revision: "123456"
+        internal-admin-kubeconfig-secret-revision: "123456"
     spec:
       containers:
       - args:
@@ -50,7 +50,7 @@ spec:
         terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
-          name: usercluster-controller
+          name: internal-admin-kubeconfig
           readOnly: true
       imagePullSecrets:
       - name: dockercfg
@@ -74,8 +74,8 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
       volumes:
-      - name: usercluster-controller
+      - name: internal-admin-kubeconfig
         secret:
           defaultMode: 292
-          secretName: usercluster-controller
+          secretName: internal-admin-kubeconfig
 status: {}

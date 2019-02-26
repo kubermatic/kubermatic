@@ -46,7 +46,7 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 	controller, err := New(
 		kubeClient,
 		dynamicClient,
-		client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
+		client.NewInternal(kubeInformerFactory.Core().V1().Secrets().Lister()),
 		TestDC,
 		dcs,
 		"",

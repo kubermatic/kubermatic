@@ -116,7 +116,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 
 			clusterProviders[ctx] = kubernetesprovider.NewClusterProvider(
 				defaultImpersonationClientForSeed.CreateImpersonatedClientSet,
-				client.New(kubeInformerFactory.Core().V1().Secrets().Lister()),
+				client.NewExternal(kubeInformerFactory.Core().V1().Secrets().Lister()),
 				kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(),
 				options.workerName,
 				rbac.ExtractGroupPrefix,
