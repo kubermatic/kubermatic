@@ -24,7 +24,11 @@ type openshiftData struct {
 	client  client.Client
 }
 
-func (od *openshiftData) GetRootCA(ctx context.Context) (*triple.KeyPair, error) {
+func (od *openshiftData) GetRootCA() (*triple.KeyPair, error) {
+	return od.GetRootCAWithContext(context.Background())
+}
+
+func (od *openshiftData) GetRootCAWithContext(ctx context.Context) (*triple.KeyPair, error) {
 	secret := &corev1.Secret{}
 	if err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, kubernetesresources.CASecretName), secret); err != nil {
 		return nil, fmt.Errorf("failed to get cluster ca: %v", err)

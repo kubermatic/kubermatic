@@ -367,8 +367,8 @@ type RoleBindingCreator = func(data RoleBindingDataProvider, existing *rbacv1.Ro
 // ClusterRoleCreator defines an interface to create/update RBAC ClusterRoles
 type ClusterRoleCreator = func(data ClusterRoleDataProvider, existing *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error)
 
-// ClusterRoleBindingCreator defines an interface to create/update RBAC ClusterRoleBinding's
-type ClusterRoleBindingCreator = func(data ClusterRoleBindingDataProvider, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error)
+// ClusterRoleBindingCreatorDeprecated defines an interface to create/update RBAC ClusterRoleBinding's
+type ClusterRoleBindingCreatorDeprecated = func(data ClusterRoleBindingDataProvider, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error)
 
 // InitializerConfigurationCreator defines an interface to create/update InitializerConfigurations
 type InitializerConfigurationCreator = func(data *TemplateData, existing *admissionv1alpha1.InitializerConfiguration) (*admissionv1alpha1.InitializerConfiguration, error)

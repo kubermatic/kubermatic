@@ -14,9 +14,13 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -144,11 +148,89 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("failed to reconcile Deployments: %v", err)
 	}
 
+	return r.createClusterAccessToken(ctx, osData)
+}
+
+// Openshift doesn't seem to support a token-file-based authentication at all
+// It can be passed down onto the kube-apiserver but does still not work, presumably because OS puts another authentication
+// layer on top
+// The workaround here is to create a serviceaccount and clusterrolebinding in the user cluster, then copy the token secret
+// of that Serviceaccount into the admin kubeconfig.
+// In its current form this is not a long-term solution as we wont notice if someone deletes the token Secret inside the user
+// cluster, rendering our admin-kubeconfig invalid
+// TODO: Find an alternate approach or move this to a controller that has informers in both the user cluster and the seed
+func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *openshiftData) (*reconcile.Result, error) {
+	kubeConfigSecret := &corev1.Secret{}
+	if err := r.Get(ctx, nn(osData.Cluster().Status.NamespaceName, openshiftresources.ExternalX509KubeconfigName), kubeConfigSecret); err != nil {
+		return nil, fmt.Errorf("failed to get userCluster kubeconfig secret: %v", err)
+	}
+	cfg, err := clientcmd.RESTConfigFromKubeConfig(kubeConfigSecret.Data[resources.KubeconfigSecretKey])
+	if err != nil {
+		return nil, fmt.Errorf("failed to get config from secret: %v", err)
+	}
+	userClusterClient, err := client.New(cfg, client.Options{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get userClusterClient: %v", err)
+	}
+
+	// Ensure ServiceAccount in user cluster
+	tokenOwnerServiceAccountName, tokenOwnerServiceAccountCreator := openshiftresources.TokenOwnerServiceAccount(ctx)
+	err = resources.EnsureNamedObjectV2(ctx,
+		nn(metav1.NamespaceSystem, tokenOwnerServiceAccountName),
+		resources.ServiceAccountObjectWrapper(tokenOwnerServiceAccountCreator),
+		userClusterClient,
+		&corev1.ServiceAccount{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create TokenOwnerServiceAccount in user cluster: %v", err)
+	}
+
+	// Ensure ClusterRoleBinding in user cluster
+	tokenOwnerServiceAccountClusterRoleBindingName, tokenOwnerServiceAccountClusterRoleBindingCreator := openshiftresources.TokenOwnerServiceAccountClusterRoleBinding(ctx)
+	err = resources.EnsureNamedObjectV2(ctx,
+		nn("", tokenOwnerServiceAccountClusterRoleBindingName),
+		resources.ClusterRoleBindingObjectWrapper(tokenOwnerServiceAccountClusterRoleBindingCreator),
+		userClusterClient, &rbacv1.ClusterRoleBinding{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create TokenOwnerServiceAccountClusterRoleBinding in user cluster: %v", err)
+	}
+
+	// Get the ServiceAccount to find out the name of its secret
+	tokenOwnerServiceAccount := &corev1.ServiceAccount{}
+	if err := userClusterClient.Get(ctx, nn(metav1.NamespaceSystem, tokenOwnerServiceAccountName), tokenOwnerServiceAccount); err != nil {
+		return nil, fmt.Errorf("failed to get TokenOwnerServiceAccount after creating it: %v", err)
+	}
+
+	// Check if the secret already exists, if not try again later
+	if len(tokenOwnerServiceAccount.Secrets) < 1 {
+		return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
+	}
+
+	// Get the secret
+	tokenSecret := &corev1.Secret{}
+	if err := userClusterClient.Get(ctx, nn(metav1.NamespaceSystem, tokenOwnerServiceAccount.Secrets[0].Name), tokenSecret); err != nil {
+		return nil, fmt.Errorf("failed to get token secret from user cluster: %v", err)
+	}
+
+	// Create the admin-kubeconfig in the seed cluster
+	adminKubeconfigSecretName, adminKubeconfigCreator := resources.AdminKubeconfigCreator(osData, func(c *clientcmdapi.Config) {
+		c.AuthInfos[resources.KubeconfigDefaultContextKey].Token = string(tokenSecret.Data["token"])
+	})()
+	err = resources.EnsureNamedObjectV2(ctx,
+		nn(osData.Cluster().Status.NamespaceName, adminKubeconfigSecretName),
+		resources.SecretObjectWrapper(adminKubeconfigCreator),
+		r.Client,
+		&corev1.Secret{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to ensure token secret: %v", err)
+	}
 	return nil, nil
 }
 
 func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshiftData) []resources.NamedSecretCreatorGetter {
 	return []resources.NamedSecretCreatorGetter{openshiftresources.ServiceSignerCA(),
+		//TODO: This is only needed because of the ServiceAccount Token needed for Openshift
+		//TODO: Streamline this by using it everywhere and use the clientprovider here or remove
+		openshiftresources.ExternalX509KubeconfigCreator(osData),
 		openshiftresources.GetLoopbackKubeconfigCreator(ctx, osData)}
 }
 

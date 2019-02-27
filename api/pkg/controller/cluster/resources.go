@@ -200,8 +200,6 @@ func GetSecretCreators(data *resources.TemplateData) []resources.NamedSecretCrea
 		apiserver.ServiceAccountKeyCreator(),
 		openvpn.TLSServingCertificateCreator(data),
 		openvpn.InternalClientCertificateCreator(data),
-		apiserver.TokenUsersCreator(data),
-		resources.AdminKubeconfigCreator(data),
 		machinecontroller.TLSServingCertificateCreator(data),
 
 		// Kubeconfigs
@@ -212,6 +210,11 @@ func GetSecretCreators(data *resources.TemplateData) []resources.NamedSecretCrea
 		resources.GetInternalKubeconfigCreator(resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil, data),
 		resources.GetInternalKubeconfigCreator(resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil, data),
 		resources.GetInternalKubeconfigCreator(resources.InternalUserClusterAdminKubeconfigSecretName, resources.InternalUserClusterAdminKubeconfigCertUsername, []string{"system:masters"}, data),
+	}
+
+	if cluster := data.Cluster(); cluster != nil && cluster.Annotations["kubermatic.io/openshift"] == "" {
+		creators = append(creators, resources.AdminKubeconfigCreator(data))
+		creators = append(creators, apiserver.TokenUsersCreator(data))
 	}
 
 	if len(data.OIDCCAFile()) > 0 {

@@ -284,8 +284,8 @@ func (cc *Controller) userClusterEnsureClusterRoles(c *kubermaticv1.Cluster, cli
 }
 
 // GetUserClusterRoleBindingCreators returns a list of ClusterRoleBindingCreators which should be used to - guess what - create user cluster role bindings.
-func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.ClusterRoleBindingCreator {
-	creators := []resources.ClusterRoleBindingCreator{
+func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.ClusterRoleBindingCreatorDeprecated {
+	creators := []resources.ClusterRoleBindingCreatorDeprecated{
 		machinecontroller.ClusterRoleBinding,
 		machinecontroller.NodeBootstrapperClusterRoleBinding,
 		machinecontroller.NodeSignerClusterRoleBinding,

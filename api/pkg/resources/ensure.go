@@ -97,7 +97,7 @@ func EnsureRoleBinding(data RoleBindingDataProvider, create RoleBindingCreator, 
 
 // EnsureClusterRoleBinding will create the RoleBinding with the passed create function & create or update it if necessary.
 // To check if it's necessary it will do a lookup of the resource at the lister & compare the existing RoleBinding with the created one
-func EnsureClusterRoleBinding(data ClusterRoleBindingDataProvider, create ClusterRoleBindingCreator, lister rbacv1lister.ClusterRoleBindingLister, client rbacv1client.ClusterRoleBindingInterface) error {
+func EnsureClusterRoleBinding(data ClusterRoleBindingDataProvider, create ClusterRoleBindingCreatorDeprecated, lister rbacv1lister.ClusterRoleBindingLister, client rbacv1client.ClusterRoleBindingInterface) error {
 	var existing *rbacv1.ClusterRoleBinding
 	crb, err := create(data, nil)
 	if err != nil {
