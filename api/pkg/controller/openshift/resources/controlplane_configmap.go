@@ -15,23 +15,23 @@ import (
 )
 
 const (
-	openshiftControlPlaneConfigConfigMapName = "openshift-config"
-	openshiftContolPlaneConfigKeyName        = "master-config.yaml"
+	openshiftAPIServerConfigMapName        = "openshift-config-apiserver"
+	openshiftControllerMangerConfigMapName = "openshift-config-controller-manager"
+	openshiftContolPlaneConfigKeyName      = "master-config.yaml"
 )
 
-func OpenshiftControlPlaneConfigMapCreator(ctx context.Context,
+func OpenshiftAPIServerConfigMapCreator(ctx context.Context,
 	data openshiftData) (string, resources.ConfigMapCreator) {
-	return openshiftControlPlaneConfigConfigMapName,
+	return openshiftAPIServerConfigMapName,
 		func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
 			}
-			masterConfig, err := getMasterConfig(ctx, data)
+			masterConfig, err := getMasterConfig(ctx, data, "apiserver")
 			if err != nil {
 				return nil, fmt.Errorf("failed to get master config :%v", err)
 			}
-			cm.Name = openshiftControlPlaneConfigConfigMapName
-			cm.Labels = resources.BaseAppLabel(openshiftControlPlaneConfigConfigMapName, nil)
+			cm.Labels = resources.BaseAppLabel(openshiftAPIServerConfigMapName, nil)
 			cm.Data[openshiftContolPlaneConfigKeyName] = masterConfig
 			cm.Data["policy.json"] = policyJSON
 			cm.Data["scheduler.json"] = schedulerJSON
@@ -40,16 +40,38 @@ func OpenshiftControlPlaneConfigMapCreator(ctx context.Context,
 		}
 }
 
-type openshiftConfigInput struct {
-	ETCDEndpoints []string
-	ServiceCIDR   string
-	ClusterCIDR   string
-	ClusterURL    string
-	DNSDomain     string
-	ListenPort    string
+func OpenshiftControllerMangerConfigMapCreator(ctx context.Context,
+	data openshiftData) (string, resources.ConfigMapCreator) {
+	return openshiftControllerMangerConfigMapName,
+		func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			if cm.Data == nil {
+				cm.Data = map[string]string{}
+			}
+			masterConfig, err := getMasterConfig(ctx, data, "controller-manager")
+			if err != nil {
+				return nil, fmt.Errorf("failed to get master config :%v", err)
+			}
+			cm.Labels = resources.BaseAppLabel(openshiftControllerMangerConfigMapName, nil)
+			cm.Data[openshiftContolPlaneConfigKeyName] = masterConfig
+			cm.Data["policy.json"] = policyJSON
+			cm.Data["scheduler.json"] = schedulerJSON
+			cm.Data["recycler_pod.yaml"] = recyclerPod
+
+			return cm, nil
+		}
 }
 
-func getMasterConfig(ctx context.Context, data openshiftData) (string, error) {
+type openshiftConfigInput struct {
+	ETCDEndpoints    []string
+	ServiceCIDR      string
+	ClusterCIDR      string
+	ClusterURL       string
+	DNSDomain        string
+	ListenPort       string
+	ControlPlaneType string
+}
+
+func getMasterConfig(ctx context.Context, data openshiftData, controlPlaneType string) (string, error) {
 	controlPlaneConfigBuffer := bytes.Buffer{}
 	tmpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(openshiftControlPlaneConfigTemplate)
 	if err != nil {
@@ -60,12 +82,13 @@ func getMasterConfig(ctx context.Context, data openshiftData) (string, error) {
 		return "", fmt.Errorf("failed to get nodePort for apiserver: %v", err)
 	}
 	templateInput := openshiftConfigInput{
-		ETCDEndpoints: etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName),
-		ServiceCIDR:   data.Cluster().Spec.ClusterNetwork.Services.CIDRBlocks[0],
-		ClusterCIDR:   data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0],
-		ClusterURL:    data.Cluster().Address.URL,
-		DNSDomain:     data.Cluster().Spec.ClusterNetwork.DNSDomain,
-		ListenPort:    fmt.Sprintf("%d", apiserverListenPort),
+		ETCDEndpoints:    etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName),
+		ServiceCIDR:      data.Cluster().Spec.ClusterNetwork.Services.CIDRBlocks[0],
+		ClusterCIDR:      data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0],
+		ClusterURL:       data.Cluster().Address.URL,
+		DNSDomain:        data.Cluster().Spec.ClusterNetwork.DNSDomain,
+		ListenPort:       fmt.Sprintf("%d", apiserverListenPort),
+		ControlPlaneType: controlPlaneType,
 	}
 	if err := tmpl.Execute(&controlPlaneConfigBuffer, templateInput); err != nil {
 		return "", fmt.Errorf("failed to execute template: %v", err)
@@ -75,6 +98,32 @@ func getMasterConfig(ctx context.Context, data openshiftData) (string, error) {
 
 const schedulerJSON = `
 {"apiVersion":"v1","kind":"Policy","predicates":[{"name":"NoVolumeZoneConflict"},{"name":"MaxEBSVolumeCount"},{"name":"MaxGCEPDVolumeCount"},{"name":"MaxAzureDiskVolumeCount"},{"name":"MatchInterPodAffinity"},{"name":"NoDiskConflict"},{"name":"GeneralPredicates"},{"name":"PodToleratesNodeTaints"},{"name":"CheckNodeMemoryPressure"},{"name":"CheckNodeDiskPressure"},{"name":"CheckVolumeBinding"},{"argument":{"serviceAffinity":{"labels":["region"]}},"name":"Region"}],"priorities":[{"name":"SelectorSpreadPriority","weight":1},{"name":"InterPodAffinityPriority","weight":1},{"name":"LeastRequestedPriority","weight":1},{"name":"BalancedResourceAllocation","weight":1},{"name":"NodePreferAvoidPodsPriority","weight":10000},{"name":"NodeAffinityPriority","weight":1},{"name":"TaintTolerationPriority","weight":1},{"argument":{"serviceAntiAffinity":{"label":"zone"}},"name":"Zone","weight":2}]}`
+
+const recyclerPod = `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: recyler-pod-
+  namespace: openshift-infra
+spec:
+  activeDeadlineSeconds: 60
+  containers:
+  - args:
+    - /scrub
+    command:
+    - /usr/bin/openshift-recycle
+    image: docker.io/openshift/origin-recycler:v3.11
+    name: recyler-container
+    securityContext:
+      runAsUser: 0
+    volumeMounts:
+    - mountPath: /scrub
+      name: vol
+  restartPolicy: Never
+  serviceAccountName: pv-recycler-controller
+  volumes:
+  - name: vol
+`
 
 //TODO: Replace template with actual types in
 // https://github.com/openshift/origin/pkg/cmd/server/apis/config/v1/types.go
@@ -107,13 +156,16 @@ admissionConfig:
           reject: true
           skipOnResolutionFailure: true
         kind: ImagePolicyConfig
+{{ if eq .ControlPlaneType "apiserver" }}
 aggregatorConfig:
   proxyClientInfo:
     certFile: /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.crt
     keyFile: /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.key
+{{ end }}
 apiLevels:
 - v1
 apiVersion: v1
+{{ if eq .ControlPlaneType "apiserver" }}
 authConfig:
   requestHeader:
     clientCA: /etc/kubernetes/pki/front-proxy/client/ca.crt
@@ -125,6 +177,7 @@ authConfig:
     - X-Remote-Group
     usernameHeaders:
     - X-Remote-User
+{{ end }}
 controllerConfig:
   election:
     lockName: openshift-master-controllers
@@ -154,9 +207,12 @@ dnsConfig:
   bindAddress: 0.0.0.0:8053
   bindNetwork: tcp4
 etcdClientInfo:
+{{ if eq .ControlPlaneType "apiserver" }}
   ca: /etc/etcd/pki/client/ca.crt
   certFile: /etc/etcd/pki/client/apiserver-etcd-client.crt
   keyFile: /etc/etcd/pki/client/apiserver-etcd-client.key
+{{ end }}
+  # Mandatory field, controller manager fails startup if unset
   urls: {{ range .ETCDEndpoints }}
   - "{{ . }}"
 {{ end }}
@@ -172,16 +228,21 @@ imagePolicyConfig:
   internalRegistryHostname: docker-registry.default.svc:5000
 kind: MasterConfig
 kubeletClientInfo:
+{{ if eq .ControlPlaneType "apiserver" }}
   ca: /etc/kubernetes/pki/ca/ca.crt
   certFile: /etc/kubernetes/kubelet/kubelet-client.crt
   keyFile: /etc/kubernetes/kubelet/kubelet-client.key
+{{ end }}
+  # Port is required for the controller manager to start up
   port: 10250
 kubernetesMasterConfig:
+{{ if eq .ControlPlaneType "apiserver" }}
   apiServerArguments:
     storage-backend:
     - etcd3
     storage-media-type:
     - application/vnd.kubernetes.protobuf
+{{ end }}
   controllerArguments:
     cluster-signing-cert-file:
     - /etc/kubernetes/pki/ca/ca.crt
@@ -196,14 +257,15 @@ kubernetesMasterConfig:
   #TODO: Should we put something here?
   masterIP: ""
   podEvictionTimeout: null
+{{ if eq .ControlPlaneType "apiserver" }}
   proxyClientInfo:
     certFile: /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.crt
     keyFile: /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.key
+{{ end }}
   schedulerArguments: null
   schedulerConfigFile: /etc/origin/master/scheduler.json
   servicesNodePortRange: ''
   servicesSubnet: "{{ .ServiceCIDR }}"
-  staticNodeNames: []
 masterClients:
   externalKubernetesClientConnectionOverrides:
     acceptContentTypes: application/vnd.kubernetes.protobuf,application/json
@@ -274,14 +336,13 @@ serviceAccountConfig:
   - deployer
   masterCA: /etc/kubernetes/pki/ca/ca.crt
   privateKeyFile: /etc/kubernetes/service-account-key/sa.key
-  ## TODO: Put public key into secret
-  publicKeyFiles: []
-  #- serviceaccounts.public.key
+  publicKeyFiles:
+  - /etc/kubernetes/service-account-key/sa.pub
 servingInfo:
   bindAddress: 0.0.0.0:{{ .ListenPort }}
   bindNetwork: tcp4
-  certFile: /etc/kubernetes/tls/apiserver-tls.crt
   clientCA: /etc/kubernetes/pki/ca/ca.crt
+  certFile: /etc/kubernetes/tls/apiserver-tls.crt
   keyFile: /etc/kubernetes/tls/apiserver-tls.key
   maxRequestsInFlight: 500
   requestTimeoutSeconds: 3600

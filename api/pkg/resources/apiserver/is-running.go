@@ -2,6 +2,7 @@ package apiserver
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
@@ -9,7 +10,12 @@ import (
 )
 
 // IsRunningInitContainer returns a init container which will wait until the apiserver is reachable via its ClusterIP
-func IsRunningInitContainer(data resources.DeploymentDataProvider) (*corev1.Container, error) {
+type isRunningInitContainerData interface {
+	InClusterApiserverURL() (*url.URL, error)
+	ImageRegistry(string) string
+}
+
+func IsRunningInitContainer(data isRunningInitContainerData) (*corev1.Container, error) {
 	// get clusterIP of apiserver
 	url, err := data.InClusterApiserverURL()
 	if err != nil {
