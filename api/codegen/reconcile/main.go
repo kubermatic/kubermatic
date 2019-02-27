@@ -39,6 +39,11 @@ func main() {
 				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
 			},
 			{
+				ResourceName: "ServiceAccount",
+				ImportAlias:  "corev1",
+				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
+			},
+			{
 				ResourceName:       "StatefulSet",
 				ImportAlias:        "appsv1",
 				ResourceImportPath: "k8s.io/api/apps/v1",
@@ -57,6 +62,11 @@ func main() {
 				ResourceName:       "VerticalPodAutoscaler",
 				ImportAlias:        "autoscalingv1beta1",
 				ResourceImportPath: "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1",
+			},
+			{
+				ResourceName:       "ClusterRoleBinding",
+				ImportAlias:        "rbacv1",
+				ResourceImportPath: "k8s.io/api/rbac/v1",
 			},
 		},
 	}
