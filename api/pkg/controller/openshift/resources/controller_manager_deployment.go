@@ -112,7 +112,7 @@ func DeploymentCreator(ctx context.Context, data openshiftData) (string, resourc
 				ReadOnly:  true,
 			},
 			{
-				Name: resources.UserClusterControllerKubeconfigSecretName,
+				Name: resources.InternalUserClusterAdminKubeconfigSecretName,
 				// We have to mount a Kubeconfig that doesn't use 127.0.0.1 as address
 				// here
 				MountPath: "/etc/origin/master/loopback-kubeconfig",
@@ -228,10 +228,10 @@ func getControllerManagerVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.UserClusterControllerKubeconfigSecretName,
+			Name: resources.InternalUserClusterAdminKubeconfigSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.UserClusterControllerKubeconfigSecretName,
+					SecretName:  resources.InternalUserClusterAdminKubeconfigSecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
