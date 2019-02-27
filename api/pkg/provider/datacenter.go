@@ -42,6 +42,10 @@ type OpenstackSpec struct {
 	// Used for automatic network creation
 	DNSServers []string  `yaml:"dns_servers"`
 	Images     ImageList `yaml:"images"`
+	// Gets mapped to the "manage-security-groups" setting in the cloud config.
+	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
+	// To make this change backwards compatible, this will default to true.
+	ManageSecurityGroups *bool `yaml:"manage_security_groups"`
 }
 
 // AzureSpec describes an Azure cloud datacenter
