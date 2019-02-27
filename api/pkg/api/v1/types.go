@@ -508,6 +508,8 @@ type NodeSpec struct {
 	OperatingSystem OperatingSystemSpec `json:"operatingSystem"`
 	// required: true
 	Versions NodeVersionInfo `json:"versions,omitempty"`
+	// required: false
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 // DigitaloceanNodeSpec digitalocean node settings
@@ -660,10 +662,9 @@ type NodeDeployment struct {
 type NodeDeploymentSpec struct {
 	// required: true
 	Replicas int32 `json:"replicas,omitempty"`
-
 	// required: true
 	Template NodeSpec `json:"template"`
-
+	// required: false
 	Paused *bool `json:"paused,omitempty"`
 }
 

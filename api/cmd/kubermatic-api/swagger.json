@@ -4137,6 +4137,13 @@
         "cloud": {
           "$ref": "#/definitions/NodeCloudSpec"
         },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Labels"
+        },
         "operatingSystem": {
           "$ref": "#/definitions/OperatingSystemSpec"
         },

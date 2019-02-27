@@ -38,7 +38,8 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 	md.Spec.Selector.MatchLabels = map[string]string{
 		"machine": fmt.Sprintf("md-%s-%s", c.Name, rand.String(10)),
 	}
-	md.Spec.Template.ObjectMeta.Labels = md.Spec.Selector.MatchLabels
+	md.Spec.Template.Labels = md.Spec.Selector.MatchLabels
+	md.Spec.Template.Spec.Labels = nd.Spec.Template.Labels
 
 	md.Spec.Replicas = &nd.Spec.Replicas
 	md.Spec.Template.Spec.Versions.Kubelet = nd.Spec.Template.Versions.Kubelet
