@@ -82,6 +82,7 @@ func CloudConfig(data resources.ConfigMapDataProvider) (cloudConfig string, err 
 			return cloudConfig, err
 		}
 	} else if cloud.Openstack != nil {
+		manageSecurityGroups := dc.Spec.Openstack.ManageSecurityGroups
 		openstackCloudConfig := &openstack.CloudConfig{
 			Global: openstack.GlobalOpts{
 				AuthURL:    dc.Spec.Openstack.AuthURL,
@@ -97,7 +98,7 @@ func CloudConfig(data resources.ConfigMapDataProvider) (cloudConfig string, err 
 				IgnoreVolumeAZ:  dc.Spec.Openstack.IgnoreVolumeAZ,
 			},
 			LoadBalancer: openstack.LoadBalancerOpts{
-				ManageSecurityGroups: true,
+				ManageSecurityGroups: manageSecurityGroups == nil || *manageSecurityGroups,
 			},
 			Version: data.Cluster().Spec.Version.String(),
 		}
