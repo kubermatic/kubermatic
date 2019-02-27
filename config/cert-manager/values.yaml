@@ -24,3 +24,10 @@ certManager:
     # defaultIssuerKind: ""
     # defaultACMEChallengeType: ""
     # defaultACMEDNS01ChallengeProvider: ""
+
+  # It is possible to configure tolerations and a nodeSelector
+  # for the cert-managet deployments:
+  #tolerations: |
+  #  - operator: Exists
+  #nodeSelector: |
+  #  node-role.kubernetes.io/master: ""

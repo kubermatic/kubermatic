@@ -13,6 +13,15 @@ spec:
         app: webhook
     spec:
       serviceAccountName: webhook
+      {{- if .Values.certManager.tolerations }}
+      tolerations:
+      {{- with .Values.certManager.tolerations }}
+        {{ . }}
+      {{- end }}{{ end }}
+      {{- if .Values.certManager.nodeSelector }}
+      nodeSelector:
+        {{ .Values.certManager.nodeSelector }}
+      {{- end }}
       containers:
         - name: webhook
           image: '{{ .Values.certManager.webhookImage.repository }}:{{ .Values.certManager.webhookImage.tag }}'
