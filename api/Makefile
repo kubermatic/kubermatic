@@ -34,10 +34,10 @@ showenv:
 check: gofmt lint
 
 test:
-	$(GO) test -v ./...
+	$(GO) test ./...
 
 test-update:
-	-$(GO) test -v ./... -update
+	-$(GO) test ./... -update
 
 clean:
 	rm -f $(TARGET)
