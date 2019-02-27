@@ -165,7 +165,8 @@ func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
 }
 
 func (r *Reconciler) getAllConfigmapCreators() []openshiftresources.NamedConfigMapCreator {
-	return []openshiftresources.NamedConfigMapCreator{openshiftresources.OpenshiftControlPlaneConfigMapCreator}
+	return []openshiftresources.NamedConfigMapCreator{openshiftresources.OpenshiftAPIServerConfigMapCreator,
+		openshiftresources.OpenshiftControllerMangerConfigMapCreator}
 }
 
 func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) error {
@@ -180,7 +181,7 @@ func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) erro
 }
 
 func (r *Reconciler) getAllDeploymentCreators() []openshiftresources.NamedDeploymentCreator {
-	return []openshiftresources.NamedDeploymentCreator{openshiftresources.APIDeploymentCreator}
+	return []openshiftresources.NamedDeploymentCreator{openshiftresources.APIDeploymentCreator, openshiftresources.DeploymentCreator}
 }
 
 func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) error {

@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+	"net/url"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -23,6 +24,7 @@ type openshiftData interface {
 	NodeAccessNetwork() string
 	GetClusterRef() metav1.OwnerReference
 	GetRootCA(context.Context) (*triple.KeyPair, error)
+	InClusterApiserverURL() (*url.URL, error)
 }
 
 type NamedConfigMapCreator func(context.Context, openshiftData) (string, resources.ConfigMapCreator)
