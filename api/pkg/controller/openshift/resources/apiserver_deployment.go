@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	defaultResourceRequirements = corev1.ResourceRequirements{
+	apiServerDefaultResourceRequirements = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
 			corev1.ResourceMemory: resource.MustParse("256Mi"),
 			corev1.ResourceCPU:    resource.MustParse("100m"),
@@ -66,7 +66,7 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) (string, reso
 		}
 		dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-		volumes := getVolumes()
+		volumes := getAPIServerVolumes()
 
 		podLabels, err := data.GetPodTemplateLabels(ctx, legacyAppLabelValue, volumes, nil)
 		if err != nil {
@@ -127,7 +127,7 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) (string, reso
 			return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
 		}
 
-		resourceRequirements := defaultResourceRequirements.DeepCopy()
+		resourceRequirements := apiServerDefaultResourceRequirements.DeepCopy()
 		if data.Cluster().Spec.ComponentsOverride.Apiserver.Resources != nil {
 			resourceRequirements = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources
 		}
@@ -140,8 +140,8 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) (string, reso
 				Image:                    data.ImageRegistry(resources.RegistryDocker) + "/openshift/origin-control-plane:v3.11",
 				ImagePullPolicy:          corev1.PullIfNotPresent,
 				Command:                  []string{"/usr/bin/openshift", "start", "master", "api"},
-				Env:                      getEnvVars(data.Cluster()),
 				Args:                     []string{"--config=/etc/origin/master/master-config.yaml"},
+				Env:                      getAPIServerEnvVars(data.Cluster()),
 				TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 				TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 				Resources:                *resourceRequirements,
@@ -236,7 +236,7 @@ func getVolumeMounts() []corev1.VolumeMount {
 			ReadOnly:  true,
 		},
 		{
-			Name:      openshiftControlPlaneConfigConfigMapName,
+			Name:      openshiftAPIServerConfigMapName,
 			MountPath: "/etc/origin/master",
 		},
 		{
@@ -252,7 +252,7 @@ func getVolumeMounts() []corev1.VolumeMount {
 	return volumesMounts
 }
 
-func getVolumes() []corev1.Volume {
+func getAPIServerVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: resources.ApiserverTLSSecretName,
@@ -362,10 +362,10 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: openshiftControlPlaneConfigConfigMapName,
+			Name: openshiftAPIServerConfigMapName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: openshiftControlPlaneConfigConfigMapName},
+					LocalObjectReference: corev1.LocalObjectReference{Name: openshiftAPIServerConfigMapName},
 				},
 			},
 		},
@@ -390,7 +390,7 @@ func getVolumes() []corev1.Volume {
 	}
 }
 
-func getEnvVars(cluster *kubermaticv1.Cluster) []corev1.EnvVar {
+func getAPIServerEnvVars(cluster *kubermaticv1.Cluster) []corev1.EnvVar {
 	var vars []corev1.EnvVar
 	if cluster.Spec.Cloud.AWS != nil {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: cluster.Spec.Cloud.AWS.AccessKeyID})
