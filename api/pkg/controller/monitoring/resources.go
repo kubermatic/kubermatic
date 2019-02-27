@@ -40,20 +40,6 @@ func (c *Controller) getClusterTemplateData(cluster *kubermaticv1.Cluster) (*res
 	), nil
 }
 
-func (c *Controller) ensureServiceAccounts(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := []resources.ServiceAccountCreator{
-		prometheus.ServiceAccount,
-	}
-
-	for _, create := range creators {
-		if err := resources.EnsureServiceAccount(data, create, c.serviceAccountLister.ServiceAccounts(cluster.Status.NamespaceName), c.kubeClient.CoreV1().ServiceAccounts(cluster.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the ServiceAccount exists: %v", err)
-		}
-	}
-
-	return nil
-}
-
 func (c *Controller) ensureRoles(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := []resources.RoleCreator{
 		prometheus.Role,
@@ -175,4 +161,17 @@ func (c *Controller) ensureServices(cluster *kubermaticv1.Cluster, data *resourc
 	creators := GetServiceCreators(data)
 
 	return resources.ReconcileServices(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.ClusterRefWrapper(cluster))
+}
+
+// GetServiceCreators returns all service creators that are currently in use
+func GetServiceAccountCreators() []resources.ServiceAccountCreator {
+	return []resources.ServiceAccountCreator{
+		prometheus.ServiceAccountCreator(),
+	}
+}
+
+func (c *Controller) ensureServiceAccounts(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	creators := GetServiceAccountCreators()
+
+	return resources.ReconcileServiceAccounts(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.ClusterRefWrapper(cluster))
 }

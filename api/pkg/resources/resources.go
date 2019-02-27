@@ -356,9 +356,6 @@ type ECDSAKeyPair struct {
 	Cert *x509.Certificate
 }
 
-// ServiceAccountCreator defines an interface to create/update ServiceAccounts
-type ServiceAccountCreator = func(data ServiceAccountDataProvider, existing *corev1.ServiceAccount) (*corev1.ServiceAccount, error)
-
 // RoleCreator defines an interface to create/update RBAC Roles
 type RoleCreator = func(data RoleDataProvider, existing *rbacv1.Role) (*rbacv1.Role, error)
 

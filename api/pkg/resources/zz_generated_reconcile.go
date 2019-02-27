@@ -129,6 +129,41 @@ func ReconcileConfigMaps(namedGetters []NamedConfigMapCreatorGetter, namespace s
 	return nil
 }
 
+// ServiceAccountCreator defines an interface to create/update ServiceAccounts
+type ServiceAccountCreator = func(existing *corev1.ServiceAccount) (*corev1.ServiceAccount, error)
+
+// ServiceAccountObjectWrapper adds a wrapper so the ServiceAccountCreator matches ObjectCreator
+// This is needed as golang does not support function interface matching
+func ServiceAccountObjectWrapper(create ServiceAccountCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*corev1.ServiceAccount))
+		}
+		return create(&corev1.ServiceAccount{})
+	}
+}
+
+// ReconcileServiceAccounts will create and update the ServiceAccounts coming from the passed ServiceAccountCreator slice
+func ReconcileServiceAccounts(creators []ServiceAccountCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
+	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &corev1.ServiceAccount{})
+	if err != nil {
+		return fmt.Errorf("failed to get ServiceAccount informer: %v", err)
+	}
+
+	for _, create := range creators {
+		createObject := ServiceAccountObjectWrapper(create)
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureObject(namespace, createObject, store, client); err != nil {
+			return fmt.Errorf("failed to ensure ServiceAccount: %v", err)
+		}
+	}
+
+	return nil
+}
+
 // StatefulSetCreator defines an interface to create/update StatefulSets
 type StatefulSetCreator = func(existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error)
 
