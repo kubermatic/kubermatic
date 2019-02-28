@@ -34,7 +34,7 @@ func deploymentImageAddingWrapper(creator resources.DeploymentCreator, container
 		}
 
 		var containerWasFound bool
-		for idx, _ := range d.Spec.Template.Spec.Containers {
+		for idx := range d.Spec.Template.Spec.Containers {
 			if d.Spec.Template.Spec.Containers[idx].Name == containerName {
 				d.Spec.Template.Spec.Containers[idx].Image = image
 				containerWasFound = true
