@@ -58,6 +58,11 @@ func main() {
 				ImportAlias:        "autoscalingv1beta1",
 				ResourceImportPath: "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1",
 			},
+			{
+				ResourceName:       "ClusterRoleBinding",
+				ImportAlias:        "rbacv1",
+				ResourceImportPath: "k8s.io/api/rbac/v1",
+			},
 		},
 	}
 

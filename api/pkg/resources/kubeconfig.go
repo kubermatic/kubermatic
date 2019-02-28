@@ -4,7 +4,10 @@ import (
 	"crypto/x509"
 	"fmt"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+
 	"github.com/golang/glog"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/client-go/tools/clientcmd"
@@ -13,8 +16,13 @@ import (
 	"k8s.io/client-go/util/cert/triple"
 )
 
+type adminKubeconfigCreatorData interface {
+	Cluster() *kubermaticv1.Cluster
+	GetRootCA() (*triple.KeyPair, error)
+}
+
 // AdminKubeconfigCreator returns a function to create/update the secret with the admin kubeconfig
-func AdminKubeconfigCreator(data SecretDataProvider) NamedSecretCreatorGetter {
+func AdminKubeconfigCreator(data adminKubeconfigCreatorData, modifier ...func(*clientcmdapi.Config)) NamedSecretCreatorGetter {
 	return func() (string, SecretCreator) {
 		return AdminKubeconfigSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
@@ -31,6 +39,10 @@ func AdminKubeconfigCreator(data SecretDataProvider) NamedSecretCreatorGetter {
 				KubeconfigDefaultContextKey: {
 					Token: data.Cluster().Address.AdminToken,
 				},
+			}
+
+			for _, m := range modifier {
+				m(config)
 			}
 
 			b, err := clientcmd.Write(*config)

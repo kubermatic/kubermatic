@@ -16,7 +16,7 @@ import (
 const apiserverLoopbackKubeconfigName = "apiserver-loopback-kubeconfig"
 
 type loopbackKubeconfigCreatorData interface {
-	GetRootCA(context.Context) (*triple.KeyPair, error)
+	GetRootCAWithContext(context.Context) (*triple.KeyPair, error)
 	Cluster() *kubermaticv1.Cluster
 	GetApiserverExternalNodePort(context.Context) (int32, error)
 }
@@ -31,7 +31,7 @@ func GetLoopbackKubeconfigCreator(ctx context.Context, data loopbackKubeconfigCr
 				se.Data = map[string][]byte{}
 			}
 
-			ca, err := data.GetRootCA(ctx)
+			ca, err := data.GetRootCAWithContext(ctx)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 			}
