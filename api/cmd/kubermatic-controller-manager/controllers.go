@@ -113,18 +113,13 @@ func createCloudController(ctrlCtx *controllerContext) (runner, error) {
 }
 
 func createOpenshiftController(ctrlCtx *controllerContext) (runner, error) {
-	if err := openshiftcontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName); err != nil {
+	if err := openshiftcontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, ctrlCtx.dcs); err != nil {
 		return nil, fmt.Errorf("failed to add openshift controller to mgr: %v", err)
 	}
 	return nil, nil
 }
 
 func createClusterController(ctrlCtx *controllerContext) (runner, error) {
-	dcs, err := provider.LoadDatacentersMeta(ctrlCtx.runOptions.dcFile)
-	if err != nil {
-		return nil, err
-	}
-
 	dockerPullConfigJSON, err := ioutil.ReadFile(ctrlCtx.runOptions.dockerPullConfigJSONFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load ImagePullSecret from %s: %v", ctrlCtx.runOptions.dockerPullConfigJSONFile, err)
@@ -136,7 +131,7 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.runOptions.externalURL,
 		ctrlCtx.runOptions.dc,
-		dcs,
+		ctrlCtx.dcs,
 		ctrlCtx.clientProvider,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodePortRange,

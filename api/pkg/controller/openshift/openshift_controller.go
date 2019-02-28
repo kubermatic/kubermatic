@@ -7,6 +7,7 @@ import (
 
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
@@ -41,15 +42,17 @@ type Reconciler struct {
 	client.Client
 	scheme   *runtime.Scheme
 	recorder record.EventRecorder
+	dcs      map[string]provider.DatacenterMeta
 }
 
-func Add(mgr manager.Manager, numWorkers int, workerName string) error {
+func Add(mgr manager.Manager, numWorkers int, workerName string, dcs map[string]provider.DatacenterMeta) error {
 	clusterPredicates := workerlabel.Predicates(workerName)
 
 	dynamicClient := mgr.GetClient()
 	reconciler := &Reconciler{Client: dynamicClient,
 		scheme:   mgr.GetScheme(),
-		recorder: mgr.GetRecorder(ControllerName)}
+		recorder: mgr.GetRecorder(ControllerName),
+		dcs:      dcs}
 
 	c, err := controller.New(ControllerName, mgr,
 		controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
@@ -136,7 +139,11 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
-	osData := &openshiftData{cluster: cluster, client: r.Client}
+	dc, found := r.dcs[cluster.Spec.Cloud.DatacenterName]
+	if !found {
+		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
+	}
+	osData := &openshiftData{cluster: cluster, client: r.Client, dC: &dc}
 
 	if err := r.secrets(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Secrets: %v", err)
@@ -328,10 +335,15 @@ func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) erro
 
 func (r *Reconciler) getAllDeploymentCreators() []openshiftresources.NamedDeploymentCreator {
 	return []openshiftresources.NamedDeploymentCreator{openshiftresources.APIDeploymentCreator,
-		openshiftresources.DeploymentCreator}
+		openshiftresources.DeploymentCreator,
+		openshiftresources.MachineController,
+		openshiftresources.MachineControllerWebhook}
 }
 
 func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) error {
+	//TODO: These are actually NamedDeploymentCreatorGetters
+	// We should move their calling into getAllDeploymentCreators so they can have a different
+	// signature
 	for _, namedDeploymentCreator := range r.getAllDeploymentCreators() {
 		deploymentName, deploymentCreator := namedDeploymentCreator(ctx, osData)
 		if err := resources.EnsureNamedObjectV2(ctx,

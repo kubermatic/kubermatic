@@ -19,6 +19,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
@@ -228,6 +229,11 @@ func newControllerContext(
 	}
 
 	selector, err := workerlabel.LabelSelector(runOp.workerName)
+	if err != nil {
+		return nil, err
+	}
+
+	ctrlCtx.dcs, err = provider.LoadDatacentersMeta(ctrlCtx.runOptions.dcFile)
 	if err != nil {
 		return nil, err
 	}
