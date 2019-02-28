@@ -3,21 +3,14 @@
 set -euo pipefail
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 echodate() { echo "$(date) $@"; }
-cd $(dirname $0)/../..
+cd $(dirname $0)/../../..
 
 if [ "$#" -lt 1 ] || [ "${1}" == "--help" ]; then
   cat <<EOF
-Usage: $(basename $0) (master|seed) path/to/${VALUES_FILE}
+Usage: $(basename $0) (master|seed)
 EOF
   exit 0
 fi
-
-if [[ ! -f ${2} ]]; then
-    echo "File not found!"
-    exit 1
-fi
-
-VALUES_FILE=$(realpath ${2})
 
 function retry {
   local retries=$1
