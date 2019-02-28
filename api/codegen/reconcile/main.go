@@ -39,11 +39,6 @@ func main() {
 				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
 			},
 			{
-				ResourceName: "ServiceAccount",
-				ImportAlias:  "corev1",
-				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
-			},
-			{
 				ResourceName:       "StatefulSet",
 				ImportAlias:        "appsv1",
 				ResourceImportPath: "k8s.io/api/apps/v1",
