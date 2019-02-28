@@ -772,7 +772,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 1: get existing cluster health status",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":true,"scheduler":false,"controller":true,"machineController":false,"etcd":true}`,
+			ExpectedResponse: `{"apiserver":true,"scheduler":false,"controller":true,"machineController":false,"etcd":true,"cloudProviderInfrastructure":true}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -784,11 +784,12 @@ func TestGetClusterHealth(t *testing.T) {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Status.Health = kubermaticv1.ClusterHealth{
 						ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
-							Apiserver:         true,
-							Scheduler:         false,
-							Controller:        true,
-							MachineController: false,
-							Etcd:              true,
+							Apiserver:                   true,
+							Scheduler:                   false,
+							Controller:                  true,
+							MachineController:           false,
+							Etcd:                        true,
+							CloudProviderInfrastructure: true,
 						},
 					}
 					return cluster
