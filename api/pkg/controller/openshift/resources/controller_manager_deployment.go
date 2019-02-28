@@ -62,7 +62,7 @@ func DeploymentCreator(ctx context.Context, data openshiftData) (string, resourc
 		dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 		volumes := getControllerManagerVolumes()
-		podLabels, err := data.GetPodTemplateLabels(ctx, ControllerManagerDeploymentName, volumes, nil)
+		podLabels, err := data.GetPodTemplateLabelsWithContext(ctx, ControllerManagerDeploymentName, volumes, nil)
 		if err != nil {
 			return nil, err
 		}
