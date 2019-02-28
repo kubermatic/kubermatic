@@ -32,7 +32,7 @@ var (
 )
 
 const (
-	apiserverDeploymentName = "apiserver-openshift"
+	ApiserverDeploymentName = "apiserver-openshift"
 	// TODO: Change this to `apiserver-openshift`. Requires to mange the service
 	// with this controller first as we need to adapt its label selector
 	legacyAppLabelValue = "apiserver"
@@ -40,9 +40,9 @@ const (
 
 // DeploymentCreator returns the function to create and update the API server deployment
 func APIDeploymentCreator(ctx context.Context, data openshiftData) (string, resources.DeploymentCreator) {
-	return apiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+	return ApiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 
-		dep.Name = apiserverDeploymentName
+		dep.Name = ApiserverDeploymentName
 		dep.Labels = resources.BaseAppLabel(legacyAppLabelValue, nil)
 
 		dep.Spec.Replicas = resources.Int32(1)
@@ -136,7 +136,7 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) (string, reso
 			*openvpnSidecar,
 			*dnatControllerSidecar,
 			{
-				Name:                     apiserverDeploymentName,
+				Name:                     ApiserverDeploymentName,
 				Image:                    data.ImageRegistry(resources.RegistryDocker) + "/openshift/origin-control-plane:v3.11",
 				ImagePullPolicy:          corev1.PullIfNotPresent,
 				Command:                  []string{"/usr/bin/openshift", "start", "master", "api"},
@@ -182,7 +182,7 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) (string, reso
 			},
 		}
 
-		dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(apiserverDeploymentName, data.Cluster().Name, nil))
+		dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(ApiserverDeploymentName, data.Cluster().Name, nil))
 
 		return dep, nil
 	}
