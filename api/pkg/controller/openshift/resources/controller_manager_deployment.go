@@ -31,14 +31,14 @@ var (
 )
 
 const (
-	controlllerManagerDeploymentName = "openshift-controller-manager"
+	ControllerManagerDeploymentName = "openshift-controller-manager"
 )
 
 // DeploymentCreator returns the function to create and update the controller manager deployment
 func DeploymentCreator(ctx context.Context, data openshiftData) (string, resources.DeploymentCreator) {
-	return controlllerManagerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+	return ControllerManagerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 		dep.Name = resources.ControllerManagerDeploymentName
-		dep.Labels = resources.BaseAppLabel(controlllerManagerDeploymentName, nil)
+		dep.Labels = resources.BaseAppLabel(ControllerManagerDeploymentName, nil)
 
 		dep.Spec.Replicas = resources.Int32(1)
 		if data.Cluster().Spec.ComponentsOverride.ControllerManager.Replicas != nil {
@@ -46,7 +46,7 @@ func DeploymentCreator(ctx context.Context, data openshiftData) (string, resourc
 		}
 
 		dep.Spec.Selector = &metav1.LabelSelector{
-			MatchLabels: resources.BaseAppLabel(controlllerManagerDeploymentName, nil),
+			MatchLabels: resources.BaseAppLabel(ControllerManagerDeploymentName, nil),
 		}
 		dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 		dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
@@ -62,7 +62,7 @@ func DeploymentCreator(ctx context.Context, data openshiftData) (string, resourc
 		dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 		volumes := getControllerManagerVolumes()
-		podLabels, err := data.GetPodTemplateLabels(ctx, controlllerManagerDeploymentName, volumes, nil)
+		podLabels, err := data.GetPodTemplateLabels(ctx, ControllerManagerDeploymentName, volumes, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -150,7 +150,7 @@ func DeploymentCreator(ctx context.Context, data openshiftData) (string, resourc
 		dep.Spec.Template.Spec.Containers = []corev1.Container{
 			*openvpnSidecar,
 			{
-				Name:                     controlllerManagerDeploymentName,
+				Name:                     ControllerManagerDeploymentName,
 				Image:                    data.ImageRegistry(resources.RegistryDocker) + "/openshift/origin-control-plane:v3.11",
 				ImagePullPolicy:          corev1.PullIfNotPresent,
 				Command:                  []string{"/usr/bin/openshift", "start", "master", "controllers"},
@@ -182,7 +182,7 @@ func DeploymentCreator(ctx context.Context, data openshiftData) (string, resourc
 			},
 		}
 
-		dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(controlllerManagerDeploymentName, data.Cluster().Name, nil))
+		dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(ControllerManagerDeploymentName, data.Cluster().Name, nil))
 
 		return dep, nil
 	}
@@ -241,6 +241,7 @@ func getControllerManagerVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{Name: openshiftControllerMangerConfigMapName},
+					DefaultMode:          resources.Int32(420),
 				},
 			},
 		},
