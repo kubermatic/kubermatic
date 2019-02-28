@@ -212,4 +212,5 @@ type controllerContext struct {
 	dynamicCache              ctrlruntimecache.Cache
 	mgr                       manager.Manager
 	clientProvider            *client.Provider
+	dcs                       map[string]provider.DatacenterMeta
 }

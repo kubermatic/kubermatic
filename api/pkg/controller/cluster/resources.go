@@ -158,8 +158,6 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster, data *resources.Te
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
 func GetDeploymentCreators(data resources.DeploymentDataProvider) []resources.DeploymentCreator {
 	creators := []resources.DeploymentCreator{
-		machinecontroller.DeploymentCreator(data),
-		machinecontroller.WebhookDeploymentCreator(data),
 		openvpn.DeploymentCreator(data),
 		dns.DeploymentCreator(data),
 		metricsserver.DeploymentCreator(data),
@@ -170,6 +168,8 @@ func GetDeploymentCreators(data resources.DeploymentDataProvider) []resources.De
 		creators = append(creators, apiserver.DeploymentCreator(data))
 		creators = append(creators, scheduler.DeploymentCreator(data))
 		creators = append(creators, controllermanager.DeploymentCreator(data))
+		creators = append(creators, machinecontroller.DeploymentCreator(data))
+		creators = append(creators, machinecontroller.WebhookDeploymentCreator(data))
 	}
 
 	if data.Cluster() != nil && len(data.Cluster().Spec.MachineNetworks) > 0 {
