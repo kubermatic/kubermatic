@@ -241,6 +241,7 @@ func getControllerManagerVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{Name: openshiftControllerMangerConfigMapName},
+					DefaultMode:          resources.Int32(420),
 				},
 			},
 		},

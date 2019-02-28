@@ -151,7 +151,6 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	reconcileRequest, err := r.createClusterAccessToken(ctx, osData)
 	if reconcileRequest != nil || err != nil {
-		glog.Infof("returning aftter create cluster access token")
 		return reconcileRequest, err
 	}
 
@@ -165,26 +164,25 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error {
 	currentHealth := osData.Cluster().Status.Health.DeepCopy()
 	type depInfo struct {
-		healthy  bool
+		healthy  *bool
 		minReady int32
 	}
 
 	healthMapping := map[string]*depInfo{
-		openshiftresources.ApiserverDeploymentName:         {healthy: currentHealth.Apiserver, minReady: 1},
-		openshiftresources.ControllerManagerDeploymentName: {healthy: currentHealth.Controller, minReady: 1},
-		resources.MachineControllerDeploymentName:          {healthy: currentHealth.MachineController, minReady: 1},
-		resources.OpenVPNServerDeploymentName:              {healthy: currentHealth.OpenVPN, minReady: 1},
-	}
-
-	for name := range healthMapping {
-		healthy, err := resources.HealthyDeployment(ctx, r.Client, nn(osData.Cluster().Status.NamespaceName, name), healthMapping[name].minReady)
-		if err != nil {
-			return fmt.Errorf("failed to get dep health %q: %v", name, err)
-		}
-		healthMapping[name].healthy = healthy
+		openshiftresources.ApiserverDeploymentName:         {healthy: &currentHealth.Apiserver, minReady: 1},
+		openshiftresources.ControllerManagerDeploymentName: {healthy: &currentHealth.Controller, minReady: 1},
+		resources.MachineControllerDeploymentName:          {healthy: &currentHealth.MachineController, minReady: 1},
+		resources.OpenVPNServerDeploymentName:              {healthy: &currentHealth.OpenVPN, minReady: 1},
 	}
 
 	var err error
+	for name := range healthMapping {
+		*healthMapping[name].healthy, err = resources.HealthyDeployment(ctx, r.Client, nn(osData.Cluster().Status.NamespaceName, name), healthMapping[name].minReady)
+		if err != nil {
+			return fmt.Errorf("failed to get dep health %q: %v", name, err)
+		}
+	}
+
 	currentHealth.Etcd, err = resources.HealthyStatefulSet(ctx, r.Client, nn(osData.Cluster().Status.NamespaceName, resources.EtcdStatefulSetName), 2)
 	if err != nil {
 		return fmt.Errorf("failed to get etcd health: %v", err)
@@ -195,7 +193,6 @@ func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error
 	currentHealth.Scheduler = currentHealth.Controller
 
 	if osData.Cluster().Status.Health != *currentHealth {
-		glog.Infof("updating cluster")
 		return r.updateCluster(ctx, osData.Cluster().Name, func(c *kubermaticv1.Cluster) {
 			c.Status.Health = *currentHealth
 		})
