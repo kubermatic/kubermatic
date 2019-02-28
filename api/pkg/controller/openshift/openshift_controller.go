@@ -151,6 +151,10 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return r.createClusterAccessToken(ctx, osData)
 }
 
+func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error {
+	currentHealth := osData.Cluster().Status.Health.DeepCopy()
+}
+
 // Openshift doesn't seem to support a token-file-based authentication at all
 // It can be passed down onto the kube-apiserver but does still not work, presumably because OS puts another authentication
 // layer on top
