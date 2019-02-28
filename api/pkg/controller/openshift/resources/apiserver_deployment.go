@@ -196,11 +196,6 @@ func getVolumeMounts() []corev1.VolumeMount {
 			ReadOnly:  true,
 		},
 		{
-			Name:      resources.TokensSecretName,
-			MountPath: "/etc/kubernetes/tokens",
-			ReadOnly:  true,
-		},
-		{
 			Name:      resources.KubeletClientCertificatesSecretName,
 			MountPath: "/etc/kubernetes/kubelet",
 			ReadOnly:  true,
@@ -259,15 +254,6 @@ func getAPIServerVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  resources.ApiserverTLSSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
-				},
-			},
-		},
-		{
-			Name: resources.TokensSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.TokensSecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},

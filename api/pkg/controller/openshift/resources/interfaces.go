@@ -23,9 +23,12 @@ type openshiftData interface {
 	ImageRegistry(string) string
 	NodeAccessNetwork() string
 	GetClusterRef() metav1.OwnerReference
-	GetRootCA(context.Context) (*triple.KeyPair, error)
+	GetRootCA() (*triple.KeyPair, error)
+	GetRootCAWithContext(context.Context) (*triple.KeyPair, error)
 	InClusterApiserverURL() (*url.URL, error)
 }
 
 type NamedConfigMapCreator func(context.Context, openshiftData) (string, resources.ConfigMapCreator)
 type NamedDeploymentCreator func(context.Context, openshiftData) (string, resources.DeploymentCreator)
+type NamedClusterRoleBindingCreator func(context.Context, openshiftData) (string, resources.ClusterRoleBindingCreator)
+type NamedServiceAccountCreator func(context.Context, openshiftData) (string, resources.ServiceAccountCreator)

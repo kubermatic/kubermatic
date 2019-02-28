@@ -13,6 +13,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	autoscalingv1beta1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"
 )
 
@@ -298,6 +299,41 @@ func ReconcileVerticalPodAutoscalers(creators []VerticalPodAutoscalerCreator, na
 
 		if err := EnsureObject(namespace, createObject, store, client); err != nil {
 			return fmt.Errorf("failed to ensure VerticalPodAutoscaler: %v", err)
+		}
+	}
+
+	return nil
+}
+
+// ClusterRoleBindingCreator defines an interface to create/update ClusterRoleBindings
+type ClusterRoleBindingCreator = func(existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error)
+
+// ClusterRoleBindingObjectWrapper adds a wrapper so the ClusterRoleBindingCreator matches ObjectCreator
+// This is needed as golang does not support function interface matching
+func ClusterRoleBindingObjectWrapper(create ClusterRoleBindingCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*rbacv1.ClusterRoleBinding))
+		}
+		return create(&rbacv1.ClusterRoleBinding{})
+	}
+}
+
+// ReconcileClusterRoleBindings will create and update the ClusterRoleBindings coming from the passed ClusterRoleBindingCreator slice
+func ReconcileClusterRoleBindings(creators []ClusterRoleBindingCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
+	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &rbacv1.ClusterRoleBinding{})
+	if err != nil {
+		return fmt.Errorf("failed to get ClusterRoleBinding informer: %v", err)
+	}
+
+	for _, create := range creators {
+		createObject := ClusterRoleBindingObjectWrapper(create)
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureObject(namespace, createObject, store, client); err != nil {
+			return fmt.Errorf("failed to ensure ClusterRoleBinding: %v", err)
 		}
 	}
 

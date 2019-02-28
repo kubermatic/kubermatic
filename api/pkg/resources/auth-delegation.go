@@ -34,7 +34,7 @@ func RoleBindingAuthenticationReaderCreator(username string) RoleBindingCreator 
 }
 
 // ClusterRoleBindingAuthDelegatorCreator returns a function to create the ClusterRoleBinding which is needed for extension apiserver which do auth delegation
-func ClusterRoleBindingAuthDelegatorCreator(username string) ClusterRoleBindingCreator {
+func ClusterRoleBindingAuthDelegatorCreator(username string) ClusterRoleBindingCreatorDeprecated {
 	return func(data ClusterRoleBindingDataProvider, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 		var crb *rbacv1.ClusterRoleBinding
 		if existing != nil {
