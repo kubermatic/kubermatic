@@ -44,6 +44,7 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (*kubermaticv1.Clus
 	return health, nil
 }
 
+//TODO: Use resources.HealthyDeployment instead once we have a lister-backed dynamic client
 func (cc *Controller) healthyDeployment(ns, name string, minReady int32) (bool, error) {
 	dep, err := cc.deploymentLister.Deployments(ns).Get(name)
 	if err != nil {
@@ -56,6 +57,7 @@ func (cc *Controller) healthyDeployment(ns, name string, minReady int32) (bool, 
 	return dep.Status.ReadyReplicas >= minReady, nil
 }
 
+//TODO: Use resources.HealthyStatefulSet instead once we have a lister-backed dynamic client
 func (cc *Controller) healthyStatefulSet(ns, name string, minReady int32) (bool, error) {
 	set, err := cc.statefulSetLister.StatefulSets(ns).Get(name)
 	if err != nil {

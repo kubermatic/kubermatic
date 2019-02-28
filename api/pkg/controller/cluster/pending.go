@@ -35,9 +35,11 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 		return nil, err
 	}
 
-	// synchronize cluster.status.health
-	if cluster, err = cc.syncHealth(cluster); err != nil {
-		return nil, err
+	// synchronize cluster.status.health for Kubernetes clusters
+	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		if cluster, err = cc.syncHealth(cluster); err != nil {
+			return nil, err
+		}
 	}
 
 	if cluster.Status.Health.Apiserver {

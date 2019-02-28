@@ -22,6 +22,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -148,7 +149,70 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("failed to reconcile Deployments: %v", err)
 	}
 
-	return r.createClusterAccessToken(ctx, osData)
+	reconcileRequest, err := r.createClusterAccessToken(ctx, osData)
+	if reconcileRequest != nil || err != nil {
+		return reconcileRequest, err
+	}
+
+	if err := r.syncHeath(ctx, osData); err != nil {
+		return nil, fmt.Errorf("failed to sync health: %v", err)
+	}
+
+	return nil, nil
+}
+
+func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error {
+	currentHealth := osData.Cluster().Status.Health.DeepCopy()
+	type depInfo struct {
+		healthy  *bool
+		minReady int32
+	}
+
+	healthMapping := map[string]*depInfo{
+		openshiftresources.ApiserverDeploymentName:         {healthy: &currentHealth.Apiserver, minReady: 1},
+		openshiftresources.ControllerManagerDeploymentName: {healthy: &currentHealth.Controller, minReady: 1},
+		resources.MachineControllerDeploymentName:          {healthy: &currentHealth.MachineController, minReady: 1},
+		resources.OpenVPNServerDeploymentName:              {healthy: &currentHealth.OpenVPN, minReady: 1},
+	}
+
+	var err error
+	for name := range healthMapping {
+		*healthMapping[name].healthy, err = resources.HealthyDeployment(ctx, r.Client, nn(osData.Cluster().Status.NamespaceName, name), healthMapping[name].minReady)
+		if err != nil {
+			return fmt.Errorf("failed to get dep health %q: %v", name, err)
+		}
+	}
+
+	currentHealth.Etcd, err = resources.HealthyStatefulSet(ctx, r.Client, nn(osData.Cluster().Status.NamespaceName, resources.EtcdStatefulSetName), 2)
+	if err != nil {
+		return fmt.Errorf("failed to get etcd health: %v", err)
+	}
+
+	//TODO: Revisit this. This is a tiny bit ugly, but Openshift doesn't have a distinct scheduler
+	// and introducing a distinct health struct for Openshift means we have to change the API as well
+	currentHealth.Scheduler = currentHealth.Controller
+
+	if osData.Cluster().Status.Health != *currentHealth {
+		return r.updateCluster(ctx, osData.Cluster().Name, func(c *kubermaticv1.Cluster) {
+			c.Status.Health = *currentHealth
+		})
+	}
+
+	return nil
+}
+
+func (r *Reconciler) updateCluster(ctx context.Context, name string, modify func(*kubermaticv1.Cluster)) error {
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+		//Get latest version
+		cluster := &kubermaticv1.Cluster{}
+		if err := r.Get(ctx, nn("", name), cluster); err != nil {
+			return err
+		}
+		// Apply modifications
+		modify(cluster)
+		// Update the cluster
+		return r.Update(ctx, cluster)
+	})
 }
 
 // Openshift doesn't seem to support a token-file-based authentication at all
