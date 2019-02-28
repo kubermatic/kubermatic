@@ -31,7 +31,7 @@ var (
 )
 
 // WebhookDeploymentCreator returns the function to create and update the machine controller webhook deployment
-func WebhookDeploymentCreator(data resources.DeploymentDataProvider) resources.DeploymentCreator {
+func WebhookDeploymentCreator(data machinecontrollerData) resources.DeploymentCreator {
 	return func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 		dep.Name = resources.MachineControllerWebhookDeploymentName
 		dep.Labels = resources.BaseAppLabel(resources.MachineControllerWebhookDeploymentName, nil)

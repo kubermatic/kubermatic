@@ -68,7 +68,7 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) (string, reso
 
 		volumes := getAPIServerVolumes()
 
-		podLabels, err := data.GetPodTemplateLabels(ctx, legacyAppLabelValue, volumes, nil)
+		podLabels, err := data.GetPodTemplateLabelsWithContext(ctx, legacyAppLabelValue, volumes, nil)
 		if err != nil {
 			return nil, err
 		}

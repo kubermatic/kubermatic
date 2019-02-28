@@ -8,6 +8,7 @@ import (
 	"net/url"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kubernetesresources "github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -22,6 +23,11 @@ import (
 type openshiftData struct {
 	cluster *kubermaticv1.Cluster
 	client  client.Client
+	dC      *provider.DatacenterMeta
+}
+
+func (od *openshiftData) DC() *provider.DatacenterMeta {
+	return od.dC
 }
 
 func (od *openshiftData) GetRootCA() (*triple.KeyPair, error) {
@@ -97,7 +103,11 @@ func (od *openshiftData) Cluster() *kubermaticv1.Cluster {
 	return od.cluster
 }
 
-func (od *openshiftData) GetPodTemplateLabels(ctx context.Context, appName string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error) {
+func (od *openshiftData) GetPodTemplateLabels(appName string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error) {
+	return od.GetPodTemplateLabelsWithContext(context.TODO(), appName, volumes, additionalLabels)
+}
+
+func (od *openshiftData) GetPodTemplateLabelsWithContext(ctx context.Context, appName string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error) {
 	podLabels := kubernetesresources.AppClusterLabel(appName, od.cluster.Name, additionalLabels)
 	for _, v := range volumes {
 		if v.VolumeSource.Secret != nil {

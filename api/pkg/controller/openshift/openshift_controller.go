@@ -327,7 +327,8 @@ func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) erro
 }
 
 func (r *Reconciler) getAllDeploymentCreators() []openshiftresources.NamedDeploymentCreator {
-	return []openshiftresources.NamedDeploymentCreator{openshiftresources.APIDeploymentCreator, openshiftresources.DeploymentCreator}
+	return []openshiftresources.NamedDeploymentCreator{openshiftresources.APIDeploymentCreator,
+		openshiftresources.DeploymentCreator}
 }
 
 func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) error {

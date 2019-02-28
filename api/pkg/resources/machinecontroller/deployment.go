@@ -2,7 +2,10 @@ package machinecontroller
 
 import (
 	"fmt"
+	"net/url"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 
@@ -32,8 +35,17 @@ const (
 	tag = "v1.0.4"
 )
 
+type machinecontrollerData interface {
+	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
+	ImageRegistry(string) string
+	Cluster() *kubermaticv1.Cluster
+	InClusterApiserverURL() (*url.URL, error)
+	ClusterIPByServiceName(string) (string, error)
+	DC() *provider.DatacenterMeta
+}
+
 // DeploymentCreator returns the function to create and update the machine controller deployment
-func DeploymentCreator(data resources.DeploymentDataProvider) resources.DeploymentCreator {
+func DeploymentCreator(data machinecontrollerData) resources.DeploymentCreator {
 	return func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 		dep.Name = resources.MachineControllerDeploymentName
 		dep.Labels = resources.BaseAppLabel(name, nil)
@@ -141,7 +153,7 @@ func getKubeconfigVolume() corev1.Volume {
 	}
 }
 
-func getEnvVars(data resources.DeploymentDataProvider) []corev1.EnvVar {
+func getEnvVars(data machinecontrollerData) []corev1.EnvVar {
 	var vars []corev1.EnvVar
 	if data.Cluster().Spec.Cloud.AWS != nil {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: data.Cluster().Spec.Cloud.AWS.AccessKeyID})
