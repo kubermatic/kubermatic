@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/evanphx/json-patch"
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	prometheusapi "github.com/prometheus/client_golang/api"
@@ -228,11 +228,12 @@ func getClusterHealth(projectProvider provider.ProjectProvider) endpoint.Endpoin
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		return apiv1.ClusterHealth{
-			Apiserver:         existingCluster.Status.Health.Apiserver,
-			Scheduler:         existingCluster.Status.Health.Scheduler,
-			Controller:        existingCluster.Status.Health.Controller,
-			MachineController: existingCluster.Status.Health.MachineController,
-			Etcd:              existingCluster.Status.Health.Etcd,
+			Apiserver:                   existingCluster.Status.Health.Apiserver,
+			Scheduler:                   existingCluster.Status.Health.Scheduler,
+			Controller:                  existingCluster.Status.Health.Controller,
+			MachineController:           existingCluster.Status.Health.MachineController,
+			Etcd:                        existingCluster.Status.Health.Etcd,
+			CloudProviderInfrastructure: existingCluster.Status.Health.CloudProviderInfrastructure,
 		}, nil
 	}
 }
