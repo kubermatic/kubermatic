@@ -13,7 +13,7 @@ fi
 
 cd "$(dirname "$0")/../"
 
-docker build -t docker.io/kubermatic/api:${1} .
+docker build -t quay.io/kubermatic/api:${1} .
 
 for TAG in "$@"
 do
@@ -22,10 +22,6 @@ do
     fi
 
     echo "Tagging ${TAG}"
-    # Docker Hub
-    docker tag docker.io/kubermatic/api:${1} docker.io/kubermatic/api:${TAG}
-    docker push docker.io/kubermatic/api:${TAG}
-    # Quay.io
-    docker tag docker.io/kubermatic/api:${1} quay.io/kubermatic/api:${TAG}
+    docker tag quay.io/kubermatic/api:${1} quay.io/kubermatic/api:${TAG}
     docker push quay.io/kubermatic/api:${TAG}
 done
