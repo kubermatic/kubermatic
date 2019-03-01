@@ -337,7 +337,8 @@ func (r *Reconciler) getAllDeploymentCreators() []openshiftresources.NamedDeploy
 	return []openshiftresources.NamedDeploymentCreator{openshiftresources.APIDeploymentCreator,
 		openshiftresources.DeploymentCreator,
 		openshiftresources.MachineController,
-		openshiftresources.MachineControllerWebhook}
+		openshiftresources.MachineControllerWebhook,
+		openshiftresources.UserClusterController}
 }
 
 func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) error {

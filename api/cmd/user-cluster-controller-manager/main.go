@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster"
+
 	"github.com/golang/glog"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -21,11 +23,13 @@ import (
 
 type controllerRunOptions struct {
 	internalAddr string
+	openshift    bool
 }
 
 func main() {
 	runOp := controllerRunOptions{}
 	flag.StringVar(&runOp.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal HTTP /metrics server is running on")
+	flag.BoolVar(&runOp.openshift, "openshift", false, "Whether the managed cluster is an openshift cluster")
 	flag.Parse()
 
 	var g run.Group
@@ -54,9 +58,15 @@ func main() {
 		glog.Fatal(err)
 	}
 
+	metrics := newMetrics()
+
 	// Setup all Controllers
 	glog.Info("registering controllers")
-	if err := registerControllers(mgr); err != nil {
+	if _, err := usercluster.Add(mgr, runOp.openshift); err != nil {
+		glog.Fatalf("failed to register user cluster controller: %v", err)
+	}
+	metrics.controllers.Inc()
+	if err := registerControllers(mgr, metrics); err != nil {
 		glog.Fatal(err)
 	}
 

@@ -20,29 +20,25 @@ const (
 	debugLevel = 4
 )
 
-// reconciler creates and deletes Kubernetes resources to achieve the desired state
-type reconciler struct {
-	ctx    context.Context
-	client controllerclient.Client
-}
-
 // Reconcile creates, updates, or deletes Kubernetes resources to match the desired state.
-func (r *reconciler) Reconcile() error {
-	if err := r.ensureAPIServices(); err != nil {
+func (r *reconciler) reconcile(ctx context.Context) error {
+	if err := r.ensureAPIServices(ctx); err != nil {
 		return err
 	}
 	return nil
 }
 
 // GetAPIServiceCreators returns a list of APIServiceCreator
-func GetAPIServiceCreators() []resources.APIServiceCreator {
-	return []resources.APIServiceCreator{
-		metricsserver.APIService,
+func (r *reconciler) GetAPIServiceCreators() []resources.APIServiceCreator {
+	creators := []resources.APIServiceCreator{}
+	if !r.openshift {
+		creators = append(creators, metricsserver.APIService)
 	}
+	return creators
 }
 
-func (r *reconciler) ensureAPIServices() error {
-	creators := GetAPIServiceCreators()
+func (r *reconciler) ensureAPIServices(ctx context.Context) error {
+	creators := r.GetAPIServiceCreators()
 
 	for _, create := range creators {
 		apiService, err := create(nil)
@@ -51,10 +47,10 @@ func (r *reconciler) ensureAPIServices() error {
 		}
 
 		existing := &apiregistrationv1beta1.APIService{}
-		err = r.client.Get(r.ctx, controllerclient.ObjectKey{Namespace: apiService.Namespace, Name: apiService.Name}, existing)
+		err = r.Get(ctx, controllerclient.ObjectKey{Namespace: apiService.Namespace, Name: apiService.Name}, existing)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				if err := r.client.Create(r.ctx, apiService); err != nil {
+				if err := r.Create(ctx, apiService); err != nil {
 					return fmt.Errorf("failed to create APIService %s in namespace %s: %v", apiService.Name, apiService.Namespace, err)
 				}
 				glog.V(debugLevel).Infof("created a new APIService %s in namespace %s", apiService.Name, apiService.Namespace)
@@ -71,7 +67,7 @@ func (r *reconciler) ensureAPIServices() error {
 			continue
 		}
 
-		if err := r.client.Update(r.ctx, apiService); err != nil {
+		if err := r.Update(ctx, apiService); err != nil {
 			return fmt.Errorf("failed to update APIService %s in namespace %s: %v", apiService.Name, apiService.Namespace, err)
 		}
 		glog.V(debugLevel).Infof("updated APIService %s in namespace %s", apiService.Name, apiService.Namespace)

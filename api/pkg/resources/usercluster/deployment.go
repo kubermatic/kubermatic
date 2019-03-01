@@ -2,6 +2,7 @@ package usercluster
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
@@ -30,8 +31,18 @@ const (
 	name = "usercluster-controller"
 )
 
+// userclusterControllerData is the subet of the deploymentData interface
+// that is actually required by the usercluster deployment
+// This makes importing the the deployment elsewhere (openshift controller)
+// easier as only have to implement the parts that are actually in use
+type userclusterControllerData interface {
+	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
+	ImageRegistry(string) string
+	InClusterApiserverURL() (*url.URL, error)
+}
+
 // DeploymentCreator returns the function to create and update the user cluster controller deployment
-func DeploymentCreator(data resources.DeploymentDataProvider) resources.DeploymentCreator {
+func DeploymentCreator(data userclusterControllerData) resources.DeploymentCreator {
 	return func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 		dep.Name = resources.UserClusterControllerDeploymentName
 		dep.Labels = resources.BaseAppLabel(name, nil)
