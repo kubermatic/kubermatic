@@ -358,11 +358,11 @@ type ECDSAKeyPair struct {
 	Cert *x509.Certificate
 }
 
-// RoleCreator defines an interface to create/update RBAC Roles
-type RoleCreator = func(data RoleDataProvider, existing *rbacv1.Role) (*rbacv1.Role, error)
+// RoleCreatorDeprecated defines an interface to create/update RBAC Roles
+type RoleCreatorDeprecated = func(data RoleDataProvider, existing *rbacv1.Role) (*rbacv1.Role, error)
 
 // RoleBindingCreator defines an interface to create/update RBAC RoleBinding's
-type RoleBindingCreator = func(data RoleBindingDataProvider, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error)
+type RoleBindingCreatorDeprecated = func(data RoleBindingDataProvider, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error)
 
 // ClusterRoleCreator defines an interface to create/update RBAC ClusterRoles
 type ClusterRoleCreator = func(data ClusterRoleDataProvider, existing *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error)
