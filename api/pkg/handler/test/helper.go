@@ -54,6 +54,8 @@ const (
 	DefaultClusterName = "defClusterName"
 	// ProjectName holds the test project ID
 	ProjectName = "my-first-project-ID"
+	// TestDatacenter holds datacenter name
+	TestDatacenter = "us-central1"
 )
 
 // GetUser is a convenience function for generating apiv1.User

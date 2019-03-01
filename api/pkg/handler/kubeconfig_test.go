@@ -1,4 +1,4 @@
-package handler
+package handler_test
 
 import (
 	"encoding/base64"
@@ -10,18 +10,22 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gorilla/securecookie"
 	"github.com/stretchr/testify/assert"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
 
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
-	testDatacenter          = "us-central1"
 	testExpectedRedirectURI = "/api/v1/kubeconfig"
 	testClusterName         = "AbcCluster"
+
+	csrfCookieName = "csrf_token"
 )
 
 const testKubeconfig = `apiVersion: v1
@@ -80,7 +84,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			ClusterID:           test.ClusterID,
 			ProjectID:           test.GenDefaultProject().Name,
 			UserID:              "0000",
-			Datacenter:          testDatacenter,
+			Datacenter:          test.TestDatacenter,
 			HTTPStatusInitPhase: http.StatusNotFound,
 		},
 		{
@@ -88,7 +92,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			ClusterID:                 test.ClusterID,
 			ProjectID:                 test.GenDefaultProject().Name,
 			UserID:                    test.GenDefaultUser().Name,
-			Datacenter:                testDatacenter,
+			Datacenter:                test.TestDatacenter,
 			Nonce:                     "abc", // incorrect length
 			HTTPStatusInitPhase:       http.StatusSeeOther,
 			ExistingKubermaticObjects: genTestKubeconfigKubermaticObjects(),
@@ -103,7 +107,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			ClusterID:                 test.ClusterID,
 			ProjectID:                 test.GenDefaultProject().Name,
 			UserID:                    test.GenDefaultUser().Name,
-			Datacenter:                testDatacenter,
+			Datacenter:                test.TestDatacenter,
 			HTTPStatusInitPhase:       http.StatusSeeOther,
 			ExistingKubermaticObjects: genTestKubeconfigKubermaticObjects(),
 			ExpectedRedirectURI:       testExpectedRedirectURI,
@@ -119,7 +123,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			reqURL := fmt.Sprintf("/api/v1/kubeconfig?cluster_id=%s&project_id=%s&user_id=%s&datacenter=%s", tc.ClusterID, tc.ProjectID, tc.UserID, tc.Datacenter)
 			req := httptest.NewRequest("GET", reqURL, strings.NewReader(""))
 			res := httptest.NewRecorder()
-			ep, err := createTestEndpoint(apiv1.User{}, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil)
+			ep, err := test.CreateTestEndpoint(apiv1.User{}, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -182,7 +186,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 				res = httptest.NewRecorder()
 
 				// create secure cookie
-				if encoded, err := secureCookie.Encode(csrfCookieName, cookieValue); err == nil {
+				if encoded, err := getSecureCookie().Encode(csrfCookieName, cookieValue); err == nil {
 					// Drop a cookie on the recorder.
 					http.SetCookie(res, &http.Cookie{Name: "csrf_token", Value: encoded})
 
@@ -217,7 +221,7 @@ func genTestKubeconfigKubermaticObjects() []runtime.Object {
 	}
 }
 
-func marshalEncodeState(oidcState state) (string, error) {
+func marshalEncodeState(oidcState handler.State) (string, error) {
 
 	rawState, err := json.Marshal(oidcState)
 	if err != nil {
@@ -228,10 +232,14 @@ func marshalEncodeState(oidcState state) (string, error) {
 
 }
 
-func unmarshalState(rawState []byte) (state, error) {
-	oidcState := state{}
+func unmarshalState(rawState []byte) (handler.State, error) {
+	oidcState := handler.State{}
 	if err := json.Unmarshal(rawState, &oidcState); err != nil {
-		return state{}, err
+		return handler.State{}, err
 	}
 	return oidcState, nil
+}
+
+func getSecureCookie() *securecookie.SecureCookie {
+	return securecookie.New([]byte(""), nil)
 }
