@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -38,7 +39,7 @@ func (r Routing) getClusterMetrics() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(getClusterMetrics(r.projectProvider, r.prometheusClient)),
+		)(cluster.GetMetricsEndpoint(r.projectProvider, r.prometheusClient)),
 		common.DecodeGetClusterReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
