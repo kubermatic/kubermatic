@@ -6,6 +6,8 @@ versions:
   default: false
 - version: "1.11.7"
   default: false
+- version: "1.11.8"
+  default: false
 # Kubernetes 1.12
 - version: "1.12.3"
   default: false
@@ -13,10 +15,16 @@ versions:
   default: false
 - version: "1.12.5"
   default: true
+- version: "1.12.6"
+  default: true
 # Kubernetes 1.13
 - version: "1.13.0"
   default: false
 - version: "1.13.1"
   default: false
 - version: "1.13.2"
+  default: false
+- version: "1.13.3"
+  default: false
+- version: "1.13.4"
   default: false
