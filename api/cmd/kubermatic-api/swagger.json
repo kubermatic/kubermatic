@@ -4141,6 +4141,14 @@
         "cloud": {
           "$ref": "#/definitions/NodeCloudSpec"
         },
+        "labels": {
+          "description": "Map of string keys and values that can be used to organize and categorize (scope and select) objects.\nIt will be applied to Nodes allowing users run their apps on specific Node using labelSelector.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Labels"
+        },
         "operatingSystem": {
           "$ref": "#/definitions/OperatingSystemSpec"
         },
