@@ -78,6 +78,11 @@ type projectResource struct {
 // managing RBAC roles for project's resources
 // The controller will also set proper ownership chain through OwnerReferences
 // so that whenever a project is deleted dependants object will be garbage collected.
+// The controller consists of two parts. First, take care of project and project resource types.
+// Creates RBAC cluster roles and binding for those types. It also generates `userprojectbindings` to link the project
+// with owners. This part is located in `sync_project.go`.
+// Second controller monitor project resources objects. Those objects are called `named resources`.
+// Creates RBAC cluster roles and binding for them. The source code is located in `sync_resources.go`
 func New(metrics *Metrics, allClusterProviders []*ClusterProvider) (*Controller, error) {
 	c := &Controller{
 		projectQueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_project"),
