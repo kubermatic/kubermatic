@@ -1,3 +1,28 @@
+### [v2.9.2]()
+
+* The cleanup of services of type LoadBalancer on cluster deletion was fixed and re-enabled [#2780](https://github.com/kubermatic/kubermatic/pull/2780)
+* The Kubernetes Dashboard addon was updated to 1.10.1 [#2848](https://github.com/kubermatic/kubermatic/pull/2848)
+* Joining of nodes via the BYO functionality was fixed [#2835](https://github.com/kubermatic/kubermatic/pull/2835)
+* [It is now possible to configure whether Openstack security groups for LoadBalancers should be managed by Kubernetes, check the sample `datacenters.yaml` in the docs for details](https://docs.kubermatic.io/installation/install_kubermatic/_manual/#defining-the-datacenters) [#2878](https://github.com/kubermatic/kubermatic/pull/2878)
+* A bug that resulted in clusters being twice in the UI overview got resolved [#1088](https://github.com/kubermatic/dashboard-v2/pull/1088)
+* A bug that could cause the image of a NodeDeployment to be set to the default when the NodeDeployment gets edited got resolved [#1076](https://github.com/kubermatic/dashboard-v2/pull/1076)
+* A bug that caused the version of the UI to not be shown in the footer got resolved [#1096](https://github.com/kubermatic/dashboard-v2/pull/1096)
+* A bug that caused updating and deleting of NodeDeployments in the NodeDeployment details page not to work got resolved [#1076](https://github.com/kubermatic/dashboard-v2/pull/1076)
+* The NodeDeployment detail view now correctly displays the node datacenter instead of the seed datacenter [#1094](https://github.com/kubermatic/dashboard-v2/pull/1094)
+* Support for Kubernetes 1.11.8, 1.12.6, 1.13.3 and 1.13.4 was added [#2894](https://github.com/kubermatic/kubermatic/pull/2894)
+
+### [v2.9.1]()
+
+* The Docker version used for all new machines with CoreOS or Ubuntu has a fix for CVE-2019-573. It s advised to roll over all your worker nodes to make sure that new version is used
+* It is now possible to name NodeDeployments
+* A bug that caused duplicate top level keys in the values.example.yaml got fixed
+* A bug that made it impossible to choose a subnet on Openstack after a network was choosen got fixed
+* Scraping of 1.13 user cluster Schedulers and Controller manager now works
+* Scraping of the seed clusters Scheduler and Controller manager now works
+* A bug that caused spurious failures when appplying the cert-manager chart was resolved
+* NodeDeployment events are now shown in the UI
+* It is now possible to configure the Kubernetes version of a NodeDeployment in the UI
+
 ### [v2.9.0]()
 
 
