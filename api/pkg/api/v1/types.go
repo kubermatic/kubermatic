@@ -508,6 +508,8 @@ type NodeSpec struct {
 	OperatingSystem OperatingSystemSpec `json:"operatingSystem"`
 	// required: true
 	Versions NodeVersionInfo `json:"versions,omitempty"`
+	// Map of string keys and values that can be used to organize and categorize (scope and select) objects.
+	// It will be applied to Nodes allowing users run their apps on specific Node using labelSelector.
 	// required: false
 	Labels map[string]string `json:"labels,omitempty"`
 }
