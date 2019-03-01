@@ -5,13 +5,6 @@ export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 echodate() { echo "$(date) $@"; }
 cd $(dirname $0)/../../..
 
-if [ "$#" -lt 1 ] || [ "${1}" == "--help" ]; then
-  cat <<EOF
-Usage: $(basename $0) (master|seed)
-EOF
-  exit 0
-fi
-
 function retry {
   local retries=$1
   shift
