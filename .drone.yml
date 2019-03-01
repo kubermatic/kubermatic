@@ -36,24 +36,6 @@ pipeline:
         include:
         - release/*
         - master
-  sync-charts:
-    commands:
-    - apk add --no-cache -U git bash openssh
-    - git fetch
-    - export LATEST_VERSION=$(git describe --tags --abbrev=0)
-    - sed -i "s/__KUBERMATIC_TAG__/$LATEST_VERSION/g" config/kubermatic/values.yaml
-    - git config --global user.email "dev@loodse.com"
-    - git config --global user.name "drone"
-    - cd api && ./hack/sync-charts.sh ../config
-    image: alpine:3.8
-    pull: true
-    when:
-      branch:
-        exclude:
-        - release/v1.*
-        - release/*cherry*
-        include:
-        - release/*
   deploy-dev:
     commands:
     - export VAULT_ADDR=https://vault.loodse.com/
