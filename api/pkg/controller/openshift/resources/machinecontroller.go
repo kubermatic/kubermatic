@@ -10,7 +10,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 )
 
-const machineControllerImage = "quay.io/kubermatic/machine-controller-private:ff4cdb756d8710cddccd87325bf66f0217ceac7c-dirty"
+const machineControllerImage = "quay.io/kubermatic/machine-controller-private:8936af2a674563e8350ee2084546d40b71c665ea-dirty"
 
 func MachineController(_ context.Context, osData openshiftData) (string, resources.DeploymentCreator) {
 	creator := machinecontroller.DeploymentCreator(osData)
