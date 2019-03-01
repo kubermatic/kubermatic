@@ -145,12 +145,14 @@ func GetServiceCreators(data *resources.TemplateData) []resources.ServiceCreator
 		etcd.ServiceCreator(data),
 		dns.ServiceCreator(),
 		machinecontroller.ServiceCreator(),
-		metricsserver.ServiceCreator(),
 	}
 }
 
 func (cc *Controller) ensureServices(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetServiceCreators(data)
+	if cluster := data.Cluster(); cluster != nil && cluster.Annotations["kubermatic.io/openshift"] == "" {
+		creators = append(creators, metricsserver.ServiceCreator())
+	}
 
 	return resources.ReconcileServices(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(c))
 }
@@ -160,8 +162,6 @@ func GetDeploymentCreators(data resources.DeploymentDataProvider) []resources.De
 	creators := []resources.DeploymentCreator{
 		openvpn.DeploymentCreator(data),
 		dns.DeploymentCreator(data),
-		metricsserver.DeploymentCreator(data),
-		usercluster.DeploymentCreator(data),
 	}
 
 	if cluster := data.Cluster(); cluster != nil && cluster.Annotations["kubermatic.io/openshift"] == "" {
@@ -170,6 +170,8 @@ func GetDeploymentCreators(data resources.DeploymentDataProvider) []resources.De
 		creators = append(creators, controllermanager.DeploymentCreator(data))
 		creators = append(creators, machinecontroller.DeploymentCreator(data))
 		creators = append(creators, machinecontroller.WebhookDeploymentCreator(data))
+		creators = append(creators, metricsserver.DeploymentCreator(data))
+		creators = append(creators, usercluster.DeploymentCreator(data))
 	}
 
 	if data.Cluster() != nil && len(data.Cluster().Spec.MachineNetworks) > 0 {
