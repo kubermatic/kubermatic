@@ -166,7 +166,7 @@ func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVe
 		rsp.nonce = nonce
 		rsp.secureCookieMode = oidcCfg.CookieSecureMode
 
-		oidcState := state{
+		oidcState := State{
 			Nonce:      nonce,
 			ClusterID:  req.ClusterID,
 			ProjectID:  req.ProjectID,
@@ -270,8 +270,8 @@ const (
 	kubeconfigGenerated = iota
 )
 
-// state holds data that are send and retrieved from OIDC provider
-type state struct {
+// State holds data that are send and retrieved from OIDC provider
+type State struct {
 	// nonce a random string that binds requests / responses of API server and OIDC provider
 	// see https://tools.ietf.org/html/rfc6749#section-10.12
 	Nonce     string `json:"nonce"`
@@ -294,7 +294,7 @@ type CreateOIDCKubeconfigReq struct {
 	// not exported so that they don't leak to swagger spec.
 	code             string
 	encodedState     string
-	decodedState     state
+	decodedState     State
 	phase            int
 	cookieNonceValue string
 }
@@ -325,7 +325,7 @@ func decodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}
 		if err != nil {
 			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected base64 encoded value, err = %v", err)
 		}
-		oidcState := state{}
+		oidcState := State{}
 		if err := json.Unmarshal(rawState, &oidcState); err != nil {
 			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected json encoded value, err = %v", err)
 		}
