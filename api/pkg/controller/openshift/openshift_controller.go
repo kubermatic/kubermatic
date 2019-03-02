@@ -359,14 +359,14 @@ func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
 	return nil
 }
 
-func (r *Reconciler) getAllConfigmapCreators() []openshiftresources.NamedConfigMapCreator {
-	return []openshiftresources.NamedConfigMapCreator{openshiftresources.OpenshiftAPIServerConfigMapCreator,
-		openshiftresources.OpenshiftControllerMangerConfigMapCreator}
+func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *openshiftData) []resources.NamedConfigMapCreatorGetter {
+	return []resources.NamedConfigMapCreatorGetter{openshiftresources.OpenshiftAPIServerConfigMapCreator(ctx, osData),
+		openshiftresources.OpenshiftControllerMangerConfigMapCreator(ctx, osData)}
 }
 
 func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) error {
-	for _, namedConfigmapCreator := range r.getAllConfigmapCreators() {
-		configMapName, configMapCreator := namedConfigmapCreator(ctx, osData)
+	for _, namedConfigmapCreator := range r.getAllConfigmapCreators(ctx, osData) {
+		configMapName, configMapCreator := namedConfigmapCreator()
 		if err := resources.EnsureNamedObjectV2(ctx,
 			nn(osData.Cluster().Status.NamespaceName, configMapName), resources.ConfigMapObjectWrapper(configMapCreator), r.Client, &corev1.ConfigMap{}); err != nil {
 			return fmt.Errorf("failed to ensure ConfigMap %s: %v", configMapName, err)

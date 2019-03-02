@@ -31,7 +31,4 @@ type openshiftData interface {
 	DC() *provider.DatacenterMeta
 }
 
-type NamedConfigMapCreator func(context.Context, openshiftData) (string, resources.ConfigMapCreator)
 type NamedDeploymentCreator func(context.Context, openshiftData) (string, resources.DeploymentCreator)
-type NamedClusterRoleBindingCreator func(context.Context, openshiftData) (string, resources.ClusterRoleBindingCreator)
-type NamedServiceAccountCreator func(context.Context, openshiftData) (string, resources.ServiceAccountCreator)
