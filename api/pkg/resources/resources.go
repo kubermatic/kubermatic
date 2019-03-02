@@ -279,6 +279,12 @@ const (
 	// MachineControllerMutatingWebhookConfigurationName is the name of the machine-controllers mutating webhook
 	// configuration
 	MachineControllerMutatingWebhookConfigurationName = "machine-controller.kubermatic.io"
+
+	// InternalUserClusterAdminKubeconfigSecretName is the name of the secret containing an admin kubeconfig that can only be used from
+	// within the seed cluster
+	InternalUserClusterAdminKubeconfigSecretName = "internal-admin-kubeconfig"
+	// InternalUserClusterAdminKubeconfigCertUsername is the name of the user coming from kubeconfig cert
+	InternalUserClusterAdminKubeconfigCertUsername = "kubermatic-controllers"
 )
 
 const (

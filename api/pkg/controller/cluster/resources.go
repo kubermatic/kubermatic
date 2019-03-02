@@ -214,6 +214,7 @@ func GetSecretCreatorOperations(c *kubermaticv1.Cluster, dockerPullConfigJSON []
 		{resources.OpenVPNClientCertificatesSecretName, openvpn.InternalClientCertificate},
 		{resources.TokensSecretName, apiserver.TokenUsers},
 		{resources.AdminKubeconfigSecretName, resources.AdminKubeconfig},
+		{resources.InternalUserClusterAdminKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.InternalUserClusterAdminKubeconfigSecretName, resources.InternalUserClusterAdminKubeconfigCertUsername, []string{"system:masters"})},
 		{resources.SchedulerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil)},
 		{resources.KubeletDnatControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil)},
 		{resources.MachineControllerKubeconfigSecretName, resources.GetInternalKubeconfigCreator(resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername, nil)},
