@@ -6,7 +6,6 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 
 	corev1 "k8s.io/api/core/v1"
@@ -30,5 +29,3 @@ type openshiftData interface {
 	InClusterApiserverURL() (*url.URL, error)
 	DC() *provider.DatacenterMeta
 }
-
-type NamedDeploymentCreator func(context.Context, openshiftData) (string, resources.DeploymentCreator)

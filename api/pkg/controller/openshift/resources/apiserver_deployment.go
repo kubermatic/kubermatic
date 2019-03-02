@@ -39,152 +39,154 @@ const (
 )
 
 // DeploymentCreator returns the function to create and update the API server deployment
-func APIDeploymentCreator(ctx context.Context, data openshiftData) (string, resources.DeploymentCreator) {
-	return ApiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+func APIDeploymentCreator(ctx context.Context, data openshiftData) resources.NamedDeploymentCreatorGetter {
+	return func() (string, resources.DeploymentCreator) {
+		return ApiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 
-		dep.Name = ApiserverDeploymentName
-		dep.Labels = resources.BaseAppLabel(legacyAppLabelValue, nil)
+			dep.Name = ApiserverDeploymentName
+			dep.Labels = resources.BaseAppLabel(legacyAppLabelValue, nil)
 
-		dep.Spec.Replicas = resources.Int32(1)
-		if data.Cluster().Spec.ComponentsOverride.Apiserver.Replicas != nil {
-			dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.Apiserver.Replicas
-		}
+			dep.Spec.Replicas = resources.Int32(1)
+			if data.Cluster().Spec.ComponentsOverride.Apiserver.Replicas != nil {
+				dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.Apiserver.Replicas
+			}
 
-		dep.Spec.Selector = &metav1.LabelSelector{
-			MatchLabels: resources.BaseAppLabel(legacyAppLabelValue, nil),
-		}
-		dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
-		dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
-			MaxSurge: &intstr.IntOrString{
-				Type:   intstr.Int,
-				IntVal: 1,
-			},
-			MaxUnavailable: &intstr.IntOrString{
-				Type:   intstr.Int,
-				IntVal: 0,
-			},
-		}
-		dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
-
-		volumes := getAPIServerVolumes()
-
-		podLabels, err := data.GetPodTemplateLabelsWithContext(ctx, legacyAppLabelValue, volumes, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		externalNodePort, err := data.GetApiserverExternalNodePort(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-			Labels: podLabels,
-			Annotations: map[string]string{
-				"prometheus.io/scrape_with_kube_cert": "true",
-				"prometheus.io/path":                  "/metrics",
-				"prometheus.io/port":                  strconv.Itoa(int(externalNodePort)),
-			},
-		}
-
-		etcdEndpoints := etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName)
-
-		// Configure user cluster DNS resolver for this pod.
-		dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
-		if err != nil {
-			return nil, err
-		}
-		dep.Spec.Template.Spec.Volumes = volumes
-		dep.Spec.Template.Spec.InitContainers = []corev1.Container{
-			{
-				Name:            "etcd-running",
-				Image:           data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + etcd.ImageTag,
-				ImagePullPolicy: corev1.PullIfNotPresent,
-				Command: []string{
-					"/bin/sh",
-					"-ec",
-					fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/pki/client/ca.crt --cert=/etc/etcd/pki/client/apiserver-etcd-client.crt --key=/etc/etcd/pki/client/apiserver-etcd-client.key --dial-timeout=2s --endpoints='%s' endpoint health; do echo waiting for etcd; sleep 2; done;", strings.Join(etcdEndpoints, ",")),
+			dep.Spec.Selector = &metav1.LabelSelector{
+				MatchLabels: resources.BaseAppLabel(legacyAppLabelValue, nil),
+			}
+			dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
+			dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
+				MaxSurge: &intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 1,
 				},
-				TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-				TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-				VolumeMounts: []corev1.VolumeMount{
-					{
-						Name:      resources.ApiserverEtcdClientCertificateSecretName,
-						MountPath: "/etc/etcd/pki/client",
-						ReadOnly:  true,
+				MaxUnavailable: &intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 0,
+				},
+			}
+			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
+
+			volumes := getAPIServerVolumes()
+
+			podLabels, err := data.GetPodTemplateLabelsWithContext(ctx, legacyAppLabelValue, volumes, nil)
+			if err != nil {
+				return nil, err
+			}
+
+			externalNodePort, err := data.GetApiserverExternalNodePort(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
+				Labels: podLabels,
+				Annotations: map[string]string{
+					"prometheus.io/scrape_with_kube_cert": "true",
+					"prometheus.io/path":                  "/metrics",
+					"prometheus.io/port":                  strconv.Itoa(int(externalNodePort)),
+				},
+			}
+
+			etcdEndpoints := etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName)
+
+			// Configure user cluster DNS resolver for this pod.
+			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
+			if err != nil {
+				return nil, err
+			}
+			dep.Spec.Template.Spec.Volumes = volumes
+			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
+				{
+					Name:            "etcd-running",
+					Image:           data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + etcd.ImageTag,
+					ImagePullPolicy: corev1.PullIfNotPresent,
+					Command: []string{
+						"/bin/sh",
+						"-ec",
+						fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/pki/client/ca.crt --cert=/etc/etcd/pki/client/apiserver-etcd-client.crt --key=/etc/etcd/pki/client/apiserver-etcd-client.key --dial-timeout=2s --endpoints='%s' endpoint health; do echo waiting for etcd; sleep 2; done;", strings.Join(etcdEndpoints, ",")),
 					},
-				},
-			},
-		}
-
-		openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
-		if err != nil {
-			return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
-		}
-
-		dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(data, "dnat-controller")
-		if err != nil {
-			return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
-		}
-
-		resourceRequirements := apiServerDefaultResourceRequirements.DeepCopy()
-		if data.Cluster().Spec.ComponentsOverride.Apiserver.Resources != nil {
-			resourceRequirements = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources
-		}
-
-		dep.Spec.Template.Spec.Containers = []corev1.Container{
-			*openvpnSidecar,
-			*dnatControllerSidecar,
-			{
-				Name:                     ApiserverDeploymentName,
-				Image:                    data.ImageRegistry(resources.RegistryDocker) + "/openshift/origin-control-plane:v3.11",
-				ImagePullPolicy:          corev1.PullIfNotPresent,
-				Command:                  []string{"/usr/bin/openshift", "start", "master", "api"},
-				Args:                     []string{"--config=/etc/origin/master/master-config.yaml"},
-				Env:                      getAPIServerEnvVars(data.Cluster()),
-				TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-				TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-				Resources:                *resourceRequirements,
-				Ports: []corev1.ContainerPort{
-					{
-						ContainerPort: externalNodePort,
-						Protocol:      corev1.ProtocolTCP,
-					},
-				},
-				ReadinessProbe: &corev1.Probe{
-					Handler: corev1.Handler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path:   "/healthz",
-							Port:   intstr.FromInt(int(externalNodePort)),
-							Scheme: "HTTPS",
+					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      resources.ApiserverEtcdClientCertificateSecretName,
+							MountPath: "/etc/etcd/pki/client",
+							ReadOnly:  true,
 						},
 					},
-					FailureThreshold: 3,
-					PeriodSeconds:    5,
-					SuccessThreshold: 1,
-					TimeoutSeconds:   15,
 				},
-				LivenessProbe: &corev1.Probe{
-					Handler: corev1.Handler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path:   "/healthz",
-							Port:   intstr.FromInt(int(externalNodePort)),
-							Scheme: "HTTPS",
+			}
+
+			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
+			if err != nil {
+				return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
+			}
+
+			dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(data, "dnat-controller")
+			if err != nil {
+				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
+			}
+
+			resourceRequirements := apiServerDefaultResourceRequirements.DeepCopy()
+			if data.Cluster().Spec.ComponentsOverride.Apiserver.Resources != nil {
+				resourceRequirements = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources
+			}
+
+			dep.Spec.Template.Spec.Containers = []corev1.Container{
+				*openvpnSidecar,
+				*dnatControllerSidecar,
+				{
+					Name:                     ApiserverDeploymentName,
+					Image:                    data.ImageRegistry(resources.RegistryDocker) + "/openshift/origin-control-plane:v3.11",
+					ImagePullPolicy:          corev1.PullIfNotPresent,
+					Command:                  []string{"/usr/bin/openshift", "start", "master", "api"},
+					Args:                     []string{"--config=/etc/origin/master/master-config.yaml"},
+					Env:                      getAPIServerEnvVars(data.Cluster()),
+					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+					Resources:                *resourceRequirements,
+					Ports: []corev1.ContainerPort{
+						{
+							ContainerPort: externalNodePort,
+							Protocol:      corev1.ProtocolTCP,
 						},
 					},
-					InitialDelaySeconds: 15,
-					FailureThreshold:    8,
-					PeriodSeconds:       10,
-					SuccessThreshold:    1,
-					TimeoutSeconds:      15,
+					ReadinessProbe: &corev1.Probe{
+						Handler: corev1.Handler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/healthz",
+								Port:   intstr.FromInt(int(externalNodePort)),
+								Scheme: "HTTPS",
+							},
+						},
+						FailureThreshold: 3,
+						PeriodSeconds:    5,
+						SuccessThreshold: 1,
+						TimeoutSeconds:   15,
+					},
+					LivenessProbe: &corev1.Probe{
+						Handler: corev1.Handler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/healthz",
+								Port:   intstr.FromInt(int(externalNodePort)),
+								Scheme: "HTTPS",
+							},
+						},
+						InitialDelaySeconds: 15,
+						FailureThreshold:    8,
+						PeriodSeconds:       10,
+						SuccessThreshold:    1,
+						TimeoutSeconds:      15,
+					},
+					VolumeMounts: getVolumeMounts(),
 				},
-				VolumeMounts: getVolumeMounts(),
-			},
+			}
+
+			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(ApiserverDeploymentName, data.Cluster().Name, nil))
+
+			return dep, nil
 		}
-
-		dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(ApiserverDeploymentName, data.Cluster().Name, nil))
-
-		return dep, nil
 	}
 }
 
