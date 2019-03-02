@@ -1,0 +1,12 @@
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    component: elasticsearch
+  name: es-data
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      component: elasticsearch
+      role: data
