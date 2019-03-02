@@ -1,0 +1,18 @@
+# This file has been generated, do not edit.
+groups:
+- name: cert-manager
+  rules:
+  - alert: CertManagerCertExpiresSoon
+    annotations:
+      message: The certificate {{ $labels.name }} expires in less than 3 days.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-certmanagercertexpiressoon
+    expr: certmanager_certificate_expiration_timestamp_seconds - time() < 3*24*3600
+    labels:
+      severity: warning
+  - alert: CertManagerCertExpiresVerySoon
+    annotations:
+      message: The certificate {{ $labels.name }} expires in less than 24 hours.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-certmanagercertexpiresverysoon
+    expr: certmanager_certificate_expiration_timestamp_seconds - time() < 24*3600
+    labels:
+      severity: critical
