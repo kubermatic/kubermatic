@@ -175,7 +175,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 				return err
 			}
 			callbacks := kubeleaderelection.LeaderCallbacks{
-				OnStartedLeading: func(stop <-chan struct{}) {
+				OnStartedLeading: func(_ context.Context) {
 					if err = runAllControllers(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh, ctxDone, ctrlCtx.mgr, controllers); err != nil {
 						glog.Error(err)
 						ctxDone()
@@ -196,7 +196,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 				return fmt.Errorf("failed to create a leaderelection: %v", err)
 			}
 
-			go leader.Run()
+			go leader.Run(ctx)
 			<-done
 			return nil
 		}, func(err error) {
