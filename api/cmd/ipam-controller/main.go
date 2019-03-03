@@ -120,7 +120,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	err = leaderElectionLoop(config, ctx, func(stopCh <-chan struct{}) {
+	err = leaderElectionLoop(ctx, config, func(stopCh <-chan struct{}) {
 		tweakFunc := func(options *metav1.ListOptions) {
 			options.IncludeUninitialized = true
 		}
@@ -158,7 +158,7 @@ func getEventRecorder(masterKubeClient *kubernetes.Clientset, name string) (reco
 	return recorder, nil
 }
 
-func leaderElectionLoop(config *restclient.Config, ctx context.Context, callback func(stopCh <-chan struct{})) error {
+func leaderElectionLoop(ctx context.Context, config *restclient.Config, callback func(stopCh <-chan struct{})) error {
 	leaderElectionClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return err

@@ -22,7 +22,8 @@ func (prometheusMetricsProvider) NewDepthMetric(name string) workqueue.GaugeMetr
 		Name:      "depth",
 		Help:      "Current depth of workqueue: " + name,
 	})
-	prometheus.Register(depth)
+	// Upstream has prometheus.Register here
+	prometheus.MustRegister(depth)
 	return depth
 }
 
@@ -32,7 +33,8 @@ func (prometheusMetricsProvider) NewAddsMetric(name string) workqueue.CounterMet
 		Name:      "adds",
 		Help:      "Total number of adds handled by workqueue: " + name,
 	})
-	prometheus.Register(adds)
+	// Upstream has prometheus.Register here
+	prometheus.MustRegister(adds)
 	return adds
 }
 
@@ -42,7 +44,8 @@ func (prometheusMetricsProvider) NewLatencyMetric(name string) workqueue.Summary
 		Name:      "queue_latency",
 		Help:      "How long an item stays in workqueue" + name + " before being requested.",
 	})
-	prometheus.Register(latency)
+	// Upstream has prometheus.Register here
+	prometheus.MustRegister(latency)
 	return latency
 }
 
@@ -52,7 +55,8 @@ func (prometheusMetricsProvider) NewWorkDurationMetric(name string) workqueue.Su
 		Name:      "work_duration",
 		Help:      "How long processing an item from workqueue" + name + " takes.",
 	})
-	prometheus.Register(workDuration)
+	// Upstream has prometheus.Register here
+	prometheus.MustRegister(workDuration)
 	return workDuration
 }
 
@@ -65,7 +69,8 @@ func (prometheusMetricsProvider) NewUnfinishedWorkSecondsMetric(name string) wor
 			"values indicate stuck threads. One can deduce the number of stuck " +
 			"threads by observing the rate at which this increases.",
 	})
-	prometheus.Register(unfinished)
+	// Upstream has prometheus.Register here
+	prometheus.MustRegister(unfinished)
 	return unfinished
 }
 
@@ -76,7 +81,8 @@ func (prometheusMetricsProvider) NewLongestRunningProcessorMicrosecondsMetric(na
 		Help: "How many microseconds has the longest running " +
 			"processor for " + name + " been running.",
 	})
-	prometheus.Register(unfinished)
+	// Upstream has prometheus.Register here
+	prometheus.MustRegister(unfinished)
 	return unfinished
 }
 
@@ -86,6 +92,7 @@ func (prometheusMetricsProvider) NewRetriesMetric(name string) workqueue.Counter
 		Name:      "retries",
 		Help:      "Total number of retries handled by workqueue: " + name,
 	})
-	prometheus.Register(retries)
+	// Upstream has prometheus.Register here
+	prometheus.MustRegister(retries)
 	return retries
 }

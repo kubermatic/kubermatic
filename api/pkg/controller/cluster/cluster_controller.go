@@ -152,7 +152,9 @@ func NewController(
 	// I would prefer to pass the whole feature gates struct but that leads to a ugly import cycle.
 	// We would first clean up the resource handling to move the data->creator handling into the controller
 	enableVPA, enableEtcdDataCorruptionChecks bool) (*Controller, error) {
-	kubermaticscheme.AddToScheme(scheme.Scheme)
+	if err := kubermaticscheme.AddToScheme(scheme.Scheme); err != nil {
+		return nil, fmt.Errorf("failed to add kubermatic scheme: %v", err)
+	}
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(glog.V(4).Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
