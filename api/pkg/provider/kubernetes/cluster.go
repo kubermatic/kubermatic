@@ -13,7 +13,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -23,7 +22,6 @@ import (
 
 // UserClusterConnectionProvider offers functions to interact with a user cluster
 type UserClusterConnectionProvider interface {
-	GetClient(*kubermaticapiv1.Cluster, ...k8cuserclusterclient.ConfigOption) (kubernetes.Interface, error)
 	GetDynamicClient(*kubermaticapiv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 	GetAdminKubeconfig(*kubermaticapiv1.Cluster) ([]byte, error)
 }
@@ -203,13 +201,6 @@ func (p *ClusterProvider) GetAdminKubeconfigForCustomerCluster(c *kubermaticapiv
 // Note that the client you will get has admin privileges
 func (p *ClusterProvider) GetAdminClientForCustomerCluster(c *kubermaticapiv1.Cluster) (ctrlruntimeclient.Client, error) {
 	return p.userClusterConnProvider.GetDynamicClient(c)
-}
-
-// GetAdminKubernetesClientForCustomerCluster returns a client to interact with the given cluster
-//
-// Note that the client you will get has admin privileges
-func (p *ClusterProvider) GetAdminKubernetesClientForCustomerCluster(c *kubermaticapiv1.Cluster) (kubernetes.Interface, error) {
-	return p.userClusterConnProvider.GetClient(c)
 }
 
 // GetClientForCustomerCluster returns a client to interact with all resources in the given cluster

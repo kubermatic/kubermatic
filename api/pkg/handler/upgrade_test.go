@@ -1,6 +1,7 @@
 package handler_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -20,6 +21,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
@@ -140,7 +142,7 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 		ExistingKubermaticUser     *kubermaticv1.User
 		ExistingAPIUser            *apiv1.User
 		ExistingCluster            *kubermaticv1.Cluster
-		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
+		ExistingMachineDeployments []runtime.Object
 		ExistingKubermaticObjs     []runtime.Object
 	}{
 		{
@@ -156,7 +158,7 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 				return cluster
 			}()),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
-			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+			ExistingMachineDeployments: []runtime.Object{
 				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
 				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil),
 			},
@@ -173,7 +175,7 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 				cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.1.1")
 				return cluster
 			}()), ExistingAPIUser: test.GenDefaultAPIUser(),
-			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+			ExistingMachineDeployments: []runtime.Object{
 				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
 				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil),
 			},
@@ -181,6 +183,7 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 	}
 
 	for _, tc := range testcases {
+		t.Logf("entering")
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodes/upgrades",
 				tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(tc.Body))
@@ -203,8 +206,8 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			mds, err := cs.FakeMachineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).List(metav1.ListOptions{})
-			if err != nil {
+			mds := &clusterv1alpha1.MachineDeploymentList{}
+			if err := cs.FakeClient.List(context.TODO(), &ctrlruntimeclient.ListOptions{Raw: &metav1.ListOptions{}}, mds); err != nil {
 				t.Fatalf("failed to list machine deployments: %v", err)
 			}
 
