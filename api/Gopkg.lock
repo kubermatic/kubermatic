@@ -1518,7 +1518,7 @@
 
 [[projects]]
   branch = "release-8.0"
-  digest = "1:2727b9d70b14b584e8cf384a4e7b07a876cbab839893e3aaa5715c6daa4e06ce"
+  digest = "1:2233904b75340fd684969376c7c3ffd1b90d1caf3c5494d53828deb658467bf6"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -1675,7 +1675,6 @@
     "transport",
     "util/buffer",
     "util/cert",
-    "util/cert/triple",
     "util/connrotation",
     "util/flowcontrol",
     "util/homedir",
@@ -1975,7 +1974,6 @@
     "k8s.io/client-go/tools/metrics",
     "k8s.io/client-go/tools/record",
     "k8s.io/client-go/util/cert",
-    "k8s.io/client-go/util/cert/triple",
     "k8s.io/client-go/util/flowcontrol",
     "k8s.io/client-go/util/homedir",
     "k8s.io/client-go/util/retry",
