@@ -18,13 +18,13 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
-	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // UserClusterConnectionProvider offers functions to interact with a user cluster
 type UserClusterConnectionProvider interface {
 	GetClient(*kubermaticapiv1.Cluster, ...k8cuserclusterclient.ConfigOption) (kubernetes.Interface, error)
-	GetMachineClient(*kubermaticapiv1.Cluster, ...k8cuserclusterclient.ConfigOption) (clusterv1alpha1clientset.Interface, error)
+	GetDynamicClient(*kubermaticapiv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 	GetAdminKubeconfig(*kubermaticapiv1.Cluster) ([]byte, error)
 }
 
@@ -198,11 +198,11 @@ func (p *ClusterProvider) GetAdminKubeconfigForCustomerCluster(c *kubermaticapiv
 	return clientcmd.Load(b)
 }
 
-// GetAdminMachineClientForCustomerCluster returns a client to interact with machine resources in the given cluster
+// GetAdminClientForCustomerCluster returns a client to interact with all resources in the given cluster
 //
 // Note that the client you will get has admin privileges
-func (p *ClusterProvider) GetAdminMachineClientForCustomerCluster(c *kubermaticapiv1.Cluster) (clusterv1alpha1clientset.Interface, error) {
-	return p.userClusterConnProvider.GetMachineClient(c)
+func (p *ClusterProvider) GetAdminClientForCustomerCluster(c *kubermaticapiv1.Cluster) (ctrlruntimeclient.Client, error) {
+	return p.userClusterConnProvider.GetDynamicClient(c)
 }
 
 // GetAdminKubernetesClientForCustomerCluster returns a client to interact with the given cluster
@@ -212,12 +212,12 @@ func (p *ClusterProvider) GetAdminKubernetesClientForCustomerCluster(c *kubermat
 	return p.userClusterConnProvider.GetClient(c)
 }
 
-// GetMachineClientForCustomerCluster returns a client to interact with machine resources in the given cluster
+// GetClientForCustomerCluster returns a client to interact with all resources in the given cluster
 //
 // Note that the client doesn't use admin account instead it authn/authz as userInfo(email, group)
 // This implies that you have to make sure the user has the appropriate permissions inside the user cluster
-func (p *ClusterProvider) GetMachineClientForCustomerCluster(userInfo *provider.UserInfo, c *kubermaticapiv1.Cluster) (clusterv1alpha1clientset.Interface, error) {
-	return p.userClusterConnProvider.GetMachineClient(c, p.withImpersonation(userInfo))
+func (p *ClusterProvider) GetClientForCustomerCluster(userInfo *provider.UserInfo, c *kubermaticapiv1.Cluster) (ctrlruntimeclient.Client, error) {
+	return p.userClusterConnProvider.GetDynamicClient(c, p.withImpersonation(userInfo))
 }
 
 func (p *ClusterProvider) withImpersonation(userInfo *provider.UserInfo) k8cuserclusterclient.ConfigOption {

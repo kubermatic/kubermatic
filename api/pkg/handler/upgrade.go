@@ -16,6 +16,9 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 func getClusterUpgrades(updateManager UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
@@ -149,21 +152,20 @@ func upgradeClusterNodeDeployments(projectProvider provider.ProjectProvider) end
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		machineClient, err := clusterProvider.GetAdminMachineClientForCustomerCluster(cluster)
+		client, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineDeployments, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).List(metav1.ListOptions{})
-		if err != nil {
+		machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
+		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		var updateErrors []error
 		for _, machineDeployment := range machineDeployments.Items {
 			machineDeployment.Spec.Template.Spec.Versions.Kubelet = req.Body.Version.String()
-			_, err = machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Update(&machineDeployment)
-			if err != nil {
+			if err := client.Update(ctx, &machineDeployment); err != nil {
 				updateErrors = append(updateErrors, err)
 			}
 		}

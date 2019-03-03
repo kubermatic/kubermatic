@@ -109,7 +109,7 @@ func patchCluster(cloudProviders map[string]provider.CloudProvider, projectProvi
 			return nil, errors.NewBadRequest("cannot decode patched cluster: %v", err)
 		}
 
-		incompatibleKubelets, err := checkClusterVersionSkew(userInfo, clusterProvider, patchedCluster)
+		incompatibleKubelets, err := checkClusterVersionSkew(ctx, userInfo, clusterProvider, patchedCluster)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check existing nodes' version skew: %v", err)
 		}

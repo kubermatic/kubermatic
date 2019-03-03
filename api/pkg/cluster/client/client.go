@@ -16,8 +16,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	aggregationclientset "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 
-	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
-
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
@@ -110,20 +108,6 @@ func (p *Provider) GetClient(c *kubermaticv1.Cluster, options ...ConfigOption) (
 	}
 
 	client, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	return client, nil
-}
-
-// GetMachineClient returns a client to interact with machine resources for the given cluster
-func (p *Provider) GetMachineClient(c *kubermaticv1.Cluster, options ...ConfigOption) (clusterv1alpha1clientset.Interface, error) {
-	config, err := p.GetClientConfig(c, options...)
-	if err != nil {
-		return nil, err
-	}
-	client, err := clusterv1alpha1clientset.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}

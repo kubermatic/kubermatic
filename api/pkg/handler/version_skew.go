@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -11,7 +12,8 @@ import (
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // errVersionSkew denotes an error condition where a given kubelet/controlplane version pair is not supported
@@ -55,14 +57,14 @@ func ensureVersionCompatible(controlPlane *semver.Version, kubelet *semver.Versi
 
 // checkClusterVersionSkew returns a list of machines and/or machine deployments
 // that are running kubelet at a version incompatible with the cluster's control plane.
-func checkClusterVersionSkew(userInfo *provider.UserInfo, clusterProvider provider.ClusterProvider, cluster *kubermaticapiv1.Cluster) ([]string, error) {
-	machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(userInfo, cluster)
+func checkClusterVersionSkew(ctx context.Context, userInfo *provider.UserInfo, clusterProvider provider.ClusterProvider, cluster *kubermaticapiv1.Cluster) ([]string, error) {
+	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a machine client: %v", err)
 	}
 
 	// get deduplicated list of all used kubelet versions
-	kubeletVersions, err := getKubeletVersions(machineClient)
+	kubeletVersions, err := getKubeletVersions(ctx, client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the list of kubelet versions used in the cluster: %v", err)
 	}
@@ -99,14 +101,16 @@ func checkClusterVersionSkew(userInfo *provider.UserInfo, clusterProvider provid
 }
 
 // getKubeletVersions returns the list of all kubelet versions used by a given cluster's Machines and MachineDeployments
-func getKubeletVersions(machineClient clusterv1alpha1clientset.Interface) ([]string, error) {
-	machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{IncludeUninitialized: true})
-	if err != nil {
+func getKubeletVersions(ctx context.Context, client ctrlruntimeclient.Client) ([]string, error) {
+	listOpts := &ctrlruntimeclient.ListOptions{Raw: &metav1.ListOptions{IncludeUninitialized: true}}
+
+	machineList := &clusterv1alpha1.MachineList{}
+	if err := client.List(ctx, listOpts, machineList); err != nil {
 		return nil, fmt.Errorf("failed to load machines from cluster: %v", err)
 	}
 
-	machineDeployments, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).List(metav1.ListOptions{})
-	if err != nil {
+	machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
+	if err := client.List(ctx, listOpts, machineDeployments); err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 

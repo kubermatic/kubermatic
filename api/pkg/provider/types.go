@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
-	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -107,20 +107,20 @@ type ClusterProvider interface {
 	// GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster
 	GetAdminKubeconfigForCustomerCluster(cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
 
-	// GetAdminMachineClientForCustomerCluster returns a client to interact with machine resources in the given cluster
+	// GetAdminClientForCustomerCluster returns a client to interact with all resources in the given cluster
 	//
 	// Note that the client you will get has admin privileges
-	GetAdminMachineClientForCustomerCluster(cluster *kubermaticv1.Cluster) (clusterv1alpha1clientset.Interface, error)
+	GetAdminClientForCustomerCluster(*kubermaticv1.Cluster) (ctrlruntimeclient.Client, error)
 
 	// GetAdminKubernetesClientForCustomerCluster returns a client to interact with the given cluster
 	//
 	// Note that the client you will get has admin privileges
 	GetAdminKubernetesClientForCustomerCluster(cluster *kubermaticv1.Cluster) (kubernetes.Interface, error)
 
-	// GetMachineClientForCustomerCluster returns a client to interact with machine resources in the given cluster
+	// GetClientForCustomerCluster returns a client to interact with all resources in the given cluster
 	//
 	// Note that the client doesn't use admin account instead it authn/authz as userInfo(email, group)
-	GetMachineClientForCustomerCluster(userInfo *UserInfo, c *kubermaticv1.Cluster) (clusterv1alpha1clientset.Interface, error)
+	GetClientForCustomerCluster(*UserInfo, *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error)
 }
 
 // SSHKeyListOptions allows to set filters that will be applied to filter the result.
