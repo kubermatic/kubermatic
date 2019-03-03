@@ -14,10 +14,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -162,13 +164,15 @@ func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv
 		return c, nil
 	}
 
-	userClusterCoreClient, err := cc.userClusterConnProvider.GetClient(c)
+	client, err := cc.userClusterConnProvider.GetDynamicClient(c)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user cluster client: %v", err)
 	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	nodes, err := userClusterCoreClient.CoreV1().Nodes().List(metav1.ListOptions{})
-	if err != nil {
+	nodes := &corev1.NodeList{}
+	if err := client.List(ctx, &controllerruntimeclient.ListOptions{}, nodes); err != nil {
 		return nil, fmt.Errorf("failed to get user cluster nodes: %v", err)
 	}
 
@@ -180,8 +184,8 @@ func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv
 
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			// Get latest version of the node to prevent conflict errors
-			currentNode, err := userClusterCoreClient.CoreV1().Nodes().Get(node.Name, metav1.GetOptions{})
-			if err != nil {
+			currentNode := &corev1.Node{}
+			if err := client.Get(ctx, types.NamespacedName{Name: node.Name}, currentNode); err != nil {
 				return err
 			}
 			if currentNode.Annotations == nil {
@@ -189,50 +193,54 @@ func (cc *Controller) deletingNodeCleanup(c *kubermaticv1.Cluster) (*kubermaticv
 			}
 			node.Annotations[eviction.SkipEvictionAnnotationKey] = "true"
 
-			currentNode, err = userClusterCoreClient.CoreV1().Nodes().Update(&node)
-			return err
+			return client.Update(ctx, currentNode)
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to add the annotation '%s=true' to node '%s': %v", eviction.SkipEvictionAnnotationKey, node.Name, err)
 		}
 	}
 
-	machineClient, err := cc.userClusterConnProvider.GetMachineClient(c)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get machine client: %v", err)
-	}
-
-	machineDeploymentList, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).List(metav1.ListOptions{})
-	if err != nil {
+	machineDeploymentList := &clusterv1alpha1.MachineDeploymentList{}
+	listOpts := &controllerruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}
+	if err := client.List(ctx, listOpts, machineDeploymentList); err != nil {
 		return nil, fmt.Errorf("failed to list MachineDeployments: %v", err)
 	}
 	if len(machineDeploymentList.Items) > 0 {
-		if err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
-			return nil, fmt.Errorf("failed to delete MachineDeployments: %v", err)
+		// TODO: Use DeleteCollection once https://github.com/kubernetes-sigs/controller-runtime/issues/344 is resolved
+		for _, machineDeployment := range machineDeploymentList.Items {
+			if err := client.Delete(ctx, &machineDeployment); err != nil {
+				return nil, fmt.Errorf("failed to delete MachineDeployment %q: %v", machineDeployment.Name, err)
+			}
 		}
 		// Return here to make sure we don't attempt to delete MachineSets until the MachineDeployment is actually gone
 		return c, nil
 	}
 
-	machineSetList, err := machineClient.ClusterV1alpha1().MachineSets(metav1.NamespaceSystem).List(metav1.ListOptions{})
-	if err != nil {
+	machineSetList := &clusterv1alpha1.MachineSetList{}
+	if err = client.List(ctx, listOpts, machineSetList); err != nil {
 		return nil, fmt.Errorf("failed to list MachineSets: %v", err)
 	}
 	if len(machineSetList.Items) > 0 {
-		if err := machineClient.ClusterV1alpha1().MachineSets(metav1.NamespaceSystem).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
-			return nil, fmt.Errorf("failed to delete MachineSets: %v", err)
+		// TODO: Use DeleteCollection once https://github.com/kubernetes-sigs/controller-runtime/issues/344 is resolved
+		for _, machineSet := range machineSetList.Items {
+			if err := client.Delete(ctx, &machineSet); err != nil {
+				return nil, fmt.Errorf("failed to delete MachineSet %q: %v", machineSet.Namespace, err)
+			}
 		}
 		// Return here to make sure we don't attempt to delete Machines until the MachineSet is actually gone
 		return c, nil
 	}
 
-	machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{})
-	if err != nil {
+	machineList := &clusterv1alpha1.MachineList{}
+	if err := client.List(ctx, listOpts, machineList); err != nil {
 		return nil, fmt.Errorf("failed to get Machines: %v", err)
 	}
 	if len(machineList.Items) > 0 {
-		if err = machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
-			return nil, fmt.Errorf("failed to delete Machines: %v", err)
+		// TODO: Use DeleteCollection once https://github.com/kubernetes-sigs/controller-runtime/issues/344 is resolved
+		for _, machine := range machineList.Items {
+			if err := client.Delete(ctx, &machine); err != nil {
+				return nil, fmt.Errorf("failed to delete Machine %q: %v", machine.Name, err)
+			}
 		}
 
 		return c, nil
