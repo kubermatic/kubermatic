@@ -7,7 +7,6 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -111,11 +110,6 @@ type ClusterProvider interface {
 	//
 	// Note that the client you will get has admin privileges
 	GetAdminClientForCustomerCluster(*kubermaticv1.Cluster) (ctrlruntimeclient.Client, error)
-
-	// GetAdminKubernetesClientForCustomerCluster returns a client to interact with the given cluster
-	//
-	// Note that the client you will get has admin privileges
-	GetAdminKubernetesClientForCustomerCluster(cluster *kubermaticv1.Cluster) (kubernetes.Interface, error)
 
 	// GetClientForCustomerCluster returns a client to interact with all resources in the given cluster
 	//

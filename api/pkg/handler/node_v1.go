@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/apimachinery/pkg/runtime"
-
 	"github.com/Masterminds/semver"
 	"github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
@@ -29,10 +27,10 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/kubernetes"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -1137,7 +1135,7 @@ func listNodeDeploymentNodesEvents() endpoint.Endpoint {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		customerClusterClient, err := clusterProvider.GetAdminKubernetesClientForCustomerCluster(cluster)
+		client, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -1149,7 +1147,7 @@ func listNodeDeploymentNodesEvents() endpoint.Endpoint {
 
 		events := make([]apiv1.Event, 0)
 		for _, machine := range machines.Items {
-			machineEvents, err := getMachineEvents(customerClusterClient, machine)
+			machineEvents, err := getMachineEvents(ctx, client, machine)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -1173,9 +1171,10 @@ func listNodeDeploymentNodesEvents() endpoint.Endpoint {
 }
 
 // getMachineEvents returns Kubernetes API event objects assigned to the Machine.
-func getMachineEvents(client kubernetes.Interface, machine clusterv1alpha1.Machine) ([]apiv1.Event, error) {
-	events, err := client.CoreV1().Events(metav1.NamespaceSystem).Search(runtime.NewScheme(), &machine)
-	if err != nil {
+func getMachineEvents(ctx context.Context, client ctrlruntimeclient.Client, machine clusterv1alpha1.Machine) ([]apiv1.Event, error) {
+	events := &corev1.EventList{}
+	listOpts := &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, FieldSelector: fields.OneTermEqualSelector("involvedObject.uid", string(machine.UID))}
+	if err := client.List(ctx, listOpts, events); err != nil {
 		return nil, err
 	}
 
