@@ -192,7 +192,7 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 			machineObj := []runtime.Object{}
 			kubernetesObj := []runtime.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			for _, existingMachineDeployment := range tc.ExistingMachineDeployments {
+			for existingMachineDeployment := range tc.ExistingMachineDeployments {
 				machineObj = append(machineObj, existingMachineDeployment)
 			}
 			ep, cs, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil, hack.NewTestRouting)

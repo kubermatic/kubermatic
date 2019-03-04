@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/glog"
 	prometheusapi "github.com/prometheus/client_golang/api"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -42,7 +43,9 @@ func init() {
 	// call this in init so we don't get pancs due to concurrent map access
 	// This is requied for the ctrlruntime fake client to be able to use
 	// the clusterv1alpha1 crd
-	clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme)
+	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
+		glog.Fatalf("failed to add clusterv1alpha1 scheme to scheme.Scheme: %v", err)
+	}
 }
 
 const (
