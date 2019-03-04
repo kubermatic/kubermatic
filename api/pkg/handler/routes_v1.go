@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/project"
@@ -779,8 +780,8 @@ func (r Routing) createCluster() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(createClusterEndpoint(r.cloudProviders, r.projectProvider, r.datacenters)),
-		decodeCreateClusterReq,
+		)(cluster.CreateEndpoint(r.cloudProviders, r.projectProvider, r.datacenters)),
+		cluster.DecodeCreateReq,
 		setStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
@@ -805,8 +806,8 @@ func (r Routing) listClusters() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(listClusters(r.projectProvider)),
-		decodeListClustersReq,
+		)(cluster.ListEndpoint(r.projectProvider)),
+		cluster.DecodeListReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -830,7 +831,7 @@ func (r Routing) listClustersForProject() http.Handler {
 			r.oidcAuthenticator.Verifier(),
 			middleware.UserSaver(r.userProvider),
 			middleware.UserInfo(r.userProjectMapper),
-		)(listClustersForProject(r.projectProvider, r.clusterProviders)),
+		)(cluster.ListAllEndpoint(r.projectProvider, r.clusterProviders)),
 		common.DecodeGetProject,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -856,7 +857,7 @@ func (r Routing) getCluster() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(getCluster(r.projectProvider)),
+		)(cluster.GetEndpoint(r.projectProvider)),
 		common.DecodeGetClusterReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -882,8 +883,8 @@ func (r Routing) patchCluster() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(patchCluster(r.cloudProviders, r.projectProvider, r.datacenters)),
-		decodePatchClusterReq,
+		)(cluster.PatchEndpoint(r.cloudProviders, r.projectProvider, r.datacenters)),
+		cluster.DecodePatchReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -936,8 +937,8 @@ func (r Routing) deleteCluster() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(deleteCluster(r.sshKeyProvider, r.projectProvider)),
-		DecodeDeleteClusterReq,
+		)(cluster.DeleteEndpoint(r.sshKeyProvider, r.projectProvider)),
+		cluster.DecodeDeleteReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -962,7 +963,7 @@ func (r Routing) getClusterHealth() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(getClusterHealth(r.projectProvider)),
+		)(cluster.HealthEndpoint(r.projectProvider)),
 		common.DecodeGetClusterReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -991,8 +992,8 @@ func (r Routing) assignSSHKeyToCluster() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(assignSSHKeyToCluster(r.sshKeyProvider, r.projectProvider)),
-		decodeAssignSSHKeyToClusterReq,
+		)(cluster.AssignSSHKeyEndpoint(r.sshKeyProvider, r.projectProvider)),
+		cluster.DecodeAssignSSHKeyReq,
 		setStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
@@ -1021,8 +1022,8 @@ func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(listSSHKeysAssingedToCluster(r.sshKeyProvider, r.projectProvider)),
-		decodeListSSHKeysAssignedToCluster,
+		)(cluster.ListSSHKeysEndpoint(r.sshKeyProvider, r.projectProvider)),
+		cluster.DecodeListSSHKeysReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1050,8 +1051,8 @@ func (r Routing) detachSSHKeyFromCluster() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(detachSSHKeyFromCluster(r.sshKeyProvider, r.projectProvider)),
-		decodeDetachSSHKeysFromCluster,
+		)(cluster.DetachSSHKeyEndpoint(r.sshKeyProvider, r.projectProvider)),
+		cluster.DecodeDetachSSHKeysReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1076,8 +1077,8 @@ func (r Routing) revokeClusterAdminToken() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(revokeClusterAdminToken(r.projectProvider)),
-		decodeClusterAdminTokenReq,
+		)(cluster.RevokeAdminTokenEndpoint(r.projectProvider)),
+		cluster.DecodeAdminTokenReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)

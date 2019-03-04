@@ -35,6 +35,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	restclient "k8s.io/client-go/rest"
 
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	clusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 	fakeclusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset/fake"
 )
@@ -427,6 +428,27 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 
 func GenDefaultCluster() *kubermaticapiv1.Cluster {
 	return GenCluster(DefaultClusterID, DefaultClusterName, GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
+}
+
+func GenTestMachine(name, rawProviderSpec string, labels map[string]string, ownerRef []metav1.OwnerReference) *clusterv1alpha1.Machine {
+	return &clusterv1alpha1.Machine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            name,
+			Namespace:       metav1.NamespaceSystem,
+			Labels:          labels,
+			OwnerReferences: ownerRef,
+		},
+		Spec: clusterv1alpha1.MachineSpec{
+			ProviderSpec: clusterv1alpha1.ProviderSpec{
+				Value: &runtime.RawExtension{
+					Raw: []byte(rawProviderSpec),
+				},
+			},
+			Versions: clusterv1alpha1.MachineVersionInfo{
+				Kubelet: "v9.9.9",
+			},
+		},
+	}
 }
 
 func CheckStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t *testing.T) {
