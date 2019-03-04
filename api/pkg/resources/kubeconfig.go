@@ -4,6 +4,8 @@ import (
 	"crypto/x509"
 	"fmt"
 
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
+
 	"github.com/golang/glog"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -11,7 +13,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	certutil "k8s.io/client-go/util/cert"
-	"k8s.io/client-go/util/cert/triple"
 )
 
 // AdminKubeconfig returns a secret with the AdminKubeconfig key

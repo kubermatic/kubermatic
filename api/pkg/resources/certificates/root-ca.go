@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	certutil "k8s.io/client-go/util/cert"
-	"k8s.io/client-go/util/cert/triple"
 )
 
 // GetCACreator returns a function to create a secret containing a CA with the specified name

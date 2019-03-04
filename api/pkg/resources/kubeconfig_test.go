@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/util/cert/triple"
 )
 
 func TestGetBaseKubeconfig(t *testing.T) {
