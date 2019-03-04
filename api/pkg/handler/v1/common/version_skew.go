@@ -1,4 +1,4 @@
-package handler
+package common
 
 import (
 	"context"
@@ -7,31 +7,31 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// errVersionSkew denotes an error condition where a given kubelet/controlplane version pair is not supported
-type errVersionSkew struct {
+// ErrVersionSkew denotes an error condition where a given kubelet/controlplane version pair is not supported
+type ErrVersionSkew struct {
 	ControlPlane *semver.Version
 	Kubelet      *semver.Version
 }
 
 // Error returns a string representation of the error
-func (e errVersionSkew) Error() string {
+func (e ErrVersionSkew) Error() string {
 	return fmt.Sprintf("kubelet version %s is not compatible with control plane version %s", e.Kubelet, e.ControlPlane)
 }
 
-var _ error = errVersionSkew{}
+var _ error = ErrVersionSkew{}
 
-// ensureVersionCompatible checks whether the given kubelet version
+// EnsureVersionCompatible checks whether the given kubelet version
 // is deemed compatible with the given version of the control plane.
-func ensureVersionCompatible(controlPlane *semver.Version, kubelet *semver.Version) error {
+func EnsureVersionCompatible(controlPlane *semver.Version, kubelet *semver.Version) error {
 	if controlPlane == nil {
 		return errors.New("ensureVersionCompatible: controlPlane is nil")
 	}
@@ -46,7 +46,7 @@ func ensureVersionCompatible(controlPlane *semver.Version, kubelet *semver.Versi
 	compatible := kubelet.Major() == controlPlane.Major() && kubelet.Minor() >= (controlPlane.Minor()-2) && kubelet.Minor() <= controlPlane.Minor()
 
 	if !compatible {
-		return errVersionSkew{
+		return ErrVersionSkew{
 			ControlPlane: controlPlane,
 			Kubelet:      kubelet,
 		}
@@ -55,9 +55,9 @@ func ensureVersionCompatible(controlPlane *semver.Version, kubelet *semver.Versi
 	return nil
 }
 
-// checkClusterVersionSkew returns a list of machines and/or machine deployments
+// CheckClusterVersionSkew returns a list of machines and/or machine deployments
 // that are running kubelet at a version incompatible with the cluster's control plane.
-func checkClusterVersionSkew(ctx context.Context, userInfo *provider.UserInfo, clusterProvider provider.ClusterProvider, cluster *kubermaticapiv1.Cluster) ([]string, error) {
+func CheckClusterVersionSkew(ctx context.Context, userInfo *provider.UserInfo, clusterProvider provider.ClusterProvider, cluster *kubermaticapiv1.Cluster) ([]string, error) {
 	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a machine client: %v", err)
@@ -79,9 +79,9 @@ func checkClusterVersionSkew(ctx context.Context, userInfo *provider.UserInfo, c
 			return nil, fmt.Errorf("failed to parse kubelet version: %v", parseErr)
 		}
 
-		if err = ensureVersionCompatible(clusterVersion, kubeletVersion); err != nil {
+		if err = EnsureVersionCompatible(clusterVersion, kubeletVersion); err != nil {
 			// errVersionSkew says it's incompatible
-			if _, ok := err.(errVersionSkew); ok {
+			if _, ok := err.(ErrVersionSkew); ok {
 				incompatibleVersionsSet[kubeletVersion.String()] = true
 				continue
 			}
@@ -111,7 +111,7 @@ func getKubeletVersions(ctx context.Context, client ctrlruntimeclient.Client) ([
 
 	machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
 	if err := client.List(ctx, listOpts, machineDeployments); err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, KubernetesErrorToHTTPError(err)
 	}
 
 	kubeletVersionsSet := map[string]bool{}

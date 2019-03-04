@@ -84,10 +84,10 @@ func getClusterNodeUpgrades(updateManager UpdateManager, projectProvider provide
 		var compatibleVersions []*version.MasterVersion
 		clusterVersion := cluster.Spec.Version.Semver()
 		for _, v := range versions {
-			if err = ensureVersionCompatible(clusterVersion, v.Version); err == nil {
+			if err = common.EnsureVersionCompatible(clusterVersion, v.Version); err == nil {
 				compatibleVersions = append(compatibleVersions, v)
 			} else {
-				_, ok := err.(errVersionSkew)
+				_, ok := err.(common.ErrVersionSkew)
 				if !ok {
 					return nil, fmt.Errorf("failed to check compatibility between kubelet %q and control plane %q: %v", v.Version, clusterVersion, err)
 				}
@@ -148,7 +148,7 @@ func upgradeClusterNodeDeployments(projectProvider provider.ProjectProvider) end
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		if err = ensureVersionCompatible(cluster.Spec.Version.Version, requestedKubeletVersion); err != nil {
+		if err = common.EnsureVersionCompatible(cluster.Spec.Version.Version, requestedKubeletVersion); err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
 

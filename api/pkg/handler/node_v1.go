@@ -593,7 +593,7 @@ func createNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 				return nil, k8cerrors.NewBadRequest("failed to parse kubelet version: %v", err)
 			}
 
-			if err = ensureVersionCompatible(cluster.Spec.Version.Semver(), kversion); err != nil {
+			if err = common.EnsureVersionCompatible(cluster.Spec.Version.Semver(), kversion); err != nil {
 				return nil, k8cerrors.NewBadRequest(err.Error())
 			}
 
@@ -984,7 +984,7 @@ func patchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 		if err != nil {
 			return nil, k8cerrors.NewBadRequest("failed to parse kubelet version: %v", err)
 		}
-		if err = ensureVersionCompatible(cluster.Spec.Version.Semver(), kversion); err != nil {
+		if err = common.EnsureVersionCompatible(cluster.Spec.Version.Semver(), kversion); err != nil {
 			return nil, k8cerrors.NewBadRequest(err.Error())
 		}
 

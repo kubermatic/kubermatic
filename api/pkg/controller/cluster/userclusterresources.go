@@ -126,7 +126,7 @@ func (cc *Controller) userClusterEnsureInitializerConfiguration(c *kubermaticv1.
 }
 
 func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
-	creators := []resources.RoleCreator{
+	creators := []resources.RoleCreatorDeprecated{
 		machinecontroller.EndpointReaderRole,
 		machinecontroller.KubeSystemRole,
 		machinecontroller.KubePublicRole,
@@ -176,7 +176,7 @@ func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster, client kub
 }
 
 func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
-	creators := []resources.RoleBindingCreator{
+	creators := []resources.RoleBindingCreatorDeprecated{
 		machinecontroller.DefaultRoleBinding,
 		machinecontroller.KubeSystemRoleBinding,
 		machinecontroller.KubePublicRoleBinding,

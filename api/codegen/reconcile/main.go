@@ -63,6 +63,16 @@ func main() {
 				ImportAlias:        "rbacv1",
 				ResourceImportPath: "k8s.io/api/rbac/v1",
 			},
+			{
+				ResourceName: "Role",
+				ImportAlias:  "rbacv1",
+				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
+			},
+			{
+				ResourceName: "RoleBinding",
+				ImportAlias:  "rbacv1",
+				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
+			},
 		},
 	}
 
