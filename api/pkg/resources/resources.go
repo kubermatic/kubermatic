@@ -361,7 +361,7 @@ type ECDSAKeyPair struct {
 // RoleCreatorDeprecated defines an interface to create/update RBAC Roles
 type RoleCreatorDeprecated = func(data RoleDataProvider, existing *rbacv1.Role) (*rbacv1.Role, error)
 
-// RoleBindingCreator defines an interface to create/update RBAC RoleBinding's
+// RoleBindingCreatorDeprecated defines an interface to create/update RBAC RoleBinding's
 type RoleBindingCreatorDeprecated = func(data RoleBindingDataProvider, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error)
 
 // ClusterRoleCreator defines an interface to create/update RBAC ClusterRoles
