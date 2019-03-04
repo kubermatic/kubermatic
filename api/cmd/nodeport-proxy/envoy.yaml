@@ -34,14 +34,6 @@ static_resources:
         max_pending_requests: 100000
         max_requests: 60000000
         max_retries: 50
-  - name: statsd
-    connect_timeout: "0.25s"
-    type: STRICT_DNS
-    lb_policy: ROUND_ROBIN
-    hosts:
-    - socket_address:
-        address: "127.0.0.1"
-        port_value: 9125
   listeners:
 admin:
   access_log_path: /dev/null
@@ -49,8 +41,3 @@ admin:
     socket_address:
       address: 127.0.0.1
       port_value: 9001
-stats_sinks:
-- name: "envoy.statsd"
-  config:
-    tcp_cluster_name: statsd
-    prefix: front-envoy
