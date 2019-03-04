@@ -7,4 +7,5 @@ rules:
   - ""
   resources:
   - services
+  - pods
   verbs: ["get", "list", "watch", "update"]
