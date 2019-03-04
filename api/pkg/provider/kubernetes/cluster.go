@@ -215,7 +215,7 @@ func (p *ClusterProvider) withImpersonation(userInfo *provider.UserInfo) k8cuser
 	return func(cfg *restclient.Config) *restclient.Config {
 		cfg.Impersonate = restclient.ImpersonationConfig{
 			UserName: userInfo.Email,
-			Groups:   []string{p.extractGroupPrefix(userInfo.Group)},
+			Groups:   []string{p.extractGroupPrefix(userInfo.Group), "system:authenticated"},
 		}
 		return cfg
 	}
