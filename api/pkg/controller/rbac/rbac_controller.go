@@ -348,6 +348,10 @@ type projectResourceQueueItem struct {
 	clusterProvider *ClusterProvider
 }
 
+func (i *projectResourceQueueItem) String() string {
+	return i.metaObject.GetName()
+}
+
 func (c *Controller) informerIndexerFor(sharedInformers kubermaticsharedinformers.SharedInformerFactory, gvr schema.GroupVersionResource, kind string, clusterProvider *ClusterProvider) (cache.Controller, cache.Indexer, error) {
 	handlers := cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {

@@ -2,7 +2,9 @@ package rbac
 
 import (
 	"testing"
+	"time"
 
+	fakeInformerProvider "github.com/kubermatic/kubermatic/api/pkg/controller/rbac/fake"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -13,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/fake"
-	rbaclister "k8s.io/client-go/listers/rbac/v1"
 	clienttesting "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/cache"
 )
@@ -506,7 +507,6 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 				}
 				objs = append(objs, existingClusterRole)
 			}
-			clusterRoleLister := rbaclister.NewClusterRoleLister(clusterRoleIndexer)
 
 			clusterRoleBindingIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			for _, existingClusterRoleBinding := range test.existingClusterRoleBindings {
@@ -516,13 +516,17 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 				}
 				objs = append(objs, existingClusterRoleBinding)
 			}
-			clusterRoleBindingLister := rbaclister.NewClusterRoleBindingLister(clusterRoleBindingIndexer)
 
 			fakeKubeClient := fake.NewSimpleClientset(objs...)
+			// manually set lister as we don't want to start informers in the tests
+			fakeKubeInformerProvider := NewInformerProvider(fakeKubeClient, time.Minute*5)
+			fakeInformerFactoryForClusterRole := fakeInformerProvider.NewFakeSharedInformerFactory(fakeKubeClient, metav1.NamespaceAll)
+			fakeInformerFactoryForClusterRole.AddFakeClusterRoleBindingInformer(clusterRoleBindingIndexer)
+			fakeInformerFactoryForClusterRole.AddFakeClusterRoleInformer(clusterRoleIndexer)
+
 			fakeClusterProvider := &ClusterProvider{
-				kubeClient:                   fakeKubeClient,
-				rbacClusterRoleBindingLister: clusterRoleBindingLister,
-				rbacClusterRoleLister:        clusterRoleLister,
+				kubeClient:           fakeKubeClient,
+				kubeInformerProvider: fakeKubeInformerProvider,
 			}
 
 			// act
