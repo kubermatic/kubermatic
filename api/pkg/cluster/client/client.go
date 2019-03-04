@@ -18,7 +18,6 @@ import (
 
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 // UserClusterConnectionProvider describes the interface available for accessing
@@ -165,12 +164,7 @@ func (p *provider) GetDynamicClient(c *kubermaticv1.Cluster, options ...ConfigOp
 	if err != nil {
 		return nil, err
 	}
-	combinedScheme := scheme.Scheme
-	mapper, err := apiutil.NewDiscoveryRESTMapper(config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create rest mapper: %v", err)
-	}
-	dynamicClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{Scheme: combinedScheme, Mapper: mapper})
+	dynamicClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create dynamic client: %v", err)
 	}
