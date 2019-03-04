@@ -106,11 +106,11 @@ func listNodesForClusterLegacy(projectProvider provider.ProjectProvider) endpoin
 		}
 
 		machineList := &clusterv1alpha1.MachineList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Raw: &metav1.ListOptions{IncludeUninitialized: true}}, machineList); err != nil {
+		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, Raw: &metav1.ListOptions{IncludeUninitialized: true}}, machineList); err != nil {
 			return nil, fmt.Errorf("failed to load machines from cluster: %v", err)
 		}
 
-		nodeList, err := getNodeList(cluster, clusterProvider)
+		nodeList, err := getNodeList(ctx, cluster, clusterProvider)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -149,14 +149,14 @@ func listNodesForClusterLegacy(projectProvider provider.ProjectProvider) endpoin
 	}
 }
 
-func getNodeList(cluster *v1.Cluster, clusterProvider provider.ClusterProvider) (*corev1.NodeList, error) {
+func getNodeList(ctx context.Context, cluster *v1.Cluster, clusterProvider provider.ClusterProvider) (*corev1.NodeList, error) {
 	client, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
 	nodeList := &corev1.NodeList{}
-	if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
+	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
 		return nil, err
 	}
 	return nodeList, nil
@@ -352,7 +352,7 @@ func getMachineForNode(node *corev1.Node, machines []clusterv1alpha1.Machine) *c
 
 func findMachineAndNode(ctx context.Context, name string, client ctrlruntimeclient.Client) (*clusterv1alpha1.Machine, *corev1.Node, error) {
 	machineList := &clusterv1alpha1.MachineList{}
-	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Raw: &metav1.ListOptions{IncludeUninitialized: true}}, machineList); err != nil {
+	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, Raw: &metav1.ListOptions{IncludeUninitialized: true}}, machineList); err != nil {
 		return nil, nil, fmt.Errorf("failed to load machines from cluster: %v", err)
 	}
 
@@ -707,7 +707,7 @@ func listNodeDeployments(projectProvider provider.ProjectProvider) endpoint.Endp
 		}
 
 		machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, machineDeployments); err != nil {
+		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -845,7 +845,7 @@ func getMachinesForNodeDeployment(ctx context.Context, clusterProvider provider.
 	}
 
 	machines := &clusterv1alpha1.MachineList{}
-	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels)}, machines); err != nil {
+	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels)}, machines); err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	return machines, nil
@@ -872,7 +872,7 @@ func listNodeDeploymentNodes(projectProvider provider.ProjectProvider) endpoint.
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		nodeList, err := getNodeList(cluster, clusterProvider)
+		nodeList, err := getNodeList(ctx, cluster, clusterProvider)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

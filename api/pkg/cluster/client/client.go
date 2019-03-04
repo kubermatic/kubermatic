@@ -45,7 +45,7 @@ func NewInternal(secretLister corev1lister.SecretLister) (UserClusterConnectionP
 // that uses the external cluster address and hence works from everywhere.
 // Use NewInternal if possible
 func NewExternal(secretLister corev1lister.SecretLister) (UserClusterConnectionProvider, error) {
-	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
+	if err := clusterv1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		return nil, fmt.Errorf("failed to add clusterv1alpha1 to scheme: %v", err)
 	}
 	return &provider{secretLister: secretLister, useExternalAddress: true}, nil
