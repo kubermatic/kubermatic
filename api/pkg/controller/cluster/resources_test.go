@@ -12,6 +12,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -22,7 +23,6 @@ import (
 	listerscorev1 "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 	certutil "k8s.io/client-go/util/cert"
-	"k8s.io/client-go/util/cert/triple"
 )
 
 func TestLaunchingCreateNamespace(t *testing.T) {
