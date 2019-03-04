@@ -22,6 +22,13 @@ required = [
     non-go = false
     unused-packages = false
 
+
+# TODO @alvaroaleman: This was needed so the typed fake clientset stays compatible with our client-go
+# version. We should replace all usages of the typed cluster-api client set with the one from ctrlruntime
+[[override]]
+  name = "sigs.k8s.io/cluster-api"
+  revision = "813b1fec840d79b37fe86778237b6db6d1cb959d"
+
 [[constraint]]
   name = "github.com/go-swagger/go-swagger"
   branch = "master"
@@ -92,35 +99,39 @@ required = [
 
 [[override]]
   name = "k8s.io/apimachinery"
-  branch = "release-1.11"
+  branch = "release-1.13"
 
 [[override]]
   name = "k8s.io/apiextensions-apiserver"
-  branch = "release-1.11"
+  branch = "release-1.13"
 
 [[override]]
   name = "k8s.io/api"
-  branch = "release-1.11"
+  branch = "release-1.13"
 
 [[override]]
   name = "k8s.io/client-go"
-  branch = "release-8.0"
+  version = "kubernetes-1.13.1"
 
 [[override]]
   name = "k8s.io/kube-aggregator"
-  branch = "release-1.11"
+  branch = "release-1.13"
 
 [[override]]
   name = "k8s.io/code-generator"
-  branch = "release-1.11"
+  branch = "release-1.13"
 
 [[override]]
   name = "k8s.io/apiserver"
-  branch = "release-1.11"
+  branch = "release-1.13"
 
 [[override]]
   name = "github.com/kubermatic/machine-controller"
   version = "v1.0.5"
+
+[[override]]
+  name = "sigs.k8s.io/controller-runtime"
+  version = "v0.1.10"
 
 [[constraint]]
   name = "github.com/prometheus/client_golang"

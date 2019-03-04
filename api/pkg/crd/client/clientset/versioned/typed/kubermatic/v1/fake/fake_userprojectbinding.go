@@ -96,7 +96,7 @@ func (c *FakeUserProjectBindings) DeleteCollection(options *v1.DeleteOptions, li
 // Patch applies the patch and returns the patched userProjectBinding.
 func (c *FakeUserProjectBindings) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *kubermaticv1.UserProjectBinding, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(userprojectbindingsResource, name, data, subresources...), &kubermaticv1.UserProjectBinding{})
+		Invokes(testing.NewRootPatchSubresourceAction(userprojectbindingsResource, name, pt, data, subresources...), &kubermaticv1.UserProjectBinding{})
 	if obj == nil {
 		return nil, err
 	}
