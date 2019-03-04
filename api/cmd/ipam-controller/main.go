@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"flag"
 	"fmt"
 	"net"
@@ -116,7 +117,10 @@ func main() {
 	config = restclient.AddUserAgent(config, controllerName)
 	client := clusterv1alpha1clientset.NewForConfigOrDie(config)
 
-	err = leaderElectionLoop(config, func(stopCh <-chan struct{}) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	err = leaderElectionLoop(ctx, config, func(stopCh <-chan struct{}) {
 		tweakFunc := func(options *metav1.ListOptions) {
 			options.IncludeUninitialized = true
 		}
@@ -154,15 +158,15 @@ func getEventRecorder(masterKubeClient *kubernetes.Clientset, name string) (reco
 	return recorder, nil
 }
 
-func leaderElectionLoop(config *restclient.Config, callback func(stopCh <-chan struct{})) error {
+func leaderElectionLoop(ctx context.Context, config *restclient.Config, callback func(stopCh <-chan struct{})) error {
 	leaderElectionClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return err
 	}
 
 	callbacks := kubeleaderelection.LeaderCallbacks{
-		OnStartedLeading: func(stop <-chan struct{}) {
-			callback(stop)
+		OnStartedLeading: func(ctx context.Context) {
+			callback(ctx.Done())
 		},
 		OnStoppedLeading: func() {
 			glog.Error("==================== OnStoppedLeading ====================")
@@ -179,6 +183,6 @@ func leaderElectionLoop(config *restclient.Config, callback func(stopCh <-chan s
 		return fmt.Errorf("failed to create a leaderelection: %v", err)
 	}
 
-	leader.Run()
+	leader.Run(ctx)
 	return nil
 }

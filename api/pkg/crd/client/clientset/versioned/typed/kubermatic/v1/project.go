@@ -3,6 +3,8 @@
 package v1
 
 import (
+	"time"
+
 	scheme "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/scheme"
 	v1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,10 +59,15 @@ func (c *projects) Get(name string, options metav1.GetOptions) (result *v1.Proje
 
 // List takes label and field selectors, and returns the list of Projects that match those selectors.
 func (c *projects) List(opts metav1.ListOptions) (result *v1.ProjectList, err error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	result = &v1.ProjectList{}
 	err = c.client.Get().
 		Resource("projects").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Do().
 		Into(result)
 	return
@@ -68,10 +75,15 @@ func (c *projects) List(opts metav1.ListOptions) (result *v1.ProjectList, err er
 
 // Watch returns a watch.Interface that watches the requested projects.
 func (c *projects) Watch(opts metav1.ListOptions) (watch.Interface, error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	opts.Watch = true
 	return c.client.Get().
 		Resource("projects").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Watch()
 }
 
@@ -125,9 +137,14 @@ func (c *projects) Delete(name string, options *metav1.DeleteOptions) error {
 
 // DeleteCollection deletes a collection of objects.
 func (c *projects) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
+	var timeout time.Duration
+	if listOptions.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	}
 	return c.client.Delete().
 		Resource("projects").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
+		Timeout(timeout).
 		Body(options).
 		Do().
 		Error()
