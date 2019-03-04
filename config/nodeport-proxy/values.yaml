@@ -1,4 +1,9 @@
 nodePortPoxy:
+  replicas: 3
+  envoy:
+    image:
+      repository: "envoyproxy/envoy-alpine"
+      tag: "v1.9.0"
   image:
     repository: "quay.io/kubermatic/nodeport-proxy"
-    tag: "v1.2"
+    tag: "v2.0.0"
