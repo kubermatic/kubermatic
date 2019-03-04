@@ -93,7 +93,7 @@ func main() {
 	if _, err := informer.GetSyncedStoreFromDynamicFactory(dynamicCache, &autoscalingv1beta1.VerticalPodAutoscaler{}); err != nil {
 		if _, crdNotRegistered := err.(*meta.NoKindMatchError); crdNotRegistered {
 			glog.Fatal(`
-The VerticalPodAutoscaler is not installed in this seed cluster. 
+The VerticalPodAutoscaler is not installed in this seed cluster.
 Please install the VerticalPodAutoscaler according to the documentation: https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler#installation`)
 		}
 	}
@@ -184,7 +184,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 				return err
 			}
 			callbacks := kubeleaderelection.LeaderCallbacks{
-				OnStartedLeading: func(stop <-chan struct{}) {
+				OnStartedLeading: func(_ context.Context) {
 					if err = runAllControllers(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh, ctxDone, controllers); err != nil {
 						glog.Error(err)
 						ctxDone()
@@ -205,7 +205,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 				return fmt.Errorf("failed to create a leaderelection: %v", err)
 			}
 
-			go leader.Run()
+			go leader.Run(ctx)
 			<-done
 			return nil
 		}, func(err error) {
