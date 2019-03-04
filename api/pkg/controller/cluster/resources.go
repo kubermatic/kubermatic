@@ -308,11 +308,10 @@ func (cc *Controller) ensureVerticalPodAutoscalers(c *kubermaticv1.Cluster, data
 		"dns-resolver",
 		"machine-controller",
 		"machine-controller-webhook",
-		"metrics-server",
 		"openvpn-server",
 	}
 	if c.Annotations["kubermatic.io/openshift"] == "" {
-		controlPlaneDeploymentNames = append(controlPlaneDeploymentNames, "apiserver", "controller-manager", "scheduler")
+		controlPlaneDeploymentNames = append(controlPlaneDeploymentNames, "apiserver", "controller-manager", "scheduler", "metrics-server")
 	}
 	creators, err := resources.GetVerticalPodAutoscalersForAll(controlPlaneDeploymentNames, []string{"etcd"}, c.Status.NamespaceName, cc.dynamicCache)
 	if err != nil {

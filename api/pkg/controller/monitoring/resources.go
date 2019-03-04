@@ -41,7 +41,7 @@ func (c *Controller) getClusterTemplateData(cluster *kubermaticv1.Cluster) (*res
 }
 
 func (c *Controller) ensureRoles(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := []resources.RoleCreator{
+	creators := []resources.RoleCreatorDeprecated{
 		prometheus.Role,
 	}
 
@@ -55,7 +55,7 @@ func (c *Controller) ensureRoles(cluster *kubermaticv1.Cluster, data *resources.
 }
 
 func (c *Controller) ensureRoleBindings(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := []resources.RoleBindingCreator{
+	creators := []resources.RoleBindingCreatorDeprecated{
 		prometheus.RoleBinding,
 	}
 

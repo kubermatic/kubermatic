@@ -5,7 +5,7 @@ import (
 )
 
 // RoleBindingAuthenticationReaderCreator returns a function to create the RoleBinding which is needed for extension apiserver which do auth delegation
-func RoleBindingAuthenticationReaderCreator(username string) RoleBindingCreator {
+func RoleBindingAuthenticationReaderCreator(username string) RoleBindingCreatorDeprecated {
 	return func(data RoleBindingDataProvider, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 		var rb *rbacv1.RoleBinding
 		if existing != nil {
