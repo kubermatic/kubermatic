@@ -40,9 +40,9 @@ import (
 )
 
 func init() {
-	// call this in init so we don't get pancs due to concurrent map access
-	// This is requied for the ctrlruntime fake client to be able to use
-	// the clusterv1alpha1 crd
+	// We call this in init because even thought it is possible to register the same
+	// scheme multiple times it is an unprotected concurrent map access and these tests
+	// are very good at making that panic
 	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
 		glog.Fatalf("failed to add clusterv1alpha1 scheme to scheme.Scheme: %v", err)
 	}

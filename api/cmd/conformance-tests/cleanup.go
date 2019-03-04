@@ -53,7 +53,7 @@ func deleteAllNonDefaultNamespaces(log *logrus.Entry, kubeClient kubernetes.Inte
 	})
 }
 
-func tryToDeleteClusterWithRetries(log *logrus.Entry, cluster *kubermaticv1.Cluster, clusterClientProvider *clusterclient.Provider, kubermaticClient kubermaticclientset.Interface) error {
+func tryToDeleteClusterWithRetries(log *logrus.Entry, cluster *kubermaticv1.Cluster, clusterClientProvider clusterclient.UserClusterConnectionProvider, kubermaticClient kubermaticclientset.Interface) error {
 	const maxAttempts = 5
 	return retryNAttempts(maxAttempts, func(attempt int) error {
 		err := tryToDeleteCluster(log, cluster, clusterClientProvider, kubermaticClient)
@@ -66,7 +66,7 @@ func tryToDeleteClusterWithRetries(log *logrus.Entry, cluster *kubermaticv1.Clus
 
 // tryToDeleteCluster will try to delete all potential orphaned cloud provider resources like LB's & PVC's
 // After deleting them it will delete the kubermatic cluster object
-func tryToDeleteCluster(log *logrus.Entry, cluster *kubermaticv1.Cluster, clusterClientProvider *clusterclient.Provider, kubermaticClient kubermaticclientset.Interface) error {
+func tryToDeleteCluster(log *logrus.Entry, cluster *kubermaticv1.Cluster, clusterClientProvider clusterclient.UserClusterConnectionProvider, kubermaticClient kubermaticclientset.Interface) error {
 	log.Infof("Trying to delete cluster...")
 
 	kubeClient, err := clusterClientProvider.GetClient(cluster)

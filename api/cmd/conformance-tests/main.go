@@ -31,8 +31,6 @@ import (
 	kubermaticsignals "github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
-	"k8s.io/client-go/kubernetes/scheme"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -61,7 +59,7 @@ type Opts struct {
 	clusterLister                  kubermaticv1lister.ClusterLister
 	kubermaticClient               kubermaticclientset.Interface
 	seedKubeClient                 kubernetes.Interface
-	clusterClientProvider          *clusterclient.Provider
+	clusterClientProvider          clusterclient.UserClusterConnectionProvider
 	dcFile                         string
 	repoRoot                       string
 	dcs                            map[string]provider.DatacenterMeta
@@ -209,13 +207,6 @@ func main() {
 	log := mainLog.WithFields(fields)
 	opts.log = log
 
-	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		log.Fatalf("failed to register clusterapi scheme: %v", err)
-	}
-	if err := v1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		log.Fatalf("failed to register kubermatic scheme: %v", err)
-	}
-
 	for _, s := range strings.Split(providers, ",") {
 		opts.providers.Insert(strings.ToLower(strings.TrimSpace(s)))
 	}
@@ -292,7 +283,10 @@ func main() {
 
 	opts.clusterLister = kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister()
 
-	clusterClientProvider := clusterclient.NewExternal(kubeInformerFactory.Core().V1().Secrets().Lister())
+	clusterClientProvider, err := clusterclient.NewExternal(kubeInformerFactory.Core().V1().Secrets().Lister())
+	if err != nil {
+		log.Fatalf("failed to get clusterClientProvider: %v", err)
+	}
 	opts.clusterClientProvider = clusterClientProvider
 
 	kubermaticInformerFactory.Start(rootCtx.Done())
@@ -316,7 +310,7 @@ func main() {
 	log.Infof("Whole suite took: %.2f seconds", time.Since(start).Seconds())
 }
 
-func cleanupClusters(opts Opts, log *logrus.Entry, kubermaticClient kubermaticclientset.Interface, clusterClientProvider *clusterclient.Provider) error {
+func cleanupClusters(opts Opts, log *logrus.Entry, kubermaticClient kubermaticclientset.Interface, clusterClientProvider clusterclient.UserClusterConnectionProvider) error {
 	if opts.namePrefix == "" {
 		log.Fatalf("cleanup-on-start was specified but name-prefix is empty")
 	}

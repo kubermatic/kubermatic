@@ -114,9 +114,14 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 			kubermaticSeedInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticSeedClient, informer.DefaultInformerResyncPeriod)
 			defaultImpersonationClientForSeed := kubernetesprovider.NewKubermaticImpersonationClient(cfg)
 
+			userClusterConnectionProvider, err := client.NewExternal(kubeInformerFactory.Core().V1().Secrets().Lister())
+			if err != nil {
+				glog.Fatalf("failed to get usreClusterConnectionProvider: %v", err)
+			}
+
 			clusterProviders[ctx] = kubernetesprovider.NewClusterProvider(
 				defaultImpersonationClientForSeed.CreateImpersonatedClientSet,
-				client.NewExternal(kubeInformerFactory.Core().V1().Secrets().Lister()),
+				userClusterConnectionProvider,
 				kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(),
 				options.workerName,
 				rbac.ExtractGroupPrefix,

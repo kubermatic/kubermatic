@@ -98,7 +98,7 @@ type testRunner struct {
 	kubermaticClient      kubermaticclientset.Interface
 	seedKubeClient        kubernetes.Interface
 	clusterLister         kubermaticv1lister.ClusterLister
-	clusterClientProvider *clusterclient.Provider
+	clusterClientProvider clusterclient.UserClusterConnectionProvider
 	dcs                   map[string]provider.DatacenterMeta
 }
 
