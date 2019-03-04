@@ -10,7 +10,6 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -99,28 +98,9 @@ func listSSHKeyEndpoint(keyProvider provider.SSHKeyProvider, projectProvider pro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		apiKeys := convertInternalSSHKeysToExternal(keys)
+		apiKeys := common.ConvertInternalSSHKeysToExternal(keys)
 		return apiKeys, nil
 	}
-}
-
-func convertInternalSSHKeysToExternal(internalKeys []*kubermaticapiv1.UserSSHKey) []*apiv1.SSHKey {
-	apiKeys := make([]*apiv1.SSHKey, len(internalKeys))
-	for index, key := range internalKeys {
-		apiKey := &apiv1.SSHKey{
-			ObjectMeta: apiv1.ObjectMeta{
-				ID:                key.Name,
-				Name:              key.Spec.Name,
-				CreationTimestamp: apiv1.NewTime(key.CreationTimestamp.Time),
-			},
-			Spec: apiv1.SSHKeySpec{
-				Fingerprint: key.Spec.Fingerprint,
-				PublicKey:   key.Spec.PublicKey,
-			},
-		}
-		apiKeys[index] = apiKey
-	}
-	return apiKeys
 }
 
 // ListSSHKeyReq defined HTTP request for listSHHKeys endpoint
