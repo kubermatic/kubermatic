@@ -10,12 +10,12 @@ import (
 	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1lister "k8s.io/client-go/listers/core/v1"
-	"k8s.io/client-go/util/cert/triple"
 )
 
 // TemplateData is a group of data required for template generation
