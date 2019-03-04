@@ -202,7 +202,6 @@ spec:
           path: /var/lib/cni/networks/openshift-sdn
           type: ""
         name: host-var-lib-cni-networks-openshift-sdn
-  templateGeneration: 2
   updateStrategy:
     rollingUpdate:
       maxUnavailable: 1
