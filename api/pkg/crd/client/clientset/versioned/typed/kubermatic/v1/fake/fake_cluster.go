@@ -107,7 +107,7 @@ func (c *FakeClusters) DeleteCollection(options *v1.DeleteOptions, listOptions v
 // Patch applies the patch and returns the patched cluster.
 func (c *FakeClusters) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *kubermaticv1.Cluster, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(clustersResource, name, data, subresources...), &kubermaticv1.Cluster{})
+		Invokes(testing.NewRootPatchSubresourceAction(clustersResource, name, pt, data, subresources...), &kubermaticv1.Cluster{})
 	if obj == nil {
 		return nil, err
 	}

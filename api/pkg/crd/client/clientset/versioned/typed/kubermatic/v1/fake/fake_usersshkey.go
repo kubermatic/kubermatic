@@ -96,7 +96,7 @@ func (c *FakeUserSSHKeys) DeleteCollection(options *v1.DeleteOptions, listOption
 // Patch applies the patch and returns the patched userSSHKey.
 func (c *FakeUserSSHKeys) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *kubermaticv1.UserSSHKey, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(usersshkeysResource, name, data, subresources...), &kubermaticv1.UserSSHKey{})
+		Invokes(testing.NewRootPatchSubresourceAction(usersshkeysResource, name, pt, data, subresources...), &kubermaticv1.UserSSHKey{})
 	if obj == nil {
 		return nil, err
 	}

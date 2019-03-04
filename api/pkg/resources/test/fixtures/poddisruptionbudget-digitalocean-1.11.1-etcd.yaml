@@ -17,6 +17,5 @@ spec:
 status:
   currentHealthy: 0
   desiredHealthy: 0
-  disruptedPods: null
   disruptionsAllowed: 0
   expectedPods: 0

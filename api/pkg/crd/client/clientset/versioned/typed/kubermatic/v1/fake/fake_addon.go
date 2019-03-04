@@ -103,7 +103,7 @@ func (c *FakeAddons) DeleteCollection(options *v1.DeleteOptions, listOptions v1.
 // Patch applies the patch and returns the patched addon.
 func (c *FakeAddons) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *kubermaticv1.Addon, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(addonsResource, c.ns, name, data, subresources...), &kubermaticv1.Addon{})
+		Invokes(testing.NewPatchSubresourceAction(addonsResource, c.ns, name, pt, data, subresources...), &kubermaticv1.Addon{})
 
 	if obj == nil {
 		return nil, err
