@@ -20,10 +20,9 @@ const (
 	openshiftContolPlaneConfigKeyName      = "master-config.yaml"
 )
 
-func OpenshiftAPIServerConfigMapCreator(ctx context.Context,
-	data openshiftData) (string, resources.ConfigMapCreator) {
-	return openshiftAPIServerConfigMapName,
-		func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+func OpenshiftAPIServerConfigMapCreator(ctx context.Context, data openshiftData) resources.NamedConfigMapCreatorGetter {
+	return func() (string, resources.ConfigMapCreator) {
+		return openshiftAPIServerConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
 			}
@@ -38,12 +37,12 @@ func OpenshiftAPIServerConfigMapCreator(ctx context.Context,
 
 			return cm, nil
 		}
+	}
 }
 
-func OpenshiftControllerMangerConfigMapCreator(ctx context.Context,
-	data openshiftData) (string, resources.ConfigMapCreator) {
-	return openshiftControllerMangerConfigMapName,
-		func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+func OpenshiftControllerMangerConfigMapCreator(ctx context.Context, data openshiftData) resources.NamedConfigMapCreatorGetter {
+	return func() (string, resources.ConfigMapCreator) {
+		return openshiftControllerMangerConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
 			}
@@ -59,6 +58,7 @@ func OpenshiftControllerMangerConfigMapCreator(ctx context.Context,
 
 			return cm, nil
 		}
+	}
 }
 
 type openshiftConfigInput struct {

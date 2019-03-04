@@ -66,8 +66,11 @@ func ClusterRole(_ resources.ClusterRoleDataProvider, existing *rbacv1.ClusterRo
 		},
 		{
 			APIGroups: []string{"cluster.k8s.io"},
-			Resources: []string{"machines", "machinesets", "machinesets/status", "machinedeployments", "machinedeployments/status", "clusters", "clusters/status"},
-			Verbs:     []string{"*"},
+			Resources: []string{"machines", "machines/finalizers",
+				"machinesets", "machinesets/status", "machinesets/finalizers",
+				"machinedeployments", "machinedeployments/status", "machinedeployments/finalizers",
+				"clusters", "clusters/status", "clusters/finalizers"},
+			Verbs: []string{"*"},
 		},
 	}
 	return r, nil

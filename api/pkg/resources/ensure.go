@@ -23,7 +23,7 @@ import (
 
 // EnsureRole will create the role with the passed create function & create or update it if necessary.
 // To check if it's necessary it will do a lookup of the resource at the lister & compare the existing Role with the created one
-func EnsureRole(data RoleDataProvider, create RoleCreator, lister rbacv1lister.RoleNamespaceLister, client rbacv1client.RoleInterface) error {
+func EnsureRole(data RoleDataProvider, create RoleCreatorDeprecated, lister rbacv1lister.RoleNamespaceLister, client rbacv1client.RoleInterface) error {
 	var existing *rbacv1.Role
 	role, err := create(data, nil)
 	if err != nil {
@@ -60,7 +60,7 @@ func EnsureRole(data RoleDataProvider, create RoleCreator, lister rbacv1lister.R
 
 // EnsureRoleBinding will create the RoleBinding with the passed create function & create or update it if necessary.
 // To check if it's necessary it will do a lookup of the resource at the lister & compare the existing RoleBinding with the created one
-func EnsureRoleBinding(data RoleBindingDataProvider, create RoleBindingCreator, lister rbacv1lister.RoleBindingNamespaceLister, client rbacv1client.RoleBindingInterface) error {
+func EnsureRoleBinding(data RoleBindingDataProvider, create RoleBindingCreatorDeprecated, lister rbacv1lister.RoleBindingNamespaceLister, client rbacv1client.RoleBindingInterface) error {
 	var existing *rbacv1.RoleBinding
 	rb, err := create(data, nil)
 	if err != nil {

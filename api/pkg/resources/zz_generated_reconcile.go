@@ -339,3 +339,73 @@ func ReconcileClusterRoleBindings(creators []ClusterRoleBindingCreator, namespac
 
 	return nil
 }
+
+// RoleCreator defines an interface to create/update Roles
+type RoleCreator = func(existing *rbacv1.Role) (*rbacv1.Role, error)
+
+// RoleObjectWrapper adds a wrapper so the RoleCreator matches ObjectCreator
+// This is needed as golang does not support function interface matching
+func RoleObjectWrapper(create RoleCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*rbacv1.Role))
+		}
+		return create(&rbacv1.Role{})
+	}
+}
+
+// ReconcileRoles will create and update the Roles coming from the passed RoleCreator slice
+func ReconcileRoles(creators []RoleCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
+	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &rbacv1.Role{})
+	if err != nil {
+		return fmt.Errorf("failed to get Role informer: %v", err)
+	}
+
+	for _, create := range creators {
+		createObject := RoleObjectWrapper(create)
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureObject(namespace, createObject, store, client); err != nil {
+			return fmt.Errorf("failed to ensure Role: %v", err)
+		}
+	}
+
+	return nil
+}
+
+// RoleBindingCreator defines an interface to create/update RoleBindings
+type RoleBindingCreator = func(existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error)
+
+// RoleBindingObjectWrapper adds a wrapper so the RoleBindingCreator matches ObjectCreator
+// This is needed as golang does not support function interface matching
+func RoleBindingObjectWrapper(create RoleBindingCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*rbacv1.RoleBinding))
+		}
+		return create(&rbacv1.RoleBinding{})
+	}
+}
+
+// ReconcileRoleBindings will create and update the RoleBindings coming from the passed RoleBindingCreator slice
+func ReconcileRoleBindings(creators []RoleBindingCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
+	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &rbacv1.RoleBinding{})
+	if err != nil {
+		return fmt.Errorf("failed to get RoleBinding informer: %v", err)
+	}
+
+	for _, create := range creators {
+		createObject := RoleBindingObjectWrapper(create)
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureObject(namespace, createObject, store, client); err != nil {
+			return fmt.Errorf("failed to ensure RoleBinding: %v", err)
+		}
+	}
+
+	return nil
+}
