@@ -135,7 +135,7 @@ func PatchEndpoint(cloudProviders map[string]provider.CloudProvider, projectProv
 	}
 }
 
-// ListEndpoint list clusters withing the given datacenter
+// ListEndpoint list clusters within the given datacenter
 func ListEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(ListReq)
