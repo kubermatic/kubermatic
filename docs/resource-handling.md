@@ -5,19 +5,19 @@ The following will describe how we structure the code in Kubermatic to achieve a
 
 ## Reconciling
 
-Our reconciling is designed in a way, that every Object will be overwritten on each sync.
+Our reconciling is designed in a way, that we got notified whenever an object change, compare it to a desired state and if there is a diff update it.
 
 ## EnsureNamedObject
 
-EnsureNamedObject is a generic "reconcile" function which will update the existing object or create it.
-If the existing object does not differ from the "wanted" object, EnsureNamedObject will issue any API call. 
+`EnsureNamedObject` is a generic "reconcile" function which will update the existing object or create it.
+If the existing object does not differ from the "wanted" object, `EnsureNamedObject` will issue any API call. 
 ```go
 func EnsureNamedObject(name string, namespace string, rawcreate ObjectCreator, store informerStore, client ctrlruntimeclient.Client) error
 ```
 
 ## ObjectCreator
 
-ObjectCreator defines an interface to create/update a runtime.Object.
+ObjectCreator is a function definition to handle the create/update of a runtime.Object.
 It uses `runtime.Object` as that is the minimal interface which gets satisfied by all Kubernetes objects.
 That way we can have a single function to reconcile all Objects within a single function.
 `existing` will be the already existing object coming from the cache. If no object is found in the cache `existing` is nil.
@@ -121,3 +121,106 @@ func MyWonderfulSecretCreator(data dataProvider) NamedSecretCreatorGetter {
 	}
 }
 ```
+
+## Extend reconciling with a new type
+
+### Extend the codegen
+
+As mentioned [above](#reconcilesecrets-aka-reduce-the-type-casting), all typed reconcile functions are being created using code generation.
+To add a new type, the type must be added to the code generation first. 
+
+Extend the `Resources` slice with the additional item in the [code](https://github.com/kubermatic/kubermatic/blob/master/api/codegen/reconcile/main.go):
+```go
+		Resources: []reconcileFunctionData{
+			{
+				ResourceName:       "MyNewType",
+				ImportAlias:        "myapiv1",
+				// ResourceImportPath must only be defined once inside the Resources slice.
+				// If it has already been defined, just omit it here.
+				ResourceImportPath: "my.io/api/v1",
+			},
+			//...
+```
+
+Run the code generation from the repository root:
+```bash
+go generate api/pkg/resources/ensure.go
+```
+
+### Write your MyNewTypeCreator
+
+```go
+func MyWonderfulMyNewTypeCreator(data dataProvider) MyNewTypeCreator {
+	return func(existing *myapiv1.MyNewType) (*myapiv1.MyNewType, error) {
+		existing.Foo = "bar"
+		return existing, nil
+	}
+}
+```
+
+### Reconcile your new resource
+
+```go
+creators := []MyNewTypeCreator{
+	MyWonderfulMyNewTypeCreator(data)
+}
+
+if err := ReconcileMyNewTypes(creators, "some-namespace", client, informerFactory); err != nil {
+	return fmt.Errorf("failed to reconcile MyNewTypes: %v", err)
+}
+```
+
+## Wrap/Modify existing objects
+
+For wrapping/modifying existing resources we have 2 options:
+- Pass `ObjectModifier` functions to the typed `Reconcile*` functions
+  Good if you wan't to modify all resources of a specific type
+- Wrap the typed `*Creator` function.
+  Good if you want to modify a single resource
+
+### ObjectModifier
+
+Every `Reconcile*` functions has a variadic parameter called `objectModifiers`.
+All passed in `*Creator` functions are being wrapped by the passed in `objectModifiers`.
+
+Example:
+```go
+// ClusterRefWrapper is responsible for wrapping a ObjectCreator function, solely to set the OwnerReference to the cluster object
+func ClusterRefWrapper(c *kubermaticv1.Cluster) ObjectModifier {
+	return func(create ObjectCreator) ObjectCreator {
+		return func(existing runtime.Object) (runtime.Object, error) {
+			obj, err := create(existing)
+			if err != nil {
+				return obj, err
+			}
+
+			obj.(metav1.Object).SetOwnerReferences([]metav1.OwnerReference{GetClusterRef(c)})
+			return obj, nil
+		}
+	}
+}
+```
+
+### Wrap the typed creator
+
+To apply a modification only to single a resource function it can be wrapped:
+```go
+func MyWonderfulMyNewTypeCreator(data dataProvider) MyNewTypeCreator {
+	return func(existing *myapiv1.MyNewType) (*myapiv1.MyNewType, error) {
+		existing.Foo = "bar"
+		return existing, nil
+	}
+}
+
+func WrappedMyWonderfulMyNewTypeCreator(create MyNewTypeCreator) MyNewTypeCreator {
+	return func(existing *myapiv1.MyNewType) (*myapiv1.MyNewType, error) {
+    existing, err := create(existing)
+    if err != nil {
+      return nil, err
+    }
+    
+    existing.Foo = "baz"
+    return existing, nil
+	}
+}
+``` 
