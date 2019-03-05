@@ -44,6 +44,39 @@ func TestSingleCIDRAllocation(t *testing.T) {
 	assertNetworkEquals(t, resultMachine, "192.168.0.2/16", "192.168.0.1", "8.8.8.8")
 }
 
+func TestMultipleCIDRAllocation(t *testing.T) {
+	t.Parallel()
+
+	nets := []Network{
+		buildNet(t, "192.168.0.0/30", "192.168.0.1", "8.8.8.8"),
+		buildNet(t, "10.0.0.0/24", "10.0.0.1", "8.8.8.8"),
+	}
+
+	machines := []machineTestData{
+		{"192.168.0.2/30", "192.168.0.1", createMachine("Jayne")},
+		{"192.168.0.3/30", "192.168.0.1", createMachine("Kaylee")},
+		{"10.0.0.2/24", "10.0.0.1", createMachine("River")},
+	}
+
+	machineObjects := []runtime.Object{}
+	for _, m := range machines {
+		machineObjects = append(machineObjects, m.machine)
+	}
+
+	r := newTestReconciler(nets, machineObjects...)
+	for _, tuple := range machines {
+		if err := r.reconcile(context.Background(), tuple.machine); err != nil {
+			t.Errorf("failed to sync machine %q: %v", tuple.machine.Name, err)
+		}
+		reconciledMachine := &clusterv1alpha1.Machine{}
+		if err := r.Get(context.Background(), types.NamespacedName{Name: tuple.machine.Name}, reconciledMachine); err != nil {
+			t.Errorf("failed to get machine %q after reconcile: %v", tuple.machine.Name, err)
+		}
+		assertNetworkEquals(t, reconciledMachine, tuple.ip, tuple.gw, "8.8.8.8")
+	}
+
+}
+
 func createMachine(name string) *clusterv1alpha1.Machine {
 	return &clusterv1alpha1.Machine{
 		ObjectMeta: metav1.ObjectMeta{
@@ -81,4 +114,10 @@ func buildNet(t *testing.T, cidr string, gw string, dnsServers ...string) Networ
 		Gateway:    net.ParseIP(gw),
 		DNSServers: dnsIps,
 	}
+}
+
+type machineTestData struct {
+	ip      string
+	gw      string
+	machine *clusterv1alpha1.Machine
 }
