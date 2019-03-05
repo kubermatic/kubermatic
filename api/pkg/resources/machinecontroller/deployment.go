@@ -32,7 +32,7 @@ var (
 const (
 	name = "machine-controller"
 
-	tag = "v1.0.5"
+	tag = "v1.0.6"
 )
 
 type machinecontrollerData interface {
