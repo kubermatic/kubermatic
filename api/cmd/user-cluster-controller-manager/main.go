@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/nodecsrapprover"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster"
 
 	"github.com/golang/glog"
@@ -68,6 +69,12 @@ func main() {
 	metrics.controllers.Inc()
 	if err := registerControllers(mgr, metrics); err != nil {
 		glog.Fatal(err)
+	}
+	if runOp.openshift {
+		if err := nodecsrapprover.Add(mgr, 4, cfg); err != nil {
+			glog.Fatalf("failed to add nodecsrapprover controller: %v", err)
+		}
+		glog.Infof("Registered nodecsrapprover controller")
 	}
 
 	// This group is forever waiting in a goroutine for signals to stop
