@@ -134,7 +134,7 @@ func (r *reconciler) reconcile(ctx context.Context, machine *clusterv1alpha1.Mac
 	// Block until the change is in the lister to make sure we don't hand out an IP twice
 	return wait.Poll(1*time.Second, 60*time.Second, func() (bool, error) {
 		newMachine := &clusterv1alpha1.Machine{}
-		if r.Get(ctx, types.NamespacedName{Namespace: machine.Namespace, Name: machine.Name}, newMachine); err != nil {
+		if err := r.Get(ctx, types.NamespacedName{Namespace: machine.Namespace, Name: machine.Name}, newMachine); err != nil {
 			return false, err
 		}
 		newConfig, err := providerconfig.GetConfig(newMachine.Spec.ProviderSpec)
