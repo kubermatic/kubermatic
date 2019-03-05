@@ -1,6 +1,7 @@
 package handler_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -21,9 +22,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	clienttesting "k8s.io/client-go/testing"
 
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestDeleteNodeForCluster(t *testing.T) {
@@ -38,9 +39,9 @@ func TestDeleteNodeForCluster(t *testing.T) {
 		ExistingNodes           []*corev1.Node
 		ExistingMachines        []*clusterv1alpha1.Machine
 		ExistingKubermaticObjs  []runtime.Object
-		ExpectedActions         int
 		ExpectedHTTPStatusOnGet int
 		ExpectedResponseOnGet   string
+		ExpectedNodeCount       int
 	}{
 		// scenario 1
 		{
@@ -59,12 +60,12 @@ func TestDeleteNodeForCluster(t *testing.T) {
 				genTestMachine("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
 				genTestMachine("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
 			},
-			ExpectedActions: 2,
 			//
 			// even though the machine object was deleted the associated node object was not. When the client GETs the previously deleted "node" it will get a valid response.
 			// That is only true for testing, but in a real cluster, the node object will get deleted by the garbage-collector as it has a ownerRef set.
 			ExpectedHTTPStatusOnGet: http.StatusOK,
 			ExpectedResponseOnGet:   `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}},"status":{"machineName":"","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
+			ExpectedNodeCount:       1,
 		},
 	}
 
@@ -93,29 +94,15 @@ func TestDeleteNodeForCluster(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			fakeMachineClient := clientsSets.FakeMachineClient
-			if len(fakeMachineClient.Actions()) != tc.ExpectedActions {
-				t.Fatalf("expected to get %d but got %d actions = %v", tc.ExpectedActions, len(fakeMachineClient.Actions()), fakeMachineClient.Actions())
+			machines := &clusterv1alpha1.MachineList{}
+			if err := clientsSets.FakeClient.List(context.TODO(), &ctrlruntimeclient.ListOptions{}, machines); err != nil {
+				t.Fatalf("failed to list machines from fake client: %v", err)
 			}
 
-			deletedActionFound := false
-			for _, action := range fakeMachineClient.Actions() {
-				if action.Matches("delete", "machines") {
-					deletedActionFound = true
-					deleteAction, ok := action.(clienttesting.DeleteAction)
-					if !ok {
-						t.Fatalf("unexpected action %#v", action)
-					}
-					if tc.NodeIDToDelete != deleteAction.GetName() {
-						t.Fatalf("expected that machine %s will be deleted, but machine %s was deleted", tc.NodeIDToDelete, deleteAction.GetName())
-					}
-				}
-			}
-			if !deletedActionFound {
-				t.Fatal("delete action was not found")
+			if machineCount := len(machines.Items); machineCount != tc.ExpectedNodeCount {
+				t.Errorf("Expected %d machines to be gone but got %d", tc.ExpectedNodeCount, machineCount)
 			}
 
-			//
 			req = httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodes/%s", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.NodeIDToDelete), strings.NewReader(""))
 			res = httptest.NewRecorder()
 			ep.ServeHTTP(res, req)
@@ -799,8 +786,10 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 			ExistingMachines: []*clusterv1alpha1.Machine{
 				genTestMachine("venus-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
 				genTestMachine("venus-2", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "xyz": "abc"}, nil),
-				genTestMachine("mars-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "345", "xyz": "abc"}, nil),
-				genTestMachine("mars-2", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, nil),
+				// TODO @alvaroaleman: Have to deactivate these because the ctrlruntimefakeclient doesn't have a release where a LabelSelector is supported yet
+				// This is already done in https://github.com/kubernetes-sigs/controller-runtime/pull/311 but we have to wait for that release
+				//				genTestMachine("mars-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "345", "xyz": "abc"}, nil),
+				//				genTestMachine("mars-2", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, nil),
 			},
 			ExpectedResponse: []apiv1.Node{
 				{
@@ -1142,18 +1131,18 @@ func TestPatchNodeDeployment(t *testing.T) {
 func TestDeleteNodeDeployment(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
-		Name                       string
-		HTTPStatus                 int
-		NodeIDToDelete             string
-		ClusterIDToSync            string
-		ProjectIDToSync            string
-		ExistingAPIUser            *apiv1.User
-		ExistingNodes              []*corev1.Node
-		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
-		ExistingKubermaticObjs     []runtime.Object
-		ExpectedActions            int
-		ExpectedHTTPStatusOnGet    int
-		ExpectedResponseOnGet      string
+		Name                        string
+		HTTPStatus                  int
+		NodeIDToDelete              string
+		ClusterIDToSync             string
+		ProjectIDToSync             string
+		ExistingAPIUser             *apiv1.User
+		ExistingNodes               []*corev1.Node
+		ExistingMachineDeployments  []*clusterv1alpha1.MachineDeployment
+		ExistingKubermaticObjs      []runtime.Object
+		ExpectedHTTPStatusOnGet     int
+		ExpectedResponseOnGet       string
+		EpxectedNodeDeploymentCount int
 	}{
 		// scenario 1
 		{
@@ -1172,13 +1161,12 @@ func TestDeleteNodeDeployment(t *testing.T) {
 				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
 				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil),
 			},
-			ExpectedActions: 1,
-			//
 			// Even though the machine deployment object was deleted the associated node object was not.
 			// When the client GETs the previously deleted "node" it will get a valid response.
 			// That is only true for testing, but in a real cluster, the node object will get deleted by the garbage-collector as it has a ownerRef set.
-			ExpectedHTTPStatusOnGet: http.StatusOK,
-			ExpectedResponseOnGet:   `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}},"status":{"machineName":"","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
+			ExpectedHTTPStatusOnGet:     http.StatusOK,
+			ExpectedResponseOnGet:       `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":""}},"status":{"machineName":"","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
+			EpxectedNodeDeploymentCount: 1,
 		},
 	}
 
@@ -1208,26 +1196,13 @@ func TestDeleteNodeDeployment(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			fakeMachineClient := clientsSets.FakeMachineClient
-			if len(fakeMachineClient.Actions()) != tc.ExpectedActions {
-				t.Fatalf("expected to get %d but got %d actions = %v", tc.ExpectedActions, len(fakeMachineClient.Actions()), fakeMachineClient.Actions())
+			machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
+			if err := clientsSets.FakeClient.List(context.TODO(), &ctrlruntimeclient.ListOptions{}, machineDeployments); err != nil {
+				t.Fatalf("failed to list MachineDeployments: %v", err)
 			}
 
-			deletedActionFound := false
-			for _, action := range fakeMachineClient.Actions() {
-				if action.Matches("delete", "machinedeployments") {
-					deletedActionFound = true
-					deleteAction, ok := action.(clienttesting.DeleteAction)
-					if !ok {
-						t.Fatalf("unexpected action %#v", action)
-					}
-					if tc.NodeIDToDelete != deleteAction.GetName() {
-						t.Fatalf("expected that machine deployment %s will be deleted, but machine deployment %s was deleted", tc.NodeIDToDelete, deleteAction.GetName())
-					}
-				}
-			}
-			if !deletedActionFound {
-				t.Fatal("delete action was not found")
+			if machineDeploymentCount := len(machineDeployments.Items); machineDeploymentCount != tc.EpxectedNodeDeploymentCount {
+				t.Errorf("Expected to find %d  machineDeployments but got %d", tc.EpxectedNodeDeploymentCount, machineDeploymentCount)
 			}
 
 			req = httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodes/%s",

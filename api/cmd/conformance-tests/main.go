@@ -59,7 +59,7 @@ type Opts struct {
 	clusterLister                  kubermaticv1lister.ClusterLister
 	kubermaticClient               kubermaticclientset.Interface
 	seedKubeClient                 kubernetes.Interface
-	clusterClientProvider          *clusterclient.Provider
+	clusterClientProvider          clusterclient.UserClusterConnectionProvider
 	dcFile                         string
 	repoRoot                       string
 	dcs                            map[string]provider.DatacenterMeta
@@ -283,7 +283,10 @@ func main() {
 
 	opts.clusterLister = kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister()
 
-	clusterClientProvider := clusterclient.NewExternal(kubeInformerFactory.Core().V1().Secrets().Lister())
+	clusterClientProvider, err := clusterclient.NewExternal(kubeInformerFactory.Core().V1().Secrets().Lister())
+	if err != nil {
+		log.Fatalf("failed to get clusterClientProvider: %v", err)
+	}
 	opts.clusterClientProvider = clusterClientProvider
 
 	kubermaticInformerFactory.Start(rootCtx.Done())
@@ -307,7 +310,7 @@ func main() {
 	log.Infof("Whole suite took: %.2f seconds", time.Since(start).Seconds())
 }
 
-func cleanupClusters(opts Opts, log *logrus.Entry, kubermaticClient kubermaticclientset.Interface, clusterClientProvider *clusterclient.Provider) error {
+func cleanupClusters(opts Opts, log *logrus.Entry, kubermaticClient kubermaticclientset.Interface, clusterClientProvider clusterclient.UserClusterConnectionProvider) error {
 	if opts.namePrefix == "" {
 		log.Fatalf("cleanup-on-start was specified but name-prefix is empty")
 	}

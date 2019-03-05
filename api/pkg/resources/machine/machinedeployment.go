@@ -23,7 +23,7 @@ import (
 
 // Deployment returns a Machine Deployment object for the given Node Deployment spec.
 func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.MachineDeployment, error) {
-	md := clusterv1alpha1.MachineDeployment{}
+	md := &clusterv1alpha1.MachineDeployment{}
 
 	if nd.Name != "" {
 		md.Name = nd.Name
@@ -60,7 +60,7 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 
 	md.Spec.Template.Spec.ProviderSpec.Value = &runtime.RawExtension{Raw: b}
 
-	return &md, nil
+	return md, nil
 }
 
 func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*providerconfig.Config, error) {
