@@ -242,6 +242,9 @@ kubernetesMasterConfig:
     - etcd3
     storage-media-type:
     - application/vnd.kubernetes.protobuf
+    kubelet-preferred-address-types:
+    - ExternalIP
+    - InternalIP
 {{ end }}
   controllerArguments:
     cluster-signing-cert-file:

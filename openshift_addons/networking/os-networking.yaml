@@ -1,0 +1,202 @@
+# TODO: Deploy via user cluster controller
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    openshift.io/description: ""
+    openshift.io/display-name: ""
+    openshift.io/node-selector: ""
+    openshift.io/sa.scc.mcs: s0:c8,c7
+    openshift.io/sa.scc.supplemental-groups: 1000070000/10000
+    openshift.io/sa.scc.uid-range: 1000070000/10000
+  name: openshift-sdn
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: 2019-02-20T09:11:41Z
+  name: sdn
+  namespace: openshift-sdn
+---
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  annotations:
+    image.openshift.io/triggers: |
+      [{"from":{"kind":"ImageStreamTag","name":"node:v3.11"},"fieldPath":"spec.template.spec.containers[?(@.name==\"openvswitch\")].image"}]
+    kubernetes.io/description: |
+      This daemon set launches the openvswitch daemon.
+  creationTimestamp: 2019-02-20T09:11:41Z
+  generation: 2
+  labels:
+    app: ovs
+    component: network
+    openshift.io/component: network
+    type: infra
+  name: ovs
+  namespace: openshift-sdn
+spec:
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: ovs
+  template:
+    metadata:
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ""
+      creationTimestamp: null
+      labels:
+        app: ovs
+        component: network
+        openshift.io/component: network
+        type: infra
+    spec:
+      containers:
+      - command:
+        - /bin/bash
+        - -c
+        - |
+          #!/bin/bash
+          set -euo pipefail
+
+          # if another process is listening on the cni-server socket, wait until it exits
+          trap 'kill $(jobs -p); exit 0' TERM
+          retries=0
+          while true; do
+            if /usr/share/openvswitch/scripts/ovs-ctl status &>/dev/null; then
+              echo "warning: Another process is currently managing OVS, waiting 15s ..." 2>&1
+              sleep 15 & wait
+              (( retries += 1 ))
+            else
+              break
+            fi
+            if [[ "${retries}" -gt 40 ]]; then
+              echo "error: Another process is currently managing OVS, exiting" 2>&1
+              exit 1
+            fi
+          done
+
+          # launch OVS
+          function quit {
+              /usr/share/openvswitch/scripts/ovs-ctl stop
+              exit 0
+          }
+          trap quit SIGTERM
+          /usr/share/openvswitch/scripts/ovs-ctl start --no-ovs-vswitchd --system-id=random
+
+          # Restrict the number of pthreads ovs-vswitchd creates to reduce the
+          # amount of RSS it uses on hosts with many cores
+          # https://bugzilla.redhat.com/show_bug.cgi?id=1571379
+          # https://bugzilla.redhat.com/show_bug.cgi?id=1572797
+          if [[ `nproc` -gt 12 ]]; then
+              ovs-vsctl --no-wait set Open_vSwitch . other_config:n-revalidator-threads=4
+              ovs-vsctl --no-wait set Open_vSwitch . other_config:n-handler-threads=10
+          fi
+          /usr/share/openvswitch/scripts/ovs-ctl start --no-ovsdb-server --system-id=random
+          while true; do sleep 5; done
+        image: docker.io/openshift/origin-node:v3.11
+        imagePullPolicy: IfNotPresent
+        name: openvswitch
+        resources:
+          limits:
+            cpu: 200m
+            memory: 400Mi
+          requests:
+            cpu: 100m
+            memory: 300Mi
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /lib/modules
+          name: host-modules
+          readOnly: true
+        - mountPath: /run/openvswitch
+          name: host-run-ovs
+        - mountPath: /var/run/openvswitch
+          name: host-run-ovs
+        - mountPath: /sys
+          name: host-sys
+          readOnly: true
+        - mountPath: /etc/openvswitch
+          name: host-config-openvswitch
+      dnsPolicy: ClusterFirst
+      hostNetwork: true
+      hostPID: true
+      priorityClassName: system-node-critical
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: sdn
+      serviceAccountName: sdn
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - hostPath:
+          path: /lib/modules
+          type: ""
+        name: host-modules
+      - hostPath:
+          path: /run/openvswitch
+          type: ""
+        name: host-run-ovs
+      - hostPath:
+          path: /sys
+          type: ""
+        name: host-sys
+      - hostPath:
+          path: /etc/origin/openvswitch
+          type: ""
+        name: host-config-openvswitch
+  templateGeneration: 2
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+---
+allowHostDirVolumePlugin: true
+allowHostIPC: true
+allowHostNetwork: true
+allowHostPID: true
+allowHostPorts: true
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: true
+allowedCapabilities:
+- '*'
+allowedUnsafeSysctls:
+- '*'
+apiVersion: v1
+defaultAddCapabilities: null
+fsGroup:
+  type: RunAsAny
+groups:
+- system:cluster-admins
+- system:nodes
+- system:masters
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+    kubernetes.io/description: 'privileged allows access to all privileged and host
+      features and the ability to run as any user, any group, any fsGroup, and with
+      any SELinux context.  WARNING: this is the most relaxed SCC and should be used
+      only for cluster administration. Grant with caution.'
+  creationTimestamp: "2019-03-04T08:35:36Z"
+  name: privileged
+priority: null
+readOnlyRootFilesystem: false
+requiredDropCapabilities: null
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+- '*'
+supplementalGroups:
+  type: RunAsAny
+users:
+- system:admin
+- system:serviceaccount:openshift-infra:build-controller
+- system:serviceaccount:openshift-sdn:sdn
+volumes:
+- '*'

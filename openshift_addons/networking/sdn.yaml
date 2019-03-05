@@ -1,0 +1,208 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  annotations:
+    image.openshift.io/triggers: |
+      [
+        {"from":{"kind":"ImageStreamTag","name":"node:v3.11"},"fieldPath":"spec.template.spec.containers[?(@.name==\"sdn\")].image"}
+      ]
+    kubernetes.io/description: |
+      This daemon set launches the OpenShift networking components (kube-proxy, DNS, and openshift-sdn).
+      It expects that OVS is running on the node.
+  labels:
+    app: sdn
+    component: network
+    openshift.io/component: network
+    type: infra
+  name: sdn
+  namespace: openshift-sdn
+spec:
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: sdn
+  template:
+    metadata:
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ""
+      creationTimestamp: null
+      labels:
+        app: sdn
+        component: network
+        openshift.io/component: network
+        type: infra
+    spec:
+      containers:
+      - command:
+        - /bin/bash
+        - -c
+        - |
+          #!/bin/bash
+          set -euo pipefail
+
+          # if another process is listening on the cni-server socket, wait until it exits
+          trap 'kill $(jobs -p); exit 0' TERM
+          retries=0
+          while true; do
+            if echo 'test' | socat - UNIX-CONNECT:/var/run/openshift-sdn/cni-server.sock >/dev/null; then
+              echo "warning: Another process is currently listening on the CNI socket, waiting 15s ..." 2>&1
+              sleep 15 & wait
+              (( retries += 1 ))
+            else
+              break
+            fi
+            if [[ "${retries}" -gt 40 ]]; then
+              echo "error: Another process is currently listening on the CNI socket, exiting" 2>&1
+              exit 1
+            fi
+          done
+          # if the node config doesn't exist yet, wait until it does
+          retries=0
+          while true; do
+            if [[ ! -f /etc/origin/node/node-config.yaml ]]; then
+              echo "warning: Cannot find existing node-config.yaml, waiting 15s ..." 2>&1
+              sleep 15 & wait
+              (( retries += 1 ))
+            else
+              break
+            fi
+            if [[ "${retries}" -gt 40 ]]; then
+              echo "error: No existing node-config.yaml, exiting" 2>&1
+              exit 1
+            fi
+          done
+
+          # Take over network functions on the node
+          rm -Rf /etc/cni/net.d/80-openshift-network.conf
+          cp -Rf /opt/cni/bin/* /host/opt/cni/bin/
+
+          if [[ -f /etc/sysconfig/origin-node ]]; then
+            set -o allexport
+            source /etc/sysconfig/origin-node
+          fi
+
+          # use either the bootstrapped node kubeconfig or the static configuration
+          file=/etc/origin/node/node.kubeconfig
+          if [[ ! -f "${file}" ]]; then
+            # use the static node config if it exists
+            # TODO: remove when static node configuration is no longer supported
+            for f in /etc/origin/node/system*.kubeconfig; do
+              echo "info: Using ${f} for node configuration" 1>&2
+              file="${f}"
+              break
+            done
+          fi
+          # Use the same config as the node, but with the service account token
+          oc config "--config=${file}" view --flatten > /tmp/kubeconfig
+          oc config --config=/tmp/kubeconfig set-credentials sa "--token=$( cat /var/run/secrets/kubernetes.io/serviceaccount/token )"
+          oc config --config=/tmp/kubeconfig set-context "$( oc config --config=/tmp/kubeconfig current-context )" --user=sa
+          # Launch the network process
+          if which openshift-sdn; then
+            exec openshift-sdn --config=/etc/origin/node/node-config.yaml --kubeconfig=/tmp/kubeconfig --loglevel=${DEBUG_LOGLEVEL:-2}
+          fi
+          exec openshift start network --config=/etc/origin/node/node-config.yaml --kubeconfig=/tmp/kubeconfig --loglevel=${DEBUG_LOGLEVEL:-2}
+        env:
+        - name: OPENSHIFT_DNS_DOMAIN
+          value: cluster.local
+        image: docker.io/openshift/origin-node:v3.11
+        imagePullPolicy: IfNotPresent
+        name: sdn
+        ports:
+        - containerPort: 10256
+          hostPort: 10256
+          name: healthz
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/origin/node/
+          name: host-config
+          readOnly: true
+        - mountPath: /etc/sysconfig/origin-node
+          name: host-sysconfig-node
+          readOnly: true
+        - mountPath: /var/run
+          name: host-var-run
+        - mountPath: /var/run/dbus/
+          name: host-var-run-dbus
+          readOnly: true
+        - mountPath: /var/run/openvswitch/
+          name: host-var-run-ovs
+          readOnly: true
+        - mountPath: /var/run/kubernetes/
+          name: host-var-run-kubernetes
+          readOnly: true
+        - mountPath: /var/run/openshift-sdn
+          name: host-var-run-openshift-sdn
+        - mountPath: /host/opt/cni/bin
+          name: host-opt-cni-bin
+        - mountPath: /etc/cni/net.d
+          name: host-etc-cni-netd
+        - mountPath: /var/lib/cni/networks/openshift-sdn
+          name: host-var-lib-cni-networks-openshift-sdn
+      dnsPolicy: ClusterFirst
+      hostNetwork: true
+      hostPID: true
+      priorityClassName: system-node-critical
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: sdn
+      serviceAccountName: sdn
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - hostPath:
+          path: /etc/origin/node
+          type: ""
+        name: host-config
+      - hostPath:
+          path: /etc/sysconfig/origin-node
+          type: ""
+        name: host-sysconfig-node
+      - hostPath:
+          path: /lib/modules
+          type: ""
+        name: host-modules
+      - hostPath:
+          path: /var/run
+          type: ""
+        name: host-var-run
+      - hostPath:
+          path: /var/run/dbus
+          type: ""
+        name: host-var-run-dbus
+      - hostPath:
+          path: /var/run/openvswitch
+          type: ""
+        name: host-var-run-ovs
+      - hostPath:
+          path: /var/run/kubernetes
+          type: ""
+        name: host-var-run-kubernetes
+      - hostPath:
+          path: /var/run/openshift-sdn
+          type: ""
+        name: host-var-run-openshift-sdn
+      - hostPath:
+          path: /opt/cni/bin
+          type: ""
+        name: host-opt-cni-bin
+      - hostPath:
+          path: /etc/cni/net.d
+          type: ""
+        name: host-etc-cni-netd
+      - hostPath:
+          path: /var/lib/cni/networks/openshift-sdn
+          type: ""
+        name: host-var-lib-cni-networks-openshift-sdn
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
