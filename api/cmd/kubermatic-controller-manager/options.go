@@ -42,7 +42,8 @@ type controllerRunOptions struct {
 	overwriteRegistry                                string
 	nodePortRange                                    string
 	nodeAccessNetwork                                string
-	addonsPath                                       string
+	kubernetesAddonsPath                             string
+	openshiftAddonsPath                              string
 	addonsList                                       string
 	backupContainerFile                              string
 	cleanupContainerFile                             string
@@ -82,7 +83,8 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.StringVar(&c.nodePortRange, "nodeport-range", "30000-32767", "NodePort range to use for new clusters. It must be within the NodePort range of the seed-cluster")
 	flag.StringVar(&c.nodeAccessNetwork, "node-access-network", "10.254.0.0/16", "A network which allows direct access to nodes via VPN. Uses CIDR notation.")
-	flag.StringVar(&c.addonsPath, "addons-path", "/opt/addons", "Path to addon manifests. Should contain sub-folders for each addon")
+	flag.StringVar(&c.kubernetesAddonsPath, "kubernetes-addons-path", "/opt/kubernetes-addons", "Path to addon manifests. Should contain sub-folders for each addon")
+	flag.StringVar(&c.openshiftAddonsPath, "openshift-addons-path", "/opt/openshift-addons", "Path to addon manifests. Should contain sub-folders for each addon")
 	flag.StringVar(&c.addonsList, "addons-list", "canal,dashboard,dns,kube-proxy,openvpn,rbac,kubelet-configmap,default-storage-class", "Comma separated list of Addons to install into every user-cluster")
 	flag.StringVar(&c.backupContainerFile, "backup-container", "", fmt.Sprintf("[Required] Filepath of a backup container yaml. It must mount a volume named %s from which it reads the etcd backups", backupcontroller.SharedVolumeName))
 	flag.StringVar(&c.cleanupContainerFile, "cleanup-container", "", "[Required] Filepath of a cleanup container yaml. The container will be used to cleanup the backup directory for a cluster after it got deleted.")
