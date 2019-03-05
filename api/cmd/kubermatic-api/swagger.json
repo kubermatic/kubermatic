@@ -3560,8 +3560,11 @@
           "x-go-name": "Code"
         },
         "details": {
-          "description": "Additional error message",
-          "type": "string",
+          "description": "Additional error messages",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
           "x-go-name": "Additional"
         },
         "message": {
