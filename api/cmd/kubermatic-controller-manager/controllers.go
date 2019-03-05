@@ -286,7 +286,8 @@ func createAddonController(ctrlCtx *controllerContext) (runner, error) {
 				"NodeAccessNetwork": ctrlCtx.runOptions.nodeAccessNetwork,
 			},
 		},
-		ctrlCtx.runOptions.addonsPath,
+		ctrlCtx.runOptions.kubernetesAddonsPath,
+		ctrlCtx.runOptions.openshiftAddonsPath,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.clientProvider,
 		ctrlCtx.kubermaticClient,
@@ -297,15 +298,21 @@ func createAddonController(ctrlCtx *controllerContext) (runner, error) {
 
 func createAddonInstallerController(ctrlCtx *controllerContext) (runner, error) {
 
-	defaultAddonsList := strings.Split(ctrlCtx.runOptions.addonsList, ",")
-	for i, a := range defaultAddonsList {
-		defaultAddonsList[i] = strings.TrimSpace(a)
+	kubernetesAddons := strings.Split(ctrlCtx.runOptions.kubernetesAddonsList, ",")
+	for i, a := range kubernetesAddons {
+		kubernetesAddons[i] = strings.TrimSpace(a)
+	}
+
+	openshiftAddons := strings.Split(ctrlCtx.runOptions.openshiftAddonsList, ",")
+	for i, a := range openshiftAddons {
+		openshiftAddons[i] = strings.TrimSpace(a)
 	}
 
 	return addoninstaller.New(
 		ctrlCtx.runOptions.workerName,
 		addoninstaller.NewMetrics(),
-		defaultAddonsList,
+		kubernetesAddons,
+		openshiftAddons,
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Addons(),
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),

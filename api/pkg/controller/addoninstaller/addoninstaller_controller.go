@@ -46,7 +46,8 @@ type Controller struct {
 	workerName       string
 	queue            workqueue.RateLimitingInterface
 	metrics          *Metrics
-	defaultAddonList []string
+	kubernetesAddons []string
+	openshiftAddons  []string
 	client           kubermaticclientset.Interface
 	clusterLister    kubermaticv1lister.ClusterLister
 	addonLister      kubermaticv1lister.AddonLister
@@ -57,7 +58,8 @@ type Controller struct {
 func New(
 	workerName string,
 	metrics *Metrics,
-	defaultAddonList []string,
+	kubernetesAddons []string,
+	openshiftAddons []string,
 	client kubermaticclientset.Interface,
 	addonInformer kubermaticv1informers.AddonInformer,
 	clusterInformer kubermaticv1informers.ClusterInformer) (*Controller, error) {
@@ -66,7 +68,8 @@ func New(
 		workerName:       workerName,
 		queue:            workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute), "addon_installer_cluster"),
 		metrics:          metrics,
-		defaultAddonList: defaultAddonList,
+		kubernetesAddons: kubernetesAddons,
+		openshiftAddons:  openshiftAddons,
 		client:           client,
 	}
 
@@ -117,7 +120,7 @@ func (c *Controller) enqueueCluster(cluster *kubermaticv1.Cluster) {
 }
 
 // make API call to create an addon in the cluster
-func (c *Controller) createDefaultAddon(addon string, cluster *kubermaticv1.Cluster) error {
+func (c *Controller) createAddon(addon string, cluster *kubermaticv1.Cluster) error {
 	gv := kubermaticv1.SchemeGroupVersion
 	glog.V(8).Infof("Create addon %s for the cluster %s\n", addon, cluster.Name)
 
@@ -228,16 +231,25 @@ func (c *Controller) sync(key string) error {
 		return nil
 	}
 
-	for _, defaultAddon := range c.defaultAddonList {
-		_, err := c.addonLister.Addons(cluster.Status.NamespaceName).Get(defaultAddon)
-		if err != nil && kerrors.IsNotFound(err) {
-			if err = c.createDefaultAddon(defaultAddon, cluster); err != nil {
-				return fmt.Errorf("failed to create initial adddon %s: %v", defaultAddon, err)
-			}
-		} else if err != nil {
-			return fmt.Errorf("failed to get addon %s: %v", defaultAddon, err)
-		}
+	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		return c.ensureAddons(cluster, c.kubernetesAddons)
 	}
 
-	return err
+	return c.ensureAddons(cluster, c.openshiftAddons)
+}
+
+func (c *Controller) ensureAddons(cluster *kubermaticv1.Cluster, addons []string) error {
+	for _, addon := range addons {
+		_, err := c.addonLister.Addons(cluster.Status.NamespaceName).Get(addon)
+		if err == nil {
+			continue
+		}
+		if !kerrors.IsNotFound(err) {
+			return fmt.Errorf("failed to get addon %s: %v", addon, err)
+		}
+		if err := c.createAddon(addon, cluster); err != nil {
+			return fmt.Errorf("failed to create addon %s: %v", addon, err)
+		}
+	}
+	return nil
 }

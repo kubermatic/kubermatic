@@ -3,24 +3,32 @@
 set -e
 
 cleanup() {
-  OLD_EXIT_CODE=$?
-  docker rm -f $CONTAINER_NAME >/dev/null
-  rm -rf ./addons-from-container
-  exit $OLD_EXIT_CODE
+  set +e
+  docker rm -f $KUBERNETES_CONTAINER_NAME >/dev/null
+  docker rm -f $OPENSHIFT_CONTAINER_NAME >/dev/null
+  rm -rf ./addons-from-container*
 }
 trap cleanup EXIT
 
 cd $(dirname $0)/../..
 
-IMAGE=$(cat config/kubermatic/values.yaml |grep 'addons:' -A3|grep repository|awk '{ print $2 }'|tr -d '"')
-TAG=$(cat config/kubermatic/values.yaml |grep 'addons:' -A3|grep tag|awk '{ print $2 }'|tr -d '"')
+KUBERNETES_IMAGE=quay.io/kubermatic/addons
+KUBERNETES_TAG="$(cat config/kubermatic/values.yaml |grep $KUBERNETES_IMAGE -A2|grep tag|awk '{ print $2 }'|tr -d '"')"
+OPENSHIFT_IMAGE=quay.io/kubermatic/openshift-addons
+OPENSHIFT_TAG="$(cat config/kubermatic/values.yaml |grep $OPENSHIFT_IMAGE -A2|grep tag|awk '{ print $2 }'|tr -d '"')"
 
-CONTAINER_NAME=$(docker create $IMAGE:$TAG)
+KUBERNETES_CONTAINER_NAME=$(docker create $KUBERNETES_IMAGE:$KUBERNETES_TAG)
+OPENSHIFT_CONTAINER_NAME=$(docker create $OPENSHIFT_IMAGE:$OPENSHIFT_TAG)
 
-docker cp $CONTAINER_NAME:/addons ./addons-from-container
+docker cp $KUBERNETES_CONTAINER_NAME:/addons ./addons-from-container-kubernetes
+docker cp $OPENSHIFT_CONTAINER_NAME:/addons ./addons-from-container-openshift
 
 for ignored_file in $(cat addons/.dockerignore); do
-  cp addons/$ignored_file ./addons-from-container/
+  cp addons/$ignored_file ./addons-from-container-kubernetes/
+done
+for ignored_file in $(cat addons/.dockerignore); do
+  cp openshift_addons/$ignored_file ./addons-from-container-openshift/
 done
 
-diff --brief -r ./addons ./addons-from-container
+diff --brief -r ./addons ./addons-from-container-kubernetes
+diff --brief -r ./openshift_addons ./addons-from-container-openshift
