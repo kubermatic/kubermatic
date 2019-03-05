@@ -23,5 +23,6 @@ fi
 ./_build/user-cluster-controller-manager \
     -kubeconfig=$KUBECONFIG_USERCLUSTER_CONTROLLER \
     -logtostderr \
+    -internal-address=127.0.0.1:8087 \
     -v=4 \
     $ARGS

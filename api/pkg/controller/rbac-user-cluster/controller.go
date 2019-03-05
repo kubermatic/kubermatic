@@ -5,6 +5,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
+	"github.com/golang/glog"
+
 	rbacv1 "k8s.io/api/rbac/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -78,6 +80,9 @@ func (r *reconcileRBAC) Reconcile(request reconcile.Request) (reconcile.Result, 
 	rdr := reconciler{client: r.Client, ctx: r.ctx}
 
 	err := rdr.Reconcile(request.Name)
+	if err != nil {
+		glog.Errorf("RBAC reconciliation failed: %v", err)
+	}
 
 	return reconcile.Result{}, err
 }
