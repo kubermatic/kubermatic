@@ -72,9 +72,9 @@ spec:
           - -updates=/opt/master-files/updates.yaml
           - -internal-address=0.0.0.0:8085
           - -kubernetes-addons-list={{ join "," .Values.kubermatic.controller.addons.kubernetes.defaultAddons }}
-          - -openshift-addon-list={{ join "," .Values.kubermatic.controller.addons.openshift.defaultAddons}}
+          - -openshift-addons-list={{ join "," .Values.kubermatic.controller.addons.openshift.defaultAddons}}
           - -kubernetes-addons-path=/opt/addons/kubernetes
-          - -openshift-addonss-path=/opt/addons/openshift
+          - -openshift-addons-path=/opt/addons/openshift
           - -backup-container=/opt/backup/store-container.yaml
           - -cleanup-container=/opt/backup/cleanup-container.yaml
           - -nodeport-range={{ .Values.kubermatic.controller.nodeportRange }}
