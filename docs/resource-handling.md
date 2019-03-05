@@ -6,11 +6,12 @@ The following will describe how we structure the code in Kubermatic to achieve a
 ## Reconciling
 
 Our reconciling is designed in a way, that we got notified whenever an object change, compare it to a desired state and if there is a diff update it.
+The desired state comes from the [creators](#objectcreator) we define.
 
 ## EnsureNamedObject
 
 `EnsureNamedObject` is a generic "reconcile" function which will update the existing object or create it.
-If the existing object does not differ from the "wanted" object, `EnsureNamedObject` will issue any API call. 
+If the existing object does not differ from the "wanted" object, `EnsureNamedObject` will not issue any API call. 
 ```go
 func EnsureNamedObject(name string, namespace string, rawcreate ObjectCreator, store informerStore, client ctrlruntimeclient.Client) error
 ```
@@ -89,6 +90,7 @@ type SecretCreator = func(existing *corev1.Secret) (*corev1.Secret, error)
 
 ```go
 func MyWonderfulSecret(existing corev1.Secret) (corev1.Secret, error) {
+	// No nil check needed as thats being handled by ReconcileSecrets
 	existing.Name = "wonderful-secret"
 	existing.Data = map[string][]byte{
 		"user":     []byte("foo"),
@@ -158,7 +160,7 @@ func MyWonderfulMyNewTypeCreator(data dataProvider) MyNewTypeCreator {
 }
 ```
 
-### Reconcile your new resource
+### Reconcile your new resource in a controller
 
 ```go
 creators := []MyNewTypeCreator{
@@ -174,7 +176,7 @@ if err := ReconcileMyNewTypes(creators, "some-namespace", client, informerFactor
 
 For wrapping/modifying existing resources we have 2 options:
 - Pass `ObjectModifier` functions to the typed `Reconcile*` functions
-  Good if you wan't to modify all resources of a specific type
+  Good if you want to modify all resources of a specific type
 - Wrap the typed `*Creator` function.
   Good if you want to modify a single resource
 
