@@ -116,7 +116,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 
 			userClusterConnectionProvider, err := client.NewExternal(kubeInformerFactory.Core().V1().Secrets().Lister())
 			if err != nil {
-				glog.Fatalf("failed to get usreClusterConnectionProvider: %v", err)
+				return providers{}, fmt.Errorf("failed to get userClusterConnectionProvider: %v", err)
 			}
 
 			clusterProviders[ctx] = kubernetesprovider.NewClusterProvider(
