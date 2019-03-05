@@ -120,7 +120,7 @@ func TestCreateAddon(t *testing.T) {
 
 			controller := Controller{}
 			controller.client = kubermaticClient
-			controller.defaultAddonList = addons
+			controller.kubernetesAddons = addons
 			controller.clusterLister = informerFactory.Kubermatic().V1().Clusters().Lister()
 			controller.addonLister = informerFactory.Kubermatic().V1().Addons().Lister()
 

@@ -22,6 +22,11 @@ spec:
         securityContext:
           privileged: true
         env:
+        ## This is only needed because the `sdn` daemonset wont start without this file being preset
+        ## It is not deployed via the machine-controller because the machine-controller doesn't know
+        ## the pod cidr. Also the whole thing feels very redundant, because there is a resource
+        ## clusternetwork.v1.network.openshift.io created for the network configured in the control plane
+        ## TODO: Figure out which parts of this config file are actually needed and remove everythiing else
         - name: STARTUP_SCRIPT
           value: |
             cat <<EOF >/etc/origin/node/node-config.yaml

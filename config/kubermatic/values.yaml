@@ -51,20 +51,29 @@ kubermatic:
       tag: "__KUBERMATIC_TAG__"
       pullPolicy: "IfNotPresent"
     addons:
-      image:
-        repository: "quay.io/kubermatic/addons"
-        tag: "v0.1.18"
-        pullPolicy: "IfNotPresent"
-      # list of Addons to install into every user-cluster. All need to exist in the addons image
-      defaultAddons:
-      - canal
-      - dashboard
-      - dns
-      - kube-proxy
-      - openvpn
-      - rbac
-      - kubelet-configmap
-      - default-storage-class
+      kubernetes:
+        # list of Addons to install into every user-cluster. All need to exist in the addons image
+        defaultAddons:
+        - canal
+        - dashboard
+        - dns
+        - kube-proxy
+        - openvpn
+        - rbac
+        - kubelet-configmap
+        - default-storage-class
+        image:
+          repository: "quay.io/kubermatic/addons"
+          tag: "v0.1.18"
+          pullPolicy: "IfNotPresent"
+      openshift:
+        # list of Addons to install into every user-cluster. All need to exist in the addons image
+        defaultAddons:
+        - networking
+        image:
+          repository: "quay.io/kubermatic/openshift-addons"
+          tag: "v0.1"
+          pullPolicy: "IfNotPresent"
   api:
     replicas: 2
     image:

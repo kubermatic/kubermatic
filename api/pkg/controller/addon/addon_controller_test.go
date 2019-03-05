@@ -175,7 +175,7 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 	}
 
 	controller := &Controller{
-		addonDir:           addonDir,
+		kubernetesAddonDir: addonDir,
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 	manifests, err := controller.getAddonManifests(addon, cluster)
@@ -227,7 +227,7 @@ func TestController_getAddonDeploymentManifests(t *testing.T) {
 	}
 
 	controller := &Controller{
-		addonDir:           addonDir,
+		kubernetesAddonDir: addonDir,
 		registryURI:        parceRegistryURI("bar.io"),
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
@@ -264,7 +264,7 @@ func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 	}
 
 	controller := &Controller{
-		addonDir:           addonDir,
+		kubernetesAddonDir: addonDir,
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 	manifests, err := controller.getAddonManifests(addon, cluster)
@@ -305,7 +305,7 @@ func TestController_getAddonManifests(t *testing.T) {
 	}
 
 	controller := &Controller{
-		addonDir:           addonDir,
+		kubernetesAddonDir: addonDir,
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 	manifests, err := controller.getAddonManifests(addon, cluster)
@@ -357,7 +357,7 @@ func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 
 func TestController_getDeleteCommand(t *testing.T) {
 	controller := &Controller{}
-	cmd := controller.getDeleteCommand("/opt/kubeconfig", "/opt/manifest.yaml")
+	cmd := controller.getDeleteCommand("/opt/kubeconfig", "/opt/manifest.yaml", false)
 	expected := "kubectl --kubeconfig /opt/kubeconfig delete -f /opt/manifest.yaml"
 	got := strings.Join(cmd.Args, " ")
 	if got != expected {
@@ -367,7 +367,7 @@ func TestController_getDeleteCommand(t *testing.T) {
 
 func TestController_getApplyCommand(t *testing.T) {
 	controller := &Controller{}
-	cmd := controller.getApplyCommand("/opt/kubeconfig", "/opt/manifest.yaml", labels.SelectorFromSet(map[string]string{"foo": "bar"}))
+	cmd := controller.getApplyCommand("/opt/kubeconfig", "/opt/manifest.yaml", labels.SelectorFromSet(map[string]string{"foo": "bar"}), false)
 	expected := "kubectl --kubeconfig /opt/kubeconfig apply --prune -f /opt/manifest.yaml -l foo=bar"
 	got := strings.Join(cmd.Args, " ")
 	if got != expected {

@@ -298,13 +298,15 @@ func createAddonController(ctrlCtx *controllerContext) (runner, error) {
 
 func createAddonInstallerController(ctrlCtx *controllerContext) (runner, error) {
 
-	kubernetesAddons := strings.Split(ctrlCtx.runOptions.addonsList, ",")
+	kubernetesAddons := strings.Split(ctrlCtx.runOptions.kubernetesAddonsList, ",")
 	for i, a := range kubernetesAddons {
 		kubernetesAddons[i] = strings.TrimSpace(a)
 	}
 
-	// TODO: Softcode
-	openshiftAddons := []string{"networking"}
+	openshiftAddons := strings.Split(ctrlCtx.runOptions.openshiftAddonsList, ",")
+	for i, a := range openshiftAddons {
+		openshiftAddons[i] = strings.TrimSpace(a)
+	}
 
 	return addoninstaller.New(
 		ctrlCtx.runOptions.workerName,
