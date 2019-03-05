@@ -24,13 +24,15 @@ func main() {
 				ResourceImportPath: "k8s.io/api/core/v1",
 			},
 			{
-				ResourceName: "Secret",
-				ImportAlias:  "corev1",
+				ResourceName:   "Secret",
+				ImportAlias:    "corev1",
+				UseNamedObject: true,
 				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
 			},
 			{
-				ResourceName: "ConfigMap",
-				ImportAlias:  "corev1",
+				ResourceName:   "ConfigMap",
+				ImportAlias:    "corev1",
+				UseNamedObject: true,
 				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
 			},
 			{
@@ -72,6 +74,12 @@ func main() {
 				ResourceName: "RoleBinding",
 				ImportAlias:  "rbacv1",
 				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
+			},
+			{
+				ResourceName:       "CustomResourceDefinition",
+				ImportAlias:        "apiextensionsv1beta1",
+				ResourceImportPath: "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
+				UseNamedObject:     true,
 			},
 		},
 	}
@@ -119,7 +127,7 @@ import (
 )
 
 {{ range .Resources }}
-{{ if or (eq .ResourceName "Secret") (eq .ResourceName "ConfigMap") }}
+{{ if .UseNamedObject }}
 {{ namedReconcileFunc .ResourceName .ImportAlias }}
 {{ else }}
 {{ reconcileFunc .ResourceName .ImportAlias }}
@@ -133,6 +141,7 @@ type reconcileFunctionData struct {
 	ResourceName       string
 	ResourceImportPath string
 	ImportAlias        string
+	UseNamedObject     bool
 }
 
 func reconcileFunc(resourceName, importAlias string) (string, error) {

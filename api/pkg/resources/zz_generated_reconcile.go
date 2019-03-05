@@ -14,6 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	autoscalingv1beta1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"
 )
 
@@ -404,6 +405,45 @@ func ReconcileRoleBindings(creators []RoleBindingCreator, namespace string, clie
 
 		if err := EnsureObject(namespace, createObject, store, client); err != nil {
 			return fmt.Errorf("failed to ensure RoleBinding: %v", err)
+		}
+	}
+
+	return nil
+}
+
+// CustomResourceDefinitionCreator defines an interface to create/update CustomResourceDefinitions
+type CustomResourceDefinitionCreator = func(existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error)
+
+// NamedCustomResourceDefinitionCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedCustomResourceDefinitionCreatorGetter = func() (name string, create CustomResourceDefinitionCreator)
+
+// CustomResourceDefinitionObjectWrapper adds a wrapper so the CustomResourceDefinitionCreator matches ObjectCreator
+// This is needed as golang does not support function interface matching
+func CustomResourceDefinitionObjectWrapper(create CustomResourceDefinitionCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*apiextensionsv1beta1.CustomResourceDefinition))
+		}
+		return create(&apiextensionsv1beta1.CustomResourceDefinition{})
+	}
+}
+
+// ReconcileCustomResourceDefinitions will create and update the CustomResourceDefinitions coming from the passed CustomResourceDefinitionCreator slice
+func ReconcileCustomResourceDefinitions(namedGetters []NamedCustomResourceDefinitionCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
+	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &apiextensionsv1beta1.CustomResourceDefinition{})
+	if err != nil {
+		return fmt.Errorf("failed to get CustomResourceDefinition informer: %v", err)
+	}
+
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := CustomResourceDefinitionObjectWrapper(create)
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+			return fmt.Errorf("failed to ensure CustomResourceDefinition: %v", err)
 		}
 	}
 
