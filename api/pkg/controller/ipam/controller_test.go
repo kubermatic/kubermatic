@@ -7,69 +7,13 @@ import (
 
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
 
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	clusterv1alpha1fakeclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset/fake"
 	clusterinformers "sigs.k8s.io/cluster-api/pkg/client/informers_generated/externalversions"
 )
-
-func TestReuseReleasedIP(t *testing.T) {
-	t.Parallel()
-
-	nets := []Network{buildNet(t, "192.168.0.0/16", "192.168.0.1", "8.8.8.8")}
-
-	mSusi := createMachine("susi")
-	mBabsi := createMachine("babsi")
-
-	ctrl, stop := newTestController(nets, mSusi, mBabsi)
-	defer close(stop)
-
-	err := ctrl.syncMachine(mSusi)
-	if err != nil {
-		t.Errorf("error in machineAdded handler: %v", err)
-	}
-
-	mSusi2, err := ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Get("susi", metav1.GetOptions{})
-	if err != nil {
-		t.Errorf("couldn't retrieve updated machine, see: %v", err)
-	}
-
-	assertNetworkEquals(t, mSusi2, "192.168.0.2/16", "192.168.0.1", "8.8.8.8")
-
-	err = ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Delete("susi", &metav1.DeleteOptions{})
-	if err != nil {
-		t.Errorf("couldn't retrieve updated machine, see: %v", err)
-	}
-	err = wait.Poll(5*time.Millisecond, 5*time.Second, func() (bool, error) {
-		_, err = ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Get("susi", metav1.GetOptions{})
-		if err != nil {
-			if k8serrors.IsNotFound(err) {
-				return true, nil
-			}
-			return false, err
-		}
-		return false, nil
-	})
-	if err != nil {
-		t.Errorf("failed waiting until lister received delete event on machine 'susi': %v", err)
-	}
-
-	err = ctrl.syncMachine(mBabsi)
-	if err != nil {
-		t.Errorf("error in machineAdded handler: %v", err)
-	}
-
-	mBabsi2, err := ctrl.client.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Get("babsi", metav1.GetOptions{})
-	if err != nil {
-		t.Errorf("couldn't retrieve updated machine, see: %v", err)
-	}
-
-	assertNetworkEquals(t, mBabsi2, "192.168.0.2/16", "192.168.0.1", "8.8.8.8")
-}
 
 func TestFailWhenCIDRIsExhausted(t *testing.T) {
 	t.Parallel()

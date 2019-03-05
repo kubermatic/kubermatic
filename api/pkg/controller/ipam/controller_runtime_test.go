@@ -77,6 +77,42 @@ func TestMultipleCIDRAllocation(t *testing.T) {
 
 }
 
+func TestReuseReleasedIP(t *testing.T) {
+	t.Parallel()
+
+	nets := []Network{buildNet(t, "192.168.0.0/16", "192.168.0.1", "8.8.8.8")}
+
+	mHoban := createMachine("Hoban")
+	mShepherd := createMachine("Shepherd")
+
+	r := newTestReconciler(nets, mHoban, mShepherd)
+	if err := r.reconcile(context.Background(), mHoban); err != nil {
+		t.Fatalf("failed to sync machine: %v", err)
+	}
+
+	updatedHoban := &clusterv1alpha1.Machine{}
+	if err := r.Get(context.Background(), types.NamespacedName{Name: mHoban.Name}, updatedHoban); err != nil {
+		t.Fatalf("failed to get machine %q after reconcile: %v", mHoban.Name, err)
+	}
+
+	assertNetworkEquals(t, updatedHoban, "192.168.0.2/16", "192.168.0.1", "8.8.8.8")
+
+	if err := r.Delete(context.Background(), updatedHoban); err != nil {
+		t.Fatalf("failed to delete machine: %v", err)
+	}
+
+	if err := r.reconcile(context.Background(), mShepherd); err != nil {
+		t.Fatalf("failed to sync machine: %v", err)
+	}
+
+	updatedShepherd := &clusterv1alpha1.Machine{}
+	if err := r.Get(context.Background(), types.NamespacedName{Name: mShepherd.Name}, updatedShepherd); err != nil {
+		t.Fatalf("failed to get machine %q  after reconcile: %v", mShepherd.Name, err)
+	}
+
+	assertNetworkEquals(t, updatedShepherd, "192.168.0.2/16", "192.168.0.1", "8.8.8.8")
+}
+
 func createMachine(name string) *clusterv1alpha1.Machine {
 	return &clusterv1alpha1.Machine{
 		ObjectMeta: metav1.ObjectMeta{
@@ -97,6 +133,12 @@ func newTestReconciler(networks []Network, objects ...runtime.Object) *reconcile
 	return &reconciler{Client: client, cidrRanges: networks}
 }
 
+type machineTestData struct {
+	ip      string
+	gw      string
+	machine *clusterv1alpha1.Machine
+}
+
 func buildNet(t *testing.T, cidr string, gw string, dnsServers ...string) Network {
 	ip, ipnet, err := net.ParseCIDR(cidr)
 	if err != nil {
@@ -114,10 +156,4 @@ func buildNet(t *testing.T, cidr string, gw string, dnsServers ...string) Networ
 		Gateway:    net.ParseIP(gw),
 		DNSServers: dnsIps,
 	}
-}
-
-type machineTestData struct {
-	ip      string
-	gw      string
-	machine *clusterv1alpha1.Machine
 }
