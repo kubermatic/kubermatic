@@ -70,11 +70,12 @@ type KubeconfigProvider interface {
 
 // Controller stores necessary components that are required to manage in-cluster Add-On's
 type Controller struct {
-	queue          workqueue.RateLimitingInterface
-	metrics        *Metrics
-	addonVariables map[string]interface{}
-	addonDir       string
-	registryURI    string
+	queue              workqueue.RateLimitingInterface
+	metrics            *Metrics
+	addonVariables     map[string]interface{}
+	kubernetesAddonDir string
+	openshiftAddonDir  string
+	registryURI        string
 
 	KubeconfigProvider KubeconfigProvider
 
@@ -88,7 +89,8 @@ type Controller struct {
 func New(
 	metrics *Metrics,
 	addonCtxVariables map[string]interface{},
-	addonDir string,
+	kubernetesAddonDir string,
+	openshiftAddonDir string,
 	overwriteRegistey string,
 	KubeconfigProvider KubeconfigProvider,
 	client kubermaticclientset.Interface,
@@ -99,7 +101,8 @@ func New(
 		queue:              workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute), "addon"),
 		metrics:            metrics,
 		addonVariables:     addonCtxVariables,
-		addonDir:           addonDir,
+		kubernetesAddonDir: kubernetesAddonDir,
+		openshiftAddonDir:  openshiftAddonDir,
 		KubeconfigProvider: KubeconfigProvider,
 		client:             client,
 	}
@@ -321,7 +324,11 @@ type templateData struct {
 func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]*bytes.Buffer, error) {
 	var allManifests []*bytes.Buffer
 
-	manifestPath := path.Join(c.addonDir, addon.Spec.Name)
+	addonDir := c.kubernetesAddonDir
+	if isOpenshift(cluster) {
+		addonDir = c.openshiftAddonDir
+	}
+	manifestPath := path.Join(addonDir, addon.Spec.Name)
 	infos, err := ioutil.ReadDir(manifestPath)
 	if err != nil {
 		return nil, err
@@ -542,14 +549,22 @@ func (c *Controller) setupManifestInteraction(addon *kubermaticv1.Addon, cluster
 	return kubeconfigFilename, manifestFilename, done, nil
 }
 
-func (c *Controller) getDeleteCommand(kubeconfigFilename, manifestFilename string) *exec.Cmd {
-	cmd := exec.Command("kubectl", "--kubeconfig", kubeconfigFilename, "delete", "-f", manifestFilename)
+func (c *Controller) getDeleteCommand(kubeconfigFilename, manifestFilename string, openshift bool) *exec.Cmd {
+	binary := "kubectl"
+	if openshift {
+		binary = "oc"
+	}
+	cmd := exec.Command(binary, "--kubeconfig", kubeconfigFilename, "delete", "-f", manifestFilename)
 	return cmd
 }
 
-func (c *Controller) getApplyCommand(kubeconfigFilename, manifestFilename string, selector labels.Selector) *exec.Cmd {
+func (c *Controller) getApplyCommand(kubeconfigFilename, manifestFilename string, selector labels.Selector, openshift bool) *exec.Cmd {
 	//kubectl apply --prune -f manifest.yaml -l app=nginx
-	cmd := exec.Command("kubectl", "--kubeconfig", kubeconfigFilename, "apply", "--prune", "-f", manifestFilename, "-l", selector.String())
+	binary := "kubectl"
+	if openshift {
+		binary = "oc"
+	}
+	cmd := exec.Command(binary, "--kubeconfig", kubeconfigFilename, "apply", "--prune", "-f", manifestFilename, "-l", selector.String())
 	return cmd
 }
 
@@ -584,7 +599,7 @@ func (c *Controller) ensureIsInstalled(addon *kubermaticv1.Addon, cluster *kuber
 
 	// We delete all resources with this label which are not in the combined manifest
 	selector := labels.SelectorFromSet(c.getAddonLabel(addon))
-	cmd := c.getApplyCommand(kubeconfigFilename, manifestFilename, selector)
+	cmd := c.getApplyCommand(kubeconfigFilename, manifestFilename, selector, isOpenshift(cluster))
 
 	glog.V(8).Infof("applying addon %s to cluster %s: %s ...", addon.Name, cluster.Name, strings.Join(cmd.Args, " "))
 	out, err := cmd.CombinedOutput()
@@ -602,7 +617,7 @@ func (c *Controller) cleanupManifests(addon *kubermaticv1.Addon, cluster *kuberm
 	}
 	defer done()
 
-	cmd := c.getDeleteCommand(kubeconfigFilename, manifestFilename)
+	cmd := c.getDeleteCommand(kubeconfigFilename, manifestFilename, isOpenshift(cluster))
 	glog.V(8).Infof("deleting addon (%s) manifests from cluster %s: %s ...", addon.Name, cluster.Name, strings.Join(cmd.Args, " "))
 	out, err := cmd.CombinedOutput()
 	glog.V(8).Infof("executed '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
@@ -613,6 +628,10 @@ func (c *Controller) cleanupManifests(addon *kubermaticv1.Addon, cluster *kuberm
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %v\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
 	}
 	return nil
+}
+
+func isOpenshift(c *kubermaticv1.Cluster) bool {
+	return c.Annotations["kubermatic.io/openshift"] != ""
 }
 
 func wasKubectlDeleteSuccessful(out string) bool {
