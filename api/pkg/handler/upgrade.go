@@ -159,18 +159,17 @@ func upgradeClusterNodeDeployments(projectProvider provider.ProjectProvider) end
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		var updateErrors []error
+		var updateErrors []string
 		for _, machineDeployment := range machineDeployments.Items {
 			machineDeployment.Spec.Template.Spec.Versions.Kubelet = req.Body.Version.String()
 			_, err = machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Update(&machineDeployment)
 			if err != nil {
-				updateErrors = append(updateErrors, err)
+				updateErrors = append(updateErrors, err.Error())
 			}
 		}
 
 		if len(updateErrors) > 0 {
-			return nil, errors.NewWithDetails(http.StatusInternalServerError, "failed to update some node deployments",
-				fmt.Sprintf("%+q", updateErrors))
+			return nil, errors.NewWithDetails(http.StatusInternalServerError, "failed to update some node deployments", updateErrors)
 		}
 
 		return nil, nil

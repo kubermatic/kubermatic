@@ -35,16 +35,16 @@ type ErrorDetails struct {
 	//
 	// Required: true
 	Message string `json:"message"`
-	// Additional error message
+	// Additional error messages
 	//
 	// Required: false
-	Additional string `json:"details,omitempty"`
+	Additional []string `json:"details,omitempty"`
 }
 
 func errorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
+	var additional []string
 	errorCode := http.StatusInternalServerError
 	msg := err.Error()
-	additional := ""
 	if h, ok := err.(errors.HTTPError); ok {
 		errorCode = h.StatusCode()
 		msg = h.Error()
