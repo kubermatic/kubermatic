@@ -42,7 +42,7 @@ spec:
         command: ["/bin/sh"]
         args:
         - "-c"
-        - "cp -r /addons/* /opt/addons/kubernetes"
+        - "mkdir -p /opt/addons/kubernetes && cp -r /addons/* /opt/addons/kubernetes"
         volumeMounts:
         - name: addons
           mountPath: /opt/addons
@@ -52,7 +52,7 @@ spec:
         command: ["/bin/sh"]
         args:
         - "-c"
-        - "cp -r /addons/* /opt/addons/openshift"
+        - "mkdir -p /opt/addons/openshift && cp -r /addons/* /opt/addons/openshift"
         volumeMounts:
         - name: addons
           mountPath: /opt/addons
