@@ -3,9 +3,12 @@ package ipam
 import (
 	"context"
 	"net"
+	"strings"
 	"testing"
 
 	"github.com/golang/glog"
+
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -113,6 +116,27 @@ func TestReuseReleasedIP(t *testing.T) {
 	assertNetworkEquals(t, updatedShepherd, "192.168.0.2/16", "192.168.0.1", "8.8.8.8")
 }
 
+func TestFailWhenCIDRIsExhausted(t *testing.T) {
+	t.Parallel()
+
+	nets := []Network{buildNet(t, "192.168.0.0/30", "192.168.0.1", "8.8.8.8")}
+
+	mSimon := createMachine("Simon")
+	mZoe := createMachine("Zoe")
+	mInara := createMachine("Inara")
+
+	r := newTestReconciler(nets, mSimon, mZoe, mInara)
+	if err := r.reconcile(context.Background(), mSimon); err != nil {
+		t.Fatalf("failed to reconcile machine %q: %v", mSimon.Name, err)
+	}
+	if err := r.reconcile(context.Background(), mZoe); err != nil {
+		t.Fatalf("failed to reconcile machine %q: %v", mZoe.Name, err)
+	}
+	if err := r.reconcile(context.Background(), mInara); err == nil || err.Error() != "cidr exhausted" {
+		t.Fatalf("Expected err to be 'cidr exhausted' but was %v", err)
+	}
+}
+
 func createMachine(name string) *clusterv1alpha1.Machine {
 	return &clusterv1alpha1.Machine{
 		ObjectMeta: metav1.ObjectMeta{
@@ -156,4 +180,35 @@ func buildNet(t *testing.T, cidr string, gw string, dnsServers ...string) Networ
 		Gateway:    net.ParseIP(gw),
 		DNSServers: dnsIps,
 	}
+}
+
+func assertNetworkEquals(t *testing.T, m *clusterv1alpha1.Machine, ip string, gw string, dns ...string) {
+	network, err := getNetworkForMachine(m)
+	if err != nil {
+		t.Errorf("couldn't get network for machine %s, see: %v", m.Name, err)
+	}
+
+	if network.CIDR != ip {
+		t.Errorf("Assertion mismatch for machine %s, see: expected cidr '%s' but got '%s'", m.Name, ip, network.CIDR)
+	}
+
+	if network.Gateway != gw {
+		t.Errorf("Assertion mismatch for machine %s, see: expected gateway '%s' but got '%s'", m.Name, gw, network.Gateway)
+	}
+
+	expectedDNSJoined := strings.Join(dns, ",")
+	actualDNSJoined := strings.Join(network.DNS.Servers, ",")
+
+	if expectedDNSJoined != actualDNSJoined {
+		t.Errorf("Assertion mismatch for machine %s, see: expected dns servers '%s' but got '%s'", m.Name, expectedDNSJoined, actualDNSJoined)
+	}
+}
+
+func getNetworkForMachine(m *clusterv1alpha1.Machine) (*providerconfig.NetworkConfig, error) {
+	cfg, err := providerconfig.GetConfig(m.Spec.ProviderSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	return cfg.Network, nil
 }
