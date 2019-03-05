@@ -155,6 +155,14 @@ type UserProvider interface {
 	UserByID(id string) (*kubermaticv1.User, error)
 }
 
+// PrivilegedProjectProvider declares the set of method for interacting with kubermatic's project and uses privileged
+// account for it
+type PrivilegedProjectProvider interface {
+	// GetUnsecured returns the project with the given name
+	// This function is unsafe in a sense that it uses privileged account to get project with the given name
+	GetUnsecured(projectInternalName string, options *ProjectGetOptions) (*kubermaticv1.Project, error)
+}
+
 // ProjectProvider declares the set of method for interacting with kubermatic's project
 type ProjectProvider interface {
 	// New creates a brand new project in the system with the given name

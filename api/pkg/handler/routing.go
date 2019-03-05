@@ -10,7 +10,17 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/version"
 )
+
+// UpdateManager specifies a set of methods to handle cluster versions & updates
+type UpdateManager interface {
+	GetVersion(string) (*version.MasterVersion, error)
+	GetMasterVersions() ([]*version.MasterVersion, error)
+	GetDefault() (*version.MasterVersion, error)
+	AutomaticUpdate(from string) (*version.MasterVersion, error)
+	GetPossibleUpdates(from string) ([]*version.MasterVersion, error)
+}
 
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {
@@ -19,6 +29,7 @@ type Routing struct {
 	sshKeyProvider        provider.SSHKeyProvider
 	userProvider          provider.UserProvider
 	projectProvider       provider.ProjectProvider
+privilegedProjectProvider provider.PrivilegedProjectProvider
 	logger                log.Logger
 	oidcAuthenticator     auth.OIDCAuthenticator
 	oidcIssuer            auth.OIDCIssuerVerifier
@@ -37,6 +48,7 @@ func NewRouting(
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	projectProvider provider.ProjectProvider,
+	privilegedProject provider.PrivilegedProjectProvider,
 	oidcAuthenticator auth.OIDCAuthenticator,
 	oidcIssuerVerifier auth.OIDCIssuerVerifier,
 	updateManager common.UpdateManager,
@@ -50,6 +62,7 @@ func NewRouting(
 		sshKeyProvider:        newSSHKeyProvider,
 		userProvider:          userProvider,
 		projectProvider:       projectProvider,
+privilegedProjectProvider: privilegedProject,
 		cloudProviders:        cloudProviders,
 		logger:                log.NewLogfmtLogger(os.Stderr),
 		oidcAuthenticator:     oidcAuthenticator,

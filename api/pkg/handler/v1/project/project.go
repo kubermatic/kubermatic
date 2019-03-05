@@ -14,6 +14,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // CreateEndpoint defines an HTTP endpoint that creates a new project in the system
@@ -53,7 +55,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint 
 }
 
 // ListEndpoint defines an HTTP endpoint for listing projects
-func ListEndpoint(projectProvider provider.ProjectProvider, memberMapper provider.ProjectMemberMapper, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) endpoint.Endpoint {
+func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberMapper provider.ProjectMemberMapper, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		user := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
 		projects := []*apiv1.Project{}
@@ -62,21 +64,46 @@ func ListEndpoint(projectProvider provider.ProjectProvider, memberMapper provide
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
+		var errorList []string
 		for _, mapping := range userMappings {
 			userInfo := &provider.UserInfo{Email: mapping.Spec.UserEmail, Group: mapping.Spec.Group}
 			projectInternal, err := projectProvider.Get(userInfo, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
+				if !isStatus(err, http.StatusForbidden) {
+					errorList = append(errorList, err.Error())
+					continue
+				}
+				if _, errGetUnsecured := privilegedProjectProvider.GetUnsecured(mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true}); errGetUnsecured != nil {
+					if !isStatus(errGetUnsecured, http.StatusNotFound) {
+						// store original error
+						errorList = append(errorList, err.Error())
+					}
+					continue
+				}
 			}
+
 			projectOwners, err := getOwnersForProject(userInfo, projectInternal, memberProvider, userProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 			projects = append(projects, convertInternalProjectToExternal(projectInternal, projectOwners))
+
 		}
 
+		if len(errorList) > 0 {
+			return projects, errors.NewWithDetails(http.StatusInternalServerError, "failed to get some projects", errorList)
+		}
 		return projects, nil
 	}
+}
+
+func isStatus(err error, status int32) bool {
+	if kubernetesError, ok := err.(*kerrors.StatusError); ok {
+		if status == kubernetesError.Status().Code {
+			return true
+		}
+	}
+	return false
 }
 
 // DeleteEndpoint defines an HTTP endpoint for deleting a project

@@ -215,7 +215,7 @@ func TestListProjectEndpoint(t *testing.T) {
 
 			// validate
 			if res.Code != tc.HTTPStatus {
-				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+				t.Fatalf("expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
 			actualProjects := test.ProjectV1SliceWrapper{}
