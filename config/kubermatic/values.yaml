@@ -70,9 +70,10 @@ kubermatic:
         # list of Addons to install into every user-cluster. All need to exist in the addons image
         defaultAddons:
         - networking
+        - openvpn
         image:
           repository: "quay.io/kubermatic/openshift-addons"
-          tag: "v0.1"
+          tag: "v0.3"
           pullPolicy: "IfNotPresent"
   api:
     replicas: 2
