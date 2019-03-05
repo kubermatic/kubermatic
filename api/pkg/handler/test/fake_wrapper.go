@@ -97,6 +97,10 @@ func (k *NodeV1SliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *NodeV1Slice
 func (k NodeV1SliceWrapper) EqualOrDie(expected NodeV1SliceWrapper, t *testing.T) {
 	t.Helper()
 	if diff := deep.Equal(k, expected); diff != nil {
+		originalMarshalled, _ := json.Marshal(k)
+		expectedMarshalled, _ := json.Marshal(expected)
+		t.Logf("Original:\n---\n%s\n---\n", string(originalMarshalled))
+		t.Logf("expected:\n---\n%s\n---\n", string(expectedMarshalled))
 		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
 	}
 }

@@ -241,11 +241,17 @@ func newControllerContext(
 	ctrlCtx.kubermaticInformerFactory = kubermaticinformers.NewFilteredSharedInformerFactory(ctrlCtx.kubermaticClient, informer.DefaultInformerResyncPeriod, metav1.NamespaceAll, selector)
 	ctrlCtx.kubeInformerFactory = kubeinformers.NewSharedInformerFactory(ctrlCtx.kubeClient, informer.DefaultInformerResyncPeriod)
 
-	var clientProvider *client.Provider
+	var clientProvider client.UserClusterConnectionProvider
 	if ctrlCtx.runOptions.kubeconfig != "" {
-		clientProvider = client.NewExternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
+		clientProvider, err = client.NewExternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
+		if err != nil {
+			return nil, fmt.Errorf("failed to get clientProvider: %v", err)
+		}
 	} else {
-		clientProvider = client.NewInternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
+		clientProvider, err = client.NewInternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
+		if err != nil {
+			return nil, fmt.Errorf("failed to get clientProvider: %v", err)
+		}
 	}
 	ctrlCtx.clientProvider = clientProvider
 

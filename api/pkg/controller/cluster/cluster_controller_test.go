@@ -31,6 +31,10 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 
 	kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, time.Minute*5)
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, time.Minute*5)
+	client, err := client.NewInternal(kubeInformerFactory.Core().V1().Secrets().Lister())
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	dynamicClient := ctrlruntimefakeclient.NewFakeClient()
 	controller, err := NewController(
@@ -40,7 +44,7 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 		TestExternalURL,
 		TestDC,
 		dcs,
-		client.NewInternal(kubeInformerFactory.Core().V1().Secrets().Lister()),
+		client,
 		"",
 		"",
 		"192.0.2.0/24",

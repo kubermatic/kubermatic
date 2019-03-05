@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -97,7 +98,7 @@ type testRunner struct {
 	kubermaticClient      kubermaticclientset.Interface
 	seedKubeClient        kubernetes.Interface
 	clusterLister         kubermaticv1lister.ClusterLister
-	clusterClientProvider *clusterclient.Provider
+	clusterClientProvider clusterclient.UserClusterConnectionProvider
 	dcs                   map[string]provider.DatacenterMeta
 }
 
@@ -434,7 +435,7 @@ func (r *testRunner) executeGinkgoRunWithRetries(log *logrus.Entry, run *ginkgoR
 
 func (r *testRunner) setupNodes(log *logrus.Entry, scenarioName string, cluster *kubermaticv1.Cluster, clusterKubeClient kubernetes.Interface, apiNodes []*kubermaticapiv1.Node, dc provider.DatacenterMeta) error {
 	log.Info("Creating machines...")
-	kubeMachineClient, err := r.clusterClientProvider.GetMachineClient(cluster)
+	client, err := r.clusterClientProvider.GetDynamicClient(cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get the machine client for the cluster: %v", err)
 	}
@@ -455,11 +456,12 @@ func (r *testRunner) setupNodes(log *logrus.Entry, scenarioName string, cluster 
 		}
 		// Make sure all nodes have different names across all scenarios - otherwise the Kubelet might not come up (OpenStack has this...)
 		m.Name = fmt.Sprintf("%s-machine-%d", scenarioName, i)
+		m.Namespace = metav1.NamespaceSystem
 		m.Spec.Name = strings.Replace(fmt.Sprintf("%s-node-%d", scenarioName, i), ".", "-", -1)
 
 		err = retryNAttempts(defaultAPIRetries, func(attempt int) error {
 			machineLog := log.WithFields(logrus.Fields{"machine": m.Name})
-			_, err := kubeMachineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Create(m)
+			err := client.Create(context.TODO(), m)
 			if err != nil {
 				if kerrors.IsAlreadyExists(err) {
 					return nil

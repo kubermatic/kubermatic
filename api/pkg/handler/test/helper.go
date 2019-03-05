@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/glog"
 	prometheusapi "github.com/prometheus/client_golang/api"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -25,20 +26,27 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	"k8s.io/client-go/kubernetes/scheme"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/informers"
-	kubernetesclient "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/fake"
 	restclient "k8s.io/client-go/rest"
 
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
-	clusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
-	fakeclusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset/fake"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
+
+func init() {
+	// We call this in init because even thought it is possible to register the same
+	// scheme multiple times it is an unprotected concurrent map access and these tests
+	// are very good at making that panic
+	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
+		glog.Fatalf("failed to add clusterv1alpha1 scheme to scheme.Scheme: %v", err)
+	}
+}
 
 const (
 	// UserID holds the test user ID
@@ -98,8 +106,7 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	authenticator := NewAuthenticator(user)
 	issuerVerifier := NewIssuerVerifier()
 
-	kubeClient := fake.NewSimpleClientset(kubeObjects...)
-	kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, 10*time.Millisecond)
+	fakeClient := fakectrlruntimeclient.NewFakeClient(append(kubeObjects, machineObjects...)...)
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
 
@@ -115,8 +122,7 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		return nil, nil, err
 	}
 
-	fakeMachineClient := fakeclusterclientset.NewSimpleClientset(machineObjects...)
-	fUserClusterConnection := &fakeUserClusterConnection{fakeMachineClient, kubeClient}
+	fUserClusterConnection := &fakeUserClusterConnection{fakeClient}
 
 	clusterProvider := kubernetes.NewClusterProvider(
 		fakeImpersonationClient,
@@ -127,8 +133,6 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
 
-	kubeInformerFactory.Start(wait.NeverStop)
-	kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
 	kubermaticInformerFactory.Start(wait.NeverStop)
 	kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
 
@@ -150,7 +154,7 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		updates,
 	)
 
-	return mainRouter, &ClientsSets{kubermaticClient, fakeMachineClient}, nil
+	return mainRouter, &ClientsSets{kubermaticClient, fakeClient}, nil
 }
 
 // CreateTestEndpoint does exactly the same as CreateTestEndpointAndGetClients except it omits ClientsSets when returning
@@ -197,26 +201,21 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 }
 
 type fakeUserClusterConnection struct {
-	fakeMachineClient    clusterclientset.Interface
-	fakeKubernetesClient kubernetesclient.Interface
+	fakeDynamicClient ctrlruntimeclient.Client
+}
+
+func (f *fakeUserClusterConnection) GetDynamicClient(_ *kubermaticapiv1.Cluster, _ ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error) {
+	return f.fakeDynamicClient, nil
 }
 
 func (f *fakeUserClusterConnection) GetAdminKubeconfig(c *kubermaticapiv1.Cluster) ([]byte, error) {
 	return []byte(generateTestKubeconfig(ClusterID, IDToken)), nil
 }
 
-func (f *fakeUserClusterConnection) GetMachineClient(c *kubermaticapiv1.Cluster, options ...k8cuserclusterclient.ConfigOption) (clusterclientset.Interface, error) {
-	return f.fakeMachineClient, nil
-}
-
-func (f *fakeUserClusterConnection) GetClient(c *kubermaticapiv1.Cluster, options ...k8cuserclusterclient.ConfigOption) (kubernetesclient.Interface, error) {
-	return f.fakeKubernetesClient, nil
-}
-
 // ClientsSets a simple wrapper that holds fake client sets
 type ClientsSets struct {
 	FakeKubermaticClient *kubermaticfakeclentset.Clientset
-	FakeMachineClient    *fakeclusterclientset.Clientset
+	FakeClient           ctrlruntimeclient.Client
 }
 
 // generateTestKubeconfig returns test kubeconfig yaml structure
@@ -225,7 +224,7 @@ func generateTestKubeconfig(clusterID, token string) string {
 apiVersion: v1
 clusters:
 - cluster:
-    certificate-authority-data: 
+    certificate-authority-data:
     server: test.fake.io
   name: %s
 contexts:

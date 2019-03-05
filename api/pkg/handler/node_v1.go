@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/apimachinery/pkg/runtime"
-
 	"github.com/Masterminds/semver"
 	"github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
@@ -29,11 +27,12 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/kubernetes"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
-	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -58,17 +57,12 @@ func deleteNodeForClusterLegacy(projectProvider provider.ProjectProvider) endpoi
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(userInfo, cluster)
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create a machine client: %v", err)
+			return nil, fmt.Errorf("failed to create a client: %v", err)
 		}
 
-		kubeClient, err := clusterProvider.GetAdminKubernetesClientForCustomerCluster(cluster)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create a kubernetes client: %v", err)
-		}
-
-		machine, node, err := findMachineAndNode(req.NodeID, machineClient, kubeClient)
+		machine, node, err := findMachineAndNode(ctx, req.NodeID, client)
 		if err != nil {
 			return nil, err
 		}
@@ -77,9 +71,9 @@ func deleteNodeForClusterLegacy(projectProvider provider.ProjectProvider) endpoi
 		}
 
 		if machine != nil {
-			return nil, common.KubernetesErrorToHTTPError(machineClient.ClusterV1alpha1().Machines(machine.Namespace).Delete(machine.Name, nil))
+			return nil, common.KubernetesErrorToHTTPError(client.Delete(ctx, machine))
 		} else if node != nil {
-			return nil, common.KubernetesErrorToHTTPError(kubeClient.CoreV1().Nodes().Delete(node.Name, nil))
+			return nil, common.KubernetesErrorToHTTPError(client.Delete(ctx, node))
 		}
 		return nil, nil
 	}
@@ -106,17 +100,17 @@ func listNodesForClusterLegacy(projectProvider provider.ProjectProvider) endpoin
 		// but here we decided to use machineClient and kubeClient directly to access the user cluster.
 		//
 		// how about moving machineClient and kubeClient to their own provider ?
-		machineClient, err := clusterProvider.GetAdminMachineClientForCustomerCluster(cluster)
+		client, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{IncludeUninitialized: true})
-		if err != nil {
+		machineList := &clusterv1alpha1.MachineList{}
+		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, Raw: &metav1.ListOptions{IncludeUninitialized: true}}, machineList); err != nil {
 			return nil, fmt.Errorf("failed to load machines from cluster: %v", err)
 		}
 
-		nodeList, err := getNodeList(cluster, clusterProvider)
+		nodeList, err := getNodeList(ctx, cluster, clusterProvider)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -155,13 +149,17 @@ func listNodesForClusterLegacy(projectProvider provider.ProjectProvider) endpoin
 	}
 }
 
-func getNodeList(cluster *v1.Cluster, clusterProvider provider.ClusterProvider) (*corev1.NodeList, error) {
-	kubeClient, err := clusterProvider.GetAdminKubernetesClientForCustomerCluster(cluster)
+func getNodeList(ctx context.Context, cluster *v1.Cluster, clusterProvider provider.ClusterProvider) (*corev1.NodeList, error) {
+	client, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return kubeClient.CoreV1().Nodes().List(metav1.ListOptions{})
+	nodeList := &corev1.NodeList{}
+	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
+		return nil, err
+	}
+	return nodeList, nil
 }
 
 func getNodeForClusterLegacy(projectProvider provider.ProjectProvider) endpoint.Endpoint {
@@ -180,22 +178,17 @@ func getNodeForClusterLegacy(projectProvider provider.ProjectProvider) endpoint.
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineClient, err := clusterProvider.GetAdminMachineClientForCustomerCluster(cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
 		// TODO:
 		// normally we have project, user and sshkey providers
 		// but here we decided to use machineClient and kubeClient directly to access the user cluster.
 		//
 		// how about moving machineClient and kubeClient to their own provider ?
-		kubeClient, err := clusterProvider.GetAdminKubernetesClientForCustomerCluster(cluster)
+		client, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machine, node, err := findMachineAndNode(req.NodeID, machineClient, kubeClient)
+		machine, node, err := findMachineAndNode(ctx, req.NodeID, client)
 		if err != nil {
 			return nil, err
 		}
@@ -357,14 +350,14 @@ func getMachineForNode(node *corev1.Node, machines []clusterv1alpha1.Machine) *c
 	return nil
 }
 
-func findMachineAndNode(name string, machineClient clusterv1alpha1clientset.Interface, kubeClient kubernetes.Interface) (*clusterv1alpha1.Machine, *corev1.Node, error) {
-	machineList, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(metav1.ListOptions{IncludeUninitialized: true})
-	if err != nil {
+func findMachineAndNode(ctx context.Context, name string, client ctrlruntimeclient.Client) (*clusterv1alpha1.Machine, *corev1.Node, error) {
+	machineList := &clusterv1alpha1.MachineList{}
+	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, Raw: &metav1.ListOptions{IncludeUninitialized: true}}, machineList); err != nil {
 		return nil, nil, fmt.Errorf("failed to load machines from cluster: %v", err)
 	}
 
-	nodeList, err := kubeClient.CoreV1().Nodes().List(metav1.ListOptions{})
-	if err != nil {
+	nodeList := &corev1.NodeList{}
+	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
 		return nil, nil, fmt.Errorf("failed to load nodes from cluster: %v", err)
 	}
 
@@ -573,7 +566,7 @@ func createNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(userInfo, cluster)
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -616,8 +609,7 @@ func createNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
 		}
 
-		md, err = machineClient.ClusterV1alpha1().MachineDeployments(md.Namespace).Create(md)
-		if err != nil {
+		if err := client.Create(ctx, md); err != nil {
 			return nil, fmt.Errorf("failed to create machine deployment: %v", err)
 		}
 
@@ -709,13 +701,13 @@ func listNodeDeployments(projectProvider provider.ProjectProvider) endpoint.Endp
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(userInfo, cluster)
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineDeployments, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).List(metav1.ListOptions{})
-		if err != nil {
+		machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
+		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -791,13 +783,13 @@ func getNodeDeployment(projectProvider provider.ProjectProvider) endpoint.Endpoi
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(userInfo, cluster)
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineDeployment, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Get(req.NodeDeploymentID, metav1.GetOptions{})
-		if err != nil {
+		machineDeployment := &clusterv1alpha1.MachineDeployment{}
+		if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: req.NodeDeploymentID}, machineDeployment); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -840,21 +832,20 @@ func decodeListNodeDeploymentNodes(c context.Context, r *http.Request) (interfac
 	return req, nil
 }
 
-func getMachinesForNodeDeployment(clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, cluster *v1.Cluster, nodeDeploymentID string) (*clusterv1alpha1.MachineList, error) {
+func getMachinesForNodeDeployment(ctx context.Context, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, cluster *v1.Cluster, nodeDeploymentID string) (*clusterv1alpha1.MachineList, error) {
 
-	machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(userInfo, cluster)
+	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	machineDeployment, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Get(nodeDeploymentID, metav1.GetOptions{})
-	if err != nil {
+	machineDeployment := &clusterv1alpha1.MachineDeployment{}
+	if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: nodeDeploymentID}, machineDeployment); err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	listOptions := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels).String()}
-	machines, err := machineClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).List(listOptions)
-	if err != nil {
+	machines := &clusterv1alpha1.MachineList{}
+	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels)}, machines); err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	return machines, nil
@@ -876,12 +867,12 @@ func listNodeDeploymentNodes(projectProvider provider.ProjectProvider) endpoint.
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machines, err := getMachinesForNodeDeployment(clusterProvider, userInfo, cluster, req.NodeDeploymentID)
+		machines, err := getMachinesForNodeDeployment(ctx, clusterProvider, userInfo, cluster, req.NodeDeploymentID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		nodeList, err := getNodeList(cluster, clusterProvider)
+		nodeList, err := getNodeList(ctx, cluster, clusterProvider)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -955,15 +946,15 @@ func patchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(userInfo, cluster)
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		// We cannot use machineClient.ClusterV1alpha1().MachineDeployments().Patch() method as we are not exposing
 		// MachineDeployment type directly. API uses NodeDeployment type and we cannot ensure compatibility here.
-		machineDeployment, err := machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Get(req.NodeDeploymentID, metav1.GetOptions{})
-		if err != nil {
+		machineDeployment := &clusterv1alpha1.MachineDeployment{}
+		if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: req.NodeDeploymentID}, machineDeployment); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -1018,8 +1009,7 @@ func patchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 		machineDeployment.Spec.Replicas = patchedMachineDeployment.Spec.Replicas
 		machineDeployment.Spec.Paused = patchedMachineDeployment.Spec.Paused
 
-		machineDeployment, err = machineClient.ClusterV1alpha1().MachineDeployments(machineDeployment.Namespace).Update(machineDeployment)
-		if err != nil {
+		if err := client.Update(ctx, machineDeployment); err != nil {
 			return nil, fmt.Errorf("failed to update machine deployment: %v", err)
 		}
 
@@ -1076,12 +1066,12 @@ func deleteNodeDeployment(projectProvider provider.ProjectProvider) endpoint.End
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineClient, err := clusterProvider.GetMachineClientForCustomerCluster(userInfo, cluster)
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create a machine client: %v", err)
 		}
 
-		return nil, common.KubernetesErrorToHTTPError(machineClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem).Delete(req.NodeDeploymentID, nil))
+		return nil, common.KubernetesErrorToHTTPError(client.Delete(ctx, &clusterv1alpha1.MachineDeployment{ObjectMeta: metav1.ObjectMeta{Namespace: metav1.NamespaceSystem, Name: req.NodeDeploymentID}}))
 	}
 }
 
@@ -1145,19 +1135,19 @@ func listNodeDeploymentNodesEvents() endpoint.Endpoint {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		customerClusterClient, err := clusterProvider.GetAdminKubernetesClientForCustomerCluster(cluster)
+		client, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machines, err := getMachinesForNodeDeployment(clusterProvider, userInfo, cluster, req.NodeDeploymentID)
+		machines, err := getMachinesForNodeDeployment(ctx, clusterProvider, userInfo, cluster, req.NodeDeploymentID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		events := make([]apiv1.Event, 0)
 		for _, machine := range machines.Items {
-			machineEvents, err := getMachineEvents(customerClusterClient, machine)
+			machineEvents, err := getMachineEvents(ctx, client, machine)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -1181,9 +1171,10 @@ func listNodeDeploymentNodesEvents() endpoint.Endpoint {
 }
 
 // getMachineEvents returns Kubernetes API event objects assigned to the Machine.
-func getMachineEvents(client kubernetes.Interface, machine clusterv1alpha1.Machine) ([]apiv1.Event, error) {
-	events, err := client.CoreV1().Events(metav1.NamespaceSystem).Search(runtime.NewScheme(), &machine)
-	if err != nil {
+func getMachineEvents(ctx context.Context, client ctrlruntimeclient.Client, machine clusterv1alpha1.Machine) ([]apiv1.Event, error) {
+	events := &corev1.EventList{}
+	listOpts := &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, FieldSelector: fields.OneTermEqualSelector("involvedObject.uid", string(machine.UID))}
+	if err := client.List(ctx, listOpts, events); err != nil {
 		return nil, err
 	}
 

@@ -44,7 +44,6 @@ import (
 	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
 
-	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
 	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -52,7 +51,6 @@ import (
 // userClusterConnectionProvider offers functions to retrieve clients for the given user clusters
 type userClusterConnectionProvider interface {
 	GetClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (kubernetes.Interface, error)
-	GetMachineClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (clusterv1alpha1clientset.Interface, error)
 	GetApiextensionsClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (apiextensionsclientset.Interface, error)
 	GetAdmissionRegistrationClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (admissionregistrationclientset.AdmissionregistrationV1beta1Interface, error)
 	GetKubeAggregatorClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (aggregationclientset.Interface, error)

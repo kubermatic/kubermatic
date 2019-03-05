@@ -25,6 +25,7 @@ type reconciler struct {
 
 // Reconcile creates and updates ClusterRoles and ClusterRoleBinding to achieve the desired state
 func (r *reconciler) Reconcile(resourceName string) error {
+	glog.V(4).Infof("Reconciling RBAC for %s", resourceName)
 
 	err := r.ensureRBACClusterRole(resourceName)
 	if err != nil {
