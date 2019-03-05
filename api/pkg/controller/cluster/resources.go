@@ -11,7 +11,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
@@ -174,10 +173,6 @@ func GetDeploymentCreators(data resources.DeploymentDataProvider) []resources.De
 		creators = append(creators, usercluster.DeploymentCreator(data))
 	}
 
-	if data.Cluster() != nil && len(data.Cluster().Spec.MachineNetworks) > 0 {
-		creators = append(creators, ipamcontroller.DeploymentCreator(data))
-	}
-
 	return creators
 }
 
@@ -223,9 +218,6 @@ func GetSecretCreators(data *resources.TemplateData) []resources.NamedSecretCrea
 		creators = append(creators, apiserver.DexCACertificateCreator(data))
 	}
 
-	if len(data.Cluster().Spec.MachineNetworks) > 0 {
-		creators = append(creators, resources.GetInternalKubeconfigCreator(resources.IPAMControllerKubeconfigSecretName, resources.IPAMControllerCertUsername, nil, data))
-	}
 	return creators
 }
 

@@ -115,8 +115,6 @@ const (
 	MachineControllerWebhookServingCertCertKeyName = "cert.pem"
 	//MachineControllerWebhookServingCertKeyKeyName is the name for the key that contains the key
 	MachineControllerWebhookServingCertKeyKeyName = "key.pem"
-	//IPAMControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the ipam controller
-	IPAMControllerKubeconfigSecretName = "ipamcontroller-kubeconfig"
 	//PrometheusApiserverClientCertificateSecretName is the name for the secret containing the client certificate used by prometheus to access the apiserver
 	PrometheusApiserverClientCertificateSecretName = "prometheus-apiserver-certificate"
 
@@ -184,22 +182,8 @@ const (
 	SchedulerCertUsername = "system:kube-scheduler"
 	//KubeletDnatControllerCertUsername is the name of the user coming from kubeconfig cert
 	KubeletDnatControllerCertUsername = "kubermatic:kubeletdnat-controller"
-	//IPAMControllerCertUsername is the name of the user coming from kubeconfig cert
-	IPAMControllerCertUsername = "kubermatic:ipam-controller"
 	// PrometheusCertUsername is the name of the user coming from kubeconfig cert
 	PrometheusCertUsername = "prometheus"
-
-	// MachineIPAMInitializerConfigurationName is the name of the initializerconfiguration used for setting up static ips for machines
-	MachineIPAMInitializerConfigurationName = "ipam-initializer"
-	// MachineIPAMInitializerName is the name of the initializer used for setting up static ips for machines
-	MachineIPAMInitializerName = "ipam.kubermatic.io"
-	// IPAMControllerDeploymentName is the name of the ipam controller's deployment
-	IPAMControllerDeploymentName = "ipam-controller"
-
-	// IPAMControllerClusterRoleName is the name for the IPAMController cluster role
-	IPAMControllerClusterRoleName = "system:kubermatic-ipam-controller"
-	// IPAMControllerClusterRoleBindingName is the name for the IPAMController clusterrolebinding
-	IPAMControllerClusterRoleBindingName = "system:kubermatic-ipam-controller"
 
 	// KubeletDnatControllerClusterRoleName is the name for the KubeletDnatController cluster role
 	KubeletDnatControllerClusterRoleName = "system:kubermatic-kubeletdnat-controller"
