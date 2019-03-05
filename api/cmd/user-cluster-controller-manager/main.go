@@ -34,7 +34,7 @@ func main() {
 	runOp := controllerRunOptions{}
 	flag.StringVar(&runOp.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal HTTP /metrics server is running on")
 	flag.BoolVar(&runOp.openshift, "openshift", false, "Whether the managed cluster is an openshift cluster")
-	flag.Var(&runOp.networks, "ipam-controller-network", `The networks from which the ipam controller should allocate IPs for machines (e.g.: .--ipam-controller-network="10.0.0.0/16,10.0.0.1,8.8.8.8" --ipam-controller-network="192.168.5.0/24,192.168.5.1,1.1.1.1,8.8.4.4")`)
+	flag.Var(&runOp.networks, "ipam-controller-network", "The networks from which the ipam controller should allocate IPs for machines (e.g.: .--ipam-controller-network=10.0.0.0/16,10.0.0.1,8.8.8.8 --ipam-controller-network=192.168.5.0/24,192.168.5.1,1.1.1.1,8.8.4.4)")
 	flag.Parse()
 
 	var g run.Group
