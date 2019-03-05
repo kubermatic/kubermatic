@@ -30,20 +30,6 @@ const (
 	initializerName = "ipam.kubermatic.io"
 )
 
-type cidrExhaustedError struct{}
-
-func (c cidrExhaustedError) Error() string {
-	return "cidr exhausted"
-}
-
-// Network represents a machine network configuration
-type Network struct {
-	IP         net.IP
-	IPNet      net.IPNet
-	Gateway    net.IP
-	DNSServers []net.IP
-}
-
 // Controller is the ipam controller itself
 type Controller struct {
 	queue     workqueue.RateLimitingInterface
@@ -333,16 +319,6 @@ func (c *Controller) getNextFreeIPForCIDR(network Network, usedIps []net.IP) (ne
 	}
 
 	return nil, cidrExhaustedError{}
-}
-
-func ipsContains(haystack []net.IP, needle net.IP) bool {
-	for _, ip := range haystack {
-		if ip.Equal(needle) {
-			return true
-		}
-	}
-
-	return false
 }
 
 func (c *Controller) inc(ip net.IP) {

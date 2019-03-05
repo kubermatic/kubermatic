@@ -1,7 +1,6 @@
 package ipam
 
 import (
-	"net"
 	"strings"
 	"testing"
 	"time"
@@ -24,27 +23,27 @@ type machineTestData struct {
 	machine *clusterv1alpha1.Machine
 }
 
-func TestSingleCIDRAllocation(t *testing.T) {
-	t.Parallel()
-
-	nets := []Network{buildNet(t, "192.168.0.0/16", "192.168.0.1", "8.8.8.8")}
-
-	m := createMachine("susi")
-	ctrl, stop := newTestController(nets, m)
-	defer close(stop)
-
-	err := ctrl.syncMachine(m)
-	if err != nil {
-		t.Errorf("error in machineAdded handler: %v", err)
-	}
-
-	m2, err := ctrl.client.ClusterV1alpha1().Machines(m.Namespace).Get("susi", metav1.GetOptions{})
-	if err != nil {
-		t.Errorf("couldn't retrieve updated machine, see: %v", err)
-	}
-
-	assertNetworkEquals(t, m2, "192.168.0.2/16", "192.168.0.1", "8.8.8.8")
-}
+//func TestSingleCIDRAllocation(t *testing.T) {
+//	t.Parallel()
+//
+//	nets := []Network{buildNet(t, "192.168.0.0/16", "192.168.0.1", "8.8.8.8")}
+//
+//	m := createMachine("susi")
+//	ctrl, stop := newTestController(nets, m)
+//	defer close(stop)
+//
+//	err := ctrl.syncMachine(m)
+//	if err != nil {
+//		t.Errorf("error in machineAdded handler: %v", err)
+//	}
+//
+//	m2, err := ctrl.client.ClusterV1alpha1().Machines(m.Namespace).Get("susi", metav1.GetOptions{})
+//	if err != nil {
+//		t.Errorf("couldn't retrieve updated machine, see: %v", err)
+//	}
+//
+//	assertNetworkEquals(t, m2, "192.168.0.2/16", "192.168.0.1", "8.8.8.8")
+//}
 
 func TestMultipleCIDRAllocation(t *testing.T) {
 	t.Parallel()
@@ -165,61 +164,6 @@ func TestFailWhenCIDRIsExhausted(t *testing.T) {
 	}
 }
 
-func createMachine(name string) *clusterv1alpha1.Machine {
-	machine := &clusterv1alpha1.Machine{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: metav1.NamespaceSystem,
-			Initializers: &metav1.Initializers{
-				Pending: []metav1.Initializer{{Name: initializerName}},
-			},
-		},
-		Spec: clusterv1alpha1.MachineSpec{
-			ProviderSpec: clusterv1alpha1.ProviderSpec{
-				Value: &runtime.RawExtension{Raw: []byte(`{}`)},
-			},
-		},
-	}
-
-	return machine
-}
-
-func newTestController(networks []Network, objects ...runtime.Object) (*Controller, chan struct{}) {
-	tweakFunc := func(options *metav1.ListOptions) {
-		options.IncludeUninitialized = true
-	}
-
-	client := clusterv1alpha1fakeclientset.NewSimpleClientset(objects...)
-	factory := clusterinformers.NewFilteredSharedInformerFactory(client, 1*time.Second, metav1.NamespaceAll, tweakFunc)
-
-	controller := NewController(client, factory.Cluster().V1alpha1().Machines(), networks)
-	stopCh := make(chan struct{})
-
-	factory.Start(stopCh)
-	factory.WaitForCacheSync(stopCh)
-
-	return controller, stopCh
-}
-
-func buildNet(t *testing.T, cidr string, gw string, dnsServers ...string) Network {
-	ip, ipnet, err := net.ParseCIDR(cidr)
-	if err != nil {
-		t.Fatalf("error in network config of test, couldnt parse %s as cidr", cidr)
-	}
-
-	dnsIps := make([]net.IP, len(dnsServers))
-	for i, d := range dnsServers {
-		dnsIps[i] = net.ParseIP(d)
-	}
-
-	return Network{
-		IP:         ip,
-		IPNet:      *ipnet,
-		Gateway:    net.ParseIP(gw),
-		DNSServers: dnsIps,
-	}
-}
-
 func assertNetworkEquals(t *testing.T, m *clusterv1alpha1.Machine, ip string, gw string, dns ...string) {
 	network, err := getNetworkForMachine(m)
 	if err != nil {
@@ -249,4 +193,21 @@ func getNetworkForMachine(m *clusterv1alpha1.Machine) (*providerconfig.NetworkCo
 	}
 
 	return cfg.Network, nil
+}
+
+func newTestController(networks []Network, objects ...runtime.Object) (*Controller, chan struct{}) {
+	tweakFunc := func(options *metav1.ListOptions) {
+		options.IncludeUninitialized = true
+	}
+
+	client := clusterv1alpha1fakeclientset.NewSimpleClientset(objects...)
+	factory := clusterinformers.NewFilteredSharedInformerFactory(client, 1*time.Second, metav1.NamespaceAll, tweakFunc)
+
+	controller := NewController(client, factory.Cluster().V1alpha1().Machines(), networks)
+	stopCh := make(chan struct{})
+
+	factory.Start(stopCh)
+	factory.WaitForCacheSync(stopCh)
+
+	return controller, stopCh
 }
