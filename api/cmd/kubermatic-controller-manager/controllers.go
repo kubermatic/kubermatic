@@ -297,15 +297,19 @@ func createAddonController(ctrlCtx *controllerContext) (runner, error) {
 
 func createAddonInstallerController(ctrlCtx *controllerContext) (runner, error) {
 
-	defaultAddonsList := strings.Split(ctrlCtx.runOptions.addonsList, ",")
-	for i, a := range defaultAddonsList {
-		defaultAddonsList[i] = strings.TrimSpace(a)
+	kubernetesAddons := strings.Split(ctrlCtx.runOptions.addonsList, ",")
+	for i, a := range kubernetesAddons {
+		kubernetesAddons[i] = strings.TrimSpace(a)
 	}
+
+	// TODO: Softcode
+	openshiftAddons := []string{"networking"}
 
 	return addoninstaller.New(
 		ctrlCtx.runOptions.workerName,
 		addoninstaller.NewMetrics(),
-		defaultAddonsList,
+		kubernetesAddons,
+		openshiftAddons,
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Addons(),
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
