@@ -58,6 +58,10 @@ func GenerateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
 				Resources: []string{machinedeployments, machines},
 				Verbs:     verbs,
 			},
+			{
+				Resources: []string{"nodes"},
+				Verbs:     []string{"get"},
+			},
 		},
 	}
 	return clusterRole, nil
