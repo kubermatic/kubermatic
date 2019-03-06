@@ -68,8 +68,8 @@ function deployMaster {
 function deploySeed {
   retry 5 kubectl apply -f ./config/kubermatic/crd/
   for chart in "${!chartNamespaces[@]}"; do
-      # don't deploy the certs and cert-manager chart onto non-master seeds
-      if [[ "$chart" == "certs" ]] || [[ "$chart" == "cert-manager" ]]; then
+      # Don't deploy ingress-related charts on non-master seeds
+      if echo $chart| grep -q 'certs|cert-manager|oauth|iap|nginx-ingress-controller'; then
         continue
       fi
 
