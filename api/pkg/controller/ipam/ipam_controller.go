@@ -10,7 +10,6 @@ import (
 
 	"github.com/golang/glog"
 
-	machinecontroller "github.com/kubermatic/machine-controller/pkg/controller/machine"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	corev1 "k8s.io/api/core/v1"
@@ -30,8 +29,9 @@ import (
 
 const (
 	// ControllerName is the name of this controller
-	ControllerName  = "kubermatic_ipam_controller"
-	annotationValue = "ipam"
+	ControllerName                 = "kubermatic_ipam_controller"
+	annotationMachineUninitialized = "machine-controller.kubermatic.io/initializers"
+	annotationValue                = "ipam"
 )
 
 type cidrExhaustedError struct{}
@@ -92,7 +92,7 @@ func (r *reconciler) reconcile(ctx context.Context, machine *clusterv1alpha1.Mac
 		return nil
 	}
 
-	if !strings.Contains(machine.Annotations[machinecontroller.AnnotationMachineUninitialized], annotationValue) {
+	if !strings.Contains(machine.Annotations[annotationMachineUninitialized], annotationValue) {
 		glog.V(4).Infof("Machine %s doesn't need initialization", machine.Name)
 		return nil
 	}
@@ -124,10 +124,10 @@ func (r *reconciler) reconcile(ctx context.Context, machine *clusterv1alpha1.Mac
 	}
 
 	machine.Spec.ProviderSpec.Value = &runtime.RawExtension{Raw: cfgSerialized}
-	newAnnotationVal := strings.Replace(machine.Annotations[machinecontroller.AnnotationMachineUninitialized],
+	newAnnotationVal := strings.Replace(machine.Annotations[annotationMachineUninitialized],
 		annotationValue,
 		"", -1)
-	machine.Annotations[machinecontroller.AnnotationMachineUninitialized] = newAnnotationVal
+	machine.Annotations[annotationMachineUninitialized] = newAnnotationVal
 	if err := r.Update(ctx, machine); err != nil {
 		return fmt.Errorf("failed to update machine %q after adding network: %v", machine.Name, err)
 	}
