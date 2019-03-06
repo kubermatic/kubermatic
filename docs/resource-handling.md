@@ -100,6 +100,11 @@ It offers:
 func ReconcileSecrets(namedGetters []NamedSecretCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error 
 ```
 
+The signature of all `Reconcile*` functions will change in the future to be more convenient for controller-runtime controllers:
+```go
+func ReconcileSecrets(ctx context.Context, namedGetters []NamedSecretCreatorGetter, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error 
+``` 
+
 ### SecretCreator
 
 A typed creator function. Prefer the [NamedSecretCreatorGetter](#namedsecretcreatorgetter) instead. 
