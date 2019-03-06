@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang/glog"
 
+	machinecontroller "github.com/kubermatic/machine-controller/pkg/controller/machine"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	corev1 "k8s.io/api/core/v1"
@@ -91,7 +92,7 @@ func (r *reconciler) reconcile(ctx context.Context, machine *clusterv1alpha1.Mac
 		return nil
 	}
 
-	if !strings.Contains(machine.Annotations["kubermatic/io/initialization"], annotationValue) {
+	if !strings.Contains(machine.Annotations[machinecontroller.AnnotationMachineUninitialized], annotationValue) {
 		glog.V(4).Infof("Machine %s doesn't need initialization", machine.Name)
 		return nil
 	}
@@ -123,10 +124,10 @@ func (r *reconciler) reconcile(ctx context.Context, machine *clusterv1alpha1.Mac
 	}
 
 	machine.Spec.ProviderSpec.Value = &runtime.RawExtension{Raw: cfgSerialized}
-	newAnnotationVal := strings.Replace(machine.Annotations["kubermatic/io/initialization"],
+	newAnnotationVal := strings.Replace(machine.Annotations[machinecontroller.AnnotationMachineUninitialized],
 		annotationValue,
 		"", -1)
-	machine.Annotations["kubermatic/io/initialization"] = newAnnotationVal
+	machine.Annotations[machinecontroller.AnnotationMachineUninitialized] = newAnnotationVal
 	if err := r.Update(ctx, machine); err != nil {
 		return fmt.Errorf("failed to update machine %q after adding network: %v", machine.Name, err)
 	}
