@@ -27,7 +27,7 @@ function retry {
 
 declare -A chartNamespaces
 chartNamespaces=(
-["nginx-ingress-controller"]="nginx-ingress-controller"
+["nginx"]="ingress-nginx"
 ["cert-manager"]="cert-manager"
 ["certs"]="default"
 ["minio"]="minio"
@@ -53,6 +53,8 @@ function deploy {
     else
       directory_name=$chart
     fi
+
+    if [[ "${chart}" == "nginx" ]]; then directory_name=nginx-ingress-controller; fi
 
     retry 5 helm upgrade --install --force --wait --timeout 300 \
       --namespace=${chartNamespaces[$chart]} \
