@@ -54,7 +54,7 @@ function deploy {
       directory_name=$chart
     fi
 
-    retry 5 helm $1 upgrade --install --force --wait --timeout 300 \
+    retry 5 helm upgrade --install --force --wait --timeout 300 \
       --namespace=${chartNamespaces[$chart]} \
       --values $VALUES_FILE \
       --set=kubermatic.controller.image.tag=$GIT_HEAD_HASH \
