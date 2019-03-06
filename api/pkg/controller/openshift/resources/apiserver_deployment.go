@@ -122,10 +122,12 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) (string, reso
 			return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
 		}
 
-		dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(data, "dnat-controller")
-		if err != nil {
-			return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
-		}
+		// TODO: This breaks the apiserver->kubelet connection for logs/exec. Why? It _looks_
+		// like it is working correctly
+		//	dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(data, "dnat-controller")
+		//	if err != nil {
+		//		return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
+		//	}
 
 		resourceRequirements := apiServerDefaultResourceRequirements.DeepCopy()
 		if data.Cluster().Spec.ComponentsOverride.Apiserver.Resources != nil {
@@ -134,7 +136,7 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) (string, reso
 
 		dep.Spec.Template.Spec.Containers = []corev1.Container{
 			*openvpnSidecar,
-			*dnatControllerSidecar,
+			//*dnatControllerSidecar,
 			{
 				Name:                     ApiserverDeploymentName,
 				Image:                    data.ImageRegistry(resources.RegistryDocker) + "/openshift/origin-control-plane:v3.11",
