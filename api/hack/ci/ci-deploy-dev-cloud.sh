@@ -45,7 +45,7 @@ chartNamespaces=(
 ["kibana"]="logging"
 )
 
-function deploy {
+function deployMaster {
   retry 5 kubectl apply -f ./config/kubermatic/crd/
   for chart in "${!chartNamespaces[@]}"; do
     if [[ "${chartNamespaces[$chart]}" == "monitoring" ]] || [[ "${chartNamespaces[$chart]}" == "logging" ]] ; then
@@ -54,9 +54,35 @@ function deploy {
       directory_name=$chart
     fi
 
-    retry 5 helm $1 upgrade --install --force --wait --timeout 300 \
+    retry 5 helm upgrade $1 --install --force --wait --timeout 300 \
       --namespace=${chartNamespaces[$chart]} \
       --values $VALUES_FILE \
+      --set=kubermatic.isMaster=true \
+      --set=kubermatic.controller.image.tag=$GIT_HEAD_HASH \
+      --set=kubermatic.api.image.tag=$GIT_HEAD_HASH \
+      --set=kubermatic.rbac.image.tag=$GIT_HEAD_HASH \
+      $chart ./config/$directory_name/
+  done
+}
+
+function deploySeed {
+  retry 5 kubectl apply -f ./config/kubermatic/crd/
+  for chart in "${!chartNamespaces[@]}"; do
+      # don't deploy the certs and cert-manager chart onto non-master seeds
+      if [[ "$chart" == "certs" ]] || [[ "$chart" == "cert-manager" ]]; then
+        continue
+      fi
+
+    if [[ "${chartNamespaces[$chart]}" == "monitoring" ]] || [[ "${chartNamespaces[$chart]}" == "logging" ]] ; then
+      directory_name="${chartNamespaces[$chart]}/$chart"
+    else
+      directory_name=$chart
+    fi
+
+    retry 5 helm upgrade $1 --install --force --wait --timeout 300 \
+      --namespace=${chartNamespaces[$chart]} \
+      --values $VALUES_FILE \
+      --set=kubermatic.isMaster=false \
       --set=kubermatic.controller.image.tag=$GIT_HEAD_HASH \
       --set=kubermatic.api.image.tag=$GIT_HEAD_HASH \
       --set=kubermatic.rbac.image.tag=$GIT_HEAD_HASH \
@@ -94,7 +120,7 @@ vault kv get -field=values.yaml \
 echodate "Successfully got secrets for dev from Vault"
 
 echodate "Deploying Kubermatic to dev"
-deploy "--tiller-namespace=kubermatic-installer --set=kubermatic.isMaster=true"
+deployMaster "--tiller-namespace=kubermatic-installer"
 echodate "Successfully deployed Kubermatic to dev"
 
 # deploy to cloud-asia
@@ -105,7 +131,7 @@ vault kv get -field=asia-east1-a-1-values.yaml \
 echodate "Successfully got secrets for cloud-asia from Vault"
 
 echodate "Deploying Kubermatic to cloud-asia"
-deploy "--kube-context=asia-east1-a-1 --tiller-namespace=kubermatic-installer --set=kubermatic.isMaster=false"
+deploySeed "--kube-context=asia-east1-a-1 --tiller-namespace=kubermatic-installer"
 echodate "Successfully deployed Kubermatic to cloud-asia"
 
 # deploy to cloud-europe
@@ -116,7 +142,7 @@ vault kv get -field=europe-west3-c-1-values.yaml \
 echodate "Successfully got secrets for cloud-europe from Vault"
 
 echodate "Deploying Kubermatic to cloud-europe"
-deploy "--kube-context=europe-west3-c-1 --tiller-namespace=kubermatic-installer --set=kubermatic.isMaster=false"
+deployMaster "--kube-context=europe-west3-c-1 --tiller-namespace=kubermatic-installer"
 echodate "Successfully deployed Kubermatic to cloud-europe"
 
 # deploy to cloud-us
@@ -126,6 +152,6 @@ vault kv get -field=us-central1-c-1-values.yaml \
   dev/seed-clusters/cloud.kubermatic.io > $VALUES_FILE
 echodate "Successfully got secrets for cloud-us from Vault"
 
-echodate "Deploying Kubermatic to cloud-europe"
-deploy "--kube-context=us-central1-c-1 --tiller-namespace=kubermatic-installer --set=kubermatic.isMaster=false"
-echodate "Successfully deployed Kubermatic to cloud-europe"
+echodate "Deploying Kubermatic to cloud-us"
+deploySeed "--kube-context=us-central1-c-1 --tiller-namespace=kubermatic-installer"
+echodate "Successfully deployed Kubermatic to cloud-us"
