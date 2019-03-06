@@ -71,9 +71,10 @@ kubermatic:
         defaultAddons:
         - networking
         - openvpn
+        - rbac
         image:
           repository: "quay.io/kubermatic/openshift-addons"
-          tag: "v0.3"
+          tag: "v0.4"
           pullPolicy: "IfNotPresent"
   api:
     replicas: 2
