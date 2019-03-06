@@ -54,6 +54,7 @@ function deployMaster {
       directory_name=$chart
     fi
 
+    echodate "Deploying chart $chart"
     retry 5 helm upgrade $1 --install --force --wait --timeout 300 \
       --namespace=${chartNamespaces[$chart]} \
       --values $VALUES_FILE \
@@ -62,6 +63,7 @@ function deployMaster {
       --set=kubermatic.api.image.tag=$GIT_HEAD_HASH \
       --set=kubermatic.rbac.image.tag=$GIT_HEAD_HASH \
       $chart ./config/$directory_name/
+    echodate "Finished deploying chart $chart"
   done
 }
 
@@ -69,7 +71,7 @@ function deploySeed {
   retry 5 kubectl apply -f ./config/kubermatic/crd/
   for chart in "${!chartNamespaces[@]}"; do
       # Don't deploy ingress-related charts on non-master seeds
-      if echo $chart| grep -q 'certs|cert-manager|oauth|iap|nginx-ingress-controller'; then
+      if echo $chart| grep -qE 'certs|cert-manager|oauth|iap|nginx-ingress-controller'; then
         continue
       fi
 
@@ -79,6 +81,7 @@ function deploySeed {
       directory_name=$chart
     fi
 
+    echodate "Deploying chart $chart"
     retry 5 helm upgrade $1 --install --force --wait --timeout 300 \
       --namespace=${chartNamespaces[$chart]} \
       --values $VALUES_FILE \
@@ -87,6 +90,7 @@ function deploySeed {
       --set=kubermatic.api.image.tag=$GIT_HEAD_HASH \
       --set=kubermatic.rbac.image.tag=$GIT_HEAD_HASH \
       $chart ./config/$directory_name/
+    echodate "Finished deploying chart $chart"
   done
 }
 
