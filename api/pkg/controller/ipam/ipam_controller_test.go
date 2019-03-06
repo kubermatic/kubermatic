@@ -2,6 +2,7 @@ package ipam
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"strings"
 	"testing"
@@ -142,7 +143,7 @@ func createMachine(name string) *clusterv1alpha1.Machine {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   metav1.NamespaceSystem,
-			Annotations: map[string]string{"kubermatic/io/initialization": "ipam"},
+			Annotations: map[string]string{annotationMachineUninitialized: annotationValue},
 		},
 		Spec: clusterv1alpha1.MachineSpec{
 			ProviderSpec: clusterv1alpha1.ProviderSpec{
@@ -185,7 +186,7 @@ func buildNet(t *testing.T, cidr string, gw string, dnsServers ...string) Networ
 func assertNetworkEquals(t *testing.T, m *clusterv1alpha1.Machine, ip string, gw string, dns ...string) {
 	network, err := getNetworkForMachine(m)
 	if err != nil {
-		t.Errorf("couldn't get network for machine %s, see: %v", m.Name, err)
+		t.Fatalf("couldn't get network for machine %s, see: %v", m.Name, err)
 	}
 
 	if network.CIDR != ip {
@@ -208,6 +209,10 @@ func getNetworkForMachine(m *clusterv1alpha1.Machine) (*providerconfig.NetworkCo
 	cfg, err := providerconfig.GetConfig(m.Spec.ProviderSpec)
 	if err != nil {
 		return nil, err
+	}
+
+	if cfg.Network == nil {
+		return nil, fmt.Errorf("machine %q has no network config", m.Name)
 	}
 
 	return cfg.Network, nil
