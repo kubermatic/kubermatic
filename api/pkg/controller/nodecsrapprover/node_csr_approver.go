@@ -107,7 +107,7 @@ func (r *reconciler) reconcile(ctx context.Context, request reconcile.Request) e
 		return fmt.Errorf("failed to update approval for CSR %q: %v", csr.Name, err)
 	}
 
-	glog.V(4).Infof("Successfully approved CSR %q", csr.Name)
+	glog.V(2).Infof("Successfully approved CSR %q", csr.Name)
 	return nil
 }
 
