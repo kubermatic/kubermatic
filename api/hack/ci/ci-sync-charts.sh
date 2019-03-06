@@ -9,6 +9,9 @@ export LATEST_VERSION=$(git describe --tags --abbrev=0)
 sed -i "s/__KUBERMATIC_TAG__/$LATEST_VERSION/g" config/kubermatic/values.yaml
 git config --global user.email "dev@loodse.com"
 git config --global user.name "Prow CI Robot"
+git config --global core.sshCommand 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+eval $(ssh-agent)
+ssh-add /root/.ssh/id_rsa
 
 if ! git describe --exact-match --tags HEAD &>/dev/null; then
   echo "No tag matches current HEAD, exitting..."
@@ -35,7 +38,7 @@ fi
 # create fresh clone of the installer repository
 rm -rf ${TARGET_DIR}
 mkdir ${TARGET_DIR}
-git clone https://github.com/kubermatic/kubermatic-installer.git ${TARGET_DIR}
+git clone git@github.com:kubermatic/kubermatic-installer.git ${TARGET_DIR}
 cd ${TARGET_DIR}
 git checkout ${INSTALLER_BRANCH}
 cd ..
@@ -135,7 +138,7 @@ mv ${TARGET_DIR}/values.example.{tmp.,}yaml
 cd ${TARGET_DIR}
 git add .
 if ! git status|grep 'nothing to commit'; then
-  git commit -m "Syncing charts from release $(git describe --exact-match --tags HEAD)"
+  git commit -m "Syncing charts from release ${LATEST_VERSION}"
   git push origin ${INSTALLER_BRANCH}
 fi
 
