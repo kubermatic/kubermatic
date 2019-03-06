@@ -17,6 +17,8 @@ spec:
       role: master
   template:
     metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/es-config-configmap.yaml") . | sha256sum }}
       labels:
         component: elasticsearch
         role: master
@@ -60,6 +62,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
             - name: NODE_MASTER
               value: "true"
             - name: NODE_INGEST
@@ -83,9 +89,19 @@ spec:
           readinessProbe:
             tcpSocket:
               port: transport
-            initialDelaySeconds: 120
             timeoutSeconds: 10
             periodSeconds: 10
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - /bin/bash
+                - /pre-stop.sh
+            postStart:
+              exec:
+                command:
+                - /bin/bash
+                - /post-start.sh
           resources:
             requests:
               cpu: 75m
@@ -99,6 +115,12 @@ spec:
             - name: config
               mountPath: /usr/share/elasticsearch/config/jvm.options
               subPath: jvm.options
+            - name: config
+              mountPath: /post-start.sh
+              subPath: post-start.sh
+            - name: config
+              mountPath: /pre-stop.sh
+              subPath: pre-stop.sh
       volumes:
         - name: config
           configMap:
@@ -111,4 +133,4 @@ spec:
         accessModes: [ ReadWriteOnce ]
         resources:
           requests:
-            storage: 1Gi
+            storage: {{ .Values.logging.elasticsearch.masterStorageSize }}
