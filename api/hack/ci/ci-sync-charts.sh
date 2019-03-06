@@ -3,12 +3,13 @@
 set -euo pipefail
 
 apk add --no-cache -U git bash openssh
-cd $(dirname $0)/../..
+cd $(dirname $0)/../../..
 git fetch
 export LATEST_VERSION=$(git describe --tags --abbrev=0)
 sed -i "s/__KUBERMATIC_TAG__/$LATEST_VERSION/g" config/kubermatic/values.yaml
 git config --global user.email "dev@loodse.com"
 git config --global user.name "Prow CI Robot"
+git config --global core.sshCommand 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
 
 if ! git describe --exact-match --tags HEAD &>/dev/null; then
   echo "No tag matches current HEAD, exitting..."
@@ -18,23 +19,11 @@ fi
 export INSTALLER_BRANCH="$(git branch --contains HEAD --all \
   |tr -d ' '|grep -E 'remotes/origin/release/v2.[0-9]+$'|cut -d '/' -f3-)"
 
-if [ "$#" -lt 1 ] || [ "${1}" == "--help" ]; then
-  cat <<EOF
-Usage: $(basename $0) <branch-name> <path-to-charts>
-
-  <path-to-charts>               The path to the kubermatic charts to sync
-
-Example:
-  $(basename $0) v2.5 ../config
-EOF
-  exit 0
-fi
-
 export CHARTS='kubermatic cert-manager certs nginx-ingress-controller nodeport-proxy oauth minio iap'
 export MONITORING_CHARTS='alertmanager grafana kube-state-metrics node-exporter prometheus'
 export LOGGING_CHARTS='elasticsearch kibana fluentbit'
 export BACKUP_CHARTS='ark ark-config'
-export CHARTS_DIR=$1
+export CHARTS_DIR=$(pwd)/config
 export TARGET_DIR='sync_target'
 export TARGET_VALUES_FILE=${TARGET_DIR}/values.example.yaml
 export TARGET_VALUES_SEED_FILE=${TARGET_DIR}/values.seed.example.yaml
@@ -147,7 +136,7 @@ mv ${TARGET_DIR}/values.example.{tmp.,}yaml
 cd ${TARGET_DIR}
 git add .
 if ! git status|grep 'nothing to commit'; then
-  git commit -m "Syncing charts from release $(git describe --exact-match --tags HEAD)"
+  git commit -m "Syncing charts from release ${LATEST_VERSION}"
   git push origin ${INSTALLER_BRANCH}
 fi
 
