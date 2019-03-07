@@ -13,10 +13,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	debugLevel = 4
-)
-
 // reconciler creates and updates ClusterRoles and ClusterRoleBinding to achieve the desired state
 type reconciler struct {
 	ctx    context.Context
@@ -50,20 +46,20 @@ func (r *reconciler) ensureRBACClusterRole(resourceName string) error {
 	if err != nil {
 		// create Cluster Role if not exist
 		if errors.IsNotFound(err) {
-			glog.V(debugLevel).Infof("creating a new Cluster Role %s", resourceName)
 			if err := r.client.Create(r.ctx, defaultClusterRole); err != nil {
 				return fmt.Errorf("failed to create the RBAC Cluster Role: %v", err)
 			}
+			glog.V(2).Infof("Created a new ClusterRole %s", defaultClusterRole.Name)
 			return nil
 		}
 		return err
 	}
 	// compare Cluster Role with default. If don't match update for default
 	if !ClusterRoleMatches(clusterRole, defaultClusterRole) {
-		glog.V(debugLevel).Infof("updating the Cluster Role %s because it doesn't match the expected one", resourceName)
 		if err := r.client.Update(r.ctx, defaultClusterRole); err != nil {
 			return fmt.Errorf("failed to update the RBAC Cluster Role: %v", err)
 		}
+		glog.V(4).Infof("Updated the ClusterCole %s", defaultClusterRole.Name)
 	}
 
 	return nil
@@ -78,10 +74,10 @@ func (r *reconciler) ensureRBACClusterRoleBinding(resourceName string) error {
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{}
 	if err := r.client.Get(r.ctx, controllerclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: resourceName}, clusterRoleBinding); err != nil {
 		if errors.IsNotFound(err) {
-			glog.V(debugLevel).Infof("creating a new ClusterRoleBinding %s", resourceName)
 			if err := r.client.Create(r.ctx, defaultClusterBinding); err != nil {
 				return fmt.Errorf("failed to create the RBAC ClusterRoleBinding: %v", err)
 			}
+			glog.V(2).Infof("Created a new ClusterRoleBinding %s", defaultClusterBinding.Name)
 			return nil
 		}
 		return err
@@ -89,10 +85,10 @@ func (r *reconciler) ensureRBACClusterRoleBinding(resourceName string) error {
 
 	// compare cluster role bindings with default. If don't match update for default
 	if !ClusterRoleBindingMatches(clusterRoleBinding, defaultClusterBinding) {
-		glog.V(debugLevel).Infof("updating the ClusterRoleBidning %s because it doesn't match the expected one", defaultClusterBinding.Name)
 		if err := r.client.Update(r.ctx, defaultClusterBinding); err != nil {
 			return fmt.Errorf("failed to update the RBAC ClusterRoleBinding: %v", err)
 		}
+		glog.V(4).Infof("Updated the ClusterColeBinding %s", defaultClusterBinding.Name)
 	}
 	return nil
 }
