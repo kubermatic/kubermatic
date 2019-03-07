@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"fmt"
+	"time"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -44,6 +45,22 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 		return err
 	}
 
+	// check that all StatefulSets are created
+	if err := cc.ensureStatefulSets(cluster, data); err != nil {
+		return err
+	}
+
+	// Wait until the cloud provider infra is ready before attempting
+	// to render the cloud-config
+	// TODO: Model resource deployment as a DAG so we don't need hacks
+	// like this combined with tribal knowledge and "someone is noticing this
+	// isn't working correctly"
+	// https://github.com/kubermatic/kubermatic/issues/2948
+	if !cluster.Status.Health.CloudProviderInfrastructure {
+		cc.enqueueAfter(cluster, 1*time.Second)
+		return nil
+	}
+
 	// check that all ConfigMaps are available
 	if err := cc.ensureConfigMaps(cluster, data); err != nil {
 		return err
@@ -51,11 +68,6 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 
 	// check that all Deployments are available
 	if err := cc.ensureDeployments(cluster, data); err != nil {
-		return err
-	}
-
-	// check that all StatefulSets are created
-	if err := cc.ensureStatefulSets(cluster, data); err != nil {
 		return err
 	}
 
