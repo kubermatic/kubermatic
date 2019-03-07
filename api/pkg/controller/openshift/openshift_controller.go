@@ -131,16 +131,9 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	glog.V(4).Infof("Reconciling cluster %s", cluster.Name)
 
-	// Wait for namespace
-	if cluster.Status.NamespaceName == "" {
-		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
-	}
-	ns := &corev1.Namespace{}
-	if err := r.Get(ctx, types.NamespacedName{Name: cluster.Status.NamespaceName}, ns); err != nil {
-		if !kerrors.IsNotFound(err) {
-			return nil, err
-		}
-		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+	// Ensure Namespace
+	if err := r.ensureNamespace(ctx, cluster); err != nil {
+		return nil, fmt.Errorf("failed to ensure Namespace: %v", err)
 	}
 
 	dc, found := r.dcs[cluster.Spec.Cloud.DatacenterName]
@@ -398,6 +391,31 @@ func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) err
 			return fmt.Errorf("failed to ensure Deployment %s: %v", deploymentName, err)
 		}
 	}
+	return nil
+}
+
+func (r *Reconciler) ensureNamespace(ctx context.Context, c *kubermaticv1.Cluster) error {
+	if c.Status.NamespaceName == "" {
+		if err := r.updateCluster(ctx, c.Name, func(c *kubermaticv1.Cluster) {
+			c.Status.NamespaceName = fmt.Sprintf("cluster-%s", c.Name)
+		}); err != nil {
+			return fmt.Errorf("failed to set .Status.NamespaceName: %v", err)
+		}
+	}
+
+	ns := &corev1.Namespace{}
+	if err := r.Get(ctx, nn("", c.Status.NamespaceName), ns); err != nil {
+		if !kerrors.IsNotFound(err) {
+			return fmt.Errorf("failed to get Namespace %q: %v", c.Status.NamespaceName, err)
+		}
+		return nil
+	}
+
+	ns.Name = c.Status.NamespaceName
+	if err := r.Create(ctx, ns); err != nil {
+		return fmt.Errorf("failed to create Namespace %q: %v", ns.Name, err)
+	}
+
 	return nil
 }
 

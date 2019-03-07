@@ -16,8 +16,10 @@ const (
 func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	var err error
 	// Create the namespace
-	if cluster, err = cc.ensureNamespaceExists(cluster); err != nil {
-		return nil, err
+	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		if cluster, err = cc.ensureNamespaceExists(cluster); err != nil {
+			return nil, err
+		}
 	}
 
 	// Set the hostname & url
