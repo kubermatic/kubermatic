@@ -98,7 +98,7 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, dcs map[string]
 	if err := c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, enqueueClusterForNamespacedObject); err != nil {
 		return fmt.Errorf("failed to create watch for Deployments: %v", err)
 	}
-	if err := c.Watch(&source.Kind{Type: &corev1.Namespace{}}, &handler.EnqueueRequestForOwner{}); err != nil {
+	if err := c.Watch(&source.Kind{Type: &corev1.Namespace{}}, &handler.EnqueueRequestForOwner{OwnerType: &kubermaticv1.Cluster{}}); err != nil {
 		return fmt.Errorf("failed to create watch for Namespaces: %v", err)
 	}
 
@@ -163,13 +163,17 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("failed to reconcile Deployments: %v", err)
 	}
 
+	if err := r.syncHeath(ctx, osData); err != nil {
+		return nil, fmt.Errorf("failed to sync health: %v", err)
+	}
+
+	if !osData.Cluster().Status.Health.Apiserver {
+		return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
+	}
+
 	reconcileRequest, err := r.createClusterAccessToken(ctx, osData)
 	if reconcileRequest != nil || err != nil {
 		return reconcileRequest, err
-	}
-
-	if err := r.syncHeath(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to sync health: %v", err)
 	}
 
 	if err := r.createInClusterResources(ctx, osData); err != nil {
@@ -448,12 +452,12 @@ func (r *Reconciler) ensureNamespace(ctx context.Context, c *kubermaticv1.Cluste
 		if !kerrors.IsNotFound(err) {
 			return fmt.Errorf("failed to get Namespace %q: %v", c.Status.NamespaceName, err)
 		}
-		return nil
-	}
-
-	ns.Name = c.Status.NamespaceName
-	if err := r.Create(ctx, ns); err != nil {
-		return fmt.Errorf("failed to create Namespace %q: %v", ns.Name, err)
+		ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
+			Name:            c.Status.NamespaceName,
+			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(c, kubermaticv1.SchemeGroupVersion.WithKind("Cluster"))}}}
+		if err := r.Create(ctx, ns); err != nil {
+			return fmt.Errorf("failed to create Namespace %q: %v", ns.Name, err)
+		}
 	}
 
 	return nil
