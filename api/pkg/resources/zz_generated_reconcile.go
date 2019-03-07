@@ -21,6 +21,9 @@ import (
 // ServiceCreator defines an interface to create/update Services
 type ServiceCreator = func(existing *corev1.Service) (*corev1.Service, error)
 
+// NamedServiceCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedServiceCreatorGetter = func() (name string, create ServiceCreator)
+
 // ServiceObjectWrapper adds a wrapper so the ServiceCreator matches ObjectCreator
 // This is needed as golang does not support function interface matching
 func ServiceObjectWrapper(create ServiceCreator) ObjectCreator {
@@ -33,19 +36,20 @@ func ServiceObjectWrapper(create ServiceCreator) ObjectCreator {
 }
 
 // ReconcileServices will create and update the Services coming from the passed ServiceCreator slice
-func ReconcileServices(creators []ServiceCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
+func ReconcileServices(namedGetters []NamedServiceCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
 	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &corev1.Service{})
 	if err != nil {
 		return fmt.Errorf("failed to get Service informer: %v", err)
 	}
 
-	for _, create := range creators {
+	for _, get := range namedGetters {
+		name, create := get()
 		createObject := ServiceObjectWrapper(create)
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureObject(namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
 			return fmt.Errorf("failed to ensure Service: %v", err)
 		}
 	}

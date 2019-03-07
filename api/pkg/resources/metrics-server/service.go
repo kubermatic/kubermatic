@@ -8,21 +8,23 @@ import (
 )
 
 // ServiceCreator returns the function to reconcile the seed cluster internal metrics-server service
-func ServiceCreator() resources.ServiceCreator {
-	return func(se *corev1.Service) (*corev1.Service, error) {
-		se.Name = resources.MetricsServerServiceName
-		labels := resources.BaseAppLabel(name, nil)
-		se.Labels = labels
+func ServiceCreator() resources.NamedServiceCreatorGetter {
+	return func() (string, resources.ServiceCreator) {
+		return resources.MetricsServerServiceName, func(se *corev1.Service) (*corev1.Service, error) {
+			se.Name = resources.MetricsServerServiceName
+			labels := resources.BaseAppLabel(name, nil)
+			se.Labels = labels
 
-		se.Spec.Selector = labels
-		se.Spec.Ports = []corev1.ServicePort{
-			{
-				Port:       443,
-				Protocol:   corev1.ProtocolTCP,
-				TargetPort: intstr.FromInt(443),
-			},
+			se.Spec.Selector = labels
+			se.Spec.Ports = []corev1.ServicePort{
+				{
+					Port:       443,
+					Protocol:   corev1.ProtocolTCP,
+					TargetPort: intstr.FromInt(443),
+				},
+			}
+
+			return se, nil
 		}
-
-		return se, nil
 	}
 }
