@@ -259,7 +259,6 @@ kubernetesMasterConfig:
     - /etc/origin/master/recycler_pod.yaml
   # For some reason this field results in an error: Encountered config error json: unknown field "masterCount" in object *config.MasterConfig, raw JSON:
   #masterCount: 1
-  #TODO: Should we put something here?
   masterIP: "{{ .MasterIP }}"
   podEvictionTimeout: null
 {{ if eq .ControlPlaneType "apiserver" }}
