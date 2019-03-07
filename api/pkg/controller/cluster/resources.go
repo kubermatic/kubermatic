@@ -52,6 +52,10 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 
 	// Wait until the cloud provider infra is ready before attempting
 	// to render the cloud-config
+	// TODO: Model resource deployment as a DAG so we don't need hacks
+	// like this combined with tribal knowledge and "someone is noticing this
+	// isn't working correctly"
+	// https://github.com/kubermatic/kubermatic/issues/2948
 	if !cluster.Status.Health.CloudProviderInfrastructure {
 		cc.enqueueAfter(cluster, 1*time.Second)
 		return nil
