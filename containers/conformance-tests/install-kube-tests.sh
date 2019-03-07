@@ -7,11 +7,10 @@ set -euox pipefail
 TMP_ROOT="./.install-tmp"
 
 declare -A FULL_VERSIONS
-FULL_VERSIONS["1.10"]=$(curl -Ss https://storage.googleapis.com/kubernetes-release/release/stable-1.10.txt)
-FULL_VERSIONS["1.11"]=$(curl -Ss https://storage.googleapis.com/kubernetes-release/release/stable-1.11.txt)
-FULL_VERSIONS["1.12"]=$(curl -Ss https://storage.googleapis.com/kubernetes-release/release/stable-1.12.txt)
-FULL_VERSIONS["1.13"]=$(curl -Ss https://storage.googleapis.com/kubernetes-release/release/stable-1.13.txt)
-# Only stable releases get published on this GCS bucket.
+FULL_VERSIONS["1.10"]="v1.10.13"
+FULL_VERSIONS["1.11"]="v1.11.8"
+FULL_VERSIONS["1.12"]="v1.12.6"
+FULL_VERSIONS["1.13"]="v1.13.4"
 FULL_VERSIONS["1.14"]="v1.14.0-beta.1"
 
 for VERSION in 1.10 1.11 1.12 1.13 1.14; do
