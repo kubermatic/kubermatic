@@ -91,6 +91,9 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, dcs map[string]
 	if err := c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, enqueueClusterForNamespacedObject); err != nil {
 		return fmt.Errorf("failed to create watch for Deployments: %v", err)
 	}
+	if err := c.Watch(&source.Kind{Type: &corev1.Namespace{}}, &handler.EnqueueRequestForOwner{}); err != nil {
+		return fmt.Errorf("failed to create watch for Namespaces: %v", err)
+	}
 
 	//TODO: Ensure only openshift clusters are handled via a predicate
 	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, clusterPredicates)
