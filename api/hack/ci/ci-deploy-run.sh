@@ -27,7 +27,7 @@ retry 5 vault write \
 export VAULT_TOKEN="$(cat /tmp/vault-token-response.json| jq .auth.client_token -r)"
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
-export HELM_EXTRA_ARGS="--tiller-namespace=kubermatic-installer \
+export HELM_EXTRA_ARGS="--tiller-namespace=kube-system \
     --set=kubermatic.controller.image.tag=${GIT_HEAD_HASH} \
     --set=kubermatic.api.image.tag=${GIT_HEAD_HASH} \
     --set=kubermatic.rbac.image.tag=${GIT_HEAD_HASH}"
