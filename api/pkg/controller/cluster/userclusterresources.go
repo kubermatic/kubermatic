@@ -29,10 +29,6 @@ func (cc *Controller) reconcileUserClusterResources(cluster *kubermaticv1.Cluste
 		return nil, err
 	}
 
-	if err = cc.userClusterEnsureRoles(cluster, client); err != nil {
-		return nil, err
-	}
-
 	if err = cc.userClusterEnsureConfigMaps(cluster, client); err != nil {
 		return nil, err
 	}
@@ -67,56 +63,6 @@ func (cc *Controller) reconcileUserClusterResources(cluster *kubermaticv1.Cluste
 	}
 
 	return cluster, nil
-}
-
-func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
-	creators := []resources.RoleCreatorDeprecated{
-		machinecontroller.EndpointReaderRole,
-		machinecontroller.KubeSystemRole,
-		machinecontroller.KubePublicRole,
-		machinecontroller.ClusterInfoReaderRole,
-	}
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
-
-	for _, create := range creators {
-		var existing *rbacv1.Role
-		role, err := create(data, nil)
-		if err != nil {
-			return fmt.Errorf("failed to build Role: %v", err)
-		}
-
-		if existing, err = client.RbacV1().Roles(role.Namespace).Get(role.Name, metav1.GetOptions{}); err != nil {
-			if !errors.IsNotFound(err) {
-				return err
-			}
-
-			if _, err = client.RbacV1().Roles(role.Namespace).Create(role); err != nil {
-				return fmt.Errorf("failed to create Role %s in namespace %s: %v", role.Name, role.Namespace, err)
-			}
-			glog.V(4).Infof("Created Role %s inside user-cluster %s", role.Name, c.Name)
-			continue
-		}
-
-		role, err = create(data, existing.DeepCopy())
-		if err != nil {
-			return fmt.Errorf("failed to build Role: %v", err)
-		}
-
-		if resources.DeepEqual(role, existing) {
-			continue
-		}
-
-		if _, err = client.RbacV1().Roles(role.Namespace).Update(role); err != nil {
-			return fmt.Errorf("failed to update Role %s in namespace %s: %v", role.Name, role.Namespace, err)
-		}
-		glog.V(4).Infof("Updated Role %s inside user-cluster %s", role.Name, c.Name)
-	}
-
-	return nil
 }
 
 func (cc *Controller) userClusterEnsureRoleBindings(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
