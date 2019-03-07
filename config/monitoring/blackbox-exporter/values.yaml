@@ -1,0 +1,15 @@
+blackboxExporter:
+  image:
+    repository: prom/blackbox-exporter
+    tag: v0.14.0
+    pullPolicy: IfNotPresent
+
+  containers:
+    blackboxExporter:
+      resources:
+        limits:
+          cpu: 100m
+          memory: 50Mi
+        requests:
+          cpu: 20m
+          memory: 25Mi
