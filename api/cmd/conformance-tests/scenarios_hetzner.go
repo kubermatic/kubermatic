@@ -68,12 +68,11 @@ func (s *hetznerScenario) Cluster(secrets secrets) *v1.Cluster {
 	}
 }
 
-func (s *hetznerScenario) Nodes(num int) []*kubermaticapiv1.Node {
-	var nodes []*kubermaticapiv1.Node
-	for i := 0; i < num; i++ {
-		node := &kubermaticapiv1.Node{
-			ObjectMeta: kubermaticapiv1.ObjectMeta{},
-			Spec: kubermaticapiv1.NodeSpec{
+func (s *hetznerScenario) Nodes(num int) *kubermaticapiv1.NodeDeployment {
+	return &kubermaticapiv1.NodeDeployment{
+		Spec: kubermaticapiv1.NodeDeploymentSpec{
+			Replicas: int32(num),
+			Template: kubermaticapiv1.NodeSpec{
 				Cloud: kubermaticapiv1.NodeCloudSpec{
 					Hetzner: &kubermaticapiv1.HetznerNodeSpec{
 						Type: "cx31",
@@ -84,10 +83,6 @@ func (s *hetznerScenario) Nodes(num int) []*kubermaticapiv1.Node {
 				},
 				OperatingSystem: s.nodeOsSpec,
 			},
-		}
-
-		nodes = append(nodes, node)
+		},
 	}
-
-	return nodes
 }

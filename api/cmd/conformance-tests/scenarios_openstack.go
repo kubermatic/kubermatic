@@ -81,13 +81,12 @@ func (s *openStackScenario) Cluster(secrets secrets) *v1.Cluster {
 	}
 }
 
-func (s *openStackScenario) Nodes(num int) []*kubermaticapiv1.Node {
+func (s *openStackScenario) Nodes(num int) *kubermaticapiv1.NodeDeployment {
 	osName := getOSNameFromSpec(s.nodeOsSpec)
-	var nodes []*kubermaticapiv1.Node
-	for i := 0; i < num; i++ {
-		node := &kubermaticapiv1.Node{
-			ObjectMeta: kubermaticapiv1.ObjectMeta{},
-			Spec: kubermaticapiv1.NodeSpec{
+	return &kubermaticapiv1.NodeDeployment{
+		Spec: kubermaticapiv1.NodeDeploymentSpec{
+			Replicas: int32(num),
+			Template: kubermaticapiv1.NodeSpec{
 				Cloud: kubermaticapiv1.NodeCloudSpec{
 					Openstack: &kubermaticapiv1.OpenstackNodeSpec{
 						Flavor: "m1.small",
@@ -99,10 +98,6 @@ func (s *openStackScenario) Nodes(num int) []*kubermaticapiv1.Node {
 				},
 				OperatingSystem: s.nodeOsSpec,
 			},
-		}
-
-		nodes = append(nodes, node)
+		},
 	}
-
-	return nodes
 }
