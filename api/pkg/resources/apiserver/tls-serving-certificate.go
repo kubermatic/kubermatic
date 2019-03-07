@@ -2,17 +2,25 @@ package apiserver
 
 import (
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"net"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 
 	corev1 "k8s.io/api/core/v1"
 	certutil "k8s.io/client-go/util/cert"
 )
 
+type tlsServingCertCreatorData interface {
+	Cluster() *kubermaticv1.Cluster
+	GetRootCA() (*triple.KeyPair, error)
+}
+
 // TLSServingCertificateCreator returns a function to create/update the secret with the apiserver tls certificate used to serve https
-func TLSServingCertificateCreator(data resources.SecretDataProvider) resources.NamedSecretCreatorGetter {
+func TLSServingCertificateCreator(data tlsServingCertCreatorData) resources.NamedSecretCreatorGetter {
 	return func() (string, resources.SecretCreator) {
 		return resources.ApiserverTLSSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
@@ -24,9 +32,9 @@ func TLSServingCertificateCreator(data resources.SecretDataProvider) resources.N
 				return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 			}
 
-			externalIP, err := data.ExternalIP()
-			if err != nil {
-				return nil, fmt.Errorf("failed to get external IP for cluster: %v", err)
+			externalIP := data.Cluster().Address.IP
+			if externalIP == "" {
+				return nil, errors.New("externalIP is unset")
 			}
 
 			inClusterIP, err := resources.InClusterApiserverIP(data.Cluster())
@@ -55,7 +63,7 @@ func TLSServingCertificateCreator(data resources.SecretDataProvider) resources.N
 					fmt.Sprintf("%s.%s.svc.cluster.local", resources.ApiserverInternalServiceName, data.Cluster().Status.NamespaceName),
 				},
 				IPs: []net.IP{
-					*externalIP,
+					net.ParseIP(externalIP),
 					*inClusterIP,
 					net.ParseIP("127.0.0.1"),
 				},

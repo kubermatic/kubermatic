@@ -5,8 +5,12 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
 )
 
+type internalClientCertificateCreatorData interface {
+	GetOpenVPNCA() (*resources.ECDSAKeyPair, error)
+}
+
 // InternalClientCertificateCreator returns a function to create/update the secret with a client certificate for the openvpn clients in the seed cluster.
-func InternalClientCertificateCreator(data resources.SecretDataProvider) resources.NamedSecretCreatorGetter {
+func InternalClientCertificateCreator(data internalClientCertificateCreatorData) resources.NamedSecretCreatorGetter {
 	return func() (string, resources.SecretCreator) {
 		return resources.OpenVPNClientCertificatesSecretName, certificates.GetECDSAClientCertificateCreator(
 			resources.OpenVPNClientCertificatesSecretName,

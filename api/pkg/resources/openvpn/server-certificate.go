@@ -11,8 +11,12 @@ import (
 	certutil "k8s.io/client-go/util/cert"
 )
 
+type tlsServingCertCreatorData interface {
+	GetOpenVPNCA() (*resources.ECDSAKeyPair, error)
+}
+
 // TLSServingCertificateCreator returns a function to create/update a secret with the openvpn server tls certificate
-func TLSServingCertificateCreator(data resources.SecretDataProvider) resources.NamedSecretCreatorGetter {
+func TLSServingCertificateCreator(data tlsServingCertCreatorData) resources.NamedSecretCreatorGetter {
 	return func() (string, resources.SecretCreator) {
 		return resources.OpenVPNServerCertificatesSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {

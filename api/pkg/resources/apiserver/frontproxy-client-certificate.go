@@ -3,10 +3,15 @@ package apiserver
 import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 )
 
+type frontProxyClientCertificateCreatorData interface {
+	GetFrontProxyCA() (*triple.KeyPair, error)
+}
+
 // FrontProxyClientCertificateCreator returns a function to create/update the secret with the client certificate for authenticating against extension apiserver
-func FrontProxyClientCertificateCreator(data resources.SecretDataProvider) resources.NamedSecretCreatorGetter {
+func FrontProxyClientCertificateCreator(data frontProxyClientCertificateCreatorData) resources.NamedSecretCreatorGetter {
 	return certificates.GetClientCertificateCreator(
 		resources.ApiserverFrontProxyClientCertificateSecretName,
 		"apiserver-aggregator",

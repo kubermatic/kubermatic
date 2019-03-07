@@ -118,17 +118,14 @@ func createOpenshiftController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.dcs,
 		ctrlCtx.runOptions.overwriteRegistry,
-		ctrlCtx.runOptions.nodeAccessNetwork); err != nil {
+		ctrlCtx.runOptions.nodeAccessNetwork,
+		ctrlCtx.dockerPullConfigJSON); err != nil {
 		return nil, fmt.Errorf("failed to add openshift controller to mgr: %v", err)
 	}
 	return nil, nil
 }
 
 func createClusterController(ctrlCtx *controllerContext) (runner, error) {
-	dockerPullConfigJSON, err := ioutil.ReadFile(ctrlCtx.runOptions.dockerPullConfigJSONFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load ImagePullSecret from %s: %v", ctrlCtx.runOptions.dockerPullConfigJSONFile, err)
-	}
 
 	return cluster.NewController(
 		ctrlCtx.kubeClient,
@@ -147,7 +144,7 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultRules,
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultScrapingConfigs,
 		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
-		dockerPullConfigJSON,
+		ctrlCtx.dockerPullConfigJSON,
 
 		ctrlCtx.dynamicCache,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),

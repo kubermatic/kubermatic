@@ -9,6 +9,11 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	"github.com/golang/glog"
@@ -40,23 +45,25 @@ var _ reconcile.Reconciler = &Reconciler{}
 
 type Reconciler struct {
 	client.Client
-	scheme            *runtime.Scheme
-	recorder          record.EventRecorder
-	dcs               map[string]provider.DatacenterMeta
-	overwriteRegistry string
-	nodeAccessNetwork string
+	scheme               *runtime.Scheme
+	recorder             record.EventRecorder
+	dcs                  map[string]provider.DatacenterMeta
+	overwriteRegistry    string
+	nodeAccessNetwork    string
+	dockerPullConfigJSON []byte
 }
 
-func Add(mgr manager.Manager, numWorkers int, workerName string, dcs map[string]provider.DatacenterMeta, overwriteRegistry, nodeAccessNetwork string) error {
+func Add(mgr manager.Manager, numWorkers int, workerName string, dcs map[string]provider.DatacenterMeta, overwriteRegistry, nodeAccessNetwork string, dockerPullConfigJSON []byte) error {
 	clusterPredicates := workerlabel.Predicates(workerName)
 
 	dynamicClient := mgr.GetClient()
 	reconciler := &Reconciler{Client: dynamicClient,
-		scheme:            mgr.GetScheme(),
-		recorder:          mgr.GetRecorder(ControllerName),
-		dcs:               dcs,
-		overwriteRegistry: overwriteRegistry,
-		nodeAccessNetwork: nodeAccessNetwork}
+		scheme:               mgr.GetScheme(),
+		recorder:             mgr.GetRecorder(ControllerName),
+		dcs:                  dcs,
+		overwriteRegistry:    overwriteRegistry,
+		nodeAccessNetwork:    nodeAccessNetwork,
+		dockerPullConfigJSON: dockerPullConfigJSON}
 
 	c, err := controller.New(ControllerName, mgr,
 		controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
@@ -340,11 +347,41 @@ func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *opens
 }
 
 func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshiftData) []resources.NamedSecretCreatorGetter {
-	return []resources.NamedSecretCreatorGetter{openshiftresources.ServiceSignerCA(),
+	creators := []resources.NamedSecretCreatorGetter{
+		certificates.RootCACreator(osData),
+		openvpn.CACreator(),
+		certificates.FrontProxyCACreator(),
+		openshiftresources.ServiceSignerCA(),
+		resources.ImagePullSecretCreator(r.dockerPullConfigJSON),
+		apiserver.FrontProxyClientCertificateCreator(osData),
+		etcd.TLSCertificateCreator(osData),
+		apiserver.EtcdClientCertificateCreator(osData),
+		apiserver.TLSServingCertificateCreator(osData),
+		apiserver.KubeletClientCertificateCreator(osData),
+		apiserver.ServiceAccountKeyCreator(),
+		openvpn.TLSServingCertificateCreator(osData),
+		openvpn.InternalClientCertificateCreator(osData),
+		machinecontroller.TLSServingCertificateCreator(osData),
+
+		// Kubeconfigs
+		resources.GetInternalKubeconfigCreator(resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, osData),
+		resources.GetInternalKubeconfigCreator(resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil, osData),
+		resources.GetInternalKubeconfigCreator(resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername, nil, osData),
+		resources.GetInternalKubeconfigCreator(resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername, nil, osData),
+		resources.GetInternalKubeconfigCreator(resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil, osData),
+		resources.GetInternalKubeconfigCreator(resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil, osData),
+		resources.GetInternalKubeconfigCreator(resources.InternalUserClusterAdminKubeconfigSecretName, resources.InternalUserClusterAdminKubeconfigCertUsername, []string{"system:masters"}, osData),
+
 		//TODO: This is only needed because of the ServiceAccount Token needed for Openshift
 		//TODO: Streamline this by using it everywhere and use the clientprovider here or remove
 		openshiftresources.ExternalX509KubeconfigCreator(osData),
 		openshiftresources.GetLoopbackKubeconfigCreator(ctx, osData)}
+
+	if len(osData.Cluster().Spec.MachineNetworks) > 0 {
+		creators = append(creators, resources.GetInternalKubeconfigCreator(resources.IPAMControllerKubeconfigSecretName, resources.IPAMControllerCertUsername, nil, osData))
+	}
+
+	return creators
 }
 
 func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {

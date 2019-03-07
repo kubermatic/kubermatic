@@ -2,6 +2,7 @@ package openshift
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"crypto/rsa"
 	"errors"
 	"fmt"
@@ -32,6 +33,35 @@ func (od *openshiftData) DC() *provider.DatacenterMeta {
 	return od.dC
 }
 
+func (od *openshiftData) GetOpenVPNCA() (*kubernetesresources.ECDSAKeyPair, error) {
+	return od.GetOpenVPNCAWithContext(context.TODO())
+}
+func (od *openshiftData) GetOpenVPNCAWithContext(ctx context.Context) (*kubernetesresources.ECDSAKeyPair, error) {
+	caCertSecret := &corev1.Secret{}
+	if err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, kubernetesresources.OpenVPNCASecretName), caCertSecret); err != nil {
+		return nil, fmt.Errorf("failed to get OpenVPN CA: %v", err)
+	}
+	certs, err := certutil.ParseCertsPEM(caCertSecret.Data[kubernetesresources.CACertSecretKey])
+	if err != nil {
+		return nil, fmt.Errorf("got an invalid cert from the CA secret %s: %v", kubernetesresources.CASecretName, err)
+	}
+
+	if len(certs) != 1 {
+		return nil, fmt.Errorf("did not find exactly one but %v certificates in the CA secret", len(certs))
+	}
+
+	key, err := certutil.ParsePrivateKeyPEM(caCertSecret.Data[kubernetesresources.CAKeySecretKey])
+	if err != nil {
+		return nil, fmt.Errorf("got an invalid private key from the CA secret %s: %v", kubernetesresources.CASecretName, err)
+	}
+
+	ecdsaKey, isECDSAKey := key.(*ecdsa.PrivateKey)
+	if !isECDSAKey {
+		return nil, errors.New("key is not a ECDSA key")
+	}
+	return &kubernetesresources.ECDSAKeyPair{Cert: certs[0], Key: ecdsaKey}, nil
+}
+
 func (od *openshiftData) GetRootCA() (*triple.KeyPair, error) {
 	return od.GetRootCAWithContext(context.Background())
 }
@@ -41,18 +71,23 @@ func (od *openshiftData) GetRootCAWithContext(ctx context.Context) (*triple.KeyP
 	if err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, kubernetesresources.CASecretName), secret); err != nil {
 		return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 	}
-	certs, err := certutil.ParseCertsPEM(secret.Data[kubernetesresources.CACertSecretKey])
+	return od.parseRSA(secret.Data[kubernetesresources.CACertSecretKey],
+		secret.Data[kubernetesresources.CAKeySecretKey])
+}
+
+func (od *openshiftData) parseRSA(cert, rawKey []byte) (*triple.KeyPair, error) {
+	certs, err := certutil.ParseCertsPEM(cert)
 	if err != nil {
-		return nil, fmt.Errorf("got an invalid cert from the CA secret: %v", err)
+		return nil, fmt.Errorf("got an invalid cert from the secret: %v", err)
 	}
 
 	if len(certs) != 1 {
-		return nil, fmt.Errorf("did not find exactly one but %v certificates in the CA secret", len(certs))
+		return nil, fmt.Errorf("did not find exactly one but %v certificates in the secret", len(certs))
 	}
 
-	key, err := certutil.ParsePrivateKeyPEM(secret.Data[kubernetesresources.CAKeySecretKey])
+	key, err := certutil.ParsePrivateKeyPEM(rawKey)
 	if err != nil {
-		return nil, fmt.Errorf("got an invalid private key from the CA secret: %v", err)
+		return nil, fmt.Errorf("got an invalid private key from the secret: %v", err)
 	}
 
 	rsaKey, isRSAKey := key.(*rsa.PrivateKey)
@@ -60,6 +95,19 @@ func (od *openshiftData) GetRootCAWithContext(ctx context.Context) (*triple.KeyP
 		return nil, errors.New("key is not a RSA key")
 	}
 	return &triple.KeyPair{Cert: certs[0], Key: rsaKey}, nil
+}
+
+func (od *openshiftData) GetFrontProxyCA() (*triple.KeyPair, error) {
+	return od.GetFrontProxyCAWithContext(context.TODO())
+}
+
+func (od *openshiftData) GetFrontProxyCAWithContext(ctx context.Context) (*triple.KeyPair, error) {
+	secret := &corev1.Secret{}
+	if err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, kubernetesresources.FrontProxyCASecretName), secret); err != nil {
+		return nil, fmt.Errorf("failed to get FrontProxy CA: %v", err)
+	}
+	return od.parseRSA(secret.Data[kubernetesresources.CACertSecretKey],
+		secret.Data[kubernetesresources.CAKeySecretKey])
 }
 
 func (od *openshiftData) ImageRegistry(registry string) string {

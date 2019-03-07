@@ -39,7 +39,6 @@ type TemplateData struct {
 	oidcCAFile                                       string
 	oidcIssuerURL                                    string
 	oidcIssuerClientID                               string
-	DockerPullConfigJSON                             []byte
 	enableEtcdDataCorruptionChecks                   bool
 }
 
@@ -179,7 +178,6 @@ func NewTemplateData(
 		inClusterPrometheusDisableDefaultRules: inClusterPrometheusDisableDefaultRules,
 		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
 		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
-		DockerPullConfigJSON:                             dockerPullConfigJSON,
 		oidcCAFile:                                       oidcCAFile,
 		oidcIssuerURL:                                    oidcURL,
 		oidcIssuerClientID:                               oidcIssuerClientID,
