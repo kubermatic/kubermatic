@@ -217,4 +217,5 @@ type controllerContext struct {
 	mgr                       manager.Manager
 	clientProvider            client.UserClusterConnectionProvider
 	dcs                       map[string]provider.DatacenterMeta
+	dockerPullConfigJSON      []byte
 }

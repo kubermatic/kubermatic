@@ -9,6 +9,11 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	"github.com/golang/glog"
@@ -40,19 +45,25 @@ var _ reconcile.Reconciler = &Reconciler{}
 
 type Reconciler struct {
 	client.Client
-	scheme   *runtime.Scheme
-	recorder record.EventRecorder
-	dcs      map[string]provider.DatacenterMeta
+	scheme               *runtime.Scheme
+	recorder             record.EventRecorder
+	dcs                  map[string]provider.DatacenterMeta
+	overwriteRegistry    string
+	nodeAccessNetwork    string
+	dockerPullConfigJSON []byte
 }
 
-func Add(mgr manager.Manager, numWorkers int, workerName string, dcs map[string]provider.DatacenterMeta) error {
+func Add(mgr manager.Manager, numWorkers int, workerName string, dcs map[string]provider.DatacenterMeta, overwriteRegistry, nodeAccessNetwork string, dockerPullConfigJSON []byte) error {
 	clusterPredicates := workerlabel.Predicates(workerName)
 
 	dynamicClient := mgr.GetClient()
 	reconciler := &Reconciler{Client: dynamicClient,
-		scheme:   mgr.GetScheme(),
-		recorder: mgr.GetRecorder(ControllerName),
-		dcs:      dcs}
+		scheme:               mgr.GetScheme(),
+		recorder:             mgr.GetRecorder(ControllerName),
+		dcs:                  dcs,
+		overwriteRegistry:    overwriteRegistry,
+		nodeAccessNetwork:    nodeAccessNetwork,
+		dockerPullConfigJSON: dockerPullConfigJSON}
 
 	c, err := controller.New(ControllerName, mgr,
 		controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
@@ -86,6 +97,9 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, dcs map[string]
 	}
 	if err := c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, enqueueClusterForNamespacedObject); err != nil {
 		return fmt.Errorf("failed to create watch for Deployments: %v", err)
+	}
+	if err := c.Watch(&source.Kind{Type: &corev1.Namespace{}}, &handler.EnqueueRequestForOwner{OwnerType: &kubermaticv1.Cluster{}}); err != nil {
+		return fmt.Errorf("failed to create watch for Namespaces: %v", err)
 	}
 
 	//TODO: Ensure only openshift clusters are handled via a predicate
@@ -127,23 +141,16 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	glog.V(4).Infof("Reconciling cluster %s", cluster.Name)
 
-	// Wait for namespace
-	if cluster.Status.NamespaceName == "" {
-		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
-	}
-	ns := &corev1.Namespace{}
-	if err := r.Get(ctx, types.NamespacedName{Name: cluster.Status.NamespaceName}, ns); err != nil {
-		if !kerrors.IsNotFound(err) {
-			return nil, err
-		}
-		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+	// Ensure Namespace
+	if err := r.ensureNamespace(ctx, cluster); err != nil {
+		return nil, fmt.Errorf("failed to ensure Namespace: %v", err)
 	}
 
 	dc, found := r.dcs[cluster.Spec.Cloud.DatacenterName]
 	if !found {
 		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
 	}
-	osData := &openshiftData{cluster: cluster, client: r.Client, dC: &dc}
+	osData := &openshiftData{cluster: cluster, client: r.Client, dC: &dc, overwriteRegistry: r.overwriteRegistry, nodeAccessNetwork: r.nodeAccessNetwork}
 
 	if err := r.secrets(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Secrets: %v", err)
@@ -156,13 +163,17 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("failed to reconcile Deployments: %v", err)
 	}
 
+	if err := r.syncHeath(ctx, osData); err != nil {
+		return nil, fmt.Errorf("failed to sync health: %v", err)
+	}
+
+	if !osData.Cluster().Status.Health.Apiserver {
+		return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
+	}
+
 	reconcileRequest, err := r.createClusterAccessToken(ctx, osData)
 	if reconcileRequest != nil || err != nil {
 		return reconcileRequest, err
-	}
-
-	if err := r.syncHeath(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to sync health: %v", err)
 	}
 
 	if err := r.createInClusterResources(ctx, osData); err != nil {
@@ -242,7 +253,7 @@ func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error
 	currentHealth.Scheduler = currentHealth.Controller
 
 	if osData.Cluster().Status.Health != *currentHealth {
-		return r.updateCluster(ctx, osData.Cluster().Name, func(c *kubermaticv1.Cluster) {
+		return r.updateCluster(ctx, osData.Cluster(), func(c *kubermaticv1.Cluster) {
 			c.Status.Health = *currentHealth
 		})
 	}
@@ -250,17 +261,18 @@ func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error
 	return nil
 }
 
-func (r *Reconciler) updateCluster(ctx context.Context, name string, modify func(*kubermaticv1.Cluster)) error {
+func (r *Reconciler) updateCluster(ctx context.Context, c *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {
+	// Store it here because it may be unset later on if an update request failed
+	name := c.Name
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 		//Get latest version
-		cluster := &kubermaticv1.Cluster{}
-		if err := r.Get(ctx, nn("", name), cluster); err != nil {
+		if err := r.Get(ctx, nn("", name), c); err != nil {
 			return err
 		}
 		// Apply modifications
-		modify(cluster)
+		modify(c)
 		// Update the cluster
-		return r.Update(ctx, cluster)
+		return r.Update(ctx, c)
 	})
 }
 
@@ -340,11 +352,37 @@ func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *opens
 }
 
 func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshiftData) []resources.NamedSecretCreatorGetter {
-	return []resources.NamedSecretCreatorGetter{openshiftresources.ServiceSignerCA(),
+	creators := []resources.NamedSecretCreatorGetter{
+		certificates.RootCACreator(osData),
+		openvpn.CACreator(),
+		certificates.FrontProxyCACreator(),
+		openshiftresources.ServiceSignerCA(),
+		resources.ImagePullSecretCreator(r.dockerPullConfigJSON),
+		apiserver.FrontProxyClientCertificateCreator(osData),
+		etcd.TLSCertificateCreator(osData),
+		apiserver.EtcdClientCertificateCreator(osData),
+		apiserver.TLSServingCertificateCreator(osData),
+		apiserver.KubeletClientCertificateCreator(osData),
+		apiserver.ServiceAccountKeyCreator(),
+		openvpn.TLSServingCertificateCreator(osData),
+		openvpn.InternalClientCertificateCreator(osData),
+		machinecontroller.TLSServingCertificateCreator(osData),
+
+		// Kubeconfigs
+		resources.GetInternalKubeconfigCreator(resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, osData),
+		resources.GetInternalKubeconfigCreator(resources.KubeletDnatControllerKubeconfigSecretName, resources.KubeletDnatControllerCertUsername, nil, osData),
+		resources.GetInternalKubeconfigCreator(resources.MachineControllerKubeconfigSecretName, resources.MachineControllerCertUsername, nil, osData),
+		resources.GetInternalKubeconfigCreator(resources.ControllerManagerKubeconfigSecretName, resources.ControllerManagerCertUsername, nil, osData),
+		resources.GetInternalKubeconfigCreator(resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil, osData),
+		resources.GetInternalKubeconfigCreator(resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil, osData),
+		resources.GetInternalKubeconfigCreator(resources.InternalUserClusterAdminKubeconfigSecretName, resources.InternalUserClusterAdminKubeconfigCertUsername, []string{"system:masters"}, osData),
+
 		//TODO: This is only needed because of the ServiceAccount Token needed for Openshift
 		//TODO: Streamline this by using it everywhere and use the clientprovider here or remove
 		openshiftresources.ExternalX509KubeconfigCreator(osData),
 		openshiftresources.GetLoopbackKubeconfigCreator(ctx, osData)}
+
+	return creators
 }
 
 func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
@@ -394,6 +432,31 @@ func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) err
 			return fmt.Errorf("failed to ensure Deployment %s: %v", deploymentName, err)
 		}
 	}
+	return nil
+}
+
+func (r *Reconciler) ensureNamespace(ctx context.Context, c *kubermaticv1.Cluster) error {
+	if c.Status.NamespaceName == "" {
+		if err := r.updateCluster(ctx, c, func(c *kubermaticv1.Cluster) {
+			c.Status.NamespaceName = fmt.Sprintf("cluster-%s", c.Name)
+		}); err != nil {
+			return fmt.Errorf("failed to set .Status.NamespaceName: %v", err)
+		}
+	}
+
+	ns := &corev1.Namespace{}
+	if err := r.Get(ctx, nn("", c.Status.NamespaceName), ns); err != nil {
+		if !kerrors.IsNotFound(err) {
+			return fmt.Errorf("failed to get Namespace %q: %v", c.Status.NamespaceName, err)
+		}
+		ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
+			Name:            c.Status.NamespaceName,
+			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(c, kubermaticv1.SchemeGroupVersion.WithKind("Cluster"))}}}
+		if err := r.Create(ctx, ns); err != nil {
+			return fmt.Errorf("failed to create Namespace %q: %v", ns.Name, err)
+		}
+	}
+
 	return nil
 }
 

@@ -41,8 +41,10 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 	}
 
 	// check that all secrets are available // New way of handling secrets
-	if err := cc.ensureSecrets(cluster, data); err != nil {
-		return err
+	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		if err := cc.ensureSecrets(cluster, data); err != nil {
+			return err
+		}
 	}
 
 	// check that all StatefulSets are created
@@ -200,12 +202,12 @@ func (cc *Controller) ensureDeployments(cluster *kubermaticv1.Cluster, data *res
 }
 
 // GetSecretCreators returns all SecretCreators that are currently in use
-func GetSecretCreators(data *resources.TemplateData) []resources.NamedSecretCreatorGetter {
+func (cc *Controller) GetSecretCreators(data *resources.TemplateData) []resources.NamedSecretCreatorGetter {
 	creators := []resources.NamedSecretCreatorGetter{
 		certificates.RootCACreator(data),
 		openvpn.CACreator(),
-		certificates.FrontProxyCACreator(data),
-		resources.ImagePullSecretCreator(data.DockerPullConfigJSON),
+		certificates.FrontProxyCACreator(),
+		resources.ImagePullSecretCreator(cc.dockerPullConfigJSON),
 		apiserver.FrontProxyClientCertificateCreator(data),
 		etcd.TLSCertificateCreator(data),
 		apiserver.EtcdClientCertificateCreator(data),
@@ -224,11 +226,8 @@ func GetSecretCreators(data *resources.TemplateData) []resources.NamedSecretCrea
 		resources.GetInternalKubeconfigCreator(resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil, data),
 		resources.GetInternalKubeconfigCreator(resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil, data),
 		resources.GetInternalKubeconfigCreator(resources.InternalUserClusterAdminKubeconfigSecretName, resources.InternalUserClusterAdminKubeconfigCertUsername, []string{"system:masters"}, data),
-	}
-
-	if cluster := data.Cluster(); cluster != nil && cluster.Annotations["kubermatic.io/openshift"] == "" {
-		creators = append(creators, resources.AdminKubeconfigCreator(data))
-		creators = append(creators, apiserver.TokenUsersCreator(data))
+		resources.AdminKubeconfigCreator(data),
+		apiserver.TokenUsersCreator(data),
 	}
 
 	if len(data.OIDCCAFile()) > 0 {
@@ -242,7 +241,7 @@ func GetSecretCreators(data *resources.TemplateData) []resources.NamedSecretCrea
 }
 
 func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	namedSecretCreatorGetters := GetSecretCreators(data)
+	namedSecretCreatorGetters := cc.GetSecretCreators(data)
 
 	if err := resources.ReconcileSecrets(namedSecretCreatorGetters, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(c)); err != nil {
 		return fmt.Errorf("failed to ensure that the Secret exists: %v", err)

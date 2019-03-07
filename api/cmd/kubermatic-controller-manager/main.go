@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -92,6 +93,11 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	//Register the global error metric. Ensures that runtime.HandleError() increases the error metric
 	metrics.RegisterRuntimErrorMetricCounter("kubermatic_controller_manager", prometheus.DefaultRegisterer)
 
+	dockerPullConfigJSON, err := ioutil.ReadFile(options.dockerPullConfigJSONFile)
+	if err != nil {
+		glog.Fatalf("Failed to read dockerPullConfigJSON file %q: %v", options.dockerPullConfigJSONFile, err)
+	}
+
 	stopCh := signals.SetupSignalHandler()
 	ctx, ctxDone := context.WithCancel(context.Background())
 	defer ctxDone()
@@ -108,6 +114,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	if err != nil {
 		glog.Fatal(err)
 	}
+	ctrlCtx.dockerPullConfigJSON = dockerPullConfigJSON
 
 	controllers, err := createAllControllers(ctrlCtx)
 	if err != nil {
