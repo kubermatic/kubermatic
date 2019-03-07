@@ -381,10 +381,6 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 		openshiftresources.ExternalX509KubeconfigCreator(osData),
 		openshiftresources.GetLoopbackKubeconfigCreator(ctx, osData)}
 
-	if len(osData.Cluster().Spec.MachineNetworks) > 0 {
-		creators = append(creators, resources.GetInternalKubeconfigCreator(resources.IPAMControllerKubeconfigSecretName, resources.IPAMControllerCertUsername, nil, osData))
-	}
-
 	return creators
 }
 
