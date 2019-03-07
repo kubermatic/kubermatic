@@ -39,6 +39,7 @@ data:
         Kube_URL            https://kubernetes.default.svc.cluster.local:443
         Merge_Log           On
         K8S-Logging.Parser  On
+        Annotations         Off
 
   outputs.conf: |
 {{- range .Values.logging.fluentbit.configuration.outputs }}
