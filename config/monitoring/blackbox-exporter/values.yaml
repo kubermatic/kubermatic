@@ -13,3 +13,14 @@ blackboxExporter:
         requests:
           cpu: 20m
           memory: 25Mi
+
+  modules:
+    # A module that requires HTTPS and HTTP 2xx codes on its targets.
+    https_2xx:
+      prober: http
+      timeout: 5s
+      http:
+        method: GET
+        valid_http_versions: ["HTTP/1.1", "HTTP/2"]
+        fail_if_not_ssl: true
+        preferred_ip_protocol: "ip4"

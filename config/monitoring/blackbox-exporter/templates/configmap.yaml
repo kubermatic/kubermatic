@@ -5,11 +5,4 @@ metadata:
 data:
   config.yml: |
     modules:
-      https_2xx:
-        prober: http
-        timeout: 5s
-        http:
-          method: GET
-          valid_http_versions: ["HTTP/1.1", "HTTP/2"]
-          fail_if_not_ssl: true
-          preferred_ip_protocol: "ip4"
+{{ .Values.blackboxExporter.modules | toYaml | indent 6 }}
