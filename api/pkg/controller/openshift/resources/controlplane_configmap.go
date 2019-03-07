@@ -69,6 +69,7 @@ type openshiftConfigInput struct {
 	DNSDomain        string
 	ListenPort       string
 	ControlPlaneType string
+	MasterIP         string
 }
 
 func getMasterConfig(ctx context.Context, data openshiftData, controlPlaneType string) (string, error) {
@@ -89,6 +90,7 @@ func getMasterConfig(ctx context.Context, data openshiftData, controlPlaneType s
 		DNSDomain:        data.Cluster().Spec.ClusterNetwork.DNSDomain,
 		ListenPort:       fmt.Sprintf("%d", apiserverListenPort),
 		ControlPlaneType: controlPlaneType,
+		MasterIP:         data.Cluster().Address.IP,
 	}
 	if err := tmpl.Execute(&controlPlaneConfigBuffer, templateInput); err != nil {
 		return "", fmt.Errorf("failed to execute template: %v", err)
@@ -258,7 +260,7 @@ kubernetesMasterConfig:
   # For some reason this field results in an error: Encountered config error json: unknown field "masterCount" in object *config.MasterConfig, raw JSON:
   #masterCount: 1
   #TODO: Should we put something here?
-  masterIP: ""
+  masterIP: "{{ .MasterIP }}"
   podEvictionTimeout: null
 {{ if eq .ControlPlaneType "apiserver" }}
   proxyClientInfo:
