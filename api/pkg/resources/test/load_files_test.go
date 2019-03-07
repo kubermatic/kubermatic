@@ -557,9 +557,10 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				var serviceCreators []resources.ServiceCreator
+				var serviceCreators []resources.NamedServiceCreatorGetter
 				serviceCreators = append(serviceCreators, clustercontroller.GetServiceCreators(data)...)
-				for _, create := range serviceCreators {
+				for _, creatorGetter := range serviceCreators {
+					_, create := creatorGetter()
 					res, err := create(&corev1.Service{})
 					if err != nil {
 						t.Fatalf("failed to create Service: %v", err)

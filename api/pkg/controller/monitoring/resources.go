@@ -151,8 +151,8 @@ func (c *Controller) ensureVerticalPodAutoscalers(cluster *kubermaticv1.Cluster)
 }
 
 // GetServiceCreators returns all service creators that are currently in use
-func GetServiceCreators(data *resources.TemplateData) []resources.ServiceCreator {
-	return []resources.ServiceCreator{
+func GetServiceCreators(data *resources.TemplateData) []resources.NamedServiceCreatorGetter {
+	return []resources.NamedServiceCreatorGetter{
 		prometheus.ServiceCreator(data),
 	}
 }
