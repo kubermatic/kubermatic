@@ -23,7 +23,7 @@ fi
 
 cd "$(dirname "$0")/../../"
 
-source ./api/hack/helper.sh
+source ./api/hack/lib.sh
 
 function deploy {
   local name=$1

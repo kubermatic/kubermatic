@@ -4,7 +4,7 @@ set -euo pipefail
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 cd $(dirname $0)/../../..
 
-source ./api/hack/helper.sh
+source ./api/hack/lib.sh
 
 echodate "Logging into Quay"
 docker ps &>/dev/null || start-docker.sh
