@@ -21,9 +21,11 @@ import (
 // openshiftData implements the openshiftData interface which is
 // passed into all creator funcs and contains all data they need
 type openshiftData struct {
-	cluster *kubermaticv1.Cluster
-	client  client.Client
-	dC      *provider.DatacenterMeta
+	cluster           *kubermaticv1.Cluster
+	client            client.Client
+	dC                *provider.DatacenterMeta
+	overwriteRegistry string
+	nodeAccessNetwork string
 }
 
 func (od *openshiftData) DC() *provider.DatacenterMeta {
@@ -60,13 +62,17 @@ func (od *openshiftData) GetRootCAWithContext(ctx context.Context) (*triple.KeyP
 	return &triple.KeyPair{Cert: certs[0], Key: rsaKey}, nil
 }
 
-// TODO: Implement option to override
 func (od *openshiftData) ImageRegistry(registry string) string {
+	if od.overwriteRegistry != "" {
+		return od.overwriteRegistry
+	}
 	return registry
 }
 
-// TODO: Softcode this, its an arg to the kubermatic controller manager
 func (od *openshiftData) NodeAccessNetwork() string {
+	if od.nodeAccessNetwork != "" {
+		return od.nodeAccessNetwork
+	}
 	return "10.254.0.0/16"
 }
 

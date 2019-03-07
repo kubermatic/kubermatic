@@ -113,7 +113,12 @@ func createCloudController(ctrlCtx *controllerContext) (runner, error) {
 }
 
 func createOpenshiftController(ctrlCtx *controllerContext) (runner, error) {
-	if err := openshiftcontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, ctrlCtx.dcs); err != nil {
+	if err := openshiftcontroller.Add(ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.dcs,
+		ctrlCtx.runOptions.overwriteRegistry,
+		ctrlCtx.runOptions.nodeAccessNetwork); err != nil {
 		return nil, fmt.Errorf("failed to add openshift controller to mgr: %v", err)
 	}
 	return nil, nil

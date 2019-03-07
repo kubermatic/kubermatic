@@ -40,19 +40,23 @@ var _ reconcile.Reconciler = &Reconciler{}
 
 type Reconciler struct {
 	client.Client
-	scheme   *runtime.Scheme
-	recorder record.EventRecorder
-	dcs      map[string]provider.DatacenterMeta
+	scheme            *runtime.Scheme
+	recorder          record.EventRecorder
+	dcs               map[string]provider.DatacenterMeta
+	overwriteRegistry string
+	nodeAccessNetwork string
 }
 
-func Add(mgr manager.Manager, numWorkers int, workerName string, dcs map[string]provider.DatacenterMeta) error {
+func Add(mgr manager.Manager, numWorkers int, workerName string, dcs map[string]provider.DatacenterMeta, overwriteRegistry, nodeAccessNetwork string) error {
 	clusterPredicates := workerlabel.Predicates(workerName)
 
 	dynamicClient := mgr.GetClient()
 	reconciler := &Reconciler{Client: dynamicClient,
-		scheme:   mgr.GetScheme(),
-		recorder: mgr.GetRecorder(ControllerName),
-		dcs:      dcs}
+		scheme:            mgr.GetScheme(),
+		recorder:          mgr.GetRecorder(ControllerName),
+		dcs:               dcs,
+		overwriteRegistry: overwriteRegistry,
+		nodeAccessNetwork: nodeAccessNetwork}
 
 	c, err := controller.New(ControllerName, mgr,
 		controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
@@ -143,7 +147,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	if !found {
 		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
 	}
-	osData := &openshiftData{cluster: cluster, client: r.Client, dC: &dc}
+	osData := &openshiftData{cluster: cluster, client: r.Client, dC: &dc, overwriteRegistry: r.overwriteRegistry, nodeAccessNetwork: r.nodeAccessNetwork}
 
 	if err := r.secrets(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Secrets: %v", err)
