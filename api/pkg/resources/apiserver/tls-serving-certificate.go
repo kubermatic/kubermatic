@@ -41,6 +41,10 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) resources.Name
 			if err != nil {
 				return nil, fmt.Errorf("failed to get the in-cluster ClusterIP for the apiserver: %v", err)
 			}
+			externalIPParsed := net.ParseIP(externalIP)
+			if externalIPParsed == nil {
+				return nil, errors.New("no external IP")
+			}
 
 			altNames := certutil.AltNames{
 				DNSNames: []string{
@@ -63,7 +67,7 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) resources.Name
 					fmt.Sprintf("%s.%s.svc.cluster.local", resources.ApiserverInternalServiceName, data.Cluster().Status.NamespaceName),
 				},
 				IPs: []net.IP{
-					net.ParseIP(externalIP),
+					externalIPParsed,
 					*inClusterIP,
 					net.ParseIP("127.0.0.1"),
 				},

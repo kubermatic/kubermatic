@@ -253,7 +253,7 @@ func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error
 	currentHealth.Scheduler = currentHealth.Controller
 
 	if osData.Cluster().Status.Health != *currentHealth {
-		return r.updateCluster(ctx, osData.Cluster().Name, func(c *kubermaticv1.Cluster) {
+		return r.updateCluster(ctx, osData.Cluster(), func(c *kubermaticv1.Cluster) {
 			c.Status.Health = *currentHealth
 		})
 	}
@@ -261,17 +261,18 @@ func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error
 	return nil
 }
 
-func (r *Reconciler) updateCluster(ctx context.Context, name string, modify func(*kubermaticv1.Cluster)) error {
+func (r *Reconciler) updateCluster(ctx context.Context, c *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {
+	// Store it here because it may be unset later on if an update request failed
+	name := c.Name
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 		//Get latest version
-		cluster := &kubermaticv1.Cluster{}
-		if err := r.Get(ctx, nn("", name), cluster); err != nil {
+		if err := r.Get(ctx, nn("", name), c); err != nil {
 			return err
 		}
 		// Apply modifications
-		modify(cluster)
+		modify(c)
 		// Update the cluster
-		return r.Update(ctx, cluster)
+		return r.Update(ctx, c)
 	})
 }
 
@@ -436,7 +437,7 @@ func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) err
 
 func (r *Reconciler) ensureNamespace(ctx context.Context, c *kubermaticv1.Cluster) error {
 	if c.Status.NamespaceName == "" {
-		if err := r.updateCluster(ctx, c.Name, func(c *kubermaticv1.Cluster) {
+		if err := r.updateCluster(ctx, c, func(c *kubermaticv1.Cluster) {
 			c.Status.NamespaceName = fmt.Sprintf("cluster-%s", c.Name)
 		}); err != nil {
 			return fmt.Errorf("failed to set .Status.NamespaceName: %v", err)
