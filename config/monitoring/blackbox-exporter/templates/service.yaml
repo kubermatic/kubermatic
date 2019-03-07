@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: blackbox-exporter
+  name: blackbox-exporter
+spec:
+  ports:
+  - name: web
+    port: 9115
+    targetPort: web
+  selector:
+    app: blackbox-exporter

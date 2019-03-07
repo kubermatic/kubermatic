@@ -1,0 +1,32 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: blackbox-exporter
+spec:
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: blackbox-exporter
+      annotations:
+        kubermatic/scrape: "true"
+        kubermatic/scrape_port: "9115"
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      containers:
+      - name: exporter
+        image: '{{ .Values.blackboxExporter.image.repository }}:{{ .Values.blackboxExporter.image.tag }}'
+        imagePullPolicy: {{ .Values.blackboxExporter.image.pullPolicy }}
+        ports:
+        - containerPort: 9115
+          name: web
+        volumeMounts:
+        - name: config
+          mountPath: /etc/blackbox_exporter
+        resources:
+{{ toYaml .Values.blackboxExporter.containers.blackboxExporter.resources | indent 10 }}
+      volumes:
+      - name: config
+        configMap:
+          name: blackbox-exporter-config
