@@ -6,35 +6,17 @@ set -euo pipefail
 # receives a SIGINT
 set -o monitor
 
+cd $(dirname $0)/../..
+
+source ./api/hack/lib.sh
+
 export BUILD_ID=${BUILD_ID:-BUILD_ID_UNDEF}
-echodate() { echo "$(date) $@"; }
 echodate "Build ID is $BUILD_ID"
 export VERSIONS=${VERSIONS_TO_TEST:-"v1.12.4"}
 export NAMESPACE="prow-kubermatic-${BUILD_ID}"
 echodate "Testing versions: ${VERSIONS}"
-cd $(dirname $0)/../..
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos}
-
-function retry {
-  local retries=$1
-  shift
-
-  local count=0
-  until "$@"; do
-    exit=$?
-    wait=$((2 ** $count))
-    count=$(($count + 1))
-    if [ $count -lt $retries ]; then
-      echo "Retry $count/$retries exited $exit, retrying in $wait seconds..."
-      sleep $wait
-    else
-      echo "Retry $count/$retries exited $exit, no more retries left."
-      return $exit
-    fi
-  done
-  return 0
-}
 
 function cleanup {
   testRC=$?
