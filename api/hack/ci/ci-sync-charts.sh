@@ -20,7 +20,7 @@ export INSTALLER_BRANCH="$(git branch --contains HEAD --all \
   |tr -d ' '|grep -E 'remotes/origin/release/v2.[0-9]+$'|cut -d '/' -f3-)"
 
 export CHARTS='kubermatic cert-manager certs nginx-ingress-controller nodeport-proxy oauth minio iap'
-export MONITORING_CHARTS='alertmanager grafana kube-state-metrics node-exporter prometheus'
+export MONITORING_CHARTS='alertmanager blackbox-exporter grafana kube-state-metrics node-exporter prometheus'
 export LOGGING_CHARTS='elasticsearch kibana fluentbit'
 export BACKUP_CHARTS='ark ark-config'
 export CHARTS_DIR=$(pwd)/config
