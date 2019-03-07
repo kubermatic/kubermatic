@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
+# Required for signal propagation to work so
+# the cleanup trap gets executed when the script
+# receives a SIGINT
+set -o monitor
 
 export BUILD_ID=${BUILD_ID:-BUILD_ID_UNDEF}
 echodate() { echo "$(date) $@"; }
