@@ -3,6 +3,7 @@ package certificates
 import (
 	"fmt"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 
@@ -33,15 +34,19 @@ func GetCACreator(commonName string) resources.SecretCreator {
 	}
 }
 
+type caCreatorData interface {
+	Cluster() *kubermaticv1.Cluster
+}
+
 // RootCACreator returns a function to create a secret with the root ca
-func RootCACreator(data resources.SecretDataProvider) resources.NamedSecretCreatorGetter {
+func RootCACreator(data caCreatorData) resources.NamedSecretCreatorGetter {
 	return func() (string, resources.SecretCreator) {
 		return resources.CASecretName, GetCACreator(fmt.Sprintf("root-ca.%s", data.Cluster().Address.ExternalName))
 	}
 }
 
 // FrontProxyCACreator returns a function to create a secret with front proxy ca
-func FrontProxyCACreator(data resources.SecretDataProvider) resources.NamedSecretCreatorGetter {
+func FrontProxyCACreator() resources.NamedSecretCreatorGetter {
 	return func() (string, resources.SecretCreator) {
 		return resources.FrontProxyCASecretName, GetCACreator("front-proxy-ca")
 	}

@@ -165,8 +165,13 @@ func getServingCertVolume() corev1.Volume {
 	}
 }
 
+type tlsServingCertCreatorData interface {
+	GetRootCA() (*triple.KeyPair, error)
+	Cluster() *kubermaticv1.Cluster
+}
+
 // TLSServingCertificateCreator returns a function to create/update the secret with the machine-controller-webhook tls certificate
-func TLSServingCertificateCreator(data resources.SecretDataProvider) resources.NamedSecretCreatorGetter {
+func TLSServingCertificateCreator(data tlsServingCertCreatorData) resources.NamedSecretCreatorGetter {
 	return func() (string, resources.SecretCreator) {
 		return resources.MachineControllerWebhookServingCertSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {

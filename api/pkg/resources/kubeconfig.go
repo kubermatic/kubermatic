@@ -3,6 +3,7 @@ package resources
 import (
 	"crypto/x509"
 	"fmt"
+	"net/url"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
@@ -57,8 +58,14 @@ func AdminKubeconfigCreator(data adminKubeconfigCreatorData, modifier ...func(*c
 	}
 }
 
+type internalKubeconfigCreatorData interface {
+	GetRootCA() (*triple.KeyPair, error)
+	InClusterApiserverURL() (*url.URL, error)
+	Cluster() *kubermaticv1.Cluster
+}
+
 // GetInternalKubeconfigCreator is a generic function to return a secret generator to create a kubeconfig which must only be used within the seed-cluster as it uses the ClusterIP of the apiserver.
-func GetInternalKubeconfigCreator(name, commonName string, organizations []string, data SecretDataProvider) NamedSecretCreatorGetter {
+func GetInternalKubeconfigCreator(name, commonName string, organizations []string, data internalKubeconfigCreatorData) NamedSecretCreatorGetter {
 	return func() (string, SecretCreator) {
 		return name, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {

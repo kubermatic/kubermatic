@@ -5,14 +5,21 @@ import (
 	"fmt"
 	"net"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 
 	corev1 "k8s.io/api/core/v1"
 	certutil "k8s.io/client-go/util/cert"
 )
 
+type tlsCertificateCreatorData interface {
+	Cluster() *kubermaticv1.Cluster
+	GetRootCA() (*triple.KeyPair, error)
+}
+
 // TLSCertificateCreator returns a function to create/update the secret with the etcd tls certificate
-func TLSCertificateCreator(data resources.SecretDataProvider) resources.NamedSecretCreatorGetter {
+func TLSCertificateCreator(data tlsCertificateCreatorData) resources.NamedSecretCreatorGetter {
 	return func() (string, resources.SecretCreator) {
 		return resources.EtcdTLSCertificateSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			ca, err := data.GetRootCA()
