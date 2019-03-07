@@ -22,6 +22,7 @@ func main() {
 				ResourceName:       "Service",
 				ImportAlias:        "corev1",
 				ResourceImportPath: "k8s.io/api/core/v1",
+				UseNamedObject:     true,
 			},
 			{
 				ResourceName:   "Secret",

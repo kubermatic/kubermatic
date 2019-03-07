@@ -27,20 +27,22 @@ var (
 )
 
 // ServiceCreator returns the function to reconcile the DNS service
-func ServiceCreator() resources.ServiceCreator {
-	return func(se *corev1.Service) (*corev1.Service, error) {
-		se.Name = resources.DNSResolverServiceName
-		se.Spec.Selector = resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil)
-		se.Spec.Ports = []corev1.ServicePort{
-			{
-				Name:       "dns",
-				Protocol:   corev1.ProtocolUDP,
-				Port:       int32(53),
-				TargetPort: intstr.FromInt(53),
-			},
-		}
+func ServiceCreator() resources.NamedServiceCreatorGetter {
+	return func() (string, resources.ServiceCreator) {
+		return resources.DNSResolverServiceName, func(se *corev1.Service) (*corev1.Service, error) {
+			se.Name = resources.DNSResolverServiceName
+			se.Spec.Selector = resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil)
+			se.Spec.Ports = []corev1.ServicePort{
+				{
+					Name:       "dns",
+					Protocol:   corev1.ProtocolUDP,
+					Port:       int32(53),
+					TargetPort: intstr.FromInt(53),
+				},
+			}
 
-		return se, nil
+			return se, nil
+		}
 	}
 }
 
