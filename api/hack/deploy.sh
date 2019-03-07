@@ -36,8 +36,8 @@ helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES
 helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace logging fluentbit ./config/logging/fluentbit/
 helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace logging kibana ./config/logging/kibana/
 
-helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace kubermatic kubermatic ./config/kubermatic/
-
 if [[ "${1}" = "master" ]]; then
     helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace oauth oauth ./config/oauth/
 fi
+
+helm upgrade --install --wait --timeout 300 ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace kubermatic kubermatic ./config/kubermatic/

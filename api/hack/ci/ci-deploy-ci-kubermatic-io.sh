@@ -59,8 +59,8 @@ chartNamespaces=(
 ["nginx-ingress-controller"]="nginx-ingress-controller"
 ["cert-manager"]="cert-manager"
 ["certs"]="default"
-["kubermatic"]="kubermatic"
 ["oauth"]="oauth"
+["kubermatic"]="kubermatic"
 )
 
 retry 5 kubectl apply -f ./config/kubermatic/crd/
