@@ -19,7 +19,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	clusterclientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
@@ -211,13 +211,12 @@ func (ctl *clusterCreator) getDatacenters() (map[string]provider.DatacenterMeta,
 }
 
 func (ctl *clusterCreator) createMachineDeployment(restConfig *rest.Config, dc provider.DatacenterMeta, cluster *kubermaticv1.Cluster, node apiv1.Node) error {
-	clusterClient, err := clusterclientset.NewForConfig(restConfig)
+	client, err := ctrlruntimeclient.New(restConfig, ctrlruntimeclient.Options{})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create dynamic client: %v", err)
 	}
 
 	machineReplicas := int32(ctl.runOpts.Nodes)
-	machineDeploymentClient := clusterClient.ClusterV1alpha1().MachineDeployments(metav1.NamespaceSystem)
 
 	nd := apiv1.NodeDeployment{
 		ObjectMeta: apiv1.ObjectMeta{
@@ -229,14 +228,13 @@ func (ctl *clusterCreator) createMachineDeployment(restConfig *rest.Config, dc p
 		},
 	}
 
-	template, err := machineresource.Deployment(cluster, &nd, dc, nil)
+	md, err := machineresource.Deployment(cluster, &nd, dc, nil)
 	if err != nil {
 		return err
 	}
 
-	md, err := machineDeploymentClient.Create(template)
-	if err != nil {
-		return err
+	if err := client.Create(context.TODO(), md); err != nil {
+		return fmt.Errorf("failed to create MachineDeployment: %v", err)
 	}
 
 	log.Infof("created machine deployment: %s", md.Name)
