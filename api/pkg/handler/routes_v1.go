@@ -910,9 +910,9 @@ func (r Routing) getClusterKubeconfig() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(getClusterKubeconfig(r.projectProvider)),
-		decodeGetClusterKubeconfig,
-		encodeKubeconfig,
+		)(cluster.GetAdminKubeconfigEndpoint(r.projectProvider)),
+		cluster.DecodeGetAdminKubeconfig,
+		cluster.EncodeKubeconfig,
 		r.defaultServerOptions()...,
 	)
 }

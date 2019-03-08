@@ -1,4 +1,4 @@
-package handler_test
+package cluster_test
 
 import (
 	"encoding/base64"
@@ -14,9 +14,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -221,7 +221,7 @@ func genTestKubeconfigKubermaticObjects() []runtime.Object {
 	}
 }
 
-func marshalEncodeState(oidcState handler.State) (string, error) {
+func marshalEncodeState(oidcState cluster.OIDCState) (string, error) {
 
 	rawState, err := json.Marshal(oidcState)
 	if err != nil {
@@ -232,10 +232,10 @@ func marshalEncodeState(oidcState handler.State) (string, error) {
 
 }
 
-func unmarshalState(rawState []byte) (handler.State, error) {
-	oidcState := handler.State{}
+func unmarshalState(rawState []byte) (cluster.OIDCState, error) {
+	oidcState := cluster.OIDCState{}
 	if err := json.Unmarshal(rawState, &oidcState); err != nil {
-		return handler.State{}, err
+		return cluster.OIDCState{}, err
 	}
 	return oidcState, nil
 }
