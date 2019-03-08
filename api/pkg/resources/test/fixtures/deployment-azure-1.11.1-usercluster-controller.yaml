@@ -35,7 +35,7 @@ spec:
         - -v
         - "4"
         - --ipam-controller-network
-        - ',,'
+        - 192.168.1.1/24,192.168.1.1,8.8.8.8
         command:
         - /usr/local/bin/user-cluster-controller-manager
         image: 'quay.io/kubermatic/api:'

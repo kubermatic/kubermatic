@@ -213,7 +213,13 @@ func TestLoadFiles(t *testing.T) {
 							DNSDomain: "cluster.local",
 						},
 						MachineNetworks: []kubermaticv1.MachineNetworkingConfig{
-							{},
+							{
+								CIDR: "192.168.1.1/24",
+								DNSServers: []string{
+									"8.8.8.8",
+								},
+								Gateway: "192.168.1.1",
+							},
 						},
 					},
 					Address: kubermaticv1.ClusterAddress{
