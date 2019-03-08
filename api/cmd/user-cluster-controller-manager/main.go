@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/ipam"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/nodecsrapprover"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster"
 
@@ -17,6 +18,7 @@ import (
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
@@ -25,12 +27,14 @@ import (
 type controllerRunOptions struct {
 	internalAddr string
 	openshift    bool
+	networks     networkFlags
 }
 
 func main() {
 	runOp := controllerRunOptions{}
 	flag.StringVar(&runOp.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal HTTP /metrics server is running on")
 	flag.BoolVar(&runOp.openshift, "openshift", false, "Whether the managed cluster is an openshift cluster")
+	flag.Var(&runOp.networks, "ipam-controller-network", "The networks from which the ipam controller should allocate IPs for machines (e.g.: .--ipam-controller-network=10.0.0.0/16,10.0.0.1,8.8.8.8 --ipam-controller-network=192.168.5.0/24,192.168.5.1,1.1.1.1,8.8.4.4)")
 	flag.Parse()
 
 	var g run.Group
@@ -67,6 +71,16 @@ func main() {
 		glog.Fatalf("failed to register user cluster controller: %v", err)
 	}
 	metrics.controllers.Inc()
+	if len(runOp.networks) > 0 {
+		if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+			glog.Fatalf("failed to add clusterv1alpha1 scheme: %v", err)
+		}
+		if err := ipam.Add(mgr, runOp.networks); err != nil {
+			glog.Fatalf("failed to add IPAM controller to mgr: %v", err)
+		}
+		glog.Infof("Added IPAM controller to mgr")
+		metrics.controllers.Inc()
+	}
 	if err := registerControllers(mgr, metrics); err != nil {
 		glog.Fatal(err)
 	}

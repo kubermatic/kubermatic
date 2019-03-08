@@ -7,7 +7,6 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 
@@ -23,10 +22,6 @@ func GetUserClusterRoleCreators(c *kubermaticv1.Cluster) []resources.ClusterRole
 	creators := []resources.ClusterRoleCreator{
 		kubestatemetrics.ClusterRole,
 		prometheus.ClusterRole,
-	}
-
-	if len(c.Spec.MachineNetworks) > 0 {
-		creators = append(creators, ipamcontroller.ClusterRole)
 	}
 
 	return creators
@@ -77,10 +72,6 @@ func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.Clus
 	creators := []resources.ClusterRoleBindingCreatorDeprecated{
 		kubestatemetrics.ClusterRoleBinding,
 		prometheus.ClusterRoleBinding,
-	}
-
-	if len(c.Spec.MachineNetworks) > 0 {
-		creators = append(creators, ipamcontroller.ClusterRoleBinding)
 	}
 
 	return creators

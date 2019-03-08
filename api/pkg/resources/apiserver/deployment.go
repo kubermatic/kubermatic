@@ -246,10 +246,6 @@ func getApiserverFlags(data resources.DeploymentDataProvider, externalNodePort i
 	}
 	var featureGates []string
 
-	if data.Cluster().Spec.Version.Semver().Minor() >= 9 {
-		featureGates = append(featureGates, "Initializers=true")
-		flags = append(flags, "--runtime-config", "admissionregistration.k8s.io/v1alpha1")
-	}
 	if data.Cluster().Spec.Version.Semver().Minor() == 10 {
 		featureGates = append(featureGates, "CustomResourceSubresources=true")
 	}

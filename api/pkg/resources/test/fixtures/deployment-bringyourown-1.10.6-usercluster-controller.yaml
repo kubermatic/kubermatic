@@ -34,6 +34,8 @@ spec:
         - -logtostderr
         - -v
         - "4"
+        - --ipam-controller-network
+        - ',,'
         command:
         - /usr/local/bin/user-cluster-controller-manager
         image: 'quay.io/kubermatic/api:'

@@ -1773,21 +1773,14 @@
   revision = "0317810137be915b9cf888946c6e115c1bfac693"
 
 [[projects]]
-  digest = "1:36c29171bb333484f3618f8184be674aa0b5c4e25b4884ce135f64bbf585a191"
+  digest = "1:f9121674515662ba794b28097c1d92380cc54bac687cd7c79b64223b2c6ec3c8"
   name = "sigs.k8s.io/cluster-api"
   packages = [
     "pkg/apis/cluster/common",
     "pkg/apis/cluster/v1alpha1",
     "pkg/client/clientset_generated/clientset",
-    "pkg/client/clientset_generated/clientset/fake",
     "pkg/client/clientset_generated/clientset/scheme",
     "pkg/client/clientset_generated/clientset/typed/cluster/v1alpha1",
-    "pkg/client/clientset_generated/clientset/typed/cluster/v1alpha1/fake",
-    "pkg/client/informers_generated/externalversions",
-    "pkg/client/informers_generated/externalversions/cluster",
-    "pkg/client/informers_generated/externalversions/cluster/v1alpha1",
-    "pkg/client/informers_generated/externalversions/internalinterfaces",
-    "pkg/client/listers_generated/cluster/v1alpha1",
   ]
   pruneopts = "NUT"
   revision = "813b1fec840d79b37fe86778237b6db6d1cb959d"
@@ -2014,13 +2007,8 @@
     "k8s.io/gengo/examples/defaulter-gen/generators",
     "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1",
     "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset",
-    "sigs.k8s.io/cluster-api/pkg/apis/cluster/common",
     "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1",
     "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset",
-    "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset/fake",
-    "sigs.k8s.io/cluster-api/pkg/client/informers_generated/externalversions",
-    "sigs.k8s.io/cluster-api/pkg/client/informers_generated/externalversions/cluster/v1alpha1",
-    "sigs.k8s.io/cluster-api/pkg/client/listers_generated/cluster/v1alpha1",
     "sigs.k8s.io/controller-runtime/pkg/cache",
     "sigs.k8s.io/controller-runtime/pkg/cache/informertest",
     "sigs.k8s.io/controller-runtime/pkg/client",
