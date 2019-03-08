@@ -212,6 +212,9 @@ func (ctl *clusterCreator) getDatacenters() (map[string]provider.DatacenterMeta,
 
 func (ctl *clusterCreator) createMachineDeployment(restConfig *rest.Config, dc provider.DatacenterMeta, cluster *kubermaticv1.Cluster, node apiv1.Node) error {
 	client, err := ctrlruntimeclient.New(restConfig, ctrlruntimeclient.Options{})
+	if err != nil {
+		return fmt.Errorf("failed to create dynamic client: %v", err)
+	}
 
 	machineReplicas := int32(ctl.runOpts.Nodes)
 
