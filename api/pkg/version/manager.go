@@ -23,10 +23,6 @@ type Manager struct {
 type MasterVersion struct {
 	Version *semver.Version `json:"version"`
 	Default bool            `json:"default"`
-
-	// If true, then given version control plane version is not compatible
-	// with one of the kubelets inside cluster and shouldn't be used.
-	RestrictedByKubeletVersion bool `json:"restrictedByKubeletVersion"`
 }
 
 // MasterUpdate represents an update option for K8s master components

@@ -41,19 +41,50 @@ func getClusterUpgrades(updateManager UpdateManager, projectProvider provider.Pr
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
+		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
 		versions, err := updateManager.GetPossibleUpdates(cluster.Spec.Version.String())
 		if err != nil {
 			return nil, err
 		}
+
 		var upgrades []*apiv1.MasterVersion
 		for _, v := range versions {
+			isRestrictedByKubeletVersions, err := isRestrictedByKubeletVersions(v, machineDeployments.Items)
+			if err != nil {
+				return nil, err
+			}
+
 			upgrades = append(upgrades, &apiv1.MasterVersion{
-				Version: v.Version,
+				Version:                    v.Version,
+				RestrictedByKubeletVersion: isRestrictedByKubeletVersions,
 			})
 		}
 
 		return upgrades, nil
 	}
+}
+
+func isRestrictedByKubeletVersions(controlPlaneVersion *version.MasterVersion, mds []clusterv1alpha1.MachineDeployment) (bool, error) {
+	for _, md := range mds {
+		kubeletVersion, err := semver.NewVersion(md.Spec.Template.Spec.Versions.Kubelet)
+		if err != nil {
+			return false, err
+		}
+
+		if err = common.EnsureVersionCompatible(controlPlaneVersion.Version, kubeletVersion); err != nil {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func getClusterNodeUpgrades(updateManager UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
