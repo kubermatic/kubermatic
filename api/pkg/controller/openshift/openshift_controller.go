@@ -11,6 +11,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
@@ -159,6 +160,11 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	if err := r.configMaps(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile ConfigMaps: %v", err)
 	}
+
+	if err := r.services(ctx, osData); err != nil {
+		return nil, fmt.Errorf("failed to reconcile Services: %v", err)
+	}
+
 	if err := r.deployments(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Deployments: %v", err)
 	}
@@ -457,6 +463,29 @@ func (r *Reconciler) ensureNamespace(ctx context.Context, c *kubermaticv1.Cluste
 		}
 	}
 
+	return nil
+}
+
+// GetServiceCreators returns all service creators that are currently in use
+func getAllServiceCreators(osData *openshiftData) []resources.NamedServiceCreatorGetter {
+	return []resources.NamedServiceCreatorGetter{
+		apiserver.InternalServiceCreator(),
+		apiserver.ExternalServiceCreator(),
+		openvpn.ServiceCreator(),
+		etcd.ServiceCreator(osData),
+		dns.ServiceCreator(),
+		machinecontroller.ServiceCreator(),
+	}
+}
+
+func (r *Reconciler) services(ctx context.Context, osData *openshiftData) error {
+	for _, namedServiceCreator := range getAllServiceCreators(osData) {
+		serviceName, serviceCreator := namedServiceCreator()
+		if err := resources.EnsureNamedObjectV2(ctx,
+			nn(osData.Cluster().Status.NamespaceName, serviceName), resources.ServiceObjectWrapper(serviceCreator), r.Client, &corev1.Service{}); err != nil {
+			return fmt.Errorf("failed to ensure Service %s: %v", serviceName, err)
+		}
+	}
 	return nil
 }
 
