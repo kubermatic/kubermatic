@@ -3,6 +3,7 @@ package ipam
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -33,12 +34,6 @@ const (
 	annotationMachineUninitialized = "machine-controller.kubermatic.io/initializers"
 	annotationValue                = "ipam"
 )
-
-type cidrExhaustedError struct{}
-
-func (c cidrExhaustedError) Error() string {
-	return "cidr exhausted"
-}
 
 // Network represents a machine network configuration
 type Network struct {
@@ -159,7 +154,7 @@ func (r *reconciler) getNextFreeIP(ctx context.Context) (net.IP, Network, error)
 		}
 	}
 
-	return nil, Network{}, cidrExhaustedError{}
+	return nil, Network{}, errors.New("cidr exhausted")
 }
 
 func (r *reconciler) ipsToStrs(ips []net.IP) []string {
@@ -219,7 +214,7 @@ func (r *reconciler) getNextFreeIPForCIDR(network Network, usedIps []net.IP) (ne
 		}
 	}
 
-	return nil, cidrExhaustedError{}
+	return nil, errors.New("cidr exhausted")
 }
 
 func inc(ip net.IP) {

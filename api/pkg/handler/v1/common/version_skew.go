@@ -101,15 +101,15 @@ func CheckClusterVersionSkew(ctx context.Context, userInfo *provider.UserInfo, c
 
 // getKubeletVersions returns the list of all kubelet versions used by a given cluster's Machines and MachineDeployments
 func getKubeletVersions(ctx context.Context, client ctrlruntimeclient.Client) ([]string, error) {
-	listOpts := &ctrlruntimeclient.ListOptions{}
+	emptyListOpts := &ctrlruntimeclient.ListOptions{}
 
 	machineList := &clusterv1alpha1.MachineList{}
-	if err := client.List(ctx, listOpts, machineList); err != nil {
+	if err := client.List(ctx, emptyListOpts, machineList); err != nil {
 		return nil, fmt.Errorf("failed to load machines from cluster: %v", err)
 	}
 
 	machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
-	if err := client.List(ctx, listOpts, machineDeployments); err != nil {
+	if err := client.List(ctx, emptyListOpts, machineDeployments); err != nil {
 		return nil, KubernetesErrorToHTTPError(err)
 	}
 
