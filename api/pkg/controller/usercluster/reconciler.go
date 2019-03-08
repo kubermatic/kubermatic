@@ -6,14 +6,16 @@ import (
 
 	"github.com/golang/glog"
 
-	controllerclient "sigs.k8s.io/controller-runtime/pkg/client"
-
+	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/machine-controller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
+
+	controllerclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -23,6 +25,10 @@ const (
 // Reconcile creates, updates, or deletes Kubernetes resources to match the desired state.
 func (r *reconciler) reconcile(ctx context.Context) error {
 	if err := r.ensureAPIServices(ctx); err != nil {
+		return err
+	}
+
+	if err := r.ensureRoles(ctx); err != nil {
 		return err
 	}
 	return nil
@@ -71,6 +77,38 @@ func (r *reconciler) ensureAPIServices(ctx context.Context) error {
 			return fmt.Errorf("failed to update APIService %s in namespace %s: %v", apiService.Name, apiService.Namespace, err)
 		}
 		glog.V(debugLevel).Infof("updated APIService %s in namespace %s", apiService.Name, apiService.Namespace)
+	}
+
+	return nil
+}
+
+func (r *reconciler) ensureRoles(ctx context.Context) error {
+	// kube-system
+	creators := []resources.NamedRoleCreatorGetter{
+		machinecontroller.KubeSystemRoleCreator(),
+	}
+
+	if err := resources.ReconcileRoles(creators, v1.NamespaceSystem, r.Client, r.cache); err != nil {
+		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", v1.NamespaceSystem, err)
+	}
+
+	// kube-public
+	creators = []resources.NamedRoleCreatorGetter{
+		machinecontroller.ClusterInfoReaderRoleCreator(),
+		machinecontroller.KubePublicRoleCreator(),
+	}
+
+	if err := resources.ReconcileRoles(creators, v1.NamespacePublic, r.Client, r.cache); err != nil {
+		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", v1.NamespacePublic, err)
+	}
+
+	// default
+	creators = []resources.NamedRoleCreatorGetter{
+		machinecontroller.EndpointReaderRoleCreator(),
+	}
+
+	if err := resources.ReconcileRoles(creators, v1.NamespaceDefault, r.Client, r.cache); err != nil {
+		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", v1.NamespaceDefault, err)
 	}
 
 	return nil

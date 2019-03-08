@@ -30,7 +30,7 @@ var (
 )
 
 const (
-	name = "machine-controller"
+	Name = "machine-controller"
 
 	tag = "v1.0.7"
 )
@@ -48,11 +48,11 @@ type machinecontrollerData interface {
 func DeploymentCreator(data machinecontrollerData) resources.DeploymentCreator {
 	return func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 		dep.Name = resources.MachineControllerDeploymentName
-		dep.Labels = resources.BaseAppLabel(name, nil)
+		dep.Labels = resources.BaseAppLabel(Name, nil)
 
 		dep.Spec.Replicas = resources.Int32(1)
 		dep.Spec.Selector = &metav1.LabelSelector{
-			MatchLabels: resources.BaseAppLabel(name, nil),
+			MatchLabels: resources.BaseAppLabel(Name, nil),
 		}
 		dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 		dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
@@ -68,7 +68,7 @@ func DeploymentCreator(data machinecontrollerData) resources.DeploymentCreator {
 		dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 		volumes := []corev1.Volume{getKubeconfigVolume()}
-		podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
+		podLabels, err := data.GetPodTemplateLabels(Name, volumes, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create pod labels: %v", err)
 		}
@@ -96,7 +96,7 @@ func DeploymentCreator(data machinecontrollerData) resources.DeploymentCreator {
 		}
 		dep.Spec.Template.Spec.Containers = []corev1.Container{
 			{
-				Name:            name,
+				Name:            Name,
 				Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command:         []string{"/usr/local/bin/machine-controller"},
