@@ -7,7 +7,11 @@ node:
   data: ${NODE_DATA}
   ingest: ${NODE_INGEST}
 
-network.host: _site_
+# bind to both interfaces so Kubernetes port-forwardings work as expected
+network.bind_host: [_site_, _local_]
+
+# publish only the external interface (pod IP) for communicating with other peers
+network.publish_host: _site_
 
 http:
   enabled: true
