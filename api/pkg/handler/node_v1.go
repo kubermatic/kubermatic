@@ -106,7 +106,7 @@ func listNodesForClusterLegacy(projectProvider provider.ProjectProvider) endpoin
 		}
 
 		machineList := &clusterv1alpha1.MachineList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, Raw: &metav1.ListOptions{IncludeUninitialized: true}}, machineList); err != nil {
+		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineList); err != nil {
 			return nil, fmt.Errorf("failed to load machines from cluster: %v", err)
 		}
 
@@ -352,7 +352,7 @@ func getMachineForNode(node *corev1.Node, machines []clusterv1alpha1.Machine) *c
 
 func findMachineAndNode(ctx context.Context, name string, client ctrlruntimeclient.Client) (*clusterv1alpha1.Machine, *corev1.Node, error) {
 	machineList := &clusterv1alpha1.MachineList{}
-	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, Raw: &metav1.ListOptions{IncludeUninitialized: true}}, machineList); err != nil {
+	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineList); err != nil {
 		return nil, nil, fmt.Errorf("failed to load machines from cluster: %v", err)
 	}
 

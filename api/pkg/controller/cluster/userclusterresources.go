@@ -3,20 +3,17 @@ package cluster
 import (
 	"fmt"
 
-	"github.com/go-test/deep"
 	"github.com/golang/glog"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/ipamcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
-	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -30,12 +27,6 @@ func (cc *Controller) reconcileUserClusterResources(cluster *kubermaticv1.Cluste
 	var err error
 	if err = cc.launchingCreateOpenVPNClientCertificates(cluster); err != nil {
 		return nil, err
-	}
-
-	if len(cluster.Spec.MachineNetworks) > 0 {
-		if err = cc.userClusterEnsureInitializerConfiguration(cluster, client); err != nil {
-			return nil, err
-		}
 	}
 
 	if err = cc.userClusterEnsureRoles(cluster, client); err != nil {
@@ -76,53 +67,6 @@ func (cc *Controller) reconcileUserClusterResources(cluster *kubermaticv1.Cluste
 	}
 
 	return cluster, nil
-}
-
-func (cc *Controller) userClusterEnsureInitializerConfiguration(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
-	creators := []resources.InitializerConfigurationCreator{
-		ipamcontroller.MachineIPAMInitializerConfiguration,
-	}
-
-	data, err := cc.getClusterTemplateData(c)
-	if err != nil {
-		return err
-	}
-
-	for _, create := range creators {
-		var existing *admissionv1alpha1.InitializerConfiguration
-		initializerConfiguration, err := create(data, nil)
-		if err != nil {
-			return fmt.Errorf("failed to build InitializerConfiguration: %v", err)
-		}
-
-		if existing, err = client.AdmissionregistrationV1alpha1().InitializerConfigurations().Get(initializerConfiguration.Name, metav1.GetOptions{}); err != nil {
-			if !errors.IsNotFound(err) {
-				return err
-			}
-
-			if _, err = client.AdmissionregistrationV1alpha1().InitializerConfigurations().Create(initializerConfiguration); err != nil {
-				return fmt.Errorf("failed to create InitializerConfiguration %s %v", initializerConfiguration.Name, err)
-			}
-			glog.V(4).Infof("Created InitializerConfiguration %s inside user-cluster %s", initializerConfiguration.Name, c.Name)
-			continue
-		}
-
-		initializerConfiguration, err = create(data, existing.DeepCopy())
-		if err != nil {
-			return fmt.Errorf("failed to build InitializerConfiguration: %v", err)
-		}
-
-		if diff := deep.Equal(initializerConfiguration, existing); diff == nil {
-			continue
-		}
-
-		if _, err = client.AdmissionregistrationV1alpha1().InitializerConfigurations().Update(initializerConfiguration); err != nil {
-			return fmt.Errorf("failed to update InitializerConfiguration %s: %v", initializerConfiguration.Name, err)
-		}
-		glog.V(4).Infof("Updated InitializerConfiguration %s inside user-cluster %s", initializerConfiguration.Name, c.Name)
-	}
-
-	return nil
 }
 
 func (cc *Controller) userClusterEnsureRoles(c *kubermaticv1.Cluster, client kubernetes.Interface) error {
@@ -231,10 +175,6 @@ func GetUserClusterRoleCreators(c *kubermaticv1.Cluster) []resources.ClusterRole
 		metricsserver.ClusterRole,
 	}
 
-	if len(c.Spec.MachineNetworks) > 0 {
-		creators = append(creators, ipamcontroller.ClusterRole)
-	}
-
 	return creators
 }
 
@@ -294,10 +234,6 @@ func GetUserClusterRoleBindingCreators(c *kubermaticv1.Cluster) []resources.Clus
 		metricsserver.ClusterRoleBindingAuthDelegator,
 		scheduler.ClusterRoleBindingAuthDelegator,
 		controllermanager.ClusterRoleBindingAuthDelegator,
-	}
-
-	if len(c.Spec.MachineNetworks) > 0 {
-		creators = append(creators, ipamcontroller.ClusterRoleBinding)
 	}
 
 	return creators

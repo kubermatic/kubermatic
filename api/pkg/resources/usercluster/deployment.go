@@ -3,7 +3,9 @@ package usercluster
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 
@@ -39,6 +41,7 @@ type userclusterControllerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	ImageRegistry(string) string
 	InClusterApiserverURL() (*url.URL, error)
+	Cluster() *kubermaticv1.Cluster
 }
 
 // DeploymentCreator returns the function to create and update the user cluster controller deployment
@@ -93,12 +96,11 @@ func DeploymentCreator(data userclusterControllerData) resources.DeploymentCreat
 				Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command:         []string{"/usr/local/bin/user-cluster-controller-manager"},
-				Args: []string{
+				Args: append([]string{
 					"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 					"-internal-address", "0.0.0.0:8085",
 					"-logtostderr",
-					"-v", "4",
-				},
+					"-v", "4"}, getNetworkArgs(data)...),
 				TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 				TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 				Resources:                defaultResourceRequirements,
@@ -130,4 +132,18 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 	}
+}
+
+func getNetworkArgs(data userclusterControllerData) []string {
+	networkFlags := make([]string, len(data.Cluster().Spec.MachineNetworks)*2)
+	i := 0
+
+	for _, n := range data.Cluster().Spec.MachineNetworks {
+		networkFlags[i] = "--ipam-controller-network"
+		i++
+		networkFlags[i] = fmt.Sprintf("%s,%s,%s", n.CIDR, n.Gateway, strings.Join(n.DNSServers, ","))
+		i++
+	}
+
+	return networkFlags
 }
