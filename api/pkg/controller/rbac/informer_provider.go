@@ -12,7 +12,7 @@ import (
 // InformerProvider allows for storing shared informer factories for the given namespaces
 // additionally it provides method for starting and waiting for all registered factories
 type InformerProvider interface {
-	// KubeInformerFactoryFor registeres a shared informer factory for the given namespace
+	// KubeInformerFactoryFor registers a shared informer factory for the given namespace
 	KubeInformerFactoryFor(namespace string) kubeinformers.SharedInformerFactory
 	// StartInformers starts all registered factories
 	StartInformers(stopCh <-chan struct{})
@@ -20,8 +20,8 @@ type InformerProvider interface {
 	WaitForCachesToSync(stopCh <-chan struct{}) error
 }
 
-// informerProvider simply holds namespaced factories
-type informerProvider struct {
+// InformerProviderImpl simply holds namespaced factories
+type InformerProviderImpl struct {
 	kubeClient    kubernetes.Interface
 	kubeInformers map[string]kubeinformers.SharedInformerFactory
 
@@ -31,12 +31,12 @@ type informerProvider struct {
 }
 
 // NewInformerProvider creates a new provider that
-func NewInformerProvider(kubeClient kubernetes.Interface, resync time.Duration) *informerProvider {
-	return &informerProvider{kubeClient: kubeClient, resync: resync, kubeInformers: map[string]kubeinformers.SharedInformerFactory{}, lock: &sync.Mutex{}}
+func NewInformerProvider(kubeClient kubernetes.Interface, resync time.Duration) *InformerProviderImpl {
+	return &InformerProviderImpl{kubeClient: kubeClient, resync: resync, kubeInformers: map[string]kubeinformers.SharedInformerFactory{}, lock: &sync.Mutex{}}
 }
 
-// KubeInformerFactoryFor registeres a shared informer factory for the given namespace
-func (p *informerProvider) KubeInformerFactoryFor(namespace string) kubeinformers.SharedInformerFactory {
+// KubeInformerFactoryFor registers a shared informer factory for the given namespace
+func (p *InformerProviderImpl) KubeInformerFactoryFor(namespace string) kubeinformers.SharedInformerFactory {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -54,7 +54,7 @@ func (p *informerProvider) KubeInformerFactoryFor(namespace string) kubeinformer
 }
 
 // StartInformers starts all registered factories
-func (p *informerProvider) StartInformers(stopCh <-chan struct{}) {
+func (p *InformerProviderImpl) StartInformers(stopCh <-chan struct{}) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -65,7 +65,7 @@ func (p *informerProvider) StartInformers(stopCh <-chan struct{}) {
 }
 
 // WaitForCachesToSync waits until caches from all factories are synced
-func (p *informerProvider) WaitForCachesToSync(stopCh <-chan struct{}) error {
+func (p *InformerProviderImpl) WaitForCachesToSync(stopCh <-chan struct{}) error {
 	for _, informer := range p.kubeInformers {
 		infKubeSyncStatus := informer.WaitForCacheSync(stopCh)
 		for informerType, informerSynced := range infKubeSyncStatus {

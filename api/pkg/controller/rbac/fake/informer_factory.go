@@ -9,26 +9,26 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-type fakeSharedInformerFactory struct {
+type SharedInformerFactory struct {
 	kubeinformers.SharedInformerFactory
 }
 
 // NewFakeSharedInformerFactory returns a new factory
-func NewFakeSharedInformerFactory(kubeClient kubernetes.Interface, namespace string) *fakeSharedInformerFactory {
+func NewFakeSharedInformerFactory(kubeClient kubernetes.Interface, namespace string) *SharedInformerFactory {
 	f := kubeinformers.NewFilteredSharedInformerFactory(kubeClient, time.Minute*5, namespace, nil)
-	factory := &fakeSharedInformerFactory{SharedInformerFactory: f}
+	factory := &SharedInformerFactory{SharedInformerFactory: f}
 	return factory
 }
 
 // AddFakeClusterRoleInformer adds a dummy informer that returns items from clusterRoleIndexer
-func (f *fakeSharedInformerFactory) AddFakeClusterRoleInformer(clusterRoleIndexer cache.Indexer) {
+func (f *SharedInformerFactory) AddFakeClusterRoleInformer(clusterRoleIndexer cache.Indexer) {
 	f.InformerFor(&rbacv1.ClusterRole{}, func(fakeKubeClient kubernetes.Interface, resync time.Duration) cache.SharedIndexInformer {
 		return &dummySharedIndexInformer{indexer: clusterRoleIndexer}
 	})
 }
 
 // AddFakeClusterRoleBindingInformer adds a dummy informer that returns items from clusterRoleBindingIndexer
-func (f *fakeSharedInformerFactory) AddFakeClusterRoleBindingInformer(clusterRoleBindingIndexer cache.Indexer) {
+func (f *SharedInformerFactory) AddFakeClusterRoleBindingInformer(clusterRoleBindingIndexer cache.Indexer) {
 	f.InformerFor(&rbacv1.ClusterRoleBinding{}, func(fakeKubeClient kubernetes.Interface, resync time.Duration) cache.SharedIndexInformer {
 		return &dummySharedIndexInformer{indexer: clusterRoleBindingIndexer}
 	})
