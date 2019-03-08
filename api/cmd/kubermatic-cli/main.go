@@ -5,7 +5,10 @@ import (
 	"flag"
 	"time"
 
-	log "github.com/golang/glog"
+	"github.com/golang/glog"
+
+	"k8s.io/client-go/kubernetes/scheme"
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 
 	kubermaticsignals "github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/flagopts"
@@ -54,12 +57,17 @@ func main() {
 	flag.Var(&runOpts.Kubeconf, "kubeconfig", "path to kubeconfig file")
 
 	if err := flag.CommandLine.Set("logtostderr", "1"); err != nil {
-		panic("can't set flag")
+		glog.Fatal("can't set flag `logtostderr` to `1`")
 	}
 
 	flag.Parse()
 
-	log.Info("starting")
+	// Required to be able to use cluster-api types with the dynamic client
+	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
+		glog.Fatalf("failed to register clusterv1alpha1 scheme: %v", err)
+	}
+
+	glog.Info("starting")
 
 	stopCh := kubermaticsignals.SetupSignalHandler()
 	rootCtx, rootCancel := context.WithCancel(context.Background())
@@ -68,25 +76,25 @@ func main() {
 		select {
 		case <-stopCh:
 			rootCancel()
-			log.Info("user requested to stop the application")
+			glog.Info("user requested to stop the application")
 		case <-rootCtx.Done():
-			log.Info("context has been closed")
+			glog.Info("context has been closed")
 		}
 	}()
 
 	ctl, err := newClusterCreator(runOpts)
 	if err != nil {
-		log.Exit(err)
+		glog.Exit(err)
 	}
 
 	if err = ctl.create(rootCtx); err != nil {
 		if runOpts.DeleteOnError {
 			if errd := ctl.delete(); errd != nil {
-				log.Errorf("can't delete cluster %s: %+v", ctl.clusterName, err)
+				glog.Errorf("can't delete cluster %s: %+v", ctl.clusterName, err)
 			}
 		}
-		log.Exit(err)
+		glog.Exit(err)
 	}
 
-	log.Info("cluster and machines created")
+	glog.Info("cluster and machines created")
 }
