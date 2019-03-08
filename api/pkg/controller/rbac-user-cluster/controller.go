@@ -42,28 +42,21 @@ var mapFn = handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request
 
 // Add creates a new RBAC generator controller that is responsible for creating Cluster Roles and Cluster Role Bindings
 // for groups: `owners`, `editors` and `viewers``
-func Add(mgr manager.Manager) (string, error) {
+func Add(mgr manager.Manager) error {
 	reconcile := &reconcileRBAC{Client: mgr.GetClient(), ctx: context.TODO()}
 
-	return controllerName, add(mgr, reconcile)
-}
-
-// add adds a new Controller to mgr with r as the Reconcile.reconciler
-func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: r})
+	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconcile})
 	if err != nil {
 		return err
 	}
 
 	// Watch for changes to ClusterRoles
-	err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn})
-	if err != nil {
+	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
 		return err
 	}
 	// Watch for changes to ClusterRoleBindings
-	err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRoleBinding{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn})
-	if err != nil {
+	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRoleBinding{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
 		return err
 	}
 	return nil
