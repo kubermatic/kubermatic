@@ -76,10 +76,16 @@ data:
         Time_Format %d/%b/%Y:%H:%M:%S %z
 
     [PARSER]
-        Name   json
-        Format json
-        Time_Key time
+        Name        json
+        Format      json
+        Time_Key    time
         Time_Format %d/%b/%Y:%H:%M:%S %z
+
+    [PARSER]
+        Name        json_iso
+        Format      json
+        Time_Key    time
+        Time_Format %Y-%m-%dT:%H:%M:%S%z
 
     [PARSER]
         Name        docker
