@@ -18,6 +18,7 @@ spec:
         kubermatic/scrape: 'true'
         kubermatic/scrape_port: '8085'
         checksum/kubeconfig: {{ include (print $.Template.BasePath "/kubeconfig-secret.yaml") . | sha256sum }}
+        fluentbit.io/parser: glog
     spec:
       initContainers:
       - name: projects-migrator

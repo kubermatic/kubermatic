@@ -12,6 +12,7 @@ spec:
         app: vpa-admission-controller
       annotations:
         checksum/tls: {{ include (print $.Template.BasePath "/vpa-tls.yaml") . | sha256sum }}
+        fluentbit.io/parser: glog
     spec:
       serviceAccountName: vpa-admission-controller
       containers:
