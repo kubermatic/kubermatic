@@ -265,6 +265,10 @@ type VSphereNetwork struct {
 type MasterVersion struct {
 	Version *semver.Version `json:"version"`
 	Default bool            `json:"default,omitempty"`
+
+	// If true, then given version control plane version is not compatible
+	// with one of the kubelets inside cluster and shouldn't be used.
+	RestrictedByKubeletVersion bool `json:"restrictedByKubeletVersion,omitempty"`
 }
 
 // Cluster defines the cluster resource

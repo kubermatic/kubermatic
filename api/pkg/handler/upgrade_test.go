@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Masterminds/semver"
 	"github.com/go-test/deep"
@@ -26,28 +27,30 @@ import (
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
-func TestGetClusterUpgradesV1(t *testing.T) {
+func TestGetClusterUpgrades(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
-		name                   string
-		cluster                *kubermaticv1.Cluster
-		existingKubermaticObjs []runtime.Object
-		apiUser                apiv1.User
-		versions               []*version.MasterVersion
-		updates                []*version.MasterUpdate
-		wantUpdates            []*apiv1.MasterVersion
+		name                       string
+		cluster                    *kubermaticv1.Cluster
+		existingKubermaticObjs     []runtime.Object
+		existingMachineDeployments []*clusterv1alpha1.MachineDeployment
+		apiUser                    apiv1.User
+		versions                   []*version.MasterVersion
+		updates                    []*version.MasterUpdate
+		wantUpdates                []*apiv1.MasterVersion
 	}{
 		{
 			name: "upgrade available",
-			cluster: &kubermaticv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:   "foo",
-					Labels: map[string]string{"user": test.UserName},
-				},
-				Spec: kubermaticv1.ClusterSpec{Version: *ksemver.NewSemverOrDie("1.6.0")},
-			},
-			existingKubermaticObjs: test.GenDefaultKubermaticObjects(),
-			apiUser:                *test.GenDefaultAPIUser(),
+			cluster: func() *kubermaticv1.Cluster {
+				c := test.GenCluster("foo", "foo", "project", time.Now())
+				c.Labels = map[string]string{"user": test.UserName}
+				c.Spec.Version = *ksemver.NewSemverOrDie("1.6.0")
+				return c
+			}(),
+			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(),
+			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
+			apiUser:                    *test.GenDefaultAPIUser(),
 			wantUpdates: []*apiv1.MasterVersion{
 				{
 					Version: semver.MustParse("1.6.1"),
@@ -81,17 +84,67 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 			},
 		},
 		{
-			name: "no available",
-			cluster: &kubermaticv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:   "foo",
-					Labels: map[string]string{"user": test.UserName},
-				},
-				Spec: kubermaticv1.ClusterSpec{Version: *ksemver.NewSemverOrDie("1.6.0")},
-			},
+			name: "upgrade available but restricted by kubelet versions",
+			cluster: func() *kubermaticv1.Cluster {
+				c := test.GenCluster("foo", "foo", "project", time.Now())
+				c.Labels = map[string]string{"user": test.UserName}
+				c.Spec.Version = *ksemver.NewSemverOrDie("1.6.0")
+				return c
+			}(),
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(),
-			apiUser:                *test.GenDefaultAPIUser(),
-			wantUpdates:            []*apiv1.MasterVersion{},
+			existingMachineDeployments: func() []*clusterv1alpha1.MachineDeployment {
+				mds := make([]*clusterv1alpha1.MachineDeployment, 0, 1)
+				mdWithOldKubelet := genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil)
+				mdWithOldKubelet.Spec.Template.Spec.Versions.Kubelet = "v1.4.0"
+				mds = append(mds, mdWithOldKubelet)
+				return mds
+			}(),
+			apiUser: *test.GenDefaultAPIUser(),
+			wantUpdates: []*apiv1.MasterVersion{
+				{
+					Version: semver.MustParse("1.6.1"),
+				},
+				{
+					Version:                    semver.MustParse("1.7.0"),
+					RestrictedByKubeletVersion: true,
+				},
+			},
+			versions: []*version.MasterVersion{
+				{
+					Version: semver.MustParse("1.6.0"),
+				},
+				{
+					Version: semver.MustParse("1.6.1"),
+				},
+				{
+					Version: semver.MustParse("1.7.0"),
+				},
+			},
+			updates: []*version.MasterUpdate{
+				{
+					From:      "1.6.0",
+					To:        "1.6.1",
+					Automatic: false,
+				},
+				{
+					From:      "1.6.x",
+					To:        "1.7.0",
+					Automatic: false,
+				},
+			},
+		},
+		{
+			name: "no available",
+			cluster: func() *kubermaticv1.Cluster {
+				c := test.GenCluster("foo", "foo", "project", time.Now())
+				c.Labels = map[string]string{"user": test.UserName}
+				c.Spec.Version = *ksemver.NewSemverOrDie("1.6.0")
+				return c
+			}(),
+			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(),
+			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
+			apiUser:                    *test.GenDefaultAPIUser(),
+			wantUpdates:                []*apiv1.MasterVersion{},
 			versions: []*version.MasterVersion{
 				{
 					Version: semver.MustParse("1.6.0"),
@@ -106,7 +159,12 @@ func TestGetClusterUpgradesV1(t *testing.T) {
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{testStruct.cluster}
 			kubermaticObj = append(kubermaticObj, testStruct.existingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(testStruct.apiUser, []runtime.Object{}, kubermaticObj, testStruct.versions, testStruct.updates, hack.NewTestRouting)
+			machineObj := []runtime.Object{}
+			for _, existingMachineDeployment := range testStruct.existingMachineDeployments {
+				machineObj = append(machineObj, existingMachineDeployment)
+			}
+
+			ep, _, err := test.CreateTestEndpointAndGetClients(testStruct.apiUser, nil, []runtime.Object{}, machineObj, kubermaticObj, testStruct.versions, testStruct.updates, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create testStruct endpoint due to %v", err)
 			}
