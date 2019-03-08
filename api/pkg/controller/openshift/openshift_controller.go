@@ -405,7 +405,10 @@ func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
 
 func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *openshiftData) []resources.NamedConfigMapCreatorGetter {
 	return []resources.NamedConfigMapCreatorGetter{openshiftresources.OpenshiftAPIServerConfigMapCreator(ctx, osData),
-		openshiftresources.OpenshiftControllerMangerConfigMapCreator(ctx, osData)}
+		openshiftresources.OpenshiftControllerMangerConfigMapCreator(ctx, osData),
+		openvpn.ServerClientConfigsConfigMapCreator(osData),
+		dns.ConfigMapCreator(osData),
+	}
 }
 
 func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) error {

@@ -64,9 +64,11 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 		return nil
 	}
 
-	// check that all ConfigMaps are available
-	if err := cc.ensureConfigMaps(cluster, data); err != nil {
-		return err
+	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		// check that all ConfigMaps are available
+		if err := cc.ensureConfigMaps(cluster, data); err != nil {
+			return err
+		}
 	}
 
 	// check that all Deployments are available
