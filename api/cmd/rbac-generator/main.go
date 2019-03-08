@@ -113,17 +113,17 @@ func main() {
 				glog.Fatal(err)
 			}
 
-			kubeInformerFactory := kuberinformers.NewSharedInformerFactory(kubeClient, time.Minute*5)
 			kubermaticClient := kubermaticclientset.NewForConfigOrDie(cfg)
 			kubermaticInformerFactory := externalversions.NewFilteredSharedInformerFactory(kubermaticClient, time.Minute*5, metav1.NamespaceAll, selector)
-			ctrlCtx.allClusterProviders = append(ctrlCtx.allClusterProviders, rbaccontroller.NewClusterProvider(fmt.Sprintf("%s/%s", clusterPrefix, ctxName), kubeClient, kubeInformerFactory, kubermaticClient, kubermaticInformerFactory))
+			kubeInformerProvider := rbaccontroller.NewInformerProvider(kubeClient, time.Minute*5)
+			ctrlCtx.allClusterProviders = append(ctrlCtx.allClusterProviders, rbaccontroller.NewClusterProvider(fmt.Sprintf("%s/%s", clusterPrefix, ctxName), kubeClient, kubeInformerProvider, kubermaticClient, kubermaticInformerFactory))
 
 			// special case the current context/master is also a seed cluster
 			// we keep cluster resources also on master
 			if ctxName == clientcmdConfig.CurrentContext {
 				glog.V(2).Infof("Special case adding %s (current context) also as seed cluster", ctxName)
 				clusterPrefix = rbaccontroller.SeedProviderPrefix
-				ctrlCtx.allClusterProviders = append(ctrlCtx.allClusterProviders, rbaccontroller.NewClusterProvider(fmt.Sprintf("%s/%s", clusterPrefix, ctxName), kubeClient, kubeInformerFactory, kubermaticClient, kubermaticInformerFactory))
+				ctrlCtx.allClusterProviders = append(ctrlCtx.allClusterProviders, rbaccontroller.NewClusterProvider(fmt.Sprintf("%s/%s", clusterPrefix, ctxName), kubeClient, kubeInformerProvider, kubermaticClient, kubermaticInformerFactory))
 			}
 		}
 	}
