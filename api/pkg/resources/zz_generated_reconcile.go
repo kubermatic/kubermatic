@@ -173,6 +173,9 @@ func ReconcileServiceAccounts(creators []ServiceAccountCreator, namespace string
 // StatefulSetCreator defines an interface to create/update StatefulSets
 type StatefulSetCreator = func(existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error)
 
+// NamedStatefulSetCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedStatefulSetCreatorGetter = func() (name string, create StatefulSetCreator)
+
 // StatefulSetObjectWrapper adds a wrapper so the StatefulSetCreator matches ObjectCreator
 // This is needed as golang does not support function interface matching
 func StatefulSetObjectWrapper(create StatefulSetCreator) ObjectCreator {
@@ -185,19 +188,20 @@ func StatefulSetObjectWrapper(create StatefulSetCreator) ObjectCreator {
 }
 
 // ReconcileStatefulSets will create and update the StatefulSets coming from the passed StatefulSetCreator slice
-func ReconcileStatefulSets(creators []StatefulSetCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
+func ReconcileStatefulSets(namedGetters []NamedStatefulSetCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
 	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &appsv1.StatefulSet{})
 	if err != nil {
 		return fmt.Errorf("failed to get StatefulSet informer: %v", err)
 	}
 
-	for _, create := range creators {
+	for _, get := range namedGetters {
+		name, create := get()
 		createObject := StatefulSetObjectWrapper(create)
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureObject(namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
 			return fmt.Errorf("failed to ensure StatefulSet: %v", err)
 		}
 	}

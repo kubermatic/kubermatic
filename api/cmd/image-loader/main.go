@@ -167,8 +167,9 @@ func getImagesFromCreators(templateData *resources.TemplateData) (images []strin
 
 	cronjobCreators := cluster.GetCronJobCreators()
 
-	for _, createFunc := range statefulsetCreators {
-		statefulset, err := createFunc(&appsv1.StatefulSet{})
+	for _, creatorGetter := range statefulsetCreators {
+		_, creator := creatorGetter()
+		statefulset, err := creator(&appsv1.StatefulSet{})
 		if err != nil {
 			return nil, err
 		}
