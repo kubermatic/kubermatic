@@ -3916,6 +3916,11 @@
           "type": "boolean",
           "x-go-name": "Default"
         },
+        "restrictedByKubeletVersion": {
+          "description": "If true, then given version control plane version is not compatible\nwith one of the kubelets inside cluster and shouldn't be used.",
+          "type": "boolean",
+          "x-go-name": "RestrictedByKubeletVersion"
+        },
         "version": {
           "$ref": "#/definitions/Version"
         }
