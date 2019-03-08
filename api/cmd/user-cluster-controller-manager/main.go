@@ -4,16 +4,14 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"net/http"
-	"time"
-
-	"github.com/kubermatic/kubermatic/api/pkg/controller/ipam"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/nodecsrapprover"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster"
 
 	"github.com/golang/glog"
 	"github.com/oklog/run"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/kubermatic/kubermatic/api/pkg/controller/ipam"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/nodecsrapprover"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac-user-cluster"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster"
 
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,7 +48,7 @@ func main() {
 	// Create Context
 	done := ctx.Done()
 
-	mgr, err := manager.New(cfg, manager.Options{LeaderElection: true, LeaderElectionNamespace: metav1.NamespaceSystem})
+	mgr, err := manager.New(cfg, manager.Options{LeaderElection: true, LeaderElectionNamespace: metav1.NamespaceSystem, MetricsBindAddress: runOp.internalAddr})
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -63,14 +61,12 @@ func main() {
 		glog.Fatal(err)
 	}
 
-	metrics := newMetrics()
-
 	// Setup all Controllers
 	glog.Info("registering controllers")
-	if _, err := usercluster.Add(mgr, runOp.openshift); err != nil {
+	if err := usercluster.Add(mgr, runOp.openshift); err != nil {
 		glog.Fatalf("failed to register user cluster controller: %v", err)
 	}
-	metrics.controllers.Inc()
+
 	if len(runOp.networks) > 0 {
 		if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 			glog.Fatalf("failed to add clusterv1alpha1 scheme: %v", err)
@@ -79,11 +75,12 @@ func main() {
 			glog.Fatalf("failed to add IPAM controller to mgr: %v", err)
 		}
 		glog.Infof("Added IPAM controller to mgr")
-		metrics.controllers.Inc()
 	}
-	if err := registerControllers(mgr, metrics); err != nil {
-		glog.Fatal(err)
+
+	if err := rbacusercluster.Add(mgr); err != nil {
+		glog.Fatalf("failed to add user RBAC controller to mgr: %v", err)
 	}
+
 	if runOp.openshift {
 		if err := nodecsrapprover.Add(mgr, 4, cfg); err != nil {
 			glog.Fatalf("failed to add nodecsrapprover controller: %v", err)
@@ -102,31 +99,6 @@ func main() {
 			}
 		}, func(err error) {
 			ctxDone()
-		})
-	}
-
-	// This group is running an internal http server with metrics and other debug information
-	{
-		m := http.NewServeMux()
-		m.Handle("/metrics", promhttp.Handler())
-
-		s := http.Server{
-			Addr:         runOp.internalAddr,
-			Handler:      m,
-			ReadTimeout:  5 * time.Second,
-			WriteTimeout: 10 * time.Second,
-		}
-
-		g.Add(func() error {
-			glog.Infof("starting the internal HTTP metrics server: %s\n", runOp.internalAddr)
-			return s.ListenAndServe()
-		}, func(err error) {
-			glog.Infof("stopping internal HTTP metrics server, err = %v", err)
-			timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second)
-			defer cancel()
-			if err := s.Shutdown(timeoutCtx); err != nil {
-				glog.Errorf("failed to shutdown the internal HTTP server gracefully, err = %v", err)
-			}
 		})
 	}
 

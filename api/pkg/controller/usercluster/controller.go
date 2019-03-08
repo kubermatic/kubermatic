@@ -20,22 +20,22 @@ const (
 )
 
 // Add creates a new user cluster controller.
-func Add(mgr manager.Manager, openshift bool) (string, error) {
+func Add(mgr manager.Manager, openshift bool) error {
 	reconcile := &reconciler{Client: mgr.GetClient(), cache: mgr.GetCache(), openshift: openshift}
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconcile})
 	if err != nil {
-		return controllerName, err
+		return err
 	}
 
 	if err = c.Watch(&source.Kind{Type: &apiregistrationv1beta1.APIService{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return controllerName, err
+		return err
 	}
 
 	if err = c.Watch(&source.Kind{Type: &rbacv1.Role{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return controllerName, err
+		return err
 	}
 
-	return controllerName, nil
+	return nil
 }
 
 // reconcileUserCluster reconciles objects in the user cluster
