@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	fakeInformerProvider "github.com/kubermatic/kubermatic/api/pkg/controller/rbac/fake"
 	kubermaticfakeclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -17,7 +18,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
-	kuberinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes/fake"
 	rbaclister "k8s.io/client-go/listers/rbac/v1"
 	clienttesting "k8s.io/client-go/testing"
@@ -467,10 +467,15 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 				}
 			}
 			fakeKubeClient := fake.NewSimpleClientset(objs...)
-			roleBindingsLister := rbaclister.NewClusterRoleBindingLister(roleBindingsIndexer)
+			// manually set lister as we don't want to start informers in the tests
+			fakeKubeInformerProviderForMaster := NewInformerProvider(fakeKubeClient, time.Minute*5)
+			fakeInformerFactoryForClusterRole := fakeInformerProvider.NewFakeSharedInformerFactory(fakeKubeClient, metav1.NamespaceAll)
+			fakeInformerFactoryForClusterRole.AddFakeClusterRoleBindingInformer(roleBindingsIndexer)
+			fakeKubeInformerProviderForMaster.kubeInformers[metav1.NamespaceAll] = fakeInformerFactoryForClusterRole
+
 			fakeMasterClusterProvider := &ClusterProvider{
-				kubeClient:                   fakeKubeClient,
-				rbacClusterRoleBindingLister: roleBindingsLister,
+				kubeClient:           fakeKubeClient,
+				kubeInformerProvider: fakeKubeInformerProviderForMaster,
 			}
 
 			seedClusterProviders := make([]*ClusterProvider, test.seedClusters)
@@ -485,12 +490,14 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					}
 				}
 				fakeSeedKubeClient := fake.NewSimpleClientset(objs...)
-				fakeKubeInformerFactory := kuberinformers.NewSharedInformerFactory(fakeSeedKubeClient, time.Minute*5)
-				fakeProvider := NewClusterProvider(strconv.Itoa(i), fakeSeedKubeClient, fakeKubeInformerFactory, nil, nil)
+				fakeKubeInformerProviderForSeed := NewInformerProvider(fakeSeedKubeClient, time.Minute*5)
 
 				// manually set lister as we don't want to start informers in the tests
-				roleBindingsLister := rbaclister.NewClusterRoleBindingLister(roleBindingsIndexer)
-				fakeProvider.rbacClusterRoleBindingLister = roleBindingsLister
+				fakeInformerFactoryForClusterRole := fakeInformerProvider.NewFakeSharedInformerFactory(fakeSeedKubeClient, metav1.NamespaceAll)
+				fakeInformerFactoryForClusterRole.AddFakeClusterRoleBindingInformer(roleBindingsIndexer)
+
+				fakeKubeInformerProviderForSeed.kubeInformers[metav1.NamespaceAll] = fakeInformerFactoryForClusterRole
+				fakeProvider := NewClusterProvider(strconv.Itoa(i), fakeSeedKubeClient, fakeKubeInformerProviderForSeed, nil, nil)
 				seedClusterProviders[i] = fakeProvider
 			}
 
@@ -737,9 +744,9 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 					}
 
 					fakeKubeClient := fake.NewSimpleClientset(kubeObjs...)
-					fakeKubeInformerFactory := kuberinformers.NewSharedInformerFactory(fakeKubeClient, time.Minute*5)
+					fakeKubeInformerProvider := NewInformerProvider(fakeKubeClient, time.Minute*5)
 					fakeKubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjs...)
-					fakeProvider := NewClusterProvider(providerName, fakeKubeClient, fakeKubeInformerFactory, fakeKubermaticClient, nil)
+					fakeProvider := NewClusterProvider(providerName, fakeKubeClient, fakeKubeInformerProvider, fakeKubermaticClient, nil)
 					fakeProvider.AddIndexerFor(clusterResourcesIndexer, schema.GroupVersionResource{Resource: kubermaticv1.ClusterResourceName})
 					seedClusterProviders[index] = fakeProvider
 					index = index + 1
@@ -1012,8 +1019,8 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				}
 				clusterResourcesIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 				fakeSeedKubeClient := fake.NewSimpleClientset(objs...)
-				fakeKubeInformerFactory := kuberinformers.NewSharedInformerFactory(fakeSeedKubeClient, time.Minute*5)
-				fakeProvider := NewClusterProvider(strconv.Itoa(i), fakeSeedKubeClient, fakeKubeInformerFactory, nil, nil)
+				fakeKubeInformerProvider := NewInformerProvider(fakeSeedKubeClient, time.Minute*5)
+				fakeProvider := NewClusterProvider(strconv.Itoa(i), fakeSeedKubeClient, fakeKubeInformerProvider, nil, nil)
 				fakeProvider.AddIndexerFor(clusterResourcesIndexer, schema.GroupVersionResource{Resource: kubermaticv1.ClusterResourceName})
 				seedClusterProviders[i] = fakeProvider
 			}
@@ -1618,18 +1625,24 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			objs := []runtime.Object{}
 			fakeKubeClient := fake.NewSimpleClientset(objs...)
 			roleIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
-			roleLister := rbaclister.NewClusterRoleLister(roleIndexer)
+
+			// manually set lister as we don't want to start informers in the tests
+			fakeKubeInformerProviderForMaster := NewInformerProvider(fakeKubeClient, time.Minute*5)
+			fakeInformerFactoryForClusterRole := fakeInformerProvider.NewFakeSharedInformerFactory(fakeKubeClient, metav1.NamespaceAll)
+			fakeInformerFactoryForClusterRole.AddFakeClusterRoleInformer(roleIndexer)
+			fakeKubeInformerProviderForMaster.kubeInformers[metav1.NamespaceAll] = fakeInformerFactoryForClusterRole
+
 			fakeMasterClusterProvider := &ClusterProvider{
-				kubeClient:            fakeKubeClient,
-				rbacClusterRoleLister: roleLister,
+				kubeClient:           fakeKubeClient,
+				kubeInformerProvider: fakeKubeInformerProviderForMaster,
 			}
 
 			seedClusterProviders := make([]*ClusterProvider, test.seedClusters)
 			for i := 0; i < test.seedClusters; i++ {
 				objs := []runtime.Object{}
 				fakeSeedKubeClient := fake.NewSimpleClientset(objs...)
-				fakeKubeInformerFactory := kuberinformers.NewSharedInformerFactory(fakeSeedKubeClient, time.Minute*5)
-				fakeProvider := NewClusterProvider(strconv.Itoa(i), fakeSeedKubeClient, fakeKubeInformerFactory, nil, nil)
+				fakeKubeInformerProvider := NewInformerProvider(fakeSeedKubeClient, time.Minute*5)
+				fakeProvider := NewClusterProvider(strconv.Itoa(i), fakeSeedKubeClient, fakeKubeInformerProvider, nil, nil)
 				seedClusterProviders[i] = fakeProvider
 			}
 
