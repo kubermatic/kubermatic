@@ -1248,52 +1248,11 @@ func (k nodeDeploymentSliceWrapper) EqualOrDie(expected nodeDeploymentSliceWrapp
 }
 
 func genTestMachine(name, rawProviderSpec string, labels map[string]string, ownerRef []metav1.OwnerReference) *clusterv1alpha1.Machine {
-	return &clusterv1alpha1.Machine{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            name,
-			Namespace:       metav1.NamespaceSystem,
-			Labels:          labels,
-			OwnerReferences: ownerRef,
-		},
-		Spec: clusterv1alpha1.MachineSpec{
-			ProviderSpec: clusterv1alpha1.ProviderSpec{
-				Value: &runtime.RawExtension{
-					Raw: []byte(rawProviderSpec),
-				},
-			},
-			Versions: clusterv1alpha1.MachineVersionInfo{
-				Kubelet: "v9.9.9",
-			},
-		},
-	}
+	return test.GenTestMachine(name, rawProviderSpec, labels, ownerRef)
 }
 
 func genTestMachineDeployment(name, rawProviderSpec string, selector map[string]string) *clusterv1alpha1.MachineDeployment {
-	var replicas int32 = 1
-	return &clusterv1alpha1.MachineDeployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: metav1.NamespaceSystem,
-		},
-		Spec: clusterv1alpha1.MachineDeploymentSpec{
-			Selector: metav1.LabelSelector{
-				MatchLabels: selector,
-			},
-			Replicas: &replicas,
-			Template: clusterv1alpha1.MachineTemplateSpec{
-				Spec: clusterv1alpha1.MachineSpec{
-					ProviderSpec: clusterv1alpha1.ProviderSpec{
-						Value: &runtime.RawExtension{
-							Raw: []byte(rawProviderSpec),
-						},
-					},
-					Versions: clusterv1alpha1.MachineVersionInfo{
-						Kubelet: "v9.9.9",
-					},
-				},
-			},
-		},
-	}
+	return test.GenTestMachineDeployment(name, rawProviderSpec, selector)
 }
 
 func genTestCluster(isControllerReady bool) *kubermaticv1.Cluster {
