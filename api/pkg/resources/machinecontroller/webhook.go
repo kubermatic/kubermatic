@@ -68,7 +68,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) resources.DeploymentCr
 
 		dep.Spec.Template.Spec.Containers = []corev1.Container{
 			{
-				Name:            name,
+				Name:            Name,
 				Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command:         []string{"/usr/local/bin/webhook"},

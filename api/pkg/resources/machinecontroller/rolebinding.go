@@ -36,7 +36,7 @@ func createRoleBinding(existing *rbacv1.RoleBinding, namespace string) (*rbacv1.
 
 	rb.Name = resources.MachineControllerRoleBindingName
 	rb.Namespace = namespace
-	rb.Labels = resources.BaseAppLabel(name, nil)
+	rb.Labels = resources.BaseAppLabel(Name, nil)
 
 	rb.RoleRef = rbacv1.RoleRef{
 		Name:     resources.MachineControllerRoleName,

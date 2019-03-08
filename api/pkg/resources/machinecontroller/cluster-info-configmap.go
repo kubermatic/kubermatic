@@ -25,7 +25,7 @@ func ClusterInfoConfigMapCreator(data resources.ConfigMapDataProvider) resources
 
 		cm.Name = resources.ClusterInfoConfigMapName
 		cm.Namespace = metav1.NamespacePublic
-		cm.Labels = resources.BaseAppLabel(name, nil)
+		cm.Labels = resources.BaseAppLabel(Name, nil)
 
 		caKp, err := data.GetRootCA()
 		if err != nil {

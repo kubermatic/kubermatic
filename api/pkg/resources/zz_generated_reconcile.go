@@ -348,6 +348,9 @@ func ReconcileClusterRoleBindings(creators []ClusterRoleBindingCreator, namespac
 // RoleCreator defines an interface to create/update Roles
 type RoleCreator = func(existing *rbacv1.Role) (*rbacv1.Role, error)
 
+// NamedRoleCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedRoleCreatorGetter = func() (name string, create RoleCreator)
+
 // RoleObjectWrapper adds a wrapper so the RoleCreator matches ObjectCreator
 // This is needed as golang does not support function interface matching
 func RoleObjectWrapper(create RoleCreator) ObjectCreator {
@@ -360,19 +363,20 @@ func RoleObjectWrapper(create RoleCreator) ObjectCreator {
 }
 
 // ReconcileRoles will create and update the Roles coming from the passed RoleCreator slice
-func ReconcileRoles(creators []RoleCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
+func ReconcileRoles(namedGetters []NamedRoleCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
 	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &rbacv1.Role{})
 	if err != nil {
 		return fmt.Errorf("failed to get Role informer: %v", err)
 	}
 
-	for _, create := range creators {
+	for _, get := range namedGetters {
+		name, create := get()
 		createObject := RoleObjectWrapper(create)
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureObject(namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
 			return fmt.Errorf("failed to ensure Role: %v", err)
 		}
 	}
