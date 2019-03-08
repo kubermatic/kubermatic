@@ -5,6 +5,7 @@ logging:
       tag: 1.0.4
       pullPolicy: "IfNotPresent"
     configuration:
+      containerRuntimeParser: docker
       outputs:
         - |
           Name            es
