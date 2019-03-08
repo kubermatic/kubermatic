@@ -11,6 +11,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
@@ -153,16 +154,25 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 	osData := &openshiftData{cluster: cluster, client: r.Client, dC: &dc, overwriteRegistry: r.overwriteRegistry, nodeAccessNetwork: r.nodeAccessNetwork}
 
+	if err := r.services(ctx, osData); err != nil {
+		return nil, fmt.Errorf("failed to reconcile Services: %v", err)
+	}
+
 	if err := r.secrets(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Secrets: %v", err)
 	}
 
+	// Wait until the cloud provider infra is ready before attempting
+	// to render the cloud-config
+	// TODO: Model resource deployment as a DAG so we don't need hacks
+	// like this combined with tribal knowledge and "someone is noticing this
+	// isn't working correctly"
+	// https://github.com/kubermatic/kubermatic/issues/2948
+	if !cluster.Status.Health.CloudProviderInfrastructure {
+		return &reconcile.Result{RequeueAfter: 1 * time.Second}, nil
+	}
 	if err := r.configMaps(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile ConfigMaps: %v", err)
-	}
-
-	if err := r.services(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to reconcile Services: %v", err)
 	}
 
 	if err := r.deployments(ctx, osData); err != nil {
@@ -404,7 +414,9 @@ func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
 }
 
 func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *openshiftData) []resources.NamedConfigMapCreatorGetter {
-	return []resources.NamedConfigMapCreatorGetter{openshiftresources.OpenshiftAPIServerConfigMapCreator(ctx, osData),
+	return []resources.NamedConfigMapCreatorGetter{
+		cloudconfig.ConfigMapCreator(osData),
+		openshiftresources.OpenshiftAPIServerConfigMapCreator(ctx, osData),
 		openshiftresources.OpenshiftControllerMangerConfigMapCreator(ctx, osData),
 		openvpn.ServerClientConfigsConfigMapCreator(osData),
 		dns.ConfigMapCreator(osData),
