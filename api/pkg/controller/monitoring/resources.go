@@ -124,8 +124,8 @@ func (c *Controller) ensureConfigMaps(cluster *kubermaticv1.Cluster, data *resou
 }
 
 // GetStatefulSetCreators returns all StatefulSetCreators that are currently in use
-func GetStatefulSetCreators(data *resources.TemplateData) []resources.StatefulSetCreator {
-	return []resources.StatefulSetCreator{
+func GetStatefulSetCreators(data *resources.TemplateData) []resources.NamedStatefulSetCreatorGetter {
+	return []resources.NamedStatefulSetCreatorGetter{
 		prometheus.StatefulSetCreator(data),
 	}
 }
