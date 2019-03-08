@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/golang/glog"
+
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -90,43 +92,6 @@ func EnsureRoleBinding(data RoleBindingDataProvider, create RoleBindingCreatorDe
 
 	if _, err = client.Update(rb); err != nil {
 		return fmt.Errorf("failed to update RoleBinding %s: %v", rb.Name, err)
-	}
-
-	return nil
-}
-
-// EnsureClusterRoleBinding will create the RoleBinding with the passed create function & create or update it if necessary.
-// To check if it's necessary it will do a lookup of the resource at the lister & compare the existing RoleBinding with the created one
-func EnsureClusterRoleBinding(data ClusterRoleBindingDataProvider, create ClusterRoleBindingCreatorDeprecated, lister rbacv1lister.ClusterRoleBindingLister, client rbacv1client.ClusterRoleBindingInterface) error {
-	var existing *rbacv1.ClusterRoleBinding
-	crb, err := create(data, nil)
-	if err != nil {
-		return fmt.Errorf("failed to build ClusterRoleBinding: %v", err)
-	}
-
-	if existing, err = lister.Get(crb.Name); err != nil {
-		if !kubeerrors.IsNotFound(err) {
-			return err
-		}
-
-		if _, err = client.Create(crb); err != nil {
-			return fmt.Errorf("failed to create ClusterRoleBinding %s: %v", crb.Name, err)
-		}
-		return nil
-	}
-	existing = existing.DeepCopy()
-
-	crb, err = create(data, existing.DeepCopy())
-	if err != nil {
-		return fmt.Errorf("failed to build ClusterRoleBinding: %v", err)
-	}
-
-	if DeepEqual(crb, existing) {
-		return nil
-	}
-
-	if _, err = client.Update(crb); err != nil {
-		return fmt.Errorf("failed to update ClusterRoleBinding %s: %v", crb.Name, err)
 	}
 
 	return nil
@@ -225,6 +190,7 @@ func EnsureObject(namespace string, rawcreate ObjectCreator, store informerStore
 		if err := client.Create(ctx, obj); err != nil {
 			return fmt.Errorf("failed to create %T '%s': %v", obj, key, err)
 		}
+		glog.V(2).Infof("Created %T %s in Namespace %s", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
 		return nil
 	}
 
@@ -249,6 +215,7 @@ func EnsureObject(namespace string, rawcreate ObjectCreator, store informerStore
 	if err = client.Update(ctx, obj); err != nil {
 		return fmt.Errorf("failed to update object %T '%s': %v", obj, key, err)
 	}
+	glog.V(2).Infof("Updated %T %s in Namespace %s", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
 
 	return nil
 }
@@ -279,6 +246,7 @@ func EnsureNamedObjectV2(ctx context.Context, namespacedName types.NamespacedNam
 		if err := client.Create(ctx, obj); err != nil {
 			return fmt.Errorf("failed to create %T '%s': %v", obj, namespacedName.String(), err)
 		}
+		glog.V(2).Infof("Created %T %s in Namespace %s", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
 		return nil
 	}
 
@@ -296,6 +264,7 @@ func EnsureNamedObjectV2(ctx context.Context, namespacedName types.NamespacedNam
 	if err = client.Update(ctx, obj); err != nil {
 		return fmt.Errorf("failed to update object %T '%s': %v", obj, namespacedName.String(), err)
 	}
+	glog.V(2).Infof("Updated %T %s in Namespace %s", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
 
 	return nil
 }
@@ -330,6 +299,7 @@ func EnsureNamedObject(name string, namespace string, rawcreate ObjectCreator, s
 		if err := client.Create(ctx, obj); err != nil {
 			return fmt.Errorf("failed to create %T '%s': %v", obj, key, err)
 		}
+		glog.V(2).Infof("Created %T %s in Namespace %s", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
 		return nil
 	}
 
@@ -353,6 +323,7 @@ func EnsureNamedObject(name string, namespace string, rawcreate ObjectCreator, s
 	if err = client.Update(ctx, obj); err != nil {
 		return fmt.Errorf("failed to update object %T '%s': %v", obj, key, err)
 	}
+	glog.V(2).Infof("Updated %T %s in Namespace %s", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
 
 	return nil
 }
