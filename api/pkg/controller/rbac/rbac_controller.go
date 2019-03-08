@@ -178,15 +178,6 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider) (*Controller,
 			},
 			kind: kubermaticv1.SSHKeyKind,
 		},
-
-		{
-			gvr: schema.GroupVersionResource{
-				Group:    kubermaticv1.GroupName,
-				Version:  kubermaticv1.GroupVersion,
-				Resource: kubermaticv1.UserProjectBindingResourceName,
-			},
-			kind: kubermaticv1.UserProjectBindingKind,
-		},
 	}
 
 	for _, clusterProvider := range allClusterProviders {
@@ -224,7 +215,6 @@ func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
 
 	for i := 0; i < workerCount; i++ {
 		go wait.Until(c.runProjectWorker, time.Second, stopCh)
-		go wait.Until(c.runProjectBindingsWorker, time.Second, stopCh)
 		go wait.Until(c.runProjectResourcesWorker, time.Second, stopCh)
 	}
 
@@ -309,24 +299,6 @@ func (c *Controller) enqueueProjectResource(obj interface{}, gvr schema.GroupVer
 		clusterProvider: clusterProvider,
 	}
 	c.projectResourcesQueue.Add(item)
-}
-
-func (c *Controller) runProjectBindingsWorker() {
-	for c.processProjectBindingNextItem() {
-	}
-}
-
-func (c *Controller) processProjectBindingNextItem() bool {
-	key, quit := c.projectBindingsQueue.Get()
-	if quit {
-		return false
-	}
-	defer c.projectBindingsQueue.Done(key)
-
-	err := c.syncProjectBindings(key.(string))
-
-	c.handleErr(err, key, c.projectQueue)
-	return true
 }
 
 func (c *Controller) enqueueProjectBinding(projectBinding *kubermaticv1.UserProjectBinding) {

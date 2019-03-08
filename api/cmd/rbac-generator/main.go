@@ -16,6 +16,7 @@ import (
 	rbaccontroller "github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
@@ -25,6 +26,8 @@ import (
 	kuberinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 type controllerRunOptions struct {
@@ -190,6 +193,33 @@ func main() {
 	// This group is running the actual controller logic
 	{
 		g.Add(func() error {
+
+			cfg, err := clientcmd.BuildConfigFromFlags(ctrlCtx.runOptions.masterURL, ctrlCtx.runOptions.kubeconfig)
+			if err != nil {
+				return err
+			}
+
+			mgr, err := manager.New(cfg, manager.Options{})
+			if err != nil {
+				glog.Errorf("failed to start kubebuilder manager: %v", err)
+				return err
+			}
+			glog.Info("registering components")
+			if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
+				return err
+			}
+
+			if err := rbaccontroller.Add(mgr); err != nil {
+				return err
+			}
+
+			go func() {
+				if err := mgr.Start(ctrlCtx.stopCh); err != nil {
+					glog.Errorf("failed to start kubebuilder manager: %v", err)
+					return
+				}
+			}()
+
 			// controller will return iff ctrlCtx is stopped
 			ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
 			return nil
