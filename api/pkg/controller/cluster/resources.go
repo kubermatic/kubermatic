@@ -262,8 +262,8 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster, data *resources.
 }
 
 // GetStatefulSetCreators returns all StatefulSetCreators that are currently in use
-func GetStatefulSetCreators(data *resources.TemplateData) []resources.StatefulSetCreator {
-	return []resources.StatefulSetCreator{
+func GetStatefulSetCreators(data *resources.TemplateData) []resources.NamedStatefulSetCreatorGetter {
+	return []resources.NamedStatefulSetCreatorGetter{
 		etcd.StatefulSetCreator(data),
 	}
 }

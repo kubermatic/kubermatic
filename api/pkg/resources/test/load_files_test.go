@@ -570,10 +570,11 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				var statefulSetCreators []resources.StatefulSetCreator
+				var statefulSetCreators []resources.NamedStatefulSetCreatorGetter
 				statefulSetCreators = append(statefulSetCreators, clustercontroller.GetStatefulSetCreators(data)...)
 				statefulSetCreators = append(statefulSetCreators, monitoringcontroller.GetStatefulSetCreators(data)...)
-				for _, create := range statefulSetCreators {
+				for _, creatorGetter := range statefulSetCreators {
+					_, create := creatorGetter()
 					res, err := create(&appsv1.StatefulSet{})
 					if err != nil {
 						t.Fatalf("failed to create StatefulSet: %v", err)

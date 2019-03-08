@@ -45,6 +45,7 @@ func main() {
 				ResourceName:       "StatefulSet",
 				ImportAlias:        "appsv1",
 				ResourceImportPath: "k8s.io/api/apps/v1",
+				UseNamedObject:     true,
 			},
 			{
 				ResourceName: "Deployment",
