@@ -17,7 +17,7 @@ updates:
   to: 1.10.*
   automatic: false
 - from: 1.10.*
-  to: 1.11.0
+  to: 1.11.5
   automatic: false
 # CVE-2018-1002105
 - from: <= 1.10.10
