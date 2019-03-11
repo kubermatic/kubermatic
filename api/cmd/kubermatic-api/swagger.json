@@ -138,6 +138,47 @@
         }
       }
     },
+    "/api/v1/nodes/upgrades": {
+      "get": {
+        "description": "Gets possible node upgrades for a specific control plane version",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "getNodeUpgrades",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/MasterVersion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MasterVersion",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MasterVersion"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/projects": {
       "get": {
         "produces": [
@@ -1223,21 +1264,35 @@
     },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades": {
       "get": {
-        "description": "Gets possible node upgrades for a specific control plane version",
+        "description": "Gets possible node upgrades for a cluster",
         "produces": [
           "application/json"
         ],
         "tags": [
           "project"
         ],
-        "operationId": "getNodeUpgrades",
+        "operationId": "getClusterNodeUpgrades",
         "parameters": [
           {
-            "name": "Body",
-            "in": "body",
-            "schema": {
-              "$ref": "#/definitions/MasterVersion"
-            }
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
           }
         ],
         "responses": {
