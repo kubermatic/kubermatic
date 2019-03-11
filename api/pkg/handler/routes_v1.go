@@ -66,10 +66,6 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Handler(r.listOpenstackSubnets())
 
 	mux.Methods(http.MethodGet).
-		Path("/versions").
-		Handler(r.getMasterVersions())
-
-	mux.Methods(http.MethodGet).
 		Path("/version").
 		Handler(r.getKubermaticVersion())
 
@@ -277,6 +273,16 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/users/{user_id}").
 		Handler(r.deleteUserFromProject())
+
+	//
+	// Defines set of HTTP endpoints for control plane and kubelet versions
+	mux.Methods(http.MethodGet).
+		Path("/versions").
+		Handler(r.getMasterVersions())
+
+	mux.Methods(http.MethodGet).
+		Path("/nodes/upgrades").
+		Handler(r.getNodeUpgrades())
 
 	//
 	// Defines an endpoint to retrieve information about the current token owner
@@ -1143,7 +1149,7 @@ func (r Routing) createNodeForClusterLegacy() http.Handler {
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
 		)(createNodeForClusterLegacy(r.sshKeyProvider, r.projectProvider, r.datacenters)),
-		decodeCreateNodeForClusterLegacy,
+		decodeNodeUpgradesReq,
 		setStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
@@ -1253,6 +1259,30 @@ func (r Routing) getClusterNodeUpgrades() http.Handler {
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
 		)(getClusterNodeUpgrades(r.updateManager, r.projectProvider)),
+		common.DecodeGetClusterReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades project getNodeUpgrades
+//
+//    Gets possible node upgrades for a specific control plane version
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []MasterVersion
+//       401: empty
+//       403: empty
+func (r Routing) getNodeUpgrades() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.oidcAuthenticator.Verifier(),
+			middleware.UserSaver(r.userProvider),
+		)(getNodeUpgrades(r.updateManager)),
 		common.DecodeGetClusterReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,

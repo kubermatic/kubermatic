@@ -112,21 +112,75 @@ func getClusterNodeUpgrades(updateManager UpdateManager, projectProvider provide
 			return nil, fmt.Errorf("failed to get master versions: %v", err)
 		}
 
-		var compatibleVersions []*version.MasterVersion
-		clusterVersion := cluster.Spec.Version.Semver()
-		for _, v := range versions {
-			if err = common.EnsureVersionCompatible(clusterVersion, v.Version); err == nil {
-				compatibleVersions = append(compatibleVersions, v)
-			} else {
-				_, ok := err.(common.ErrVersionSkew)
-				if !ok {
-					return nil, fmt.Errorf("failed to check compatibility between kubelet %q and control plane %q: %v", v.Version, clusterVersion, err)
-				}
-			}
+		compatibleVersions, err := filterIncompatibleVersions(versions, cluster.Spec.Version.Semver())
+		if err != nil {
+			return nil, fmt.Errorf("failed filter incompatible versions: %v", err)
 		}
 
 		return convertVersionsToExternal(compatibleVersions), nil
 	}
+}
+
+// NodeUpgradesReq defines HTTP request for getNodeUpgrades
+// swagger:parameters getNodeUpgrades
+type NodeUpgradesReq struct {
+	common.GetClusterReq
+
+	// in: body
+	Body apiv1.MasterVersion
+}
+
+func decodeNodeUpgradesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req NodeUpgradesReq
+
+	cr, err := common.DecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.GetClusterReq = cr.(common.GetClusterReq)
+
+	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func getNodeUpgrades(updateManager UpdateManager) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(NodeUpgradesReq)
+		if !ok {
+			return nil, errors.NewWrongRequest(request, NodeUpgradesReq{})
+		}
+
+		versions, err := updateManager.GetMasterVersions()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get master versions: %v", err)
+		}
+
+		compatibleVersions, err := filterIncompatibleVersions(versions, req.Body.Version)
+		if err != nil {
+			return nil, fmt.Errorf("failed filter incompatible versions: %v", err)
+		}
+
+		return convertVersionsToExternal(compatibleVersions), nil
+	}
+}
+
+func filterIncompatibleVersions(possibleKubeletVersions []*version.MasterVersion, controlPlaneVersion *semver.Version) ([]*version.MasterVersion, error) {
+	var compatibleVersions []*version.MasterVersion
+	for _, v := range possibleKubeletVersions {
+		if err := common.EnsureVersionCompatible(controlPlaneVersion, v.Version); err == nil {
+			compatibleVersions = append(compatibleVersions, v)
+		} else {
+			_, ok := err.(common.ErrVersionSkew)
+			if !ok {
+				return nil, fmt.Errorf("failed to check compatibility between kubelet %q and control plane %q: %v", v.Version, controlPlaneVersion, err)
+			}
+		}
+	}
+	return compatibleVersions, nil
 }
 
 // UpgradeClusterNodeDeploymentsReq defines HTTP request for upgradeClusterNodeDeployments endpoint
