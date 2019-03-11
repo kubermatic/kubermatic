@@ -124,23 +124,13 @@ func getClusterNodeUpgrades(updateManager UpdateManager, projectProvider provide
 // NodeUpgradesReq defines HTTP request for getNodeUpgrades
 // swagger:parameters getNodeUpgrades
 type NodeUpgradesReq struct {
-	common.GetClusterReq
-
 	// in: body
 	Body apiv1.MasterVersion
 }
 
 func decodeNodeUpgradesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NodeUpgradesReq
-
-	cr, err := common.DecodeGetClusterReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	req.GetClusterReq = cr.(common.GetClusterReq)
-
-	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
 	}
 

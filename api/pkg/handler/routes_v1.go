@@ -1149,7 +1149,7 @@ func (r Routing) createNodeForClusterLegacy() http.Handler {
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
 		)(createNodeForClusterLegacy(r.sshKeyProvider, r.projectProvider, r.datacenters)),
-		decodeNodeUpgradesReq,
+		decodeCreateNodeForClusterLegacy,
 		setStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
@@ -1283,7 +1283,7 @@ func (r Routing) getNodeUpgrades() http.Handler {
 			r.oidcAuthenticator.Verifier(),
 			middleware.UserSaver(r.userProvider),
 		)(getNodeUpgrades(r.updateManager)),
-		common.DecodeGetClusterReq,
+		decodeNodeUpgradesReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)

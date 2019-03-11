@@ -1223,35 +1223,21 @@
     },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades": {
       "get": {
-        "description": "Gets possible node upgrades for a cluster",
+        "description": "Gets possible node upgrades for a specific control plane version",
         "produces": [
           "application/json"
         ],
         "tags": [
           "project"
         ],
-        "operationId": "getClusterNodeUpgrades",
+        "operationId": "getNodeUpgrades",
         "parameters": [
           {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterID",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/MasterVersion"
+            }
           }
         ],
         "responses": {
