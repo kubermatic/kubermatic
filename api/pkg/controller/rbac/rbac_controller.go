@@ -51,9 +51,8 @@ func NewMetrics() *Metrics {
 
 // Controller stores necessary components that are required to implement RBACGenerator
 type Controller struct {
-	projectQueue         workqueue.RateLimitingInterface
-	projectBindingsQueue workqueue.RateLimitingInterface
-	metrics              *Metrics
+	projectQueue workqueue.RateLimitingInterface
+	metrics      *Metrics
 
 	projectLister            kubermaticv1lister.ProjectLister
 	userLister               kubermaticv1lister.UserLister
@@ -81,7 +80,6 @@ type projectResource struct {
 func New(metrics *Metrics, allClusterProviders []*ClusterProvider) (*Controller, error) {
 	c := &Controller{
 		projectQueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_project"),
-		projectBindingsQueue:  workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_project_bindings"),
 		projectResourcesQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_project_resources"),
 		metrics:               metrics,
 	}
@@ -130,33 +128,6 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider) (*Controller,
 	c.userLister = userInformer.Lister()
 	c.userProjectBindingLister = c.masterClusterProvider.kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister()
 
-	// sets up an informer for project binding resources
-	projectBindingsInformer := c.masterClusterProvider.kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings()
-	projectBindingsInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			c.enqueueProjectBinding(obj.(*kubermaticv1.UserProjectBinding))
-		},
-		UpdateFunc: func(old, cur interface{}) {
-			c.enqueueProjectBinding(cur.(*kubermaticv1.UserProjectBinding))
-		},
-		DeleteFunc: func(obj interface{}) {
-			projectBinding, ok := obj.(*kubermaticv1.UserProjectBinding)
-			if !ok {
-				tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
-				if !ok {
-					runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
-					return
-				}
-				projectBinding, ok = tombstone.Obj.(*kubermaticv1.UserProjectBinding)
-				if !ok {
-					runtime.HandleError(fmt.Errorf("tombstone contained object that is not a UserProjectBinding %#v", obj))
-					return
-				}
-			}
-			c.enqueueProjectBinding(projectBinding)
-		},
-	})
-
 	// sets up informers for project resources
 	// a list of dependent resources that we would like to watch/monitor
 	c.projectResources = []projectResource{
@@ -177,6 +148,15 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider) (*Controller,
 				Resource: kubermaticv1.SSHKeyResourceName,
 			},
 			kind: kubermaticv1.SSHKeyKind,
+		},
+
+		{
+			gvr: schema.GroupVersionResource{
+				Group:    kubermaticv1.GroupName,
+				Version:  kubermaticv1.GroupVersion,
+				Resource: kubermaticv1.UserProjectBindingResourceName,
+			},
+			kind: kubermaticv1.UserProjectBindingKind,
 		},
 	}
 
@@ -299,16 +279,6 @@ func (c *Controller) enqueueProjectResource(obj interface{}, gvr schema.GroupVer
 		clusterProvider: clusterProvider,
 	}
 	c.projectResourcesQueue.Add(item)
-}
-
-func (c *Controller) enqueueProjectBinding(projectBinding *kubermaticv1.UserProjectBinding) {
-	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(projectBinding)
-	if err != nil {
-		runtime.HandleError(fmt.Errorf("couldn't get key for object %#v: %v", projectBinding, err))
-		return
-	}
-
-	c.projectBindingsQueue.Add(key)
 }
 
 const projectResourcesResyncTime time.Duration = 5 * time.Minute

@@ -26,7 +26,6 @@ import (
 	kuberinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -193,7 +192,17 @@ func main() {
 	// This group is running the actual controller logic
 	{
 		g.Add(func() error {
+			// controller will return iff ctrlCtx is stopped
+			ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
+			return nil
+		}, func(err error) {
+			glog.Infof("Stopping RBACGenerator controller, err = %v", err)
+		})
+	}
 
+	// This group is running the controller manager
+	{
+		g.Add(func() error {
 			cfg, err := clientcmd.BuildConfigFromFlags(ctrlCtx.runOptions.masterURL, ctrlCtx.runOptions.kubeconfig)
 			if err != nil {
 				return err
@@ -201,10 +210,9 @@ func main() {
 
 			mgr, err := manager.New(cfg, manager.Options{})
 			if err != nil {
-				glog.Errorf("failed to start kubebuilder manager: %v", err)
+				glog.Errorf("failed to start RBACGenerator manager: %v", err)
 				return err
 			}
-			glog.Info("registering components")
 			if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
 				return err
 			}
@@ -213,18 +221,13 @@ func main() {
 				return err
 			}
 
-			go func() {
-				if err := mgr.Start(ctrlCtx.stopCh); err != nil {
-					glog.Errorf("failed to start kubebuilder manager: %v", err)
-					return
-				}
-			}()
-
-			// controller will return iff ctrlCtx is stopped
-			ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
+			if err := mgr.Start(ctrlCtx.stopCh); err != nil {
+				glog.Errorf("failed to start RBACGenerator manager: %v", err)
+				return err
+			}
 			return nil
 		}, func(err error) {
-			glog.Infof("Stopping RBACGenerator controller, err = %v", err)
+			glog.Infof("Stopping RBACGenerator manager, err = %v", err)
 		})
 	}
 

@@ -5,31 +5,30 @@ import (
 	"fmt"
 	"strings"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/source"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const ControllerName = "kubermatic_sync_projectbinding_controller"
+const controllerName = "kubermatic_sync_projectbinding_controller"
 
 func Add(mgr manager.Manager) error {
 	r := &reconcileSyncProjectBinding{Client: mgr.GetClient(), ctx: context.TODO()}
 	// Create a new controller
-	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: r})
+	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
-	// Watch for changes to ClusterRoles
+	// Watch for changes to UserProjectBinding
 	err = c.Watch(&source.Kind{Type: &kubermaticv1.UserProjectBinding{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
@@ -37,7 +36,7 @@ func Add(mgr manager.Manager) error {
 	return nil
 }
 
-// reconcileRBAC reconciles Cluster Role and Cluster Role Binding objects
+// reconcileSyncProjectBinding reconciles UserProjectBinding objects
 type reconcileSyncProjectBinding struct {
 	ctx context.Context
 	client.Client
