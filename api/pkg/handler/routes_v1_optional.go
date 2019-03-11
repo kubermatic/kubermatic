@@ -8,29 +8,12 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 )
 
-// OIDCConfiguration is a struct that holds
-// OIDC provider configuration data, read from command line arguments
-type OIDCConfiguration struct {
-	// URL holds OIDC Issuer URL address
-	URL string
-	// ClientID holds OIDC ClientID
-	ClientID string
-	// ClientSecret holds OIDC ClientSecret
-	ClientSecret string
-	// CookieHashKey is required, used to authenticate the cookie value using HMAC
-	// It is recommended to use a key with 32 or 64 bytes.
-	CookieHashKey string
-	// CookieSecureMode if true then cookie received only with HTTPS otherwise with HTTP.
-	CookieSecureMode bool
-	// OfflineAccessAsScope if true then "offline_access" scope will be used
-	// otherwise 'access_type=offline" query param will be passed
-	OfflineAccessAsScope bool
-}
-
 // RegisterV1Optional declares all router paths for v1
-func (r Routing) RegisterV1Optional(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg OIDCConfiguration, mainMux *mux.Router) {
+func (r Routing) RegisterV1Optional(mux *mux.Router, oidcKubeConfEndpoint bool, oidcCfg common.OIDCConfiguration, mainMux *mux.Router) {
 	// if enabled exposes defines an endpoint for generating kubeconfig for a cluster that will contain OIDC tokens
 	if oidcKubeConfEndpoint {
 		mux.Methods(http.MethodGet).
@@ -50,14 +33,14 @@ func (r Routing) RegisterV1Optional(mux *mux.Router, oidcKubeConfEndpoint bool, 
 //     Responses:
 //       default: errorResponse
 //       200: Kubeconfig
-func (r Routing) createOIDCKubeconfig(oidcCfg OIDCConfiguration) http.Handler {
+func (r Routing) createOIDCKubeconfig(oidcCfg common.OIDCConfiguration) http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfoUnauthorized(r.userProjectMapper, r.userProvider),
-		)(createOIDCKubeconfig(r.projectProvider, r.oidcIssuer, oidcCfg)),
-		decodeCreateOIDCKubeconfig,
-		encodeOIDCKubeconfig,
+		)(cluster.CreateOIDCKubeconfigEndpoint(r.projectProvider, r.oidcIssuer, oidcCfg)),
+		cluster.DecodeCreateOIDCKubeconfig,
+		cluster.EncodeOIDCKubeconfig,
 		r.defaultServerOptions()...,
 	)
 }
