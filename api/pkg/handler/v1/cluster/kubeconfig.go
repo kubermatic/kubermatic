@@ -1,4 +1,4 @@
-package handler
+package cluster
 
 import (
 	"context"
@@ -30,7 +30,7 @@ const (
 
 var secureCookie *securecookie.SecureCookie
 
-func getClusterKubeconfig(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func GetAdminKubeconfigEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -52,7 +52,7 @@ func getClusterKubeconfig(projectProvider provider.ProjectProvider) endpoint.End
 	}
 }
 
-func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVerifier auth.OIDCIssuerVerifier, oidcCfg OIDCConfiguration) endpoint.Endpoint {
+func CreateOIDCKubeconfigEndpoint(projectProvider provider.ProjectProvider, oidcIssuerVerifier auth.OIDCIssuerVerifier, oidcCfg common.OIDCConfiguration) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		oidcIssuer := oidcIssuerVerifier.(auth.OIDCIssuer)
 		oidcVerifier := oidcIssuerVerifier.(auth.OIDCVerifier)
@@ -166,7 +166,7 @@ func createOIDCKubeconfig(projectProvider provider.ProjectProvider, oidcIssuerVe
 		rsp.nonce = nonce
 		rsp.secureCookieMode = oidcCfg.CookieSecureMode
 
-		oidcState := State{
+		oidcState := OIDCState{
 			Nonce:      nonce,
 			ClusterID:  req.ClusterID,
 			ProjectID:  req.ProjectID,
@@ -190,7 +190,7 @@ type encodeKubeConifgResponse struct {
 	filePrefix string
 }
 
-func encodeKubeconfig(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
+func EncodeKubeconfig(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	rsp := response.(*encodeKubeConifgResponse)
 	cfg := rsp.clientCfg
 	filename := "kubeconfig"
@@ -228,7 +228,7 @@ type createOIDCKubeconfigRsp struct {
 	secureCookieMode bool
 }
 
-func encodeOIDCKubeconfig(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
+func EncodeOIDCKubeconfig(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	rsp := response.(createOIDCKubeconfigRsp)
 
 	// handles kubeconfig Generated PHASE
@@ -239,7 +239,7 @@ func encodeOIDCKubeconfig(c context.Context, w http.ResponseWriter, response int
 		if err != nil {
 			return fmt.Errorf("the cookie can't be removed, err = %v", err)
 		}
-		return encodeKubeconfig(c, w, &encodeKubeConifgResponse{clientCfg: rsp.oidcKubeConfig})
+		return EncodeKubeconfig(c, w, &encodeKubeConifgResponse{clientCfg: rsp.oidcKubeConfig})
 	}
 
 	// handles initialPhase
@@ -255,7 +255,7 @@ func encodeOIDCKubeconfig(c context.Context, w http.ResponseWriter, response int
 	return nil
 }
 
-func decodeGetClusterKubeconfig(c context.Context, r *http.Request) (interface{}, error) {
+func DecodeGetAdminKubeconfig(c context.Context, r *http.Request) (interface{}, error) {
 	req, err := common.DecodeGetClusterReq(c, r)
 	if err != nil {
 		return nil, err
@@ -270,8 +270,8 @@ const (
 	kubeconfigGenerated = iota
 )
 
-// State holds data that are send and retrieved from OIDC provider
-type State struct {
+// OIDCState holds data that are send and retrieved from OIDC provider
+type OIDCState struct {
 	// nonce a random string that binds requests / responses of API server and OIDC provider
 	// see https://tools.ietf.org/html/rfc6749#section-10.12
 	Nonce     string `json:"nonce"`
@@ -294,12 +294,12 @@ type CreateOIDCKubeconfigReq struct {
 	// not exported so that they don't leak to swagger spec.
 	code             string
 	encodedState     string
-	decodedState     State
+	decodedState     OIDCState
 	phase            int
 	cookieNonceValue string
 }
 
-func decodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}, error) {
+func DecodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}, error) {
 	req := CreateOIDCKubeconfigReq{}
 
 	// handle OIDC errors
@@ -325,7 +325,7 @@ func decodeCreateOIDCKubeconfig(c context.Context, r *http.Request) (interface{}
 		if err != nil {
 			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected base64 encoded value, err = %v", err)
 		}
-		oidcState := State{}
+		oidcState := OIDCState{}
 		if err := json.Unmarshal(rawState, &oidcState); err != nil {
 			return nil, kcerrors.NewBadRequest("incorrect value of state parameter, expected json encoded value, err = %v", err)
 		}
