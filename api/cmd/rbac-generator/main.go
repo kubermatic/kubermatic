@@ -5,17 +5,16 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/golang/glog"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	rbaccontroller "github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
@@ -25,6 +24,7 @@ import (
 	kuberinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 type controllerRunOptions struct {
@@ -161,32 +161,6 @@ func main() {
 		})
 	}
 
-	// This group is running an internal http metrics server with metrics
-	{
-		m := http.NewServeMux()
-		m.Handle("/metrics", promhttp.Handler())
-
-		s := http.Server{
-			Addr:         ctrlCtx.runOptions.internalAddr,
-			Handler:      m,
-			ReadTimeout:  5 * time.Second,
-			WriteTimeout: 10 * time.Second,
-		}
-
-		g.Add(func() error {
-			glog.Infof("Starting the internal HTTP metrics server at %s/metrics\n", ctrlCtx.runOptions.internalAddr)
-			return s.ListenAndServe()
-		}, func(err error) {
-			glog.Infof("Stopping internal HTTP metrics server, err = %v", err)
-			timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second)
-			defer cancel()
-
-			if err := s.Shutdown(timeoutCtx); err != nil {
-				glog.Errorf("Failed to shutdown the internal HTTP server gracefully, err = %v", err)
-			}
-		})
-	}
-
 	// This group is running the actual controller logic
 	{
 		g.Add(func() error {
@@ -195,6 +169,37 @@ func main() {
 			return nil
 		}, func(err error) {
 			glog.Infof("Stopping RBACGenerator controller, err = %v", err)
+		})
+	}
+
+	// This group is running the controller manager
+	{
+		g.Add(func() error {
+			cfg, err := clientcmd.BuildConfigFromFlags(ctrlCtx.runOptions.masterURL, ctrlCtx.runOptions.kubeconfig)
+			if err != nil {
+				return err
+			}
+
+			mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: ctrlCtx.runOptions.internalAddr})
+			if err != nil {
+				glog.Errorf("failed to start RBACGenerator manager: %v", err)
+				return err
+			}
+			if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
+				return err
+			}
+
+			if err := rbaccontroller.Add(mgr); err != nil {
+				return err
+			}
+
+			if err := mgr.Start(ctrlCtx.stopCh); err != nil {
+				glog.Errorf("failed to start RBACGenerator manager: %v", err)
+				return err
+			}
+			return nil
+		}, func(err error) {
+			glog.Infof("Stopping RBACGenerator manager, err = %v", err)
 		})
 	}
 
