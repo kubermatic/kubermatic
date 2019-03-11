@@ -48,8 +48,9 @@ func main() {
 				UseNamedObject:     true,
 			},
 			{
-				ResourceName: "Deployment",
-				ImportAlias:  "appsv1",
+				ResourceName:   "Deployment",
+				ImportAlias:    "appsv1",
+				UseNamedObject: true,
 				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
 			},
 			{

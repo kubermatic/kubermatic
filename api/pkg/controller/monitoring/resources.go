@@ -69,8 +69,8 @@ func (c *Controller) ensureRoleBindings(cluster *kubermaticv1.Cluster, data *res
 }
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
-func GetDeploymentCreators(data resources.DeploymentDataProvider) []resources.DeploymentCreator {
-	creators := []resources.DeploymentCreator{
+func GetDeploymentCreators(data resources.DeploymentDataProvider) []resources.NamedDeploymentCreatorGetter {
+	creators := []resources.NamedDeploymentCreatorGetter{
 		kubestatemetrics.DeploymentCreator(data),
 	}
 

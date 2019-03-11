@@ -529,11 +529,12 @@ func TestLoadFiles(t *testing.T) {
 				kubeInformerFactory.Start(wait.NeverStop)
 				kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
 
-				var deploymentCreators []resources.DeploymentCreator
+				var deploymentCreators []resources.NamedDeploymentCreatorGetter
 				deploymentCreators = append(deploymentCreators, clustercontroller.GetDeploymentCreators(data)...)
 				deploymentCreators = append(deploymentCreators, monitoringcontroller.GetDeploymentCreators(data)...)
 				for _, create := range deploymentCreators {
-					res, err := create(&appsv1.Deployment{})
+					_, creator := create()
+					res, err := creator(&appsv1.Deployment{})
 					if err != nil {
 						t.Fatalf("failed to create Deployment: %v", err)
 					}

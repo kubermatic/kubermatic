@@ -1,7 +1,6 @@
 package resources
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -10,11 +9,12 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 )
 
-func UserClusterController(_ context.Context, osData openshiftData) (string, resources.DeploymentCreator) {
+func UserClusterController(osData openshiftData) resources.NamedDeploymentCreatorGetter {
 
-	creator := usercluster.DeploymentCreator(osData)
-	creator = addContainerArg(creator, "usercluster-controller", "-openshift", "true")
-	return resources.UserClusterControllerDeploymentName, creator
+	name, creator := usercluster.DeploymentCreator(osData)()
+	return func() (string, resources.DeploymentCreator) {
+		return name, addContainerArg(creator, "usercluster-controller", "-openshift", "true")
+	}
 }
 
 func addContainerArg(creator resources.DeploymentCreator, containerName string, arg ...string) resources.DeploymentCreator {
