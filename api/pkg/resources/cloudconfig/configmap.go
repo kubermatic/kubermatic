@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure"
@@ -17,8 +19,13 @@ const (
 	name = "cloud-config"
 )
 
+type configMapCreatorData interface {
+	DC() *provider.DatacenterMeta
+	Cluster() *kubermaticv1.Cluster
+}
+
 // ConfigMapCreator returns a function to create the ConfigMap containing the cloud-config
-func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.NamedConfigMapCreatorGetter {
+func ConfigMapCreator(data configMapCreatorData) resources.NamedConfigMapCreatorGetter {
 	return func() (string, resources.ConfigMapCreator) {
 		return resources.CloudConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
@@ -40,7 +47,7 @@ func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.NamedConfi
 }
 
 // CloudConfig returns the cloud-config for the supplied data
-func CloudConfig(data resources.ConfigMapDataProvider) (cloudConfig string, err error) {
+func CloudConfig(data configMapCreatorData) (cloudConfig string, err error) {
 	cloud := data.Cluster().Spec.Cloud
 	dc := data.DC()
 	if cloud.AWS != nil {
