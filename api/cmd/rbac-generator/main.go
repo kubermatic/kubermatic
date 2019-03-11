@@ -5,13 +5,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/golang/glog"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	rbaccontroller "github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
@@ -163,32 +161,6 @@ func main() {
 		})
 	}
 
-	// This group is running an internal http metrics server with metrics
-	{
-		m := http.NewServeMux()
-		m.Handle("/metrics", promhttp.Handler())
-
-		s := http.Server{
-			Addr:         ctrlCtx.runOptions.internalAddr,
-			Handler:      m,
-			ReadTimeout:  5 * time.Second,
-			WriteTimeout: 10 * time.Second,
-		}
-
-		g.Add(func() error {
-			glog.Infof("Starting the internal HTTP metrics server at %s/metrics\n", ctrlCtx.runOptions.internalAddr)
-			return s.ListenAndServe()
-		}, func(err error) {
-			glog.Infof("Stopping internal HTTP metrics server, err = %v", err)
-			timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second)
-			defer cancel()
-
-			if err := s.Shutdown(timeoutCtx); err != nil {
-				glog.Errorf("Failed to shutdown the internal HTTP server gracefully, err = %v", err)
-			}
-		})
-	}
-
 	// This group is running the actual controller logic
 	{
 		g.Add(func() error {
@@ -208,7 +180,7 @@ func main() {
 				return err
 			}
 
-			mgr, err := manager.New(cfg, manager.Options{})
+			mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: ctrlCtx.runOptions.internalAddr})
 			if err != nil {
 				glog.Errorf("failed to start RBACGenerator manager: %v", err)
 				return err
