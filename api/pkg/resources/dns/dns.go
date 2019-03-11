@@ -3,6 +3,7 @@ package dns
 import (
 	"fmt"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
@@ -163,8 +164,12 @@ func getVolumes() []corev1.Volume {
 	}
 }
 
+type configMapCreatorData interface {
+	Cluster() *kubermaticv1.Cluster
+}
+
 // ConfigMapCreator returns a ConfigMap containing the cloud-config for the supplied data
-func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.NamedConfigMapCreatorGetter {
+func ConfigMapCreator(data configMapCreatorData) resources.NamedConfigMapCreatorGetter {
 	return func() (string, resources.ConfigMapCreator) {
 		return resources.DNSResolverConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			dnsIP, err := resources.UserClusterDNSResolverIP(data.Cluster())

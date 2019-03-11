@@ -5,14 +5,20 @@ import (
 	"net"
 	"strings"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type serverClientConfigsData interface {
+	Cluster() *kubermaticv1.Cluster
+	NodeAccessNetwork() string
+}
+
 // ServerClientConfigsConfigMapCreator returns a ConfigMap containing the ClientConfig for the OpenVPN server. It lives inside the seed-cluster
-func ServerClientConfigsConfigMapCreator(data resources.ConfigMapDataProvider) resources.NamedConfigMapCreatorGetter {
+func ServerClientConfigsConfigMapCreator(data serverClientConfigsData) resources.NamedConfigMapCreatorGetter {
 	return func() (string, resources.ConfigMapCreator) {
 		return resources.OpenVPNClientConfigsConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			cm.Labels = resources.BaseAppLabel(name, nil)

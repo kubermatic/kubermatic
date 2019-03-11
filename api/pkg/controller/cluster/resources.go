@@ -35,8 +35,10 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 	}
 
 	// check that all services are available
-	if err := cc.ensureServices(cluster, data); err != nil {
-		return err
+	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		if err := cc.ensureServices(cluster, data); err != nil {
+			return err
+		}
 	}
 
 	// check that all secrets are available // New way of handling secrets
@@ -62,9 +64,11 @@ func (cc *Controller) ensureResourcesAreDeployed(cluster *kubermaticv1.Cluster) 
 		return nil
 	}
 
-	// check that all ConfigMaps are available
-	if err := cc.ensureConfigMaps(cluster, data); err != nil {
-		return err
+	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		// check that all ConfigMaps are available
+		if err := cc.ensureConfigMaps(cluster, data); err != nil {
+			return err
+		}
 	}
 
 	// check that all Deployments are available
@@ -158,15 +162,12 @@ func GetServiceCreators(data *resources.TemplateData) []resources.NamedServiceCr
 		etcd.ServiceCreator(data),
 		dns.ServiceCreator(),
 		machinecontroller.ServiceCreator(),
+		metricsserver.ServiceCreator(),
 	}
 }
 
 func (cc *Controller) ensureServices(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetServiceCreators(data)
-	if cluster := data.Cluster(); cluster != nil && cluster.Annotations["kubermatic.io/openshift"] == "" {
-		creators = append(creators, metricsserver.ServiceCreator())
-	}
-
 	return resources.ReconcileServices(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(c))
 }
 

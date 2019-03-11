@@ -3,14 +3,20 @@ package etcd
 import (
 	"fmt"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+type serviceCreatorData interface {
+	Cluster() *kubermaticv1.Cluster
+	GetClusterRef() metav1.OwnerReference
+}
+
 // ServiceCreator returns the function to reconcile the etcd service
-func ServiceCreator(data *resources.TemplateData) resources.NamedServiceCreatorGetter {
+func ServiceCreator(data serviceCreatorData) resources.NamedServiceCreatorGetter {
 	return func() (string, resources.ServiceCreator) {
 		return resources.EtcdServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.EtcdServiceName
