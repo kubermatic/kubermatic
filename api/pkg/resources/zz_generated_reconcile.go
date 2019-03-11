@@ -212,6 +212,9 @@ func ReconcileStatefulSets(namedGetters []NamedStatefulSetCreatorGetter, namespa
 // DeploymentCreator defines an interface to create/update Deployments
 type DeploymentCreator = func(existing *appsv1.Deployment) (*appsv1.Deployment, error)
 
+// NamedDeploymentCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedDeploymentCreatorGetter = func() (name string, create DeploymentCreator)
+
 // DeploymentObjectWrapper adds a wrapper so the DeploymentCreator matches ObjectCreator
 // This is needed as golang does not support function interface matching
 func DeploymentObjectWrapper(create DeploymentCreator) ObjectCreator {
@@ -224,19 +227,20 @@ func DeploymentObjectWrapper(create DeploymentCreator) ObjectCreator {
 }
 
 // ReconcileDeployments will create and update the Deployments coming from the passed DeploymentCreator slice
-func ReconcileDeployments(creators []DeploymentCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
+func ReconcileDeployments(namedGetters []NamedDeploymentCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
 	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &appsv1.Deployment{})
 	if err != nil {
 		return fmt.Errorf("failed to get Deployment informer: %v", err)
 	}
 
-	for _, create := range creators {
+	for _, get := range namedGetters {
+		name, create := get()
 		createObject := DeploymentObjectWrapper(create)
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureObject(namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
 			return fmt.Errorf("failed to ensure Deployment: %v", err)
 		}
 	}

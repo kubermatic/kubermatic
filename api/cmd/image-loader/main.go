@@ -177,7 +177,8 @@ func getImagesFromCreators(templateData *resources.TemplateData) (images []strin
 	}
 
 	for _, createFunc := range deploymentCreators {
-		deployment, err := createFunc(&appsv1.Deployment{})
+		_, creator := createFunc()
+		deployment, err := creator(&appsv1.Deployment{})
 		if err != nil {
 			return nil, err
 		}
