@@ -94,7 +94,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(),
 			existingMachineDeployments: func() []*clusterv1alpha1.MachineDeployment {
 				mds := make([]*clusterv1alpha1.MachineDeployment, 0, 1)
-				mdWithOldKubelet := genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil)
+				mdWithOldKubelet := test.GenTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil)
 				mdWithOldKubelet.Spec.Template.Spec.Versions.Kubelet = "v1.4.0"
 				mds = append(mds, mdWithOldKubelet)
 				return mds

@@ -19,7 +19,7 @@ type OIDCConfiguration struct {
 	// OfflineAccessAsScope if true then "offline_access" scope will be used
 	// otherwise 'access_type=offline" query param will be passed
 	OfflineAccessAsScope bool
-	}
+}
 
 // UpdateManager specifies a set of methods to handle cluster versions & updates
 type UpdateManager interface {
