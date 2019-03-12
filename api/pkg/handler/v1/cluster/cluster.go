@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kubermatic/kubermatic/api/pkg/handler"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -62,7 +61,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 		}
 
 		// Validate the node deployment.
-		nd, err := handler.ValidateNodeDeployment(req.Body.NodeDeployment, newCluster.Spec.Version.Semver())
+		nd, err := machineresource.Validate(req.Body.NodeDeployment, newCluster.Spec.Version.Semver())
 		if err != nil {
 			return nil, k8cerrors.NewBadRequest(fmt.Sprintf("node deployment validation failed: %s", err.Error()))
 		}
