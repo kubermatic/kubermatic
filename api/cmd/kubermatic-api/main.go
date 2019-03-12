@@ -153,10 +153,15 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		return providers{}, fmt.Errorf("failed to create project provider due to %v", err)
 	}
 
+	privilegedProjectProvider, err := kubernetesprovider.NewPrivilegedProjectProvider(defaultImpersonationClient.CreateImpersonatedClientSet)
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create privileged project provider due to %v", err)
+	}
+
 	kubermaticMasterInformerFactory.Start(wait.NeverStop)
 	kubermaticMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
 
-	return providers{sshKey: sshKeyProvider, user: userProvider, project: projectProvider, projectMember: projectMemberProvider, memberMapper: projectMemberProvider, cloud: cloudProviders, clusters: clusterProviders, datacenters: datacenters}, nil
+	return providers{sshKey: sshKeyProvider, user: userProvider, project: projectProvider, privilegedProject: privilegedProjectProvider, projectMember: projectMemberProvider, memberMapper: projectMemberProvider, cloud: cloudProviders, clusters: clusterProviders, datacenters: datacenters}, nil
 }
 
 func createOIDCAuthenticatorIssuer(options serverRunOptions) (auth.OIDCAuthenticator, auth.OIDCIssuerVerifier, error) {
@@ -209,6 +214,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticato
 		prov.sshKey,
 		prov.user,
 		prov.project,
+		prov.privilegedProject,
 		oidcAuthenticator,
 		oidcIssuerVerifier,
 		updateManager,

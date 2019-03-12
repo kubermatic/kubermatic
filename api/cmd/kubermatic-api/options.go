@@ -85,12 +85,13 @@ func (o serverRunOptions) validate() error {
 }
 
 type providers struct {
-	sshKey        provider.SSHKeyProvider
-	user          provider.UserProvider
-	project       provider.ProjectProvider
-	projectMember provider.ProjectMemberProvider
-	memberMapper  provider.ProjectMemberMapper
-	cloud         provider.CloudRegistry
-	clusters      map[string]provider.ClusterProvider
-	datacenters   map[string]provider.DatacenterMeta
+	sshKey            provider.SSHKeyProvider
+	user              provider.UserProvider
+	project           provider.ProjectProvider
+	privilegedProject provider.PrivilegedProjectProvider
+	projectMember     provider.ProjectMemberProvider
+	memberMapper      provider.ProjectMemberMapper
+	cloud             provider.CloudRegistry
+	clusters          map[string]provider.ClusterProvider
+	datacenters       map[string]provider.DatacenterMeta
 }

@@ -32,6 +32,18 @@ func NewProjectProvider(createMasterImpersonatedClient kubermaticImpersonationCl
 	}, nil
 }
 
+// NewPrivilegedProjectProvider returns a privileged project provider
+func NewPrivilegedProjectProvider(createMasterImpersonatedClient kubermaticImpersonationClient) (*PrivilegedProjectProvider, error) {
+	kubermaticClient, err := createMasterImpersonatedClient(restclient.ImpersonationConfig{})
+	if err != nil {
+		return nil, err
+	}
+
+	return &PrivilegedProjectProvider{
+		clientPrivileged: kubermaticClient.Projects(),
+	}, nil
+}
+
 // ProjectProvider represents a data structure that knows how to manage projects
 type ProjectProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
@@ -42,6 +54,12 @@ type ProjectProvider struct {
 
 	// projectLister local cache that stores projects objects
 	projectLister kubermaticv1lister.ProjectLister
+}
+
+// PrivilegedProjectProvider represents a data structure that knows how to manage projects in a privileged way
+type PrivilegedProjectProvider struct {
+	// treat clientPrivileged as a privileged user and use wisely
+	clientPrivileged kubermaticclientv1.ProjectInterface
 }
 
 // New creates a brand new project in the system with the given name
@@ -126,6 +144,19 @@ func (p *ProjectProvider) Get(userInfo *provider.UserInfo, projectInternalName s
 		return nil, err
 	}
 	project, err := masterImpersonatedClient.Projects().Get(projectInternalName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if !options.IncludeUninitialized && project.Status.Phase != kubermaticapiv1.ProjectActive {
+		return nil, kerrors.NewServiceUnavailable("Project is not initialized yet")
+	}
+	return project, nil
+}
+
+// GetUnsecured returns the project with the given name
+// This function is unsafe in a sense that it uses privileged account to get project with the given name
+func (p *PrivilegedProjectProvider) GetUnsecured(projectInternalName string, options *provider.ProjectGetOptions) (*kubermaticapiv1.Project, error) {
+	project, err := p.clientPrivileged.Get(projectInternalName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

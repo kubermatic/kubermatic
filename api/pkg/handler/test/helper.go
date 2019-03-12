@@ -89,6 +89,7 @@ type newRoutingFunc func(
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	oidcAuthenticator auth.OIDCAuthenticator,
 	oidcIssuerVerifier auth.OIDCIssuerVerifier,
 	prometheusClient prometheusapi.Client,
@@ -122,6 +123,11 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		return nil, nil, err
 	}
 
+	privilegedProjectProvider, err := kubernetes.NewPrivilegedProjectProvider(fakeImpersonationClient)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	fUserClusterConnection := &fakeUserClusterConnection{fakeClient}
 
 	clusterProvider := kubernetes.NewClusterProvider(
@@ -146,6 +152,7 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		sshKeyProvider,
 		userProvider,
 		projectProvider,
+		privilegedProjectProvider,
 		authenticator,
 		issuerVerifier,
 		prometheusClient,
