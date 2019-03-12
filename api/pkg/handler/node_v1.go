@@ -576,34 +576,11 @@ func createNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 			return nil, fmt.Errorf("unknown cluster datacenter %s", cluster.Spec.Cloud.DatacenterName)
 		}
 
-		nd := &req.Body
-
-		if nd.Spec.Template.Cloud.Openstack == nil &&
-			nd.Spec.Template.Cloud.Digitalocean == nil &&
-			nd.Spec.Template.Cloud.AWS == nil &&
-			nd.Spec.Template.Cloud.Hetzner == nil &&
-			nd.Spec.Template.Cloud.VSphere == nil &&
-			nd.Spec.Template.Cloud.Azure == nil {
-			return nil, k8cerrors.NewBadRequest("cannot create node deployment without cloud provider")
+		nd, err := ValidateNodeDeployment(req.Body, cluster.Spec.Version.Semver())
+		if err != nil {
+			return nil, k8cerrors.NewBadRequest(fmt.Sprintf("node deployment validation failed: %s", err.Error()))
 		}
 
-		if nd.Spec.Template.Versions.Kubelet != "" {
-			kversion, err := semver.NewVersion(nd.Spec.Template.Versions.Kubelet)
-			if err != nil {
-				return nil, k8cerrors.NewBadRequest("failed to parse kubelet version: %v", err)
-			}
-
-			if err = common.EnsureVersionCompatible(cluster.Spec.Version.Semver(), kversion); err != nil {
-				return nil, k8cerrors.NewBadRequest(err.Error())
-			}
-
-			nd.Spec.Template.Versions.Kubelet = kversion.String()
-		} else {
-			//TODO: rework the versions
-			nd.Spec.Template.Versions.Kubelet = cluster.Spec.Version.String()
-		}
-
-		// Create Machine Deployment resource.
 		md, err := machineresource.Deployment(cluster, nd, dc, keys)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
@@ -615,6 +592,34 @@ func createNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 
 		return outputMachineDeployment(md)
 	}
+}
+
+func ValidateNodeDeployment(nd apiv1.NodeDeployment, controlPlaneVersion *semver.Version) (*apiv1.NodeDeployment, error) {
+	if nd.Spec.Template.Cloud.Openstack == nil &&
+		nd.Spec.Template.Cloud.Digitalocean == nil &&
+		nd.Spec.Template.Cloud.AWS == nil &&
+		nd.Spec.Template.Cloud.Hetzner == nil &&
+		nd.Spec.Template.Cloud.VSphere == nil &&
+		nd.Spec.Template.Cloud.Azure == nil {
+		return nil, k8cerrors.NewBadRequest("node deployment needs to have cloud provider data")
+	}
+
+	if nd.Spec.Template.Versions.Kubelet != "" {
+		kubeletVersion, err := semver.NewVersion(nd.Spec.Template.Versions.Kubelet)
+		if err != nil {
+			return nil, k8cerrors.NewBadRequest("failed to parse kubelet version: %v", err)
+		}
+
+		if err = common.EnsureVersionCompatible(controlPlaneVersion, kubeletVersion); err != nil {
+			return nil, k8cerrors.NewBadRequest(err.Error())
+		}
+
+		nd.Spec.Template.Versions.Kubelet = kubeletVersion.String()
+	} else {
+		nd.Spec.Template.Versions.Kubelet = controlPlaneVersion.String()
+	}
+
+	return &nd, nil
 }
 
 func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.NodeDeployment, error) {

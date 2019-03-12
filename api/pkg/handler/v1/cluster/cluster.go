@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kubermatic/kubermatic/api/pkg/handler"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
 
-	jsonpatch "github.com/evanphx/json-patch"
+	"github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	prometheusapi "github.com/prometheus/client_golang/api"
@@ -25,11 +26,13 @@ import (
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cluster"
+	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
 )
 
-func CreateEndpoint(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -39,7 +42,8 @@ func CreateEndpoint(cloudProviders map[string]provider.CloudProvider, projectPro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		spec, err := cluster.Spec(req.Body, cloudProviders, dcs)
+		// Create the cluster.
+		spec, err := cluster.Spec(req.Body.Cluster, cloudProviders, dcs)
 		if err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
@@ -56,6 +60,55 @@ func CreateEndpoint(cloudProviders map[string]provider.CloudProvider, projectPro
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
+
+		// Validate the node deployment.
+		nd, err := handler.ValidateNodeDeployment(req.Body.NodeDeployment, newCluster.Spec.Version.Semver())
+		if err != nil {
+			return nil, k8cerrors.NewBadRequest(fmt.Sprintf("node deployment validation failed: %s", err.Error()))
+		}
+
+		// Wait for the cluster to be healthy.
+		// TODO Return and continue in goroutine?
+		timeout := 3 * time.Minute
+		deadline := time.Now().Add(timeout)
+		clusterID := newCluster.Name
+		for {
+			// CheckInitStatus allows us to check if cluster is healthy.
+			newCluster, err = clusterProvider.Get(userInfo, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+			if err == nil {
+				// Create initial node deployment.
+				keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: clusterID})
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+
+				client, err := clusterProvider.GetClientForCustomerCluster(userInfo, newCluster)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+
+				dc, found := dcs[newCluster.Spec.Cloud.DatacenterName]
+				if !found {
+					return nil, fmt.Errorf("unknown cluster datacenter %s", newCluster.Spec.Cloud.DatacenterName)
+				}
+
+				md, err := machineresource.Deployment(newCluster, nd, dc, keys)
+				if err != nil {
+					return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
+				}
+
+				if err := client.Create(ctx, md); err != nil {
+					return nil, fmt.Errorf("failed to create machine deployment: %v", err)
+				}
+				break
+			}
+
+			if time.Now().After(deadline) {
+				return convertInternalClusterToExternal(newCluster),
+					fmt.Errorf("couldn't create initial node deployment, timed out waiting for cluster to be ready")
+			}
+		}
+
 		return convertInternalClusterToExternal(newCluster), nil
 	}
 }
@@ -525,7 +578,7 @@ type DetachSSHKeysReq struct {
 type CreateReq struct {
 	common.DCReq
 	// in: body
-	Body apiv1.Cluster
+	Body apiv1.CreateClusterSpec
 }
 
 func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
