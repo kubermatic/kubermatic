@@ -191,7 +191,7 @@ func createOIDCAuthenticatorIssuer(options serverRunOptions) (auth.OIDCAuthentic
 	return authenticator, issuer, err
 }
 
-func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticator auth.OIDCAuthenticator, oidcIssuerVerifier auth.OIDCIssuerVerifier, updateManager *version.Manager) (http.HandlerFunc, error) {
+func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticator auth.OIDCAuthenticator, oidcIssuerVerifier auth.OIDCIssuerVerifier, updateManager common.UpdateManager) (http.HandlerFunc, error) {
 	var prometheusClient prometheusapi.Client
 	if options.featureGates.Enabled(PrometheusEndpoint) {
 		var err error
