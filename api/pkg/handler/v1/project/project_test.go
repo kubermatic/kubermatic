@@ -1,6 +1,7 @@
 package project_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,12 +11,22 @@ import (
 	"time"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
+	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
+	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/project"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
+	restclient "k8s.io/client-go/rest"
 )
 
 func TestRenameProjectEndpoint(t *testing.T) {
@@ -215,7 +226,7 @@ func TestListProjectEndpoint(t *testing.T) {
 
 			// validate
 			if res.Code != tc.HTTPStatus {
-				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+				t.Fatalf("expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
 			actualProjects := test.ProjectV1SliceWrapper{}
@@ -225,6 +236,128 @@ func TestListProjectEndpoint(t *testing.T) {
 			wrappedExpectedProjects.Sort()
 
 			actualProjects.EqualOrDie(wrappedExpectedProjects, t)
+		})
+	}
+}
+
+func TestListProjectMethod(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                      string
+		ExistingKubermaticObjects []runtime.Object
+		ExistingAPIUser           *kubermaticapiv1.User
+		ExpectedErrorMsg          string
+		ExpectedDetails           []string
+		ExpectedResponse          []apiv1.Project
+	}{
+		{
+			Name: "scenario 1: project doesn't exist and it's forbidden for impersonated client, skipped in the result list",
+			ExistingKubermaticObjects: []runtime.Object{
+				// add some projects
+				test.GenProject(test.NoExistingFakeProject, kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-second-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp().Add(time.Minute)),
+				test.GenProject(test.ExistingFakeProject, kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute)),
+				// add John
+				test.GenUser("JohnID", "John", "john@acme.com"),
+				// make John the owner of the first project and the editor of the second
+				test.GenBinding(test.NoExistingFakeProjectID, "john@acme.com", "owners"),
+				test.GenBinding(test.ExistingFakeProjectID, "john@acme.com", "editors"),
+			},
+			ExistingAPIUser: test.GenUser("JohnID", "John", "john@acme.com"),
+			ExpectedResponse: []apiv1.Project{
+				{
+					Status: "Active",
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                test.ExistingFakeProjectID,
+						Name:              test.ExistingFakeProject,
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC),
+					},
+					Owners: []apiv1.User{},
+				},
+			},
+		},
+		{
+			Name: "scenario 1: two project providers return 404 error code, the first error is added to the final error details list",
+			ExistingKubermaticObjects: []runtime.Object{
+				// add some projects
+				test.GenProject(test.ForbiddenFakeProject, kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject(test.ExistingFakeProject, kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute)),
+				// add John
+				test.GenUser("JohnID", "John", "john@acme.com"),
+				// make John the owner of the first project and the editor of the second
+				test.GenBinding(test.ForbiddenFakeProjectID, "john@acme.com", "owners"),
+				test.GenBinding(test.ExistingFakeProjectID, "john@acme.com", "editors"),
+			},
+			ExistingAPIUser:  test.GenUser("JohnID", "John", "john@acme.com"),
+			ExpectedErrorMsg: "failed to get some projects, please examine details field for more info",
+			ExpectedDetails:  []string{test.ImpersonatedClientErrorMsg},
+			ExpectedResponse: []apiv1.Project{
+				{
+					Status: "Active",
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                test.ExistingFakeProjectID,
+						Name:              test.ExistingFakeProject,
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC),
+					},
+					Owners: []apiv1.User{},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+
+			kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(tc.ExistingKubermaticObjects...)
+			kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
+
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
+				return kubermaticClient.KubermaticV1(), nil
+			}
+
+			projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister())
+			userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister())
+
+			kubermaticInformerFactory.Start(wait.NeverStop)
+			kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
+
+			endpointFun := project.ListEndpoint(test.NewFakeProjectProvider(), test.NewFakePrivilegedProjectProvider(), projectMemberProvider, projectMemberProvider, userProvider)
+
+			ctx := context.WithValue(context.TODO(), middleware.UserCRContextKey, tc.ExistingAPIUser)
+
+			projectsRaw, err := endpointFun(ctx, nil)
+			resultProjectList := make([]apiv1.Project, 0)
+
+			for _, project := range projectsRaw.([]*apiv1.Project) {
+				resultProjectList = append(resultProjectList, *project)
+			}
+
+			if len(tc.ExpectedErrorMsg) > 0 {
+				kubermaticError, ok := err.(errors.HTTPError)
+				if !ok {
+					t.Fatal("expected HTTPError")
+				}
+				if kubermaticError.Error() != tc.ExpectedErrorMsg {
+					t.Fatalf("expected error message %s got %s", tc.ExpectedErrorMsg, kubermaticError.Error())
+				}
+				if !equality.Semantic.DeepEqual(kubermaticError.Details(), tc.ExpectedDetails) {
+					t.Fatalf("expected error details %v got %v", tc.ExpectedDetails, kubermaticError.Details())
+				}
+
+			} else {
+				if err != nil {
+					t.Fatalf("unexpected error %v", err)
+				}
+			}
+
+			actualProjects := test.ProjectV1SliceWrapper(resultProjectList)
+			actualProjects.Sort()
+
+			wrappedExpectedProjects := test.ProjectV1SliceWrapper(tc.ExpectedResponse)
+			wrappedExpectedProjects.Sort()
+
+			actualProjects.EqualOrDie(wrappedExpectedProjects, t)
+
 		})
 	}
 }

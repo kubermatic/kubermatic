@@ -643,7 +643,7 @@ func (r Routing) listProjects() http.Handler {
 			r.oidcAuthenticator.Verifier(),
 			middleware.UserSaver(r.userProvider),
 			middleware.UserInfo(r.userProjectMapper),
-		)(project.ListEndpoint(r.projectProvider, r.userProjectMapper, r.projectMemberProvider, r.userProvider)),
+		)(project.ListEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userProjectMapper, r.projectMemberProvider, r.userProvider)),
 		decodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
