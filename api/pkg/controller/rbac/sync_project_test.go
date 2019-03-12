@@ -11,6 +11,7 @@ import (
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
+	k8scorev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -830,7 +831,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 		// scenario 1
 		{
 
-			name:          "Scenario 1: When a project is removed corresponding Subject from the RBAC Binding are removed",
+			name:          "Scenario 1: When a project is removed corresponding Subject from the Cluster RBAC Binding are removed",
 			projectToSync: createProject("plan9", createUser("James Bond")),
 			projectResourcesToSync: []projectResource{
 				{
@@ -2119,6 +2120,891 @@ func TestEnsureProjectOwner(t *testing.T) {
 			test.expectedBinding.Name = createdBinding.Name
 			if !equality.Semantic.DeepEqual(createdBinding, test.expectedBinding) {
 				t.Fatalf("%v", diff.ObjectDiff(test.expectedBinding, createdBinding))
+			}
+		})
+	}
+}
+
+func TestEnsureProjectRBACRoleForResources(t *testing.T) {
+	tests := []struct {
+		name                     string
+		projectResourcesToSync   []projectResource
+		expectedRolesForMaster   []*rbacv1.Role
+		expectedActionsForMaster []string
+		seedClusters             int
+		expectedActionsForSeeds  []string
+		expectedRolesForSeeds    []*rbacv1.Role
+		existingRoles            []*rbacv1.Role
+	}{
+		// scenario 1
+		{
+			name:                     "Scenario 1: Proper set of RBAC Roles for secrets in sa-secrets namespace are created on master seed clusters",
+			expectedActionsForMaster: []string{"create"},
+			expectedActionsForSeeds:  []string{"create"},
+			seedClusters:             1,
+			projectResourcesToSync: []projectResource{
+				{
+					gvr: schema.GroupVersionResource{
+						Group:    k8scorev1.GroupName,
+						Version:  k8scorev1.SchemeGroupVersion.Version,
+						Resource: "secrets",
+					},
+					kind:      "Secret",
+					namespace: "sa-secrets",
+				},
+				{
+					gvr: schema.GroupVersionResource{
+						Group:    k8scorev1.GroupName,
+						Version:  k8scorev1.SchemeGroupVersion.Version,
+						Resource: "secrets",
+					},
+					kind:        "Secret",
+					destination: destinationSeed,
+					namespace:   "sa-secrets",
+				},
+			},
+
+			expectedRolesForSeeds: []*rbacv1.Role{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secrets:owners",
+						Namespace: "sa-secrets",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{k8scorev1.SchemeGroupVersion.Group},
+							Resources: []string{"secrets"},
+							Verbs:     []string{"create"},
+						},
+					},
+				},
+			},
+
+			expectedRolesForMaster: []*rbacv1.Role{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secrets:owners",
+						Namespace: "sa-secrets",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{k8scorev1.SchemeGroupVersion.Group},
+							Resources: []string{"secrets"},
+							Verbs:     []string{"create"},
+						},
+					},
+				},
+			},
+		},
+
+		// scenario 2
+		{
+			name:                     "Scenario 2: No-op if proper set of RBAC Roles for secrets in sa-secrets namespace already exist on master and seed clusters",
+			expectedActionsForMaster: []string{},
+			expectedActionsForSeeds:  []string{},
+			seedClusters:             1,
+			projectResourcesToSync: []projectResource{
+				{
+					gvr: schema.GroupVersionResource{
+						Group:    k8scorev1.GroupName,
+						Version:  k8scorev1.SchemeGroupVersion.Version,
+						Resource: "secrets",
+					},
+					kind:      "Secret",
+					namespace: "sa-secrets",
+				},
+				{
+					gvr: schema.GroupVersionResource{
+						Group:    k8scorev1.GroupName,
+						Version:  k8scorev1.SchemeGroupVersion.Version,
+						Resource: "secrets",
+					},
+					kind:        "Secret",
+					destination: destinationSeed,
+					namespace:   "sa-secrets",
+				},
+			},
+
+			expectedRolesForSeeds: []*rbacv1.Role{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secrets:owners",
+						Namespace: "sa-secrets",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{k8scorev1.SchemeGroupVersion.Group},
+							Resources: []string{"secrets"},
+							Verbs:     []string{"create"},
+						},
+					},
+				},
+			},
+
+			existingRoles: []*rbacv1.Role{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secrets:owners",
+						Namespace: "sa-secrets",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{k8scorev1.SchemeGroupVersion.Group},
+							Resources: []string{"secrets"},
+							Verbs:     []string{"create"},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// setup the test scenario
+			objs := []runtime.Object{}
+			fakeKubeClient := fake.NewSimpleClientset(objs...)
+			roleIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+			for _, res := range test.existingRoles {
+				roleIndexer.Add(res)
+			}
+
+			// manually set lister as we don't want to start informers in the tests
+			fakeKubeInformerProviderForMaster := NewInformerProvider(fakeKubeClient, time.Minute*5)
+			for _, res := range test.projectResourcesToSync {
+				fakeInformerFactoryForRole := fakeInformerProvider.NewFakeSharedInformerFactory(fakeKubeClient, res.namespace)
+				fakeInformerFactoryForRole.AddFakeRoleInformer(roleIndexer)
+				fakeKubeInformerProviderForMaster.kubeInformers[res.namespace] = fakeInformerFactoryForRole
+			}
+			fakeKubeInformerProviderForMaster.started = true
+
+			fakeMasterClusterProvider := &ClusterProvider{
+				kubeClient:           fakeKubeClient,
+				kubeInformerProvider: fakeKubeInformerProviderForMaster,
+			}
+
+			seedClusterProviders := make([]*ClusterProvider, test.seedClusters)
+			for i := 0; i < test.seedClusters; i++ {
+				objs := []runtime.Object{}
+				fakeSeedKubeClient := fake.NewSimpleClientset(objs...)
+				fakeKubeInformerProvider := NewInformerProvider(fakeSeedKubeClient, time.Minute*5)
+				for _, res := range test.projectResourcesToSync {
+					fakeInformerFactoryForRole := fakeInformerProvider.NewFakeSharedInformerFactory(fakeKubeClient, res.namespace)
+					fakeInformerFactoryForRole.AddFakeRoleInformer(roleIndexer)
+					fakeKubeInformerProvider.kubeInformers[res.namespace] = fakeInformerFactoryForRole
+				}
+				fakeProvider := NewClusterProvider(strconv.Itoa(i), fakeSeedKubeClient, fakeKubeInformerProvider, nil, nil)
+				fakeKubeInformerProvider.started = true
+				seedClusterProviders[i] = fakeProvider
+			}
+
+			// act
+			target := Controller{}
+			target.masterClusterProvider = fakeMasterClusterProvider
+			target.projectResources = test.projectResourcesToSync
+			target.seedClusterProviders = seedClusterProviders
+			err := target.ensureRBACRoleForResources()
+
+			// validate master cluster
+			{
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(test.expectedRolesForMaster) == 0 {
+					if len(fakeKubeClient.Actions()) != 0 {
+						t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+					}
+					return
+				}
+
+				if len(fakeKubeClient.Actions()) != len(test.expectedActionsForMaster) {
+					t.Fatalf("unexpected number of actions, expected to get %d but got %d, actions %v", len(test.expectedActionsForMaster), len(fakeKubeClient.Actions()), fakeKubeClient.Actions())
+				}
+
+				createActionIndex := 0
+				for index, action := range fakeKubeClient.Actions() {
+					if !action.Matches(test.expectedActionsForMaster[index], "roles") {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if action.GetVerb() == "get" {
+						continue
+					}
+					// TODO: figure out why action.(clienttesting.GenericAction) does not work
+					createAction, ok := action.(clienttesting.CreateAction)
+					if !ok {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.Role), test.expectedRolesForMaster[createActionIndex]) {
+						t.Fatalf("%v", diff.ObjectDiff(test.expectedRolesForMaster[createActionIndex], createAction.GetObject().(*rbacv1.Role)))
+					}
+					createActionIndex = createActionIndex + 1
+				}
+			}
+
+			// validate seed clusters
+			for i := 0; i < test.seedClusters; i++ {
+
+				seedKubeClient, ok := seedClusterProviders[i].kubeClient.(*fake.Clientset)
+				if !ok {
+					t.Fatal("expected thatt seedClusterRESTClient will hold *fake.Clientset")
+				}
+				if len(test.expectedRolesForSeeds) == 0 {
+					if len(seedKubeClient.Actions()) != 0 {
+						t.Fatalf("unexpected actions %#v", seedKubeClient.Actions())
+					}
+					return
+				}
+
+				if len(seedKubeClient.Actions()) != len(test.expectedActionsForSeeds) {
+					t.Fatalf("unexpected number of actions, got %d, but expected to get %d, actions %v", len(seedKubeClient.Actions()), len(test.expectedActionsForSeeds), seedKubeClient.Actions())
+				}
+
+				createActionIndex := 0
+				for index, action := range seedKubeClient.Actions() {
+					if !action.Matches(test.expectedActionsForSeeds[index], "roles") {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if action.GetVerb() == "get" {
+						continue
+					}
+					// TODO: figure out why action.(clienttesting.GenericAction) does not work
+					createAction, ok := action.(clienttesting.CreateAction)
+					if !ok {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.Role), test.expectedRolesForSeeds[createActionIndex]) {
+						t.Fatalf("%v", diff.ObjectDiff(test.expectedRolesForSeeds[createActionIndex], createAction.GetObject().(*rbacv1.Role)))
+					}
+					createActionIndex = createActionIndex + 1
+				}
+			}
+		})
+	}
+}
+
+func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
+	tests := []struct {
+		name                          string
+		projectResourcesToSync        []projectResource
+		projectToSync                 string
+		expectedRoleBindingsForMaster []*rbacv1.RoleBinding
+		existingRoleBindingsForMaster []*rbacv1.RoleBinding
+		expectedActionsForMaster      []string
+		seedClusters                  int
+		expectedActionsForSeeds       []string
+		expectedRoleBindingsForSeeds  []*rbacv1.RoleBinding
+		existingRoleBindingsForSeeds  []*rbacv1.RoleBinding
+	}{
+		// scenario 1
+		{
+			name:                     "Scenario 1: Proper set of RBAC Bindings for secrets in sa-secret namespace are created on master and seed clusters",
+			projectToSync:            "thunderball",
+			expectedActionsForMaster: []string{"create"},
+			projectResourcesToSync: []projectResource{
+				{
+					gvr: schema.GroupVersionResource{
+						Group:    k8scorev1.GroupName,
+						Version:  k8scorev1.SchemeGroupVersion.Version,
+						Resource: "secrets",
+					},
+					kind:        "Secret",
+					destination: destinationSeed,
+					namespace:   "sa-secrets",
+				},
+
+				{
+					gvr: schema.GroupVersionResource{
+						Group:    k8scorev1.GroupName,
+						Version:  k8scorev1.SchemeGroupVersion.Version,
+						Resource: "secrets",
+					},
+					kind:      "Secret",
+					namespace: "sa-secrets",
+				},
+			},
+			expectedRoleBindingsForMaster: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secrets:owners",
+						Namespace: "sa-secrets",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:owners",
+					},
+				},
+			},
+			seedClusters:            1,
+			expectedActionsForSeeds: []string{"create"},
+			expectedRoleBindingsForSeeds: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secrets:owners",
+						Namespace: "sa-secrets",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:owners",
+					},
+				},
+			},
+		},
+
+		// scenario 2
+		{
+			name:                     "Scenario 2: Existing RBAC Bindings are properly updated when a new project is added",
+			projectToSync:            "thunderball",
+			expectedActionsForMaster: []string{"update"},
+			projectResourcesToSync: []projectResource{
+				{
+					gvr: schema.GroupVersionResource{
+						Group:    k8scorev1.GroupName,
+						Version:  k8scorev1.SchemeGroupVersion.Version,
+						Resource: "secrets",
+					},
+					kind:        "Secret",
+					destination: destinationSeed,
+					namespace:   "sa-secrets",
+				},
+				{
+					gvr: schema.GroupVersionResource{
+						Group:    k8scorev1.GroupName,
+						Version:  k8scorev1.SchemeGroupVersion.Version,
+						Resource: "secrets",
+					},
+					kind:      "Secret",
+					namespace: "sa-secrets",
+				},
+			},
+			existingRoleBindingsForMaster: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secrets:owners",
+						Namespace: "sa-secrets",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-existing-project-1",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:owners",
+					},
+				},
+			},
+			expectedRoleBindingsForMaster: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secrets:owners",
+						Namespace: "sa-secrets",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-existing-project-1",
+						},
+						{
+
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:owners",
+					},
+				},
+			},
+			seedClusters:            1,
+			expectedActionsForSeeds: []string{"update"},
+			existingRoleBindingsForSeeds: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secrets:owners",
+						Namespace: "sa-secrets",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-existing-project-1",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:owners",
+					},
+				},
+			},
+			expectedRoleBindingsForSeeds: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secrets:owners",
+						Namespace: "sa-secrets",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-existing-project-1",
+						},
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:owners",
+					},
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// setup the test scenario
+			objs := []runtime.Object{}
+			roleBindingsIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+			for _, existingRoleBinding := range test.existingRoleBindingsForMaster {
+				objs = append(objs, existingRoleBinding)
+				err := roleBindingsIndexer.Add(existingRoleBinding)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			fakeKubeClient := fake.NewSimpleClientset(objs...)
+			// manually set lister as we don't want to start informers in the tests
+			fakeKubeInformerProviderForMaster := NewInformerProvider(fakeKubeClient, time.Minute*5)
+			for _, res := range test.projectResourcesToSync {
+				fakeInformerFactoryForClusterRole := fakeInformerProvider.NewFakeSharedInformerFactory(fakeKubeClient, res.namespace)
+				fakeInformerFactoryForClusterRole.AddFakeRoleBindingInformer(roleBindingsIndexer)
+				fakeKubeInformerProviderForMaster.kubeInformers[res.namespace] = fakeInformerFactoryForClusterRole
+			}
+			fakeKubeInformerProviderForMaster.started = true
+
+			fakeMasterClusterProvider := &ClusterProvider{
+				kubeClient:           fakeKubeClient,
+				kubeInformerProvider: fakeKubeInformerProviderForMaster,
+			}
+
+			seedClusterProviders := make([]*ClusterProvider, test.seedClusters)
+			for i := 0; i < test.seedClusters; i++ {
+				objs := []runtime.Object{}
+				roleBindingsIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+				for _, existingRoleBinding := range test.existingRoleBindingsForSeeds {
+					objs = append(objs, existingRoleBinding)
+					err := roleBindingsIndexer.Add(existingRoleBinding)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+				fakeSeedKubeClient := fake.NewSimpleClientset(objs...)
+				fakeKubeInformerProviderForSeed := NewInformerProvider(fakeSeedKubeClient, time.Minute*5)
+
+				// manually set lister as we don't want to start informers in the tests
+				for _, res := range test.projectResourcesToSync {
+					fakeInformerFactoryForRole := fakeInformerProvider.NewFakeSharedInformerFactory(fakeKubeClient, res.namespace)
+					fakeInformerFactoryForRole.AddFakeRoleBindingInformer(roleBindingsIndexer)
+					fakeKubeInformerProviderForSeed.kubeInformers[res.namespace] = fakeInformerFactoryForRole
+				}
+
+				fakeProvider := NewClusterProvider(strconv.Itoa(i), fakeSeedKubeClient, fakeKubeInformerProviderForSeed, nil, nil)
+				fakeKubeInformerProviderForSeed.started = true
+				seedClusterProviders[i] = fakeProvider
+			}
+
+			// act
+			target := Controller{}
+			target.masterClusterProvider = fakeMasterClusterProvider
+			target.projectResources = test.projectResourcesToSync
+			target.seedClusterProviders = seedClusterProviders
+			err := target.ensureRBACRoleBindingForResources(test.projectToSync)
+
+			// validate master cluster
+			{
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(test.expectedRoleBindingsForMaster) == 0 {
+					if len(fakeKubeClient.Actions()) != 0 {
+						t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+					}
+					return
+				}
+
+				if len(fakeKubeClient.Actions()) != len(test.expectedActionsForMaster) {
+					t.Fatalf("unexpected number of actions, expected %d, got %d, actions %v", len(test.expectedActionsForMaster), len(fakeKubeClient.Actions()), fakeKubeClient.Actions())
+				}
+
+				createActionIndex := 0
+				for index, action := range fakeKubeClient.Actions() {
+					if !action.Matches(test.expectedActionsForMaster[index], "rolebindings") {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if action.GetVerb() == "get" {
+						continue
+					}
+					// TODO: figure out why action.(clienttesting.GenericAction) does not work
+					createAction, ok := action.(clienttesting.CreateAction)
+					if !ok {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.RoleBinding), test.expectedRoleBindingsForMaster[createActionIndex]) {
+						t.Fatalf("%v", diff.ObjectDiff(test.expectedRoleBindingsForMaster[createActionIndex], createAction.GetObject().(*rbacv1.RoleBinding)))
+					}
+					createActionIndex = createActionIndex + 1
+				}
+			}
+
+			// validate seed clusters
+			for i := 0; i < test.seedClusters; i++ {
+
+				seedKubeClient, ok := seedClusterProviders[i].kubeClient.(*fake.Clientset)
+				if !ok {
+					t.Fatal("expected thatt seedClusterRESTClient will hold *fake.Clientset")
+				}
+				if len(test.expectedRoleBindingsForSeeds) == 0 {
+					if len(seedKubeClient.Actions()) != 0 {
+						t.Fatalf("unexpected actions %#v", seedKubeClient.Actions())
+					}
+					return
+				}
+
+				if len(seedKubeClient.Actions()) != len(test.expectedActionsForSeeds) {
+					t.Fatalf("unexpected number of actions, expected %d, got %d, actions %v", len(test.expectedActionsForSeeds), len(seedKubeClient.Actions()), seedKubeClient.Actions())
+				}
+
+				createActionIndex := 0
+				for index, action := range seedKubeClient.Actions() {
+					if !action.Matches(test.expectedActionsForSeeds[index], "rolebindings") {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if action.GetVerb() == "get" {
+						continue
+					}
+					// TODO: figure out why action.(clienttesting.GenericAction) does not work
+					createAction, ok := action.(clienttesting.CreateAction)
+					if !ok {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.RoleBinding), test.expectedRoleBindingsForSeeds[createActionIndex]) {
+						t.Fatalf("%v", diff.ObjectDiff(test.expectedRoleBindingsForSeeds[createActionIndex], createAction.GetObject().(*rbacv1.RoleBinding)))
+					}
+					createActionIndex = createActionIndex + 1
+				}
+			}
+		})
+	}
+}
+
+func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
+	tests := []struct {
+		name                          string
+		projectResourcesToSync        []projectResource
+		projectToSync                 *kubermaticv1.Project
+		existingUser                  *kubermaticv1.User
+		expectedRoleBindingsForMaster []*rbacv1.RoleBinding
+		existingRoleBindingsForMaster []*rbacv1.RoleBinding
+		expectedActionsForMaster      []string
+		seedClusters                  int
+		expectedActionsForSeeds       []string
+		expectedRoleBindingsForSeeds  []*rbacv1.RoleBinding
+		existingRoleBindingsForSeeds  []*rbacv1.RoleBinding
+	}{
+		// scenario 1
+		{
+
+			name:          "Scenario 1: When a project is removed corresponding Subject from the RBAC Binding are removed",
+			projectToSync: createProject("plan9", createUser("James Bond")),
+			projectResourcesToSync: []projectResource{
+
+				{
+					gvr: schema.GroupVersionResource{
+						Group:    k8scorev1.GroupName,
+						Version:  k8scorev1.SchemeGroupVersion.Version,
+						Resource: "secrets",
+					},
+					kind:        "Secret",
+					destination: destinationSeed,
+					namespace:   "sa-secrets",
+				},
+				{
+					gvr: schema.GroupVersionResource{
+						Group:    k8scorev1.GroupName,
+						Version:  k8scorev1.SchemeGroupVersion.Version,
+						Resource: "secrets",
+					},
+					kind:      "Secret",
+					namespace: "sa-secrets",
+				},
+			},
+			expectedActionsForMaster: []string{"get", "update"},
+			expectedRoleBindingsForMaster: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secrets:owners",
+						Namespace: "sa-secrets",
+					},
+					Subjects: []rbacv1.Subject{},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:owners",
+					},
+				},
+			},
+			existingRoleBindingsForMaster: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secrets:owners",
+						Namespace: "sa-secrets",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-plan9",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:owners",
+					},
+				},
+			},
+			seedClusters:            1,
+			expectedActionsForSeeds: []string{"get", "update"},
+			expectedRoleBindingsForSeeds: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secrets:owners",
+						Namespace: "sa-secrets",
+					},
+					Subjects: []rbacv1.Subject{},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:owners",
+					},
+				},
+			},
+			existingRoleBindingsForSeeds: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secrets:owners",
+						Namespace: "sa-secrets",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-plan9",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:owners",
+					},
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// setup the test scenario
+			objs := []runtime.Object{}
+			kubermaticObjs := []runtime.Object{}
+			projectIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+			if test.projectToSync != nil {
+				err := projectIndexer.Add(test.projectToSync)
+				if err != nil {
+					t.Fatal(err)
+				}
+				kubermaticObjs = append(kubermaticObjs, test.projectToSync)
+			}
+			projectLister := kubermaticv1lister.NewProjectLister(projectIndexer)
+
+			userIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+			if test.existingUser != nil {
+				err := userIndexer.Add(test.existingUser)
+				if err != nil {
+					t.Fatal(err)
+				}
+				kubermaticObjs = append(kubermaticObjs, test.projectToSync)
+			}
+			userLister := kubermaticv1lister.NewUserLister(userIndexer)
+
+			roleBindingsIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+			for _, existingRoleBinding := range test.existingRoleBindingsForMaster {
+				objs = append(objs, existingRoleBinding)
+				err := roleBindingsIndexer.Add(existingRoleBinding)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			fakeMasterKubeClient := fake.NewSimpleClientset(objs...)
+			fakeMasterKubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjs...)
+			// manually set lister as we don't want to start informers in the tests
+			fakeKubeInformerProviderForMaster := NewInformerProvider(fakeMasterKubeClient, time.Minute*5)
+			for _, res := range test.projectResourcesToSync {
+				fakeInformerFactoryForRole := fakeInformerProvider.NewFakeSharedInformerFactory(fakeMasterKubeClient, res.namespace)
+				fakeInformerFactoryForRole.AddFakeRoleBindingInformer(roleBindingsIndexer)
+				fakeKubeInformerProviderForMaster.kubeInformers[res.namespace] = fakeInformerFactoryForRole
+			}
+			fakeKubeInformerProviderForMaster.started = true
+
+			fakeMasterClusterProvider := &ClusterProvider{
+				kubeClient:           fakeMasterKubeClient,
+				kubermaticClient:     fakeMasterKubermaticClient,
+				kubeInformerProvider: fakeKubeInformerProviderForMaster,
+			}
+			seedClusterProviders := make([]*ClusterProvider, test.seedClusters)
+			for i := 0; i < test.seedClusters; i++ {
+				objs := []runtime.Object{}
+				roleBindingsIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+				for _, existingRoleBinding := range test.existingRoleBindingsForSeeds {
+					objs = append(objs, existingRoleBinding)
+					err := roleBindingsIndexer.Add(existingRoleBinding)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				clusterResourcesIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+				fakeSeedKubeClient := fake.NewSimpleClientset(objs...)
+				fakeKubeInformerProviderForSeed := NewInformerProvider(fakeSeedKubeClient, time.Minute*5)
+
+				// manually set lister as we don't want to start informers in the tests
+				for _, res := range test.projectResourcesToSync {
+					fakeInformerFactoryForRole := fakeInformerProvider.NewFakeSharedInformerFactory(fakeSeedKubeClient, res.namespace)
+					fakeInformerFactoryForRole.AddFakeRoleBindingInformer(roleBindingsIndexer)
+					fakeKubeInformerProviderForSeed.kubeInformers[res.namespace] = fakeInformerFactoryForRole
+				}
+
+				fakeProvider := NewClusterProvider(strconv.Itoa(i), fakeSeedKubeClient, fakeKubeInformerProviderForSeed, nil, nil)
+				fakeProvider.AddIndexerFor(clusterResourcesIndexer, schema.GroupVersionResource{Resource: kubermaticv1.ClusterResourceName})
+				fakeKubeInformerProviderForSeed.started = true
+				seedClusterProviders[i] = fakeProvider
+			}
+
+			// act
+			target := Controller{}
+			target.masterClusterProvider = fakeMasterClusterProvider
+			target.projectResources = test.projectResourcesToSync
+			target.seedClusterProviders = seedClusterProviders
+			target.projectLister = projectLister
+			target.userLister = userLister
+			err := target.ensureProjectCleanup(test.projectToSync)
+
+			// validate master cluster
+			{
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				fakeKubeClient, ok := fakeMasterClusterProvider.kubeClient.(*fake.Clientset)
+				if !ok {
+					t.Fatal("unable to cast fakeMasterClusterProvider.kubeCLient to *fake.Clientset")
+				}
+
+				if len(test.expectedRoleBindingsForMaster) == 0 {
+					if len(fakeKubeClient.Actions()) != 0 {
+						t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+					}
+					return
+				}
+
+				if len(fakeKubeClient.Actions()) != len(test.expectedActionsForMaster) {
+					t.Fatalf("unexpected actions %v", fakeKubeClient.Actions())
+				}
+
+				createActionIndex := 0
+				for index, action := range fakeKubeClient.Actions() {
+					if !action.Matches(test.expectedActionsForMaster[index], "rolebindings") {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if action.GetVerb() == "get" {
+						continue
+					}
+					// TODO: figure out why action.(clienttesting.GenericAction) does not work
+					createAction, ok := action.(clienttesting.CreateAction)
+					if !ok {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.RoleBinding), test.expectedRoleBindingsForMaster[createActionIndex]) {
+						t.Fatalf("%v", diff.ObjectDiff(test.expectedRoleBindingsForMaster[createActionIndex], createAction.GetObject().(*rbacv1.RoleBinding)))
+					}
+					createActionIndex = createActionIndex + 1
+				}
+			}
+
+			// validate seed clusters
+			for i := 0; i < test.seedClusters; i++ {
+
+				seedKubeClient, ok := seedClusterProviders[i].kubeClient.(*fake.Clientset)
+				if !ok {
+					t.Fatal("expected thatt seedClusterRESTClient will hold *fake.Clientset")
+				}
+				if len(test.expectedRoleBindingsForSeeds) == 0 {
+					if len(seedKubeClient.Actions()) != 0 {
+						t.Fatalf("unexpected actions %#v", seedKubeClient.Actions())
+					}
+					return
+				}
+
+				if len(seedKubeClient.Actions()) != len(test.expectedActionsForSeeds) {
+					t.Fatalf("unexpected actions %#v", seedKubeClient.Actions())
+				}
+
+				createActionIndex := 0
+				for index, action := range seedKubeClient.Actions() {
+					if !action.Matches(test.expectedActionsForSeeds[index], "rolebindings") {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if action.GetVerb() == "get" {
+						continue
+					}
+					// TODO: figure out why action.(clienttesting.GenericAction) does not work
+					createAction, ok := action.(clienttesting.CreateAction)
+					if !ok {
+						t.Fatalf("unexpected action %#v", action)
+					}
+					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.RoleBinding), test.expectedRoleBindingsForSeeds[createActionIndex]) {
+						t.Fatalf("%v", diff.ObjectDiff(test.expectedRoleBindingsForSeeds[createActionIndex], createAction.GetObject().(*rbacv1.RoleBinding)))
+					}
+					createActionIndex = createActionIndex + 1
+				}
 			}
 		})
 	}

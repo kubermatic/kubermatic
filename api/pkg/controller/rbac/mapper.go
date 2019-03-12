@@ -163,6 +163,54 @@ func generateClusterRBACRoleBindingForResource(resourceName, groupName string) *
 	return binding
 }
 
+func generateRBACRoleBindingForResource(resourceName, groupName, namespace string) *rbacv1.RoleBinding {
+	binding := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      generateRBACRoleNameForResources(resourceName, groupName),
+			Namespace: namespace,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				APIGroup: rbacv1.GroupName,
+				Kind:     "Group",
+				Name:     groupName,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "Role",
+			Name:     generateRBACRoleNameForResources(resourceName, groupName),
+		},
+	}
+	return binding
+}
+
+// generateRBACRoleForResource generates Role for the given resource in the given namespace
+// Note that for some groups we don't want to generate Role in that case a nil will be returned
+func generateRBACRoleForResource(groupName, policyResource, policyAPIGroups, kind string, namespace string) (*rbacv1.Role, error) {
+	verbs, err := generateVerbsForNamespacedResource(groupName, kind, namespace)
+	if err != nil {
+		return nil, err
+	}
+	if len(verbs) == 0 {
+		return nil, nil
+	}
+	role := &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      generateRBACRoleNameForResources(policyResource, groupName),
+			Namespace: namespace,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{policyAPIGroups},
+				Resources: []string{policyResource},
+				Verbs:     verbs,
+			},
+		},
+	}
+	return role, nil
+}
+
 // generateVerbsForNamedResource generates a set of verbs for a named resource
 // for example a "cluster" named "beefy-john"
 func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, error) {
@@ -233,4 +281,20 @@ func generateVerbsForResource(groupName, resourceKind string) ([]string, error) 
 
 	// unknown group passed
 	return []string{}, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s", groupName)
+}
+
+func generateVerbsForNamespacedResource(groupName, resourceKind, namespace string) ([]string, error) {
+	// special case - only the owners of a project can manipulate secrets in "sa-secrets" namespace
+	//
+	if namespace == "sa-secrets" {
+		secretV1Kind := "Secret"
+		if strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == secretV1Kind {
+			return []string{"create"}, nil
+		} else if resourceKind == secretV1Kind {
+			return []string{}, nil
+		}
+	}
+
+	// unknown group passed
+	return []string{}, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s, namespace = %s", groupName, namespace)
 }

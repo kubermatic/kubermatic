@@ -72,6 +72,7 @@ type projectResource struct {
 	gvr         schema.GroupVersionResource
 	kind        string
 	destination string
+	namespace   string
 }
 
 // New creates a new RBACGenerator controller that is responsible for
