@@ -56,7 +56,7 @@ type ProjectProvider struct {
 	projectLister kubermaticv1lister.ProjectLister
 }
 
-// PrivilegedProjectProvider
+// PrivilegedProjectProvider represents a data structure that knows how to manage projects in a privileged way
 type PrivilegedProjectProvider struct {
 	// treat clientPrivileged as a privileged user and use wisely
 	clientPrivileged kubermaticclientv1.ProjectInterface
