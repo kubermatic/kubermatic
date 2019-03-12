@@ -2265,7 +2265,9 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 			fakeKubeClient := fake.NewSimpleClientset(objs...)
 			roleIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			for _, res := range test.existingRoles {
-				roleIndexer.Add(res)
+				if err := roleIndexer.Add(res); err != nil {
+					t.Fatal(err)
+				}
 			}
 
 			// manually set lister as we don't want to start informers in the tests
@@ -2730,7 +2732,6 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 		name                          string
 		projectResourcesToSync        []projectResource
 		projectToSync                 *kubermaticv1.Project
-		existingUser                  *kubermaticv1.User
 		expectedRoleBindingsForMaster []*rbacv1.RoleBinding
 		existingRoleBindingsForMaster []*rbacv1.RoleBinding
 		expectedActionsForMaster      []string
@@ -2845,23 +2846,13 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 			objs := []runtime.Object{}
 			kubermaticObjs := []runtime.Object{}
 			projectIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
-			if test.projectToSync != nil {
-				err := projectIndexer.Add(test.projectToSync)
-				if err != nil {
-					t.Fatal(err)
-				}
-				kubermaticObjs = append(kubermaticObjs, test.projectToSync)
+			err := projectIndexer.Add(test.projectToSync)
+			if err != nil {
+				t.Fatal(err)
 			}
+			kubermaticObjs = append(kubermaticObjs, test.projectToSync)
 			projectLister := kubermaticv1lister.NewProjectLister(projectIndexer)
-
 			userIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
-			if test.existingUser != nil {
-				err := userIndexer.Add(test.existingUser)
-				if err != nil {
-					t.Fatal(err)
-				}
-				kubermaticObjs = append(kubermaticObjs, test.projectToSync)
-			}
 			userLister := kubermaticv1lister.NewUserLister(userIndexer)
 
 			roleBindingsIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
@@ -2925,7 +2916,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 			target.seedClusterProviders = seedClusterProviders
 			target.projectLister = projectLister
 			target.userLister = userLister
-			err := target.ensureProjectCleanup(test.projectToSync)
+			err = target.ensureProjectCleanup(test.projectToSync)
 
 			// validate master cluster
 			{
