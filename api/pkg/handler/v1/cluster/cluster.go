@@ -67,7 +67,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 		}
 
 		// Wait for the cluster to be healthy.
-		// TODO Return and continue in goroutine?
+		interval := 10 * time.Second
 		timeout := 3 * time.Minute
 		deadline := time.Now().Add(timeout)
 		clusterID := newCluster.Name
@@ -106,6 +106,8 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 				return convertInternalClusterToExternal(newCluster),
 					fmt.Errorf("couldn't create initial node deployment, timed out waiting for cluster to be ready")
 			}
+
+			time.Sleep(interval)
 		}
 
 		return convertInternalClusterToExternal(newCluster), nil
