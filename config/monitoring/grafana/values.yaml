@@ -43,6 +43,11 @@ grafana:
       # to add and edit the dashboards
       auto_assign_org_role: Viewer
 
+      # Set this to false if you do not have an identity-aware proxy
+      # in front of Grafana and would still like to login with the
+      # credentials defined above.
+      disable_login_form: true
+
   # If you manage your dashboards via your own configmaps,
   # you can add them here to have them automatically be
   # mounted in Grafana. For each volume, specify either a
