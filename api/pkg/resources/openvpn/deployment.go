@@ -67,6 +67,7 @@ func DeploymentCreator(data resources.DeploymentDataProvider) resources.NamedDep
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
+			procMountType := corev1.DefaultProcMount
 			volumes := getVolumes()
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 			if err != nil {
@@ -106,6 +107,7 @@ func DeploymentCreator(data resources.DeploymentDataProvider) resources.NamedDep
 			}...)
 
 			dep.Spec.Template.Spec.Volumes = volumes
+
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:            "iptables-init",
@@ -133,6 +135,7 @@ iptables -A INPUT -i tun0 -j DROP
 						Capabilities: &corev1.Capabilities{
 							Add: []corev1.Capability{"NET_ADMIN"},
 						},
+						ProcMount: &procMountType,
 					},
 					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -181,6 +184,7 @@ iptables -A INPUT -i tun0 -j DROP
 					},
 					SecurityContext: &corev1.SecurityContext{
 						Privileged: resources.Bool(true),
+						ProcMount:  &procMountType,
 					},
 					Resources: defaultResourceRequirements,
 					ReadinessProbe: &corev1.Probe{
@@ -231,6 +235,7 @@ iptables -A INPUT -i tun0 -j DROP
 					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 					SecurityContext: &corev1.SecurityContext{
 						Privileged: resources.Bool(true),
+						ProcMount:  &procMountType,
 					},
 					Resources: ipForwardRequirements,
 				},

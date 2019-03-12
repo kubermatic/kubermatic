@@ -27,6 +27,7 @@ type dnatControllerData interface {
 
 // DnatControllerContainer returns a sidecar container for running the dnat controller.
 func DnatControllerContainer(data dnatControllerData, name string) (*corev1.Container, error) {
+	procMountType := corev1.DefaultProcMount
 	return &corev1.Container{
 		Name:            name,
 		Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/vpnsidecar-dnat-controller:v0.2.0",
@@ -42,6 +43,7 @@ func DnatControllerContainer(data dnatControllerData, name string) (*corev1.Cont
 			Capabilities: &corev1.Capabilities{
 				Add: []corev1.Capability{"NET_ADMIN"},
 			},
+			ProcMount: &procMountType,
 		},
 		TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 		TerminationMessagePolicy: corev1.TerminationMessageReadFile,

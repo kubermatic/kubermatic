@@ -6,21 +6,21 @@ required = [
     "github.com/go-swagger/go-swagger/cmd/swagger"
 ]
 
-[prune]
-  go-tests = true
-  non-go = true
-  unused-packages = true
-  # we need to protect json-iterator otherwise the license check fails.
-  # reason here is, that json-iterator does some symlinks which break when removing the tests.
-  [[prune.project]]
-    name = "github.com/json-iterator/go"
-    go-tests = false
-    unused-packages = false
-  # contains a bash script we use for code generation
-  [[prune.project]]
-    name = "k8s.io/code-generator"
-    non-go = false
-    unused-packages = false
+#[prune]
+#  go-tests = true
+#  non-go = true
+#  unused-packages = true
+#  # we need to protect json-iterator otherwise the license check fails.
+#  # reason here is, that json-iterator does some symlinks which break when removing the tests.
+#  [[prune.project]]
+#    name = "github.com/json-iterator/go"
+#    go-tests = false
+#    unused-packages = false
+#  # contains a bash script we use for code generation
+#  [[prune.project]]
+#    name = "k8s.io/code-generator"
+#    non-go = false
+#    unused-packages = false
 
 
 [[constraint]]
@@ -118,6 +118,11 @@ required = [
 [[override]]
   name = "k8s.io/apiserver"
   branch = "release-1.13"
+
+[[constraint]]
+  name = "k8s.io/autoscaler"
+  # VPA release 0.4.0 https://github.com/kubernetes/autoscaler/releases/tag/vertical-pod-autoscaler-0.4.0
+  revision = "7f77136aeea401ca5199292c4e5eb17eb1597e55"
 
 [[override]]
   name = "github.com/kubermatic/machine-controller"

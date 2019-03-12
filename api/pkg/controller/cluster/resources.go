@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	autoscalingv1beta "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"
+	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 )
 
 const (
@@ -325,15 +325,15 @@ func (cc *Controller) ensureVerticalPodAutoscalers(c *kubermaticv1.Cluster, data
 		// If the feature is disabled, we just wrap the create function to disable the VPA.
 		// This is easier than passing a bool to all required functions.
 		for i, create := range creators {
-			creators[i] = func(existing *autoscalingv1beta.VerticalPodAutoscaler) (*autoscalingv1beta.VerticalPodAutoscaler, error) {
+			creators[i] = func(existing *autoscalingv1beta2.VerticalPodAutoscaler) (*autoscalingv1beta2.VerticalPodAutoscaler, error) {
 				vpa, err := create(existing)
 				if err != nil {
 					return nil, err
 				}
 				if vpa.Spec.UpdatePolicy == nil {
-					vpa.Spec.UpdatePolicy = &autoscalingv1beta.PodUpdatePolicy{}
+					vpa.Spec.UpdatePolicy = &autoscalingv1beta2.PodUpdatePolicy{}
 				}
-				mode := autoscalingv1beta.UpdateModeOff
+				mode := autoscalingv1beta2.UpdateModeOff
 				vpa.Spec.UpdatePolicy.UpdateMode = &mode
 
 				return vpa, nil

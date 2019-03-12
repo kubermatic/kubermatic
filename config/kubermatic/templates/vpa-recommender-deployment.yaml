@@ -23,10 +23,14 @@ spec:
         image: {{ .Values.kubermatic.vpa.recommender.image.repository }}:{{ .Values.kubermatic.vpa.recommender.image.tag }}
         command: ["/recommender"]
         args: [
-        "--address", ":8942",
-        "--kube-api-burst", "20",
-        "--kube-api-qps", "10",
-        "--logtostderr",
+          "--address", ":8942",
+          "--kube-api-burst", "20",
+          "--kube-api-qps", "10",
+          "--logtostderr",
+          "--v", "4",
+          "--storage", "prometheus",
+          "--prometheus-address","http://prometheus-kubermatic.monitoring.svc.cluster.local:9090",
+          "--prometheus-cadvisor-job-name", "cadvisor",
         ]
         resources:
           limits:
@@ -37,4 +41,4 @@ spec:
             memory: 500Mi
         ports:
         - containerPort: 8080
-{{ end }}
+        {{ end }}
