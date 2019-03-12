@@ -1,5 +1,7 @@
 package common
 
+import "github.com/kubermatic/kubermatic/api/pkg/version"
+
 // OIDCConfiguration is a struct that holds
 // OIDC provider configuration data, read from command line arguments
 type OIDCConfiguration struct {
@@ -17,4 +19,13 @@ type OIDCConfiguration struct {
 	// OfflineAccessAsScope if true then "offline_access" scope will be used
 	// otherwise 'access_type=offline" query param will be passed
 	OfflineAccessAsScope bool
+}
+
+// UpdateManager specifies a set of methods to handle cluster versions & updates
+type UpdateManager interface {
+	GetVersion(string) (*version.MasterVersion, error)
+	GetMasterVersions() ([]*version.MasterVersion, error)
+	GetDefault() (*version.MasterVersion, error)
+	AutomaticUpdate(from string) (*version.MasterVersion, error)
+	GetPossibleUpdates(from string) ([]*version.MasterVersion, error)
 }

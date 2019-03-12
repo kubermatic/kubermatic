@@ -1,4 +1,4 @@
-package handler
+package cluster
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
-func getClusterUpgrades(updateManager UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func GetUpgradesEndpoint(updateManager common.UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
@@ -87,7 +87,7 @@ func isRestrictedByKubeletVersions(controlPlaneVersion *version.MasterVersion, m
 	return false, nil
 }
 
-func getClusterNodeUpgrades(updateManager UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func GetNodeUpgradesEndpoint(updateManager common.UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
@@ -129,17 +129,17 @@ func getClusterNodeUpgrades(updateManager UpdateManager, projectProvider provide
 	}
 }
 
-// UpgradeClusterNodeDeploymentsReq defines HTTP request for upgradeClusterNodeDeployments endpoint
+// UpgradeNodeDeploymentsReq defines HTTP request for upgradeClusterNodeDeployments endpoint
 // swagger:parameters upgradeClusterNodeDeployments
-type UpgradeClusterNodeDeploymentsReq struct {
+type UpgradeNodeDeploymentsReq struct {
 	common.GetClusterReq
 
 	// in: body
 	Body apiv1.MasterVersion
 }
 
-func DecodeUpgradeClusterNodeDeploymentsReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req UpgradeClusterNodeDeploymentsReq
+func DecodeUpgradeNodeDeploymentsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req UpgradeNodeDeploymentsReq
 	cr, err := common.DecodeGetClusterReq(c, r)
 	if err != nil {
 		return nil, err
@@ -154,12 +154,12 @@ func DecodeUpgradeClusterNodeDeploymentsReq(c context.Context, r *http.Request) 
 	return req, nil
 }
 
-func upgradeClusterNodeDeployments(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func UpgradeNodeDeploymentsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
-		req, ok := request.(UpgradeClusterNodeDeploymentsReq)
+		req, ok := request.(UpgradeNodeDeploymentsReq)
 		if !ok {
 			return nil, errors.NewWrongRequest(request, common.GetClusterReq{})
 		}
@@ -209,7 +209,7 @@ func upgradeClusterNodeDeployments(projectProvider provider.ProjectProvider) end
 	}
 }
 
-func getMasterVersions(updateManager UpdateManager) endpoint.Endpoint {
+func GetMasterVersionsEndpoint(updateManager common.UpdateManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		versions, err := updateManager.GetMasterVersions()
 		if err != nil {
