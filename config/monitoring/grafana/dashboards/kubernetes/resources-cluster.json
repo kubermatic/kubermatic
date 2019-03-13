@@ -1555,7 +1555,7 @@
       ]
     }
   ],
-  "refresh": "30s",
+  "refresh": "<< refresh | default `30s` | toJson >>",
   "schemaVersion": 16,
   "style": "dark",
   "tags": [],

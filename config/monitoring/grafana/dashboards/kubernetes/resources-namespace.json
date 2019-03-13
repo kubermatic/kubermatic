@@ -706,7 +706,7 @@
       ]
     }
   ],
-  "refresh": "30s",
+  "refresh": "<< refresh | default `30s` | toJson >>",
   "schemaVersion": 16,
   "style": "dark",
   "tags": [],
@@ -728,11 +728,7 @@
       },
       {
         "allValue": null,
-        "current": {
-          "tags": [],
-          "text": "",
-          "value": ""
-        },
+        "current": {},
         "datasource": "$datasource",
         "hide": 0,
         "includeAll": false,
@@ -741,7 +737,7 @@
         "name": "namespace",
         "options": [],
         "query": "label_values(kube_pod_info, namespace)",
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
         "sort": 1,
         "tagValuesQuery": "",
@@ -753,7 +749,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "<< defaultRange | toJson >>",
     "to": "now"
   },
   "timepicker": {
@@ -781,7 +777,7 @@
       "30d"
     ]
   },
-  "timezone": "browser",
+  "timezone": "",
   "title": "Compute Resources / Namespace",
   "uid": "f9d729354e90",
   "version": 1

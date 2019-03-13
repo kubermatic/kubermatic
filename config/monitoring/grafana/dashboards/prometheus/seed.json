@@ -4,7 +4,7 @@
   },
   "editable": "<< editable | default false | toJson >>",
   "gnetId": null,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "hideControls": "<< hideControls | default false | toJson >>",
   "links": [],
   "panels": [
@@ -2487,11 +2487,7 @@
       },
       {
         "allValue": null,
-        "current": {
-          "tags": [],
-          "text": "All",
-          "value": "$__all"
-        },
+        "current": {},
         "datasource": "$datasource",
         "hide": 0,
         "includeAll": true,
@@ -2500,7 +2496,7 @@
         "name": "pod",
         "options": [],
         "query": "label_values(prometheus_build_info, pod)",
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
         "sort": 0,
         "tagValuesQuery": "",
