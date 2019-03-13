@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2019 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,10 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1beta1 contains definitions of Vertical Pod Autoscaler related objects.
-package v1beta1
+// Package v1beta2 contains definitions of Vertical Pod Autoscaler related objects.
+package v1beta2
 
 import (
+	autoscaling "k8s.io/api/autoscaling/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -58,9 +59,19 @@ type VerticalPodAutoscaler struct {
 
 // VerticalPodAutoscalerSpec is the specification of the behavior of the autoscaler.
 type VerticalPodAutoscalerSpec struct {
-	// A label query that determines the set of pods controlled by the Autoscaler.
-	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
-	Selector *metav1.LabelSelector `json:"selector" protobuf:"bytes,1,name=selector"`
+
+	// TargetRef points to the controller managing the set of pods for the
+	// autoscaler to control - e.g. Deployment, StatefulSet. VerticalPodAutoscaler
+	// can be targeted at controller implementing scale subresource (the pod set is
+	// retrieved from the controller's ScaleStatus) or some well known controllers
+	// (e.g. for DaemonSet the pod set is read from the controller's spec).
+	// If VerticalPodAutoscaler cannot use specified target it will report
+	// ConfigUnsupported condition.
+	// Note that VerticalPodAutoscaler does not require full implementation
+	// of scale subresource - it will not use it to modify the replica count.
+	// The only thing retrieved is a label selector matching pods grouped by
+	// the target resource.
+	TargetRef *autoscaling.CrossVersionObjectReference `json:"targetRef" protobuf:"bytes,1,name=targetRef"`
 
 	// Describes the rules on how changes are applied to the pods.
 	// If not specified, all fields in the `PodUpdatePolicy` are set to their
@@ -223,6 +234,12 @@ var (
 	NoPodsMatched VerticalPodAutoscalerConditionType = "NoPodsMatched"
 	// FetchingHistory indicates that VPA recommender is in the process of loading additional history samples.
 	FetchingHistory VerticalPodAutoscalerConditionType = "FetchingHistory"
+	// ConfigDeprecated indicates that this VPA configuration is deprecated
+	// and will stop being supported soon.
+	ConfigDeprecated VerticalPodAutoscalerConditionType = "ConfigDeprecated"
+	// ConfigUnsupported indicates that this VPA configuration is unsupported
+	// and recommendations will not be provided for it.
+	ConfigUnsupported VerticalPodAutoscalerConditionType = "ConfigUnsupported"
 )
 
 // VerticalPodAutoscalerCondition describes the state of

@@ -1,10 +1,10 @@
+---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   name: verticalpodautoscalers.autoscaling.k8s.io
 spec:
   group: autoscaling.k8s.io
-  version: v1beta1
   scope: Namespaced
   names:
     plural: verticalpodautoscalers
@@ -12,15 +12,22 @@ spec:
     kind: VerticalPodAutoscaler
     shortNames:
     - vpa
+  version: v1beta1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: false
+  - name: v1beta2
+    served: true
+    storage: true
   validation:
     # openAPIV3Schema is the schema for validating custom objects.
     openAPIV3Schema:
       properties:
         spec:
-          required:
-            - selector
+          required: []
           properties:
-            selector:
+            targetRef:
               type: object
             updatePolicy:
               properties:
@@ -37,7 +44,6 @@ metadata:
   name: verticalpodautoscalercheckpoints.autoscaling.k8s.io
 spec:
   group: autoscaling.k8s.io
-  version: v1beta1
   scope: Namespaced
   names:
     plural: verticalpodautoscalercheckpoints
@@ -45,3 +51,11 @@ spec:
     kind: VerticalPodAutoscalerCheckpoint
     shortNames:
     - vpacheckpoint
+  version: v1beta1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: false
+  - name: v1beta2
+    served: true
+    storage: true

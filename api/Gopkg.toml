@@ -22,7 +22,6 @@ required = [
     non-go = false
     unused-packages = false
 
-
 [[constraint]]
   name = "github.com/go-swagger/go-swagger"
   branch = "master"
@@ -118,6 +117,11 @@ required = [
 [[override]]
   name = "k8s.io/apiserver"
   branch = "release-1.13"
+
+[[constraint]]
+  name = "k8s.io/autoscaler"
+  # VPA release 0.4.0 https://github.com/kubernetes/autoscaler/releases/tag/vertical-pod-autoscaler-0.4.0
+  revision = "7f77136aeea401ca5199292c4e5eb17eb1597e55"
 
 [[override]]
   name = "github.com/kubermatic/machine-controller"

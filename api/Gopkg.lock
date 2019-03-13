@@ -1513,12 +1513,11 @@
   revision = "86fb29eff6288413d76bd8506874fddd9fccdff0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:b5ddc5c20e56276a3f5e81bc1d8110f56bc3012fbfcac36643f1c07b1cf7f866"
+  digest = "1:2d59c9b4b77b519d04a176e87bcd4266194095faa1f2622f7bccc5dd1a071c31"
   name = "k8s.io/autoscaler"
-  packages = ["vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"]
+  packages = ["vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"]
   pruneopts = "NUT"
-  revision = "4fe35d1323d1c8457496d00b6e143a8615433b9d"
+  revision = "7f77136aeea401ca5199292c4e5eb17eb1597e55"
 
 [[projects]]
   digest = "1:a477c9139ba3804d071d9ab06e4fe24e11d51093af93a273466868b26f4ebe42"
@@ -1927,6 +1926,7 @@
     "k8s.io/api/admissionregistration/v1alpha1",
     "k8s.io/api/admissionregistration/v1beta1",
     "k8s.io/api/apps/v1",
+    "k8s.io/api/autoscaling/v1",
     "k8s.io/api/batch/v1",
     "k8s.io/api/batch/v1beta1",
     "k8s.io/api/certificates/v1beta1",
@@ -1958,7 +1958,7 @@
     "k8s.io/apimachinery/pkg/util/wait",
     "k8s.io/apimachinery/pkg/util/yaml",
     "k8s.io/apimachinery/pkg/watch",
-    "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1",
+    "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2",
     "k8s.io/client-go/discovery",
     "k8s.io/client-go/discovery/fake",
     "k8s.io/client-go/informers",

@@ -91,6 +91,7 @@ spec:
             memory: 5Mi
         securityContext:
           privileged: true
+          procMount: Default
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
