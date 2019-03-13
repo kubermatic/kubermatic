@@ -165,7 +165,7 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc pro
 
 // Validate if the node deployment structure fulfills certain requirements. It returns node deployment with updated
 // kubelet version if it wasn't specified.
-func Validate(nd apiv1.NodeDeployment, controlPlaneVersion *semver.Version) (*apiv1.NodeDeployment, error) {
+func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semver.Version) (*apiv1.NodeDeployment, error) {
 	if nd.Spec.Template.Cloud.Openstack == nil &&
 		nd.Spec.Template.Cloud.Digitalocean == nil &&
 		nd.Spec.Template.Cloud.AWS == nil &&
@@ -190,5 +190,5 @@ func Validate(nd apiv1.NodeDeployment, controlPlaneVersion *semver.Version) (*ap
 		nd.Spec.Template.Versions.Kubelet = controlPlaneVersion.String()
 	}
 
-	return &nd, nil
+	return nd, nil
 }

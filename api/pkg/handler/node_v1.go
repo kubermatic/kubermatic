@@ -576,7 +576,7 @@ func createNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 			return nil, fmt.Errorf("unknown cluster datacenter %s", cluster.Spec.Cloud.DatacenterName)
 		}
 
-		nd, err := machineresource.Validate(req.Body, cluster.Spec.Version.Semver())
+		nd, err := machineresource.Validate(&req.Body, cluster.Spec.Version.Semver())
 		if err != nil {
 			return nil, k8cerrors.NewBadRequest(fmt.Sprintf("node deployment validation failed: %s", err.Error()))
 		}

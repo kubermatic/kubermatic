@@ -27,11 +27,11 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cluster"
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
 )
 
-func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider,
+	dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -51,6 +51,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
+
 		if len(existingClusters) > 0 {
 			return nil, errors.NewAlreadyExists("cluster", spec.HumanReadableName)
 		}
@@ -60,57 +61,72 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		// Validate the node deployment.
-		nd, err := machineresource.Validate(req.Body.NodeDeployment, newCluster.Spec.Version.Semver())
-		if err != nil {
-			return nil, k8cerrors.NewBadRequest(fmt.Sprintf("node deployment validation failed: %s", err.Error()))
-		}
+		// Create the initial node deployment in the background.
+		go createInitialNodeDeployment(&req.Body.NodeDeployment, newCluster, project, sshKeyProvider, dcs, ctx)
 
-		// Wait for the cluster to be healthy.
-		interval := 10 * time.Second
-		timeout := 3 * time.Minute
-		deadline := time.Now().Add(timeout)
-		clusterID := newCluster.Name
-		for {
-			// CheckInitStatus allows us to check if cluster is healthy.
-			newCluster, err = clusterProvider.Get(userInfo, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-			if err == nil {
-				// Create initial node deployment.
-				keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: clusterID})
-				if err != nil {
-					return nil, common.KubernetesErrorToHTTPError(err)
-				}
+		return convertInternalClusterToExternal(newCluster), nil
+	}
+}
 
-				client, err := clusterProvider.GetClientForCustomerCluster(userInfo, newCluster)
-				if err != nil {
-					return nil, common.KubernetesErrorToHTTPError(err)
-				}
+func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticapiv1.Cluster, project *kubermaticapiv1.Project,
+	sshKeyProvider provider.SSHKeyProvider, dcs map[string]provider.DatacenterMeta, ctx context.Context) {
+	userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
-				dc, found := dcs[newCluster.Spec.Cloud.DatacenterName]
-				if !found {
-					return nil, fmt.Errorf("unknown cluster datacenter %s", newCluster.Spec.Cloud.DatacenterName)
-				}
+	nd, err := machineresource.Validate(nodeDeployment, cluster.Spec.Version.Semver())
+	if err != nil {
+		fmt.Println(err.Error()) // TODO Report error (metric, alert, event?, log?).
+		return
+	}
 
-				md, err := machineresource.Deployment(newCluster, nd, dc, keys)
-				if err != nil {
-					return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
-				}
-
-				if err := client.Create(ctx, md); err != nil {
-					return nil, fmt.Errorf("failed to create machine deployment: %v", err)
-				}
+	interval := 10 * time.Second
+	timeout := 3 * time.Minute
+	deadline := time.Now().Add(timeout)
+	clusterID := cluster.Name
+	for {
+		// CheckInitStatus allows us to check if cluster is healthy.
+		cluster, err = clusterProvider.Get(userInfo, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		if err == nil {
+			keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: clusterID})
+			if err != nil {
+				err = common.KubernetesErrorToHTTPError(err)
 				break
 			}
 
-			if time.Now().After(deadline) {
-				return convertInternalClusterToExternal(newCluster),
-					fmt.Errorf("couldn't create initial node deployment, timed out waiting for cluster to be ready")
+			client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+			if err != nil {
+				err = common.KubernetesErrorToHTTPError(err)
+				break
 			}
 
-			time.Sleep(interval)
+			dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
+			if !found {
+				err = fmt.Errorf("unknown cluster datacenter: %s", cluster.Spec.Cloud.DatacenterName)
+				break
+			}
+
+			md, err := machineresource.Deployment(cluster, nd, dc, keys)
+			if err != nil {
+				err = fmt.Errorf("failed to create machine deployment from template: %v", err)
+				break
+			}
+
+			err = client.Create(ctx, md)
+			break
 		}
 
-		return convertInternalClusterToExternal(newCluster), nil
+		if time.Now().After(deadline) {
+			err = fmt.Errorf("couldn't create initial node deployment, timed out waiting for cluster to be ready")
+			break
+		}
+
+		time.Sleep(interval)
+	}
+
+	if err != nil {
+		fmt.Println(err.Error()) // TODO Report error (metric, alert, event?, log?).
+	} else {
+		fmt.Println("initial node deployment was created") // TODO Report success (metric, alert, event?, log?).
 	}
 }
 
