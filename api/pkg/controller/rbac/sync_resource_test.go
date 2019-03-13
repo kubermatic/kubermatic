@@ -7,6 +7,7 @@ import (
 	fakeInformerProvider "github.com/kubermatic/kubermatic/api/pkg/controller/rbac/fake"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
+	k8scorev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,7 +20,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-func TestEnsureDependantsRBACRole(t *testing.T) {
+func TestSyncProjectResourcesClusterWide(t *testing.T) {
 	tests := []struct {
 		name                        string
 		dependantToSync             *projectResourceQueueItem
@@ -585,6 +586,198 @@ func TestEnsureDependantsRBACRole(t *testing.T) {
 				}
 				if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.ClusterRoleBinding), test.expectedClusterRoleBindings[index]) {
 					t.Fatalf("%v", diff.ObjectDiff(test.expectedClusterRoleBindings[index], createAction.GetObject().(*rbacv1.ClusterRoleBinding)))
+				}
+			}
+
+		})
+	}
+}
+
+func TestSyncProjectResourcesNamespaced(t *testing.T) {
+	tests := []struct {
+		name                 string
+		dependantToSync      *projectResourceQueueItem
+		expectedRoles        []*rbacv1.Role
+		existingRoles        []*rbacv1.Role
+		expectedRoleBindings []*rbacv1.RoleBinding
+		existingRoleBindings []*rbacv1.RoleBinding
+		expectedActions      []string
+		expectError          bool
+	}{
+		// scenario 1
+		{
+			name:            "scenario 1: a proper set of RBAC Role/Binding is generated for secrets in sa-secrets namespace",
+			expectedActions: []string{"create", "create"},
+
+			dependantToSync: &projectResourceQueueItem{
+				gvr: schema.GroupVersionResource{
+					Group:    k8scorev1.GroupName,
+					Version:  k8scorev1.SchemeGroupVersion.Version,
+					Resource: "secrets",
+				},
+				kind:      "Secret",
+				namespace: "sa-secrets",
+				metaObject: &k8scorev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "abcd",
+						UID:  types.UID("abcdID"),
+						Labels: map[string]string{
+							kubermaticv1.ProjectIDLabelKey: "thunderball",
+						},
+					},
+					Type: "Opaque",
+					Data: map[string][]byte{
+						"token": {0xFF, 0xFF},
+					},
+				},
+			},
+
+			expectedRoles: []*rbacv1.Role{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secret-abcd:owners-thunderball",
+						Namespace: "sa-secrets",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: k8scorev1.SchemeGroupVersion.String(),
+								Kind:       "Secret",
+								Name:       "abcd",
+								UID:        "abcdID", // set manually
+							},
+						},
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups:     []string{k8scorev1.SchemeGroupVersion.Group},
+							Resources:     []string{"secrets"},
+							ResourceNames: []string{"abcd"},
+							Verbs:         []string{"get", "update", "delete"},
+						},
+					},
+				},
+			},
+
+			expectedRoleBindings: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secret-abcd:owners-thunderball",
+						Namespace: "sa-secrets",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: k8scorev1.SchemeGroupVersion.String(),
+								Kind:       "Secret",
+								Name:       "abcd",
+								UID:        "abcdID", // set manually
+							},
+						},
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secret-abcd:owners-thunderball",
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// setup the test scenario
+			objs := []runtime.Object{}
+			roleIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+			for _, existingRole := range test.existingRoles {
+				err := roleIndexer.Add(existingRole)
+				if err != nil {
+					t.Fatal(err)
+				}
+				objs = append(objs, existingRole)
+			}
+
+			roleBindingIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+			for _, existingRoleBinding := range test.existingRoleBindings {
+				err := roleIndexer.Add(existingRoleBinding)
+				if err != nil {
+					t.Fatal(err)
+				}
+				objs = append(objs, existingRoleBinding)
+			}
+
+			fakeKubeClient := fake.NewSimpleClientset(objs...)
+			// manually set lister as we don't want to start informers in the tests
+			fakeKubeInformerProvider := NewInformerProvider(fakeKubeClient, time.Minute*5)
+			fakeInformerFactoryForClusterRole := fakeInformerProvider.NewFakeSharedInformerFactory(fakeKubeClient, metav1.NamespaceAll)
+			fakeInformerFactoryForClusterRole.AddFakeRoleBindingInformer(roleBindingIndexer)
+			fakeInformerFactoryForClusterRole.AddFakeRoleInformer(roleIndexer)
+
+			fakeClusterProvider := &ClusterProvider{
+				kubeClient:           fakeKubeClient,
+				kubeInformerProvider: fakeKubeInformerProvider,
+			}
+
+			// act
+			target := Controller{}
+			test.dependantToSync.clusterProvider = fakeClusterProvider
+			err := target.syncProjectResource(test.dependantToSync)
+
+			// validate
+			if err != nil && !test.expectError {
+				t.Fatal(err)
+			}
+			if test.expectError && err == nil {
+				t.Fatal("expected an error but got nothing")
+			}
+			if test.expectError {
+				return
+			}
+
+			if len(test.expectedRoles) == 0 && len(test.expectedRoleBindings) == 0 {
+				if len(fakeKubeClient.Actions()) != 0 {
+					t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+				}
+			}
+
+			if len(fakeKubeClient.Actions()) != len(test.expectedActions) {
+				t.Fatalf("unexpected actions expected to get %d, but got %d, actions = %#v", len(test.expectedActions), len(fakeKubeClient.Actions()), fakeKubeClient.Actions())
+			}
+
+			allActions := fakeKubeClient.Actions()
+			rolesActions := allActions[0:len(test.expectedRoles)]
+			offset := 0
+			for index, action := range rolesActions {
+				offset = offset + 1
+				if !action.Matches(test.expectedActions[index], "roles") {
+					t.Fatalf("unexpected action %#v", action)
+				}
+				// TODO: figure out why action.(clienttesting.GenericAction) does not work
+				createaction, ok := action.(clienttesting.CreateAction)
+				if !ok {
+					t.Fatalf("unexpected action %#v", action)
+				}
+				if !equality.Semantic.DeepEqual(createaction.GetObject().(*rbacv1.Role), test.expectedRoles[index]) {
+					t.Fatalf("%v", diff.ObjectDiff(test.expectedRoles[index], createaction.GetObject().(*rbacv1.Role)))
+				}
+			}
+
+			roleBindingActions := allActions[offset:]
+			for index, action := range roleBindingActions {
+				if !action.Matches(test.expectedActions[index+offset], "rolebindings") {
+					t.Fatalf("unexpected action %#v", action)
+				}
+				// TODO: figure out why action.(clienttesting.GenericAction) does not work
+				createAction, ok := action.(clienttesting.CreateAction)
+				if !ok {
+					t.Fatalf("unexpected action %#v", action)
+				}
+				if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.RoleBinding), test.expectedRoleBindings[index]) {
+					t.Fatalf("%v", diff.ObjectDiff(test.expectedRoleBindings[index], createAction.GetObject().(*rbacv1.RoleBinding)))
 				}
 			}
 

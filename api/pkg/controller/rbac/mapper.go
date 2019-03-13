@@ -211,6 +211,67 @@ func generateRBACRoleForResource(groupName, policyResource, policyAPIGroups, kin
 	return role, nil
 }
 
+// generateRBACRoleNamedResource generates Role for a named resource.
+// named resources have its rules set to a resource with the given name for example:
+// the following rule allows reading a ConfigMap named “my-config”
+//  rules:
+//   - apiGroups: [""]
+//   resources: ["configmaps"]
+//   resourceNames: ["my-config"]
+//   verbs: ["get"]
+//
+// Note that for some kinds we don't want to generate Role in that case a nil cluster resource will be returned without an error
+func generateRBACRoleNamedResource(kind, groupName, policyResource, policyAPIGroups, policyResourceName string, namespace string, oRef metav1.OwnerReference) (*rbacv1.Role, error) {
+	verbs, err := generateVerbsForNamedResourceInNamespace(groupName, kind, namespace)
+	if err != nil {
+		return nil, err
+	}
+	if len(verbs) == 0 {
+		return nil, nil
+	}
+	role := &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            generateRBACRoleNameForNamedResource(kind, policyResourceName, groupName),
+			OwnerReferences: []metav1.OwnerReference{oRef},
+			Namespace:       namespace,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups:     []string{policyAPIGroups},
+				Resources:     []string{policyResource},
+				ResourceNames: []string{policyResourceName},
+				Verbs:         verbs,
+			},
+		},
+	}
+	return role, nil
+}
+
+// generateRBACRoleBindingNamedResource generates RoleBiding for the given group
+// that will be bound to the corresponding Role
+func generateRBACRoleBindingNamedResource(kind, resourceName, groupName, namespace string, oRef metav1.OwnerReference) *rbacv1.RoleBinding {
+	binding := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            generateRBACRoleNameForNamedResource(kind, resourceName, groupName),
+			OwnerReferences: []metav1.OwnerReference{oRef},
+			Namespace:       namespace,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				APIGroup: rbacv1.GroupName,
+				Kind:     "Group",
+				Name:     groupName,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "Role",
+			Name:     generateRBACRoleNameForNamedResource(kind, resourceName, groupName),
+		},
+	}
+	return binding
+}
+
 // generateVerbsForNamedResource generates a set of verbs for a named resource
 // for example a "cluster" named "beefy-john"
 func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, error) {
@@ -284,7 +345,7 @@ func generateVerbsForResource(groupName, resourceKind string) ([]string, error) 
 }
 
 func generateVerbsForNamespacedResource(groupName, resourceKind, namespace string) ([]string, error) {
-	// special case - only the owners of a project can manipulate secrets in "sa-secrets" namespace
+	// special case - only the owners of a project can create secrets in "sa-secrets" namespace
 	//
 	if namespace == "sa-secrets" {
 		secretV1Kind := "Secret"
@@ -297,4 +358,22 @@ func generateVerbsForNamespacedResource(groupName, resourceKind, namespace strin
 
 	// unknown group passed
 	return []string{}, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s, namespace = %s", groupName, namespace)
+}
+
+// generateVerbsForNamedResourceInNamespace generates a set of verbs for a named resource in a given namespace
+// for example a "cluster" named "beefy-john"
+func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace string) ([]string, error) {
+	// special case - only the owners of a project can manipulate secrets in "sa-secrets" namespace
+	//
+	if namespace == "sa-secrets" {
+		secretV1Kind := "Secret"
+		if strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == secretV1Kind {
+			return []string{"get", "update", "delete"}, nil
+		} else if resourceKind == secretV1Kind {
+			return []string{}, nil
+		}
+	}
+
+	// unknown group passed
+	return []string{}, fmt.Errorf("unable to generate verbs for group = %s, kind = %s, namespace = %s", groupName, resourceKind, namespace)
 }

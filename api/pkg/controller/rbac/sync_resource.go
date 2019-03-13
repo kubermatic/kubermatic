@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
 	rbaclister "k8s.io/client-go/listers/rbac/v1"
 )
@@ -40,20 +41,46 @@ func (c *Controller) syncProjectResource(item *projectResourceQueueItem) error {
 		return fmt.Errorf("unable to find owing project for the object name = %s, gvr = %s", item.metaObject.GetName(), item.gvr.String())
 	}
 
-	if err := c.ensureClusterRBACRoleForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoles().Lister()); err != nil {
-		err = fmt.Errorf("failed to sync cluster RBAC Role for %s resource for %s cluster provider, due to = %v", item.gvr.String(), item.clusterProvider.providerName, err)
+	if len(item.namespace) == 0 {
+		if err := c.ensureClusterRBACRoleForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoles().Lister()); err != nil {
+			err = fmt.Errorf("failed to sync RBAC ClusterRole for %s resource for %s cluster provider, due to = %v", item.gvr.String(), item.clusterProvider.providerName, err)
+			return err
+		}
+		err := c.ensureClusterRBACRoleBindingForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister())
+		if err != nil {
+			err = fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider, due to = %v", item.gvr.String(), item.clusterProvider.providerName, err)
+		}
 		return err
 	}
-	err := c.ensureClusterRBACRoleBindingForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister())
+
+	err := c.ensureRBACRoleForNamedResource(projectName,
+		item.gvr,
+		item.kind,
+		item.namespace,
+		item.metaObject,
+		item.clusterProvider.kubeClient,
+		item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(item.namespace).Rbac().V1().Roles().Lister().Roles(item.namespace))
 	if err != nil {
-		err = fmt.Errorf("failed to sync cluster RBAC Role Binding for %s resource for %s cluster provider, due to = %v", item.gvr.String(), item.clusterProvider.providerName, err)
+		return fmt.Errorf("failed to sync RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", item.gvr.String(), item.clusterProvider.providerName, item.namespace, err)
 	}
-	return err
+
+	err = c.ensureRBACRoleBindingForNamedResource(projectName,
+		item.gvr,
+		item.kind,
+		item.namespace,
+		item.metaObject,
+		item.clusterProvider.kubeClient,
+		item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(item.namespace).Rbac().V1().RoleBindings().Lister().RoleBindings(item.namespace))
+	if err != nil {
+		return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", item.gvr.String(), item.clusterProvider.providerName, item.namespace, err)
+	}
+
+	return nil
 }
 
 func (c *Controller) ensureClusterRBACRoleForNamedResource(projectName string, objectResource string, objectKind string, object metav1.Object, kubeClient kubernetes.Interface, rbacClusterRoleLister rbaclister.ClusterRoleLister) error {
 	for _, groupPrefix := range AllGroupsPrefixes {
-		skip, generatedRole, err := shouldSkipRBACRoleBindingForNamedResource(projectName, objectResource, objectKind, groupPrefix, object)
+		skip, generatedRole, err := shouldSkipClusterRBACRoleBindingForNamedResource(projectName, objectResource, objectKind, groupPrefix, object)
 		if err != nil {
 			return err
 		}
@@ -91,12 +118,12 @@ func (c *Controller) ensureClusterRBACRoleForNamedResource(projectName string, o
 func (c *Controller) ensureClusterRBACRoleBindingForNamedResource(projectName string, objectResource string, objectKind string, object metav1.Object, kubeClient kubernetes.Interface, rbacClusterRoleBindingLister rbaclister.ClusterRoleBindingLister) error {
 	for _, groupPrefix := range AllGroupsPrefixes {
 
-		skip, _, err := shouldSkipRBACRoleBindingForNamedResource(projectName, objectResource, objectKind, groupPrefix, object)
+		skip, _, err := shouldSkipClusterRBACRoleBindingForNamedResource(projectName, objectResource, objectKind, groupPrefix, object)
 		if err != nil {
 			return err
 		}
 		if skip {
-			glog.V(5).Infof("skipping operation on ClusterRoleBinding because corresponding ClusterRole was not(will not be) created for group \"%s\" and \"%s\" resource for project %s", groupPrefix, objectResource, projectName)
+			glog.V(5).Infof("skipping operation on ClusterRoleBinding because corresponding ClusterRole was not(will not be) created for group %q and %q resource for project %q", groupPrefix, objectResource, projectName)
 			continue
 		}
 
@@ -135,11 +162,11 @@ func (c *Controller) ensureClusterRBACRoleBindingForNamedResource(projectName st
 	return nil
 }
 
-// shouldSkipRBACRoleBindingForNamedResource will tell you if you should skip the generation of ClusterResource or not,
+// shouldSkipClusterRBACRoleBindingForNamedResource will tell you if you should skip the generation of ClusterResource or not,
 // because for some kinds we actually don't create ClusterRole
 //
 // note that this method returns generated role if is not meant to be skipped
-func shouldSkipRBACRoleBindingForNamedResource(projectName string, objectResource string, objectKind string, groupPrefix string, object metav1.Object) (bool, *rbacv1.ClusterRole, error) {
+func shouldSkipClusterRBACRoleBindingForNamedResource(projectName string, objectResource string, objectKind string, groupPrefix string, object metav1.Object) (bool, *rbacv1.ClusterRole, error) {
 	generatedRole, err := generateClusterRBACRoleNamedResource(
 		objectKind,
 		GenerateActualGroupNameFor(projectName, groupPrefix),
@@ -148,6 +175,120 @@ func shouldSkipRBACRoleBindingForNamedResource(projectName string, objectResourc
 		object.GetName(),
 		metav1.OwnerReference{
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+			Kind:       objectKind,
+			UID:        object.GetUID(),
+			Name:       object.GetName(),
+		},
+	)
+
+	if err != nil {
+		return false, generatedRole, err
+	}
+	if generatedRole == nil {
+		return true, nil, nil
+	}
+	return false, generatedRole, nil
+}
+
+func (c *Controller) ensureRBACRoleForNamedResource(projectName string, objectGVR schema.GroupVersionResource, objectKind string, namespace string, object metav1.Object, kubeClient kubernetes.Interface, rbacRoleLister rbaclister.RoleNamespaceLister) error {
+	for _, groupPrefix := range AllGroupsPrefixes {
+		skip, generatedRole, err := shouldSkipRBACRoleBindingForNamedResource(projectName, objectGVR, objectKind, groupPrefix, namespace, object)
+		if err != nil {
+			return err
+		}
+		if skip {
+			glog.V(5).Infof("skipping Role generation for named resource for group %q and resource %q in namespace %q", groupPrefix, objectGVR.Resource, namespace)
+			continue
+		}
+		sharedExistingRole, err := rbacRoleLister.Get(generatedRole.Name)
+		if err != nil {
+			if !kerrors.IsNotFound(err) {
+				return err
+			}
+		}
+
+		// make sure that existing rbac role has appropriate rules/policies
+		if sharedExistingRole != nil {
+			if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) {
+				continue
+			}
+			existingRole := sharedExistingRole.DeepCopy()
+			existingRole.Rules = generatedRole.Rules
+			if _, err = kubeClient.RbacV1().Roles(namespace).Update(existingRole); err != nil {
+				return err
+			}
+			continue
+		}
+
+		if _, err = kubeClient.RbacV1().Roles(namespace).Create(generatedRole); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Controller) ensureRBACRoleBindingForNamedResource(projectName string, objectGVR schema.GroupVersionResource, objectKind string, namespace string, object metav1.Object, kubeClient kubernetes.Interface, rbacRoleBindingLister rbaclister.RoleBindingNamespaceLister) error {
+	for _, groupPrefix := range AllGroupsPrefixes {
+
+		skip, _, err := shouldSkipRBACRoleBindingForNamedResource(projectName, objectGVR, objectKind, groupPrefix, namespace, object)
+		if err != nil {
+			return err
+		}
+		if skip {
+			glog.V(5).Infof("skipping operation on RoleBinding because corresponding Role was not(will not be) created for group %q and %q resource for project %q in namespace %q", groupPrefix, objectGVR.Resource, projectName, namespace)
+			continue
+		}
+
+		generatedRoleBinding := generateRBACRoleBindingNamedResource(
+			objectKind,
+			object.GetName(),
+			GenerateActualGroupNameFor(projectName, groupPrefix),
+			namespace,
+			metav1.OwnerReference{
+				APIVersion: objectGVR.GroupVersion().String(),
+				Kind:       objectKind,
+				UID:        object.GetUID(),
+				Name:       object.GetName(),
+			},
+		)
+		sharedExistingRoleBinding, err := rbacRoleBindingLister.Get(generatedRoleBinding.Name)
+		if err != nil {
+			if !kerrors.IsNotFound(err) {
+				return err
+			}
+		}
+		if sharedExistingRoleBinding != nil {
+			if equality.Semantic.DeepEqual(sharedExistingRoleBinding.Subjects, generatedRoleBinding.Subjects) {
+				continue
+			}
+			existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
+			existingRoleBinding.Subjects = generatedRoleBinding.Subjects
+			if _, err = kubeClient.RbacV1().RoleBindings(namespace).Update(existingRoleBinding); err != nil {
+				return err
+			}
+			continue
+		}
+		if _, err = kubeClient.RbacV1().RoleBindings(namespace).Create(generatedRoleBinding); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// shouldSkipRBACRoleBindingForNamedResource will tell you if you should skip the generation of ClusterResource or not,
+// because for some kinds we actually don't create Role
+//
+// note that this method returns generated role if is not meant to be skipped
+func shouldSkipRBACRoleBindingForNamedResource(projectName string, objectGVR schema.GroupVersionResource, objectKind string, groupPrefix string, namespace string, object metav1.Object) (bool, *rbacv1.Role, error) {
+	generatedRole, err := generateRBACRoleNamedResource(
+		objectKind,
+		GenerateActualGroupNameFor(projectName, groupPrefix),
+		objectGVR.Resource,
+		objectGVR.Group,
+		object.GetName(),
+		namespace,
+		metav1.OwnerReference{
+			APIVersion: objectGVR.GroupVersion().String(),
 			Kind:       objectKind,
 			UID:        object.GetUID(),
 			Name:       object.GetName(),
