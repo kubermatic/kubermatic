@@ -200,7 +200,7 @@ func executeClusterTests(ctx *TestContext, t *testing.T) {
 		if supportsStorage(ctx.cluster) {
 			t.Run("[CloudProvider] Test PVC support with the existing StorageClass", func(t *testing.T) {
 				t.Parallel()
-				Retry(t, 3, 30*time.Second, func(t *R) {
+				Retry(t, 3, ctx.ctx, 30*time.Second, func(t *R) {
 					testStorageSupport(ctx, t)
 				})
 			})
@@ -209,7 +209,7 @@ func executeClusterTests(ctx *TestContext, t *testing.T) {
 		if supportsLBs(ctx.cluster) {
 			t.Run("[CloudProvider] Test LB support", func(t *testing.T) {
 				t.Parallel()
-				Retry(t, 3, 30*time.Second, func(t *R) {
+				Retry(t, 3, ctx.ctx, 30*time.Second, func(t *R) {
 					testLBSupport(ctx, t)
 				})
 			})
