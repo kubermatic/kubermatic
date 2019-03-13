@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"io/ioutil"
 	"path"
 	"testing"
@@ -9,13 +8,14 @@ import (
 
 	clustercontroller "github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machine"
-	"k8s.io/client-go/tools/clientcmd"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/tools/clientcmd"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 const (
@@ -46,7 +46,7 @@ func setupCluster(ctx *TestContext, t *testing.T) {
 }
 
 func waitForControlPlane(ctx *TestContext, t *testing.T) {
-	err := wait.PollImmediate(1*time.Second, ctx.controlPlaneWaitTimeout, func() (done bool, err error) {
+	err := wait.PollImmediate(1*time.Second, ctx.controlPlaneWaitTimeout, func() (bool, error) {
 		select {
 		case <-ctx.ctx.Done():
 			t.Fatal("Parent context is closed")
@@ -55,25 +55,31 @@ func waitForControlPlane(ctx *TestContext, t *testing.T) {
 
 		cluster, err := ctx.clusterLister.Get(ctx.cluster.Name)
 		if err != nil {
-			if kerrors.IsNotFound(err) {
-				return false, nil
-			}
-			t.Logf("Failed to get cluster from lister: %v. Retrying...", err)
+			t.Logf("failed to get cluster from context: %v", err)
 			return false, nil
 		}
-		return cluster.Status.Health.AllHealthy(), nil
+		ctx.cluster = cluster.DeepCopy()
+		if ctx.cluster.Status.NamespaceName == "" {
+			return false, nil
+		}
+
+		podList := &corev1.PodList{}
+		if err := ctx.client.List(ctx.ctx, &ctrlruntimeclient.ListOptions{Namespace: ctx.cluster.Status.NamespaceName}, podList); err != nil {
+			t.Logf("Failed to list pods from cluster: %v. Retrying...", err)
+			return false, nil
+		}
+
+		for _, pod := range podList.Items {
+			if !podIsReady(&pod) {
+				return false, nil
+			}
+		}
+
+		return true, nil
 	})
-	// Timeout or other error
 	if err != nil {
-		t.Fatalf("failed waiting for the control plane to become ready: %v", err)
+		t.Fatalf("failed waiting for control plane pods to become ready: %v", err)
 	}
-
-	cluster, err := ctx.clusterLister.Get(ctx.cluster.Name)
-	if err != nil {
-		t.Fatalf("failed to get cluster from context: %v", err)
-	}
-
-	ctx.cluster = cluster.DeepCopy()
 }
 
 func setupClusterContext(ctx *TestContext, t *testing.T) {
@@ -120,7 +126,7 @@ func setupNodes(ctx *TestContext, t *testing.T) {
 		default:
 		}
 
-		if err := ctx.clusterContext.client.Create(context.Background(), machineDeployment); err != nil {
+		if err := ctx.clusterContext.client.Create(ctx.ctx, machineDeployment); err != nil {
 			t.Logf("Failed to create MachineDeployment: %v. Retrying [%d/%d] ...", err, attempt, maxRetryAttempts)
 			time.Sleep(retryWait)
 			continue
@@ -139,7 +145,7 @@ func waitForNodes(ctx *TestContext, t *testing.T) {
 		}
 
 		nodeList := &corev1.NodeList{}
-		if err := ctx.clusterContext.client.List(context.Background(), nil, nodeList); err != nil {
+		if err := ctx.clusterContext.client.List(ctx.ctx, &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
 			t.Logf("Failed to list nodes from cluster: %v. Retrying...", err)
 			return false, nil
 		}
@@ -204,7 +210,7 @@ func waitForAllSystemPods(ctx *TestContext, t *testing.T) {
 		}
 
 		podList := &corev1.PodList{}
-		if err := ctx.clusterContext.client.List(context.Background(), nil, podList); err != nil {
+		if err := ctx.clusterContext.client.List(ctx.ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, podList); err != nil {
 			t.Logf("Failed to list pods from cluster: %v. Retrying...", err)
 			return false, nil
 		}

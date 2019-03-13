@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func printSeedPods(ctx *TestContext, t *testing.T) {
@@ -14,7 +14,7 @@ func printSeedPods(ctx *TestContext, t *testing.T) {
 
 	ns := ctx.cluster.Status.NamespaceName
 	podList := corev1.PodList{}
-	if err := ctx.client.List(ctx.ctx, &client.ListOptions{Namespace: ns}, &podList); err != nil {
+	if err := ctx.client.List(ctx.ctx, &ctrlruntimeclient.ListOptions{Namespace: ns}, &podList); err != nil {
 		t.Logf("failed to list pods in namespace '%s': %v", ns, err)
 		return
 	}

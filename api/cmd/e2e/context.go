@@ -10,13 +10,13 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
-	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type TestContext struct {
 	ctx                    context.Context
 	clusterLister          kubermaticv1lister.ClusterLister
-	client                 controllerruntimeclient.Client
+	client                 ctrlruntimeclient.Client
 	clusterClientProvider  clusterclient.UserClusterConnectionProvider
 	dcs                    map[string]provider.DatacenterMeta
 	nodeCount              int
@@ -31,6 +31,6 @@ type TestContext struct {
 
 	clusterContext struct {
 		kubeconfig string
-		client     controllerruntimeclient.Client
+		client     ctrlruntimeclient.Client
 	}
 }
