@@ -15,7 +15,7 @@ import (
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	autoscalingv1beta1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"
+	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 )
 
 // ServiceCreator defines an interface to create/update Services
@@ -284,22 +284,22 @@ func ReconcilePodDisruptionBudgets(creators []PodDisruptionBudgetCreator, namesp
 }
 
 // VerticalPodAutoscalerCreator defines an interface to create/update VerticalPodAutoscalers
-type VerticalPodAutoscalerCreator = func(existing *autoscalingv1beta1.VerticalPodAutoscaler) (*autoscalingv1beta1.VerticalPodAutoscaler, error)
+type VerticalPodAutoscalerCreator = func(existing *autoscalingv1beta2.VerticalPodAutoscaler) (*autoscalingv1beta2.VerticalPodAutoscaler, error)
 
 // VerticalPodAutoscalerObjectWrapper adds a wrapper so the VerticalPodAutoscalerCreator matches ObjectCreator
 // This is needed as golang does not support function interface matching
 func VerticalPodAutoscalerObjectWrapper(create VerticalPodAutoscalerCreator) ObjectCreator {
 	return func(existing runtime.Object) (runtime.Object, error) {
 		if existing != nil {
-			return create(existing.(*autoscalingv1beta1.VerticalPodAutoscaler))
+			return create(existing.(*autoscalingv1beta2.VerticalPodAutoscaler))
 		}
-		return create(&autoscalingv1beta1.VerticalPodAutoscaler{})
+		return create(&autoscalingv1beta2.VerticalPodAutoscaler{})
 	}
 }
 
 // ReconcileVerticalPodAutoscalers will create and update the VerticalPodAutoscalers coming from the passed VerticalPodAutoscalerCreator slice
 func ReconcileVerticalPodAutoscalers(creators []VerticalPodAutoscalerCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &autoscalingv1beta1.VerticalPodAutoscaler{})
+	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &autoscalingv1beta2.VerticalPodAutoscaler{})
 	if err != nil {
 		return fmt.Errorf("failed to get VerticalPodAutoscaler informer: %v", err)
 	}

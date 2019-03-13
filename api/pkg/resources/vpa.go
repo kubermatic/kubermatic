@@ -4,47 +4,51 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 
-	autoscalingv1beta1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
+	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 
 	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
 )
 
-func getVPACreatorForPodTemplate(name, namespace string, selector map[string]string, pod corev1.PodSpec, ownerRef metav1.OwnerReference) VerticalPodAutoscalerCreator {
-	var containerPolicies []autoscalingv1beta1.ContainerResourcePolicy
+func getVPACreatorForPodTemplate(name, namespace string, pod corev1.PodSpec, controllerRef metav1.OwnerReference) VerticalPodAutoscalerCreator {
+	var containerPolicies []autoscalingv1beta2.ContainerResourcePolicy
 	for _, container := range pod.Containers {
-		containerPolicies = append(containerPolicies, autoscalingv1beta1.ContainerResourcePolicy{
+		containerPolicies = append(containerPolicies, autoscalingv1beta2.ContainerResourcePolicy{
 			ContainerName: container.Name,
 			MaxAllowed:    container.Resources.Limits,
 			MinAllowed:    container.Resources.Requests,
 		})
 	}
 
-	return func(existing *autoscalingv1beta1.VerticalPodAutoscaler) (*autoscalingv1beta1.VerticalPodAutoscaler, error) {
-		var pdb *autoscalingv1beta1.VerticalPodAutoscaler
+	return func(existing *autoscalingv1beta2.VerticalPodAutoscaler) (*autoscalingv1beta2.VerticalPodAutoscaler, error) {
+		var pdb *autoscalingv1beta2.VerticalPodAutoscaler
 		if existing != nil {
 			pdb = existing
 		} else {
-			pdb = &autoscalingv1beta1.VerticalPodAutoscaler{}
+			pdb = &autoscalingv1beta2.VerticalPodAutoscaler{}
 		}
 
 		pdb.Name = name
 		pdb.Namespace = namespace
-		pdb.OwnerReferences = []metav1.OwnerReference{ownerRef}
+		pdb.OwnerReferences = []metav1.OwnerReference{controllerRef}
 
-		updateMode := autoscalingv1beta1.UpdateModeAuto
-		pdb.Spec = autoscalingv1beta1.VerticalPodAutoscalerSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: selector,
+		updateMode := autoscalingv1beta2.UpdateModeAuto
+		pdb.Spec = autoscalingv1beta2.VerticalPodAutoscalerSpec{
+			TargetRef: &autoscalingv1.CrossVersionObjectReference{
+				Name:       controllerRef.Name,
+				Kind:       controllerRef.Kind,
+				APIVersion: controllerRef.APIVersion,
 			},
-			UpdatePolicy: &autoscalingv1beta1.PodUpdatePolicy{
+			UpdatePolicy: &autoscalingv1beta2.PodUpdatePolicy{
 				UpdateMode: &updateMode,
 			},
-			ResourcePolicy: &autoscalingv1beta1.PodResourcePolicy{
+			ResourcePolicy: &autoscalingv1beta2.PodResourcePolicy{
 				ContainerPolicies: containerPolicies,
 			},
 		}
@@ -76,7 +80,6 @@ func getVerticalPodAutoscalersForResource(names []string, namespace string, stor
 			creators = append(creators, getVPACreatorForPodTemplate(
 				obj.Name,
 				obj.Namespace,
-				obj.Spec.Selector.MatchLabels,
 				obj.Spec.Template.Spec,
 				*metav1.NewControllerRef(obj, gv.WithKind("Deployment"))),
 			)
@@ -84,7 +87,6 @@ func getVerticalPodAutoscalersForResource(names []string, namespace string, stor
 			creators = append(creators, getVPACreatorForPodTemplate(
 				obj.Name,
 				obj.Namespace,
-				obj.Spec.Selector.MatchLabels,
 				obj.Spec.Template.Spec,
 				*metav1.NewControllerRef(obj, gv.WithKind("StatefulSet"))),
 			)

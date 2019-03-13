@@ -37,7 +37,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	autoscalingv1beta1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta1"
+	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 )
 
 const (
@@ -70,7 +70,7 @@ func main() {
 		glog.Fatalf("failed to create mgr: %v", err)
 	}
 	// Add all custom type schemes to our scheme. Otherwise we won't get a informer
-	if err := autoscalingv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
+	if err := autoscalingv1beta2.AddToScheme(mgr.GetScheme()); err != nil {
 		glog.Fatalf("failed to add the autoscaling.k8s.io scheme to mgr: %v", err)
 	}
 	if err := kubermaticv1.SchemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
@@ -82,7 +82,7 @@ func main() {
 	recorder := mgr.GetRecorder(controllerName)
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
-	if _, err := informer.GetSyncedStoreFromDynamicFactory(dynamicCache, &autoscalingv1beta1.VerticalPodAutoscaler{}); err != nil {
+	if _, err := informer.GetSyncedStoreFromDynamicFactory(dynamicCache, &autoscalingv1beta2.VerticalPodAutoscaler{}); err != nil {
 		if _, crdNotRegistered := err.(*meta.NoKindMatchError); crdNotRegistered {
 			glog.Fatal(`
 The VerticalPodAutoscaler is not installed in this seed cluster.
