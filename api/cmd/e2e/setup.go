@@ -15,12 +15,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 const (
-	maxRetryAttempts = 10
-	retryWait        = 5 * time.Second
+	maxRetryAttempts = 50
+	retryWait        = 6 * time.Second
 )
 
 func setupCluster(ctx *TestContext, t *testing.T) {
@@ -46,7 +45,7 @@ func setupCluster(ctx *TestContext, t *testing.T) {
 }
 
 func waitForControlPlane(ctx *TestContext, t *testing.T) {
-	err := wait.PollImmediate(1*time.Second, ctx.controlPlaneWaitTimeout, func() (bool, error) {
+	err := wait.PollImmediate(1*time.Second, 15*time.Minute, func() (bool, error) {
 		select {
 		case <-ctx.ctx.Done():
 			t.Fatal("Parent context is closed")
@@ -55,11 +54,13 @@ func waitForControlPlane(ctx *TestContext, t *testing.T) {
 
 		cluster, err := ctx.clusterLister.Get(ctx.cluster.Name)
 		if err != nil {
-			t.Logf("failed to get cluster from context: %v", err)
 			return false, nil
 		}
 		ctx.cluster = cluster.DeepCopy()
 		if ctx.cluster.Status.NamespaceName == "" {
+			return false, nil
+		}
+		if !ctx.cluster.Status.Health.AllHealthy() {
 			return false, nil
 		}
 
@@ -70,7 +71,7 @@ func waitForControlPlane(ctx *TestContext, t *testing.T) {
 		}
 
 		for _, pod := range podList.Items {
-			if !podIsReady(&pod) {
+			if !podIsReady(pod) {
 				return false, nil
 			}
 		}
@@ -101,12 +102,12 @@ func setupClusterContext(ctx *TestContext, t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mgr, err := manager.New(config, manager.Options{})
+	dynamicClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
 	if err != nil {
-		t.Fatalf("failed to create mgr: %v", err)
+		t.Fatalf("Failed to create dynamic client: %v", err)
 	}
 
-	ctx.clusterContext.client = mgr.GetClient()
+	ctx.clusterContext.client = dynamicClient
 }
 
 func setupNodes(ctx *TestContext, t *testing.T) {
@@ -137,7 +138,7 @@ func setupNodes(ctx *TestContext, t *testing.T) {
 }
 
 func waitForNodes(ctx *TestContext, t *testing.T) {
-	err := wait.PollImmediate(1*time.Second, 15*time.Minute, func() (bool, error) {
+	err := wait.PollImmediate(1*time.Second, 30*time.Minute, func() (bool, error) {
 		select {
 		case <-ctx.ctx.Done():
 			t.Fatal("Parent context is closed")
@@ -149,7 +150,7 @@ func waitForNodes(ctx *TestContext, t *testing.T) {
 			t.Logf("Failed to list nodes from cluster: %v. Retrying...", err)
 			return false, nil
 		}
-		if len(nodeList.Items) < ctx.nodeCount {
+		if len(nodeList.Items) < int(ctx.nodeDeployment.Spec.Replicas) {
 			return false, nil
 		}
 		return true, nil
@@ -192,7 +193,7 @@ func setFinalizers(ctx *TestContext, t *testing.T) {
 	t.Fatalf("failed to add Finalizers to cluster after %d attempts", maxRetryAttempts)
 }
 
-func podIsReady(p *corev1.Pod) bool {
+func podIsReady(p corev1.Pod) bool {
 	for _, c := range p.Status.Conditions {
 		if c.Type == corev1.PodReady && c.Status == corev1.ConditionTrue {
 			return true
@@ -216,7 +217,7 @@ func waitForAllSystemPods(ctx *TestContext, t *testing.T) {
 		}
 
 		for _, pod := range podList.Items {
-			if !podIsReady(&pod) {
+			if !podIsReady(pod) {
 				return false, nil
 			}
 		}

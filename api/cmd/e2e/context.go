@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"time"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
@@ -19,15 +18,12 @@ type TestContext struct {
 	client                 ctrlruntimeclient.Client
 	clusterClientProvider  clusterclient.UserClusterConnectionProvider
 	dcs                    map[string]provider.DatacenterMeta
-	nodeCount              int
 	deleteClustersWhenDone bool
 	workingDir             string
 	testBinRoot            string
 
 	cluster        *kubermaticv1.Cluster
 	nodeDeployment *kubermaticapiv1.NodeDeployment
-
-	controlPlaneWaitTimeout time.Duration
 
 	clusterContext struct {
 		kubeconfig string

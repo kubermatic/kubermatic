@@ -11,7 +11,7 @@ import (
 )
 
 func testConformanceParallel(ctx *TestContext, t *testing.T) {
-	testConformance(ctx, t, ctx.nodeCount*7, "parallel", `\[Conformance\]`, `\[Serial\]`)
+	testConformance(ctx, t, int(ctx.nodeDeployment.Spec.Replicas)*7, "parallel", `\[Conformance\]`, `\[Serial\]`)
 }
 
 func testConformanceSerial(ctx *TestContext, t *testing.T) {
@@ -41,7 +41,7 @@ func testConformance(ctx *TestContext, t *testing.T, workerCount int, name, gink
 		fmt.Sprintf("--report-prefix=%s", name+"_"),
 		fmt.Sprintf("--kubectl-path=%s", path.Join(binDir, "kubectl")),
 		fmt.Sprintf("--kubeconfig=%s", ctx.clusterContext.kubeconfig),
-		fmt.Sprintf("--num-nodes=%d", ctx.nodeCount),
+		fmt.Sprintf("--num-nodes=%d", ctx.nodeDeployment.Spec.Replicas),
 		"--provider=local",
 	}
 

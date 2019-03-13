@@ -32,14 +32,13 @@ import (
 )
 
 var (
-	kubeconfigPath          string
-	dcFile                  string
-	nodeCount               int
-	workerName              string
-	controlPlaneWaitTimeout time.Duration
-	deleteClustersWhenDone  bool
-	workingDir              string
-	testBinRoot             string
+	kubeconfigPath         string
+	dcFile                 string
+	nodeCount              int
+	workerName             string
+	deleteClustersWhenDone bool
+	workingDir             string
+	testBinRoot            string
 )
 
 func init() {
@@ -48,7 +47,6 @@ func init() {
 	flag.StringVar(&workerName, "worker-name", "", "Worker name to set on the cluster object")
 	flag.StringVar(&workingDir, "working-dir", "", "Working directory. Used to store test specific files like Kubeconfig and Ginkgo reports.")
 	flag.StringVar(&testBinRoot, "test-bin-dir", "", "Root containing the test binaries for all different Kubernetes versions. The folder must contain sub folder for each Kubernetes minor version.")
-	flag.DurationVar(&controlPlaneWaitTimeout, "control-plane-wait-timeout", 30*time.Minute, "Time to wait until the control plane of the cluster comes up")
 	flag.IntVar(&nodeCount, "node-count", 3, "The number of nodes to add to a cluster")
 	flag.BoolVar(&deleteClustersWhenDone, "delete-clusters-when-done", true, "Delete the cluster after all tests are done")
 	flag.Parse()
@@ -114,7 +112,7 @@ func TestE2E(t *testing.T) {
 	versions := []*semver.Semver{
 		semver.NewSemverOrDie("v1.11.8"),
 		semver.NewSemverOrDie("v1.12.6"),
-		semver.NewSemverOrDie("v1.13.4"),
+		semver.NewSemverOrDie("v1.13.2"),
 	}
 
 	for _, version := range versions {
@@ -168,15 +166,13 @@ func TestE2E(t *testing.T) {
 								nodeDeployment: node,
 								cluster:        cluster,
 
-								nodeCount:               nodeCount,
-								clusterClientProvider:   clusterClientProvider,
-								clusterLister:           clusterLister,
-								dcs:                     dcs,
-								client:                  dynamicClient,
-								controlPlaneWaitTimeout: controlPlaneWaitTimeout,
-								deleteClustersWhenDone:  deleteClustersWhenDone,
-								workingDir:              dir,
-								testBinRoot:             testBinRoot,
+								clusterClientProvider:  clusterClientProvider,
+								clusterLister:          clusterLister,
+								dcs:                    dcs,
+								client:                 dynamicClient,
+								deleteClustersWhenDone: deleteClustersWhenDone,
+								workingDir:             dir,
+								testBinRoot:            testBinRoot,
 							}, t)
 						})
 					}

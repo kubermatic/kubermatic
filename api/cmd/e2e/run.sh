@@ -6,6 +6,7 @@ rm -rf tests
 mkdir tests
 
 go test \
+  -v \
   -parallel 999 \
   -tags=e2e \
   -run=TestE2E/.*/aws/coreos \

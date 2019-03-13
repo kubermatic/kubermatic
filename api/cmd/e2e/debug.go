@@ -13,8 +13,8 @@ func printSeedPods(ctx *TestContext, t *testing.T) {
 	}
 
 	ns := ctx.cluster.Status.NamespaceName
-	podList := corev1.PodList{}
-	if err := ctx.client.List(ctx.ctx, &ctrlruntimeclient.ListOptions{Namespace: ns}, &podList); err != nil {
+	podList := &corev1.PodList{}
+	if err := ctx.client.List(ctx.ctx, &ctrlruntimeclient.ListOptions{Namespace: ns}, podList); err != nil {
 		t.Logf("failed to list pods in namespace '%s': %v", ns, err)
 		return
 	}
