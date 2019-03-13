@@ -3,4 +3,4 @@ kind: ConfigMap
 metadata:
   name: kibana-config
 data:
-  {{- (.Files.Glob "config/kibana/*").AsConfig | nindent 2 }}
+  {{- (.Files.Glob "config/*").AsConfig | nindent 2 }}
