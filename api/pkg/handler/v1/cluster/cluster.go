@@ -70,8 +70,8 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 
 func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticapiv1.Cluster, project *kubermaticapiv1.Project,
 	sshKeyProvider provider.SSHKeyProvider, dcs map[string]provider.DatacenterMeta, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo) {
-	ctx, ctxDone := context.WithCancel(context.Background())
-	defer ctxDone()
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
 
 	nd, err := machineresource.Validate(nodeDeployment, cluster.Spec.Version.Semver())
 	if err != nil {
