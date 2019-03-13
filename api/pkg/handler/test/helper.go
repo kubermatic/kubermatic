@@ -89,6 +89,7 @@ type newRoutingFunc func(
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	oidcAuthenticator auth.OIDCAuthenticator,
 	oidcIssuerVerifier auth.OIDCIssuerVerifier,
 	prometheusClient prometheusapi.Client,
@@ -122,6 +123,11 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		return nil, nil, err
 	}
 
+	privilegedProjectProvider, err := kubernetes.NewPrivilegedProjectProvider(fakeImpersonationClient)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	fUserClusterConnection := &fakeUserClusterConnection{fakeClient}
 
 	clusterProvider := kubernetes.NewClusterProvider(
@@ -146,6 +152,7 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		sshKeyProvider,
 		userProvider,
 		projectProvider,
+		privilegedProjectProvider,
 		authenticator,
 		issuerVerifier,
 		prometheusClient,
@@ -445,6 +452,34 @@ func GenTestMachine(name, rawProviderSpec string, labels map[string]string, owne
 			},
 			Versions: clusterv1alpha1.MachineVersionInfo{
 				Kubelet: "v9.9.9",
+			},
+		},
+	}
+}
+
+func GenTestMachineDeployment(name, rawProviderSpec string, selector map[string]string) *clusterv1alpha1.MachineDeployment {
+	var replicas int32 = 1
+	return &clusterv1alpha1.MachineDeployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: metav1.NamespaceSystem,
+		},
+		Spec: clusterv1alpha1.MachineDeploymentSpec{
+			Selector: metav1.LabelSelector{
+				MatchLabels: selector,
+			},
+			Replicas: &replicas,
+			Template: clusterv1alpha1.MachineTemplateSpec{
+				Spec: clusterv1alpha1.MachineSpec{
+					ProviderSpec: clusterv1alpha1.ProviderSpec{
+						Value: &runtime.RawExtension{
+							Raw: []byte(rawProviderSpec),
+						},
+					},
+					Versions: clusterv1alpha1.MachineVersionInfo{
+						Kubelet: "v9.9.9",
+					},
+				},
 			},
 		},
 	}

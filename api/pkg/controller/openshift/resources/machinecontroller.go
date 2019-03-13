@@ -1,7 +1,6 @@
 package resources
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -12,17 +11,19 @@ import (
 
 const machineControllerImage = "quay.io/kubermatic/machine-controller-private:8936af2a674563e8350ee2084546d40b71c665ea-dirty"
 
-func MachineController(_ context.Context, osData openshiftData) (string, resources.DeploymentCreator) {
-	creator := machinecontroller.DeploymentCreator(osData)
-	creator = deploymentImageAddingWrapper(creator, "machine-controller", machineControllerImage)
-	return resources.MachineControllerDeploymentName, creator
+func MachineController(osData openshiftData) resources.NamedDeploymentCreatorGetter {
+	name, creator := machinecontroller.DeploymentCreator(osData)()
+	return func() (string, resources.DeploymentCreator) {
+		return name, deploymentImageAddingWrapper(creator, "machine-controller", machineControllerImage)
+	}
 }
 
-func MachineControllerWebhook(_ context.Context, osData openshiftData) (string, resources.DeploymentCreator) {
+func MachineControllerWebhook(osData openshiftData) resources.NamedDeploymentCreatorGetter {
 
-	creator := machinecontroller.WebhookDeploymentCreator(osData)
-	creator = deploymentImageAddingWrapper(creator, "machine-controller", machineControllerImage)
-	return resources.MachineControllerWebhookDeploymentName, creator
+	name, creator := machinecontroller.WebhookDeploymentCreator(osData)()
+	return func() (string, resources.DeploymentCreator) {
+		return name, deploymentImageAddingWrapper(creator, "machine-controller", machineControllerImage)
+	}
 }
 
 func deploymentImageAddingWrapper(creator resources.DeploymentCreator, containerName, image string) resources.DeploymentCreator {

@@ -18,10 +18,6 @@ import (
 	controllerclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	debugLevel = 4
-)
-
 // Reconcile creates, updates, or deletes Kubernetes resources to match the desired state.
 func (r *reconciler) reconcile(ctx context.Context) error {
 	if err := r.ensureAPIServices(ctx); err != nil {
@@ -59,7 +55,7 @@ func (r *reconciler) ensureAPIServices(ctx context.Context) error {
 				if err := r.Create(ctx, apiService); err != nil {
 					return fmt.Errorf("failed to create APIService %s in namespace %s: %v", apiService.Name, apiService.Namespace, err)
 				}
-				glog.V(debugLevel).Infof("created a new APIService %s in namespace %s", apiService.Name, apiService.Namespace)
+				glog.V(2).Infof("Created a new APIService %s in namespace %s", apiService.Name, apiService.Namespace)
 				return nil
 			}
 			return err
@@ -76,7 +72,7 @@ func (r *reconciler) ensureAPIServices(ctx context.Context) error {
 		if err := r.Update(ctx, apiService); err != nil {
 			return fmt.Errorf("failed to update APIService %s in namespace %s: %v", apiService.Name, apiService.Namespace, err)
 		}
-		glog.V(debugLevel).Infof("updated APIService %s in namespace %s", apiService.Name, apiService.Namespace)
+		glog.V(4).Infof("Updated the APIService %s in namespace %s", apiService.Name, apiService.Namespace)
 	}
 
 	return nil

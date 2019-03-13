@@ -8,6 +8,7 @@ import (
 	prometheusapi "github.com/prometheus/client_golang/api"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 )
@@ -23,19 +24,20 @@ type UpdateManager interface {
 
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {
-	datacenters           map[string]provider.DatacenterMeta
-	cloudProviders        provider.CloudRegistry
-	sshKeyProvider        provider.SSHKeyProvider
-	userProvider          provider.UserProvider
-	projectProvider       provider.ProjectProvider
-	logger                log.Logger
-	oidcAuthenticator     auth.OIDCAuthenticator
-	oidcIssuer            auth.OIDCIssuerVerifier
-	clusterProviders      map[string]provider.ClusterProvider
-	updateManager         UpdateManager
-	prometheusClient      prometheusapi.Client
-	projectMemberProvider provider.ProjectMemberProvider
-	userProjectMapper     provider.ProjectMemberMapper
+	datacenters               map[string]provider.DatacenterMeta
+	cloudProviders            provider.CloudRegistry
+	sshKeyProvider            provider.SSHKeyProvider
+	userProvider              provider.UserProvider
+	projectProvider           provider.ProjectProvider
+	privilegedProjectProvider provider.PrivilegedProjectProvider
+	logger                    log.Logger
+	oidcAuthenticator         auth.OIDCAuthenticator
+	oidcIssuer                auth.OIDCIssuerVerifier
+	clusterProviders          map[string]provider.ClusterProvider
+	updateManager             common.UpdateManager
+	prometheusClient          prometheusapi.Client
+	projectMemberProvider     provider.ProjectMemberProvider
+	userProjectMapper         provider.ProjectMemberMapper
 }
 
 // NewRouting creates a new Routing.
@@ -46,27 +48,29 @@ func NewRouting(
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	projectProvider provider.ProjectProvider,
+	privilegedProject provider.PrivilegedProjectProvider,
 	oidcAuthenticator auth.OIDCAuthenticator,
 	oidcIssuerVerifier auth.OIDCIssuerVerifier,
-	updateManager UpdateManager,
+	updateManager common.UpdateManager,
 	prometheusClient prometheusapi.Client,
 	projectMemberProvider provider.ProjectMemberProvider,
 	userProjectMapper provider.ProjectMemberMapper,
 ) Routing {
 	return Routing{
-		datacenters:           datacenters,
-		clusterProviders:      newClusterProviders,
-		sshKeyProvider:        newSSHKeyProvider,
-		userProvider:          userProvider,
-		projectProvider:       projectProvider,
-		cloudProviders:        cloudProviders,
-		logger:                log.NewLogfmtLogger(os.Stderr),
-		oidcAuthenticator:     oidcAuthenticator,
-		oidcIssuer:            oidcIssuerVerifier,
-		updateManager:         updateManager,
-		prometheusClient:      prometheusClient,
-		projectMemberProvider: projectMemberProvider,
-		userProjectMapper:     userProjectMapper,
+		datacenters:               datacenters,
+		clusterProviders:          newClusterProviders,
+		sshKeyProvider:            newSSHKeyProvider,
+		userProvider:              userProvider,
+		projectProvider:           projectProvider,
+		privilegedProjectProvider: privilegedProject,
+		cloudProviders:            cloudProviders,
+		logger:                    log.NewLogfmtLogger(os.Stderr),
+		oidcAuthenticator:         oidcAuthenticator,
+		oidcIssuer:                oidcIssuerVerifier,
+		updateManager:             updateManager,
+		prometheusClient:          prometheusClient,
+		projectMemberProvider:     projectMemberProvider,
+		userProjectMapper:         userProjectMapper,
 	}
 }
 

@@ -5,11 +5,13 @@ import (
 
 	"github.com/go-test/deep"
 
+	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 
-	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -312,6 +314,84 @@ func TestListProjects(t *testing.T) {
 					t.Fatalf("returned project was not found on the list of expected ones, binding = %#v", returnedProject)
 				}
 			}
+		})
+	}
+}
+
+func TestGetUnsecuredProjects(t *testing.T) {
+	// test data
+	testcases := []struct {
+		name             string
+		projectName      string
+		existingProjects []*kubermaticv1.Project
+		getOptions       *provider.ProjectGetOptions
+		expectedProject  *kubermaticv1.Project
+		expectedError    string
+	}{
+		{
+			name:          "scenario 1: get inactive project",
+			projectName:   "n1-ID",
+			getOptions:    &provider.ProjectGetOptions{IncludeUninitialized: true},
+			expectedError: "",
+			existingProjects: []*kubermaticv1.Project{
+				// bob's project
+				test.GenProject("n1", kubermaticv1.ProjectInactive, test.DefaultCreationTimestamp(), metav1.OwnerReference{UID: types.UID("bob")}),
+				// john's project
+				test.GenProject("n2", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp(), metav1.OwnerReference{UID: types.UID("john")}),
+			},
+			expectedProject: test.GenProject("n1", kubermaticv1.ProjectInactive, test.DefaultCreationTimestamp(), metav1.OwnerReference{UID: types.UID("bob")}),
+		},
+		{
+			name:          "scenario 2: get only active project",
+			projectName:   "n1-ID",
+			getOptions:    &provider.ProjectGetOptions{IncludeUninitialized: false},
+			expectedError: "Project is not initialized yet",
+			existingProjects: []*kubermaticv1.Project{
+				// bob's project
+				test.GenProject("n1", kubermaticv1.ProjectInactive, test.DefaultCreationTimestamp(), metav1.OwnerReference{UID: types.UID("bob")}),
+				// john's project
+				test.GenProject("n2", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp(), metav1.OwnerReference{UID: types.UID("john")}),
+			},
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+
+			kubermaticObjects := []runtime.Object{}
+			for _, binding := range tc.existingProjects {
+				kubermaticObjects = append(kubermaticObjects, binding)
+			}
+
+			impersonationClient, _, _, err := createFakeClients(kubermaticObjects)
+			if err != nil {
+				t.Fatalf("unable to create fake clients, err = %v", err)
+			}
+
+			// act
+			target, err := kubernetes.NewPrivilegedProjectProvider(impersonationClient.CreateFakeImpersonatedClientSet)
+			if err != nil {
+				t.Fatal(err)
+			}
+			result, err := target.GetUnsecured(tc.projectName, tc.getOptions)
+
+			if len(tc.expectedError) == 0 {
+				// validate
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if !equality.Semantic.DeepEqual(result, tc.expectedProject) {
+					t.Fatalf("expected project: %v got: %v", tc.expectedProject, result)
+				}
+			} else {
+				if err == nil {
+					t.Fatalf("expected error message")
+				}
+				if err.Error() != tc.expectedError {
+					t.Fatalf("expected error message: %s got: %s", tc.expectedError, err.Error())
+				}
+			}
+
 		})
 	}
 }

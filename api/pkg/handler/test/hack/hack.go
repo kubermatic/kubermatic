@@ -9,6 +9,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
@@ -23,6 +24,7 @@ func NewTestRouting(
 	sshKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	authenticator auth.OIDCAuthenticator,
 	issuerVerifier auth.OIDCIssuerVerifier,
 	prometheusClient prometheusapi.Client,
@@ -38,6 +40,7 @@ func NewTestRouting(
 		sshKeyProvider,
 		userProvider,
 		projectProvider,
+		privilegedProjectProvider,
 		authenticator,
 		issuerVerifier,
 		updateManager,
@@ -58,8 +61,8 @@ func NewTestRouting(
 }
 
 // generateDefaultOicdCfg creates test configuration for OpenID clients
-func generateDefaultOicdCfg() *handler.OIDCConfiguration {
-	return &handler.OIDCConfiguration{
+func generateDefaultOicdCfg() *common.OIDCConfiguration {
+	return &common.OIDCConfiguration{
 		URL:                  test.IssuerURL,
 		ClientID:             test.IssuerClientID,
 		ClientSecret:         test.IssuerClientSecret,

@@ -37,6 +37,7 @@ import (
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/handler"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
@@ -152,10 +153,15 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		return providers{}, fmt.Errorf("failed to create project provider due to %v", err)
 	}
 
+	privilegedProjectProvider, err := kubernetesprovider.NewPrivilegedProjectProvider(defaultImpersonationClient.CreateImpersonatedClientSet)
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create privileged project provider due to %v", err)
+	}
+
 	kubermaticMasterInformerFactory.Start(wait.NeverStop)
 	kubermaticMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
 
-	return providers{sshKey: sshKeyProvider, user: userProvider, project: projectProvider, projectMember: projectMemberProvider, memberMapper: projectMemberProvider, cloud: cloudProviders, clusters: clusterProviders, datacenters: datacenters}, nil
+	return providers{sshKey: sshKeyProvider, user: userProvider, project: projectProvider, privilegedProject: privilegedProjectProvider, projectMember: projectMemberProvider, memberMapper: projectMemberProvider, cloud: cloudProviders, clusters: clusterProviders, datacenters: datacenters}, nil
 }
 
 func createOIDCAuthenticatorIssuer(options serverRunOptions) (auth.OIDCAuthenticator, auth.OIDCIssuerVerifier, error) {
@@ -190,7 +196,7 @@ func createOIDCAuthenticatorIssuer(options serverRunOptions) (auth.OIDCAuthentic
 	return authenticator, issuer, err
 }
 
-func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticator auth.OIDCAuthenticator, oidcIssuerVerifier auth.OIDCIssuerVerifier, updateManager *version.Manager) (http.HandlerFunc, error) {
+func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticator auth.OIDCAuthenticator, oidcIssuerVerifier auth.OIDCIssuerVerifier, updateManager common.UpdateManager) (http.HandlerFunc, error) {
 	var prometheusClient prometheusapi.Client
 	if options.featureGates.Enabled(PrometheusEndpoint) {
 		var err error
@@ -208,6 +214,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticato
 		prov.sshKey,
 		prov.user,
 		prov.project,
+		prov.privilegedProject,
 		oidcAuthenticator,
 		oidcIssuerVerifier,
 		updateManager,
@@ -222,7 +229,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticato
 	r.RegisterV1(v1Router)
 	r.RegisterV1Optional(v1Router,
 		options.featureGates.Enabled(OIDCKubeCfgEndpoint),
-		handler.OIDCConfiguration{
+		common.OIDCConfiguration{
 			URL:                  options.oidcURL,
 			ClientID:             options.oidcIssuerClientID,
 			ClientSecret:         options.oidcIssuerClientSecret,

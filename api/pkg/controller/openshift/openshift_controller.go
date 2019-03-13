@@ -434,20 +434,17 @@ func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) erro
 	return nil
 }
 
-func (r *Reconciler) getAllDeploymentCreators() []openshiftresources.NamedDeploymentCreator {
-	return []openshiftresources.NamedDeploymentCreator{openshiftresources.APIDeploymentCreator,
-		openshiftresources.DeploymentCreator,
-		openshiftresources.MachineController,
-		openshiftresources.MachineControllerWebhook,
-		openshiftresources.UserClusterController}
+func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *openshiftData) []resources.NamedDeploymentCreatorGetter {
+	return []resources.NamedDeploymentCreatorGetter{openshiftresources.APIDeploymentCreator(ctx, osData),
+		openshiftresources.ControllerManagerDeploymentCreator(ctx, osData),
+		openshiftresources.MachineController(osData),
+		openshiftresources.MachineControllerWebhook(osData),
+		openshiftresources.UserClusterController(osData)}
 }
 
 func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) error {
-	//TODO: These are actually NamedDeploymentCreatorGetters
-	// We should move their calling into getAllDeploymentCreators so they can have a different
-	// signature
-	for _, namedDeploymentCreator := range r.getAllDeploymentCreators() {
-		deploymentName, deploymentCreator := namedDeploymentCreator(ctx, osData)
+	for _, namedDeploymentCreator := range r.getAllDeploymentCreators(ctx, osData) {
+		deploymentName, deploymentCreator := namedDeploymentCreator()
 		if err := resources.EnsureNamedObjectV2(ctx,
 			nn(osData.Cluster().Status.NamespaceName, deploymentName), resources.DeploymentObjectWrapper(deploymentCreator), r.Client, &appsv1.Deployment{}); err != nil {
 			return fmt.Errorf("failed to ensure Deployment %s: %v", deploymentName, err)

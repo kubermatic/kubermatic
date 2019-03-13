@@ -172,8 +172,8 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster, data *resources.Te
 }
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
-func GetDeploymentCreators(data resources.DeploymentDataProvider) []resources.DeploymentCreator {
-	creators := []resources.DeploymentCreator{
+func GetDeploymentCreators(data resources.DeploymentDataProvider) []resources.NamedDeploymentCreatorGetter {
+	creators := []resources.NamedDeploymentCreatorGetter{
 		openvpn.DeploymentCreator(data),
 		dns.DeploymentCreator(data),
 	}
@@ -193,7 +193,6 @@ func GetDeploymentCreators(data resources.DeploymentDataProvider) []resources.De
 
 func (cc *Controller) ensureDeployments(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetDeploymentCreators(data)
-
 	return resources.ReconcileDeployments(creators, cluster.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(cluster))
 }
 

@@ -45,76 +45,79 @@ type userclusterControllerData interface {
 }
 
 // DeploymentCreator returns the function to create and update the user cluster controller deployment
-func DeploymentCreator(data userclusterControllerData) resources.DeploymentCreator {
-	return func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-		dep.Name = resources.UserClusterControllerDeploymentName
-		dep.Labels = resources.BaseAppLabel(name, nil)
+func DeploymentCreator(data userclusterControllerData) resources.NamedDeploymentCreatorGetter {
+	return func() (string, resources.DeploymentCreator) {
+		return resources.UserClusterControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+			dep.Name = resources.UserClusterControllerDeploymentName
+			dep.Labels = resources.BaseAppLabel(name, nil)
 
-		dep.Spec.Replicas = resources.Int32(1)
-		dep.Spec.Selector = &metav1.LabelSelector{
-			MatchLabels: resources.BaseAppLabel(name, nil),
-		}
-		dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
-		dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
-			MaxSurge: &intstr.IntOrString{
-				Type:   intstr.Int,
-				IntVal: 1,
-			},
-			MaxUnavailable: &intstr.IntOrString{
-				Type:   intstr.Int,
-				IntVal: 0,
-			},
-		}
-		dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
+			dep.Spec.Replicas = resources.Int32(1)
+			dep.Spec.Selector = &metav1.LabelSelector{
+				MatchLabels: resources.BaseAppLabel(name, nil),
+			}
+			dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
+			dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
+				MaxSurge: &intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 1,
+				},
+				MaxUnavailable: &intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 0,
+				},
+			}
+			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-		volumes := getVolumes()
-		podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create pod labels: %v", err)
-		}
+			volumes := getVolumes()
+			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create pod labels: %v", err)
+			}
 
-		dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-			Labels: podLabels,
-			Annotations: map[string]string{
-				"prometheus.io/scrape": "true",
-				"prometheus.io/path":   "/metrics",
-				"prometheus.io/port":   "8085",
-			},
-		}
+			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
+				Labels: podLabels,
+				Annotations: map[string]string{
+					"prometheus.io/scrape": "true",
+					"prometheus.io/path":   "/metrics",
+					"prometheus.io/port":   "8085",
+				},
+			}
 
-		dep.Spec.Template.Spec.Volumes = volumes
+			dep.Spec.Template.Spec.Volumes = volumes
 
-		apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
-		if err != nil {
-			return nil, err
-		}
-		dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
+			apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
+			if err != nil {
+				return nil, err
+			}
+			dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
 
-		dep.Spec.Template.Spec.Containers = []corev1.Container{
-			{
-				Name:            name,
-				Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
-				ImagePullPolicy: corev1.PullIfNotPresent,
-				Command:         []string{"/usr/local/bin/user-cluster-controller-manager"},
-				Args: append([]string{
-					"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-					"-internal-address", "0.0.0.0:8085",
-					"-logtostderr",
-					"-v", "4"}, getNetworkArgs(data)...),
-				TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-				TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-				Resources:                defaultResourceRequirements,
-				VolumeMounts: []corev1.VolumeMount{
-					{
-						Name:      resources.InternalUserClusterAdminKubeconfigSecretName,
-						MountPath: "/etc/kubernetes/kubeconfig",
-						ReadOnly:  true,
+			dep.Spec.Template.Spec.Containers = []corev1.Container{
+				{
+					Name:            name,
+					Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
+					ImagePullPolicy: corev1.PullIfNotPresent,
+					Command:         []string{"/usr/local/bin/user-cluster-controller-manager"},
+					Args: append([]string{
+						"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+						"-internal-address", "0.0.0.0:8085",
+						"-logtostderr",
+						"-v", "2",
+					}, getNetworkArgs(data)...),
+					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+					Resources:                defaultResourceRequirements,
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      resources.InternalUserClusterAdminKubeconfigSecretName,
+							MountPath: "/etc/kubernetes/kubeconfig",
+							ReadOnly:  true,
+						},
 					},
 				},
-			},
-		}
+			}
 
-		return dep, nil
+			return dep, nil
+		}
 	}
 }
 
