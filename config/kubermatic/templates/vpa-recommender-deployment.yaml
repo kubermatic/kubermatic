@@ -31,6 +31,7 @@ spec:
           "--storage", "prometheus",
           "--prometheus-address","http://prometheus-kubermatic.monitoring.svc.cluster.local:9090",
           "--prometheus-cadvisor-job-name", "cadvisor",
+          "--recommendation-margin-fraction", "0",
         ]
         resources:
           limits:
