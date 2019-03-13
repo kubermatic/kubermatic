@@ -11,9 +11,7 @@ groups:
 
   - record: namespace:container_cpu_usage_seconds_total:sum_rate
     expr: |
-      sum by (namespace) (
-        rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container_name!=""}[5m])
-      )
+      sum(rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container_name!=""}[5m])) by (namespace)
 
   - record: namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate
     expr: |
