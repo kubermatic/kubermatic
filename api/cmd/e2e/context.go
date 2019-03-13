@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"time"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -10,31 +11,27 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
-	"k8s.io/client-go/kubernetes"
-
-	clusterv1alpha1clientset "sigs.k8s.io/cluster-api/pkg/client/clientset_generated/clientset"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type TestContext struct {
+	ctx                    context.Context
 	clusterLister          kubermaticv1lister.ClusterLister
 	kubermaticClient       kubermaticclientset.Interface
-	kubeClient             kubernetes.Interface
-	clusterClientProvider  *clusterclient.Provider
+	clusterClientProvider  clusterclient.UserClusterConnectionProvider
 	dcs                    map[string]provider.DatacenterMeta
 	nodeCount              int
-	workerName             string
 	deleteClustersWhenDone bool
 	workingDir             string
 	testBinRoot            string
 
-	cluster *kubermaticv1.Cluster
-	node    *kubermaticapiv1.Node
+	cluster        *kubermaticv1.Cluster
+	nodeDeployment *kubermaticapiv1.NodeDeployment
 
 	controlPlaneWaitTimeout time.Duration
 
 	clusterContext struct {
-		kubeconfig       string
-		kubeClient       kubernetes.Interface
-		clusterAPIClient clusterv1alpha1clientset.Interface
+		kubeconfig string
+		client     client.Client
 	}
 }

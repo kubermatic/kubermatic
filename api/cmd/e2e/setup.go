@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"io/ioutil"
 	"path"
 	"testing"
@@ -9,13 +9,11 @@ import (
 
 	clustercontroller "github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machine"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
 
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -26,6 +24,12 @@ func setupCluster(ctx *TestContext, t *testing.T) {
 	)
 
 	for attempt := 1; attempt <= 100; attempt++ {
+		select {
+		case <-ctx.ctx.Done():
+			t.Fatal("Parent context is closed")
+		default:
+		}
+
 		cluster, err = ctx.kubermaticClient.KubermaticV1().Clusters().Create(ctx.cluster)
 		if err != nil {
 			time.Sleep(1 * time.Second)
@@ -41,7 +45,13 @@ func setupCluster(ctx *TestContext, t *testing.T) {
 }
 
 func waitForControlPlane(ctx *TestContext, t *testing.T) {
-	err := wait.PollImmediate(5*time.Second, 10*time.Minute, func() (done bool, err error) {
+	err := wait.PollImmediate(1*time.Second, ctx.controlPlaneWaitTimeout, func() (done bool, err error) {
+		select {
+		case <-ctx.ctx.Done():
+			t.Fatal("Parent context is closed")
+		default:
+		}
+
 		cluster, err := ctx.clusterLister.Get(ctx.cluster.Name)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
@@ -78,17 +88,11 @@ func setupClusterContext(ctx *TestContext, t *testing.T) {
 	ctx.clusterContext.kubeconfig = filename
 	t.Logf("Wrote kubeconfig to %s", filename)
 
-	kubeClient, err := ctx.clusterClientProvider.GetClient(ctx.cluster)
+	client, err := ctx.clusterClientProvider.GetDynamicClient(ctx.cluster)
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx.clusterContext.kubeClient = kubeClient
-
-	clusterAPIClient, err := ctx.clusterClientProvider.GetMachineClient(ctx.cluster)
-	if err != nil {
-		t.Fatal(err)
-	}
-	ctx.clusterContext.clusterAPIClient = clusterAPIClient
+	ctx.clusterContext.client = client
 }
 
 func setupNodes(ctx *TestContext, t *testing.T) {
@@ -96,22 +100,19 @@ func setupNodes(ctx *TestContext, t *testing.T) {
 	if !found {
 		t.Fatalf("Node datacenter '%s' not found in datacenters.yaml", ctx.cluster.Spec.Cloud.DatacenterName)
 	}
-	for i := 0; i < ctx.nodeCount; i++ {
-		createMachine(ctx, dc, t, i)
-	}
-}
 
-func createMachine(ctx *TestContext, dc provider.DatacenterMeta, t *testing.T, i int) {
-	m, err := machine.Machine(ctx.cluster, ctx.node, dc, nil)
+	machineDeployment, err := machine.Deployment(ctx.cluster, ctx.nodeDeployment, dc, nil)
 	if err != nil {
 		t.Fatalf("failed to generate Machine object: %v", err)
 	}
-	// Make sure all nodes have different names across all scenarios - otherwise the Kubelet might not come up (OpenStack has this...)
-	m.Name = fmt.Sprintf("machine-%d", i)
-	m.Spec.Name = fmt.Sprintf("node-%d", i)
-
 	for attempt := 1; attempt <= 100; attempt++ {
-		if _, err := ctx.clusterContext.clusterAPIClient.ClusterV1alpha1().Machines(metav1.NamespaceSystem).Create(m); err != nil {
+		select {
+		case <-ctx.ctx.Done():
+			t.Fatal("Parent context is closed")
+		default:
+		}
+
+		if err := ctx.clusterContext.client.Create(context.Background(), machineDeployment); err != nil {
 			time.Sleep(1 * time.Second)
 			continue
 		}
@@ -122,8 +123,14 @@ func createMachine(ctx *TestContext, dc provider.DatacenterMeta, t *testing.T, i
 
 func waitForNodes(ctx *TestContext, t *testing.T) {
 	err := wait.PollImmediate(1*time.Second, 15*time.Minute, func() (bool, error) {
-		nodeList, err := ctx.clusterContext.kubeClient.CoreV1().Nodes().List(metav1.ListOptions{})
-		if err != nil {
+		select {
+		case <-ctx.ctx.Done():
+			t.Fatal("Parent context is closed")
+		default:
+		}
+
+		nodeList := &corev1.NodeList{}
+		if err := ctx.clusterContext.client.List(context.Background(), nil, nodeList); err != nil {
 			return false, nil
 		}
 		if len(nodeList.Items) < ctx.nodeCount {
@@ -138,6 +145,11 @@ func waitForNodes(ctx *TestContext, t *testing.T) {
 
 func setFinalizers(ctx *TestContext, t *testing.T) {
 	for attempt := 1; attempt <= 100; attempt++ {
+		select {
+		case <-ctx.ctx.Done():
+			t.Fatal("Parent context is closed")
+		default:
+		}
 
 		// Refresh the cluster to avoid errors
 		cluster, err := ctx.clusterLister.Get(ctx.cluster.Name)
@@ -174,8 +186,14 @@ func podIsReady(p *corev1.Pod) bool {
 
 func waitForAllSystemPods(ctx *TestContext, t *testing.T) {
 	err := wait.PollImmediate(1*time.Second, 15*time.Minute, func() (bool, error) {
-		podList, err := ctx.clusterContext.kubeClient.CoreV1().Pods(metav1.NamespaceSystem).List(metav1.ListOptions{})
-		if err != nil {
+		select {
+		case <-ctx.ctx.Done():
+			t.Fatal("Parent context is closed")
+		default:
+		}
+
+		podList := &corev1.PodList{}
+		if err := ctx.clusterContext.client.List(context.Background(), nil, podList); err != nil {
 			return false, nil
 		}
 

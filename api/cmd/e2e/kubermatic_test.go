@@ -3,8 +3,10 @@
 package main
 
 import (
+	"context"
 	"flag"
 	goos "os"
+	"os/signal"
 	"path"
 	"strings"
 	"testing"
@@ -21,7 +23,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -51,6 +52,16 @@ func init() {
 }
 
 func TestE2E(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	signalCh := make(chan goos.Signal, 1)
+	signal.Notify(signalCh, goos.Interrupt)
+	go func() {
+		<-signalCh
+		// Using t.Fatal wont help at all.
+		t.Log("Received os signal, canceling context")
+		cancel()
+	}()
+
 	dcs, err := provider.LoadDatacentersMeta(dcFile)
 	if err != nil {
 		t.Fatalf("failed to load datacenter yaml %q: %v", dcFile, err)
@@ -73,12 +84,15 @@ func TestE2E(t *testing.T) {
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, informer.DefaultInformerResyncPeriod)
 	kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, informer.DefaultInformerResyncPeriod)
 	clusterLister := kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister()
-	clusterClientProvider := clusterclient.New(kubeInformerFactory.Core().V1().Secrets().Lister())
+	clusterClientProvider, err := clusterclient.NewExternal(kubeInformerFactory.Core().V1().Secrets().Lister())
+	if err != nil {
+		t.Fatalf("failed to get the cluster client connection provider: %v", err)
+	}
 
-	kubermaticInformerFactory.Start(wait.NeverStop)
-	kubeInformerFactory.Start(wait.NeverStop)
-	kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
-	kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
+	kubermaticInformerFactory.Start(ctx.Done())
+	kubeInformerFactory.Start(ctx.Done())
+	kubermaticInformerFactory.WaitForCacheSync(ctx.Done())
+	kubeInformerFactory.WaitForCacheSync(ctx.Done())
 
 	versions := []*semver.Semver{
 		semver.NewSemverOrDie("v1.10.12"),
@@ -124,24 +138,25 @@ func TestE2E(t *testing.T) {
 							}
 
 							cluster := getCluster(prov, version, workerName, t)
-							node := getNode(prov, os, version, t)
+							node := getNodeDeployment(prov, os, version, int32(nodeCount), t)
 
 							dir := path.Join(workingDir, strings.Replace(t.Name(), "/", "_", -1))
 							if err := goos.MkdirAll(dir, 0755); err != nil {
 								t.Fatalf("failed to create test directory: %v", err)
 							}
 
+							timeoutCtx, _ := context.WithTimeout(ctx, 1*time.Hour)
 							executeClusterTests(&TestContext{
-								node:    node,
-								cluster: cluster,
+								ctx: timeoutCtx,
+
+								nodeDeployment: node,
+								cluster:        cluster,
 
 								nodeCount:               nodeCount,
 								clusterClientProvider:   clusterClientProvider,
 								clusterLister:           clusterLister,
 								dcs:                     dcs,
-								kubeClient:              kubeClient,
 								kubermaticClient:        kubermaticClient,
-								workerName:              workerName,
 								controlPlaneWaitTimeout: controlPlaneWaitTimeout,
 								deleteClustersWhenDone:  deleteClustersWhenDone,
 								workingDir:              dir,
@@ -294,17 +309,20 @@ func getCluster(prov string, version *semver.Semver, workerName string, t *testi
 	return cluster
 }
 
-func getNode(prov, os string, version *semver.Semver, t *testing.T) *kubermaticapiv1.Node {
+func getNodeDeployment(prov, os string, version *semver.Semver, nodeCount int32, t *testing.T) *kubermaticapiv1.NodeDeployment {
 	cloudSpec := getNodeCloudSpec(prov, t)
 	osSpec := getNodeOSSpec(os, t)
-	return &kubermaticapiv1.Node{
+	return &kubermaticapiv1.NodeDeployment{
 		ObjectMeta: kubermaticapiv1.ObjectMeta{},
-		Spec: kubermaticapiv1.NodeSpec{
-			Cloud: *cloudSpec,
-			Versions: kubermaticapiv1.NodeVersionInfo{
-				Kubelet: version.String(),
+		Spec: kubermaticapiv1.NodeDeploymentSpec{
+			Replicas: nodeCount,
+			Template: kubermaticapiv1.NodeSpec{
+				Cloud: *cloudSpec,
+				Versions: kubermaticapiv1.NodeVersionInfo{
+					Kubelet: version.String(),
+				},
+				OperatingSystem: *osSpec,
 			},
-			OperatingSystem: *osSpec,
 		},
 	}
 }

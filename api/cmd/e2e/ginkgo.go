@@ -47,7 +47,7 @@ func testConformance(ctx *TestContext, t *testing.T, workerCount int, name, gink
 		"--provider=local",
 	}
 
-	cmdCtx, cancel := context.WithTimeout(context.Background(), 1*time.Hour)
+	cmdCtx, cancel := context.WithTimeout(ctx.ctx, 30*time.Minute)
 	defer cancel()
 	cmd := exec.CommandContext(cmdCtx, path.Join(binDir, "ginkgo"), args...)
 

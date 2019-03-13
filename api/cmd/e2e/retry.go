@@ -4,6 +4,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"path/filepath"
 	"runtime"
@@ -15,8 +16,15 @@ import (
 // Retry runs function f for up to maxAttempts times until f returns successfully, and reports whether f was run successfully.
 // It will sleep for the given period between invocations of f.
 // Use the provided *testutil.R instead of a *testing.T from the function.
-func Retry(t *testing.T, maxAttempts int, sleep time.Duration, f func(r *R)) bool {
+func Retry(t *testing.T, maxAttempts int, ctx context.Context, sleep time.Duration, f func(r *R)) bool {
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		// Henrik: I added this context so tests don't get retried when the context was closed
+		select {
+		case <-ctx.Done():
+			t.Fatal("Parent context is closed")
+		default:
+		}
+
 		r := &R{Attempt: attempt, log: &bytes.Buffer{}}
 
 		f(r)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -12,6 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -25,19 +27,19 @@ func testStorageSupport(ctx *TestContext, r *R) {
 	defer deleteNamespace(storageTestNamespace, ctx, r)
 
 	// We're creating a own namespace, so the cleanup routine will take care as fallback
-	ns, err := ctx.clusterContext.kubeClient.CoreV1().Namespaces().Create(&corev1.Namespace{
+	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: storageTestNamespace,
 		},
-	})
-	if err != nil {
+	}
+	if err := ctx.clusterContext.client.Create(ctx.ctx, ns); err != nil {
 		r.Errorf("failed to create Namespace: %v", err)
 		return
 	}
 
 	labels := map[string]string{"app": "data-writer"}
 	// Creating a simple StatefulSet with 1 replica which writes to the PV. That way we know if storage can be provisioned and consumed
-	set, err := ctx.clusterContext.kubeClient.AppsV1().StatefulSets(ns.Name).Create(&appsv1.StatefulSet{
+	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "data-writer",
 		},
@@ -98,17 +100,22 @@ func testStorageSupport(ctx *TestContext, r *R) {
 				},
 			},
 		},
-	})
-	if err != nil {
+	}
+	if err := ctx.clusterContext.client.Create(ctx.ctx, statefulSet); err != nil {
 		r.Errorf("failed to create StatefulSet: %v", err)
 		return
-
 	}
 
-	err = wait.Poll(10*time.Second, 10*time.Minute, func() (done bool, err error) {
-		currentSet, err := ctx.clusterContext.kubeClient.AppsV1().StatefulSets(ns.Name).Get(set.Name, metav1.GetOptions{})
-		if err != nil {
-			r.Logf("failed to load StatefulSet %s/%s from API server during PVC test: %v", ns.Name, set.Name, err)
+	err := wait.Poll(10*time.Second, 10*time.Minute, func() (done bool, err error) {
+		select {
+		case <-ctx.ctx.Done():
+			return false, errors.New("parent context is closed")
+		default:
+		}
+
+		currentSet := &appsv1.StatefulSet{}
+		if err := ctx.clusterContext.client.Get(ctx.ctx, types.NamespacedName{Name: statefulSet.Name, Namespace: statefulSet.Namespace}, currentSet); err != nil {
+			r.Logf("failed to load StatefulSet %s/%s from API server during PVC test: %v", ns.Name, statefulSet.Name, err)
 			return false, nil
 		}
 		if currentSet.Status.ReadyReplicas == 1 {
@@ -126,18 +133,18 @@ func testLBSupport(ctx *TestContext, r *R) {
 	defer deleteNamespace(lbTestNamespace, ctx, r)
 
 	// We're creating a own namespace, so the cleanup routine will take care as fallback
-	ns, err := ctx.clusterContext.kubeClient.CoreV1().Namespaces().Create(&corev1.Namespace{
+	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: lbTestNamespace,
 		},
-	})
-	if err != nil {
+	}
+	if err := ctx.clusterContext.client.Create(ctx.ctx, ns); err != nil {
 		r.Errorf("failed to create namespace: %v", err)
 		return
 	}
 
 	labels := map[string]string{"app": "hello"}
-	service, err := ctx.clusterContext.kubeClient.CoreV1().Services(ns.Name).Create(&corev1.Service{
+	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test",
 		},
@@ -151,13 +158,13 @@ func testLBSupport(ctx *TestContext, r *R) {
 				},
 			},
 		},
-	})
-	if err != nil {
+	}
+	if err := ctx.clusterContext.client.Create(ctx.ctx, service); err != nil {
 		r.Errorf("failed to create Service: %v", err)
 		return
 	}
 
-	_, err = ctx.clusterContext.kubeClient.CoreV1().Pods(ns.Name).Create(&corev1.Pod{
+	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "hello-kubernetes",
 			Labels: labels,
@@ -177,16 +184,22 @@ func testLBSupport(ctx *TestContext, r *R) {
 				},
 			},
 		},
-	})
-	if err != nil {
+	}
+	if err := ctx.clusterContext.client.Create(ctx.ctx, pod); err != nil {
 		r.Errorf("failed to create Pod: %v", err)
 		return
 	}
 
 	var host string
-	err = wait.Poll(10*time.Second, 10*time.Minute, func() (done bool, err error) {
-		currentService, err := ctx.clusterContext.kubeClient.CoreV1().Services(ns.Name).Get(service.Name, metav1.GetOptions{})
-		if err != nil {
+	err := wait.Poll(10*time.Second, 10*time.Minute, func() (done bool, err error) {
+		select {
+		case <-ctx.ctx.Done():
+			return false, errors.New("parent context is closed")
+		default:
+		}
+
+		currentService := &corev1.Service{}
+		if err := ctx.clusterContext.client.Get(ctx.ctx, types.NamespacedName{Name: service.Name, Namespace: service.Namespace}, currentService); err != nil {
 			r.Logf("failed to load Service %s/%s from API server during LB test: %v", ns.Name, service.Name, err)
 			return false, nil
 		}
@@ -212,7 +225,13 @@ func testLBSupport(ctx *TestContext, r *R) {
 	}
 
 	url := fmt.Sprintf("http://%s:80", host)
-	err = wait.Poll(30*time.Second, 10*time.Minute, func() (done bool, err error) {
+	err = wait.Poll(10*time.Second, 10*time.Minute, func() (done bool, err error) {
+		select {
+		case <-ctx.ctx.Done():
+			return false, errors.New("parent context is closed")
+		default:
+		}
+
 		resp, err := http.Get(url)
 		if err != nil {
 			r.Logf("Failed to call Pod via LB(%s) during LB test: %v", url, err)
