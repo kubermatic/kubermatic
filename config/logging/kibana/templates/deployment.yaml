@@ -28,7 +28,7 @@ spec:
             cpu: 1000m
           requests:
             cpu: 100m
-            memory: 300Mi
+            memory: 400Mi
         env:
           - name: ELASTICSEARCH_URL
             value: http://es-data:9200
@@ -36,3 +36,17 @@ spec:
         - containerPort: 5601
           name: ui
           protocol: TCP
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - /bin/bash
+              - /post-start.sh
+        volumeMounts:
+        - name: config
+          mountPath: /post-start.sh
+          subPath: post-start.sh
+      volumes:
+      - name: config
+        configMap:
+          name: kibana-config
