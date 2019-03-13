@@ -11,6 +11,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -460,6 +461,45 @@ func ReconcileCustomResourceDefinitions(namedGetters []NamedCustomResourceDefini
 
 		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
 			return fmt.Errorf("failed to ensure CustomResourceDefinition: %v", err)
+		}
+	}
+
+	return nil
+}
+
+// CronJobCreator defines an interface to create/update CronJobs
+type CronJobCreator = func(existing *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error)
+
+// NamedCronJobCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedCronJobCreatorGetter = func() (name string, create CronJobCreator)
+
+// CronJobObjectWrapper adds a wrapper so the CronJobCreator matches ObjectCreator
+// This is needed as golang does not support function interface matching
+func CronJobObjectWrapper(create CronJobCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*batchv1beta1.CronJob))
+		}
+		return create(&batchv1beta1.CronJob{})
+	}
+}
+
+// ReconcileCronJobs will create and update the CronJobs coming from the passed CronJobCreator slice
+func ReconcileCronJobs(namedGetters []NamedCronJobCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
+	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &batchv1beta1.CronJob{})
+	if err != nil {
+		return fmt.Errorf("failed to get CronJob informer: %v", err)
+	}
+
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := CronJobObjectWrapper(create)
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+			return fmt.Errorf("failed to ensure CronJob: %v", err)
 		}
 	}
 

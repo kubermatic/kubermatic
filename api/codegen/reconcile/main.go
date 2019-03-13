@@ -85,6 +85,12 @@ func main() {
 				ResourceImportPath: "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
 				UseNamedObject:     true,
 			},
+			{
+				ResourceName:       "CronJob",
+				ImportAlias:        "batchv1beta1",
+				ResourceImportPath: "k8s.io/api/batch/v1beta1",
+				UseNamedObject:     true,
+			},
 		},
 	}
 
