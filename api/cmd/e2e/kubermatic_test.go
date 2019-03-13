@@ -25,7 +25,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 var (
@@ -81,6 +84,20 @@ func TestE2E(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Create a manager
+	if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
+		t.Fatalf("failed to add kubermatic scheme to scheme: %v", err)
+	}
+	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
+		t.Fatalf("failed to add clusterv1alpha1 to scheme: %v", err)
+	}
+
+	mgr, err := manager.New(config, manager.Options{})
+	if err != nil {
+		t.Fatalf("failed to create mgr: %v", err)
+	}
+	dynamicClient := mgr.GetClient()
+
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, informer.DefaultInformerResyncPeriod)
 	kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, informer.DefaultInformerResyncPeriod)
 	clusterLister := kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister()
@@ -95,10 +112,9 @@ func TestE2E(t *testing.T) {
 	kubeInformerFactory.WaitForCacheSync(ctx.Done())
 
 	versions := []*semver.Semver{
-		semver.NewSemverOrDie("v1.10.12"),
-		semver.NewSemverOrDie("v1.11.6"),
-		semver.NewSemverOrDie("v1.12.5"),
-		semver.NewSemverOrDie("v1.13.2"),
+		semver.NewSemverOrDie("v1.11.8"),
+		semver.NewSemverOrDie("v1.12.6"),
+		semver.NewSemverOrDie("v1.13.4"),
 	}
 
 	for _, version := range versions {
@@ -156,7 +172,7 @@ func TestE2E(t *testing.T) {
 								clusterClientProvider:   clusterClientProvider,
 								clusterLister:           clusterLister,
 								dcs:                     dcs,
-								kubermaticClient:        kubermaticClient,
+								client:                  dynamicClient,
 								controlPlaneWaitTimeout: controlPlaneWaitTimeout,
 								deleteClustersWhenDone:  deleteClustersWhenDone,
 								workingDir:              dir,
@@ -175,8 +191,10 @@ func executeClusterTests(ctx *TestContext, t *testing.T) {
 	setupCluster(ctx, t)
 
 	defer func() {
+		printSeedPods(ctx, t)
+
 		if ctx.deleteClustersWhenDone {
-			if err := ctx.kubermaticClient.KubermaticV1().Clusters().Delete(ctx.cluster.Name, nil); err != nil {
+			if err := ctx.client.Delete(ctx.ctx, ctx.cluster); err != nil {
 				t.Logf("failed to delete cluster '%s': %v", ctx.cluster.Name, err)
 			}
 		}
@@ -195,7 +213,7 @@ func executeClusterTests(ctx *TestContext, t *testing.T) {
 	// Wait for all kube-system pods to be ready
 	waitForAllSystemPods(ctx, t)
 
-	// We can run all tests in paralle, except for the ginkgo serial run
+	// We can run all tests in parallel, except for the ginkgo serial run
 	t.Run("Parallel tests", func(t *testing.T) {
 		if supportsStorage(ctx.cluster) {
 			t.Run("[CloudProvider] Test PVC support with the existing StorageClass", func(t *testing.T) {

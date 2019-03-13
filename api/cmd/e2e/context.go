@@ -6,18 +6,17 @@ import (
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type TestContext struct {
 	ctx                    context.Context
 	clusterLister          kubermaticv1lister.ClusterLister
-	kubermaticClient       kubermaticclientset.Interface
+	client                 controllerruntimeclient.Client
 	clusterClientProvider  clusterclient.UserClusterConnectionProvider
 	dcs                    map[string]provider.DatacenterMeta
 	nodeCount              int
@@ -32,6 +31,6 @@ type TestContext struct {
 
 	clusterContext struct {
 		kubeconfig string
-		client     client.Client
+		client     controllerruntimeclient.Client
 	}
 }

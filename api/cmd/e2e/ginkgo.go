@@ -15,9 +15,7 @@ func testConformanceParallel(ctx *TestContext, t *testing.T) {
 }
 
 func testConformanceSerial(ctx *TestContext, t *testing.T) {
-	// Broken on aws. See https://github.com/kubernetes/kubernetes/pull/72965
-	skip := `should not cause race condition when used for configmap`
-	testConformance(ctx, t, 1, "serial", `\[Serial\].*\[Conformance\]`, skip)
+	testConformance(ctx, t, 1, "serial", `\[Serial\].*\[Conformance\]`, ``)
 }
 
 func testConformance(ctx *TestContext, t *testing.T, workerCount int, name, ginkgoFocus, ginkgoSkip string) {

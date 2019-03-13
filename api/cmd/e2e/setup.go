@@ -8,8 +8,9 @@ import (
 	"time"
 
 	clustercontroller "github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machine"
+	"k8s.io/client-go/tools/clientcmd"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -17,31 +18,31 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-func setupCluster(ctx *TestContext, t *testing.T) {
-	var (
-		cluster *kubermaticv1.Cluster
-		err     error
-	)
+const (
+	maxRetryAttempts = 10
+	retryWait        = 5 * time.Second
+)
 
-	for attempt := 1; attempt <= 100; attempt++ {
+func setupCluster(ctx *TestContext, t *testing.T) {
+	var err error
+
+	for attempt := 1; attempt <= maxRetryAttempts; attempt++ {
 		select {
 		case <-ctx.ctx.Done():
 			t.Fatal("Parent context is closed")
 		default:
 		}
 
-		cluster, err = ctx.kubermaticClient.KubermaticV1().Clusters().Create(ctx.cluster)
-		if err != nil {
-			time.Sleep(1 * time.Second)
+		if err = ctx.client.Create(ctx.ctx, ctx.cluster); err != nil {
+			time.Sleep(retryWait)
 			continue
 		}
 
-		t.Logf("Created the cluster '%s'", cluster.Name)
-		ctx.cluster = cluster.DeepCopy()
+		t.Logf("Created the cluster '%s'", ctx.cluster.Name)
 		return
 	}
 
-	t.Fatalf("failed to create the cluster object after 100 attempts: %v", err)
+	t.Fatalf("failed to create the cluster object after %d attempts: %v", maxRetryAttempts, err)
 }
 
 func waitForControlPlane(ctx *TestContext, t *testing.T) {
@@ -57,6 +58,7 @@ func waitForControlPlane(ctx *TestContext, t *testing.T) {
 			if kerrors.IsNotFound(err) {
 				return false, nil
 			}
+			t.Logf("Failed to get cluster from lister: %v. Retrying...", err)
 			return false, nil
 		}
 		return cluster.Status.Health.AllHealthy(), nil
@@ -88,11 +90,17 @@ func setupClusterContext(ctx *TestContext, t *testing.T) {
 	ctx.clusterContext.kubeconfig = filename
 	t.Logf("Wrote kubeconfig to %s", filename)
 
-	client, err := ctx.clusterClientProvider.GetDynamicClient(ctx.cluster)
+	config, err := clientcmd.BuildConfigFromFlags("", filename)
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx.clusterContext.client = client
+
+	mgr, err := manager.New(config, manager.Options{})
+	if err != nil {
+		t.Fatalf("failed to create mgr: %v", err)
+	}
+
+	ctx.clusterContext.client = mgr.GetClient()
 }
 
 func setupNodes(ctx *TestContext, t *testing.T) {
@@ -103,9 +111,9 @@ func setupNodes(ctx *TestContext, t *testing.T) {
 
 	machineDeployment, err := machine.Deployment(ctx.cluster, ctx.nodeDeployment, dc, nil)
 	if err != nil {
-		t.Fatalf("failed to generate Machine object: %v", err)
+		t.Fatalf("failed to generate MachineDeployment object: %v", err)
 	}
-	for attempt := 1; attempt <= 100; attempt++ {
+	for attempt := 1; attempt <= maxRetryAttempts; attempt++ {
 		select {
 		case <-ctx.ctx.Done():
 			t.Fatal("Parent context is closed")
@@ -113,12 +121,13 @@ func setupNodes(ctx *TestContext, t *testing.T) {
 		}
 
 		if err := ctx.clusterContext.client.Create(context.Background(), machineDeployment); err != nil {
-			time.Sleep(1 * time.Second)
+			t.Logf("Failed to create MachineDeployment: %v. Retrying [%d/%d] ...", err, attempt, maxRetryAttempts)
+			time.Sleep(retryWait)
 			continue
 		}
 		return
 	}
-	t.Fatalf("failed to create Machine after 100 attempts")
+	t.Fatalf("failed to create MachineDeployment after %d attempts", maxRetryAttempts)
 }
 
 func waitForNodes(ctx *TestContext, t *testing.T) {
@@ -131,6 +140,7 @@ func waitForNodes(ctx *TestContext, t *testing.T) {
 
 		nodeList := &corev1.NodeList{}
 		if err := ctx.clusterContext.client.List(context.Background(), nil, nodeList); err != nil {
+			t.Logf("Failed to list nodes from cluster: %v. Retrying...", err)
 			return false, nil
 		}
 		if len(nodeList.Items) < ctx.nodeCount {
@@ -144,7 +154,7 @@ func waitForNodes(ctx *TestContext, t *testing.T) {
 }
 
 func setFinalizers(ctx *TestContext, t *testing.T) {
-	for attempt := 1; attempt <= 100; attempt++ {
+	for attempt := 1; attempt <= maxRetryAttempts; attempt++ {
 		select {
 		case <-ctx.ctx.Done():
 			t.Fatal("Parent context is closed")
@@ -154,7 +164,8 @@ func setFinalizers(ctx *TestContext, t *testing.T) {
 		// Refresh the cluster to avoid errors
 		cluster, err := ctx.clusterLister.Get(ctx.cluster.Name)
 		if err != nil {
-			time.Sleep(1 * time.Second)
+			t.Logf("Failed to get cluster from lister: %v. Retrying...", err)
+			time.Sleep(retryWait)
 			continue
 		}
 
@@ -163,16 +174,16 @@ func setFinalizers(ctx *TestContext, t *testing.T) {
 		finalizers.Insert(clustercontroller.InClusterLBCleanupFinalizer)
 		cluster.Finalizers = finalizers.List()
 
-		cluster, err = ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster)
-		if err != nil {
-			time.Sleep(1 * time.Second)
+		if err = ctx.client.Update(ctx.ctx, cluster); err != nil {
+			t.Logf("Failed to update cluster: %v. Retrying...", err)
+			time.Sleep(retryWait)
 			continue
 		}
 
 		ctx.cluster = cluster.DeepCopy()
 		return
 	}
-	t.Fatalf("failed to create Machine after 100 attempts")
+	t.Fatalf("failed to add Finalizers to cluster after %d attempts", maxRetryAttempts)
 }
 
 func podIsReady(p *corev1.Pod) bool {
@@ -194,6 +205,7 @@ func waitForAllSystemPods(ctx *TestContext, t *testing.T) {
 
 		podList := &corev1.PodList{}
 		if err := ctx.clusterContext.client.List(context.Background(), nil, podList); err != nil {
+			t.Logf("Failed to list pods from cluster: %v. Retrying...", err)
 			return false, nil
 		}
 
