@@ -128,7 +128,7 @@ type NodeUpgradesReq struct {
 	Body apiv1.MasterVersion
 }
 
-func decodeNodeUpgradesReq(c context.Context, r *http.Request) (interface{}, error) {
+func DecodeNodeUpgradesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NodeUpgradesReq
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
@@ -137,7 +137,7 @@ func decodeNodeUpgradesReq(c context.Context, r *http.Request) (interface{}, err
 	return req, nil
 }
 
-func getNodeUpgrades(updateManager common.UpdateManager) endpoint.Endpoint {
+func GetNodeUpgrades(updateManager common.UpdateManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(NodeUpgradesReq)
 		if !ok {

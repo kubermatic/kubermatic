@@ -1282,8 +1282,8 @@ func (r Routing) getNodeUpgrades() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			middleware.UserSaver(r.userProvider),
-		)(getNodeUpgrades(r.updateManager)),
-		decodeNodeUpgradesReq,
+		)(cluster.GetNodeUpgrades(r.updateManager)),
+		cluster.DecodeNodeUpgradesReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
