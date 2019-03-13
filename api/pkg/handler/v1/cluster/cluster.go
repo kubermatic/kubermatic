@@ -62,17 +62,14 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 		}
 
 		// Create the initial node deployment in the background.
-		go createInitialNodeDeployment(&req.Body.NodeDeployment, newCluster, project, sshKeyProvider, dcs, ctx)
+		go createInitialNodeDeployment(&req.Body.NodeDeployment, newCluster, project, sshKeyProvider, dcs, clusterProvider, userInfo)
 
 		return convertInternalClusterToExternal(newCluster), nil
 	}
 }
 
 func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticapiv1.Cluster, project *kubermaticapiv1.Project,
-	sshKeyProvider provider.SSHKeyProvider, dcs map[string]provider.DatacenterMeta, ctx context.Context) {
-	userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
+	sshKeyProvider provider.SSHKeyProvider, dcs map[string]provider.DatacenterMeta, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo) {
 	nd, err := machineresource.Validate(nodeDeployment, cluster.Spec.Version.Semver())
 	if err != nil {
 		fmt.Println(err.Error()) // TODO Report error (metric, alert, event?, log?).
@@ -80,7 +77,7 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 	}
 
 	interval := 10 * time.Second
-	timeout := 3 * time.Minute
+	timeout := 5 * time.Minute
 	deadline := time.Now().Add(timeout)
 	clusterID := cluster.Name
 	for {
@@ -111,7 +108,7 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 				break
 			}
 
-			err = client.Create(ctx, md)
+			err = client.Create(context.Background(), md)
 			break
 		}
 
