@@ -301,11 +301,6 @@ func getCluster(prov string, version *semver.Semver, workerName string, t *testi
 		cluster.Labels[kubermaticv1.WorkerNameLabelKey] = workerName
 	}
 
-	var replicas int32 = 2
-	cluster.Spec.ComponentsOverride.Apiserver.Replicas = &replicas
-	cluster.Spec.ComponentsOverride.ControllerManager.Replicas = &replicas
-	cluster.Spec.ComponentsOverride.Scheduler.Replicas = &replicas
-
 	return cluster
 }
 
