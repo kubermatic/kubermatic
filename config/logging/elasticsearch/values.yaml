@@ -1,7 +1,7 @@
 logging:
   elasticsearch:
     dataReplicas: 5
-    masterReplicas: 3
+    masterReplicas: 4
     storageSize: 10Gi
     image:
       repository: docker.elastic.co/elasticsearch/elasticsearch
