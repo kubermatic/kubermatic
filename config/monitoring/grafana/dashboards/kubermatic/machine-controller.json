@@ -58,6 +58,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Total Machines",
       "tooltip": {
@@ -147,6 +148,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Workers",
       "tooltip": {
@@ -236,6 +238,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Total Nodes",
       "tooltip": {
@@ -325,6 +328,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "5min Error Rate",
       "tooltip": {

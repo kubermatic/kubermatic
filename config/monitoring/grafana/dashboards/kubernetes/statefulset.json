@@ -77,6 +77,7 @@
         }
       ],
       "thresholds": "",
+      "timeRegions": [],
       "title": "CPU",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -159,6 +160,7 @@
         }
       ],
       "thresholds": "",
+      "timeRegions": [],
       "title": "Memory",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -241,6 +243,7 @@
         }
       ],
       "thresholds": "",
+      "timeRegions": [],
       "title": "Network",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -324,6 +327,7 @@
         }
       ],
       "thresholds": "",
+      "timeRegions": [],
       "title": "Desired Replicas",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -407,6 +411,7 @@
         }
       ],
       "thresholds": "",
+      "timeRegions": [],
       "title": "Replicas of current version",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -490,6 +495,7 @@
         }
       ],
       "thresholds": "",
+      "timeRegions": [],
       "title": "Observed Generation",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -573,6 +579,7 @@
         }
       ],
       "thresholds": "",
+      "timeRegions": [],
       "title": "Metadata Generation",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -664,6 +671,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Replicas",
       "tooltip": {

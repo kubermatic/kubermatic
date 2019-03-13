@@ -7,7 +7,6 @@
   "gnetId": null,
   "graphTooltip": 1,
   "hideControls": "<< hideControls | default false | toJson >>",
-  "iteration": 1534505906124,
   "links": [],
   "panels": [
     {
@@ -97,6 +96,7 @@
         }
       ],
       "thresholds": "1,2",
+      "timeRegions": [],
       "title": "Up",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -161,6 +161,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "CPU Usage",
       "tooltip": {
@@ -252,6 +253,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Resident Memory",
       "tooltip": {
@@ -343,6 +345,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Open File Descriptors",
       "tooltip": {
@@ -450,6 +453,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Database Size",
       "tooltip": {
@@ -550,6 +554,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Disk Sync Duration",
       "tooltip": {
@@ -652,6 +657,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Client Traffic In",
       "tooltip": {
@@ -743,6 +749,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Client Traffic Out",
       "tooltip": {
@@ -834,6 +841,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Peer Traffic In",
       "tooltip": {
@@ -928,6 +936,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Peer Traffic Out",
       "tooltip": {
@@ -1043,6 +1052,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Raft Proposals",
       "tooltip": {
@@ -1137,6 +1147,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Total Leader Elections Per Day",
       "tooltip": {
@@ -1241,6 +1252,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Transactions",
       "tooltip": {
@@ -1332,6 +1344,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "PUT Requests",
       "tooltip": {
@@ -1423,6 +1436,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "RANGE Requests",
       "tooltip": {
@@ -1514,6 +1528,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "DELETE Requests",
       "tooltip": {
@@ -1605,6 +1620,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Total Keys",
       "tooltip": {
@@ -1696,6 +1712,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Reads",
       "tooltip": {
@@ -1787,6 +1804,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Writes",
       "tooltip": {
@@ -1878,6 +1896,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Expires",
       "tooltip": {

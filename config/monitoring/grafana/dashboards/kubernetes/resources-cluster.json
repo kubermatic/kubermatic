@@ -117,6 +117,7 @@
       ],
       "thresholds": "70,80",
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "CPU Utilisation",
       "tooltip": {
@@ -256,6 +257,7 @@
       ],
       "thresholds": "70,80",
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "CPU Requests Commitment",
       "tooltip": {
@@ -395,6 +397,7 @@
       ],
       "thresholds": "70,80",
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "CPU Limits Commitment",
       "tooltip": {
@@ -534,6 +537,7 @@
       ],
       "thresholds": "70,80",
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Memory Utilisation",
       "tooltip": {
@@ -673,6 +677,7 @@
       ],
       "thresholds": "70,80",
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Memory Requests Commitment",
       "tooltip": {
@@ -812,6 +817,7 @@
       ],
       "thresholds": "70,80",
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Memory Limits Commitment",
       "tooltip": {
@@ -919,6 +925,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "CPU Usage",
       "tooltip": {
@@ -1169,6 +1176,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "CPU Quota",
       "tooltip": {
@@ -1268,6 +1276,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Memory Usage (w/o cache)",
       "tooltip": {
@@ -1518,6 +1527,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Requests by Namespace",
       "tooltip": {

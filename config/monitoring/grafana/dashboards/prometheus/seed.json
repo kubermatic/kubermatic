@@ -12,7 +12,7 @@
       "columns": [],
       "datasource": "$datasource",
       "description": "Servers which are DOWN RIGHT NOW!",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fontSize": "100%",
       "gridPos": {
         "h": 7,
@@ -83,9 +83,10 @@
         }
       ],
       "timeFrom": "1s",
+      "timeRegions": [],
       "title": "Currently Down",
       "transform": "table",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "table"
     },
     {
@@ -99,7 +100,7 @@
       ],
       "datasource": "$datasource",
       "description": "Total number of time series in prometheus",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "locale",
       "gauge": {
         "maxValue": 100,
@@ -159,8 +160,9 @@
         }
       ],
       "thresholds": "1000000,2000000",
+      "timeRegions": [],
       "title": "Total Series",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "100%",
       "valueMaps": [
@@ -183,7 +185,7 @@
       ],
       "datasource": "$datasource",
       "decimals": null,
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "locale",
       "gauge": {
         "maxValue": 100,
@@ -243,8 +245,9 @@
         }
       ],
       "thresholds": "",
+      "timeRegions": [],
       "title": "Memory Chunks",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "100%",
       "valueMaps": [
@@ -267,7 +270,7 @@
       ],
       "datasource": "$datasource",
       "description": "The total number of rule group evaluations missed due to slow rule group evaluation.",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "locale",
       "gauge": {
         "maxValue": 100,
@@ -327,8 +330,9 @@
         }
       ],
       "thresholds": "1,10",
+      "timeRegions": [],
       "title": "Missed Iterations [$interval]",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "100%",
       "valueMaps": [
@@ -351,7 +355,7 @@
       ],
       "datasource": "$datasource",
       "description": "The total number of rule group evaluations skipped due to throttled metric storage.",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "locale",
       "gauge": {
         "maxValue": 100,
@@ -411,8 +415,9 @@
         }
       ],
       "thresholds": "1,10",
+      "timeRegions": [],
       "title": "Skipped Iterations [$interval]",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "100%",
       "valueMaps": [
@@ -435,7 +440,7 @@
       ],
       "datasource": "$datasource",
       "description": "Total number of scrapes that hit the sample limit and were rejected.",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -495,8 +500,9 @@
         }
       ],
       "thresholds": "1,10",
+      "timeRegions": [],
       "title": "Tardy Scrapes [$interval]",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "100%",
       "valueMaps": [
@@ -519,7 +525,7 @@
       ],
       "datasource": "$datasource",
       "description": "Number of times the database failed to reload block data from disk.",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -579,8 +585,9 @@
         }
       ],
       "thresholds": "1,10",
+      "timeRegions": [],
       "title": "Reload Failures [$interval]",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "100%",
       "valueMaps": [
@@ -603,7 +610,7 @@
       ],
       "datasource": "$datasource",
       "description": "Sum of all skipped scrapes",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -663,8 +670,9 @@
         }
       ],
       "thresholds": "1,10",
+      "timeRegions": [],
       "title": "Skipped Scrapes [$interval]",
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
       "valueFontSize": "100%",
       "valueMaps": [
@@ -683,7 +691,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "description": "All non-zero failures and errors",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -877,6 +885,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Failures and Errors",
       "tooltip": {
@@ -884,7 +893,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -922,7 +931,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -965,6 +974,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Upness (stacked)",
       "tooltip": {
@@ -972,7 +982,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1011,7 +1021,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1053,6 +1063,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Storage Memory Chunks",
       "tooltip": {
@@ -1060,7 +1071,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1098,7 +1109,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1140,6 +1151,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Series Count",
       "tooltip": {
@@ -1147,7 +1159,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1185,7 +1197,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1240,6 +1252,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Series Created / Removed",
       "tooltip": {
@@ -1247,7 +1260,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1286,7 +1299,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "description": "Rate of total number of appended samples",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1328,6 +1341,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Appended Samples per Second",
       "tooltip": {
@@ -1335,7 +1349,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1374,7 +1388,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "description": "Total number of syncs that were executed on a scrape pool.",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1418,6 +1432,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Scrape Sync Total",
       "tooltip": {
@@ -1425,7 +1440,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1464,7 +1479,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "description": "Actual interval to sync the scrape pool.",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1506,6 +1521,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Target Sync",
       "tooltip": {
@@ -1513,7 +1529,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1551,7 +1567,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1593,6 +1609,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Scrape Duration",
       "tooltip": {
@@ -1600,7 +1617,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1639,7 +1656,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "description": "Total number of rejected scrapes",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1708,6 +1725,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Rejected Scrapes",
       "tooltip": {
@@ -1715,7 +1733,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1755,7 +1773,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "description": "The duration of rule group evaluations",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1797,6 +1815,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Average Rule Evaluation Duration",
       "tooltip": {
@@ -1804,7 +1823,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1842,7 +1861,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1884,6 +1903,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "HTTP Request Duration",
       "tooltip": {
@@ -1891,7 +1911,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1929,7 +1949,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1971,6 +1991,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Prometheus Engine Query Duration Seconds",
       "tooltip": {
@@ -1978,7 +1999,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -2017,7 +2038,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "description": "Rule-group evaluations \n - total\n - missed due to slow rule group evaluation\n - skipped due to throttled metric storage",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -2075,6 +2096,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Rule Evaluator Iterations",
       "tooltip": {
@@ -2082,7 +2104,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -2120,7 +2142,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -2162,6 +2184,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Notifications Sent",
       "tooltip": {
@@ -2169,7 +2192,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -2207,7 +2230,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -2249,6 +2272,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Minutes Since Successful Config Reload",
       "tooltip": {
@@ -2256,7 +2280,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -2294,7 +2318,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -2336,6 +2360,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Successful Config Reload",
       "tooltip": {
@@ -2343,7 +2368,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -2383,7 +2408,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "description": "GC invocation durations",
-      "editable": "<< editable | toJson >>",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -2425,6 +2450,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "GC Rate / 2m",
       "tooltip": {
@@ -2432,7 +2458,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | toJson >>",
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,

@@ -7,7 +7,6 @@
   "gnetId": null,
   "graphTooltip": 1,
   "hideControls": "<< hideControls | default false | toJson >>",
-  "iteration": 1534515683711,
   "links": [],
   "panels": [
     {
@@ -74,6 +73,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "CPU Usage",
       "tooltip": {
@@ -120,7 +120,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": true,
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 0,
       "gridPos": {
@@ -165,6 +165,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Resident Memory",
       "tooltip": {
@@ -211,7 +212,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": true,
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 0,
       "gridPos": {
@@ -256,6 +257,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Open File Descriptors",
       "tooltip": {
@@ -302,7 +304,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": true,
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 0,
       "gridPos": {
@@ -347,6 +349,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Cluster Members",
       "tooltip": {
@@ -408,7 +411,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "decimals": null,
-      "editable": true,
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 0,
       "grid": {},
@@ -455,6 +458,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Database Size",
       "tooltip": {
@@ -499,7 +503,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": true,
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 0,
       "grid": {},
@@ -555,6 +559,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Disk Sync Duration",
       "tooltip": {
@@ -612,7 +617,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": true,
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -657,6 +662,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Client Traffic In",
       "tooltip": {
@@ -703,7 +709,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": true,
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -748,6 +754,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Client Traffic Out",
       "tooltip": {
@@ -794,7 +801,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": true,
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 0,
       "gridPos": {
@@ -839,6 +846,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Peer Traffic In",
       "tooltip": {
@@ -886,7 +894,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "decimals": null,
-      "editable": true,
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 0,
       "grid": {},
@@ -933,6 +941,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Peer Traffic Out",
       "tooltip": {
@@ -990,7 +999,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": true,
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -1035,6 +1044,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Transactions",
       "tooltip": {
@@ -1081,7 +1091,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": true,
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -1126,6 +1136,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "PUT Requests",
       "tooltip": {
@@ -1172,7 +1183,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": true,
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -1217,6 +1228,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "RANGE Requests",
       "tooltip": {
@@ -1263,7 +1275,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": true,
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -1308,6 +1320,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "DELETE Requests",
       "tooltip": {
@@ -1354,7 +1367,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": true,
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -1399,6 +1412,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Total Keys",
       "tooltip": {
@@ -1445,7 +1459,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": true,
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -1490,6 +1504,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Reads",
       "tooltip": {
@@ -1536,7 +1551,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": true,
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -1581,6 +1596,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Writes",
       "tooltip": {
@@ -1627,7 +1643,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": true,
+      "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 5,
       "gridPos": {
@@ -1672,6 +1688,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Expires",
       "tooltip": {

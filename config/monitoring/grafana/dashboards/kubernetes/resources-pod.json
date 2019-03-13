@@ -71,6 +71,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "CPU Usage",
       "tooltip": {
@@ -321,6 +322,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "CPU Quota",
       "tooltip": {
@@ -420,6 +422,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Memory Usage",
       "tooltip": {
@@ -670,6 +673,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Memory Quota",
       "tooltip": {
