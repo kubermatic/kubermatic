@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
@@ -28,6 +29,10 @@ import (
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider,
@@ -97,6 +102,22 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 			if err != nil {
 				err = common.KubernetesErrorToHTTPError(err)
 				break
+			}
+
+			// since we use an impersonated client when sending a request to the cluster
+			// there have to be RBAC Roles/Bindings in place otherwise we get 403 errors
+			// at the moment the cluster health doesn't check if the RBAC was generated
+			// so we might open a connection and get an access denied error
+			//
+			// TODO: we could extend the cluster health to report when the controller has finished generating RBAC
+			//       instead of listing machine deployments
+			//
+			// TODO: figure out why client.Create doesn't report errors when RBAC was not generated and we should get 403
+			machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
+			if err = client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments); err != nil {
+				err = common.KubernetesErrorToHTTPError(err)
+				glog.V(5).Infof("failed to list machine deployments, err = %v", err)
+				continue
 			}
 
 			dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
