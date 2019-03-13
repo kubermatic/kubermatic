@@ -58,6 +58,31 @@ func (c *Controller) syncProjectResource(item *projectResourceQueueItem) error {
 		item.metaObject,
 		item.clusterProvider.kubeClient,
 		item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(item.namespace).Rbac().V1().Roles().Lister().Roles(item.namespace))
+		if err != nil {
+		return fmt.Errorf("failed to sync RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", item.gvr.String(), item.clusterProvider.providerName, item.namespace, err)
+		}
+
+	err = c.ensureRBACRoleBindingForNamedResource(projectName,
+		item.gvr,
+		item.kind,
+		item.namespace,
+		item.metaObject,
+		item.clusterProvider.kubeClient,
+		item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(item.namespace).Rbac().V1().RoleBindings().Lister().RoleBindings(item.namespace))
+	if err != nil {
+		return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", item.gvr.String(), item.clusterProvider.providerName, item.namespace, err)
+	}
+
+	return nil
+	}
+
+	err := c.ensureRBACRoleForNamedResource(projectName,
+		item.gvr,
+		item.kind,
+		item.namespace,
+		item.metaObject,
+		item.clusterProvider.kubeClient,
+		item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(item.namespace).Rbac().V1().Roles().Lister().Roles(item.namespace))
 	if err != nil {
 		return fmt.Errorf("failed to sync RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", item.gvr.String(), item.clusterProvider.providerName, item.namespace, err)
 	}

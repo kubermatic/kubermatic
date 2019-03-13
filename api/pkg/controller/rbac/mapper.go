@@ -377,3 +377,21 @@ func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace
 	// unknown group passed
 	return nil, fmt.Errorf("unable to generate verbs for group = %s, kind = %s, namespace = %s", groupName, resourceKind, namespace)
 }
+
+// generateVerbsForNamedResourceInNamespace generates a set of verbs for a named resource in a given namespace
+// for example a "cluster" named "beefy-john"
+func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace string) ([]string, error) {
+	// special case - only the owners of a project can manipulate secrets in "sa-secrets" namespace
+	//
+	if namespace == "sa-secrets" {
+		secretV1Kind := "Secret"
+		if strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == secretV1Kind {
+			return []string{"get", "update", "delete"}, nil
+		} else if resourceKind == secretV1Kind {
+			return []string{}, nil
+		}
+	}
+
+	// unknown group passed
+	return []string{}, fmt.Errorf("unable to generate verbs for group = %s, kind = %s, namespace = %s", groupName, resourceKind, namespace)
+}
