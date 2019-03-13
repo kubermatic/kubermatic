@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	rbaccontroller "github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac/service-account"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -190,6 +191,9 @@ func main() {
 			}
 
 			if err := rbaccontroller.Add(mgr); err != nil {
+				return err
+			}
+			if err := serviceaccount.Add(mgr); err != nil {
 				return err
 			}
 

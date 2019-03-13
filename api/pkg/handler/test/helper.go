@@ -294,6 +294,29 @@ func GenUser(id, name, email string) *kubermaticapiv1.User {
 	}
 }
 
+// GenServiceAccount generates a Service Account resource
+func GenServiceAccount(id, name, group, projectName string) *kubermaticapiv1.User {
+	return &kubermaticapiv1.User{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{"group": group},
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticapiv1.ProjectKindName,
+					Name:       projectName,
+					UID:        types.UID(id),
+				},
+			},
+			Name: fmt.Sprintf("serviceaccount-%s", id),
+		},
+		Spec: kubermaticapiv1.UserSpec{
+			Name:  name,
+			ID:    id,
+			Email: fmt.Sprintf("serviceaccount-%s@sa.kubermatic.io", id),
+		},
+	}
+}
+
 // GenAPIUser generates a API user
 func GenAPIUser(name, email string) *apiv1.User {
 	usr := GenUser("", name, email)
