@@ -22,6 +22,11 @@ spec:
           "--address", ":8944",
           "--logtostderr",
         ]
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         volumeMounts:
           - name: tls-certs
             mountPath: "/etc/tls-certs"
