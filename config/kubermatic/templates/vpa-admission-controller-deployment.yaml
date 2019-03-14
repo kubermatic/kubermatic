@@ -22,6 +22,7 @@ spec:
           "--address", ":8944",
           "--logtostderr",
         ]
+        env:
         - name: NAMESPACE
           valueFrom:
             fieldRef:
