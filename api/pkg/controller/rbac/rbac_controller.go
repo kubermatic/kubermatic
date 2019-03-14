@@ -287,6 +287,7 @@ const projectResourcesResyncTime time.Duration = 5 * time.Minute
 type projectResourceQueueItem struct {
 	gvr             schema.GroupVersionResource
 	kind            string
+	namespace       string
 	metaObject      metav1.Object
 	clusterProvider *ClusterProvider
 }
