@@ -8,7 +8,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 
 	"k8s.io/apimachinery/pkg/api/equality"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
@@ -25,7 +24,6 @@ func TestCreateBinding(t *testing.T) {
 		name                      string
 		saName                    string
 		existingKubermaticObjects []runtime.Object
-		expectedBindingName       string
 		expectedBinding           *kubermaticv1.UserProjectBinding
 	}{
 		{
@@ -35,26 +33,14 @@ func TestCreateBinding(t *testing.T) {
 				test.GenDefaultProject(),
 				test.GenServiceAccount("abcd", "test", "editors", "my-first-project-ID"),
 			},
-			expectedBindingName: "sa-my-first-project-ID-abcd",
-			expectedBinding: &kubermaticv1.UserProjectBinding{
-				ObjectMeta: metav1.ObjectMeta{
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticv1.UserKindName,
-							UID:        "",
-							Name:       "serviceaccount-abcd",
-						},
-					},
-					Name:   "sa-my-first-project-ID-abcd",
-					Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: "my-first-project-ID"},
-				},
-				Spec: kubermaticv1.UserProjectBindingSpec{
-					ProjectID: "my-first-project-ID",
-					UserEmail: "serviceaccount-abcd@sa.kubermatic.io",
-					Group:     "editors",
-				},
-			},
+			expectedBinding: func() *kubermaticv1.UserProjectBinding {
+				binding := test.GenBinding("my-first-project-ID", "serviceaccount-abcd@sa.kubermatic.io", "editors")
+				binding.OwnerReferences[0].Kind = kubermaticv1.UserKindName
+				binding.OwnerReferences[0].Name = "serviceaccount-abcd"
+				binding.Labels = map[string]string{kubermaticv1.ProjectIDLabelKey: "my-first-project-ID"}
+				binding.Spec.Group = "editors"
+				return binding
+			}(),
 		},
 	}
 
@@ -77,14 +63,26 @@ func TestCreateBinding(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			binding := &kubermaticv1.UserProjectBinding{}
-			err = kubermaticFakeClient.Get(target.ctx, controllerclient.ObjectKey{Name: test.expectedBindingName}, binding)
+			bindings := &kubermaticv1.UserProjectBindingList{}
+			err = kubermaticFakeClient.List(context.TODO(), &controllerclient.ListOptions{}, bindings)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if !equality.Semantic.DeepEqual(binding, test.expectedBinding) {
-				t.Fatalf("%v", diff.ObjectDiff(binding, test.expectedBinding))
+			if len(bindings.Items) != 1 {
+				t.Fatalf("wrong number of bindigs, expectd 1 got %d", len(bindings.Items))
+			}
+
+			if !equality.Semantic.DeepEqual(bindings.Items[0].Labels, test.expectedBinding.Labels) {
+				t.Fatalf("%v", diff.ObjectDiff(bindings.Items[0].Labels, test.expectedBinding.Labels))
+			}
+
+			if !equality.Semantic.DeepEqual(bindings.Items[0].OwnerReferences, test.expectedBinding.OwnerReferences) {
+				t.Fatalf("%v", diff.ObjectDiff(bindings.Items[0].OwnerReferences, test.expectedBinding.OwnerReferences))
+			}
+
+			if !equality.Semantic.DeepEqual(bindings.Items[0].Spec, test.expectedBinding.Spec) {
+				t.Fatalf("%v", diff.ObjectDiff(bindings.Items[0].Spec, test.expectedBinding.Spec))
 			}
 
 		})

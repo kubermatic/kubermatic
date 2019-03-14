@@ -3,9 +3,9 @@ package serviceaccount
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"strings"
-
-	"github.com/golang/glog"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
@@ -57,8 +57,6 @@ func (r *reconcileServiceAccountProjectBinding) Reconcile(request reconcile.Requ
 }
 
 func (r *reconcileServiceAccountProjectBinding) ensureServiceAccountProjectBinding(saName string) error {
-	glog.V(4).Infof("Reconciling SA binding for %s", saName)
-
 	sa := &kubermaticv1.User{}
 	if err := r.Get(r.ctx, client.ObjectKey{Namespace: metav1.NamespaceAll, Name: saName}, sa); err != nil {
 		if kerrors.IsNotFound(err) {
@@ -84,55 +82,61 @@ func (r *reconcileServiceAccountProjectBinding) ensureServiceAccountProjectBindi
 		return fmt.Errorf("unable to find owing project for the service account = %s", sa.Name)
 	}
 
-	project := &kubermaticv1.Project{}
-	if err := r.Get(r.ctx, client.ObjectKey{Namespace: metav1.NamespaceAll, Name: projectName}, project); err != nil {
+	labelSelector, err := labels.Parse(fmt.Sprintf("%s=%s", kubermaticv1.ProjectIDLabelKey, projectName))
+	if err != nil {
 		return err
 	}
 
-	binding := &kubermaticv1.UserProjectBinding{}
-	bindingName := genBindingName(projectName, sa.Spec.ID)
-	if err := r.Get(r.ctx, client.ObjectKey{Namespace: metav1.NamespaceAll, Name: bindingName}, binding); err != nil {
-		if kerrors.IsNotFound(err) {
-			return r.createBinding(sa, project)
+	bindings := &kubermaticv1.UserProjectBindingList{}
+	if err := r.List(r.ctx, &client.ListOptions{LabelSelector: labelSelector}, bindings); err != nil {
+		return err
+	}
+
+	bindingExist := false
+	for _, binding := range bindings.Items {
+		if binding.Spec.ProjectID == projectName && strings.EqualFold(binding.Spec.UserEmail, sa.Spec.Email) {
+			bindingExist = true
+			break
 		}
-		return err
 	}
-
+	if !bindingExist {
+		return r.createBinding(sa, projectName)
+	}
 	return nil
 }
 
-func (r *reconcileServiceAccountProjectBinding) createBinding(user *kubermaticv1.User, project *kubermaticv1.Project) error {
-	group, ok := user.Labels[labelGroup]
+func (r *reconcileServiceAccountProjectBinding) createBinding(sa *kubermaticv1.User, projectName string) error {
+	group, ok := sa.Labels[labelGroup]
 	if !ok {
-		return fmt.Errorf("label %s not found", labelGroup)
+		return fmt.Errorf("label %s not found for sa %s", labelGroup, sa.Name)
 	}
+
+	// remove labelGroup from sa
+	delete(sa.Labels, labelGroup)
+	err := r.Update(r.ctx, sa)
+	if err != nil {
+		return err
+	}
+
 	binding := &kubermaticv1.UserProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 					Kind:       kubermaticv1.UserKindName,
-					UID:        user.GetUID(),
-					Name:       user.Name,
+					UID:        sa.GetUID(),
+					Name:       sa.Name,
 				},
 			},
-			Name:   genBindingName(project.Name, user.Spec.ID),
-			Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: project.Name},
+			Name:   rand.String(10),
+			Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: projectName},
 		},
 		Spec: kubermaticv1.UserProjectBindingSpec{
-			ProjectID: project.Name,
-			UserEmail: user.Spec.Email,
+			ProjectID: projectName,
+			UserEmail: sa.Spec.Email,
 			Group:     group,
 		},
 	}
 
-	if err := r.Create(r.ctx, binding); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func genBindingName(projectName, userID string) string {
-	return fmt.Sprintf("sa-%s-%s", projectName, userID)
+	return r.Create(r.ctx, binding)
 }
