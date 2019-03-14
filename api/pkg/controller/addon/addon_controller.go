@@ -523,23 +523,23 @@ func (c *Controller) writeAdminKubeconfig(addon *kubermaticv1.Addon, cluster *ku
 func (c *Controller) setupManifestInteraction(addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, string, fileHandlingDone, error) {
 	manifests, err := c.getAddonManifests(addon, cluster)
 	if err != nil {
-		return "", "", nil, err
+		return "", "", nil, fmt.Errorf("failed to get addon manifests: %v", err)
 	}
 
 	manifests, err = c.ensureAddonLabelOnManifests(addon, manifests)
 	if err != nil {
-		return "", "", nil, err
+		return "", "", nil, fmt.Errorf("failed to add the addon specific label to all addon resources: %v", err)
 	}
 
 	manifest := c.combineManifests(manifests)
 	manifestFilename, manifestDone, err := c.writeCombinedManifest(manifest, addon, cluster)
 	if err != nil {
-		return "", "", nil, err
+		return "", "", nil, fmt.Errorf("failed to write all addon resources into a combined manifest file: %v", err)
 	}
 
 	kubeconfigFilename, kubeconfigDone, err := c.writeAdminKubeconfig(addon, cluster)
 	if err != nil {
-		return "", "", nil, err
+		return "", "", nil, fmt.Errorf("failed to write the admin kubeconfig to the local filesystem: %v", err)
 	}
 
 	done := func() {
