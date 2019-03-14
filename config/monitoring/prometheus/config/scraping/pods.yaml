@@ -31,3 +31,9 @@ relabel_configs:
   target_label: pod
   replacement: $1
   action: replace
+# put the node name on node-exporter metrics
+- source_labels: [__meta_kubernetes_pod_label_app, __meta_kubernetes_pod_node_name]
+  action: replace
+  regex: node-exporter;(.+)
+  replacement: $1
+  target_label: node_name
