@@ -13,7 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
-	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/usercluster"
@@ -288,19 +288,17 @@ func (cc *Controller) ensurePodDisruptionBudgets(c *kubermaticv1.Cluster, data *
 }
 
 // GetCronJobCreators returns all CronJobCreators that are currently in use
-func GetCronJobCreators() []resources.CronJobCreator {
-	return []resources.CronJobCreator{
-		etcd.CronJob,
+func GetCronJobCreators(data *resources.TemplateData) []resources.NamedCronJobCreatorGetter {
+	return []resources.NamedCronJobCreatorGetter{
+		etcd.CronJobCreator(data),
 	}
 }
 
 func (cc *Controller) ensureCronJobs(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := GetCronJobCreators()
+	creators := GetCronJobCreators(data)
 
-	for _, create := range creators {
-		if err := resources.EnsureCronJob(data, create, cc.cronJobLister.CronJobs(c.Status.NamespaceName), cc.kubeClient.BatchV1beta1().CronJobs(c.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the CronJob exists: %v", err)
-		}
+	if err := resources.ReconcileCronJobs(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(c)); err != nil {
+		return fmt.Errorf("failed to ensure that the CronJobs exists: %v", err)
 	}
 
 	return nil
