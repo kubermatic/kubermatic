@@ -13,6 +13,7 @@ import (
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
+	k8scorev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -72,6 +73,9 @@ type projectResource struct {
 	kind        string
 	destination string
 	namespace   string
+
+	//
+	shouldEnqueue func(obj metav1.Object) bool
 }
 
 // New creates a new RBACGenerator controller that is responsible for
@@ -159,6 +163,20 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider) (*Controller,
 			},
 			kind: kubermaticv1.UserProjectBindingKind,
 		},
+
+		{
+			gvr: schema.GroupVersionResource{
+				Group:    k8scorev1.GroupName,
+				Version:  k8scorev1.SchemeGroupVersion.Version,
+				Resource: "secrets",
+			},
+			kind:      "Secret",
+			namespace: "sa-secrets",
+			shouldEnqueue: func(obj metav1.Object) bool {
+				// do not reconcile default secrets that were added by the system (k8s)
+				return !strings.HasPrefix(obj.GetName(), "default")
+			},
+		},
 	}
 
 	for _, clusterProvider := range allClusterProviders {
@@ -172,11 +190,19 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider) (*Controller,
 				glog.V(6).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the seed cluster provider", resource.gvr.String(), clusterProvider.providerName)
 				continue
 			}
-			informer, indexer, err := c.informerIndexerFor(clusterProvider.kubermaticInformerFactory, resource.gvr, resource.kind, clusterProvider)
+			if resource.gvr.Group == kubermaticv1.GroupName {
+				informer, indexer, err := c.informerIndexerForKubermaticResource(clusterProvider.kubermaticInformerFactory, resource, clusterProvider)
+				if err != nil {
+					return nil, err
+				}
+				clusterProvider.AddIndexerFor(indexer, resource.gvr)
+				c.projectResourcesInformers = append(c.projectResourcesInformers, informer)
+				continue
+			}
+			informer, err := c.informerForKubeResource(clusterProvider.kubeInformerProvider, resource, clusterProvider)
 			if err != nil {
 				return nil, err
 			}
-			clusterProvider.AddIndexerFor(indexer, resource.gvr)
 			c.projectResourcesInformers = append(c.projectResourcesInformers, informer)
 		}
 	}
@@ -268,15 +294,19 @@ func (c *Controller) processProjectResourcesNextItem() bool {
 	return true
 }
 
-func (c *Controller) enqueueProjectResource(obj interface{}, gvr schema.GroupVersionResource, kind string, clusterProvider *ClusterProvider) {
+func (c *Controller) enqueueProjectResource(obj interface{}, staticResource projectResource, clusterProvider *ClusterProvider) {
 	metaObj, err := meta.Accessor(obj)
 	if err != nil {
-		runtime.HandleError(fmt.Errorf("unable to get meta accessor for %#v, gvr %s", obj, gvr.String()))
+		runtime.HandleError(fmt.Errorf("unable to get meta accessor for %#v, gvr %s", obj, staticResource.gvr.String()))
+	}
+	if staticResource.shouldEnqueue != nil && !staticResource.shouldEnqueue(metaObj) {
+		return
 	}
 	item := &projectResourceQueueItem{
-		gvr:             gvr,
-		kind:            kind,
+		gvr:             staticResource.gvr,
+		kind:            staticResource.kind,
 		metaObject:      metaObj,
+		namespace:       metaObj.GetNamespace(),
 		clusterProvider: clusterProvider,
 	}
 	c.projectResourcesQueue.Add(item)
@@ -296,26 +326,56 @@ func (i *projectResourceQueueItem) String() string {
 	return i.metaObject.GetName()
 }
 
-func (c *Controller) informerIndexerFor(sharedInformers kubermaticsharedinformers.SharedInformerFactory, gvr schema.GroupVersionResource, kind string, clusterProvider *ClusterProvider) (cache.Controller, cache.Indexer, error) {
+func (c *Controller) informerIndexerForKubermaticResource(sharedInformers kubermaticsharedinformers.SharedInformerFactory, resource projectResource, clusterProvider *ClusterProvider) (cache.Controller, cache.Indexer, error) {
 	handlers := cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			c.enqueueProjectResource(obj, gvr, kind, clusterProvider)
+			c.enqueueProjectResource(obj, resource, clusterProvider)
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			c.enqueueProjectResource(newObj, gvr, kind, clusterProvider)
+			c.enqueueProjectResource(newObj, resource, clusterProvider)
 		},
 		DeleteFunc: func(obj interface{}) {
 			if deletedFinalStateUnknown, ok := obj.(cache.DeletedFinalStateUnknown); ok {
 				obj = deletedFinalStateUnknown.Obj
 			}
-			c.enqueueProjectResource(obj, gvr, kind, clusterProvider)
+			c.enqueueProjectResource(obj, resource, clusterProvider)
 		},
 	}
-	shared, err := sharedInformers.ForResource(gvr)
+	shared, err := sharedInformers.ForResource(resource.gvr)
 	if err == nil {
-		glog.V(4).Infof("using a shared informer and indexer for a project's resource %q for provider %q", gvr.String(), clusterProvider.providerName)
+		glog.V(4).Infof("using a shared informer and indexer for %q resource, provider %q", resource.gvr.String(), clusterProvider.providerName)
 		shared.Informer().AddEventHandlerWithResyncPeriod(handlers, projectResourcesResyncTime)
 		return shared.Informer().GetController(), shared.Informer().GetIndexer(), nil
 	}
-	return nil, nil, fmt.Errorf("uanble to create shared informer and indexer for the given project's resource %v for provider %q", gvr.String(), clusterProvider.providerName)
+	return nil, nil, fmt.Errorf("uanble to create shared informer and indexer for %q resource, provider %q, err %v", resource.gvr.String(), clusterProvider.providerName, err)
+}
+
+func (c *Controller) informerForKubeResource(kubeInformerProvider InformerProvider, resource projectResource, clusterProvider *ClusterProvider) (cache.Controller, error) {
+	handlers := cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			c.enqueueProjectResource(obj, resource, clusterProvider)
+		},
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			c.enqueueProjectResource(newObj, resource, clusterProvider)
+		},
+		DeleteFunc: func(obj interface{}) {
+			if deletedFinalStateUnknown, ok := obj.(cache.DeletedFinalStateUnknown); ok {
+				obj = deletedFinalStateUnknown.Obj
+			}
+			c.enqueueProjectResource(obj, resource, clusterProvider)
+		},
+	}
+	shared, err := kubeInformerProvider.KubeInformerFactoryFor(resource.namespace).ForResource(resource.gvr)
+	if err == nil {
+		glog.V(4).Infof("using a shared informer for %q resource, provider %q in namespace %q", resource.gvr.String(), clusterProvider.providerName, resource.namespace)
+		shared.Informer().AddEventHandlerWithResyncPeriod(handlers, projectResourcesResyncTime)
+
+		if len(resource.namespace) > 0 {
+			glog.V(4).Infof("registering Roles and RoleBindings informers in %q namespace for provider %s for resource %q", resource.namespace, clusterProvider.providerName, resource.gvr.String())
+			_ = kubeInformerProvider.KubeInformerFactoryFor(resource.namespace).Rbac().V1().Roles().Lister()
+			_ = kubeInformerProvider.KubeInformerFactoryFor(resource.namespace).Rbac().V1().RoleBindings().Lister()
+		}
+		return shared.Informer().GetController(), nil
+	}
+	return nil, fmt.Errorf("uanble to create shared informer and indexer for the given project's resource %v for provider %q, err %v", resource.gvr.String(), clusterProvider.providerName, err)
 }
