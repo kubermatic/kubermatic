@@ -208,8 +208,6 @@ func getApiserverFlags(data resources.DeploymentDataProvider, externalNodePort i
 		nodePortRange = defaultNodePortRange
 	}
 
-	admissionControlFlagName, admissionControlFlagValue := getAdmissionControlFlags(data)
-
 	flags := []string{
 		"--advertise-address", data.Cluster().Address.IP,
 		"--secure-port", fmt.Sprintf("%d", externalNodePort),
@@ -219,7 +217,7 @@ func getApiserverFlags(data resources.DeploymentDataProvider, externalNodePort i
 		"--etcd-certfile", "/etc/etcd/pki/client/apiserver-etcd-client.crt",
 		"--etcd-keyfile", "/etc/etcd/pki/client/apiserver-etcd-client.key",
 		"--storage-backend", "etcd3",
-		admissionControlFlagName, admissionControlFlagValue,
+		"--enable-admission-plugins", "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,Priority,ResourceQuota",
 		"--authorization-mode", "Node,RBAC",
 		"--external-hostname", data.Cluster().Address.ExternalName,
 		"--token-auth-file", "/etc/kubernetes/tokens/tokens.csv",
@@ -284,28 +282,6 @@ func getApiserverFlags(data resources.DeploymentDataProvider, externalNodePort i
 	}
 
 	return flags, nil
-}
-
-func getAdmissionControlFlags(data resources.DeploymentDataProvider) (string, string) {
-	// We use these as default in case semver parsing fails
-	admissionControlFlagValue := "NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction"
-	admissionControlFlagName := "--admission-control"
-
-	// Enable {Mutating,Validating}AdmissionWebhook for 1.9+
-	if data.Cluster().Spec.Version.Semver().Minor() >= 9 {
-		admissionControlFlagValue += ",Initializers,MutatingAdmissionWebhook,ValidatingAdmissionWebhook"
-	}
-
-	// Use the newer "--enable-admission-plugins" which doesn't care about order for 1.10+
-	if data.Cluster().Spec.Version.Semver().Minor() >= 10 {
-		admissionControlFlagName = "--enable-admission-plugins"
-	}
-
-	// Order of these flags matter pre 1.10 and MutatingAdmissionWebhook may manipulate the object, so "ResourceQuota
-	// must come last
-	admissionControlFlagValue += ",ResourceQuota"
-
-	return admissionControlFlagName, admissionControlFlagValue
 }
 
 func getVolumeMounts(enableDexCA bool) []corev1.VolumeMount {
