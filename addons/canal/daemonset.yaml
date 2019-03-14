@@ -28,7 +28,14 @@ spec:
       hostNetwork: true
       serviceAccountName: canal
       tolerations:
-        - operator: Exists
+        # Tolerate this effect so the pods will be schedulable at all times
+        - effect: NoSchedule
+          operator: Exists
+        # Mark the pod as a critical add-on for rescheduling.
+        - key: "CriticalAddonsOnly"
+          operator: "Exists"
+        - effect: NoExecute
+          operator: Exists
       # Minimize downtime during a rolling upgrade or deletion; tell Kubernetes to do a "force
       # deletion": https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods.
       terminationGracePeriodSeconds: 0
@@ -43,7 +50,7 @@ spec:
             - name: DATASTORE_TYPE
               value: "kubernetes"
             # Enable felix logging.
-            - name: FELIX_LOGSEVERITYSYS
+            - name: FELIX_LOGSEVERITYSCREEN
               value: "info"
             # Don't enable BGP.
             - name: CALICO_NETWORKING_BACKEND
@@ -102,7 +109,7 @@ spec:
         # This container installs the Calico CNI binaries
         # and CNI network config file on each node.
         - name: install-cni
-          image: quay.io/calico/cni:v1.11.0
+          image: quay.io/calico/cni:v1.11.8
           command: ["/install-cni.sh"]
           env:
             - name: CNI_CONF_NAME
@@ -149,10 +156,10 @@ spec:
                   name: canal-config
                   key: masquerade
           volumeMounts:
-          - name: run
-            mountPath: /run
-          - name: flannel-cfg
-            mountPath: /etc/kube-flannel/
+            - name: run
+              mountPath: /run
+            - name: flannel-cfg
+              mountPath: /etc/kube-flannel/
       volumes:
         # Used by calico/node.
         - name: lib-modules
