@@ -21,6 +21,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -165,7 +166,7 @@ func getImagesFromCreators(templateData *resources.TemplateData) (images []strin
 	deploymentCreators := cluster.GetDeploymentCreators(templateData)
 	deploymentCreators = append(deploymentCreators, monitoring.GetDeploymentCreators(templateData)...)
 
-	cronjobCreators := cluster.GetCronJobCreators()
+	cronjobCreators := cluster.GetCronJobCreators(templateData)
 
 	for _, creatorGetter := range statefulsetCreators {
 		_, creator := creatorGetter()
@@ -186,7 +187,8 @@ func getImagesFromCreators(templateData *resources.TemplateData) (images []strin
 	}
 
 	for _, createFunc := range cronjobCreators {
-		cronJob, err := createFunc(templateData, nil)
+		_, creator := createFunc()
+		cronJob, err := creator(&batchv1beta1.CronJob{})
 		if err != nil {
 			return nil, err
 		}

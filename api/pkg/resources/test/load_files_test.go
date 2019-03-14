@@ -11,8 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"k8s.io/api/policy/v1beta1"
-
 	"github.com/Masterminds/semver"
 	"github.com/ghodss/yaml"
 	"github.com/pmezard/go-difflib/difflib"
@@ -28,8 +26,9 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/api/core/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -233,195 +232,195 @@ func TestLoadFiles(t *testing.T) {
 				}
 
 				kubeClient := kubefake.NewSimpleClientset(
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.DexCASecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.TokensSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.ServiceAccountKeySecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.ApiserverTLSSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.KubeletClientCertificatesSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.CASecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.OpenVPNCASecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.ApiserverEtcdClientCertificateSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.ApiserverFrontProxyClientCertificateSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.EtcdTLSCertificateSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.MachineControllerKubeconfigSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.OpenVPNServerCertificatesSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.OpenVPNClientCertificatesSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.ControllerManagerKubeconfigSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.KubeStateMetricsKubeconfigSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.SchedulerKubeconfigSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.KubeletDnatControllerKubeconfigSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.FrontProxyCASecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.MetricsServerKubeconfigSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.PrometheusApiserverClientCertificateSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.MachineControllerWebhookServingCertSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Secret{
+					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.InternalUserClusterAdminKubeconfigSecretName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.ConfigMap{
+					&corev1.ConfigMap{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.OpenVPNClientConfigsConfigMapName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.ConfigMap{
+					&corev1.ConfigMap{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.CloudConfigConfigMapName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.ConfigMap{
+					&corev1.ConfigMap{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.PrometheusConfigConfigMapName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.ConfigMap{
+					&corev1.ConfigMap{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
 							Name:            resources.DNSResolverConfigMapName,
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&v1.Service{
+					&corev1.Service{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      resources.ApiserverExternalServiceName,
 							Namespace: cluster.Status.NamespaceName,
 						},
-						Spec: v1.ServiceSpec{
-							Ports: []v1.ServicePort{
+						Spec: corev1.ServiceSpec{
+							Ports: []corev1.ServicePort{
 								{
 									NodePort: 30000,
 								},
@@ -429,13 +428,13 @@ func TestLoadFiles(t *testing.T) {
 							ClusterIP: "192.0.2.10",
 						},
 					},
-					&v1.Service{
+					&corev1.Service{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      resources.ApiserverInternalServiceName,
 							Namespace: cluster.Status.NamespaceName,
 						},
-						Spec: v1.ServiceSpec{
-							Ports: []v1.ServicePort{
+						Spec: corev1.ServiceSpec{
+							Ports: []corev1.ServicePort{
 								{
 									NodePort: 30001,
 								},
@@ -443,13 +442,13 @@ func TestLoadFiles(t *testing.T) {
 							ClusterIP: "192.0.2.11",
 						},
 					},
-					&v1.Service{
+					&corev1.Service{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      resources.OpenVPNServerServiceName,
 							Namespace: cluster.Status.NamespaceName,
 						},
-						Spec: v1.ServiceSpec{
-							Ports: []v1.ServicePort{
+						Spec: corev1.ServiceSpec{
+							Ports: []corev1.ServicePort{
 								{
 									NodePort: 30003,
 								},
@@ -457,13 +456,13 @@ func TestLoadFiles(t *testing.T) {
 							ClusterIP: "192.0.2.13",
 						},
 					},
-					&v1.Service{
+					&corev1.Service{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      resources.DNSResolverServiceName,
 							Namespace: cluster.Status.NamespaceName,
 						},
-						Spec: v1.ServiceSpec{
-							Ports: []v1.ServicePort{
+						Spec: corev1.ServiceSpec{
+							Ports: []corev1.ServicePort{
 								{
 									NodePort: 30003,
 								},
@@ -603,7 +602,7 @@ func TestLoadFiles(t *testing.T) {
 				}
 
 				for _, create := range clustercontroller.GetPodDisruptionBudgetCreators(data) {
-					res, err := create(&v1beta1.PodDisruptionBudget{})
+					res, err := create(&policyv1beta1.PodDisruptionBudget{})
 					if err != nil {
 						t.Fatalf("failed to create PodDisruptionBudget: %v", err)
 					}
@@ -616,8 +615,9 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				for _, create := range clustercontroller.GetCronJobCreators() {
-					res, err := create(data, nil)
+				for _, creatorGetter := range clustercontroller.GetCronJobCreators(data) {
+					_, create := creatorGetter()
+					res, err := create(&batchv1beta1.CronJob{})
 					if err != nil {
 						t.Fatalf("failed to create CronJob: %v", err)
 					}
@@ -639,7 +639,7 @@ func TestLoadFiles(t *testing.T) {
 	}
 }
 
-func verifyContainerResources(owner string, podTemplateSpec v1.PodTemplateSpec, t *testing.T) {
+func verifyContainerResources(owner string, podTemplateSpec corev1.PodTemplateSpec, t *testing.T) {
 	// Verify that every pod has resource request's & limit's set.
 	for _, container := range podTemplateSpec.Spec.Containers {
 		resourceLists := map[string]corev1.ResourceList{
