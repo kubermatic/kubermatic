@@ -18,6 +18,7 @@ This covers the existing, developer focusing, documentation:
   - [Events guideline](docs/events.md)
 - [Proposals](docs/proposals)
 - [Things that break](docs/things-that-break.md)
+- [Resource handling](docs/resource-handling.md)
 
 
 Customer facing documentation can be found at https://github.com/kubermatic/docs which gets published at https://docs.kubermatic.io 
