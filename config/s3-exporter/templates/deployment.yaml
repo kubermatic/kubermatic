@@ -15,6 +15,7 @@ spec:
       annotations:
         kubermatic/scrape: 'true'
         kubermatic/scrape_port: '9340'
+        fluentbit.io/parser: glog
     spec:
       serviceAccount: s3-exporter
       containers:

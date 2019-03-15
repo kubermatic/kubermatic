@@ -14,6 +14,7 @@ spec:
       annotations:
         kubermatic/scrape: "true"
         kubermatic/scrape_port: "9402"
+        fluentbit.io/parser: glog
     spec:
       serviceAccountName: cert-manager
       {{- if .Values.certManager.securityContext.enabled }}

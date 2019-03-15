@@ -8,6 +8,8 @@ spec:
     metadata:
       labels:
         app: ca-helper
+      annotations:
+        fluentbit.io/parser: glog
     spec:
       serviceAccountName: ca-sync
       restartPolicy: OnFailure
