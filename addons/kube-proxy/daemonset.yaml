@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
@@ -6,68 +6,58 @@ metadata:
   name: kube-proxy
   namespace: kube-system
 spec:
-  revisionHistoryLimit: 10
   selector:
     matchLabels:
       k8s-app: kube-proxy
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
-      annotations:
-        scheduler.alpha.kubernetes.io/critical-pod: ""
-      creationTimestamp: null
       labels:
         k8s-app: kube-proxy
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ""
     spec:
+      priorityClassName: system-node-critical
       containers:
-      - command:
-        - /usr/local/bin/kube-proxy
-        - --config=/var/lib/kube-proxy/config.conf
-        image: k8s.gcr.io/kube-proxy-amd64:v{{ .Cluster.Spec.Version }}
+      - name: kube-proxy
+        image: k8s.gcr.io/kube-proxy:v{{ .Cluster.Spec.Version }}
         imagePullPolicy: IfNotPresent
-        name: kube-proxy
-        resources: {}
+        command:
+        - /usr/local/bin/kube-proxy
+        - --hostname-override=$(NODE_NAME)
+        - --config=/var/lib/kube-proxy/config.conf
         securityContext:
           privileged: true
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /var/lib/kube-proxy
           name: kube-proxy
         - mountPath: /run/xtables.lock
           name: xtables-lock
+          readOnly: false
         - mountPath: /lib/modules
           name: lib-modules
           readOnly: true
-      dnsPolicy: ClusterFirst
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
       hostNetwork: true
-      nodeSelector:
-        beta.kubernetes.io/arch: amd64
-      priorityClassName: system-node-critical
-      restartPolicy: Always
-      schedulerName: default-scheduler
-      securityContext: {}
-      serviceAccount: kube-proxy
       serviceAccountName: kube-proxy
-      terminationGracePeriodSeconds: 30
-      tolerations:
-      - key: CriticalAddonsOnly
-        operator: Exists
-      - operator: Exists
       volumes:
       - configMap:
           defaultMode: 420
           name: kube-proxy
         name: kube-proxy
-      - hostPath:
+      - name: xtables-lock
+        hostPath:
           path: /run/xtables.lock
           type: FileOrCreate
-        name: xtables-lock
-      - hostPath:
+      - name: lib-modules
+        hostPath:
           path: /lib/modules
-          type: ""
-        name: lib-modules
-  templateGeneration: 1
-  updateStrategy:
-    rollingUpdate:
-      maxUnavailable: 1
-    type: RollingUpdate
+      tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+      - operator: Exists
