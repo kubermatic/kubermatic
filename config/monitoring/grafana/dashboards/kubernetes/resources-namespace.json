@@ -60,7 +60,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(irate(container_cpu_usage_seconds_total{namespace=\"$namespace\"}[1m])) by (pod_name)",
+          "expr": "sum(namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate{namespace=\"$namespace\"}) by (pod_name)",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{pod_name}}",
@@ -255,10 +255,10 @@
           "decimals": 2,
           "link": true,
           "linkTooltip": "Drill down",
-          "linkUrl": "/d/6581e46e4e5c7ba40a07646395ef7b23/k8s-resources-pod?var-datasource=$datasource&var-namespace=$namespace&var-pod=$__cell",
+          "linkUrl": "/d/0143e76b1bcb/resources-pod?var-namespace=$namespace&var-pod=$__cell",
           "pattern": "pod",
           "thresholds": [],
-          "type": "number",
+          "type": "string",
           "unit": "short"
         },
         {
@@ -275,7 +275,7 @@
       ],
       "targets": [
         {
-          "expr": "sum(label_replace(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\"}[5m]), \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod)",
+          "expr": "sum(label_replace(namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate{namespace=\"$namespace\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -293,7 +293,7 @@
           "step": 10
         },
         {
-          "expr": "sum(label_replace(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\"}[5m]), \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod) / sum(kube_pod_container_resource_requests_cpu_cores{namespace=\"$namespace\"}) by (pod)",
+          "expr": "sum(label_replace(namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate{namespace=\"$namespace\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod) / sum(kube_pod_container_resource_requests_cpu_cores{namespace=\"$namespace\"}) by (pod)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -311,7 +311,7 @@
           "step": 10
         },
         {
-          "expr": "sum(label_replace(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\"}[5m]), \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod) / sum(kube_pod_container_resource_limits_cpu_cores{namespace=\"$namespace\"}) by (pod)",
+          "expr": "sum(label_replace(namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate{namespace=\"$namespace\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod) / sum(kube_pod_container_resource_limits_cpu_cores{namespace=\"$namespace\"}) by (pod)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -411,7 +411,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(container_memory_usage_bytes{namespace=\"$namespace\"}) by (pod_name)",
+          "expr": "sum(container_memory_usage_bytes{namespace=\"$namespace\", container_name!=\"\"}) by (pod_name)",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{pod_name}}",
@@ -599,6 +599,48 @@
           "unit": "percentunit"
         },
         {
+          "alias": "Memory Usage (RSS)",
+          "colorMode": null,
+          "colors": [],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "link": false,
+          "linkTooltip": "Drill down",
+          "linkUrl": "",
+          "pattern": "Value #F",
+          "thresholds": [],
+          "type": "number",
+          "unit": "bytes"
+        },
+        {
+          "alias": "Memory Usage (Cache)",
+          "colorMode": null,
+          "colors": [],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "link": false,
+          "linkTooltip": "Drill down",
+          "linkUrl": "",
+          "pattern": "Value #G",
+          "thresholds": [],
+          "type": "number",
+          "unit": "bytes"
+        },
+        {
+          "alias": "Memory Usage (Swap",
+          "colorMode": null,
+          "colors": [],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "link": false,
+          "linkTooltip": "Drill down",
+          "linkUrl": "",
+          "pattern": "Value #H",
+          "thresholds": [],
+          "type": "number",
+          "unit": "bytes"
+        },
+        {
           "alias": "Pod",
           "colorMode": null,
           "colors": [],
@@ -606,10 +648,10 @@
           "decimals": 2,
           "link": true,
           "linkTooltip": "Drill down",
-          "linkUrl": "/d/6581e46e4e5c7ba40a07646395ef7b23/k8s-resources-pod?var-datasource=$datasource&var-namespace=$namespace&var-pod=$__cell",
+          "linkUrl": "/d/0143e76b1bcb/resources-pod?var-namespace=$namespace&var-pod=$__cell",
           "pattern": "pod",
           "thresholds": [],
-          "type": "number",
+          "type": "string",
           "unit": "short"
         },
         {
@@ -626,7 +668,7 @@
       ],
       "targets": [
         {
-          "expr": "sum(label_replace(container_memory_usage_bytes{namespace=\"$namespace\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod)",
+          "expr": "sum(label_replace(container_memory_usage_bytes{namespace=\"$namespace\",container_name!=\"\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -644,7 +686,7 @@
           "step": 10
         },
         {
-          "expr": "sum(label_replace(container_memory_usage_bytes{namespace=\"$namespace\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod) / sum(kube_pod_container_resource_requests_memory_bytes{namespace=\"$namespace\"}) by (pod)",
+          "expr": "sum(label_replace(container_memory_usage_bytes{namespace=\"$namespace\",container_name!=\"\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod) / sum(kube_pod_container_resource_requests_memory_bytes{namespace=\"$namespace\"}) by (pod)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -662,12 +704,39 @@
           "step": 10
         },
         {
-          "expr": "sum(label_replace(container_memory_usage_bytes{namespace=\"$namespace\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod) / sum(kube_pod_container_resource_limits_memory_bytes{namespace=\"$namespace\"}) by (pod)",
+          "expr": "sum(label_replace(container_memory_usage_bytes{namespace=\"$namespace\",container_name!=\"\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod) / sum(kube_pod_container_resource_limits_memory_bytes{namespace=\"$namespace\"}) by (pod)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
           "legendFormat": "",
           "refId": "E",
+          "step": 10
+        },
+        {
+          "expr": "sum(label_replace(container_memory_rss{namespace=\"$namespace\",container_name!=\"\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod)",
+          "format": "table",
+          "instant": true,
+          "intervalFactor": 2,
+          "legendFormat": "",
+          "refId": "F",
+          "step": 10
+        },
+        {
+          "expr": "sum(label_replace(container_memory_cache{namespace=\"$namespace\",container_name!=\"\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod)",
+          "format": "table",
+          "instant": true,
+          "intervalFactor": 2,
+          "legendFormat": "",
+          "refId": "G",
+          "step": 10
+        },
+        {
+          "expr": "sum(label_replace(container_memory_swap{namespace=\"$namespace\",container_name!=\"\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod)",
+          "format": "table",
+          "instant": true,
+          "intervalFactor": 2,
+          "legendFormat": "",
+          "refId": "H",
           "step": 10
         }
       ],
@@ -729,12 +798,14 @@
         "query": "prometheus",
         "refresh": 1,
         "regex": "",
+        "skipUrlSync": false,
         "type": "datasource"
       },
       {
         "allValue": null,
         "current": {},
         "datasource": "$datasource",
+        "definition": "",
         "hide": 0,
         "includeAll": false,
         "label": "namespace",
@@ -744,6 +815,7 @@
         "query": "label_values(kube_pod_info, namespace)",
         "refresh": 2,
         "regex": "",
+        "skipUrlSync": false,
         "sort": 1,
         "tagValuesQuery": "",
         "tags": [],
