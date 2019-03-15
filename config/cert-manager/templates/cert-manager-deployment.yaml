@@ -11,6 +11,8 @@ spec:
     metadata:
       labels:
         app: cert-manager
+      annotations:
+        fluentbit.io/parser: glog
     spec:
       serviceAccountName: cert-manager
       {{- if .Values.certManager.securityContext.enabled }}

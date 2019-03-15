@@ -19,14 +19,14 @@ data:
 
     @INCLUDE input-kubernetes.conf
     @INCLUDE filter-kubernetes.conf
-    @INCLUDE output-elasticsearch.conf
+    @INCLUDE outputs.conf
 
   input-kubernetes.conf: |
     [INPUT]
         Name              tail
         Tag               kube.*
         Path              /var/log/containers/*.log
-        Parser            docker
+        Parser            {{ .Values.logging.fluentbit.configuration.containerRuntimeParser }}
         DB                /var/log/flb_kube.db
         Mem_Buf_Limit     5MB
         Skip_Long_Lines   On
@@ -38,16 +38,15 @@ data:
         Match               kube.*
         Kube_URL            https://kubernetes.default.svc.cluster.local:443
         Merge_Log           On
+        Merge_Log_Trim      On
         K8S-Logging.Parser  On
+        Annotations         Off
 
-  output-elasticsearch.conf: |
+  outputs.conf: |
+{{- range .Values.logging.fluentbit.configuration.outputs }}
     [OUTPUT]
-        Name            es
-        Match           *
-        Host            ${FLUENT_ELASTICSEARCH_HOST}
-        Port            ${FLUENT_ELASTICSEARCH_PORT}
-        Logstash_Format On
-        Retry_Limit     False
+{{ . | indent 6 }}
+{{- end }}
 
   parsers.conf: |
     [PARSER]
@@ -77,10 +76,16 @@ data:
         Time_Format %d/%b/%Y:%H:%M:%S %z
 
     [PARSER]
-        Name   json
-        Format json
-        Time_Key time
+        Name        json
+        Format      json
+        Time_Key    time
         Time_Format %d/%b/%Y:%H:%M:%S %z
+
+    [PARSER]
+        Name        json_iso
+        Format      json
+        Time_Key    time
+        Time_Format %Y-%m-%dT:%H:%M:%S%z
 
     [PARSER]
         Name        docker
@@ -93,8 +98,32 @@ data:
         Decode_Field_As   escaped    log
 
     [PARSER]
+        Name        containerd
+        Format      regex
+        Regex       ^(?<time>[A-Z0-9.:-]+) (?<stream>[a-z0-9]+) (?<tags>[A-Z:]+)\s*(?<log>.*)$
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+
+    # Legacy format before tags were introduced, see
+    # https://github.com/kubernetes/community/blob/master/contributors/design-proposals/node/kubelet-cri-logging.md
+    [PARSER]
+        Name        containerd3
+        Format      regex
+        Regex       ^(?<time>[A-Z0-9.:-]+) (?<stream>[a-z0-9]+)\s*(?<log>.*)$
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+
+    [PARSER]
         Name        syslog
         Format      regex
         Regex       ^\<(?<pri>[0-9]+)\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)(?:\[(?<pid>[0-9]+)\])?(?:[^\:]*\:)? *(?<message>.*)$
         Time_Key    time
         Time_Format %b %d %H:%M:%S
+
+    [PARSER]
+        Name        glog
+        Format      regex
+        Regex       ^(?<level>[A-Z])(?<time>[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]+)\s+(?<thread>[0-9]+)\s+(?<file>[^:]+):(?<line>[0-9]+)\]\s*(?<message>.*)$
+        Time_Key    time
+        Time_Format %m%d %H:%M:%S.%L
+        Types       thread:integer line:integer

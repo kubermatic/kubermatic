@@ -16,6 +16,8 @@ spec:
     metadata:
       labels:
         app: vpa-recommender
+      annotations:
+        fluentbit.io/parser: glog
     spec:
       serviceAccountName: vpa-recommender
       containers:
