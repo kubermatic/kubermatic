@@ -22,6 +22,7 @@ spec:
         {{- if .Values.kubermatic.clusterNamespacePrometheus.scrapingConfigs }}
         checksum/prometheus-scraping-configs: {{ include (print $.Template.BasePath "/clusterns-prometheus-scraping-configs-configmap.yaml") . | sha256sum }}
         {{- end }}
+        fluentbit.io/parser: glog
     spec:
       serviceAccountName: kubermatic
       initContainers:
