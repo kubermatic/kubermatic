@@ -143,12 +143,7 @@ spec:
               readOnly: true
             {{- end }}
           resources:
-            requests:
-              memory: "256Mi"
-              cpu: "200m"
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
+{{ toYaml .Values.kubermatic.controller.resources | indent 12 }}
       imagePullSecrets:
         - name: dockercfg
       tolerations:
