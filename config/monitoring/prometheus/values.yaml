@@ -81,17 +81,17 @@ prometheus:
   containers:
     prometheus:
       resources:
+        requests:
+          cpu: 500m
+          memory: 512Mi
         limits:
           cpu: 1
           memory: 2Gi
-        requests:
-          cpu: 100m
-          memory: 512Mi
     reloader:
       resources:
-        limits:
-          cpu: 100m
-          memory: 64Mi
         requests:
           cpu: 25m
           memory: 16Mi
+        limits:
+          cpu: 100m
+          memory: 32Mi
