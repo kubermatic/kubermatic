@@ -433,7 +433,7 @@
             "name": "Body",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/Cluster"
+              "$ref": "#/definitions/CreateClusterSpec"
             }
           }
         ],
@@ -3328,6 +3328,19 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
+    "CreateClusterSpec": {
+      "description": "CreateClusterSpec is the structure that is used to create cluster with its initial node deployment",
+      "type": "object",
+      "properties": {
+        "cluster": {
+          "$ref": "#/definitions/Cluster"
+        },
+        "nodeDeployment": {
+          "$ref": "#/definitions/NodeDeployment"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "Datacenter": {
       "type": "object",
