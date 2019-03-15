@@ -8,6 +8,15 @@ logging:
       repository: docker.elastic.co/elasticsearch/elasticsearch
       tag: "6.5.1"
       pullPolicy: IfNotPresent
+    resources:
+      data:
+        requests:
+          cpu: 200m
+          memory: 1500Mi
+      master:
+        requests:
+          cpu: 75m
+          memory: 350Mi
     curator:
       # Amount of days after which the indicies should be killed
       interval: 5
@@ -27,16 +36,20 @@ logging:
         pullPolicy: IfNotPresent
       all: true
       indices: false
-      resources: {}
-        # requests:
-        #   cpu: 100m
-        #   memory: 128Mi
-        # limits:
-        #   cpu: 100m
-        #   memory: 128Mi
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
     cerebro:
       image:
         repository: yannart/cerebro
         tag: "0.8.1"
         pullPolicy: IfNotPresent
       deploy: false
+      resources:
+        requests:
+          cpu: 50m
+          memory: 400Mi
