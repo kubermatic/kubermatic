@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
+	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	prometheusapi "github.com/prometheus/client_golang/api"
 	prometheusv1 "github.com/prometheus/client_golang/api/prometheus/v1"
@@ -73,6 +73,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 	}
 }
 
+// TODO: We can add an event to the cluster after successful creation or failure.
 func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticapiv1.Cluster, project *kubermaticapiv1.Project,
 	sshKeyProvider provider.SSHKeyProvider, dcs map[string]provider.DatacenterMeta, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -80,7 +81,7 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 
 	nd, err := machineresource.Validate(nodeDeployment, cluster.Spec.Version.Semver())
 	if err != nil {
-		fmt.Println(err.Error()) // TODO Report error (metric, alert, event?, log?).
+		glog.V(5).Infof("failed to list machine deployments: %v", err)
 		return
 	}
 
@@ -116,7 +117,7 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 			machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
 			if err = client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments); err != nil {
 				err = common.KubernetesErrorToHTTPError(err)
-				glog.V(5).Infof("failed to list machine deployments, err = %v", err)
+				glog.V(5).Infof("failed to list machine deployments: %v", err)
 				continue
 			}
 
@@ -145,9 +146,9 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 	}
 
 	if err != nil {
-		fmt.Println(err.Error()) // TODO Report error (metric, alert, event?, log?).
+		glog.V(5).Infof("failed to list machine deployments: %v", err)
 	} else {
-		fmt.Println("initial node deployment was created") // TODO Report success (metric, alert, event?, log?).
+		glog.V(5).Infof("initial node deployment for cluster %s created: %v", cluster.Name, err)
 	}
 }
 
