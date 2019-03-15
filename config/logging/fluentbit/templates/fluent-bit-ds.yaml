@@ -40,6 +40,8 @@ spec:
           readOnly: true
         - name: fluent-bit-config
           mountPath: /fluent-bit/etc/
+        resources:
+{{ toYaml .Values.logging.fluentbit.resources | indent 10 }}
       terminationGracePeriodSeconds: 10
       volumes:
       - name: varlog

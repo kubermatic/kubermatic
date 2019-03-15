@@ -14,3 +14,10 @@ logging:
           Port            ${FLUENT_ELASTICSEARCH_PORT}
           Logstash_Format On
           Retry_Limit     False
+    resources:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        cpu: 30m
+        memory: 24Mi
