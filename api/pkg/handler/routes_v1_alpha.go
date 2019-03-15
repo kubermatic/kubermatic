@@ -41,7 +41,7 @@ func (r Routing) getClusterMetrics() http.Handler {
 			middleware.UserInfo(r.userProjectMapper),
 		)(cluster.GetMetricsEndpoint(r.projectProvider, r.prometheusClient)),
 		common.DecodeGetClusterReq,
-		EncodeJSON,
+		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
