@@ -65,6 +65,8 @@ spec:
             - name: metrics
               containerPort: 8085
               protocol: TCP
+          resources:
+{{ toYaml .Values.ark.resources.ark | indent 12 }}
       volumes:
         - name: plugins
           emptyDir: {}

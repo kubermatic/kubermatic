@@ -61,6 +61,8 @@ spec:
             - name: gcp-credentials
               mountPath: /credentials/gcp
           {{- end }}
+          resources:
+{{ toYaml .Values.ark.resources.arkRestic | indent 12 }}
       volumes:
         - name: host-pods
           hostPath:
