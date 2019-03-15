@@ -74,7 +74,8 @@ type projectResource struct {
 	destination string
 	namespace   string
 
-	//
+	// shouldEnqueue is a convenience function that is called right before
+	// the object is added to the queue. This is your last chance to say "no"
 	shouldEnqueue func(obj metav1.Object) bool
 }
 
