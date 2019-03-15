@@ -4,17 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Masterminds/semver"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 
-	"github.com/kubermatic/kubermatic/api/pkg/validation"
+	"github.com/Masterminds/semver"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
-	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	"github.com/kubermatic/kubermatic/api/pkg/validation"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -172,17 +171,17 @@ func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semver.Version) (*a
 		nd.Spec.Template.Cloud.Hetzner == nil &&
 		nd.Spec.Template.Cloud.VSphere == nil &&
 		nd.Spec.Template.Cloud.Azure == nil {
-		return nil, k8cerrors.NewBadRequest("node deployment needs to have cloud provider data")
+		return nil, fmt.Errorf("node deployment needs to have cloud provider data")
 	}
 
 	if nd.Spec.Template.Versions.Kubelet != "" {
 		kubeletVersion, err := semver.NewVersion(nd.Spec.Template.Versions.Kubelet)
 		if err != nil {
-			return nil, k8cerrors.NewBadRequest("failed to parse kubelet version: %v", err)
+			return nil, fmt.Errorf("failed to parse kubelet version: %v", err)
 		}
 
 		if err = common.EnsureVersionCompatible(controlPlaneVersion, kubeletVersion); err != nil {
-			return nil, k8cerrors.NewBadRequest(err.Error())
+			return nil, err
 		}
 
 		nd.Spec.Template.Versions.Kubelet = kubeletVersion.String()

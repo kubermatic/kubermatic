@@ -5,6 +5,7 @@ import (
 
 	"github.com/gorilla/mux"
 	prometheusapi "github.com/prometheus/client_golang/api"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
@@ -51,7 +52,7 @@ func NewTestRouting(
 
 	mainRouter := mux.NewRouter()
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
-	r.RegisterV1(v1Router)
+	r.RegisterV1(v1Router, generateDefaultMetrics())
 	r.RegisterV1Optional(v1Router,
 		true,
 		*generateDefaultOicdCfg(),
@@ -67,5 +68,17 @@ func generateDefaultOicdCfg() *common.OIDCConfiguration {
 		ClientID:             test.IssuerClientID,
 		ClientSecret:         test.IssuerClientSecret,
 		OfflineAccessAsScope: true,
+	}
+}
+
+func generateDefaultMetrics() common.ServerMetrics {
+	return common.ServerMetrics{
+		InitNodeDeploymentFailures: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "init_node_deployment_failures",
+				Help: "The number of times initial node deployment couldn't be created within the timeout",
+			},
+			[]string{"cluster", "seed_dc"},
+		),
 	}
 }

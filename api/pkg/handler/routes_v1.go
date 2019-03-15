@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -19,7 +20,7 @@ import (
 )
 
 // RegisterV1 declares all router paths for v1
-func (r Routing) RegisterV1(mux *mux.Router) {
+func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	//
 	// no-op endpoint that always returns HTTP 200
 	mux.Methods(http.MethodGet).
@@ -119,7 +120,7 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters").
-		Handler(r.createCluster())
+		Handler(r.createCluster(metrics.InitNodeDeploymentFailures))
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters").
@@ -778,14 +779,14 @@ func (r Routing) deleteProject() http.Handler {
 //       201: Cluster
 //       401: empty
 //       403: empty
-func (r Routing) createCluster() http.Handler {
+func (r Routing) createCluster(initNodeDeploymentFailures *prometheus.CounterVec) http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(cluster.CreateEndpoint(r.sshKeyProvider, r.cloudProviders, r.projectProvider, r.datacenters)),
+		)(cluster.CreateEndpoint(r.sshKeyProvider, r.cloudProviders, r.projectProvider, r.datacenters, initNodeDeploymentFailures)),
 		cluster.DecodeCreateReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,

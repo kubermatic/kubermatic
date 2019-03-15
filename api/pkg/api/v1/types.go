@@ -274,8 +274,8 @@ type MasterVersion struct {
 // CreateClusterSpec is the structure that is used to create cluster with its initial node deployment
 // swagger:model CreateClusterSpec
 type CreateClusterSpec struct {
-	Cluster        Cluster        `json:"cluster"`
-	NodeDeployment NodeDeployment `json:"nodeDeployment"`
+	Cluster        Cluster         `json:"cluster"`
+	NodeDeployment *NodeDeployment `json:"nodeDeployment,omitempty"`
 }
 
 // Cluster defines the cluster resource

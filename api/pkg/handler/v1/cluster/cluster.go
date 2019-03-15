@@ -13,7 +13,6 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
-	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	prometheusapi "github.com/prometheus/client_golang/api"
 	prometheusv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/client_golang/prometheus"
@@ -33,12 +32,14 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider,
-	dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+	dcs map[string]provider.DatacenterMeta, initNodeDeploymentFailures *prometheus.CounterVec) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -69,84 +70,111 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 		}
 
 		// Create the initial node deployment in the background.
-		go createInitialNodeDeployment(&req.Body.NodeDeployment, newCluster, project, sshKeyProvider, dcs, clusterProvider, userInfo)
+		if req.Body.NodeDeployment != nil {
+			go createInitialNodeDeployment(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, dcs,
+				clusterProvider, userInfo, req.DC, initNodeDeploymentFailures)
+		}
 
 		return convertInternalClusterToExternal(newCluster), nil
 	}
 }
 
-// TODO: We can add an event to the cluster after successful creation or failure.
-func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticapiv1.Cluster, project *kubermaticapiv1.Project,
-	sshKeyProvider provider.SSHKeyProvider, dcs map[string]provider.DatacenterMeta, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo) {
+func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticapiv1.Cluster,
+	project *kubermaticapiv1.Project, sshKeyProvider provider.SSHKeyProvider, dcs map[string]provider.DatacenterMeta,
+	clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, seedDC string, initNodeDeploymentFailures *prometheus.CounterVec) {
+	defer utilruntime.HandleCrash()
+
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	defer cancelCtx()
 
 	nd, err := machineresource.Validate(nodeDeployment, cluster.Spec.Version.Semver())
 	if err != nil {
 		glog.V(5).Infof("initial node deployment for cluster %s is not valid: %v", cluster.Name, err)
+		initNodeDeploymentFailures.With(prometheus.Labels{"cluster": cluster.Name, "seed_dc": seedDC}).Add(1)
 		return
 	}
 
-	interval := 10 * time.Second
-	timeout := 5 * time.Minute
-	deadline := time.Now().Add(timeout)
-	for {
-		// CheckInitStatus allows us to check if cluster is healthy.
-		cluster, err = clusterProvider.Get(userInfo, cluster.Name, &provider.ClusterGetOptions{CheckInitStatus: true})
-		if err == nil {
-			keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: cluster.Name})
-			if err != nil {
-				glog.V(5).Infof("failed to list ssh keys for cluster %s: %v", cluster.Name, common.KubernetesErrorToHTTPError(err))
-				continue
-			}
+	err = wait.Poll(5*time.Second, 5*time.Minute, initClusterCondition(ctx, cluster.Name, clusterProvider, userInfo))
+	if err != nil {
+		glog.V(5).Infof("couldn't create initial node deployment, timed out waiting for cluster to be ready")
+		initNodeDeploymentFailures.With(prometheus.Labels{"cluster": cluster.Name, "seed_dc": seedDC}).Add(1)
+		return
+	}
 
-			client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
-			if err != nil {
-				glog.V(5).Infof("failed to create client for cluster %s: %v", cluster.Name, common.KubernetesErrorToHTTPError(err))
-				continue
-			}
+	cluster, err = clusterProvider.Get(userInfo, cluster.Name, &provider.ClusterGetOptions{CheckInitStatus: true})
+	if err != nil {
+		glog.V(5).Infof("failed to get cluster %s: %v", cluster.Name, err)
+		initNodeDeploymentFailures.With(prometheus.Labels{"cluster": cluster.Name, "seed_dc": seedDC}).Add(1)
+		return
+	}
 
-			// since we use an impersonated client when sending a request to the cluster
-			// there have to be RBAC Roles/Bindings in place otherwise we get 403 errors
-			// at the moment the cluster health doesn't check if the RBAC was generated
-			// so we might open a connection and get an access denied error
-			//
-			// TODO: we could extend the cluster health to report when the controller has finished generating RBAC
-			//       instead of listing machine deployments
-			//
-			// TODO: figure out why client.Create doesn't report errors when RBAC was not generated and we should get 403
-			machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
-			if err = client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments); err != nil {
-				err = common.KubernetesErrorToHTTPError(err)
-				glog.V(5).Infof("failed to list machine deployments in %s cluster: %v", cluster.Name, err)
-				continue
-			}
+	keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: cluster.Name})
+	if err != nil {
+		glog.V(5).Infof("failed to list ssh keys for cluster %s: %v", cluster.Name, common.KubernetesErrorToHTTPError(err))
+		initNodeDeploymentFailures.With(prometheus.Labels{"cluster": cluster.Name, "seed_dc": seedDC}).Add(1)
+		return
+	}
 
-			dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
-			if !found {
-				glog.V(5).Infof("failed to find datacenter for cluster %s: %v", cluster.Name, cluster.Spec.Cloud.DatacenterName)
-				continue
-			}
+	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+	if err != nil {
+		glog.V(5).Infof("failed to create client for cluster %s: %v", cluster.Name, common.KubernetesErrorToHTTPError(err))
+		initNodeDeploymentFailures.With(prometheus.Labels{"cluster": cluster.Name, "seed_dc": seedDC}).Add(1)
+		return
+	}
 
-			md, err := machineresource.Deployment(cluster, nd, dc, keys)
-			if err != nil {
-				glog.V(5).Infof("failed to create machine deployment from template: %v", err)
-				continue
-			}
+	dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
+	if !found {
+		glog.V(5).Infof("failed to find datacenter for cluster %s: %v", cluster.Name, cluster.Spec.Cloud.DatacenterName)
+		initNodeDeploymentFailures.With(prometheus.Labels{"cluster": cluster.Name, "seed_dc": seedDC}).Add(1)
+		return
+	}
 
-			if err = client.Create(ctx, md); err != nil {
-				glog.V(5).Infof("initial node deployment for cluster %s created: %v", cluster.Name, err)
-				return
-			}
+	md, err := machineresource.Deployment(cluster, nd, dc, keys)
+	if err != nil {
+		glog.V(5).Infof("failed to create machine deployment from template: %v", err)
+		initNodeDeploymentFailures.With(prometheus.Labels{"cluster": cluster.Name, "seed_dc": seedDC}).Add(1)
+		return
+	}
+
+	err = client.Create(ctx, md)
+	if err != nil {
+		glog.V(5).Infof("failed to create initial node deployment for cluster %s: %v", cluster.Name, err)
+		initNodeDeploymentFailures.With(prometheus.Labels{"cluster": cluster.Name, "seed_dc": seedDC}).Add(1)
+		return
+	}
+
+	glog.V(5).Infof("created initial node deployment for cluster %s", cluster.Name)
+}
+
+func initClusterCondition(ctx context.Context, clusterName string, clusterProvider provider.ClusterProvider,
+	userInfo *provider.UserInfo) func() (bool, error) {
+	return func() (bool, error) {
+		c, err := clusterProvider.Get(userInfo, clusterName, &provider.ClusterGetOptions{CheckInitStatus: true})
+		if err != nil {
+			return false, nil
 		}
 
-		if time.Now().After(deadline) {
-			glog.V(5).Info("couldn't create initial node deployment, timed out waiting for cluster to be ready")
-			metrics.InitNodeDeploymentFailures.With(prometheus.Labels{"cluster": cluster.Name}).Add(1)
-			return
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, c)
+		if err != nil {
+			return false, nil
 		}
 
-		time.Sleep(interval)
+		// since we use an impersonated client when sending a request to the cluster
+		// there have to be RBAC Roles/Bindings in place otherwise we get 403 errors
+		// at the moment the cluster health doesn't check if the RBAC was generated
+		// so we might open a connection and get an access denied error
+		//
+		// TODO: we could extend the cluster health to report when the controller has finished generating RBAC
+		//       instead of listing machine deployments
+		//
+		// TODO: figure out why client.Create doesn't report errors when RBAC was not generated and we should get 403
+		machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
+		err = client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments)
+		if err != nil {
+			return false, nil
+		}
+
+		return true, nil
 	}
 }
 
