@@ -63,8 +63,7 @@ spec:
           successThreshold: 1
           timeoutSeconds: 3
         resources:
-          requests:
-            memory: 200Mi
+{{ toYaml .Values.alertmanager.resources.alertmanager | indent 10 }}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
@@ -80,9 +79,7 @@ spec:
         imagePullPolicy: IfNotPresent
         name: config-reloader
         resources:
-          limits:
-            cpu: 5m
-            memory: 10Mi
+{{ toYaml .Values.alertmanager.resources.reloader | indent 10 }}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:

@@ -12,3 +12,18 @@ alertmanager:
       slack_configs:
       - channel: '#alerting'
         send_resolved: true
+  resources:
+    alertmanager:
+      requests:
+        cpu: 20m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
+    reloader:
+      requests:
+        cpu: 5m
+        memory: 10Mi
+      limits:
+        cpu: 5m
+        memory: 10Mi
