@@ -134,13 +134,13 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 
 			if err = client.Create(ctx, md); err != nil {
 				glog.V(5).Infof("initial node deployment for cluster %s created: %v", cluster.Name, err)
-				break
+				return
 			}
 		}
 
 		if time.Now().After(deadline) {
 			glog.V(5).Info("couldn't create initial node deployment, timed out waiting for cluster to be ready")
-			break
+			return
 		}
 
 		time.Sleep(interval)
