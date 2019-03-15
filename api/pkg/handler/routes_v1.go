@@ -276,12 +276,17 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 
 	//
 	// Defines set of HTTP endpoints for control plane and kubelet versions
+	// TODO: Remove /versions and use /upgrades/cluster.
 	mux.Methods(http.MethodGet).
 		Path("/versions").
 		Handler(r.getMasterVersions())
 
 	mux.Methods(http.MethodGet).
-		Path("/nodes/upgrades").
+		Path("/upgrades/cluster").
+		Handler(r.getMasterVersions())
+
+	mux.Methods(http.MethodGet).
+		Path("/upgrades/node").
 		Handler(r.getNodeUpgrades())
 
 	//
@@ -588,6 +593,7 @@ func (r Routing) datacenterHandler() http.Handler {
 }
 
 // swagger:route GET /api/v1/versions versions getMasterVersions
+// swagger:route GET /api/v1/upgrades/cluster versions getMasterVersions
 //
 // Lists all versions which don't result in automatic updates
 //
@@ -1265,7 +1271,7 @@ func (r Routing) getClusterNodeUpgrades() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/nodes/upgrades project getNodeUpgrades
+// swagger:route GET /api/v1/upgrades/node versions getNodeUpgrades
 //
 //    Gets possible node upgrades for a specific control plane version
 //

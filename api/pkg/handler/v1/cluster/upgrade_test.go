@@ -488,7 +488,7 @@ func TestGetNodeUpgrades(t *testing.T) {
 	}
 	for _, testStruct := range tests {
 		t.Run(testStruct.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v1/nodes/upgrades", strings.NewReader(testStruct.controlPlaneVersion))
+			req := httptest.NewRequest("GET", "/api/v1/upgrades/node", strings.NewReader(testStruct.controlPlaneVersion))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(testStruct.apiUser, []runtime.Object{}, nil,
 				testStruct.existingVersions, testStruct.existingUpdates, hack.NewTestRouting)
