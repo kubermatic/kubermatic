@@ -45,6 +45,8 @@ spec:
         - containerPort: 8001
           name: grpc
           protocol: TCP
+        resources:
+{{ toYaml .Values.nodePortPoxy.resources.envoyManager | indent 10 }}
       - name: envoy
         command:
         - /usr/local/bin/envoy
@@ -78,6 +80,8 @@ spec:
         volumeMounts:
         - mountPath: /etc/envoy
           name: envoy-config
+        resources:
+{{ toYaml .Values.nodePortPoxy.resources.envoy | indent 10 }}
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -125,5 +129,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        resources:
+{{ toYaml .Values.nodePortPoxy.resources.lbUpdater | indent 10 }}
       imagePullSecrets:
       - name: quay
