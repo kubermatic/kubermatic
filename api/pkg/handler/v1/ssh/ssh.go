@@ -1,4 +1,4 @@
-package handler
+package ssh
 
 import (
 	"context"
@@ -16,9 +16,9 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func createSSHKeyEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func CreateEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(CreateSSHKeyReq)
+		req, ok := request.(CreateReq)
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
@@ -56,9 +56,9 @@ func createSSHKeyEndpoint(keyProvider provider.SSHKeyProvider, projectProvider p
 	}
 }
 
-func deleteSSHKeyEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func DeleteEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(DeleteSSHKeyReq)
+		req, ok := request.(DeleteReq)
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
@@ -76,9 +76,9 @@ func deleteSSHKeyEndpoint(keyProvider provider.SSHKeyProvider, projectProvider p
 	}
 }
 
-func listSSHKeyEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func ListEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(ListSSHKeyReq)
+		req, ok := request.(ListReq)
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
@@ -103,30 +103,30 @@ func listSSHKeyEndpoint(keyProvider provider.SSHKeyProvider, projectProvider pro
 	}
 }
 
-// ListSSHKeyReq defined HTTP request for listSHHKeys endpoint
+// ListReq defined HTTP request for listSHHKeys endpoint
 // swagger:parameters listSSHKeys
-type ListSSHKeyReq struct {
+type ListReq struct {
 	common.ProjectReq
 }
 
-func decodeListSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
+func DecodeListReq(c context.Context, r *http.Request) (interface{}, error) {
 	req, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
 		return nil, nil
 	}
-	return ListSSHKeyReq{ProjectReq: req.(common.ProjectReq)}, err
+	return ListReq{ProjectReq: req.(common.ProjectReq)}, err
 }
 
-// DeleteSSHKeyReq defines HTTP request for deleteSSHKey endpoint
+// DeleteReq defines HTTP request for deleteSSHKey endpoint
 // swagger:parameters deleteSSHKey
-type DeleteSSHKeyReq struct {
+type DeleteReq struct {
 	common.ProjectReq
 	// in: path
 	SSHKeyID string `json:"key_id"`
 }
 
-func decodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req DeleteSSHKeyReq
+func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req DeleteReq
 
 	dcr, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
@@ -143,16 +143,16 @@ func decodeDeleteSSHKeyReq(c context.Context, r *http.Request) (interface{}, err
 	return req, nil
 }
 
-// CreateSSHKeyReq represent a request for specific data to create a new SSH key
+// CreateReq represent a request for specific data to create a new SSH key
 // swagger:parameters createSSHKey
-type CreateSSHKeyReq struct {
+type CreateReq struct {
 	common.ProjectReq
 	// swagger:ignore
 	Key apiv1.SSHKey `json:"-"`
 }
 
-func decodeCreateSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req CreateSSHKeyReq
+func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req CreateReq
 
 	dcr, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
