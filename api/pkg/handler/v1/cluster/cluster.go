@@ -81,28 +81,27 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 
 	nd, err := machineresource.Validate(nodeDeployment, cluster.Spec.Version.Semver())
 	if err != nil {
-		glog.V(5).Infof("failed to list machine deployments: %v", err)
+		glog.V(5).Infof("initial node deployment for cluster %s is not valid: %v", cluster.Name, err)
 		return
 	}
 
 	interval := 10 * time.Second
 	timeout := 5 * time.Minute
 	deadline := time.Now().Add(timeout)
-	clusterID := cluster.Name
 	for {
 		// CheckInitStatus allows us to check if cluster is healthy.
-		cluster, err = clusterProvider.Get(userInfo, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		cluster, err = clusterProvider.Get(userInfo, cluster.Name, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err == nil {
-			keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: clusterID})
+			keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: cluster.Name})
 			if err != nil {
-				err = common.KubernetesErrorToHTTPError(err)
-				break
+				glog.V(5).Infof("failed to list ssh keys for cluster %s: %v", cluster.Name, common.KubernetesErrorToHTTPError(err))
+				continue
 			}
 
 			client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
 			if err != nil {
-				err = common.KubernetesErrorToHTTPError(err)
-				break
+				glog.V(5).Infof("failed to create client for cluster %s: %v", cluster.Name, common.KubernetesErrorToHTTPError(err))
+				continue
 			}
 
 			// since we use an impersonated client when sending a request to the cluster
@@ -117,38 +116,34 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 			machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
 			if err = client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments); err != nil {
 				err = common.KubernetesErrorToHTTPError(err)
-				glog.V(5).Infof("failed to list machine deployments: %v", err)
+				glog.V(5).Infof("failed to list machine deployments in %s cluster: %v", cluster.Name, err)
 				continue
 			}
 
 			dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
 			if !found {
-				err = fmt.Errorf("unknown cluster datacenter: %s", cluster.Spec.Cloud.DatacenterName)
-				break
+				glog.V(5).Infof("failed to find datacenter for cluster %s: %v", cluster.Name, cluster.Spec.Cloud.DatacenterName)
+				continue
 			}
 
 			md, err := machineresource.Deployment(cluster, nd, dc, keys)
 			if err != nil {
-				err = fmt.Errorf("failed to create machine deployment from template: %v", err)
-				break
+				glog.V(5).Infof("failed to create machine deployment from template: %v", err)
+				continue
 			}
 
-			err = client.Create(ctx, md)
-			break
+			if err = client.Create(ctx, md); err != nil {
+				glog.V(5).Infof("initial node deployment for cluster %s created: %v", cluster.Name, err)
+				break
+			}
 		}
 
 		if time.Now().After(deadline) {
-			err = fmt.Errorf("couldn't create initial node deployment, timed out waiting for cluster to be ready")
+			glog.V(5).Info("couldn't create initial node deployment, timed out waiting for cluster to be ready")
 			break
 		}
 
 		time.Sleep(interval)
-	}
-
-	if err != nil {
-		glog.V(5).Infof("failed to list machine deployments: %v", err)
-	} else {
-		glog.V(5).Infof("initial node deployment for cluster %s created: %v", cluster.Name, err)
 	}
 }
 
