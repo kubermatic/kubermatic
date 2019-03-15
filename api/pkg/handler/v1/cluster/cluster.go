@@ -13,8 +13,10 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
+	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	prometheusapi "github.com/prometheus/client_golang/api"
 	prometheusv1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -140,6 +142,7 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 
 		if time.Now().After(deadline) {
 			glog.V(5).Info("couldn't create initial node deployment, timed out waiting for cluster to be ready")
+			metrics.InitNodeDeploymentFailures.With(prometheus.Labels{"cluster": cluster.Name}).Add(1)
 			return
 		}
 

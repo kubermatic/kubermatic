@@ -25,10 +25,18 @@ var httpRequestsDuration = prometheus.NewHistogramVec(
 	[]string{"method", "route"},
 )
 
+var InitNodeDeploymentFailures = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Name: "init_node_deployment_failures",
+	Help: "The number of times initial node deployment couldn't be created within the 5m timeout",
+},
+	[]string{"cluster"},
+)
+
 // RegisterHTTPVecs registers http_requests_total and http_request_duration_seconds metric vecs.
 func RegisterHTTPVecs() {
 	prometheus.MustRegister(httpRequestsTotal)
 	prometheus.MustRegister(httpRequestsDuration)
+	prometheus.MustRegister(InitNodeDeploymentFailures)
 }
 
 // InstrumentHandler wraps the passed handler with prometheus duration and counter tracking.
