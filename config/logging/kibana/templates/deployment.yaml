@@ -23,12 +23,7 @@ spec:
         image: '{{ .Values.logging.kibana.image.repository }}:{{ .Values.logging.kibana.image.tag }}'
         imagePullPolicy: {{ .Values.logging.kibana.image.pullPolicy }}
         resources:
-          # need more cpu upon initialization, therefore burstable class
-          limits:
-            cpu: 1000m
-          requests:
-            cpu: 100m
-            memory: 400Mi
+{{ toYaml .Values.logging.kibana.resources | indent 10 }}
         env:
           - name: ELASTICSEARCH_URL
             value: http://es-data:9200
