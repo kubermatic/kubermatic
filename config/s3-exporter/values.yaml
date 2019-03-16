@@ -4,3 +4,10 @@ s3Exporter:
     tag: v0.3
   endpoint: http://minio.minio.svc.cluster.local:9000
   bucket: kubermatic-etcd-backups
+  resources:
+    requests:
+      cpu: 10m
+      memory: 16Mi
+    limits:
+      cpu: 30m
+      memory: 24Mi
