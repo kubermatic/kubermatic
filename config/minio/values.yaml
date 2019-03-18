@@ -15,9 +15,17 @@ minio:
   #storageClass: hdd
 
   resources:
-    requests:
-      cpu: 10m
-      memory: 32Mi
-    limits:
-      cpu: 100m
-      memory: 128Mi
+    minio:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    backup:
+      requests:
+        cpu: 50m
+        memory: 32Mi
+      limits:
+        cpu: 500m
+        memory: 1500Mi

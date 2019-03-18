@@ -40,7 +40,7 @@ spec:
         - name: storage
           mountPath: "/storage"
         resources:
-{{ toYaml .Values.minio.resources | indent 10 }}
+{{ toYaml .Values.minio.resources.minio | indent 10 }}
 
       {{- if .Values.minio.backups }}
       - name: backup
@@ -67,6 +67,8 @@ spec:
         securityContext:
           runAsNonRoot: false
           runAsUser: 0
+        resources:
+{{ toYaml .Values.minio.resources.backup | indent 10 }}
       {{- end }}
       volumes:
       - name: storage
