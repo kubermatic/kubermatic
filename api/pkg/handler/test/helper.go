@@ -88,6 +88,7 @@ type newRoutingFunc func(
 	cloudProviders map[string]provider.CloudProvider,
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
+	serviceAccountProvider provider.ServiceAccountProvider,
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	oidcAuthenticator auth.OIDCAuthenticator,
@@ -117,6 +118,7 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 
 	sshKeyProvider := kubernetes.NewSSHKeyProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
 	userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister())
+	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeImpersonationClient)
 	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister())
 	projectProvider, err := kubernetes.NewProjectProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Projects().Lister())
 	if err != nil {
@@ -151,6 +153,7 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		cloudProviders,
 		sshKeyProvider,
 		userProvider,
+		serviceAccountProvider,
 		projectProvider,
 		privilegedProjectProvider,
 		authenticator,
