@@ -106,10 +106,13 @@ func (r *reconcileServiceAccountProjectBinding) ensureServiceAccountProjectBindi
 		}
 	}
 	// remove labelGroup from sa
-	delete(sa.Labels, labelGroup)
-	if err := r.Update(r.ctx, sa); err != nil {
-		return err
+	if _, ok := sa.Labels[labelGroup]; ok {
+		delete(sa.Labels, labelGroup)
+		if err := r.Update(r.ctx, sa); err != nil {
+			return err
+		}
 	}
+
 	return nil
 }
 
