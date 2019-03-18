@@ -11,21 +11,21 @@ nodePortPoxy:
     envoy:
       requests:
         cpu: 10m
-        memory: 24Mi
+        memory: 32Mi
       limits:
         cpu: 20m
-        memory: 48Mi
+        memory: 64Mi
     envoyManager:
       requests:
         cpu: 10m
-        memory: 24Mi
+        memory: 32Mi
       limits:
         cpu: 20m
         memory: 48Mi
     lbUpdater:
       requests:
         cpu: 10m
-        memory: 24Mi
+        memory: 32Mi
       limits:
         cpu: 10m
-        memory: 24Mi
+        memory: 32Mi

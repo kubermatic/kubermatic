@@ -9,10 +9,10 @@ grafana:
   resources:
     requests:
       cpu: 100m
-      memory: 50Mi
+      memory: 48Mi
     limits:
       cpu: 200m
-      memory: 100Mi
+      memory: 128Mi
 
   # Control where the provisioning files are located.
   # If you want to *not* use the predefined ones, this

@@ -7,7 +7,7 @@ s3Exporter:
   resources:
     requests:
       cpu: 10m
-      memory: 16Mi
+      memory: 24Mi
     limits:
       cpu: 30m
-      memory: 24Mi
+      memory: 32Mi

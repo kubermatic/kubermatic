@@ -117,7 +117,7 @@ kubermatic:
         memory: 32Mi
       limits:
         cpu: 100m
-        memory: 64Mi
+        memory: 32Mi
   rbac:
     replicas: 1
     image:
@@ -209,10 +209,10 @@ kubermatic:
       resources:
         requests:
           cpu: 50m
-          memory: 500Mi
+          memory: 32Mi
         limits:
           cpu: 200m
-          memory: 1000Mi
+          memory: 128Mi
 
     recommender:
       image:
@@ -233,7 +233,7 @@ kubermatic:
       resources:
         requests:
           cpu: 50m
-          memory: 200Mi
+          memory: 32Mi
         limits:
           cpu: 200m
-          memory: 500Mi
+          memory: 128Mi

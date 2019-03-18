@@ -8,4 +8,4 @@ nodeExporter:
       memory: 24Mi
     limits:
       cpu: 200m
-      memory: 50Mi
+      memory: 48Mi

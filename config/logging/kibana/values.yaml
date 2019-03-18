@@ -7,7 +7,8 @@ logging:
     resources:
       requests:
         cpu: 100m
-        memory: 400Mi
+        memory: 450Mi
       limits:
         # need more cpu upon initialization, therefore burstable class
         cpu: 1000m
+        memory: 600Mi
