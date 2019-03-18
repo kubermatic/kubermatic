@@ -2709,11 +2709,9 @@
         "operationId": "getNodeUpgrades",
         "parameters": [
           {
-            "name": "Body",
-            "in": "body",
-            "schema": {
-              "$ref": "#/definitions/MasterVersion"
-            }
+            "type": "string",
+            "name": "ControlPlaneVersion",
+            "in": "query"
           }
         ],
         "responses": {
