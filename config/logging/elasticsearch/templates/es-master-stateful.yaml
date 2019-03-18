@@ -103,9 +103,7 @@ spec:
                 - /bin/bash
                 - /post-start.sh
           resources:
-            requests:
-              cpu: 75m
-              memory: 350Mi
+{{ toYaml .Values.logging.elasticsearch.resources.master | indent 12 }}
           volumeMounts:
             - name: storage
               mountPath: /usr/share/elasticsearch/data

@@ -32,12 +32,7 @@ spec:
           "--logtostderr",
         ]
         resources:
-          limits:
-            cpu: 200m
-            memory: 1000Mi
-          requests:
-            cpu: 50m
-            memory: 500Mi
+{{ toYaml .Values.kubermatic.vpa.updater.resources | indent 10 }}
         ports:
         - containerPort: 8080
 {{ end }}

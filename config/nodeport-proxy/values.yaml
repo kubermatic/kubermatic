@@ -7,3 +7,25 @@ nodePortPoxy:
   image:
     repository: "quay.io/kubermatic/nodeport-proxy"
     tag: "v2.0.0"
+  resources:
+    envoy:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 20m
+        memory: 64Mi
+    envoyManager:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 20m
+        memory: 48Mi
+    lbUpdater:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 10m
+        memory: 32Mi

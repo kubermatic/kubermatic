@@ -50,10 +50,8 @@ spec:
             port: http
           initialDelaySeconds: 3
           timeoutSeconds: 2
-{{- if $.Values.iap.resources }}
         resources:
 {{ toYaml $.Values.iap.resources | indent 10 }}
-{{- end }}
         volumeMounts:
         - name: config
           mountPath: /config

@@ -36,12 +36,7 @@ spec:
           "--recommendation-margin-fraction", "0",
         ]
         resources:
-          limits:
-            cpu: 200m
-            memory: 1000Mi
-          requests:
-            cpu: 50m
-            memory: 500Mi
+{{ toYaml .Values.kubermatic.vpa.recommender.resources | indent 10 }}
         ports:
         - containerPort: 8080
         {{ end }}

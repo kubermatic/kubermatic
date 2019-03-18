@@ -2,3 +2,10 @@ nodeExporter:
   image:
     repository: quay.io/prometheus/node-exporter
     tag: v0.17.0
+  resources:
+    requests:
+      cpu: 50m
+      memory: 24Mi
+    limits:
+      cpu: 200m
+      memory: 48Mi

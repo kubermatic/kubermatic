@@ -39,6 +39,9 @@ spec:
         volumeMounts:
         - name: storage
           mountPath: "/storage"
+        resources:
+{{ toYaml .Values.minio.resources.minio | indent 10 }}
+
       {{- if .Values.minio.backups }}
       - name: backup
         image: alpine:3.7
@@ -64,6 +67,8 @@ spec:
         securityContext:
           runAsNonRoot: false
           runAsUser: 0
+        resources:
+{{ toYaml .Values.minio.resources.backup | indent 10 }}
       {{- end }}
       volumes:
       - name: storage

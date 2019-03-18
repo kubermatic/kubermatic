@@ -29,15 +29,13 @@ spec:
             port: 8080
           initialDelaySeconds: 5
           timeoutSeconds: 5
+        resources:
+{{ toYaml .Values.kubeStateMetrics.resources | indent 10 }}
+
       - name: addon-resizer
         image: {{ .Values.kubeStateMetrics.resizer.image.repository }}:{{ .Values.kubeStateMetrics.resizer.image.tag }}
         resources:
-          limits:
-            cpu: 100m
-            memory: 30Mi
-          requests:
-            cpu: 100m
-            memory: 30Mi
+{{ toYaml .Values.kubeStateMetrics.resizer.resources | indent 10 }}
         env:
           - name: MY_POD_NAME
             valueFrom:

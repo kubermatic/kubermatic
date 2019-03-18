@@ -30,6 +30,8 @@ spec:
           readOnly: true
 {{ if .Values.dex.grpc }}{{ toYaml .Values.dex.grpc.certMount | trim | indent 8 }}
 {{- end }}
+        resources:
+{{ toYaml .Values.dex.resources | indent 10 }}
       volumes:
       - name: config
         configMap:

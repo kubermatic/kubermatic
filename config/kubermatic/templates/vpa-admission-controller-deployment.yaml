@@ -33,12 +33,7 @@ spec:
             mountPath: "/etc/tls-certs"
             readOnly: true
         resources:
-          limits:
-            cpu: 200m
-            memory: 500Mi
-          requests:
-            cpu: 50m
-            memory: 200Mi
+{{ toYaml .Values.kubermatic.vpa.admissioncontroller.resources | indent 10 }}
         ports:
         - containerPort: 8000
       volumes:

@@ -3,4 +3,12 @@ logging:
     image:
       repository: docker.elastic.co/kibana/kibana
       tag: "6.5.1"
-      pullPolicy: "IfNotPresent"
+      pullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 100m
+        memory: 450Mi
+      limits:
+        # need more cpu upon initialization, therefore burstable class
+        cpu: 1000m
+        memory: 600Mi

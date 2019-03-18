@@ -31,6 +31,7 @@ kubermatic:
   etcd:
     # PV size for the etcd StatefulSet of new clusters
     diskSize: "5Gi"
+
   controller:
     # Available feature gates:
     # - OpenIDAuthPlugin
@@ -76,12 +77,26 @@ kubermatic:
           repository: "quay.io/kubermatic/openshift-addons"
           tag: "v0.4"
           pullPolicy: "IfNotPresent"
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
   api:
     replicas: 2
     image:
       repository: "quay.io/kubermatic/api"
       tag: "__KUBERMATIC_TAG__"
       pullPolicy: "IfNotPresent"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 64Mi
+      limits:
+        cpu: 250m
+        memory: 128Mi
   ui:
     replicas: 2
     image:
@@ -96,12 +111,26 @@ kubermatic:
         "show_terms_of_service": false,
         "cleanup_cluster": false
       }
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 32Mi
   rbac:
     replicas: 1
     image:
-      repository: "quay.io/kubermatic/api"
-      tag: "__KUBERMATIC_TAG__"
-      pullPolicy: "IfNotPresent"
+      repository: quay.io/kubermatic/api
+      tag: __KUBERMATIC_TAG__
+      pullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 50m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
   storeContainer: |
     command:
     - /bin/sh
@@ -146,6 +175,8 @@ kubermatic:
         secretKeyRef:
           name: s3-credentials
           key: SECRET_ACCESS_KEY
+
+  clusterNamespacePrometheus: {}
 #  clusterNamespacePrometheus:
 #    disableDefaultScrapingConfigs: true
 #    scrapingConfigs:
@@ -169,17 +200,40 @@ kubermatic:
 #          for: 10m
 #          labels:
 #            severity: warning
-  clusterNamespacePrometheus: {}
+
   vpa:
     updater:
       image:
         repository: k8s.gcr.io/vpa-updater
         tag: 0.4.0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 32Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi
+
     recommender:
       image:
         repository: k8s.gcr.io/vpa-recommender
         tag: 0.4.0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 500Mi
+        limits:
+          cpu: 200m
+          memory: 1000Mi
+
     admissioncontroller:
       image:
         repository: k8s.gcr.io/vpa-admission-controller
         tag: 0.4.0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 32Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi

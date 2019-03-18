@@ -56,12 +56,7 @@ spec:
             mountPath: "/opt/.kube/"
             readOnly: true
         resources:
-          requests:
-            memory: "64Mi"
-            cpu: "100m"
-          limits:
-            memory: "256Mi"
-            cpu: "200m"
+{{ toYaml .Values.kubermatic.rbac.resources | indent 10 }}
       imagePullSecrets:
         - name: dockercfg
       volumes:

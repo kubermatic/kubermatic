@@ -12,3 +12,10 @@ nginx:
     tag: 0.22.0
   config: {}
 #    load-balance: "least_conn"
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 256Mi

@@ -105,3 +105,6 @@ spec:
             periodSeconds: 10
             successThreshold: 1
             timeoutSeconds: 1
+          resources:
+{{ toYaml .Values.nginx.resources | indent 12 }}
+

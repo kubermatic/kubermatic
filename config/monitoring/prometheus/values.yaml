@@ -76,22 +76,28 @@ prometheus:
   #  mountPath: /initech/recordings
   #  secretName: initech-recording-rules-secret
 
-  # For larger deployments it can make sense to increase the CPU/memory
-  # limits accordingly.
   containers:
     prometheus:
       resources:
-        limits:
+        requests:
           cpu: 1
           memory: 2Gi
-        requests:
-          cpu: 100m
-          memory: 512Mi
-    reloader:
-      resources:
         limits:
+          cpu: 2
+          memory: 10Gi
+    backup:
+      resources:
+        requests:
           cpu: 100m
           memory: 64Mi
+        limits:
+          cpu: 500m
+          memory: 10Gi
+    reloader:
+      resources:
         requests:
-          cpu: 25m
-          memory: 16Mi
+          cpu: 5m
+          memory: 24Mi
+        limits:
+          cpu: 5m
+          memory: 32Mi

@@ -7,6 +7,23 @@ ark:
     tag: v0.10.0
     pullPolicy: IfNotPresent
 
+  resources:
+    ark:
+      requests:
+        cpu: 10m
+        memory: 50Mi
+      limits:
+        cpu: 100m
+        memory: 100Mi
+    arkRestic:
+      requests:
+        cpu: 10m
+        memory: 30Mi
+      limits:
+        cpu: 200m
+        # during backups memory usage can spike, see https://github.com/restic/restic/issues/979
+        memory: 1Gi
+
   # CLI flags to pass to ark server; note that the two flags
   # `default-backup-storage-location` and `default-volume-snapshot-locations`
   # are automatically set via the ark-config Helm chart's
@@ -16,7 +33,7 @@ ark:
     - --backup-sync-period=1m
 
   # whether or not to create a restic daemonset
-  # restic: true
+  restic: true
 
   # configure the credentials used to make snapshots (when using
   # persistentVolumeProvider) and to store backups; you can enable
