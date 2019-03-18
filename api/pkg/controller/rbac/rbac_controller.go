@@ -178,6 +178,19 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider) (*Controller,
 				return !strings.HasPrefix(obj.GetName(), "default")
 			},
 		},
+
+		{
+			gvr: schema.GroupVersionResource{
+				Group:    kubermaticv1.GroupName,
+				Version:  kubermaticv1.GroupVersion,
+				Resource: kubermaticv1.UserResourceName,
+			},
+			kind: kubermaticv1.UserKindName,
+			shouldEnqueue: func(obj metav1.Object) bool {
+				// do not reconcile resources without "serviceaccount" prefix
+				return strings.HasPrefix(obj.GetName(), "serviceaccount")
+			},
+		},
 	}
 
 	for _, clusterProvider := range allClusterProviders {
