@@ -294,6 +294,25 @@ func GenUser(id, name, email string) *kubermaticapiv1.User {
 	}
 }
 
+// GenServiceAccount generates a Service Account resource
+func GenServiceAccount(id, name, group, projectName string) *kubermaticapiv1.User {
+	user := GenUser(id, name, fmt.Sprintf("serviceaccount-%s@sa.kubermatic.io", id))
+	user.Labels = map[string]string{"group": group}
+	user.OwnerReferences = []metav1.OwnerReference{
+		{
+			APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+			Kind:       kubermaticapiv1.ProjectKindName,
+			Name:       projectName,
+			UID:        types.UID(id),
+		},
+	}
+	user.Spec.ID = id
+	user.Name = fmt.Sprintf("serviceaccount-%s", id)
+	user.UID = ""
+
+	return user
+}
+
 // GenAPIUser generates a API user
 func GenAPIUser(name, email string) *apiv1.User {
 	usr := GenUser("", name, email)
