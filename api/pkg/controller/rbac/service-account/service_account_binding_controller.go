@@ -3,9 +3,10 @@ package serviceaccount
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
@@ -100,7 +101,14 @@ func (r *reconcileServiceAccountProjectBinding) ensureServiceAccountProjectBindi
 		}
 	}
 	if !bindingExist {
-		return r.createBinding(sa, projectName)
+		if err := r.createBinding(sa, projectName); err != nil {
+			return err
+		}
+		// remove labelGroup from sa
+		delete(sa.Labels, labelGroup)
+		if err := r.Update(r.ctx, sa); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -109,13 +117,6 @@ func (r *reconcileServiceAccountProjectBinding) createBinding(sa *kubermaticv1.U
 	group, ok := sa.Labels[labelGroup]
 	if !ok {
 		return fmt.Errorf("label %s not found for sa %s", labelGroup, sa.Name)
-	}
-
-	// remove labelGroup from sa
-	delete(sa.Labels, labelGroup)
-	err := r.Update(r.ctx, sa)
-	if err != nil {
-		return err
 	}
 
 	binding := &kubermaticv1.UserProjectBinding{
