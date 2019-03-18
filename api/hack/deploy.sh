@@ -30,6 +30,7 @@ function deploy {
   local namespace=$2
   local path=$3
 
+  echo "Upgrading ${name}..."
   retry 5 helm upgrade --install --force --wait --timeout 300 ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
 }
 
