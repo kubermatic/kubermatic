@@ -8,11 +8,13 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/project"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/ssh"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/user"
 )
 
@@ -315,8 +317,8 @@ func (r Routing) listSSHKeys() http.Handler {
 			r.oidcAuthenticator.Verifier(),
 			middleware.UserSaver(r.userProvider),
 			middleware.UserInfo(r.userProjectMapper),
-		)(listSSHKeyEndpoint(r.sshKeyProvider, r.projectProvider)),
-		decodeListSSHKeyReq,
+		)(ssh.ListEndpoint(r.sshKeyProvider, r.projectProvider)),
+		ssh.DecodeListReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -343,8 +345,8 @@ func (r Routing) createSSHKey() http.Handler {
 			r.oidcAuthenticator.Verifier(),
 			middleware.UserSaver(r.userProvider),
 			middleware.UserInfo(r.userProjectMapper),
-		)(createSSHKeyEndpoint(r.sshKeyProvider, r.projectProvider)),
-		decodeCreateSSHKeyReq,
+		)(ssh.CreateEndpoint(r.sshKeyProvider, r.projectProvider)),
+		ssh.DecodeCreateReq,
 		setStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
@@ -368,8 +370,8 @@ func (r Routing) deleteSSHKey() http.Handler {
 			r.oidcAuthenticator.Verifier(),
 			middleware.UserSaver(r.userProvider),
 			middleware.UserInfo(r.userProjectMapper),
-		)(deleteSSHKeyEndpoint(r.sshKeyProvider, r.projectProvider)),
-		decodeDeleteSSHKeyReq,
+		)(ssh.DeleteEndpoint(r.sshKeyProvider, r.projectProvider)),
+		ssh.DecodeDeleteReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -630,7 +632,7 @@ func (r Routing) getKubermaticVersion() http.Handler {
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
 			middleware.UserSaver(r.userProvider),
-		)(getKubermaticVersion()),
+		)(v1.GetKubermaticVersion()),
 		decodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
