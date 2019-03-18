@@ -149,10 +149,6 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/upgrades").
 		Handler(r.getClusterUpgrades())
 
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades").
-		Handler(r.getClusterNodeUpgrades())
-
 	mux.Methods(http.MethodPut).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades").
 		Handler(r.upgradeClusterNodeDeployments())
@@ -278,11 +274,6 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 
 	//
 	// Defines set of HTTP endpoints for control plane and kubelet versions
-	// TODO: Remove /versions and use /upgrades/cluster.
-	mux.Methods(http.MethodGet).
-		Path("/versions").
-		Handler(r.getMasterVersions())
-
 	mux.Methods(http.MethodGet).
 		Path("/upgrades/cluster").
 		Handler(r.getMasterVersions())
@@ -1241,32 +1232,6 @@ func (r Routing) getClusterUpgrades() http.Handler {
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
 		)(cluster.GetUpgradesEndpoint(r.updateManager, r.projectProvider)),
-		common.DecodeGetClusterReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades project getClusterNodeUpgrades
-//
-//    Gets possible node upgrades for a cluster
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: []MasterVersion
-//       401: empty
-//       403: empty
-func (r Routing) getClusterNodeUpgrades() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
-			middleware.UserSaver(r.userProvider),
-			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
-		)(cluster.GetNodeUpgradesEndpoint(r.updateManager, r.projectProvider)),
 		common.DecodeGetClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
