@@ -41,6 +41,15 @@ type ErrorDetails struct {
 	Additional []string `json:"details,omitempty"`
 }
 
+// EmptyResponse is a empty response
+// swagger:response empty
+type EmptyResponse struct{}
+
+func decodeEmptyReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req struct{}
+	return req, nil
+}
+
 func errorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 	var additional []string
 	errorCode := http.StatusInternalServerError
@@ -60,30 +69,14 @@ func errorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 
 	w.Header().Set(headerContentType, contentTypeJSON)
 	w.WriteHeader(errorCode)
-	err = EncodeJSON(ctx, w, e)
+	err = encodeJSON(ctx, w, e)
 	if err != nil {
 		glog.Info(err)
 	}
 }
 
-// EmptyResponse is a empty response
-// swagger:response empty
-type EmptyResponse struct{}
-
-// StatusOK returns the status code 200
-func StatusOK(res http.ResponseWriter, _ *http.Request) {
-	res.WriteHeader(http.StatusOK)
-}
-
-func setStatusCreatedHeader(f func(context.Context, http.ResponseWriter, interface{}) error) func(context.Context, http.ResponseWriter, interface{}) error {
-	return func(ctx context.Context, r http.ResponseWriter, i interface{}) error {
-		r.WriteHeader(http.StatusCreated)
-		return f(ctx, r, i)
-	}
-}
-
-// EncodeJSON writes the JSON encoding of response to the http response writer
-func EncodeJSON(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
+// encodeJSON writes the JSON encoding of response to the http response writer
+func encodeJSON(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	w.Header().Set(headerContentType, contentTypeJSON)
 
 	// As long as we pipe the response from the listers we need this.
@@ -106,4 +99,16 @@ func EncodeJSON(c context.Context, w http.ResponseWriter, response interface{}) 
 	}
 
 	return json.NewEncoder(w).Encode(response)
+}
+
+// statusOK returns the status code 200
+func statusOK(res http.ResponseWriter, _ *http.Request) {
+	res.WriteHeader(http.StatusOK)
+}
+
+func setStatusCreatedHeader(f func(context.Context, http.ResponseWriter, interface{}) error) func(context.Context, http.ResponseWriter, interface{}) error {
+	return func(ctx context.Context, r http.ResponseWriter, i interface{}) error {
+		r.WriteHeader(http.StatusCreated)
+		return f(ctx, r, i)
+	}
 }

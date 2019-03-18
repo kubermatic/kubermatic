@@ -1,10 +1,10 @@
-package handler_test
+package common_test
 
 import (
 	"testing"
 
 	"github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -49,7 +49,7 @@ func TestFilterEventsByType(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 
-			result := handler.FilterEventsByType(tc.InputEvents, tc.Filter)
+			result := common.FilterEventsByType(tc.InputEvents, tc.Filter)
 			if !equal(result, tc.ExpectedEvents) {
 				t.Fatalf("event list %v is not the same as expected %v", result, tc.ExpectedEvents)
 			}
