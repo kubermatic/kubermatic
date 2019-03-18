@@ -87,40 +87,6 @@ func isRestrictedByKubeletVersions(controlPlaneVersion *version.MasterVersion, m
 	return false, nil
 }
 
-func GetNodeUpgradesEndpoint(updateManager common.UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-
-		req, ok := request.(common.GetClusterReq)
-		if !ok {
-			return nil, errors.NewWrongRequest(request, common.GetClusterReq{})
-		}
-
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		versions, err := updateManager.GetMasterVersions()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get master versions: %v", err)
-		}
-
-		compatibleVersions, err := filterIncompatibleVersions(versions, cluster.Spec.Version.Semver())
-		if err != nil {
-			return nil, fmt.Errorf("failed filter incompatible versions: %v", err)
-		}
-
-		return convertVersionsToExternal(compatibleVersions), nil
-	}
-}
-
 // NodeUpgradesReq defines HTTP request for getNodeUpgrades
 // swagger:parameters getNodeUpgrades
 type NodeUpgradesReq struct {
