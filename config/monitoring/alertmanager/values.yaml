@@ -23,7 +23,7 @@ alertmanager:
     reloader:
       requests:
         cpu: 5m
-        memory: 10Mi
+        memory: 24Mi
       limits:
         cpu: 5m
-        memory: 10Mi
+        memory: 32Mi
