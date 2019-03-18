@@ -14,6 +14,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/project"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/ssh"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/user"
 )
@@ -271,6 +272,12 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/users/{user_id}").
 		Handler(r.deleteUserFromProject())
+
+	//
+	// Defines set of HTTP endpoints for ServiceAccounts of the given project
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/serviceaccounts").
+		Handler(r.addserviceAccountToProject())
 
 	//
 	// Defines set of HTTP endpoints for control plane and kubelet versions
@@ -1419,6 +1426,34 @@ func (r Routing) getCurrentUser() http.Handler {
 		)(user.GetEndpoint(r.userProjectMapper)),
 		decodeEmptyReq,
 		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/projects/{project_id}/serviceaccounts serviceaccounts addServiceAccountToProject
+//
+//     Adds the given service account to the given project
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: ServiceAccount
+//       401: empty
+//       403: empty
+func (r Routing) addserviceAccountToProject() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.oidcAuthenticator.Verifier(),
+			middleware.UserSaver(r.userProvider),
+			middleware.UserInfo(r.userProjectMapper),
+		)(serviceaccount.AddEndpoint(r.projectProvider, r.serviceAccountProvider)),
+		serviceaccount.DecodeAddReq,
+		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
 	)
 }

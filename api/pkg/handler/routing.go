@@ -28,6 +28,7 @@ type Routing struct {
 	cloudProviders            provider.CloudRegistry
 	sshKeyProvider            provider.SSHKeyProvider
 	userProvider              provider.UserProvider
+	serviceAccountProvider    provider.ServiceAccountProvider
 	projectProvider           provider.ProjectProvider
 	privilegedProjectProvider provider.PrivilegedProjectProvider
 	logger                    log.Logger
@@ -47,6 +48,7 @@ func NewRouting(
 	cloudProviders map[string]provider.CloudProvider,
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
+	serviceAccountProvider provider.ServiceAccountProvider,
 	projectProvider provider.ProjectProvider,
 	privilegedProject provider.PrivilegedProjectProvider,
 	oidcAuthenticator auth.OIDCAuthenticator,
@@ -61,6 +63,7 @@ func NewRouting(
 		clusterProviders:          newClusterProviders,
 		sshKeyProvider:            newSSHKeyProvider,
 		userProvider:              userProvider,
+		serviceAccountProvider:    serviceAccountProvider,
 		projectProvider:           projectProvider,
 		privilegedProjectProvider: privilegedProject,
 		cloudProviders:            cloudProviders,
