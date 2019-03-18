@@ -90,8 +90,8 @@ prometheus:
     reloader:
       resources:
         requests:
-          cpu: 25m
-          memory: 16Mi
+          cpu: 5m
+          memory: 24Mi
         limits:
-          cpu: 100m
+          cpu: 5m
           memory: 32Mi

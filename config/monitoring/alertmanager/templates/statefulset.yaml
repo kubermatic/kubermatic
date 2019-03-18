@@ -72,12 +72,12 @@ spec:
         - mountPath: /alertmanager
           name: alertmanager-kubermatic-db
           subPath: alertmanager-db
-      - args:
+      - name: reloader
+        image: jimmidyson/configmap-reload
+        imagePullPolicy: IfNotPresent
+        args:
         - -webhook-url=http://localhost:9093/-/reload
         - -volume-dir=/etc/alertmanager/config
-        image: quay.io/coreos/configmap-reload:v0.0.1
-        imagePullPolicy: IfNotPresent
-        name: config-reloader
         resources:
 {{ toYaml .Values.alertmanager.resources.reloader | indent 10 }}
         terminationMessagePath: /dev/termination-log
