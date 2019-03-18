@@ -20,6 +20,18 @@ domain-name = {{ .Global.DomainName | iniEscape }}
 region      = {{ .Global.Region | iniEscape }}
 
 [LoadBalancer]
+lb-version = {{ default "v2" .LoadBalancer.LBVersion | iniEscape }}
+subnet-id = {{ .LoadBalancer.SubnetID | iniEscape }}
+floating-network-id = {{ .LoadBalancer.FloatingNetworkID | iniEscape }}
+lb-method = {{ default "ROUND_ROBIN" .LoadBalancer.LBMethod | iniEscape }}
+lb-provider = {{ .LoadBalancer.LBProvider | iniEscape }}
+
+{{- if .LoadBalancer.CreateMonitor }}
+create-monitor = {{ .LoadBalancer.CreateMonitor }}
+monitor-delay = {{ .LoadBalancer.MonitorDelay }}
+monitor-timeout = {{ .LoadBalancer.MonitorTimeout }}
+monitor-max-retries = {{ .LoadBalancer.MonitorMaxRetries }}
+{{- end}}
 {{- if semverCompare "~1.9.10 || ~1.10.6 || ~1.11.1 || >=1.12.*" .Version }}
 manage-security-groups = {{ .LoadBalancer.ManageSecurityGroups }}
 {{- end }}
@@ -34,7 +46,16 @@ bs-version        = {{ .BlockStorage.BSVersion | iniEscape }}
 )
 
 type LoadBalancerOpts struct {
-	ManageSecurityGroups bool `gcfg:"manage-security-groups"`
+	LBVersion            string       `gcfg:"lb-version"`
+	SubnetID             string       `gcfg:"subnet-id"`
+	FloatingNetworkID    string       `gcfg:"floating-network-id"`
+	LBMethod             string       `gcfg:"lb-method"`
+	LBProvider           string       `gcfg:"lb-provider"`
+	CreateMonitor        bool         `gcfg:"create-monitor"`
+	MonitorDelay         ini.Duration `gcfg:"monitor-delay"`
+	MonitorTimeout       ini.Duration `gcfg:"monitor-timeout"`
+	MonitorMaxRetries    uint         `gcfg:"monitor-max-retries"`
+	ManageSecurityGroups bool         `gcfg:"manage-security-groups"`
 }
 
 type BlockStorageOpts struct {
