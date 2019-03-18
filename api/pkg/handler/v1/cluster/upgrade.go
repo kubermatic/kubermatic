@@ -124,16 +124,13 @@ func GetNodeUpgradesEndpoint(updateManager common.UpdateManager, projectProvider
 // NodeUpgradesReq defines HTTP request for getNodeUpgrades
 // swagger:parameters getNodeUpgrades
 type NodeUpgradesReq struct {
-	// in: body
-	Body apiv1.MasterVersion
+	// in: query
+	ControlPlaneVersion string
 }
 
 func DecodeNodeUpgradesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NodeUpgradesReq
-	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
-		return nil, err
-	}
-
+	req.ControlPlaneVersion = r.URL.Query().Get("control_plane_version")
 	return req, nil
 }
 
@@ -144,12 +141,17 @@ func GetNodeUpgrades(updateManager common.UpdateManager) endpoint.Endpoint {
 			return nil, errors.NewWrongRequest(request, NodeUpgradesReq{})
 		}
 
+		controlPlaneVersion, err := semver.NewVersion(req.ControlPlaneVersion)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse control plane version: %v", err)
+		}
+
 		versions, err := updateManager.GetMasterVersions()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get master versions: %v", err)
 		}
 
-		compatibleVersions, err := filterIncompatibleVersions(versions, req.Body.Version)
+		compatibleVersions, err := filterIncompatibleVersions(versions, controlPlaneVersion)
 		if err != nil {
 			return nil, fmt.Errorf("failed filter incompatible versions: %v", err)
 		}

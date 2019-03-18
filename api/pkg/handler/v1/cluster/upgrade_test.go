@@ -412,7 +412,7 @@ func TestGetNodeUpgrades(t *testing.T) {
 	}{
 		{
 			name:                "only the same major version and no more than 2 minor versions behind the control plane",
-			controlPlaneVersion: `{"version": "1.6.0"}`,
+			controlPlaneVersion: "1.6.0",
 			apiUser:             *test.GenDefaultAPIUser(),
 			existingUpdates: []*version.MasterUpdate{
 				{
@@ -488,7 +488,7 @@ func TestGetNodeUpgrades(t *testing.T) {
 	}
 	for _, testStruct := range tests {
 		t.Run(testStruct.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v1/upgrades/node", strings.NewReader(testStruct.controlPlaneVersion))
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/upgrades/node?control_plane_version=%s", testStruct.controlPlaneVersion), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(testStruct.apiUser, []runtime.Object{}, nil,
 				testStruct.existingVersions, testStruct.existingUpdates, hack.NewTestRouting)
