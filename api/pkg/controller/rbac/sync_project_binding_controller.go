@@ -162,16 +162,9 @@ func (r *reconcileSyncProjectBinding) userForBinding(projectBinding *kubermaticv
 }
 
 func (r *reconcileSyncProjectBinding) getProjectForBinding(projectBinding *kubermaticv1.UserProjectBinding) (*kubermaticv1.Project, error) {
-	for _, ref := range projectBinding.OwnerReferences {
-		if ref.Kind == kubermaticv1.ProjectKindName {
-			var err error
-			projectFromCache := &kubermaticv1.Project{}
-			if err = r.Get(r.ctx, client.ObjectKey{Namespace: metav1.NamespaceAll, Name: ref.Name}, projectFromCache); err != nil {
-				return nil, err
-			}
-			return projectFromCache, nil
-		}
+	projectFromCache := &kubermaticv1.Project{}
+	if err := r.Get(r.ctx, client.ObjectKey{Namespace: metav1.NamespaceAll, Name: projectBinding.Spec.ProjectID}, projectFromCache); err != nil {
+		return nil, err
 	}
-
-	return nil, fmt.Errorf("the given project binding %s doesn't have associated project", projectBinding.Name)
+	return projectFromCache, nil
 }
