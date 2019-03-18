@@ -1155,10 +1155,10 @@ func listNodeDeploymentNodesEvents() endpoint.Endpoint {
 			if len(machineEvents) > 0 {
 				if len(req.Type) > 0 {
 					if req.Type == warningType {
-						machineEvents = FilterEventsByType(machineEvents, corev1.EventTypeWarning)
+						machineEvents = common.FilterEventsByType(machineEvents, corev1.EventTypeWarning)
 					}
 					if req.Type == normalType {
-						machineEvents = FilterEventsByType(machineEvents, corev1.EventTypeNormal)
+						machineEvents = common.FilterEventsByType(machineEvents, corev1.EventTypeNormal)
 					}
 				}
 
@@ -1180,7 +1180,7 @@ func getMachineEvents(ctx context.Context, client ctrlruntimeclient.Client, mach
 
 	kubermaticEvents := make([]apiv1.Event, 0)
 	for _, event := range events.Items {
-		kubermaticEvent := toEvent(event)
+		kubermaticEvent := common.ConvertInternalEventToExternal(event)
 		kubermaticEvents = append(kubermaticEvents, kubermaticEvent)
 	}
 
