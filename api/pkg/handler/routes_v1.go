@@ -1292,6 +1292,7 @@ func (r Routing) getNodeUpgrades() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(cluster.GetNodeUpgrades(r.updateManager)),
 		cluster.DecodeNodeUpgradesReq,
+		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
