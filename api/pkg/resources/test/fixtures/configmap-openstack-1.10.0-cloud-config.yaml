@@ -9,6 +9,11 @@ data:
     region      = "cbk"
 
     [LoadBalancer]
+    lb-version = "v2"
+    subnet-id = ""
+    floating-network-id = ""
+    lb-method = "ROUND_ROBIN"
+    lb-provider = ""
 
     [BlockStorage]
     ignore-volume-az  = true
