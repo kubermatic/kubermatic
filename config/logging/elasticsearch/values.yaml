@@ -51,5 +51,9 @@ logging:
       deploy: false
       resources:
         requests:
-          cpu: 50m
+          cpu: 100m
           memory: 400Mi
+        limits:
+          cpu: 200m
+          # memory usage spikes when starting
+          memory: 800Mi
