@@ -11,6 +11,8 @@ spec:
     metadata:
       labels:
         app: webhook
+      annotations:
+        fluentbit.io/parser: glog
     spec:
       serviceAccountName: webhook
       containers:

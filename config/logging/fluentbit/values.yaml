@@ -2,5 +2,15 @@ logging:
   fluentbit:
     image:
       repository: fluent/fluent-bit
-      tag: 0.14.7
+      tag: 1.0.4
       pullPolicy: "IfNotPresent"
+    configuration:
+      containerRuntimeParser: docker
+      outputs:
+        - |
+          Name            es
+          Match           *
+          Host            ${FLUENT_ELASTICSEARCH_HOST}
+          Port            ${FLUENT_ELASTICSEARCH_PORT}
+          Logstash_Format On
+          Retry_Limit     False

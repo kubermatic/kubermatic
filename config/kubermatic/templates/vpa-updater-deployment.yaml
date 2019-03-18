@@ -16,6 +16,8 @@ spec:
     metadata:
       labels:
         app: vpa-updater
+      annotations:
+        fluentbit.io/parser: glog
     spec:
       serviceAccountName: vpa-updater
       containers:
