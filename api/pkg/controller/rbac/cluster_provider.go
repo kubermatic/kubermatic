@@ -49,7 +49,7 @@ func NewClusterProvider(providerName string, kubeClient kubernetes.Interface, ku
 	}
 
 	// registering Listers for RBAC Cluster Roles and Bindings
-	glog.V(6).Infof("registering ClusterRoles and ClusterRoleBindings informers in all namespaces for provider %s", providerName)
+	glog.V(4).Infof("registering ClusterRoles and ClusterRoleBindings informers in all namespaces for provider %s", providerName)
 	_ = cp.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoles().Lister()
 	_ = cp.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister()
 
