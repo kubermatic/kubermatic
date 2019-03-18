@@ -60,3 +60,5 @@ spec:
           ports:
           - name: metrics
             containerPort: 9402
+          resources:
+{{ toYaml .Values.certManager.resources.certManager | indent 12 }}

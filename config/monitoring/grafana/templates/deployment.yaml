@@ -21,12 +21,7 @@ spec:
         - containerPort: 3000
           name: http
         resources:
-          limits:
-            cpu: 200m
-            memory: 200Mi
-          requests:
-            cpu: 100m
-            memory: 100Mi
+{{ toYaml .Values.grafana.resources | indent 10 }}
         volumeMounts:
         - mountPath: /var/lib/grafana
           name: grafana-storage

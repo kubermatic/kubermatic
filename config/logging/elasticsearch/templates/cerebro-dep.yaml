@@ -36,9 +36,7 @@ spec:
           initialDelaySeconds: 10
           timeoutSeconds: 10
         resources:
-          requests:
-            cpu: 50m
-            memory: 400Mi
+{{ toYaml .Values.logging.elasticsearch.cerebro.resources | indent 10 }}
         volumeMounts:
           - name: config
             mountPath: /cerebro

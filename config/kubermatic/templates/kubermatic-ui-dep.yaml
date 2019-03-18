@@ -17,13 +17,6 @@ spec:
         - name: webserver
           image: '{{ .Values.kubermatic.ui.image.repository }}:{{ .Values.kubermatic.ui.image.tag }}'
           imagePullPolicy: {{ .Values.kubermatic.ui.image.pullPolicy }}
-          resources:
-            requests:
-              memory: "64Mi"
-              cpu: "100m"
-            limits:
-              memory: "128Mi"
-              cpu: "250m"
           ports:
             - name: http
               containerPort: 8080
@@ -31,6 +24,8 @@ spec:
             - name: config
               mountPath: "/dist/config/"
               readOnly: true
+          resources:
+{{ toYaml .Values.kubermatic.ui.resources | indent 12 }}
       imagePullSecrets:
         - name: dockercfg
       tolerations:

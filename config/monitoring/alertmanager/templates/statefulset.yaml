@@ -63,8 +63,7 @@ spec:
           successThreshold: 1
           timeoutSeconds: 3
         resources:
-          requests:
-            memory: 200Mi
+{{ toYaml .Values.alertmanager.resources.alertmanager | indent 10 }}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
@@ -73,16 +72,14 @@ spec:
         - mountPath: /alertmanager
           name: alertmanager-kubermatic-db
           subPath: alertmanager-db
-      - args:
+      - name: reloader
+        image: jimmidyson/configmap-reload
+        imagePullPolicy: IfNotPresent
+        args:
         - -webhook-url=http://localhost:9093/-/reload
         - -volume-dir=/etc/alertmanager/config
-        image: quay.io/coreos/configmap-reload:v0.0.1
-        imagePullPolicy: IfNotPresent
-        name: config-reloader
         resources:
-          limits:
-            cpu: 5m
-            memory: 10Mi
+{{ toYaml .Values.alertmanager.resources.reloader | indent 10 }}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:

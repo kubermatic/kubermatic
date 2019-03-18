@@ -41,3 +41,5 @@ spec:
             - -access-key-id=$(ACCESS_KEY_ID)
             - -secret-access-key=$(SECRET_ACCESS_KEY)
             - -bucket={{ .Values.s3Exporter.bucket }}
+          resources:
+{{ toYaml .Values.s3Exporter.resources | indent 12 }}

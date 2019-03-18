@@ -42,6 +42,8 @@ spec:
           volumeMounts:
           - name: certs
             mountPath: /certs
+          resources:
+{{ toYaml .Values.certManager.resources.webhook | indent 12 }}
       volumes:
       - name: certs
         secret:

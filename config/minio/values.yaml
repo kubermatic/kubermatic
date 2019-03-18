@@ -13,3 +13,19 @@ minio:
   # you cannot change this later on without purging the
   # chart and losing data.
   #storageClass: hdd
+
+  resources:
+    minio:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 512Mi
+    backup:
+      requests:
+        cpu: 50m
+        memory: 32Mi
+      limits:
+        cpu: 500m
+        memory: 1500Mi

@@ -7,12 +7,12 @@ blackboxExporter:
   containers:
     blackboxExporter:
       resources:
-        limits:
-          cpu: 100m
-          memory: 50Mi
         requests:
           cpu: 20m
-          memory: 25Mi
+          memory: 24Mi
+        limits:
+          cpu: 100m
+          memory: 32Mi
 
   modules:
     # A module that requires HTTPS and HTTP 2xx codes on its targets.

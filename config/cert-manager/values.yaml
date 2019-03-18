@@ -31,3 +31,26 @@ certManager:
   #  - operator: Exists
   #nodeSelector: |
   #  node-role.kubernetes.io/master: ""
+
+  resources:
+    certManager:
+      requests:
+        cpu: 10m
+        memory: 30Mi
+      limits:
+        cpu: 30m
+        memory: 50Mi
+    caSync:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    webhook:
+      requests:
+        cpu: 10m
+        memory: 30Mi
+      limits:
+        cpu: 30m
+        memory: 30Mi
