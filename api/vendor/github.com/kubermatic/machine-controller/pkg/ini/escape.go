@@ -1,6 +1,8 @@
 package ini
 
-import "strings"
+import (
+	"strings"
+)
 
 // Allowed escaping characters by gopkg.in/gcfg.v1 - the lib kubernetes uses
 var escaper = strings.NewReplacer(

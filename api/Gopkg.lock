@@ -726,7 +726,7 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:bc06df2e71f72e6059e5df6de5b97ac7df336dc8e75fa6ee3c2307afe5a463e8"
+  digest = "1:ec595db2829abd8f1dd08cf7f75658574e7220c12c631cb19da00906d5fa9462"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/cloudprovider/cloud",
@@ -751,8 +751,8 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "184b4f64103038f807467db8774cf73da81e678d"
-  version = "v1.0.6"
+  revision = "48a443c218bbb6a83f5d67fcf5c9f854c356763e"
+  version = "v1.1.0"
 
 [[projects]]
   digest = "1:d244f8666a838fe6ad70ec8fe77f50ebc29fdc3331a2729ba5886bef8435d10d"
