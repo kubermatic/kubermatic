@@ -293,6 +293,10 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 	if strings.HasPrefix(groupName, EditorGroupNamePrefix) && resourceKind == kubermaticv1.UserProjectBindingKind {
 		return nil, nil
 	}
+	// special case - editors are not allowed to interact with service accounts (User)
+	if strings.HasPrefix(groupName, EditorGroupNamePrefix) && resourceKind == kubermaticv1.UserKindName {
+		return nil, nil
+	}
 
 	// editors of a named resource
 	if strings.HasPrefix(groupName, EditorGroupNamePrefix) {
@@ -305,7 +309,10 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 	// special case - viewers are not allowed to interact with members of a project (UserProjectBinding)
 	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) && resourceKind == kubermaticv1.UserProjectBindingKind {
 		return nil, nil
-
+	}
+	// special case - viewers are not allowed to interact with service accounts (User)
+	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) && resourceKind == kubermaticv1.UserKindName {
+		return nil, nil
 	}
 	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) {
 		return []string{"get"}, nil
@@ -323,6 +330,14 @@ func generateVerbsForResource(groupName, resourceKind string) ([]string, error) 
 	if strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == kubermaticv1.UserProjectBindingKind {
 		return []string{"create"}, nil
 	} else if resourceKind == kubermaticv1.UserProjectBindingKind {
+		return nil, nil
+	}
+
+	// special case - only the owners of a project can create service account (aka. users)
+	//
+	if strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == kubermaticv1.UserKindName {
+		return []string{"create"}, nil
+	} else if resourceKind == kubermaticv1.UserKindName {
 		return nil, nil
 	}
 

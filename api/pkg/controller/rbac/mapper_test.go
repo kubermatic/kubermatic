@@ -61,6 +61,18 @@ func TestGenerateVerbsForNamedResources(t *testing.T) {
 			expectedVerbs: []string{},
 			resourceKind:  "UserProjectBinding",
 		},
+		{
+			name:          "scenario 8: viewers of a project cannot interact with ServiceAccount (User) named resource",
+			groupName:     "viewers-projectID",
+			expectedVerbs: []string{},
+			resourceKind:  "User",
+		},
+		{
+			name:          "scenario 8: editors of a project cannot interact with ServiceAccount (User) named resource",
+			groupName:     "editors-projectID",
+			expectedVerbs: []string{},
+			resourceKind:  "User",
+		},
 	}
 
 	for _, test := range tests {
@@ -125,6 +137,24 @@ func TestGenerateVerbsForResources(t *testing.T) {
 			groupName:     "viewers-projectID",
 			expectedVerbs: []string{},
 			resourceKind:  "UserProjectBinding",
+		},
+		{
+			name:          "scenario 8: only the owners can create ServiceAccounts (aka. User) resources",
+			groupName:     "owners-projectID",
+			expectedVerbs: []string{"create"},
+			resourceKind:  "User",
+		},
+		{
+			name:          "scenario 9: the editors cannot create ServiceAccounts (aka. User) resources",
+			groupName:     "editors-projectID",
+			expectedVerbs: []string{},
+			resourceKind:  "User",
+		},
+		{
+			name:          "scenario 10: the viewers cannot create ServiceAccounts (aka. User) resources",
+			groupName:     "viewers-projectID",
+			expectedVerbs: []string{},
+			resourceKind:  "User",
 		},
 	}
 
