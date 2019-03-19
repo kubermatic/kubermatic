@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	fakeInformerProvider "github.com/kubermatic/kubermatic/api/pkg/controller/rbac/fake"
+	fakeInformerProvider "github.com/kubermatic/kubermatic/api/pkg/controller/rbac/test/fake"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	k8scorev1 "k8s.io/api/core/v1"

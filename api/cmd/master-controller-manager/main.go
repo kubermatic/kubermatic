@@ -11,8 +11,9 @@ import (
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 
-	rbaccontroller "github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac/service-account"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac/user-project-binding"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/service-account"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -44,7 +45,7 @@ type controllerContext struct {
 	kubermaticMasterClient          kubermaticclientset.Interface
 	kubermaticMasterInformerFactory externalversions.SharedInformerFactory
 	kubeMasterInformerFactory       kuberinformers.SharedInformerFactory
-	allClusterProviders             []*rbaccontroller.ClusterProvider
+	allClusterProviders             []*rbac.ClusterProvider
 }
 
 func main() {
@@ -82,7 +83,7 @@ func main() {
 	ctrlCtx.kubermaticMasterInformerFactory = externalversions.NewFilteredSharedInformerFactory(ctrlCtx.kubermaticMasterClient, informer.DefaultInformerResyncPeriod, metav1.NamespaceAll, selector)
 	ctrlCtx.kubeMasterInformerFactory = kuberinformers.NewSharedInformerFactory(ctrlCtx.kubeMasterClient, informer.DefaultInformerResyncPeriod)
 
-	ctrlCtx.allClusterProviders = []*rbaccontroller.ClusterProvider{}
+	ctrlCtx.allClusterProviders = []*rbac.ClusterProvider{}
 	{
 		clientcmdConfig, err := clientcmd.LoadFromFile(ctrlCtx.runOptions.kubeconfig)
 		if err != nil {
@@ -104,10 +105,10 @@ func main() {
 			var clusterPrefix string
 			if ctxName == clientcmdConfig.CurrentContext {
 				glog.V(2).Infof("Adding %s as master cluster", ctxName)
-				clusterPrefix = rbaccontroller.MasterProviderPrefix
+				clusterPrefix = rbac.MasterProviderPrefix
 			} else {
 				glog.V(2).Infof("Adding %s as seed cluster", ctxName)
-				clusterPrefix = rbaccontroller.SeedProviderPrefix
+				clusterPrefix = rbac.SeedProviderPrefix
 			}
 			kubeClient, err := kubernetes.NewForConfig(cfg)
 			if err != nil {
@@ -116,21 +117,21 @@ func main() {
 
 			kubermaticClient := kubermaticclientset.NewForConfigOrDie(cfg)
 			kubermaticInformerFactory := externalversions.NewFilteredSharedInformerFactory(kubermaticClient, time.Minute*5, metav1.NamespaceAll, selector)
-			kubeInformerProvider := rbaccontroller.NewInformerProvider(kubeClient, time.Minute*5)
-			ctrlCtx.allClusterProviders = append(ctrlCtx.allClusterProviders, rbaccontroller.NewClusterProvider(fmt.Sprintf("%s/%s", clusterPrefix, ctxName), kubeClient, kubeInformerProvider, kubermaticClient, kubermaticInformerFactory))
+			kubeInformerProvider := rbac.NewInformerProvider(kubeClient, time.Minute*5)
+			ctrlCtx.allClusterProviders = append(ctrlCtx.allClusterProviders, rbac.NewClusterProvider(fmt.Sprintf("%s/%s", clusterPrefix, ctxName), kubeClient, kubeInformerProvider, kubermaticClient, kubermaticInformerFactory))
 
 			// special case the current context/master is also a seed cluster
 			// we keep cluster resources also on master
 			if ctxName == clientcmdConfig.CurrentContext {
 				glog.V(2).Infof("Special case adding %s (current context) also as seed cluster", ctxName)
-				clusterPrefix = rbaccontroller.SeedProviderPrefix
-				ctrlCtx.allClusterProviders = append(ctrlCtx.allClusterProviders, rbaccontroller.NewClusterProvider(fmt.Sprintf("%s/%s", clusterPrefix, ctxName), kubeClient, kubeInformerProvider, kubermaticClient, kubermaticInformerFactory))
+				clusterPrefix = rbac.SeedProviderPrefix
+				ctrlCtx.allClusterProviders = append(ctrlCtx.allClusterProviders, rbac.NewClusterProvider(fmt.Sprintf("%s/%s", clusterPrefix, ctxName), kubeClient, kubeInformerProvider, kubermaticClient, kubermaticInformerFactory))
 			}
 		}
 	}
 
-	ctrl, err := rbaccontroller.New(
-		rbaccontroller.NewMetrics(),
+	ctrl, err := rbac.New(
+		rbac.NewMetrics(),
 		ctrlCtx.allClusterProviders)
 	if err != nil {
 		glog.Fatal(err)
@@ -162,7 +163,7 @@ func main() {
 		})
 	}
 
-	// This group is running the actual controller logic
+	// This group is running the actual rbac logic
 	{
 		g.Add(func() error {
 			// controller will return iff ctrlCtx is stopped
@@ -190,7 +191,7 @@ func main() {
 				return err
 			}
 
-			if err := rbaccontroller.Add(mgr); err != nil {
+			if err := userprojectbinding.Add(mgr); err != nil {
 				return err
 			}
 			if err := serviceaccount.Add(mgr); err != nil {
