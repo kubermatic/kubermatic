@@ -1,144 +1,4 @@
-package resources
-
-import (
-	"bytes"
-	"context"
-	"fmt"
-	"text/template"
-
-	"github.com/Masterminds/sprig"
-
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
-
-	corev1 "k8s.io/api/core/v1"
-)
-
-const (
-	openshiftAPIServerConfigMapName        = "openshift-config-apiserver"
-	openshiftControllerMangerConfigMapName = "openshift-config-controller-manager"
-	openshiftContolPlaneConfigKeyName      = "master-config.yaml"
-)
-
-func OpenshiftAPIServerConfigMapCreator(ctx context.Context, data openshiftData) resources.NamedConfigMapCreatorGetter {
-	return func() (string, resources.ConfigMapCreator) {
-		return openshiftAPIServerConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-			if cm.Data == nil {
-				cm.Data = map[string]string{}
-			}
-			masterConfig, err := getMasterConfig(ctx, data, "apiserver")
-			if err != nil {
-				return nil, fmt.Errorf("failed to get master config :%v", err)
-			}
-			cm.Labels = resources.BaseAppLabel(openshiftAPIServerConfigMapName, nil)
-			cm.Data[openshiftContolPlaneConfigKeyName] = masterConfig
-			cm.Data["policy.json"] = policyJSON
-			cm.Data["scheduler.json"] = schedulerJSON
-
-			return cm, nil
-		}
-	}
-}
-
-func OpenshiftControllerMangerConfigMapCreator(ctx context.Context, data openshiftData) resources.NamedConfigMapCreatorGetter {
-	return func() (string, resources.ConfigMapCreator) {
-		return openshiftControllerMangerConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-			if cm.Data == nil {
-				cm.Data = map[string]string{}
-			}
-			masterConfig, err := getMasterConfig(ctx, data, "controller-manager")
-			if err != nil {
-				return nil, fmt.Errorf("failed to get master config :%v", err)
-			}
-			cm.Labels = resources.BaseAppLabel(openshiftControllerMangerConfigMapName, nil)
-			cm.Data[openshiftContolPlaneConfigKeyName] = masterConfig
-			cm.Data["policy.json"] = policyJSON
-			cm.Data["scheduler.json"] = schedulerJSON
-			cm.Data["recycler_pod.yaml"] = recyclerPod
-
-			return cm, nil
-		}
-	}
-}
-
-type openshiftConfigInput struct {
-	ETCDEndpoints     []string
-	ServiceCIDR       string
-	ClusterCIDR       string
-	ClusterURL        string
-	DNSDomain         string
-	ListenPort        string
-	ControlPlaneType  string
-	MasterIP          string
-	CloudProviderName string
-}
-
-type masterConfigData interface {
-	Cluster() *kubermaticv1.Cluster
-	GetApiserverExternalNodePort(context.Context) (int32, error)
-}
-
-func getMasterConfig(ctx context.Context, data masterConfigData, controlPlaneType string) (string, error) {
-	controlPlaneConfigBuffer := bytes.Buffer{}
-	tmpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(openshiftControlPlaneConfigTemplate)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse openshiftControlPlaneConfigTemplate: %v", err)
-	}
-	apiserverListenPort, err := data.GetApiserverExternalNodePort(ctx)
-	if err != nil {
-		return "", fmt.Errorf("failed to get nodePort for apiserver: %v", err)
-	}
-	templateInput := openshiftConfigInput{
-		ETCDEndpoints:     etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName),
-		ServiceCIDR:       data.Cluster().Spec.ClusterNetwork.Services.CIDRBlocks[0],
-		ClusterCIDR:       data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0],
-		ClusterURL:        data.Cluster().Address.URL,
-		DNSDomain:         data.Cluster().Spec.ClusterNetwork.DNSDomain,
-		ListenPort:        fmt.Sprintf("%d", apiserverListenPort),
-		ControlPlaneType:  controlPlaneType,
-		MasterIP:          data.Cluster().Address.IP,
-		CloudProviderName: apiserver.GetKubernetesCloudProviderName(data.Cluster()),
-	}
-	if err := tmpl.Execute(&controlPlaneConfigBuffer, templateInput); err != nil {
-		return "", fmt.Errorf("failed to execute template: %v", err)
-	}
-	return controlPlaneConfigBuffer.String(), nil
-}
-
-const schedulerJSON = `
-{"apiVersion":"v1","kind":"Policy","predicates":[{"name":"NoVolumeZoneConflict"},{"name":"MaxEBSVolumeCount"},{"name":"MaxGCEPDVolumeCount"},{"name":"MaxAzureDiskVolumeCount"},{"name":"MatchInterPodAffinity"},{"name":"NoDiskConflict"},{"name":"GeneralPredicates"},{"name":"PodToleratesNodeTaints"},{"name":"CheckNodeMemoryPressure"},{"name":"CheckNodeDiskPressure"},{"name":"CheckVolumeBinding"},{"argument":{"serviceAffinity":{"labels":["region"]}},"name":"Region"}],"priorities":[{"name":"SelectorSpreadPriority","weight":1},{"name":"InterPodAffinityPriority","weight":1},{"name":"LeastRequestedPriority","weight":1},{"name":"BalancedResourceAllocation","weight":1},{"name":"NodePreferAvoidPodsPriority","weight":10000},{"name":"NodeAffinityPriority","weight":1},{"name":"TaintTolerationPriority","weight":1},{"argument":{"serviceAntiAffinity":{"label":"zone"}},"name":"Zone","weight":2}]}`
-
-const recyclerPod = `
-apiVersion: v1
-kind: Pod
-metadata:
-  name: recyler-pod-
-  namespace: openshift-infra
-spec:
-  activeDeadlineSeconds: 60
-  containers:
-  - args:
-    - /scrub
-    command:
-    - /usr/bin/openshift-recycle
-    image: docker.io/openshift/origin-recycler:v3.11
-    name: recyler-container
-    securityContext:
-      runAsUser: 0
-    volumeMounts:
-    - mountPath: /scrub
-      name: vol
-  restartPolicy: Never
-  serviceAccountName: pv-recycler-controller
-  volumes:
-  - name: vol
-`
-
-//TODO: Replace template with actual types in
-// https://github.com/openshift/origin/pkg/cmd/server/apis/config/v1/types.go
-const openshiftControlPlaneConfigTemplate = `admissionConfig:
+admissionConfig:
   pluginConfig:
     BuildDefaults:
       configuration:
@@ -166,16 +26,13 @@ const openshiftControlPlaneConfigTemplate = `admissionConfig:
           reject: true
           skipOnResolutionFailure: true
         kind: ImagePolicyConfig
-{{- if eq .ControlPlaneType "apiserver" }}
 aggregatorConfig:
   proxyClientInfo:
     certFile: /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.crt
     keyFile: /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.key
-{{- end }}
 apiLevels:
 - v1
 apiVersion: v1
-{{- if eq .ControlPlaneType "apiserver" }}
 authConfig:
   requestHeader:
     clientCA: /etc/kubernetes/pki/front-proxy/client/ca.crt
@@ -187,7 +44,6 @@ authConfig:
     - X-Remote-Group
     usernameHeaders:
     - X-Remote-User
-{{- end }}
 controllerConfig:
   election:
     lockName: openshift-master-controllers
@@ -217,15 +73,14 @@ dnsConfig:
   bindAddress: 0.0.0.0:8053
   bindNetwork: tcp4
 etcdClientInfo:
-{{- if eq .ControlPlaneType "apiserver" }}
   ca: /etc/etcd/pki/client/ca.crt
   certFile: /etc/etcd/pki/client/apiserver-etcd-client.crt
   keyFile: /etc/etcd/pki/client/apiserver-etcd-client.key
-{{- end }}
   # Mandatory field, controller manager fails startup if unset
-  urls: {{ range .ETCDEndpoints }}
-  - "{{ . }}"
-{{- end }}
+  urls: 
+  - "https://etcd-0.etcd.cluster-aws-1.svc.cluster.local.:2379"
+  - "https://etcd-1.etcd.cluster-aws-1.svc.cluster.local.:2379"
+  - "https://etcd-2.etcd.cluster-aws-1.svc.cluster.local.:2379"
 etcdStorageConfig:
   kubernetesStoragePrefix: kubernetes.io
   kubernetesStorageVersion: v1
@@ -238,15 +93,12 @@ imagePolicyConfig:
   internalRegistryHostname: docker-registry.default.svc:5000
 kind: MasterConfig
 kubeletClientInfo:
-{{- if eq .ControlPlaneType "apiserver" }}
   ca: /etc/kubernetes/pki/ca/ca.crt
   certFile: /etc/kubernetes/kubelet/kubelet-client.crt
   keyFile: /etc/kubernetes/kubelet/kubelet-client.key
-{{- end }}
   # Port is required for the controller manager to start up
   port: 10250
 kubernetesMasterConfig:
-{{- if eq .ControlPlaneType "apiserver" }}
   apiServerArguments:
     storage-backend:
     - etcd3
@@ -255,13 +107,10 @@ kubernetesMasterConfig:
     kubelet-preferred-address-types:
     - ExternalIP
     - InternalIP
-{{- if .CloudProviderName }}
     cloud-provider:
-      - "{{ .CloudProviderName }}"
+      - "aws"
     cloud-config:
       - "/etc/kubernetes/cloud/config"
-{{- end }}
-{{- end }}
   controllerArguments:
     cluster-signing-cert-file:
     - /etc/kubernetes/pki/ca/ca.crt
@@ -271,25 +120,21 @@ kubernetesMasterConfig:
     - /etc/origin/master/recycler_pod.yaml
     pv-recycler-pod-template-filepath-nfs:
     - /etc/origin/master/recycler_pod.yaml
-{{- if .CloudProviderName }}
     cloud-provider:
-      - "{{ .CloudProviderName }}"
+      - "aws"
     cloud-config:
       - "/etc/kubernetes/cloud/config"
-{{- end }}
   # For some reason this field results in an error: Encountered config error json: unknown field "masterCount" in object *config.MasterConfig, raw JSON:
   #masterCount: 1
-  masterIP: "{{ .MasterIP }}"
+  masterIP: "35.198.93.90"
   podEvictionTimeout: null
-{{- if eq .ControlPlaneType "apiserver" }}
   proxyClientInfo:
     certFile: /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.crt
     keyFile: /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.key
-{{- end }}
   schedulerArguments: null
   schedulerConfigFile: /etc/origin/master/scheduler.json
   servicesNodePortRange: ''
-  servicesSubnet: "{{ .ServiceCIDR }}"
+  servicesSubnet: "10.10.10.0/24"
 masterClients:
   externalKubernetesClientConnectionOverrides:
     acceptContentTypes: application/vnd.kubernetes.protobuf,application/json
@@ -303,20 +148,20 @@ masterClients:
     contentType: application/vnd.kubernetes.protobuf
     qps: 300
   openshiftLoopbackKubeConfig: /etc/origin/master/loopback-kubeconfig/kubeconfig
-masterPublicURL: "{{ .ClusterURL }}"
+masterPublicURL: "https://henrik-os1.europe-west3-c.dev.kubermatic.io:32593"
 networkConfig:
   clusterNetworks:
-  - cidr: "{{ .ClusterCIDR }}"
+  - cidr: "172.25.0.0/16"
     # The number of bits to allocate per node subnet, e.G. 8 == hosts get a /24
     hostSubnetLength: 8
   externalIPNetworkCIDRs:
   - 0.0.0.0/0
   networkPluginName: redhat/openshift-ovs-subnet
-  serviceNetworkCIDR: "{{ .ServiceCIDR }}"
+  serviceNetworkCIDR: "10.10.10.0/24"
 # TODO: Get this running with dex
 #oauthConfig:
 #  # TODO: Could be made nicer to be something listening on 443
-#  assetPublicURL: "{{ .ClusterURL }}/console"
+#  assetPublicURL: "https://henrik-os1.europe-west3-c.dev.kubermatic.io:32593/console"
 #  grantConfig:
 #    method: auto
 #  identityProviders:
@@ -328,8 +173,8 @@ networkConfig:
 #      apiVersion: v1
 #      kind: AllowAllPasswordIdentityProvider
 #  masterCA: /etc/kubernetes/pki/ca/ca.crt
-#  masterPublicURL: "{{ .ClusterURL }}"
-#  masterURL: "{{ .ClusterURL }}"
+#  masterPublicURL: "https://henrik-os1.europe-west3-c.dev.kubermatic.io:32593"
+#  masterURL: "https://henrik-os1.europe-west3-c.dev.kubermatic.io:32593"
 #  sessionConfig:
 #    sessionMaxAgeSeconds: 3600
 #    sessionName: ssn
@@ -351,7 +196,7 @@ projectConfig:
     mcsLabelsPerProject: 5
     uidAllocatorRange: 1000000000-1999999999/10000
 routingConfig:
-  subdomain: router.default.svc.{{ .DNSDomain }}
+  subdomain: router.default.svc.cluster.local
 serviceAccountConfig:
   limitSecretReferences: false
   managedNames:
@@ -363,7 +208,7 @@ serviceAccountConfig:
   publicKeyFiles:
   - /etc/kubernetes/service-account-key/sa.pub
 servingInfo:
-  bindAddress: 0.0.0.0:{{ .ListenPort }}
+  bindAddress: 0.0.0.0:32593
   bindNetwork: tcp4
   clientCA: /etc/kubernetes/pki/ca/ca.crt
   certFile: /etc/kubernetes/tls/apiserver-tls.crt
@@ -371,4 +216,4 @@ servingInfo:
   maxRequestsInFlight: 500
   requestTimeoutSeconds: 3600
 volumeConfig:
-  dynamicProvisioningEnabled: true`
+  dynamicProvisioningEnabled: true
