@@ -53,19 +53,23 @@ type Reconciler struct {
 	overwriteRegistry    string
 	nodeAccessNetwork    string
 	dockerPullConfigJSON []byte
+	workerName           string
 }
 
 func Add(mgr manager.Manager, numWorkers int, workerName string, dcs map[string]provider.DatacenterMeta, overwriteRegistry, nodeAccessNetwork string, dockerPullConfigJSON []byte) error {
 	clusterPredicates := workerlabel.Predicates(workerName)
 
 	dynamicClient := mgr.GetClient()
-	reconciler := &Reconciler{Client: dynamicClient,
+	reconciler := &Reconciler{
+		Client:               dynamicClient,
 		scheme:               mgr.GetScheme(),
 		recorder:             mgr.GetRecorder(ControllerName),
 		dcs:                  dcs,
 		overwriteRegistry:    overwriteRegistry,
 		nodeAccessNetwork:    nodeAccessNetwork,
-		dockerPullConfigJSON: dockerPullConfigJSON}
+		dockerPullConfigJSON: dockerPullConfigJSON,
+		workerName:           workerName,
+	}
 
 	c, err := controller.New(ControllerName, mgr,
 		controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
@@ -120,6 +124,19 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, err
 	}
 
+	if cluster.Spec.Pause {
+		glog.V(6).Infof("skipping paused cluster %s", cluster.Name)
+		return reconcile.Result{}, nil
+	}
+
+	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		return reconcile.Result{}, nil
+	}
+
+	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+		return reconcile.Result{}, nil
+	}
+
 	// Add a wrapping here so we can emit an event on error
 	result, err := r.reconcile(ctx, cluster)
 	if err != nil {
@@ -132,15 +149,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	if cluster.Spec.Pause {
-		glog.V(6).Infof("skipping paused cluster %s", cluster.Name)
-		return nil, nil
-	}
-
-	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		return nil, nil
-	}
-
 	glog.V(4).Infof("Reconciling cluster %s", cluster.Name)
 
 	// Ensure Namespace
