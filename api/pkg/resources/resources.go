@@ -33,7 +33,7 @@ import (
 )
 
 // KUBERMATICCOMMIT is a magic variable containing the git commit hash of the current (as in currently executing) kubermatic api. It gets feeded by Makefile as a ldflag.
-var KUBERMATICCOMMIT string
+var KUBERMATICCOMMIT string = "a5dfa30702c29187583fa7351f8f05d1ccd2bf24"
 
 // KUBERMATICGITTAG is a magic variable containing the output of `git describe` for the current (as in currently executing) kubermatic api. It gets fed by Makefile as an ldflag.
 var KUBERMATICGITTAG = "manual_build"

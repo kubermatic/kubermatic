@@ -8,7 +8,9 @@ import (
 
 	"github.com/Masterminds/sprig"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 
 	corev1 "k8s.io/api/core/v1"
@@ -62,17 +64,23 @@ func OpenshiftControllerMangerConfigMapCreator(ctx context.Context, data openshi
 }
 
 type openshiftConfigInput struct {
-	ETCDEndpoints    []string
-	ServiceCIDR      string
-	ClusterCIDR      string
-	ClusterURL       string
-	DNSDomain        string
-	ListenPort       string
-	ControlPlaneType string
-	MasterIP         string
+	ETCDEndpoints     []string
+	ServiceCIDR       string
+	ClusterCIDR       string
+	ClusterURL        string
+	DNSDomain         string
+	ListenPort        string
+	ControlPlaneType  string
+	MasterIP          string
+	CloudProviderName string
 }
 
-func getMasterConfig(ctx context.Context, data openshiftData, controlPlaneType string) (string, error) {
+type masterConfigData interface {
+	Cluster() *kubermaticv1.Cluster
+	GetApiserverExternalNodePort(context.Context) (int32, error)
+}
+
+func getMasterConfig(ctx context.Context, data masterConfigData, controlPlaneType string) (string, error) {
 	controlPlaneConfigBuffer := bytes.Buffer{}
 	tmpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(openshiftControlPlaneConfigTemplate)
 	if err != nil {
@@ -83,14 +91,15 @@ func getMasterConfig(ctx context.Context, data openshiftData, controlPlaneType s
 		return "", fmt.Errorf("failed to get nodePort for apiserver: %v", err)
 	}
 	templateInput := openshiftConfigInput{
-		ETCDEndpoints:    etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName),
-		ServiceCIDR:      data.Cluster().Spec.ClusterNetwork.Services.CIDRBlocks[0],
-		ClusterCIDR:      data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0],
-		ClusterURL:       data.Cluster().Address.URL,
-		DNSDomain:        data.Cluster().Spec.ClusterNetwork.DNSDomain,
-		ListenPort:       fmt.Sprintf("%d", apiserverListenPort),
-		ControlPlaneType: controlPlaneType,
-		MasterIP:         data.Cluster().Address.IP,
+		ETCDEndpoints:     etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName),
+		ServiceCIDR:       data.Cluster().Spec.ClusterNetwork.Services.CIDRBlocks[0],
+		ClusterCIDR:       data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0],
+		ClusterURL:        data.Cluster().Address.URL,
+		DNSDomain:         data.Cluster().Spec.ClusterNetwork.DNSDomain,
+		ListenPort:        fmt.Sprintf("%d", apiserverListenPort),
+		ControlPlaneType:  controlPlaneType,
+		MasterIP:          data.Cluster().Address.IP,
+		CloudProviderName: apiserver.GetKubernetesCloudProviderName(data.Cluster()),
 	}
 	if err := tmpl.Execute(&controlPlaneConfigBuffer, templateInput); err != nil {
 		return "", fmt.Errorf("failed to execute template: %v", err)
@@ -129,8 +138,7 @@ spec:
 
 //TODO: Replace template with actual types in
 // https://github.com/openshift/origin/pkg/cmd/server/apis/config/v1/types.go
-const openshiftControlPlaneConfigTemplate = `
-admissionConfig:
+const openshiftControlPlaneConfigTemplate = `admissionConfig:
   pluginConfig:
     BuildDefaults:
       configuration:
@@ -247,6 +255,12 @@ kubernetesMasterConfig:
     kubelet-preferred-address-types:
     - ExternalIP
     - InternalIP
+{{ if .CloudProviderName }}
+    cloud-provider:
+      - "{{ .CloudProviderName }}"
+    cloud-config:
+      - "/etc/kubernetes/cloud/config"
+{{ end }}
 {{ end }}
   controllerArguments:
     cluster-signing-cert-file:
@@ -257,6 +271,12 @@ kubernetesMasterConfig:
     - /etc/origin/master/recycler_pod.yaml
     pv-recycler-pod-template-filepath-nfs:
     - /etc/origin/master/recycler_pod.yaml
+{{ if .CloudProviderName }}
+    cloud-provider:
+      - "{{ .CloudProviderName }}"
+    cloud-config:
+      - "/etc/kubernetes/cloud/config"
+{{ end }}
   # For some reason this field results in an error: Encountered config error json: unknown field "masterCount" in object *config.MasterConfig, raw JSON:
   #masterCount: 1
   masterIP: "{{ .MasterIP }}"
@@ -351,5 +371,6 @@ servingInfo:
   maxRequestsInFlight: 500
   requestTimeoutSeconds: 3600
 volumeConfig:
-  dynamicProvisioningEnabled: true
-`
+  dynamicProvisioningEnabled: true`
+
+// Removing a trailing line
