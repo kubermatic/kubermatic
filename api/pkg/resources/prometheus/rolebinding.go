@@ -4,33 +4,28 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// RoleBinding returns the RoleBinding for the prometheus
-func RoleBinding(data resources.RoleBindingDataProvider, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-	var rb *rbacv1.RoleBinding
-	if existing != nil {
-		rb = existing
-	} else {
-		rb = &rbacv1.RoleBinding{}
+// RoleBindingCreator returns the func to create/update the RoleBinding for Prometheus
+func RoleBindingCreator(clusterNamespace string) resources.NamedRoleBindingCreatorGetter {
+	return func() (string, resources.RoleBindingCreator) {
+		return resources.PrometheusRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+			rb.Labels = resources.BaseAppLabel(name, nil)
+
+			rb.RoleRef = rbacv1.RoleRef{
+				Name:     resources.PrometheusRoleName,
+				Kind:     "Role",
+				APIGroup: rbacv1.GroupName,
+			}
+			rb.Subjects = []rbacv1.Subject{
+				{
+					Kind:      "ServiceAccount",
+					Name:      resources.PrometheusServiceAccountName,
+					Namespace: clusterNamespace,
+				},
+			}
+			return rb, nil
+		}
 	}
 
-	rb.Name = resources.PrometheusRoleBindingName
-	rb.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-	rb.Labels = resources.BaseAppLabel(name, nil)
-
-	rb.RoleRef = rbacv1.RoleRef{
-		Name:     resources.PrometheusRoleName,
-		Kind:     "Role",
-		APIGroup: rbacv1.GroupName,
-	}
-	rb.Subjects = []rbacv1.Subject{
-		{
-			Kind:      "ServiceAccount",
-			Name:      resources.PrometheusServiceAccountName,
-			Namespace: data.Cluster().Status.NamespaceName,
-		},
-	}
-	return rb, nil
 }

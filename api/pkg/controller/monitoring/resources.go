@@ -40,32 +40,20 @@ func (c *Controller) getClusterTemplateData(cluster *kubermaticv1.Cluster) (*res
 	), nil
 }
 
-func (c *Controller) ensureRoles(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := []resources.RoleCreatorDeprecated{
-		prometheus.Role,
+func (c *Controller) ensureRoles(cluster *kubermaticv1.Cluster) error {
+	getters := []resources.NamedRoleCreatorGetter{
+		prometheus.RoleCreator(),
 	}
 
-	for _, create := range creators {
-		if err := resources.EnsureRole(data, create, c.roleLister.Roles(cluster.Status.NamespaceName), c.kubeClient.RbacV1().Roles(cluster.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the Role exists: %v", err)
-		}
-	}
-
-	return nil
+	return resources.ReconcileRoles(getters, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.ClusterRefWrapper(cluster))
 }
 
-func (c *Controller) ensureRoleBindings(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := []resources.RoleBindingCreatorDeprecated{
-		prometheus.RoleBinding,
+func (c *Controller) ensureRoleBindings(cluster *kubermaticv1.Cluster) error {
+	getters := []resources.NamedRoleBindingCreatorGetter{
+		prometheus.RoleBindingCreator(cluster.Status.NamespaceName),
 	}
 
-	for _, create := range creators {
-		if err := resources.EnsureRoleBinding(data, create, c.roleBindingLister.RoleBindings(cluster.Status.NamespaceName), c.kubeClient.RbacV1().RoleBindings(cluster.Status.NamespaceName)); err != nil {
-			return fmt.Errorf("failed to ensure that the RoleBinding exists: %v", err)
-		}
-	}
-
-	return nil
+	return resources.ReconcileRoleBindings(getters, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.ClusterRefWrapper(cluster))
 }
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
