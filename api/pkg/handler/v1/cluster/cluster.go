@@ -71,8 +71,16 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 
 		// Create the initial node deployment in the background.
 		if req.Body.NodeDeployment != nil {
-			go createInitialNodeDeployment(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, dcs,
-				clusterProvider, userInfo, req.DC, initNodeDeploymentFailures)
+			go func() {
+				defer utilruntime.HandleCrash()
+				err := createInitialNodeDeployment(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, dcs, clusterProvider, userInfo)
+				if err != nil {
+					glog.V(5).Infof("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
+					initNodeDeploymentFailures.With(prometheus.Labels{"cluster": newCluster.Name, "seed_dc": req.DC}).Add(1)
+				} else {
+					glog.V(5).Infof("created initial node deployment for cluster %s", newCluster.Name)
+				}
+			}()
 		}
 
 		return convertInternalClusterToExternal(newCluster), nil
@@ -81,69 +89,51 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 
 func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticapiv1.Cluster,
 	project *kubermaticapiv1.Project, sshKeyProvider provider.SSHKeyProvider, dcs map[string]provider.DatacenterMeta,
-	clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, seedDC string, initNodeDeploymentFailures *prometheus.CounterVec) {
-	defer utilruntime.HandleCrash()
-
+	clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo) error {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	defer cancelCtx()
 
 	nd, err := machineresource.Validate(nodeDeployment, cluster.Spec.Version.Semver())
 	if err != nil {
-		glog.V(5).Infof("initial node deployment for cluster %s is not valid: %v", cluster.Name, err)
-		initNodeDeploymentFailures.With(prometheus.Labels{"cluster": cluster.Name, "seed_dc": seedDC}).Add(1)
-		return
+		return fmt.Errorf("node deployment is not valid: %v", err)
 	}
 
 	err = wait.Poll(5*time.Second, 5*time.Minute, initClusterCondition(ctx, cluster.Name, clusterProvider, userInfo))
 	if err != nil {
-		glog.V(5).Infof("couldn't create initial node deployment, timed out waiting for cluster to be ready")
-		initNodeDeploymentFailures.With(prometheus.Labels{"cluster": cluster.Name, "seed_dc": seedDC}).Add(1)
-		return
+		return fmt.Errorf("timed out waiting for cluster to be ready: %v", err)
 	}
 
 	cluster, err = clusterProvider.Get(userInfo, cluster.Name, &provider.ClusterGetOptions{CheckInitStatus: true})
 	if err != nil {
-		glog.V(5).Infof("failed to get cluster %s: %v", cluster.Name, err)
-		initNodeDeploymentFailures.With(prometheus.Labels{"cluster": cluster.Name, "seed_dc": seedDC}).Add(1)
-		return
+		return fmt.Errorf("failed to get cluster: %v", err)
 	}
 
 	keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: cluster.Name})
 	if err != nil {
-		glog.V(5).Infof("failed to list ssh keys for cluster %s: %v", cluster.Name, common.KubernetesErrorToHTTPError(err))
-		initNodeDeploymentFailures.With(prometheus.Labels{"cluster": cluster.Name, "seed_dc": seedDC}).Add(1)
-		return
+		return fmt.Errorf("failed to list cluster ssh keys: %v", common.KubernetesErrorToHTTPError(err))
 	}
 
 	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
 	if err != nil {
-		glog.V(5).Infof("failed to create client for cluster %s: %v", cluster.Name, common.KubernetesErrorToHTTPError(err))
-		initNodeDeploymentFailures.With(prometheus.Labels{"cluster": cluster.Name, "seed_dc": seedDC}).Add(1)
-		return
+		return fmt.Errorf("failed to create cluster client: %v", common.KubernetesErrorToHTTPError(err))
 	}
 
 	dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
 	if !found {
-		glog.V(5).Infof("failed to find datacenter for cluster %s: %v", cluster.Name, cluster.Spec.Cloud.DatacenterName)
-		initNodeDeploymentFailures.With(prometheus.Labels{"cluster": cluster.Name, "seed_dc": seedDC}).Add(1)
-		return
+		return fmt.Errorf("failed to find cluster datacenter: %v", cluster.Spec.Cloud.DatacenterName)
 	}
 
 	md, err := machineresource.Deployment(cluster, nd, dc, keys)
 	if err != nil {
-		glog.V(5).Infof("failed to create machine deployment from template: %v", err)
-		initNodeDeploymentFailures.With(prometheus.Labels{"cluster": cluster.Name, "seed_dc": seedDC}).Add(1)
-		return
+		return fmt.Errorf("failed to create machine deployment from template: %v", err)
 	}
 
 	err = client.Create(ctx, md)
 	if err != nil {
-		glog.V(5).Infof("failed to create initial node deployment for cluster %s: %v", cluster.Name, err)
-		initNodeDeploymentFailures.With(prometheus.Labels{"cluster": cluster.Name, "seed_dc": seedDC}).Add(1)
-		return
+		return fmt.Errorf("failed to save machine deployment: %v", err)
 	}
 
-	glog.V(5).Infof("created initial node deployment for cluster %s", cluster.Name)
+	return nil
 }
 
 func initClusterCondition(ctx context.Context, clusterName string, clusterProvider provider.ClusterProvider,
