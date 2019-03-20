@@ -98,7 +98,7 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 		return fmt.Errorf("node deployment is not valid: %v", err)
 	}
 
-	err = wait.Poll(5*time.Second, 5*time.Minute, initClusterCondition(ctx, cluster.Name, clusterProvider, userInfo))
+	err = wait.Poll(5*time.Second, 30*time.Minute, initClusterCondition(ctx, cluster.Name, clusterProvider, userInfo))
 	if err != nil {
 		return fmt.Errorf("timed out waiting for cluster to be ready: %v", err)
 	}
