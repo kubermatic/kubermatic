@@ -42,7 +42,8 @@ if [[ "${1}" = "master" ]]; then
     deploy "cert-manager" "cert-manager" ./config/cert-manager/
     deploy "certs" "default" ./config/certs/
     deploy "oauth" "oauth" ./config/oauth/
-    deploy "iap" "iap" ./config/iap/
+    # We might have not configured IAP which results in nothing being deployed. This triggers https://github.com/helm/helm/issues/4295 and marks this as failed
+    deploy "iap" "iap" ./config/iap/ || true
 fi
 
 deploy "minio" "minio" ./config/minio/
