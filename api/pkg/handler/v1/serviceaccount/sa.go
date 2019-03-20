@@ -3,6 +3,7 @@ package serviceaccount
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -13,8 +14,17 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	label "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
+
+	"k8s.io/apimachinery/pkg/api/errors"
 )
+
+// serviceAccountGroupsPrefixes holds a list of groups with prefixes that we will generate RBAC Roles/Binding for service account.
+var serviceAccountGroupsPrefixes = []string{
+	rbac.EditorGroupNamePrefix,
+	rbac.ViewerGroupNamePrefix,
+}
 
 // AddEndpoint adds the given service account to the given project
 func AddEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider) endpoint.Endpoint {
@@ -31,9 +41,22 @@ func AddEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		sa, err := serviceAccountProvider.CreateServiceAccount(userInfo, project, saFromRequest.Name, saFromRequest.Group)
+		// check if service account name is already reserved in the project
+		existingSA, err := serviceAccountProvider.GetServiceAccountByNameForProject(userInfo, saFromRequest.Name, project.Name)
 		if err != nil {
-			return nil, err
+			if !errors.IsNotFound(err) {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+		}
+
+		if existingSA != nil {
+			return nil, common.KubernetesErrorToHTTPError(fmt.Errorf("the given name: '%s' for service account already exists", saFromRequest.Name))
+		}
+
+		groupName := rbac.GenerateActualGroupNameFor(project.Name, saFromRequest.Group)
+		sa, err := serviceAccountProvider.CreateServiceAccount(userInfo, project, saFromRequest.Name, groupName)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		return convertInternalServiceAccountToExternal(sa), nil
@@ -55,7 +78,7 @@ func (r AddReq) Validate() error {
 	}
 
 	isRequestedGroupPrefixValid := false
-	for _, existingGroupPrefix := range rbac.ServiceAccountGroupsPrefixes {
+	for _, existingGroupPrefix := range serviceAccountGroupsPrefixes {
 		if existingGroupPrefix == r.Body.Group {
 			isRequestedGroupPrefixValid = true
 			break
@@ -93,6 +116,6 @@ func convertInternalServiceAccountToExternal(internal *kubermaticapiv1.User) *ap
 			Name:              internal.Spec.Name,
 			CreationTimestamp: apiv1.NewTime(internal.CreationTimestamp.Time),
 		},
-		Group: internal.Labels["group"],
+		Group: internal.Labels[label.ServiceAccountLabelGroup],
 	}
 }

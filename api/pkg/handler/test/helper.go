@@ -118,7 +118,7 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 
 	sshKeyProvider := kubernetes.NewSSHKeyProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
 	userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister())
-	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeImpersonationClient)
+	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister(), "localhost")
 	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister())
 	projectProvider, err := kubernetes.NewProjectProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Projects().Lister())
 	if err != nil {
@@ -300,7 +300,7 @@ func GenUser(id, name, email string) *kubermaticapiv1.User {
 // GenServiceAccount generates a Service Account resource
 func GenServiceAccount(id, name, group, projectName string) *kubermaticapiv1.User {
 	user := GenUser(id, name, fmt.Sprintf("serviceaccount-%s@sa.kubermatic.io", id))
-	user.Labels = map[string]string{"group": group}
+	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: fmt.Sprintf("%s-%s", group, projectName)}
 	user.OwnerReferences = []metav1.OwnerReference{
 		{
 			APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),

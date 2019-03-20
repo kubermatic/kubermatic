@@ -2,7 +2,12 @@ package kubernetes
 
 import (
 	"fmt"
+	"strings"
 
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
@@ -11,10 +16,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
+const ServiceAccountLabelGroup = "initialGroup"
+
 // NewServiceAccountProvider returns a service account provider
-func NewServiceAccountProvider(createMasterImpersonatedClient kubermaticImpersonationClient) *ServiceAccountProvider {
+func NewServiceAccountProvider(createMasterImpersonatedClient kubermaticImpersonationClient, serviceAccountLister kubermaticv1lister.UserLister, domain string) *ServiceAccountProvider {
 	return &ServiceAccountProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
+		serviceAccountLister:           serviceAccountLister,
+		domain:                         domain,
 	}
 }
 
@@ -22,6 +31,10 @@ func NewServiceAccountProvider(createMasterImpersonatedClient kubermaticImperson
 type ServiceAccountProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
 	createMasterImpersonatedClient kubermaticImpersonationClient
+
+	serviceAccountLister kubermaticv1lister.UserLister
+
+	domain string
 }
 
 // CreateServiceAccount creates a new service account
@@ -38,7 +51,7 @@ func (p *ServiceAccountProvider) CreateServiceAccount(userInfo *provider.UserInf
 
 	user := kubermaticv1.User{}
 	user.Name = uniqueName
-	user.Spec.Email = fmt.Sprintf("%s@kubermatic.io", uniqueName)
+	user.Spec.Email = fmt.Sprintf("%s@%s", uniqueName, p.domain)
 	user.Spec.Name = name
 	user.Spec.ID = uniqueID
 	user.OwnerReferences = []metav1.OwnerReference{
@@ -49,7 +62,7 @@ func (p *ServiceAccountProvider) CreateServiceAccount(userInfo *provider.UserInf
 			Name:       project.Name,
 		},
 	}
-	user.Labels = map[string]string{"group": group}
+	user.Labels = map[string]string{ServiceAccountLabelGroup: group}
 	user.Spec.Projects = []kubermaticv1.ProjectGroup{}
 
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
@@ -58,4 +71,31 @@ func (p *ServiceAccountProvider) CreateServiceAccount(userInfo *provider.UserInf
 	}
 
 	return masterImpersonatedClient.Users().Create(&user)
+}
+
+func (p *ServiceAccountProvider) GetServiceAccountByNameForProject(userInfo *provider.UserInfo, serviceAccountName, projectName string) (*kubermaticv1.User, error) {
+	if userInfo == nil {
+		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
+	}
+	if len(serviceAccountName) == 0 || len(projectName) == 0 {
+		return nil, kerrors.NewBadRequest("service account name and project name cannot be empty")
+	}
+
+	serviceAccounts, err := p.serviceAccountLister.List(labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	for _, sa := range serviceAccounts {
+		if strings.HasPrefix(sa.Name, "serviceaccount") && sa.Spec.Name == serviceAccountName {
+			for _, owner := range sa.GetOwnerReferences() {
+				if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName &&
+					owner.Name == projectName {
+					return sa, nil
+				}
+			}
+		}
+	}
+
+	return nil, kerrors.NewNotFound(schema.GroupResource{Resource: "ServiceAccount"}, serviceAccountName)
 }

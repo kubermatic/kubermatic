@@ -35,12 +35,6 @@ var AllGroupsPrefixes = []string{
 	ViewerGroupNamePrefix,
 }
 
-// ServiceAccountGroupsPrefixes holds a list of groups with prefixes that we will generate RBAC Roles/Binding for service account.
-var ServiceAccountGroupsPrefixes = []string{
-	EditorGroupNamePrefix,
-	ViewerGroupNamePrefix,
-}
-
 // GenerateActualGroupNameFor generates a group name for the given project and group prefix.
 func GenerateActualGroupNameFor(projectName, groupName string) string {
 	return fmt.Sprintf("%s-%s", groupName, projectName)

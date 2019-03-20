@@ -12,6 +12,7 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -48,7 +49,7 @@ func TestCreateServiceAccountProject(t *testing.T) {
 			existingAPIUser: *test.GenAPIUser("john", "john@acme.com"),
 			projectToSync:   "plan9-ID",
 			expectedSAName:  "test",
-			expectedGroup:   "editors",
+			expectedGroup:   "editors-plan9-ID",
 		},
 		{
 			name:       "scenario 2: check forbidden owner group",
@@ -81,6 +82,23 @@ func TestCreateServiceAccountProject(t *testing.T) {
 			existingAPIUser:  *test.GenAPIUser("john", "john@acme.com"),
 			projectToSync:    "my-first-project-ID",
 			expectedResponse: `{"error":{"code":400,"message":"the name, project ID and group cannot be empty"}}`,
+		},
+		{
+			name:       "scenario 4: check when given name is already reserved",
+			body:       `{"name":"test", "group":"editors"}`,
+			httpStatus: http.StatusInternalServerError,
+			existingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				test.GenServiceAccount("", "test", "editors", "my-first-project-ID"),
+			},
+			existingAPIUser:  *test.GenAPIUser("john", "john@acme.com"),
+			projectToSync:    "my-first-project-ID",
+			expectedResponse: `{"error":{"code":500,"message":"the given name: 'test' for service account already exists"}}`,
 		},
 	}
 

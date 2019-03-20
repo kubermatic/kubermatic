@@ -325,4 +325,5 @@ func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 // ServiceAccountProvider declares the set of methods for interacting with kubermatic service account
 type ServiceAccountProvider interface {
 	CreateServiceAccount(userInfo *UserInfo, project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error)
+	GetServiceAccountByNameForProject(userInfo *UserInfo, serviceAccountName, projectName string) (*kubermaticv1.User, error)
 }
