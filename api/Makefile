@@ -77,8 +77,8 @@ run-controller-manager:
 run-api-server:
 	./hack/run-api.sh
 
-run-rbac-generator:
-	./hack/run-rbac-generator.sh
+run-master-controller-manager:
+	./hack/run-master-controller-manager.sh
 
 verify: gofmt
 		./hack/verify-codegen.sh

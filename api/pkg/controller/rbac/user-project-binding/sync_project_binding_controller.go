@@ -1,10 +1,11 @@
-package rbac
+package userprojectbinding
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -55,7 +56,7 @@ func (r *reconcileSyncProjectBinding) Reconcile(request reconcile.Request) (reco
 	if projectBinding.DeletionTimestamp != nil {
 		return reconcile.Result{}, r.removeFinalizerFromBinding(projectBinding)
 	}
-	if ExtractGroupPrefix(projectBinding.Spec.Group) == OwnerGroupNamePrefix {
+	if rbac.ExtractGroupPrefix(projectBinding.Spec.Group) == rbac.OwnerGroupNamePrefix {
 		return reconcile.Result{}, r.ensureProjectOwnerForBinding(projectBinding)
 	}
 	return reconcile.Result{}, r.ensureNotProjectOwnerForBinding(projectBinding)
@@ -135,9 +136,9 @@ func (r *reconcileSyncProjectBinding) ensureNotProjectOwnerForBinding(projectBin
 }
 
 func (r *reconcileSyncProjectBinding) removeFinalizerFromBinding(projectBinding *kubermaticv1.UserProjectBinding) error {
-	if sets.NewString(projectBinding.Finalizers...).Has(CleanupFinalizerName) {
+	if sets.NewString(projectBinding.Finalizers...).Has(rbac.CleanupFinalizerName) {
 		finalizers := sets.NewString(projectBinding.Finalizers...)
-		finalizers.Delete(CleanupFinalizerName)
+		finalizers.Delete(rbac.CleanupFinalizerName)
 		projectBinding.Finalizers = finalizers.List()
 		return r.Update(r.ctx, projectBinding)
 

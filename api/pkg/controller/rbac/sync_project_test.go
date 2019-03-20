@@ -6,7 +6,8 @@ import (
 	"testing"
 	"time"
 
-	fakeInformerProvider "github.com/kubermatic/kubermatic/api/pkg/controller/rbac/fake"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac/test"
+	fakeInformerProvider "github.com/kubermatic/kubermatic/api/pkg/controller/rbac/test/fake"
 	kubermaticfakeclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -33,9 +34,9 @@ func TestEnsureProjectIsInActivePhase(t *testing.T) {
 	}{
 		{
 			name:          "scenario 1: a project's phase is set to Active",
-			projectToSync: createProject("thunderball", createUser("James Bond")),
+			projectToSync: test.CreateProject("thunderball", test.CreateUser("James Bond")),
 			expectedProject: func() *kubermaticv1.Project {
-				project := createProject("thunderball", createUser("James Bond"))
+				project := test.CreateProject("thunderball", test.CreateUser("James Bond"))
 				project.Status.Phase = "Active"
 				return project
 			}(),
@@ -94,9 +95,9 @@ func TestEnsureProjectInitialized(t *testing.T) {
 	}{
 		{
 			name:          "scenario 1: cleanup finializer is added to a project",
-			projectToSync: createProject("thunderball", createUser("James Bond")),
+			projectToSync: test.CreateProject("thunderball", test.CreateUser("James Bond")),
 			expectedProject: func() *kubermaticv1.Project {
-				project := createProject("thunderball", createUser("James Bond"))
+				project := test.CreateProject("thunderball", test.CreateUser("James Bond"))
 				project.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
 				return project
 			}(),
@@ -599,7 +600,7 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 		// scenario 1
 		{
 			name:          "scenario 1: when a project is removed all cluster resources from all clusters (physical location) are also removed",
-			projectToSync: createProject("plan9", createUser("bob")),
+			projectToSync: test.CreateProject("plan9", test.CreateUser("bob")),
 			existingClustersOn: map[string][]*kubermaticv1.Cluster{
 
 				// cluster resources that are on "a" physical location
@@ -832,7 +833,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 		{
 
 			name:          "Scenario 1: When a project is removed corresponding Subject from the Cluster RBAC Binding are removed",
-			projectToSync: createProject("plan9", createUser("James Bond")),
+			projectToSync: test.CreateProject("plan9", test.CreateUser("James Bond")),
 			projectResourcesToSync: []projectResource{
 				{
 					gvr: schema.GroupVersionResource{
@@ -1129,7 +1130,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 		// scenario 1
 		{
 			name:            "scenario 1: desired RBAC Role Bindings for a project resource are created",
-			projectToSync:   createProject("thunderball", createUser("James Bond")),
+			projectToSync:   test.CreateProject("thunderball", test.CreateUser("James Bond")),
 			expectedActions: []string{"create", "create", "create"},
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
 				{
@@ -1213,7 +1214,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 		// scenario 2
 		{
 			name:          "scenario 2: no op when desicred RBAC Role Bindings exist",
-			projectToSync: createProject("thunderball", createUser("James Bond")),
+			projectToSync: test.CreateProject("thunderball", test.CreateUser("James Bond")),
 			existingClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
 				{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1296,7 +1297,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 		// scenario 3
 		{
 			name:            "scenario 3: update when existing binding doesn't match desired ones",
-			projectToSync:   createProject("thunderball", createUser("James Bond")),
+			projectToSync:   test.CreateProject("thunderball", test.CreateUser("James Bond")),
 			expectedActions: []string{"update", "update", "update"},
 			existingClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
 				{
@@ -1743,7 +1744,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 		// scenario 1
 		{
 			name:            "scenario 1: desired RBAC Roles for a project resource are created",
-			projectToSync:   createProject("thunderball", createUser("James Bond")),
+			projectToSync:   test.CreateProject("thunderball", test.CreateUser("James Bond")),
 			expectedActions: []string{"create", "create", "create"},
 			expectedClusterRoles: []*rbacv1.ClusterRole{
 				{
@@ -1816,7 +1817,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 		// scenario 2
 		{
 			name:          "scenario 2: no op when desicred RBAC Roles exist",
-			projectToSync: createProject("thunderball", createUser("James Bond")),
+			projectToSync: test.CreateProject("thunderball", test.CreateUser("James Bond")),
 			existingClusterRoles: []*rbacv1.ClusterRole{
 				{
 					ObjectMeta: metav1.ObjectMeta{
@@ -1888,7 +1889,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 		// scenario 3
 		{
 			name:            "scenario 3: update when desired are not the same as expected RBAC Roles",
-			projectToSync:   createProject("thunderball", createUser("James Bond")),
+			projectToSync:   test.CreateProject("thunderball", test.CreateUser("James Bond")),
 			expectedActions: []string{"update", "update"},
 			existingClusterRoles: []*rbacv1.ClusterRole{
 				{
@@ -2044,19 +2045,19 @@ func TestEnsureProjectOwner(t *testing.T) {
 	}{
 		{
 			name:          "scenario 1: make sure, that the owner of the newly created project is set properly.",
-			projectToSync: createProject("thunderball", createUser("James Bond")),
-			existingUser:  createUser("James Bond"),
+			projectToSync: test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			existingUser:  test.CreateUser("James Bond"),
 			expectedBinding: func() *kubermaticv1.UserProjectBinding {
-				binding := createExpectedOwnerBinding("James Bond", createProject("thunderball", createUser("James Bond")))
+				binding := test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond")))
 				binding.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
 				return binding
 			}(),
 		},
 		{
 			name:            "scenario 2: no op when the owner of the project was set.",
-			projectToSync:   createProject("thunderball", createUser("James Bond")),
-			existingUser:    createUser("James Bond"),
-			existingBinding: createExpectedOwnerBinding("James Bond", createProject("thunderball", createUser("James Bond"))),
+			projectToSync:   test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			existingUser:    test.CreateUser("James Bond"),
+			existingBinding: test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond"))),
 		},
 	}
 	for _, test := range tests {
@@ -2744,7 +2745,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 		{
 
 			name:          "Scenario 1: When a project is removed corresponding Subject from the RBAC Binding are removed",
-			projectToSync: createProject("plan9", createUser("James Bond")),
+			projectToSync: test.CreateProject("plan9", test.CreateUser("James Bond")),
 			projectResourcesToSync: []projectResource{
 
 				{
@@ -2999,77 +3000,4 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 			}
 		})
 	}
-}
-
-func createProject(name string, owner *kubermaticv1.User) *kubermaticv1.Project {
-	return &kubermaticv1.Project{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       kubermaticv1.ProjectKindName,
-			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			UID:  types.UID(name) + "ID",
-			Name: name,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: owner.APIVersion,
-					Kind:       owner.Kind,
-					UID:        owner.GetUID(),
-					Name:       owner.Name,
-				},
-			},
-		},
-		Spec: kubermaticv1.ProjectSpec{
-			Name: name,
-		},
-		Status: kubermaticv1.ProjectStatus{
-			Phase: kubermaticv1.ProjectInactive,
-		},
-	}
-}
-
-func createUser(name string) *kubermaticv1.User {
-	return &kubermaticv1.User{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       kubermaticv1.UserKindName,
-			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			UID:  "",
-			Name: name,
-		},
-		Spec: kubermaticv1.UserSpec{
-			Email: fmt.Sprintf("%s@acme.com", name),
-		},
-	}
-}
-
-func createExpectedBindingFor(userName string, userGroup string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
-	user := createUser(userName)
-	return &kubermaticv1.UserProjectBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("binding-for-%s", userName),
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.ProjectKindName,
-					UID:        project.GetUID(),
-					Name:       project.Name,
-				},
-			},
-		},
-		Spec: kubermaticv1.UserProjectBindingSpec{
-			UserEmail: user.Spec.Email,
-			ProjectID: project.Name,
-			Group:     fmt.Sprintf("%s-%s", userGroup, project.Name),
-		},
-	}
-}
-
-func createExpectedOwnerBinding(userName string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
-	return createExpectedBindingFor(userName, "owners", project)
-}
-
-func createExpectedEditorBinding(userName string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
-	return createExpectedBindingFor(userName, "editors", project)
 }
