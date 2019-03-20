@@ -78,6 +78,7 @@ func main() {
 				ResourceName: "RoleBinding",
 				ImportAlias:  "rbacv1",
 				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
+				UseNamedObject: true,
 			},
 			{
 				ResourceName:       "CustomResourceDefinition",

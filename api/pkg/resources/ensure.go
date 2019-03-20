@@ -6,12 +6,9 @@ import (
 
 	"github.com/golang/glog"
 
-	rbacv1 "k8s.io/api/rbac/v1"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	rbacv1client "k8s.io/client-go/kubernetes/typed/rbac/v1"
-	rbacv1lister "k8s.io/client-go/listers/rbac/v1"
 	"k8s.io/client-go/tools/cache"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -19,80 +16,6 @@ import (
 )
 
 //go:generate go run ../../codegen/reconcile/main.go
-
-// EnsureRole will create the role with the passed create function & create or update it if necessary.
-// To check if it's necessary it will do a lookup of the resource at the lister & compare the existing Role with the created one
-func EnsureRole(data RoleDataProvider, create RoleCreatorDeprecated, lister rbacv1lister.RoleNamespaceLister, client rbacv1client.RoleInterface) error {
-	var existing *rbacv1.Role
-	role, err := create(data, nil)
-	if err != nil {
-		return fmt.Errorf("failed to build Role: %v", err)
-	}
-
-	if existing, err = lister.Get(role.Name); err != nil {
-		if !kubeerrors.IsNotFound(err) {
-			return err
-		}
-
-		if _, err = client.Create(role); err != nil {
-			return fmt.Errorf("failed to create Role %s: %v", role.Name, err)
-		}
-		return nil
-	}
-	existing = existing.DeepCopy()
-
-	role, err = create(data, existing.DeepCopy())
-	if err != nil {
-		return fmt.Errorf("failed to build Role: %v", err)
-	}
-
-	if DeepEqual(role, existing) {
-		return nil
-	}
-
-	if _, err = client.Update(role); err != nil {
-		return fmt.Errorf("failed to update Role %s: %v", role.Name, err)
-	}
-
-	return nil
-}
-
-// EnsureRoleBinding will create the RoleBinding with the passed create function & create or update it if necessary.
-// To check if it's necessary it will do a lookup of the resource at the lister & compare the existing RoleBinding with the created one
-func EnsureRoleBinding(data RoleBindingDataProvider, create RoleBindingCreatorDeprecated, lister rbacv1lister.RoleBindingNamespaceLister, client rbacv1client.RoleBindingInterface) error {
-	var existing *rbacv1.RoleBinding
-	rb, err := create(data, nil)
-	if err != nil {
-		return fmt.Errorf("failed to build RoleBinding: %v", err)
-	}
-
-	if existing, err = lister.Get(rb.Name); err != nil {
-		if !kubeerrors.IsNotFound(err) {
-			return err
-		}
-
-		if _, err = client.Create(rb); err != nil {
-			return fmt.Errorf("failed to create RoleBinding %s: %v", rb.Name, err)
-		}
-		return nil
-	}
-	existing = existing.DeepCopy()
-
-	rb, err = create(data, existing.DeepCopy())
-	if err != nil {
-		return fmt.Errorf("failed to build RoleBinding: %v", err)
-	}
-
-	if DeepEqual(rb, existing) {
-		return nil
-	}
-
-	if _, err = client.Update(rb); err != nil {
-		return fmt.Errorf("failed to update RoleBinding %s: %v", rb.Name, err)
-	}
-
-	return nil
-}
 
 func createWithNamespace(rawcreate ObjectCreator, namespace string) ObjectCreator {
 	return func(existing runtime.Object) (runtime.Object, error) {
