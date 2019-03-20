@@ -18,6 +18,7 @@ type serverRunOptions struct {
 	workerName      string
 	versionsFile    string
 	updatesFile     string
+	domain          string
 
 	// OIDC configuration
 	oidcURL                        string
@@ -56,6 +57,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.BoolVar(&s.oidcIssuerCookieSecureMode, "oidc-issuer-cookie-secure-mode", true, "When true cookie received only with HTTPS. Set false for local deployment with HTTP")
 	flag.BoolVar(&s.oidcIssuerOfflineAccessAsScope, "oidc-issuer-offline-access-as-scope", true, "Set it to false if OIDC provider requires to set \"access_type=offline\" query param when accessing the refresh token")
 	flag.StringVar(&rawFeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for various features.")
+	flag.StringVar(&s.domain, "domain", "localhost", "A domain name on which the server is deployed")
 	flag.Parse()
 
 	featureGates, err := features.NewFeatures(rawFeatureGates)
