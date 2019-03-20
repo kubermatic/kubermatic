@@ -4,12 +4,12 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-make -C $(dirname $0)/.. rbac-generator
+make -C $(dirname $0)/.. master-controller-manager
 
 KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
-./_build/rbac-generator \
+./_build/master-controller-manager \
   -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
   -internal-address=127.0.0.1:8086 \
   -worker-name="$(tr -cd '[:alnum:]' <<< $KUBERMATIC_WORKERNAME | tr '[:upper:]' '[:lower:]')" \

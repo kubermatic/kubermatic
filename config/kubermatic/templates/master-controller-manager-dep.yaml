@@ -2,18 +2,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: rbac-generator-v1
+  name: master-controller-v1
   labels:
-    app: rbac-generator
+    app: master-controller
 spec:
   replicas: {{.Values.kubermatic.rbac.replicas}}
   selector:
     matchLabels:
-      app: rbac-generator
+      app: master-controller
   template:
     metadata:
       labels:
-        app: rbac-generator
+        app: master-controller
       annotations:
         kubermatic/scrape: 'true'
         kubermatic/scrape_port: '8085'
@@ -38,9 +38,9 @@ spec:
             mountPath: "/opt/.kube/"
             readOnly: true
       containers:
-      - name: rbac-generator
+      - name: master-controller
         command:
-        - rbac-generator
+        - master-controller-manager
         args:
         - -internal-address=0.0.0.0:8085
         - -v=4
