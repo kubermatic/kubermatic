@@ -39,8 +39,6 @@ var KUBERMATICCOMMIT string
 var KUBERMATICGITTAG = "manual_build"
 
 const (
-	// KubermaticNamespaceName specifies the name of the kubermatic namespace
-	KubermaticNamespaceName = "kubermatic"
 	// ApiserverDeploymentName is the name of the apiserver deployment
 	ApiserverDeploymentName = "apiserver"
 	//ControllerManagerDeploymentName is the name for the controller manager deployment
@@ -62,8 +60,6 @@ const (
 	//DNSResolverServiceName is the name of the dns resolvers service
 	DNSResolverServiceName = "dns-resolver"
 	//DNSResolverVPAName is the name of the dns resolvers VerticalPodAutoscaler
-	DNSResolverVPAName = "dns-resolver"
-	//KubeStateMetricsDeploymentName is the name for the kube-state-metrics deployment
 	KubeStateMetricsDeploymentName = "kube-state-metrics"
 	// UserClusterControllerDeploymentName is the name of the usercluster-controller deployment
 	UserClusterControllerDeploymentName = "usercluster-controller"
@@ -213,8 +209,6 @@ const (
 	KubeStateMetricsClusterRoleBindingName = "system:kubermatic-kube-state-metrics"
 	//PrometheusClusterRoleBindingName is the name for the Prometheus ClusterRoleBinding
 	PrometheusClusterRoleBindingName = "system:external-prometheus"
-	//MetricsServerAuthDelegatorClusterRoleBindingName is the name for the metrics server ClusterRoleBinding used for token access review
-	MetricsServerAuthDelegatorClusterRoleBindingName = "metrics-server:system:auth-delegator"
 	//MetricsServerResourceReaderClusterRoleBindingName is the name for the metrics server ClusterRoleBinding
 	MetricsServerResourceReaderClusterRoleBindingName = "system:metrics-server"
 

@@ -321,12 +321,12 @@ func (c *Controller) sync(key string) error {
 	}
 
 	// check that all roles are created
-	if err := c.ensureRoles(cluster, data); err != nil {
+	if err := c.ensureRoles(cluster); err != nil {
 		return err
 	}
 
 	// check that all role bindings are created
-	if err := c.ensureRoleBindings(cluster, data); err != nil {
+	if err := c.ensureRoleBindings(cluster); err != nil {
 		return err
 	}
 
