@@ -255,20 +255,9 @@ func getApiserverFlags(data resources.DeploymentDataProvider, externalNodePort i
 		flags = append(flags, strings.Join(featureGates, ","))
 	}
 
-	if data.Cluster().Spec.Cloud.AWS != nil {
-		flags = append(flags, "--cloud-provider", "aws")
-		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-	}
-	if data.Cluster().Spec.Cloud.Openstack != nil {
-		flags = append(flags, "--cloud-provider", "openstack")
-		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-	}
-	if data.Cluster().Spec.Cloud.VSphere != nil {
-		flags = append(flags, "--cloud-provider", "vsphere")
-		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-	}
-	if data.Cluster().Spec.Cloud.Azure != nil {
-		flags = append(flags, "--cloud-provider", "azure")
+	cloudProviderName := GetKubernetesCloudProviderName(data.Cluster())
+	if cloudProviderName != "" {
+		flags = append(flags, "--cloud-provider", cloudProviderName)
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
 
@@ -282,6 +271,23 @@ func getApiserverFlags(data resources.DeploymentDataProvider, externalNodePort i
 	}
 
 	return flags, nil
+}
+
+func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster) string {
+	if cluster.Spec.Cloud.AWS != nil {
+		return "aws"
+	}
+	if cluster.Spec.Cloud.Openstack != nil {
+		return "openstack"
+	}
+	if cluster.Spec.Cloud.VSphere != nil {
+		return "vsphere"
+	}
+	if cluster.Spec.Cloud.Azure != nil {
+		return "azure"
+	}
+
+	return ""
 }
 
 func getVolumeMounts(enableDexCA bool) []corev1.VolumeMount {

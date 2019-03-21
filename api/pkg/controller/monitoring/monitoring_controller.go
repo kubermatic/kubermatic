@@ -305,6 +305,7 @@ func (c *Controller) sync(key string) error {
 	if clusterFromCache.Status.NamespaceName == "" {
 		glog.V(6).Infof("skipping cluster %s because it has no namespace yet", key)
 		c.enqueueAfter(clusterFromCache, healthCheckPeriod)
+		return nil
 	}
 
 	glog.V(4).Infof("syncing cluster %s", key)
