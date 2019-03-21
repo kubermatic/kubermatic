@@ -12,12 +12,12 @@ import (
 
 var metrics = common.ServerMetrics{
 	HTTPRequestsTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "kubermatic_api_http_requests_total",
+		Name: "http_requests_total",
 		Help: "Count of all HTTP requests",
 	}, []string{"code", "method"}),
 	HTTPRequestsDuration: prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name:    "kubermatic_api_http_request_duration_seconds",
+			Name:    "http_request_duration_seconds",
 			Help:    "A histogram of latencies for requests.",
 			Buckets: []float64{.005, .01, .025, .05, 0.1, 0.25, 0.5, 1, 1.25, 1.85, 2, 5},
 		},
@@ -25,7 +25,7 @@ var metrics = common.ServerMetrics{
 	),
 	InitNodeDeploymentFailures: prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "kubermatic_api_init_node_deployment_failures",
+			Name: "init_node_deployment_failures",
 			Help: "The number of times initial node deployment couldn't be created within the timeout",
 		},
 		[]string{"cluster", "seed_dc"},
