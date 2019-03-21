@@ -8,8 +8,12 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 )
 
-func CompareOutput(t *testing.T, name, output string, update bool) {
-	golden, err := filepath.Abs(filepath.Join("testdata", name+".golden"))
+func CompareOutput(t *testing.T, name, output string, update bool, suffix string) {
+	filename := name + ".golden"
+	if suffix != "" {
+		filename = filename + suffix
+	}
+	golden, err := filepath.Abs(filepath.Join("testdata", filename))
 	if err != nil {
 		t.Fatalf("failed to get absolute path to goldan file: %v", err)
 	}

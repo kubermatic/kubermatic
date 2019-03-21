@@ -52,7 +52,7 @@ func TestGetEtcdCommand(t *testing.T) {
 			}
 			cmd := args[2]
 
-			testhelper.CompareOutput(t, fmt.Sprintf("etcd-command-%s", test.name), cmd, *update)
+			testhelper.CompareOutput(t, fmt.Sprintf("etcd-command-%s", test.name), cmd, *update, ".sh")
 		})
 	}
 }

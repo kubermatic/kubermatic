@@ -27,8 +27,18 @@ func TokenOwnerServiceAccount(_ context.Context) (string, resources.ServiceAccou
 // admin powers
 func TokenOwnerServiceAccountClusterRoleBinding(_ context.Context) (string, resources.ClusterRoleBindingCreator) {
 	return tokenOwnerServiceAccountBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-		crb.Subjects = []rbacv1.Subject{{Kind: "ServiceAccount", Name: tokenOwnerServiceAccountName, Namespace: metav1.NamespaceSystem}}
-		crb.RoleRef = rbacv1.RoleRef{Name: "cluster-admin", Kind: "ClusterRole"}
+		crb.Subjects = []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      tokenOwnerServiceAccountName,
+				Namespace: metav1.NamespaceSystem,
+			},
+		}
+		crb.RoleRef = rbacv1.RoleRef{
+			Name:     "cluster-admin",
+			Kind:     "ClusterRole",
+			APIGroup: rbacv1.GroupName,
+		}
 		return crb, nil
 	}
 }

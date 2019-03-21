@@ -8,14 +8,13 @@ import (
 )
 
 const (
-	machineControllerRoleName        = "machine-controler"
-	machineControllerRoleBindingName = "machine-controllre"
+	machineControllerRoleName        = "machine-controller"
+	machineControllerRoleBindingName = "machine-controller"
 	openshiftInfraNamespaceName      = "openshift-infra"
 )
 
 func MachineControllerRole() (types.NamespacedName, resources.RoleCreator) {
-	return types.NamespacedName{Namespace: openshiftInfraNamespaceName,
-			Name: machineControllerRoleName},
+	return types.NamespacedName{Namespace: openshiftInfraNamespaceName, Name: machineControllerRoleName},
 		func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Rules = []rbacv1.PolicyRule{
 				{
@@ -32,18 +31,23 @@ func MachineControllerRole() (types.NamespacedName, resources.RoleCreator) {
 			}
 			return r, nil
 		}
-
 }
 
 func MachineControllerRoleBinding() (types.NamespacedName, resources.RoleBindingCreator) {
-	return types.NamespacedName{Namespace: openshiftInfraNamespaceName,
-			Name: machineControllerRoleBindingName}, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-
+	return types.NamespacedName{Namespace: openshiftInfraNamespaceName, Name: machineControllerRoleBindingName},
+		func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.RoleRef = rbacv1.RoleRef{
-				APIGroup: "rbac.authorization.k8s.io",
 				Kind:     "Role",
-				Name:     machineControllerRoleName}
-			rb.Subjects = []rbacv1.Subject{{Kind: "User", Name: resources.MachineControllerCertUsername}}
+				APIGroup: rbacv1.GroupName,
+				Name:     machineControllerRoleName,
+			}
+			rb.Subjects = []rbacv1.Subject{
+				{
+					Kind:     "User",
+					Name:     resources.MachineControllerCertUsername,
+					APIGroup: rbacv1.GroupName,
+				},
+			}
 			return rb, nil
 		}
 }
