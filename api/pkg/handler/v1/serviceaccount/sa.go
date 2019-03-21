@@ -63,6 +63,55 @@ func AddEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvide
 	}
 }
 
+func ListEndpoint(serviceAccountProvider provider.ServiceAccountProvider, projectProvider provider.ProjectProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		response := make([]*apiv1.ServiceAccount, 0)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		req, ok := request.(common.GetProjectRq)
+		if !ok {
+			return nil, k8cerrors.NewBadRequest("invalid request")
+		}
+
+		if len(req.ProjectID) == 0 {
+			return nil, k8cerrors.NewBadRequest("the name of the project cannot be empty")
+		}
+
+		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		bindings, err := memberProvider.List(userInfo, project, &provider.ProjectMemberListOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		groupMap := getGroupByEmailFromBindings(bindings)
+
+		saList, err := serviceAccountProvider.List(userInfo, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		var errorList []string
+		for _, sa := range saList {
+			internalSA := convertInternalServiceAccountToExternal(sa)
+			internalSA.Group, ok = groupMap[sa.Spec.Email]
+			//  ok means that the binding was created by master controller manager and SA can be displayed
+			if ok {
+				response = append(response, internalSA)
+			} else {
+				errorList = append(errorList, fmt.Sprintf("binding missing for %s", internalSA.Name))
+			}
+		}
+
+		if len(errorList) > 0 {
+			return response, k8cerrors.NewWithDetails(http.StatusInternalServerError, "failed to get some service accounts, please examine details field for more info", errorList)
+		}
+
+		return response, nil
+	}
+}
+
 // AddReq defines HTTP request for addServiceAccountToProject
 // swagger:parameters addServiceAccountToProject
 type AddReq struct {
@@ -118,4 +167,13 @@ func convertInternalServiceAccountToExternal(internal *kubermaticapiv1.User) *ap
 		},
 		Group: internal.Labels[label.ServiceAccountLabelGroup],
 	}
+}
+
+func getGroupByEmailFromBindings(bindings []*kubermaticapiv1.UserProjectBinding) map[string]string {
+	result := make(map[string]string)
+	for _, binding := range bindings {
+		result[binding.Spec.UserEmail] = binding.Spec.Group
+	}
+
+	return result
 }

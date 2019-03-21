@@ -2071,6 +2071,48 @@
       }
     },
     "/api/v1/projects/{project_id}/serviceaccounts": {
+      "get": {
+        "description": "Get list of service accounts for the given project",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "serviceaccounts"
+        ],
+        "operationId": "getServiceAccountsForProject",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ServiceAccount",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ServiceAccount"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
       "post": {
         "description": "Adds the given service account to the given project",
         "consumes": [

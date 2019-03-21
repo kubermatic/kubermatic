@@ -99,3 +99,31 @@ func (p *ServiceAccountProvider) GetServiceAccountByNameForProject(userInfo *pro
 
 	return nil, kerrors.NewNotFound(schema.GroupResource{Resource: "ServiceAccount"}, serviceAccountName)
 }
+
+// List gets a list of service accounts for the project
+func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, projectName string) ([]*kubermaticv1.User, error) {
+	if userInfo == nil {
+		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
+	}
+	if len(projectName) == 0 {
+		return nil, kerrors.NewBadRequest("project name cannot be empty")
+	}
+
+	resultList := make([]*kubermaticv1.User, 0)
+	serviceAccounts, err := p.serviceAccountLister.List(labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+	for _, sa := range serviceAccounts {
+		if strings.HasPrefix(sa.Name, "serviceaccount") {
+			for _, owner := range sa.GetOwnerReferences() {
+				if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName &&
+					owner.Name == projectName {
+					resultList = append(resultList, sa)
+				}
+			}
+		}
+	}
+
+	return resultList, nil
+}

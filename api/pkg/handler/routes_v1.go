@@ -277,7 +277,11 @@ func (r Routing) RegisterV1(mux *mux.Router) {
 	// Defines set of HTTP endpoints for ServiceAccounts of the given project
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/serviceaccounts").
-		Handler(r.addserviceAccountToProject())
+		Handler(r.addServiceAccountToProject())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/serviceaccounts").
+		Handler(r.getServiceAccountsForProject())
 
 	//
 	// Defines set of HTTP endpoints for control plane and kubelet versions
@@ -1445,7 +1449,7 @@ func (r Routing) getCurrentUser() http.Handler {
 //       201: ServiceAccount
 //       401: empty
 //       403: empty
-func (r Routing) addserviceAccountToProject() http.Handler {
+func (r Routing) addServiceAccountToProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),
@@ -1454,6 +1458,34 @@ func (r Routing) addserviceAccountToProject() http.Handler {
 		)(serviceaccount.AddEndpoint(r.projectProvider, r.serviceAccountProvider)),
 		serviceaccount.DecodeAddReq,
 		setStatusCreatedHeader(encodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/serviceaccounts serviceaccounts getServiceAccountsForProject
+//
+//     Get list of service accounts for the given project
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []ServiceAccount
+//       401: empty
+//       403: empty
+func (r Routing) getServiceAccountsForProject() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.oidcAuthenticator.Verifier(),
+			middleware.UserSaver(r.userProvider),
+			middleware.UserInfo(r.userProjectMapper),
+		)(serviceaccount.ListEndpoint(r.serviceAccountProvider, r.projectProvider, r.projectMemberProvider)),
+		common.DecodeGetProject,
+		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }

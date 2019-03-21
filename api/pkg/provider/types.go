@@ -326,4 +326,5 @@ func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 type ServiceAccountProvider interface {
 	CreateServiceAccount(userInfo *UserInfo, project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error)
 	GetServiceAccountByNameForProject(userInfo *UserInfo, serviceAccountName, projectName string) (*kubermaticv1.User, error)
+	List(userInfo *UserInfo, projectName string) ([]*kubermaticv1.User, error)
 }
