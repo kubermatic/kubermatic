@@ -1,3 +1,15 @@
+### [v2.9.3]()
+
+
+- Errors when reconciling MachineDeployments and MachineSets will now result in an event on the object [#2930](https://github.com/kubermatic/kubermatic/issues/2930) ([kubermatic-bot](https://github.com/kubermatic-bot))
+- Missing permissions have been added to the kube-state-metrics ClusterRole [#2978](https://github.com/kubermatic/kubermatic/issues/2978) ([kubermatic-bot](https://github.com/kubermatic-bot))
+- Fixed invalid variable caching in Grafana dashboards [#2992](https://github.com/kubermatic/kubermatic/issues/2992) ([kubermatic-bot](https://github.com/kubermatic-bot))
+- Kibana is automatically initialized in new installations. [#2995](https://github.com/kubermatic/kubermatic/issues/2995) ([kubermatic-bot](https://github.com/kubermatic-bot))
+- Updated machine controller to `v1.1.0` [#3028](https://github.com/kubermatic/kubermatic/issues/3028) ([mrIncompetent](https://github.com/mrIncompetent))
+
+
+
+
 ### [v2.9.2]()
 
 * The cleanup of services of type LoadBalancer on cluster deletion was fixed and re-enabled [#2780](https://github.com/kubermatic/kubermatic/pull/2780)
@@ -11,6 +23,9 @@
 * The NodeDeployment detail view now correctly displays the node datacenter instead of the seed datacenter [#1094](https://github.com/kubermatic/dashboard-v2/pull/1094)
 * Support for Kubernetes 1.11.8, 1.12.6, 1.13.3 and 1.13.4 was added [#2894](https://github.com/kubermatic/kubermatic/pull/2894)
 
+
+
+
 ### [v2.9.1]()
 
 * The Docker version used for all new machines with CoreOS or Ubuntu has a fix for CVE-2019-573. It s advised to roll over all your worker nodes to make sure that new version is used
@@ -22,6 +37,9 @@
 * A bug that caused spurious failures when appplying the cert-manager chart was resolved
 * NodeDeployment events are now shown in the UI
 * It is now possible to configure the Kubernetes version of a NodeDeployment in the UI
+
+
+
 
 ### [v2.9.0]()
 
