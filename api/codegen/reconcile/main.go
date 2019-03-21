@@ -22,18 +22,15 @@ func main() {
 				ResourceName:       "Service",
 				ImportAlias:        "corev1",
 				ResourceImportPath: "k8s.io/api/core/v1",
-				UseNamedObject:     true,
 			},
 			{
-				ResourceName:   "Secret",
-				ImportAlias:    "corev1",
-				UseNamedObject: true,
+				ResourceName: "Secret",
+				ImportAlias:  "corev1",
 				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
 			},
 			{
-				ResourceName:   "ConfigMap",
-				ImportAlias:    "corev1",
-				UseNamedObject: true,
+				ResourceName: "ConfigMap",
+				ImportAlias:  "corev1",
 				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
 			},
 			{
@@ -45,12 +42,10 @@ func main() {
 				ResourceName:       "StatefulSet",
 				ImportAlias:        "appsv1",
 				ResourceImportPath: "k8s.io/api/apps/v1",
-				UseNamedObject:     true,
 			},
 			{
-				ResourceName:   "Deployment",
-				ImportAlias:    "appsv1",
-				UseNamedObject: true,
+				ResourceName: "Deployment",
+				ImportAlias:  "appsv1",
 				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
 			},
 			{
@@ -72,25 +67,21 @@ func main() {
 				ResourceName: "Role",
 				ImportAlias:  "rbacv1",
 				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
-				UseNamedObject: true,
 			},
 			{
 				ResourceName: "RoleBinding",
 				ImportAlias:  "rbacv1",
 				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
-				UseNamedObject: true,
 			},
 			{
 				ResourceName:       "CustomResourceDefinition",
 				ImportAlias:        "apiextensionsv1beta1",
 				ResourceImportPath: "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
-				UseNamedObject:     true,
 			},
 			{
 				ResourceName:       "CronJob",
 				ImportAlias:        "batchv1beta1",
 				ResourceImportPath: "k8s.io/api/batch/v1beta1",
-				UseNamedObject:     true,
 			},
 		},
 	}
@@ -116,7 +107,6 @@ func lowercaseFirst(str string) string {
 
 var (
 	reconcileAllTplFuncs = map[string]interface{}{
-		"reconcileFunc":      reconcileFunc,
 		"namedReconcileFunc": namedReconcileFunc,
 	}
 	reconcileAllTemplate = template.Must(template.New("").Funcs(reconcileAllTplFuncs).Funcs(sprig.TxtFuncMap()).Parse(`// This file is generated. DO NOT EDIT.
@@ -138,11 +128,7 @@ import (
 )
 
 {{ range .Resources }}
-{{ if .UseNamedObject }}
 {{ namedReconcileFunc .ResourceName .ImportAlias }}
-{{ else }}
-{{ reconcileFunc .ResourceName .ImportAlias }}
-{{ end }}
 {{- end }}
 
 `))
@@ -152,23 +138,6 @@ type reconcileFunctionData struct {
 	ResourceName       string
 	ResourceImportPath string
 	ImportAlias        string
-	UseNamedObject     bool
-}
-
-func reconcileFunc(resourceName, importAlias string) (string, error) {
-	b := &bytes.Buffer{}
-	err := reconcileFunctionTemplate.Execute(b, struct {
-		ResourceName string
-		ImportAlias  string
-	}{
-		ResourceName: resourceName,
-		ImportAlias:  importAlias,
-	})
-	if err != nil {
-		return "", err
-	}
-
-	return b.String(), nil
 }
 
 func namedReconcileFunc(resourceName, importAlias string) (string, error) {
@@ -191,43 +160,6 @@ var (
 	reconcileFunctionTplFuncs = map[string]interface{}{
 		"lowercaseFirst": lowercaseFirst,
 	}
-
-	reconcileFunctionTemplate = template.Must(template.New("").Funcs(reconcileFunctionTplFuncs).Parse(`// {{ .ResourceName }}Creator defines an interface to create/update {{ .ResourceName }}s
-type {{ .ResourceName }}Creator = func(existing *{{ .ImportAlias }}.{{ .ResourceName }}) (*{{ .ImportAlias }}.{{ .ResourceName }}, error)
-
-// {{ .ResourceName }}ObjectWrapper adds a wrapper so the {{ .ResourceName }}Creator matches ObjectCreator
-// This is needed as golang does not support function interface matching
-func {{ .ResourceName }}ObjectWrapper(create {{ .ResourceName }}Creator) ObjectCreator {
-	return func(existing runtime.Object) (runtime.Object, error) {
-		if existing != nil {
-			return create(existing.(*{{ .ImportAlias }}.{{ .ResourceName }}))
-		}
-		return create(&{{ .ImportAlias }}.{{ .ResourceName }}{})
-	}
-}
-
-// Reconcile{{ .ResourceName }}s will create and update the {{ .ResourceName }}s coming from the passed {{ .ResourceName }}Creator slice
-func Reconcile{{ .ResourceName }}s(creators []{{ .ResourceName }}Creator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &{{ .ImportAlias }}.{{ .ResourceName }}{})
-	if err != nil {
-		return fmt.Errorf("failed to get {{ .ResourceName }} informer: %v", err)
-	}
-
-	for _, create := range creators {
-		createObject := {{ .ResourceName }}ObjectWrapper(create)
-		for _, objectModifier := range objectModifiers {
-			createObject = objectModifier(createObject)
-		}
-
-		if err := EnsureObject(namespace, createObject, store, client); err != nil {
-			return fmt.Errorf("failed to ensure {{ .ResourceName }}: %v", err)
-		}
-	}
-
-	return nil
-}
-
-`))
 )
 
 var namedReconcileFunctionTemplate = template.Must(template.New("").Funcs(reconcileFunctionTplFuncs).Parse(`// {{ .ResourceName }}Creator defines an interface to create/update {{ .ResourceName }}s

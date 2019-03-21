@@ -45,7 +45,7 @@ func (c *Controller) ensureRoles(cluster *kubermaticv1.Cluster) error {
 		prometheus.RoleCreator(),
 	}
 
-	return resources.ReconcileRoles(getters, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.ClusterRefWrapper(cluster))
+	return resources.ReconcileRoles(getters, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }
 
 func (c *Controller) ensureRoleBindings(cluster *kubermaticv1.Cluster) error {
@@ -53,7 +53,7 @@ func (c *Controller) ensureRoleBindings(cluster *kubermaticv1.Cluster) error {
 		prometheus.RoleBindingCreator(cluster.Status.NamespaceName),
 	}
 
-	return resources.ReconcileRoleBindings(getters, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.ClusterRefWrapper(cluster))
+	return resources.ReconcileRoleBindings(getters, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
@@ -68,7 +68,7 @@ func GetDeploymentCreators(data resources.DeploymentDataProvider) []resources.Na
 func (c *Controller) ensureDeployments(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetDeploymentCreators(data)
 
-	return resources.ReconcileDeployments(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.ClusterRefWrapper(cluster))
+	return resources.ReconcileDeployments(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }
 
 // GetSecretCreatorOperations returns all SecretCreators that are currently in use
@@ -121,7 +121,7 @@ func GetStatefulSetCreators(data *resources.TemplateData) []resources.NamedState
 func (c *Controller) ensureStatefulSets(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetStatefulSetCreators(data)
 
-	return resources.ReconcileStatefulSets(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.ClusterRefWrapper(cluster))
+	return resources.ReconcileStatefulSets(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }
 
 func (c *Controller) ensureVerticalPodAutoscalers(cluster *kubermaticv1.Cluster) error {
@@ -148,12 +148,12 @@ func GetServiceCreators(data *resources.TemplateData) []resources.NamedServiceCr
 func (c *Controller) ensureServices(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetServiceCreators(data)
 
-	return resources.ReconcileServices(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.ClusterRefWrapper(cluster))
+	return resources.ReconcileServices(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }
 
 // GetServiceCreators returns all service creators that are currently in use
-func GetServiceAccountCreators() []resources.ServiceAccountCreator {
-	return []resources.ServiceAccountCreator{
+func GetServiceAccountCreators() []resources.NamedServiceAccountCreatorGetter {
+	return []resources.NamedServiceAccountCreatorGetter{
 		prometheus.ServiceAccountCreator(),
 	}
 }
@@ -161,5 +161,5 @@ func GetServiceAccountCreators() []resources.ServiceAccountCreator {
 func (c *Controller) ensureServiceAccounts(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetServiceAccountCreators()
 
-	return resources.ReconcileServiceAccounts(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.ClusterRefWrapper(cluster))
+	return resources.ReconcileServiceAccounts(creators, cluster.Status.NamespaceName, c.dynamicClient, c.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }

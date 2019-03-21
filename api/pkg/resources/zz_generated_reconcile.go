@@ -139,6 +139,9 @@ func ReconcileConfigMaps(namedGetters []NamedConfigMapCreatorGetter, namespace s
 // ServiceAccountCreator defines an interface to create/update ServiceAccounts
 type ServiceAccountCreator = func(existing *corev1.ServiceAccount) (*corev1.ServiceAccount, error)
 
+// NamedServiceAccountCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedServiceAccountCreatorGetter = func() (name string, create ServiceAccountCreator)
+
 // ServiceAccountObjectWrapper adds a wrapper so the ServiceAccountCreator matches ObjectCreator
 // This is needed as golang does not support function interface matching
 func ServiceAccountObjectWrapper(create ServiceAccountCreator) ObjectCreator {
@@ -151,19 +154,20 @@ func ServiceAccountObjectWrapper(create ServiceAccountCreator) ObjectCreator {
 }
 
 // ReconcileServiceAccounts will create and update the ServiceAccounts coming from the passed ServiceAccountCreator slice
-func ReconcileServiceAccounts(creators []ServiceAccountCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
+func ReconcileServiceAccounts(namedGetters []NamedServiceAccountCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
 	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &corev1.ServiceAccount{})
 	if err != nil {
 		return fmt.Errorf("failed to get ServiceAccount informer: %v", err)
 	}
 
-	for _, create := range creators {
+	for _, get := range namedGetters {
+		name, create := get()
 		createObject := ServiceAccountObjectWrapper(create)
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureObject(namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
 			return fmt.Errorf("failed to ensure ServiceAccount: %v", err)
 		}
 	}
@@ -252,6 +256,9 @@ func ReconcileDeployments(namedGetters []NamedDeploymentCreatorGetter, namespace
 // PodDisruptionBudgetCreator defines an interface to create/update PodDisruptionBudgets
 type PodDisruptionBudgetCreator = func(existing *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error)
 
+// NamedPodDisruptionBudgetCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedPodDisruptionBudgetCreatorGetter = func() (name string, create PodDisruptionBudgetCreator)
+
 // PodDisruptionBudgetObjectWrapper adds a wrapper so the PodDisruptionBudgetCreator matches ObjectCreator
 // This is needed as golang does not support function interface matching
 func PodDisruptionBudgetObjectWrapper(create PodDisruptionBudgetCreator) ObjectCreator {
@@ -264,19 +271,20 @@ func PodDisruptionBudgetObjectWrapper(create PodDisruptionBudgetCreator) ObjectC
 }
 
 // ReconcilePodDisruptionBudgets will create and update the PodDisruptionBudgets coming from the passed PodDisruptionBudgetCreator slice
-func ReconcilePodDisruptionBudgets(creators []PodDisruptionBudgetCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
+func ReconcilePodDisruptionBudgets(namedGetters []NamedPodDisruptionBudgetCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
 	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &policyv1beta1.PodDisruptionBudget{})
 	if err != nil {
 		return fmt.Errorf("failed to get PodDisruptionBudget informer: %v", err)
 	}
 
-	for _, create := range creators {
+	for _, get := range namedGetters {
+		name, create := get()
 		createObject := PodDisruptionBudgetObjectWrapper(create)
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureObject(namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
 			return fmt.Errorf("failed to ensure PodDisruptionBudget: %v", err)
 		}
 	}
@@ -286,6 +294,9 @@ func ReconcilePodDisruptionBudgets(creators []PodDisruptionBudgetCreator, namesp
 
 // VerticalPodAutoscalerCreator defines an interface to create/update VerticalPodAutoscalers
 type VerticalPodAutoscalerCreator = func(existing *autoscalingv1beta2.VerticalPodAutoscaler) (*autoscalingv1beta2.VerticalPodAutoscaler, error)
+
+// NamedVerticalPodAutoscalerCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedVerticalPodAutoscalerCreatorGetter = func() (name string, create VerticalPodAutoscalerCreator)
 
 // VerticalPodAutoscalerObjectWrapper adds a wrapper so the VerticalPodAutoscalerCreator matches ObjectCreator
 // This is needed as golang does not support function interface matching
@@ -299,19 +310,20 @@ func VerticalPodAutoscalerObjectWrapper(create VerticalPodAutoscalerCreator) Obj
 }
 
 // ReconcileVerticalPodAutoscalers will create and update the VerticalPodAutoscalers coming from the passed VerticalPodAutoscalerCreator slice
-func ReconcileVerticalPodAutoscalers(creators []VerticalPodAutoscalerCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
+func ReconcileVerticalPodAutoscalers(namedGetters []NamedVerticalPodAutoscalerCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
 	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &autoscalingv1beta2.VerticalPodAutoscaler{})
 	if err != nil {
 		return fmt.Errorf("failed to get VerticalPodAutoscaler informer: %v", err)
 	}
 
-	for _, create := range creators {
+	for _, get := range namedGetters {
+		name, create := get()
 		createObject := VerticalPodAutoscalerObjectWrapper(create)
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureObject(namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
 			return fmt.Errorf("failed to ensure VerticalPodAutoscaler: %v", err)
 		}
 	}
@@ -321,6 +333,9 @@ func ReconcileVerticalPodAutoscalers(creators []VerticalPodAutoscalerCreator, na
 
 // ClusterRoleBindingCreator defines an interface to create/update ClusterRoleBindings
 type ClusterRoleBindingCreator = func(existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error)
+
+// NamedClusterRoleBindingCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedClusterRoleBindingCreatorGetter = func() (name string, create ClusterRoleBindingCreator)
 
 // ClusterRoleBindingObjectWrapper adds a wrapper so the ClusterRoleBindingCreator matches ObjectCreator
 // This is needed as golang does not support function interface matching
@@ -334,19 +349,20 @@ func ClusterRoleBindingObjectWrapper(create ClusterRoleBindingCreator) ObjectCre
 }
 
 // ReconcileClusterRoleBindings will create and update the ClusterRoleBindings coming from the passed ClusterRoleBindingCreator slice
-func ReconcileClusterRoleBindings(creators []ClusterRoleBindingCreator, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
+func ReconcileClusterRoleBindings(namedGetters []NamedClusterRoleBindingCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
 	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &rbacv1.ClusterRoleBinding{})
 	if err != nil {
 		return fmt.Errorf("failed to get ClusterRoleBinding informer: %v", err)
 	}
 
-	for _, create := range creators {
+	for _, get := range namedGetters {
+		name, create := get()
 		createObject := ClusterRoleBindingObjectWrapper(create)
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureObject(namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
 			return fmt.Errorf("failed to ensure ClusterRoleBinding: %v", err)
 		}
 	}
