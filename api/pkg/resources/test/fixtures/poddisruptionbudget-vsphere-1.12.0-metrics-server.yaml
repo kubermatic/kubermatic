@@ -1,6 +1,5 @@
 metadata:
   creationTimestamp: null
-  name: metrics-server
 spec:
   maxUnavailable: 1
   selector:
