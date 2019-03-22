@@ -118,7 +118,7 @@ kubermatic:
       limits:
         cpu: 100m
         memory: 32Mi
-  rbac:
+  masterController:
     replicas: 1
     image:
       repository: quay.io/kubermatic/api

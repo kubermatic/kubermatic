@@ -30,7 +30,7 @@ export VALUES_FILE=/tmp/values.yaml
 export HELM_EXTRA_ARGS="--tiller-namespace=kube-system \
     --set=kubermatic.controller.image.tag=${GIT_HEAD_HASH} \
     --set=kubermatic.api.image.tag=${GIT_HEAD_HASH} \
-    --set=kubermatic.rbac.image.tag=${GIT_HEAD_HASH}"
+    --set=kubermatic.masterController.image.tag=${GIT_HEAD_HASH}"
 
 # deploy to dev
 vault kv get -field=kubeconfig dev/seed-clusters/run.kubermatic.io > ${KUBECONFIG}

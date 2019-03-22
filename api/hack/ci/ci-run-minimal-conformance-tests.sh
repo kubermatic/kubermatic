@@ -159,8 +159,8 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set-string=kubermatic.controller.image.tag=$GIT_HEAD_HASH \
   --set-string=kubermatic.api.image.repository=quay.io/kubermatic/api \
   --set-string=kubermatic.api.image.tag=$GIT_HEAD_HASH \
-  --set-string=kubermatic.rbac.image.repository=quay.io/kubermatic/api \
-  --set-string=kubermatic.rbac.image.tag=$GIT_HEAD_HASH \
+  --set-string=kubermatic.masterController.image.repository=quay.io/kubermatic/api \
+  --set-string=kubermatic.masterController.image.tag=$GIT_HEAD_HASH \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
