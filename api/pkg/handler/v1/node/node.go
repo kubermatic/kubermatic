@@ -1,4 +1,4 @@
-package handler
+package node
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -30,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/sets"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -41,9 +39,156 @@ const (
 	initialConditionParsingDelay = 5
 )
 
-func deleteNodeForClusterLegacy(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+// createNodeDeploymentReq defines HTTP request for createMachineDeployment
+// swagger:parameters createNodeDeployment
+type createNodeDeploymentReq struct {
+	common.GetClusterReq
+	// in: body
+	Body apiv1.NodeDeployment
+}
+
+func DecodeCreateNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
+	var req createNodeDeploymentReq
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	dcr, err := common.DecodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ClusterID = clusterID
+	req.DCReq = dcr.(common.DCReq)
+
+	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func CreateNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(DeleteNodeForClusterReq)
+		req := request.(createNodeDeploymentReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: req.ClusterID})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
+		if !found {
+			return nil, fmt.Errorf("unknown cluster datacenter %s", cluster.Spec.Cloud.DatacenterName)
+		}
+
+		nd, err := machineresource.Validate(&req.Body, cluster.Spec.Version.Semver())
+		if err != nil {
+			return nil, k8cerrors.NewBadRequest(fmt.Sprintf("node deployment validation failed: %s", err.Error()))
+		}
+
+		md, err := machineresource.Deployment(cluster, nd, dc, keys)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
+		}
+
+		if err := client.Create(ctx, md); err != nil {
+			return nil, fmt.Errorf("failed to create machine deployment: %v", err)
+		}
+
+		return outputMachineDeployment(md)
+	}
+}
+
+func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.NodeDeployment, error) {
+	nodeStatus := apiv1.NodeStatus{}
+	nodeStatus.MachineName = md.Name
+
+	var deletionTimestamp *apiv1.Time
+	if md.DeletionTimestamp != nil {
+		dt := apiv1.NewTime(md.DeletionTimestamp.Time)
+		deletionTimestamp = &dt
+	}
+
+	operatingSystemSpec, err := machineconversions.GetAPIV1OperatingSystemSpec(md.Spec.Template.Spec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get operating system spec from machine deployment: %v", err)
+	}
+
+	cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(md.Spec.Template.Spec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get node cloud spec from machine deployment: %v", err)
+	}
+
+	return &apiv1.NodeDeployment{
+		ObjectMeta: apiv1.ObjectMeta{
+			ID:                md.Name,
+			Name:              md.Name,
+			DeletionTimestamp: deletionTimestamp,
+			CreationTimestamp: apiv1.NewTime(md.CreationTimestamp.Time),
+		},
+		Spec: apiv1.NodeDeploymentSpec{
+			Replicas: *md.Spec.Replicas,
+			Template: apiv1.NodeSpec{
+				Labels: md.Spec.Template.Spec.Labels,
+				Versions: apiv1.NodeVersionInfo{
+					Kubelet: md.Spec.Template.Spec.Versions.Kubelet,
+				},
+				OperatingSystem: *operatingSystemSpec,
+				Cloud:           *cloudSpec,
+			},
+			Paused: &md.Spec.Paused,
+		},
+		Status: md.Status,
+	}, nil
+}
+
+// listNodeDeploymentsReq defines HTTP request for listNodeDeployments
+// swagger:parameters listNodeDeployments
+type listNodeDeploymentsReq struct {
+	common.GetClusterReq
+}
+
+func DecodeListNodeDeployments(c context.Context, r *http.Request) (interface{}, error) {
+	var req listNodeDeploymentsReq
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	dcr, err := common.DecodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ClusterID = clusterID
+	req.DCReq = dcr.(common.DCReq)
+
+	return req, nil
+}
+
+func ListNodeDeployments(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listNodeDeploymentsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
@@ -59,29 +204,73 @@ func deleteNodeForClusterLegacy(projectProvider provider.ProjectProvider) endpoi
 
 		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create a client: %v", err)
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machine, node, err := findMachineAndNode(ctx, req.NodeID, client)
-		if err != nil {
-			return nil, err
-		}
-		if machine == nil && node == nil {
-			return nil, k8cerrors.NewNotFound("Node", req.NodeID)
+		machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
+		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		if machine != nil {
-			return nil, common.KubernetesErrorToHTTPError(client.Delete(ctx, machine))
-		} else if node != nil {
-			return nil, common.KubernetesErrorToHTTPError(client.Delete(ctx, node))
+		nodeDeployments := make([]*apiv1.NodeDeployment, 0, len(machineDeployments.Items))
+		for i := range machineDeployments.Items {
+			nd, err := outputMachineDeployment(&machineDeployments.Items[i])
+			if err != nil {
+				return nil, fmt.Errorf("failed to output machine deployment %s: %v", machineDeployments.Items[i].Name, err)
+			}
+
+			nodeDeployments = append(nodeDeployments, nd)
 		}
-		return nil, nil
+
+		return nodeDeployments, nil
 	}
 }
 
-func listNodesForClusterLegacy(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+// nodeDeploymentReq defines HTTP request for getNodeDeployment
+// swagger:parameters getNodeDeployment
+type nodeDeploymentReq struct {
+	common.GetClusterReq
+	// in: path
+	NodeDeploymentID string `json:"nodedeployment_id"`
+}
+
+func decodeNodeDeploymentID(c context.Context, r *http.Request) (string, error) {
+	nodeDeploymentID := mux.Vars(r)["nodedeployment_id"]
+	if nodeDeploymentID == "" {
+		return "", fmt.Errorf("'nodedeployment_id' parameter is required but was not provided")
+	}
+
+	return nodeDeploymentID, nil
+}
+
+func DecodeGetNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
+	var req nodeDeploymentReq
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	dcr, err := common.DecodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ClusterID = clusterID
+	req.NodeDeploymentID = nodeDeploymentID
+	req.DCReq = dcr.(common.DCReq)
+
+	return req, nil
+}
+
+func GetNodeDeployment(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(ListNodesForClusterReq)
+		req := request.(nodeDeploymentReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
@@ -95,19 +284,93 @@ func listNodesForClusterLegacy(projectProvider provider.ProjectProvider) endpoin
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		// TODO:
-		// normally we have project, user and sshkey providers
-		// but here we decided to use machineClient and kubeClient directly to access the user cluster.
-		//
-		// how about moving machineClient and kubeClient to their own provider ?
-		client, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineList := &clusterv1alpha1.MachineList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineList); err != nil {
-			return nil, fmt.Errorf("failed to load machines from cluster: %v", err)
+		machineDeployment := &clusterv1alpha1.MachineDeployment{}
+		if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: req.NodeDeploymentID}, machineDeployment); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return outputMachineDeployment(machineDeployment)
+	}
+}
+
+// nodeDeploymentNodesReq defines HTTP request for listNodeDeploymentNodes
+// swagger:parameters listNodeDeploymentNodes
+type nodeDeploymentNodesReq struct {
+	common.GetClusterReq
+	// in: path
+	NodeDeploymentID string `json:"nodedeployment_id"`
+	// in: query
+	HideInitialConditions bool `json:"hideInitialConditions"`
+}
+
+func DecodeListNodeDeploymentNodes(c context.Context, r *http.Request) (interface{}, error) {
+	var req nodeDeploymentNodesReq
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	dcr, err := common.DecodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ClusterID = clusterID
+	req.NodeDeploymentID = nodeDeploymentID
+	req.DCReq = dcr.(common.DCReq)
+
+	return req, nil
+}
+
+func getMachinesForNodeDeployment(ctx context.Context, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, cluster *v1.Cluster, nodeDeploymentID string) (*clusterv1alpha1.MachineList, error) {
+
+	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	machineDeployment := &clusterv1alpha1.MachineDeployment{}
+	if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: nodeDeploymentID}, machineDeployment); err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	machines := &clusterv1alpha1.MachineList{}
+	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels)}, machines); err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	return machines, nil
+}
+
+func ListNodeDeploymentNodes(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(nodeDeploymentNodesReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		machines, err := getMachinesForNodeDeployment(ctx, clusterProvider, userInfo, cluster, req.NodeDeploymentID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		nodeList, err := getNodeList(ctx, cluster, clusterProvider)
@@ -115,38 +378,314 @@ func listNodesForClusterLegacy(projectProvider provider.ProjectProvider) endpoin
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		// The following is a bit tricky. We might have a node which is not created by a machine and vice versa...
 		var nodesV1 []*apiv1.Node
-		matchedMachineNodes := sets.NewString()
-
-		// Go over all machines first
-		for i := range machineList.Items {
-			node := getNodeForMachine(&machineList.Items[i], nodeList.Items)
-			if node != nil {
-				matchedMachineNodes.Insert(string(node.UID))
-			}
-
-			// Do not list Machines that are controlled, i.e. by Machine Set.
-			if len(machineList.Items[i].ObjectMeta.OwnerReferences) != 0 {
-				continue
-			}
-
-			outNode, err := outputMachine(&machineList.Items[i], node, req.HideInitialConditions)
+		for i := range machines.Items {
+			node := getNodeForMachine(&machines.Items[i], nodeList.Items)
+			outNode, err := outputMachine(&machines.Items[i], node, req.HideInitialConditions)
 			if err != nil {
-				return nil, fmt.Errorf("failed to output machine %s: %v", machineList.Items[i].Name, err)
+				return nil, fmt.Errorf("failed to output machine %s: %v", machines.Items[i].Name, err)
 			}
 
 			nodesV1 = append(nodesV1, outNode)
 		}
 
-		// Now all nodes, which do not belong to a machine - Relevant for BYO
-		for i := range nodeList.Items {
-			if !matchedMachineNodes.Has(string(nodeList.Items[i].UID)) {
-				nodesV1 = append(nodesV1, outputNode(&nodeList.Items[i], req.HideInitialConditions))
-			}
-		}
 		return nodesV1, nil
 	}
+}
+
+// patchNodeDeploymentReq defines HTTP request for patchNodeDeployment endpoint
+// swagger:parameters patchNodeDeployment
+type patchNodeDeploymentReq struct {
+	nodeDeploymentReq
+
+	// in: body
+	Patch []byte
+}
+
+func DecodePatchNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
+	var req patchNodeDeploymentReq
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	dcr, err := common.DecodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ClusterID = clusterID
+	req.NodeDeploymentID = nodeDeploymentID
+	req.DCReq = dcr.(common.DCReq)
+
+	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func PatchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(patchNodeDeploymentReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		// We cannot use machineClient.ClusterV1alpha1().MachineDeployments().Patch() method as we are not exposing
+		// MachineDeployment type directly. API uses NodeDeployment type and we cannot ensure compatibility here.
+		machineDeployment := &clusterv1alpha1.MachineDeployment{}
+		if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: req.NodeDeploymentID}, machineDeployment); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		nodeDeployment, err := outputMachineDeployment(machineDeployment)
+		if err != nil {
+			return nil, fmt.Errorf("cannot output existing node deployment: %v", err)
+		}
+
+		nodeDeploymentJSON, err := json.Marshal(nodeDeployment)
+		if err != nil {
+			return nil, fmt.Errorf("cannot decode existing node deployment: %v", err)
+		}
+
+		patchedNodeDeploymentJSON, err := jsonpatch.MergePatch(nodeDeploymentJSON, req.Patch)
+		if err != nil {
+			return nil, fmt.Errorf("cannot patch node deployment: %v", err)
+		}
+
+		var patchedNodeDeployment *apiv1.NodeDeployment
+		err = json.Unmarshal(patchedNodeDeploymentJSON, &patchedNodeDeployment)
+		if err != nil {
+			return nil, fmt.Errorf("cannot decode patched cluster: %v", err)
+		}
+
+		//TODO: We need to make the kubelet version configurable but restrict it to versions supported by the control plane
+		kversion, err := semver.NewVersion(patchedNodeDeployment.Spec.Template.Versions.Kubelet)
+		if err != nil {
+			return nil, k8cerrors.NewBadRequest("failed to parse kubelet version: %v", err)
+		}
+		if err = common.EnsureVersionCompatible(cluster.Spec.Version.Semver(), kversion); err != nil {
+			return nil, k8cerrors.NewBadRequest(err.Error())
+		}
+
+		dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
+		if !found {
+			return nil, fmt.Errorf("unknown cluster datacenter %s", cluster.Spec.Cloud.DatacenterName)
+		}
+
+		keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: req.ClusterID})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		patchedMachineDeployment, err := machineresource.Deployment(cluster, patchedNodeDeployment, dc, keys)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
+		}
+
+		// Only the fields from NodeDeploymentSpec will be updated by a patch.
+		// It ensures that the name and resource version are set and the selector stays the same.
+		machineDeployment.Spec.Template.Spec = patchedMachineDeployment.Spec.Template.Spec
+		machineDeployment.Spec.Replicas = patchedMachineDeployment.Spec.Replicas
+		machineDeployment.Spec.Paused = patchedMachineDeployment.Spec.Paused
+
+		if err := client.Update(ctx, machineDeployment); err != nil {
+			return nil, fmt.Errorf("failed to update machine deployment: %v", err)
+		}
+
+		return outputMachineDeployment(machineDeployment)
+	}
+}
+
+// deleteNodeDeploymentReq defines HTTP request for deleteNodeDeployment
+// swagger:parameters deleteNodeDeployment
+type deleteNodeDeploymentReq struct {
+	common.GetClusterReq
+	// in: path
+	NodeDeploymentID string `json:"nodedeployment_id"`
+}
+
+func DecodeDeleteNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
+	var req deleteNodeDeploymentReq
+
+	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	dcr, err := common.DecodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ClusterID = clusterID
+	req.NodeDeploymentID = nodeDeploymentID
+	req.DCReq = dcr.(common.DCReq)
+
+	return req, nil
+}
+
+func DeleteNodeDeployment(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(deleteNodeDeploymentReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create a machine client: %v", err)
+		}
+
+		return nil, common.KubernetesErrorToHTTPError(client.Delete(ctx, &clusterv1alpha1.MachineDeployment{ObjectMeta: metav1.ObjectMeta{Namespace: metav1.NamespaceSystem, Name: req.NodeDeploymentID}}))
+	}
+}
+
+const (
+	warningType = "warning"
+	normalType  = "normal"
+)
+
+// nodeDeploymentNodesEventsReq defines HTTP request for listNodeDeploymentNodesEvents endpoint
+// swagger:parameters listNodeDeploymentNodesEvents
+type nodeDeploymentNodesEventsReq struct {
+	common.GetClusterReq
+	// in: query
+	Type string
+
+	// in: path
+	NodeDeploymentID string `json:"nodedeployment_id"`
+}
+
+func DecodeListNodeDeploymentNodesEvents(c context.Context, r *http.Request) (interface{}, error) {
+	var req nodeDeploymentNodesEventsReq
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	dcr, err := common.DecodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ClusterID = clusterID
+	req.NodeDeploymentID = nodeDeploymentID
+	req.DCReq = dcr.(common.DCReq)
+
+	req.Type = r.URL.Query().Get("type")
+	if len(req.Type) > 0 {
+		if req.Type == warningType || req.Type == normalType {
+			return req, nil
+		}
+		return nil, fmt.Errorf("wrong query paramater, unsupported type: %s", req.Type)
+	}
+
+	return req, nil
+}
+
+func ListNodeDeploymentNodesEvents() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(nodeDeploymentNodesEventsReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		client, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		machines, err := getMachinesForNodeDeployment(ctx, clusterProvider, userInfo, cluster, req.NodeDeploymentID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		events := make([]apiv1.Event, 0)
+		for _, machine := range machines.Items {
+			machineEvents, err := getMachineEvents(ctx, client, machine)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+
+			if len(machineEvents) > 0 {
+				if len(req.Type) > 0 {
+					if req.Type == warningType {
+						machineEvents = common.FilterEventsByType(machineEvents, corev1.EventTypeWarning)
+					}
+					if req.Type == normalType {
+						machineEvents = common.FilterEventsByType(machineEvents, corev1.EventTypeNormal)
+					}
+				}
+
+				events = append(events, machineEvents...)
+			}
+		}
+
+		return events, nil
+	}
+}
+
+// getMachineEvents returns Kubernetes API event objects assigned to the Machine.
+func getMachineEvents(ctx context.Context, client ctrlruntimeclient.Client, machine clusterv1alpha1.Machine) ([]apiv1.Event, error) {
+	events := &corev1.EventList{}
+	listOpts := &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, FieldSelector: fields.OneTermEqualSelector("involvedObject.uid", string(machine.UID))}
+	if err := client.List(ctx, listOpts, events); err != nil {
+		return nil, err
+	}
+
+	kubermaticEvents := make([]apiv1.Event, 0)
+	for _, event := range events.Items {
+		kubermaticEvent := common.ConvertInternalEventToExternal(event)
+		kubermaticEvents = append(kubermaticEvents, kubermaticEvent)
+	}
+
+	return kubermaticEvents, nil
 }
 
 func getNodeList(ctx context.Context, cluster *v1.Cluster, clusterProvider provider.ClusterProvider) (*corev1.NodeList, error) {
@@ -160,79 +699,6 @@ func getNodeList(ctx context.Context, cluster *v1.Cluster, clusterProvider provi
 		return nil, err
 	}
 	return nodeList, nil
-}
-
-func getNodeForClusterLegacy(projectProvider provider.ProjectProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(NodeReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		// TODO:
-		// normally we have project, user and sshkey providers
-		// but here we decided to use machineClient and kubeClient directly to access the user cluster.
-		//
-		// how about moving machineClient and kubeClient to their own provider ?
-		client, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		machine, node, err := findMachineAndNode(ctx, req.NodeID, client)
-		if err != nil {
-			return nil, err
-		}
-		if machine == nil && node == nil {
-			return nil, k8cerrors.NewNotFound("Node", req.NodeID)
-		}
-
-		if machine == nil {
-			return outputNode(node, req.HideInitialConditions), nil
-		}
-
-		return outputMachine(machine, node, req.HideInitialConditions)
-	}
-}
-
-func createNodeForClusterLegacy(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		return nil, k8cerrors.NewWithDetails(http.StatusBadRequest, "Creating Nodes is deprecated. Please create a Node Deployment instead", []string{"If you are calling this API endpoint directly then use POST \"v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments\" instead"})
-	}
-}
-
-func outputNode(node *corev1.Node, hideInitialNodeConditions bool) *apiv1.Node {
-	nodeStatus := apiv1.NodeStatus{}
-	nodeStatus = apiNodeStatus(nodeStatus, node, hideInitialNodeConditions)
-	var deletionTimestamp *apiv1.Time
-	if node.DeletionTimestamp != nil {
-		t := apiv1.NewTime(node.DeletionTimestamp.Time)
-		deletionTimestamp = &t
-	}
-
-	return &apiv1.Node{
-		ObjectMeta: apiv1.ObjectMeta{
-			ID:                node.Name,
-			Name:              node.Name,
-			DeletionTimestamp: deletionTimestamp,
-			CreationTimestamp: apiv1.NewTime(node.CreationTimestamp.Time),
-		},
-		Spec: apiv1.NodeSpec{
-			Versions:        apiv1.NodeVersionInfo{},
-			OperatingSystem: apiv1.OperatingSystemSpec{},
-			Cloud:           apiv1.NodeCloudSpec{},
-		},
-		Status: nodeStatus,
-	}
 }
 
 func apiNodeStatus(status apiv1.NodeStatus, inputNode *corev1.Node, hideInitialNodeConditions bool) apiv1.NodeStatus {
@@ -335,831 +801,4 @@ func getNodeForMachine(machine *clusterv1alpha1.Machine, nodes []corev1.Node) *c
 		}
 	}
 	return nil
-}
-
-func getMachineForNode(node *corev1.Node, machines []clusterv1alpha1.Machine) *clusterv1alpha1.Machine {
-	ref := metav1.GetControllerOf(node)
-	if ref == nil {
-		return nil
-	}
-	for _, machine := range machines {
-		if ref.UID == machine.UID {
-			return &machine
-		}
-	}
-	return nil
-}
-
-func findMachineAndNode(ctx context.Context, name string, client ctrlruntimeclient.Client) (*clusterv1alpha1.Machine, *corev1.Node, error) {
-	machineList := &clusterv1alpha1.MachineList{}
-	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineList); err != nil {
-		return nil, nil, fmt.Errorf("failed to load machines from cluster: %v", err)
-	}
-
-	nodeList := &corev1.NodeList{}
-	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
-		return nil, nil, fmt.Errorf("failed to load nodes from cluster: %v", err)
-	}
-
-	var node *corev1.Node
-	var machine *clusterv1alpha1.Machine
-
-	for i, n := range nodeList.Items {
-		if n.Name == name {
-			node = &nodeList.Items[i]
-			break
-		}
-	}
-
-	for i, m := range machineList.Items {
-		if m.Name == name {
-			machine = &machineList.Items[i]
-			break
-		}
-	}
-
-	//Check if we can get a owner ref from a machine
-	if node != nil && machine == nil {
-		machine = getMachineForNode(node, machineList.Items)
-	}
-
-	if machine != nil && node == nil {
-		node = getNodeForMachine(machine, nodeList.Items)
-	}
-
-	return machine, node, nil
-}
-
-// DeleteNodeForClusterReq defines HTTP request for deleteNodeForClusterLegacy
-// swagger:parameters deleteNodeForClusterLegacy
-type DeleteNodeForClusterReq struct {
-	common.GetClusterReq
-	// in: path
-	NodeID string `json:"node_id"`
-}
-
-func decodeDeleteNodeForClusterLegacy(c context.Context, r *http.Request) (interface{}, error) {
-	var req DeleteNodeForClusterReq
-
-	nodeID := mux.Vars(r)["node_id"]
-	if nodeID == "" {
-		return "", fmt.Errorf("'node_id' parameter is required but was not provided")
-	}
-
-	clusterID, err := common.DecodeClusterID(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	dcr, err := common.DecodeDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	req.ClusterID = clusterID
-	req.NodeID = nodeID
-	req.DCReq = dcr.(common.DCReq)
-
-	return req, nil
-}
-
-// ListNodesForClusterReq defines HTTP request for listNodesForClusterLegacy
-// swagger:parameters listNodesForClusterLegacy
-type ListNodesForClusterReq struct {
-	common.GetClusterReq
-	// in: query
-	HideInitialConditions bool `json:"hideInitialConditions"`
-}
-
-func decodeListNodesForClusterLegacy(c context.Context, r *http.Request) (interface{}, error) {
-	var req ListNodesForClusterReq
-
-	clusterID, err := common.DecodeClusterID(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	dcr, err := common.DecodeDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	req.HideInitialConditions, _ = strconv.ParseBool(r.URL.Query().Get("hideInitialConditions"))
-	req.ClusterID = clusterID
-	req.DCReq = dcr.(common.DCReq)
-
-	return req, nil
-}
-
-// CreateNodeReqLegacy defines HTTP request for createNodeForClusterLegacy
-// swagger:parameters createNodeForClusterLegacy
-type CreateNodeReqLegacy struct {
-	common.GetClusterReq
-	// in: body
-	Body apiv1.Node
-}
-
-func decodeCreateNodeForClusterLegacy(c context.Context, r *http.Request) (interface{}, error) {
-	var req CreateNodeReqLegacy
-
-	clusterID, err := common.DecodeClusterID(c, r)
-	if err != nil {
-		return nil, err
-	}
-	dcr, err := common.DecodeDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	req.ClusterID = clusterID
-	req.DCReq = dcr.(common.DCReq)
-
-	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NodeReq defines HTTP request for getNodeForClusterLegacy
-// swagger:parameters getNodeForClusterLegacy
-type NodeReq struct {
-	common.GetClusterReq
-	// in: path
-	NodeID string `json:"node_id"`
-	// in: query
-	HideInitialConditions bool `json:"hideInitialConditions"`
-}
-
-func decodeGetNodeForClusterLegacy(c context.Context, r *http.Request) (interface{}, error) {
-	var req NodeReq
-
-	clusterID, err := common.DecodeClusterID(c, r)
-	if err != nil {
-		return nil, err
-	}
-	nodeID := mux.Vars(r)["node_id"]
-	if nodeID == "" {
-		return nil, fmt.Errorf("'node_id' parameter is required but was not provided")
-	}
-
-	dcr, err := common.DecodeDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	req.ClusterID = clusterID
-	req.NodeID = nodeID
-	req.DCReq = dcr.(common.DCReq)
-
-	return req, nil
-}
-
-// CreateNodeDeploymentReq defines HTTP request for createMachineDeployment
-// swagger:parameters createNodeDeployment
-type CreateNodeDeploymentReq struct {
-	common.GetClusterReq
-	// in: body
-	Body apiv1.NodeDeployment
-}
-
-func decodeCreateNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
-	var req CreateNodeDeploymentReq
-
-	clusterID, err := common.DecodeClusterID(c, r)
-	if err != nil {
-		return nil, err
-	}
-	dcr, err := common.DecodeDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	req.ClusterID = clusterID
-	req.DCReq = dcr.(common.DCReq)
-
-	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-func createNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(CreateNodeDeploymentReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-
-		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: req.ClusterID})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
-		if !found {
-			return nil, fmt.Errorf("unknown cluster datacenter %s", cluster.Spec.Cloud.DatacenterName)
-		}
-
-		nd, err := machineresource.Validate(&req.Body, cluster.Spec.Version.Semver())
-		if err != nil {
-			return nil, k8cerrors.NewBadRequest(fmt.Sprintf("node deployment validation failed: %s", err.Error()))
-		}
-
-		md, err := machineresource.Deployment(cluster, nd, dc, keys)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
-		}
-
-		if err := client.Create(ctx, md); err != nil {
-			return nil, fmt.Errorf("failed to create machine deployment: %v", err)
-		}
-
-		return outputMachineDeployment(md)
-	}
-}
-
-func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.NodeDeployment, error) {
-	nodeStatus := apiv1.NodeStatus{}
-	nodeStatus.MachineName = md.Name
-
-	var deletionTimestamp *apiv1.Time
-	if md.DeletionTimestamp != nil {
-		dt := apiv1.NewTime(md.DeletionTimestamp.Time)
-		deletionTimestamp = &dt
-	}
-
-	operatingSystemSpec, err := machineconversions.GetAPIV1OperatingSystemSpec(md.Spec.Template.Spec)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get operating system spec from machine deployment: %v", err)
-	}
-
-	cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(md.Spec.Template.Spec)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get node cloud spec from machine deployment: %v", err)
-	}
-
-	return &apiv1.NodeDeployment{
-		ObjectMeta: apiv1.ObjectMeta{
-			ID:                md.Name,
-			Name:              md.Name,
-			DeletionTimestamp: deletionTimestamp,
-			CreationTimestamp: apiv1.NewTime(md.CreationTimestamp.Time),
-		},
-		Spec: apiv1.NodeDeploymentSpec{
-			Replicas: *md.Spec.Replicas,
-			Template: apiv1.NodeSpec{
-				Labels: md.Spec.Template.Spec.Labels,
-				Versions: apiv1.NodeVersionInfo{
-					Kubelet: md.Spec.Template.Spec.Versions.Kubelet,
-				},
-				OperatingSystem: *operatingSystemSpec,
-				Cloud:           *cloudSpec,
-			},
-			Paused: &md.Spec.Paused,
-		},
-		Status: md.Status,
-	}, nil
-}
-
-// ListNodeDeploymentsReq defines HTTP request for listNodeDeployments
-// swagger:parameters listNodeDeployments
-type ListNodeDeploymentsReq struct {
-	common.GetClusterReq
-}
-
-func decodeListNodeDeployments(c context.Context, r *http.Request) (interface{}, error) {
-	var req ListNodeDeploymentsReq
-
-	clusterID, err := common.DecodeClusterID(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	dcr, err := common.DecodeDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	req.ClusterID = clusterID
-	req.DCReq = dcr.(common.DCReq)
-
-	return req, nil
-}
-
-func listNodeDeployments(projectProvider provider.ProjectProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(ListNodeDeploymentsReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		nodeDeployments := make([]*apiv1.NodeDeployment, 0, len(machineDeployments.Items))
-		for i := range machineDeployments.Items {
-			nd, err := outputMachineDeployment(&machineDeployments.Items[i])
-			if err != nil {
-				return nil, fmt.Errorf("failed to output machine deployment %s: %v", machineDeployments.Items[i].Name, err)
-			}
-
-			nodeDeployments = append(nodeDeployments, nd)
-		}
-
-		return nodeDeployments, nil
-	}
-}
-
-// NodeDeploymentReq defines HTTP request for getNodeDeployment
-// swagger:parameters getNodeDeployment
-type NodeDeploymentReq struct {
-	common.GetClusterReq
-	// in: path
-	NodeDeploymentID string `json:"nodedeployment_id"`
-}
-
-func decodeNodeDeploymentID(c context.Context, r *http.Request) (string, error) {
-	nodeDeploymentID := mux.Vars(r)["nodedeployment_id"]
-	if nodeDeploymentID == "" {
-		return "", fmt.Errorf("'nodedeployment_id' parameter is required but was not provided")
-	}
-
-	return nodeDeploymentID, nil
-}
-
-func decodeGetNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
-	var req NodeDeploymentReq
-
-	clusterID, err := common.DecodeClusterID(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	dcr, err := common.DecodeDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	req.ClusterID = clusterID
-	req.NodeDeploymentID = nodeDeploymentID
-	req.DCReq = dcr.(common.DCReq)
-
-	return req, nil
-}
-
-func getNodeDeployment(projectProvider provider.ProjectProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(NodeDeploymentReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		machineDeployment := &clusterv1alpha1.MachineDeployment{}
-		if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: req.NodeDeploymentID}, machineDeployment); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		return outputMachineDeployment(machineDeployment)
-	}
-}
-
-// NodeDeploymentNodesReq defines HTTP request for listNodeDeploymentNodes
-// swagger:parameters listNodeDeploymentNodes
-type NodeDeploymentNodesReq struct {
-	common.GetClusterReq
-	// in: path
-	NodeDeploymentID string `json:"nodedeployment_id"`
-	// in: query
-	HideInitialConditions bool `json:"hideInitialConditions"`
-}
-
-func decodeListNodeDeploymentNodes(c context.Context, r *http.Request) (interface{}, error) {
-	var req NodeDeploymentNodesReq
-
-	clusterID, err := common.DecodeClusterID(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	dcr, err := common.DecodeDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	req.ClusterID = clusterID
-	req.NodeDeploymentID = nodeDeploymentID
-	req.DCReq = dcr.(common.DCReq)
-
-	return req, nil
-}
-
-func getMachinesForNodeDeployment(ctx context.Context, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, cluster *v1.Cluster, nodeDeploymentID string) (*clusterv1alpha1.MachineList, error) {
-
-	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-
-	machineDeployment := &clusterv1alpha1.MachineDeployment{}
-	if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: nodeDeploymentID}, machineDeployment); err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-
-	machines := &clusterv1alpha1.MachineList{}
-	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels)}, machines); err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-	return machines, nil
-}
-
-func listNodeDeploymentNodes(projectProvider provider.ProjectProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(NodeDeploymentNodesReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		machines, err := getMachinesForNodeDeployment(ctx, clusterProvider, userInfo, cluster, req.NodeDeploymentID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		nodeList, err := getNodeList(ctx, cluster, clusterProvider)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		var nodesV1 []*apiv1.Node
-		for i := range machines.Items {
-			node := getNodeForMachine(&machines.Items[i], nodeList.Items)
-			outNode, err := outputMachine(&machines.Items[i], node, req.HideInitialConditions)
-			if err != nil {
-				return nil, fmt.Errorf("failed to output machine %s: %v", machines.Items[i].Name, err)
-			}
-
-			nodesV1 = append(nodesV1, outNode)
-		}
-
-		return nodesV1, nil
-	}
-}
-
-// PatchNodeDeploymentReq defines HTTP request for patchNodeDeployment endpoint
-// swagger:parameters patchNodeDeployment
-type PatchNodeDeploymentReq struct {
-	NodeDeploymentReq
-
-	// in: body
-	Patch []byte
-}
-
-func decodePatchNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
-	var req PatchNodeDeploymentReq
-
-	clusterID, err := common.DecodeClusterID(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	dcr, err := common.DecodeDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	req.ClusterID = clusterID
-	req.NodeDeploymentID = nodeDeploymentID
-	req.DCReq = dcr.(common.DCReq)
-
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-func patchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(PatchNodeDeploymentReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-
-		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		// We cannot use machineClient.ClusterV1alpha1().MachineDeployments().Patch() method as we are not exposing
-		// MachineDeployment type directly. API uses NodeDeployment type and we cannot ensure compatibility here.
-		machineDeployment := &clusterv1alpha1.MachineDeployment{}
-		if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: req.NodeDeploymentID}, machineDeployment); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		nodeDeployment, err := outputMachineDeployment(machineDeployment)
-		if err != nil {
-			return nil, fmt.Errorf("cannot output existing node deployment: %v", err)
-		}
-
-		nodeDeploymentJSON, err := json.Marshal(nodeDeployment)
-		if err != nil {
-			return nil, fmt.Errorf("cannot decode existing node deployment: %v", err)
-		}
-
-		patchedNodeDeploymentJSON, err := jsonpatch.MergePatch(nodeDeploymentJSON, req.Patch)
-		if err != nil {
-			return nil, fmt.Errorf("cannot patch node deployment: %v", err)
-		}
-
-		var patchedNodeDeployment *apiv1.NodeDeployment
-		err = json.Unmarshal(patchedNodeDeploymentJSON, &patchedNodeDeployment)
-		if err != nil {
-			return nil, fmt.Errorf("cannot decode patched cluster: %v", err)
-		}
-
-		//TODO: We need to make the kubelet version configurable but restrict it to versions supported by the control plane
-		kversion, err := semver.NewVersion(patchedNodeDeployment.Spec.Template.Versions.Kubelet)
-		if err != nil {
-			return nil, k8cerrors.NewBadRequest("failed to parse kubelet version: %v", err)
-		}
-		if err = common.EnsureVersionCompatible(cluster.Spec.Version.Semver(), kversion); err != nil {
-			return nil, k8cerrors.NewBadRequest(err.Error())
-		}
-
-		dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
-		if !found {
-			return nil, fmt.Errorf("unknown cluster datacenter %s", cluster.Spec.Cloud.DatacenterName)
-		}
-
-		keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: req.ClusterID})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		patchedMachineDeployment, err := machineresource.Deployment(cluster, patchedNodeDeployment, dc, keys)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
-		}
-
-		// Only the fields from NodeDeploymentSpec will be updated by a patch.
-		// It ensures that the name and resource version are set and the selector stays the same.
-		machineDeployment.Spec.Template.Spec = patchedMachineDeployment.Spec.Template.Spec
-		machineDeployment.Spec.Replicas = patchedMachineDeployment.Spec.Replicas
-		machineDeployment.Spec.Paused = patchedMachineDeployment.Spec.Paused
-
-		if err := client.Update(ctx, machineDeployment); err != nil {
-			return nil, fmt.Errorf("failed to update machine deployment: %v", err)
-		}
-
-		return outputMachineDeployment(machineDeployment)
-	}
-}
-
-// DeleteNodeDeploymentReq defines HTTP request for deleteNodeDeployment
-// swagger:parameters deleteNodeDeployment
-type DeleteNodeDeploymentReq struct {
-	common.GetClusterReq
-	// in: path
-	NodeDeploymentID string `json:"nodedeployment_id"`
-}
-
-func decodeDeleteNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
-	var req DeleteNodeDeploymentReq
-
-	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	clusterID, err := common.DecodeClusterID(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	dcr, err := common.DecodeDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	req.ClusterID = clusterID
-	req.NodeDeploymentID = nodeDeploymentID
-	req.DCReq = dcr.(common.DCReq)
-
-	return req, nil
-}
-
-func deleteNodeDeployment(projectProvider provider.ProjectProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(DeleteNodeDeploymentReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create a machine client: %v", err)
-		}
-
-		return nil, common.KubernetesErrorToHTTPError(client.Delete(ctx, &clusterv1alpha1.MachineDeployment{ObjectMeta: metav1.ObjectMeta{Namespace: metav1.NamespaceSystem, Name: req.NodeDeploymentID}}))
-	}
-}
-
-const (
-	warningType = "warning"
-	normalType  = "normal"
-)
-
-// NodeDeploymentNodesEventsReq defines HTTP request for listNodeDeploymentNodesEvents endpoint
-// swagger:parameters listNodeDeploymentNodesEvents
-type NodeDeploymentNodesEventsReq struct {
-	common.GetClusterReq
-	// in: query
-	Type string
-
-	// in: path
-	NodeDeploymentID string `json:"nodedeployment_id"`
-}
-
-func decodeListNodeDeploymentNodesEvents(c context.Context, r *http.Request) (interface{}, error) {
-	var req NodeDeploymentNodesEventsReq
-
-	clusterID, err := common.DecodeClusterID(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	dcr, err := common.DecodeDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	req.ClusterID = clusterID
-	req.NodeDeploymentID = nodeDeploymentID
-	req.DCReq = dcr.(common.DCReq)
-
-	req.Type = r.URL.Query().Get("type")
-	if len(req.Type) > 0 {
-		if req.Type == warningType || req.Type == normalType {
-			return req, nil
-		}
-		return nil, fmt.Errorf("wrong query paramater, unsupported type: %s", req.Type)
-	}
-
-	return req, nil
-}
-
-func listNodeDeploymentNodesEvents() endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(NodeDeploymentNodesEventsReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		client, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		machines, err := getMachinesForNodeDeployment(ctx, clusterProvider, userInfo, cluster, req.NodeDeploymentID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		events := make([]apiv1.Event, 0)
-		for _, machine := range machines.Items {
-			machineEvents, err := getMachineEvents(ctx, client, machine)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-
-			if len(machineEvents) > 0 {
-				if len(req.Type) > 0 {
-					if req.Type == warningType {
-						machineEvents = common.FilterEventsByType(machineEvents, corev1.EventTypeWarning)
-					}
-					if req.Type == normalType {
-						machineEvents = common.FilterEventsByType(machineEvents, corev1.EventTypeNormal)
-					}
-				}
-
-				events = append(events, machineEvents...)
-			}
-		}
-
-		return events, nil
-	}
-}
-
-// getMachineEvents returns Kubernetes API event objects assigned to the Machine.
-func getMachineEvents(ctx context.Context, client ctrlruntimeclient.Client, machine clusterv1alpha1.Machine) ([]apiv1.Event, error) {
-	events := &corev1.EventList{}
-	listOpts := &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, FieldSelector: fields.OneTermEqualSelector("involvedObject.uid", string(machine.UID))}
-	if err := client.List(ctx, listOpts, events); err != nil {
-		return nil, err
-	}
-
-	kubermaticEvents := make([]apiv1.Event, 0)
-	for _, event := range events.Items {
-		kubermaticEvent := common.ConvertInternalEventToExternal(event)
-		kubermaticEvents = append(kubermaticEvents, kubermaticEvent)
-	}
-
-	return kubermaticEvents, nil
 }

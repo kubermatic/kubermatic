@@ -229,6 +229,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticato
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
 	v1AlphaRouter := mainRouter.PathPrefix("/api/v1alpha").Subrouter()
 	r.RegisterV1(v1Router, metrics)
+	r.RegisterV1Legacy(v1Router)
 	r.RegisterV1Optional(v1Router,
 		options.featureGates.Enabled(OIDCKubeCfgEndpoint),
 		common.OIDCConfiguration{
