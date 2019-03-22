@@ -90,6 +90,7 @@
         }
       ],
       "thresholds": "0.7,0.9",
+      "timeRegions": [],
       "title": "Total Disk Usage",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -172,6 +173,7 @@
         }
       ],
       "thresholds": "",
+      "timeRegions": [],
       "title": "Total Disk Capacity",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -254,6 +256,7 @@
         }
       ],
       "thresholds": "",
+      "timeRegions": [],
       "title": "Total Available Disk Space",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -336,6 +339,7 @@
         }
       ],
       "thresholds": "",
+      "timeRegions": [],
       "title": "Total Used Disk Space",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -436,6 +440,7 @@
         }
       ],
       "thresholds": "0.7,0.9",
+      "timeRegions": [],
       "title": "Disk Usage",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -521,6 +526,7 @@
         }
       ],
       "thresholds": "",
+      "timeRegions": [],
       "title": "Capacity",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -589,6 +595,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Disk Usages",
       "tooltip": {
@@ -700,6 +707,7 @@
         }
       ],
       "thresholds": "",
+      "timeRegions": [],
       "title": "Available",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -785,6 +793,7 @@
         }
       ],
       "thresholds": "",
+      "timeRegions": [],
       "title": "Used",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",

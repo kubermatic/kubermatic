@@ -6,7 +6,6 @@
   "gnetId": null,
   "graphTooltip": 1,
   "hideControls": "<< hideControls | default false | toJson >>",
-  "iteration": 1534359654832,
   "links": [],
   "panels": [
     {
@@ -79,6 +78,7 @@
         }
       ],
       "thresholds": "",
+      "timeRegions": [],
       "title": "Controller Request Volume",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -163,6 +163,7 @@
         }
       ],
       "thresholds": "",
+      "timeRegions": [],
       "title": "Controller Connections",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -246,6 +247,7 @@
         }
       ],
       "thresholds": "95, 99, 99.5",
+      "timeRegions": [],
       "title": "Controller Success Rate (non-4|5xx responses)",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -331,6 +333,7 @@
         }
       ],
       "thresholds": "",
+      "timeRegions": [],
       "title": "Config Reloads",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -416,6 +419,7 @@
         }
       ],
       "thresholds": "",
+      "timeRegions": [],
       "title": "Last Config Failed",
       "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "singlestat",
@@ -501,6 +505,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Network I/O pressure",
       "tooltip": {
@@ -605,6 +610,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Average Memory Usage",
       "tooltip": {
@@ -714,6 +720,7 @@
         }
       ],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Average CPU Usage",
       "tooltip": {
@@ -970,6 +977,7 @@
         }
       ],
       "timeFrom": null,
+      "timeRegions": [],
       "title": "Ingress Percentile Response Times and Transfer Rates",
       "transform": "table",
       "transparent": "<< transparentPanels | default true | toJson >>",
@@ -1052,6 +1060,7 @@
           "step": 1
         }
       ],
+      "timeRegions": [],
       "title": "Ingress Certificate Expiry",
       "transform": "timeseries_aggregations",
       "transparent": "<< transparentPanels | default true | toJson >>",

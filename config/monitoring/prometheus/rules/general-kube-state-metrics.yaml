@@ -9,9 +9,7 @@ groups:
       max(label_replace(kube_pod_info{job="kube-state-metrics"}, "pod", "$1", "pod", "(.*)")) by (node, namespace, pod)
     record: 'node_namespace_pod:kube_pod_info:'
   - expr: |
-      sum by (namespace) (
-        rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container_name!=""}[5m])
-      )
+      sum(rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container_name!=""}[5m])) by (namespace)
     record: namespace:container_cpu_usage_seconds_total:sum_rate
   - expr: |
       sum by (namespace, pod_name, container_name) (
