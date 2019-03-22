@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/node"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -14,6 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/node"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/project"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/ssh"
@@ -1116,7 +1116,7 @@ func (r Routing) getNodeForClusterLegacy() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(node.GetNodeForClusterLegacy(r.projectProvider)),
+		)(node.GetNodeForClusterLegacyEndpoint(r.projectProvider)),
 		node.DecodeGetNodeForClusterLegacy,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1149,7 +1149,7 @@ func (r Routing) createNodeForClusterLegacy() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(node.CreateNodeForClusterLegacy(r.sshKeyProvider, r.projectProvider, r.datacenters)),
+		)(node.CreateNodeForClusterLegacyEndpoint()),
 		node.DecodeCreateNodeForClusterLegacy,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
@@ -1178,7 +1178,7 @@ func (r Routing) listNodesForClusterLegacy() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(node.ListNodesForClusterLegacy(r.projectProvider)),
+		)(node.ListNodesForClusterLegacyEndpoint(r.projectProvider)),
 		node.DecodeListNodesForClusterLegacy,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1207,7 +1207,7 @@ func (r Routing) deleteNodeForClusterLegacy() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(node.DeleteNodeForClusterLegacy(r.projectProvider)),
+		)(node.DeleteNodeForClusterLegacyEndpoint(r.projectProvider)),
 		node.DecodeDeleteNodeForClusterLegacy,
 		encodeJSON,
 		r.defaultServerOptions()...,

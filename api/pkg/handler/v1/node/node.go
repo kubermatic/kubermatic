@@ -39,16 +39,16 @@ const (
 	initialConditionParsingDelay = 5
 )
 
-// CreateNodeDeploymentReq defines HTTP request for createMachineDeployment
+// createNodeDeploymentReq defines HTTP request for createMachineDeployment
 // swagger:parameters createNodeDeployment
-type CreateNodeDeploymentReq struct {
+type createNodeDeploymentReq struct {
 	common.GetClusterReq
 	// in: body
 	Body apiv1.NodeDeployment
 }
 
 func DecodeCreateNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
-	var req CreateNodeDeploymentReq
+	var req createNodeDeploymentReq
 
 	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
@@ -71,7 +71,7 @@ func DecodeCreateNodeDeployment(c context.Context, r *http.Request) (interface{}
 
 func CreateNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(CreateNodeDeploymentReq)
+		req := request.(createNodeDeploymentReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
@@ -161,14 +161,14 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 	}, nil
 }
 
-// ListNodeDeploymentsReq defines HTTP request for listNodeDeployments
+// listNodeDeploymentsReq defines HTTP request for listNodeDeployments
 // swagger:parameters listNodeDeployments
-type ListNodeDeploymentsReq struct {
+type listNodeDeploymentsReq struct {
 	common.GetClusterReq
 }
 
 func DecodeListNodeDeployments(c context.Context, r *http.Request) (interface{}, error) {
-	var req ListNodeDeploymentsReq
+	var req listNodeDeploymentsReq
 
 	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
@@ -188,7 +188,7 @@ func DecodeListNodeDeployments(c context.Context, r *http.Request) (interface{},
 
 func ListNodeDeployments(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(ListNodeDeploymentsReq)
+		req := request.(listNodeDeploymentsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
@@ -226,9 +226,9 @@ func ListNodeDeployments(projectProvider provider.ProjectProvider) endpoint.Endp
 	}
 }
 
-// NodeDeploymentReq defines HTTP request for getNodeDeployment
+// nodeDeploymentReq defines HTTP request for getNodeDeployment
 // swagger:parameters getNodeDeployment
-type NodeDeploymentReq struct {
+type nodeDeploymentReq struct {
 	common.GetClusterReq
 	// in: path
 	NodeDeploymentID string `json:"nodedeployment_id"`
@@ -244,7 +244,7 @@ func decodeNodeDeploymentID(c context.Context, r *http.Request) (string, error) 
 }
 
 func DecodeGetNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
-	var req NodeDeploymentReq
+	var req nodeDeploymentReq
 
 	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
@@ -270,7 +270,7 @@ func DecodeGetNodeDeployment(c context.Context, r *http.Request) (interface{}, e
 
 func GetNodeDeployment(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(NodeDeploymentReq)
+		req := request.(nodeDeploymentReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
@@ -298,9 +298,9 @@ func GetNodeDeployment(projectProvider provider.ProjectProvider) endpoint.Endpoi
 	}
 }
 
-// NodeDeploymentNodesReq defines HTTP request for listNodeDeploymentNodes
+// nodeDeploymentNodesReq defines HTTP request for listNodeDeploymentNodes
 // swagger:parameters listNodeDeploymentNodes
-type NodeDeploymentNodesReq struct {
+type nodeDeploymentNodesReq struct {
 	common.GetClusterReq
 	// in: path
 	NodeDeploymentID string `json:"nodedeployment_id"`
@@ -309,7 +309,7 @@ type NodeDeploymentNodesReq struct {
 }
 
 func DecodeListNodeDeploymentNodes(c context.Context, r *http.Request) (interface{}, error) {
-	var req NodeDeploymentNodesReq
+	var req nodeDeploymentNodesReq
 
 	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
@@ -354,7 +354,7 @@ func getMachinesForNodeDeployment(ctx context.Context, clusterProvider provider.
 
 func ListNodeDeploymentNodes(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(NodeDeploymentNodesReq)
+		req := request.(nodeDeploymentNodesReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
@@ -393,17 +393,17 @@ func ListNodeDeploymentNodes(projectProvider provider.ProjectProvider) endpoint.
 	}
 }
 
-// PatchNodeDeploymentReq defines HTTP request for patchNodeDeployment endpoint
+// patchNodeDeploymentReq defines HTTP request for patchNodeDeployment endpoint
 // swagger:parameters patchNodeDeployment
-type PatchNodeDeploymentReq struct {
-	NodeDeploymentReq
+type patchNodeDeploymentReq struct {
+	nodeDeploymentReq
 
 	// in: body
 	Patch []byte
 }
 
 func DecodePatchNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
-	var req PatchNodeDeploymentReq
+	var req patchNodeDeploymentReq
 
 	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
@@ -433,7 +433,7 @@ func DecodePatchNodeDeployment(c context.Context, r *http.Request) (interface{},
 
 func PatchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(PatchNodeDeploymentReq)
+		req := request.(patchNodeDeploymentReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
@@ -518,16 +518,16 @@ func PatchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 	}
 }
 
-// DeleteNodeDeploymentReq defines HTTP request for deleteNodeDeployment
+// deleteNodeDeploymentReq defines HTTP request for deleteNodeDeployment
 // swagger:parameters deleteNodeDeployment
-type DeleteNodeDeploymentReq struct {
+type deleteNodeDeploymentReq struct {
 	common.GetClusterReq
 	// in: path
 	NodeDeploymentID string `json:"nodedeployment_id"`
 }
 
 func DecodeDeleteNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
-	var req DeleteNodeDeploymentReq
+	var req deleteNodeDeploymentReq
 
 	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
 	if err != nil {
@@ -553,7 +553,7 @@ func DecodeDeleteNodeDeployment(c context.Context, r *http.Request) (interface{}
 
 func DeleteNodeDeployment(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(DeleteNodeDeploymentReq)
+		req := request.(deleteNodeDeploymentReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
@@ -581,9 +581,9 @@ const (
 	normalType  = "normal"
 )
 
-// NodeDeploymentNodesEventsReq defines HTTP request for listNodeDeploymentNodesEvents endpoint
+// nodeDeploymentNodesEventsReq defines HTTP request for listNodeDeploymentNodesEvents endpoint
 // swagger:parameters listNodeDeploymentNodesEvents
-type NodeDeploymentNodesEventsReq struct {
+type nodeDeploymentNodesEventsReq struct {
 	common.GetClusterReq
 	// in: query
 	Type string
@@ -593,7 +593,7 @@ type NodeDeploymentNodesEventsReq struct {
 }
 
 func DecodeListNodeDeploymentNodesEvents(c context.Context, r *http.Request) (interface{}, error) {
-	var req NodeDeploymentNodesEventsReq
+	var req nodeDeploymentNodesEventsReq
 
 	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
@@ -627,7 +627,7 @@ func DecodeListNodeDeploymentNodesEvents(c context.Context, r *http.Request) (in
 
 func ListNodeDeploymentNodesEvents() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(NodeDeploymentNodesEventsReq)
+		req := request.(nodeDeploymentNodesEventsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 

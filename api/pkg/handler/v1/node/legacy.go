@@ -23,9 +23,9 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func DeleteNodeForClusterLegacy(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func DeleteNodeForClusterLegacyEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(DeleteNodeForClusterLegacyReq)
+		req := request.(deleteNodeForClusterLegacyReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
@@ -61,9 +61,9 @@ func DeleteNodeForClusterLegacy(projectProvider provider.ProjectProvider) endpoi
 	}
 }
 
-func ListNodesForClusterLegacy(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func ListNodesForClusterLegacyEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(ListNodesForClusterReq)
+		req := request.(listNodesForClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
@@ -126,9 +126,9 @@ func ListNodesForClusterLegacy(projectProvider provider.ProjectProvider) endpoin
 	}
 }
 
-func GetNodeForClusterLegacy(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func GetNodeForClusterLegacyEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(NodeLegacyReq)
+		req := request.(getNodeLegacyReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
@@ -163,22 +163,22 @@ func GetNodeForClusterLegacy(projectProvider provider.ProjectProvider) endpoint.
 	}
 }
 
-func CreateNodeForClusterLegacy(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+func CreateNodeForClusterLegacyEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		return nil, k8cerrors.NewWithDetails(http.StatusBadRequest, "Creating Nodes is deprecated. Please create a Node Deployment instead", []string{"If you are calling this API endpoint directly then use POST \"v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments\" instead"})
 	}
 }
 
-// DeleteNodeForClusterLegacyReq defines HTTP request for deleteNodeForClusterLegacy
+// deleteNodeForClusterLegacyReq defines HTTP request for deleteNodeForClusterLegacy
 // swagger:parameters deleteNodeForClusterLegacy
-type DeleteNodeForClusterLegacyReq struct {
+type deleteNodeForClusterLegacyReq struct {
 	common.GetClusterReq
 	// in: path
 	NodeID string `json:"node_id"`
 }
 
 func DecodeDeleteNodeForClusterLegacy(c context.Context, r *http.Request) (interface{}, error) {
-	var req DeleteNodeForClusterLegacyReq
+	var req deleteNodeForClusterLegacyReq
 
 	nodeID := mux.Vars(r)["node_id"]
 	if nodeID == "" {
@@ -202,16 +202,16 @@ func DecodeDeleteNodeForClusterLegacy(c context.Context, r *http.Request) (inter
 	return req, nil
 }
 
-// ListNodesForClusterReq defines HTTP request for listNodesForClusterLegacy
+// listNodesForClusterReq defines HTTP request for listNodesForClusterLegacy
 // swagger:parameters listNodesForClusterLegacy
-type ListNodesForClusterReq struct {
+type listNodesForClusterReq struct {
 	common.GetClusterReq
 	// in: query
 	HideInitialConditions bool `json:"hideInitialConditions"`
 }
 
 func DecodeListNodesForClusterLegacy(c context.Context, r *http.Request) (interface{}, error) {
-	var req ListNodesForClusterReq
+	var req listNodesForClusterReq
 
 	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
@@ -230,16 +230,16 @@ func DecodeListNodesForClusterLegacy(c context.Context, r *http.Request) (interf
 	return req, nil
 }
 
-// CreateNodeReqLegacy defines HTTP request for createNodeForClusterLegacy
+// createNodeReqLegacyReq defines HTTP request for createNodeForClusterLegacy
 // swagger:parameters createNodeForClusterLegacy
-type CreateNodeReqLegacy struct {
+type createNodeReqLegacyReq struct {
 	common.GetClusterReq
 	// in: body
 	Body apiv1.Node
 }
 
 func DecodeCreateNodeForClusterLegacy(c context.Context, r *http.Request) (interface{}, error) {
-	var req CreateNodeReqLegacy
+	var req createNodeReqLegacyReq
 
 	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
@@ -260,9 +260,9 @@ func DecodeCreateNodeForClusterLegacy(c context.Context, r *http.Request) (inter
 	return req, nil
 }
 
-// NodeLegacyReq defines HTTP request for getNodeForClusterLegacy
+// getNodeLegacyReq defines HTTP request for getNodeForClusterLegacy
 // swagger:parameters getNodeForClusterLegacy
-type NodeLegacyReq struct {
+type getNodeLegacyReq struct {
 	common.GetClusterReq
 	// in: path
 	NodeID string `json:"node_id"`
@@ -271,7 +271,7 @@ type NodeLegacyReq struct {
 }
 
 func DecodeGetNodeForClusterLegacy(c context.Context, r *http.Request) (interface{}, error) {
-	var req NodeLegacyReq
+	var req getNodeLegacyReq
 
 	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
