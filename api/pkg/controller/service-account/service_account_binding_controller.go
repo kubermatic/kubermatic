@@ -56,7 +56,7 @@ func (r *reconcileServiceAccountProjectBinding) Reconcile(request reconcile.Requ
 	}
 
 	if err := r.ensureServiceAccountProjectBinding(resourceName); err != nil {
-		glog.Error(err)
+		glog.Errorf("failed to reconcile in controller %s due to error: %v", controllerName, err)
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil
