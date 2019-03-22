@@ -13,6 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/node"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/project"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/ssh"
@@ -167,24 +168,6 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}").
 		Handler(r.detachSSHKeyFromCluster())
-
-	//
-	// Defines a set of HTTP endpoints for nodes that belong to a cluster
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}").
-		Handler(r.getNodeForClusterLegacy())
-
-	mux.Methods(http.MethodPost).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes").
-		Handler(r.createNodeForClusterLegacy())
-
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes").
-		Handler(r.listNodesForClusterLegacy())
-
-	mux.Methods(http.MethodDelete).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}").
-		Handler(r.deleteNodeForClusterLegacy())
 
 	mux.Methods(http.MethodPut).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token").
@@ -1090,129 +1073,6 @@ func (r Routing) revokeClusterAdminToken() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id} project getNodeForClusterLegacy
-//
-//     Deprecated:
-//     Gets a node that is assigned to the given cluster.
-//
-//     This endpoint is deprecated, please create a Node Deployment instead.
-//
-//     Consumes:
-//     - application/json
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: Node
-//       401: empty
-//       403: empty
-func (r Routing) getNodeForClusterLegacy() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
-			middleware.UserSaver(r.userProvider),
-			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
-		)(getNodeForClusterLegacy(r.projectProvider)),
-		decodeGetNodeForClusterLegacy,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes project createNodeForClusterLegacy
-//
-//     Deprecated:
-//     Creates a node that will belong to the given cluster
-//
-//     This endpoint is deprecated, please create a Node Deployment instead.
-//     Use POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments
-//
-//     Consumes:
-//     - application/json
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       201: Node
-//       401: empty
-//       403: empty
-func (r Routing) createNodeForClusterLegacy() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
-			middleware.UserSaver(r.userProvider),
-			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
-		)(createNodeForClusterLegacy(r.sshKeyProvider, r.projectProvider, r.datacenters)),
-		decodeCreateNodeForClusterLegacy,
-		setStatusCreatedHeader(encodeJSON),
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes project listNodesForClusterLegacy
-//
-//     Deprecated:
-//     Lists nodes that belong to the given cluster
-//
-//     This endpoint is deprecated, please create a Node Deployment instead.
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: []Node
-//       401: empty
-//       403: empty
-func (r Routing) listNodesForClusterLegacy() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
-			middleware.UserSaver(r.userProvider),
-			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
-		)(listNodesForClusterLegacy(r.projectProvider)),
-		decodeListNodesForClusterLegacy,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id} project deleteNodeForClusterLegacy
-//
-//    Deprecated:
-//    Deletes the given node that belongs to the cluster.
-//
-//     This endpoint is deprecated, please create a Node Deployment instead.
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
-func (r Routing) deleteNodeForClusterLegacy() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
-			middleware.UserSaver(r.userProvider),
-			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
-		)(deleteNodeForClusterLegacy(r.projectProvider)),
-		decodeDeleteNodeForClusterLegacy,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/upgrades project getClusterUpgrades
 //
 //    Gets possible cluster upgrades
@@ -1638,8 +1498,8 @@ func (r Routing) createNodeDeployment() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(createNodeDeployment(r.sshKeyProvider, r.projectProvider, r.datacenters)),
-		decodeCreateNodeDeployment,
+		)(node.CreateNodeDeployment(r.sshKeyProvider, r.projectProvider, r.datacenters)),
+		node.DecodeCreateNodeDeployment,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
 	)
@@ -1664,8 +1524,8 @@ func (r Routing) listNodeDeployments() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(listNodeDeployments(r.projectProvider)),
-		decodeListNodeDeployments,
+		)(node.ListNodeDeployments(r.projectProvider)),
+		node.DecodeListNodeDeployments,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1690,8 +1550,8 @@ func (r Routing) getNodeDeployment() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(getNodeDeployment(r.projectProvider)),
-		decodeGetNodeDeployment,
+		)(node.GetNodeDeployment(r.projectProvider)),
+		node.DecodeGetNodeDeployment,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1716,8 +1576,8 @@ func (r Routing) listNodeDeploymentNodes() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(listNodeDeploymentNodes(r.projectProvider)),
-		decodeListNodeDeploymentNodes,
+		)(node.ListNodeDeploymentNodes(r.projectProvider)),
+		node.DecodeListNodeDeploymentNodes,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1743,8 +1603,8 @@ func (r Routing) listNodeDeploymentNodesEvents() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(listNodeDeploymentNodesEvents()),
-		decodeListNodeDeploymentNodesEvents,
+		)(node.ListNodeDeploymentNodesEvents()),
+		node.DecodeListNodeDeploymentNodesEvents,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1773,8 +1633,8 @@ func (r Routing) patchNodeDeployment() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(patchNodeDeployment(r.sshKeyProvider, r.projectProvider, r.datacenters)),
-		decodePatchNodeDeployment,
+		)(node.PatchNodeDeployment(r.sshKeyProvider, r.projectProvider, r.datacenters)),
+		node.DecodePatchNodeDeployment,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1799,8 +1659,8 @@ func (r Routing) deleteNodeDeployment() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(deleteNodeDeployment(r.projectProvider)),
-		decodeDeleteNodeDeployment,
+		)(node.DeleteNodeDeployment(r.projectProvider)),
+		node.DecodeDeleteNodeDeployment,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
