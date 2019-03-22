@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/node"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -1115,8 +1116,8 @@ func (r Routing) getNodeForClusterLegacy() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(getNodeForClusterLegacy(r.projectProvider)),
-		decodeGetNodeForClusterLegacy,
+		)(node.GetNodeForClusterLegacy(r.projectProvider)),
+		node.DecodeGetNodeForClusterLegacy,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1148,8 +1149,8 @@ func (r Routing) createNodeForClusterLegacy() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(createNodeForClusterLegacy(r.sshKeyProvider, r.projectProvider, r.datacenters)),
-		decodeCreateNodeForClusterLegacy,
+		)(node.CreateNodeForClusterLegacy(r.sshKeyProvider, r.projectProvider, r.datacenters)),
+		node.DecodeCreateNodeForClusterLegacy,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
 	)
@@ -1177,8 +1178,8 @@ func (r Routing) listNodesForClusterLegacy() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(listNodesForClusterLegacy(r.projectProvider)),
-		decodeListNodesForClusterLegacy,
+		)(node.ListNodesForClusterLegacy(r.projectProvider)),
+		node.DecodeListNodesForClusterLegacy,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1206,8 +1207,8 @@ func (r Routing) deleteNodeForClusterLegacy() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(deleteNodeForClusterLegacy(r.projectProvider)),
-		decodeDeleteNodeForClusterLegacy,
+		)(node.DeleteNodeForClusterLegacy(r.projectProvider)),
+		node.DecodeDeleteNodeForClusterLegacy,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1638,8 +1639,8 @@ func (r Routing) createNodeDeployment() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(createNodeDeployment(r.sshKeyProvider, r.projectProvider, r.datacenters)),
-		decodeCreateNodeDeployment,
+		)(node.CreateNodeDeployment(r.sshKeyProvider, r.projectProvider, r.datacenters)),
+		node.DecodeCreateNodeDeployment,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
 	)
@@ -1664,8 +1665,8 @@ func (r Routing) listNodeDeployments() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(listNodeDeployments(r.projectProvider)),
-		decodeListNodeDeployments,
+		)(node.ListNodeDeployments(r.projectProvider)),
+		node.DecodeListNodeDeployments,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1690,8 +1691,8 @@ func (r Routing) getNodeDeployment() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(getNodeDeployment(r.projectProvider)),
-		decodeGetNodeDeployment,
+		)(node.GetNodeDeployment(r.projectProvider)),
+		node.DecodeGetNodeDeployment,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1716,8 +1717,8 @@ func (r Routing) listNodeDeploymentNodes() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(listNodeDeploymentNodes(r.projectProvider)),
-		decodeListNodeDeploymentNodes,
+		)(node.ListNodeDeploymentNodes(r.projectProvider)),
+		node.DecodeListNodeDeploymentNodes,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1743,8 +1744,8 @@ func (r Routing) listNodeDeploymentNodesEvents() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(listNodeDeploymentNodesEvents()),
-		decodeListNodeDeploymentNodesEvents,
+		)(node.ListNodeDeploymentNodesEvents()),
+		node.DecodeListNodeDeploymentNodesEvents,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1773,8 +1774,8 @@ func (r Routing) patchNodeDeployment() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(patchNodeDeployment(r.sshKeyProvider, r.projectProvider, r.datacenters)),
-		decodePatchNodeDeployment,
+		)(node.PatchNodeDeployment(r.sshKeyProvider, r.projectProvider, r.datacenters)),
+		node.DecodePatchNodeDeployment,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1799,8 +1800,8 @@ func (r Routing) deleteNodeDeployment() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
-		)(deleteNodeDeployment(r.projectProvider)),
-		decodeDeleteNodeDeployment,
+		)(node.DeleteNodeDeployment(r.projectProvider)),
+		node.DecodeDeleteNodeDeployment,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
