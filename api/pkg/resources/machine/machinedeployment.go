@@ -5,13 +5,15 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/kubermatic/kubermatic/api/pkg/validation"
+	"github.com/Masterminds/semver"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
+	"github.com/kubermatic/kubermatic/api/pkg/validation"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -158,4 +160,34 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc pro
 
 	config.OperatingSystemSpec = *osExt
 	return &config, nil
+}
+
+// Validate if the node deployment structure fulfills certain requirements. It returns node deployment with updated
+// kubelet version if it wasn't specified.
+func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semver.Version) (*apiv1.NodeDeployment, error) {
+	if nd.Spec.Template.Cloud.Openstack == nil &&
+		nd.Spec.Template.Cloud.Digitalocean == nil &&
+		nd.Spec.Template.Cloud.AWS == nil &&
+		nd.Spec.Template.Cloud.Hetzner == nil &&
+		nd.Spec.Template.Cloud.VSphere == nil &&
+		nd.Spec.Template.Cloud.Azure == nil {
+		return nil, fmt.Errorf("node deployment needs to have cloud provider data")
+	}
+
+	if nd.Spec.Template.Versions.Kubelet != "" {
+		kubeletVersion, err := semver.NewVersion(nd.Spec.Template.Versions.Kubelet)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse kubelet version: %v", err)
+		}
+
+		if err = common.EnsureVersionCompatible(controlPlaneVersion, kubeletVersion); err != nil {
+			return nil, err
+		}
+
+		nd.Spec.Template.Versions.Kubelet = kubeletVersion.String()
+	} else {
+		nd.Spec.Template.Versions.Kubelet = controlPlaneVersion.String()
+	}
+
+	return nd, nil
 }

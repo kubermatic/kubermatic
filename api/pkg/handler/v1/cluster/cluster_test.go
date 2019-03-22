@@ -653,7 +653,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 1
 		{
 			Name:                   "scenario 1: a cluster with invalid spec is rejected",
-			Body:                   `{"name":"keen-snyder","spec":{"cloud":{"digitalocean":{"token":"dummy_token"},"dc":"us-central1"}, "version":""}}`,
+			Body:                   `{"cluster":{"name":"keen-snyder","spec":{"cloud":{"digitalocean":{"token":"dummy_token"},"dc":"us-central1"}, "version":""}}}`,
 			ExpectedResponse:       `{"error":{"code":400,"message":"invalid cluster: invalid cloud spec \"Version\" is required but was not specified"}}`,
 			HTTPStatus:             http.StatusBadRequest,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),
@@ -663,7 +663,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 2
 		{
 			Name:             "scenario 2: cluster is created when valid spec and ssh key are passed",
-			Body:             `{"name":"keen-snyder","spec":{"version":"1.9.7","cloud":{"fake":{"token":"dummy_token"},"dc":"us-central1"}}}`,
+			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.9.7","cloud":{"fake":{"token":"dummy_token"},"dc":"us-central1"}}}}`,
 			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"dc":"us-central1","fake":{}},"version":"1.9.7"},"status":{"version":"1.9.7","url":""}}`,
 			RewriteClusterID: true,
 			HTTPStatus:       http.StatusCreated,

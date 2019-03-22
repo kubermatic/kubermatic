@@ -38,7 +38,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
-	"github.com/kubermatic/kubermatic/api/pkg/metrics"
+	metricspkg "github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
@@ -77,7 +77,7 @@ func main() {
 		glog.Fatalf(fmt.Sprintf("failed to create API Handler due to %v", err))
 	}
 
-	go metrics.ServeForever(options.internalAddr, "/metrics")
+	go metricspkg.ServeForever(options.internalAddr, "/metrics")
 	glog.Info(fmt.Sprintf("Listening on %s", options.listenAddress))
 	glog.Fatal(http.ListenAndServe(options.listenAddress, handlers.CombinedLoggingHandler(os.Stdout, apiHandler)))
 }
@@ -223,10 +223,12 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticato
 		prov.memberMapper,
 	)
 
+	registerMetrics()
+
 	mainRouter := mux.NewRouter()
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
 	v1AlphaRouter := mainRouter.PathPrefix("/api/v1alpha").Subrouter()
-	r.RegisterV1(v1Router)
+	r.RegisterV1(v1Router, metrics)
 	r.RegisterV1Optional(v1Router,
 		options.featureGates.Enabled(OIDCKubeCfgEndpoint),
 		common.OIDCConfiguration{
@@ -239,8 +241,6 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticato
 		},
 		mainRouter)
 	r.RegisterV1Alpha(v1AlphaRouter)
-
-	metrics.RegisterHTTPVecs()
 
 	lookupRoute := func(r *http.Request) string {
 		var match mux.RouteMatch
@@ -262,5 +262,5 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticato
 		return name
 	}
 
-	return metrics.InstrumentHandler(mainRouter, lookupRoute), nil
+	return instrumentHandler(mainRouter, lookupRoute), nil
 }

@@ -9,11 +9,13 @@ import (
 	"strconv"
 	"time"
 
-	jsonpatch "github.com/evanphx/json-patch"
+	"github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
+	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	prometheusapi "github.com/prometheus/client_golang/api"
 	prometheusv1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -25,11 +27,19 @@ import (
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cluster"
+	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CreateEndpoint(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider,
+	dcs map[string]provider.DatacenterMeta, initNodeDeploymentFailures *prometheus.CounterVec) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -39,7 +49,8 @@ func CreateEndpoint(cloudProviders map[string]provider.CloudProvider, projectPro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		spec, err := cluster.Spec(req.Body, cloudProviders, dcs)
+		// Create the cluster.
+		spec, err := cluster.Spec(req.Body.Cluster, cloudProviders, dcs)
 		if err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
@@ -48,6 +59,7 @@ func CreateEndpoint(cloudProviders map[string]provider.CloudProvider, projectPro
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
+
 		if len(existingClusters) > 0 {
 			return nil, errors.NewAlreadyExists("cluster", spec.HumanReadableName)
 		}
@@ -56,7 +68,103 @@ func CreateEndpoint(cloudProviders map[string]provider.CloudProvider, projectPro
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
+
+		// Create the initial node deployment in the background.
+		if req.Body.NodeDeployment != nil {
+			go func() {
+				defer utilruntime.HandleCrash()
+				err := createInitialNodeDeployment(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, dcs, clusterProvider, userInfo)
+				if err != nil {
+					glog.V(5).Infof("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
+					initNodeDeploymentFailures.With(prometheus.Labels{"cluster": newCluster.Name, "seed_dc": req.DC}).Add(1)
+				} else {
+					glog.V(5).Infof("created initial node deployment for cluster %s", newCluster.Name)
+				}
+			}()
+		}
+
 		return convertInternalClusterToExternal(newCluster), nil
+	}
+}
+
+func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticapiv1.Cluster,
+	project *kubermaticapiv1.Project, sshKeyProvider provider.SSHKeyProvider, dcs map[string]provider.DatacenterMeta,
+	clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo) error {
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+
+	nd, err := machineresource.Validate(nodeDeployment, cluster.Spec.Version.Semver())
+	if err != nil {
+		return fmt.Errorf("node deployment is not valid: %v", err)
+	}
+
+	err = wait.Poll(5*time.Second, 30*time.Minute, initClusterCondition(ctx, cluster.Name, clusterProvider, userInfo))
+	if err != nil {
+		return fmt.Errorf("timed out waiting for cluster to be ready: %v", err)
+	}
+
+	cluster, err = clusterProvider.Get(userInfo, cluster.Name, &provider.ClusterGetOptions{CheckInitStatus: true})
+	if err != nil {
+		return fmt.Errorf("failed to get cluster: %v", err)
+	}
+
+	keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: cluster.Name})
+	if err != nil {
+		return fmt.Errorf("failed to list cluster ssh keys: %v", common.KubernetesErrorToHTTPError(err))
+	}
+
+	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+	if err != nil {
+		return fmt.Errorf("failed to create cluster client: %v", common.KubernetesErrorToHTTPError(err))
+	}
+
+	dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
+	if !found {
+		return fmt.Errorf("failed to find cluster datacenter: %v", cluster.Spec.Cloud.DatacenterName)
+	}
+
+	md, err := machineresource.Deployment(cluster, nd, dc, keys)
+	if err != nil {
+		return fmt.Errorf("failed to create machine deployment from template: %v", err)
+	}
+
+	err = client.Create(ctx, md)
+	if err != nil {
+		return fmt.Errorf("failed to save machine deployment: %v", err)
+	}
+
+	return nil
+}
+
+func initClusterCondition(ctx context.Context, clusterName string, clusterProvider provider.ClusterProvider,
+	userInfo *provider.UserInfo) func() (bool, error) {
+	return func() (bool, error) {
+		c, err := clusterProvider.Get(userInfo, clusterName, &provider.ClusterGetOptions{CheckInitStatus: true})
+		if err != nil {
+			return false, nil
+		}
+
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, c)
+		if err != nil {
+			return false, nil
+		}
+
+		// since we use an impersonated client when sending a request to the cluster
+		// there have to be RBAC Roles/Bindings in place otherwise we get 403 errors
+		// at the moment the cluster health doesn't check if the RBAC was generated
+		// so we might open a connection and get an access denied error
+		//
+		// TODO: we could extend the cluster health to report when the controller has finished generating RBAC
+		//       instead of listing machine deployments
+		//
+		// TODO: figure out why client.Create doesn't report errors when RBAC was not generated and we should get 403
+		machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
+		err = client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments)
+		if err != nil {
+			return false, nil
+		}
+
+		return true, nil
 	}
 }
 
@@ -525,7 +633,7 @@ type DetachSSHKeysReq struct {
 type CreateReq struct {
 	common.DCReq
 	// in: body
-	Body apiv1.Cluster
+	Body apiv1.CreateClusterSpec
 }
 
 func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
