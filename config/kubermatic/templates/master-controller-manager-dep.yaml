@@ -6,7 +6,7 @@ metadata:
   labels:
     app: master-controller
 spec:
-  replicas: {{.Values.kubermatic.rbac.replicas}}
+  replicas: {{.Values.kubermatic.masterController.replicas}}
   selector:
     matchLabels:
       app: master-controller
@@ -22,8 +22,8 @@ spec:
     spec:
       initContainers:
       - name: projects-migrator
-        image: '{{.Values.kubermatic.rbac.image.repository}}:{{.Values.kubermatic.rbac.image.tag}}'
-        imagePullPolicy: {{.Values.kubermatic.rbac.image.pullPolicy}}
+        image: '{{.Values.kubermatic.masterController.image.repository}}:{{.Values.kubermatic.masterController.image.tag}}'
+        imagePullPolicy: {{.Values.kubermatic.masterController.image.pullPolicy}}
         command:
         - projects-migrator
         args:
@@ -49,14 +49,14 @@ spec:
         {{- if .Values.kubermatic.worker_name }}
         - -worker-name={{ .Values.kubermatic.worker_name }}
         {{- end }}
-        image: '{{.Values.kubermatic.rbac.image.repository}}:{{.Values.kubermatic.rbac.image.tag}}'
-        imagePullPolicy: {{.Values.kubermatic.rbac.image.pullPolicy}}
+        image: '{{.Values.kubermatic.masterController.image.repository}}:{{.Values.kubermatic.masterController.image.tag}}'
+        imagePullPolicy: {{.Values.kubermatic.masterController.image.pullPolicy}}
         volumeMounts:
           - name: kubeconfig
             mountPath: "/opt/.kube/"
             readOnly: true
         resources:
-{{ toYaml .Values.kubermatic.rbac.resources | indent 10 }}
+{{ toYaml .Values.kubermatic.masterController.resources | indent 10 }}
       imagePullSecrets:
         - name: dockercfg
       volumes:
