@@ -117,6 +117,7 @@
       ],
       "thresholds": "70,80",
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "CPU Utilisation",
       "tooltip": {
@@ -256,6 +257,7 @@
       ],
       "thresholds": "70,80",
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "CPU Requests Commitment",
       "tooltip": {
@@ -395,6 +397,7 @@
       ],
       "thresholds": "70,80",
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "CPU Limits Commitment",
       "tooltip": {
@@ -534,6 +537,7 @@
       ],
       "thresholds": "70,80",
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Memory Utilisation",
       "tooltip": {
@@ -673,6 +677,7 @@
       ],
       "thresholds": "70,80",
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Memory Requests Commitment",
       "tooltip": {
@@ -812,6 +817,7 @@
       ],
       "thresholds": "70,80",
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Memory Limits Commitment",
       "tooltip": {
@@ -908,7 +914,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(irate(container_cpu_usage_seconds_total{namespace!=\"\"}[1m])) by (namespace)",
+          "expr": "sum(namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate) by (namespace)",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{namespace}}",
@@ -919,6 +925,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "CPU Usage",
       "tooltip": {
@@ -1102,10 +1109,12 @@
           "decimals": 2,
           "link": true,
           "linkTooltip": "Drill down",
-          "linkUrl": "/d/85a562078cdf77779eaa1add43ccec1e/k8s-resources-namespace?var-datasource=$datasource&var-namespace=$__cell",
+          "linkUrl": "/d/f9d729354e90/resources-namespace?var-namespace=$__cell",
           "pattern": "namespace",
+          "preserveFormat": false,
+          "sanitize": false,
           "thresholds": [],
-          "type": "number",
+          "type": "string",
           "unit": "short"
         },
         {
@@ -1122,7 +1131,7 @@
       ],
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace!=\"\"}[5m])) by (namespace)",
+          "expr": "sum(namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate) by (namespace)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -1140,7 +1149,7 @@
           "step": 10
         },
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total[5m])) by (namespace) / sum(kube_pod_container_resource_requests_cpu_cores) by (namespace)",
+          "expr": "sum(namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate) by (namespace) / sum(kube_pod_container_resource_requests_cpu_cores) by (namespace)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -1158,7 +1167,7 @@
           "step": 10
         },
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total[5m])) by (namespace) / sum(kube_pod_container_resource_limits_cpu_cores) by (namespace)",
+          "expr": "sum(namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate) by (namespace) / sum(kube_pod_container_resource_limits_cpu_cores) by (namespace)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -1169,6 +1178,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "CPU Quota",
       "tooltip": {
@@ -1257,7 +1267,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(container_memory_rss{namespace!=\"\"}) by (namespace)",
+          "expr": "sum(container_memory_rss{container_name!=\"\"}) by (namespace)",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{namespace}}",
@@ -1268,6 +1278,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Memory Usage (w/o cache)",
       "tooltip": {
@@ -1451,10 +1462,10 @@
           "decimals": 2,
           "link": true,
           "linkTooltip": "Drill down",
-          "linkUrl": "/d/85a562078cdf77779eaa1add43ccec1e/k8s-resources-namespace?var-datasource=$datasource&var-namespace=$__cell",
+          "linkUrl": "/d/f9d729354e90/resources-namespace?var-namespace=$__cell",
           "pattern": "namespace",
           "thresholds": [],
-          "type": "number",
+          "type": "string",
           "unit": "short"
         },
         {
@@ -1471,7 +1482,7 @@
       ],
       "targets": [
         {
-          "expr": "sum(container_memory_rss{namespace!=\"\"}) by (namespace)",
+          "expr": "sum(container_memory_rss{container_name!=\"\"}) by (namespace)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -1489,7 +1500,7 @@
           "step": 10
         },
         {
-          "expr": "sum(container_memory_rss) by (namespace) / sum(kube_pod_container_resource_requests_memory_bytes) by (namespace)",
+          "expr": "sum(container_memory_rss{container_name!=\"\"}) by (namespace) / sum(kube_pod_container_resource_requests_memory_bytes) by (namespace)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -1507,7 +1518,7 @@
           "step": 10
         },
         {
-          "expr": "sum(container_memory_rss) by (namespace) / sum(kube_pod_container_resource_limits_memory_bytes) by (namespace)",
+          "expr": "sum(container_memory_rss{container_name!=\"\"}) by (namespace) / sum(kube_pod_container_resource_limits_memory_bytes) by (namespace)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -1518,6 +1529,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Requests by Namespace",
       "tooltip": {
@@ -1573,6 +1585,7 @@
         "query": "prometheus",
         "refresh": 1,
         "regex": "",
+        "skipUrlSync": false,
         "type": "datasource"
       }
     ]

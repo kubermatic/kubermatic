@@ -29,7 +29,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "editable": "<< editable | default false | toJson >>",
-      "fill": 1,
+      "fill": 10,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -47,7 +47,7 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 1,
+      "linewidth": 0,
       "links": [],
       "nullPointMode": "null as zero",
       "percentage": false,
@@ -56,11 +56,11 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": false,
+      "stack": true,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "node:node_cpu_utilisation:avg1m{node=~\"$node\"}",
+          "expr": "node:cluster_cpu_utilisation:ratio{node=~\"$nodes\"}",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{node}}",
@@ -71,6 +71,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "CPU Utilisation",
       "tooltip": {
@@ -89,11 +90,10 @@
       },
       "yaxes": [
         {
-          "decimals": 1,
           "format": "percentunit",
           "label": null,
           "logBase": 1,
-          "max": null,
+          "max": 1,
           "min": 0,
           "show": true
         },
@@ -118,7 +118,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "editable": "<< editable | default false | toJson >>",
-      "fill": 1,
+      "fill": 10,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -136,7 +136,7 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 1,
+      "linewidth": 0,
       "links": [],
       "nullPointMode": "null as zero",
       "percentage": false,
@@ -145,11 +145,11 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": false,
+      "stack": true,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "node:node_cpu_saturation_load1:{node=~\"$node\"}",
+          "expr": "node:node_cpu_saturation_load1:{node=~\"$nodes\"} / scalar(sum(min(kube_pod_info) by (node)))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{node}}",
@@ -160,6 +160,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "CPU Saturation (Load1)",
       "tooltip": {
@@ -178,11 +179,10 @@
       },
       "yaxes": [
         {
-          "decimals": 0,
-          "format": "none",
+          "format": "percentunit",
           "label": null,
           "logBase": 1,
-          "max": null,
+          "max": 1,
           "min": 0,
           "show": true
         },
@@ -221,7 +221,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "editable": "<< editable | default false | toJson >>",
-      "fill": 1,
+      "fill": 10,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -239,7 +239,7 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 1,
+      "linewidth": 0,
       "links": [],
       "nullPointMode": "null as zero",
       "percentage": false,
@@ -248,11 +248,11 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": false,
+      "stack": true,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "node:node_memory_utilisation:ratio{node=~\"$node\"}",
+          "expr": "node:cluster_memory_utilisation:ratio{node=~\"$nodes\"}",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{node}}",
@@ -263,6 +263,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Memory Utilisation",
       "tooltip": {
@@ -281,11 +282,10 @@
       },
       "yaxes": [
         {
-          "decimals": null,
           "format": "percentunit",
           "label": null,
           "logBase": 1,
-          "max": null,
+          "max": 1,
           "min": 0,
           "show": true
         },
@@ -310,7 +310,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "editable": "<< editable | default false | toJson >>",
-      "fill": 1,
+      "fill": 10,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -328,7 +328,7 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 1,
+      "linewidth": 0,
       "links": [],
       "nullPointMode": "null as zero",
       "percentage": false,
@@ -337,11 +337,11 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": false,
+      "stack": true,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "node:node_memory_swap_io_bytes:sum_rate{node=~\"$node\"}",
+          "expr": "node:node_memory_swap_io_bytes:sum_rate{node=~\"$nodes\"}",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{node}}",
@@ -352,6 +352,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Memory Saturation (Swap I/O)",
       "tooltip": {
@@ -412,7 +413,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "editable": "<< editable | default false | toJson >>",
-      "fill": 1,
+      "fill": 10,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -430,7 +431,7 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 1,
+      "linewidth": 0,
       "links": [],
       "nullPointMode": "null as zero",
       "percentage": false,
@@ -439,11 +440,11 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": false,
+      "stack": true,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "node:node_disk_utilisation:avg_irate{node=~\"$node\"}",
+          "expr": "node:node_disk_utilisation:avg_irate{node=~\"$nodes\"} / scalar(:kube_pod_info_node_count:)",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{node}}",
@@ -454,8 +455,9 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
-      "title": "Disk I/O Utilisation",
+      "title": "Disk IO Utilisation",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -472,11 +474,10 @@
       },
       "yaxes": [
         {
-          "decimals": null,
           "format": "percentunit",
           "label": null,
           "logBase": 1,
-          "max": null,
+          "max": 1,
           "min": 0,
           "show": true
         },
@@ -501,7 +502,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "editable": "<< editable | default false | toJson >>",
-      "fill": 1,
+      "fill": 10,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -519,7 +520,7 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 1,
+      "linewidth": 0,
       "links": [],
       "nullPointMode": "null as zero",
       "percentage": false,
@@ -528,11 +529,11 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": false,
+      "stack": true,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "node:node_disk_saturation:avg_irate{node=~\"$node\"}",
+          "expr": "node:node_disk_saturation:avg_irate{node=~\"$nodes\"} / scalar(:kube_pod_info_node_count:)",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{node}}",
@@ -543,6 +544,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Disk IO Saturation",
       "tooltip": {
@@ -561,11 +563,10 @@
       },
       "yaxes": [
         {
-          "decimals": 1,
           "format": "percentunit",
           "label": null,
           "logBase": 1,
-          "max": null,
+          "max": 1,
           "min": 0,
           "show": true
         },
@@ -604,7 +605,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "editable": "<< editable | default false | toJson >>",
-      "fill": 1,
+      "fill": 10,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -622,7 +623,7 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 1,
+      "linewidth": 0,
       "links": [],
       "nullPointMode": "null as zero",
       "percentage": false,
@@ -631,11 +632,11 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": false,
+      "stack": true,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "node:node_net_utilisation:sum_irate{node=~\"$node\"}",
+          "expr": "node:node_net_utilisation:sum_irate{node=~\"$nodes\"}",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{node}}",
@@ -646,6 +647,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Net Utilisation (Transmitted)",
       "tooltip": {
@@ -723,7 +725,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "node:node_net_saturation:sum_irate{node=~\"$node\"}",
+          "expr": "node:node_net_saturation:sum_irate{node=~\"$nodes\"}",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{node}}",
@@ -734,6 +736,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Net Saturation (Dropped)",
       "tooltip": {
@@ -794,7 +797,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "editable": "<< editable | default false | toJson >>",
-      "fill": 1,
+      "fill": 10,
       "gridPos": {
         "h": 7,
         "w": 24,
@@ -812,7 +815,7 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 1,
+      "linewidth": 0,
       "links": [],
       "nullPointMode": "null as zero",
       "percentage": false,
@@ -821,12 +824,13 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": false,
+      "stack": true,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(max(node_filesystem_size_bytes{fstype=~\"ext[24]\"} - node_filesystem_avail_bytes{fstype=~\"ext[24]\"}) by (device,pod,namespace)) by (pod,namespace) / scalar(sum(max(node_filesystem_size_bytes{fstype=~\"ext[24]\"}) by (device,pod,namespace))) * on (namespace, pod) group_left(node) node_namespace_pod:kube_pod_info:{node=~\"$node\"}",
+          "expr": "sum(max(node_filesystem_size_bytes{fstype=~\"ext[234]|btrfs|xfs|zfs\",node=~\"$nodes\"} - node_filesystem_avail_bytes{fstype=~\"ext[234]|btrfs|xfs|zfs\",node=~\"$nodes\"}) by (device,pod,namespace)) by (pod,namespace)\n/ scalar(sum(max(node_filesystem_size_bytes{fstype=~\"ext[234]|btrfs|xfs|zfs\",node=~\"$nodes\"}) by (device,pod,namespace)))\n* on (namespace, pod) group_left (node) node_namespace_pod:kube_pod_info:\n",
           "format": "time_series",
+          "instant": false,
           "intervalFactor": 2,
           "legendFormat": "{{node}}",
           "legendLink": "/d/4ac4f123aae0ff6dbaf4f4f66120033b/k8s-node-rsrc-use",
@@ -836,6 +840,7 @@
       ],
       "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Disk Capacity",
       "tooltip": {
@@ -854,11 +859,10 @@
       },
       "yaxes": [
         {
-          "decimals": null,
           "format": "percentunit",
           "label": null,
           "logBase": 1,
-          "max": null,
+          "max": 1,
           "min": 0,
           "show": true
         },
@@ -895,21 +899,24 @@
         "query": "prometheus",
         "refresh": 1,
         "regex": "",
+        "skipUrlSync": false,
         "type": "datasource"
       },
       {
         "allValue": null,
         "current": {},
         "datasource": "$datasource",
+        "definition": "",
         "hide": 0,
         "includeAll": true,
-        "label": "Node",
+        "label": "Nodes",
         "multi": true,
-        "name": "node",
+        "name": "nodes",
         "options": [],
         "query": "label_values(kube_node_info, node)",
         "refresh": 2,
         "regex": "",
+        "skipUrlSync": false,
         "sort": 1,
         "tagValuesQuery": "",
         "tags": [],
