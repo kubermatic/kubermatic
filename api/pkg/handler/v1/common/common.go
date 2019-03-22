@@ -1,6 +1,9 @@
 package common
 
-import "github.com/kubermatic/kubermatic/api/pkg/version"
+import (
+	"github.com/kubermatic/kubermatic/api/pkg/version"
+	"github.com/prometheus/client_golang/prometheus"
+)
 
 // OIDCConfiguration is a struct that holds
 // OIDC provider configuration data, read from command line arguments
@@ -28,4 +31,11 @@ type UpdateManager interface {
 	GetDefault() (*version.MasterVersion, error)
 	AutomaticUpdate(from string) (*version.MasterVersion, error)
 	GetPossibleUpdates(from string) ([]*version.MasterVersion, error)
+}
+
+// ServerMetrics defines metrics used by the API.
+type ServerMetrics struct {
+	HTTPRequestsTotal          *prometheus.CounterVec
+	HTTPRequestsDuration       *prometheus.HistogramVec
+	InitNodeDeploymentFailures *prometheus.CounterVec
 }
