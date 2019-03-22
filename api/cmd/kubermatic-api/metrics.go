@@ -25,7 +25,7 @@ var metrics = common.ServerMetrics{
 	),
 	InitNodeDeploymentFailures: prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "init_node_deployment_failures",
+			Name: "kubermatic_api_init_node_deployment_failures",
 			Help: "The number of times initial node deployment couldn't be created within the timeout",
 		},
 		[]string{"cluster", "seed_dc"},
