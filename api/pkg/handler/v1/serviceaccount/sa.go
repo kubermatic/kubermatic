@@ -40,7 +40,7 @@ func AddEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvide
 		}
 
 		// check if service account name is already reserved in the project
-		existingSAList, err := serviceAccountProvider.List(userInfo, saFromRequest.Name, &provider.ServiceAccountListOptions{ProjectName: project.Name})
+		existingSAList, err := serviceAccountProvider.List(userInfo, project, &provider.ServiceAccountListOptions{ServiceAccountName: saFromRequest.Name})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

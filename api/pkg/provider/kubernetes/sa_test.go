@@ -79,31 +79,31 @@ func TestGetServiceAccountByNameForProject(t *testing.T) {
 	testcases := []struct {
 		name                      string
 		existingKubermaticObjects []runtime.Object
-		projectName               string
+		project                   *kubermaticv1.Project
 		saName                    string
 		userInfo                  *provider.UserInfo
 		expectedSA                []*kubermaticv1.User
 	}{
 		{
-			name:        "scenario 1, get existing service accounts",
-			userInfo:    &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
-			projectName: "abcd",
-			saName:      "test-1",
+			name:     "scenario 1, get existing service accounts",
+			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			project:  test.GenDefaultProject(),
+			saName:   "test-1",
 			existingKubermaticObjects: []runtime.Object{
 				createAuthenitactedUser(),
-				createSA("test-1", "abcd", "editors", "1"),
+				createSA("test-1", "my-first-project-ID", "editors", "1"),
 				createSA("test-2", "abcd", "viewers", "2"),
 				createSA("test-1", "dcba", "viewers", "3"),
 			},
 			expectedSA: []*kubermaticv1.User{
-				createSA("test-1", "abcd", "editors", "1"),
+				createSA("test-1", "my-first-project-ID", "editors", "1"),
 			},
 		},
 		{
-			name:        "scenario 2, service accounts not found for the project",
-			userInfo:    &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
-			projectName: "abcd",
-			saName:      "test",
+			name:     "scenario 2, service accounts not found for the project",
+			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			project:  test.GenDefaultProject(),
+			saName:   "test",
 			existingKubermaticObjects: []runtime.Object{
 				createAuthenitactedUser(),
 				createSA("test", "bbbb", "editors", "1"),
@@ -126,7 +126,7 @@ func TestGetServiceAccountByNameForProject(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			saList, err := target.List(tc.userInfo, tc.saName, &provider.ServiceAccountListOptions{ProjectName: tc.projectName})
+			saList, err := target.List(tc.userInfo, tc.project, &provider.ServiceAccountListOptions{ServiceAccountName: tc.saName})
 			// validate
 			if err != nil {
 				t.Fatal(err)

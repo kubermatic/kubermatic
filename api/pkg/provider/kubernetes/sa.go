@@ -72,16 +72,15 @@ func (p *ServiceAccountProvider) Create(userInfo *provider.UserInfo, project *ku
 	return masterImpersonatedClient.Users().Create(&user)
 }
 
-func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, serviceAccountName string, options *provider.ServiceAccountListOptions) ([]*kubermaticv1.User, error) {
+func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, project *kubermaticv1.Project, options *provider.ServiceAccountListOptions) ([]*kubermaticv1.User, error) {
 	if userInfo == nil {
 		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
 	}
+	if project == nil {
+		return nil, kerrors.NewBadRequest("project cannot be nil")
+	}
 	if options == nil {
 		options = &provider.ServiceAccountListOptions{}
-	}
-
-	if len(serviceAccountName) == 0 {
-		return nil, kerrors.NewBadRequest("service account name and project name cannot be empty")
 	}
 
 	serviceAccounts, err := p.serviceAccountLister.List(labels.Everything())
@@ -91,37 +90,39 @@ func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, serviceAccoun
 
 	resultList := make([]*kubermaticv1.User, 0)
 	for _, sa := range serviceAccounts {
-		if strings.HasPrefix(sa.Name, "serviceaccount") && sa.Spec.Name == serviceAccountName {
-			resultList = append(resultList, sa)
+		if strings.HasPrefix(sa.Name, "serviceaccount") {
+			for _, owner := range sa.GetOwnerReferences() {
+				if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName && owner.Name == project.Name {
+					resultList = append(resultList, sa)
+				}
+			}
 		}
 	}
 
 	// Note:
 	// After we get the list of SA we try to get at least one item using unprivileged account to see if the user have read access
 	if len(resultList) > 0 {
-		if !options.SkipPrivilegeVerification {
-			masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
-			if err != nil {
-				return nil, err
-			}
 
-			saToGet := resultList[0]
-			_, err = masterImpersonatedClient.Users().Get(saToGet.Name, metav1.GetOptions{})
-			if err != nil {
-				return nil, err
-			}
+		masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+		if err != nil {
+			return nil, err
 		}
+
+		saToGet := resultList[0]
+		_, err = masterImpersonatedClient.Users().Get(saToGet.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+
 	}
-	if len(options.ProjectName) == 0 {
+	if len(options.ServiceAccountName) == 0 {
 		return resultList, nil
 	}
 
 	filteredList := make([]*kubermaticv1.User, 0)
 	for _, sa := range resultList {
-		for _, owner := range sa.GetOwnerReferences() {
-			if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName && owner.Name == options.ProjectName {
-				filteredList = append(filteredList, sa)
-			}
+		if sa.Spec.Name == options.ServiceAccountName {
+			filteredList = append(filteredList, sa)
 		}
 	}
 
