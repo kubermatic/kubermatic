@@ -123,6 +123,7 @@ func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, project *kube
 	for _, sa := range resultList {
 		if sa.Spec.Name == options.ServiceAccountName {
 			filteredList = append(filteredList, sa)
+			break
 		}
 	}
 
