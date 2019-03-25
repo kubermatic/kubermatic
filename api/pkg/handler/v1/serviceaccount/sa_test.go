@@ -54,7 +54,7 @@ func TestCreateServiceAccountProject(t *testing.T) {
 		{
 			name:       "scenario 2: check forbidden owner group",
 			body:       `{"name":"test", "group":"owners"}`,
-			httpStatus: http.StatusInternalServerError,
+			httpStatus: http.StatusBadRequest,
 			existingKubermaticObjs: []runtime.Object{
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
@@ -65,12 +65,12 @@ func TestCreateServiceAccountProject(t *testing.T) {
 			},
 			existingAPIUser:  *test.GenAPIUser("john", "john@acme.com"),
 			projectToSync:    "my-first-project-ID",
-			expectedResponse: `{"error":{"code":500,"message":"invalid group name owners"}}`,
+			expectedResponse: `{"error":{"code":400,"message":"invalid group name owners"}}`,
 		},
 		{
 			name:       "scenario 3: check name, group, project ID validator",
 			body:       `{"name":"test"}`,
-			httpStatus: http.StatusInternalServerError,
+			httpStatus: http.StatusBadRequest,
 			existingKubermaticObjs: []runtime.Object{
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
@@ -81,7 +81,7 @@ func TestCreateServiceAccountProject(t *testing.T) {
 			},
 			existingAPIUser:  *test.GenAPIUser("john", "john@acme.com"),
 			projectToSync:    "my-first-project-ID",
-			expectedResponse: `{"error":{"code":500,"message":"the name, project ID and group cannot be empty"}}`,
+			expectedResponse: `{"error":{"code":400,"message":"the name, project ID and group cannot be empty"}}`,
 		},
 		{
 			name:       "scenario 4: check when given name is already reserved",

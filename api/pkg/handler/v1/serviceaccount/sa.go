@@ -31,7 +31,7 @@ func AddEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvide
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		err := req.Validate()
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, errors.NewBadRequest(err.Error())
 		}
 		saFromRequest := req.Body
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
