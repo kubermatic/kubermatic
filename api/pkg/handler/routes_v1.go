@@ -1312,7 +1312,7 @@ func (r Routing) addServiceAccountToProject() http.Handler {
 			r.oidcAuthenticator.Verifier(),
 			middleware.UserSaver(r.userProvider),
 			middleware.UserInfo(r.userProjectMapper),
-		)(serviceaccount.AddEndpoint(r.projectProvider, r.serviceAccountProvider)),
+		)(serviceaccount.CreateEndpoint(r.projectProvider, r.serviceAccountProvider)),
 		serviceaccount.DecodeAddReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,

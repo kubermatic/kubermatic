@@ -24,10 +24,10 @@ var serviceAccountGroupsPrefixes = []string{
 	rbac.ViewerGroupNamePrefix,
 }
 
-// AddEndpoint adds the given service account to the given project
-func AddEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider) endpoint.Endpoint {
+// CreateEndpoint adds the given service account to the given project
+func CreateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(AddReq)
+		req := request.(addReq)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		err := req.Validate()
 		if err != nil {
@@ -59,16 +59,16 @@ func AddEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvide
 	}
 }
 
-// AddReq defines HTTP request for addServiceAccountToProject
+// addReq defines HTTP request for addServiceAccountToProject
 // swagger:parameters addServiceAccountToProject
-type AddReq struct {
+type addReq struct {
 	common.ProjectReq
 	// in: body
 	Body apiv1.ServiceAccount
 }
 
-// Validate validates AddReq request
-func (r AddReq) Validate() error {
+// Validate validates addReq request
+func (r addReq) Validate() error {
 	if len(r.ProjectID) == 0 || len(r.Body.Name) == 0 || len(r.Body.Group) == 0 {
 		return fmt.Errorf("the name, project ID and group cannot be empty")
 	}
@@ -81,9 +81,9 @@ func (r AddReq) Validate() error {
 	return fmt.Errorf("invalid group name %s", r.Body.Group)
 }
 
-// DecodeAddReq  decodes an HTTP request into AddReq
+// DecodeAddReq  decodes an HTTP request into addReq
 func DecodeAddReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req AddReq
+	var req addReq
 
 	prjReq, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
