@@ -7,9 +7,10 @@ import (
 )
 
 // ServiceAccountCreator returns a func to create/update the ServiceAccount used by Prometheus.
-func ServiceAccountCreator() resources.ServiceAccountCreator {
-	return func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-		sa.Name = resources.PrometheusServiceAccountName
-		return sa, nil
+func ServiceAccountCreator() resources.NamedServiceAccountCreatorGetter {
+	return func() (string, resources.ServiceAccountCreator) {
+		return resources.PrometheusServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+			return sa, nil
+		}
 	}
 }

@@ -16,7 +16,7 @@ import (
 	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
 )
 
-func getVPACreatorForPodTemplate(name, namespace string, pod corev1.PodSpec, controllerRef metav1.OwnerReference) VerticalPodAutoscalerCreator {
+func getVPACreatorForPodTemplate(name string, pod corev1.PodSpec, controllerRef metav1.OwnerReference) NamedVerticalPodAutoscalerCreatorGetter {
 	var containerPolicies []autoscalingv1beta2.ContainerResourcePolicy
 	for _, container := range pod.Containers {
 		containerPolicies = append(containerPolicies, autoscalingv1beta2.ContainerResourcePolicy{
@@ -26,34 +26,27 @@ func getVPACreatorForPodTemplate(name, namespace string, pod corev1.PodSpec, con
 		})
 	}
 
-	return func(existing *autoscalingv1beta2.VerticalPodAutoscaler) (*autoscalingv1beta2.VerticalPodAutoscaler, error) {
-		var pdb *autoscalingv1beta2.VerticalPodAutoscaler
-		if existing != nil {
-			pdb = existing
-		} else {
-			pdb = &autoscalingv1beta2.VerticalPodAutoscaler{}
+	return func() (string, VerticalPodAutoscalerCreator) {
+		return name, func(vpa *autoscalingv1beta2.VerticalPodAutoscaler) (*autoscalingv1beta2.VerticalPodAutoscaler, error) {
+			updateMode := autoscalingv1beta2.UpdateModeAuto
+			// We're doing this as we don't want to use the Cluster object as owner.
+			// Instead we're using the actual target as owner - this way the VPA gets deleted when the Deployment/StatefulSet gets deleted as well
+			vpa.OwnerReferences = []metav1.OwnerReference{controllerRef}
+			vpa.Spec = autoscalingv1beta2.VerticalPodAutoscalerSpec{
+				TargetRef: &autoscalingv1.CrossVersionObjectReference{
+					Name:       controllerRef.Name,
+					Kind:       controllerRef.Kind,
+					APIVersion: controllerRef.APIVersion,
+				},
+				UpdatePolicy: &autoscalingv1beta2.PodUpdatePolicy{
+					UpdateMode: &updateMode,
+				},
+				ResourcePolicy: &autoscalingv1beta2.PodResourcePolicy{
+					ContainerPolicies: containerPolicies,
+				},
+			}
+			return vpa, nil
 		}
-
-		pdb.Name = name
-		pdb.Namespace = namespace
-		pdb.OwnerReferences = []metav1.OwnerReference{controllerRef}
-
-		updateMode := autoscalingv1beta2.UpdateModeAuto
-		pdb.Spec = autoscalingv1beta2.VerticalPodAutoscalerSpec{
-			TargetRef: &autoscalingv1.CrossVersionObjectReference{
-				Name:       controllerRef.Name,
-				Kind:       controllerRef.Kind,
-				APIVersion: controllerRef.APIVersion,
-			},
-			UpdatePolicy: &autoscalingv1beta2.PodUpdatePolicy{
-				UpdateMode: &updateMode,
-			},
-			ResourcePolicy: &autoscalingv1beta2.PodResourcePolicy{
-				ContainerPolicies: containerPolicies,
-			},
-		}
-
-		return pdb, nil
 	}
 }
 
@@ -61,8 +54,8 @@ func getVPACreatorForPodTemplate(name, namespace string, pod corev1.PodSpec, con
 // If creator functions for VPA's for Deployments should be returned, a deployment store must be passed in. Otherwise a StatefulSet store.
 // All resources must exist in the specified namespace.
 // The VPA resource will have the same selector as the Deployment/StatefulSet. The pod container limits will be set as VPA limits.
-func getVerticalPodAutoscalersForResource(names []string, namespace string, store cache.Store) ([]VerticalPodAutoscalerCreator, error) {
-	var creators []VerticalPodAutoscalerCreator
+func getVerticalPodAutoscalersForResource(names []string, namespace string, store cache.Store) ([]NamedVerticalPodAutoscalerCreatorGetter, error) {
+	var creators []NamedVerticalPodAutoscalerCreatorGetter
 	for _, name := range names {
 		name := name
 		key := fmt.Sprintf("%s/%s", namespace, name)
@@ -79,14 +72,12 @@ func getVerticalPodAutoscalersForResource(names []string, namespace string, stor
 		case *appsv1.Deployment:
 			creators = append(creators, getVPACreatorForPodTemplate(
 				obj.Name,
-				obj.Namespace,
 				obj.Spec.Template.Spec,
 				*metav1.NewControllerRef(obj, gv.WithKind("Deployment"))),
 			)
 		case *appsv1.StatefulSet:
 			creators = append(creators, getVPACreatorForPodTemplate(
 				obj.Name,
-				obj.Namespace,
 				obj.Spec.Template.Spec,
 				*metav1.NewControllerRef(obj, gv.WithKind("StatefulSet"))),
 			)
@@ -101,7 +92,7 @@ func getVerticalPodAutoscalersForResource(names []string, namespace string, stor
 // GetVerticalPodAutoscalersForAll will return functions to create VPA resource for all supplied Deployments and StatefulSets.
 // All resources must exist in the specified namespace.
 // The VPA resource will have the same selector as the Deployment/StatefulSet. The pod container limits will be set as VPA limits.
-func GetVerticalPodAutoscalersForAll(deploymentNames, statefulSetNames []string, namespace string, dynamicCache ctrlruntimecache.Cache) ([]VerticalPodAutoscalerCreator, error) {
+func GetVerticalPodAutoscalersForAll(deploymentNames, statefulSetNames []string, namespace string, dynamicCache ctrlruntimecache.Cache) ([]NamedVerticalPodAutoscalerCreatorGetter, error) {
 	deploymentStore, err := informer.GetSyncedStoreFromDynamicFactory(dynamicCache, &appsv1.Deployment{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Deployment store: %v", err)

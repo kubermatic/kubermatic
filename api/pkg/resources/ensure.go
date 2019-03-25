@@ -9,8 +9,6 @@ import (
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/cache"
-
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -43,64 +41,6 @@ func createWithName(rawcreate ObjectCreator, name string) ObjectCreator {
 // We're using to ease testing
 type informerStore interface {
 	GetByKey(key string) (item interface{}, exists bool, err error)
-}
-
-// EnsureObject will generate the Object with the passed create function & create or update it in Kubernetes if necessary.
-// Deprecated, use EnsureNamedObject instead, it doesn't require to call the creator twice
-func EnsureObject(namespace string, rawcreate ObjectCreator, store informerStore, client ctrlruntimeclient.Client) error {
-	ctx := context.Background()
-
-	// A wrapper to ensure we always set the Namespace. This is useful as we call create twice
-	create := createWithNamespace(rawcreate, namespace)
-
-	obj, err := create(nil)
-	if err != nil {
-		return fmt.Errorf("failed to build Object(%T): %v", obj, err)
-	}
-
-	key, err := cache.MetaNamespaceKeyFunc(obj)
-	if err != nil {
-		return fmt.Errorf("failed to get key for Object(%T): %v", obj, err)
-	}
-
-	iobj, exists, err := store.GetByKey(key)
-	if err != nil {
-		return err
-	}
-
-	// Object does not exist in lister -> Create the Object
-	if !exists {
-		if err := client.Create(ctx, obj); err != nil {
-			return fmt.Errorf("failed to create %T '%s': %v", obj, key, err)
-		}
-		glog.V(2).Infof("Created %T %s in Namespace %s", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
-		return nil
-	}
-
-	// Object does exist in lister -> Update it
-	existing, ok := iobj.(runtime.Object)
-	if !ok {
-		return fmt.Errorf("failed case Object from lister to metav1.Object. Object is %T", iobj)
-	}
-
-	// Create a copy to ensure we don't modify any lister state
-	existing = existing.DeepCopyObject()
-
-	obj, err = create(existing.DeepCopyObject())
-	if err != nil {
-		return fmt.Errorf("failed to build Object(%T) '%s': %v", existing, key, err)
-	}
-
-	if DeepEqual(obj.(metav1.Object), existing.(metav1.Object)) {
-		return nil
-	}
-
-	if err = client.Update(ctx, obj); err != nil {
-		return fmt.Errorf("failed to update object %T '%s': %v", obj, key, err)
-	}
-	glog.V(2).Infof("Updated %T %s in Namespace %s", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
-
-	return nil
 }
 
 // EnsureNamedObjectV2 will generate the Object with the passed create function & create or update it in Kubernetes if necessary.

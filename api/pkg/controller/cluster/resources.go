@@ -17,6 +17,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/usercluster"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -168,7 +169,7 @@ func GetServiceCreators(data *resources.TemplateData) []resources.NamedServiceCr
 
 func (cc *Controller) ensureServices(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetServiceCreators(data)
-	return resources.ReconcileServices(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(c))
+	return resources.ReconcileServices(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(c)))
 }
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
@@ -193,7 +194,7 @@ func GetDeploymentCreators(data resources.DeploymentDataProvider) []resources.Na
 
 func (cc *Controller) ensureDeployments(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetDeploymentCreators(data)
-	return resources.ReconcileDeployments(creators, cluster.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(cluster))
+	return resources.ReconcileDeployments(creators, cluster.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }
 
 // GetSecretCreators returns all SecretCreators that are currently in use
@@ -235,7 +236,7 @@ func (cc *Controller) GetSecretCreators(data *resources.TemplateData) []resource
 func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	namedSecretCreatorGetters := cc.GetSecretCreators(data)
 
-	if err := resources.ReconcileSecrets(namedSecretCreatorGetters, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(c)); err != nil {
+	if err := resources.ReconcileSecrets(namedSecretCreatorGetters, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return fmt.Errorf("failed to ensure that the Secret exists: %v", err)
 	}
 
@@ -254,7 +255,7 @@ func GetConfigMapCreators(data *resources.TemplateData) []resources.NamedConfigM
 func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetConfigMapCreators(data)
 
-	if err := resources.ReconcileConfigMaps(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(c)); err != nil {
+	if err := resources.ReconcileConfigMaps(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)
 	}
 
@@ -269,8 +270,8 @@ func GetStatefulSetCreators(data *resources.TemplateData) []resources.NamedState
 }
 
 // GetPodDisruptionBudgetCreators returns all PodDisruptionBudgetCreators that are currently in use
-func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []resources.PodDisruptionBudgetCreator {
-	return []resources.PodDisruptionBudgetCreator{
+func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []resources.NamedPodDisruptionBudgetCreatorGetter {
+	return []resources.NamedPodDisruptionBudgetCreatorGetter{
 		etcd.PodDisruptionBudgetCreator(data),
 		apiserver.PodDisruptionBudgetCreator(),
 		metricsserver.PodDisruptionBudgetCreator(),
@@ -280,7 +281,7 @@ func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []resources.Po
 func (cc *Controller) ensurePodDisruptionBudgets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetPodDisruptionBudgetCreators(data)
 
-	if err := resources.ReconcilePodDisruptionBudgets(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(c)); err != nil {
+	if err := resources.ReconcilePodDisruptionBudgets(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return fmt.Errorf("failed to ensure that the PodDisruptionBudget exists: %v", err)
 	}
 
@@ -297,7 +298,7 @@ func GetCronJobCreators(data *resources.TemplateData) []resources.NamedCronJobCr
 func (cc *Controller) ensureCronJobs(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetCronJobCreators(data)
 
-	if err := resources.ReconcileCronJobs(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(c)); err != nil {
+	if err := resources.ReconcileCronJobs(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return fmt.Errorf("failed to ensure that the CronJobs exists: %v", err)
 	}
 
@@ -322,28 +323,38 @@ func (cc *Controller) ensureVerticalPodAutoscalers(c *kubermaticv1.Cluster, data
 	if !cc.enableVPA {
 		// If the feature is disabled, we just wrap the create function to disable the VPA.
 		// This is easier than passing a bool to all required functions.
-		for i, create := range creators {
-			creators[i] = func(existing *autoscalingv1beta2.VerticalPodAutoscaler) (*autoscalingv1beta2.VerticalPodAutoscaler, error) {
-				vpa, err := create(existing)
-				if err != nil {
-					return nil, err
-				}
-				if vpa.Spec.UpdatePolicy == nil {
-					vpa.Spec.UpdatePolicy = &autoscalingv1beta2.PodUpdatePolicy{}
-				}
-				mode := autoscalingv1beta2.UpdateModeOff
-				vpa.Spec.UpdatePolicy.UpdateMode = &mode
-
-				return vpa, nil
+		for i, getNameAndCreator := range creators {
+			creators[i] = func() (string, resources.VerticalPodAutoscalerCreator) {
+				name, create := getNameAndCreator()
+				return name, disableVPAWrapper(create)
 			}
 		}
 	}
 
-	return resources.ReconcileVerticalPodAutoscalers(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(c))
+	return resources.ReconcileVerticalPodAutoscalers(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(c)))
+}
+
+// disableVPAWrapper is a wrapper function which sets the UpdateMode on the VPA to UpdateModeOff.
+// This essentially disables any processing from the VerticalPodAutoscaler
+func disableVPAWrapper(create resources.VerticalPodAutoscalerCreator) resources.VerticalPodAutoscalerCreator {
+	return func(vpa *autoscalingv1beta2.VerticalPodAutoscaler) (*autoscalingv1beta2.VerticalPodAutoscaler, error) {
+		vpa, err := create(vpa)
+		if err != nil {
+			return nil, err
+		}
+
+		if vpa.Spec.UpdatePolicy == nil {
+			vpa.Spec.UpdatePolicy = &autoscalingv1beta2.PodUpdatePolicy{}
+		}
+		mode := autoscalingv1beta2.UpdateModeOff
+		vpa.Spec.UpdatePolicy.UpdateMode = &mode
+
+		return vpa, nil
+	}
 }
 
 func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetStatefulSetCreators(data)
 
-	return resources.ReconcileStatefulSets(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.ClusterRefWrapper(c))
+	return resources.ReconcileStatefulSets(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(c)))
 }
