@@ -14,10 +14,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	label "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
-	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
-
-	"k8s.io/apimachinery/pkg/api/errors"
+	sa "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
 // serviceAccountGroupsPrefixes holds a list of groups with prefixes that we will generate RBAC Roles/Binding for service account.
@@ -33,7 +31,7 @@ func AddEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvide
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		err := req.Validate()
 		if err != nil {
-			return nil, err
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		saFromRequest := req.Body
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
@@ -42,19 +40,17 @@ func AddEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvide
 		}
 
 		// check if service account name is already reserved in the project
-		existingSA, err := serviceAccountProvider.GetServiceAccountByNameForProject(userInfo, saFromRequest.Name, project.Name)
+		existingSAList, err := serviceAccountProvider.List(userInfo, saFromRequest.Name, &provider.ServiceAccountListOptions{ProjectName: project.Name})
 		if err != nil {
-			if !errors.IsNotFound(err) {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		if existingSA != nil {
-			return nil, common.KubernetesErrorToHTTPError(fmt.Errorf("the given name: '%s' for service account already exists", saFromRequest.Name))
+		if len(existingSAList) > 0 {
+			return nil, errors.NewAlreadyExists("service account", saFromRequest.Name)
 		}
 
 		groupName := rbac.GenerateActualGroupNameFor(project.Name, saFromRequest.Group)
-		sa, err := serviceAccountProvider.CreateServiceAccount(userInfo, project, saFromRequest.Name, groupName)
+		sa, err := serviceAccountProvider.Create(userInfo, project, saFromRequest.Name, groupName)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -74,21 +70,15 @@ type AddReq struct {
 // Validate validates AddReq request
 func (r AddReq) Validate() error {
 	if len(r.ProjectID) == 0 || len(r.Body.Name) == 0 || len(r.Body.Group) == 0 {
-		return k8cerrors.NewBadRequest("the name, project ID and group cannot be empty")
+		return fmt.Errorf("the name, project ID and group cannot be empty")
 	}
 
-	isRequestedGroupPrefixValid := false
 	for _, existingGroupPrefix := range serviceAccountGroupsPrefixes {
 		if existingGroupPrefix == r.Body.Group {
-			isRequestedGroupPrefixValid = true
-			break
+			return nil
 		}
 	}
-	if !isRequestedGroupPrefixValid {
-		return k8cerrors.NewBadRequest("invalid group name %s", r.Body.Group)
-	}
-
-	return nil
+	return fmt.Errorf("invalid group name %s", r.Body.Group)
 }
 
 // DecodeAddReq  decodes an HTTP request into AddReq
@@ -116,6 +106,6 @@ func convertInternalServiceAccountToExternal(internal *kubermaticapiv1.User) *ap
 			Name:              internal.Spec.Name,
 			CreationTimestamp: apiv1.NewTime(internal.CreationTimestamp.Time),
 		},
-		Group: internal.Labels[label.ServiceAccountLabelGroup],
+		Group: internal.Labels[sa.ServiceAccountLabelGroup],
 	}
 }

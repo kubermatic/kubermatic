@@ -54,7 +54,7 @@ func TestCreateServiceAccountProject(t *testing.T) {
 		{
 			name:       "scenario 2: check forbidden owner group",
 			body:       `{"name":"test", "group":"owners"}`,
-			httpStatus: http.StatusBadRequest,
+			httpStatus: http.StatusInternalServerError,
 			existingKubermaticObjs: []runtime.Object{
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
@@ -65,12 +65,12 @@ func TestCreateServiceAccountProject(t *testing.T) {
 			},
 			existingAPIUser:  *test.GenAPIUser("john", "john@acme.com"),
 			projectToSync:    "my-first-project-ID",
-			expectedResponse: `{"error":{"code":400,"message":"invalid group name owners"}}`,
+			expectedResponse: `{"error":{"code":500,"message":"invalid group name owners"}}`,
 		},
 		{
 			name:       "scenario 3: check name, group, project ID validator",
 			body:       `{"name":"test"}`,
-			httpStatus: http.StatusBadRequest,
+			httpStatus: http.StatusInternalServerError,
 			existingKubermaticObjs: []runtime.Object{
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
@@ -81,12 +81,12 @@ func TestCreateServiceAccountProject(t *testing.T) {
 			},
 			existingAPIUser:  *test.GenAPIUser("john", "john@acme.com"),
 			projectToSync:    "my-first-project-ID",
-			expectedResponse: `{"error":{"code":400,"message":"the name, project ID and group cannot be empty"}}`,
+			expectedResponse: `{"error":{"code":500,"message":"the name, project ID and group cannot be empty"}}`,
 		},
 		{
 			name:       "scenario 4: check when given name is already reserved",
 			body:       `{"name":"test", "group":"editors"}`,
-			httpStatus: http.StatusInternalServerError,
+			httpStatus: http.StatusConflict,
 			existingKubermaticObjs: []runtime.Object{
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
@@ -98,7 +98,7 @@ func TestCreateServiceAccountProject(t *testing.T) {
 			},
 			existingAPIUser:  *test.GenAPIUser("john", "john@acme.com"),
 			projectToSync:    "my-first-project-ID",
-			expectedResponse: `{"error":{"code":500,"message":"the given name: 'test' for service account already exists"}}`,
+			expectedResponse: `{"error":{"code":409,"message":"service account \"test\" already exists"}}`,
 		},
 	}
 

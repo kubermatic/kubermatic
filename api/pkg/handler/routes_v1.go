@@ -261,7 +261,7 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	// Defines set of HTTP endpoints for ServiceAccounts of the given project
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/serviceaccounts").
-		Handler(r.addserviceAccountToProject())
+		Handler(r.addServiceAccountToProject())
 
 	//
 	// Defines set of HTTP endpoints for control plane and kubelet versions
@@ -1306,7 +1306,7 @@ func (r Routing) getCurrentUser() http.Handler {
 //       201: ServiceAccount
 //       401: empty
 //       403: empty
-func (r Routing) addserviceAccountToProject() http.Handler {
+func (r Routing) addServiceAccountToProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			r.oidcAuthenticator.Verifier(),

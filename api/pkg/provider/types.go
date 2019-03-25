@@ -324,6 +324,15 @@ func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 
 // ServiceAccountProvider declares the set of methods for interacting with kubermatic service account
 type ServiceAccountProvider interface {
-	CreateServiceAccount(userInfo *UserInfo, project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error)
-	GetServiceAccountByNameForProject(userInfo *UserInfo, serviceAccountName, projectName string) (*kubermaticv1.User, error)
+	Create(userInfo *UserInfo, project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error)
+	List(userInfo *UserInfo, serviceAccountName string, options *ServiceAccountListOptions) ([]*kubermaticv1.User, error)
+}
+
+// ServiceAccountListOptions allows to set filters that will be applied to filter the result.
+type ServiceAccountListOptions struct {
+	// ProjectName list only projects with the given name
+	ProjectName string
+
+	// SkipPrivilegeVerification if set will not check if the user that wants to list members of the given project has sufficient privileges.
+	SkipPrivilegeVerification bool
 }

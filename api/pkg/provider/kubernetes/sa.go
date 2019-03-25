@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -37,8 +36,8 @@ type ServiceAccountProvider struct {
 	domain string
 }
 
-// CreateServiceAccount creates a new service account
-func (p *ServiceAccountProvider) CreateServiceAccount(userInfo *provider.UserInfo, project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error) {
+// Create creates a new service account
+func (p *ServiceAccountProvider) Create(userInfo *provider.UserInfo, project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error) {
 	if project == nil {
 		return nil, kerrors.NewBadRequest("Project cannot be nil")
 	}
@@ -73,11 +72,15 @@ func (p *ServiceAccountProvider) CreateServiceAccount(userInfo *provider.UserInf
 	return masterImpersonatedClient.Users().Create(&user)
 }
 
-func (p *ServiceAccountProvider) GetServiceAccountByNameForProject(userInfo *provider.UserInfo, serviceAccountName, projectName string) (*kubermaticv1.User, error) {
+func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, serviceAccountName string, options *provider.ServiceAccountListOptions) ([]*kubermaticv1.User, error) {
 	if userInfo == nil {
 		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
 	}
-	if len(serviceAccountName) == 0 || len(projectName) == 0 {
+	if options == nil {
+		options = &provider.ServiceAccountListOptions{}
+	}
+
+	if len(serviceAccountName) == 0 {
 		return nil, kerrors.NewBadRequest("service account name and project name cannot be empty")
 	}
 
@@ -86,16 +89,41 @@ func (p *ServiceAccountProvider) GetServiceAccountByNameForProject(userInfo *pro
 		return nil, err
 	}
 
+	resultList := make([]*kubermaticv1.User, 0)
 	for _, sa := range serviceAccounts {
 		if strings.HasPrefix(sa.Name, "serviceaccount") && sa.Spec.Name == serviceAccountName {
-			for _, owner := range sa.GetOwnerReferences() {
-				if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName &&
-					owner.Name == projectName {
-					return sa, nil
-				}
+			resultList = append(resultList, sa)
+		}
+	}
+
+	// Note:
+	// After we get the list of SA we try to get at least one item using unprivileged account to see if the user have read access
+	if len(resultList) > 0 {
+		if !options.SkipPrivilegeVerification {
+			masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+			if err != nil {
+				return nil, err
+			}
+
+			saToGet := resultList[0]
+			_, err = masterImpersonatedClient.Users().Get(saToGet.Name, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	if len(options.ProjectName) == 0 {
+		return resultList, nil
+	}
+
+	filteredList := make([]*kubermaticv1.User, 0)
+	for _, sa := range resultList {
+		for _, owner := range sa.GetOwnerReferences() {
+			if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName && owner.Name == options.ProjectName {
+				filteredList = append(filteredList, sa)
 			}
 		}
 	}
 
-	return nil, kerrors.NewNotFound(schema.GroupResource{Resource: "ServiceAccount"}, serviceAccountName)
+	return filteredList, nil
 }

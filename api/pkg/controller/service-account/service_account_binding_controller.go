@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	label "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	serviceaccount "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -103,8 +103,8 @@ func (r *reconcileServiceAccountProjectBinding) ensureServiceAccountProjectBindi
 		}
 	}
 	// remove labelGroup from sa
-	if _, ok := sa.Labels[label.ServiceAccountLabelGroup]; ok {
-		delete(sa.Labels, label.ServiceAccountLabelGroup)
+	if _, ok := sa.Labels[serviceaccount.ServiceAccountLabelGroup]; ok {
+		delete(sa.Labels, serviceaccount.ServiceAccountLabelGroup)
 		if err := r.Update(r.ctx, sa); err != nil {
 			return err
 		}
@@ -114,9 +114,9 @@ func (r *reconcileServiceAccountProjectBinding) ensureServiceAccountProjectBindi
 }
 
 func (r *reconcileServiceAccountProjectBinding) createBinding(sa *kubermaticv1.User, projectName string) error {
-	group, ok := sa.Labels[label.ServiceAccountLabelGroup]
+	group, ok := sa.Labels[serviceaccount.ServiceAccountLabelGroup]
 	if !ok {
-		return fmt.Errorf("label %s not found for sa %s", label.ServiceAccountLabelGroup, sa.Name)
+		return fmt.Errorf("label %s not found for sa %s", serviceaccount.ServiceAccountLabelGroup, sa.Name)
 	}
 
 	binding := &kubermaticv1.UserProjectBinding{
