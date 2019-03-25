@@ -9,18 +9,19 @@ import (
 )
 
 // PodDisruptionBudgetCreator returns a func to create/update the etcd PodDisruptionBudget
-func PodDisruptionBudgetCreator(data *resources.TemplateData) resources.PodDisruptionBudgetCreator {
-	return func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
-		pdb.Name = resources.EtcdPodDisruptionBudgetName
+func PodDisruptionBudgetCreator(data *resources.TemplateData) resources.NamedPodDisruptionBudgetCreatorGetter {
+	return func() (string, resources.PodDisruptionBudgetCreator) {
+		return resources.EtcdPodDisruptionBudgetName, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
+			minAvailable := intstr.FromInt((resources.EtcdClusterSize / 2) + 1)
+			pdb.Spec = policyv1beta1.PodDisruptionBudgetSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: getBasePodLabels(data.Cluster()),
+				},
+				MinAvailable: &minAvailable,
+			}
 
-		minAvailable := intstr.FromInt((resources.EtcdClusterSize / 2) + 1)
-		pdb.Spec = policyv1beta1.PodDisruptionBudgetSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: getBasePodLabels(data.Cluster()),
-			},
-			MinAvailable: &minAvailable,
+			return pdb, nil
 		}
-
-		return pdb, nil
 	}
+
 }

@@ -601,13 +601,14 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				for _, create := range clustercontroller.GetPodDisruptionBudgetCreators(data) {
+				for _, creatorGetter := range clustercontroller.GetPodDisruptionBudgetCreators(data) {
+					name, create := creatorGetter()
 					res, err := create(&policyv1beta1.PodDisruptionBudget{})
 					if err != nil {
 						t.Fatalf("failed to create PodDisruptionBudget: %v", err)
 					}
 
-					fixturePath := fmt.Sprintf("poddisruptionbudget-%s-%s-%s", prov, ver.Version.String(), res.Name)
+					fixturePath := fmt.Sprintf("poddisruptionbudget-%s-%s-%s", prov, ver.Version.String(), name)
 					if err != nil {
 						t.Fatalf("failed to create PodDisruptionBudget for %s: %v", fixturePath, err)
 					}
