@@ -267,6 +267,10 @@ func (c *Controller) sync(key string) error {
 		return nil
 	}
 
+	if cluster.Spec.Pause {
+		return nil
+	}
+
 	// When the apiserver is not healthy, we must skip it
 	if !cluster.Status.Health.Apiserver {
 		glog.V(6).Infof("API server of cluster %s is not running - not processing the addon", cluster.Name)
