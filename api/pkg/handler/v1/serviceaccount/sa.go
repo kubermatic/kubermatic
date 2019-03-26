@@ -106,6 +106,14 @@ func convertInternalServiceAccountToExternal(internal *kubermaticapiv1.User) *ap
 			Name:              internal.Spec.Name,
 			CreationTimestamp: apiv1.NewTime(internal.CreationTimestamp.Time),
 		},
-		Group: internal.Labels[sa.ServiceAccountLabelGroup],
+		Group:  internal.Labels[sa.ServiceAccountLabelGroup],
+		Status: getStatus(internal),
 	}
+}
+
+func getStatus(serviceAccount *kubermaticapiv1.User) string {
+	if _, ok := serviceAccount.Labels[sa.ServiceAccountLabelGroup]; ok {
+		return apiv1.ServiceAccountInactive
+	}
+	return apiv1.ServiceAccountActive
 }

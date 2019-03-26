@@ -181,10 +181,24 @@ type ProjectGroup struct {
 	GroupPrefix string `json:"group"`
 }
 
+// These are the valid statuses of a ServiceAccount.
+const (
+	// ServiceAccountActive means the ServiceAccount is available for use in the system
+	ServiceAccountActive string = "Active"
+
+	// ServiceAccountInactive means the ServiceAccount is inactive and requires further initialization
+	ServiceAccountInactive string = "Inactive"
+
+	// ServiceAccountTerminating means the ServiceAccount is undergoing graceful termination
+	ServiceAccountTerminating string = "Terminating"
+)
+
 // ServiceAccount represent an API service account
 // swagger:model ServiceAccount
 type ServiceAccount struct {
 	ObjectMeta
+	// Status describes three stages of ServiceAccount life including Active, Inactive and Terminating
+	Status string `json:"status"`
 	// Group that a service account belongs to
 	Group string `json:"group"`
 }
