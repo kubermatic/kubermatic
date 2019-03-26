@@ -34,6 +34,7 @@ spec:
           - -versions=/opt/master-files/versions.yaml
           - -updates=/opt/master-files/updates.yaml
           - -internal-address=0.0.0.0:8085
+          - -domain={{ .Values.kubermatic.domain }}
           - -kubeconfig=/opt/.kube/kubeconfig
           - -master-resources=/opt/master-files
           # the following flags enable oidc kubeconfig feature/endpoint

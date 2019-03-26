@@ -38,7 +38,7 @@ func TestCreateBinding(t *testing.T) {
 				binding.OwnerReferences[0].Kind = kubermaticv1.UserKindName
 				binding.OwnerReferences[0].Name = "serviceaccount-abcd"
 				binding.Labels = map[string]string{kubermaticv1.ProjectIDLabelKey: "my-first-project-ID"}
-				binding.Spec.Group = "editors"
+				binding.Spec.Group = "editors-my-first-project-ID"
 				return binding
 			}(),
 		},

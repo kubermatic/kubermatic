@@ -181,6 +181,14 @@ type ProjectGroup struct {
 	GroupPrefix string `json:"group"`
 }
 
+// ServiceAccount represent an API service account
+// swagger:model ServiceAccount
+type ServiceAccount struct {
+	ObjectMeta
+	// Group that a service account belongs to
+	Group string `json:"group"`
+}
+
 // Project is a top-level container for a set of resources
 // swagger:model Project
 type Project struct {

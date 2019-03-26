@@ -147,6 +147,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	cloudProviders := cloud.Providers(datacenters)
 	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultImpersonationClient.CreateImpersonatedClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
 	userProvider := kubernetesprovider.NewUserProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister())
+	serviceAccountProvider := kubernetesprovider.NewServiceAccountProvider(defaultImpersonationClient.CreateImpersonatedClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister(), options.domain)
 	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultImpersonationClient.CreateImpersonatedClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserProjectBindings().Lister())
 	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultImpersonationClient.CreateImpersonatedClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().Projects().Lister())
 	if err != nil {
@@ -161,7 +162,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	kubermaticMasterInformerFactory.Start(wait.NeverStop)
 	kubermaticMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
 
-	return providers{sshKey: sshKeyProvider, user: userProvider, project: projectProvider, privilegedProject: privilegedProjectProvider, projectMember: projectMemberProvider, memberMapper: projectMemberProvider, cloud: cloudProviders, clusters: clusterProviders, datacenters: datacenters}, nil
+	return providers{sshKey: sshKeyProvider, user: userProvider, serviceAccountProvider: serviceAccountProvider, project: projectProvider, privilegedProject: privilegedProjectProvider, projectMember: projectMemberProvider, memberMapper: projectMemberProvider, cloud: cloudProviders, clusters: clusterProviders, datacenters: datacenters}, nil
 }
 
 func createOIDCAuthenticatorIssuer(options serverRunOptions) (auth.OIDCAuthenticator, auth.OIDCIssuerVerifier, error) {
@@ -213,6 +214,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticato
 		prov.cloud,
 		prov.sshKey,
 		prov.user,
+		prov.serviceAccountProvider,
 		prov.project,
 		prov.privilegedProject,
 		oidcAuthenticator,
