@@ -130,6 +130,9 @@ func TestCreateServiceAccountProject(t *testing.T) {
 				if sa.Name != tc.expectedSAName {
 					t.Fatalf("expected name %s got %s", tc.expectedSAName, sa.Name)
 				}
+				if sa.Status != apiv1.ServiceAccountInactive {
+					t.Fatalf("expected Inactive state got %s", sa.Status)
+				}
 
 				expectedSA, err := client.FakeKubermaticClient.KubermaticV1().Users().Get(sa.ID, metav1.GetOptions{})
 				if err != nil {
