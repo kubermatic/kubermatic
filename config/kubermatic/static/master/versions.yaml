@@ -28,5 +28,5 @@ versions:
   default: false
 - version: "1.13.4"
   default: false
-- version: "v1.14.0-beta.1"
+- version: "v1.14.0"
   default: false
