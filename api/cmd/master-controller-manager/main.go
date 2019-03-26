@@ -4,16 +4,11 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"fmt"
-	"time"
 
 	"github.com/golang/glog"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac/user-project-binding"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/service-account"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -45,12 +40,14 @@ type controllerContext struct {
 	kubermaticMasterClient          kubermaticclientset.Interface
 	kubermaticMasterInformerFactory externalversions.SharedInformerFactory
 	kubeMasterInformerFactory       kuberinformers.SharedInformerFactory
-	allClusterProviders             []*rbac.ClusterProvider
+
+	mgr               manager.Manager
+	labelSelectorFunc func(*metav1.ListOptions)
 }
 
 func main() {
 	var g run.Group
-	ctrlCtx := controllerContext{}
+	ctrlCtx := &controllerContext{}
 	flag.StringVar(&ctrlCtx.runOptions.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&ctrlCtx.runOptions.masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&ctrlCtx.runOptions.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
@@ -69,85 +66,46 @@ func main() {
 	}
 
 	// register the global error metric. Ensures that runtime.HandleError() increases the error metric
-	metrics.RegisterRuntimErrorMetricCounter("kubermatic_rbac_generator", prometheus.DefaultRegisterer)
+	metrics.RegisterRuntimErrorMetricCounter("kubermatic_master_controller_manager", prometheus.DefaultRegisterer)
 
-	// register an operating system signals on which we will gracefully close the app
+	// register an operating system signals and context on which we will gracefully close the app
 	stopCh := signals.SetupSignalHandler()
 	ctx, ctxDone := context.WithCancel(context.Background())
 	defer ctxDone()
 	done := ctx.Done()
-
 	ctrlCtx.stopCh = done
+
 	ctrlCtx.kubeMasterClient = kubernetes.NewForConfigOrDie(config)
 	ctrlCtx.kubermaticMasterClient = kubermaticclientset.NewForConfigOrDie(config)
 	ctrlCtx.kubermaticMasterInformerFactory = externalversions.NewFilteredSharedInformerFactory(ctrlCtx.kubermaticMasterClient, informer.DefaultInformerResyncPeriod, metav1.NamespaceAll, selector)
 	ctrlCtx.kubeMasterInformerFactory = kuberinformers.NewSharedInformerFactory(ctrlCtx.kubeMasterClient, informer.DefaultInformerResyncPeriod)
+	ctrlCtx.labelSelectorFunc = selector
 
-	ctrlCtx.allClusterProviders = []*rbac.ClusterProvider{}
 	{
-		clientcmdConfig, err := clientcmd.LoadFromFile(ctrlCtx.runOptions.kubeconfig)
+		cfg, err := clientcmd.BuildConfigFromFlags(ctrlCtx.runOptions.masterURL, ctrlCtx.runOptions.kubeconfig)
 		if err != nil {
-			glog.Fatal(err)
+			glog.Fatalf("failed to build config: %v", err)
 		}
 
-		for ctxName := range clientcmdConfig.Contexts {
-			clientConfig := clientcmd.NewNonInteractiveClientConfig(
-				*clientcmdConfig,
-				ctxName,
-				&clientcmd.ConfigOverrides{CurrentContext: ctxName},
-				nil,
-			)
-			cfg, err := clientConfig.ClientConfig()
-			if err != nil {
-				glog.Fatal(err)
-			}
-
-			var clusterPrefix string
-			if ctxName == clientcmdConfig.CurrentContext {
-				glog.V(2).Infof("Adding %s as master cluster", ctxName)
-				clusterPrefix = rbac.MasterProviderPrefix
-			} else {
-				glog.V(2).Infof("Adding %s as seed cluster", ctxName)
-				clusterPrefix = rbac.SeedProviderPrefix
-			}
-			kubeClient, err := kubernetes.NewForConfig(cfg)
-			if err != nil {
-				glog.Fatal(err)
-			}
-
-			kubermaticClient := kubermaticclientset.NewForConfigOrDie(cfg)
-			kubermaticInformerFactory := externalversions.NewFilteredSharedInformerFactory(kubermaticClient, time.Minute*5, metav1.NamespaceAll, selector)
-			kubeInformerProvider := rbac.NewInformerProvider(kubeClient, time.Minute*5)
-			ctrlCtx.allClusterProviders = append(ctrlCtx.allClusterProviders, rbac.NewClusterProvider(fmt.Sprintf("%s/%s", clusterPrefix, ctxName), kubeClient, kubeInformerProvider, kubermaticClient, kubermaticInformerFactory))
-
-			// special case the current context/master is also a seed cluster
-			// we keep cluster resources also on master
-			if ctxName == clientcmdConfig.CurrentContext {
-				glog.V(2).Infof("Special case adding %s (current context) also as seed cluster", ctxName)
-				clusterPrefix = rbac.SeedProviderPrefix
-				ctrlCtx.allClusterProviders = append(ctrlCtx.allClusterProviders, rbac.NewClusterProvider(fmt.Sprintf("%s/%s", clusterPrefix, ctxName), kubeClient, kubeInformerProvider, kubermaticClient, kubermaticInformerFactory))
-			}
+		mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: ctrlCtx.runOptions.internalAddr})
+		if err != nil {
+			glog.Fatalf("failed to create Controller Manager instance: %v", err)
 		}
+		if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
+			glog.Fatalf("failed to register types in Scheme: %v", err)
+		}
+		ctrlCtx.mgr = mgr
 	}
 
-	ctrl, err := rbac.New(
-		rbac.NewMetrics(),
-		ctrlCtx.allClusterProviders)
+	controllers, err := createAllControllers(ctrlCtx)
 	if err != nil {
-		glog.Fatal(err)
+		glog.Fatalf("could not create all controllers: %v", err)
 	}
 
 	ctrlCtx.kubermaticMasterInformerFactory.Start(ctrlCtx.stopCh)
 	ctrlCtx.kubeMasterInformerFactory.Start(ctrlCtx.stopCh)
 	ctrlCtx.kubermaticMasterInformerFactory.WaitForCacheSync(ctrlCtx.stopCh)
 	ctrlCtx.kubeMasterInformerFactory.WaitForCacheSync(ctrlCtx.stopCh)
-
-	for _, seedClusterProvider := range ctrlCtx.allClusterProviders {
-		seedClusterProvider.StartInformers(ctrlCtx.stopCh)
-		if err := seedClusterProvider.WaitForCachesToSync(ctrlCtx.stopCh); err != nil {
-			glog.Fatalf("Closing the controller, failed to sync cache: %v", err)
-		}
-	}
 
 	// This group is forever waiting in a goroutine for signals to stop
 	{
@@ -163,48 +121,13 @@ func main() {
 		})
 	}
 
-	// This group is running the actual rbac logic
+	// This group is running all controllers
 	{
 		g.Add(func() error {
-			// controller will return iff ctrlCtx is stopped
-			ctrl.Run(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh)
-			return nil
+			return runAllControllersAndCtrlManager(ctrlCtx.runOptions.workerCount, done, ctxDone, ctrlCtx.mgr, controllers)
 		}, func(err error) {
-			glog.Infof("Stopping RBACGenerator controller, err = %v", err)
-		})
-	}
-
-	// This group is running the controller manager
-	{
-		g.Add(func() error {
-			cfg, err := clientcmd.BuildConfigFromFlags(ctrlCtx.runOptions.masterURL, ctrlCtx.runOptions.kubeconfig)
-			if err != nil {
-				return err
-			}
-
-			mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: ctrlCtx.runOptions.internalAddr})
-			if err != nil {
-				glog.Errorf("failed to start RBACGenerator manager: %v", err)
-				return err
-			}
-			if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
-				return err
-			}
-
-			if err := userprojectbinding.Add(mgr); err != nil {
-				return err
-			}
-			if err := serviceaccount.Add(mgr); err != nil {
-				return err
-			}
-
-			if err := mgr.Start(ctrlCtx.stopCh); err != nil {
-				glog.Errorf("failed to start RBACGenerator manager: %v", err)
-				return err
-			}
-			return nil
-		}, func(err error) {
-			glog.Infof("Stopping RBACGenerator manager, err = %v", err)
+			glog.Infof("Stopping Master Controller, due to = %v", err)
+			ctxDone()
 		})
 	}
 
