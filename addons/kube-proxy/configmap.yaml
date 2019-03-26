@@ -19,10 +19,11 @@ data:
     configSyncPeriod: 15m0s
     conntrack:
       max: null
-      maxPerCore: 32768
-      min: 131072
-      tcpCloseWaitTimeout: 1h0m0s
-      tcpEstablishedTimeout: 24h0m0s
+      maxPerCore: 0
+      # Following the recommendation from https://github.com/kubermatic/kubermatic/issues/3026#issuecomment-473936154
+      min: 524288
+      tcpCloseWaitTimeout: 15m
+      tcpEstablishedTimeout: 2h
     enableProfiling: false
     healthzBindAddress: 0.0.0.0:10256
     hostnameOverride: ""
