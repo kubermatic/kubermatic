@@ -9,8 +9,8 @@ import (
 	"github.com/oklog/run"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac/user-project-binding"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/service-account"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/user-project-binding"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 
