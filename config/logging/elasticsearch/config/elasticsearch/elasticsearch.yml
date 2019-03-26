@@ -19,7 +19,7 @@ http:
 
 discovery:
   zen:
-    minimum_master_nodes: 1
+    minimum_master_nodes: ${MINIMUM_MASTER_NODES}
     ping:
       unicast:
         hosts:

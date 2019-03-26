@@ -72,6 +72,8 @@ spec:
               value: "true"
             - name: NODE_DATA
               value: "true"
+            - name: MINIMUM_MASTER_NODES
+              value: "{{ add (div .Values.logging.elasticsearch.masterReplicas 2) 1 }}"
           ports:
             - containerPort: 9200
               name: http

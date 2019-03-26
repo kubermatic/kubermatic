@@ -74,6 +74,8 @@ spec:
               value: "false"
             - name: ES_JAVA_OPTS
               value: "-Xms128m -Xmx128m"
+            - name: MINIMUM_MASTER_NODES
+              value: "{{ add (div .Values.logging.elasticsearch.masterReplicas 2) 1 }}"
           ports:
             - containerPort: 9200
               name: http

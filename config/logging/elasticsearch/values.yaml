@@ -1,7 +1,7 @@
 logging:
   elasticsearch:
     dataReplicas: 5
-    masterReplicas: 4
+    masterReplicas: 3
     storageSize: 10Gi
     masterStorageSize: 1Gi
     image:
