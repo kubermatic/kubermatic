@@ -16,7 +16,7 @@ logging:
 
     master:
       replicas: 3
-      heapSize: "512m"
+      heapSize: "256m"
       # additionalJavaOpts: "-XX:MaxRAM=512m"
       resources:
         requests:
@@ -28,12 +28,12 @@ logging:
 
     data:
       replicas: 5
-      heapSize: "1536m"
+      heapSize: "1024m"
       # additionalJavaOpts: "-XX:MaxRAM=1536m"
       resources:
         requests:
           cpu: 200m
-          memory: 1500Mi
+          memory: 1536Mi
       nodeSelector: {}
       nodeAffinity: {}
       storageSize: 10Gi
