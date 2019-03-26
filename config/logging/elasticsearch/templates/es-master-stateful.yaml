@@ -9,8 +9,8 @@ spec:
   podManagementPolicy: Parallel
   updateStrategy:
     type: RollingUpdate
-  serviceName: elasticsearch-master
-  replicas: {{ .Values.logging.elasticsearch.masterReplicas }}
+  serviceName: es-master
+  replicas: {{ .Values.logging.elasticsearch.master.replicas }}
   selector:
     matchLabels:
       component: elasticsearch
@@ -18,11 +18,14 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/es-config-configmap.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/es-configmap.yaml") . | sha256sum }}
       labels:
         component: elasticsearch
         role: master
     spec:
+      serviceAccountName: es-master
+      securityContext:
+        fsGroup: 1000
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -33,6 +36,14 @@ spec:
                     role: master
                 topologyKey: kubernetes.io/hostname
               weight: 100
+        {{- with .Values.logging.elasticsearch.master.nodeAffinity }}
+        nodeAffinity:
+{{ toYaml . | indent 10 }}
+      {{- end }}
+{{- if .Values.logging.elasticsearch.master.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.logging.elasticsearch.master.nodeSelector | indent 8 }}
+{{- end }}
       initContainers:
         - name: sysctl
           image: '{{ .Values.logging.elasticsearch.init.image.repository }}:{{ .Values.logging.elasticsearch.init.image.tag }}'
@@ -47,14 +58,26 @@ spec:
           image: '{{ .Values.logging.elasticsearch.image.repository }}:{{ .Values.logging.elasticsearch.image.tag }}'
           imagePullPolicy: {{ .Values.logging.elasticsearch.image.pullPolicy }}
           command:
-            - sh
+            - /bin/bash
             - -c
-            - "chown -R elasticsearch.root /usr/share/elasticsearch/data"
+            - >
+              set -e;
+              set -x;
+              chown elasticsearch:elasticsearch /usr/share/elasticsearch/data;
+              for datadir in $(find /usr/share/elasticsearch/data -mindepth 1 -maxdepth 1 -not -name ".snapshot"); do
+                chown -R elasticsearch:elasticsearch $datadir;
+              done;
+              chown elasticsearch:elasticsearch /usr/share/elasticsearch/logs;
+              for logfile in $(find /usr/share/elasticsearch/logs -mindepth 1 -maxdepth 1 -not -name ".snapshot"); do
+                chown -R elasticsearch:elasticsearch $logfile;
+              done
+          securityContext:
+            runAsUser: 0
           volumeMounts:
             - name: storage
               mountPath: /usr/share/elasticsearch/data
       containers:
-        - name: es-master
+        - name: elasticsearch
           image: '{{ .Values.logging.elasticsearch.image.repository }}:{{ .Values.logging.elasticsearch.image.tag }}'
           imagePullPolicy: {{ .Values.logging.elasticsearch.image.pullPolicy }}
           env:
@@ -73,9 +96,17 @@ spec:
             - name: NODE_DATA
               value: "false"
             - name: ES_JAVA_OPTS
-              value: "-Xms128m -Xmx128m"
-            - name: MINIMUM_MASTER_NODES
-              value: "{{ add (div .Values.logging.elasticsearch.masterReplicas 2) 1 }}"
+              value: "-Djava.net.preferIPv4Stack=true -Xms{{ .Values.logging.elasticsearch.master.heapSize }} -Xmx{{ .Values.logging.elasticsearch.master.heapSize }} {{ .Values.logging.elasticsearch.cluster.additionalJavaOpts }} {{ .Values.logging.elasticsearch.master.additionalJavaOpts }}"
+            - name: DISCOVERY_SERVICE
+              value: es-master
+            - name: PROCESSORS
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.cpu
+            {{- range $key, $value :=  .Values.logging.elasticsearch.cluster.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
           ports:
             - containerPort: 9200
               name: http
@@ -98,33 +129,33 @@ spec:
               exec:
                 command:
                 - /bin/bash
-                - /pre-stop.sh
+                - /pre-stop-hook.sh
             postStart:
               exec:
                 command:
                 - /bin/bash
-                - /post-start.sh
+                - /post-start-hook.sh
           resources:
-{{ toYaml .Values.logging.elasticsearch.resources.master | indent 12 }}
+{{ toYaml .Values.logging.elasticsearch.master.resources | indent 12 }}
           volumeMounts:
             - name: storage
               mountPath: /usr/share/elasticsearch/data
             - name: config
               mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
               subPath: elasticsearch.yml
+            - mountPath: /usr/share/elasticsearch/config/log4j2.properties
+              name: config
+              subPath: log4j2.properties
             - name: config
-              mountPath: /usr/share/elasticsearch/config/jvm.options
-              subPath: jvm.options
+              mountPath: /post-start-hook.sh
+              subPath: post-start-hook.sh
             - name: config
-              mountPath: /post-start.sh
-              subPath: post-start.sh
-            - name: config
-              mountPath: /pre-stop.sh
-              subPath: pre-stop.sh
+              mountPath: /pre-stop-hook.sh
+              subPath: pre-stop-hook.sh
       volumes:
         - name: config
           configMap:
-            name: elasticsearch-config
+            name: es-config
   volumeClaimTemplates:
     - metadata:
         name: storage
@@ -133,4 +164,4 @@ spec:
         accessModes: [ ReadWriteOnce ]
         resources:
           requests:
-            storage: {{ .Values.logging.elasticsearch.masterStorageSize }}
+            storage: {{ .Values.logging.elasticsearch.master.storageSize }}
