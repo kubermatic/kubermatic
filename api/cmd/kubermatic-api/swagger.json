@@ -4817,6 +4817,11 @@
           "description": "Name represents human readable name for the resource",
           "type": "string",
           "x-go-name": "Name"
+        },
+        "status": {
+          "description": "Status describes three stages of ServiceAccount life including Active, Inactive and Terminating",
+          "type": "string",
+          "x-go-name": "Status"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
