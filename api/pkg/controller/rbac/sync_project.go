@@ -24,7 +24,7 @@ const (
 	CleanupFinalizerName = "kubermatic.io/controller-manager-rbac-cleanup"
 )
 
-func (c *Controller) sync(key string) error {
+func (c *projectController) sync(key string) error {
 	listerProject, err := c.projectLister.Get(key)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
@@ -48,10 +48,10 @@ func (c *Controller) sync(key string) error {
 	if err = c.ensureProjectOwner(project); err != nil {
 		return fmt.Errorf("failed to ensure that the project owner exists in the owners group: %v", err)
 	}
-	if err = c.ensureClusterRBACRoleForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.masterClusterProvider.kubeClient, c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoles().Lister()); err != nil {
+	if err = ensureClusterRBACRoleForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.masterClusterProvider.kubeClient, c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoles().Lister()); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC Role for the project exists: %v", err)
 	}
-	if err = c.ensureClusterRBACRoleBindingForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.masterClusterProvider.kubeClient, c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister()); err != nil {
+	if err = ensureClusterRBACRoleBindingForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.masterClusterProvider.kubeClient, c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister()); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC RoleBinding for the project exists: %v", err)
 	}
 	if err = c.ensureClusterRBACRoleForResources(); err != nil {
@@ -73,7 +73,7 @@ func (c *Controller) sync(key string) error {
 	return nil
 }
 
-func (c *Controller) ensureCleanupFinalizerExists(project *kubermaticv1.Project) error {
+func (c *projectController) ensureCleanupFinalizerExists(project *kubermaticv1.Project) error {
 	var err error
 	if !sets.NewString(project.Finalizers...).Has(CleanupFinalizerName) {
 		finalizers := sets.NewString(project.Finalizers...)
@@ -87,7 +87,7 @@ func (c *Controller) ensureCleanupFinalizerExists(project *kubermaticv1.Project)
 	return err
 }
 
-func (c *Controller) ensureProjectIsInActivePhase(project *kubermaticv1.Project) error {
+func (c *projectController) ensureProjectIsInActivePhase(project *kubermaticv1.Project) error {
 	if project.Status.Phase == kubermaticv1.ProjectInactive {
 		var err error
 		project.Status.Phase = kubermaticv1.ProjectActive
@@ -100,7 +100,7 @@ func (c *Controller) ensureProjectIsInActivePhase(project *kubermaticv1.Project)
 }
 
 // ensureProjectOwner makes sure that the owner of the project is assign to "owners" group
-func (c *Controller) ensureProjectOwner(project *kubermaticv1.Project) error {
+func (c *projectController) ensureProjectOwner(project *kubermaticv1.Project) error {
 	var sharedOwner *kubermaticv1.User
 	for _, ref := range project.OwnerReferences {
 		if ref.Kind == kubermaticv1.UserKindName {
@@ -149,7 +149,7 @@ func (c *Controller) ensureProjectOwner(project *kubermaticv1.Project) error {
 	return err
 }
 
-func (c *Controller) ensureClusterRBACRoleForResources() error {
+func (c *projectController) ensureClusterRBACRoleForResources() error {
 	for _, projectResource := range c.projectResources {
 		if len(projectResource.namespace) > 0 {
 			continue
@@ -175,7 +175,7 @@ func (c *Controller) ensureClusterRBACRoleForResources() error {
 	return nil
 }
 
-func (c *Controller) ensureClusterRBACRoleBindingForResources(projectName string) error {
+func (c *projectController) ensureClusterRBACRoleBindingForResources(projectName string) error {
 	for _, projectResource := range c.projectResources {
 		if len(projectResource.namespace) > 0 {
 			continue
@@ -281,7 +281,7 @@ func ensureClusterRBACRoleBindingForResource(kubeClient kubernetes.Interface, gr
 	return err
 }
 
-func (c *Controller) ensureRBACRoleForResources() error {
+func (c *projectController) ensureRBACRoleForResources() error {
 	for _, projectResource := range c.projectResources {
 		if len(projectResource.namespace) == 0 {
 			continue
@@ -348,7 +348,7 @@ func ensureRBACRoleForResource(kubeClient kubernetes.Interface, groupName string
 	return err
 }
 
-func (c *Controller) ensureRBACRoleBindingForResources(projectName string) error {
+func (c *projectController) ensureRBACRoleBindingForResources(projectName string) error {
 	for _, projectResource := range c.projectResources {
 		if len(projectResource.namespace) == 0 {
 			continue
@@ -437,7 +437,7 @@ func ensureRBACRoleBindingForResource(kubeClient kubernetes.Interface, groupName
 // - removes no longer needed Subject from RBAC Binding for project's resources
 // - removes cluster resources on master and seed because for them we use Labels not OwnerReferences
 // - removes cleanupFinalizer
-func (c *Controller) ensureProjectCleanup(project *kubermaticv1.Project) error {
+func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) error {
 	// cluster resources don't have OwnerReferences set thus we need to manually remove them
 	for _, clusterProvider := range c.seedClusterProviders {
 		if clusterProvider.clusterResourceLister == nil {
@@ -578,7 +578,7 @@ func cleanUpRBACRoleBindingFor(kubeClient kubernetes.Interface, groupName, resou
 	return err
 }
 
-func (c *Controller) shouldDeleteProject(project *kubermaticv1.Project) bool {
+func (c *projectController) shouldDeleteProject(project *kubermaticv1.Project) bool {
 	return project.DeletionTimestamp != nil && sets.NewString(project.Finalizers...).Has(CleanupFinalizerName)
 }
 

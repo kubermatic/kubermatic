@@ -24,7 +24,7 @@ import (
 // the project resources live only on master cluster and cluster resources are on master and seed clusters
 // we cannot use OwnerReferences for cluster resources because they are on clusters that don't have corresponding
 // project resource and will be automatically gc'ed
-func (c *Controller) syncProjectResource(item *projectResourceQueueItem) error {
+func (c *resourcesController) syncProjectResource(item *projectResourceQueueItem) error {
 	projectName := ""
 	for _, owner := range item.metaObject.GetOwnerReferences() {
 		if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName &&
@@ -42,10 +42,10 @@ func (c *Controller) syncProjectResource(item *projectResourceQueueItem) error {
 	}
 
 	if len(item.namespace) == 0 {
-		if err := c.ensureClusterRBACRoleForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoles().Lister()); err != nil {
+		if err := ensureClusterRBACRoleForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoles().Lister()); err != nil {
 			return fmt.Errorf("failed to sync RBAC ClusterRole for %s resource for %s cluster provider, due to = %v", item.gvr.String(), item.clusterProvider.providerName, err)
 		}
-		if err := c.ensureClusterRBACRoleBindingForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister()); err != nil {
+		if err := ensureClusterRBACRoleBindingForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister()); err != nil {
 			return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider, due to = %v", item.gvr.String(), item.clusterProvider.providerName, err)
 		}
 		return nil
@@ -76,7 +76,7 @@ func (c *Controller) syncProjectResource(item *projectResourceQueueItem) error {
 	return nil
 }
 
-func (c *Controller) ensureClusterRBACRoleForNamedResource(projectName string, objectResource string, objectKind string, object metav1.Object, kubeClient kubernetes.Interface, rbacClusterRoleLister rbaclister.ClusterRoleLister) error {
+func ensureClusterRBACRoleForNamedResource(projectName string, objectResource string, objectKind string, object metav1.Object, kubeClient kubernetes.Interface, rbacClusterRoleLister rbaclister.ClusterRoleLister) error {
 	for _, groupPrefix := range AllGroupsPrefixes {
 		skip, generatedRole, err := shouldSkipClusterRBACRoleBindingForNamedResource(projectName, objectResource, objectKind, groupPrefix, object)
 		if err != nil {
@@ -113,7 +113,7 @@ func (c *Controller) ensureClusterRBACRoleForNamedResource(projectName string, o
 	return nil
 }
 
-func (c *Controller) ensureClusterRBACRoleBindingForNamedResource(projectName string, objectResource string, objectKind string, object metav1.Object, kubeClient kubernetes.Interface, rbacClusterRoleBindingLister rbaclister.ClusterRoleBindingLister) error {
+func ensureClusterRBACRoleBindingForNamedResource(projectName string, objectResource string, objectKind string, object metav1.Object, kubeClient kubernetes.Interface, rbacClusterRoleBindingLister rbaclister.ClusterRoleBindingLister) error {
 	for _, groupPrefix := range AllGroupsPrefixes {
 
 		skip, _, err := shouldSkipClusterRBACRoleBindingForNamedResource(projectName, objectResource, objectKind, groupPrefix, object)
@@ -188,7 +188,7 @@ func shouldSkipClusterRBACRoleBindingForNamedResource(projectName string, object
 	return false, generatedRole, nil
 }
 
-func (c *Controller) ensureRBACRoleForNamedResource(projectName string, objectGVR schema.GroupVersionResource, objectKind string, namespace string, object metav1.Object, kubeClient kubernetes.Interface, rbacRoleLister rbaclister.RoleNamespaceLister) error {
+func (c *resourcesController) ensureRBACRoleForNamedResource(projectName string, objectGVR schema.GroupVersionResource, objectKind string, namespace string, object metav1.Object, kubeClient kubernetes.Interface, rbacRoleLister rbaclister.RoleNamespaceLister) error {
 	for _, groupPrefix := range AllGroupsPrefixes {
 		skip, generatedRole, err := shouldSkipRBACRoleBindingForNamedResource(projectName, objectGVR, objectKind, groupPrefix, namespace, object)
 		if err != nil {
@@ -225,7 +225,7 @@ func (c *Controller) ensureRBACRoleForNamedResource(projectName string, objectGV
 	return nil
 }
 
-func (c *Controller) ensureRBACRoleBindingForNamedResource(projectName string, objectGVR schema.GroupVersionResource, objectKind string, namespace string, object metav1.Object, kubeClient kubernetes.Interface, rbacRoleBindingLister rbaclister.RoleBindingNamespaceLister) error {
+func (c *resourcesController) ensureRBACRoleBindingForNamedResource(projectName string, objectGVR schema.GroupVersionResource, objectKind string, namespace string, object metav1.Object, kubeClient kubernetes.Interface, rbacRoleBindingLister rbaclister.RoleBindingNamespaceLister) error {
 	for _, groupPrefix := range AllGroupsPrefixes {
 
 		skip, _, err := shouldSkipRBACRoleBindingForNamedResource(projectName, objectGVR, objectKind, groupPrefix, namespace, object)
