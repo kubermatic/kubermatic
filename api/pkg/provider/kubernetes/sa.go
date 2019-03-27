@@ -72,6 +72,7 @@ func (p *ServiceAccountProvider) Create(userInfo *provider.UserInfo, project *ku
 	return masterImpersonatedClient.Users().Create(&user)
 }
 
+// List gets service accounts for the project
 func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, project *kubermaticv1.Project, options *provider.ServiceAccountListOptions) ([]*kubermaticv1.User, error) {
 	if userInfo == nil {
 		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
@@ -128,4 +129,50 @@ func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, project *kube
 	}
 
 	return filteredList, nil
+}
+
+// Get method returns service account with given name
+func (p *ServiceAccountProvider) Get(userInfo *provider.UserInfo, name string) (*kubermaticv1.User, error) {
+	if userInfo == nil {
+		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
+	}
+	if len(name) == 0 {
+		return nil, kerrors.NewBadRequest("service account name cannot be empty")
+	}
+
+	serviceAccount, err := p.serviceAccountLister.Get(name)
+	if err != nil {
+		return nil, err
+	}
+
+	// Note:
+	// After we get the SA we try to get item using unprivileged account to see if the user have read access
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = masterImpersonatedClient.Users().Get(serviceAccount.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return serviceAccount, nil
+}
+
+// Update simply updates the given service account
+func (p *ServiceAccountProvider) Update(userInfo *provider.UserInfo, serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error) {
+	if userInfo == nil {
+		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
+	}
+	if serviceAccount == nil {
+		return nil, kerrors.NewBadRequest("service account name cannot be nil")
+	}
+
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	if err != nil {
+		return nil, err
+	}
+
+	return masterImpersonatedClient.Users().Update(serviceAccount)
 }

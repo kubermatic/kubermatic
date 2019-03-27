@@ -2157,6 +2157,61 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}": {
+      "put": {
+        "description": "Changes membership of the given service account for the given project",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "serviceaccounts"
+        ],
+        "operationId": "editServiceAccount",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/ServiceAccount"
+            }
+          },
+          {
+            "type": "string",
+            "x-go-name": "ServiceAccountID",
+            "name": "serviceaccount_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ServiceAccount",
+            "schema": {
+              "$ref": "#/definitions/ServiceAccount"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/sshkeys": {
       "get": {
         "description": "The returned collection is sorted by creation timestamp.",

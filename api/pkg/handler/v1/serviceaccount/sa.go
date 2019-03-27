@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
@@ -14,7 +15,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	sa "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	serviceaccount "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
@@ -107,12 +108,108 @@ func ListEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvid
 	}
 }
 
+// EditEndpoint changes the service account group and/or name in the given project
+func EditEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		req, ok := request.(editReq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+		err := req.Validate()
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+		saFromRequest := req.Body
+
+		sa, err := serviceAccountProvider.Get(userInfo, req.ServiceAccountID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		// update the service account name
+		if sa.Spec.Name != saFromRequest.Name {
+			// check if service account name is already reserved in the project
+			existingSAList, err := serviceAccountProvider.List(userInfo, project, &provider.ServiceAccountListOptions{ServiceAccountName: saFromRequest.Name})
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+
+			if len(existingSAList) > 0 {
+				return nil, errors.NewAlreadyExists("service account", saFromRequest.Name)
+			}
+			sa.Spec.Name = saFromRequest.Name
+
+		}
+
+		bindings, err := memberMapper.MappingsFor(sa.Spec.Email)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+
+		}
+
+		var saBinding *kubermaticapiv1.UserProjectBinding
+		var isBinding bool
+		for _, bindig := range bindings {
+			if bindig.Spec.ProjectID == req.ProjectID {
+				saBinding = bindig
+				isBinding = true
+				break
+			}
+		}
+
+		newGroup := rbac.GenerateActualGroupNameFor(project.Name, saFromRequest.Group)
+		if isBinding {
+			if newGroup != saBinding.Spec.Group {
+				sa.Labels[serviceaccount.ServiceAccountLabelGroup] = newGroup
+			}
+		}
+
+		if _, err := serviceAccountProvider.Update(userInfo, sa); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		result := convertInternalServiceAccountToExternal(sa)
+		return result, nil
+	}
+}
+
 // addReq defines HTTP request for addServiceAccountToProject
 // swagger:parameters addServiceAccountToProject
 type addReq struct {
 	common.ProjectReq
 	// in: body
 	Body apiv1.ServiceAccount
+}
+
+// idReq represents a request that contains service account ID in the path
+type idReq struct {
+	// in: path
+	ServiceAccountID string `json:"serviceaccount_id"`
+}
+
+// editReq defines HTTP request for editServiceAccount
+// swagger:parameters editServiceAccount
+type editReq struct {
+	addReq
+	idReq
+}
+
+// Validate validates EditUserToProject request
+func (r editReq) Validate() error {
+	err := r.addReq.Validate()
+	if err != nil {
+		return err
+	}
+	if r.ServiceAccountID != r.Body.ID {
+		return fmt.Errorf("service account ID mismatch, you requested to update ServiceAccount = %s but body contains ServiceAccount = %s", r.ServiceAccountID, r.Body.ID)
+	}
+	return nil
 }
 
 // Validate validates addReq request
@@ -147,6 +244,42 @@ func DecodeAddReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
+// DecodeEditReq  decodes an HTTP request into EditReq
+func DecodeEditReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req editReq
+
+	prjReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+
+	}
+	req.ProjectReq = prjReq.(common.ProjectReq)
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	saIDReq, err := decodeServiceAccountIDReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ServiceAccountID = saIDReq.ServiceAccountID
+
+	return req, nil
+}
+
+func decodeServiceAccountIDReq(c context.Context, r *http.Request) (idReq, error) {
+	var req idReq
+
+	saID, ok := mux.Vars(r)["serviceaccount_id"]
+	if !ok {
+		return req, fmt.Errorf("'serviceaccount_id' parameter is required")
+	}
+	req.ServiceAccountID = saID
+
+	return req, nil
+}
+
 func convertInternalServiceAccountToExternal(internal *kubermaticapiv1.User) *apiv1.ServiceAccount {
 	return &apiv1.ServiceAccount{
 		ObjectMeta: apiv1.ObjectMeta{
@@ -154,13 +287,13 @@ func convertInternalServiceAccountToExternal(internal *kubermaticapiv1.User) *ap
 			Name:              internal.Spec.Name,
 			CreationTimestamp: apiv1.NewTime(internal.CreationTimestamp.Time),
 		},
-		Group:  internal.Labels[sa.ServiceAccountLabelGroup],
+		Group:  internal.Labels[serviceaccount.ServiceAccountLabelGroup],
 		Status: getStatus(internal),
 	}
 }
 
 func getStatus(serviceAccount *kubermaticapiv1.User) string {
-	if _, ok := serviceAccount.Labels[sa.ServiceAccountLabelGroup]; ok {
+	if _, ok := serviceAccount.Labels[serviceaccount.ServiceAccountLabelGroup]; ok {
 		return apiv1.ServiceAccountInactive
 	}
 	return apiv1.ServiceAccountActive
