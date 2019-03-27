@@ -29,8 +29,10 @@ spec:
       - args:
         - -kubeconfig
         - /etc/kubernetes/kubeconfig/kubeconfig
-        - -internal-address
+        - -metrics-listen-address
         - 0.0.0.0:8085
+        - -health-listen-address
+        - 0.0.0.0:8086
         - -logtostderr
         - -v
         - "2"
@@ -41,6 +43,15 @@ spec:
         image: 'quay.io/kubermatic/api:'
         imagePullPolicy: IfNotPresent
         name: usercluster-controller
+        readinessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /ready
+            port: 8086
+            scheme: HTTP
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 15
         resources:
           limits:
             cpu: 500m
