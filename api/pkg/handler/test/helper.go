@@ -116,10 +116,11 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		return kubermaticClient.KubermaticV1(), nil
 	}
 
+	userLister := kubermaticInformerFactory.Kubermatic().V1().Users().Lister()
 	sshKeyProvider := kubernetes.NewSSHKeyProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
-	userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister())
-	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister(), "localhost")
-	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister())
+	userProvider := kubernetes.NewUserProvider(kubermaticClient, userLister)
+	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, userLister, "localhost")
+	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userLister)
 	projectProvider, err := kubernetes.NewProjectProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Projects().Lister())
 	if err != nil {
 		return nil, nil, err
