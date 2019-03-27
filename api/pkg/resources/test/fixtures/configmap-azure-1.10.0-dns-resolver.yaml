@@ -5,6 +5,11 @@ data:
         forward . /etc/resolv.conf
         errors
     }
+    # Required as we cannot use the trailing dot inside the externalName sevice which is located inside the user cluster
+    metrics-server.cluster-de-test-01.svc.cluster.local {
+        forward . /etc/resolv.conf
+        errors
+    }
     cluster.local {
         forward . 10.10.10.10
         errors
