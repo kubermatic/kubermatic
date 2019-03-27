@@ -16,6 +16,7 @@ spec:
       labels:
         k8s-app: kibana-logging
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         seccomp.security.alpha.kubernetes.io/pod: 'docker/default'
     spec:
       containers:
