@@ -1,8 +1,8 @@
 logging:
   kibana:
     image:
-      repository: docker.elastic.co/kibana/kibana
-      tag: "6.5.1"
+      repository: docker.elastic.co/kibana/kibana-oss
+      tag: "6.6.2"
       pullPolicy: IfNotPresent
     resources:
       requests:
