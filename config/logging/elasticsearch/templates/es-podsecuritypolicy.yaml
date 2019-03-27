@@ -1,0 +1,32 @@
+apiVersion: extensions/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: elasticsearch
+spec:
+  # required for sysctl and chown calls in init containers
+  privileged: true
+  allowPrivilegeEscalation: true
+  volumes:
+    - 'configMap'
+    - 'secret'
+    - 'persistentVolumeClaim'
+  hostNetwork: false
+  hostPID: false
+  hostIPC: false
+  runAsUser:
+    rule: 'RunAsAny'
+  runAsGroup:
+    rule: 'RunAsAny'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1000
+        max: 1000
+  readOnlyRootFilesystem: false
+  hostPorts:
+    - min: 1
+      max: 65535

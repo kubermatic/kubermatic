@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: elasticsearch
+roleRef:
+  kind: Role
+  name: elasticsearch
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: es-data
+- kind: ServiceAccount
+  name: es-master

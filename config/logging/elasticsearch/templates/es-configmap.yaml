@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: es-config
+data:
+  elasticsearch.yml: |-
+    cluster.name: log-data
+
+    node.data: ${NODE_DATA:true}
+    node.master: ${NODE_MASTER:true}
+    node.ingest: ${NODE_INGEST:true}
+    node.name: ${HOSTNAME}
+
+    # bind to both interfaces so Kubernetes port-forwardings work as expected
+    network.bind_host: [_site_, _local_]
+
+    # publish only the external interface (pod IP) for communicating with other peers
+    network.publish_host: _site_
+
+    # see https://github.com/kubernetes/kubernetes/issues/3595
+    bootstrap.memory_lock: ${BOOTSTRAP_MEMORY_LOCK:false}
+
+    discovery.zen.ping.unicast.hosts: ${DISCOVERY_SERVICE:}
+    discovery.zen.minimum_master_nodes: ${MINIMUM_MASTER_NODES:2}
+
+    # see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
+    processors: ${PROCESSORS:}
+
+    # avoid split-brain w/ a minimum consensus of two masters plus a data node
+    gateway.expected_master_nodes: ${EXPECTED_MASTER_NODES:2}
+    gateway.expected_data_nodes: ${EXPECTED_DATA_NODES:1}
+    gateway.recover_after_time: ${RECOVER_AFTER_TIME:5m}
+    gateway.recover_after_master_nodes: ${RECOVER_AFTER_MASTER_NODES:2}
+    gateway.recover_after_data_nodes: ${RECOVER_AFTER_DATA_NODES:1}
+{{- with .Values.logging.elasticsearch.cluster.config }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+
+  log4j2.properties: |-
+    status = error
+    appender.console.type = Console
+    appender.console.name = console
+    appender.console.layout.type = PatternLayout
+    appender.console.layout.pattern = [%d{ISO8601}][%-5p][%-25c{1.}] %marker%m%n
+    rootLogger.level = info
+    rootLogger.appenderRef.console.ref = console
+    logger.searchguard.name = com.floragunn
+    logger.searchguard.level = info
+
+  pre-stop-hook.sh: |-
+    #!/usr/bin/env bash
+    set -xeuo pipefail
+
+    # Following best practices from https://www.elastic.co/guide/en/elasticsearch/reference/current/rolling-upgrades.html
+
+    # Disable shard allocation
+    curl --retry 10 --retry-delay 1 -X PUT "${POD_IP}:9200/_cluster/settings" -H "Content-Type: application/json" -d"
+    {
+      \"persistent\": {
+        \"cluster.routing.allocation.enable\": \"none\"
+      }
+    }
+    "
+
+    # Execute a synced flush
+    curl --retry 10 --retry-delay 1 -X POST "${POD_IP}:9200/_flush/synced"
+
+  post-start-hook.sh: |-
+    #!/usr/bin/env bash
+    set -xeuo pipefail
+
+    # Following best practices from https://www.elastic.co/guide/en/elasticsearch/reference/current/rolling-upgrades.html
+
+    # Wait until the node joined the cluster again
+    until [[ "$(curl --silent --show-error --connect-timeout 1 -H "Content-Type: application/json" -X GET http://${POD_IP}:9200/_cat/nodes | grep ${POD_IP})" ]];
+    do
+      echo "Node has not joined the cluster"
+      sleep 1
+    done
+
+    # Enable shard allocation
+    curl --retry 10 --retry-delay 1 -X PUT "${POD_IP}:9200/_cluster/settings" -H "Content-Type: application/json" -d"
+    {
+      \"persistent\": {
+        \"cluster.routing.allocation.enable\": null
+      }
+    }
+    "
