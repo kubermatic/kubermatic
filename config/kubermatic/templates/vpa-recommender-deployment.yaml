@@ -32,7 +32,7 @@ spec:
           "--v", "4",
           "--storage", "prometheus",
           "--prometheus-address","http://prometheus-kubermatic.monitoring.svc.cluster.local:9090",
-          "--prometheus-cadvisor-job-name", "cadvisor",
+          "--prometheus-cadvisor-job-name", "cadvisor-vpa",
           "--recommendation-margin-fraction", "0",
         ]
         resources:

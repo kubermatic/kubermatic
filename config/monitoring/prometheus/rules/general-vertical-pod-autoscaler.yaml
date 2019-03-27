@@ -1,0 +1,16 @@
+# This file has been generated, do not edit.
+groups:
+- name: vertical-pod-autoscaler
+  rules:
+  - expr: |
+      label_replace(
+        sum(container_cpu_usage_seconds_total{job="cadvisor", pod_name=~".+", name!="POD", name!=""}) by (pod_name, namespace, name),
+        "job", "cadvisor-vpa", "", ""
+      )
+    record: container_cpu_usage_seconds_total
+  - expr: |
+      label_replace(
+        sum(container_memory_usage_bytes{job="cadvisor", pod_name=~".+", name!="POD", name!=""}) by (pod_name, namespace, name),
+        "job", "cadvisor-vpa", "", ""
+      )
+    record: container_memory_usage_bytes
