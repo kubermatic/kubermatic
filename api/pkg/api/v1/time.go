@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// code change
 // Time is a wrapper around time.Time which supports correct
 // marshaling JSON.  Wrappers are provided for many
 // of the factory methods that the time package offers.
