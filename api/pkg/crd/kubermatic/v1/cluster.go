@@ -352,7 +352,8 @@ func (h *ClusterHealthStatus) AllHealthy() bool {
 		h.Controller &&
 		h.Apiserver &&
 		h.Scheduler &&
-		h.CloudProviderInfrastructure
+		h.CloudProviderInfrastructure &&
+		h.UserClusterControllerManager
 }
 
 // MarshalJSON adds base64 json encoding to the Bytes type.
