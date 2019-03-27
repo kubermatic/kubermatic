@@ -33,6 +33,13 @@ groups:
       node:node_num_cpu:sum
     record: 'node:node_cpu_saturation_load1:'
   - expr: |
+      node:node_cpu_utilisation:avg1m
+        *
+      node:node_num_cpu:sum
+        /
+      scalar(sum(node:node_num_cpu:sum))
+    record: node:cluster_cpu_utilisation:ratio
+  - expr: |
       1 -
       sum(node_memory_MemFree_bytes{app="node-exporter"} + node_memory_Cached_bytes{app="node-exporter"} + node_memory_Buffers_bytes{app="node-exporter"})
       /
@@ -88,6 +95,11 @@ groups:
           node_namespace_pod:kube_pod_info:
       )
     record: node:node_memory_swap_io_bytes:sum_rate
+  - expr: |
+      (node:node_memory_bytes_total:sum - node:node_memory_bytes_available:sum)
+      /
+      scalar(sum(node:node_memory_bytes_total:sum))
+    record: node:cluster_memory_utilisation:ratio
   - expr: |
       avg(irate(node_disk_io_time_seconds_total{app="node-exporter",device=~"nvme.+|rbd.+|sd.+|vd.+|xvd.+"}[1m]))
     record: :node_disk_utilisation:avg_irate
