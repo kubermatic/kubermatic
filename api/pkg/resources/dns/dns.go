@@ -178,14 +178,19 @@ func ConfigMapCreator(data configMapCreatorData) resources.NamedConfigMapCreator
 			if err != nil {
 				return nil, err
 			}
-			seedClusterNamespaceDNS := fmt.Sprintf("%s.svc.cluster.local.", data.Cluster().Status.NamespaceName)
+			seedClusterNamespaceDNS := fmt.Sprintf("%s.svc.cluster.local", data.Cluster().Status.NamespaceName)
 
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
 			}
 
 			cm.Data["Corefile"] = fmt.Sprintf(`
-%s {
+%s. {
+    forward . /etc/resolv.conf
+    errors
+}
+# Required as we cannot use the trailing dot inside the externalName sevice which is located inside the user cluster
+metrics-server.%s {
     forward . /etc/resolv.conf
     errors
 }
@@ -198,7 +203,7 @@ func ConfigMapCreator(data configMapCreatorData) resources.NamedConfigMapCreator
   errors
   health
 }
-`, seedClusterNamespaceDNS, data.Cluster().Spec.ClusterNetwork.DNSDomain, dnsIP)
+`, seedClusterNamespaceDNS, seedClusterNamespaceDNS, data.Cluster().Spec.ClusterNetwork.DNSDomain, dnsIP)
 
 			return cm, nil
 		}
