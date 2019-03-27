@@ -797,14 +797,14 @@
       "dashes": false,
       "datasource": "$datasource",
       "editable": "<< editable | default false | toJson >>",
-      "fill": 10,
+      "fill": 1,
       "gridPos": {
         "h": 7,
         "w": 24,
         "x": 0,
         "y": 33
       },
-      "id": 8,
+      "id": 14,
       "legend": {
         "avg": false,
         "current": false,
@@ -815,24 +815,24 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 0,
+      "linewidth": 1,
       "links": [],
-      "nullPointMode": "null as zero",
+      "nullPointMode": "null",
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(max(node_filesystem_size_bytes{fstype=~\"ext[234]|btrfs|xfs|zfs\",node=~\"$nodes\"} - node_filesystem_avail_bytes{fstype=~\"ext[234]|btrfs|xfs|zfs\",node=~\"$nodes\"}) by (device,pod,namespace)) by (pod,namespace)\n/ scalar(sum(max(node_filesystem_size_bytes{fstype=~\"ext[234]|btrfs|xfs|zfs\",node=~\"$nodes\"}) by (device,pod,namespace)))\n* on (namespace, pod) group_left (node) node_namespace_pod:kube_pod_info:\n",
+          "expr": "(\n  sum(node_filesystem_size_bytes{fstype=~\"ext[234]|btrfs|xfs|zfs\",node_name=~\"$nodes\"}) by (node_name) -\n  sum(node_filesystem_avail_bytes{fstype=~\"ext[234]|btrfs|xfs|zfs\",node_name=~\"$nodes\"}) by (node_name)\n) / sum(node_filesystem_size_bytes{fstype=~\"ext[234]|btrfs|xfs|zfs\",node_name=~\"$nodes\"}) by (node_name)",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 2,
-          "legendFormat": "{{node}}",
+          "legendFormat": "{{node_name}}",
           "legendLink": "/d/4ac4f123aae0ff6dbaf4f4f66120033b/k8s-node-rsrc-use",
           "refId": "A",
           "step": 10
@@ -859,11 +859,12 @@
       },
       "yaxes": [
         {
+          "decimals": 1,
           "format": "percentunit",
           "label": null,
           "logBase": 1,
-          "max": 1,
-          "min": 0,
+          "max": null,
+          "min": null,
           "show": true
         },
         {
