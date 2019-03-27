@@ -36,6 +36,14 @@ groups:
       /
       node:node_num_cpu:sum
 
+  - record: node:cluster_cpu_utilisation:ratio
+    expr: |
+      node:node_cpu_utilisation:avg1m
+        *
+      node:node_num_cpu:sum
+        /
+      scalar(sum(node:node_num_cpu:sum))
+
   - record: ':node_memory_utilisation:'
     expr: |
       1 -
@@ -99,6 +107,12 @@ groups:
         * on (namespace, pod) group_left(node)
           node_namespace_pod:kube_pod_info:
       )
+
+  - record: node:cluster_memory_utilisation:ratio
+    expr: |
+      (node:node_memory_bytes_total:sum - node:node_memory_bytes_available:sum)
+      /
+      scalar(sum(node:node_memory_bytes_total:sum))
 
   - record: :node_disk_utilisation:avg_irate
     expr: |
