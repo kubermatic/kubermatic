@@ -2,10 +2,12 @@ package rbacusercluster
 
 import (
 	"context"
-
-	"k8s.io/apimachinery/pkg/types"
+	"errors"
+	"fmt"
 
 	"github.com/golang/glog"
+	"github.com/heptiolabs/healthcheck"
+	"k8s.io/apimachinery/pkg/types"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,7 +44,7 @@ var mapFn = handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request
 
 // Add creates a new RBAC generator controller that is responsible for creating Cluster Roles and Cluster Role Bindings
 // for groups: `owners`, `editors` and `viewers``
-func Add(mgr manager.Manager) error {
+func Add(mgr manager.Manager, registerReconciledCheck func(name string, check healthcheck.Check)) error {
 	reconcile := &reconcileRBAC{Client: mgr.GetClient(), ctx: context.TODO()}
 
 	// Create a new controller
@@ -59,6 +61,15 @@ func Add(mgr manager.Manager) error {
 	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRoleBinding{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
 		return err
 	}
+
+	// A very simple but limited way to express the successful reconciling to the seed cluster
+	registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciling_successfully"), func() error {
+		if !reconcile.reconcilingSuccessfully {
+			return errors.New("last reconcile failed or did not happen yet")
+		}
+		return nil
+	})
+
 	return nil
 }
 
@@ -66,16 +77,19 @@ func Add(mgr manager.Manager) error {
 type reconcileRBAC struct {
 	ctx context.Context
 	client.Client
+	reconcilingSuccessfully bool
 }
 
 // Reconcile makes changes in response to Cluster Role and Cluster Role Binding related changes
 func (r *reconcileRBAC) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	rdr := reconciler{client: r.Client, ctx: r.ctx}
 
-	err := rdr.Reconcile(request.Name)
-	if err != nil {
+	if err := rdr.Reconcile(request.Name); err != nil {
 		glog.Errorf("RBAC reconciliation failed: %v", err)
+		r.reconcilingSuccessfully = false
+		return reconcile.Result{}, err
 	}
+	r.reconcilingSuccessfully = true
 
-	return reconcile.Result{}, err
+	return reconcile.Result{}, nil
 }

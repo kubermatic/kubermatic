@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"net/http"
+	"time"
 
 	"github.com/golang/glog"
+	"github.com/heptiolabs/healthcheck"
 	"github.com/oklog/run"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/ipam"
@@ -23,19 +26,23 @@ import (
 )
 
 type controllerRunOptions struct {
-	internalAddr string
-	openshift    bool
-	networks     networkFlags
+	metricsListenAddr string
+	healthListenAddr  string
+	openshift         bool
+	networks          networkFlags
 }
 
 func main() {
 	runOp := controllerRunOptions{}
-	flag.StringVar(&runOp.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal HTTP /metrics server is running on")
+	flag.StringVar(&runOp.metricsListenAddr, "metrics-listen-address", "127.0.0.1:8085", "The address on which the internal HTTP /metrics server is running on")
+	flag.StringVar(&runOp.healthListenAddr, "health-listen-address", "127.0.0.1:8086", "The address on which the internal HTTP /ready & /live server is running on")
 	flag.BoolVar(&runOp.openshift, "openshift", false, "Whether the managed cluster is an openshift cluster")
 	flag.Var(&runOp.networks, "ipam-controller-network", "The networks from which the ipam controller should allocate IPs for machines (e.g.: .--ipam-controller-network=10.0.0.0/16,10.0.0.1,8.8.8.8 --ipam-controller-network=192.168.5.0/24,192.168.5.1,1.1.1.1,8.8.4.4)")
 	flag.Parse()
 
 	var g run.Group
+
+	healthHandler := healthcheck.NewHandler()
 
 	cfg, err := config.GetConfig()
 	if err != nil {
@@ -48,7 +55,7 @@ func main() {
 	// Create Context
 	done := ctx.Done()
 
-	mgr, err := manager.New(cfg, manager.Options{LeaderElection: true, LeaderElectionNamespace: metav1.NamespaceSystem, MetricsBindAddress: runOp.internalAddr})
+	mgr, err := manager.New(cfg, manager.Options{LeaderElection: true, LeaderElectionNamespace: metav1.NamespaceSystem, MetricsBindAddress: runOp.metricsListenAddr})
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -63,7 +70,7 @@ func main() {
 
 	// Setup all Controllers
 	glog.Info("registering controllers")
-	if err := usercluster.Add(mgr, runOp.openshift); err != nil {
+	if err := usercluster.Add(mgr, runOp.openshift, healthHandler.AddReadinessCheck); err != nil {
 		glog.Fatalf("failed to register user cluster controller: %v", err)
 	}
 
@@ -77,7 +84,7 @@ func main() {
 		glog.Infof("Added IPAM controller to mgr")
 	}
 
-	if err := rbacusercluster.Add(mgr); err != nil {
+	if err := rbacusercluster.Add(mgr, healthHandler.AddReadinessCheck); err != nil {
 		glog.Fatalf("failed to add user RBAC controller to mgr: %v", err)
 	}
 
@@ -109,6 +116,21 @@ func main() {
 			return mgr.Start(done)
 		}, func(err error) {
 			glog.Infof("stopping user cluster controller manager, err = %v", err)
+		})
+	}
+
+	// This group starts the readiness & liveness http server
+	{
+		h := &http.Server{Addr: runOp.healthListenAddr, Handler: healthHandler}
+		g.Add(func() error {
+			return h.ListenAndServe()
+		}, func(err error) {
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+			defer cancel()
+
+			if err := h.Shutdown(shutdownCtx); err != nil {
+				glog.Errorf("Healthcheck handler terminated with an error: %v", err)
+			}
 		})
 	}
 

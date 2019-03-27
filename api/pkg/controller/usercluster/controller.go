@@ -2,7 +2,10 @@ package usercluster
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
+	"github.com/heptiolabs/healthcheck"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -20,7 +23,7 @@ const (
 )
 
 // Add creates a new user cluster controller.
-func Add(mgr manager.Manager, openshift bool) error {
+func Add(mgr manager.Manager, openshift bool, registerReconciledCheck func(name string, check healthcheck.Check)) error {
 	reconcile := &reconciler{Client: mgr.GetClient(), cache: mgr.GetCache(), openshift: openshift}
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconcile})
 	if err != nil {
@@ -35,17 +38,32 @@ func Add(mgr manager.Manager, openshift bool) error {
 		return err
 	}
 
+	// A very simple but limited way to express the successful reconciling to the seed cluster
+	registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciling_successfully"), func() error {
+		if !reconcile.reconcilingSuccessfully {
+			return errors.New("last reconcile failed or did not happen yet")
+		}
+		return nil
+	})
+
 	return nil
 }
 
 // reconcileUserCluster reconciles objects in the user cluster
 type reconciler struct {
 	client.Client
-	openshift bool
-	cache     cache.Cache
+	openshift               bool
+	cache                   cache.Cache
+	reconcilingSuccessfully bool
 }
 
 // Reconcile makes changes in response to objects in the user cluster.
 func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	return reconcile.Result{}, r.reconcile(context.TODO())
+	if err := r.reconcile(context.TODO()); err != nil {
+		r.reconcilingSuccessfully = false
+		return reconcile.Result{}, err
+	}
+	r.reconcilingSuccessfully = true
+
+	return reconcile.Result{}, nil
 }
