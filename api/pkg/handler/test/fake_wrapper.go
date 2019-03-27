@@ -164,3 +164,33 @@ func (k ProjectV1SliceWrapper) EqualOrDie(expected ProjectV1SliceWrapper, t *tes
 		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
 	}
 }
+
+// NewServiceAccountV1SliceWrapper wraps []apiv1.ServiceAccount
+// to provide convenient methods for tests
+type NewServiceAccountV1SliceWrapper []apiv1.ServiceAccount
+
+// Sort sorts the collection by name
+func (k NewServiceAccountV1SliceWrapper) Sort() {
+	sort.Slice(k, func(i, j int) bool {
+		return k[i].Name > (k[j].Name)
+	})
+}
+
+// DecodeOrDie reads and decodes json data from the reader
+func (k *NewServiceAccountV1SliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *NewServiceAccountV1SliceWrapper {
+	t.Helper()
+	dec := json.NewDecoder(r)
+	err := dec.Decode(k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return k
+}
+
+// EqualOrDie compares whether expected collection is equal to the actual one
+func (k NewServiceAccountV1SliceWrapper) EqualOrDie(expected NewServiceAccountV1SliceWrapper, t *testing.T) {
+	t.Helper()
+	if diff := deep.Equal(k, expected); diff != nil {
+		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+	}
+}
