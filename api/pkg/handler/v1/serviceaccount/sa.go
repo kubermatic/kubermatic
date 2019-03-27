@@ -59,6 +59,54 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProv
 	}
 }
 
+// ListEndpoint returns service accounts of the given project
+func ListEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		req, ok := request.(common.GetProjectRq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+
+		if len(req.ProjectID) == 0 {
+			return nil, errors.NewBadRequest("the name of the project cannot be empty")
+		}
+
+		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		saList, err := serviceAccountProvider.List(userInfo, project, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		var errorList []string
+		response := make([]*apiv1.ServiceAccount, 0)
+		for _, sa := range saList {
+			externalSA := convertInternalServiceAccountToExternal(sa)
+			if apiv1.ServiceAccountInactive == externalSA.Status {
+				response = append(response, externalSA)
+				continue
+			}
+
+			group, err := memberMapper.MapUserToGroup(sa.Spec.Email, project.Name)
+			if err != nil {
+				errorList = append(errorList, err.Error())
+			} else {
+				externalSA.Group = group
+				response = append(response, externalSA)
+			}
+		}
+		if len(errorList) > 0 {
+			return response, errors.NewWithDetails(http.StatusInternalServerError, "failed to get some service accounts, please examine details field for more info", errorList)
+		}
+
+		return response, nil
+	}
+}
+
 // addReq defines HTTP request for addServiceAccountToProject
 // swagger:parameters addServiceAccountToProject
 type addReq struct {
