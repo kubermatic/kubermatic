@@ -85,9 +85,9 @@ func ListEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvid
 		var errorList []string
 		response := make([]*apiv1.ServiceAccount, 0)
 		for _, sa := range saList {
-			internalSA := convertInternalServiceAccountToExternal(sa)
-			if apiv1.ServiceAccountInactive == internalSA.Status {
-				response = append(response, internalSA)
+			externalSA := convertInternalServiceAccountToExternal(sa)
+			if apiv1.ServiceAccountInactive == externalSA.Status {
+				response = append(response, externalSA)
 				continue
 			}
 
@@ -95,8 +95,8 @@ func ListEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvid
 			if err != nil {
 				errorList = append(errorList, err.Error())
 			} else {
-				internalSA.Group = group
-				response = append(response, internalSA)
+				externalSA.Group = group
+				response = append(response, externalSA)
 			}
 		}
 		if len(errorList) > 0 {
