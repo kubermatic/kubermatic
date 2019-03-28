@@ -1,0 +1,8 @@
+{{ range $name, $config := .Values.velero.backupStorageLocations }}
+apiVersion: velero.io/v1
+kind: BackupStorageLocation
+metadata:
+  name: {{ $name }}
+spec:
+{{ $config | toYaml | indent 2 }}
+{{ end }}
