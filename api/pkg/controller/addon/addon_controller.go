@@ -267,6 +267,12 @@ func (c *Controller) sync(key string) error {
 		return nil
 	}
 
+	// If a cluster has the pause flag set, every processing should be skipped
+	if cluster.Spec.Pause {
+		glog.V(6).Infof("skipping paused cluster %s", key)
+		return nil
+	}
+
 	// When the apiserver is not healthy, we must skip it
 	if !cluster.Status.Health.Apiserver {
 		glog.V(6).Infof("API server of cluster %s is not running - not processing the addon", cluster.Name)
