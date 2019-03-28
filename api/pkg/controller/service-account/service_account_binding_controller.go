@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/rand"
+	"github.com/golang/glog"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	serviceaccount "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -51,7 +52,11 @@ func (r *reconcileServiceAccountProjectBinding) Reconcile(request reconcile.Requ
 		return reconcile.Result{}, nil
 	}
 
-	return reconcile.Result{}, r.ensureServiceAccountProjectBinding(resourceName)
+	if err := r.ensureServiceAccountProjectBinding(resourceName); err != nil {
+		glog.Errorf("failed to reconcile in controller %s due to error: %v", controllerName, err)
+		return reconcile.Result{}, err
+	}
+	return reconcile.Result{}, nil
 }
 
 func (r *reconcileServiceAccountProjectBinding) ensureServiceAccountProjectBinding(saName string) error {
