@@ -23,7 +23,15 @@ const (
 	openshiftContolPlaneConfigKeyName      = "master-config.yaml"
 )
 
-func OpenshiftAPIServerConfigMapCreator(ctx context.Context, data openshiftData) reconciling.NamedConfigMapCreatorGetter {
+type masterConfigData interface {
+	Cluster() *kubermaticv1.Cluster
+	GetApiserverExternalNodePort(context.Context) (int32, error)
+	OIDCIssuerURL() string
+	OIDCClientID() string
+	OIDCClientSecret() string
+}
+
+func OpenshiftAPIServerConfigMapCreator(ctx context.Context, data masterConfigData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return openshiftAPIServerConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
@@ -43,7 +51,7 @@ func OpenshiftAPIServerConfigMapCreator(ctx context.Context, data openshiftData)
 	}
 }
 
-func OpenshiftControllerMangerConfigMapCreator(ctx context.Context, data openshiftData) reconciling.NamedConfigMapCreatorGetter {
+func OpenshiftControllerMangerConfigMapCreator(ctx context.Context, data masterConfigData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return openshiftControllerMangerConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
@@ -64,6 +72,12 @@ func OpenshiftControllerMangerConfigMapCreator(ctx context.Context, data openshi
 	}
 }
 
+type oidcData struct {
+	IssuerURL    string
+	ClientID     string
+	ClientSecret string
+}
+
 type openshiftConfigInput struct {
 	ETCDEndpoints     []string
 	ServiceCIDR       string
@@ -74,11 +88,7 @@ type openshiftConfigInput struct {
 	ControlPlaneType  string
 	MasterIP          string
 	CloudProviderName string
-}
-
-type masterConfigData interface {
-	Cluster() *kubermaticv1.Cluster
-	GetApiserverExternalNodePort(context.Context) (int32, error)
+	OIDC              oidcData
 }
 
 func getMasterConfig(ctx context.Context, data masterConfigData, controlPlaneType string) (string, error) {
@@ -101,6 +111,11 @@ func getMasterConfig(ctx context.Context, data masterConfigData, controlPlaneTyp
 		ControlPlaneType:  controlPlaneType,
 		MasterIP:          data.Cluster().Address.IP,
 		CloudProviderName: apiserver.GetKubernetesCloudProviderName(data.Cluster()),
+		OIDC: oidcData{
+			IssuerURL:    data.OIDCIssuerURL(),
+			ClientID:     data.OIDCClientID(),
+			ClientSecret: data.OIDCClientSecret(),
+		},
 	}
 	if err := tmpl.Execute(&controlPlaneConfigBuffer, templateInput); err != nil {
 		return "", fmt.Errorf("failed to execute template: %v", err)
@@ -314,30 +329,52 @@ networkConfig:
   - 0.0.0.0/0
   networkPluginName: redhat/openshift-ovs-subnet
   serviceNetworkCIDR: "{{ .ServiceCIDR }}"
+{{- if eq .ControlPlaneType "apiserver" }}
 # TODO: Get this running with dex
-#oauthConfig:
-#  # TODO: Could be made nicer to be something listening on 443
-#  assetPublicURL: "{{ .ClusterURL }}/console"
-#  grantConfig:
-#    method: auto
-#  identityProviders:
-#  - challenge: true
-#    login: true
-#    mappingMethod: claim
-#    name: allow_all
-#    provider:
-#      apiVersion: v1
-#      kind: AllowAllPasswordIdentityProvider
-#  masterCA: /etc/kubernetes/pki/ca/ca.crt
-#  masterPublicURL: "{{ .ClusterURL }}"
-#  masterURL: "{{ .ClusterURL }}"
-#  sessionConfig:
-#    sessionMaxAgeSeconds: 3600
-#    sessionName: ssn
-#    sessionSecretsFile: /etc/origin/master/session-secrets.yaml
-#  tokenConfig:
-#    accessTokenMaxAgeSeconds: 86400
-#    authorizeTokenMaxAgeSeconds: 500
+oauthConfig:
+  alwaysShowProviderSelection: false
+  grantConfig:
+    method: auto
+    serviceAccountMethod: prompt
+  identityProviders:
+    - challenge: true
+      login: true
+      mappingMethod: claim
+      name: openid-connect
+      provider:
+        apiVersion: v1
+        kind: OpenIDIdentityProvider
+        clientID: {{ .OIDC.ClientID }}
+        clientSecret: {{ .OIDC.ClientSecret }}
+        ca: /etc/kubernetes/dex/ca/caBundle.pem
+        claims:
+          id:
+            - sub
+          preferredUsername:
+            - name
+          name:
+            - name
+          email:
+            - email
+        extraScopes:
+          - email
+          - profile
+        urls:
+          authorize: {{ .OIDC.IssuerURL }}/auth
+          token: {{ .OIDC.IssuerURL }}/token
+  masterCA: /etc/kubernetes/pki/ca/ca.crt
+  assetPublicURL: "{{ .ClusterURL }}/console"
+  masterPublicURL: "{{ .ClusterURL }}"
+  masterURL: "{{ .ClusterURL }}"
+  sessionConfig:
+    sessionMaxAgeSeconds: 300
+    sessionName: ssn
+    sessionSecretsFile: ""
+  templates: null
+  tokenConfig:
+    accessTokenMaxAgeSeconds: 86400
+    authorizeTokenMaxAgeSeconds: 300
+{{- end }}
 pauseControllers: false
 policyConfig:
   bootstrapPolicyFile: /etc/origin/master/policy.json

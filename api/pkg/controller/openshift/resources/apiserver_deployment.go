@@ -245,6 +245,10 @@ func getVolumeMounts() []corev1.VolumeMount {
 			Name:      ServiceSignerCASecretName,
 			MountPath: "/etc/origin/master/service-signer-ca",
 		},
+		{
+			Name:      resources.DexCASecretName,
+			MountPath: "/etc/kubernetes/dex/ca",
+		},
 	}
 
 	return volumesMounts
@@ -373,6 +377,15 @@ func getAPIServerVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  ServiceSignerCASecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.DexCASecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.DexCASecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
