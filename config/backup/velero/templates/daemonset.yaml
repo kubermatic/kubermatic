@@ -31,8 +31,8 @@ spec:
 
         {{- if .Values.velero.credentials.azure }}
         envFrom:
-          - secretRef:
-              name: azure-credentials
+        - secretRef:
+            name: azure-credentials
         {{- end }}
 
         env:
