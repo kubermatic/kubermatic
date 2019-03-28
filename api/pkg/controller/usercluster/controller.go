@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/heptiolabs/healthcheck"
 
@@ -24,7 +25,7 @@ const (
 
 // Add creates a new user cluster controller.
 func Add(mgr manager.Manager, openshift bool, registerReconciledCheck func(name string, check healthcheck.Check)) error {
-	reconcile := &reconciler{Client: mgr.GetClient(), cache: mgr.GetCache(), openshift: openshift}
+	reconcile := &reconciler{Client: mgr.GetClient(), cache: mgr.GetCache(), openshift: openshift, rLock: &sync.Mutex{}}
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconcile})
 	if err != nil {
 		return err
@@ -40,6 +41,8 @@ func Add(mgr manager.Manager, openshift bool, registerReconciledCheck func(name 
 
 	// A very simple but limited way to express the first successful reconciling to the seed cluster
 	registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciled_successfully_once"), func() error {
+		reconcile.rLock.Lock()
+		defer reconcile.rLock.Unlock()
 		if !reconcile.reconciledSuccessfullyOnce {
 			return errors.New("no successful reconciliation so far")
 		}
@@ -52,8 +55,10 @@ func Add(mgr manager.Manager, openshift bool, registerReconciledCheck func(name 
 // reconcileUserCluster reconciles objects in the user cluster
 type reconciler struct {
 	client.Client
-	openshift                  bool
-	cache                      cache.Cache
+	openshift bool
+	cache     cache.Cache
+
+	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
 }
 
@@ -63,6 +68,8 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, err
 	}
 
+	r.rLock.Lock()
+	defer r.rLock.Unlock()
 	r.reconciledSuccessfullyOnce = true
 	return reconcile.Result{}, nil
 }

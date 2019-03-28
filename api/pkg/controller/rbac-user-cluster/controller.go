@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/golang/glog"
 	"github.com/heptiolabs/healthcheck"
@@ -45,7 +46,7 @@ var mapFn = handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request
 // Add creates a new RBAC generator controller that is responsible for creating Cluster Roles and Cluster Role Bindings
 // for groups: `owners`, `editors` and `viewers``
 func Add(mgr manager.Manager, registerReconciledCheck func(name string, check healthcheck.Check)) error {
-	reconcile := &reconcileRBAC{Client: mgr.GetClient(), ctx: context.TODO()}
+	reconcile := &reconcileRBAC{Client: mgr.GetClient(), ctx: context.TODO(), rLock: &sync.Mutex{}}
 
 	// Create a new controller
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconcile})
@@ -64,6 +65,8 @@ func Add(mgr manager.Manager, registerReconciledCheck func(name string, check he
 
 	// A very simple but limited way to express the first successful reconciling to the seed cluster
 	registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciled_successfully_once"), func() error {
+		reconcile.rLock.Lock()
+		defer reconcile.rLock.Unlock()
 		if !reconcile.reconciledSuccessfullyOnce {
 			return errors.New("no successful reconciliation so far")
 		}
@@ -77,6 +80,8 @@ func Add(mgr manager.Manager, registerReconciledCheck func(name string, check he
 type reconcileRBAC struct {
 	ctx context.Context
 	client.Client
+
+	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
 }
 
@@ -89,6 +94,8 @@ func (r *reconcileRBAC) Reconcile(request reconcile.Request) (reconcile.Result, 
 		return reconcile.Result{}, err
 	}
 
+	r.rLock.Lock()
+	defer r.rLock.Unlock()
 	r.reconciledSuccessfullyOnce = true
 	return reconcile.Result{}, nil
 }
