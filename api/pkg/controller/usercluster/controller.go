@@ -38,10 +38,10 @@ func Add(mgr manager.Manager, openshift bool, registerReconciledCheck func(name 
 		return err
 	}
 
-	// A very simple but limited way to express the successful reconciling to the seed cluster
-	registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciling_successfully"), func() error {
-		if !reconcile.reconcilingSuccessfully {
-			return errors.New("last reconcile failed or did not happen yet")
+	// A very simple but limited way to express the first successful reconciling to the seed cluster
+	registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciled_successfully_once"), func() error {
+		if !reconcile.reconciledSuccessfullyOnce {
+			return errors.New("no successful reconciliation so far")
 		}
 		return nil
 	})
@@ -52,18 +52,17 @@ func Add(mgr manager.Manager, openshift bool, registerReconciledCheck func(name 
 // reconcileUserCluster reconciles objects in the user cluster
 type reconciler struct {
 	client.Client
-	openshift               bool
-	cache                   cache.Cache
-	reconcilingSuccessfully bool
+	openshift                  bool
+	cache                      cache.Cache
+	reconciledSuccessfullyOnce bool
 }
 
 // Reconcile makes changes in response to objects in the user cluster.
 func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	if err := r.reconcile(context.TODO()); err != nil {
-		r.reconcilingSuccessfully = false
 		return reconcile.Result{}, err
 	}
-	r.reconcilingSuccessfully = true
 
+	r.reconciledSuccessfullyOnce = true
 	return reconcile.Result{}, nil
 }

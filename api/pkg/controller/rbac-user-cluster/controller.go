@@ -62,10 +62,10 @@ func Add(mgr manager.Manager, registerReconciledCheck func(name string, check he
 		return err
 	}
 
-	// A very simple but limited way to express the successful reconciling to the seed cluster
-	registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciling_successfully"), func() error {
-		if !reconcile.reconcilingSuccessfully {
-			return errors.New("last reconcile failed or did not happen yet")
+	// A very simple but limited way to express the first successful reconciling to the seed cluster
+	registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciled_successfully_once"), func() error {
+		if !reconcile.reconciledSuccessfullyOnce {
+			return errors.New("no successful reconciliation so far")
 		}
 		return nil
 	})
@@ -77,7 +77,7 @@ func Add(mgr manager.Manager, registerReconciledCheck func(name string, check he
 type reconcileRBAC struct {
 	ctx context.Context
 	client.Client
-	reconcilingSuccessfully bool
+	reconciledSuccessfullyOnce bool
 }
 
 // Reconcile makes changes in response to Cluster Role and Cluster Role Binding related changes
@@ -86,10 +86,9 @@ func (r *reconcileRBAC) Reconcile(request reconcile.Request) (reconcile.Result, 
 
 	if err := rdr.Reconcile(request.Name); err != nil {
 		glog.Errorf("RBAC reconciliation failed: %v", err)
-		r.reconcilingSuccessfully = false
 		return reconcile.Result{}, err
 	}
-	r.reconcilingSuccessfully = true
 
+	r.reconciledSuccessfullyOnce = true
 	return reconcile.Result{}, nil
 }
