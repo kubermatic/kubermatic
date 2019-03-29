@@ -9,3 +9,15 @@ nodeExporter:
     limits:
       cpu: 200m
       memory: 48Mi
+
+  rbacProxy:
+    image:
+      repository: quay.io/coreos/kube-rbac-proxy
+      tag: v0.4.1
+    resources:
+      requests:
+        cpu: 10m
+        memory: 24Mi
+      limits:
+        cpu: 20m
+        memory: 48Mi
