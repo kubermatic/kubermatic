@@ -7,12 +7,13 @@ import (
 	"github.com/golang/glog"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/machine-controller"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/user-auth"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 
 	controllerclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,9 +25,18 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.ensureRoles(ctx); err != nil {
+	if err := r.reconcileRoles(ctx); err != nil {
 		return err
 	}
+
+	if err := r.reconcileServiceAcconts(ctx); err != nil {
+		return err
+	}
+
+	if err := r.reconcileClusterRoleBindings(ctx); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -78,14 +88,14 @@ func (r *reconciler) ensureAPIServices(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) ensureRoles(ctx context.Context) error {
+func (r *reconciler) reconcileRoles(ctx context.Context) error {
 	// kube-system
 	creators := []resources.NamedRoleCreatorGetter{
 		machinecontroller.KubeSystemRoleCreator(),
 	}
 
-	if err := resources.ReconcileRoles(creators, v1.NamespaceSystem, r.Client, r.cache); err != nil {
-		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", v1.NamespaceSystem, err)
+	if err := resources.ReconcileRoles(creators, metav1.NamespaceSystem, r.Client, r.cache); err != nil {
+		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", metav1.NamespaceSystem, err)
 	}
 
 	// kube-public
@@ -94,8 +104,8 @@ func (r *reconciler) ensureRoles(ctx context.Context) error {
 		machinecontroller.KubePublicRoleCreator(),
 	}
 
-	if err := resources.ReconcileRoles(creators, v1.NamespacePublic, r.Client, r.cache); err != nil {
-		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", v1.NamespacePublic, err)
+	if err := resources.ReconcileRoles(creators, metav1.NamespacePublic, r.Client, r.cache); err != nil {
+		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", metav1.NamespacePublic, err)
 	}
 
 	// default
@@ -103,9 +113,31 @@ func (r *reconciler) ensureRoles(ctx context.Context) error {
 		machinecontroller.EndpointReaderRoleCreator(),
 	}
 
-	if err := resources.ReconcileRoles(creators, v1.NamespaceDefault, r.Client, r.cache); err != nil {
-		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", v1.NamespaceDefault, err)
+	if err := resources.ReconcileRoles(creators, metav1.NamespaceDefault, r.Client, r.cache); err != nil {
+		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", metav1.NamespaceDefault, err)
 	}
 
+	return nil
+}
+
+func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
+	creators := []resources.NamedServiceAccountCreatorGetter{
+		userauth.ServiceAccountCreator(),
+	}
+
+	if err := resources.ReconcileServiceAccounts(creators, metav1.NamespaceSystem, r.Client, r.cache); err != nil {
+		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", metav1.NamespaceSystem, err)
+	}
+	return nil
+}
+
+func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context) error {
+	creators := []resources.NamedClusterRoleBindingCreatorGetter{
+		userauth.ClusterRoleBindingCreator(),
+	}
+
+	if err := resources.ReconcileClusterRoleBindings(creators, "", r.Client, r.cache); err != nil {
+		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %v", err)
+	}
 	return nil
 }
