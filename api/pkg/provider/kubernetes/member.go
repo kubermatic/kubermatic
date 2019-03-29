@@ -87,11 +87,15 @@ func (p *ProjectMemberProvider) List(userInfo *provider.UserInfo, project *kuber
 	for _, member := range allMembers {
 		if member.Spec.ProjectID == project.Name {
 
-			// skip if user is service account type
+			// The provider should serve only regular users as a members.
+			// The ServiceAccount is another type of the user and should not be append to project members.
+			// This code checks if member is a regular user or service account and omits service account types.
 			if strings.HasPrefix(member.Spec.UserEmail, serviceAccount) {
 				userEmailParts := strings.Split(member.Spec.UserEmail, "@")
-				if _, err := p.userLister.Get(userEmailParts[0]); err == nil {
-					continue
+				if len(userEmailParts) == 2 {
+					if _, err := p.userLister.Get(userEmailParts[0]); err == nil {
+						continue
+					}
 				}
 			}
 			projectMembers = append(projectMembers, member)
