@@ -315,7 +315,9 @@ func TestListProjectMethod(t *testing.T) {
 				return kubermaticClient.KubermaticV1(), nil
 			}
 
-			projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister())
+			userLister := kubermaticInformerFactory.Kubermatic().V1().Users().Lister()
+			projectBindingLister := kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister()
+			projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, projectBindingLister, userLister)
 			userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister())
 
 			kubermaticInformerFactory.Start(wait.NeverStop)

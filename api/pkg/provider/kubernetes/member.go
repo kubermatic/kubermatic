@@ -17,11 +17,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+const serviceAccount = "serviceaccount"
+
 // NewProjectMemberProvider returns a project members provider
-func NewProjectMemberProvider(createMasterImpersonatedClient kubermaticImpersonationClient, membersLister kubermaticv1lister.UserProjectBindingLister) *ProjectMemberProvider {
+func NewProjectMemberProvider(createMasterImpersonatedClient kubermaticImpersonationClient, membersLister kubermaticv1lister.UserProjectBindingLister, userLister kubermaticv1lister.UserLister) *ProjectMemberProvider {
 	return &ProjectMemberProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
 		membersLister:                  membersLister,
+		userLister:                     userLister,
 	}
 }
 
@@ -34,6 +37,9 @@ type ProjectMemberProvider struct {
 
 	// membersLister local cache that stores bindings for members and projects
 	membersLister kubermaticv1lister.UserProjectBindingLister
+
+	// userLister local cache that stores users
+	userLister kubermaticv1lister.UserLister
 }
 
 // Create creates a binding for the given member and the given project
@@ -80,6 +86,18 @@ func (p *ProjectMemberProvider) List(userInfo *provider.UserInfo, project *kuber
 	projectMembers := []*kubermaticapiv1.UserProjectBinding{}
 	for _, member := range allMembers {
 		if member.Spec.ProjectID == project.Name {
+
+			// The provider should serve only regular users as a members.
+			// The ServiceAccount is another type of the user and should not be append to project members.
+			// This code checks if member is a regular user or service account and omits service account types.
+			if strings.HasPrefix(member.Spec.UserEmail, serviceAccount) {
+				userEmailParts := strings.Split(member.Spec.UserEmail, "@")
+				if len(userEmailParts) == 2 {
+					if _, err := p.userLister.Get(userEmailParts[0]); err == nil {
+						continue
+					}
+				}
+			}
 			projectMembers = append(projectMembers, member)
 		}
 	}
