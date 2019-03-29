@@ -59,7 +59,7 @@ groups:
         The kubelet on {{ $labels.instance }} is experiencing {{ printf "%0.0f" $value }}% errors.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclienterrors
     expr: |
-      (sum(rate(rest_client_requests_total{code=~"5..",job="kubelet"}[5m])) by (instance)
+      (sum(rate(rest_client_requests_total{code=~"(5..|<error>)",job="kubelet"}[5m])) by (instance)
         /
       sum(rate(rest_client_requests_total{job="kubelet"}[5m])) by (instance))
       * 100 > 1
@@ -74,10 +74,43 @@ groups:
         The pod {{ $labels.namespace }}/{{ $labels.pod }} is experiencing {{ printf "%0.0f" $value }}% errors.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclienterrors
     expr: |
-      (sum(rate(rest_client_requests_total{code=~"5..",job="pods"}[5m])) by (namespace, pod)
+      (sum(rate(rest_client_requests_total{code=~"(5..|<error>)",job="pods"}[5m])) by (namespace, pod)
         /
       sum(rate(rest_client_requests_total{job="pods"}[5m])) by (namespace, pod))
       * 100 > 1
+    for: 15m
+    labels:
+      severity: warning
+
+  - alert: KubeletRuntimeErrors
+    annotations:
+      message:
+        The kubelet on {{ $labels.instance }} is having an elevated error rate for container runtime oprations.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeletruntimeerrors
+    expr: |
+      sum(rate(kubelet_runtime_operations_errors{job="kubelet"}[5m])) by (instance) > 0.1
+    for: 15m
+    labels:
+      severity: warning
+
+  - alert: KubeletCGroupManagerLatencyHigh
+    annotations:
+      message:
+        The kubelet's cgroup manager latency on {{ $labels.instance }} has been elevated ({{ printf "%0.2f" $value }}ms) for more than 15 minutes.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeletcgroupmanagerlatencyhigh
+    expr: |
+      sum(rate(kubelet_cgroup_manager_latency_microseconds{quantile="0.9"}[5m])) by (instance) / 1000 > 1
+    for: 15m
+    labels:
+      severity: warning
+
+  - alert: KubeletPodWorkerLatencyHigh
+    annotations:
+      message:
+        The kubelet's pod worker latency for {{ $labels.operation_type }} operations on {{ $labels.instance }} has been elevated ({{ printf "%0.2f" $value }}ms) for more than 15 minutes.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeletpodworkerlatencyhigh
+    expr: |
+      sum(rate(kubelet_pod_worker_latency_microseconds{quantile="0.9"}[5m])) by (instance, operation_type) / 1000 > 250
     for: 15m
     labels:
       severity: warning
