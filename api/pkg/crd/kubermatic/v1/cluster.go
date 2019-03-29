@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -334,13 +335,14 @@ type OpenstackCloudSpec struct {
 
 // ClusterHealthStatus stores health information of the components of a cluster.
 type ClusterHealthStatus struct {
-	Apiserver                   bool `json:"apiserver"`
-	Scheduler                   bool `json:"scheduler"`
-	Controller                  bool `json:"controller"`
-	MachineController           bool `json:"machineController"`
-	Etcd                        bool `json:"etcd"`
-	OpenVPN                     bool `json:"openvpn"`
-	CloudProviderInfrastructure bool `json:"cloudProviderInfrastructure"`
+	Apiserver                    bool `json:"apiserver"`
+	Scheduler                    bool `json:"scheduler"`
+	Controller                   bool `json:"controller"`
+	MachineController            bool `json:"machineController"`
+	Etcd                         bool `json:"etcd"`
+	OpenVPN                      bool `json:"openvpn"`
+	CloudProviderInfrastructure  bool `json:"cloudProviderInfrastructure"`
+	UserClusterControllerManager bool `json:"userClusterControllerManager"`
 }
 
 // AllHealthy returns if all components are healthy
@@ -350,7 +352,8 @@ func (h *ClusterHealthStatus) AllHealthy() bool {
 		h.Controller &&
 		h.Apiserver &&
 		h.Scheduler &&
-		h.CloudProviderInfrastructure
+		h.CloudProviderInfrastructure &&
+		h.UserClusterControllerManager
 }
 
 // MarshalJSON adds base64 json encoding to the Bytes type.

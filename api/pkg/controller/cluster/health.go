@@ -20,11 +20,12 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (*kubermaticv1.Clus
 	}
 
 	healthMapping := map[string]*depInfo{
-		resources.ApiserverDeploymentName:         {healthy: &health.Apiserver, minReady: 1},
-		resources.ControllerManagerDeploymentName: {healthy: &health.Controller, minReady: 1},
-		resources.SchedulerDeploymentName:         {healthy: &health.Scheduler, minReady: 1},
-		resources.MachineControllerDeploymentName: {healthy: &health.MachineController, minReady: 1},
-		resources.OpenVPNServerDeploymentName:     {healthy: &health.OpenVPN, minReady: 1},
+		resources.ApiserverDeploymentName:             {healthy: &health.Apiserver, minReady: 1},
+		resources.ControllerManagerDeploymentName:     {healthy: &health.Controller, minReady: 1},
+		resources.SchedulerDeploymentName:             {healthy: &health.Scheduler, minReady: 1},
+		resources.MachineControllerDeploymentName:     {healthy: &health.MachineController, minReady: 1},
+		resources.OpenVPNServerDeploymentName:         {healthy: &health.OpenVPN, minReady: 1},
+		resources.UserClusterControllerDeploymentName: {healthy: &health.UserClusterControllerManager, minReady: 1},
 	}
 
 	for name := range healthMapping {

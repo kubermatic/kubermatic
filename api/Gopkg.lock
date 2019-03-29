@@ -687,6 +687,14 @@
   version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:b669bf7ea147e4d75e097e89f45c1e7de52e79dc913bbbae94b79177f7b075b6"
+  name = "github.com/heptiolabs/healthcheck"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "6ff867650f40c632367411120275478876202233"
+
+[[projects]]
   digest = "1:0e6ba0b7d6e399fcfd307379c02fc5cb703a72632dd3f4f219e8a0b6301a1625"
   name = "github.com/hetznercloud/hcloud-go"
   packages = [
@@ -1888,6 +1896,7 @@
     "github.com/gorilla/handlers",
     "github.com/gorilla/mux",
     "github.com/gorilla/securecookie",
+    "github.com/heptiolabs/healthcheck",
     "github.com/hetznercloud/hcloud-go/hcloud",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure",
