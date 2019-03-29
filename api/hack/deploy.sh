@@ -20,6 +20,7 @@ if [[ "${1}" = "master" ]]; then
 else
   MASTER_FLAG="--set=kubermatic.isMaster=false"
 fi
+DEPLOY_NODEPORT_PROXY=${DEPLOY_NODEPORT_PROXY:-true}
 
 cd "$(dirname "$0")/../../"
 
@@ -47,7 +48,10 @@ if [[ "${1}" = "master" ]]; then
 fi
 
 deploy "minio" "minio" ./config/minio/
-deploy "nodeport-proxy" "nodeport-proxy" ./config/nodeport-proxy/
+# The NodePort proxy is only relevant in cloud environments (Where LB services can be used)
+if [[ "${DEPLOY_NODEPORT_PROXY}" = true ]]; then
+  deploy "nodeport-proxy" "nodeport-proxy" ./config/nodeport-proxy/
+fi
 
 #Monitoring
 deploy "prometheus" "monitoring" ./config/monitoring/prometheus/
