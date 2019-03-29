@@ -28,14 +28,14 @@ func TestCreateServiceAccount(t *testing.T) {
 		{
 			name:     "scenario 1, create service account `test` for editors group",
 			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
-			project:  createProject("abcd"),
+			project:  test.GenDefaultProject(),
 			saName:   "test",
-			saGroup:  "editors-abcd",
+			saGroup:  "editors-my-first-project-ID",
 			existingKubermaticObjects: []runtime.Object{
 				createAuthenitactedUser(),
-				createProject("abcd"),
+				test.GenDefaultProject(),
 			},
-			expectedSA:     createSA("test", "abcd", "editors", "1"),
+			expectedSA:     createSA("test", "my-first-project-ID", "editors", "1"),
 			expectedSAName: "serviceaccount-1",
 		},
 	}
@@ -74,7 +74,7 @@ func TestCreateServiceAccount(t *testing.T) {
 	}
 }
 
-func TestGetServiceAccountByNameForProject(t *testing.T) {
+func TestList(t *testing.T) {
 	// test data
 	testcases := []struct {
 		name                      string
