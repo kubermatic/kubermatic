@@ -8,7 +8,7 @@ spec:
   clusterIP: None
   ports:
   - name: https
-    port: 9123
+    port: 9100
     targetPort: https
   selector:
     app: node-exporter

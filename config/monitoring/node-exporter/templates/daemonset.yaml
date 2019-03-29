@@ -16,7 +16,7 @@ spec:
         app: node-exporter
       annotations:
         kubermatic/scrape: 'true'
-        kubermatic/scrape_port: '9123'
+        kubermatic/scrape_port: '9100'
     spec:
       hostNetwork: true
       hostPID: true
@@ -28,7 +28,7 @@ spec:
         - "--path.procfs=/host/proc"
         - "--path.sysfs=/host/sys"
         - "--path.rootfs=/host/root"
-        - "--web.listen-address=127.0.0.1:9123"
+        - "--web.listen-address=127.0.0.1:9100"
         resources:
 {{ toYaml .Values.nodeExporter.resources | indent 10 }}
         volumeMounts:
@@ -46,17 +46,17 @@ spec:
         image: "{{ .Values.nodeExporter.rbacProxy.image.repository }}:{{ .Values.nodeExporter.rbacProxy.image.tag}}"
         args:
         - "--logtostderr"
-        - "--secure-listen-address=$(IP):9123"
+        - "--secure-listen-address=$(IP):9100"
         - "--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256"
-        - "--upstream=http://127.0.0.1:9123/"
+        - "--upstream=http://127.0.0.1:9100/"
         env:
         - name: IP
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
         ports:
-        - containerPort: 9123
-          hostPort: 9123
+        - containerPort: 9100
+          hostPort: 9100
           name: https
         resources:
 {{ toYaml .Values.nodeExporter.rbacProxy.resources | indent 10 }}
