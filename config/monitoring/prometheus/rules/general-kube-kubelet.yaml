@@ -56,7 +56,7 @@ groups:
         $value }}% errors.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclienterrors
     expr: |
-      (sum(rate(rest_client_requests_total{code=~"5..",job="kubelet"}[5m])) by (instance)
+      (sum(rate(rest_client_requests_total{code=~"(5..|<error>)",job="kubelet"}[5m])) by (instance)
         /
       sum(rate(rest_client_requests_total{job="kubelet"}[5m])) by (instance))
       * 100 > 1
@@ -69,7 +69,7 @@ groups:
         printf "%0.0f" $value }}% errors.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclienterrors
     expr: |
-      (sum(rate(rest_client_requests_total{code=~"5..",job="pods"}[5m])) by (namespace, pod)
+      (sum(rate(rest_client_requests_total{code=~"(5..|<error>)",job="pods"}[5m])) by (namespace, pod)
         /
       sum(rate(rest_client_requests_total{job="pods"}[5m])) by (namespace, pod))
       * 100 > 1
