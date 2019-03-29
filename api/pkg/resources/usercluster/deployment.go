@@ -99,13 +99,27 @@ func DeploymentCreator(data userclusterControllerData) resources.NamedDeployment
 					Command:         []string{"/usr/local/bin/user-cluster-controller-manager"},
 					Args: append([]string{
 						"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-						"-internal-address", "0.0.0.0:8085",
+						"-metrics-listen-address", "0.0.0.0:8085",
+						"-health-listen-address", "0.0.0.0:8086",
 						"-logtostderr",
 						"-v", "2",
 					}, getNetworkArgs(data)...),
 					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 					Resources:                defaultResourceRequirements,
+					ReadinessProbe: &corev1.Probe{
+						Handler: corev1.Handler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/ready",
+								Port:   intstr.FromInt(8086),
+								Scheme: corev1.URISchemeHTTP,
+							},
+						},
+						FailureThreshold: 5,
+						PeriodSeconds:    5,
+						SuccessThreshold: 1,
+						TimeoutSeconds:   15,
+					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      resources.InternalUserClusterAdminKubeconfigSecretName,
