@@ -1,0 +1,105 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: velero
+  labels:
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/version: '{{ .Values.velero.image.tag }}'
+    app.kubernetes.io/managed-by: helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: velero
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: velero
+      annotations:
+        kubermatic/scrape: "true"
+        kubermatic/scrape_port: "8085"
+{{- with .Values.velero.podAnnotations }}
+{{ toYaml . | indent 8 }}
+{{- end }}
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: velero
+        image: '{{ .Values.velero.image.repository }}:{{ .Values.velero.image.tag }}'
+        imagePullPolicy: {{ .Values.velero.image.pullPolicy }}
+
+        command:
+        - /velero
+        args:
+        - server
+        {{- range .Values.velero.serverFlags }}
+        - '{{ . }}'
+        {{- end }}
+        {{- with .Values.velero.defaultBackupStorageLocation }}
+        - '--default-backup-storage-location={{ . }}'
+        {{- end }}
+        {{- with .Values.velero.defaultVolumeSnapshotLocations }}
+        - '--default-volume-snapshot-locations={{ . | join "," }}'
+        {{- end }}
+
+        {{- if .Values.velero.credentials.azure }}
+        envFrom:
+        - secretRef:
+            name: azure-credentials
+        {{- end }}
+
+        env:
+        - name: VELERO_SCRATCH_DIR
+          value: /scratch
+        {{- if .Values.velero.credentials.aws }}
+        - name: AWS_SHARED_CREDENTIALS_FILE
+          value: /credentials/aws/creds
+        {{- end }}
+        {{- if .Values.velero.credentials.gcp }}
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /credentials/gcp/creds
+        {{- end }}
+
+        volumeMounts:
+        - name: plugins
+          mountPath: /plugins
+        - name: scratch
+          mountPath: /scratch
+        {{- if .Values.velero.credentials.aws }}
+        - name: aws-credentials
+          mountPath: /credentials/aws
+        {{- end }}
+        {{- if .Values.velero.credentials.gcp }}
+        - name: gcp-credentials
+          mountPath: /credentials/gcp
+        {{- end }}
+
+        ports:
+        - name: metrics
+          containerPort: 8085
+          protocol: TCP
+
+        resources:
+{{ toYaml .Values.velero.resources.velero | indent 10 }}
+
+      volumes:
+      - name: plugins
+        emptyDir: {}
+      - name: scratch
+        emptyDir: {}
+      {{- if .Values.velero.credentials.aws }}
+      - name: aws-credentials
+        secret:
+          secretName: aws-credentials
+      {{- end }}
+      {{- if .Values.velero.credentials.gcp }}
+      - name: gcp-credentials
+        secret:
+          secretName: gcp-credentials
+      {{- end }}
+
+      serviceAccountName: velero
+      nodeSelector:
+{{ toYaml .Values.velero.nodeSelector | indent 8 }}
+      tolerations:
+{{ toYaml .Values.velero.tolerations | indent 8 }}

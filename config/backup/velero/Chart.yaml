@@ -1,0 +1,3 @@
+description: A Helm chart for Heptio Velero
+name: velero
+version: 0.11.0
