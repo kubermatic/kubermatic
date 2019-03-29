@@ -72,6 +72,8 @@ func (p *ClusterProvider) WaitForCachesToSync(stopCh <-chan struct{}) error {
 
 // AddIndexerFor adds Lister for the given resource
 // Note: this method creates Lister for some resources, for example "cluster" resources
+//
+// TODO: try rm this since we have InformerProvider
 func (p *ClusterProvider) AddIndexerFor(indexer cache.Indexer, gvr schema.GroupVersionResource) {
 	if gvr.Resource == kubermaticv1.ClusterResourceName {
 		p.clusterResourceLister = kubermaticv1listers.NewClusterLister(indexer)
