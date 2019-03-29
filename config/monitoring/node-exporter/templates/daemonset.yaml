@@ -2,6 +2,10 @@ apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
   name: node-exporter
+  labels:
+    app.kubernetes.io/name: node-exporter
+    app.kubernetes.io/version: '{{ .Values.nodeExporter.image.tag }}'
+    app.kubernetes.io/managed-by: helm
 spec:
   updateStrategy:
     type: RollingUpdate
@@ -12,20 +16,19 @@ spec:
         app: node-exporter
       annotations:
         kubermatic/scrape: 'true'
-        kubermatic/scrape_port: '9100'
+        kubermatic/scrape_port: '9123'
     spec:
       hostNetwork: true
       hostPID: true
+      serviceAccountName: node-exporter
       containers:
       - name: node-exporter
         image: "{{ .Values.nodeExporter.image.repository }}:{{ .Values.nodeExporter.image.tag}}"
         args:
         - "--path.procfs=/host/proc"
         - "--path.sysfs=/host/sys"
-        ports:
-        - containerPort: 9100
-          hostPort: 9100
-          name: scrape
+        - "--path.rootfs=/host/root"
+        - "--web.listen-address=127.0.0.1:9123"
         resources:
 {{ toYaml .Values.nodeExporter.resources | indent 10 }}
         volumeMounts:
@@ -35,9 +38,33 @@ spec:
         - name: sys
           readOnly: true
           mountPath: /host/sys
+        - name: root
+          readOnly: true
+          mountPath: /host/root
+          mountPropagation: HostToContainer
+      - name: kube-rbac-proxy
+        image: "{{ .Values.nodeExporter.rbacProxy.image.repository }}:{{ .Values.nodeExporter.rbacProxy.image.tag}}"
+        args:
+        - "--logtostderr"
+        - "--secure-listen-address=$(IP):9123"
+        - "--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256"
+        - "--upstream=http://127.0.0.1:9123/"
+        env:
+        - name: IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        ports:
+        - containerPort: 9123
+          hostPort: 9123
+          name: https
+        resources:
+{{ toYaml .Values.nodeExporter.rbacProxy.resources | indent 10 }}
       tolerations:
-        - effect: NoSchedule
-          operator: Exists
+      - effect: NoExecute
+        operator: Exists
+      - effect: NoSchedule
+        operator: Exists
       volumes:
       - name: proc
         hostPath:
@@ -45,3 +72,9 @@ spec:
       - name: sys
         hostPath:
           path: /sys
+      - name: root
+        hostPath:
+          path: /
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534

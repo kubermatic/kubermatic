@@ -5,11 +5,10 @@ metadata:
   labels:
     app: node-exporter
 spec:
-  type: ClusterIP
   clusterIP: None
   ports:
-  - name: http
-    port: 9100
-    protocol: TCP
+  - name: https
+    port: 9123
+    targetPort: https
   selector:
     app: node-exporter
