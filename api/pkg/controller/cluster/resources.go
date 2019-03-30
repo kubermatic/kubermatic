@@ -173,7 +173,7 @@ func (cc *Controller) ensureServices(c *kubermaticv1.Cluster, data *resources.Te
 }
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
-func GetDeploymentCreators(data resources.DeploymentDataProvider) []resources.NamedDeploymentCreatorGetter {
+func GetDeploymentCreators(data *resources.TemplateData) []resources.NamedDeploymentCreatorGetter {
 	creators := []resources.NamedDeploymentCreatorGetter{
 		openvpn.DeploymentCreator(data),
 		dns.DeploymentCreator(data),
@@ -186,7 +186,7 @@ func GetDeploymentCreators(data resources.DeploymentDataProvider) []resources.Na
 		creators = append(creators, machinecontroller.DeploymentCreator(data))
 		creators = append(creators, machinecontroller.WebhookDeploymentCreator(data))
 		creators = append(creators, metricsserver.DeploymentCreator(data))
-		creators = append(creators, usercluster.DeploymentCreator(data))
+		creators = append(creators, usercluster.DeploymentCreator(data, false))
 	}
 
 	return creators

@@ -7,6 +7,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	Name = "metrics-server"
+)
+
 // APIService returns a APIService for the metrics server - used inside the user cluster
 func APIService(existing *apiregistrationv1beta1.APIService) (*apiregistrationv1beta1.APIService, error) {
 	se := existing
@@ -15,7 +19,7 @@ func APIService(existing *apiregistrationv1beta1.APIService) (*apiregistrationv1
 	}
 
 	se.Name = resources.MetricsServerAPIServiceName
-	labels := resources.BaseAppLabel(name, nil)
+	labels := resources.BaseAppLabel(Name, nil)
 	se.Labels = labels
 
 	se.Spec.Service = &apiregistrationv1beta1.ServiceReference{

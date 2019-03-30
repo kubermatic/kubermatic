@@ -291,25 +291,31 @@ func (c *Controller) sync(key string) error {
 		}
 		return err
 	}
+	cluster := clusterFromCache.DeepCopy()
 
-	if clusterFromCache.Spec.Pause {
+	if cluster.Spec.Pause {
 		glog.V(6).Infof("skipping cluster %s due to it was set to paused", key)
 		return nil
 	}
 
-	if clusterFromCache.DeletionTimestamp != nil {
+	if cluster.DeletionTimestamp != nil {
 		// Cluster got deleted - all monitoring components will die soon
 		return nil
 	}
 
-	if clusterFromCache.Status.NamespaceName == "" {
+	if cluster.Status.NamespaceName == "" {
 		glog.V(6).Infof("skipping cluster %s because it has no namespace yet", key)
 		c.enqueueAfter(clusterFromCache, healthCheckPeriod)
 		return nil
 	}
 
+	// Wait until the UCCM is ready - otherwise we deploy with missing RBAC resources
+	if !cluster.Status.Health.UserClusterControllerManager {
+		glog.V(6).Infof("skipping cluster %s because the UserClusterControllerManager is not ready yet", key)
+		c.enqueueAfter(clusterFromCache, healthCheckPeriod)
+		return nil
+	}
 	glog.V(4).Infof("syncing cluster %s", key)
-	cluster := clusterFromCache.DeepCopy()
 
 	data, err := c.getClusterTemplateData(cluster)
 	if err != nil {
@@ -361,22 +367,5 @@ func (c *Controller) sync(key string) error {
 		return err
 	}
 
-	if !clusterFromCache.Status.Health.AllHealthy() {
-		glog.V(6).Infof("waiting for cluster %s to become healthy", key)
-		c.enqueueAfter(cluster, healthCheckPeriod)
-		return nil
-	}
-
-	client, err := c.userClusterConnProvider.GetClient(cluster)
-	if err != nil {
-		return err
-	}
-
-	// check that all cluster roles in the user cluster are created
-	if err = c.userClusterEnsureClusterRoles(cluster, data, client); err != nil {
-		return err
-	}
-
-	// check that all cluster role bindings in the user cluster are created
-	return c.userClusterEnsureClusterRoleBindings(cluster, data, client)
+	return nil
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -223,69 +222,4 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) resources.Name
 			return se, nil
 		}
 	}
-}
-
-// MutatingwebhookConfiguration returns the MutatingwebhookConfiguration for the machine controler
-func MutatingwebhookConfiguration(c *kubermaticv1.Cluster, data *resources.TemplateData, existing *admissionregistrationv1beta1.MutatingWebhookConfiguration) (*admissionregistrationv1beta1.MutatingWebhookConfiguration, error) {
-	mutatingWebhookConfiguration := existing
-	if mutatingWebhookConfiguration == nil {
-		mutatingWebhookConfiguration = &admissionregistrationv1beta1.MutatingWebhookConfiguration{}
-	}
-	mutatingWebhookConfiguration.Name = resources.MachineControllerMutatingWebhookConfigurationName
-
-	ca, err := data.GetRootCA()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get root ca: %v", err)
-	}
-
-	mutatingWebhookConfiguration.Webhooks = []admissionregistrationv1beta1.Webhook{
-		{
-			Name:              fmt.Sprintf("%s-machinedeployments", resources.MachineControllerMutatingWebhookConfigurationName),
-			NamespaceSelector: &metav1.LabelSelector{},
-			FailurePolicy:     failurePolicyPtr(admissionregistrationv1beta1.Fail),
-			Rules: []admissionregistrationv1beta1.RuleWithOperations{
-				{
-					Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
-					Rule: admissionregistrationv1beta1.Rule{
-						APIGroups:   []string{clusterAPIGroup},
-						APIVersions: []string{clusterAPIVersion},
-						Resources:   []string{"machinedeployments"},
-					},
-				},
-			},
-			ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
-				URL:      strPtr(fmt.Sprintf("https://%s.%s.svc.cluster.local./machinedeployments", resources.MachineControllerWebhookServiceName, c.Status.NamespaceName)),
-				CABundle: certutil.EncodeCertPEM(ca.Cert),
-			},
-		},
-		{
-			Name:              fmt.Sprintf("%s-machines", resources.MachineControllerMutatingWebhookConfigurationName),
-			NamespaceSelector: &metav1.LabelSelector{},
-			FailurePolicy:     failurePolicyPtr(admissionregistrationv1beta1.Fail),
-			Rules: []admissionregistrationv1beta1.RuleWithOperations{
-				{
-					Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
-					Rule: admissionregistrationv1beta1.Rule{
-						APIGroups:   []string{clusterAPIGroup},
-						APIVersions: []string{clusterAPIVersion},
-						Resources:   []string{"machines"},
-					},
-				},
-			},
-			ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
-				URL:      strPtr(fmt.Sprintf("https://%s.%s.svc.cluster.local./machines", resources.MachineControllerWebhookServiceName, c.Status.NamespaceName)),
-				CABundle: certutil.EncodeCertPEM(ca.Cert),
-			},
-		},
-	}
-
-	return mutatingWebhookConfiguration, nil
-}
-
-func strPtr(a string) *string {
-	return &a
-}
-
-func failurePolicyPtr(a admissionregistrationv1beta1.FailurePolicyType) *admissionregistrationv1beta1.FailurePolicyType {
-	return &a
 }
