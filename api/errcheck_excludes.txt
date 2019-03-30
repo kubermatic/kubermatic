@@ -1,4 +1,0 @@
-strconv.ParseBool
-os.RemoveAll
-fmt.Fprint
-fmt.Fprintln
