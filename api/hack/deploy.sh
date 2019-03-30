@@ -21,6 +21,7 @@ else
   MASTER_FLAG="--set=kubermatic.isMaster=false"
 fi
 DEPLOY_NODEPORT_PROXY=${DEPLOY_NODEPORT_PROXY:-true}
+DEPLOY_ALERTMANAGER=${DEPLOY_ALERTMANAGER:-true}
 
 cd "$(dirname "$0")/../../"
 
@@ -58,7 +59,9 @@ deploy "prometheus" "monitoring" ./config/monitoring/prometheus/
 deploy "node-exporter" "monitoring" ./config/monitoring/node-exporter/
 deploy "kube-state-metrics" "monitoring" ./config/monitoring/kube-state-metrics/
 deploy "grafana" "monitoring" ./config/monitoring/grafana/
-deploy "alertmanager" "monitoring" ./config/monitoring/alertmanager/
+if [[ "${DEPLOY_NODEPORT_PROXY}" = true ]]; then
+  deploy "alertmanager" "monitoring" ./config/monitoring/alertmanager/
+fi
 
 #Logging
 deploy "elasticsearch" "logging" ./config/logging/elasticsearch/
