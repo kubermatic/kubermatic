@@ -34,7 +34,7 @@ function deploy {
   local path=$3
 
   echo "Upgrading ${name}..."
-  retry 5 helm upgrade --atomic --install --wait --timeout 300 ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
+  retry 5 helm upgrade --install --wait --timeout 300 ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path} --atomic
 }
 
 echodate "Initializing Tiller"
