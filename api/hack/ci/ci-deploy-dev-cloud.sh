@@ -38,7 +38,7 @@ vault kv get -field=values.yaml dev/seed-clusters/dev.kubermatic.io > ${VALUES_F
 echodate "Successfully got secrets for dev from Vault"
 
 echodate "Deploying Kubermatic to dev"
-./api/hack/deploy.sh master ${VALUES_FILE} ${HELM_EXTRA_ARGS}
+TILLER_NAMESPACE=kubermatic-installer ./api/hack/deploy.sh master ${VALUES_FILE} ${HELM_EXTRA_ARGS}
 
 # deploy to cloud-asia
 vault kv get -field=kubeconfig dev/seed-clusters/cloud.kubermatic.io > ${KUBECONFIG}
@@ -47,7 +47,7 @@ kubectl config use-context asia-east1-a-1
 echodate "Successfully got secrets for cloud-asia from Vault"
 
 echodate "Deploying Kubermatic to cloud-asia"
-./api/hack/deploy.sh seed ${VALUES_FILE} ${HELM_EXTRA_ARGS}
+TILLER_NAMESPACE=kubermatic-installer ./api/hack/deploy.sh seed ${VALUES_FILE} ${HELM_EXTRA_ARGS}
 
 # deploy to cloud-eu
 vault kv get -field=kubeconfig dev/seed-clusters/cloud.kubermatic.io > ${KUBECONFIG}
@@ -56,7 +56,7 @@ kubectl config use-context europe-west3-c-1
 echodate "Successfully got secrets for cloud-eu from Vault"
 
 echodate "Deploying Kubermatic to cloud-eu"
-./api/hack/deploy.sh master ${VALUES_FILE} ${HELM_EXTRA_ARGS}
+TILLER_NAMESPACE=kubermatic-installer ./api/hack/deploy.sh master ${VALUES_FILE} ${HELM_EXTRA_ARGS}
 
 # deploy to cloud-us
 vault kv get -field=kubeconfig dev/seed-clusters/cloud.kubermatic.io > ${KUBECONFIG}
@@ -65,4 +65,4 @@ kubectl config use-context us-central1-c-1
 echodate "Successfully got secrets for cloud-us from Vault"
 
 echodate "Deploying Kubermatic to cloud-us"
-./api/hack/deploy.sh seed ${VALUES_FILE} ${HELM_EXTRA_ARGS}
+TILLER_NAMESPACE=kubermatic-installer ./api/hack/deploy.sh seed ${VALUES_FILE} ${HELM_EXTRA_ARGS}

@@ -22,6 +22,7 @@ else
 fi
 DEPLOY_NODEPORT_PROXY=${DEPLOY_NODEPORT_PROXY:-true}
 DEPLOY_ALERTMANAGER=${DEPLOY_ALERTMANAGER:-true}
+TILLER_NAMESPACE=${TILLER_NAMESPACE:-kubermatic}
 
 cd "$(dirname "$0")/../../"
 
@@ -35,6 +36,12 @@ function deploy {
   echo "Upgrading ${name}..."
   retry 5 helm upgrade --install --wait --timeout 300 ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
 }
+
+echodate "Initializing Tiller"
+kubectl create serviceaccount -n ${TILLER_NAMESPACE} tiller-sa || true
+kubectl create clusterrolebinding tiller-cluster-role --clusterrole=cluster-admin --serviceaccount=${TILLER_NAMESPACE}:tiller-sa  || true
+helm --service-account tiller-sa --tiller-namespace ${TILLER_NAMESPACE} init --replicas 3 --history-max 100 --upgrade --wait
+echodate "Tiller initialized successfully"
 
 echo "Deploying the CRD's..."
 retry 5 kubectl apply -f ./config/kubermatic/crd/
