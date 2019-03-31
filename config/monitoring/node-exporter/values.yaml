@@ -4,10 +4,10 @@ nodeExporter:
     tag: v0.17.0
   resources:
     requests:
-      cpu: 50m
+      cpu: 10m
       memory: 24Mi
     limits:
-      cpu: 200m
+      cpu: 25m
       memory: 48Mi
 
   rbacProxy:
