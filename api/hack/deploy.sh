@@ -34,13 +34,13 @@ function deploy {
   local path=$3
 
   echo "Upgrading ${name}..."
-  retry 5 helm upgrade --install --wait --timeout 300 ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
+  retry 5 helm upgrade --atomic --install --wait --timeout 300 ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
 }
 
 echodate "Initializing Tiller"
 kubectl create serviceaccount -n ${TILLER_NAMESPACE} tiller-sa || true
 kubectl create clusterrolebinding tiller-cluster-role --clusterrole=cluster-admin --serviceaccount=${TILLER_NAMESPACE}:tiller-sa  || true
-retry 5 helm --service-account tiller-sa --tiller-namespace ${TILLER_NAMESPACE} init --replicas 3 --history-max 100 --force-upgrade --wait
+retry 5 helm --service-account tiller-sa --tiller-namespace ${TILLER_NAMESPACE} init --replicas 3 --history-max 100 --upgrade --wait || true
 echodate "Tiller initialized successfully"
 
 echo "Deploying the CRD's..."
