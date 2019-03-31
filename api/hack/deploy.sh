@@ -40,7 +40,7 @@ function deploy {
 echodate "Initializing Tiller"
 kubectl create serviceaccount -n ${TILLER_NAMESPACE} tiller-sa || true
 kubectl create clusterrolebinding tiller-cluster-role --clusterrole=cluster-admin --serviceaccount=${TILLER_NAMESPACE}:tiller-sa  || true
-helm --service-account tiller-sa --tiller-namespace ${TILLER_NAMESPACE} init --replicas 3 --history-max 100 --upgrade --wait
+helm --service-account tiller-sa --tiller-namespace ${TILLER_NAMESPACE} init --replicas 3 --history-max 100 --force-upgrade --wait
 echodate "Tiller initialized successfully"
 
 echo "Deploying the CRD's..."
