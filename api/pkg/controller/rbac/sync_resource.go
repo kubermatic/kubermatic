@@ -24,7 +24,7 @@ import (
 // the project resources live only on master cluster and cluster resources are on master and seed clusters
 // we cannot use OwnerReferences for cluster resources because they are on clusters that don't have corresponding
 // project resource and will be automatically gc'ed
-func (c *resourcesController) syncProjectResource(item *projectResourceQueueItem) error {
+func (c *resourcesController) syncProjectResource(item *resourceToProcess) error {
 	projectName := ""
 	for _, owner := range item.metaObject.GetOwnerReferences() {
 		if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName &&
