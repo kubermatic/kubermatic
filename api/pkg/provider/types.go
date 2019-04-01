@@ -326,6 +326,8 @@ func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 type ServiceAccountProvider interface {
 	Create(userInfo *UserInfo, project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error)
 	List(userInfo *UserInfo, project *kubermaticv1.Project, options *ServiceAccountListOptions) ([]*kubermaticv1.User, error)
+	Get(userInfo *UserInfo, name string) (*kubermaticv1.User, error)
+	Update(userInfo *UserInfo, serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error)
 }
 
 // ServiceAccountListOptions allows to set filters that will be applied to filter the result.

@@ -2,6 +2,7 @@ package serviceaccount
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -18,7 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func TestCreateBinding(t *testing.T) {
+func TestReconcileBinding(t *testing.T) {
 
 	tests := []struct {
 		name                      string
@@ -33,14 +34,17 @@ func TestCreateBinding(t *testing.T) {
 				test.GenDefaultProject(),
 				test.GenServiceAccount("abcd", "test", "editors", "my-first-project-ID"),
 			},
-			expectedBinding: func() *kubermaticv1.UserProjectBinding {
-				binding := test.GenBinding("my-first-project-ID", "serviceaccount-abcd@sa.kubermatic.io", "editors")
-				binding.OwnerReferences[0].Kind = kubermaticv1.UserKindName
-				binding.OwnerReferences[0].Name = "serviceaccount-abcd"
-				binding.Labels = map[string]string{kubermaticv1.ProjectIDLabelKey: "my-first-project-ID"}
-				binding.Spec.Group = "editors-my-first-project-ID"
-				return binding
-			}(),
+			expectedBinding: genSABinding("my-first-project-ID", "serviceaccount-abcd", "serviceaccount-abcd@sa.kubermatic.io", "editors"),
+		},
+		{
+			name:   "scenario 2: this test update binding group from viewers to editors",
+			saName: "serviceaccount-abcd",
+			existingKubermaticObjects: []runtime.Object{
+				test.GenDefaultProject(),
+				test.GenServiceAccount("abcd", "test", "editors", "my-first-project-ID"),
+				genSABinding("my-first-project-ID", "serviceaccount-abcd", "serviceaccount-abcd@sa.kubermatic.io", "viewers"),
+			},
+			expectedBinding: genSABinding("my-first-project-ID", "serviceaccount-abcd", "serviceaccount-abcd@sa.kubermatic.io", "editors"),
 		},
 	}
 
@@ -87,4 +91,13 @@ func TestCreateBinding(t *testing.T) {
 
 		})
 	}
+}
+
+func genSABinding(projectID, saName, email, group string) *kubermaticv1.UserProjectBinding {
+	binding := test.GenBinding(projectID, email, group)
+	binding.OwnerReferences[0].Kind = kubermaticv1.UserKindName
+	binding.OwnerReferences[0].Name = saName
+	binding.Labels = map[string]string{kubermaticv1.ProjectIDLabelKey: projectID}
+	binding.Spec.Group = fmt.Sprintf("%s-%s", group, projectID)
+	return binding
 }

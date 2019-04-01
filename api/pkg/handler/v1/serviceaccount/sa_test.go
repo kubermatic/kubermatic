@@ -12,6 +12,7 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
+	serviceaccount "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -263,6 +264,124 @@ func TestList(t *testing.T) {
 
 			} else {
 				test.CompareWithResult(t, res, tc.expectedError)
+			}
+
+		})
+	}
+}
+
+func TestEdit(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		name                   string
+		body                   string
+		expectedErrorResponse  string
+		expectedGroup          string
+		expectedSAName         string
+		projectToSync          string
+		saToUpdate             string
+		bindingName            string
+		httpStatus             int
+		existingAPIUser        apiv1.User
+		existingKubermaticObjs []runtime.Object
+	}{
+		{
+			name:       "scenario 1: update service account, change name and group",
+			body:       `{"id":"serviceaccount-1", "name":"newName", "group":"editors"}`,
+			httpStatus: http.StatusOK,
+			existingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("my-third-project-ID", "john@acme.com", "editors"),
+				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "viewers"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				/*add service account*/
+				genActiveServiceAccount("1", "test", "viewers", "plan9-ID"),
+			},
+			existingAPIUser: *test.GenAPIUser("john", "john@acme.com"),
+			projectToSync:   "plan9-ID",
+			expectedSAName:  "newName",
+			expectedGroup:   "editors-plan9-ID",
+			saToUpdate:      "serviceaccount-1",
+			bindingName:     "plan9-ID-serviceaccount-1@sa.kubermatic.io-viewers",
+		},
+		{
+			name:       "scenario 2: change service account name for already existing in project",
+			body:       `{"id":"serviceaccount-1", "name":"test-2", "group":"viewers"}`,
+			httpStatus: http.StatusConflict,
+			existingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "viewers"),
+				test.GenBinding("plan9-ID", "serviceaccount-2@sa.kubermatic.io", "viewers"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				/*add service account*/
+				genActiveServiceAccount("1", "test-1", "viewers", "plan9-ID"),
+				genActiveServiceAccount("2", "test-2", "viewers", "plan9-ID"),
+			},
+			existingAPIUser:       *test.GenAPIUser("john", "john@acme.com"),
+			projectToSync:         "plan9-ID",
+			saToUpdate:            "serviceaccount-1",
+			expectedErrorResponse: `{"error":{"code":409,"message":"service account \"test-2\" already exists"}}`,
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s", tc.projectToSync, tc.saToUpdate), strings.NewReader(tc.body))
+			res := httptest.NewRecorder()
+
+			ep, client, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.httpStatus {
+				t.Fatalf("expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
+
+			if tc.httpStatus == http.StatusOK {
+				var sa apiv1.ServiceAccount
+				err = json.Unmarshal(res.Body.Bytes(), &sa)
+				if err != nil {
+					t.Fatal(err.Error())
+				}
+				if sa.Group != tc.expectedGroup {
+					t.Fatalf("expected group %s got %s", tc.expectedGroup, sa.Group)
+				}
+				if sa.Name != tc.expectedSAName {
+					t.Fatalf("expected name %s got %s", tc.expectedSAName, sa.Name)
+				}
+
+				expectedSA, err := client.FakeKubermaticClient.KubermaticV1().Users().Get(sa.ID, metav1.GetOptions{})
+				if err != nil {
+					t.Fatalf("expected SA object got error %v", err)
+				}
+				if expectedSA.Spec.Name != tc.expectedSAName {
+					t.Fatalf("expected name %s got %s", tc.expectedSAName, expectedSA.Spec.Name)
+				}
+
+				group, ok := expectedSA.Labels[serviceaccount.ServiceAccountLabelGroup]
+				if !ok {
+					t.Fatalf("expected find label %s", serviceaccount.ServiceAccountLabelGroup)
+				}
+
+				if group != tc.expectedGroup {
+					t.Fatalf("expected group from binding %s got %s", tc.expectedGroup, group)
+				}
+
+			} else {
+				test.CompareWithResult(t, res, tc.expectedErrorResponse)
 			}
 
 		})
