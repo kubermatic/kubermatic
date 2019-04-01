@@ -617,12 +617,12 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 					Version:  k8scorev1.SchemeGroupVersion.Version,
 					Resource: "secrets",
 				},
-				kind:      "Secret",
-				namespace: "sa-secrets",
+				kind: "Secret",
 				metaObject: &k8scorev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "abcd",
-						UID:  types.UID("abcdID"),
+						Name:      "abcd",
+						Namespace: "sa-secrets",
+						UID:       types.UID("abcdID"),
 						Labels: map[string]string{
 							kubermaticv1.ProjectIDLabelKey: "thunderball",
 						},

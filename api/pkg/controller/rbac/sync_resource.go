@@ -41,7 +41,7 @@ func (c *resourcesController) syncProjectResource(item *resourceToProcess) error
 		return fmt.Errorf("unable to find owing project for the object name = %s, gvr = %s", item.metaObject.GetName(), item.gvr.String())
 	}
 
-	if len(item.namespace) == 0 {
+	if len(item.metaObject.GetNamespace()) == 0 {
 		if err := ensureClusterRBACRoleForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoles().Lister()); err != nil {
 			return fmt.Errorf("failed to sync RBAC ClusterRole for %s resource for %s cluster provider, due to = %v", item.gvr.String(), item.clusterProvider.providerName, err)
 		}
@@ -54,23 +54,23 @@ func (c *resourcesController) syncProjectResource(item *resourceToProcess) error
 	err := c.ensureRBACRoleForNamedResource(projectName,
 		item.gvr,
 		item.kind,
-		item.namespace,
+		item.metaObject.GetNamespace(),
 		item.metaObject,
 		item.clusterProvider.kubeClient,
-		item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(item.namespace).Rbac().V1().Roles().Lister().Roles(item.namespace))
+		item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(item.metaObject.GetNamespace()).Rbac().V1().Roles().Lister().Roles(item.metaObject.GetNamespace()))
 	if err != nil {
-		return fmt.Errorf("failed to sync RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", item.gvr.String(), item.clusterProvider.providerName, item.namespace, err)
+		return fmt.Errorf("failed to sync RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", item.gvr.String(), item.clusterProvider.providerName, item.metaObject.GetNamespace(), err)
 	}
 
 	err = c.ensureRBACRoleBindingForNamedResource(projectName,
 		item.gvr,
 		item.kind,
-		item.namespace,
+		item.metaObject.GetNamespace(),
 		item.metaObject,
 		item.clusterProvider.kubeClient,
-		item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(item.namespace).Rbac().V1().RoleBindings().Lister().RoleBindings(item.namespace))
+		item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(item.metaObject.GetNamespace()).Rbac().V1().RoleBindings().Lister().RoleBindings(item.metaObject.GetNamespace()))
 	if err != nil {
-		return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", item.gvr.String(), item.clusterProvider.providerName, item.namespace, err)
+		return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", item.gvr.String(), item.clusterProvider.providerName, item.metaObject.GetNamespace(), err)
 	}
 
 	return nil
