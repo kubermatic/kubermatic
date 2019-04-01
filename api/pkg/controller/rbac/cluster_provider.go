@@ -16,13 +16,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-const (
-	// MasterProviderPrefix denotes prefix a master cluster has in its name
-	MasterProviderPrefix = "master"
-	// SeedProviderPrefix denotes prefix a seed cluster has in its name
-	SeedProviderPrefix = "seed"
-)
-
 // ClusterProvider holds set of clients that allow for communication with the cluster and
 // that are required to properly generate RBAC for resources in that particular cluster
 type ClusterProvider struct {
@@ -79,6 +72,8 @@ func (p *ClusterProvider) WaitForCachesToSync(stopCh <-chan struct{}) error {
 
 // AddIndexerFor adds Lister for the given resource
 // Note: this method creates Lister for some resources, for example "cluster" resources
+//
+// TODO: try rm this since we have InformerProvider
 func (p *ClusterProvider) AddIndexerFor(indexer cache.Indexer, gvr schema.GroupVersionResource) {
 	if gvr.Resource == kubermaticv1.ClusterResourceName {
 		p.clusterResourceLister = kubermaticv1listers.NewClusterLister(indexer)
