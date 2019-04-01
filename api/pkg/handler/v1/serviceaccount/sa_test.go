@@ -388,6 +388,57 @@ func TestEdit(t *testing.T) {
 	}
 }
 
+func TestDelete(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		name                   string
+		body                   string
+		projectToSync          string
+		saToDelete             string
+		httpStatus             int
+		existingAPIUser        *apiv1.User
+		existingKubermaticObjs []runtime.Object
+	}{
+		{
+			name:            "scenario 1: the owner of the project delete service account",
+			httpStatus:      http.StatusOK,
+			body:            `{"id":"serviceaccount-1"}`,
+			projectToSync:   test.GenDefaultProject().Name,
+			existingAPIUser: test.GenDefaultAPIUser(),
+			existingKubermaticObjs: []runtime.Object{
+				// add a project
+				test.GenDefaultProject(),
+				// add a user
+				test.GenDefaultUser(),
+				// make a user the owner of the default project
+				test.GenDefaultOwnerBinding(),
+				test.GenBinding("my-first-project-ID", "serviceaccount-1@sa.kubermatic.io", "viewers"),
+				/*add service account*/
+				genActiveServiceAccount("1", "test", "viewers", "my-first-project-ID"),
+			},
+			saToDelete: "serviceaccount-1",
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s", tc.projectToSync, tc.saToDelete), strings.NewReader(tc.body))
+			res := httptest.NewRecorder()
+
+			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.httpStatus {
+				t.Fatalf("expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
+		})
+	}
+}
+
 func genActiveServiceAccount(id, name, group, projectName string) *kubermaticapiv1.User {
 	serviceAccount := test.GenServiceAccount(id, name, group, projectName)
 	serviceAccount.Labels = map[string]string{}
