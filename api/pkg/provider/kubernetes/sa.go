@@ -140,19 +140,12 @@ func (p *ServiceAccountProvider) Get(userInfo *provider.UserInfo, name string) (
 		return nil, kerrors.NewBadRequest("service account name cannot be empty")
 	}
 
-	serviceAccount, err := p.serviceAccountLister.Get(name)
-	if err != nil {
-		return nil, err
-	}
-
-	// Note:
-	// After we get the SA we try to get item using unprivileged account to see if the user have read access
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = masterImpersonatedClient.Users().Get(serviceAccount.Name, metav1.GetOptions{})
+	serviceAccount, err := masterImpersonatedClient.Users().Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

@@ -2159,7 +2159,7 @@
     },
     "/api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}": {
       "put": {
-        "description": "Changes membership of the given service account for the given project",
+        "description": "Updates service account for the given project",
         "consumes": [
           "application/json"
         ],
@@ -2169,7 +2169,7 @@
         "tags": [
           "serviceaccounts"
         ],
-        "operationId": "editServiceAccount",
+        "operationId": "updateServiceAccount",
         "parameters": [
           {
             "type": "string",

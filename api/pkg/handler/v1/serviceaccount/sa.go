@@ -108,11 +108,11 @@ func ListEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvid
 	}
 }
 
-// EditEndpoint changes the service account group and/or name in the given project
-func EditEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
+// UpdateEndpoint changes the service account group and/or name in the given project
+func UpdateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		req, ok := request.(editReq)
+		req, ok := request.(updateReq)
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
@@ -147,27 +147,15 @@ func EditEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvid
 
 		}
 
-		bindings, err := memberMapper.MappingsFor(sa.Spec.Email)
+		currentGroup, err := memberMapper.MapUserToGroup(sa.Spec.Email, project.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 
 		}
 
-		var saBinding *kubermaticapiv1.UserProjectBinding
-		var isBinding bool
-		for _, bindig := range bindings {
-			if bindig.Spec.ProjectID == req.ProjectID {
-				saBinding = bindig
-				isBinding = true
-				break
-			}
-		}
-
 		newGroup := rbac.GenerateActualGroupNameFor(project.Name, saFromRequest.Group)
-		if isBinding {
-			if newGroup != saBinding.Spec.Group {
-				sa.Labels[serviceaccount.ServiceAccountLabelGroup] = newGroup
-			}
+		if newGroup != currentGroup {
+			sa.Labels[serviceaccount.ServiceAccountLabelGroup] = newGroup
 		}
 
 		if _, err := serviceAccountProvider.Update(userInfo, sa); err != nil {
@@ -175,6 +163,7 @@ func EditEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvid
 		}
 
 		result := convertInternalServiceAccountToExternal(sa)
+		result.Group = newGroup
 		return result, nil
 	}
 }
@@ -193,15 +182,15 @@ type idReq struct {
 	ServiceAccountID string `json:"serviceaccount_id"`
 }
 
-// editReq defines HTTP request for editServiceAccount
-// swagger:parameters editServiceAccount
-type editReq struct {
+// updateReq defines HTTP request for updateServiceAccount
+// swagger:parameters updateServiceAccount
+type updateReq struct {
 	addReq
 	idReq
 }
 
-// Validate validates EditUserToProject request
-func (r editReq) Validate() error {
+// Validate validates UpdateEndpoint request
+func (r updateReq) Validate() error {
 	err := r.addReq.Validate()
 	if err != nil {
 		return err
@@ -244,9 +233,9 @@ func DecodeAddReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// DecodeEditReq  decodes an HTTP request into EditReq
-func DecodeEditReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req editReq
+// DecodeUpdateReq  decodes an HTTP request into updateReq
+func DecodeUpdateReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req updateReq
 
 	prjReq, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
