@@ -29,10 +29,8 @@ type resourcesController struct {
 }
 
 type resourceToProcess struct {
-	gvr  schema.GroupVersionResource
-	kind string
-	// rm since ns is in metaObject
-	namespace       string
+	gvr             schema.GroupVersionResource
+	kind            string
 	metaObject      metav1.Object
 	clusterProvider *ClusterProvider
 }
@@ -124,7 +122,6 @@ func (c *resourcesController) processProjectResourcesNextItem() bool {
 	processingItem := &resourceToProcess{
 		gvr:             qItem.gvr,
 		kind:            qItem.kind,
-		namespace:       resMeta.GetNamespace(),
 		clusterProvider: qItem.clusterProvider,
 		metaObject:      resMeta,
 	}
