@@ -267,6 +267,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/serviceaccounts").
 		Handler(r.listServiceAccounts())
 
+	mux.Methods(http.MethodPut).
+		Path("/projects/{project_id}/serviceaccounts/{serviceaccount_id}").
+		Handler(r.updateServiceAccount())
+
 	//
 	// Defines set of HTTP endpoints for control plane and kubelet versions
 	mux.Methods(http.MethodGet).
@@ -1343,6 +1347,34 @@ func (r Routing) listServiceAccounts() http.Handler {
 			middleware.UserInfo(r.userProjectMapper),
 		)(serviceaccount.ListEndpoint(r.projectProvider, r.serviceAccountProvider, r.userProjectMapper)),
 		common.DecodeGetProject,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id} serviceaccounts updateServiceAccount
+//
+//     Updates service account for the given project
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ServiceAccount
+//       401: empty
+//       403: empty
+func (r Routing) updateServiceAccount() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.oidcAuthenticator.Verifier(),
+			middleware.UserSaver(r.userProvider),
+			middleware.UserInfo(r.userProjectMapper),
+		)(serviceaccount.UpdateEndpoint(r.projectProvider, r.serviceAccountProvider, r.userProjectMapper)),
+		serviceaccount.DecodeUpdateReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

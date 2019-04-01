@@ -96,13 +96,23 @@ func (r *reconcileServiceAccountProjectBinding) ensureServiceAccountProjectBindi
 	}
 
 	bindingExist := false
+	var existingBinding kubermaticv1.UserProjectBinding
 	for _, binding := range bindings.Items {
 		if binding.Spec.ProjectID == projectName && strings.EqualFold(binding.Spec.UserEmail, sa.Spec.Email) {
 			bindingExist = true
+			existingBinding = binding
 			break
 		}
 	}
-	if !bindingExist {
+	if bindingExist {
+		group, ok := sa.Labels[serviceaccount.ServiceAccountLabelGroup]
+		if ok {
+			existingBinding.Spec.Group = group
+			if err := r.Update(r.ctx, &existingBinding); err != nil {
+				return err
+			}
+		}
+	} else {
 		if err := r.createBinding(sa, projectName); err != nil {
 			return err
 		}
