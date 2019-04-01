@@ -49,7 +49,7 @@ func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 }
 
 // DeploymentCreator returns the function to create and update the DNS resolver deployment
-func DeploymentCreator(data resources.DeploymentDataProvider) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.DNSResolverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.DNSResolverDeploymentName

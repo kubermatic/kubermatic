@@ -10,7 +10,7 @@ import (
 )
 
 // ServiceCreator returns the function to reconcile the prometheus service used for federation
-func ServiceCreator(data resources.ServiceDataProvider) reconciling.NamedServiceCreatorGetter {
+func ServiceCreator(data *resources.TemplateData) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return name, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = name

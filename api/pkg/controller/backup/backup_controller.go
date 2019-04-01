@@ -1,14 +1,12 @@
 package backup
 
 import (
-	"crypto/x509"
-	"errors"
+	"context"
 	"fmt"
-	"net"
-	"net/url"
 	"strings"
 	"time"
 
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 
 	"github.com/golang/glog"
@@ -21,7 +19,6 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 
 	"k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -43,6 +40,7 @@ import (
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -116,6 +114,7 @@ type Controller struct {
 	queue            workqueue.RateLimitingInterface
 	kubermaticClient kubermaticclientset.Interface
 	kubernetesClient kubernetes.Interface
+	dynamicClient    ctrlruntimeclient.Client
 	clusterLister    kubermaticv1lister.ClusterLister
 	cronJobLister    listersbatchv1beta1.CronJobLister
 	jobLister        listersbatchv1.JobLister
@@ -133,6 +132,7 @@ func New(
 	metrics *Metrics,
 	kubermaticClient kubermaticclientset.Interface,
 	kubernetesClient kubernetes.Interface,
+	dynamicClient ctrlruntimeclient.Client,
 	clusterInformer kubermaticv1informers.ClusterInformer,
 	cronJobInformer informersbatchv1beta1.CronJobInformer,
 	jobInformer informersbatchv1.JobInformer,
@@ -153,6 +153,7 @@ func New(
 		queue:                workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "backup_cluster"),
 		kubermaticClient:     kubermaticClient,
 		kubernetesClient:     kubernetesClient,
+		dynamicClient:        dynamicClient,
 		backupScheduleString: backupScheduleString,
 		storeContainer:       storeContainer,
 		cleanupContainer:     cleanupContainer,
@@ -381,50 +382,6 @@ func (c *Controller) sync(key string) error {
 	return c.ensureCronJob(cluster)
 }
 
-type secretData struct {
-	cluster       *kubermaticv1.Cluster
-	secretLister  corev1lister.SecretLister
-	serviceLister corev1lister.ServiceLister
-}
-
-// GetDexCA returns the chain of public certificates for TLS verification of the Dex
-func (d *secretData) GetDexCA() ([]*x509.Certificate, error) {
-	return nil, errors.New("not implemented")
-}
-
-// GetRootCA returns the root CA of the cluster
-func (d *secretData) GetRootCA() (*triple.KeyPair, error) {
-	return resources.GetClusterRootCA(d.cluster, d.secretLister)
-}
-
-func (d *secretData) GetClusterRef() metav1.OwnerReference {
-	return resources.GetClusterRef(d.cluster)
-}
-
-func (d *secretData) Cluster() *kubermaticv1.Cluster {
-	return d.cluster
-}
-
-func (d *secretData) ExternalIP() (*net.IP, error) {
-	return resources.GetClusterExternalIP(d.cluster)
-}
-
-func (d *secretData) GetOpenVPNCA() (*resources.ECDSAKeyPair, error) {
-	return resources.GetOpenVPNCA(d.cluster, d.secretLister)
-}
-
-func (d *secretData) GetFrontProxyCA() (*triple.KeyPair, error) {
-	return resources.GetClusterFrontProxyCA(d.cluster, d.secretLister)
-}
-
-func (d *secretData) InClusterApiserverURL() (*url.URL, error) {
-	return resources.GetClusterApiserverURL(d.cluster, d.serviceLister)
-}
-
-func (d *secretData) InClusterApiserverAddress() (string, error) {
-	return resources.GetClusterApiserverAddress(d.cluster, d.serviceLister)
-}
-
 func (c *Controller) getEtcdSecretName(cluster *kubermaticv1.Cluster) string {
 	return fmt.Sprintf("cluster-%s-etcd-client-certificate", cluster.Name)
 }
@@ -439,10 +396,8 @@ func (c *Controller) ensureCronJobSecret(cluster *kubermaticv1.Cluster) error {
 	}
 	notFound := kerrors.IsNotFound(err)
 
-	data := secretData{
-		cluster:       cluster,
-		secretLister:  c.secretLister,
-		serviceLister: c.serviceLister,
+	getCA := func() (*triple.KeyPair, error) {
+		return resources.GetClusterRootCA(context.Background(), cluster, c.dynamicClient)
 	}
 
 	_, create := certificates.GetClientCertificateCreator(
@@ -451,7 +406,7 @@ func (c *Controller) ensureCronJobSecret(cluster *kubermaticv1.Cluster) error {
 		nil,
 		resources.BackupEtcdClientCertificateCertSecretKey,
 		resources.BackupEtcdClientCertificateKeySecretKey,
-		data.GetRootCA,
+		getCA,
 	)()
 
 	se, err := create(existing.DeepCopy())

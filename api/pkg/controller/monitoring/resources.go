@@ -1,6 +1,7 @@
 package monitoring
 
 import (
+	"context"
 	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -9,21 +10,22 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (c *Controller) getClusterTemplateData(cluster *kubermaticv1.Cluster) (*resources.TemplateData, error) {
+func (c *Controller) getClusterTemplateData(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (*resources.TemplateData, error) {
 	dc, found := c.dcs[cluster.Spec.Cloud.DatacenterName]
 	if !found {
 		return nil, fmt.Errorf("failed to get datacenter %s", cluster.Spec.Cloud.DatacenterName)
 	}
 
 	return resources.NewTemplateData(
+		ctx,
+		client,
 		cluster,
 		&dc,
 		c.dc,
-		c.secretLister,
-		c.configMapLister,
-		c.serviceLister,
 		c.overwriteRegistry,
 		c.nodePortRange,
 		c.nodeAccessNetwork,
@@ -33,7 +35,6 @@ func (c *Controller) getClusterTemplateData(cluster *kubermaticv1.Cluster) (*res
 		c.inClusterPrometheusDisableDefaultRules,
 		c.inClusterPrometheusDisableDefaultScrapingConfigs,
 		c.inClusterPrometheusScrapingConfigsFile,
-		c.dockerPullConfigJSON,
 		"",
 		"",
 		"",
@@ -58,7 +59,7 @@ func (c *Controller) ensureRoleBindings(cluster *kubermaticv1.Cluster) error {
 }
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
-func GetDeploymentCreators(data resources.DeploymentDataProvider) []reconciling.NamedDeploymentCreatorGetter {
+func GetDeploymentCreators(data *resources.TemplateData) []reconciling.NamedDeploymentCreatorGetter {
 	creators := []reconciling.NamedDeploymentCreatorGetter{
 		kubestatemetrics.DeploymentCreator(data),
 	}

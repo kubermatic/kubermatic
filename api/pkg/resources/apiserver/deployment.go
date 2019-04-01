@@ -38,7 +38,7 @@ const (
 )
 
 // DeploymentCreator returns the function to create and update the API server deployment
-func DeploymentCreator(data resources.DeploymentDataProvider) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.ApiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			var enableDexCA bool
@@ -203,7 +203,7 @@ func DeploymentCreator(data resources.DeploymentDataProvider) reconciling.NamedD
 	}
 }
 
-func getApiserverFlags(data resources.DeploymentDataProvider, externalNodePort int32, etcdEndpoints []string) ([]string, error) {
+func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etcdEndpoints []string) ([]string, error) {
 	nodePortRange := data.NodePortRange()
 	if nodePortRange == "" {
 		nodePortRange = defaultNodePortRange

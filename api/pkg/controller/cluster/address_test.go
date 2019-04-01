@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -28,7 +29,7 @@ func TestGetExternalIPv4(t *testing.T) {
 }
 
 func TestPendingCreateAddressesSuccessfully(t *testing.T) {
-	c := &kubermaticv1.Cluster{
+	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: TestClusterName,
 		},
@@ -55,26 +56,24 @@ func TestPendingCreateAddressesSuccessfully(t *testing.T) {
 			},
 		},
 	}
-	controller := newTestController([]runtime.Object{externalService}, []runtime.Object{c})
-
-	updatedCluster, err := controller.syncAddress(c)
-	if err != nil {
+	controller := newTestController([]runtime.Object{externalService}, []runtime.Object{cluster})
+	if err := controller.syncAddress(context.Background(), cluster); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	expectedExternalName := fmt.Sprintf("%s.%s.%s", updatedCluster.Name, TestDC, TestExternalURL)
-	if updatedCluster.Address.ExternalName != fmt.Sprintf("%s.%s.%s", updatedCluster.Name, TestDC, TestExternalURL) {
-		t.Fatalf("external name is wrong. Expected=%s Got=%s", expectedExternalName, updatedCluster.Address.ExternalName)
+	expectedExternalName := fmt.Sprintf("%s.%s.%s", cluster.Name, TestDC, TestExternalURL)
+	if cluster.Address.ExternalName != fmt.Sprintf("%s.%s.%s", cluster.Name, TestDC, TestExternalURL) {
+		t.Fatalf("external name is wrong. Expected=%s Got=%s", expectedExternalName, cluster.Address.ExternalName)
 	}
 
-	expectedURL := fmt.Sprintf("https://%s:%d", updatedCluster.Address.ExternalName, TestExternalPort)
-	if updatedCluster.Address.URL != expectedURL {
-		t.Fatalf("url is wrong. Expected=%s Got=%s", expectedURL, updatedCluster.Address.URL)
+	expectedURL := fmt.Sprintf("https://%s:%d", cluster.Address.ExternalName, TestExternalPort)
+	if cluster.Address.URL != expectedURL {
+		t.Fatalf("url is wrong. Expected=%s Got=%s", expectedURL, cluster.Address.URL)
 	}
 }
 
 func TestSeedDNSOverride(t *testing.T) {
-	c := &kubermaticv1.Cluster{
+	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: TestClusterName,
 		},
@@ -101,20 +100,18 @@ func TestSeedDNSOverride(t *testing.T) {
 			},
 		},
 	}
-	controller := newTestController([]runtime.Object{externalService}, []runtime.Object{c})
-
-	updatedCluster, err := controller.syncAddress(c)
-	if err != nil {
+	controller := newTestController([]runtime.Object{externalService}, []runtime.Object{cluster})
+	if err := controller.syncAddress(context.Background(), cluster); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	expectedExternalName := fmt.Sprintf("%s.%s.%s", updatedCluster.Name, "alias-europe-west3-c", TestExternalURL)
-	if updatedCluster.Address.ExternalName != expectedExternalName {
-		t.Fatalf("external name is wrong. Expected=%s Got=%s", expectedExternalName, updatedCluster.Address.ExternalName)
+	expectedExternalName := fmt.Sprintf("%s.%s.%s", cluster.Name, "alias-europe-west3-c", TestExternalURL)
+	if cluster.Address.ExternalName != expectedExternalName {
+		t.Fatalf("external name is wrong. Expected=%s Got=%s", expectedExternalName, cluster.Address.ExternalName)
 	}
 
-	expectedURL := fmt.Sprintf("https://%s:%d", updatedCluster.Address.ExternalName, TestExternalPort)
-	if updatedCluster.Address.URL != expectedURL {
-		t.Fatalf("url is wrong. Expected=%s Got=%s", expectedURL, updatedCluster.Address.URL)
+	expectedURL := fmt.Sprintf("https://%s:%d", cluster.Address.ExternalName, TestExternalPort)
+	if cluster.Address.URL != expectedURL {
+		t.Fatalf("url is wrong. Expected=%s Got=%s", expectedURL, cluster.Address.URL)
 	}
 }

@@ -33,7 +33,7 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 				cm.Data = map[string]string{}
 			}
 
-			cloudConfig, err := CloudConfig(data)
+			cloudConfig, err := CloudConfig(data.Cluster(), data.DC())
 			if err != nil {
 				return nil, fmt.Errorf("failed to create cloud-config: %v", err)
 			}
@@ -48,15 +48,14 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 }
 
 // CloudConfig returns the cloud-config for the supplied data
-func CloudConfig(data configMapCreatorData) (cloudConfig string, err error) {
-	cloud := data.Cluster().Spec.Cloud
-	dc := data.DC()
+func CloudConfig(cluster *kubermaticv1.Cluster, dc *provider.DatacenterMeta) (cloudConfig string, err error) {
+	cloud := cluster.Spec.Cloud
 	if cloud.AWS != nil {
 		awsCloudConfig := &aws.CloudConfig{
 			Global: aws.GlobalOpts{
 				Zone:                        cloud.AWS.AvailabilityZone,
 				VPC:                         cloud.AWS.VPCID,
-				KubernetesClusterID:         data.Cluster().Name,
+				KubernetesClusterID:         cluster.Name,
 				DisableSecurityGroupIngress: false,
 				SubnetID:                    cloud.AWS.SubnetID,
 				RouteTableID:                cloud.AWS.RouteTableID,
@@ -108,7 +107,7 @@ func CloudConfig(data configMapCreatorData) (cloudConfig string, err error) {
 			LoadBalancer: openstack.LoadBalancerOpts{
 				ManageSecurityGroups: manageSecurityGroups == nil || *manageSecurityGroups,
 			},
-			Version: data.Cluster().Spec.Version.String(),
+			Version: cluster.Spec.Version.String(),
 		}
 		cloudConfig, err = openstack.CloudConfigToString(openstackCloudConfig)
 		if err != nil {
@@ -124,7 +123,7 @@ func CloudConfig(data configMapCreatorData) (cloudConfig string, err error) {
 				InsecureFlag:     dc.Spec.VSphere.AllowInsecure,
 				Datacenter:       dc.Spec.VSphere.Datacenter,
 				DefaultDatastore: dc.Spec.VSphere.Datastore,
-				WorkingDir:       data.Cluster().Name,
+				WorkingDir:       cluster.Name,
 			},
 			Workspace: vsphere.WorkspaceOpts{
 				// This is redudant with what the Vsphere cloud provider itself does:
@@ -135,7 +134,7 @@ func CloudConfig(data configMapCreatorData) (cloudConfig string, err error) {
 				// if they are not - But maybe that will change at some point
 				VCenterIP:        strings.Replace(dc.Spec.VSphere.Endpoint, "https://", "", -1),
 				Datacenter:       dc.Spec.VSphere.Datacenter,
-				Folder:           data.Cluster().Name,
+				Folder:           cluster.Name,
 				DefaultDatastore: dc.Spec.VSphere.Datastore,
 			},
 			Disk: vsphere.DiskOpts{

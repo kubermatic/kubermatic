@@ -23,7 +23,7 @@ const TestDC = "europe-west3-c"
 const TestExternalURL = "dev.kubermatic.io"
 const TestExternalPort = 30000
 
-func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime.Object) *Controller {
+func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime.Object) *Reconciler {
 	dcs := buildDatacenterMeta()
 
 	kubeClient := kubefake.NewSimpleClientset(kubeObjects...)
