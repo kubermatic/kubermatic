@@ -202,49 +202,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return reconcileRequest, err
 	}
 
-	if err := r.createInClusterResources(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to create in cluster resources: %v", err)
-	}
-
 	return nil, nil
-}
-
-// TODO: Move into user cluster controller
-func (r *Reconciler) createInClusterResources(ctx context.Context, osData *openshiftData) error {
-	kubeConfigSecret := &corev1.Secret{}
-	if err := r.Get(ctx, nn(osData.Cluster().Status.NamespaceName, openshiftresources.ExternalX509KubeconfigName), kubeConfigSecret); err != nil {
-		return fmt.Errorf("failed to get userCluster kubeconfig secret: %v", err)
-	}
-	cfg, err := clientcmd.RESTConfigFromKubeConfig(kubeConfigSecret.Data[resources.KubeconfigSecretKey])
-	if err != nil {
-		return fmt.Errorf("failed to get config from secret: %v", err)
-	}
-	userClusterClient, err := client.New(cfg, client.Options{})
-	if err != nil {
-		return fmt.Errorf("failed to get userClusterClient: %v", err)
-	}
-
-	namespacedName, roleCreator := openshiftresources.MachineControllerRole()
-	err = reconciling.EnsureNamedObjectV2(ctx,
-		namespacedName,
-		reconciling.RoleObjectWrapper(roleCreator),
-		userClusterClient,
-		&rbacv1.Role{})
-	if err != nil {
-		return fmt.Errorf("failed to create role %s inside user cluster: %v", namespacedName.String(), err)
-	}
-
-	namespacedName, roleBindingCreator := openshiftresources.MachineControllerRoleBinding()
-	err = reconciling.EnsureNamedObjectV2(ctx,
-		namespacedName,
-		reconciling.RoleBindingObjectWrapper(roleBindingCreator),
-		userClusterClient,
-		&rbacv1.RoleBinding{})
-	if err != nil {
-		return fmt.Errorf("failed to create RoleBinding %s inside user cluster: %v", namespacedName.String(), err)
-	}
-
-	return nil
 }
 
 func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error {
