@@ -9,7 +9,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type serverClientConfigsData interface {
@@ -67,52 +66,5 @@ func ServerClientConfigsConfigMapCreator(data serverClientConfigsData) resources
 
 			return cm, nil
 		}
-	}
-}
-
-// ClientConfigConfigMapCreator returns a ConfigMap containing the config for the OpenVPN client. It lives inside the user-cluster
-func ClientConfigConfigMapCreator(data resources.ConfigMapDataProvider) resources.ConfigMapCreator {
-	return func(existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-		cm := existing
-		if cm == nil {
-			cm = &corev1.ConfigMap{}
-		}
-		if cm.Data == nil {
-			cm.Data = map[string]string{}
-		}
-
-		cm.Name = resources.OpenVPNClientConfigConfigMapName
-		cm.Namespace = metav1.NamespaceSystem
-		cm.Labels = resources.BaseAppLabel(name, nil)
-
-		openvpnSvc, err := data.ServiceLister().Services(data.Cluster().Status.NamespaceName).Get(resources.OpenVPNServerServiceName)
-		if err != nil {
-			return nil, err
-		}
-
-		config := fmt.Sprintf(`client
-proto tcp
-dev kube
-dev-type tun
-auth-nocache
-remote %s %d
-nobind
-ca '/etc/openvpn/certs/ca.crt'
-cert '/etc/openvpn/certs/client.crt'
-key '/etc/openvpn/certs/client.key'
-remote-cert-tls server
-script-security 2
-link-mtu 1432
-cipher AES-256-GCM
-auth SHA1
-keysize 256
-status /run/openvpn-status
-up '/bin/sh -c "/sbin/iptables -t nat -I POSTROUTING -s 10.20.0.0/24 -j MASQUERADE"'
-log /dev/stdout
-`, data.Cluster().Address.ExternalName, openvpnSvc.Spec.Ports[0].NodePort)
-
-		cm.Data["config"] = config
-
-		return cm, nil
 	}
 }

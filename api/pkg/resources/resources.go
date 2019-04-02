@@ -19,10 +19,7 @@ import (
 
 	"github.com/golang/glog"
 
-	admissionv1alpha1 "k8s.io/api/admissionregistration/v1alpha1"
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -335,29 +332,11 @@ type ECDSAKeyPair struct {
 	Cert *x509.Certificate
 }
 
-// RoleCreatorDeprecated defines an interface to create/update RBAC Roles
-type RoleCreatorDeprecated = func(data RoleDataProvider, existing *rbacv1.Role) (*rbacv1.Role, error)
-
-// RoleBindingCreatorDeprecated defines an interface to create/update RBAC RoleBinding's
-type RoleBindingCreatorDeprecated = func(data RoleBindingDataProvider, existing *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error)
-
-// ClusterRoleCreator defines an interface to create/update RBAC ClusterRoles
-type ClusterRoleCreator = func(data ClusterRoleDataProvider, existing *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error)
-
-// ClusterRoleBindingCreatorDeprecated defines an interface to create/update RBAC ClusterRoleBinding's
-type ClusterRoleBindingCreatorDeprecated = func(data ClusterRoleBindingDataProvider, existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error)
-
-// InitializerConfigurationCreator defines an interface to create/update InitializerConfigurations
-type InitializerConfigurationCreator = func(data *TemplateData, existing *admissionv1alpha1.InitializerConfiguration) (*admissionv1alpha1.InitializerConfiguration, error)
-
 // CRDCreateor defines an interface to create/update CustomRessourceDefinitions
 type CRDCreateor = func(version semver.Semver, existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error)
 
 // APIServiceCreator defines an interface to create/update APIService's
 type APIServiceCreator = func(existing *apiregistrationv1beta1.APIService) (*apiregistrationv1beta1.APIService, error)
-
-// MutatingWebhookConfigurationCreator defines an interface to create/update MutatingWebhookConfigurations
-type MutatingWebhookConfigurationCreator = func(cluster *kubermaticv1.Cluster, data *TemplateData, existing *admissionregistrationv1beta1.MutatingWebhookConfiguration) (*admissionregistrationv1beta1.MutatingWebhookConfiguration, error)
 
 // ObjectCreator defines an interface to create/update a runtime.Object
 type ObjectCreator = func(existing runtime.Object) (runtime.Object, error)

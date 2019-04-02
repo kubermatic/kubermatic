@@ -64,6 +64,11 @@ func main() {
 				ResourceImportPath: "k8s.io/api/rbac/v1",
 			},
 			{
+				ResourceName: "ClusterRole",
+				ImportAlias:  "rbacv1",
+				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
+			},
+			{
 				ResourceName: "Role",
 				ImportAlias:  "rbacv1",
 				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
@@ -82,6 +87,11 @@ func main() {
 				ResourceName:       "CronJob",
 				ImportAlias:        "batchv1beta1",
 				ResourceImportPath: "k8s.io/api/batch/v1beta1",
+			},
+			{
+				ResourceName:       "MutatingWebhookConfiguration",
+				ImportAlias:        "admissionregistrationv1beta1",
+				ResourceImportPath: "k8s.io/api/admissionregistration/v1beta1",
 			},
 		},
 	}

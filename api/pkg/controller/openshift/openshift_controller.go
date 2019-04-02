@@ -16,6 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/usercluster"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	"github.com/golang/glog"
@@ -447,7 +448,7 @@ func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *opens
 		openshiftresources.ControllerManagerDeploymentCreator(ctx, osData),
 		openshiftresources.MachineController(osData),
 		openshiftresources.MachineControllerWebhook(osData),
-		openshiftresources.UserClusterController(osData)}
+		usercluster.DeploymentCreator(osData, true)}
 }
 
 func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) error {

@@ -185,9 +185,8 @@ func (od *openshiftData) GetPodTemplateLabelsWithContext(ctx context.Context, ap
 
 func (od *openshiftData) GetApiserverExternalNodePort(ctx context.Context) (int32, error) {
 	service := &corev1.Service{}
-	if err := od.client.Get(ctx,
-		nn(od.cluster.Status.NamespaceName, kubernetesresources.ApiserverExternalServiceName),
-		service); err != nil {
+	err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, kubernetesresources.ApiserverExternalServiceName), service)
+	if err != nil {
 		return 0, fmt.Errorf("failed to get apiservice for cluster %s: %v", od.cluster.Name, err)
 	}
 
@@ -213,4 +212,19 @@ func (od *openshiftData) InClusterApiserverURL() (*url.URL, error) {
 	}
 	dnsName := kubernetesresources.GetAbsoluteServiceDNSName(kubernetesresources.ApiserverExternalServiceName, od.cluster.Status.NamespaceName)
 	return url.Parse(fmt.Sprintf("https://%s:%d", dnsName, port))
+}
+
+func (od *openshiftData) GetOpenVPNServerPort() (int32, error) {
+	ctx := context.Background()
+	service := &corev1.Service{}
+	err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, kubernetesresources.OpenVPNServerServiceName), service)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get apiservice for cluster %s: %v", od.cluster.Name, err)
+	}
+
+	if portLen := len(service.Spec.Ports); portLen != 1 {
+		return 0, fmt.Errorf("expected service %s to have exactly one port but has %d", kubernetesresources.OpenVPNServerServiceName, portLen)
+	}
+	return service.Spec.Ports[0].NodePort, nil
+
 }

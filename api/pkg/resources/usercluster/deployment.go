@@ -42,10 +42,11 @@ type userclusterControllerData interface {
 	ImageRegistry(string) string
 	InClusterApiserverURL() (*url.URL, error)
 	Cluster() *kubermaticv1.Cluster
+	GetOpenVPNServerPort() (int32, error)
 }
 
 // DeploymentCreator returns the function to create and update the user cluster controller deployment
-func DeploymentCreator(data userclusterControllerData) resources.NamedDeploymentCreatorGetter {
+func DeploymentCreator(data userclusterControllerData, openshift bool) resources.NamedDeploymentCreatorGetter {
 	return func() (string, resources.DeploymentCreator) {
 		return resources.UserClusterControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.UserClusterControllerDeploymentName
@@ -67,6 +68,11 @@ func DeploymentCreator(data userclusterControllerData) resources.NamedDeployment
 				},
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
+
+			openvpnServerPort, err := data.GetOpenVPNServerPort()
+			if err != nil {
+				return nil, err
+			}
 
 			volumes := getVolumes()
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
@@ -101,9 +107,24 @@ func DeploymentCreator(data userclusterControllerData) resources.NamedDeployment
 						"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 						"-metrics-listen-address", "0.0.0.0:8085",
 						"-health-listen-address", "0.0.0.0:8086",
+						"-namespace", "$(NAMESPACE)",
+						"-ca-cert", "/etc/kubernetes/pki/ca/ca.crt",
+						"-cluster-url", data.Cluster().Address.URL,
+						"-openvpn-server-port", fmt.Sprint(openvpnServerPort),
+						fmt.Sprintf("-openshift=%t", openshift),
 						"-logtostderr",
 						"-v", "2",
 					}, getNetworkArgs(data)...),
+					Env: []corev1.EnvVar{
+						{
+							Name: "NAMESPACE",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.namespace",
+								},
+							},
+						},
+					},
 					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 					Resources:                defaultResourceRequirements,
@@ -126,6 +147,11 @@ func DeploymentCreator(data userclusterControllerData) resources.NamedDeployment
 							MountPath: "/etc/kubernetes/kubeconfig",
 							ReadOnly:  true,
 						},
+						{
+							Name:      resources.CASecretName,
+							MountPath: "/etc/kubernetes/pki/ca",
+							ReadOnly:  true,
+						},
 					},
 				},
 			}
@@ -145,6 +171,21 @@ func getVolumes() []corev1.Volume {
 					// We have to make the secret readable for all for now because owner/group cannot be changed.
 					// ( upstream proposal: https://github.com/kubernetes/kubernetes/pull/28733 )
 					DefaultMode: resources.Int32(resources.DefaultAllReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.CASecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.CASecretName,
+					DefaultMode: resources.Int32(resources.DefaultAllReadOnlyMode),
+					Items: []corev1.KeyToPath{
+						{
+							Path: resources.CACertSecretKey,
+							Key:  resources.CACertSecretKey,
+						},
+					},
 				},
 			},
 		},
