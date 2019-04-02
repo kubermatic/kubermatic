@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
+
 	"github.com/golang/glog"
 	prometheusapi "github.com/prometheus/client_golang/api"
 
@@ -34,6 +36,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	kubernetesclientset "k8s.io/client-go/kubernetes"
+	fakerestclient "k8s.io/client-go/kubernetes/fake"
 	restclient "k8s.io/client-go/rest"
 
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
@@ -67,6 +71,8 @@ const (
 	ProjectName = "my-first-project-ID"
 	// TestDatacenter holds datacenter name
 	TestDatacenter = "us-central1"
+	// TestServiceAccountHashKey authenticates the service account's token value using HMAC
+	TestServiceAccountHashKey = "secret"
 )
 
 // GetUser is a convenience function for generating apiv1.User
@@ -91,6 +97,7 @@ type newRoutingFunc func(
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	serviceAccountProvider provider.ServiceAccountProvider,
+	serviceAccountTokenProvider provider.ServiceAccountTokenProvider,
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	oidcIssuerVerifier auth.OIDCIssuerVerifier,
@@ -114,21 +121,28 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
 
-	fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
+	fakeKubermaticImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
 		return kubermaticClient.KubermaticV1(), nil
 	}
-
+	fakeKubernetesImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubernetesclientset.Interface, error) {
+		return fakerestclient.NewSimpleClientset(append(kubeObjects, machineObjects...)...), nil
+	}
 	userLister := kubermaticInformerFactory.Kubermatic().V1().Users().Lister()
-	sshKeyProvider := kubernetes.NewSSHKeyProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
+	sshKeyProvider := kubernetes.NewSSHKeyProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
 	userProvider := kubernetes.NewUserProvider(kubermaticClient, userLister)
-	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, userLister, "localhost")
-	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userLister)
-	projectProvider, err := kubernetes.NewProjectProvider(fakeImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Projects().Lister())
+	tokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(TestServiceAccountHashKey))
+	if err != nil {
+		return nil, nil, err
+	}
+	serviceAccountTokenProvider := kubernetes.NewServiceAccountTokenProvider(fakeKubernetesImpersonationClient, tokenGenerator)
+	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeKubermaticImpersonationClient, userLister, "localhost")
+	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userLister)
+	projectProvider, err := kubernetes.NewProjectProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Projects().Lister())
 	if err != nil {
 		return nil, nil, err
 	}
 
-	privilegedProjectProvider, err := kubernetes.NewPrivilegedProjectProvider(fakeImpersonationClient)
+	privilegedProjectProvider, err := kubernetes.NewPrivilegedProjectProvider(fakeKubermaticImpersonationClient)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -136,7 +150,7 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	fUserClusterConnection := &fakeUserClusterConnection{fakeClient}
 
 	clusterProvider := kubernetes.NewClusterProvider(
-		fakeImpersonationClient,
+		fakeKubermaticImpersonationClient,
 		fUserClusterConnection,
 		kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(),
 		"",
@@ -157,6 +171,7 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		sshKeyProvider,
 		userProvider,
 		serviceAccountProvider,
+		serviceAccountTokenProvider,
 		projectProvider,
 		privilegedProjectProvider,
 		fakeOIDCClient,

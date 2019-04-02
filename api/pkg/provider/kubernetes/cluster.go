@@ -92,7 +92,7 @@ func (p *ClusterProvider) New(project *kubermaticapiv1.Project, userInfo *provid
 		Address: kubermaticapiv1.ClusterAddress{},
 	}
 
-	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	seedImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +145,7 @@ func (p *ClusterProvider) List(project *kubermaticapiv1.Project, options *provid
 
 // Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to
 func (p *ClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, options *provider.ClusterGetOptions) (*kubermaticapiv1.Cluster, error) {
-	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	seedImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func (p *ClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, o
 
 // Delete deletes the given cluster
 func (p *ClusterProvider) Delete(userInfo *provider.UserInfo, clusterName string) error {
-	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	seedImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return err
 	}
@@ -178,7 +178,7 @@ func (p *ClusterProvider) Delete(userInfo *provider.UserInfo, clusterName string
 
 // Update updates a cluster
 func (p *ClusterProvider) Update(userInfo *provider.UserInfo, newCluster *kubermaticapiv1.Cluster) (*kubermaticapiv1.Cluster, error) {
-	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	seedImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}

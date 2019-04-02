@@ -31,6 +31,9 @@ type serverRunOptions struct {
 	oidcSkipTLSVerify              bool
 	oidcIssuerOfflineAccessAsScope bool
 
+	//service account configuration
+	serviceAccountHashKey string
+
 	featureGates features.FeatureGate
 }
 
@@ -58,6 +61,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.BoolVar(&s.oidcIssuerOfflineAccessAsScope, "oidc-issuer-offline-access-as-scope", true, "Set it to false if OIDC provider requires to set \"access_type=offline\" query param when accessing the refresh token")
 	flag.StringVar(&rawFeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for various features.")
 	flag.StringVar(&s.domain, "domain", "localhost", "A domain name on which the server is deployed")
+	flag.StringVar(&s.serviceAccountHashKey, "service-account-hash-key", "", "Hash key authenticates the service account's token value using HMAC. It is recommended to use a key with 32 or 64 bytes.")
 	flag.Parse()
 
 	featureGates, err := features.NewFeatures(rawFeatureGates)
@@ -87,18 +91,24 @@ func (o serverRunOptions) validate() error {
 			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-client-id\" flag was not specified", OIDCKubeCfgEndpoint)
 		}
 	}
+
+	if len(o.serviceAccountHashKey) == 0 {
+		return fmt.Errorf("the service-account-hash-key flag was not specified")
+	}
+
 	return nil
 }
 
 type providers struct {
-	sshKey                 provider.SSHKeyProvider
-	user                   provider.UserProvider
-	serviceAccountProvider provider.ServiceAccountProvider
-	project                provider.ProjectProvider
-	privilegedProject      provider.PrivilegedProjectProvider
-	projectMember          provider.ProjectMemberProvider
-	memberMapper           provider.ProjectMemberMapper
-	cloud                  provider.CloudRegistry
-	clusters               map[string]provider.ClusterProvider
-	datacenters            map[string]provider.DatacenterMeta
+	sshKey                      provider.SSHKeyProvider
+	user                        provider.UserProvider
+	serviceAccountProvider      provider.ServiceAccountProvider
+	serviceAccountTokenProvider provider.ServiceAccountTokenProvider
+	project                     provider.ProjectProvider
+	privilegedProject           provider.PrivilegedProjectProvider
+	projectMember               provider.ProjectMemberProvider
+	memberMapper                provider.ProjectMemberMapper
+	cloud                       provider.CloudRegistry
+	clusters                    map[string]provider.ClusterProvider
+	datacenters                 map[string]provider.DatacenterMeta
 }

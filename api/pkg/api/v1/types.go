@@ -204,6 +204,14 @@ type ServiceAccount struct {
 	Group string `json:"group"`
 }
 
+// ServiceAccountToken represent an API service account token
+// swagger:model ServiceAccountToken
+type ServiceAccountToken struct {
+	ObjectMeta
+	// Token the JWT token
+	Token string `json:"token,omitempty"`
+}
+
 // Project is a top-level container for a set of resources
 // swagger:model Project
 type Project struct {
