@@ -54,6 +54,7 @@ spec:
         - name: NAMESPACE
           valueFrom:
             fieldRef:
+              apiVersion: v1
               fieldPath: metadata.namespace
         image: 'quay.io/kubermatic/api:'
         imagePullPolicy: IfNotPresent
