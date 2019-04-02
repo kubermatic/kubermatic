@@ -88,9 +88,14 @@ func TestListTokens(t *testing.T) {
 		tokenName      string
 	}{
 		{
-			name:          "scenario 1, get all tokens for the service account 'serviceaccount-1' in project: 'my-first-project-ID'",
-			userInfo:      &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
-			saToSync:      createSA("test-1", "my-first-project-ID", "viewers", "1"),
+			name:     "scenario 1, get all tokens for the service account 'serviceaccount-1' in project: 'my-first-project-ID'",
+			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			saToSync: func() *kubermaticv1.User {
+				sa := createSA("test-1", "my-first-project-ID", "viewers", "1")
+				// "serviceaccount-" prefix is removed by the provider
+				sa.Name = "1"
+				return sa
+			}(),
 			projectToSync: test.GenDefaultProject(),
 			secrets: []*v1.Secret{
 				test.GenSecret("my-first-project-ID", "serviceaccount-1", "test-token-1", "1"),
@@ -106,9 +111,14 @@ func TestListTokens(t *testing.T) {
 			},
 		},
 		{
-			name:          "scenario 2, get token with specific name",
-			userInfo:      &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
-			saToSync:      createSA("test-1", "my-first-project-ID", "viewers", "1"),
+			name:     "scenario 2, get token with specific name",
+			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			saToSync: func() *kubermaticv1.User {
+				sa := createSA("test-1", "my-first-project-ID", "viewers", "1")
+				// "serviceaccount-" prefix is removed by the provider
+				sa.Name = "1"
+				return sa
+			}(),
 			projectToSync: test.GenDefaultProject(),
 			secrets: []*v1.Secret{
 				test.GenSecret("my-first-project-ID", "serviceaccount-1", "test-token-1", "1"),

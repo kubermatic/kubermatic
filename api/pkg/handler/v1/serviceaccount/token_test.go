@@ -51,7 +51,7 @@ func TestCreateTokenProject(t *testing.T) {
 			existingKubernetesObjs: []runtime.Object{},
 			existingAPIUser:        *test.GenAPIUser("john", "john@acme.com"),
 			projectToSync:          "plan9-ID",
-			saToSync:               "serviceaccount-1",
+			saToSync:               "1",
 			expectedName:           "test",
 		},
 		{
@@ -76,7 +76,7 @@ func TestCreateTokenProject(t *testing.T) {
 			},
 			existingAPIUser:       *test.GenAPIUser("john", "john@acme.com"),
 			projectToSync:         "plan9-ID",
-			saToSync:              "serviceaccount-1",
+			saToSync:              "1",
 			expectedErrorResponse: `{"error":{"code":409,"message":"token \"test\" already exists"}}`,
 		},
 	}
@@ -120,7 +120,7 @@ func TestCreateTokenProject(t *testing.T) {
 				if saTokenClaim.ProjectID != tc.projectToSync {
 					t.Fatalf("expected project name %s got %s", tc.projectToSync, saTokenClaim.ProjectID)
 				}
-				if saTokenClaim.Email != fmt.Sprintf("%s@sa.kubermatic.io", tc.saToSync) {
+				if saTokenClaim.Email != fmt.Sprintf("serviceaccount-%s@sa.kubermatic.io", tc.saToSync) {
 					t.Fatalf("expected email %s@sa.kubermatic.io got %s", tc.saToSync, saTokenClaim.Email)
 				}
 			}
