@@ -14,7 +14,13 @@ import (
 )
 
 type Provider interface {
-	UserData(spec clusterv1alpha1.MachineSpec, kubeconfig *clientcmdapi.Config, ccProvider cloud.ConfigProvider, clusterDNSIPs []net.IP) (string, error)
+	UserData(
+		spec clusterv1alpha1.MachineSpec,
+		kubeconfig *clientcmdapi.Config,
+		ccProvider cloud.ConfigProvider,
+		clusterDNSIPs []net.IP,
+		externalCloudProvider bool,
+	) (string, error)
 }
 
 func NewIgnition(p Provider) *Ignition {
@@ -25,8 +31,14 @@ type Ignition struct {
 	p Provider
 }
 
-func (j *Ignition) UserData(spec clusterv1alpha1.MachineSpec, kubeconfig *clientcmdapi.Config, ccProvider cloud.ConfigProvider, clusterDNSIPs []net.IP) (string, error) {
-	before, err := j.p.UserData(spec, kubeconfig, ccProvider, clusterDNSIPs)
+func (j *Ignition) UserData(
+	spec clusterv1alpha1.MachineSpec,
+	kubeconfig *clientcmdapi.Config,
+	ccProvider cloud.ConfigProvider,
+	clusterDNSIPs []net.IP,
+	externalCloudProvider bool,
+) (string, error) {
+	before, err := j.p.UserData(spec, kubeconfig, ccProvider, clusterDNSIPs, externalCloudProvider)
 	if err != nil {
 		return "", err
 	}

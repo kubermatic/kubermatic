@@ -777,7 +777,8 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:ec595db2829abd8f1dd08cf7f75658574e7220c12c631cb19da00906d5fa9462"
+  branch = "add-userdata-plugins"
+  digest = "1:ccb4152f83d536aab7910fc19d4b11d4f1295453d2fb384d42bdec966320bf7a"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/cloudprovider/cloud",
@@ -798,12 +799,10 @@
     "pkg/userdata/cloud",
     "pkg/userdata/convert",
     "pkg/userdata/coreos",
-    "pkg/userdata/helper",
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "48a443c218bbb6a83f5d67fcf5c9f854c356763e"
-  version = "v1.1.0"
+  revision = "b3b7a28e4205735fa9a683b8af935df698b71a27"
 
 [[projects]]
   digest = "1:0dbba7d4d4f3eeb01acd81af338ff4a3c4b0bb814d87368ea536e616f383240d"
