@@ -169,7 +169,7 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProv
 }
 
 // DeleteEndpoint deletes the service account for the given project
-func DeleteEndpoint(serviceAccountProvider provider.ServiceAccountProvider) endpoint.Endpoint {
+func DeleteEndpoint(serviceAccountProvider provider.ServiceAccountProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		req, ok := request.(deleteReq)
@@ -179,6 +179,16 @@ func DeleteEndpoint(serviceAccountProvider provider.ServiceAccountProvider) endp
 		err := req.Validate()
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		// check if project exist
+		if _, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{}); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		// check if service account exist before deleting it
+		if _, err := serviceAccountProvider.Get(userInfo, req.ServiceAccountID); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		if err := serviceAccountProvider.Delete(userInfo, req.ServiceAccountID); err != nil {
@@ -213,20 +223,14 @@ type updateReq struct {
 // deleteReq defines HTTP request for deleteServiceAccount
 // swagger:parameters deleteServiceAccount
 type deleteReq struct {
+	common.ProjectReq
 	idReq
-	// in: body
-	Body apiv1.ServiceAccount
 }
 
 // Validate validates DeleteEndpoint request
 func (r deleteReq) Validate() error {
-
 	if len(r.ServiceAccountID) == 0 {
 		return fmt.Errorf("the service account ID cannot be empty")
-	}
-
-	if r.ServiceAccountID != r.Body.ID {
-		return fmt.Errorf("service account ID mismatch, you requested to delete ServiceAccount = %s but body contains ServiceAccount = %s", r.ServiceAccountID, r.Body.ID)
 	}
 	return nil
 }
@@ -303,9 +307,12 @@ func DecodeUpdateReq(c context.Context, r *http.Request) (interface{}, error) {
 func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req deleteReq
 
-	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+	prjReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
 		return nil, err
+
 	}
+	req.ProjectReq = prjReq.(common.ProjectReq)
 
 	saIDReq, err := decodeServiceAccountIDReq(c, r)
 	if err != nil {

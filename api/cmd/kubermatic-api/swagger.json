@@ -2223,17 +2223,17 @@
         "parameters": [
           {
             "type": "string",
-            "x-go-name": "ServiceAccountID",
-            "name": "serviceaccount_id",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
             "in": "path",
             "required": true
           },
           {
-            "name": "Body",
-            "in": "body",
-            "schema": {
-              "$ref": "#/definitions/ServiceAccount"
-            }
+            "type": "string",
+            "x-go-name": "ServiceAccountID",
+            "name": "serviceaccount_id",
+            "in": "path",
+            "required": true
           }
         ],
         "responses": {

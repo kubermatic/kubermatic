@@ -1402,7 +1402,7 @@ func (r Routing) deleteServiceAccount() http.Handler {
 			r.oidcAuthenticator.Verifier(),
 			middleware.UserSaver(r.userProvider),
 			middleware.UserInfo(r.userProjectMapper),
-		)(serviceaccount.DeleteEndpoint(r.serviceAccountProvider)),
+		)(serviceaccount.DeleteEndpoint(r.serviceAccountProvider, r.projectProvider)),
 		serviceaccount.DecodeDeleteReq,
 		encodeJSON,
 		r.defaultServerOptions()...,

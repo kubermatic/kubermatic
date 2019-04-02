@@ -393,7 +393,6 @@ func TestDelete(t *testing.T) {
 
 	testcases := []struct {
 		name                   string
-		body                   string
 		projectToSync          string
 		saToDelete             string
 		httpStatus             int
@@ -403,7 +402,6 @@ func TestDelete(t *testing.T) {
 		{
 			name:            "scenario 1: the owner of the project delete service account",
 			httpStatus:      http.StatusOK,
-			body:            `{"id":"serviceaccount-1"}`,
 			projectToSync:   test.GenDefaultProject().Name,
 			existingAPIUser: test.GenDefaultAPIUser(),
 			existingKubermaticObjs: []runtime.Object{
@@ -422,7 +420,7 @@ func TestDelete(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s", tc.projectToSync, tc.saToDelete), strings.NewReader(tc.body))
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s", tc.projectToSync, tc.saToDelete), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
