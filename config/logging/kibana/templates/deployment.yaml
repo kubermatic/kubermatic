@@ -26,22 +26,33 @@ spec:
         resources:
 {{ toYaml .Values.logging.kibana.resources | indent 10 }}
         env:
-          - name: ELASTICSEARCH_URL
-            value: http://es-data:9200
+        - name: ELASTICSEARCH_URL
+          value: http://es-data:9200
         ports:
         - containerPort: 5601
           name: ui
           protocol: TCP
-        lifecycle:
-          postStart:
-            exec:
-              command:
-              - /bin/bash
-              - /post-start.sh
+
+      - name: setup-index-pattern
+        image: "{{ .Values.logging.kibana.setupContainer.image.repository }}:{{ .Values.logging.kibana.setupContainer.image.tag }}"
+        command: [/bin/bash]
+        args: [/ensure-index-pattern.sh]
+        resources:
+{{ toYaml .Values.logging.kibana.setupContainer.resources | indent 10 }}
+        env:
+        - name: ELASTICSEARCH_URL
+          value: http://es-data:9200
+        - name: KIBANA_URL
+          value: http://127.0.0.1:5601
+        - name: KIBANA_VERSION
+          value: '{{ .Values.logging.kibana.image.tag }}'
+        # - name: DEBUG
+        #   value: 'true'
         volumeMounts:
         - name: config
-          mountPath: /post-start.sh
-          subPath: post-start.sh
+          mountPath: /ensure-index-pattern.sh
+          subPath: ensure-index-pattern.sh
+
       volumes:
       - name: config
         configMap:
