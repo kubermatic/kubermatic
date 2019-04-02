@@ -38,7 +38,7 @@ func (s *ServiceAccountAuthClient) Verify(ctx context.Context, token string) (To
 		return TokenClaims{}, err
 	}
 
-	tokenList, err := s.saTokenProvider.ListUnsecured(&provider.ServiceAccountTokenListOptions{customClaims.TokenID})
+	tokenList, err := s.saTokenProvider.ListUnsecured(&provider.ServiceAccountTokenListOptions{TokenName: customClaims.TokenID})
 	if kerrors.IsNotFound(err) {
 		return TokenClaims{}, fmt.Errorf("sa: the token %s has been revoked for %s", customClaims.TokenID, customClaims.Email)
 	}
