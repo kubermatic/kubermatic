@@ -5,7 +5,7 @@ import (
 	"encoding/pem"
 	"fmt"
 
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -13,7 +13,7 @@ import (
 type dexCAGetter func() ([]*x509.Certificate, error)
 
 // GetDexCACreator returns a function to create a secret containing a CA bundle with the specified name
-func GetDexCACreator(dataCAKey string, getCA dexCAGetter) resources.SecretCreator {
+func GetDexCACreator(dataCAKey string, getCA dexCAGetter) reconciling.SecretCreator {
 	return func(se *corev1.Secret) (*corev1.Secret, error) {
 		ca, err := getCA()
 		if err != nil {

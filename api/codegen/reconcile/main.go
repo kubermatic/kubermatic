@@ -120,7 +120,7 @@ var (
 		"namedReconcileFunc": namedReconcileFunc,
 	}
 	reconcileAllTemplate = template.Must(template.New("").Funcs(reconcileAllTplFuncs).Funcs(sprig.TxtFuncMap()).Parse(`// This file is generated. DO NOT EDIT.
-package resources
+package reconciling
 
 import (
 	"fmt"

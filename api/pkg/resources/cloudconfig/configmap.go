@@ -7,6 +7,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
@@ -25,8 +26,8 @@ type configMapCreatorData interface {
 }
 
 // ConfigMapCreator returns a function to create the ConfigMap containing the cloud-config
-func ConfigMapCreator(data configMapCreatorData) resources.NamedConfigMapCreatorGetter {
-	return func() (string, resources.ConfigMapCreator) {
+func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.CloudConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}

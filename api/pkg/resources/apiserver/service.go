@@ -2,14 +2,15 @@ package apiserver
 
 import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // InternalServiceCreator returns the function to reconcile the internal API server service
-func InternalServiceCreator() resources.NamedServiceCreatorGetter {
-	return func() (string, resources.ServiceCreator) {
+func InternalServiceCreator() reconciling.NamedServiceCreatorGetter {
+	return func() (string, reconciling.ServiceCreator) {
 		return resources.ApiserverInternalServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.ApiserverInternalServiceName
 			se.Labels = resources.BaseAppLabel(name, nil)
@@ -32,8 +33,8 @@ func InternalServiceCreator() resources.NamedServiceCreatorGetter {
 }
 
 // ExternalServiceCreator returns the function to reconcile the external API server service
-func ExternalServiceCreator() resources.NamedServiceCreatorGetter {
-	return func() (string, resources.ServiceCreator) {
+func ExternalServiceCreator() reconciling.NamedServiceCreatorGetter {
+	return func() (string, reconciling.ServiceCreator) {
 		return resources.ApiserverExternalServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.ApiserverExternalServiceName
 			se.Annotations = map[string]string{

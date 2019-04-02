@@ -15,6 +15,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/usercluster"
 
@@ -155,8 +156,8 @@ func (cc *Controller) ensureNamespaceExists(c *kubermaticv1.Cluster) (*kubermati
 }
 
 // GetServiceCreators returns all service creators that are currently in use
-func GetServiceCreators(data *resources.TemplateData) []resources.NamedServiceCreatorGetter {
-	return []resources.NamedServiceCreatorGetter{
+func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedServiceCreatorGetter {
+	return []reconciling.NamedServiceCreatorGetter{
 		apiserver.InternalServiceCreator(),
 		apiserver.ExternalServiceCreator(),
 		openvpn.ServiceCreator(),
@@ -169,12 +170,12 @@ func GetServiceCreators(data *resources.TemplateData) []resources.NamedServiceCr
 
 func (cc *Controller) ensureServices(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetServiceCreators(data)
-	return resources.ReconcileServices(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(c)))
+	return reconciling.ReconcileServices(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
 }
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
-func GetDeploymentCreators(data *resources.TemplateData) []resources.NamedDeploymentCreatorGetter {
-	creators := []resources.NamedDeploymentCreatorGetter{
+func GetDeploymentCreators(data *resources.TemplateData) []reconciling.NamedDeploymentCreatorGetter {
+	creators := []reconciling.NamedDeploymentCreatorGetter{
 		openvpn.DeploymentCreator(data),
 		dns.DeploymentCreator(data),
 	}
@@ -194,12 +195,12 @@ func GetDeploymentCreators(data *resources.TemplateData) []resources.NamedDeploy
 
 func (cc *Controller) ensureDeployments(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetDeploymentCreators(data)
-	return resources.ReconcileDeployments(creators, cluster.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(cluster)))
+	return reconciling.ReconcileDeployments(creators, cluster.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }
 
 // GetSecretCreators returns all SecretCreators that are currently in use
-func (cc *Controller) GetSecretCreators(data *resources.TemplateData) []resources.NamedSecretCreatorGetter {
-	creators := []resources.NamedSecretCreatorGetter{
+func (cc *Controller) GetSecretCreators(data *resources.TemplateData) []reconciling.NamedSecretCreatorGetter {
+	creators := []reconciling.NamedSecretCreatorGetter{
 		certificates.RootCACreator(data),
 		openvpn.CACreator(),
 		certificates.FrontProxyCACreator(),
@@ -236,7 +237,7 @@ func (cc *Controller) GetSecretCreators(data *resources.TemplateData) []resource
 func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	namedSecretCreatorGetters := cc.GetSecretCreators(data)
 
-	if err := resources.ReconcileSecrets(namedSecretCreatorGetters, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
+	if err := reconciling.ReconcileSecrets(namedSecretCreatorGetters, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return fmt.Errorf("failed to ensure that the Secret exists: %v", err)
 	}
 
@@ -244,8 +245,8 @@ func (cc *Controller) ensureSecrets(c *kubermaticv1.Cluster, data *resources.Tem
 }
 
 // GetConfigMapCreators returns all ConfigMapCreators that are currently in use
-func GetConfigMapCreators(data *resources.TemplateData) []resources.NamedConfigMapCreatorGetter {
-	return []resources.NamedConfigMapCreatorGetter{
+func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfigMapCreatorGetter {
+	return []reconciling.NamedConfigMapCreatorGetter{
 		cloudconfig.ConfigMapCreator(data),
 		openvpn.ServerClientConfigsConfigMapCreator(data),
 		dns.ConfigMapCreator(data),
@@ -255,7 +256,7 @@ func GetConfigMapCreators(data *resources.TemplateData) []resources.NamedConfigM
 func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetConfigMapCreators(data)
 
-	if err := resources.ReconcileConfigMaps(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
+	if err := reconciling.ReconcileConfigMaps(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)
 	}
 
@@ -263,15 +264,15 @@ func (cc *Controller) ensureConfigMaps(c *kubermaticv1.Cluster, data *resources.
 }
 
 // GetStatefulSetCreators returns all StatefulSetCreators that are currently in use
-func GetStatefulSetCreators(data *resources.TemplateData) []resources.NamedStatefulSetCreatorGetter {
-	return []resources.NamedStatefulSetCreatorGetter{
+func GetStatefulSetCreators(data *resources.TemplateData) []reconciling.NamedStatefulSetCreatorGetter {
+	return []reconciling.NamedStatefulSetCreatorGetter{
 		etcd.StatefulSetCreator(data),
 	}
 }
 
 // GetPodDisruptionBudgetCreators returns all PodDisruptionBudgetCreators that are currently in use
-func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []resources.NamedPodDisruptionBudgetCreatorGetter {
-	return []resources.NamedPodDisruptionBudgetCreatorGetter{
+func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []reconciling.NamedPodDisruptionBudgetCreatorGetter {
+	return []reconciling.NamedPodDisruptionBudgetCreatorGetter{
 		etcd.PodDisruptionBudgetCreator(data),
 		apiserver.PodDisruptionBudgetCreator(),
 		metricsserver.PodDisruptionBudgetCreator(),
@@ -281,7 +282,7 @@ func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []resources.Na
 func (cc *Controller) ensurePodDisruptionBudgets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetPodDisruptionBudgetCreators(data)
 
-	if err := resources.ReconcilePodDisruptionBudgets(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
+	if err := reconciling.ReconcilePodDisruptionBudgets(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return fmt.Errorf("failed to ensure that the PodDisruptionBudget exists: %v", err)
 	}
 
@@ -289,8 +290,8 @@ func (cc *Controller) ensurePodDisruptionBudgets(c *kubermaticv1.Cluster, data *
 }
 
 // GetCronJobCreators returns all CronJobCreators that are currently in use
-func GetCronJobCreators(data *resources.TemplateData) []resources.NamedCronJobCreatorGetter {
-	return []resources.NamedCronJobCreatorGetter{
+func GetCronJobCreators(data *resources.TemplateData) []reconciling.NamedCronJobCreatorGetter {
+	return []reconciling.NamedCronJobCreatorGetter{
 		etcd.CronJobCreator(data),
 	}
 }
@@ -298,7 +299,7 @@ func GetCronJobCreators(data *resources.TemplateData) []resources.NamedCronJobCr
 func (cc *Controller) ensureCronJobs(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetCronJobCreators(data)
 
-	if err := resources.ReconcileCronJobs(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
+	if err := reconciling.ReconcileCronJobs(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return fmt.Errorf("failed to ensure that the CronJobs exists: %v", err)
 	}
 
@@ -324,19 +325,19 @@ func (cc *Controller) ensureVerticalPodAutoscalers(c *kubermaticv1.Cluster, data
 		// If the feature is disabled, we just wrap the create function to disable the VPA.
 		// This is easier than passing a bool to all required functions.
 		for i, getNameAndCreator := range creators {
-			creators[i] = func() (string, resources.VerticalPodAutoscalerCreator) {
+			creators[i] = func() (string, reconciling.VerticalPodAutoscalerCreator) {
 				name, create := getNameAndCreator()
 				return name, disableVPAWrapper(create)
 			}
 		}
 	}
 
-	return resources.ReconcileVerticalPodAutoscalers(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(c)))
+	return reconciling.ReconcileVerticalPodAutoscalers(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
 }
 
 // disableVPAWrapper is a wrapper function which sets the UpdateMode on the VPA to UpdateModeOff.
 // This essentially disables any processing from the VerticalPodAutoscaler
-func disableVPAWrapper(create resources.VerticalPodAutoscalerCreator) resources.VerticalPodAutoscalerCreator {
+func disableVPAWrapper(create reconciling.VerticalPodAutoscalerCreator) reconciling.VerticalPodAutoscalerCreator {
 	return func(vpa *autoscalingv1beta2.VerticalPodAutoscaler) (*autoscalingv1beta2.VerticalPodAutoscaler, error) {
 		vpa, err := create(vpa)
 		if err != nil {
@@ -356,5 +357,5 @@ func disableVPAWrapper(create resources.VerticalPodAutoscalerCreator) resources.
 func (cc *Controller) ensureStatefulSets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetStatefulSetCreators(data)
 
-	return resources.ReconcileStatefulSets(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, resources.OwnerRefWrapper(resources.GetClusterRef(c)))
+	return reconciling.ReconcileStatefulSets(creators, c.Status.NamespaceName, cc.dynamicClient, cc.dynamicCache, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
 }

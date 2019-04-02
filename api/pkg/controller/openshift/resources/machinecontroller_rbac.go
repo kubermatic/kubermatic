@@ -2,6 +2,7 @@ package resources
 
 import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -13,7 +14,7 @@ const (
 	openshiftInfraNamespaceName      = "openshift-infra"
 )
 
-func MachineControllerRole() (types.NamespacedName, resources.RoleCreator) {
+func MachineControllerRole() (types.NamespacedName, reconciling.RoleCreator) {
 	return types.NamespacedName{Namespace: openshiftInfraNamespaceName, Name: machineControllerRoleName},
 		func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Rules = []rbacv1.PolicyRule{
@@ -33,7 +34,7 @@ func MachineControllerRole() (types.NamespacedName, resources.RoleCreator) {
 		}
 }
 
-func MachineControllerRoleBinding() (types.NamespacedName, resources.RoleBindingCreator) {
+func MachineControllerRoleBinding() (types.NamespacedName, reconciling.RoleBindingCreator) {
 	return types.NamespacedName{Namespace: openshiftInfraNamespaceName, Name: machineControllerRoleBindingName},
 		func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.RoleRef = rbacv1.RoleRef{

@@ -2,6 +2,7 @@ package kubestatemetrics
 
 import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
@@ -11,8 +12,8 @@ const (
 )
 
 // ClusterRoleCreator returns the func to create/update the ClusterRole for kube-state-metrics
-func ClusterRoleCreator() resources.NamedClusterRoleCreatorGetter {
-	return func() (string, resources.ClusterRoleCreator) {
+func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
+	return func() (string, reconciling.ClusterRoleCreator) {
 		return resources.KubeStateMetricsClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Labels = resources.BaseAppLabel(Name, nil)
 

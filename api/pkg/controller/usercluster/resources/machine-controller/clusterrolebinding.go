@@ -4,12 +4,13 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
 // ClusterRoleBinding returns a ClusterRoleBinding for the machine-controller.
-func ClusterRoleBindingCreator() resources.NamedClusterRoleBindingCreatorGetter {
+func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
 	// TemplateData actually not needed, no ownerrefs set in user-cluster
 	return createClusterRoleBindingCreator("controller",
 		resources.MachineControllerClusterRoleName, rbacv1.Subject{
@@ -20,7 +21,7 @@ func ClusterRoleBindingCreator() resources.NamedClusterRoleBindingCreatorGetter 
 }
 
 // NodeBootstrapperClusterRoleBinding returns a ClusterRoleBinding for the machine-controller.
-func NodeBootstrapperClusterRoleBindingCreator() resources.NamedClusterRoleBindingCreatorGetter {
+func NodeBootstrapperClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
 	return createClusterRoleBindingCreator("kubelet-bootstrap",
 		"system:node-bootstrapper", rbacv1.Subject{
 			Kind:     "Group",
@@ -30,7 +31,7 @@ func NodeBootstrapperClusterRoleBindingCreator() resources.NamedClusterRoleBindi
 }
 
 // NodeSignerClusterRoleBindingCreator returns a ClusterRoleBinding for the machine-controller.
-func NodeSignerClusterRoleBindingCreator() resources.NamedClusterRoleBindingCreatorGetter {
+func NodeSignerClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
 	return createClusterRoleBindingCreator("node-signer",
 		"system:certificates.k8s.io:certificatesigningrequests:nodeclient", rbacv1.Subject{
 			Kind:     "Group",
@@ -39,8 +40,8 @@ func NodeSignerClusterRoleBindingCreator() resources.NamedClusterRoleBindingCrea
 		})
 }
 
-func createClusterRoleBindingCreator(crbSuffix, cRoleRef string, subj rbacv1.Subject) resources.NamedClusterRoleBindingCreatorGetter {
-	return func() (string, resources.ClusterRoleBindingCreator) {
+func createClusterRoleBindingCreator(crbSuffix, cRoleRef string, subj rbacv1.Subject) reconciling.NamedClusterRoleBindingCreatorGetter {
+	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return fmt.Sprintf("%s:%s", resources.MachineControllerClusterRoleBindingName, crbSuffix), func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.Labels = resources.BaseAppLabel(Name, nil)
 

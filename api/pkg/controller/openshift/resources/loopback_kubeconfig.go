@@ -7,6 +7,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	"github.com/golang/glog"
 
@@ -24,8 +25,8 @@ type loopbackKubeconfigCreatorData interface {
 // GetLoopbackKubeconfigCreator is a function to return a secret generator to create a kubeconfig which must only by the openshift-apiserver itself as it uses 127.0.0.1 as address
 // It is required because the Apiserver tries to talk to itself before it is ready, hence it
 // doesn't appear as valid endpoint on the service
-func GetLoopbackKubeconfigCreator(ctx context.Context, data loopbackKubeconfigCreatorData) resources.NamedSecretCreatorGetter {
-	return func() (string, resources.SecretCreator) {
+func GetLoopbackKubeconfigCreator(ctx context.Context, data loopbackKubeconfigCreatorData) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
 		return apiserverLoopbackKubeconfigName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}

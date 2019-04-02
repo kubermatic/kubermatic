@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -35,8 +36,8 @@ const (
 )
 
 // DeploymentCreator returns the function to create and update the scheduler deployment
-func DeploymentCreator(data resources.DeploymentDataProvider) resources.NamedDeploymentCreatorGetter {
-	return func() (string, resources.DeploymentCreator) {
+func DeploymentCreator(data resources.DeploymentDataProvider) reconciling.NamedDeploymentCreatorGetter {
+	return func() (string, reconciling.DeploymentCreator) {
 		return resources.SchedulerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.SchedulerDeploymentName
 			dep.Labels = resources.BaseAppLabel(name, nil)

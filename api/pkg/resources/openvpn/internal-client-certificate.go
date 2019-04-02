@@ -3,6 +3,7 @@ package openvpn
 import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 )
 
 type internalClientCertificateCreatorData interface {
@@ -10,8 +11,8 @@ type internalClientCertificateCreatorData interface {
 }
 
 // InternalClientCertificateCreator returns a function to create/update the secret with a client certificate for the openvpn clients in the seed cluster.
-func InternalClientCertificateCreator(data internalClientCertificateCreatorData) resources.NamedSecretCreatorGetter {
-	return func() (string, resources.SecretCreator) {
+func InternalClientCertificateCreator(data internalClientCertificateCreatorData) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
 		return resources.OpenVPNClientCertificatesSecretName, certificates.GetECDSAClientCertificateCreator(
 			resources.OpenVPNClientCertificatesSecretName,
 			"internal-client",
@@ -25,7 +26,7 @@ func InternalClientCertificateCreator(data internalClientCertificateCreatorData)
 
 // UserClusterClientCertificateCreator returns a function to create/update the secret with the client certificate for the openvpn client in the user
 // cluster
-func UserClusterClientCertificateCreator(ca *resources.ECDSAKeyPair) resources.SecretCreator {
+func UserClusterClientCertificateCreator(ca *resources.ECDSAKeyPair) reconciling.SecretCreator {
 	return certificates.GetECDSAClientCertificateCreator(
 		resources.OpenVPNClientCertificatesSecretName,
 		"user-cluster-client",

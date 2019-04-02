@@ -1,4 +1,4 @@
-package resources
+package reconciling
 
 import (
 	"context"
@@ -10,10 +10,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-//go:generate go run ../../codegen/reconcile/main.go
+//go:generate go run ../../../codegen/reconcile/main.go
+
+// ObjectCreator defines an interface to create/update a runtime.Object
+type ObjectCreator = func(existing runtime.Object) (runtime.Object, error)
+
+// ObjectModifier is a wrapper function which modifies the object which gets returned by the passed in ObjectCreator
+type ObjectModifier func(create ObjectCreator) ObjectCreator
 
 func createWithNamespace(rawcreate ObjectCreator, namespace string) ObjectCreator {
 	return func(existing runtime.Object) (runtime.Object, error) {

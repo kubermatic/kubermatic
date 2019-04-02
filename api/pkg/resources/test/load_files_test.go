@@ -22,6 +22,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machine"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
@@ -528,7 +529,7 @@ func TestLoadFiles(t *testing.T) {
 				kubeInformerFactory.Start(wait.NeverStop)
 				kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
 
-				var deploymentCreators []resources.NamedDeploymentCreatorGetter
+				var deploymentCreators []reconciling.NamedDeploymentCreatorGetter
 				deploymentCreators = append(deploymentCreators, clustercontroller.GetDeploymentCreators(data)...)
 				deploymentCreators = append(deploymentCreators, monitoringcontroller.GetDeploymentCreators(data)...)
 				for _, create := range deploymentCreators {
@@ -549,7 +550,7 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				var namedConfigMapCreatorGetters []resources.NamedConfigMapCreatorGetter
+				var namedConfigMapCreatorGetters []reconciling.NamedConfigMapCreatorGetter
 				namedConfigMapCreatorGetters = append(namedConfigMapCreatorGetters, clustercontroller.GetConfigMapCreators(data)...)
 				namedConfigMapCreatorGetters = append(namedConfigMapCreatorGetters, monitoringcontroller.GetConfigMapCreators(data)...)
 				for _, namedGetter := range namedConfigMapCreatorGetters {
@@ -563,7 +564,7 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				var serviceCreators []resources.NamedServiceCreatorGetter
+				var serviceCreators []reconciling.NamedServiceCreatorGetter
 				serviceCreators = append(serviceCreators, clustercontroller.GetServiceCreators(data)...)
 				for _, creatorGetter := range serviceCreators {
 					_, create := creatorGetter()
@@ -576,7 +577,7 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				var statefulSetCreators []resources.NamedStatefulSetCreatorGetter
+				var statefulSetCreators []reconciling.NamedStatefulSetCreatorGetter
 				statefulSetCreators = append(statefulSetCreators, clustercontroller.GetStatefulSetCreators(data)...)
 				statefulSetCreators = append(statefulSetCreators, monitoringcontroller.GetStatefulSetCreators(data)...)
 				for _, creatorGetter := range statefulSetCreators {

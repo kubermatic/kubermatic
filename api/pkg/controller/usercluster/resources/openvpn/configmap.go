@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	v1 "k8s.io/api/core/v1"
 )
@@ -13,8 +14,8 @@ const (
 )
 
 // ClientConfigConfigMapCreator returns a ConfigMap containing the config for the OpenVPN client. It lives inside the user-cluster
-func ClientConfigConfigMapCreator(hostname string, serverPort int) resources.NamedConfigMapCreatorGetter {
-	return func() (string, resources.ConfigMapCreator) {
+func ClientConfigConfigMapCreator(hostname string, serverPort int) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.OpenVPNClientConfigConfigMapName, func(cm *v1.ConfigMap) (*v1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}

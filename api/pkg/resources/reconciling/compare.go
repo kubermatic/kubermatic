@@ -1,4 +1,4 @@
-package resources
+package reconciling
 
 import (
 	"github.com/go-test/deep"

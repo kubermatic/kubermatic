@@ -7,13 +7,14 @@ import (
 	"encoding/pem"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
 // ServiceAccountKeyCreator returns a function to create/update a secret with the ServiceAccount key
-func ServiceAccountKeyCreator() resources.NamedSecretCreatorGetter {
-	return func() (string, resources.SecretCreator) {
+func ServiceAccountKeyCreator() reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
 		return resources.ServiceAccountKeySecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if _, exists := se.Data[resources.ServiceAccountKeySecretKey]; exists {
 				return se, nil

@@ -9,6 +9,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	certutil "k8s.io/client-go/util/cert"
@@ -20,8 +21,8 @@ type tlsServingCertCreatorData interface {
 }
 
 // TLSServingCertificateCreator returns a function to create/update the secret with the apiserver tls certificate used to serve https
-func TLSServingCertificateCreator(data tlsServingCertCreatorData) resources.NamedSecretCreatorGetter {
-	return func() (string, resources.SecretCreator) {
+func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
 		return resources.ApiserverTLSSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}

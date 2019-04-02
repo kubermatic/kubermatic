@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/clientcmd"
@@ -13,8 +14,8 @@ import (
 )
 
 // ClusterInfoConfigMapCreator returns the func to create/update the ConfigMap
-func ClusterInfoConfigMapCreator(url string, caCert *x509.Certificate) resources.NamedConfigMapCreatorGetter {
-	return func() (string, resources.ConfigMapCreator) {
+func ClusterInfoConfigMapCreator(url string, caCert *x509.Certificate) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.ClusterInfoConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}

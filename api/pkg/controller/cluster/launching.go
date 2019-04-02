@@ -8,6 +8,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -67,7 +68,7 @@ func (cc *Controller) launchingCreateOpenVPNClientCertificates(c *kubermaticv1.C
 		return fmt.Errorf("failed to build Secret: %v", err)
 	}
 
-	if equal := resources.DeepEqual(existing, secret); equal {
+	if equal := reconciling.DeepEqual(existing, secret); equal {
 		return nil
 	}
 

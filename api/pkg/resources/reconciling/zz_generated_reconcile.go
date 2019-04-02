@@ -1,5 +1,5 @@
 // This file is generated. DO NOT EDIT.
-package resources
+package reconciling
 
 import (
 	"fmt"
