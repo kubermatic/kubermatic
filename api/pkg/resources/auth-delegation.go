@@ -1,12 +1,14 @@
 package resources
 
 import (
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
 // RoleBindingAuthenticationReaderCreator returns a function to create the RoleBinding which is needed for extension apiserver which do auth delegation
-func RoleBindingAuthenticationReaderCreator(username string) NamedRoleBindingCreatorGetter {
-	return func() (string, RoleBindingCreator) {
+func RoleBindingAuthenticationReaderCreator(username string) reconciling.NamedRoleBindingCreatorGetter {
+	return func() (string, reconciling.RoleBindingCreator) {
 		return username + "-authentication-reader", func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.RoleRef = rbacv1.RoleRef{
 				Name:     "extension-apiserver-authentication-reader",
@@ -26,8 +28,8 @@ func RoleBindingAuthenticationReaderCreator(username string) NamedRoleBindingCre
 }
 
 // ClusterRoleBindingAuthDelegatorCreator returns a function to create the ClusterRoleBinding which is needed for extension apiserver which do auth delegation
-func ClusterRoleBindingAuthDelegatorCreator(username string) NamedClusterRoleBindingCreatorGetter {
-	return func() (string, ClusterRoleBindingCreator) {
+func ClusterRoleBindingAuthDelegatorCreator(username string) reconciling.NamedClusterRoleBindingCreatorGetter {
+	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return username + "-auth-delegator", func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.RoleRef = rbacv1.RoleRef{
 				Name:     "system:auth-delegator",

@@ -1,7 +1,7 @@
 package userauth
 
 import (
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -13,8 +13,8 @@ const (
 )
 
 // ServiceAccountCreator returns a func to create/update the ServiceAccount used by the cluster user
-func ServiceAccountCreator() resources.NamedServiceAccountCreatorGetter {
-	return func() (string, resources.ServiceAccountCreator) {
+func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+	return func() (string, reconciling.ServiceAccountCreator) {
 		return ServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil
 		}
@@ -22,8 +22,8 @@ func ServiceAccountCreator() resources.NamedServiceAccountCreatorGetter {
 }
 
 // ClusterRoleBindingCreator returns a func to create/update the ClusterRoleBinding which will give the "external-admin-user" full admin access
-func ClusterRoleBindingCreator() resources.NamedClusterRoleBindingCreatorGetter {
-	return func() (string, resources.ClusterRoleBindingCreator) {
+func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
+	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return "external-admin-user", func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.RoleRef = rbacv1.RoleRef{
 				Name:     "cluster-admin",

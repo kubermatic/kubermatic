@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	"k8s.io/api/admissionregistration/v1beta1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
@@ -13,8 +14,8 @@ import (
 )
 
 // MutatingwebhookConfigurationCreator returns the MutatingwebhookConfiguration for the machine controler
-func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace string) resources.NamedMutatingWebhookConfigurationCreatorGetter {
-	return func() (string, resources.MutatingWebhookConfigurationCreator) {
+func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
+	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
 		return resources.MachineControllerMutatingWebhookConfigurationName, func(mutatingWebhookConfiguration *v1beta1.MutatingWebhookConfiguration) (*v1beta1.MutatingWebhookConfiguration, error) {
 			failurePolicy := admissionregistrationv1beta1.Fail
 			mdURL := fmt.Sprintf("https://%s.%s.svc.cluster.local./machinedeployments", resources.MachineControllerWebhookServiceName, namespace)

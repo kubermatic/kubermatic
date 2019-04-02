@@ -5,6 +5,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -34,8 +35,8 @@ const (
 )
 
 // DeploymentCreator returns the function to create and update the metrics server deployment
-func DeploymentCreator(data resources.DeploymentDataProvider) resources.NamedDeploymentCreatorGetter {
-	return func() (string, resources.DeploymentCreator) {
+func DeploymentCreator(data resources.DeploymentDataProvider) reconciling.NamedDeploymentCreatorGetter {
+	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MetricsServerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.MetricsServerDeploymentName
 			dep.Labels = resources.BaseAppLabel(name, nil)

@@ -4,6 +4,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 )
 
 type etcdClientCertificateCreatorData interface {
@@ -11,7 +12,7 @@ type etcdClientCertificateCreatorData interface {
 }
 
 // EtcdClientCertificateCreator returns a function to create/update the secret with the client certificate for authenticating against etcd
-func EtcdClientCertificateCreator(data etcdClientCertificateCreatorData) resources.NamedSecretCreatorGetter {
+func EtcdClientCertificateCreator(data etcdClientCertificateCreatorData) reconciling.NamedSecretCreatorGetter {
 	return certificates.GetClientCertificateCreator(
 		resources.ApiserverEtcdClientCertificateSecretName,
 		"apiserver",

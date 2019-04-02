@@ -8,6 +8,7 @@ import (
 	"github.com/Masterminds/sprig"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -15,8 +16,8 @@ import (
 )
 
 // CronJobCreator returns the func to create/update the etcd defragger cronjob
-func CronJobCreator(data *resources.TemplateData) resources.NamedCronJobCreatorGetter {
-	return func() (string, resources.CronJobCreator) {
+func CronJobCreator(data *resources.TemplateData) reconciling.NamedCronJobCreatorGetter {
+	return func() (string, reconciling.CronJobCreator) {
 		return resources.EtcdDefragCronJobName, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
 			command, err := defraggerCommand(data)
 			if err != nil {

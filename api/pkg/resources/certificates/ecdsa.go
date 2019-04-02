@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	certutil "k8s.io/client-go/util/cert"
@@ -26,7 +27,7 @@ type ecdsaCAGetter func() (*resources.ECDSAKeyPair, error)
 
 // GetECDSAClientCertificateCreator is a generic function to return a secret generator to create a client certificate
 // signed by the cert returned by the passed getCA func. The resulting secret has no ownerRef
-func GetECDSAClientCertificateCreator(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA ecdsaCAGetter) resources.SecretCreator {
+func GetECDSAClientCertificateCreator(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA ecdsaCAGetter) reconciling.SecretCreator {
 	return func(se *corev1.Secret) (*corev1.Secret, error) {
 		ca, err := getCA()
 		if err != nil {

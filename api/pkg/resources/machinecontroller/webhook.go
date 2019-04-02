@@ -7,6 +7,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -30,8 +31,8 @@ var (
 )
 
 // WebhookDeploymentCreator returns the function to create and update the machine controller webhook deployment
-func WebhookDeploymentCreator(data machinecontrollerData) resources.NamedDeploymentCreatorGetter {
-	return func() (string, resources.DeploymentCreator) {
+func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCreatorGetter {
+	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MachineControllerWebhookDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.MachineControllerWebhookDeploymentName
 			dep.Labels = resources.BaseAppLabel(resources.MachineControllerWebhookDeploymentName, nil)
@@ -130,8 +131,8 @@ func WebhookDeploymentCreator(data machinecontrollerData) resources.NamedDeploym
 }
 
 // ServiceCreator returns the function to reconcile the DNS service
-func ServiceCreator() resources.NamedServiceCreatorGetter {
-	return func() (string, resources.ServiceCreator) {
+func ServiceCreator() reconciling.NamedServiceCreatorGetter {
+	return func() (string, reconciling.ServiceCreator) {
 		return resources.MachineControllerWebhookServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.MachineControllerWebhookServiceName
 			se.Labels = resources.BaseAppLabel(resources.MachineControllerWebhookDeploymentName, nil)
@@ -172,8 +173,8 @@ type tlsServingCertCreatorData interface {
 }
 
 // TLSServingCertificateCreator returns a function to create/update the secret with the machine-controller-webhook tls certificate
-func TLSServingCertificateCreator(data tlsServingCertCreatorData) resources.NamedSecretCreatorGetter {
-	return func() (string, resources.SecretCreator) {
+func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
 		return resources.MachineControllerWebhookServingCertSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}

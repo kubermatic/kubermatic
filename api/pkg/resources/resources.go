@@ -22,7 +22,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	certutil "k8s.io/client-go/util/cert"
@@ -337,12 +336,6 @@ type CRDCreateor = func(version semver.Semver, existing *apiextensionsv1beta1.Cu
 
 // APIServiceCreator defines an interface to create/update APIService's
 type APIServiceCreator = func(existing *apiregistrationv1beta1.APIService) (*apiregistrationv1beta1.APIService, error)
-
-// ObjectCreator defines an interface to create/update a runtime.Object
-type ObjectCreator = func(existing runtime.Object) (runtime.Object, error)
-
-// ObjectModifier is a wrapper function which modifies the object which gets returned by the passed in ObjectCreator
-type ObjectModifier func(create ObjectCreator) ObjectCreator
 
 // GetClusterApiserverAddress returns the apiserver address for the given Cluster
 func GetClusterApiserverAddress(cluster *kubermaticv1.Cluster, lister corev1lister.ServiceLister) (string, error) {

@@ -16,6 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/scheduler"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/user-auth"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -119,11 +120,11 @@ func (r *reconciler) ensureAPIServices(ctx context.Context) error {
 }
 
 func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
-	creators := []resources.NamedServiceAccountCreatorGetter{
+	creators := []reconciling.NamedServiceAccountCreatorGetter{
 		userauth.ServiceAccountCreator(),
 	}
 
-	if err := resources.ReconcileServiceAccounts(creators, metav1.NamespaceSystem, r.Client, r.cache); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(creators, metav1.NamespaceSystem, r.Client, r.cache); err != nil {
 		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", metav1.NamespaceSystem, err)
 	}
 	return nil
@@ -131,30 +132,30 @@ func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 
 func (r *reconciler) reconcileRoles(ctx context.Context) error {
 	// kube-system
-	creators := []resources.NamedRoleCreatorGetter{
+	creators := []reconciling.NamedRoleCreatorGetter{
 		machinecontroller.KubeSystemRoleCreator(),
 	}
 
-	if err := resources.ReconcileRoles(creators, metav1.NamespaceSystem, r.Client, r.cache); err != nil {
+	if err := reconciling.ReconcileRoles(creators, metav1.NamespaceSystem, r.Client, r.cache); err != nil {
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", metav1.NamespaceSystem, err)
 	}
 
 	// kube-public
-	creators = []resources.NamedRoleCreatorGetter{
+	creators = []reconciling.NamedRoleCreatorGetter{
 		machinecontroller.ClusterInfoReaderRoleCreator(),
 		machinecontroller.KubePublicRoleCreator(),
 	}
 
-	if err := resources.ReconcileRoles(creators, metav1.NamespacePublic, r.Client, r.cache); err != nil {
+	if err := reconciling.ReconcileRoles(creators, metav1.NamespacePublic, r.Client, r.cache); err != nil {
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", metav1.NamespacePublic, err)
 	}
 
 	// default
-	creators = []resources.NamedRoleCreatorGetter{
+	creators = []reconciling.NamedRoleCreatorGetter{
 		machinecontroller.EndpointReaderRoleCreator(),
 	}
 
-	if err := resources.ReconcileRoles(creators, metav1.NamespaceDefault, r.Client, r.cache); err != nil {
+	if err := reconciling.ReconcileRoles(creators, metav1.NamespaceDefault, r.Client, r.cache); err != nil {
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", metav1.NamespaceDefault, err)
 	}
 
@@ -163,30 +164,30 @@ func (r *reconciler) reconcileRoles(ctx context.Context) error {
 
 func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 	// kube-system
-	creators := []resources.NamedRoleBindingCreatorGetter{
+	creators := []reconciling.NamedRoleBindingCreatorGetter{
 		machinecontroller.KubeSystemRoleBindingCreator(),
 		metricsserver.RolebindingAuthReaderCreator(),
 		scheduler.RoleBindingAuthDelegator(),
 		controllermanager.RoleBindingAuthDelegator(),
 	}
-	if err := resources.ReconcileRoleBindings(creators, metav1.NamespaceSystem, r.Client, r.cache); err != nil {
+	if err := reconciling.ReconcileRoleBindings(creators, metav1.NamespaceSystem, r.Client, r.cache); err != nil {
 		return fmt.Errorf("failed to reconcile Roles in kube-system Namespace: %v", err)
 	}
 
 	// kube-public
-	creators = []resources.NamedRoleBindingCreatorGetter{
+	creators = []reconciling.NamedRoleBindingCreatorGetter{
 		machinecontroller.KubePublicRoleBindingCreator(),
 		machinecontroller.ClusterInfoAnonymousRoleBindingCreator(),
 	}
-	if err := resources.ReconcileRoleBindings(creators, metav1.NamespacePublic, r.Client, r.cache); err != nil {
+	if err := reconciling.ReconcileRoleBindings(creators, metav1.NamespacePublic, r.Client, r.cache); err != nil {
 		return fmt.Errorf("failed to reconcile Roles in kube-public Namespace: %v", err)
 	}
 
 	// Default
-	creators = []resources.NamedRoleBindingCreatorGetter{
+	creators = []reconciling.NamedRoleBindingCreatorGetter{
 		machinecontroller.DefaultRoleBindingCreator(),
 	}
-	if err := resources.ReconcileRoleBindings(creators, metav1.NamespaceDefault, r.Client, r.cache); err != nil {
+	if err := reconciling.ReconcileRoleBindings(creators, metav1.NamespaceDefault, r.Client, r.cache); err != nil {
 		return fmt.Errorf("failed to reconcile Roles in default Namespace: %v", err)
 	}
 
@@ -194,7 +195,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 }
 
 func (r *reconciler) reconcileClusterRoles(ctx context.Context) error {
-	creators := []resources.NamedClusterRoleCreatorGetter{
+	creators := []reconciling.NamedClusterRoleCreatorGetter{
 		kubestatemetrics.ClusterRoleCreator(),
 		prometheus.ClusterRoleCreator(),
 		machinecontroller.ClusterRoleCreator(),
@@ -202,14 +203,14 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context) error {
 		metricsserver.ClusterRoleCreator(),
 	}
 
-	if err := resources.ReconcileClusterRoles(creators, "", r.Client, r.cache); err != nil {
+	if err := reconciling.ReconcileClusterRoles(creators, "", r.Client, r.cache); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoles: %v", err)
 	}
 	return nil
 }
 
 func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context) error {
-	creators := []resources.NamedClusterRoleBindingCreatorGetter{
+	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
 		userauth.ClusterRoleBindingCreator(),
 		kubestatemetrics.ClusterRoleBindingCreator(),
 		prometheus.ClusterRoleBindingCreator(),
@@ -223,62 +224,62 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context) error {
 		controllermanager.ClusterRoleBindingAuthDelegator(),
 	}
 
-	if err := resources.ReconcileClusterRoleBindings(creators, "", r.Client, r.cache); err != nil {
+	if err := reconciling.ReconcileClusterRoleBindings(creators, "", r.Client, r.cache); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %v", err)
 	}
 	return nil
 }
 
 func (r *reconciler) reconcileCRDs(ctx context.Context) error {
-	creators := []resources.NamedCustomResourceDefinitionCreatorGetter{
+	creators := []reconciling.NamedCustomResourceDefinitionCreatorGetter{
 		machinecontroller.MachineCRDCreator(),
 		machinecontroller.MachineSetCRDCreator(),
 		machinecontroller.MachineDeploymentCRDCreator(),
 		machinecontroller.ClusterCRDCreator(),
 	}
 
-	if err := resources.ReconcileCustomResourceDefinitions(creators, "", r.Client, r.cache); err != nil {
+	if err := reconciling.ReconcileCustomResourceDefinitions(creators, "", r.Client, r.cache); err != nil {
 		return fmt.Errorf("failed to reconcile CustomResourceDefinitions: %v", err)
 	}
 	return nil
 }
 
 func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context) error {
-	creators := []resources.NamedMutatingWebhookConfigurationCreatorGetter{
+	creators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
 		machinecontroller.MutatingwebhookConfigurationCreator(r.caCert, r.namespace),
 	}
 
-	if err := resources.ReconcileMutatingWebhookConfigurations(creators, "", r.Client, r.cache); err != nil {
+	if err := reconciling.ReconcileMutatingWebhookConfigurations(creators, "", r.Client, r.cache); err != nil {
 		return fmt.Errorf("failed to reconcile MutatingWebhookConfigurations: %v", err)
 	}
 	return nil
 }
 
 func (r *reconciler) reconcileServices(ctx context.Context) error {
-	creators := []resources.NamedServiceCreatorGetter{
+	creators := []reconciling.NamedServiceCreatorGetter{
 		metricsserver.ExternalNameServiceCreator(r.namespace),
 	}
 
-	if err := resources.ReconcileServices(creators, metav1.NamespaceSystem, r.Client, r.cache); err != nil {
+	if err := reconciling.ReconcileServices(creators, metav1.NamespaceSystem, r.Client, r.cache); err != nil {
 		return fmt.Errorf("failed to reconcile Services in kube-system namespace: %v", err)
 	}
 	return nil
 }
 
 func (r *reconciler) reconcileConfigMaps(ctx context.Context) error {
-	creators := []resources.NamedConfigMapCreatorGetter{
+	creators := []reconciling.NamedConfigMapCreatorGetter{
 		machinecontroller.ClusterInfoConfigMapCreator(r.clusterURL.String(), r.caCert),
 	}
 
-	if err := resources.ReconcileConfigMaps(creators, metav1.NamespacePublic, r.Client, r.cache); err != nil {
+	if err := reconciling.ReconcileConfigMaps(creators, metav1.NamespacePublic, r.Client, r.cache); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps in kube-public namespace: %v", err)
 	}
 
-	creators = []resources.NamedConfigMapCreatorGetter{
+	creators = []reconciling.NamedConfigMapCreatorGetter{
 		openvpn.ClientConfigConfigMapCreator(r.clusterURL.Hostname(), r.openvpnServerPort),
 	}
 
-	if err := resources.ReconcileConfigMaps(creators, metav1.NamespaceSystem, r.Client, r.cache); err != nil {
+	if err := reconciling.ReconcileConfigMaps(creators, metav1.NamespaceSystem, r.Client, r.cache); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps in kube-system namespace: %v", err)
 	}
 	return nil

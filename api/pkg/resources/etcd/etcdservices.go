@@ -5,6 +5,8 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -16,8 +18,8 @@ type serviceCreatorData interface {
 }
 
 // ServiceCreator returns the function to reconcile the etcd service
-func ServiceCreator(data serviceCreatorData) resources.NamedServiceCreatorGetter {
-	return func() (string, resources.ServiceCreator) {
+func ServiceCreator(data serviceCreatorData) reconciling.NamedServiceCreatorGetter {
+	return func() (string, reconciling.ServiceCreator) {
 		return resources.EtcdServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.EtcdServiceName
 			se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}

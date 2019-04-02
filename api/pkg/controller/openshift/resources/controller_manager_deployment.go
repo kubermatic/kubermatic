@@ -8,6 +8,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -35,8 +36,8 @@ const (
 )
 
 // DeploymentCreator returns the function to create and update the controller manager deployment
-func ControllerManagerDeploymentCreator(ctx context.Context, data openshiftData) resources.NamedDeploymentCreatorGetter {
-	return func() (string, resources.DeploymentCreator) {
+func ControllerManagerDeploymentCreator(ctx context.Context, data openshiftData) reconciling.NamedDeploymentCreatorGetter {
+	return func() (string, reconciling.DeploymentCreator) {
 		return ControllerManagerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.ControllerManagerDeploymentName
 			dep.Labels = resources.BaseAppLabel(ControllerManagerDeploymentName, nil)

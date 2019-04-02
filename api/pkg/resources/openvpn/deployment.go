@@ -5,6 +5,7 @@ import (
 	"net"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -42,8 +43,8 @@ const (
 )
 
 // DeploymentCreator returns the function to create and update the openvpn server deployment
-func DeploymentCreator(data resources.DeploymentDataProvider) resources.NamedDeploymentCreatorGetter {
-	return func() (string, resources.DeploymentCreator) {
+func DeploymentCreator(data resources.DeploymentDataProvider) reconciling.NamedDeploymentCreatorGetter {
+	return func() (string, reconciling.DeploymentCreator) {
 		return resources.OpenVPNServerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.OpenVPNServerDeploymentName
 			dep.Labels = resources.BaseAppLabel(name, nil)

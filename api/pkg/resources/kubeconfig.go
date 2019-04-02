@@ -7,6 +7,7 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	"github.com/golang/glog"
 
@@ -23,8 +24,8 @@ type adminKubeconfigCreatorData interface {
 }
 
 // AdminKubeconfigCreator returns a function to create/update the secret with the admin kubeconfig
-func AdminKubeconfigCreator(data adminKubeconfigCreatorData, modifier ...func(*clientcmdapi.Config)) NamedSecretCreatorGetter {
-	return func() (string, SecretCreator) {
+func AdminKubeconfigCreator(data adminKubeconfigCreatorData, modifier ...func(*clientcmdapi.Config)) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
 		return AdminKubeconfigSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}
@@ -65,8 +66,8 @@ type internalKubeconfigCreatorData interface {
 }
 
 // GetInternalKubeconfigCreator is a generic function to return a secret generator to create a kubeconfig which must only be used within the seed-cluster as it uses the ClusterIP of the apiserver.
-func GetInternalKubeconfigCreator(name, commonName string, organizations []string, data internalKubeconfigCreatorData) NamedSecretCreatorGetter {
-	return func() (string, SecretCreator) {
+func GetInternalKubeconfigCreator(name, commonName string, organizations []string, data internalKubeconfigCreatorData) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
 		return name, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}

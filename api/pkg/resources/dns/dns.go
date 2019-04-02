@@ -5,6 +5,7 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -28,8 +29,8 @@ var (
 )
 
 // ServiceCreator returns the function to reconcile the DNS service
-func ServiceCreator() resources.NamedServiceCreatorGetter {
-	return func() (string, resources.ServiceCreator) {
+func ServiceCreator() reconciling.NamedServiceCreatorGetter {
+	return func() (string, reconciling.ServiceCreator) {
 		return resources.DNSResolverServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.DNSResolverServiceName
 			se.Spec.Selector = resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil)
@@ -48,8 +49,8 @@ func ServiceCreator() resources.NamedServiceCreatorGetter {
 }
 
 // DeploymentCreator returns the function to create and update the DNS resolver deployment
-func DeploymentCreator(data resources.DeploymentDataProvider) resources.NamedDeploymentCreatorGetter {
-	return func() (string, resources.DeploymentCreator) {
+func DeploymentCreator(data resources.DeploymentDataProvider) reconciling.NamedDeploymentCreatorGetter {
+	return func() (string, reconciling.DeploymentCreator) {
 		return resources.DNSResolverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.DNSResolverDeploymentName
 			dep.Labels = resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil)
@@ -171,8 +172,8 @@ type configMapCreatorData interface {
 }
 
 // ConfigMapCreator returns a ConfigMap containing the cloud-config for the supplied data
-func ConfigMapCreator(data configMapCreatorData) resources.NamedConfigMapCreatorGetter {
-	return func() (string, resources.ConfigMapCreator) {
+func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.DNSResolverConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			dnsIP, err := resources.UserClusterDNSResolverIP(data.Cluster())
 			if err != nil {
