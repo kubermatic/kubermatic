@@ -146,6 +146,9 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 
 	tokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey))
 	serviceAccountTokenProvider := kubernetes.NewServiceAccountTokenProvider(fakeKubernetesImpersonationClient, kubernetesInformerFactory.Core().V1().Secrets().Lister())
+	if err != nil {
+		return nil, nil, nil, err
+	}
 	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeKubermaticImpersonationClient, userLister, "localhost")
 	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userLister)
 	projectProvider, err := kubernetes.NewProjectProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Projects().Lister())

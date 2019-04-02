@@ -349,3 +349,13 @@ type ServiceAccountTokenListOptions struct {
 	// TokenName list only tokens with the specified name
 	TokenName string
 }
+
+// PrivilegedServiceAccountTokenProvider declares the set of method for interacting with kubermatic's sa's tokens and uses privileged account for it
+type PrivilegedServiceAccountTokenProvider interface {
+	// ListUnsecured returns all tokens in kubermatic namespace
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resource
+	// gets resources from the cache
+	ListUnsecured(*ServiceAccountTokenListOptions) ([]*v1.Secret, error)
+}

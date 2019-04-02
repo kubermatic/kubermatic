@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -180,7 +181,7 @@ func TokenVerifier(tokenVerifier auth.TokenVerifier) endpoint.Middleware {
 			defer cancel()
 			claims, err := tokenVerifier.Verify(verifyCtx, token)
 			if err != nil {
-				return nil, k8cerrors.NewNotAuthorized()
+				return nil, k8cerrors.New(http.StatusUnauthorized, fmt.Sprintf("access denied due to an invalid token, details = %v", err))
 			}
 
 			if claims.Subject == "" {

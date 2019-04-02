@@ -121,7 +121,6 @@ func (o *OpenIDClient) Verify(ctx context.Context, token string) (TokenClaims, e
 
 	idToken, err := o.verifier.Verify(ctx, token)
 	if err != nil {
-		fmt.Printf("%v", err)
 		return TokenClaims{}, err
 	}
 

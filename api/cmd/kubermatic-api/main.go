@@ -70,7 +70,7 @@ func main() {
 	if err != nil {
 		glog.Fatalf("failed to create an openid authenticator for issuer %s (oidcClientID=%s) due to %v", options.oidcURL, options.oidcAuthenticatorClientID, err)
 	}
-	tokenVerifiers, tokenExtractors, err := createAuthClients(options)
+	tokenVerifiers, tokenExtractors, err := createAuthClients(options, providers)
 	if err != nil {
 		glog.Fatalf("failed to create auth clients due to %v", err)
 	}
@@ -163,7 +163,11 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	userProvider := kubernetesprovider.NewUserProvider(kubermaticMasterClient, userLister)
 
 	serviceAccountTokenProvider := kubernetesprovider.NewServiceAccountTokenProvider(defaultKubernetesImpersonationClient.CreateImpersonatedKubernetesClientSet, kubeInformerFactory.Core().V1().Secrets().Lister())
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create service account token provider due to %v", err)
+	}
 	serviceAccountProvider := kubernetesprovider.NewServiceAccountProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, userLister, options.domain)
+
 	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userLister)
 	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().Projects().Lister())
 	if err != nil {
@@ -181,17 +185,18 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	kubermaticMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
 
 	return providers{
-			sshKey:                      sshKeyProvider,
-			user:                        userProvider,
-			serviceAccountProvider:      serviceAccountProvider,
-			serviceAccountTokenProvider: serviceAccountTokenProvider,
-			project:                     projectProvider,
-			privilegedProject:           privilegedProjectProvider,
-			projectMember:               projectMemberProvider,
-			memberMapper:                projectMemberProvider,
-			cloud:                       cloudProviders,
-			clusters:                    clusterProviders,
-			datacenters:                 datacenters},
+			sshKey:                                sshKeyProvider,
+			user:                                  userProvider,
+			serviceAccountProvider:                serviceAccountProvider,
+			serviceAccountTokenProvider:           serviceAccountTokenProvider,
+			privilegedServiceAccountTokenProvider: serviceAccountTokenProvider,
+			project:                               projectProvider,
+			privilegedProject:                     privilegedProjectProvider,
+			projectMember:                         projectMemberProvider,
+			memberMapper:                          projectMemberProvider,
+			cloud:                                 cloudProviders,
+			clusters:                              clusterProviders,
+			datacenters:                           datacenters},
 		nil
 }
 
@@ -209,7 +214,7 @@ func createOIDCClients(options serverRunOptions) (auth.OIDCIssuerVerifier, error
 	)
 }
 
-func createAuthClients(options serverRunOptions) (auth.TokenVerifier, auth.TokenExtractor, error) {
+func createAuthClients(options serverRunOptions, prov providers) (auth.TokenVerifier, auth.TokenExtractor, error) {
 	oidcExtractorVerifier, err := auth.NewOpenIDClient(
 		options.oidcURL,
 		options.oidcAuthenticatorClientID,
@@ -226,8 +231,14 @@ func createAuthClients(options serverRunOptions) (auth.TokenVerifier, auth.Token
 		return nil, nil, fmt.Errorf("failed to create OIDC Authenticator: %v", err)
 	}
 
-	tokenVerifiers := auth.NewTokenVerifierPlugins([]auth.TokenVerifier{oidcExtractorVerifier})
-	tokenExtractors := auth.NewTokenExtractorPlugins([]auth.TokenExtractor{oidcExtractorVerifier})
+	jwtExtractorVerifier := auth.NewServiceAccountAuthClient(
+		auth.NewHeaderBearerTokenExtractor("Authorization"),
+		serviceaccount.JWTTokenAuthenticator([]byte(options.serviceAccountSigningKey)),
+		prov.privilegedServiceAccountTokenProvider,
+	)
+
+	tokenVerifiers := auth.NewTokenVerifierPlugins([]auth.TokenVerifier{oidcExtractorVerifier, jwtExtractorVerifier})
+	tokenExtractors := auth.NewTokenExtractorPlugins([]auth.TokenExtractor{oidcExtractorVerifier, jwtExtractorVerifier})
 	return tokenVerifiers, tokenExtractors, nil
 }
 

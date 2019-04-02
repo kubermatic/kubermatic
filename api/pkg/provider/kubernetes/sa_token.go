@@ -11,7 +11,9 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/kubernetes"
 	kubev1 "k8s.io/client-go/listers/core/v1"
+	"k8s.io/client-go/rest"
 )
 
 const (
@@ -21,10 +23,16 @@ const (
 
 // NewServiceAccountProvider returns a service account provider
 func NewServiceAccountTokenProvider(kubernetesImpersonationClient kubernetesImpersonationClient, secretLister kubev1.SecretLister) *ServiceAccountTokenProvider {
+	kubernetesClient, err := kubernetesImpersonationClient(rest.ImpersonationConfig{})
+	if err != nil {
+		return nil, err
+	}
+
 	return &ServiceAccountTokenProvider{
 		kubernetesImpersonationClient: kubernetesImpersonationClient,
 		secretLister:                  secretLister,
-	}
+		kubernetesClientPrivileged:    kubernetesClient,
+	}, nil
 }
 
 // ServiceAccountProvider manages service account resources
@@ -33,6 +41,9 @@ type ServiceAccountTokenProvider struct {
 	kubernetesImpersonationClient kubernetesImpersonationClient
 
 	secretLister kubev1.SecretLister
+
+	// treat kubernetesClientPrivileged as a privileged user and use wisely
+	kubernetesClientPrivileged kubernetes.Interface
 }
 
 // Create creates a new token for service account
@@ -98,7 +109,7 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 
 	resultList := make([]*v1.Secret, 0)
 	for _, secret := range allSecrets {
-		if strings.HasPrefix(secret.Name, "sa-token") {
+		if isToken(secret) {
 			for _, owner := range secret.GetOwnerReferences() {
 				if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.UserKindName &&
 					owner.Name == saCopy.Name && owner.UID == saCopy.UID {
@@ -141,3 +152,38 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 
 	return filteredList, nil
 }
+
+}
+
+// ListUnsecured returns all tokens in kubermatic namespace
+//
+// Note that this function:
+// is unsafe in a sense that it uses privileged account to get the resource
+// gets resources from the cache
+func (p *ServiceAccountTokenProvider) ListUnsecured(options *provider.ServiceAccountTokenListOptions) ([]*v1.Secret, error) {
+	allSecrets, err := p.secretLister.List(labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+	allTokens := []*v1.Secret{}
+	for _, secret := range allSecrets {
+		if isToken(secret) {
+			allTokens = append(allSecrets, secret)
+		}
+	}
+	if options == nil {
+		return allTokens, nil
+	}
+	for _, token := range allTokens {
+		if token.Name == options.TokenName {
+			return []*v1.Secret{token.DeepCopy()}, nil
+		}
+	}
+	return nil, kerrors.NewNotFound(v1.SchemeGroupVersion.WithResource("secret").GroupResource(), options.TokenName)
+}
+
+func isToken(secret *v1.Secret) bool {
+	if secret == nil {
+		return false
+	}
+	return strings.HasPrefix(secret.Name, "sa-token")
