@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/glog"
 
+	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/controller-manager"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/dnat-controller"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/kube-state-metrics"
@@ -18,6 +19,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -159,6 +161,17 @@ func (r *reconciler) reconcileRoles(ctx context.Context) error {
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", metav1.NamespaceDefault, err)
 	}
 
+	if r.openshift {
+		namespacedName, roleCreator := openshiftresources.MachineControllerRole()
+		if err := reconciling.EnsureNamedObjectV2(ctx,
+			namespacedName,
+			reconciling.RoleObjectWrapper(roleCreator),
+			r.Client,
+			&rbacv1.Role{}); err != nil {
+			return fmt.Errorf("failed to reconcile Role %q: %v", namespacedName.String(), err)
+		}
+	}
+
 	return nil
 }
 
@@ -171,7 +184,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 		controllermanager.RoleBindingAuthDelegator(),
 	}
 	if err := reconciling.ReconcileRoleBindings(creators, metav1.NamespaceSystem, r.Client, r.cache); err != nil {
-		return fmt.Errorf("failed to reconcile Roles in kube-system Namespace: %v", err)
+		return fmt.Errorf("failed to reconcile RoleBindings in kube-system Namespace: %v", err)
 	}
 
 	// kube-public
@@ -180,7 +193,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 		machinecontroller.ClusterInfoAnonymousRoleBindingCreator(),
 	}
 	if err := reconciling.ReconcileRoleBindings(creators, metav1.NamespacePublic, r.Client, r.cache); err != nil {
-		return fmt.Errorf("failed to reconcile Roles in kube-public Namespace: %v", err)
+		return fmt.Errorf("failed to reconcile RoleBindings in kube-public Namespace: %v", err)
 	}
 
 	// Default
@@ -188,7 +201,18 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 		machinecontroller.DefaultRoleBindingCreator(),
 	}
 	if err := reconciling.ReconcileRoleBindings(creators, metav1.NamespaceDefault, r.Client, r.cache); err != nil {
-		return fmt.Errorf("failed to reconcile Roles in default Namespace: %v", err)
+		return fmt.Errorf("failed to reconcile RoleBindings in default Namespace: %v", err)
+	}
+
+	if r.openshift {
+		namespacedName, roleBindingCreator := openshiftresources.MachineControllerRoleBinding()
+		if err := reconciling.EnsureNamedObjectV2(ctx,
+			namespacedName,
+			reconciling.RoleBindingObjectWrapper(roleBindingCreator),
+			r.Client,
+			&rbacv1.RoleBinding{}); err != nil {
+			return fmt.Errorf("failed to reconcile RoleBinding %q: %v", namespacedName.String(), err)
+		}
 	}
 
 	return nil
