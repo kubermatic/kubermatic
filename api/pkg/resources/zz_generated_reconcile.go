@@ -10,6 +10,7 @@ import (
 	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -370,6 +371,45 @@ func ReconcileClusterRoleBindings(namedGetters []NamedClusterRoleBindingCreatorG
 	return nil
 }
 
+// ClusterRoleCreator defines an interface to create/update ClusterRoles
+type ClusterRoleCreator = func(existing *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error)
+
+// NamedClusterRoleCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedClusterRoleCreatorGetter = func() (name string, create ClusterRoleCreator)
+
+// ClusterRoleObjectWrapper adds a wrapper so the ClusterRoleCreator matches ObjectCreator
+// This is needed as golang does not support function interface matching
+func ClusterRoleObjectWrapper(create ClusterRoleCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*rbacv1.ClusterRole))
+		}
+		return create(&rbacv1.ClusterRole{})
+	}
+}
+
+// ReconcileClusterRoles will create and update the ClusterRoles coming from the passed ClusterRoleCreator slice
+func ReconcileClusterRoles(namedGetters []NamedClusterRoleCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
+	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &rbacv1.ClusterRole{})
+	if err != nil {
+		return fmt.Errorf("failed to get ClusterRole informer: %v", err)
+	}
+
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := ClusterRoleObjectWrapper(create)
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+			return fmt.Errorf("failed to ensure ClusterRole: %v", err)
+		}
+	}
+
+	return nil
+}
+
 // RoleCreator defines an interface to create/update Roles
 type RoleCreator = func(existing *rbacv1.Role) (*rbacv1.Role, error)
 
@@ -520,6 +560,45 @@ func ReconcileCronJobs(namedGetters []NamedCronJobCreatorGetter, namespace strin
 
 		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
 			return fmt.Errorf("failed to ensure CronJob: %v", err)
+		}
+	}
+
+	return nil
+}
+
+// MutatingWebhookConfigurationCreator defines an interface to create/update MutatingWebhookConfigurations
+type MutatingWebhookConfigurationCreator = func(existing *admissionregistrationv1beta1.MutatingWebhookConfiguration) (*admissionregistrationv1beta1.MutatingWebhookConfiguration, error)
+
+// NamedMutatingWebhookConfigurationCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedMutatingWebhookConfigurationCreatorGetter = func() (name string, create MutatingWebhookConfigurationCreator)
+
+// MutatingWebhookConfigurationObjectWrapper adds a wrapper so the MutatingWebhookConfigurationCreator matches ObjectCreator
+// This is needed as golang does not support function interface matching
+func MutatingWebhookConfigurationObjectWrapper(create MutatingWebhookConfigurationCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*admissionregistrationv1beta1.MutatingWebhookConfiguration))
+		}
+		return create(&admissionregistrationv1beta1.MutatingWebhookConfiguration{})
+	}
+}
+
+// ReconcileMutatingWebhookConfigurations will create and update the MutatingWebhookConfigurations coming from the passed MutatingWebhookConfigurationCreator slice
+func ReconcileMutatingWebhookConfigurations(namedGetters []NamedMutatingWebhookConfigurationCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
+	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &admissionregistrationv1beta1.MutatingWebhookConfiguration{})
+	if err != nil {
+		return fmt.Errorf("failed to get MutatingWebhookConfiguration informer: %v", err)
+	}
+
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := MutatingWebhookConfigurationObjectWrapper(create)
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+			return fmt.Errorf("failed to ensure MutatingWebhookConfiguration: %v", err)
 		}
 	}
 

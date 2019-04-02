@@ -47,12 +47,6 @@ func (d *TemplateData) TemplateData() interface{} {
 	return d
 }
 
-// UserClusterData groups data required for resource creation in user-cluster
-type UserClusterData struct {
-	configMapLister corev1lister.ConfigMapLister
-	serviceLister   corev1lister.ServiceLister
-}
-
 // RoleDataProvider provides data
 type RoleDataProvider interface {
 	GetClusterRef() metav1.OwnerReference
@@ -280,16 +274,6 @@ func (d *TemplateData) EnableEtcdDataCorruptionChecks() bool {
 	return d.enableEtcdDataCorruptionChecks
 }
 
-// NewUserClusterData returns an instance of UserClusterData
-func NewUserClusterData(
-	configMapLister corev1lister.ConfigMapLister,
-	serviceLister corev1lister.ServiceLister) *UserClusterData {
-	return &UserClusterData{
-		configMapLister: configMapLister,
-		serviceLister:   serviceLister,
-	}
-}
-
 // GetClusterRef returns a instance of a OwnerReference for the Cluster in the TemplateData
 func (d *TemplateData) GetClusterRef() metav1.OwnerReference {
 	return GetClusterRef(d.cluster)
@@ -328,7 +312,6 @@ func (d *TemplateData) ProviderName() string {
 func (d *TemplateData) GetApiserverExternalNodePort() (int32, error) {
 	s, err := d.serviceLister.Services(d.cluster.Status.NamespaceName).Get(ApiserverExternalServiceName)
 	if err != nil {
-
 		return 0, fmt.Errorf("failed to get NodePort for external apiserver service: %v", err)
 
 	}
@@ -415,87 +398,12 @@ func (d *TemplateData) GetPodTemplateLabels(appName string, volumes []corev1.Vol
 	return podLabels, nil
 }
 
-// ServiceLister returns the serviceLister
-func (d *UserClusterData) ServiceLister() corev1lister.ServiceLister {
-	return d.serviceLister
-}
+// GetApiserverExternalNodePort returns the nodeport of the external apiserver service
+func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
+	s, err := d.serviceLister.Services(d.cluster.Status.NamespaceName).Get(OpenVPNServerServiceName)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get NodePort for openvpn server service: %v", err)
 
-// ConfigMapLister returns the configMapLister
-func (d *UserClusterData) ConfigMapLister() corev1lister.ConfigMapLister {
-	return d.configMapLister
-}
-
-// GetClusterRef panics
-func (d *UserClusterData) GetClusterRef() metav1.OwnerReference {
-	panic("GetClusterRef not implemented for UserClusterData")
-}
-
-// ImageRegistry panics
-func (d *UserClusterData) ImageRegistry(defaultRegistry string) string {
-	panic("ImageRegistry not implemented for UserClusterData")
-}
-
-// GetPodTemplateLabels panics
-func (d *UserClusterData) GetPodTemplateLabels(_ string, _ []corev1.Volume, _ map[string]string) (map[string]string, error) {
-	panic("GetPodTemplateLabels not implemented for UserClusterData")
-}
-
-// NodeAccessNetwork panics
-func (d *UserClusterData) NodeAccessNetwork() string {
-	panic("NodeAccessNetwork not implemented for UserClusterData")
-}
-
-// GetApiserverExternalNodePort panics
-func (d *UserClusterData) GetApiserverExternalNodePort() (int32, error) {
-	panic("GetApiserverExternalNodePort not implemented for UserClusterData")
-}
-
-// ClusterIPByServiceName panics
-func (d *UserClusterData) ClusterIPByServiceName(name string) (string, error) {
-	panic("ClusterIPByServiceName not implemented for UserClusterData")
-}
-
-// InClusterApiserverURL panics
-func (d *UserClusterData) InClusterApiserverURL() (*url.URL, error) {
-	panic("InClusterApiserverURL not implemented for UserClusterData")
-}
-
-// GetFrontProxyCA panics
-func (d *UserClusterData) GetFrontProxyCA() (*triple.KeyPair, error) {
-	panic("GetFrontProxyCA not implemented for UserClusterData")
-}
-
-// ExternalIP panics
-func (d *UserClusterData) ExternalIP() (*net.IP, error) {
-	panic("ExternalIP not implemented for UserClusterData")
-}
-
-// TemplateData returns data for templating
-func (d *UserClusterData) TemplateData() interface{} {
-	return d
-}
-
-// InClusterPrometheusRulesFile panics
-func (d *UserClusterData) InClusterPrometheusRulesFile() string {
-	panic("InClusterPrometheusRulesFile not implemented for UserClusterData")
-}
-
-// InClusterPrometheusScrapingConfigsFile returns inClusterPrometheusScrapingConfigsFile
-func (d *UserClusterData) InClusterPrometheusScrapingConfigsFile() string {
-	panic("InClusterPrometheusScrapingConfigsFile not implemented for UserClusterData")
-}
-
-// InClusterPrometheusDisableDefaultRules panics
-func (d *UserClusterData) InClusterPrometheusDisableDefaultRules() bool {
-	panic("InClusterPrometheusDisableDefaultRules not implemented for UserClusterData")
-}
-
-// InClusterPrometheusDisableDefaultScrapingConfigs panics
-func (d *UserClusterData) InClusterPrometheusDisableDefaultScrapingConfigs() bool {
-	panic("InClusterPrometheusDisableDefaultScrapingConfigs not implemented for UserClusterData")
-}
-
-// Cluster panics
-func (d *UserClusterData) Cluster() *kubermaticv1.Cluster {
-	panic("Cluster not implemented for UserClusterData")
+	}
+	return s.Spec.Ports[0].NodePort, nil
 }

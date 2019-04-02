@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"io/ioutil"
+	"log"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/golang/glog"
@@ -18,6 +21,7 @@ import (
 
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	certutil "k8s.io/client-go/util/cert"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -30,6 +34,10 @@ type controllerRunOptions struct {
 	healthListenAddr  string
 	openshift         bool
 	networks          networkFlags
+	namespace         string
+	caPath            string
+	clusterURL        string
+	openvpnServerPort int
 }
 
 func main() {
@@ -38,7 +46,40 @@ func main() {
 	flag.StringVar(&runOp.healthListenAddr, "health-listen-address", "127.0.0.1:8086", "The address on which the internal HTTP /ready & /live server is running on")
 	flag.BoolVar(&runOp.openshift, "openshift", false, "Whether the managed cluster is an openshift cluster")
 	flag.Var(&runOp.networks, "ipam-controller-network", "The networks from which the ipam controller should allocate IPs for machines (e.g.: .--ipam-controller-network=10.0.0.0/16,10.0.0.1,8.8.8.8 --ipam-controller-network=192.168.5.0/24,192.168.5.1,1.1.1.1,8.8.4.4)")
+	flag.StringVar(&runOp.namespace, "namespace", "", "Namespace in which the cluster is running in")
+	flag.StringVar(&runOp.caPath, "ca-cert", "ca.crt", "Path to the CA cert file")
+	flag.StringVar(&runOp.clusterURL, "cluster-url", "", "Cluster URL")
+	flag.IntVar(&runOp.openvpnServerPort, "openvpn-server-port", 0, "OpenVPN server port")
 	flag.Parse()
+
+	if runOp.namespace == "" {
+		log.Fatal("-namespace must be set")
+	}
+	if runOp.caPath == "" {
+		log.Fatal("-ca-cert must be set")
+	}
+	if runOp.clusterURL == "" {
+		log.Fatal("-cluster-url must be set")
+	}
+	clusterURL, err := url.Parse(runOp.clusterURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if runOp.openvpnServerPort == 0 {
+		log.Fatal("-openvpn-server-port must be set")
+	}
+
+	caBytes, err := ioutil.ReadFile(runOp.caPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	certs, err := certutil.ParseCertsPEM(caBytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if len(certs) != 1 {
+		log.Fatalf("did not find exactly one but %d certificates in the given CA", len(certs))
+	}
 
 	var g run.Group
 
@@ -70,7 +111,13 @@ func main() {
 
 	// Setup all Controllers
 	glog.Info("registering controllers")
-	if err := usercluster.Add(mgr, runOp.openshift, healthHandler.AddReadinessCheck); err != nil {
+	if err := usercluster.Add(mgr,
+		runOp.openshift,
+		runOp.namespace,
+		certs[0],
+		clusterURL,
+		runOp.openvpnServerPort,
+		healthHandler.AddReadinessCheck); err != nil {
 		glog.Fatalf("failed to register user cluster controller: %v", err)
 	}
 
