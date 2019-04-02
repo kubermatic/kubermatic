@@ -14,7 +14,7 @@ kubectl get secret admin-kubeconfig -o go-template='{{ index .data "kubeconfig" 
   | base64 -d > ${KUBECONFIG_USERCLUSTER_CONTROLLER}
 
 CA_CERT_USERCLUSTER_CONTROLLER=$(mktemp)
-kubectl -n get secret ca -o json | jq -r '.data["ca.crt"]' | base64 -d > ${CA_CERT_USERCLUSTER_CONTROLLER}
+kubectl get secret ca -o json | jq -r '.data["ca.crt"]' | base64 -d > ${CA_CERT_USERCLUSTER_CONTROLLER}
 
 CLUSTER_NAME=$(kubectl get secret admin-kubeconfig -o go-template='{{ .metadata.namespace }}'|sed 's/cluster-//g')
 ARGS=""
