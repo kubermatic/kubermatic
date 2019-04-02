@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticscheme "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -57,9 +56,7 @@ type userClusterConnectionProvider interface {
 
 // Reconciler is a controller which is responsible for managing clusters
 type Reconciler struct {
-	kubeClient kubernetes.Interface
 	ctrlruntimeclient.Client
-	kubermaticClient        kubermaticclientset.Interface
 	userClusterConnProvider userClusterConnectionProvider
 	dynamicCache            ctrlruntimecache.Cache
 	workerName              string
@@ -96,9 +93,7 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	workerName string,
-	kubeClient kubernetes.Interface,
 	dynamicClient ctrlruntimeclient.Client,
-	kubermaticClient kubermaticclientset.Interface,
 	externalURL string,
 	dc string,
 	dcs map[string]provider.DatacenterMeta,
@@ -127,9 +122,7 @@ func Add(
 	}
 
 	reconciler := &Reconciler{
-		kubeClient:              kubeClient,
 		Client:                  dynamicClient,
-		kubermaticClient:        kubermaticClient,
 		userClusterConnProvider: userClusterConnProvider,
 		dynamicCache:            dynamicCache,
 		workerName:              workerName,
