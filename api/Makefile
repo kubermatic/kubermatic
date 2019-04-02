@@ -1,5 +1,5 @@
 export CGO_ENABLED?=0
-REPO=kubermatic/api
+REPO=quay.io/kubermatic/api
 GO?=go
 CMD=$(filter-out OWNERS nodeport-proxy, $(notdir $(wildcard ./cmd/*)))
 GOBUILDFLAGS?=-v
