@@ -12,7 +12,6 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
-
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -197,6 +196,74 @@ func TestListTokens(t *testing.T) {
 
 			actualSA.EqualOrDie(wrappedExpectedToken, t)
 
+		})
+	}
+}
+
+func TestServiceAccountCanGetProject(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		name                   string
+		existingKubermaticObjs []runtime.Object
+		existingKubernetesObjs []runtime.Object
+		expectedResponse       string
+		projectToSync          string
+		authReqestFunc         test.AuthorizeRequestFunc
+		httpStatus             int
+		existingAPIUser        apiv1.User
+	}{
+		{
+			name:       "scenario 1: use a valid service account token to get a project",
+			httpStatus: http.StatusOK,
+			existingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				genActiveServiceAccount("1", "test-1", "editors", "plan9-ID"),
+			},
+			/*given sa and secret it knows how to generate a valid token*/
+			authReqestFunc: test.AuthorizeRequest(
+				genActiveServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenSecret("plan9-ID", "serviceaccount-1", "test-1", "1")),
+			existingKubernetesObjs: []runtime.Object{
+				test.GenSecret("plan9-ID", "serviceaccount-1", "test-1", "1"),
+				test.GenSecret("plan10-ID", "serviceaccount-2", "test-2", "2"),
+				test.GenSecret("plan9-ID", "serviceaccount-1", "test-3", "3"),
+				test.GenSecret("plan11-ID", "serviceaccount-3", "test-4", "4"),
+			},
+			/* the API user is actually a service account*/
+			existingAPIUser:  *test.GenAPIUser("sa-1", "serviceaccount-1@sa.kubermatic.io"),
+			projectToSync:    "plan9-ID",
+			expectedResponse: `{"id":"plan9-ID","name":"plan9","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active","owners":[{"name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com"}]}`,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			// set up
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s", tc.projectToSync), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			ep, cs, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+			err = tc.authReqestFunc(cs.TokenGenerator, req)
+			if err != nil {
+				t.Fatalf("failed to add authorization info to the request, due to %v", err)
+			}
+
+			// act
+			ep.ServeHTTP(res, req)
+
+			// validate
+			if res.Code != tc.httpStatus {
+				t.Fatalf("expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
+			test.CompareWithResult(t, res, tc.expectedResponse)
 		})
 	}
 }

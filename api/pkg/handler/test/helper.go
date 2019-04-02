@@ -120,49 +120,71 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		datacenters = buildDatacenterMeta()
 	}
 	cloudProviders := cloud.Providers(datacenters)
-	fakeOIDCClient := NewFakeOIDCClient(user)
 
 	fakeClient := fakectrlruntimeclient.NewFakeClient(append(kubeObjects, machineObjects...)...)
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
-
 	kubernetesClient := fakerestclient.NewSimpleClientset(kubeObjects...)
-
 	kubernetesInformerFactory := informers.NewSharedInformerFactory(kubernetesClient, 10*time.Millisecond)
-
 	fakeKubermaticImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
 		return kubermaticClient.KubermaticV1(), nil
 	}
 	fakeKubernetesImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubernetesclientset.Interface, error) {
 		return kubernetesClient, nil
 	}
+
 	userLister := kubermaticInformerFactory.Kubermatic().V1().Users().Lister()
 	sshKeyProvider := kubernetes.NewSSHKeyProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
 	userProvider := kubernetes.NewUserProvider(kubermaticClient, userLister)
+
 	tokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(TestServiceAccountHashKey))
 	if err != nil {
 		return nil, nil, err
 	}
-
 	tokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey))
 	serviceAccountTokenProvider, err := kubernetes.NewServiceAccountTokenProvider(fakeKubernetesImpersonationClient, kubernetesInformerFactory.Core().V1().Secrets().Lister())
 	if err != nil {
 		return nil, nil, err
 	}
 	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeKubermaticImpersonationClient, userLister, "localhost")
+	verifiers := []auth.TokenVerifier{}
+	extractors := []auth.TokenExtractor{}
+	{
+		// if the API users is actually a service account use JWTTokenAuthentication
+		// that knows how to extract and verify the token
+		if strings.HasSuffix(user.Email, "@sa.kubermatic.io") {
+			saExtractorVerifier := auth.NewServiceAccountAuthClient(
+				auth.NewHeaderBearerTokenExtractor("Authorization"),
+				serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey)),
+				serviceAccountTokenProvider,
+			)
+			verifiers = append(verifiers, saExtractorVerifier)
+			extractors = append(extractors, saExtractorVerifier)
+
+		} else {
+			// for normal users we use OIDCClient which is broken at the moment
+			// because the tests don't send a token in the Header instead
+			// the client spits out a hardcoded value
+			fakeOIDCClient := NewFakeOIDCClient(user)
+			verifiers = append(verifiers, fakeOIDCClient)
+			extractors = append(extractors, fakeOIDCClient)
+		}
+	}
+	tokenVerifiers := auth.NewTokenVerifierPlugins(verifiers)
+	tokenExtractors := auth.NewTokenExtractorPlugins(extractors)
+	fakeOIDCClient := NewFakeOIDCClient(user)
+
 	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userLister)
 	projectProvider, err := kubernetes.NewProjectProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Projects().Lister())
 	if err != nil {
 		return nil, nil, err
 	}
-
 	privilegedProjectProvider, err := kubernetes.NewPrivilegedProjectProvider(fakeKubermaticImpersonationClient)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	fUserClusterConnection := &fakeUserClusterConnection{fakeClient}
-
 	clusterProvider := kubernetes.NewClusterProvider(
 		fakeKubermaticImpersonationClient,
 		fUserClusterConnection,
@@ -191,8 +213,8 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		projectProvider,
 		privilegedProjectProvider,
 		fakeOIDCClient,
-		fakeOIDCClient, /*implements auth.TokenVerifier */
-		fakeOIDCClient, /*implements auth.TokenExtractor */
+		tokenVerifiers,
+		tokenExtractors,
 		prometheusClient,
 		projectMemberProvider,
 		versions,
@@ -605,4 +627,26 @@ func GenDefaultExpiry() (apiv1.Time, error) {
 		return apiv1.Time{}, err
 	}
 	return apiv1.NewTime(claim.Expiry.Time()), nil
+}
+
+// AuthorizeRequestFunc is a helper function for authorizing a request
+type AuthorizeRequestFunc func(serviceaccount.TokenGenerator, *http.Request) error
+
+// AuthorizeRequest given a ServiceAccount and a Secrets knows how to generate and add a valid token that is used for authentication
+func AuthorizeRequest(sa *kubermaticapiv1.User, s *v1.Secret) AuthorizeRequestFunc {
+	return func(tokenGenerator serviceaccount.TokenGenerator, req *http.Request) error {
+		if len(sa.OwnerReferences) <= 0 {
+			return fmt.Errorf("haven't found an owner for the given sa %s", sa.Name)
+		}
+		owner := sa.OwnerReferences[0]
+		if owner.Kind != kubermaticapiv1.ProjectKindName || owner.APIVersion != kubermaticapiv1.SchemeGroupVersion.String() {
+			return fmt.Errorf("the given sa %s should belong (owner) to a project but it doesn't", sa.Name)
+		}
+		token, err := tokenGenerator.Generate(serviceaccount.Claims(sa.Spec.Email, owner.Name, s.Name))
+		if err != nil {
+			return err
+		}
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+		return nil
+	}
 }
