@@ -2,6 +2,7 @@ package machinecontroller
 
 import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 )
@@ -12,8 +13,8 @@ const (
 )
 
 // MachineCRD returns the machine CRD definition
-func MachineCRDCreator() resources.NamedCustomResourceDefinitionCreatorGetter {
-	return func() (string, resources.CustomResourceDefinitionCreator) {
+func MachineCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.MachineCRDName, func(crd *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
 			crd.Spec.Group = clusterAPIGroup
 			crd.Spec.Version = clusterAPIVersion
@@ -31,8 +32,8 @@ func MachineCRDCreator() resources.NamedCustomResourceDefinitionCreatorGetter {
 }
 
 // MachineSetCRD returns the machineset CRD definition
-func MachineSetCRDCreator() resources.NamedCustomResourceDefinitionCreatorGetter {
-	return func() (string, resources.CustomResourceDefinitionCreator) {
+func MachineSetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.MachineSetCRDName, func(crd *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
 			crd.Spec.Group = clusterAPIGroup
 			crd.Spec.Version = clusterAPIVersion
@@ -50,8 +51,8 @@ func MachineSetCRDCreator() resources.NamedCustomResourceDefinitionCreatorGetter
 }
 
 // MachineDeploymentCRD returns the machinedeployments CRD definition
-func MachineDeploymentCRDCreator() resources.NamedCustomResourceDefinitionCreatorGetter {
-	return func() (string, resources.CustomResourceDefinitionCreator) {
+func MachineDeploymentCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.MachineDeploymentCRDName, func(crd *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
 			crd.Spec.Group = clusterAPIGroup
 			crd.Spec.Version = clusterAPIVersion
@@ -69,8 +70,8 @@ func MachineDeploymentCRDCreator() resources.NamedCustomResourceDefinitionCreato
 }
 
 // ClusterCRD returns the cluster crd definition
-func ClusterCRDCreator() resources.NamedCustomResourceDefinitionCreatorGetter {
-	return func() (string, resources.CustomResourceDefinitionCreator) {
+func ClusterCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.ClusterCRDName, func(crd *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
 			crd.Spec.Group = clusterAPIGroup
 			crd.Spec.Version = clusterAPIVersion

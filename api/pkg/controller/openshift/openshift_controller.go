@@ -16,6 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/usercluster"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
@@ -224,9 +225,9 @@ func (r *Reconciler) createInClusterResources(ctx context.Context, osData *opens
 	}
 
 	namespacedName, roleCreator := openshiftresources.MachineControllerRole()
-	err = resources.EnsureNamedObjectV2(ctx,
+	err = reconciling.EnsureNamedObjectV2(ctx,
 		namespacedName,
-		resources.RoleObjectWrapper(roleCreator),
+		reconciling.RoleObjectWrapper(roleCreator),
 		userClusterClient,
 		&rbacv1.Role{})
 	if err != nil {
@@ -234,9 +235,9 @@ func (r *Reconciler) createInClusterResources(ctx context.Context, osData *opens
 	}
 
 	namespacedName, roleBindingCreator := openshiftresources.MachineControllerRoleBinding()
-	err = resources.EnsureNamedObjectV2(ctx,
+	err = reconciling.EnsureNamedObjectV2(ctx,
 		namespacedName,
-		resources.RoleBindingObjectWrapper(roleBindingCreator),
+		reconciling.RoleBindingObjectWrapper(roleBindingCreator),
 		userClusterClient,
 		&rbacv1.RoleBinding{})
 	if err != nil {
@@ -325,9 +326,9 @@ func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *opens
 
 	// Ensure ServiceAccount in user cluster
 	tokenOwnerServiceAccountName, tokenOwnerServiceAccountCreator := openshiftresources.TokenOwnerServiceAccount(ctx)
-	err = resources.EnsureNamedObjectV2(ctx,
+	err = reconciling.EnsureNamedObjectV2(ctx,
 		nn(metav1.NamespaceSystem, tokenOwnerServiceAccountName),
-		resources.ServiceAccountObjectWrapper(tokenOwnerServiceAccountCreator),
+		reconciling.ServiceAccountObjectWrapper(tokenOwnerServiceAccountCreator),
 		userClusterClient,
 		&corev1.ServiceAccount{})
 	if err != nil {
@@ -336,9 +337,9 @@ func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *opens
 
 	// Ensure ClusterRoleBinding in user cluster
 	tokenOwnerServiceAccountClusterRoleBindingName, tokenOwnerServiceAccountClusterRoleBindingCreator := openshiftresources.TokenOwnerServiceAccountClusterRoleBinding(ctx)
-	err = resources.EnsureNamedObjectV2(ctx,
+	err = reconciling.EnsureNamedObjectV2(ctx,
 		nn("", tokenOwnerServiceAccountClusterRoleBindingName),
-		resources.ClusterRoleBindingObjectWrapper(tokenOwnerServiceAccountClusterRoleBindingCreator),
+		reconciling.ClusterRoleBindingObjectWrapper(tokenOwnerServiceAccountClusterRoleBindingCreator),
 		userClusterClient, &rbacv1.ClusterRoleBinding{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create TokenOwnerServiceAccountClusterRoleBinding in user cluster: %v", err)
@@ -365,9 +366,9 @@ func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *opens
 	adminKubeconfigSecretName, adminKubeconfigCreator := resources.AdminKubeconfigCreator(osData, func(c *clientcmdapi.Config) {
 		c.AuthInfos[resources.KubeconfigDefaultContextKey].Token = string(tokenSecret.Data["token"])
 	})()
-	err = resources.EnsureNamedObjectV2(ctx,
+	err = reconciling.EnsureNamedObjectV2(ctx,
 		nn(osData.Cluster().Status.NamespaceName, adminKubeconfigSecretName),
-		resources.SecretObjectWrapper(adminKubeconfigCreator),
+		reconciling.SecretObjectWrapper(adminKubeconfigCreator),
 		r.Client,
 		&corev1.Secret{})
 	if err != nil {
@@ -376,8 +377,8 @@ func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *opens
 	return nil, nil
 }
 
-func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshiftData) []resources.NamedSecretCreatorGetter {
-	creators := []resources.NamedSecretCreatorGetter{
+func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshiftData) []reconciling.NamedSecretCreatorGetter {
+	creators := []reconciling.NamedSecretCreatorGetter{
 		certificates.RootCACreator(osData),
 		openvpn.CACreator(),
 		certificates.FrontProxyCACreator(),
@@ -413,8 +414,8 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
 	for _, namedSecretCreator := range r.getAllSecretCreators(ctx, osData) {
 		secretName, secretCreator := namedSecretCreator()
-		if err := resources.EnsureNamedObjectV2(ctx,
-			nn(osData.Cluster().Status.NamespaceName, secretName), resources.SecretObjectWrapper(secretCreator), r.Client, &corev1.Secret{}); err != nil {
+		if err := reconciling.EnsureNamedObjectV2(ctx,
+			nn(osData.Cluster().Status.NamespaceName, secretName), reconciling.SecretObjectWrapper(secretCreator), r.Client, &corev1.Secret{}); err != nil {
 			return fmt.Errorf("failed to ensure Secret %s: %v", secretName, err)
 		}
 	}
@@ -422,8 +423,8 @@ func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
 	return nil
 }
 
-func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *openshiftData) []resources.NamedConfigMapCreatorGetter {
-	return []resources.NamedConfigMapCreatorGetter{
+func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *openshiftData) []reconciling.NamedConfigMapCreatorGetter {
+	return []reconciling.NamedConfigMapCreatorGetter{
 		cloudconfig.ConfigMapCreator(osData),
 		openshiftresources.OpenshiftAPIServerConfigMapCreator(ctx, osData),
 		openshiftresources.OpenshiftControllerMangerConfigMapCreator(ctx, osData),
@@ -435,16 +436,16 @@ func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *opensh
 func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) error {
 	for _, namedConfigmapCreator := range r.getAllConfigmapCreators(ctx, osData) {
 		configMapName, configMapCreator := namedConfigmapCreator()
-		if err := resources.EnsureNamedObjectV2(ctx,
-			nn(osData.Cluster().Status.NamespaceName, configMapName), resources.ConfigMapObjectWrapper(configMapCreator), r.Client, &corev1.ConfigMap{}); err != nil {
+		if err := reconciling.EnsureNamedObjectV2(ctx,
+			nn(osData.Cluster().Status.NamespaceName, configMapName), reconciling.ConfigMapObjectWrapper(configMapCreator), r.Client, &corev1.ConfigMap{}); err != nil {
 			return fmt.Errorf("failed to ensure ConfigMap %s: %v", configMapName, err)
 		}
 	}
 	return nil
 }
 
-func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *openshiftData) []resources.NamedDeploymentCreatorGetter {
-	return []resources.NamedDeploymentCreatorGetter{openshiftresources.APIDeploymentCreator(ctx, osData),
+func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *openshiftData) []reconciling.NamedDeploymentCreatorGetter {
+	return []reconciling.NamedDeploymentCreatorGetter{openshiftresources.APIDeploymentCreator(ctx, osData),
 		openshiftresources.ControllerManagerDeploymentCreator(ctx, osData),
 		openshiftresources.MachineController(osData),
 		openshiftresources.MachineControllerWebhook(osData),
@@ -454,8 +455,8 @@ func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *opens
 func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) error {
 	for _, namedDeploymentCreator := range r.getAllDeploymentCreators(ctx, osData) {
 		deploymentName, deploymentCreator := namedDeploymentCreator()
-		if err := resources.EnsureNamedObjectV2(ctx,
-			nn(osData.Cluster().Status.NamespaceName, deploymentName), resources.DeploymentObjectWrapper(deploymentCreator), r.Client, &appsv1.Deployment{}); err != nil {
+		if err := reconciling.EnsureNamedObjectV2(ctx,
+			nn(osData.Cluster().Status.NamespaceName, deploymentName), reconciling.DeploymentObjectWrapper(deploymentCreator), r.Client, &appsv1.Deployment{}); err != nil {
 			return fmt.Errorf("failed to ensure Deployment %s: %v", deploymentName, err)
 		}
 	}
@@ -488,8 +489,8 @@ func (r *Reconciler) ensureNamespace(ctx context.Context, c *kubermaticv1.Cluste
 }
 
 // GetServiceCreators returns all service creators that are currently in use
-func getAllServiceCreators(osData *openshiftData) []resources.NamedServiceCreatorGetter {
-	return []resources.NamedServiceCreatorGetter{
+func getAllServiceCreators(osData *openshiftData) []reconciling.NamedServiceCreatorGetter {
+	return []reconciling.NamedServiceCreatorGetter{
 		apiserver.InternalServiceCreator(),
 		apiserver.ExternalServiceCreator(),
 		openvpn.ServiceCreator(),
@@ -502,8 +503,8 @@ func getAllServiceCreators(osData *openshiftData) []resources.NamedServiceCreato
 func (r *Reconciler) services(ctx context.Context, osData *openshiftData) error {
 	for _, namedServiceCreator := range getAllServiceCreators(osData) {
 		serviceName, serviceCreator := namedServiceCreator()
-		if err := resources.EnsureNamedObjectV2(ctx,
-			nn(osData.Cluster().Status.NamespaceName, serviceName), resources.ServiceObjectWrapper(serviceCreator), r.Client, &corev1.Service{}); err != nil {
+		if err := reconciling.EnsureNamedObjectV2(ctx,
+			nn(osData.Cluster().Status.NamespaceName, serviceName), reconciling.ServiceObjectWrapper(serviceCreator), r.Client, &corev1.Service{}); err != nil {
 			return fmt.Errorf("failed to ensure Service %s: %v", serviceName, err)
 		}
 	}

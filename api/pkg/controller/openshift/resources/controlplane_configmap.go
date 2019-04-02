@@ -12,6 +12,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -22,8 +23,8 @@ const (
 	openshiftContolPlaneConfigKeyName      = "master-config.yaml"
 )
 
-func OpenshiftAPIServerConfigMapCreator(ctx context.Context, data openshiftData) resources.NamedConfigMapCreatorGetter {
-	return func() (string, resources.ConfigMapCreator) {
+func OpenshiftAPIServerConfigMapCreator(ctx context.Context, data openshiftData) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
 		return openshiftAPIServerConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
@@ -42,8 +43,8 @@ func OpenshiftAPIServerConfigMapCreator(ctx context.Context, data openshiftData)
 	}
 }
 
-func OpenshiftControllerMangerConfigMapCreator(ctx context.Context, data openshiftData) resources.NamedConfigMapCreatorGetter {
-	return func() (string, resources.ConfigMapCreator) {
+func OpenshiftControllerMangerConfigMapCreator(ctx context.Context, data openshiftData) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
 		return openshiftControllerMangerConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}

@@ -9,6 +9,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -39,8 +40,8 @@ const (
 )
 
 // DeploymentCreator returns the function to create and update the API server deployment
-func APIDeploymentCreator(ctx context.Context, data openshiftData) resources.NamedDeploymentCreatorGetter {
-	return func() (string, resources.DeploymentCreator) {
+func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.NamedDeploymentCreatorGetter {
+	return func() (string, reconciling.DeploymentCreator) {
 		return ApiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 
 			dep.Name = ApiserverDeploymentName

@@ -3,15 +3,16 @@ package resources
 import (
 	"fmt"
 
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 const ExternalX509KubeconfigName = "kubermatic-cluster-admin-secret"
 
-func ExternalX509KubeconfigCreator(data openshiftData) resources.NamedSecretCreatorGetter {
-	return func() (string, resources.SecretCreator) {
+func ExternalX509KubeconfigCreator(data openshiftData) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
 		return ExternalX509KubeconfigName, func(secret *corev1.Secret) (*corev1.Secret, error) {
 			b := secret.Data[resources.KubeconfigSecretKey]
 			ca, err := data.GetRootCA()

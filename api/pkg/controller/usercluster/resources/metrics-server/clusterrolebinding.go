@@ -2,13 +2,14 @@ package metricsserver
 
 import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
 // ClusterRoleBindingResourceReaderCreator returns the ClusterRoleBinding required for the metrics server to read all required resources
-func ClusterRoleBindingResourceReaderCreator() resources.NamedClusterRoleBindingCreatorGetter {
-	return func() (string, resources.ClusterRoleBindingCreator) {
+func ClusterRoleBindingResourceReaderCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
+	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return resources.MetricsServerResourceReaderClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.Labels = resources.BaseAppLabel(Name, nil)
 
@@ -31,6 +32,6 @@ func ClusterRoleBindingResourceReaderCreator() resources.NamedClusterRoleBinding
 }
 
 // ClusterRoleBindingAuthDelegatorCreator returns the ClusterRoleBinding required for the metrics server to create token review requests
-func ClusterRoleBindingAuthDelegatorCreator() resources.NamedClusterRoleBindingCreatorGetter {
+func ClusterRoleBindingAuthDelegatorCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
 	return resources.ClusterRoleBindingAuthDelegatorCreator(resources.MetricsServerCertUsername)
 }

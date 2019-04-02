@@ -2,6 +2,7 @@ package prometheus
 
 import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -9,8 +10,8 @@ import (
 )
 
 // ServiceCreator returns the function to reconcile the prometheus service used for federation
-func ServiceCreator(data resources.ServiceDataProvider) resources.NamedServiceCreatorGetter {
-	return func() (string, resources.ServiceCreator) {
+func ServiceCreator(data resources.ServiceDataProvider) reconciling.NamedServiceCreatorGetter {
+	return func() (string, reconciling.ServiceCreator) {
 		return name, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = name
 			se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}

@@ -259,7 +259,7 @@ Extend the `Resources` slice with the additional item in the [code](https://gith
 
 Run the code generation from the repository root:
 ```bash
-go generate api/pkg/resources/ensure.go
+go generate api/pkg/resources/reconciling/ensure.go
 ```
 
 See [here](#example-namedsecretcreator-implementation) on how to use the generated functions.

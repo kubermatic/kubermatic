@@ -5,6 +5,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -35,8 +36,8 @@ var (
 )
 
 // StatefulSetCreator returns the function to reconcile the Prometheus StatefulSet
-func StatefulSetCreator(data *resources.TemplateData) resources.NamedStatefulSetCreatorGetter {
-	return func() (string, resources.StatefulSetCreator) {
+func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulSetCreatorGetter {
+	return func() (string, reconciling.StatefulSetCreator) {
 		return resources.PrometheusStatefulSetName, func(existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 			var set *appsv1.StatefulSet
 			if existing != nil {

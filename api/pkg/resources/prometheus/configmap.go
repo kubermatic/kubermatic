@@ -9,6 +9,7 @@ import (
 	"github.com/Masterminds/sprig"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -19,8 +20,8 @@ type promTplModel struct {
 }
 
 // ConfigMapCreator returns a ConfigMapCreator containing the prometheus config for the supplied data
-func ConfigMapCreator(data resources.ConfigMapDataProvider) resources.NamedConfigMapCreatorGetter {
-	return func() (string, resources.ConfigMapCreator) {
+func ConfigMapCreator(data resources.ConfigMapDataProvider) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.PrometheusConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}

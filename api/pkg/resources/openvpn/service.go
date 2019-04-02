@@ -2,14 +2,15 @@ package openvpn
 
 import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // ServiceCreator returns the function to reconcile the external OpenVPN service
-func ServiceCreator() resources.NamedServiceCreatorGetter {
-	return func() (string, resources.ServiceCreator) {
+func ServiceCreator() reconciling.NamedServiceCreatorGetter {
+	return func() (string, reconciling.ServiceCreator) {
 		return resources.OpenVPNServerServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.OpenVPNServerServiceName
 			se.Labels = resources.BaseAppLabel(name, nil)
