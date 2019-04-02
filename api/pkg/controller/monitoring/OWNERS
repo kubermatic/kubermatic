@@ -2,12 +2,15 @@
 
 approvers:
   - team-seed
+  - team-lifecycle
 
 reviewers:
   - team-seed
+  - team-lifecycle
 
 labels:
   - team/seed
+  - team-lifecycle
 
 options:
   no_parent_owners: true
