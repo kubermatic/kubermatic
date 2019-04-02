@@ -778,7 +778,7 @@
 
 [[projects]]
   branch = "add-userdata-plugins"
-  digest = "1:ccb4152f83d536aab7910fc19d4b11d4f1295453d2fb384d42bdec966320bf7a"
+  digest = "1:4e4dda1b1a7dca280d22cfec03ffb0e2a6fbf16c408b863f3cb932ac5597c414"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/cloudprovider/cloud",
@@ -799,6 +799,8 @@
     "pkg/userdata/cloud",
     "pkg/userdata/convert",
     "pkg/userdata/coreos",
+    "pkg/userdata/helper",
+    "pkg/userdata/plugin",
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
@@ -1906,7 +1908,10 @@
     "github.com/kubermatic/machine-controller/pkg/node/eviction",
     "github.com/kubermatic/machine-controller/pkg/providerconfig",
     "github.com/kubermatic/machine-controller/pkg/userdata/centos",
+    "github.com/kubermatic/machine-controller/pkg/userdata/cloud",
     "github.com/kubermatic/machine-controller/pkg/userdata/coreos",
+    "github.com/kubermatic/machine-controller/pkg/userdata/helper",
+    "github.com/kubermatic/machine-controller/pkg/userdata/plugin",
     "github.com/kubermatic/machine-controller/pkg/userdata/ubuntu",
     "github.com/minio/minio-go",
     "github.com/oklog/run",
