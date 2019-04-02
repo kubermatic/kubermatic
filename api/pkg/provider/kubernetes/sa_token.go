@@ -22,7 +22,7 @@ const (
 )
 
 // NewServiceAccountProvider returns a service account provider
-func NewServiceAccountTokenProvider(kubernetesImpersonationClient kubernetesImpersonationClient, secretLister kubev1.SecretLister) *ServiceAccountTokenProvider {
+func NewServiceAccountTokenProvider(kubernetesImpersonationClient kubernetesImpersonationClient, secretLister kubev1.SecretLister) (*ServiceAccountTokenProvider, error) {
 	kubernetesClient, err := kubernetesImpersonationClient(rest.ImpersonationConfig{})
 	if err != nil {
 		return nil, err
@@ -153,8 +153,6 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 	return filteredList, nil
 }
 
-}
-
 // ListUnsecured returns all tokens in kubermatic namespace
 //
 // Note that this function:
@@ -187,3 +185,4 @@ func isToken(secret *v1.Secret) bool {
 		return false
 	}
 	return strings.HasPrefix(secret.Name, "sa-token")
+}

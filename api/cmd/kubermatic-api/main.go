@@ -162,7 +162,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
 	userProvider := kubernetesprovider.NewUserProvider(kubermaticMasterClient, userLister)
 
-	serviceAccountTokenProvider := kubernetesprovider.NewServiceAccountTokenProvider(defaultKubernetesImpersonationClient.CreateImpersonatedKubernetesClientSet, kubeInformerFactory.Core().V1().Secrets().Lister())
+	serviceAccountTokenProvider, err := kubernetesprovider.NewServiceAccountTokenProvider(defaultKubernetesImpersonationClient.CreateImpersonatedKubernetesClientSet, kubeInformerFactory.Core().V1().Secrets().Lister())
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create service account token provider due to %v", err)
 	}
