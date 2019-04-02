@@ -18,7 +18,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/usercluster"
-	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	"github.com/golang/glog"
 
@@ -59,8 +58,6 @@ type Reconciler struct {
 }
 
 func Add(mgr manager.Manager, numWorkers int, workerName string, dcs map[string]provider.DatacenterMeta, overwriteRegistry, nodeAccessNetwork string, dockerPullConfigJSON []byte) error {
-	clusterPredicates := workerlabel.Predicates(workerName)
-
 	dynamicClient := mgr.GetClient()
 	reconciler := &Reconciler{
 		Client:               dynamicClient,
@@ -86,11 +83,6 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, dcs map[string]
 			glog.Errorf("failed to list Clusters: %v", err)
 		}
 		for _, cluster := range clusterList.Items {
-			// Predicates are used on the watched object itself, hence we can not
-			// use them for anything other than the Cluster CR itself
-			if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != workerName {
-				continue
-			}
 			if cluster.Status.NamespaceName == a.Meta.GetNamespace() {
 				return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: cluster.Name}}}
 			}
@@ -110,8 +102,7 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, dcs map[string]
 		return fmt.Errorf("failed to create watch for Namespaces: %v", err)
 	}
 
-	//TODO: Ensure only openshift clusters are handled via a predicate
-	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, clusterPredicates)
+	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{})
 }
 
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
