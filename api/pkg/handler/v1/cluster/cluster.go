@@ -31,11 +31,9 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider,
@@ -73,7 +71,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 		if req.Body.NodeDeployment != nil {
 			go func() {
 				defer utilruntime.HandleCrash()
-				err := createInitialNodeDeployment(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, dcs, clusterProvider, userInfo)
+				err := createInitialNodeDeploymentWithRetries(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, dcs, clusterProvider, userInfo)
 				if err != nil {
 					glog.V(5).Infof("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
 					initNodeDeploymentFailures.With(prometheus.Labels{"cluster": newCluster.Name, "seed_dc": req.DC}).Add(1)
@@ -87,6 +85,31 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 	}
 }
 
+func createInitialNodeDeploymentWithRetries(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticapiv1.Cluster,
+	project *kubermaticapiv1.Project, sshKeyProvider provider.SSHKeyProvider, dcs map[string]provider.DatacenterMeta,
+	clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo) error {
+	return wait.Poll(5*time.Second, 30*time.Minute, func() (bool, error) {
+		err := createInitialNodeDeployment(nodeDeployment, cluster, project, sshKeyProvider, dcs, clusterProvider, userInfo)
+		switch {
+		case err == nil:
+			return true, nil
+		case kerrors.IsInternalError(err):
+			// An internal error can be:
+			//
+			//  Internal error occurred: failed calling webhook "machine-controller.kubermatic.io-machinedeployments"
+			//  Post REDACTED: net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)
+			fallthrough
+		case kerrors.IsServiceUnavailable(err):
+			fallthrough
+		case kerrors.IsServerTimeout(err):
+			glog.V(6).Infof("retrying creating initial Node Deployments for cluster %s (%s) due to %v", cluster.Name, cluster.Spec.HumanReadableName, err)
+			return false, nil
+		}
+		glog.V(6).Infof("giving up creating initial Node Deployments for cluster %s (%s) due to an unknown err %v", cluster.Name, cluster.Spec.HumanReadableName, err)
+		return false, err
+	})
+}
+
 func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticapiv1.Cluster,
 	project *kubermaticapiv1.Project, sshKeyProvider provider.SSHKeyProvider, dcs map[string]provider.DatacenterMeta,
 	clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo) error {
@@ -98,24 +121,19 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 		return fmt.Errorf("node deployment is not valid: %v", err)
 	}
 
-	err = wait.Poll(5*time.Second, 30*time.Minute, initClusterCondition(ctx, cluster.Name, clusterProvider, userInfo))
-	if err != nil {
-		return fmt.Errorf("timed out waiting for cluster to be ready: %v", err)
-	}
-
 	cluster, err = clusterProvider.Get(userInfo, cluster.Name, &provider.ClusterGetOptions{CheckInitStatus: true})
 	if err != nil {
-		return fmt.Errorf("failed to get cluster: %v", err)
+		return err
 	}
 
 	keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: cluster.Name})
 	if err != nil {
-		return fmt.Errorf("failed to list cluster ssh keys: %v", common.KubernetesErrorToHTTPError(err))
+		return err
 	}
 
 	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
 	if err != nil {
-		return fmt.Errorf("failed to create cluster client: %v", common.KubernetesErrorToHTTPError(err))
+		return err
 	}
 
 	dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
@@ -125,47 +143,10 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 
 	md, err := machineresource.Deployment(cluster, nd, dc, keys)
 	if err != nil {
-		return fmt.Errorf("failed to create machine deployment from template: %v", err)
+		return err
 	}
 
-	err = client.Create(ctx, md)
-	if err != nil {
-		return fmt.Errorf("failed to save machine deployment: %v", err)
-	}
-
-	return nil
-}
-
-func initClusterCondition(ctx context.Context, clusterName string, clusterProvider provider.ClusterProvider,
-	userInfo *provider.UserInfo) func() (bool, error) {
-	return func() (bool, error) {
-		c, err := clusterProvider.Get(userInfo, clusterName, &provider.ClusterGetOptions{CheckInitStatus: true})
-		if err != nil {
-			return false, nil
-		}
-
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, c)
-		if err != nil {
-			return false, nil
-		}
-
-		// since we use an impersonated client when sending a request to the cluster
-		// there have to be RBAC Roles/Bindings in place otherwise we get 403 errors
-		// at the moment the cluster health doesn't check if the RBAC was generated
-		// so we might open a connection and get an access denied error
-		//
-		// TODO: we could extend the cluster health to report when the controller has finished generating RBAC
-		//       instead of listing machine deployments
-		//
-		// TODO: figure out why client.Create doesn't report errors when RBAC was not generated and we should get 403
-		machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
-		err = client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments)
-		if err != nil {
-			return false, nil
-		}
-
-		return true, nil
-	}
+	return client.Create(ctx, md)
 }
 
 func GetEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
@@ -337,12 +318,13 @@ func HealthEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint 
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		return apiv1.ClusterHealth{
-			Apiserver:                   existingCluster.Status.Health.Apiserver,
-			Scheduler:                   existingCluster.Status.Health.Scheduler,
-			Controller:                  existingCluster.Status.Health.Controller,
-			MachineController:           existingCluster.Status.Health.MachineController,
-			Etcd:                        existingCluster.Status.Health.Etcd,
-			CloudProviderInfrastructure: existingCluster.Status.Health.CloudProviderInfrastructure,
+			Apiserver:                    existingCluster.Status.Health.Apiserver,
+			Scheduler:                    existingCluster.Status.Health.Scheduler,
+			Controller:                   existingCluster.Status.Health.Controller,
+			MachineController:            existingCluster.Status.Health.MachineController,
+			Etcd:                         existingCluster.Status.Health.Etcd,
+			CloudProviderInfrastructure:  existingCluster.Status.Health.CloudProviderInfrastructure,
+			UserClusterControllerManager: existingCluster.Status.Health.UserClusterControllerManager,
 		}, nil
 	}
 }
