@@ -18,11 +18,11 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/usercluster"
-	"k8s.io/apimachinery/pkg/types"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 )
@@ -226,7 +226,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 	}
 
 	if len(data.OIDCCAFile()) > 0 {
-		creators = append(creators, apiserver.DexCACertificateCreator(data))
+		creators = append(creators, apiserver.DexCACertificateCreator(data.GetDexCA))
 	}
 
 	return creators

@@ -59,9 +59,10 @@ type controllerRunOptions struct {
 	dockerPullConfigJSONFile                         string
 
 	// OIDC configuration
-	oidcCAFile         string
-	oidcIssuerURL      string
-	oidcIssuerClientID string
+	oidcCAFile             string
+	oidcIssuerURL          string
+	oidcIssuerClientID     string
+	oidcIssuerClientSecret string
 
 	featureGates features.FeatureGate
 }
@@ -103,6 +104,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.oidcCAFile, "oidc-ca-file", "", "The path to the certificate for the CA that signed your identity provider’s web certificate.")
 	flag.StringVar(&c.oidcIssuerURL, "oidc-issuer-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.StringVar(&c.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
+	flag.StringVar(&c.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
 	flag.Parse()
 
 	featureGates, err := features.NewFeatures(rawFeatureGates)
@@ -126,6 +128,10 @@ func (o controllerRunOptions) validate() error {
 
 		if len(o.oidcIssuerClientID) == 0 {
 			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-client-id\" flag was not specified", OpenIDAuthPlugin)
+		}
+
+		if len(o.oidcIssuerClientSecret) == 0 {
+			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-client-secret\" flag was not specified", OpenIDAuthPlugin)
 		}
 
 	} else {

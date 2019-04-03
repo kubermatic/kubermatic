@@ -85,6 +85,7 @@ spec:
           - -oidc-ca-file=/opt/dex-ca/caBundle.pem
           - -oidc-issuer-url={{ .Values.kubermatic.auth.tokenIssuer }}
           - -oidc-issuer-client-id={{ .Values.kubermatic.auth.issuerClientID }}
+          - -oidc-issuer-client-secret={{ .Values.kubermatic.auth.issuerClientSecret }}
           {{- end }}
           - -feature-gates={{ .Values.kubermatic.controller.featureGates }}
           {{- if .Values.kubermatic.clusterNamespacePrometheus.disableDefaultRules }}

@@ -46,6 +46,13 @@ const ControllerName = "kubermatic_openshift_controller"
 // at compile time
 var _ reconcile.Reconciler = &Reconciler{}
 
+type OIDCConfig struct {
+	IssuerURL    string
+	CAFile       string
+	ClientID     string
+	ClientSecret string
+}
+
 type Reconciler struct {
 	client.Client
 	scheme               *runtime.Scheme
@@ -55,9 +62,18 @@ type Reconciler struct {
 	nodeAccessNetwork    string
 	dockerPullConfigJSON []byte
 	workerName           string
+	oidc                 OIDCConfig
 }
 
-func Add(mgr manager.Manager, numWorkers int, workerName string, dcs map[string]provider.DatacenterMeta, overwriteRegistry, nodeAccessNetwork string, dockerPullConfigJSON []byte) error {
+func Add(
+	mgr manager.Manager,
+	numWorkers int,
+	workerName string,
+	dcs map[string]provider.DatacenterMeta,
+	overwriteRegistry, nodeAccessNetwork string,
+	dockerPullConfigJSON []byte,
+	oidcConfig OIDCConfig,
+) error {
 	dynamicClient := mgr.GetClient()
 	reconciler := &Reconciler{
 		Client:               dynamicClient,
@@ -68,6 +84,7 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, dcs map[string]
 		nodeAccessNetwork:    nodeAccessNetwork,
 		dockerPullConfigJSON: dockerPullConfigJSON,
 		workerName:           workerName,
+		oidc:                 oidcConfig,
 	}
 
 	c, err := controller.New(ControllerName, mgr,
@@ -133,6 +150,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// Add a wrapping here so we can emit an event on error
 	result, err := r.reconcile(ctx, cluster)
 	if err != nil {
+		glog.Errorf("failed reconciling cluster %s: %v", cluster.Name, err)
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
 	}
 	if result == nil {
@@ -153,7 +171,14 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	if !found {
 		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
 	}
-	osData := &openshiftData{cluster: cluster, client: r.Client, dC: &dc, overwriteRegistry: r.overwriteRegistry, nodeAccessNetwork: r.nodeAccessNetwork}
+	osData := &openshiftData{
+		cluster:           cluster,
+		client:            r.Client,
+		dc:                &dc,
+		overwriteRegistry: r.overwriteRegistry,
+		nodeAccessNetwork: r.nodeAccessNetwork,
+		oidc:              r.oidc,
+	}
 
 	if err := r.services(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Services: %v", err)
@@ -330,6 +355,7 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 	creators := []reconciling.NamedSecretCreatorGetter{
 		certificates.RootCACreator(osData),
 		openvpn.CACreator(),
+		apiserver.DexCACertificateCreator(osData.GetDexCA),
 		certificates.FrontProxyCACreator(),
 		openshiftresources.ServiceSignerCA(),
 		resources.ImagePullSecretCreator(r.dockerPullConfigJSON),

@@ -151,29 +151,49 @@ networkConfig:
   networkPluginName: redhat/openshift-ovs-subnet
   serviceNetworkCIDR: "10.10.10.0/24"
 # TODO: Get this running with dex
-#oauthConfig:
-#  # TODO: Could be made nicer to be something listening on 443
-#  assetPublicURL: "https://henrik-os2.europe-west3-c.dev.kubermatic.io:32594/console"
-#  grantConfig:
-#    method: auto
-#  identityProviders:
-#  - challenge: true
-#    login: true
-#    mappingMethod: claim
-#    name: allow_all
-#    provider:
-#      apiVersion: v1
-#      kind: AllowAllPasswordIdentityProvider
-#  masterCA: /etc/kubernetes/pki/ca/ca.crt
-#  masterPublicURL: "https://henrik-os2.europe-west3-c.dev.kubermatic.io:32594"
-#  masterURL: "https://henrik-os2.europe-west3-c.dev.kubermatic.io:32594"
-#  sessionConfig:
-#    sessionMaxAgeSeconds: 3600
-#    sessionName: ssn
-#    sessionSecretsFile: /etc/origin/master/session-secrets.yaml
-#  tokenConfig:
-#    accessTokenMaxAgeSeconds: 86400
-#    authorizeTokenMaxAgeSeconds: 500
+oauthConfig:
+  alwaysShowProviderSelection: false
+  grantConfig:
+    method: auto
+    serviceAccountMethod: prompt
+  identityProviders:
+    - challenge: true
+      login: true
+      mappingMethod: claim
+      name: openid-connect
+      provider:
+        apiVersion: v1
+        kind: OpenIDIdentityProvider
+        clientID: client-id
+        clientSecret: client-secret
+        ca: /etc/kubernetes/dex/ca/caBundle.pem
+        claims:
+          id:
+            - sub
+          preferredUsername:
+            - name
+          name:
+            - name
+          email:
+            - email
+        extraScopes:
+          - email
+          - profile
+        urls:
+          authorize: https://dev.kubermatic.io/dex/auth
+          token: https://dev.kubermatic.io/dex/token
+  masterCA: /etc/kubernetes/pki/ca/ca.crt
+  assetPublicURL: "https://henrik-os2.europe-west3-c.dev.kubermatic.io:32594/console"
+  masterPublicURL: "https://henrik-os2.europe-west3-c.dev.kubermatic.io:32594"
+  masterURL: "https://henrik-os2.europe-west3-c.dev.kubermatic.io:32594"
+  sessionConfig:
+    sessionMaxAgeSeconds: 300
+    sessionName: ssn
+    sessionSecretsFile: ""
+  templates: null
+  tokenConfig:
+    accessTokenMaxAgeSeconds: 86400
+    authorizeTokenMaxAgeSeconds: 300
 pauseControllers: false
 policyConfig:
   bootstrapPolicyFile: /etc/origin/master/policy.json

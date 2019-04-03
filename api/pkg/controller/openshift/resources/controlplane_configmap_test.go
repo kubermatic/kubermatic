@@ -18,6 +18,7 @@ var update = flag.Bool("update", false, "update .golden files")
 type fakeMasterConfigData struct {
 	cluster  *kubermaticv1.Cluster
 	nodePort int32
+	oidc     oidcData
 }
 
 func (d *fakeMasterConfigData) Cluster() *kubermaticv1.Cluster {
@@ -26,6 +27,18 @@ func (d *fakeMasterConfigData) Cluster() *kubermaticv1.Cluster {
 
 func (d *fakeMasterConfigData) GetApiserverExternalNodePort(context.Context) (int32, error) {
 	return d.nodePort, nil
+}
+
+func (d *fakeMasterConfigData) OIDCIssuerURL() string {
+	return d.oidc.IssuerURL
+}
+
+func (d *fakeMasterConfigData) OIDCClientID() string {
+	return d.oidc.ClientID
+}
+
+func (d *fakeMasterConfigData) OIDCClientSecret() string {
+	return d.oidc.ClientSecret
 }
 
 func TestGetMasterConfig(t *testing.T) {
@@ -109,6 +122,11 @@ func TestGetMasterConfig(t *testing.T) {
 			data := &fakeMasterConfigData{
 				nodePort: test.nodePort,
 				cluster:  test.cluster,
+				oidc: oidcData{
+					ClientSecret: "client-secret",
+					ClientID:     "client-id",
+					IssuerURL:    "https://dev.kubermatic.io/dex",
+				},
 			}
 
 			apiserverConfig, err := getMasterConfig(ctx, data, "apiserver")
