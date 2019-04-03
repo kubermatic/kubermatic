@@ -3362,6 +3362,10 @@
         "scheduler": {
           "type": "boolean",
           "x-go-name": "Scheduler"
+        },
+        "userClusterControllerManager": {
+          "type": "boolean",
+          "x-go-name": "UserClusterControllerManager"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"

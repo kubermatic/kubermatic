@@ -93,19 +93,19 @@ func createInitialNodeDeploymentWithRetries(nodeDeployment *apiv1.NodeDeployment
 		switch {
 		case err == nil:
 			return true, nil
+		case kerrors.IsInternalError(err):
 			// An internal error can be:
 			//
-			//  Internal error occurred: failed calling webhook "machine-controller.kubermatic.io-machinedeployments": Post REDACTED:
-			//  net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)
-		case kerrors.IsInternalError(err):
+			//  Internal error occurred: failed calling webhook "machine-controller.kubermatic.io-machinedeployments"
+			//  Post REDACTED: net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)
 			fallthrough
 		case kerrors.IsServiceUnavailable(err):
 			fallthrough
 		case kerrors.IsServerTimeout(err):
-			glog.V(6).Infof("retrying creating initial ND for cluster %s (%s) due to %v", cluster.Name, cluster.Spec.HumanReadableName, err)
+			glog.V(6).Infof("retrying creating initial Node Deployments for cluster %s (%s) due to %v", cluster.Name, cluster.Spec.HumanReadableName, err)
 			return false, nil
 		}
-		glog.V(6).Infof("giving up creating initial ND for cluster %s (%s) due to an unknown err %v", cluster.Name, cluster.Spec.HumanReadableName, err)
+		glog.V(6).Infof("giving up creating initial Node Deployments for cluster %s (%s) due to an unknown err %v", cluster.Name, cluster.Spec.HumanReadableName, err)
 		return false, err
 	})
 }
@@ -146,12 +146,7 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 		return err
 	}
 
-	err = client.Create(ctx, md)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return client.Create(ctx, md)
 }
 
 func GetEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
