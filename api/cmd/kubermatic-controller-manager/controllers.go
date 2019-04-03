@@ -117,10 +117,12 @@ func createOpenshiftController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
+		ctrlCtx.runOptions.dc,
 		ctrlCtx.dcs,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodeAccessNetwork,
 		ctrlCtx.dockerPullConfigJSON,
+		ctrlCtx.runOptions.externalURL,
 		openshiftcontroller.OIDCConfig{
 			CAFile:       ctrlCtx.runOptions.oidcCAFile,
 			ClientID:     ctrlCtx.runOptions.oidcIssuerClientID,
