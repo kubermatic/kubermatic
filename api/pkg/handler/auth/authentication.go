@@ -13,9 +13,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// contextKey defines a dedicated type for keys to use on contexts
-type contextKey string
-
 // OIDCExtractorVerifier is responsible for extracting auth data from a request
 type OIDCExtractorVerifier interface {
 	OIDCVerifier
