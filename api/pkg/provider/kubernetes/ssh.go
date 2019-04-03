@@ -99,7 +99,7 @@ func (p *SSHKeyProvider) List(project *kubermaticapiv1.Project, options *provide
 		owners := key.GetOwnerReferences()
 		for _, owner := range owners {
 			if owner.APIVersion == kubermaticapiv1.SchemeGroupVersion.String() && owner.Kind == kubermaticapiv1.ProjectKindName && owner.Name == project.Name {
-				projectKeys = append(projectKeys, key)
+				projectKeys = append(projectKeys, key.DeepCopy())
 			}
 		}
 	}

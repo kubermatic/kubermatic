@@ -98,7 +98,7 @@ func (p *ProjectMemberProvider) List(userInfo *provider.UserInfo, project *kuber
 					}
 				}
 			}
-			projectMembers = append(projectMembers, member)
+			projectMembers = append(projectMembers, member.DeepCopy())
 		}
 	}
 

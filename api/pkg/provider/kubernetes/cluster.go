@@ -122,7 +122,7 @@ func (p *ClusterProvider) List(project *kubermaticapiv1.Project, options *provid
 	projectClusters := []*kubermaticapiv1.Cluster{}
 	for _, cluster := range clusters {
 		if clusterProject := cluster.GetLabels()[kubermaticapiv1.ProjectIDLabelKey]; clusterProject == project.Name {
-			projectClusters = append(projectClusters, cluster)
+			projectClusters = append(projectClusters, cluster.DeepCopy())
 		}
 	}
 
