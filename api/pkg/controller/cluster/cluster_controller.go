@@ -287,7 +287,7 @@ func (r *Reconciler) updateClusterError(ctx context.Context, cluster *kubermatic
 			c.Status.ErrorReason = &reason
 		})
 		if err != nil {
-			return fmt.Errorf("failed to set error status on cluster to: errorReason='%s' errorMessage='%s'. Could not update cluster: %v", reason, message, err)
+			return fmt.Errorf("failed to set error status on cluster to: errorReason=%q errorMessage=%q. Could not update cluster: %v", reason, message, err)
 		}
 	}
 
