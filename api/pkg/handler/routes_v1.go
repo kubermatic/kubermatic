@@ -271,6 +271,9 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/serviceaccounts/{serviceaccount_id}").
 		Handler(r.updateServiceAccount())
 
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/serviceaccounts/{serviceaccount_id}").
+		Handler(r.deleteServiceAccount())
 	//
 	// Defines set of HTTP endpoints for control plane and kubelet versions
 	mux.Methods(http.MethodGet).
@@ -1375,6 +1378,32 @@ func (r Routing) updateServiceAccount() http.Handler {
 			middleware.UserInfo(r.userProjectMapper),
 		)(serviceaccount.UpdateEndpoint(r.projectProvider, r.serviceAccountProvider, r.userProjectMapper)),
 		serviceaccount.DecodeUpdateReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id} serviceaccounts deleteServiceAccount
+//
+//     Deletes service account for the given project
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteServiceAccount() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			r.oidcAuthenticator.Verifier(),
+			middleware.UserSaver(r.userProvider),
+			middleware.UserInfo(r.userProjectMapper),
+		)(serviceaccount.DeleteEndpoint(r.serviceAccountProvider, r.projectProvider)),
+		serviceaccount.DecodeDeleteReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

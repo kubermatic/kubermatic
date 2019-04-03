@@ -168,6 +168,37 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProv
 	}
 }
 
+// DeleteEndpoint deletes the service account for the given project
+func DeleteEndpoint(serviceAccountProvider provider.ServiceAccountProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		req, ok := request.(deleteReq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+		err := req.Validate()
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		// check if project exist
+		if _, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{}); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		// check if service account exist before deleting it
+		if _, err := serviceAccountProvider.Get(userInfo, req.ServiceAccountID); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		if err := serviceAccountProvider.Delete(userInfo, req.ServiceAccountID); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return nil, nil
+	}
+}
+
 // addReq defines HTTP request for addServiceAccountToProject
 // swagger:parameters addServiceAccountToProject
 type addReq struct {
@@ -187,6 +218,21 @@ type idReq struct {
 type updateReq struct {
 	addReq
 	idReq
+}
+
+// deleteReq defines HTTP request for deleteServiceAccount
+// swagger:parameters deleteServiceAccount
+type deleteReq struct {
+	common.ProjectReq
+	idReq
+}
+
+// Validate validates DeleteEndpoint request
+func (r deleteReq) Validate() error {
+	if len(r.ServiceAccountID) == 0 {
+		return fmt.Errorf("the service account ID cannot be empty")
+	}
+	return nil
 }
 
 // Validate validates UpdateEndpoint request
@@ -247,6 +293,26 @@ func DecodeUpdateReq(c context.Context, r *http.Request) (interface{}, error) {
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
 	}
+
+	saIDReq, err := decodeServiceAccountIDReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ServiceAccountID = saIDReq.ServiceAccountID
+
+	return req, nil
+}
+
+// DecodeDeleteeReq  decodes an HTTP request into deleteReq
+func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req deleteReq
+
+	prjReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+
+	}
+	req.ProjectReq = prjReq.(common.ProjectReq)
 
 	saIDReq, err := decodeServiceAccountIDReq(c, r)
 	if err != nil {
