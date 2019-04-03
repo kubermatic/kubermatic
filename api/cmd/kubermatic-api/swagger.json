@@ -2210,6 +2210,46 @@
             "$ref": "#/responses/errorResponse"
           }
         }
+      },
+      "delete": {
+        "description": "Deletes service account for the given project",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "serviceaccounts"
+        ],
+        "operationId": "deleteServiceAccount",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ServiceAccountID",
+            "name": "serviceaccount_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
       }
     },
     "/api/v1/projects/{project_id}/sshkeys": {

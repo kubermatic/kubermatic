@@ -169,3 +169,20 @@ func (p *ServiceAccountProvider) Update(userInfo *provider.UserInfo, serviceAcco
 
 	return masterImpersonatedClient.Users().Update(serviceAccount)
 }
+
+// Delete simply deletes the given service account
+func (p *ServiceAccountProvider) Delete(userInfo *provider.UserInfo, name string) error {
+	if userInfo == nil {
+		return kerrors.NewBadRequest("userInfo cannot be nil")
+	}
+	if len(name) == 0 {
+		return kerrors.NewBadRequest("service account name cannot be empty")
+	}
+
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	if err != nil {
+		return err
+	}
+
+	return masterImpersonatedClient.Users().Delete(name, &metav1.DeleteOptions{})
+}
