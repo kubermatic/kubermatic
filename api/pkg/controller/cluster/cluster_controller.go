@@ -27,7 +27,6 @@ import (
 	admissionregistrationclientset "k8s.io/client-go/kubernetes/typed/admissionregistration/v1beta1"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
-	"k8s.io/client-go/util/workqueue"
 	aggregationclientset "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 
 	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
@@ -65,7 +64,6 @@ type Reconciler struct {
 	dcs         map[string]provider.DatacenterMeta
 	dc          string
 
-	queue    workqueue.RateLimitingInterface
 	recorder record.EventRecorder
 
 	overwriteRegistry                                string
@@ -127,7 +125,6 @@ func Add(
 		dynamicCache:            dynamicCache,
 		workerName:              workerName,
 
-		queue:    workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute), "cluster"),
 		recorder: mgr.GetRecorder(ControllerName),
 
 		overwriteRegistry:                      overwriteRegistry,
