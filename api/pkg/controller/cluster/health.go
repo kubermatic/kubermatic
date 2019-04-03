@@ -1,18 +1,18 @@
 package cluster
 
 import (
+	"context"
 	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-
-	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 )
 
-func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (*kubermaticv1.ClusterHealth, error) {
-	ns := kubernetes.NamespaceName(c.Name)
-	health := c.Status.Health.DeepCopy()
+func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.ClusterHealth, error) {
+	ns := kubernetes.NamespaceName(cluster.Name)
+	health := cluster.Status.Health.DeepCopy()
 
 	type depInfo struct {
 		healthy  *bool
@@ -29,7 +29,8 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (*kubermaticv1.Clus
 	}
 
 	for name := range healthMapping {
-		healthy, err := cc.healthyDeployment(ns, name, healthMapping[name].minReady)
+		key := types.NamespacedName{Namespace: ns, Name: name}
+		healthy, err := resources.HealthyDeployment(ctx, r, key, healthMapping[name].minReady)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get dep health %q: %v", name, err)
 		}
@@ -37,7 +38,8 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (*kubermaticv1.Clus
 	}
 
 	var err error
-	health.Etcd, err = cc.healthyStatefulSet(ns, resources.EtcdStatefulSetName, 2)
+	key := types.NamespacedName{Namespace: ns, Name: resources.EtcdStatefulSetName}
+	health.Etcd, err = resources.HealthyStatefulSet(ctx, r, key, 2)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get etcd health: %v", err)
 	}
@@ -45,42 +47,16 @@ func (cc *Controller) clusterHealth(c *kubermaticv1.Cluster) (*kubermaticv1.Clus
 	return health, nil
 }
 
-//TODO: Use resources.HealthyDeployment instead once we have a lister-backed dynamic client
-func (cc *Controller) healthyDeployment(ns, name string, minReady int32) (bool, error) {
-	dep, err := cc.deploymentLister.Deployments(ns).Get(name)
+func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	health, err := r.clusterHealth(ctx, cluster)
 	if err != nil {
-		if errors.IsNotFound(err) {
-			return false, nil
-		}
-		return false, err
+		return err
 	}
-
-	return dep.Status.ReadyReplicas >= minReady, nil
-}
-
-//TODO: Use resources.HealthyStatefulSet instead once we have a lister-backed dynamic client
-func (cc *Controller) healthyStatefulSet(ns, name string, minReady int32) (bool, error) {
-	set, err := cc.statefulSetLister.StatefulSets(ns).Get(name)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	return set.Status.ReadyReplicas >= minReady, nil
-}
-
-func (cc *Controller) syncHealth(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	health, err := cc.clusterHealth(c)
-	if err != nil {
-		return nil, err
-	}
-	if c.Status.Health != *health {
-		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
+	if cluster.Status.Health != *health {
+		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			c.Status.Health = *health
 		})
 	}
 
-	return c, err
+	return err
 }

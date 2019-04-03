@@ -1,15 +1,16 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
-	"time"
 
 	"github.com/Masterminds/semver"
 	"github.com/golang/glog"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
@@ -26,8 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	kubeinformers "k8s.io/client-go/informers"
-	kubefake "k8s.io/client-go/kubernetes/fake"
 )
 
 const mockNamespaceName = "mock-namespace"
@@ -330,15 +329,6 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		resources.InternalUserClusterAdminKubeconfigSecretName,
 	})
 	objects := []runtime.Object{configMapList, secretList, serviceList}
-	client := kubefake.NewSimpleClientset(objects...)
-
-	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(client, time.Second*30)
-	configMapInformer := kubeInformerFactory.Core().V1().ConfigMaps()
-	configMapLister := configMapInformer.Lister()
-	secretInformer := kubeInformerFactory.Core().V1().Secrets()
-	secretLister := secretInformer.Lister()
-	serviceInformer := kubeInformerFactory.Core().V1().Services()
-	serviceLister := serviceInformer.Lister()
 
 	clusterVersion, err := ksemver.NewSemver(masterVersion.Version.String())
 	if err != nil {
@@ -352,17 +342,14 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 	fakeCluster.Spec.ClusterNetwork.DNSDomain = "cluster.local"
 	fakeCluster.Status.NamespaceName = mockNamespaceName
 
-	stopChannel := make(chan struct{})
-	kubeInformerFactory.Start(stopChannel)
-	kubeInformerFactory.WaitForCacheSync(stopChannel)
+	fakeDynamicClient := fake.NewFakeClient(objects...)
 
 	return resources.NewTemplateData(
+		context.Background(),
+		fakeDynamicClient,
 		fakeCluster,
 		&provider.DatacenterMeta{},
 		"",
-		secretLister,
-		configMapLister,
-		serviceLister,
 		"",
 		"",
 		"192.0.2.0/24",
@@ -372,11 +359,11 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		false,
 		false,
 		"",
-		nil,
 		"",
 		"",
 		"",
-		false), nil
+		false,
+	), nil
 }
 
 func createNamedSecrets(secretNames []string) *corev1.SecretList {

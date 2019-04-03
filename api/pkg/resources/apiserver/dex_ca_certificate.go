@@ -7,7 +7,7 @@ import (
 )
 
 // DexCACertificateCreator returns a function to create/update the secret with the certificate for TLS verification against dex
-func DexCACertificateCreator(data resources.SecretDataProvider) reconciling.NamedSecretCreatorGetter {
+func DexCACertificateCreator(data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.DexCASecretName, certificates.GetDexCACreator(
 			resources.DexCAFileName,

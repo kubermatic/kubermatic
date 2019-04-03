@@ -121,7 +121,8 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 							Name: "NAMESPACE",
 							ValueFrom: &corev1.EnvVarSource{
 								FieldRef: &corev1.ObjectFieldSelector{
-									FieldPath: "metadata.namespace",
+									FieldPath:  "metadata.namespace",
+									APIVersion: "v1",
 								},
 							},
 						},

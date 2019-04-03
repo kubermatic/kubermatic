@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/golang/glog"
@@ -16,8 +17,8 @@ import (
 )
 
 // clusterIsReachable checks if the cluster is reachable via its external name
-func (cc *Controller) clusterIsReachable(c *kubermaticv1.Cluster) (bool, error) {
-	client, err := cc.userClusterConnProvider.GetClient(c)
+func (r *Reconciler) clusterIsReachable(c *kubermaticv1.Cluster) (bool, error) {
+	client, err := r.userClusterConnProvider.GetClient(c)
 	if err != nil {
 		return false, err
 	}
@@ -31,13 +32,14 @@ func (cc *Controller) clusterIsReachable(c *kubermaticv1.Cluster) (bool, error) 
 	return true, nil
 }
 
-func (cc *Controller) launchingCreateOpenVPNClientCertificates(c *kubermaticv1.Cluster) error {
-	client, err := cc.userClusterConnProvider.GetClient(c)
+func (r *Reconciler) launchingCreateOpenVPNClientCertificates(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	client, err := r.userClusterConnProvider.GetClient(cluster)
 	if err != nil {
 		return err
 	}
 
-	caKp, err := resources.GetOpenVPNCA(c, cc.secretLister)
+	// Pull from the seed cluster
+	caKp, err := resources.GetOpenVPNCA(ctx, cluster, r)
 	if err != nil {
 		return err
 	}
@@ -53,7 +55,7 @@ func (cc *Controller) launchingCreateOpenVPNClientCertificates(c *kubermaticv1.C
 		// Secret does not exist -> Create it
 		secret, err := createCertificate(&corev1.Secret{})
 		if err != nil {
-			return fmt.Errorf("failed to build Secret %s: %v", secret.Name, err)
+			return fmt.Errorf("failed to build OpenVPN client key Secret: %v", err)
 		}
 
 		if _, err = client.CoreV1().Secrets(metav1.NamespaceSystem).Create(secret); err != nil {

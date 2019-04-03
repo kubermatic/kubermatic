@@ -2,6 +2,7 @@ package resources
 
 import (
 	"bufio"
+	"context"
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
@@ -13,19 +14,22 @@ import (
 	"os"
 	"time"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
+	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
-	"github.com/golang/glog"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	certutil "k8s.io/client-go/util/cert"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // KUBERMATICCOMMIT is a magic variable containing the git commit hash of the current (as in currently executing) kubermatic api. It gets feeded by Makefile as a ldflag.
@@ -338,10 +342,11 @@ type CRDCreateor = func(version semver.Semver, existing *apiextensionsv1beta1.Cu
 type APIServiceCreator = func(existing *apiregistrationv1beta1.APIService) (*apiregistrationv1beta1.APIService, error)
 
 // GetClusterApiserverAddress returns the apiserver address for the given Cluster
-func GetClusterApiserverAddress(cluster *kubermaticv1.Cluster, lister corev1lister.ServiceLister) (string, error) {
-	service, err := lister.Services(cluster.Status.NamespaceName).Get(ApiserverExternalServiceName)
-	if err != nil {
-		return "", fmt.Errorf("could not get service %s from lister for cluster %s: %v", ApiserverExternalServiceName, cluster.Name, err)
+func GetClusterApiserverAddress(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) (string, error) {
+	service := &corev1.Service{}
+	key := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: ApiserverExternalServiceName}
+	if err := client.Get(ctx, key, service); err != nil {
+		return "", fmt.Errorf("could not get service %s: %v", key, err)
 	}
 
 	if len(service.Spec.Ports) != 1 {
@@ -353,8 +358,8 @@ func GetClusterApiserverAddress(cluster *kubermaticv1.Cluster, lister corev1list
 }
 
 // GetClusterApiserverURL returns the apiserver url for the given Cluster
-func GetClusterApiserverURL(cluster *kubermaticv1.Cluster, lister corev1lister.ServiceLister) (*url.URL, error) {
-	addr, err := GetClusterApiserverAddress(cluster, lister)
+func GetClusterApiserverURL(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) (*url.URL, error) {
+	addr, err := GetClusterApiserverAddress(ctx, cluster, client)
 	if err != nil {
 		return nil, err
 	}
@@ -560,8 +565,8 @@ func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 	return true
 }
 
-func getECDSAClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*ECDSAKeyPair, error) {
-	cert, key, err := getClusterCAFromLister(name, cluster, lister)
+func getECDSAClusterCAFromLister(ctx context.Context, name string, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) (*ECDSAKeyPair, error) {
+	cert, key, err := getClusterCAFromLister(ctx, name, cluster, client)
 	if err != nil {
 		return nil, err
 	}
@@ -572,8 +577,8 @@ func getECDSAClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lis
 	return &ECDSAKeyPair{Cert: cert, Key: ecdsaKey}, nil
 }
 
-func getRSAClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*triple.KeyPair, error) {
-	cert, key, err := getClusterCAFromLister(name, cluster, lister)
+func getRSAClusterCAFromLister(ctx context.Context, name string, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) (*triple.KeyPair, error) {
+	cert, key, err := getClusterCAFromLister(ctx, name, cluster, client)
 	if err != nil {
 		return nil, err
 	}
@@ -585,24 +590,25 @@ func getRSAClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, liste
 }
 
 // getClusterCAFromLister returns the CA of the cluster from the lister
-func getClusterCAFromLister(name string, cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*x509.Certificate, interface{}, error) {
-	caCertSecret, err := lister.Secrets(cluster.Status.NamespaceName).Get(name)
-	if err != nil {
+func getClusterCAFromLister(ctx context.Context, name string, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) (*x509.Certificate, interface{}, error) {
+	caSecret := &corev1.Secret{}
+	caSecretKey := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: name}
+	if err := client.Get(ctx, caSecretKey, caSecret); err != nil {
 		return nil, nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
 	}
 
-	certs, err := certutil.ParseCertsPEM(caCertSecret.Data[CACertSecretKey])
+	certs, err := certutil.ParseCertsPEM(caSecret.Data[CACertSecretKey])
 	if err != nil {
-		return nil, nil, fmt.Errorf("got an invalid cert from the CA secret %s: %v", CASecretName, err)
+		return nil, nil, fmt.Errorf("got an invalid cert from the CA secret %s: %v", caSecretKey, err)
 	}
 
 	if len(certs) != 1 {
 		return nil, nil, fmt.Errorf("did not find exactly one but %v certificates in the CA secret", len(certs))
 	}
 
-	key, err := certutil.ParsePrivateKeyPEM(caCertSecret.Data[CAKeySecretKey])
+	key, err := certutil.ParsePrivateKeyPEM(caSecret.Data[CAKeySecretKey])
 	if err != nil {
-		return nil, nil, fmt.Errorf("got an invalid private key from the CA secret %s: %v", CASecretName, err)
+		return nil, nil, fmt.Errorf("got an invalid private key from the CA secret %s: %v", caSecretKey, err)
 	}
 
 	return certs[0], key, nil
@@ -636,18 +642,18 @@ func GetDexCAFromFile(caBundleFilePath string) ([]*x509.Certificate, error) {
 }
 
 // GetClusterRootCA returns the root CA of the cluster from the lister
-func GetClusterRootCA(cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*triple.KeyPair, error) {
-	return getRSAClusterCAFromLister(CASecretName, cluster, lister)
+func GetClusterRootCA(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) (*triple.KeyPair, error) {
+	return getRSAClusterCAFromLister(ctx, CASecretName, cluster, client)
 }
 
 // GetClusterFrontProxyCA returns the frontproxy CA of the cluster from the lister
-func GetClusterFrontProxyCA(cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*triple.KeyPair, error) {
-	return getRSAClusterCAFromLister(FrontProxyCASecretName, cluster, lister)
+func GetClusterFrontProxyCA(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) (*triple.KeyPair, error) {
+	return getRSAClusterCAFromLister(ctx, FrontProxyCASecretName, cluster, client)
 }
 
 // GetOpenVPNCA returns the OpenVPN CA of the cluster from the lister
-func GetOpenVPNCA(cluster *kubermaticv1.Cluster, lister corev1lister.SecretLister) (*ECDSAKeyPair, error) {
-	return getECDSAClusterCAFromLister(OpenVPNCASecretName, cluster, lister)
+func GetOpenVPNCA(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) (*ECDSAKeyPair, error) {
+	return getECDSAClusterCAFromLister(ctx, OpenVPNCASecretName, cluster, client)
 }
 
 // ClusterIPForService returns the cluster ip for the given service
@@ -672,4 +678,55 @@ func ClusterIPForService(name, namespace string, serviceLister corev1lister.Serv
 // GetAbsoluteServiceDNSName returns the absolute DNS name for the given service and the given cluster. Absolute means a trailing dot will be appended to the DNS name
 func GetAbsoluteServiceDNSName(service, namespace string) string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local.", service, namespace)
+}
+
+// SecretRevision returns the resource version of the Secret specified by name.
+func SecretRevision(ctx context.Context, key types.NamespacedName, client ctrlruntimeclient.Client) (string, error) {
+	secret := &corev1.Secret{}
+	if err := client.Get(ctx, key, secret); err != nil {
+		return "", fmt.Errorf("could not get Secret %s: %v", key, err)
+	}
+	return secret.ResourceVersion, nil
+}
+
+// ConfigMapRevision returns the resource version of the ConfigMap specified by name.
+func ConfigMapRevision(ctx context.Context, key types.NamespacedName, client ctrlruntimeclient.Client) (string, error) {
+	cm := &corev1.ConfigMap{}
+	if err := client.Get(ctx, key, cm); err != nil {
+		return "", fmt.Errorf("could not get ConfigMap %s: %v", key, err)
+	}
+	return cm.ResourceVersion, nil
+}
+
+// GetPodTemplateLabels returns a set of labels for a Pod including the revisions of depending secrets and configmaps.
+// This will force pods being restarted as soon as one of the secrets/configmaps get updated.
+func GetPodTemplateLabels(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	appName, clusterName, namespace string,
+	volumes []corev1.Volume,
+	additionalLabels map[string]string,
+) (map[string]string, error) {
+	podLabels := AppClusterLabel(appName, clusterName, additionalLabels)
+
+	for _, v := range volumes {
+		if v.VolumeSource.Secret != nil {
+			key := types.NamespacedName{Namespace: namespace, Name: v.VolumeSource.Secret.SecretName}
+			revision, err := SecretRevision(ctx, key, client)
+			if err != nil {
+				return nil, err
+			}
+			podLabels[fmt.Sprintf("%s-secret-revision", v.VolumeSource.Secret.SecretName)] = revision
+		}
+		if v.VolumeSource.ConfigMap != nil {
+			key := types.NamespacedName{Namespace: namespace, Name: v.VolumeSource.ConfigMap.Name}
+			revision, err := ConfigMapRevision(ctx, key, client)
+			if err != nil {
+				return nil, err
+			}
+			podLabels[fmt.Sprintf("%s-configmap-revision", v.VolumeSource.ConfigMap.Name)] = revision
+		}
+	}
+
+	return podLabels, nil
 }
