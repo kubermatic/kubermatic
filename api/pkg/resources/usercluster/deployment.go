@@ -65,7 +65,7 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 				},
 				MaxUnavailable: &intstr.IntOrString{
 					Type:   intstr.Int,
-					IntVal: 0,
+					IntVal: 1,
 				},
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
