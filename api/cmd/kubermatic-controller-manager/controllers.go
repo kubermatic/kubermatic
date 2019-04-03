@@ -33,7 +33,7 @@ import (
 // each entry holds the name of the controller and the corresponding
 // start function that will essentially run the controller
 var allControllers = map[string]controllerCreator{
-	"Cluster":                          createClusterController,
+	cluster.ControllerName:             createClusterController,
 	"Update":                           createUpdateController,
 	"Addon":                            createAddonController,
 	"AddonInstaller":                   createAddonInstallerController,
@@ -126,11 +126,11 @@ func createOpenshiftController(ctrlCtx *controllerContext) (runner, error) {
 }
 
 func createClusterController(ctrlCtx *controllerContext) (runner, error) {
-
-	return cluster.NewController(
-		ctrlCtx.kubeClient,
+	return nil, cluster.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
 		ctrlCtx.dynamicClient,
-		ctrlCtx.kubermaticClient,
 		ctrlCtx.runOptions.externalURL,
 		ctrlCtx.runOptions.dc,
 		ctrlCtx.dcs,
@@ -145,23 +145,7 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultScrapingConfigs,
 		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
 		ctrlCtx.dockerPullConfigJSON,
-
 		ctrlCtx.dynamicCache,
-		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
-		ctrlCtx.kubeInformerFactory.Core().V1().Namespaces(),
-		ctrlCtx.kubeInformerFactory.Core().V1().Secrets(),
-		ctrlCtx.kubeInformerFactory.Core().V1().Services(),
-		ctrlCtx.kubeInformerFactory.Core().V1().PersistentVolumeClaims(),
-		ctrlCtx.kubeInformerFactory.Core().V1().ConfigMaps(),
-		ctrlCtx.kubeInformerFactory.Core().V1().ServiceAccounts(),
-		ctrlCtx.kubeInformerFactory.Apps().V1().Deployments(),
-		ctrlCtx.kubeInformerFactory.Apps().V1().StatefulSets(),
-		ctrlCtx.kubeInformerFactory.Batch().V1beta1().CronJobs(),
-		ctrlCtx.kubeInformerFactory.Extensions().V1beta1().Ingresses(),
-		ctrlCtx.kubeInformerFactory.Rbac().V1().Roles(),
-		ctrlCtx.kubeInformerFactory.Rbac().V1().RoleBindings(),
-		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
-		ctrlCtx.kubeInformerFactory.Policy().V1beta1().PodDisruptionBudgets(),
 		ctrlCtx.runOptions.oidcCAFile,
 		ctrlCtx.runOptions.oidcIssuerURL,
 		ctrlCtx.runOptions.oidcIssuerClientID,
@@ -191,6 +175,7 @@ func createBackupController(ctrlCtx *controllerContext) (runner, error) {
 		backupcontroller.NewMetrics(),
 		ctrlCtx.kubermaticClient,
 		ctrlCtx.kubeClient,
+		ctrlCtx.dynamicClient,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 		ctrlCtx.kubeInformerFactory.Batch().V1beta1().CronJobs(),
 		ctrlCtx.kubeInformerFactory.Batch().V1().Jobs(),

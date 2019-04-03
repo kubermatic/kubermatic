@@ -13,7 +13,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -68,13 +67,9 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 
 			// For migration purpose.
 			// We switched from the etcd-operator to a simple etcd-StatefulSet. Therefore we need to migrate the data.
-			var migrate bool
-			if _, err := data.ServiceLister().Services(data.Cluster().Status.NamespaceName).Get("etcd-cluster-client"); err != nil {
-				if !errors.IsNotFound(err) {
-					return nil, err
-				}
-			} else {
-				migrate = true
+			migrate, err := data.HasEtcdOperatorService()
+			if err != nil {
+				return nil, fmt.Errorf("failed to check if we need to include the etcd-operator migration code: %v", err)
 			}
 
 			etcdStartCmd, err := getEtcdCommand(data.Cluster().Name, data.Cluster().Status.NamespaceName, migrate, data.EnableEtcdDataCorruptionChecks())

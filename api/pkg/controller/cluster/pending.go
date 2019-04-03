@@ -1,10 +1,13 @@
 package cluster
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/golang/glog"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 )
@@ -13,53 +16,51 @@ const (
 	reachableCheckPeriod = 5 * time.Second
 )
 
-func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	var err error
+func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// Create the namespace
 	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		if cluster, err = cc.ensureNamespaceExists(cluster); err != nil {
+		if err := r.ensureNamespaceExists(ctx, cluster); err != nil {
 			return nil, err
 		}
 	}
 
 	// Set the hostname & url
-	if cluster, err = cc.syncAddress(cluster); err != nil {
+	if err := r.syncAddress(ctx, cluster); err != nil {
 		return nil, err
 	}
 
 	// Set default network configuration
-	if cluster, err = cc.ensureClusterNetworkDefaults(cluster); err != nil {
+	if err := r.ensureClusterNetworkDefaults(ctx, cluster); err != nil {
 		return nil, err
 	}
 
 	// Deploy & Update master components for Kubernetes
-	if err = cc.ensureResourcesAreDeployed(cluster); err != nil {
+	if err := r.ensureResourcesAreDeployed(ctx, cluster); err != nil {
 		return nil, err
 	}
 
 	// synchronize cluster.status.health for Kubernetes clusters
 	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		if cluster, err = cc.syncHealth(cluster); err != nil {
+		if err := r.syncHealth(ctx, cluster); err != nil {
 			return nil, err
 		}
 	}
 
 	if cluster.Status.Health.Apiserver {
 		// Controlling of user-cluster resources
-		reachable, err := cc.clusterIsReachable(cluster)
+		reachable, err := r.clusterIsReachable(cluster)
 		if err != nil {
 			return nil, err
 		}
 
 		if !reachable {
-			cc.enqueueAfter(cluster, reachableCheckPeriod)
-			return cluster, nil
+			return &reconcile.Result{RequeueAfter: reachableCheckPeriod}, nil
 		}
 
 		// Only add the node deletion finalizer when the cluster is actually running
 		// Otherwise we fail to delete the nodes and are stuck in a loop
 		if !kuberneteshelper.HasFinalizer(cluster, NodeDeletionFinalizer) {
-			cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+			err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 				c.Finalizers = append(c.Finalizers, NodeDeletionFinalizer)
 			})
 			if err != nil {
@@ -67,25 +68,24 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 			}
 		}
 
-		client, err := cc.userClusterConnProvider.GetClient(cluster)
+		client, err := r.userClusterConnProvider.GetClient(cluster)
 		if err != nil {
 			return nil, err
 		}
 
 		// TODO: Move into own controller
-		if cluster, err = cc.reconcileUserClusterResources(cluster, client); err != nil {
+		if err := r.reconcileUserClusterResources(ctx, cluster, client); err != nil {
 			return nil, fmt.Errorf("failed to reconcile user cluster resources: %v", err)
 		}
 	}
 
 	if !cluster.Status.Health.AllHealthy() {
 		glog.V(5).Infof("Cluster %q not yet healthy: %+v", cluster.Name, cluster.Status.Health)
-		cc.enqueueAfter(cluster, reachableCheckPeriod)
-		return cluster, nil
+		return &reconcile.Result{RequeueAfter: reachableCheckPeriod}, nil
 	}
 
 	if cluster.Status.Phase == kubermaticv1.LaunchingClusterStatusPhase {
-		cluster, err = cc.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			c.Status.Phase = kubermaticv1.RunningClusterStatusPhase
 		})
 		if err != nil {
@@ -93,38 +93,37 @@ func (cc *Controller) reconcileCluster(cluster *kubermaticv1.Cluster) (*kubermat
 		}
 	}
 
-	return cluster, nil
+	return &reconcile.Result{}, nil
 }
 
 // ensureClusterNetworkDefaults will apply default cluster network configuration
-func (cc *Controller) ensureClusterNetworkDefaults(c *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	var err error
-	if len(c.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
-		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
+func (r *Reconciler) ensureClusterNetworkDefaults(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	var modifiers []func(*kubermaticv1.Cluster)
+
+	if len(cluster.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
+		setServiceNetwork := func(c *kubermaticv1.Cluster) {
 			c.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
-		})
-		if err != nil {
-			return nil, err
 		}
+		modifiers = append(modifiers, setServiceNetwork)
 	}
 
-	if len(c.Spec.ClusterNetwork.Pods.CIDRBlocks) == 0 {
-		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
+	if len(cluster.Spec.ClusterNetwork.Pods.CIDRBlocks) == 0 {
+		setPodNetwork := func(c *kubermaticv1.Cluster) {
 			c.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
-		})
-		if err != nil {
-			return nil, err
 		}
+		modifiers = append(modifiers, setPodNetwork)
 	}
 
-	if c.Spec.ClusterNetwork.DNSDomain == "" {
-		c, err = cc.updateCluster(c.Name, func(c *kubermaticv1.Cluster) {
+	if cluster.Spec.ClusterNetwork.DNSDomain == "" {
+		setDNSDomain := func(c *kubermaticv1.Cluster) {
 			c.Spec.ClusterNetwork.DNSDomain = "cluster.local"
-		})
-		if err != nil {
-			return nil, err
 		}
+		modifiers = append(modifiers, setDNSDomain)
 	}
 
-	return c, nil
+	return r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+		for _, modify := range modifiers {
+			modify(c)
+		}
+	})
 }

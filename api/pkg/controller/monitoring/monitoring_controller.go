@@ -1,6 +1,7 @@
 package monitoring
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -317,7 +318,7 @@ func (c *Controller) sync(key string) error {
 	}
 	glog.V(4).Infof("syncing cluster %s", key)
 
-	data, err := c.getClusterTemplateData(cluster)
+	data, err := c.getClusterTemplateData(context.Background(), c.dynamicClient, cluster)
 	if err != nil {
 		return err
 	}

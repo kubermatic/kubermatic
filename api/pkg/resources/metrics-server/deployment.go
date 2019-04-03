@@ -35,7 +35,7 @@ const (
 )
 
 // DeploymentCreator returns the function to create and update the metrics server deployment
-func DeploymentCreator(data resources.DeploymentDataProvider) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MetricsServerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.MetricsServerDeploymentName

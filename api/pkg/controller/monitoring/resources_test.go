@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"k8s.io/apimachinery/pkg/types"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
@@ -13,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestCreateConfigMap(t *testing.T) {
@@ -90,7 +89,7 @@ func TestCreateConfigMap(t *testing.T) {
 			}
 			controller := newTestController(objects, []runtime.Object{test.cluster})
 
-			data, err := controller.getClusterTemplateData(test.cluster)
+			data, err := controller.getClusterTemplateData(context.Background(), controller.dynamicClient, test.cluster)
 			if err != nil {
 				t.Fatal(err)
 				return

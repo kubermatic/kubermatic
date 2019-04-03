@@ -5,6 +5,7 @@ import (
 	"time"
 
 	fakekubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
+	kubermaticscheme "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/scheme"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -14,7 +15,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	kuberinformers "k8s.io/client-go/informers"
 	fakekubernetesclientset "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/kubernetes/scheme"
 	certutil "k8s.io/client-go/util/cert"
+
+	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var (
@@ -27,6 +31,10 @@ var (
 )
 
 func TestEnsureBackupCronJob(t *testing.T) {
+	if err := kubermaticscheme.AddToScheme(scheme.Scheme); err != nil {
+		t.Fatalf("failed to add kubermatic scheme: %v", err)
+	}
+
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",
@@ -66,6 +74,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 	fakeKubermaticClient := fakekubermaticclientset.NewSimpleClientset(runtime.Object(cluster))
 	kubeInformers := kuberinformers.NewSharedInformerFactory(fakeKubeClient, 10*time.Millisecond)
 	kubermaticInformers := externalversions.NewSharedInformerFactory(fakeKubermaticClient, 10*time.Millisecond)
+	dynamicClient := ctrlruntimefakeclient.NewFakeClient(caSecret, cluster)
 
 	controller, err := New(testStoreContainer,
 		testCleanupContainer,
@@ -74,6 +83,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		NewMetrics(),
 		fakeKubermaticClient,
 		fakeKubeClient,
+		dynamicClient,
 		kubermaticInformers.Kubermatic().V1().Clusters(),
 		kubeInformers.Batch().V1beta1().CronJobs(),
 		kubeInformers.Batch().V1().Jobs(),

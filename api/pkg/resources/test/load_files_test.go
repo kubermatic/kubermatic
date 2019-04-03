@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -9,7 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/Masterminds/semver"
 	"github.com/ghodss/yaml"
@@ -34,8 +34,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/informers"
-	kubefake "k8s.io/client-go/kubernetes/fake"
+	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var update = flag.Bool("update", false, "Update test fixtures")
@@ -232,7 +231,7 @@ func TestLoadFiles(t *testing.T) {
 					},
 				}
 
-				kubeClient := kubefake.NewSimpleClientset(
+				dynamicClient := ctrlruntimefakeclient.NewFakeClient(
 					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
@@ -503,14 +502,13 @@ func TestLoadFiles(t *testing.T) {
 					}
 				})()
 
-				kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, 10*time.Millisecond)
+				ctx := context.Background()
 				data := resources.NewTemplateData(
+					ctx,
+					dynamicClient,
 					cluster,
 					&dc,
 					"testdc",
-					kubeInformerFactory.Core().V1().Secrets().Lister(),
-					kubeInformerFactory.Core().V1().ConfigMaps().Lister(),
-					kubeInformerFactory.Core().V1().Services().Lister(),
 					"",
 					"",
 					"192.0.2.0/24",
@@ -520,14 +518,11 @@ func TestLoadFiles(t *testing.T) {
 					false,
 					false,
 					tmpFilePath,
-					nil,
 					"test",
 					"",
 					"",
 					false,
 				)
-				kubeInformerFactory.Start(wait.NeverStop)
-				kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
 
 				var deploymentCreators []reconciling.NamedDeploymentCreatorGetter
 				deploymentCreators = append(deploymentCreators, clustercontroller.GetDeploymentCreators(data)...)

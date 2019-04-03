@@ -36,7 +36,7 @@ const (
 )
 
 // DeploymentCreator returns the function to create and update the controller manager deployment
-func DeploymentCreator(data resources.DeploymentDataProvider) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.ControllerManagerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.ControllerManagerDeploymentName
@@ -317,7 +317,7 @@ func getEnvVars(cluster *kubermaticv1.Cluster) []corev1.EnvVar {
 	return vars
 }
 
-func getPodAnnotations(data resources.DeploymentDataProvider) map[string]string {
+func getPodAnnotations(data *resources.TemplateData) map[string]string {
 	annotations := map[string]string{
 		"prometheus.io/path": "/metrics",
 	}
@@ -333,7 +333,7 @@ func getPodAnnotations(data resources.DeploymentDataProvider) map[string]string 
 	return annotations
 }
 
-func getHealthGetAction(data resources.DeploymentDataProvider) *corev1.HTTPGetAction {
+func getHealthGetAction(data *resources.TemplateData) *corev1.HTTPGetAction {
 	action := &corev1.HTTPGetAction{
 		Path: "/healthz",
 	}
