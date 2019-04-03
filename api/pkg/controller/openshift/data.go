@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/rsa"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"net/url"
@@ -24,18 +25,20 @@ import (
 type openshiftData struct {
 	cluster           *kubermaticv1.Cluster
 	client            client.Client
-	dC                *provider.DatacenterMeta
+	dc                *provider.DatacenterMeta
 	overwriteRegistry string
 	nodeAccessNetwork string
+	oidc              OIDCConfig
 }
 
 func (od *openshiftData) DC() *provider.DatacenterMeta {
-	return od.dC
+	return od.dc
 }
 
 func (od *openshiftData) GetOpenVPNCA() (*kubernetesresources.ECDSAKeyPair, error) {
 	return od.GetOpenVPNCAWithContext(context.TODO())
 }
+
 func (od *openshiftData) GetOpenVPNCAWithContext(ctx context.Context) (*kubernetesresources.ECDSAKeyPair, error) {
 	caCertSecret := &corev1.Secret{}
 	if err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, kubernetesresources.OpenVPNCASecretName), caCertSecret); err != nil {
@@ -226,5 +229,21 @@ func (od *openshiftData) GetOpenVPNServerPort() (int32, error) {
 		return 0, fmt.Errorf("expected service %s to have exactly one port but has %d", kubernetesresources.OpenVPNServerServiceName, portLen)
 	}
 	return service.Spec.Ports[0].NodePort, nil
+}
 
+// GetDexCA returns the chain of public certificates of the Dex
+func (od *openshiftData) GetDexCA() ([]*x509.Certificate, error) {
+	return kubernetesresources.GetDexCAFromFile(od.oidc.CAFile)
+}
+
+func (od *openshiftData) OIDCIssuerURL() string {
+	return od.oidc.IssuerURL
+}
+
+func (od *openshiftData) OIDCClientID() string {
+	return od.oidc.ClientID
+}
+
+func (od *openshiftData) OIDCClientSecret() string {
+	return od.oidc.ClientSecret
 }
