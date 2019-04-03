@@ -1399,9 +1399,9 @@ func (r Routing) updateServiceAccount() http.Handler {
 func (r Routing) deleteServiceAccount() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(serviceaccount.DeleteEndpoint(r.serviceAccountProvider, r.projectProvider)),
 		serviceaccount.DecodeDeleteReq,
 		encodeJSON,
