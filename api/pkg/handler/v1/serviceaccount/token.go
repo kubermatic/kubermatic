@@ -35,7 +35,7 @@ func CreateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccoun
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		sa, err := serviceAccountProvider.Get(userInfo, req.ServiceAccountID)
+		sa, err := serviceAccountProvider.Get(userInfo, req.ServiceAccountID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

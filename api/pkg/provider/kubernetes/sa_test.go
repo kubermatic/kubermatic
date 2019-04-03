@@ -178,7 +178,7 @@ func TestGet(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			sa, err := target.Get(tc.userInfo, tc.saName)
+			sa, err := target.Get(tc.userInfo, tc.saName, nil)
 			// validate
 			if err != nil {
 				t.Fatal(err)
@@ -230,7 +230,7 @@ func TestUpdate(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			sa, err := target.Get(tc.userInfo, tc.saName)
+			sa, err := target.Get(tc.userInfo, tc.saName, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -287,7 +287,7 @@ func TestDelete(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			_, err = target.Get(tc.userInfo, tc.saName)
+			_, err = target.Get(tc.userInfo, tc.saName, nil)
 			if err == nil {
 				t.Fatal("expected error")
 			}
