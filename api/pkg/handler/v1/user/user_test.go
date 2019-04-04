@@ -876,7 +876,6 @@ func TestNewUser(t *testing.T) {
 			},
 			ExistingAPIUser: genDefaultAPIUser(),
 		},
-
 	}
 
 	for _, tc := range testcases {
