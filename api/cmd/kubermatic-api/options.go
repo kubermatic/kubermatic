@@ -69,6 +69,8 @@ func newServerRunOptions() (serverRunOptions, error) {
 }
 
 func (o serverRunOptions) validate() error {
+	// As long as OpenShift support has not reached the testing stage, we only validate those flags when the OIDC feature flag was set
+	// TODO: Enforce validation as soon as OpenShift support is testable
 	if o.featureGates.Enabled(OIDCKubeCfgEndpoint) {
 		if len(o.oidcIssuerClientSecret) == 0 {
 			return fmt.Errorf("%s feature is enabled but \"oidc-client-secret\" flag was not specified", OIDCKubeCfgEndpoint)

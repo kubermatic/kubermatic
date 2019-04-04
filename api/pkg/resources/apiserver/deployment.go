@@ -38,14 +38,9 @@ const (
 )
 
 // DeploymentCreator returns the function to create and update the API server deployment
-func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.ApiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			var enableDexCA bool
-			if len(data.OIDCCAFile()) > 0 {
-				enableDexCA = true
-			}
-
 			dep.Name = resources.ApiserverDeploymentName
 			dep.Labels = resources.BaseAppLabel(name, nil)
 
@@ -136,7 +131,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
 			}
 
-			flags, err := getApiserverFlags(data, externalNodePort, etcdEndpoints)
+			flags, err := getApiserverFlags(data, externalNodePort, etcdEndpoints, enableDexCA)
 			if err != nil {
 				return nil, err
 			}
@@ -203,7 +198,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 	}
 }
 
-func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etcdEndpoints []string) ([]string, error) {
+func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etcdEndpoints []string, enableDexCA bool) ([]string, error) {
 	nodePortRange := data.NodePortRange()
 	if nodePortRange == "" {
 		nodePortRange = defaultNodePortRange
@@ -262,7 +257,7 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
 
-	if data.OIDCAuthPluginEnabled() {
+	if enableDexCA {
 		flags = append(flags, "--oidc-issuer-url", data.OIDCIssuerURL())
 		flags = append(flags, "--oidc-client-id", data.OIDCIssuerClientID())
 		flags = append(flags, "--oidc-username-claim", "email")

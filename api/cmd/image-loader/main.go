@@ -159,10 +159,10 @@ func getImagesForVersion(versions []*version.MasterVersion, requestedVersion str
 }
 
 func getImagesFromCreators(templateData *resources.TemplateData) (images []string, err error) {
-	statefulsetCreators := cluster.GetStatefulSetCreators(templateData)
+	statefulsetCreators := cluster.GetStatefulSetCreators(templateData, false)
 	statefulsetCreators = append(statefulsetCreators, monitoring.GetStatefulSetCreators(templateData)...)
 
-	deploymentCreators := cluster.GetDeploymentCreators(templateData)
+	deploymentCreators := cluster.GetDeploymentCreators(templateData, false)
 	deploymentCreators = append(deploymentCreators, monitoring.GetDeploymentCreators(templateData)...)
 
 	cronjobCreators := cluster.GetCronJobCreators(templateData)
@@ -362,7 +362,6 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		"",
 		"",
 		"",
-		false,
 	), nil
 }
 

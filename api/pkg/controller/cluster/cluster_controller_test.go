@@ -27,15 +27,13 @@ func newTestReconciler(t *testing.T, objects []runtime.Object) *Reconciler {
 
 	dynamicClient := ctrlruntimefakeclient.NewFakeClient(objects...)
 	r := &Reconciler{
-		Client:                         dynamicClient,
-		userClusterConnProvider:        nil,
-		externalURL:                    TestExternalURL,
-		dc:                             TestDC,
-		dcs:                            dcs,
-		enableEtcdDataCorruptionChecks: true,
-		enableVPA:                      true,
-		etcdDiskSize:                   resource.MustParse("5Gi"),
-		nodeAccessNetwork:              "192.0.2.0/24",
+		Client:                  dynamicClient,
+		userClusterConnProvider: nil,
+		externalURL:             TestExternalURL,
+		dc:                      TestDC,
+		dcs:                     dcs,
+		etcdDiskSize:            resource.MustParse("5Gi"),
+		nodeAccessNetwork:       "192.0.2.0/24",
 	}
 
 	return r
