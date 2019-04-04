@@ -158,8 +158,8 @@ func UserInfoUnauthorized(userProjectMapper provider.ProjectMemberMapper, userPr
 	}
 }
 
-// OIDCTokenVerifier knows how to verify an ID token from a request
-func OIDCTokenVerifier(o auth.TokenVerifier) endpoint.Middleware {
+// TokenVerifier knows how to verify a token from the incoming request
+func TokenVerifier(tokenVerifier auth.TokenVerifier) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			if rawTokenNotFoundErr := ctx.Value(noTokenFoundKey); rawTokenNotFoundErr != nil {
@@ -178,7 +178,7 @@ func OIDCTokenVerifier(o auth.TokenVerifier) endpoint.Middleware {
 
 			verifyCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 			defer cancel()
-			claims, err := o.Verify(verifyCtx, token)
+			claims, err := tokenVerifier.Verify(verifyCtx, token)
 			if err != nil {
 				return nil, k8cerrors.NewNotAuthorized()
 			}
@@ -209,8 +209,8 @@ func OIDCTokenVerifier(o auth.TokenVerifier) endpoint.Middleware {
 	}
 }
 
-// OIDCTokenExtractor knows how to extract an ID token from the request
-func OIDCTokenExtractor(o auth.TokenExtractor) transporthttp.RequestFunc {
+// TokenExtractor knows how to extract a token from the incoming request
+func TokenExtractor(o auth.TokenExtractor) transporthttp.RequestFunc {
 	return func(ctx context.Context, r *http.Request) context.Context {
 		token, err := o.Extract(r)
 		if err != nil {

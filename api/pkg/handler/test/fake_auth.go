@@ -30,7 +30,7 @@ const (
 )
 
 var _ auth.OIDCIssuerVerifier = &IssuerVerifier{}
-var _ auth.OIDCExtractorVerifier = &IssuerVerifier{}
+var _ auth.TokenExtractorVerifier = &IssuerVerifier{}
 
 // OicdProvider is a test stub that mocks *oidc.Provider
 type OicdProvider struct {

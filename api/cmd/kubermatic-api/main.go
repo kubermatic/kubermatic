@@ -64,15 +64,19 @@ func main() {
 	if err != nil {
 		glog.Fatalf("failed to create and initialize providers due to %v", err)
 	}
-	extractorVerifier, issuerVerifier, err := createOIDCClients(options)
+	oidcIssuerVerifier, err := createOIDCClients(options)
 	if err != nil {
-		glog.Fatalf("failed to create a openid authenticator for issuer %s (oidcClientID=%s) due to %v", options.oidcURL, options.oidcAuthenticatorClientID, err)
+		glog.Fatalf("failed to create an openid authenticator for issuer %s (oidcClientID=%s) due to %v", options.oidcURL, options.oidcAuthenticatorClientID, err)
+	}
+	tokenVerifiers, tokenExtractors, err := createAuthClients(options)
+	if err != nil {
+		glog.Fatalf("failed to create auth clients due to %v", err)
 	}
 	updateManager, err := version.NewFromFiles(options.versionsFile, options.updatesFile)
 	if err != nil {
 		glog.Fatal(fmt.Sprintf("failed to create update manager due to %v", err))
 	}
-	apiHandler, err := createAPIHandler(options, providers, extractorVerifier, issuerVerifier, updateManager)
+	apiHandler, err := createAPIHandler(options, providers, oidcIssuerVerifier, tokenVerifiers, tokenExtractors, updateManager)
 	if err != nil {
 		glog.Fatalf(fmt.Sprintf("failed to create API Handler due to %v", err))
 	}
@@ -166,8 +170,22 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	return providers{sshKey: sshKeyProvider, user: userProvider, serviceAccountProvider: serviceAccountProvider, project: projectProvider, privilegedProject: privilegedProjectProvider, projectMember: projectMemberProvider, memberMapper: projectMemberProvider, cloud: cloudProviders, clusters: clusterProviders, datacenters: datacenters}, nil
 }
 
-func createOIDCClients(options serverRunOptions) (auth.OIDCExtractorVerifier, auth.OIDCIssuerVerifier, error) {
-	extractorVerifier, err := auth.NewOpenIDClient(
+func createOIDCClients(options serverRunOptions) (auth.OIDCIssuerVerifier, error) {
+	return auth.NewOpenIDClient(
+		options.oidcURL,
+		options.oidcIssuerClientID,
+		options.oidcIssuerClientSecret,
+		options.oidcIssuerRedirectURI,
+		auth.NewCombinedExtractor(
+			auth.NewHeaderBearerTokenExtractor("Authorization"),
+			auth.NewQueryParamBearerTokenExtractor("token"),
+		),
+		options.oidcSkipTLSVerify,
+	)
+}
+
+func createAuthClients(options serverRunOptions) (auth.TokenVerifier, auth.TokenExtractor, error) {
+	oidcExtractorVerifier, err := auth.NewOpenIDClient(
 		options.oidcURL,
 		options.oidcAuthenticatorClientID,
 		"",
@@ -183,22 +201,12 @@ func createOIDCClients(options serverRunOptions) (auth.OIDCExtractorVerifier, au
 		return nil, nil, fmt.Errorf("failed to create OIDC Authenticator: %v", err)
 	}
 
-	issuer, err := auth.NewOpenIDClient(
-		options.oidcURL,
-		options.oidcIssuerClientID,
-		options.oidcIssuerClientSecret,
-		options.oidcIssuerRedirectURI,
-		auth.NewCombinedExtractor(
-			auth.NewHeaderBearerTokenExtractor("Authorization"),
-			auth.NewQueryParamBearerTokenExtractor("token"),
-		),
-		options.oidcSkipTLSVerify,
-	)
-
-	return extractorVerifier, issuer, err
+	tokenVerifiers := auth.NewTokenVerifierPlugins([]auth.TokenVerifier{oidcExtractorVerifier})
+	tokenExtractors := auth.NewTokenExtractorPlugins([]auth.TokenExtractor{oidcExtractorVerifier})
+	return tokenVerifiers, tokenExtractors, nil
 }
 
-func createAPIHandler(options serverRunOptions, prov providers, oidcExtractorVerifier auth.OIDCExtractorVerifier, oidcIssuerVerifier auth.OIDCIssuerVerifier, updateManager common.UpdateManager) (http.HandlerFunc, error) {
+func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifier auth.OIDCIssuerVerifier, tokenVerifiers auth.TokenVerifier, tokenExtractors auth.TokenExtractor, updateManager common.UpdateManager) (http.HandlerFunc, error) {
 	var prometheusClient prometheusapi.Client
 	if options.featureGates.Enabled(PrometheusEndpoint) {
 		var err error
@@ -218,8 +226,9 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcExtractorVer
 		prov.serviceAccountProvider,
 		prov.project,
 		prov.privilegedProject,
-		oidcExtractorVerifier,
 		oidcIssuerVerifier,
+		tokenVerifiers,
+		tokenExtractors,
 		updateManager,
 		prometheusClient,
 		prov.projectMember,
