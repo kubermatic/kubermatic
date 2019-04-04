@@ -25,8 +25,10 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 	}
 
 	// Set the hostname & url
-	if err := r.syncAddress(ctx, cluster); err != nil {
-		return nil, err
+	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		if err := r.syncAddress(ctx, cluster); err != nil {
+			return nil, err
+		}
 	}
 
 	// Set default network configuration

@@ -9,6 +9,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/address"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
@@ -58,10 +59,12 @@ type Reconciler struct {
 	scheme               *runtime.Scheme
 	recorder             record.EventRecorder
 	dcs                  map[string]provider.DatacenterMeta
+	dc                   string
 	overwriteRegistry    string
 	nodeAccessNetwork    string
 	dockerPullConfigJSON []byte
 	workerName           string
+	externalURL          string
 	oidc                 OIDCConfig
 }
 
@@ -69,9 +72,11 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	workerName string,
+	dc string,
 	dcs map[string]provider.DatacenterMeta,
 	overwriteRegistry, nodeAccessNetwork string,
 	dockerPullConfigJSON []byte,
+	externalURL string,
 	oidcConfig OIDCConfig,
 ) error {
 	dynamicClient := mgr.GetClient()
@@ -79,11 +84,13 @@ func Add(
 		Client:               dynamicClient,
 		scheme:               mgr.GetScheme(),
 		recorder:             mgr.GetRecorder(ControllerName),
+		dc:                   dc,
 		dcs:                  dcs,
 		overwriteRegistry:    overwriteRegistry,
 		nodeAccessNetwork:    nodeAccessNetwork,
 		dockerPullConfigJSON: dockerPullConfigJSON,
 		workerName:           workerName,
+		externalURL:          externalURL,
 		oidc:                 oidcConfig,
 	}
 
@@ -178,6 +185,10 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		overwriteRegistry: r.overwriteRegistry,
 		nodeAccessNetwork: r.nodeAccessNetwork,
 		oidc:              r.oidc,
+	}
+
+	if err := r.address(ctx, cluster); err != nil {
+		return nil, fmt.Errorf("failed to reconcile the cluster address: %v", err)
 	}
 
 	if err := r.services(ctx, osData); err != nil {
@@ -460,6 +471,23 @@ func (r *Reconciler) ensureNamespace(ctx context.Context, c *kubermaticv1.Cluste
 		}
 	}
 
+	return nil
+}
+
+func (r *Reconciler) address(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	modifiers, err := address.SyncClusterAddress(ctx, cluster, r.Client, r.externalURL, r.dc, r.dcs)
+	if err != nil {
+		return err
+	}
+	if len(modifiers) > 0 {
+		if err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+			for _, modifier := range modifiers {
+				modifier(c)
+			}
+		}); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

@@ -7,6 +7,7 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/address"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	corev1 "k8s.io/api/core/v1"
@@ -20,7 +21,7 @@ import (
 // - 2001:16B8:6844:D700:A1B9:D94B:FDC3:1C33
 func TestGetExternalIPv4(t *testing.T) {
 	const testDomain = "dns-test.kubermatic.io"
-	ip, err := getExternalIPv4(testDomain)
+	ip, err := address.GetExternalIPv4(testDomain)
 	if err != nil {
 		t.Fatalf("failed to get the external IPv4 address for %s: %v", testDomain, err)
 	}
