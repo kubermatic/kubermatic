@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# TODO: remove
+more /proc/cpuinfo
+
 CONTROLLER_IMAGE="quay.io/kubermatic/cluster-exposer:v1.0.0"
 # TODO: remove once we generate static clients from the tests
 export KUBERMATIC_DEX_DEV_E2E_USERNAME="roxy@loodse.com"
