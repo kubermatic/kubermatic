@@ -4,34 +4,22 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"time"
 
 	"github.com/coreos/go-oidc"
-	"github.com/go-kit/kit/endpoint"
-	transporthttp "github.com/go-kit/kit/transport/http"
-	"github.com/golang/glog"
 	"golang.org/x/oauth2"
-
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
-	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
-	"github.com/kubermatic/kubermatic/api/pkg/util/hash"
 )
 
 // contextKey defines a dedicated type for keys to use on contexts
 type contextKey string
 
-const (
-	rawToken contextKey = "raw-auth-token"
-)
-
-// OIDCAuthenticator  is responsible for extracting and verifying
-// data to authenticate
-type OIDCAuthenticator interface {
-	Verifier() endpoint.Middleware
-	Extractor() transporthttp.RequestFunc
+// OIDCExtractorVerifier is responsible for extracting auth data from a request
+type OIDCExtractorVerifier interface {
+	OIDCVerifier
+	Extract(rq *http.Request) string
 }
 
 // OIDCToken represents the credentials used to authorize
@@ -101,8 +89,8 @@ type TokenExtractor interface {
 	Extract(r *http.Request) string
 }
 
-// OpenIDAuthenticator implements OIDCIssuerVerifier and OIDCAuthenticator
-type OpenIDAuthenticator struct {
+// OpenIDClient implements OIDCIssuerVerifier and OIDCExtractorVerifier
+type OpenIDClient struct {
 	issuer         string
 	tokenExtractor TokenExtractor
 	clientID       string
@@ -113,8 +101,8 @@ type OpenIDAuthenticator struct {
 	httpClient     *http.Client
 }
 
-// NewOpenIDAuthenticator returns an authentication middleware which authenticates against an openID server
-func NewOpenIDAuthenticator(issuer, clientID, clientSecret, redirectURI string, extractor TokenExtractor, insecureSkipVerify bool) (*OpenIDAuthenticator, error) {
+// NewOpenIDClient returns an authentication middleware which authenticates against an openID server
+func NewOpenIDClient(issuer, clientID, clientSecret, redirectURI string, extractor TokenExtractor, insecureSkipVerify bool) (*OpenIDClient, error) {
 	ctx := context.Background()
 	tr := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
@@ -136,7 +124,7 @@ func NewOpenIDAuthenticator(issuer, clientID, clientSecret, redirectURI string, 
 		return nil, err
 	}
 
-	return &OpenIDAuthenticator{
+	return &OpenIDClient{
 		issuer:         issuer,
 		tokenExtractor: extractor,
 		clientID:       clientID,
@@ -148,72 +136,21 @@ func NewOpenIDAuthenticator(issuer, clientID, clientSecret, redirectURI string, 
 	}, nil
 }
 
-// Verifier is a convenient middleware that extracts the ID Token from the request,
-// verifies it's been signed by the provider and creates apiv1.User from it
-// TODO: move it to middleware pkg
-func (o *OpenIDAuthenticator) Verifier() endpoint.Middleware {
-	return func(next endpoint.Endpoint) endpoint.Endpoint {
-		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			t := ctx.Value(rawToken)
-			token, ok := t.(string)
-			if !ok || token == "" {
-				return nil, k8cerrors.NewNotAuthorized()
-			}
-
-			verifyCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
-			defer cancel()
-			claims, err := o.Verify(verifyCtx, token)
-			if err != nil {
-				glog.Error(err)
-				return nil, k8cerrors.NewNotAuthorized()
-			}
-
-			if claims.Subject == "" {
-				glog.Error(err)
-				return nil, k8cerrors.NewNotAuthorized()
-			}
-
-			id, err := hash.GetUserID(claims.Subject)
-			if err != nil {
-				glog.Error(err)
-				return nil, k8cerrors.NewNotAuthorized()
-			}
-
-			user := apiv1.User{
-				ObjectMeta: apiv1.ObjectMeta{
-					ID:   id,
-					Name: claims.Name,
-				},
-				Email: claims.Email,
-			}
-
-			if user.ID == "" {
-				glog.Error(err)
-				return nil, k8cerrors.NewNotAuthorized()
-			}
-
-			return next(context.WithValue(ctx, middleware.AuthenticatedUserContextKey, user), request)
-		}
-	}
-}
-
 // Extractor knows how to extract the ID token from the request
-func (o *OpenIDAuthenticator) Extractor() transporthttp.RequestFunc {
-	return func(ctx context.Context, r *http.Request) context.Context {
-		token := o.tokenExtractor.Extract(r)
-		return context.WithValue(ctx, rawToken, token)
-	}
+func (o *OpenIDClient) Extract(rq *http.Request) string {
+	return o.tokenExtractor.Extract(rq)
 }
 
 // Verify parses a raw ID Token, verifies it's been signed by the provider, preforms
 // any additional checks depending on the Config, and returns the payload as OIDCClaims.
-func (o *OpenIDAuthenticator) Verify(ctx context.Context, token string) (OIDCClaims, error) {
+func (o *OpenIDClient) Verify(ctx context.Context, token string) (OIDCClaims, error) {
 	if token == "" {
 		return OIDCClaims{}, errors.New("token cannot be empty")
 	}
 
 	idToken, err := o.verifier.Verify(ctx, token)
 	if err != nil {
+		fmt.Printf("%v", err)
 		return OIDCClaims{}, err
 	}
 
@@ -251,7 +188,7 @@ func (o *OpenIDAuthenticator) Verify(ctx context.Context, token string) (OIDCCla
 // always provide a non-zero string and validate that it matches the
 // the state query parameter on your redirect callback.
 // See http://tools.ietf.org/html/rfc6749#section-10.12 for more info.
-func (o *OpenIDAuthenticator) AuthCodeURL(state string, offlineAsScope bool, scopes ...string) string {
+func (o *OpenIDClient) AuthCodeURL(state string, offlineAsScope bool, scopes ...string) string {
 	oauth2Config := o.oauth2Config(scopes...)
 	options := oauth2.AccessTypeOnline
 	if !offlineAsScope {
@@ -261,7 +198,7 @@ func (o *OpenIDAuthenticator) AuthCodeURL(state string, offlineAsScope bool, sco
 }
 
 // Exchange converts an authorization code into a token.
-func (o *OpenIDAuthenticator) Exchange(ctx context.Context, code string) (OIDCToken, error) {
+func (o *OpenIDClient) Exchange(ctx context.Context, code string) (OIDCToken, error) {
 	clientCtx := oidc.ClientContext(ctx, o.httpClient)
 	oauth2Config := o.oauth2Config()
 
@@ -278,7 +215,7 @@ func (o *OpenIDAuthenticator) Exchange(ctx context.Context, code string) (OIDCTo
 	return oidcToken, nil
 }
 
-func (o *OpenIDAuthenticator) oauth2Config(scopes ...string) *oauth2.Config {
+func (o *OpenIDClient) oauth2Config(scopes ...string) *oauth2.Config {
 	return &oauth2.Config{
 		ClientID:     o.clientID,
 		ClientSecret: o.clientSecret,

@@ -38,7 +38,7 @@ func (r Routing) createOIDCKubeconfig(oidcCfg common.OIDCConfiguration) http.Han
 		endpoint.Chain(
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfoUnauthorized(r.userProjectMapper, r.userProvider),
-		)(cluster.CreateOIDCKubeconfigEndpoint(r.projectProvider, r.oidcIssuer, oidcCfg)),
+		)(cluster.CreateOIDCKubeconfigEndpoint(r.projectProvider, r.oidcIssuerVerifier, oidcCfg)),
 		cluster.DecodeCreateOIDCKubeconfig,
 		cluster.EncodeOIDCKubeconfig,
 		r.defaultServerOptions()...,

@@ -64,7 +64,7 @@ func main() {
 	if err != nil {
 		glog.Fatalf("failed to create and initialize providers due to %v", err)
 	}
-	authenticator, issuerVerifier, err := createOIDCAuthenticatorIssuer(options)
+	extractorVerifier, issuerVerifier, err := createOIDCClients(options)
 	if err != nil {
 		glog.Fatalf("failed to create a openid authenticator for issuer %s (oidcClientID=%s) due to %v", options.oidcURL, options.oidcAuthenticatorClientID, err)
 	}
@@ -72,7 +72,7 @@ func main() {
 	if err != nil {
 		glog.Fatal(fmt.Sprintf("failed to create update manager due to %v", err))
 	}
-	apiHandler, err := createAPIHandler(options, providers, authenticator, issuerVerifier, updateManager)
+	apiHandler, err := createAPIHandler(options, providers, extractorVerifier, issuerVerifier, updateManager)
 	if err != nil {
 		glog.Fatalf(fmt.Sprintf("failed to create API Handler due to %v", err))
 	}
@@ -166,8 +166,8 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	return providers{sshKey: sshKeyProvider, user: userProvider, serviceAccountProvider: serviceAccountProvider, project: projectProvider, privilegedProject: privilegedProjectProvider, projectMember: projectMemberProvider, memberMapper: projectMemberProvider, cloud: cloudProviders, clusters: clusterProviders, datacenters: datacenters}, nil
 }
 
-func createOIDCAuthenticatorIssuer(options serverRunOptions) (auth.OIDCAuthenticator, auth.OIDCIssuerVerifier, error) {
-	authenticator, err := auth.NewOpenIDAuthenticator(
+func createOIDCClients(options serverRunOptions) (auth.OIDCExtractorVerifier, auth.OIDCIssuerVerifier, error) {
+	extractorVerifier, err := auth.NewOpenIDClient(
 		options.oidcURL,
 		options.oidcAuthenticatorClientID,
 		"",
@@ -183,7 +183,7 @@ func createOIDCAuthenticatorIssuer(options serverRunOptions) (auth.OIDCAuthentic
 		return nil, nil, fmt.Errorf("failed to create OIDC Authenticator: %v", err)
 	}
 
-	issuer, err := auth.NewOpenIDAuthenticator(
+	issuer, err := auth.NewOpenIDClient(
 		options.oidcURL,
 		options.oidcIssuerClientID,
 		options.oidcIssuerClientSecret,
@@ -195,10 +195,10 @@ func createOIDCAuthenticatorIssuer(options serverRunOptions) (auth.OIDCAuthentic
 		options.oidcSkipTLSVerify,
 	)
 
-	return authenticator, issuer, err
+	return extractorVerifier, issuer, err
 }
 
-func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticator auth.OIDCAuthenticator, oidcIssuerVerifier auth.OIDCIssuerVerifier, updateManager common.UpdateManager) (http.HandlerFunc, error) {
+func createAPIHandler(options serverRunOptions, prov providers, oidcExtractorVerifier auth.OIDCExtractorVerifier, oidcIssuerVerifier auth.OIDCIssuerVerifier, updateManager common.UpdateManager) (http.HandlerFunc, error) {
 	var prometheusClient prometheusapi.Client
 	if options.featureGates.Enabled(PrometheusEndpoint) {
 		var err error
@@ -218,7 +218,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcAuthenticato
 		prov.serviceAccountProvider,
 		prov.project,
 		prov.privilegedProject,
-		oidcAuthenticator,
+		oidcExtractorVerifier,
 		oidcIssuerVerifier,
 		updateManager,
 		prometheusClient,

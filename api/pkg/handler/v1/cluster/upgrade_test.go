@@ -279,17 +279,19 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 func TestGetNodeUpgrades(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name                string
-		controlPlaneVersion string
-		apiUser             apiv1.User
-		existingUpdates     []*version.MasterUpdate
-		existingVersions    []*version.MasterVersion
-		expectedOutput      []*apiv1.MasterVersion
+		name                   string
+		controlPlaneVersion    string
+		apiUser                apiv1.User
+		existingUpdates        []*version.MasterUpdate
+		existingVersions       []*version.MasterVersion
+		expectedOutput         []*apiv1.MasterVersion
+		existingKubermaticObjs []runtime.Object
 	}{
 		{
-			name:                "only the same major version and no more than 2 minor versions behind the control plane",
-			controlPlaneVersion: "1.6.0",
-			apiUser:             *test.GenDefaultAPIUser(),
+			name:                   "only the same major version and no more than 2 minor versions behind the control plane",
+			controlPlaneVersion:    "1.6.0",
+			apiUser:                *test.GenDefaultAPIUser(),
+			existingKubermaticObjs: []runtime.Object{test.GenDefaultUser()},
 			existingUpdates: []*version.MasterUpdate{
 				{
 					From:      "1.6.0",
@@ -366,7 +368,7 @@ func TestGetNodeUpgrades(t *testing.T) {
 		t.Run(testStruct.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/upgrades/node?control_plane_version=%s", testStruct.controlPlaneVersion), nil)
 			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(testStruct.apiUser, []runtime.Object{}, nil,
+			ep, err := test.CreateTestEndpoint(testStruct.apiUser, nil, testStruct.existingKubermaticObjs,
 				testStruct.existingVersions, testStruct.existingUpdates, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create testStruct endpoint due to %v", err)
