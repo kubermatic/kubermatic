@@ -608,7 +608,7 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			name:            "scenario 1: a proper set of RBAC Role/Binding is generated for secrets in sa-secrets namespace",
+			name:            "scenario 1: a proper set of RBAC Role/Binding is generated for secrets in kubermatic namespace",
 			expectedActions: []string{"create", "create"},
 
 			dependantToSync: &resourceToProcess{
@@ -621,7 +621,7 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 				metaObject: &k8scorev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "abcd",
-						Namespace: "sa-secrets",
+						Namespace: "kubermatic",
 						UID:       types.UID("abcdID"),
 						Labels: map[string]string{
 							kubermaticv1.ProjectIDLabelKey: "thunderball",
@@ -638,7 +638,7 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secret-abcd:owners-thunderball",
-						Namespace: "sa-secrets",
+						Namespace: "kubermatic",
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: k8scorev1.SchemeGroupVersion.String(),
@@ -663,7 +663,7 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secret-abcd:owners-thunderball",
-						Namespace: "sa-secrets",
+						Namespace: "kubermatic",
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: k8scorev1.SchemeGroupVersion.String(),

@@ -1474,7 +1474,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			name:                     "Scenario 1: Proper set of RBAC Roles for secrets in sa-secrets namespace are created on master seed clusters",
+			name:                     "Scenario 1: Proper set of RBAC Roles for secrets in kubermatic namespace are created on master seed clusters",
 			expectedActionsForMaster: []string{"create"},
 			expectedActionsForSeeds:  []string{"create"},
 			seedClusters:             1,
@@ -1486,7 +1486,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 						Resource: "secrets",
 					},
 					kind:      "Secret",
-					namespace: "sa-secrets",
+					namespace: "kubermatic",
 				},
 				{
 					gvr: schema.GroupVersionResource{
@@ -1496,7 +1496,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 					},
 					kind:        "Secret",
 					destination: destinationSeed,
-					namespace:   "sa-secrets",
+					namespace:   "kubermatic",
 				},
 			},
 
@@ -1504,7 +1504,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secrets:owners",
-						Namespace: "sa-secrets",
+						Namespace: "kubermatic",
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1520,7 +1520,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secrets:owners",
-						Namespace: "sa-secrets",
+						Namespace: "kubermatic",
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1535,7 +1535,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 
 		// scenario 2
 		{
-			name:                     "Scenario 2: No-op if proper set of RBAC Roles for secrets in sa-secrets namespace already exist on master and seed clusters",
+			name:                     "Scenario 2: No-op if proper set of RBAC Roles for secrets in kubermatic namespace already exist on master and seed clusters",
 			expectedActionsForMaster: []string{},
 			expectedActionsForSeeds:  []string{},
 			seedClusters:             1,
@@ -1547,7 +1547,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 						Resource: "secrets",
 					},
 					kind:      "Secret",
-					namespace: "sa-secrets",
+					namespace: "kubermatic",
 				},
 				{
 					gvr: schema.GroupVersionResource{
@@ -1557,7 +1557,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 					},
 					kind:        "Secret",
 					destination: destinationSeed,
-					namespace:   "sa-secrets",
+					namespace:   "kubermatic",
 				},
 			},
 
@@ -1565,7 +1565,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secrets:owners",
-						Namespace: "sa-secrets",
+						Namespace: "kubermatic",
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1581,7 +1581,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secrets:owners",
-						Namespace: "sa-secrets",
+						Namespace: "kubermatic",
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1747,7 +1747,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 					},
 					kind:        "Secret",
 					destination: destinationSeed,
-					namespace:   "sa-secrets",
+					namespace:   "kubermatic",
 				},
 
 				{
@@ -1757,14 +1757,14 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 						Resource: "secrets",
 					},
 					kind:      "Secret",
-					namespace: "sa-secrets",
+					namespace: "kubermatic",
 				},
 			},
 			expectedRoleBindingsForMaster: []*rbacv1.RoleBinding{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secrets:owners",
-						Namespace: "sa-secrets",
+						Namespace: "kubermatic",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -1786,7 +1786,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secrets:owners",
-						Namespace: "sa-secrets",
+						Namespace: "kubermatic",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -1818,7 +1818,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 					},
 					kind:        "Secret",
 					destination: destinationSeed,
-					namespace:   "sa-secrets",
+					namespace:   "kubermatic",
 				},
 				{
 					gvr: schema.GroupVersionResource{
@@ -1827,14 +1827,14 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 						Resource: "secrets",
 					},
 					kind:      "Secret",
-					namespace: "sa-secrets",
+					namespace: "kubermatic",
 				},
 			},
 			existingRoleBindingsForMaster: []*rbacv1.RoleBinding{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secrets:owners",
-						Namespace: "sa-secrets",
+						Namespace: "kubermatic",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -1854,7 +1854,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secrets:owners",
-						Namespace: "sa-secrets",
+						Namespace: "kubermatic",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -1882,7 +1882,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secrets:owners",
-						Namespace: "sa-secrets",
+						Namespace: "kubermatic",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -1902,7 +1902,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secrets:owners",
-						Namespace: "sa-secrets",
+						Namespace: "kubermatic",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -2091,7 +2091,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 					},
 					kind:        "Secret",
 					destination: destinationSeed,
-					namespace:   "sa-secrets",
+					namespace:   "kubermatic",
 				},
 				{
 					gvr: schema.GroupVersionResource{
@@ -2100,7 +2100,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 						Resource: "secrets",
 					},
 					kind:      "Secret",
-					namespace: "sa-secrets",
+					namespace: "kubermatic",
 				},
 			},
 			expectedActionsForMaster: []string{"get", "update"},
@@ -2108,7 +2108,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secrets:owners",
-						Namespace: "sa-secrets",
+						Namespace: "kubermatic",
 					},
 					Subjects: []rbacv1.Subject{},
 					RoleRef: rbacv1.RoleRef{
@@ -2122,7 +2122,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secrets:owners",
-						Namespace: "sa-secrets",
+						Namespace: "kubermatic",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -2144,7 +2144,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secrets:owners",
-						Namespace: "sa-secrets",
+						Namespace: "kubermatic",
 					},
 					Subjects: []rbacv1.Subject{},
 					RoleRef: rbacv1.RoleRef{
@@ -2158,7 +2158,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secrets:owners",
-						Namespace: "sa-secrets",
+						Namespace: "kubermatic",
 					},
 					Subjects: []rbacv1.Subject{
 						{
