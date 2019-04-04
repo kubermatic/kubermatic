@@ -93,10 +93,10 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider) (*ControllerA
 				Resource: "secrets",
 			},
 			kind:      "Secret",
-			namespace: "sa-secrets",
+			namespace: "kubermatic",
 			shouldEnqueue: func(obj metav1.Object) bool {
-				// do not reconcile default secrets that were added by the system (k8s)
-				return !strings.HasPrefix(obj.GetName(), "default")
+				// do not reconcile secrets without "sa-token" prefix
+				return strings.HasPrefix(obj.GetName(), "sa-token")
 			},
 		},
 

@@ -24,6 +24,10 @@ const (
 	RBACResourcesNamePrefix = "kubermatic"
 )
 
+const (
+	saSecretsNamespaceName = "kubermatic"
+)
+
 // AllGroupsPrefixes holds a list of groups with prefixes that we will generate RBAC Roles/Binding for.
 //
 // Note:
@@ -360,9 +364,9 @@ func generateVerbsForResource(groupName, resourceKind string) ([]string, error) 
 }
 
 func generateVerbsForNamespacedResource(groupName, resourceKind, namespace string) ([]string, error) {
-	// special case - only the owners of a project can create secrets in "sa-secrets" namespace
+	// special case - only the owners of a project can create secrets in "saSecretsNamespaceName" namespace
 	//
-	if namespace == "sa-secrets" {
+	if namespace == saSecretsNamespaceName {
 		secretV1Kind := "Secret"
 		if strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == secretV1Kind {
 			return []string{"create"}, nil
@@ -378,9 +382,9 @@ func generateVerbsForNamespacedResource(groupName, resourceKind, namespace strin
 // generateVerbsForNamedResourceInNamespace generates a set of verbs for a named resource in a given namespace
 // for example a "cluster" named "beefy-john"
 func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace string) ([]string, error) {
-	// special case - only the owners of a project can manipulate secrets in "sa-secrets" namespace
+	// special case - only the owners of a project can manipulate secrets in "ssaSecretsNamespaceNam" namespace
 	//
-	if namespace == "sa-secrets" {
+	if namespace == saSecretsNamespaceName {
 		secretV1Kind := "Secret"
 		if strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == secretV1Kind {
 			return []string{"get", "update", "delete"}, nil
