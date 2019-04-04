@@ -69,7 +69,9 @@ func newServerRunOptions() (serverRunOptions, error) {
 }
 
 func (o serverRunOptions) validate() error {
-	// As long as OpenShift support has not reached the testing stage, we only validate those flags when the OIDC feature flag was set
+	// OpenShift always requires those flags, but as long as OpenShift support is not stable/testable
+	// we only validate them when the OIDCKubeCfgEndpoint feature flag is set (Kubernetes specific).
+	// Otherwise we force users to set those flags without any result (for Kubernetes clusters)
 	// TODO: Enforce validation as soon as OpenShift support is testable
 	if o.featureGates.Enabled(OIDCKubeCfgEndpoint) {
 		if len(o.oidcIssuerClientSecret) == 0 {
