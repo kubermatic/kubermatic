@@ -71,11 +71,11 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 			// for BringYourOwn provider we don't create ND
 			isBYO, err := common.IsBringYourOwnProvider(spec.Cloud)
 			if err != nil {
-				return nil, errors.NewBadRequest("invalid spec: %v", err)
+				return nil, errors.NewBadRequest("failed to create an initial node deployment due to an invalid spec: %v", err)
 			}
 			if isBYO {
 				glog.V(5).Infof("KubeAdm provider detected an initial node deployment won't be created for cluster %s", newCluster.Name)
-				return nil, nil
+				return convertInternalClusterToExternal(newCluster), nil
 			}
 
 			go func() {
