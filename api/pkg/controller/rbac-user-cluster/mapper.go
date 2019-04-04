@@ -16,6 +16,7 @@ const (
 	clusterPolicyAPIGroup = "cluster.k8s.io"
 
 	machinedeployments = "machinedeployments"
+	machinesets        = "machinesets"
 	machines           = "machines"
 
 	resourceNameIndex = 2
@@ -55,7 +56,7 @@ func GenerateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
 		Rules: []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{clusterPolicyAPIGroup},
-				Resources: []string{machinedeployments, machines},
+				Resources: []string{machinedeployments, machinesets, machines},
 				Verbs:     verbs,
 			},
 			{
