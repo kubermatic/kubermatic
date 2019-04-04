@@ -15,8 +15,8 @@ import (
 
 // OIDCExtractorVerifier is responsible for extracting auth data from a request
 type OIDCExtractorVerifier interface {
-	OIDCVerifier
-	Extract(rq *http.Request) string
+	TokenVerifier
+	TokenExtractor
 }
 
 // OIDCToken represents the credentials used to authorize
@@ -41,14 +41,14 @@ type OIDCToken struct {
 
 	// IDToken is the token that contains claims about authenticated user
 	//
-	// Users should use OIDCVerifier.Verify method to verify and extract claim from the token
+	// Users should use TokenVerifier.Verify method to verify and extract claim from the token
 	IDToken string
 }
 
-// OIDCIssuerVerifier combines OIDCIssuer and OIDCVerifier
+// OIDCIssuerVerifier combines OIDCIssuer and TokenVerifier
 type OIDCIssuerVerifier interface {
 	OIDCIssuer
-	OIDCVerifier
+	TokenVerifier
 }
 
 // OIDCIssuer exposes methods for getting OIDC tokens
@@ -64,26 +64,6 @@ type OIDCIssuer interface {
 
 	// Exchange converts an authorization code into a token.
 	Exchange(ctx context.Context, code string) (OIDCToken, error)
-}
-
-// OIDCVerifier knows how to verify OIDC token
-type OIDCVerifier interface {
-	// Verify parses a raw ID Token, verifies it's been signed by the provider, preforms
-	// any additional checks depending on the Config, and returns the payload as OIDCClaims.
-	Verify(ctx context.Context, token string) (OIDCClaims, error)
-}
-
-// OIDCClaims holds various claims extracted from the id_token
-type OIDCClaims struct {
-	Name    string
-	Email   string
-	Subject string
-	Groups  []string
-}
-
-// TokenExtractor is an interface token extraction
-type TokenExtractor interface {
-	Extract(r *http.Request) string
 }
 
 // OpenIDClient implements OIDCIssuerVerifier and OIDCExtractorVerifier
@@ -134,30 +114,30 @@ func NewOpenIDClient(issuer, clientID, clientSecret, redirectURI string, extract
 }
 
 // Extractor knows how to extract the ID token from the request
-func (o *OpenIDClient) Extract(rq *http.Request) string {
+func (o *OpenIDClient) Extract(rq *http.Request) (string, error) {
 	return o.tokenExtractor.Extract(rq)
 }
 
 // Verify parses a raw ID Token, verifies it's been signed by the provider, preforms
-// any additional checks depending on the Config, and returns the payload as OIDCClaims.
-func (o *OpenIDClient) Verify(ctx context.Context, token string) (OIDCClaims, error) {
+// any additional checks depending on the Config, and returns the payload as TokenClaims.
+func (o *OpenIDClient) Verify(ctx context.Context, token string) (TokenClaims, error) {
 	if token == "" {
-		return OIDCClaims{}, errors.New("token cannot be empty")
+		return TokenClaims{}, errors.New("token cannot be empty")
 	}
 
 	idToken, err := o.verifier.Verify(ctx, token)
 	if err != nil {
 		fmt.Printf("%v", err)
-		return OIDCClaims{}, err
+		return TokenClaims{}, err
 	}
 
 	claims := map[string]interface{}{}
 	err = idToken.Claims(&claims)
 	if err != nil {
-		return OIDCClaims{}, err
+		return TokenClaims{}, err
 	}
 
-	oidcClaims := OIDCClaims{}
+	oidcClaims := TokenClaims{}
 	if rawName, found := claims["name"]; found {
 		oidcClaims.Name = rawName.(string)
 	}
@@ -232,13 +212,13 @@ type headerBearerTokenExtractor struct {
 }
 
 // Extract extracts the bearer token from the header
-func (e headerBearerTokenExtractor) Extract(r *http.Request) string {
+func (e headerBearerTokenExtractor) Extract(r *http.Request) (string, error) {
 	header := r.Header.Get(e.name)
 	if len(header) < 7 {
-		return ""
+		return "", fmt.Errorf("haven't found an OIDC token in the %s header", e.name)
 	}
 	//strip BEARER/bearer/Bearer prefix
-	return header[7:]
+	return header[7:], nil
 }
 
 // NewQueryParamBearerTokenExtractor returns a token extractor which extracts the token from the given query parameter
@@ -251,8 +231,12 @@ type queryParamBearerTokenExtractor struct {
 }
 
 // Extract extracts the bearer token from the query parameter
-func (e queryParamBearerTokenExtractor) Extract(r *http.Request) string {
-	return r.URL.Query().Get(e.name)
+func (e queryParamBearerTokenExtractor) Extract(r *http.Request) (string, error) {
+	val := r.URL.Query().Get(e.name)
+	if len(val) == 0 {
+		return "", fmt.Errorf("haven't found an OIDC token in the query %q param ", e.name)
+	}
+	return val, nil
 }
 
 // NewCombinedExtractor returns an token extractor which tries a list of token extractors until it finds a token
@@ -265,12 +249,12 @@ type combinedExtractor struct {
 }
 
 // Extract extracts the token via the given token extractors. Returns as soon as it finds a token
-func (c combinedExtractor) Extract(r *http.Request) string {
-	for _, e := range c.extractors {
-		t := e.Extract(r)
-		if t != "" {
-			return t
+func (c combinedExtractor) Extract(r *http.Request) (string, error) {
+	for _, extractor := range c.extractors {
+		token, err := extractor.Extract(r)
+		if err == nil {
+			return token, nil
 		}
 	}
-	return ""
+	return "", fmt.Errorf("haven't found an OIDC token, tried %d extractors", len(c.extractors))
 }

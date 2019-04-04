@@ -40,6 +40,9 @@ const (
 
 	// rawTokenContextKey key under which the current token (OpenID ID Token) is kept in the ctx
 	rawTokenContextKey contextKey = "raw-auth-token"
+
+	// noTokenFoundKey key under which an error is kept when no suitable token has been found in a request
+	noTokenFoundKey contextKey = "no-token-found"
 )
 
 //DCGetter defines functionality to retrieve a datacenter name
@@ -156,9 +159,17 @@ func UserInfoUnauthorized(userProjectMapper provider.ProjectMemberMapper, userPr
 }
 
 // OIDCTokenVerifier knows how to verify an ID token from a request
-func OIDCTokenVerifier(o auth.OIDCVerifier) endpoint.Middleware {
+func OIDCTokenVerifier(o auth.TokenVerifier) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			if rawTokenNotFoundErr := ctx.Value(noTokenFoundKey); rawTokenNotFoundErr != nil {
+				tokenNotFoundErr, ok := rawTokenNotFoundErr.(error)
+				if !ok {
+					return nil, k8cerrors.NewNotAuthorized()
+				}
+				return nil, k8cerrors.NewWithDetails(http.StatusUnauthorized, "not authorized", []string{tokenNotFoundErr.Error()})
+			}
+
 			t := ctx.Value(rawTokenContextKey)
 			token, ok := t.(string)
 			if !ok || token == "" {
@@ -201,7 +212,10 @@ func OIDCTokenVerifier(o auth.OIDCVerifier) endpoint.Middleware {
 // OIDCTokenExtractor knows how to extract an ID token from the request
 func OIDCTokenExtractor(o auth.TokenExtractor) transporthttp.RequestFunc {
 	return func(ctx context.Context, r *http.Request) context.Context {
-		token := o.Extract(r)
+		token, err := o.Extract(r)
+		if err != nil {
+			return context.WithValue(ctx, noTokenFoundKey, err)
+		}
 		return context.WithValue(ctx, rawTokenContextKey, token)
 	}
 }
