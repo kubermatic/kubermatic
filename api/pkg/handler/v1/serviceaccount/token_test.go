@@ -210,7 +210,6 @@ func TestServiceAccountCanGetProject(t *testing.T) {
 		existingSa             *kubermaticapiv1.User
 		expectedResponse       string
 		projectToSync          string
-		authReqestFunc         test.StoreTokenAndAuthRequestFunc
 		httpStatus             int
 		existingAPIUser        apiv1.User
 	}{
@@ -226,13 +225,8 @@ func TestServiceAccountCanGetProject(t *testing.T) {
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
 			},
-			existingSa: test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
-			/*given sa and secret it knows how to generate a valid token*/
-			authReqestFunc: test.StoreSecretAndAuthRequest(
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
-				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "sa-token-1", "1")),
-			/* the API user is actually a service account*/
-			existingAPIUser:  *test.GenAPIUser("sa-1", "serviceaccount-1@sa.kubermatic.io"),
+			existingSa:       test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+			existingAPIUser:  *test.GenAPIUser("john", "john@acme.com"),
 			projectToSync:    "plan9-ID",
 			expectedResponse: `{"id":"plan9-ID","name":"plan9","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active","owners":[{"name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com"}]}`,
 		},
@@ -241,27 +235,46 @@ func TestServiceAccountCanGetProject(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			// set up
+			token := ""
+			var ep http.Handler
+			{
+				req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s/tokens", tc.projectToSync, "1"), strings.NewReader(`{"name":"ci-v","group":"viewers"}`))
+				res := httptest.NewRecorder()
+
+				tc.existingKubermaticObjs = append(tc.existingKubermaticObjs, tc.existingSa)
+				lep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+				if err != nil {
+					t.Fatalf("failed to create test endpoint due to %v", err)
+				}
+
+				// act 1 - create a service account token
+				lep.ServeHTTP(res, req)
+
+				// validate
+				if http.StatusCreated != res.Code {
+					t.Fatalf("expected HTTP status code %d, got %d: %s", http.StatusCreated, res.Code, res.Body.String())
+				}
+				tokenRsp := &apiv1.ServiceAccountToken{}
+				err = json.Unmarshal(res.Body.Bytes(), tokenRsp)
+				if err != nil {
+					t.Fatalf("unable to read the token from the respone, err %v", err)
+				}
+
+				token = tokenRsp.Token
+				ep = lep
+			}
+
+			// act 2 - get the project using sa token
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s", tc.projectToSync), strings.NewReader(""))
+			req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 			res := httptest.NewRecorder()
-
-			tc.existingKubermaticObjs = append(tc.existingKubermaticObjs, tc.existingSa)
-			ep, cs, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
-			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v", err)
-			}
-
-			err = tc.authReqestFunc(cs.FakeKubernetesCoreClient, cs.TokenGenerator, req)
-			if err != nil {
-				t.Fatalf("failed to add authorization info to the request, due to %v", err)
-			}
-
-			// act
 			ep.ServeHTTP(res, req)
 
 			// validate
 			if res.Code != tc.httpStatus {
 				t.Fatalf("expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
 			}
+
 			test.CompareWithResult(t, res, tc.expectedResponse)
 		})
 	}

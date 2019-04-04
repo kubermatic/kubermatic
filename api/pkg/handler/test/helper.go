@@ -668,30 +668,3 @@ func GenTestEvent(eventName, eventType, eventReason, eventMessage, kind, uid str
 		Type:    eventType,
 	}
 }
-
-// StoreTokenAndAuthRequestFunc is a helper function for authorizing a request
-type StoreTokenAndAuthRequestFunc func(kubernetesclientset.Interface, serviceaccount.TokenGenerator, *http.Request) error
-
-// StoreTokenAndAuthRequest given a ServiceAccount and a Secrets knows how to generate and add a valid token that is used for authentication
-func StoreSecretAndAuthRequest(sa *kubermaticapiv1.User, s *v1.Secret) StoreTokenAndAuthRequestFunc {
-	return func(fakeKubeClient kubernetesclientset.Interface, tokenGenerator serviceaccount.TokenGenerator, req *http.Request) error {
-		if len(sa.OwnerReferences) <= 0 {
-			return fmt.Errorf("haven't found an owner for the given sa %s", sa.Name)
-		}
-		owner := sa.OwnerReferences[0]
-		if owner.Kind != kubermaticapiv1.ProjectKindName || owner.APIVersion != kubermaticapiv1.SchemeGroupVersion.String() {
-			return fmt.Errorf("the given sa %s should belong (owner) to a project but it doesn't", sa.Name)
-		}
-
-		tokenName := strings.TrimPrefix(s.Name, "sa-token-")
-		token, err := tokenGenerator.Generate(serviceaccount.Claims(sa.Spec.Email, owner.Name, tokenName))
-		if err != nil {
-			return err
-		}
-
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-		s.Data["token"] = []byte(token)
-		_, err = fakeKubeClient.CoreV1().Secrets("kubermatic").Create(s)
-		return err
-	}
-}
