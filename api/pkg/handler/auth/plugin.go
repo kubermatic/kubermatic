@@ -14,6 +14,12 @@ type TokenClaims struct {
 	Groups  []string
 }
 
+// TokenExtractorVerifier combines TokenVerifier and TokenExtractor interfaces
+type TokenExtractorVerifier interface {
+	TokenVerifier
+	TokenExtractor
+}
+
 // TokenExtractor is an interface that knows how to extract a token
 type TokenExtractor interface {
 	// Extract gets a token from the given HTTP request
@@ -33,6 +39,11 @@ var _ TokenVerifier = &TokenVerifierPlugins{}
 // by calling registered plugins for a token verification
 type TokenVerifierPlugins struct {
 	plugins []TokenVerifier
+}
+
+// NewTokenVerifierPlugins creates a new instance of TokenVerifierPlugins with the given plugins
+func NewTokenVerifierPlugins(plugins []TokenVerifier) *TokenVerifierPlugins {
+	return &TokenVerifierPlugins{plugins}
 }
 
 // Verify calls all registered plugins to check the given token.
@@ -56,6 +67,11 @@ var _ TokenExtractor = &TokenExtractorPlugins{}
 // by calling registered plugins for a token extraction
 type TokenExtractorPlugins struct {
 	plugins []TokenExtractor
+}
+
+// NewTokenExtractorPlugins creates a new instance of TokenExtractorPlugins with the given plugins
+func NewTokenExtractorPlugins(plugins []TokenExtractor) *TokenExtractorPlugins {
+	return &TokenExtractorPlugins{plugins}
 }
 
 // Extract calls all registered plugins to get a token from the given request.

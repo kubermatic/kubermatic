@@ -13,12 +13,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// OIDCExtractorVerifier is responsible for extracting auth data from a request
-type OIDCExtractorVerifier interface {
-	TokenVerifier
-	TokenExtractor
-}
-
 // OIDCToken represents the credentials used to authorize
 // the requests to access protected resources on the OAuth 2.0
 // provider's backend.
@@ -66,7 +60,7 @@ type OIDCIssuer interface {
 	Exchange(ctx context.Context, code string) (OIDCToken, error)
 }
 
-// OpenIDClient implements OIDCIssuerVerifier and OIDCExtractorVerifier
+// OpenIDClient implements OIDCIssuerVerifier and TokenExtractorVerifier
 type OpenIDClient struct {
 	issuer         string
 	tokenExtractor TokenExtractor
