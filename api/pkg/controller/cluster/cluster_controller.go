@@ -87,7 +87,6 @@ type Reconciler struct {
 	oidcIssuerURL      string
 	oidcIssuerClientID string
 
-	// Temporary feature flags. TODO: Replace with the featureGates map
 	features Features
 }
 
