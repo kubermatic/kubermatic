@@ -15,11 +15,13 @@ function cleanup {
 }
 trap cleanup EXIT
 
-echo $IMAGE_PULL_SECRET_DATA | base64 -d > /config.json
+# Step 0: Setup
 # An elegant hack that routes dex.oauth domain to localhost and then down to a dex service inside the inner Kube cluster
 # See also expose.sh script
+echo $IMAGE_PULL_SECRET_DATA | base64 -d > /config.json
 sed 's/localhost/localhost dex.oauth/' < /etc/hosts > /hosts
 cat /hosts > /etc/hosts
+dockerd > /dev/null 2> /dev/null &
 
 # Step 1: Build kubermatic docker image that will be used by the inner Kube cluster
 cd $(dirname $0)/../..
