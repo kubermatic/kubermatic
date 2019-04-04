@@ -558,7 +558,7 @@ func TestDeleteToken(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				genActiveServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []runtime.Object{
 				test.GenSecret("plan9-ID", "serviceaccount-1", "test-1", "1"),
