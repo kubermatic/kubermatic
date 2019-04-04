@@ -1,7 +1,6 @@
 package user_test
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
 	"net/http"
@@ -827,10 +826,8 @@ func TestNewUser(t *testing.T) {
 			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com"}`,
 			HTTPStatus:       http.StatusOK,
 			ExpectedKubermaticUser: func() *kubermaticapiv1.User {
-				apiUser := genDefaultAPIUser()
-				expectedKubermaticUser := test.APIUserToKubermaticUser(*apiUser)
-				// the name of the object is derived from the email address and encoded as sha256
-				expectedKubermaticUser.Name = fmt.Sprintf("%x", sha256.Sum256([]byte(apiUser.Email)))
+				expectedKubermaticUser := test.GenDefaultUser()
+				expectedKubermaticUser.UID = ""
 				return expectedKubermaticUser
 			}(),
 			ExistingAPIUser: genDefaultAPIUser(),
@@ -838,8 +835,8 @@ func TestNewUser(t *testing.T) {
 
 		{
 			Name:             "scenario 2: fails when creating a user without an email address",
-			ExpectedResponse: `{"error":{"code":400,"message":"Email, ID and Name cannot be empty when creating a new user resource"}}`,
-			HTTPStatus:       http.StatusBadRequest,
+			ExpectedResponse: `{"error":{"code":401,"message":"not authorized"}}`,
+			HTTPStatus:       http.StatusUnauthorized,
 			ExistingAPIUser: func() *apiv1.User {
 				apiUser := genDefaultAPIUser()
 				apiUser.Email = ""
@@ -873,7 +870,7 @@ func TestNewUser(t *testing.T) {
 
 			// validate
 			if res.Code != tc.HTTPStatus {
-				t.Fatalf("Expected HTTP status code %d, got %d: %s", http.StatusOK, res.Code, res.Body.String())
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 			test.CompareWithResult(t, res, tc.ExpectedResponse)
 

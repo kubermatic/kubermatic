@@ -54,7 +54,7 @@ func (r Routing) RegisterV1Legacy(mux *mux.Router) {
 func (r Routing) getNodeForClusterLegacy() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.Verifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
@@ -87,7 +87,7 @@ func (r Routing) getNodeForClusterLegacy() http.Handler {
 func (r Routing) createNodeForClusterLegacy() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.Verifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
@@ -116,7 +116,7 @@ func (r Routing) createNodeForClusterLegacy() http.Handler {
 func (r Routing) listNodesForClusterLegacy() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.Verifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
@@ -145,7 +145,7 @@ func (r Routing) listNodesForClusterLegacy() http.Handler {
 func (r Routing) deleteNodeForClusterLegacy() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.Verifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfo(r.userProjectMapper),
