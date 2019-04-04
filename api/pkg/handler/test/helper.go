@@ -153,20 +153,23 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	{
 		// if the API users is actually a service account use JWTTokenAuthentication
 		// that knows how to extract and verify the token
-		saExtractorVerifier := auth.NewServiceAccountAuthClient(
-			auth.NewHeaderBearerTokenExtractor("Authorization"),
-			serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey)),
-			serviceAccountTokenProvider,
-		)
-		verifiers = append(verifiers, saExtractorVerifier)
-		extractors = append(extractors, saExtractorVerifier)
+		if strings.HasPrefix(user.Email, "serviceaccount-") {
+			saExtractorVerifier := auth.NewServiceAccountAuthClient(
+				auth.NewHeaderBearerTokenExtractor("Authorization"),
+				serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey)),
+				serviceAccountTokenProvider,
+			)
+			verifiers = append(verifiers, saExtractorVerifier)
+			extractors = append(extractors, saExtractorVerifier)
 
-		// for normal users we use OIDCClient which is broken at the moment
-		// because the tests don't send a token in the Header instead
-		// the client spits out a hardcoded value
-		fakeOIDCClient := NewFakeOIDCClient(user)
-		verifiers = append(verifiers, fakeOIDCClient)
-		extractors = append(extractors, fakeOIDCClient)
+			// for normal users we use OIDCClient which is broken at the moment
+			// because the tests don't send a token in the Header instead
+			// the client spits out a hardcoded value
+		} else {
+			fakeOIDCClient := NewFakeOIDCClient(user)
+			verifiers = append(verifiers, fakeOIDCClient)
+			extractors = append(extractors, fakeOIDCClient)
+		}
 	}
 	tokenVerifiers := auth.NewTokenVerifierPlugins(verifiers)
 	tokenExtractors := auth.NewTokenExtractorPlugins(extractors)

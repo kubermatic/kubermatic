@@ -208,7 +208,7 @@ type headerBearerTokenExtractor struct {
 func (e headerBearerTokenExtractor) Extract(r *http.Request) (string, error) {
 	header := r.Header.Get(e.name)
 	if len(header) < 7 {
-		return "", fmt.Errorf("haven't found an Bearer token in the %s header", e.name)
+		return "", fmt.Errorf("haven't found a Bearer token in the %s header", e.name)
 	}
 	//strip BEARER/bearer/Bearer prefix
 	return header[7:], nil

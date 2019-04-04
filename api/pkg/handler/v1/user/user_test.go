@@ -877,24 +877,6 @@ func TestNewUser(t *testing.T) {
 			ExistingAPIUser: genDefaultAPIUser(),
 		},
 
-		{
-			Name:             "scenario 4: creating a user with restricted email address fails",
-			ExpectedResponse: `{"error":{"code":400,"message":"cannot add a user with the given email serviceaccount-1984@sa.kubermatic.io as the name is reserved, please try a different email address"}}`,
-			HTTPStatus:       http.StatusBadRequest,
-			ExistingKubermaticObjects: []runtime.Object{
-				genDefaultUser(),
-			},
-			ExistingAPIUser: func() *apiv1.User {
-				sa := test.GenDefaultServiceAccount()
-				return &apiv1.User{
-					ObjectMeta: apiv1.ObjectMeta{
-						ID:   sa.Name,
-						Name: sa.Spec.Name,
-					},
-					Email: sa.Spec.Email,
-				}
-			}(),
-		},
 	}
 
 	for _, tc := range testcases {
