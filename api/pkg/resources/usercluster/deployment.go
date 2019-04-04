@@ -60,12 +60,14 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 			dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 			dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
 				MaxSurge: &intstr.IntOrString{
-					Type:   intstr.Int,
+					Type: intstr.Int,
+					// The readiness probe only turns ready if a sync succeeded.
+					// That requires that the controller acquires the leader lock, which only happens if the other instance stops
 					IntVal: 1,
 				},
 				MaxUnavailable: &intstr.IntOrString{
 					Type:   intstr.Int,
-					IntVal: 0,
+					IntVal: 1,
 				},
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
