@@ -25,6 +25,7 @@ dockerd > /dev/null 2> /dev/null &
 
 # Step 1: Build kubermatic docker image that will be used by the inner Kube cluster
 cd $(dirname $0)/../..
+make build
 make docker-build
 
 # Step 2: create a Kube cluster and deploy Kubermatic
