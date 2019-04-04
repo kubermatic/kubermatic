@@ -25,15 +25,15 @@ dockerd > /dev/null 2> /dev/null &
 
 # Step 1: Build kubermatic docker image that will be used by the inner Kube cluster
 cd $(dirname $0)/../..
-make build
-make docker-build
+time make build
+time make docker-build
 
 # Step 2: create a Kube cluster and deploy Kubermatic
 # Note that latestbuild tag comes from running "make docker-build"
-deploy.sh latestbuild
+time deploy.sh latestbuild
 DOCKER_CONFIG=/ docker run --name controller -d -v /root/.kube/config:/inner -v /etc/kubeconfig/kubeconfig:/outer --network host --privileged ${CONTROLLER_IMAGE} --kubeconfig-inner "/inner" --kubeconfig-outer "/outer" --namespace "default" --build-id "$PROW_JOB_ID"
 docker logs -f controller &
-expose.sh
+time expose.sh
 
 # Step3: run e2e tests
 # TODO: run api e2e test
