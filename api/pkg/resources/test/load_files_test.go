@@ -519,13 +519,12 @@ func TestLoadFiles(t *testing.T) {
 					false,
 					tmpFilePath,
 					"test",
-					"",
-					"",
-					false,
+					"https://dev.kubermatic.io/dex",
+					"kubermaticIssuer",
 				)
 
 				var deploymentCreators []reconciling.NamedDeploymentCreatorGetter
-				deploymentCreators = append(deploymentCreators, clustercontroller.GetDeploymentCreators(data)...)
+				deploymentCreators = append(deploymentCreators, clustercontroller.GetDeploymentCreators(data, true)...)
 				deploymentCreators = append(deploymentCreators, monitoringcontroller.GetDeploymentCreators(data)...)
 				for _, create := range deploymentCreators {
 					_, creator := create()
@@ -573,7 +572,7 @@ func TestLoadFiles(t *testing.T) {
 				}
 
 				var statefulSetCreators []reconciling.NamedStatefulSetCreatorGetter
-				statefulSetCreators = append(statefulSetCreators, clustercontroller.GetStatefulSetCreators(data)...)
+				statefulSetCreators = append(statefulSetCreators, clustercontroller.GetStatefulSetCreators(data, false)...)
 				statefulSetCreators = append(statefulSetCreators, monitoringcontroller.GetStatefulSetCreators(data)...)
 				for _, creatorGetter := range statefulSetCreators {
 					_, create := creatorGetter()

@@ -38,7 +38,7 @@ const (
 )
 
 // StatefulSetCreator returns the function to reconcile the etcd StatefulSet
-func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulSetCreatorGetter {
+func StatefulSetCreator(data *resources.TemplateData, enableDataCorruptionChecks bool) reconciling.NamedStatefulSetCreatorGetter {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return resources.EtcdStatefulSetName, func(set *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 			set.Name = resources.EtcdStatefulSetName
@@ -72,7 +72,7 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 				return nil, fmt.Errorf("failed to check if we need to include the etcd-operator migration code: %v", err)
 			}
 
-			etcdStartCmd, err := getEtcdCommand(data.Cluster().Name, data.Cluster().Status.NamespaceName, migrate, data.EnableEtcdDataCorruptionChecks())
+			etcdStartCmd, err := getEtcdCommand(data.Cluster().Name, data.Cluster().Status.NamespaceName, migrate, enableDataCorruptionChecks)
 			if err != nil {
 				return nil, err
 			}

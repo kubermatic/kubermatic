@@ -159,8 +159,10 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.oidcCAFile,
 		ctrlCtx.runOptions.oidcIssuerURL,
 		ctrlCtx.runOptions.oidcIssuerClientID,
-		ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
-		ctrlCtx.runOptions.featureGates.Enabled(EtcdDataCorruptionChecks),
+		cluster.Features{
+			VPA:                      ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
+			EtcdDataCorruptionChecks: ctrlCtx.runOptions.featureGates.Enabled(EtcdDataCorruptionChecks),
+		},
 	)
 }
 
