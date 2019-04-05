@@ -2,6 +2,7 @@ package addon
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,34 +11,36 @@ import (
 	"path"
 	"strings"
 	"text/template"
-	"time"
 
 	"github.com/Masterminds/sprig"
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
-	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/apimachinery/pkg/util/wait"
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/util/workqueue"
+	"k8s.io/client-go/tools/record"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
+	ControllerName = "kubermatic_addon_controller"
+
 	addonLabelKey        = "kubermatic-addon"
 	cleanupFinalizerName = "cleanup-manifests"
 )
@@ -68,251 +71,179 @@ type KubeconfigProvider interface {
 	GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
 }
 
-// Controller stores necessary components that are required to manage in-cluster Add-On's
-type Controller struct {
-	queue              workqueue.RateLimitingInterface
+// Reconciler stores necessary components that are required to manage in-cluster Add-On's
+type Reconciler struct {
+	workerName         string
 	metrics            *Metrics
 	addonVariables     map[string]interface{}
 	kubernetesAddonDir string
 	openshiftAddonDir  string
 	registryURI        string
+	ctrlruntimeclient.Client
+	recorder record.EventRecorder
 
 	KubeconfigProvider KubeconfigProvider
-
-	client        kubermaticclientset.Interface
-	clusterLister kubermaticv1lister.ClusterLister
-	addonLister   kubermaticv1lister.AddonLister
 }
 
-// New creates a new Addon controller that is responsible for
+// Add creates a new Addon controller that is responsible for
 // managing in-cluster addons
-func New(
+func Add(
+	mgr manager.Manager,
+	numWorkers int,
+	workerName string,
 	metrics *Metrics,
 	addonCtxVariables map[string]interface{},
 	kubernetesAddonDir string,
 	openshiftAddonDir string,
 	overwriteRegistey string,
-	KubeconfigProvider KubeconfigProvider,
-	client kubermaticclientset.Interface,
-	addonInformer kubermaticv1informers.AddonInformer,
-	clusterInformer kubermaticv1informers.ClusterInformer) (*Controller, error) {
+	KubeconfigProvider KubeconfigProvider) error {
 
-	c := &Controller{
-		queue:              workqueue.NewNamedRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute), "addon"),
+	client := mgr.GetClient()
+	reconciler := &Reconciler{
 		metrics:            metrics,
 		addonVariables:     addonCtxVariables,
 		kubernetesAddonDir: kubernetesAddonDir,
 		openshiftAddonDir:  openshiftAddonDir,
 		KubeconfigProvider: KubeconfigProvider,
-		client:             client,
+		Client:             client,
+		workerName:         workerName,
+		recorder:           mgr.GetRecorder(ControllerName),
 	}
 
 	prometheus.MustRegister(metrics.Workers)
 
 	if overwriteRegistey != "" {
-		c.registryURI = parceRegistryURI(overwriteRegistey)
+		reconciler.registryURI = parseRegistryURI(overwriteRegistey)
 	}
 
-	addonInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			c.enqueue(obj.(*kubermaticv1.Addon))
-		},
-		UpdateFunc: func(old, cur interface{}) {
-			c.enqueue(cur.(*kubermaticv1.Addon))
-		},
-		DeleteFunc: func(obj interface{}) {
-			addon, ok := obj.(*kubermaticv1.Addon)
-			if !ok {
-				tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
-				if !ok {
-					utilruntime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
-					return
-				}
-				addon, ok = tombstone.Obj.(*kubermaticv1.Addon)
-				if !ok {
-					utilruntime.HandleError(fmt.Errorf("tombstone contained object that is not a Addon %#v", obj))
-					return
-				}
-			}
-			c.enqueue(addon)
-		},
-	})
+	ctrlOptions := controller.Options{
+		Reconciler:              reconciler,
+		MaxConcurrentReconciles: numWorkers,
+	}
+	c, err := controller.New(ControllerName, mgr, ctrlOptions)
+	if err != nil {
+		return err
+	}
 
-	clusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			c.enqueueClusterAddons(obj)
-		},
-		UpdateFunc: func(old, cur interface{}) {
-			c.enqueueClusterAddons(cur)
-		},
-		DeleteFunc: func(obj interface{}) {
-			c.enqueueClusterAddons(obj)
-		},
-	})
-	c.addonLister = addonInformer.Lister()
-	c.clusterLister = clusterInformer.Lister()
+	enqueueClusterAddons := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
+		cluster := a.Object.(*kubermaticv1.Cluster)
+		if cluster.Status.NamespaceName == "" {
+			return nil
+		}
 
-	return c, nil
+		addonList := &kubermaticv1.AddonList{}
+		listOptions := &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
+		if err := client.List(context.Background(), listOptions, addonList); err != nil {
+			glog.Errorf("failed to get addons for cluster %s: %v", cluster.Name, err)
+			return nil
+		}
+		var requests []reconcile.Request
+		for _, addon := range addonList.Items {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{Namespace: addon.Namespace, Name: addon.Name},
+			})
+		}
+		return requests
+	})}
+
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, enqueueClusterAddons); err != nil {
+		return err
+	}
+
+	return c.Watch(&source.Kind{Type: &kubermaticv1.Addon{}}, &handler.EnqueueRequestForObject{})
 }
 
-func parceRegistryURI(uri string) string {
+func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	addon := &kubermaticv1.Addon{}
+	if err := r.Get(ctx, request.NamespacedName, addon); err != nil {
+		if kerrors.IsNotFound(err) {
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+
+	// Add a wrapping here so we can emit an event on error
+	err := r.reconcile(ctx, addon)
+	if err != nil {
+		glog.Errorf("Failed to reconcile addon %s: %v", addon.Name, err)
+		r.recorder.Eventf(addon, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
+	}
+	return reconcile.Result{}, err
+}
+
+func parseRegistryURI(uri string) string {
 	return path.Clean(uri) + "/"
 }
 
-func (c *Controller) enqueueClusterAddons(i interface{}) {
-	obj, ok := i.(metav1.Object)
-	//Object might be a tombstone
-	if !ok {
-		tombstone, ok := i.(cache.DeletedFinalStateUnknown)
-		if !ok {
-			utilruntime.HandleError(fmt.Errorf("couldn't get obj from tombstone %#v", obj))
-			return
-		}
-		obj = tombstone.Obj.(metav1.Object)
-	}
-
-	addons, err := c.addonLister.List(labels.Everything())
-	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("failed to list addons: %v", err))
-		return
-	}
-
-	for _, addon := range addons {
-		if addon.Spec.Cluster.UID == obj.GetUID() {
-			c.enqueue(addon)
-		}
-	}
-}
-
-// Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
-func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
-	defer utilruntime.HandleCrash()
-
-	for i := 0; i < workerCount; i++ {
-		go wait.Until(c.runWorker, time.Second, stopCh)
-	}
-
-	c.metrics.Workers.Set(float64(workerCount))
-	<-stopCh
-}
-
-func (c *Controller) runWorker() {
-	for c.processNextItem() {
-	}
-}
-
-func (c *Controller) processNextItem() bool {
-	key, quit := c.queue.Get()
-	if quit {
-		return false
-	}
-	defer c.queue.Done(key)
-
-	if err := c.sync(key.(string)); err != nil {
-		glog.V(0).Infof("Error syncing %v: %v", key, err)
-
-		// Re-enqueue the key rate limited. Based on the rate limiter on the
-		// queue and the re-enqueue history, the key will be processed later again.
-		c.queue.AddRateLimited(key)
-		return true
-	}
-
-	// Forget about the #AddRateLimited history of the key on every successful synchronization.
-	// This ensures that future processing of updates for this key is not delayed because of
-	// an outdated error history.
-	c.queue.Forget(key)
-	return true
-}
-
-func (c *Controller) enqueue(addon *kubermaticv1.Addon) {
-	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(addon)
-	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("couldn't get key for object %#v: %v", addon, err))
-		return
-	}
-
-	c.queue.Add(key)
-}
-
-func (c *Controller) sync(key string) error {
-	ns, name, err := cache.SplitMetaNamespaceKey(key)
-	if err != nil {
-		return fmt.Errorf("failed to split namespace & name from key: %s: %v", key, err)
-	}
-	addonFromCache, err := c.addonLister.Addons(ns).Get(name)
-	if err != nil {
-		if kerrors.IsNotFound(err) {
-			glog.V(2).Infof("addon '%s' in work queue no longer exists", key)
+func (r *Reconciler) reconcile(ctx context.Context, addon *kubermaticv1.Addon) error {
+	cluster := &kubermaticv1.Cluster{}
+	if err := r.Get(ctx, types.NamespacedName{Name: addon.Spec.Cluster.Name}, cluster); err != nil {
+		if kerrors.IsNotFound(err) && addon.DeletionTimestamp != nil {
+			if err := r.removeCleanupFinalizer(ctx, addon); err != nil {
+				return fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
+			}
 			return nil
 		}
 		return err
 	}
 
-	addon := addonFromCache.DeepCopy()
-	clusterFromCache, err := c.clusterLister.Get(addon.Spec.Cluster.Name)
-	if err != nil {
-		// Cluster does not exist anymore & the addon has the DeletionTimestamp set -> Just remove the finalizer
-		if kerrors.IsNotFound(err) && addon.DeletionTimestamp != nil {
-			if err := c.removeCleanupFinalizer(addon); err != nil {
-				return fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
-			}
-			return nil
-		}
-		return fmt.Errorf("failed to get cluster %s: %v", addon.Spec.Cluster.Name, err)
+	if cluster.Spec.Pause {
+		glog.V(4).Infof("skipping paused cluster %s", cluster.Name)
+		return nil
 	}
-	cluster := clusterFromCache.DeepCopy()
+
+	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+		return nil
+	}
 
 	// When a cluster gets deleted - we can skip it - not worth the effort.
 	// This could lead though to a potential leak of resources in case addons deploy LB's or PV's.
 	// The correct way of handling it though should be a optional cleanup routine in the cluster controller, which will delete all PV's and LB's inside the cluster cluster.
 	if cluster.DeletionTimestamp != nil {
-		glog.V(6).Infof("cluster %s is already being deleted - no need to cleanup the manifests", cluster.Name)
-		return nil
-	}
-
-	// If a cluster has the pause flag set, every processing should be skipped
-	if cluster.Spec.Pause {
-		glog.V(6).Infof("skipping paused cluster %s", key)
+		glog.V(4).Infof("cluster %s is already being deleted - no need to cleanup the manifests", cluster.Name)
 		return nil
 	}
 
 	// When the apiserver is not healthy, we must skip it
 	if !cluster.Status.Health.Apiserver {
-		glog.V(6).Infof("API server of cluster %s is not running - not processing the addon", cluster.Name)
+		glog.V(4).Infof("API server of cluster %s is not running - not processing the addon", cluster.Name)
 		return nil
 	}
 
 	// Addon got deleted - remove all manifests
 	if addon.DeletionTimestamp != nil {
-		if err := c.cleanupManifests(addon, cluster); err != nil {
+		if err := r.cleanupManifests(ctx, addon, cluster); err != nil {
 			return fmt.Errorf("failed to delete manifests from cluster: %v", err)
 		}
-		if err := c.removeCleanupFinalizer(addon); err != nil {
+		if err := r.removeCleanupFinalizer(ctx, addon); err != nil {
 			return fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
 		}
 		return nil
 	}
 
 	// Reconciling
-	if err := c.ensureIsInstalled(addon, cluster); err != nil {
+	if err := r.ensureIsInstalled(ctx, addon, cluster); err != nil {
 		return fmt.Errorf("failed to deploy the addon manifests into the cluster: %v", err)
 	}
-	if err := c.ensureFinalizerIsSet(addon); err != nil {
+	if err := r.ensureFinalizerIsSet(ctx, addon); err != nil {
 		return fmt.Errorf("failed to ensure that the cleanup finalizer existis on the addon: %v", err)
 	}
 
-	return err
+	return nil
 }
 
-func (c *Controller) removeCleanupFinalizer(addon *kubermaticv1.Addon) error {
+func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, addon *kubermaticv1.Addon) error {
 	finalizers := sets.NewString(addon.Finalizers...)
 	if finalizers.Has(cleanupFinalizerName) {
 		finalizers.Delete(cleanupFinalizerName)
 		addon.Finalizers = finalizers.List()
-		if _, err := c.client.KubermaticV1().Addons(addon.Namespace).Update(addon); err != nil {
+		if err := r.Client.Update(ctx, addon); err != nil {
 			return err
 		}
-		glog.V(6).Infof("removed the cleanup finalizer from the addon %s/%s", addon.Namespace, addon.Name)
+		glog.V(2).Infof("Removed the cleanup finalizer from the addon %s/%s", addon.Namespace, addon.Name)
 	}
 	return nil
 }
@@ -327,12 +258,12 @@ type templateData struct {
 	ClusterCIDR       string
 }
 
-func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]*bytes.Buffer, error) {
+func (r *Reconciler) getAddonManifests(addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]*bytes.Buffer, error) {
 	var allManifests []*bytes.Buffer
 
-	addonDir := c.kubernetesAddonDir
+	addonDir := r.kubernetesAddonDir
 	if isOpenshift(cluster) {
-		addonDir = c.openshiftAddonDir
+		addonDir = r.openshiftAddonDir
 	}
 	manifestPath := path.Join(addonDir, addon.Spec.Name)
 	infos, err := ioutil.ReadDir(manifestPath)
@@ -345,7 +276,7 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 		return nil, err
 	}
 
-	kubeconfig, err := c.KubeconfigProvider.GetAdminKubeconfig(cluster)
+	kubeconfig, err := r.KubeconfigProvider.GetAdminKubeconfig(cluster)
 	if err != nil {
 		return nil, err
 	}
@@ -355,13 +286,13 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 		Cluster:           cluster,
 		Addon:             addon,
 		Kubeconfig:        string(kubeconfig),
-		OverwriteRegistry: c.registryURI,
+		OverwriteRegistry: r.registryURI,
 		DNSClusterIP:      clusterIP,
 		ClusterCIDR:       cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
 	}
 
 	// Add addon variables if available.
-	if sub := c.addonVariables[addon.Spec.Name]; sub != nil {
+	if sub := r.addonVariables[addon.Spec.Name]; sub != nil {
 		data.Variables = sub.(map[string]interface{})
 	}
 
@@ -373,12 +304,12 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 
 	for _, info := range infos {
 		if info.IsDir() {
-			glog.V(6).Infof("found directory in manifest path %s for %s/%s. Ignoring.", manifestPath, addon.Namespace, addon.Name)
+			glog.V(4).Infof("found directory in manifest path %s for %s/%s. Ignoring.", manifestPath, addon.Namespace, addon.Name)
 			continue
 		}
 
 		filename := path.Join(manifestPath, info.Name())
-		glog.V(8).Infof("Processing file %s for addon %s/%s", filename, addon.Namespace, addon.Name)
+		glog.V(4).Infof("Processing file %s for addon %s/%s", filename, addon.Namespace, addon.Name)
 
 		fbytes, err := ioutil.ReadFile(filename)
 		if err != nil {
@@ -398,7 +329,7 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 
 		sd := strings.TrimSpace(bufferAll.String())
 		if len(sd) == 0 {
-			glog.V(6).Infof("skipping %s/%s as its empty after parsing", cluster.Status.NamespaceName, addon.Name)
+			glog.V(4).Infof("skipping %s/%s as its empty after parsing", cluster.Status.NamespaceName, addon.Name)
 			continue
 		}
 
@@ -426,7 +357,7 @@ func (c *Controller) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 }
 
 // combineManifests returns all manifests combined into a multi document yaml
-func (c *Controller) combineManifests(manifests []*bytes.Buffer) *bytes.Buffer {
+func (r *Reconciler) combineManifests(manifests []*bytes.Buffer) *bytes.Buffer {
 	parts := make([]string, len(manifests))
 	for i, m := range manifests {
 		s := m.String()
@@ -440,8 +371,8 @@ func (c *Controller) combineManifests(manifests []*bytes.Buffer) *bytes.Buffer {
 
 // ensureAddonLabelOnManifests adds the addonLabelKey label to all manifests.
 // For this to happen we need to decode all yaml files to json, parse them, add the label and finally encode to yaml again
-func (c *Controller) ensureAddonLabelOnManifests(addon *kubermaticv1.Addon, manifests []*bytes.Buffer) ([]*bytes.Buffer, error) {
-	wantLabels := c.getAddonLabel(addon)
+func (r *Reconciler) ensureAddonLabelOnManifests(addon *kubermaticv1.Addon, manifests []*bytes.Buffer) ([]*bytes.Buffer, error) {
+	wantLabels := r.getAddonLabel(addon)
 	for _, m := range manifests {
 		decoder := kyaml.NewYAMLToJSONDecoder(m)
 		raw := runtime.RawExtension{}
@@ -484,7 +415,7 @@ func (c *Controller) ensureAddonLabelOnManifests(addon *kubermaticv1.Addon, mani
 	return manifests, nil
 }
 
-func (c *Controller) getAddonLabel(addon *kubermaticv1.Addon) map[string]string {
+func (r *Reconciler) getAddonLabel(addon *kubermaticv1.Addon) map[string]string {
 	return map[string]string{
 		addonLabelKey: addon.Spec.Name,
 	}
@@ -495,25 +426,25 @@ type fileHandlingDone func()
 func getFileDeleteFinalizer(filename string) fileHandlingDone {
 	return func() {
 		if err := os.RemoveAll(filename); err != nil {
-			glog.V(0).Infof("failed to remove file %s: %v", filename, err)
+			glog.Errorf("failed to remove file %s: %v", filename, err)
 		}
 	}
 }
 
-func (c *Controller) writeCombinedManifest(manifest *bytes.Buffer, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, fileHandlingDone, error) {
+func (r *Reconciler) writeCombinedManifest(manifest *bytes.Buffer, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, fileHandlingDone, error) {
 	//Write combined Manifest to disk
 	manifestFilename := path.Join("/tmp", fmt.Sprintf("cluster-%s-%s.yaml", cluster.Name, addon.Name))
 	if err := ioutil.WriteFile(manifestFilename, manifest.Bytes(), 0644); err != nil {
 		return "", nil, fmt.Errorf("failed to write combined manifest to %s: %v", manifestFilename, err)
 	}
-	glog.V(8).Infof("wrote combined manifest for addon %s/%s to %s\n%s", addon.Name, addon.Namespace, manifestFilename, manifest.String())
+	glog.V(4).Infof("wrote combined manifest for addon %s/%s to %s\n%s", addon.Name, addon.Namespace, manifestFilename, manifest.String())
 
 	return manifestFilename, getFileDeleteFinalizer(manifestFilename), nil
 }
 
-func (c *Controller) writeAdminKubeconfig(addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, fileHandlingDone, error) {
+func (r *Reconciler) writeAdminKubeconfig(addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, fileHandlingDone, error) {
 	// Write kubeconfig to disk
-	kubeconfig, err := c.KubeconfigProvider.GetAdminKubeconfig(cluster)
+	kubeconfig, err := r.KubeconfigProvider.GetAdminKubeconfig(cluster)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get admin kubeconfig for cluster %s: %v", cluster.Name, err)
 	}
@@ -521,29 +452,29 @@ func (c *Controller) writeAdminKubeconfig(addon *kubermaticv1.Addon, cluster *ku
 	if err := ioutil.WriteFile(kubeconfigFilename, kubeconfig, 0644); err != nil {
 		return "", nil, fmt.Errorf("failed to write admin kubeconfig for cluster %s: %v", cluster.Name, err)
 	}
-	glog.V(8).Infof("wrote admin kubeconfig for cluster %s to %s", cluster.Name, kubeconfigFilename)
+	glog.V(4).Infof("wrote admin kubeconfig for cluster %s to %s", cluster.Name, kubeconfigFilename)
 
 	return kubeconfigFilename, getFileDeleteFinalizer(kubeconfigFilename), nil
 }
 
-func (c *Controller) setupManifestInteraction(addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, string, fileHandlingDone, error) {
-	manifests, err := c.getAddonManifests(addon, cluster)
+func (r *Reconciler) setupManifestInteraction(addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, string, fileHandlingDone, error) {
+	manifests, err := r.getAddonManifests(addon, cluster)
 	if err != nil {
 		return "", "", nil, fmt.Errorf("failed to get addon manifests: %v", err)
 	}
 
-	manifests, err = c.ensureAddonLabelOnManifests(addon, manifests)
+	manifests, err = r.ensureAddonLabelOnManifests(addon, manifests)
 	if err != nil {
 		return "", "", nil, fmt.Errorf("failed to add the addon specific label to all addon resources: %v", err)
 	}
 
-	manifest := c.combineManifests(manifests)
-	manifestFilename, manifestDone, err := c.writeCombinedManifest(manifest, addon, cluster)
+	manifest := r.combineManifests(manifests)
+	manifestFilename, manifestDone, err := r.writeCombinedManifest(manifest, addon, cluster)
 	if err != nil {
 		return "", "", nil, fmt.Errorf("failed to write all addon resources into a combined manifest file: %v", err)
 	}
 
-	kubeconfigFilename, kubeconfigDone, err := c.writeAdminKubeconfig(addon, cluster)
+	kubeconfigFilename, kubeconfigDone, err := r.writeAdminKubeconfig(addon, cluster)
 	if err != nil {
 		return "", "", nil, fmt.Errorf("failed to write the admin kubeconfig to the local filesystem: %v", err)
 	}
@@ -555,39 +486,37 @@ func (c *Controller) setupManifestInteraction(addon *kubermaticv1.Addon, cluster
 	return kubeconfigFilename, manifestFilename, done, nil
 }
 
-func (c *Controller) getDeleteCommand(kubeconfigFilename, manifestFilename string, openshift bool) *exec.Cmd {
+func (r *Reconciler) getDeleteCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, openshift bool) *exec.Cmd {
 	binary := "kubectl"
 	if openshift {
 		binary = "oc"
 	}
-	cmd := exec.Command(binary, "--kubeconfig", kubeconfigFilename, "delete", "-f", manifestFilename)
+	cmd := exec.CommandContext(ctx, binary, "--kubeconfig", kubeconfigFilename, "delete", "-f", manifestFilename)
 	return cmd
 }
 
-func (c *Controller) getApplyCommand(kubeconfigFilename, manifestFilename string, selector labels.Selector, openshift bool) *exec.Cmd {
+func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, selector labels.Selector, openshift bool) *exec.Cmd {
 	//kubectl apply --prune -f manifest.yaml -l app=nginx
 	binary := "kubectl"
 	if openshift {
 		binary = "oc"
 	}
-	cmd := exec.Command(binary, "--kubeconfig", kubeconfigFilename, "apply", "--prune", "-f", manifestFilename, "-l", selector.String())
+	cmd := exec.CommandContext(ctx, binary, "--kubeconfig", kubeconfigFilename, "apply", "--prune", "-f", manifestFilename, "-l", selector.String())
 	return cmd
 }
 
-func (c *Controller) ensureFinalizerIsSet(addon *kubermaticv1.Addon) error {
+func (r *Reconciler) ensureFinalizerIsSet(ctx context.Context, addon *kubermaticv1.Addon) error {
 	finalizers := sets.NewString(addon.Finalizers...)
 	if finalizers.Has(cleanupFinalizerName) {
 		return nil
 	}
 
-	var err error
 	addon.Finalizers = append(addon.Finalizers, cleanupFinalizerName)
-	addon, err = c.client.KubermaticV1().Addons(addon.Namespace).Update(addon)
-	return err
+	return r.Client.Update(ctx, addon)
 }
 
-func (c *Controller) ensureIsInstalled(addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
-	kubeconfigFilename, manifestFilename, done, err := c.setupManifestInteraction(addon, cluster)
+func (r *Reconciler) ensureIsInstalled(ctx context.Context, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
+	kubeconfigFilename, manifestFilename, done, err := r.setupManifestInteraction(addon, cluster)
 	if err != nil {
 		return err
 	}
@@ -599,34 +528,34 @@ func (c *Controller) ensureIsInstalled(addon *kubermaticv1.Addon, cluster *kuber
 	}
 	sd := strings.TrimSpace(string(d))
 	if len(sd) == 0 {
-		glog.V(6).Infof("skipping %s/%s as its empty after parsing", cluster.Status.NamespaceName, addon.Name)
+		glog.V(4).Infof("skipping %s/%s as its empty after parsing", cluster.Status.NamespaceName, addon.Name)
 		return nil
 	}
 
 	// We delete all resources with this label which are not in the combined manifest
-	selector := labels.SelectorFromSet(c.getAddonLabel(addon))
-	cmd := c.getApplyCommand(kubeconfigFilename, manifestFilename, selector, isOpenshift(cluster))
+	selector := labels.SelectorFromSet(r.getAddonLabel(addon))
+	cmd := r.getApplyCommand(ctx, kubeconfigFilename, manifestFilename, selector, isOpenshift(cluster))
 
-	glog.V(8).Infof("applying addon %s to cluster %s: %s ...", addon.Name, cluster.Name, strings.Join(cmd.Args, " "))
+	glog.V(4).Infof("applying addon %s to cluster %s: %s ...", addon.Name, cluster.Name, strings.Join(cmd.Args, " "))
 	out, err := cmd.CombinedOutput()
-	glog.V(8).Infof("executed '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
+	glog.V(4).Infof("executed '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
 	if err != nil {
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %v\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
 	}
 	return err
 }
 
-func (c *Controller) cleanupManifests(addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
-	kubeconfigFilename, manifestFilename, done, err := c.setupManifestInteraction(addon, cluster)
+func (r *Reconciler) cleanupManifests(ctx context.Context, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
+	kubeconfigFilename, manifestFilename, done, err := r.setupManifestInteraction(addon, cluster)
 	if err != nil {
 		return err
 	}
 	defer done()
 
-	cmd := c.getDeleteCommand(kubeconfigFilename, manifestFilename, isOpenshift(cluster))
-	glog.V(8).Infof("deleting addon (%s) manifests from cluster %s: %s ...", addon.Name, cluster.Name, strings.Join(cmd.Args, " "))
+	cmd := r.getDeleteCommand(ctx, kubeconfigFilename, manifestFilename, isOpenshift(cluster))
+	glog.V(4).Infof("deleting addon (%s) manifests from cluster %s: %s ...", addon.Name, cluster.Name, strings.Join(cmd.Args, " "))
 	out, err := cmd.CombinedOutput()
-	glog.V(8).Infof("executed '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
+	glog.V(4).Infof("executed '%s' for addon %s of cluster %s: \n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, string(out))
 	if err != nil {
 		if wasKubectlDeleteSuccessful(string(out)) {
 			return nil
