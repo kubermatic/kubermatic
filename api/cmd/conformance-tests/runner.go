@@ -30,6 +30,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -75,6 +76,7 @@ func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
 		homeDir:                      opts.homeDir,
 		seedKubeClient:               opts.seedKubeClient,
 		log:                          opts.log,
+		existingClusterLabel:         opts.existingClusterLabel,
 	}
 }
 
@@ -100,6 +102,10 @@ type testRunner struct {
 	clusterLister         kubermaticv1lister.ClusterLister
 	clusterClientProvider clusterclient.UserClusterConnectionProvider
 	dcs                   map[string]provider.DatacenterMeta
+
+	// The label to use to select an existing cluster to test against instead of
+	// creating a new one
+	existingClusterLabel string
 }
 
 type testResult struct {
@@ -204,9 +210,48 @@ func (r *testRunner) Run() error {
 }
 
 func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (*reporters.JUnitTestSuite, error) {
-	cluster, err := r.setupCluster(log, scenario)
+	var err error
+	var cluster *kubermaticv1.Cluster
+
+	if r.existingClusterLabel == "" {
+		cluster, err = r.createCluster(log, scenario)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create cluster: %v", err)
+		}
+	} else {
+		selector, err := labels.Parse(r.existingClusterLabel)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse labelselector %q: %v", r.existingClusterLabel, err)
+		}
+		foundClusters, err := r.clusterLister.List(selector)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list clusters: %v", err)
+		}
+		if foundClusterNum := len(foundClusters); foundClusterNum != 1 {
+			return nil, fmt.Errorf("expected to find exactly one existing cluster, but got %d", foundClusterNum)
+		}
+		cluster = foundClusters[0]
+	}
+
+	cluster, err = r.waitForControlPlane(log, cluster.Name)
 	if err != nil {
-		return nil, fmt.Errorf("failed to setup cluster: %v", err)
+		return nil, fmt.Errorf("failed waiting for control plane to become ready: %v", err)
+	}
+
+	// We must store the name here because the cluster object may be nil on error
+	clusterName := cluster.Name
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		cluster, err = r.kubermaticClient.KubermaticV1().Clusters().Get(clusterName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		cluster.Finalizers = append(cluster.Finalizers, clustercontroller.InClusterPVCleanupFinalizer, clustercontroller.InClusterLBCleanupFinalizer)
+		cluster, err = r.kubermaticClient.KubermaticV1().Clusters().Update(cluster)
+		return err
+
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to add PV and LB cleanup finalizers: %v", err)
 	}
 
 	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
@@ -520,7 +565,7 @@ func (r *testRunner) getCloudConfig(log *logrus.Entry, cluster *kubermaticv1.Clu
 	return filename, nil
 }
 
-func (r *testRunner) setupCluster(log *logrus.Entry, scenario testScenario) (*kubermaticv1.Cluster, error) {
+func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*kubermaticv1.Cluster, error) {
 	// Always generate a random name
 	cluster := scenario.Cluster(r.secrets)
 	cluster.Name = rand.String(8)
@@ -542,28 +587,6 @@ func (r *testRunner) setupCluster(log *logrus.Entry, scenario testScenario) (*ku
 		return nil, fmt.Errorf("failed to create the cluster resource: %v", err)
 	}
 	log.Debug("Successfully created cluster!")
-
-	cluster, err = r.waitForControlPlane(log, cluster.Name)
-	if err != nil {
-		return nil, fmt.Errorf("failed waiting for control plane to become ready: %v", err)
-	}
-
-	// We must store the name here because the cluster object may be nil on error
-	clusterName := cluster.Name
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		cluster, err = r.kubermaticClient.KubermaticV1().Clusters().Get(clusterName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		cluster.Finalizers = append(cluster.Finalizers, clustercontroller.InClusterPVCleanupFinalizer, clustercontroller.InClusterLBCleanupFinalizer)
-		cluster, err = r.kubermaticClient.KubermaticV1().Clusters().Update(cluster)
-		return err
-
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to add PV and LB cleanup finalizers: %v", err)
-	}
-
 	return cluster, nil
 }
 
