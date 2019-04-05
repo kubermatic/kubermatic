@@ -44,6 +44,12 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 	md.Spec.Replicas = &nd.Spec.Replicas
 	md.Spec.Template.Spec.Versions.Kubelet = nd.Spec.Template.Versions.Kubelet
 
+	if len(c.Spec.MachineNetworks) > 0 {
+		md.Spec.Template.Annotations = map[string]string{
+			"machine-controller.kubermatic.io/initializers": "ipam",
+		}
+	}
+
 	if nd.Spec.Paused != nil {
 		md.Spec.Paused = *nd.Spec.Paused
 	}
