@@ -38,7 +38,6 @@ func (c *Controller) getClusterTemplateData(ctx context.Context, client ctrlrunt
 		"",
 		"",
 		"",
-		false,
 	), nil
 }
 

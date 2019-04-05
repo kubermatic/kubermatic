@@ -208,6 +208,14 @@ spec:
         - azure
         - --cloud-config
         - /etc/kubernetes/cloud/config
+        - --oidc-issuer-url
+        - https://dev.kubermatic.io/dex
+        - --oidc-client-id
+        - kubermaticIssuer
+        - --oidc-username-claim
+        - email
+        - --oidc-ca-file
+        - /etc/kubernetes/dex/ca/caBundle.pem
         command:
         - /hyperkube
         - apiserver

@@ -40,7 +40,6 @@ type TemplateData struct {
 	oidcCAFile                                       string
 	oidcIssuerURL                                    string
 	oidcIssuerClientID                               string
-	enableEtcdDataCorruptionChecks                   bool
 }
 
 // NewTemplateData returns an instance of TemplateData
@@ -61,8 +60,7 @@ func NewTemplateData(
 	inClusterPrometheusScrapingConfigsFile string,
 	oidcCAFile string,
 	oidcURL string,
-	oidcIssuerClientID string,
-	enableEtcdDataCorruptionChecks bool) *TemplateData {
+	oidcIssuerClientID string) *TemplateData {
 	return &TemplateData{
 		ctx:                                    ctx,
 		client:                                 client,
@@ -81,18 +79,12 @@ func NewTemplateData(
 		oidcCAFile:                                       oidcCAFile,
 		oidcIssuerURL:                                    oidcURL,
 		oidcIssuerClientID:                               oidcIssuerClientID,
-		enableEtcdDataCorruptionChecks:                   enableEtcdDataCorruptionChecks,
 	}
 }
 
 // GetDexCA returns the chain of public certificates of the Dex
 func (d *TemplateData) GetDexCA() ([]*x509.Certificate, error) {
 	return GetDexCAFromFile(d.oidcCAFile)
-}
-
-// OIDCAuthPluginEnabled returns flag to indicate if OpenID auth plugin enabled
-func (d *TemplateData) OIDCAuthPluginEnabled() bool {
-	return len(d.oidcIssuerURL) > 0 && len(d.oidcIssuerClientID) > 0
 }
 
 // OIDCCAFile return CA file
@@ -163,11 +155,6 @@ func (d *TemplateData) NodeAccessNetwork() string {
 // NodePortRange returns the node access network
 func (d *TemplateData) NodePortRange() string {
 	return d.nodePortRange
-}
-
-// EnableEtcdDataCorruptionChecks tells if the etcdDataCorruptionCheck feature flag has been enabled
-func (d *TemplateData) EnableEtcdDataCorruptionChecks() bool {
-	return d.enableEtcdDataCorruptionChecks
 }
 
 // GetClusterRef returns a instance of a OwnerReference for the Cluster in the TemplateData

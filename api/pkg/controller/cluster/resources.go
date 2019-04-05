@@ -120,7 +120,6 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		r.oidcCAFile,
 		r.oidcIssuerURL,
 		r.oidcIssuerClientID,
-		r.enableEtcdDataCorruptionChecks,
 	), nil
 }
 
@@ -172,14 +171,14 @@ func (r *Reconciler) ensureServices(c *kubermaticv1.Cluster, data *resources.Tem
 }
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
-func GetDeploymentCreators(data *resources.TemplateData) []reconciling.NamedDeploymentCreatorGetter {
+func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuthentication bool) []reconciling.NamedDeploymentCreatorGetter {
 	creators := []reconciling.NamedDeploymentCreatorGetter{
 		openvpn.DeploymentCreator(data),
 		dns.DeploymentCreator(data),
 	}
 
 	if cluster := data.Cluster(); cluster != nil && cluster.Annotations["kubermatic.io/openshift"] == "" {
-		creators = append(creators, apiserver.DeploymentCreator(data))
+		creators = append(creators, apiserver.DeploymentCreator(data, enableAPIserverOIDCAuthentication))
 		creators = append(creators, scheduler.DeploymentCreator(data))
 		creators = append(creators, controllermanager.DeploymentCreator(data))
 		creators = append(creators, machinecontroller.DeploymentCreator(data))
@@ -192,7 +191,7 @@ func GetDeploymentCreators(data *resources.TemplateData) []reconciling.NamedDepl
 }
 
 func (r *Reconciler) ensureDeployments(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := GetDeploymentCreators(data)
+	creators := GetDeploymentCreators(data, r.features.KubernetesOIDCAuthentication)
 	return reconciling.ReconcileDeployments(creators, cluster.Status.NamespaceName, r, r.dynamicCache, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }
 
@@ -262,9 +261,9 @@ func (r *Reconciler) ensureConfigMaps(c *kubermaticv1.Cluster, data *resources.T
 }
 
 // GetStatefulSetCreators returns all StatefulSetCreators that are currently in use
-func GetStatefulSetCreators(data *resources.TemplateData) []reconciling.NamedStatefulSetCreatorGetter {
+func GetStatefulSetCreators(data *resources.TemplateData, enableDataCorruptionChecks bool) []reconciling.NamedStatefulSetCreatorGetter {
 	return []reconciling.NamedStatefulSetCreatorGetter{
-		etcd.StatefulSetCreator(data),
+		etcd.StatefulSetCreator(data, enableDataCorruptionChecks),
 	}
 }
 
@@ -319,7 +318,7 @@ func (r *Reconciler) ensureVerticalPodAutoscalers(c *kubermaticv1.Cluster, data 
 		return fmt.Errorf("failed to create the functions to handle VPA resources: %v", err)
 	}
 
-	if !r.enableVPA {
+	if !r.features.VPA {
 		// If the feature is disabled, we just wrap the create function to disable the VPA.
 		// This is easier than passing a bool to all required functions.
 		for i, getNameAndCreator := range creators {
@@ -353,7 +352,7 @@ func disableVPAWrapper(create reconciling.VerticalPodAutoscalerCreator) reconcil
 }
 
 func (r *Reconciler) ensureStatefulSets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := GetStatefulSetCreators(data)
+	creators := GetStatefulSetCreators(data, r.features.EtcdDataCorruptionChecks)
 
 	return reconciling.ReconcileStatefulSets(creators, c.Status.NamespaceName, r, r.dynamicCache, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
 }

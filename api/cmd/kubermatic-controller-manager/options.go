@@ -133,16 +133,6 @@ func (o controllerRunOptions) validate() error {
 		if len(o.oidcIssuerClientSecret) == 0 {
 			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-client-secret\" flag was not specified", OpenIDAuthPlugin)
 		}
-
-	} else {
-		// don't pass OpenID issuer flags if OpenIDAuthPlugin disabled
-		if len(o.oidcIssuerURL) > 0 {
-			return fmt.Errorf("%s feature is disabled but \"oidc-issuer-url\" flag was specified, please remove it", OpenIDAuthPlugin)
-		}
-
-		if len(o.oidcIssuerClientID) > 0 {
-			return fmt.Errorf("%s feature is disabled but \"oidc-issuer-client-id\" flag was specified, please remove it", OpenIDAuthPlugin)
-		}
 	}
 
 	if o.masterResources == "" {

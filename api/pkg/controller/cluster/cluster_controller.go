@@ -53,6 +53,12 @@ type userClusterConnectionProvider interface {
 	GetDynamicClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
 
+type Features struct {
+	VPA                          bool
+	EtcdDataCorruptionChecks     bool
+	KubernetesOIDCAuthentication bool
+}
+
 // Reconciler is a controller which is responsible for managing clusters
 type Reconciler struct {
 	ctrlruntimeclient.Client
@@ -81,9 +87,7 @@ type Reconciler struct {
 	oidcIssuerURL      string
 	oidcIssuerClientID string
 
-	// Temporary feature flags. TODO: Replace with the featureGates map
-	enableVPA                      bool
-	enableEtcdDataCorruptionChecks bool
+	features Features
 }
 
 // NewController creates a cluster controller.
@@ -111,9 +115,7 @@ func Add(
 	oidcCAFile string,
 	oidcIssuerURL string,
 	oidcIssuerClientID string,
-	// I would prefer to pass the whole feature gates struct but that leads to a ugly import cycle.
-	// We would first clean up the resource handling to move the data->creator handling into the controller
-	enableVPA, enableEtcdDataCorruptionChecks bool) error {
+	features Features) error {
 
 	if err := kubermaticscheme.AddToScheme(scheme.Scheme); err != nil {
 		return fmt.Errorf("failed to add kubermatic scheme: %v", err)
@@ -146,8 +148,7 @@ func Add(
 		oidcIssuerURL:      oidcIssuerURL,
 		oidcIssuerClientID: oidcIssuerClientID,
 
-		enableVPA:                      enableVPA,
-		enableEtcdDataCorruptionChecks: enableEtcdDataCorruptionChecks,
+		features: features,
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
