@@ -35,10 +35,10 @@ func (r Routing) RegisterV1Alpha(mux *mux.Router) {
 func (r Routing) getClusterMetrics() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			middleware.Verifier(r.oidcExtractorVerifier),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.GetMetricsEndpoint(r.projectProvider, r.prometheusClient)),
 		common.DecodeGetClusterReq,
 		encodeJSON,
