@@ -3,6 +3,7 @@ package project
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -235,10 +236,10 @@ type updateRq struct {
 func (r updateRq) validate() error {
 
 	if len(r.ProjectID) == 0 {
-		return errors.NewBadRequest("the id of the project cannot be empty")
+		return fmt.Errorf("the id of the project cannot be empty")
 	}
 	if len(r.Body.Name) == 0 {
-		return errors.NewBadRequest("the name of the project cannot be empty")
+		return fmt.Errorf("the name of the project cannot be empty")
 	}
 	return nil
 }
