@@ -256,10 +256,11 @@
             "required": true
           },
           {
-            "type": "string",
-            "x-go-name": "Name",
-            "name": "name",
-            "in": "query"
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Project"
+            }
           }
         ],
         "responses": {
