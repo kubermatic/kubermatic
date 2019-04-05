@@ -135,7 +135,7 @@ func TestCreateServiceAccountProject(t *testing.T) {
 					t.Fatalf("expected Inactive state got %s", sa.Status)
 				}
 
-				expectedSA, err := client.FakeKubermaticClient.KubermaticV1().Users().Get(sa.ID, metav1.GetOptions{})
+				expectedSA, err := client.FakeKubermaticClient.KubermaticV1().Users().Get(fmt.Sprintf("serviceaccount-%s", sa.ID), metav1.GetOptions{})
 				if err != nil {
 					t.Fatalf("expected SA object got error %v", err)
 				}
@@ -184,7 +184,7 @@ func TestList(t *testing.T) {
 			expectedSA: []apiv1.ServiceAccount{
 				{
 					ObjectMeta: apiv1.ObjectMeta{
-						ID:   "serviceaccount-1",
+						ID:   "1",
 						Name: "test-1",
 					},
 					Group:  "editors-plan9-ID",
@@ -192,7 +192,7 @@ func TestList(t *testing.T) {
 				},
 				{
 					ObjectMeta: apiv1.ObjectMeta{
-						ID:   "serviceaccount-3",
+						ID:   "3",
 						Name: "test-3",
 					},
 					Group:  "viewers-plan9-ID",
@@ -220,7 +220,7 @@ func TestList(t *testing.T) {
 			expectedSA: []apiv1.ServiceAccount{
 				{
 					ObjectMeta: apiv1.ObjectMeta{
-						ID:   "serviceaccount-1",
+						ID:   "1",
 						Name: "test-1",
 					},
 					Group:  "editors-plan9-ID",
@@ -228,7 +228,7 @@ func TestList(t *testing.T) {
 				},
 				{
 					ObjectMeta: apiv1.ObjectMeta{
-						ID:   "serviceaccount-3",
+						ID:   "3",
 						Name: "test-3",
 					},
 					Group:  "viewers-plan9-ID",
@@ -281,14 +281,13 @@ func TestEdit(t *testing.T) {
 		expectedSAName         string
 		projectToSync          string
 		saToUpdate             string
-		bindingName            string
 		httpStatus             int
 		existingAPIUser        apiv1.User
 		existingKubermaticObjs []runtime.Object
 	}{
 		{
 			name:       "scenario 1: update service account, change name and group",
-			body:       `{"id":"serviceaccount-1", "name":"newName", "group":"editors"}`,
+			body:       `{"id":"19840801", "name":"newName", "group":"editors"}`,
 			httpStatus: http.StatusOK,
 			existingKubermaticObjs: []runtime.Object{
 				/*add projects*/
@@ -298,22 +297,21 @@ func TestEdit(t *testing.T) {
 				/*add bindings*/
 				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
 				test.GenBinding("my-third-project-ID", "john@acme.com", "editors"),
-				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "viewers"),
+				test.GenBinding("plan9-ID", "serviceaccount-19840801@sa.kubermatic.io", "viewers"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
 				/*add service account*/
-				genActiveServiceAccount("1", "test", "viewers", "plan9-ID"),
+				genActiveServiceAccount("19840801", "test", "viewers", "plan9-ID"),
 			},
 			existingAPIUser: *test.GenAPIUser("john", "john@acme.com"),
 			projectToSync:   "plan9-ID",
 			expectedSAName:  "newName",
 			expectedGroup:   "editors-plan9-ID",
-			saToUpdate:      "serviceaccount-1",
-			bindingName:     "plan9-ID-serviceaccount-1@sa.kubermatic.io-viewers",
+			saToUpdate:      "19840801",
 		},
 		{
 			name:       "scenario 2: change service account name for already existing in project",
-			body:       `{"id":"serviceaccount-1", "name":"test-2", "group":"viewers"}`,
+			body:       `{"id":"19840801", "name":"test-2", "group":"viewers"}`,
 			httpStatus: http.StatusConflict,
 			existingKubermaticObjs: []runtime.Object{
 				/*add projects*/
@@ -325,12 +323,12 @@ func TestEdit(t *testing.T) {
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
 				/*add service account*/
-				genActiveServiceAccount("1", "test-1", "viewers", "plan9-ID"),
+				genActiveServiceAccount("19840801", "test-1", "viewers", "plan9-ID"),
 				genActiveServiceAccount("2", "test-2", "viewers", "plan9-ID"),
 			},
 			existingAPIUser:       *test.GenAPIUser("john", "john@acme.com"),
 			projectToSync:         "plan9-ID",
-			saToUpdate:            "serviceaccount-1",
+			saToUpdate:            "19840801",
 			expectedErrorResponse: `{"error":{"code":409,"message":"service account \"test-2\" already exists"}}`,
 		},
 	}
@@ -363,7 +361,7 @@ func TestEdit(t *testing.T) {
 					t.Fatalf("expected name %s got %s", tc.expectedSAName, sa.Name)
 				}
 
-				expectedSA, err := client.FakeKubermaticClient.KubermaticV1().Users().Get(sa.ID, metav1.GetOptions{})
+				expectedSA, err := client.FakeKubermaticClient.KubermaticV1().Users().Get(fmt.Sprintf("serviceaccount-%s", sa.ID), metav1.GetOptions{})
 				if err != nil {
 					t.Fatalf("expected SA object got error %v", err)
 				}
@@ -413,9 +411,9 @@ func TestDelete(t *testing.T) {
 				test.GenDefaultOwnerBinding(),
 				test.GenBinding("my-first-project-ID", "serviceaccount-1@sa.kubermatic.io", "viewers"),
 				/*add service account*/
-				genActiveServiceAccount("1", "test", "viewers", "my-first-project-ID"),
+				genActiveServiceAccount("19840801", "test", "viewers", "my-first-project-ID"),
 			},
-			saToDelete: "serviceaccount-1",
+			saToDelete: "19840801",
 		},
 	}
 	for _, tc := range testcases {

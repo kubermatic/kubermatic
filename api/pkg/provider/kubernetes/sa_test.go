@@ -1,6 +1,7 @@
 package kubernetes_test
 
 import (
+	"strings"
 	"testing"
 
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
@@ -8,6 +9,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"k8s.io/apimachinery/pkg/util/diff"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,8 +37,8 @@ func TestCreateServiceAccount(t *testing.T) {
 				createAuthenitactedUser(),
 				test.GenDefaultProject(),
 			},
-			expectedSA:     createSA("test", "my-first-project-ID", "editors", "1"),
-			expectedSAName: "serviceaccount-1",
+			expectedSA:     createSANoPrefix("test", "my-first-project-ID", "editors", "1"),
+			expectedSAName: "1",
 		},
 	}
 	for _, tc := range testcases {
@@ -68,7 +70,7 @@ func TestCreateServiceAccount(t *testing.T) {
 			sa.Spec.ID = ""
 
 			if !equality.Semantic.DeepEqual(sa, tc.expectedSA) {
-				t.Fatalf("expected %v got %v", tc.expectedSA, sa)
+				t.Fatalf("%v", diff.ObjectDiff(tc.expectedSA, sa))
 			}
 		})
 	}
@@ -96,7 +98,7 @@ func TestList(t *testing.T) {
 				createSA("test-1", "dcba", "viewers", "3"),
 			},
 			expectedSA: []*kubermaticv1.User{
-				createSA("test-1", "my-first-project-ID", "editors", "1"),
+				createSANoPrefix("test-1", "my-first-project-ID", "editors", "1"),
 			},
 		},
 		{
@@ -132,7 +134,7 @@ func TestList(t *testing.T) {
 				t.Fatal(err)
 			}
 			if !equality.Semantic.DeepEqual(saList, tc.expectedSA) {
-				t.Fatalf("expected %v got %v", tc.expectedSA, saList)
+				t.Fatalf("%v", diff.ObjectDiff(tc.expectedSA, saList))
 			}
 		})
 	}
@@ -152,14 +154,14 @@ func TestGet(t *testing.T) {
 			name:     "scenario 1, get existing service account",
 			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			project:  test.GenDefaultProject(),
-			saName:   "serviceaccount-1",
+			saName:   "1",
 			existingKubermaticObjects: []runtime.Object{
 				createAuthenitactedUser(),
 				createSA("test-1", "my-first-project-ID", "editors", "1"),
 				createSA("test-2", "abcd", "viewers", "2"),
 				createSA("test-1", "dcba", "viewers", "3"),
 			},
-			expectedSA: createSA("test-1", "my-first-project-ID", "editors", "1"),
+			expectedSA: createSANoPrefix("test-1", "my-first-project-ID", "editors", "1"),
 		},
 	}
 	for _, tc := range testcases {
@@ -203,7 +205,7 @@ func TestUpdate(t *testing.T) {
 			name:     "scenario 1, change name for service account",
 			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			project:  test.GenDefaultProject(),
-			saName:   "serviceaccount-1",
+			saName:   "1",
 			existingKubermaticObjects: []runtime.Object{
 				createAuthenitactedUser(),
 				createSA("test-1", "my-first-project-ID", "viewers", "1"),
@@ -211,7 +213,7 @@ func TestUpdate(t *testing.T) {
 				createSA("test-1", "dcba", "viewers", "3"),
 			},
 			newName:    "new-name",
-			expectedSA: createSA("new-name", "my-first-project-ID", "viewers", "1"),
+			expectedSA: createSANoPrefix("new-name", "my-first-project-ID", "viewers", "1"),
 		},
 	}
 	for _, tc := range testcases {
@@ -257,7 +259,7 @@ func TestDelete(t *testing.T) {
 		{
 			name:     "scenario 1, delete service account",
 			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
-			saName:   "serviceaccount-1",
+			saName:   "1",
 			existingKubermaticObjects: []runtime.Object{
 				createAuthenitactedUser(),
 				createSA("test-1", "my-first-project-ID", "viewers", "1"),
@@ -300,5 +302,11 @@ func createSA(name, projectName, group, id string) *kubermaticv1.User {
 	sa.Spec.Email = ""
 	sa.Spec.ID = ""
 
+	return sa
+}
+
+func createSANoPrefix(name, projectName, group, id string) *kubermaticv1.User {
+	sa := createSA(name, projectName, group, id)
+	sa.Name = strings.TrimPrefix(sa.Name, "serviceaccount-")
 	return sa
 }
