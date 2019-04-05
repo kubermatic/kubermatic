@@ -133,11 +133,9 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, memberProvider pro
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
-		if len(req.ProjectID) == 0 {
-			return nil, errors.NewBadRequest("the id of the project cannot be empty")
-		}
-		if len(req.Name) == 0 {
-			return nil, errors.NewBadRequest("the name of the project cannot be empty")
+		err := req.validate()
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
 		}
 
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
@@ -146,7 +144,7 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, memberProvider pro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		kubermaticProject.Spec.Name = req.Name
+		kubermaticProject.Spec.Name = req.Body.Name
 		project, err := projectProvider.Update(userInfo, kubermaticProject)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -229,25 +227,37 @@ func getOwnersForProject(userInfo *provider.UserInfo, project *kubermaticapiv1.P
 // swagger:parameters updateProject
 type updateRq struct {
 	common.ProjectReq
-	projectReq
+	// in: body
+	Body apiv1.Project
+}
+
+// validate validates updateProject request
+func (r updateRq) validate() error {
+
+	if len(r.ProjectID) == 0 {
+		return errors.NewBadRequest("the id of the project cannot be empty")
+	}
+	if len(r.Body.Name) == 0 {
+		return errors.NewBadRequest("the name of the project cannot be empty")
+	}
+	return nil
 }
 
 // DecodeUpdateRq decodes an HTTP request into updateRq
 func DecodeUpdateRq(c context.Context, r *http.Request) (interface{}, error) {
+	var req updateRq
+
 	pReq, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
 		return nil, err
 	}
+	req.ProjectReq = pReq.(common.ProjectReq)
 
-	cReq, err := DecodeCreate(c, r)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
 	}
 
-	return updateRq{
-		pReq.(common.ProjectReq),
-		cReq.(projectReq),
-	}, nil
+	return req, nil
 }
 
 type projectReq struct {
