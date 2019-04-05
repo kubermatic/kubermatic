@@ -27,7 +27,6 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
   -address=127.0.0.1:8080 \
   -oidc-url=https://dev.kubermatic.io/dex \
   -oidc-authenticator-client-id=kubermatic \
-  -oidc-issuer-url="$(vault kv get -field=oidc-issuer-url dev/seed-clusters/dev.kubermatic.io)" \
   -oidc-issuer-client-id="$(vault kv get -field=oidc-issuer-client-id dev/seed-clusters/dev.kubermatic.io)" \
   -oidc-issuer-client-secret="$(vault kv get -field=oidc-issuer-client-secret dev/seed-clusters/dev.kubermatic.io)" \
   -oidc-issuer-redirect-uri="$(vault kv get -field=oidc-issuer-redirect-uri dev/seed-clusters/dev.kubermatic.io)" \
