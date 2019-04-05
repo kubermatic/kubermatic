@@ -29,7 +29,7 @@ const (
 	// ClusterProviderContextKey key under which the current ClusterProvider is kept in the ctx
 	ClusterProviderContextKey contextKey = "cluster-provider"
 
-	// UserInfoContextKey key under which the current UserInfo is kept in the ctx
+	// UserInfoContextKey key under which the current UserInfoExtractor is kept in the ctx
 	UserInfoContextKey contextKey = "user-info"
 
 	// UserCRContextKey key under which the current User (from the database) is kept in the ctx
@@ -100,9 +100,9 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 	}
 }
 
-// UserInfo is a middleware that creates UserInfo object from kubermaticapiv1.User (authenticated)
+// UserInfoExtractor is a middleware that creates UserInfoExtractor object from kubermaticapiv1.User (authenticated)
 // and stores it in ctx under UserInfoContextKey key.
-func UserInfo(userProjectMapper provider.ProjectMemberMapper) endpoint.Middleware {
+func UserInfoExtractor(userProjectMapper provider.ProjectMemberMapper) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			user, ok := ctx.Value(UserCRContextKey).(*kubermaticapiv1.User)
@@ -155,8 +155,8 @@ func UserInfoUnauthorized(userProjectMapper provider.ProjectMemberMapper, userPr
 	}
 }
 
-// Verifier knows how to verify an ID token from a request
-func Verifier(o auth.OIDCVerifier) endpoint.Middleware {
+// OIDCTokenVerifier knows how to verify an ID token from a request
+func OIDCTokenVerifier(o auth.OIDCVerifier) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			t := ctx.Value(rawTokenContextKey)
@@ -198,8 +198,8 @@ func Verifier(o auth.OIDCVerifier) endpoint.Middleware {
 	}
 }
 
-// Extractor knows how to extract an ID token from the request
-func Extractor(o auth.TokenExtractor) transporthttp.RequestFunc {
+// OIDCTokenExtractor knows how to extract an ID token from the request
+func OIDCTokenExtractor(o auth.TokenExtractor) transporthttp.RequestFunc {
 	return func(ctx context.Context, r *http.Request) context.Context {
 		token := o.Extract(r)
 		return context.WithValue(ctx, rawTokenContextKey, token)

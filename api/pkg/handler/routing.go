@@ -82,6 +82,6 @@ func (r Routing) defaultServerOptions() []httptransport.ServerOption {
 	return []httptransport.ServerOption{
 		httptransport.ServerErrorLogger(r.logger),
 		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(middleware.Extractor(r.oidcExtractorVerifier)),
+		httptransport.ServerBefore(middleware.OIDCTokenExtractor(r.oidcExtractorVerifier)),
 	}
 }
