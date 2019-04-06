@@ -40,6 +40,8 @@ func MachineController(osData openshiftData) reconciling.NamedDeploymentCreatorG
 				if d.Spec.Template.Spec.Containers[idx].Name != "machine-controller" {
 					continue
 				}
+				d.Spec.Template.Spec.Containers[idx].Command = append(d.Spec.Template.Spec.Containers[idx].Command,
+					"-bootstrap-token-service-account-name", "openshift-infra/node-bootstrapper")
 				d.Spec.Template.Spec.Containers[idx].VolumeMounts = append(d.Spec.Template.Spec.Containers[idx].VolumeMounts, corev1.VolumeMount{
 					Name: "userdata-plugins", MountPath: "/userdata-plugins"})
 				d.Spec.Template.Spec.Containers[idx].Env = append(d.Spec.Template.Spec.Containers[idx].Env,

@@ -13,6 +13,7 @@ fi
 
 cd "$(dirname "$0")/../"
 
+make build
 docker build -t quay.io/kubermatic/api:${1} .
 
 for TAG in "$@"
