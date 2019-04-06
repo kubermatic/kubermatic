@@ -778,9 +778,10 @@
 
 [[projects]]
   branch = "add-userdata-plugins"
-  digest = "1:4e4dda1b1a7dca280d22cfec03ffb0e2a6fbf16c408b863f3cb932ac5597c414"
+  digest = "1:fda01cab49a2813c3e48dce48342468de700422563ce12a71b04cd0c76d7e1c8"
   name = "github.com/kubermatic/machine-controller"
   packages = [
+    "pkg/apis/plugin",
     "pkg/cloudprovider/cloud",
     "pkg/cloudprovider/common/ssh",
     "pkg/cloudprovider/errors",
@@ -804,7 +805,7 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "b3b7a28e4205735fa9a683b8af935df698b71a27"
+  revision = "ddac47cd8f658a694d184970cf1656f32ccbc5cd"
 
 [[projects]]
   digest = "1:0dbba7d4d4f3eeb01acd81af338ff4a3c4b0bb814d87368ea536e616f383240d"
