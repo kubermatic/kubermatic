@@ -30,7 +30,7 @@ func MachineController(osData openshiftData) reconciling.NamedDeploymentCreatorG
 				Command: []string{
 					"/bin/sh",
 					"-c",
-					"set -e && cp /usr/local/bin/openshift-userdata /target/openshift-userdata",
+					"set -e && cp /usr/local/bin/userdata-openshift /target/machine-controller-userdata-centos",
 				},
 				VolumeMounts: []corev1.VolumeMount{{Name: "userdata-plugins", MountPath: "/target"}},
 			})
