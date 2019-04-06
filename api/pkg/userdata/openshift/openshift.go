@@ -125,25 +125,25 @@ const ctTemplate = `#cloud-config
 hostname: {{ .MachineSpec.Name }}
 # Never set the hostname on AWS nodes. Kubernetes(kube-proxy) requires the hostname to be the private dns name
 {{ end }}
- {{- if .OSConfig.DistUpgradeOnBoot }}
+{{- if .OSConfig.DistUpgradeOnBoot }}
 package_upgrade: true
 package_reboot_if_required: true
 {{- end }}
- ssh_pwauth: no
- {{- if ne (len .ProviderSpec.SSHPublicKeys) 0 }}
+ssh_pwauth: no
+{{- if ne (len .ProviderSpec.SSHPublicKeys) 0 }}
 ssh_authorized_keys:
 {{- range .ProviderSpec.SSHPublicKeys }}
   - "{{ . }}"
 {{- end }}
 {{- end }}
- write_files:
+write_files:
 - path: "/etc/systemd/journald.conf.d/max_disk_use.conf"
   content: |
 {{ journalDConfig | indent 4 }}
- - path: "/etc/sysctl.d/99-openshift.conf"
+- path: "/etc/sysctl.d/99-openshift.conf"
   content: |
     net.ipv4.ip_forward=1
- - path: /etc/systemd/system/origin-node.service
+- path: /etc/systemd/system/origin-node.service
   content: |
     [Unit]
     Description=OpenShift Node
@@ -154,7 +154,7 @@ ssh_authorized_keys:
     Documentation=https://github.com/openshift/origin
     Wants=dnsmasq.service
     After=dnsmasq.service
-     [Service]
+    [Service]
     Type=notify
     EnvironmentFile=/etc/sysconfig/origin-node
     ExecStart=/usr/local/bin/openshift-node
@@ -166,9 +166,9 @@ ssh_authorized_keys:
     RestartSec=5s
     TimeoutStartSec=300
     OOMScoreAdjust=-999
-     [Install]
+    [Install]
     WantedBy=multi-user.target
- - path: "/etc/dnsmasq.d/origin-dns.conf"
+- path: "/etc/dnsmasq.d/origin-dns.conf"
   content: |
     no-resolv
     domain-needed
@@ -180,12 +180,12 @@ ssh_authorized_keys:
     bind-dynamic
     min-port=1024
     except-interface=lo
- - path: "/etc/NetworkManager/dispatcher.d/99-origin-dns.sh"
+- path: "/etc/NetworkManager/dispatcher.d/99-origin-dns.sh"
   permissions: "0755"
   content: |
     #!/bin/bash -x
     # -*- mode: sh; sh-indentation: 2 -*-
-     # This NetworkManager dispatcher script replicates the functionality of
+    # This NetworkManager dispatcher script replicates the functionality of
     # NetworkManager's dns=dnsmasq  however, rather than hardcoding the listening
     # address and /etc/resolv.conf to 127.0.0.1 it pulls the IP address from the
     # interface that owns the default route. This enables us to then configure pods
@@ -204,10 +204,10 @@ ssh_authorized_keys:
     #
     # TODO: I think this would be easy to add as a config option in NetworkManager
     # natively, look at hacking that up
-     cd /etc/sysconfig/network-scripts
+    cd /etc/sysconfig/network-scripts
     . ./network-functions
-     [ -f ../network ] && . ../network
-     if [[ $2 =~ ^(up|dhcp4-change|dhcp6-change)$ ]]; then
+    [ -f ../network ] && . ../network
+    if [[ $2 =~ ^(up|dhcp4-change|dhcp6-change)$ ]]; then
     	# If the origin-upstream-dns config file changed we need to restart
     	NEEDS_RESTART=0
     	UPSTREAM_DNS='/etc/dnsmasq.d/origin-upstream-dns.conf'
@@ -217,7 +217,7 @@ ssh_authorized_keys:
     	CURRENT_UPSTREAM_DNS_SORTED=$(mktemp)
     	NEW_RESOLV_CONF=$(mktemp)
     	NEW_NODE_RESOLV_CONF=$(mktemp)
-     	######################################################################
+    	######################################################################
     	# couldn't find an existing method to determine if the interface owns the
     	# default route
     	def_route=$(/sbin/ip route list match 0.0.0.0/0 | awk '{print $3 }')
@@ -238,7 +238,7 @@ ssh_authorized_keys:
     			# New config file, must restart
     			NEEDS_RESTART=1
     		fi
-     		# If network manager doesn't know about the nameservers then the best
+    		# If network manager doesn't know about the nameservers then the best
     		# we can do is grab them from /etc/resolv.conf but only if we've got no
     		# watermark
     		if ! grep -q '99-origin-dns.sh' /etc/resolv.conf; then
@@ -273,14 +273,14 @@ ssh_authorized_keys:
     				cp -Z $NEW_NODE_RESOLV_CONF /etc/origin/node/resolv.conf
     			fi
     		fi
-     		if ! $(systemctl -q is-active dnsmasq.service); then
+    		if ! $(systemctl -q is-active dnsmasq.service); then
     			NEEDS_RESTART=1
     		fi
      		######################################################################
     		if [ "${NEEDS_RESTART}" -eq "1" ]; then
     			systemctl restart dnsmasq
     		fi
-     		# Only if dnsmasq is running properly make it our only nameserver and place
+    		# Only if dnsmasq is running properly make it our only nameserver and place
     		# a watermark on /etc/resolv.conf
     		if $(systemctl -q is-active dnsmasq.service); then
     			if ! grep -q '99-origin-dns.sh' /etc/resolv.conf; then
@@ -297,30 +297,30 @@ ssh_authorized_keys:
     			cp -Z ${NEW_RESOLV_CONF} /etc/resolv.conf
     		fi
     	fi
-     	# Clean up after yourself
+    	# Clean up after yourself
     	rm -f $UPSTREAM_DNS_TMP $UPSTREAM_DNS_TMP_SORTED $CURRENT_UPSTREAM_DNS_SORTED $NEW_RESOLV_CONF
     fi
- - path: "/opt/bin/setup"
+- path: "/opt/bin/setup"
   permissions: "0777"
   content: |
     #!/bin/bash
     set -xeuo pipefail
-     # As we added some modules and don't want to reboot, restart the service
+    # As we added some modules and don't want to reboot, restart the service
     systemctl restart systemd-modules-load.service
     sysctl --system
-     # Create workdir for origin-node and load its unitfile
+    # Create workdir for origin-node and load its unitfile
     mkdir -p /var/lib/origin && systemctl daemon-reload
-     {{ if ne .CloudProvider "aws" }}
+    {{ if ne .CloudProvider "aws" }}
     # The normal way of setting it via cloud-init is broken:
     # https://bugs.launchpad.net/cloud-init/+bug/1662542
     hostnamectl set-hostname {{ .MachineSpec.Name }}
     {{ end }}
-     mkdir -p /etc/dnsmasq.d
+    mkdir -p /etc/dnsmasq.d
     if ! [[ -e /etc/dnsmasq.d/origin-upstream-dns.conf ]]; then
       cat /etc/resolv.conf |grep '^nameserver'|awk '{print $2}'|xargs -n 1 -I ^ echo 'server=^' >> /etc/dnsmasq.d/origin-upstream-dns.conf
     fi
-     systemctl stop firewalld && systemctl mask firewalld
-     yum install -y centos-release-openshift-origin311
+    systemctl stop firewalld && systemctl mask firewalld
+    yum install -y centos-release-openshift-origin311
     yum install -y \
       docker \
       dnsmasq \
@@ -338,8 +338,8 @@ ssh_authorized_keys:
       NetworkManager \
       ipvsadm{{ if eq .CloudProvider "vsphere" }} \
       open-vm-tools{{ end }}
-     mkdir -p /etc/origin/node/pods
-     {{- if eq .CloudProvider "vsphere" }}
+    mkdir -p /etc/origin/node/pods
+    {{- if eq .CloudProvider "vsphere" }}
     systemctl enable --now vmtoolsd.service
     {{ end }}
     systemctl enable --now NetworkManager
@@ -352,42 +352,42 @@ ssh_authorized_keys:
     while ! "$@"; do
       sleep 1
     done
- - path: "/etc/kubernetes/cloud-config"
+- path: "/etc/kubernetes/cloud-config"
   content: |
 {{ .CloudConfig | indent 4 }}
- - path: "/etc/origin/node/bootstrap.kubeconfig"
+- path: "/etc/origin/node/bootstrap.kubeconfig"
   content: |
 {{ .Kubeconfig | indent 4 }}
- - path: "/etc/sysconfig/origin-node"
+- path: "/etc/sysconfig/origin-node"
   content: |
     OPTIONS=
     DEBUG_LOGLEVEL=2
     IMAGE_VERSION=v3.11
     KUBECONFIG=/etc/origin/node/bootstrap.kubeconfig
     BOOTSTRAP_CONFIG_NAME=node-config-compute
- - path: "/etc/systemd/system/setup.service"
+- path: "/etc/systemd/system/setup.service"
   permissions: "0644"
   content: |
     [Install]
     WantedBy=multi-user.target
-     [Unit]
+    [Unit]
     Requires=network-online.target
     After=network-online.target
-     [Service]
+    [Service]
     Type=oneshot
     RemainAfterExit=true
     ExecStart=/opt/bin/supervise.sh /opt/bin/setup
- - path: "/etc/profile.d/opt-bin-path.sh"
+- path: "/etc/profile.d/opt-bin-path.sh"
   permissions: "0644"
   content: |
     export PATH="/opt/bin:$PATH"
- - path: "/usr/local/bin/openshift-node"
+- path: "/usr/local/bin/openshift-node"
   permissions: "0755"
   content: |
     #!/bin/sh
-     # This launches the Kubelet by converting the node configuration into kube flags.
-     set -euo pipefail
-     if ! [[ -f /etc/origin/node/client-ca.crt ]]; then
+    # This launches the Kubelet by converting the node configuration into kube flags.
+    set -euo pipefail
+    if ! [[ -f /etc/origin/node/client-ca.crt ]]; then
     	if [[ -f /etc/origin/node/bootstrap.kubeconfig ]]; then
     		oc config --config=/etc/origin/node/bootstrap.kubeconfig view --raw --minify -o go-template='{{ "{{index .clusters 0 \"cluster\" \"certificate-authority-data\" }}" }}' | base64 -d - > /etc/origin/node/client-ca.crt
     	fi
@@ -399,10 +399,10 @@ ssh_authorized_keys:
     fi
     flags=$( /usr/bin/openshift-node-config "--config=${config}" )
     eval "exec /usr/bin/hyperkube kubelet --v=${DEBUG_LOGLEVEL:-2} ${flags}"
- - path: "/etc/origin/node/client-ca.crt"
+- path: "/etc/origin/node/client-ca.crt"
   content: |
 {{ .KubernetesCACert | indent 4 }}
- - path: "/etc/origin/node/bootstrap-node-config.yaml"
+- path: "/etc/origin/node/bootstrap-node-config.yaml"
   permissions: "0644"
   content: |
     kind: NodeConfig
@@ -459,6 +459,6 @@ ssh_authorized_keys:
       localQuota:
         perFSGroup: null
     volumeDirectory: /var/lib/origin/openshift.local.volumes
- runcmd:
+runcmd:
 - systemctl enable --now setup.service
 `
