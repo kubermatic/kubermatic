@@ -301,7 +301,6 @@ func (r *Reconciler) ensureCronJobs(c *kubermaticv1.Cluster, data *resources.Tem
 
 func (r *Reconciler) ensureVerticalPodAutoscalers(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	controlPlaneDeploymentNames := []string{
-		"dns-resolver",
 		"machine-controller",
 		"machine-controller-webhook",
 		"openvpn-server",
