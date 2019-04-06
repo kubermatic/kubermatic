@@ -1,6 +1,7 @@
 package metricsserver
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -43,7 +44,7 @@ func EndpointsCreator(serviceIP net.IP) reconciling.NamedEndpointsCreatorGetter 
 				{
 					Addresses: []corev1.EndpointAddress{
 						{
-							IP: string(serviceIP),
+							IP: fmt.Sprint(serviceIP),
 						},
 					},
 					Ports: []corev1.EndpointPort{
