@@ -778,7 +778,7 @@
 
 [[projects]]
   branch = "add-userdata-plugins"
-  digest = "1:fda01cab49a2813c3e48dce48342468de700422563ce12a71b04cd0c76d7e1c8"
+  digest = "1:c25c737b9b319ce0e174106712553443f7d540adbceedb8d6c4e38ce47446529"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/apis/plugin",
@@ -797,7 +797,6 @@
     "pkg/node/eviction",
     "pkg/providerconfig",
     "pkg/userdata/centos",
-    "pkg/userdata/cloud",
     "pkg/userdata/convert",
     "pkg/userdata/coreos",
     "pkg/userdata/helper",
@@ -1909,7 +1908,6 @@
     "github.com/kubermatic/machine-controller/pkg/node/eviction",
     "github.com/kubermatic/machine-controller/pkg/providerconfig",
     "github.com/kubermatic/machine-controller/pkg/userdata/centos",
-    "github.com/kubermatic/machine-controller/pkg/userdata/cloud",
     "github.com/kubermatic/machine-controller/pkg/userdata/coreos",
     "github.com/kubermatic/machine-controller/pkg/userdata/helper",
     "github.com/kubermatic/machine-controller/pkg/userdata/plugin",
