@@ -22,14 +22,25 @@ spec:
         image: kubermatic/openvpn:v0.4
         command: ["/usr/sbin/openvpn"]
         args: ["--config", "/etc/openvpn/config/config"]
+        livenessProbe:
+          exec:
+            command:
+              - "/bin/ping"
+              - "-c"
+              - "1"
+              - "-w"
+              - "5"
+              - "10.20.0.1"
+          initialDelaySeconds: 60
         readinessProbe:
           exec:
             command:
-            - test
-            - -s
-            - /run/openvpn-status
-          initialDelaySeconds: 5
-          periodSeconds: 5
+              - "/bin/ping"
+              - "-c"
+              - "1"
+              - "-w"
+              - "5"
+              - "10.20.0.1"
         securityContext:
           privileged: true
         volumeMounts:
