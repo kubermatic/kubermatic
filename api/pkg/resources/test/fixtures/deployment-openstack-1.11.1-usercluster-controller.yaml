@@ -43,6 +43,8 @@ spec:
         - -openvpn-server-port
         - "30003"
         - -openshift=false
+        - -metrics-server-ip
+        - 192.0.2.14
         - -logtostderr
         - -v
         - "2"

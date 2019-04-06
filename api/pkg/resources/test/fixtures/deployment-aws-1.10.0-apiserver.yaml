@@ -204,6 +204,7 @@ spec:
         - X-Remote-User
         - --kubelet-preferred-address-types
         - ExternalIP,InternalIP
+        - --enable-aggregator-routing
         - --feature-gates
         - CustomResourceSubresources=true
         - --cloud-provider
@@ -295,17 +296,6 @@ spec:
         - mountPath: /etc/kubernetes/dex/ca
           name: dex-ca
           readOnly: true
-      dnsConfig:
-        nameservers:
-        - 192.0.2.14
-        options:
-        - name: ndots
-          value: "5"
-        searches:
-        - kube-system.svc.cluster.local
-        - svc.cluster.local
-        - cluster.local
-      dnsPolicy: None
       imagePullSecrets:
       - name: dockercfg
       initContainers:
