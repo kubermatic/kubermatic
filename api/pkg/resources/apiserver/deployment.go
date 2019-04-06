@@ -91,12 +91,6 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 			}
 
 			etcdEndpoints := etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName)
-
-			// Configure user cluster DNS resolver for this pod.
-			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
-			if err != nil {
-				return nil, err
-			}
 			dep.Spec.Template.Spec.Volumes = volumes
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
@@ -240,6 +234,9 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 		"--requestheader-group-headers", "X-Remote-Group",
 		"--requestheader-username-headers", "X-Remote-User",
 		"--kubelet-preferred-address-types", "ExternalIP,InternalIP",
+		// Make the API server dial endpoints of a Service instead of the ClusterIP.
+		// Avoids having to deal with user cluster DNS inside the seed cluster
+		"--enable-aggregator-routing",
 	}
 	var featureGates []string
 

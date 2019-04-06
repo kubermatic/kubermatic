@@ -10,7 +10,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
@@ -159,7 +158,6 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 		apiserver.ExternalServiceCreator(),
 		openvpn.ServiceCreator(),
 		etcd.ServiceCreator(data),
-		dns.ServiceCreator(),
 		machinecontroller.ServiceCreator(),
 		metricsserver.ServiceCreator(),
 	}
@@ -174,7 +172,6 @@ func (r *Reconciler) ensureServices(c *kubermaticv1.Cluster, data *resources.Tem
 func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuthentication bool) []reconciling.NamedDeploymentCreatorGetter {
 	creators := []reconciling.NamedDeploymentCreatorGetter{
 		openvpn.DeploymentCreator(data),
-		dns.DeploymentCreator(data),
 	}
 
 	if cluster := data.Cluster(); cluster != nil && cluster.Annotations["kubermatic.io/openshift"] == "" {
@@ -246,7 +243,6 @@ func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfi
 	return []reconciling.NamedConfigMapCreatorGetter{
 		cloudconfig.ConfigMapCreator(data),
 		openvpn.ServerClientConfigsConfigMapCreator(data),
-		dns.ConfigMapCreator(data),
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 	"flag"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"time"
@@ -30,14 +31,15 @@ import (
 )
 
 type controllerRunOptions struct {
-	metricsListenAddr string
-	healthListenAddr  string
-	openshift         bool
-	networks          networkFlags
-	namespace         string
-	caPath            string
-	clusterURL        string
-	openvpnServerPort int
+	metricsListenAddr     string
+	healthListenAddr      string
+	openshift             bool
+	networks              networkFlags
+	namespace             string
+	caPath                string
+	clusterURL            string
+	openvpnServerPort     int
+	metricsServerIPString string
 }
 
 func main() {
@@ -50,6 +52,7 @@ func main() {
 	flag.StringVar(&runOp.caPath, "ca-cert", "ca.crt", "Path to the CA cert file")
 	flag.StringVar(&runOp.clusterURL, "cluster-url", "", "Cluster URL")
 	flag.IntVar(&runOp.openvpnServerPort, "openvpn-server-port", 0, "OpenVPN server port")
+	flag.StringVar(&runOp.metricsServerIPString, "metrics-server-ip", "", "IP address of the metrics-server")
 	flag.Parse()
 
 	if runOp.namespace == "" {
@@ -67,6 +70,13 @@ func main() {
 	}
 	if runOp.openvpnServerPort == 0 {
 		log.Fatal("-openvpn-server-port must be set")
+	}
+	if runOp.metricsServerIPString == "" {
+		log.Fatal("-metrics-server-ip must be set")
+	}
+	metricsServerIP := net.ParseIP(runOp.metricsServerIPString)
+	if metricsServerIP == nil {
+		log.Fatalf("-metrics-server-ip must be a valid IP address, but %s was given", runOp.metricsServerIPString)
 	}
 
 	caBytes, err := ioutil.ReadFile(runOp.caPath)
@@ -117,6 +127,7 @@ func main() {
 		certs[0],
 		clusterURL,
 		runOp.openvpnServerPort,
+		metricsServerIP,
 		healthHandler.AddReadinessCheck); err != nil {
 		glog.Fatalf("failed to register user cluster controller: %v", err)
 	}

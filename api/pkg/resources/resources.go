@@ -54,12 +54,6 @@ const (
 	//OpenVPNServerDeploymentName is the name for the openvpn server deployment
 	OpenVPNServerDeploymentName = "openvpn-server"
 	//DNSResolverDeploymentName is the name of the dns resolver deployment
-	DNSResolverDeploymentName = "dns-resolver"
-	//DNSResolverConfigMapName is the name of the dns resolvers configmap
-	DNSResolverConfigMapName = "dns-resolver"
-	//DNSResolverServiceName is the name of the dns resolvers service
-	DNSResolverServiceName = "dns-resolver"
-	//DNSResolverVPAName is the name of the dns resolvers VerticalPodAutoscaler
 	KubeStateMetricsDeploymentName = "kube-state-metrics"
 	// UserClusterControllerDeploymentName is the name of the usercluster-controller deployment
 	UserClusterControllerDeploymentName = "usercluster-controller"
@@ -433,40 +427,6 @@ func InClusterApiserverIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
 	}
 	ip[len(ip)-1] = ip[len(ip)-1] + 1
 	return &ip, nil
-}
-
-type userClusterDNSPolicyAndConfigData interface {
-	Cluster() *kubermaticv1.Cluster
-	ClusterIPByServiceName(name string) (string, error)
-}
-
-// UserClusterDNSPolicyAndConfig returns a DNSPolicy and DNSConfig to configure Pods to use user cluster DNS
-func UserClusterDNSPolicyAndConfig(d userClusterDNSPolicyAndConfigData) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
-	// DNSNone indicates that the pod should use empty DNS settings. DNS
-	// parameters such as nameservers and search paths should be defined via
-	// DNSConfig.
-	dnsConfigOptionNdots := "5"
-	dnsConfigResolverIP, err := d.ClusterIPByServiceName(DNSResolverServiceName)
-	if err != nil {
-		return corev1.DNSNone, nil, err
-	}
-	if len(d.Cluster().Spec.ClusterNetwork.DNSDomain) == 0 {
-		return corev1.DNSNone, nil, fmt.Errorf("invalid (empty) DNSDomain in ClusterNetwork spec for cluster %s", d.Cluster().Name)
-	}
-	return corev1.DNSNone, &corev1.PodDNSConfig{
-		Nameservers: []string{dnsConfigResolverIP},
-		Searches: []string{
-			fmt.Sprintf("kube-system.svc.%s", d.Cluster().Spec.ClusterNetwork.DNSDomain),
-			fmt.Sprintf("svc.%s", d.Cluster().Spec.ClusterNetwork.DNSDomain),
-			d.Cluster().Spec.ClusterNetwork.DNSDomain,
-		},
-		Options: []corev1.PodDNSConfigOption{
-			{
-				Name:  "ndots",
-				Value: &dnsConfigOptionNdots,
-			},
-		},
-	}, nil
 }
 
 // BaseAppLabel returns the minimum required labels

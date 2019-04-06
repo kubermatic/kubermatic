@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"net"
 	"net/url"
 	"sync"
 
@@ -38,6 +39,7 @@ func Add(
 	caCert *x509.Certificate,
 	clusterURL *url.URL,
 	openvpnServerPort int,
+	metricsServerIP net.IP,
 	registerReconciledCheck func(name string, check healthcheck.Check)) error {
 	reconcile := &reconciler{
 		Client:            mgr.GetClient(),
@@ -48,6 +50,7 @@ func Add(
 		caCert:            caCert,
 		clusterURL:        clusterURL,
 		openvpnServerPort: openvpnServerPort,
+		metricsServerIP:   metricsServerIP,
 	}
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconcile})
 	if err != nil {
@@ -67,6 +70,10 @@ func Add(
 	}
 
 	if err = c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForObject{}); err != nil {
+		return err
+	}
+
+	if err = c.Watch(&source.Kind{Type: &corev1.Endpoints{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return err
 	}
 
@@ -116,6 +123,7 @@ type reconciler struct {
 	caCert            *x509.Certificate
 	clusterURL        *url.URL
 	openvpnServerPort int
+	metricsServerIP   net.IP
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool

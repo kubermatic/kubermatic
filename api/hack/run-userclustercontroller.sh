@@ -33,5 +33,6 @@ fi
     -namespace=$(kubectl get cluster ${CLUSTER_NAME} -o json | jq -r .status.namespaceName) \
     -openvpn-server-port=$(kubectl get service openvpn-server -o json | jq -r .spec.ports[0].nodePort) \
     -cluster-url=$(kubectl get cluster ${CLUSTER_NAME} -o json | jq -r .address.url) \
+    -metrics-server-ip=$(kubectl get service metrics-server -o json | jq -r .spec.clusterIP) \
     -ca-cert=${CA_CERT_USERCLUSTER_CONTROLLER} \
     ${ARGS}

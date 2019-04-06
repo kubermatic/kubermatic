@@ -44,6 +44,7 @@ type userclusterControllerData interface {
 	InClusterApiserverURL() (*url.URL, error)
 	Cluster() *kubermaticv1.Cluster
 	GetOpenVPNServerPort() (int32, error)
+	ClusterIPByServiceName(string) (string, error)
 }
 
 // DeploymentCreator returns the function to create and update the user cluster controller deployment
@@ -73,6 +74,11 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 			openvpnServerPort, err := data.GetOpenVPNServerPort()
+			if err != nil {
+				return nil, err
+			}
+
+			metricsServerIP, err := data.ClusterIPByServiceName(resources.MetricsServerServiceName)
 			if err != nil {
 				return nil, err
 			}
@@ -115,6 +121,7 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 						"-cluster-url", data.Cluster().Address.URL,
 						"-openvpn-server-port", fmt.Sprint(openvpnServerPort),
 						fmt.Sprintf("-openshift=%t", openshift),
+						"-metrics-server-ip", metricsServerIP,
 						"-logtostderr",
 						"-v", "2",
 					}, getNetworkArgs(data)...),

@@ -202,6 +202,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
 		cleanupMetricsServerAddon,
 		migrateClusterUserLabel,
 		cleanupKubeStateMetricsService,
+		cleanupDNS,
 	}
 
 	w := sync.WaitGroup{}
@@ -517,6 +518,23 @@ func cleanupKubeStateMetricsService(cluster *kubermaticv1.Cluster, ctx *cleanupC
 
 	err := ctx.kubeClient.CoreV1().Services(ns).Delete("kube-state-metrics", nil)
 	if err != nil && !k8serrors.IsNotFound(err) {
+		return err
+	}
+
+	return nil
+}
+
+// We removed the user cluster DNS forwarding
+func cleanupDNS(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	ns := cluster.Status.NamespaceName
+
+	if err := ctx.kubeClient.CoreV1().Services(ns).Delete("dns-resolver", nil); err != nil && !k8serrors.IsNotFound(err) {
+		return err
+	}
+	if err := ctx.kubeClient.CoreV1().ConfigMaps(ns).Delete("dns-resolver", nil); err != nil && !k8serrors.IsNotFound(err) {
+		return err
+	}
+	if err := ctx.kubeClient.AppsV1().Deployments(ns).Delete("dns-resolver", nil); err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
 

@@ -13,7 +13,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
@@ -415,7 +414,6 @@ func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *opensh
 		openshiftresources.OpenshiftAPIServerConfigMapCreator(ctx, osData),
 		openshiftresources.OpenshiftControllerMangerConfigMapCreator(ctx, osData),
 		openvpn.ServerClientConfigsConfigMapCreator(osData),
-		dns.ConfigMapCreator(osData),
 	}
 }
 
@@ -498,7 +496,6 @@ func getAllServiceCreators(osData *openshiftData) []reconciling.NamedServiceCrea
 		apiserver.ExternalServiceCreator(),
 		openvpn.ServiceCreator(),
 		etcd.ServiceCreator(osData),
-		dns.ServiceCreator(),
 		machinecontroller.ServiceCreator(),
 	}
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/ghodss/yaml"
 	"github.com/pmezard/go-difflib/difflib"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	clustercontroller "github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
@@ -407,13 +408,6 @@ func TestLoadFiles(t *testing.T) {
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
-					&corev1.ConfigMap{
-						ObjectMeta: metav1.ObjectMeta{
-							ResourceVersion: "123456",
-							Name:            resources.DNSResolverConfigMapName,
-							Namespace:       cluster.Status.NamespaceName,
-						},
-					},
 					&corev1.Service{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      resources.ApiserverExternalServiceName,
@@ -458,13 +452,15 @@ func TestLoadFiles(t *testing.T) {
 					},
 					&corev1.Service{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      resources.DNSResolverServiceName,
+							Name:      resources.MetricsServerServiceName,
 							Namespace: cluster.Status.NamespaceName,
 						},
 						Spec: corev1.ServiceSpec{
 							Ports: []corev1.ServicePort{
 								{
-									NodePort: 30003,
+									Port:       443,
+									TargetPort: intstr.FromInt(443),
+									Protocol:   corev1.ProtocolTCP,
 								},
 							},
 							ClusterIP: "192.0.2.14",

@@ -176,6 +176,45 @@ func ReconcileServiceAccounts(namedGetters []NamedServiceAccountCreatorGetter, n
 	return nil
 }
 
+// EndpointsCreator defines an interface to create/update Endpointss
+type EndpointsCreator = func(existing *corev1.Endpoints) (*corev1.Endpoints, error)
+
+// NamedEndpointsCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedEndpointsCreatorGetter = func() (name string, create EndpointsCreator)
+
+// EndpointsObjectWrapper adds a wrapper so the EndpointsCreator matches ObjectCreator
+// This is needed as golang does not support function interface matching
+func EndpointsObjectWrapper(create EndpointsCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*corev1.Endpoints))
+		}
+		return create(&corev1.Endpoints{})
+	}
+}
+
+// ReconcileEndpointss will create and update the Endpointss coming from the passed EndpointsCreator slice
+func ReconcileEndpointss(namedGetters []NamedEndpointsCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
+	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &corev1.Endpoints{})
+	if err != nil {
+		return fmt.Errorf("failed to get Endpoints informer: %v", err)
+	}
+
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := EndpointsObjectWrapper(create)
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+			return fmt.Errorf("failed to ensure Endpoints: %v", err)
+		}
+	}
+
+	return nil
+}
+
 // StatefulSetCreator defines an interface to create/update StatefulSets
 type StatefulSetCreator = func(existing *appsv1.StatefulSet) (*appsv1.StatefulSet, error)
 

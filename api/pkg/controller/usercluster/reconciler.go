@@ -66,6 +66,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
+	if err := r.reconcileEndpoints(ctx); err != nil {
+		return err
+	}
+
 	if err := r.reconcileConfigMaps(ctx); err != nil {
 		return err
 	}
@@ -281,11 +285,22 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context)
 
 func (r *reconciler) reconcileServices(ctx context.Context) error {
 	creators := []reconciling.NamedServiceCreatorGetter{
-		metricsserver.ExternalNameServiceCreator(r.namespace),
+		metricsserver.ServiceCreator(),
 	}
 
 	if err := reconciling.ReconcileServices(creators, metav1.NamespaceSystem, r.Client, r.cache); err != nil {
 		return fmt.Errorf("failed to reconcile Services in kube-system namespace: %v", err)
+	}
+	return nil
+}
+
+func (r *reconciler) reconcileEndpoints(ctx context.Context) error {
+	creators := []reconciling.NamedEndpointsCreatorGetter{
+		metricsserver.EndpointsCreator(r.metricsServerIP),
+	}
+
+	if err := reconciling.ReconcileEndpointss(creators, metav1.NamespaceSystem, r.Client, r.cache); err != nil {
+		return fmt.Errorf("failed to reconcile Endpoints in kube-system namespace: %v", err)
 	}
 	return nil
 }
