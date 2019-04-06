@@ -1,145 +1,12 @@
-package openshift
+#cloud-config
 
-import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"net"
-	"text/template"
-
-	"github.com/Masterminds/semver"
-
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
-	userdatahelper "github.com/kubermatic/machine-controller/pkg/userdata/helper"
-
-	"k8s.io/apimachinery/pkg/runtime"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
-)
-
-func getConfig(r runtime.RawExtension) (*Config, error) {
-	p := Config{}
-	if len(r.Raw) == 0 {
-		return &p, nil
-	}
-	if err := json.Unmarshal(r.Raw, &p); err != nil {
-		return nil, err
-	}
-	return &p, nil
-}
-
-// Config TODO
-type Config struct {
-	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
-}
-
-// Provider is a pkg/userdata.Provider implementation
-type Provider struct{}
-
-// UserData renders user-data template
-func (p Provider) UserData(
-	spec clusterv1alpha1.MachineSpec,
-	kubeconfig *clientcmdapi.Config,
-	cloudConfig string,
-	cloudProviderName string,
-	clusterDNSIPs []net.IP,
-	_ bool) (string, error) {
-
-	tmpl, err := template.New("user-data").Funcs(userdatahelper.TxtFuncMap()).Parse(userdataTemplate)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse user-data template: %v", err)
-	}
-
-	kubeletVersion, err := semver.NewVersion(spec.Versions.Kubelet)
-	if err != nil {
-		return "", fmt.Errorf("invalid kubelet version: '%v'", err)
-	}
-
-	pconfig, err := providerconfig.GetConfig(spec.ProviderSpec)
-	if err != nil {
-		return "", fmt.Errorf("failed to get provider config: %v", err)
-	}
-
-	if pconfig.OverwriteCloudConfig != nil {
-		cloudConfig = *pconfig.OverwriteCloudConfig
-	}
-
-	if pconfig.Network != nil {
-		return "", errors.New("static IP config is not supported with CentOS")
-	}
-
-	osConfig, err := getConfig(pconfig.OperatingSystemSpec)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse OperatingSystemSpec: '%v'", err)
-	}
-
-	serverAddr, err := userdatahelper.GetServerAddressFromKubeconfig(kubeconfig)
-	if err != nil {
-		return "", fmt.Errorf("error extracting server address from kubeconfig: %v", err)
-	}
-
-	kubeconfigString, err := userdatahelper.StringifyKubeconfig(kubeconfig)
-	if err != nil {
-		return "", err
-	}
-
-	kubernetesCACert, err := userdatahelper.GetCACert(kubeconfig)
-	if err != nil {
-		return "", fmt.Errorf("error extracting cacert: %v", err)
-	}
-
-	data := struct {
-		MachineSpec      clusterv1alpha1.MachineSpec
-		ProviderSpec     *providerconfig.Config
-		OSConfig         *Config
-		CloudProvider    string
-		CloudConfig      string
-		KubeletVersion   string
-		ClusterDNSIPs    []net.IP
-		ServerAddr       string
-		Kubeconfig       string
-		KubernetesCACert string
-	}{
-		MachineSpec:      spec,
-		ProviderSpec:     pconfig,
-		OSConfig:         osConfig,
-		CloudProvider:    cloudProviderName,
-		CloudConfig:      cloudConfig,
-		KubeletVersion:   kubeletVersion.String(),
-		ClusterDNSIPs:    clusterDNSIPs,
-		ServerAddr:       serverAddr,
-		Kubeconfig:       kubeconfigString,
-		KubernetesCACert: kubernetesCACert,
-	}
-	b := &bytes.Buffer{}
-	err = tmpl.Execute(b, data)
-	if err != nil {
-		return "", fmt.Errorf("failed to execute user-data template: %v", err)
-	}
-	return b.String(), nil
-}
-
-const userdataTemplate = `#cloud-config
-{{ if ne .CloudProvider "aws" }}
-hostname: {{ .MachineSpec.Name }}
-# Never set the hostname on AWS nodes. Kubernetes(kube-proxy) requires the hostname to be the private dns name
-{{ end }}
-{{- if .OSConfig.DistUpgradeOnBoot }}
-package_upgrade: true
-package_reboot_if_required: true
-{{- end }}
 ssh_pwauth: no
-{{- if ne (len .ProviderSpec.SSHPublicKeys) 0 }}
-ssh_authorized_keys:
-{{- range .ProviderSpec.SSHPublicKeys }}
-  - "{{ . }}"
-{{- end }}
-{{- end }}
 write_files:
 - path: "/etc/systemd/journald.conf.d/max_disk_use.conf"
   content: |
-{{ journalDConfig | indent 4 }}
+    [Journal]
+    SystemMaxUse=5G
+    
 - path: "/etc/sysctl.d/99-openshift.conf"
   content: |
     net.ipv4.ip_forward=1
@@ -310,11 +177,7 @@ write_files:
     sysctl --system
     # Create workdir for origin-node and load its unitfile
     mkdir -p /var/lib/origin && systemctl daemon-reload
-    {{ if ne .CloudProvider "aws" }}
-    # The normal way of setting it via cloud-init is broken:
-    # https://bugs.launchpad.net/cloud-init/+bug/1662542
-    hostnamectl set-hostname {{ .MachineSpec.Name }}
-    {{ end }}
+    
     mkdir -p /etc/dnsmasq.d
     if ! [[ -e /etc/dnsmasq.d/origin-upstream-dns.conf ]]; then
       cat /etc/resolv.conf |grep '^nameserver'|awk '{print $2}'|xargs -n 1 -I ^ echo 'server=^' >> /etc/dnsmasq.d/origin-upstream-dns.conf
@@ -336,12 +199,8 @@ write_files:
       wget \
       curl \
       NetworkManager \
-      ipvsadm{{ if eq .CloudProvider "vsphere" }} \
-      open-vm-tools{{ end }}
+      ipvsadm
     mkdir -p /etc/origin/node/pods
-    {{- if eq .CloudProvider "vsphere" }}
-    systemctl enable --now vmtoolsd.service
-    {{ end }}
     systemctl enable --now NetworkManager
     systemctl enable --now origin-node.service
 - path: "/opt/bin/supervise.sh"
@@ -354,10 +213,24 @@ write_files:
     done
 - path: "/etc/kubernetes/cloud-config"
   content: |
-{{ .CloudConfig | indent 4 }}
+    dummy-cloud-config
 - path: "/etc/origin/node/bootstrap.kubeconfig"
   content: |
-{{ .Kubeconfig | indent 4 }}
+    apiVersion: v1
+    clusters:
+    - cluster:
+        certificate-authority-data: bXktY2VydA==
+        server: https://server:443
+      name: ""
+    contexts: []
+    current-context: ""
+    kind: Config
+    preferences: {}
+    users:
+    - name: ""
+      user:
+        token: my-token
+    
 - path: "/etc/sysconfig/origin-node"
   content: |
     OPTIONS=
@@ -389,7 +262,7 @@ write_files:
     set -euo pipefail
     if ! [[ -f /etc/origin/node/client-ca.crt ]]; then
     	if [[ -f /etc/origin/node/bootstrap.kubeconfig ]]; then
-    		oc config --config=/etc/origin/node/bootstrap.kubeconfig view --raw --minify -o go-template='{{ "{{index .clusters 0 \"cluster\" \"certificate-authority-data\" }}" }}' | base64 -d - > /etc/origin/node/client-ca.crt
+    		oc config --config=/etc/origin/node/bootstrap.kubeconfig view --raw --minify -o go-template='{{index .clusters 0 "cluster" "certificate-authority-data" }}' | base64 -d - > /etc/origin/node/client-ca.crt
     	fi
     fi
     config=/etc/origin/node/bootstrap-node-config.yaml
@@ -401,7 +274,7 @@ write_files:
     eval "exec /usr/bin/hyperkube kubelet --v=${DEBUG_LOGLEVEL:-2} ${flags}"
 - path: "/etc/origin/node/client-ca.crt"
   content: |
-{{ .KubernetesCACert | indent 4 }}
+    my-cert
 - path: "/etc/origin/node/bootstrap-node-config.yaml"
   permissions: "0644"
   content: |
@@ -461,4 +334,3 @@ write_files:
     volumeDirectory: /var/lib/origin/openshift.local.volumes
 runcmd:
 - systemctl enable --now setup.service
-`

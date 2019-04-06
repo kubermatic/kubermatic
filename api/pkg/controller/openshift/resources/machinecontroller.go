@@ -11,7 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-const machineControllerImage = "quay.io/kubermatic/machine-controller-private:8936af2a674563e8350ee2084546d40b71c665ea-dirty"
+const machineControllerImage = "docker.io/alvaroaleman/machine-controller:ddac47cd8f658a694d184970cf1656f32ccbc5cd-dirty"
 
 func MachineController(osData openshiftData) reconciling.NamedDeploymentCreatorGetter {
 	name, creator := machinecontroller.DeploymentCreator(osData)()
@@ -25,14 +25,16 @@ func MachineController(osData openshiftData) reconciling.NamedDeploymentCreatorG
 			d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, corev1.Volume{Name: "userdata-plugins",
 				VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}})
 			d.Spec.Template.Spec.InitContainers = append(d.Spec.Template.Spec.InitContainers, corev1.Container{
-				Name:  "copy-userdata-plugin",
-				Image: osData.ImageRegistry(resources.RegistryQuay) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
+				Name:            "copy-userdata-plugin",
+				Image:           osData.ImageRegistry(resources.RegistryQuay) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command: []string{
 					"/bin/sh",
 					"-c",
 					"set -e && cp /usr/local/bin/userdata-openshift /target/machine-controller-userdata-centos",
 				},
-				VolumeMounts: []corev1.VolumeMount{{Name: "userdata-plugins", MountPath: "/target"}},
+				TerminationMessagePath: corev1.TerminationMessagePathDefault,
+				VolumeMounts:           []corev1.VolumeMount{{Name: "userdata-plugins", MountPath: "/target"}},
 			})
 			for idx := range d.Spec.Template.Spec.Containers {
 				if d.Spec.Template.Spec.Containers[idx].Name != "machine-controller" {
@@ -40,7 +42,8 @@ func MachineController(osData openshiftData) reconciling.NamedDeploymentCreatorG
 				}
 				d.Spec.Template.Spec.Containers[idx].VolumeMounts = append(d.Spec.Template.Spec.Containers[idx].VolumeMounts, corev1.VolumeMount{
 					Name: "userdata-plugins", MountPath: "/userdata-plugins"})
-				d.Spec.Template.Spec.Containers[idx].Env = append(d.Spec.Template.Spec.Containers[idx].Env, corev1.EnvVar{Name: "USERDATA_PLUGIN_DIR", Value: "/userdata-plugins"})
+				d.Spec.Template.Spec.Containers[idx].Env = append(d.Spec.Template.Spec.Containers[idx].Env,
+					corev1.EnvVar{Name: "MACHINE_CONTROLLER_USERDATA_PLUGIN_DIR", Value: "/userdata-plugins"})
 			}
 			return d, nil
 		}
