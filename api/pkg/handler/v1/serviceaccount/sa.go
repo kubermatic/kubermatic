@@ -143,7 +143,6 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProv
 				return nil, errors.NewAlreadyExists("service account", saFromRequest.Name)
 			}
 			sa.Spec.Name = saFromRequest.Name
-
 		}
 
 		currentGroup, err := memberMapper.MapUserToGroup(sa.Spec.Email, project.Name)
