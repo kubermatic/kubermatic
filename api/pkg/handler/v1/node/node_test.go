@@ -926,7 +926,7 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 				genTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started"),
 				genTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed"),
 			},
-			ExpectedResult: `[{"name":"event-1","creationTimestamp":"0001-01-01T00:00:00Z","message":"message started","type":"Normal","involvedObjectName":"testMachine","lastTimestamp":"0001-01-01T00:00:00Z","count":1},{"name":"event-2","creationTimestamp":"0001-01-01T00:00:00Z","message":"message killed","type":"Warning","involvedObjectName":"testMachine","lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
+			ExpectedResult: `[{"name":"event-1","creationTimestamp":"0001-01-01T00:00:00Z","message":"message started","type":"Normal","involvedObject":{"namespace":"kube-system","name":"testMachine"},"lastTimestamp":"0001-01-01T00:00:00Z","count":1},{"name":"event-2","creationTimestamp":"0001-01-01T00:00:00Z","message":"message killed","type":"Warning","involvedObject":{"namespace":"kube-system","name":"testMachine"},"lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
 		},
 		// scenario 2
 		{
@@ -948,7 +948,7 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 				genTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started"),
 				genTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed"),
 			},
-			ExpectedResult: `[{"name":"event-2","creationTimestamp":"0001-01-01T00:00:00Z","message":"message killed","type":"Warning","involvedObjectName":"testMachine","lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
+			ExpectedResult: `[{"name":"event-2","creationTimestamp":"0001-01-01T00:00:00Z","message":"message killed","type":"Warning","involvedObject":{"namespace":"kube-system","name":"testMachine"},"lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
 		},
 		// scenario 3
 		{
@@ -970,7 +970,7 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 				genTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started"),
 				genTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed"),
 			},
-			ExpectedResult: `[{"name":"event-1","creationTimestamp":"0001-01-01T00:00:00Z","message":"message started","type":"Normal","involvedObjectName":"testMachine","lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
+			ExpectedResult: `[{"name":"event-1","creationTimestamp":"0001-01-01T00:00:00Z","message":"message started","type":"Normal","involvedObject":{"namespace":"kube-system","name":"testMachine"},"lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
 		},
 	}
 
