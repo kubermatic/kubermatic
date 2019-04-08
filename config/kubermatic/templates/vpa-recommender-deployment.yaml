@@ -18,6 +18,8 @@ spec:
         app: vpa-recommender
       annotations:
         fluentbit.io/parser: glog
+        kubermatic/scrape: 'true'
+        kubermatic/scrape_port: '8942'
     spec:
       serviceAccountName: vpa-recommender
       containers:
@@ -33,10 +35,14 @@ spec:
           "--storage", "prometheus",
           "--prometheus-address","http://prometheus-kubermatic.monitoring.svc.cluster.local:9090",
           "--prometheus-cadvisor-job-name", "cadvisor-vpa",
+          "--metric-for-pod-labels", "kube_pod_labels",
+          "--pod-namespace-label", "namespace",
+          "--pod-name-label", "pod",
+          "--pod-label-prefix", "label_",
           "--recommendation-margin-fraction", "0",
         ]
         resources:
 {{ toYaml .Values.kubermatic.vpa.recommender.resources | indent 10 }}
         ports:
-        - containerPort: 8080
+        - containerPort: 8942
         {{ end }}
