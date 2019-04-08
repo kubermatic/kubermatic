@@ -54,10 +54,10 @@ func (r Routing) RegisterV1Legacy(mux *mux.Router) {
 func (r Routing) getNodeForClusterLegacy() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(node.GetNodeForClusterLegacyEndpoint(r.projectProvider)),
 		node.DecodeGetNodeForClusterLegacy,
 		encodeJSON,
@@ -87,10 +87,10 @@ func (r Routing) getNodeForClusterLegacy() http.Handler {
 func (r Routing) createNodeForClusterLegacy() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(node.CreateNodeForClusterLegacyEndpoint()),
 		node.DecodeCreateNodeForClusterLegacy,
 		setStatusCreatedHeader(encodeJSON),
@@ -116,10 +116,10 @@ func (r Routing) createNodeForClusterLegacy() http.Handler {
 func (r Routing) listNodesForClusterLegacy() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(node.ListNodesForClusterLegacyEndpoint(r.projectProvider)),
 		node.DecodeListNodesForClusterLegacy,
 		encodeJSON,
@@ -145,10 +145,10 @@ func (r Routing) listNodesForClusterLegacy() http.Handler {
 func (r Routing) deleteNodeForClusterLegacy() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(node.DeleteNodeForClusterLegacyEndpoint(r.projectProvider)),
 		node.DecodeDeleteNodeForClusterLegacy,
 		encodeJSON,

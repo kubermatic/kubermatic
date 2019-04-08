@@ -693,7 +693,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			ExpectedResponse:       `{"error":{"code":403,"message":"forbidden: The user \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
 			HTTPStatus:             http.StatusForbidden,
 			ProjectToSync:          test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenUser("", "John", "john@acme.com")),
 			ExistingAPIUser: func() *apiv1.User {
 				defaultUser := test.GenDefaultAPIUser()
 				defaultUser.Email = "john@acme.com"

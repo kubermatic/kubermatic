@@ -70,12 +70,14 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 		Nonce                     string
 		HTTPStatusInitPhase       int
 		ExistingKubermaticObjects []runtime.Object
+		ExistingAPIUser           *apiv1.User
 		ExpectedRedirectURI       string
 		ExpectedExchangeCodePhase ExpectedKubeconfigResp
 	}{
 		{
 			Name:                      "scenario 1, no parameters for url",
 			HTTPStatusInitPhase:       http.StatusInternalServerError,
+			ExistingAPIUser:           test.GenDefaultAPIUser(),
 			ExistingKubermaticObjects: genTestKubeconfigKubermaticObjects(),
 			ExpectedExchangeCodePhase: ExpectedKubeconfigResp{},
 		},
@@ -84,6 +86,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			ClusterID:           test.ClusterID,
 			ProjectID:           test.GenDefaultProject().Name,
 			UserID:              "0000",
+			ExistingAPIUser:     test.GenDefaultAPIUser(),
 			Datacenter:          test.TestDatacenter,
 			HTTPStatusInitPhase: http.StatusNotFound,
 		},
@@ -97,6 +100,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			HTTPStatusInitPhase:       http.StatusSeeOther,
 			ExistingKubermaticObjects: genTestKubeconfigKubermaticObjects(),
 			ExpectedRedirectURI:       testExpectedRedirectURI,
+			ExistingAPIUser:           test.GenDefaultAPIUser(),
 			ExpectedExchangeCodePhase: ExpectedKubeconfigResp{
 				BodyResponse: fmt.Sprintf(`{"error":{"code":400,"message":"incorrect value of state parameter = abc"}}%c`, '\n'),
 				HTTPStatus:   http.StatusBadRequest,
@@ -111,6 +115,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			HTTPStatusInitPhase:       http.StatusSeeOther,
 			ExistingKubermaticObjects: genTestKubeconfigKubermaticObjects(),
 			ExpectedRedirectURI:       testExpectedRedirectURI,
+			ExistingAPIUser:           test.GenDefaultAPIUser(),
 			ExpectedExchangeCodePhase: ExpectedKubeconfigResp{
 				BodyResponse: testKubeconfig,
 				HTTPStatus:   http.StatusOK,
@@ -123,7 +128,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			reqURL := fmt.Sprintf("/api/v1/kubeconfig?cluster_id=%s&project_id=%s&user_id=%s&datacenter=%s", tc.ClusterID, tc.ProjectID, tc.UserID, tc.Datacenter)
 			req := httptest.NewRequest("GET", reqURL, strings.NewReader(""))
 			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(apiv1.User{}, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}

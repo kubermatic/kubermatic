@@ -307,9 +307,9 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 func (r Routing) listSSHKeys() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(ssh.ListEndpoint(r.sshKeyProvider, r.projectProvider)),
 		ssh.DecodeListReq,
 		encodeJSON,
@@ -335,9 +335,9 @@ func (r Routing) listSSHKeys() http.Handler {
 func (r Routing) createSSHKey() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(ssh.CreateEndpoint(r.sshKeyProvider, r.projectProvider)),
 		ssh.DecodeCreateReq,
 		setStatusCreatedHeader(encodeJSON),
@@ -360,9 +360,9 @@ func (r Routing) createSSHKey() http.Handler {
 func (r Routing) deleteSSHKey() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(ssh.DeleteEndpoint(r.sshKeyProvider, r.projectProvider)),
 		ssh.DecodeDeleteReq,
 		encodeJSON,
@@ -383,7 +383,7 @@ func (r Routing) deleteSSHKey() http.Handler {
 func (r Routing) listDigitaloceanSizes() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 		)(provider.DigitaloceanSizeEndpoint()),
 		provider.DecodeDoSizesReq,
@@ -405,7 +405,7 @@ func (r Routing) listDigitaloceanSizes() http.Handler {
 func (r Routing) listAzureSizes() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 		)(provider.AzureSizeEndpoint()),
 		provider.DecodeAzureSizesReq,
@@ -427,7 +427,7 @@ func (r Routing) listAzureSizes() http.Handler {
 func (r Routing) listOpenstackSizes() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 		)(provider.OpenstackSizeEndpoint(r.cloudProviders)),
 		provider.DecodeOpenstackReq,
@@ -449,7 +449,7 @@ func (r Routing) listOpenstackSizes() http.Handler {
 func (r Routing) listVSphereNetworks() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 		)(provider.VsphereNetworksEndpoint(r.cloudProviders)),
 		provider.DecodeVSphereNetworksReq,
@@ -471,7 +471,7 @@ func (r Routing) listVSphereNetworks() http.Handler {
 func (r Routing) listOpenstackTenants() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 		)(provider.OpenstackTenantEndpoint(r.cloudProviders)),
 		provider.DecodeOpenstackTenantReq,
@@ -493,7 +493,7 @@ func (r Routing) listOpenstackTenants() http.Handler {
 func (r Routing) listOpenstackNetworks() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 		)(provider.OpenstackNetworkEndpoint(r.cloudProviders)),
 		provider.DecodeOpenstackReq,
@@ -515,7 +515,7 @@ func (r Routing) listOpenstackNetworks() http.Handler {
 func (r Routing) listOpenstackSubnets() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 		)(provider.OpenstackSubnetsEndpoint(r.cloudProviders)),
 		provider.DecodeOpenstackSubnetReq,
@@ -537,7 +537,7 @@ func (r Routing) listOpenstackSubnets() http.Handler {
 func (r Routing) listOpenstackSecurityGroups() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 		)(provider.OpenstackSecurityGroupEndpoint(r.cloudProviders)),
 		provider.DecodeOpenstackReq,
@@ -557,7 +557,7 @@ func (r Routing) listOpenstackSecurityGroups() http.Handler {
 func (r Routing) datacentersHandler() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 		)(dc.ListEndpoint(r.datacenters)),
 		dc.DecodeDatacentersReq,
@@ -578,7 +578,7 @@ func (r Routing) datacentersHandler() http.Handler {
 func (r Routing) datacenterHandler() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 		)(dc.GetEndpoint(r.datacenters)),
 		dc.DecodeLegacyDcReq,
@@ -601,7 +601,7 @@ func (r Routing) datacenterHandler() http.Handler {
 func (r Routing) getMasterVersions() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 		)(cluster.GetMasterVersionsEndpoint(r.updateManager)),
 		decodeEmptyReq,
@@ -623,7 +623,7 @@ func (r Routing) getMasterVersions() http.Handler {
 func (r Routing) getKubermaticVersion() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 		)(v1.GetKubermaticVersion()),
 		decodeEmptyReq,
@@ -647,9 +647,9 @@ func (r Routing) getKubermaticVersion() http.Handler {
 func (r Routing) listProjects() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(project.ListEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userProjectMapper, r.projectMemberProvider, r.userProvider)),
 		decodeEmptyReq,
 		encodeJSON,
@@ -672,9 +672,9 @@ func (r Routing) listProjects() http.Handler {
 func (r Routing) getProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(project.GetEndpoint(r.projectProvider, r.projectMemberProvider, r.userProvider)),
 		common.DecodeGetProject,
 		encodeJSON,
@@ -702,9 +702,9 @@ func (r Routing) getProject() http.Handler {
 func (r Routing) createProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(project.CreateEndpoint(r.projectProvider)),
 		project.DecodeCreate,
 		setStatusCreatedHeader(encodeJSON),
@@ -729,9 +729,9 @@ func (r Routing) createProject() http.Handler {
 func (r Routing) updateProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(project.UpdateEndpoint(r.projectProvider, r.projectMemberProvider, r.userProvider)),
 		project.DecodeUpdateRq,
 		encodeJSON,
@@ -755,9 +755,9 @@ func (r Routing) updateProject() http.Handler {
 func (r Routing) deleteProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(project.DeleteEndpoint(r.projectProvider)),
 		project.DecodeDelete,
 		encodeJSON,
@@ -783,10 +783,10 @@ func (r Routing) deleteProject() http.Handler {
 func (r Routing) createCluster(initNodeDeploymentFailures *prometheus.CounterVec) http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.CreateEndpoint(r.sshKeyProvider, r.cloudProviders, r.projectProvider, r.datacenters, initNodeDeploymentFailures)),
 		cluster.DecodeCreateReq,
 		setStatusCreatedHeader(encodeJSON),
@@ -809,10 +809,10 @@ func (r Routing) createCluster(initNodeDeploymentFailures *prometheus.CounterVec
 func (r Routing) listClusters() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.ListEndpoint(r.projectProvider)),
 		cluster.DecodeListReq,
 		encodeJSON,
@@ -835,9 +835,9 @@ func (r Routing) listClusters() http.Handler {
 func (r Routing) listClustersForProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.ListAllEndpoint(r.projectProvider, r.clusterProviders)),
 		common.DecodeGetProject,
 		encodeJSON,
@@ -860,10 +860,10 @@ func (r Routing) listClustersForProject() http.Handler {
 func (r Routing) getCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.GetEndpoint(r.projectProvider)),
 		common.DecodeGetClusterReq,
 		encodeJSON,
@@ -886,10 +886,10 @@ func (r Routing) getCluster() http.Handler {
 func (r Routing) patchCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.PatchEndpoint(r.cloudProviders, r.projectProvider, r.datacenters)),
 		cluster.DecodePatchReq,
 		encodeJSON,
@@ -913,10 +913,10 @@ func (r Routing) patchCluster() http.Handler {
 func (r Routing) getClusterKubeconfig() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.GetAdminKubeconfigEndpoint(r.projectProvider)),
 		cluster.DecodeGetAdminKubeconfig,
 		cluster.EncodeKubeconfig,
@@ -940,10 +940,10 @@ func (r Routing) getClusterKubeconfig() http.Handler {
 func (r Routing) deleteCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.DeleteEndpoint(r.sshKeyProvider, r.projectProvider)),
 		cluster.DecodeDeleteReq,
 		encodeJSON,
@@ -966,10 +966,10 @@ func (r Routing) deleteCluster() http.Handler {
 func (r Routing) getClusterHealth() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.HealthEndpoint(r.projectProvider)),
 		common.DecodeGetClusterReq,
 		encodeJSON,
@@ -995,10 +995,10 @@ func (r Routing) getClusterHealth() http.Handler {
 func (r Routing) assignSSHKeyToCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.AssignSSHKeyEndpoint(r.sshKeyProvider, r.projectProvider)),
 		cluster.DecodeAssignSSHKeyReq,
 		setStatusCreatedHeader(encodeJSON),
@@ -1025,10 +1025,10 @@ func (r Routing) assignSSHKeyToCluster() http.Handler {
 func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.ListSSHKeysEndpoint(r.sshKeyProvider, r.projectProvider)),
 		cluster.DecodeListSSHKeysReq,
 		encodeJSON,
@@ -1054,10 +1054,10 @@ func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 func (r Routing) detachSSHKeyFromCluster() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.DetachSSHKeyEndpoint(r.sshKeyProvider, r.projectProvider)),
 		cluster.DecodeDetachSSHKeysReq,
 		encodeJSON,
@@ -1080,10 +1080,10 @@ func (r Routing) detachSSHKeyFromCluster() http.Handler {
 func (r Routing) revokeClusterAdminToken() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.RevokeAdminTokenEndpoint(r.projectProvider)),
 		cluster.DecodeAdminTokenReq,
 		encodeJSON,
@@ -1106,10 +1106,10 @@ func (r Routing) revokeClusterAdminToken() http.Handler {
 func (r Routing) getClusterUpgrades() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.GetUpgradesEndpoint(r.updateManager, r.projectProvider)),
 		common.DecodeGetClusterReq,
 		encodeJSON,
@@ -1132,7 +1132,7 @@ func (r Routing) getClusterUpgrades() http.Handler {
 func (r Routing) getNodeUpgrades() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 		)(cluster.GetNodeUpgrades(r.updateManager)),
 		cluster.DecodeNodeUpgradesReq,
@@ -1156,10 +1156,10 @@ func (r Routing) getNodeUpgrades() http.Handler {
 func (r Routing) upgradeClusterNodeDeployments() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.UpgradeNodeDeploymentsEndpoint(r.projectProvider)),
 		cluster.DecodeUpgradeNodeDeploymentsReq,
 		encodeJSON,
@@ -1185,9 +1185,9 @@ func (r Routing) upgradeClusterNodeDeployments() http.Handler {
 func (r Routing) addUserToProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(user.AddEndpoint(r.projectProvider, r.userProvider, r.projectMemberProvider)),
 		user.DecodeAddReq,
 		setStatusCreatedHeader(encodeJSON),
@@ -1213,9 +1213,9 @@ func (r Routing) addUserToProject() http.Handler {
 func (r Routing) getUsersForProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(user.ListEndpoint(r.projectProvider, r.userProvider, r.projectMemberProvider)),
 		common.DecodeGetProject,
 		encodeJSON,
@@ -1241,9 +1241,9 @@ func (r Routing) getUsersForProject() http.Handler {
 func (r Routing) editUserInProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(user.EditEndpoint(r.projectProvider, r.userProvider, r.projectMemberProvider)),
 		user.DecodeEditReq,
 		encodeJSON,
@@ -1269,9 +1269,9 @@ func (r Routing) editUserInProject() http.Handler {
 func (r Routing) deleteUserFromProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(user.DeleteEndpoint(r.projectProvider, r.userProvider, r.projectMemberProvider)),
 		user.DecodeDeleteReq,
 		encodeJSON,
@@ -1293,7 +1293,7 @@ func (r Routing) deleteUserFromProject() http.Handler {
 func (r Routing) getCurrentUser() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 		)(user.GetEndpoint(r.userProjectMapper)),
 		decodeEmptyReq,
@@ -1320,9 +1320,9 @@ func (r Routing) getCurrentUser() http.Handler {
 func (r Routing) addServiceAccountToProject() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(serviceaccount.CreateEndpoint(r.projectProvider, r.serviceAccountProvider)),
 		serviceaccount.DecodeAddReq,
 		setStatusCreatedHeader(encodeJSON),
@@ -1345,9 +1345,9 @@ func (r Routing) addServiceAccountToProject() http.Handler {
 func (r Routing) listServiceAccounts() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(serviceaccount.ListEndpoint(r.projectProvider, r.serviceAccountProvider, r.userProjectMapper)),
 		common.DecodeGetProject,
 		encodeJSON,
@@ -1373,9 +1373,9 @@ func (r Routing) listServiceAccounts() http.Handler {
 func (r Routing) updateServiceAccount() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(serviceaccount.UpdateEndpoint(r.projectProvider, r.serviceAccountProvider, r.userProjectMapper)),
 		serviceaccount.DecodeUpdateReq,
 		encodeJSON,
@@ -1399,9 +1399,9 @@ func (r Routing) updateServiceAccount() http.Handler {
 func (r Routing) deleteServiceAccount() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(serviceaccount.DeleteEndpoint(r.serviceAccountProvider, r.projectProvider)),
 		serviceaccount.DecodeDeleteReq,
 		encodeJSON,
@@ -1422,10 +1422,10 @@ func (r Routing) deleteServiceAccount() http.Handler {
 func (r Routing) listDigitaloceanSizesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.DigitaloceanSizeNoCredentialsEndpoint(r.projectProvider)),
 		provider.DecodeDoSizesNoCredentialsReq,
 		encodeJSON,
@@ -1446,10 +1446,10 @@ func (r Routing) listDigitaloceanSizesNoCredentials() http.Handler {
 func (r Routing) listAzureSizesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.AzureSizeNoCredentialsEndpoint(r.projectProvider, r.datacenters)),
 		provider.DecodeAzureSizesNoCredentialsReq,
 		encodeJSON,
@@ -1470,10 +1470,10 @@ func (r Routing) listAzureSizesNoCredentials() http.Handler {
 func (r Routing) listOpenstackSizesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.OpenstackSizeNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
 		provider.DecodeOpenstackNoCredentialsReq,
 		encodeJSON,
@@ -1494,10 +1494,10 @@ func (r Routing) listOpenstackSizesNoCredentials() http.Handler {
 func (r Routing) listOpenstackTenantsNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.OpenstackTenantNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
 		provider.DecodeOpenstackNoCredentialsReq,
 		encodeJSON,
@@ -1518,10 +1518,10 @@ func (r Routing) listOpenstackTenantsNoCredentials() http.Handler {
 func (r Routing) listOpenstackNetworksNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.OpenstackNetworkNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
 		provider.DecodeOpenstackNoCredentialsReq,
 		encodeJSON,
@@ -1542,10 +1542,10 @@ func (r Routing) listOpenstackNetworksNoCredentials() http.Handler {
 func (r Routing) listOpenstackSecurityGroupsNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.OpenstackSecurityGroupNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
 		provider.DecodeOpenstackNoCredentialsReq,
 		encodeJSON,
@@ -1566,10 +1566,10 @@ func (r Routing) listOpenstackSecurityGroupsNoCredentials() http.Handler {
 func (r Routing) listOpenstackSubnetsNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.OpenstackSubnetsNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
 		provider.DecodeOpenstackSubnetNoCredentialsReq,
 		encodeJSON,
@@ -1590,10 +1590,10 @@ func (r Routing) listOpenstackSubnetsNoCredentials() http.Handler {
 func (r Routing) listVSphereNetworksNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.VsphereNetworksNoCredentialsEndpoint(r.projectProvider, r.cloudProviders)),
 		provider.DecodeVSphereNetworksNoCredentialsReq,
 		encodeJSON,
@@ -1619,10 +1619,10 @@ func (r Routing) listVSphereNetworksNoCredentials() http.Handler {
 func (r Routing) createNodeDeployment() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(node.CreateNodeDeployment(r.sshKeyProvider, r.projectProvider, r.datacenters)),
 		node.DecodeCreateNodeDeployment,
 		setStatusCreatedHeader(encodeJSON),
@@ -1645,10 +1645,10 @@ func (r Routing) createNodeDeployment() http.Handler {
 func (r Routing) listNodeDeployments() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(node.ListNodeDeployments(r.projectProvider)),
 		node.DecodeListNodeDeployments,
 		encodeJSON,
@@ -1671,10 +1671,10 @@ func (r Routing) listNodeDeployments() http.Handler {
 func (r Routing) getNodeDeployment() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(node.GetNodeDeployment(r.projectProvider)),
 		node.DecodeGetNodeDeployment,
 		encodeJSON,
@@ -1697,10 +1697,10 @@ func (r Routing) getNodeDeployment() http.Handler {
 func (r Routing) listNodeDeploymentNodes() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(node.ListNodeDeploymentNodes(r.projectProvider)),
 		node.DecodeListNodeDeploymentNodes,
 		encodeJSON,
@@ -1724,10 +1724,10 @@ func (r Routing) listNodeDeploymentNodes() http.Handler {
 func (r Routing) listNodeDeploymentNodesEvents() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(node.ListNodeDeploymentNodesEvents()),
 		node.DecodeListNodeDeploymentNodesEvents,
 		encodeJSON,
@@ -1754,10 +1754,10 @@ func (r Routing) listNodeDeploymentNodesEvents() http.Handler {
 func (r Routing) patchNodeDeployment() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(node.PatchNodeDeployment(r.sshKeyProvider, r.projectProvider, r.datacenters)),
 		node.DecodePatchNodeDeployment,
 		encodeJSON,
@@ -1780,10 +1780,10 @@ func (r Routing) patchNodeDeployment() http.Handler {
 func (r Routing) deleteNodeDeployment() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.OIDCTokenVerifier(r.oidcExtractorVerifier),
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(node.DeleteNodeDeployment(r.projectProvider)),
 		node.DecodeDeleteNodeDeployment,
 		encodeJSON,
