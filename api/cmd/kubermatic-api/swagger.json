@@ -3788,10 +3788,8 @@
           "type": "string",
           "x-go-name": "ID"
         },
-        "involvedObjectName": {
-          "description": "The object name that those events are about.",
-          "type": "string",
-          "x-go-name": "InvolvedObjectName"
+        "involvedObject": {
+          "$ref": "#/definitions/ObjectReference"
         },
         "lastTimestamp": {
           "description": "The time at which the most recent occurrence of this event was recorded.",
@@ -4458,6 +4456,28 @@
           "description": "Name represents human readable name for the resource",
           "type": "string",
           "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "ObjectReference": {
+      "type": "object",
+      "title": "ObjectReference contains basic information about referred object.",
+      "properties": {
+        "kind": {
+          "description": "Kind of the referent.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds\n+optional",
+          "type": "string",
+          "x-go-name": "Kind"
+        },
+        "name": {
+          "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\n+optional",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "namespace": {
+          "description": "Namespace of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/\n+optional",
+          "type": "string",
+          "x-go-name": "Namespace"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
