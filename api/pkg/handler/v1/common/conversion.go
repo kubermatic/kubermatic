@@ -34,11 +34,15 @@ func ConvertInternalEventToExternal(event corev1.Event) apiv1.Event {
 			Name:              event.ObjectMeta.Name,
 			CreationTimestamp: apiv1.NewTime(event.ObjectMeta.CreationTimestamp.Time),
 		},
-		Message:            event.Message,
-		Type:               event.Type,
-		InvolvedObjectName: event.InvolvedObject.Name,
-		LastTimestamp:      apiv1.NewTime(event.LastTimestamp.Time),
-		Count:              event.Count,
+		Message: event.Message,
+		Type:    event.Type,
+		InvolvedObject: apiv1.ObjectReference{
+			Name:      event.InvolvedObject.Name,
+			Namespace: event.InvolvedObject.Namespace,
+			Kind:      event.InvolvedObject.Kind,
+		},
+		LastTimestamp: apiv1.NewTime(event.LastTimestamp.Time),
+		Count:         event.Count,
 	}
 	return result
 }
