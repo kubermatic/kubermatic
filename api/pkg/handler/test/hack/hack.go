@@ -27,7 +27,7 @@ func NewTestRouting(
 	serviceAccountProvider provider.ServiceAccountProvider,
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
-	authenticator auth.OIDCAuthenticator,
+	authenticator auth.OIDCExtractorVerifier,
 	issuerVerifier auth.OIDCIssuerVerifier,
 	prometheusClient prometheusapi.Client,
 	projectMemberProvider *kubernetes.ProjectMemberProvider,
