@@ -30,3 +30,9 @@ spec:
       - name: config
         configMap:
           name: blackbox-exporter-config
+      nodeSelector:
+{{ toYaml .Values.blackboxExporter.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.blackboxExporter.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.blackboxExporter.tolerations | indent 8 }}
