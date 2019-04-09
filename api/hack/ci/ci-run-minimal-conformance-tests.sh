@@ -146,7 +146,7 @@ helm init --wait --service-account=tiller --tiller-namespace=$NAMESPACE
 
 echodate "Installing Kubermatic via Helm"
 
-if [[ -n $UPGRADE_TEST_BASE_HASH ]]; then
+if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
   echodate "Upgradetest, checking out revision ${UPGRADE_TEST_BASE_HASH}"
   git checkout $UPGRADE_TEST_BASE_HASH
 fi
@@ -229,7 +229,7 @@ echodate "Running conformance tester with existing cluster"
 # of nodes still work
 timeout -s 9 60m ./conformance-tests \
   -debug \
-  -upgrade \
+  -existing-cluster-label=worker-name=$BUILD_ID \
   -worker-name=$BUILD_ID \
   -kubeconfig=$KUBECONFIG \
   -datacenters=$DATACENTERS_FILE \
