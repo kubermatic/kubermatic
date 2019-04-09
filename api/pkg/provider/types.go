@@ -4,12 +4,15 @@ import (
 	"errors"
 	"fmt"
 
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	v1 "k8s.io/api/core/v1"
 )
 
 var (
@@ -340,4 +343,12 @@ type ServiceAccountListOptions struct {
 // ServiceAccountTokenProvider declares the set of methods for interacting with kubermatic service account token
 type ServiceAccountTokenProvider interface {
 	Create(userInfo *UserInfo, sa *kubermaticv1.User, tokenName, projectID string) (*v1.Secret, error)
+	List(userInfo *UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *ServiceAccountTokenListOptions) ([]*apiv1.PublicServiceAccountToken, error)
+	GetTokenAuthenticator() serviceaccount.TokenAuthenticator
+}
+
+// ServiceAccountTokenListOptions allows to set filters that will be applied to filter the result.
+type ServiceAccountTokenListOptions struct {
+	// TokenName list only tokens with the specified name
+	TokenName string
 }

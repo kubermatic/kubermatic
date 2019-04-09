@@ -37,12 +37,32 @@ func CreateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccoun
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
+		// check if token name is already reserved for service account
+		existingTokenList, err := serviceAccountTokenProvider.List(userInfo, project, sa, &provider.ServiceAccountTokenListOptions{TokenName: req.Body.Name})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if len(existingTokenList) > 0 {
+			return nil, errors.NewAlreadyExists("token", req.Body.Name)
+		}
+
 		secret, err := serviceAccountTokenProvider.Create(userInfo, sa, req.Body.Name, project.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return convertInternalTokenToExternal(secret), nil
+		token, ok := secret.Data["token"]
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not find token data")
+		}
+
+		publicClaim, _, err := serviceAccountTokenProvider.GetTokenAuthenticator().Authenticate(string(token))
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, "can not encode expiration time")
+		}
+
+		return convertInternalTokenToExternal(secret, apiv1.NewTime(publicClaim.Expiry.Time())), nil
+
 	}
 }
 
@@ -88,13 +108,12 @@ func DecodeAddTokenReq(c context.Context, r *http.Request) (interface{}, error) 
 	return req, nil
 }
 
-func convertInternalTokenToExternal(internal *v1.Secret) *apiv1.ServiceAccountToken {
-	return &apiv1.ServiceAccountToken{
-		ObjectMeta: apiv1.ObjectMeta{
-			ID:                internal.Name,
-			Name:              internal.Name,
-			CreationTimestamp: apiv1.NewTime(internal.CreationTimestamp.Time),
-		},
-		Token: string(internal.Data["token"]),
-	}
+func convertInternalTokenToExternal(internal *v1.Secret, expiry apiv1.Time) *apiv1.ServiceAccountToken {
+	externalToken := &apiv1.ServiceAccountToken{}
+	externalToken.Expiry = expiry
+	externalToken.ID = internal.Name
+	externalToken.Name = internal.Labels["name"]
+	externalToken.Token = string(internal.Data["token"])
+	externalToken.CreationTimestamp = apiv1.NewTime(internal.CreationTimestamp.Time)
+	return externalToken
 }

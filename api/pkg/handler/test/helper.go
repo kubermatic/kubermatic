@@ -12,8 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
-
 	"github.com/golang/glog"
 	prometheusapi "github.com/prometheus/client_golang/api"
 
@@ -29,13 +27,16 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
+	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 	"k8s.io/client-go/kubernetes/scheme"
 
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/informers"
 	kubernetesclientset "k8s.io/client-go/kubernetes"
 	fakerestclient "k8s.io/client-go/kubernetes/fake"
 	restclient "k8s.io/client-go/rest"
@@ -73,6 +74,8 @@ const (
 	TestDatacenter = "us-central1"
 	// TestServiceAccountHashKey authenticates the service account's token value using HMAC
 	TestServiceAccountHashKey = "secret"
+	// TestFakeToken signed JWT token with fake data
+	TestFakeToken = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjEiLCJleHAiOjE2NDk1OTcxNTIsImlhdCI6MTU1NDkwMjc1MiwibmJmIjoxNTU0OTAyNzUyLCJwcm9qZWN0X2lkIjoiMiIsInRva2VuX2lkIjoiMyJ9.xQIWS2xbQvWeFkKafU0jsfuUdIbQw5GLt5y62A03oXM"
 )
 
 // GetUser is a convenience function for generating apiv1.User
@@ -109,7 +112,7 @@ type newRoutingFunc func(
 	updates []*version.MasterUpdate) http.Handler
 
 // CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes  for the tests
-func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
+func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, serviceaccount.TokenAuthenticator, error) {
 	datacenters := dc
 	if datacenters == nil {
 		datacenters = buildDatacenterMeta()
@@ -121,30 +124,36 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
 
+	kubernetesClient := fakerestclient.NewSimpleClientset(kubeObjects...)
+
+	kubernetesInformerFactory := informers.NewSharedInformerFactory(kubernetesClient, 10*time.Millisecond)
+
 	fakeKubermaticImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
 		return kubermaticClient.KubermaticV1(), nil
 	}
 	fakeKubernetesImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubernetesclientset.Interface, error) {
-		return fakerestclient.NewSimpleClientset(append(kubeObjects, machineObjects...)...), nil
+		return kubernetesClient, nil
 	}
 	userLister := kubermaticInformerFactory.Kubermatic().V1().Users().Lister()
 	sshKeyProvider := kubernetes.NewSSHKeyProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
 	userProvider := kubernetes.NewUserProvider(kubermaticClient, userLister)
 	tokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(TestServiceAccountHashKey))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	serviceAccountTokenProvider := kubernetes.NewServiceAccountTokenProvider(fakeKubernetesImpersonationClient, tokenGenerator)
+
+	tokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey))
+	serviceAccountTokenProvider := kubernetes.NewServiceAccountTokenProvider(fakeKubernetesImpersonationClient, tokenGenerator, tokenAuth, kubernetesInformerFactory.Core().V1().Secrets().Lister())
 	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeKubermaticImpersonationClient, userLister, "localhost")
 	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userLister)
 	projectProvider, err := kubernetes.NewProjectProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Projects().Lister())
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	privilegedProjectProvider, err := kubernetes.NewPrivilegedProjectProvider(fakeKubermaticImpersonationClient)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	fUserClusterConnection := &fakeUserClusterConnection{fakeClient}
@@ -158,6 +167,8 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
 
+	kubernetesInformerFactory.Start(wait.NeverStop)
+	kubernetesInformerFactory.WaitForCacheSync(wait.NeverStop)
 	kubermaticInformerFactory.Start(wait.NeverStop)
 	kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
 
@@ -183,12 +194,12 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		updates,
 	)
 
-	return mainRouter, &ClientsSets{kubermaticClient, fakeClient}, nil
+	return mainRouter, &ClientsSets{kubermaticClient, fakeClient}, serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey)), nil
 }
 
 // CreateTestEndpoint does exactly the same as CreateTestEndpointAndGetClients except it omits ClientsSets when returning
 func CreateTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, routingFunc newRoutingFunc) (http.Handler, error) {
-	router, _, err := CreateTestEndpointAndGetClients(user, nil, kubeObjects, nil, kubermaticObjects, versions, updates, routingFunc)
+	router, _, _, err := CreateTestEndpointAndGetClients(user, nil, kubeObjects, nil, kubermaticObjects, versions, updates, routingFunc)
 	return router, err
 }
 
@@ -545,4 +556,27 @@ func CheckStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t 
 		t.Error(recorder.Body.String())
 		return
 	}
+}
+
+func GenSecret(projectID, saID, name, id string) *v1.Secret {
+	secret := &v1.Secret{}
+	secret.Name = fmt.Sprintf("sa-token-%s", id)
+	secret.Type = "Opaque"
+	secret.Namespace = "kubermatic"
+	secret.Data = map[string][]byte{}
+	secret.Data["token"] = []byte(TestFakeToken)
+	secret.Labels = map[string]string{
+		kubermaticapiv1.ProjectIDLabelKey: projectID,
+		"name":                            name,
+	}
+	secret.OwnerReferences = []metav1.OwnerReference{
+		{
+			APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+			Kind:       kubermaticapiv1.UserKindName,
+			UID:        "",
+			Name:       saID,
+		},
+	}
+
+	return secret
 }

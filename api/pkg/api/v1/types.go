@@ -204,10 +204,19 @@ type ServiceAccount struct {
 	Group string `json:"group"`
 }
 
+// PublicServiceAccountToken represent an API service account token without secret fields
+// swagger:model PublicServiceAccountToken
+type PublicServiceAccountToken struct {
+	ObjectMeta
+	// Expiry is a timestamp representing the time when this token will expire.
+	// swagger:strfmt date-time
+	Expiry Time `json:"expiry,omitempty"`
+}
+
 // ServiceAccountToken represent an API service account token
 // swagger:model ServiceAccountToken
 type ServiceAccountToken struct {
-	ObjectMeta
+	PublicServiceAccountToken
 	// Token the JWT token
 	Token string `json:"token,omitempty"`
 }

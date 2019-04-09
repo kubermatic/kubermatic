@@ -1434,9 +1434,9 @@ func (r Routing) deleteServiceAccount() http.Handler {
 func (r Routing) addTokenToServiceAccount() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			r.oidcAuthenticator.Verifier(),
+			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfo(r.userProjectMapper),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(serviceaccount.CreateTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider)),
 		serviceaccount.DecodeAddTokenReq,
 		setStatusCreatedHeader(encodeJSON),

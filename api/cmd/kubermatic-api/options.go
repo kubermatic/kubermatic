@@ -32,7 +32,7 @@ type serverRunOptions struct {
 	oidcIssuerOfflineAccessAsScope bool
 
 	//service account configuration
-	serviceAccountHashKey string
+	serviceAccountSigningKey string
 
 	featureGates features.FeatureGate
 }
@@ -61,7 +61,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.BoolVar(&s.oidcIssuerOfflineAccessAsScope, "oidc-issuer-offline-access-as-scope", true, "Set it to false if OIDC provider requires to set \"access_type=offline\" query param when accessing the refresh token")
 	flag.StringVar(&rawFeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for various features.")
 	flag.StringVar(&s.domain, "domain", "localhost", "A domain name on which the server is deployed")
-	flag.StringVar(&s.serviceAccountHashKey, "service-account-hash-key", "", "Hash key authenticates the service account's token value using HMAC. It is recommended to use a key with 32 or 64 bytes.")
+	flag.StringVar(&s.serviceAccountSigningKey, "service-account-signing-key", "", "Hash key authenticates the service account's token value using HMAC. It is recommended to use a key with 32 or 64 bytes.")
 	flag.Parse()
 
 	featureGates, err := features.NewFeatures(rawFeatureGates)
@@ -92,7 +92,7 @@ func (o serverRunOptions) validate() error {
 		}
 	}
 
-	if len(o.serviceAccountHashKey) == 0 {
+	if len(o.serviceAccountSigningKey) == 0 {
 		return fmt.Errorf("the service-account-hash-key flag was not specified")
 	}
 

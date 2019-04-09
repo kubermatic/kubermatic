@@ -1,7 +1,9 @@
 package serviceaccount_test
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
@@ -29,29 +31,39 @@ func TestServiceAccountIssuer(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			token, err := tokenGenerator.GenerateToken(serviceaccount.Claims(tc.expectedEmail, tc.expectedProject, tc.expectedToken))
+			token, err := tokenGenerator.Generate(serviceaccount.Claims(tc.expectedEmail, tc.expectedProject, tc.expectedToken))
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			tokenAuthenticator := serviceaccount.JWTTokenAuthenticator([]byte(test.TestServiceAccountHashKey))
-			result, err := tokenAuthenticator.AuthenticateToken(token)
+			public, custom, err := tokenAuthenticator.Authenticate(token)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if result.Email != tc.expectedEmail {
-				t.Fatalf("expected email %s got %s", tc.expectedEmail, result.Email)
+			if custom.Email != tc.expectedEmail {
+				t.Fatalf("expected email %s got %s", tc.expectedEmail, custom.Email)
 			}
 
-			if result.ProjectID != tc.expectedProject {
-				t.Fatalf("expected project %s got %s", tc.expectedProject, result.ProjectID)
+			if custom.ProjectID != tc.expectedProject {
+				t.Fatalf("expected project %s got %s", tc.expectedProject, custom.ProjectID)
 			}
 
-			if result.TokenID != tc.expectedToken {
-				t.Fatalf("expected token %s got %s", tc.expectedToken, result.TokenID)
+			if custom.TokenID != tc.expectedToken {
+				t.Fatalf("expected token %s got %s", tc.expectedToken, custom.TokenID)
+			}
+
+			if formatTime(public.Expiry.Time()) != formatTime(serviceaccount.Now().AddDate(3, 0, 0)) {
+				t.Fatalf("expected expire after 3 years from Now")
 			}
 
 		})
 	}
+}
+
+func formatTime(t time.Time) string {
+	return fmt.Sprintf("%d-%02d-%02dT%02d:%02d:%02d",
+		t.Year(), t.Month(), t.Day(),
+		t.Hour(), t.Minute(), t.Second())
 }

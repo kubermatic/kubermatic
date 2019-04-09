@@ -8,19 +8,22 @@ import (
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 
+// Now stubbed out to allow testing
+var Now = time.Now
+
 type TokenGenerator interface {
-	// GenerateToken generates a token which will identify the given
+	// Generate generates a token which will identify the given
 	// ServiceAccount. privateClaims is an interface that will be
 	// serialized into the JWT payload JSON encoding at the root level of
 	// the payload object. Public claims take precedent over private
 	// claims i.e. if both claims and privateClaims have an "exp" field,
 	// the value in claims will be used.
-	GenerateToken(claims *jwt.Claims, privateClaims *TokenClaim) (string, error)
+	Generate(claims *jwt.Claims, privateClaims *TokenClaim) (string, error)
 }
 
-type TokenAuthenicator interface {
-	// AuthenticateToken checks given token and transform it to private claim object
-	AuthenticateToken(tokenData string) (*TokenClaim, error)
+type TokenAuthenticator interface {
+	// Authenticate checks given token and transform it to custom claim object
+	Authenticate(tokenData string) (*jwt.Claims, *TokenClaim, error)
 }
 
 type TokenClaim struct {
@@ -31,11 +34,10 @@ type TokenClaim struct {
 
 func Claims(email, projectID, tokenID string) (*jwt.Claims, *TokenClaim) {
 
-	now := time.Now
 	sc := &jwt.Claims{
-		IssuedAt:  jwt.NewNumericDate(now()),
-		NotBefore: jwt.NewNumericDate(now()),
-		Expiry:    jwt.NewNumericDate(now().AddDate(3, 0, 0)),
+		IssuedAt:  jwt.NewNumericDate(Now()),
+		NotBefore: jwt.NewNumericDate(Now()),
+		Expiry:    jwt.NewNumericDate(Now().AddDate(3, 0, 0)),
 	}
 	pc := &TokenClaim{
 		Email:     email,
@@ -65,47 +67,47 @@ type jwtTokenAuthenticator struct {
 	key interface{}
 }
 
-// GenerateToken generates new token from claims
-func (j *jwtTokenGenerator) GenerateToken(claims *jwt.Claims, privateClaims *TokenClaim) (string, error) {
+// Generate generates new token from claims
+func (j *jwtTokenGenerator) Generate(claims *jwt.Claims, customClaims *TokenClaim) (string, error) {
 	// claims are applied in reverse precedence
 	return jwt.Signed(j.signer).
-		Claims(privateClaims).
+		Claims(customClaims).
 		Claims(claims).
 		CompactSerialize()
 }
 
 // JWTTokenAuthenticator authenticates tokens as JWT tokens produced by JWTTokenGenerator
-func JWTTokenAuthenticator(privateKey []byte) TokenAuthenicator {
+func JWTTokenAuthenticator(privateKey []byte) TokenAuthenticator {
 	return &jwtTokenAuthenticator{
 		key: privateKey,
 	}
 }
 
-// AuthenticateToken decrypts signed token data to TokenClaim object and checks if token expired
-func (a *jwtTokenAuthenticator) AuthenticateToken(tokenData string) (*TokenClaim, error) {
+// Authenticate decrypts signed token data to TokenClaim object and checks if token expired
+func (a *jwtTokenAuthenticator) Authenticate(tokenData string) (*jwt.Claims, *TokenClaim, error) {
 
 	tok, err := jwt.ParseSigned(tokenData)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	public := &jwt.Claims{}
-	private := &TokenClaim{}
+	customClaims := &TokenClaim{}
 
-	if err := tok.Claims(a.key, private, public); err != nil {
-		return nil, err
+	if err := tok.Claims(a.key, customClaims, public); err != nil {
+		return nil, nil, err
 	}
 
 	err = public.Validate(jwt.Expected{
-		Time: time.Now(),
+		Time: Now(),
 	})
 	switch {
 	case err == nil:
 	case err == jwt.ErrExpired:
-		return nil, fmt.Errorf("token has expired")
+		return nil, nil, fmt.Errorf("token has expired")
 	default:
-		return nil, fmt.Errorf("token could not be validated due to error: %v", err)
+		return nil, nil, fmt.Errorf("token could not be validated due to error: %v", err)
 	}
 
-	return private, nil
+	return public, customClaims, nil
 }

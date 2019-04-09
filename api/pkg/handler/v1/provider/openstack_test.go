@@ -231,7 +231,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 			apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName, false)
 
 			res := httptest.NewRecorder()
-			router, _, err := test.CreateTestEndpointAndGetClients(apiUser, buildOpenstackDatacenterMeta(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{test.APIUserToKubermaticUser(apiUser)}, nil, nil, hack.NewTestRouting)
+			router, _, _, err := test.CreateTestEndpointAndGetClients(apiUser, buildOpenstackDatacenterMeta(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{test.APIUserToKubermaticUser(apiUser)}, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v\n", err)
 			}
