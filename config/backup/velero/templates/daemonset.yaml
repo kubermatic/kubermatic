@@ -1,4 +1,4 @@
-{{ if .Values.velero.restic }}
+{{ if .Values.velero.restic.deploy }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -71,7 +71,7 @@ spec:
         {{- end }}
 
         resources:
-{{ toYaml .Values.velero.resources.restic | indent 10 }}
+{{ toYaml .Values.velero.restic.resources | indent 10 }}
 
       volumes:
       - name: host-pods
@@ -93,4 +93,10 @@ spec:
       serviceAccountName: velero
       securityContext:
         runAsUser: 0
+      nodeSelector:
+{{ toYaml .Values.velero.restic.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.velero.restic.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.velero.restic.tolerations | indent 8 }}
 {{ end }}
