@@ -12,3 +12,16 @@ logging:
         # need more cpu upon initialization, therefore burstable class
         cpu: 1000m
         memory: 600Mi
+
+    setupContainer:
+      image:
+        repository: quay.io/kubermatic/kibana-sidecar
+        tag: 1.0.0-1
+        pullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: 10m
+          memory: 24Mi
+        limits:
+          cpu: 10m
+          memory: 32Mi
