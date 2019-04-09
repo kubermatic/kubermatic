@@ -307,13 +307,11 @@ func createAddonInstallerController(ctrlCtx *controllerContext) (runner, error) 
 		openshiftAddons[i] = strings.TrimSpace(a)
 	}
 
-	return addoninstaller.New(
+	return nil, addoninstaller.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		addoninstaller.NewMetrics(),
 		kubernetesAddons,
-		openshiftAddons,
-		ctrlCtx.kubermaticClient,
-		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Addons(),
-		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
-	)
+		openshiftAddons)
 }
