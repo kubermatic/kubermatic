@@ -126,9 +126,9 @@ spec:
           name: openvpn-client-certificates
           readOnly: true
       - args:
-        - --kubeconfig
+        - -kubeconfig
         - /etc/kubernetes/kubeconfig/kubeconfig
-        - --node-access-network
+        - -node-access-network
         - 192.0.2.0/24
         - -v
         - "4"

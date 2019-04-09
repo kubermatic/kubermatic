@@ -26,19 +26,24 @@ type dnatControllerData interface {
 }
 
 // DnatControllerContainer returns a sidecar container for running the dnat controller.
-func DnatControllerContainer(data dnatControllerData, name string) (*corev1.Container, error) {
+func DnatControllerContainer(data dnatControllerData, name, apiserverAddress string) (*corev1.Container, error) {
 	procMountType := corev1.DefaultProcMount
+	args := []string{
+		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+		"-node-access-network", data.NodeAccessNetwork(),
+		"-v", "4",
+		"-logtostderr",
+	}
+	if apiserverAddress != "" {
+		args = append(args, "-master", apiserverAddress)
+	}
+
 	return &corev1.Container{
 		Name:            name,
-		Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/vpnsidecar-dnat-controller:v0.2.0",
+		Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command:         []string{"/usr/local/bin/kubeletdnat-controller"},
-		Args: []string{
-			"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-			"--node-access-network", data.NodeAccessNetwork(),
-			"-v", "4",
-			"-logtostderr",
-		},
+		Args:            args,
 		SecurityContext: &corev1.SecurityContext{
 			Capabilities: &corev1.Capabilities{
 				Add: []corev1.Capability{"NET_ADMIN"},
