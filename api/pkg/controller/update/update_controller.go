@@ -1,24 +1,25 @@
 package update
 
 import (
+	"context"
 	"fmt"
-	"time"
 
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
-	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/util/workqueue"
+	"k8s.io/client-go/tools/record"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // Metrics contains metrics that this controller will collect and expose
@@ -42,14 +43,16 @@ func NewMetrics() *Metrics {
 	return cm
 }
 
-// Controller stores necessary components that are required to implement Update
-type Controller struct {
-	queue         workqueue.RateLimitingInterface
+const (
+	ControllerName = "kubermatic_update_controller"
+)
+
+type Reconciler struct {
+	workerName    string
 	metrics       *Metrics
 	updateManager Manager
-
-	kubermaticClient kubermaticclientset.Interface
-	clusterLister    kubermaticv1lister.ClusterLister
+	ctrlruntimeclient.Client
+	recorder record.EventRecorder
 }
 
 // Manager specifies a set of methods to find suitable update versions for clusters
@@ -57,112 +60,60 @@ type Manager interface {
 	AutomaticUpdate(from string) (*version.MasterVersion, error)
 }
 
-// New creates a new Update controller that is responsible for
-// managing automatic updates to clusters while following a pre defined update path
-func New(
-	metrics *Metrics,
-	updateManager Manager,
-	kubermaticClient kubermaticclientset.Interface,
-	clusterInformer kubermaticv1informers.ClusterInformer) (*Controller, error) {
-	c := &Controller{
-		queue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "update_cluster"),
-		metrics:          metrics,
-		kubermaticClient: kubermaticClient,
-		updateManager:    updateManager,
+// Add creates a new update controller
+func Add(mgr manager.Manager, numWorkers int, workerName string, metrics *Metrics, updateManager Manager) error {
+	reconciler := &Reconciler{
+		workerName:    workerName,
+		metrics:       metrics,
+		updateManager: updateManager,
+		Client:        mgr.GetClient(),
+		recorder:      mgr.GetRecorder(ControllerName),
 	}
 
-	prometheus.MustRegister(metrics.Workers)
+	if err := prometheus.Register(metrics.Workers); err != nil {
+		return fmt.Errorf("failed to register worker metrics: %v", err)
+	}
 
-	clusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			c.enqueue(obj.(*kubermaticv1.Cluster))
-		},
-		UpdateFunc: func(old, cur interface{}) {
-			c.enqueue(cur.(*kubermaticv1.Cluster))
-		},
-		DeleteFunc: func(obj interface{}) {
-			cluster, ok := obj.(*kubermaticv1.Cluster)
-			if !ok {
-				tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
-				if !ok {
-					runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
-					return
-				}
-				cluster, ok = tombstone.Obj.(*kubermaticv1.Cluster)
-				if !ok {
-					runtime.HandleError(fmt.Errorf("tombstone contained object that is not a Cluster %#v", obj))
-					return
-				}
-			}
-			c.enqueue(cluster)
-		},
+	c, err := controller.New(ControllerName, mgr, controller.Options{
+		Reconciler:              reconciler,
+		MaxConcurrentReconciles: numWorkers,
 	})
-	c.clusterLister = clusterInformer.Lister()
-
-	return c, nil
-}
-
-// Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
-func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
-	defer runtime.HandleCrash()
-
-	for i := 0; i < workerCount; i++ {
-		go wait.Until(c.runWorker, time.Second, stopCh)
-	}
-
-	c.metrics.Workers.Set(float64(workerCount))
-	<-stopCh
-}
-
-func (c *Controller) runWorker() {
-	for c.processNextItem() {
-	}
-}
-
-func (c *Controller) processNextItem() bool {
-	key, quit := c.queue.Get()
-	if quit {
-		return false
-	}
-	defer c.queue.Done(key)
-
-	if err := c.sync(key.(string)); err != nil {
-		glog.V(0).Infof("Error syncing %v: %v", key, err)
-
-		// Re-enqueue the key rate limited. Based on the rate limiter on the
-		// queue and the re-enqueue history, the key will be processed later again.
-		c.queue.AddRateLimited(key)
-		return true
-	}
-
-	// Forget about the #AddRateLimited history of the key on every successful synchronization.
-	// This ensures that future processing of updates for this key is not delayed because of
-	// an outdated error history.
-	c.queue.Forget(key)
-	return true
-}
-
-func (c *Controller) enqueue(cluster *kubermaticv1.Cluster) {
-	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(cluster)
 	if err != nil {
-		runtime.HandleError(fmt.Errorf("couldn't get key for object %#v: %v", cluster, err))
-		return
+		return fmt.Errorf("failed to create controller: %v", err)
 	}
 
-	c.queue.Add(key)
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
+		return fmt.Errorf("failed to create watch: %v", err)
+	}
+
+	return nil
 }
 
-func (c *Controller) sync(key string) error {
-	clusterFromCache, err := c.clusterLister.Get(key)
-	if err != nil {
+func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	cluster := &kubermaticv1.Cluster{}
+	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if kerrors.IsNotFound(err) {
-			glog.V(2).Infof("cluster '%s' in work queue no longer exists", key)
-			return nil
+			return reconcile.Result{}, nil
 		}
-		return err
+		return reconcile.Result{}, err
 	}
 
-	cluster := clusterFromCache.DeepCopy()
+	// Add a wrapping here so we can emit an event on error
+	err := r.reconcile(ctx, cluster)
+	if err != nil {
+		glog.Errorf("Failed to reconcile cluster %q: %v", request.NamespacedName.String(), err)
+		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
+	}
+	return reconcile.Result{}, err
+}
+
+func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+		return nil
+	}
 
 	if !cluster.Status.Health.AllHealthy() {
 		// Cluster not healthy yet. Nothing to do.
@@ -170,15 +121,7 @@ func (c *Controller) sync(key string) error {
 		return nil
 	}
 
-	if err := c.ensureAutomaticUpdatesAreApplied(cluster); err != nil {
-		return err
-	}
-
-	return err
-}
-
-func (c *Controller) ensureAutomaticUpdatesAreApplied(cluster *kubermaticv1.Cluster) error {
-	update, err := c.updateManager.AutomaticUpdate(cluster.Spec.Version.String())
+	update, err := r.updateManager.AutomaticUpdate(cluster.Spec.Version.String())
 	if err != nil {
 		return fmt.Errorf("failed to get automatic update for cluster for version %s: %v", cluster.Spec.Version.String(), err)
 	}
@@ -191,6 +134,8 @@ func (c *Controller) ensureAutomaticUpdatesAreApplied(cluster *kubermaticv1.Clus
 	cluster.Status.Health.Apiserver = false
 	cluster.Status.Health.Controller = false
 	cluster.Status.Health.Scheduler = false
-	_, err = c.kubermaticClient.KubermaticV1().Clusters().Update(cluster)
-	return err
+	if err := r.Update(ctx, cluster); err != nil {
+		return fmt.Errorf("failed to update cluster: %v", err)
+	}
+	return nil
 }
