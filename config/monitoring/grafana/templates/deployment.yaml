@@ -81,3 +81,9 @@ spec:
         {{- end }}
       {{- end }}
       {{- end }}
+      nodeSelector:
+{{ toYaml .Values.grafana.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.grafana.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.grafana.tolerations | indent 8 }}
