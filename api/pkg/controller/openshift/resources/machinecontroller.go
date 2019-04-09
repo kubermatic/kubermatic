@@ -1,8 +1,6 @@
 package resources
 
 import (
-	"fmt"
-
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -11,11 +9,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-const machineControllerImage = "docker.io/alvaroaleman/machine-controller:ddac47cd8f658a694d184970cf1656f32ccbc5cd-dirty"
-
 func MachineController(osData openshiftData) reconciling.NamedDeploymentCreatorGetter {
 	name, creator := machinecontroller.DeploymentCreator(osData)()
-	creator = deploymentImageAddingWrapper(creator, "machine-controller", machineControllerImage)
+
+	// We do two things here:
+	// * Add a kubermatic-api initcontainer that copies the openshift-userdata binary
+	//   into a shared volume and configure the machine-controller via env var to use that for CentOS
+	// * Append to the machine-controller cmd so it uses a service account token instead of bootstrap
+	//   tokens
 	return func() (string, reconciling.DeploymentCreator) {
 		return name, func(in *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d, err := creator(in)
@@ -50,37 +51,4 @@ func MachineController(osData openshiftData) reconciling.NamedDeploymentCreatorG
 			return d, nil
 		}
 	}
-}
-
-func MachineControllerWebhook(osData openshiftData) reconciling.NamedDeploymentCreatorGetter {
-
-	name, creator := machinecontroller.WebhookDeploymentCreator(osData)()
-	return func() (string, reconciling.DeploymentCreator) {
-		return name, deploymentImageAddingWrapper(creator, "machine-controller", machineControllerImage)
-	}
-}
-
-func deploymentImageAddingWrapper(creator reconciling.DeploymentCreator, containerName, image string) reconciling.DeploymentCreator {
-
-	return func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-		d, err := creator(d)
-		if err != nil {
-			return nil, err
-		}
-
-		var containerWasFound bool
-		for idx := range d.Spec.Template.Spec.Containers {
-			if d.Spec.Template.Spec.Containers[idx].Name == containerName {
-				d.Spec.Template.Spec.Containers[idx].Image = image
-				containerWasFound = true
-				break
-			}
-		}
-
-		if !containerWasFound {
-			return nil, fmt.Errorf("couldn't find a container with name %s", containerName)
-		}
-		return d, nil
-	}
-
 }
