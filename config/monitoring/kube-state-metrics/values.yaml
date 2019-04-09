@@ -9,6 +9,7 @@ kubeStateMetrics:
     limits:
       cpu: 200m
       memory: 128Mi
+
   resizer:
     image:
       repository: k8s.gcr.io/addon-resizer
@@ -20,3 +21,7 @@ kubeStateMetrics:
       limits:
         cpu: 100m
         memory: 48Mi
+
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
