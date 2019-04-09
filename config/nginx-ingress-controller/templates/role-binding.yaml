@@ -7,6 +7,6 @@ roleRef:
   kind: Role
   name: nginx-ingress-role
 subjects:
-  - kind: ServiceAccount
-    name: nginx-ingress-serviceaccount
-    namespace: {{ .Release.Namespace }}
+- kind: ServiceAccount
+  name: nginx-ingress-serviceaccount
+  namespace: {{ .Release.Namespace }}

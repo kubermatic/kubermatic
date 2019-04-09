@@ -7,6 +7,6 @@ roleRef:
   kind: ClusterRole
   name: nginx-ingress-clusterrole
 subjects:
-  - kind: ServiceAccount
-    name: nginx-ingress-serviceaccount
-    namespace: {{ .Release.Namespace }}
+- kind: ServiceAccount
+  name: nginx-ingress-serviceaccount
+  namespace: {{ .Release.Namespace }}
