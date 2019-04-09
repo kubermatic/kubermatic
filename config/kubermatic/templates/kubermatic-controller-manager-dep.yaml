@@ -27,8 +27,8 @@ spec:
       serviceAccountName: kubermatic
       initContainers:
       - name: controller-manager-cleanup
-        image: '{{.Values.kubermatic.controller.image.repository}}:{{.Values.kubermatic.controller.image.tag}}'
-        imagePullPolicy: {{.Values.kubermatic.controller.image.pullPolicy}}
+        image: '{{ .Values.kubermatic.controller.image.repository }}:{{ .Values.kubermatic.controller.image.tag }}'
+        imagePullPolicy: {{ .Values.kubermatic.controller.image.pullPolicy }}
         command:
         - kubermatic-controller-manager-cleanup
         args:
@@ -58,137 +58,128 @@ spec:
         - name: addons
           mountPath: /opt/addons
       containers:
-        - name: controller-manager
-          command:
-          - kubermatic-controller-manager
-          args:
-          - -v=4
-          - -logtostderr
-          - -external-url={{ .Values.kubermatic.domain }}
-          - -datacenter-name={{ .Values.kubermatic.controller.datacenterName }}
-          - -etcd-disk-size={{ .Values.kubermatic.etcd.diskSize }}
-          - -master-resources=/opt/master-files
-          - -datacenters=/opt/datacenter/datacenters.yaml
-          - -versions=/opt/master-files/versions.yaml
-          - -updates=/opt/master-files/updates.yaml
-          - -internal-address=0.0.0.0:8085
-          - -kubernetes-addons-list={{ join "," .Values.kubermatic.controller.addons.kubernetes.defaultAddons }}
-          - -openshift-addons-list={{ join "," .Values.kubermatic.controller.addons.openshift.defaultAddons}}
-          - -kubernetes-addons-path=/opt/addons/kubernetes
-          - -openshift-addons-path=/opt/addons/openshift
-          - -backup-container=/opt/backup/store-container.yaml
-          - -cleanup-container=/opt/backup/cleanup-container.yaml
-          - -nodeport-range={{ .Values.kubermatic.controller.nodeportRange }}
-          - -docker-pull-config-json-file=/opt/docker/.dockerconfigjson
-          {{- if regexMatch ".*OpenIDAuthPlugin=true.*" (default "" .Values.kubermatic.controller.featureGates) }}
-          # the following flags enable oidc auth plugin on kube-API servers
-          - -oidc-ca-file=/opt/dex-ca/caBundle.pem
-          - -oidc-issuer-url={{ .Values.kubermatic.auth.tokenIssuer }}
-          - -oidc-issuer-client-id={{ .Values.kubermatic.auth.issuerClientID }}
-          - -oidc-issuer-client-secret={{ .Values.kubermatic.auth.issuerClientSecret }}
-          {{- end }}
-          - -feature-gates={{ .Values.kubermatic.controller.featureGates }}
-          {{- if .Values.kubermatic.clusterNamespacePrometheus.disableDefaultRules }}
-          - -in-cluster-prometheus-disable-default-rules=true
-          {{- end }}
-          {{- if .Values.kubermatic.clusterNamespacePrometheus.rules }}
-          - -in-cluster-prometheus-rules-file=/opt/incluster-prometheus-rules/_customrules.yaml
-          {{- end }}
-          {{- if .Values.kubermatic.clusterNamespacePrometheus.disableDefaultScrapingConfigs }}
-          - -in-cluster-prometheus-disable-default-scraping-configs=true
-          {{- end }}
-          {{- if .Values.kubermatic.clusterNamespacePrometheus.scrapingConfigs }}
-          - -in-cluster-prometheus-scraping-configs-file=/opt/incluster-prometheus-scraping-configs/_custom-scraping-configs.yaml
-          {{- end }}
-          {{- if .Values.kubermatic.monitoringScrapeAnnotationPrefix }}
-          - -monitoring-scrape-annotation-prefix={{ .Values.kubermatic.monitoringScrapeAnnotationPrefix }}
-          {{- end }}
-          {{- if .Values.kubermatic.worker_name }}
-          - -worker-name={{ .Values.kubermatic.worker_name }}
-          {{- end }}
-          image: '{{.Values.kubermatic.controller.image.repository}}:{{.Values.kubermatic.controller.image.tag}}'
-          imagePullPolicy: {{.Values.kubermatic.controller.image.pullPolicy}}
-          ports:
-            - name: metrics
-              containerPort: 8085
-              protocol: TCP
-          volumeMounts:
-            {{- if regexMatch ".*OpenIDAuthPlugin=true.*" (default "" .Values.kubermatic.controller.featureGates) }}
-            - name: dex-ca
-              mountPath: "/opt/dex-ca/"
-              readOnly: true
-            {{- end }}
-            - name: master-files
-              mountPath: "/opt/master-files/"
-              readOnly: true
-            - name: datacenters
-              mountPath: "/opt/datacenter/"
-              readOnly: true
-            - name: addons
-              mountPath: "/opt/addons/"
-              readOnly: true
-            - name: backup-container
-              mountPath: "/opt/backup/"
-              readOnly: true
-            - name: dockercfg
-              mountPath: "/opt/docker/"
-              readOnly: true
-            {{- if .Values.kubermatic.clusterNamespacePrometheus.rules }}
-            - name: in-cluster-prometheus-rules-file
-              mountPath: "/opt/incluster-prometheus-rules/"
-              readOnly: true
-            {{- end }}
-            {{- if .Values.kubermatic.clusterNamespacePrometheus.scrapingConfigs }}
-            - name: in-cluster-prometheus-scraping-configs-file
-              mountPath: "/opt/incluster-prometheus-scraping-configs/"
-              readOnly: true
-            {{- end }}
-          resources:
-{{ toYaml .Values.kubermatic.controller.resources | indent 12 }}
-      imagePullSecrets:
-        - name: dockercfg
-      tolerations:
-      - key: "only_critical"
-        operator: "Equal"
-        value: "true"
-        effect: "NoSchedule"
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            preference:
-              matchExpressions:
-              - key: "kubermatic.io/type"
-                operator: In
-                values:
-                - "stable"
-      volumes:
+      - name: controller-manager
+        command:
+        - kubermatic-controller-manager
+        args:
+        - -v=4
+        - -logtostderr
+        - -external-url={{ .Values.kubermatic.domain }}
+        - -datacenter-name={{ .Values.kubermatic.controller.datacenterName }}
+        - -etcd-disk-size={{ .Values.kubermatic.etcd.diskSize }}
+        - -master-resources=/opt/master-files
+        - -datacenters=/opt/datacenter/datacenters.yaml
+        - -versions=/opt/master-files/versions.yaml
+        - -updates=/opt/master-files/updates.yaml
+        - -internal-address=0.0.0.0:8085
+        - -kubernetes-addons-list={{ join "," .Values.kubermatic.controller.addons.kubernetes.defaultAddons }}
+        - -openshift-addons-list={{ join "," .Values.kubermatic.controller.addons.openshift.defaultAddons }}
+        - -kubernetes-addons-path=/opt/addons/kubernetes
+        - -openshift-addons-path=/opt/addons/openshift
+        - -backup-container=/opt/backup/store-container.yaml
+        - -cleanup-container=/opt/backup/cleanup-container.yaml
+        - -nodeport-range={{ .Values.kubermatic.controller.nodeportRange }}
+        - -docker-pull-config-json-file=/opt/docker/.dockerconfigjson
+        {{- if regexMatch ".*OpenIDAuthPlugin=true.*" (default "" .Values.kubermatic.controller.featureGates) }}
+        # the following flags enable oidc auth plugin on kube-API servers
+        - -oidc-ca-file=/opt/dex-ca/caBundle.pem
+        - -oidc-issuer-url={{ .Values.kubermatic.auth.tokenIssuer }}
+        - -oidc-issuer-client-id={{ .Values.kubermatic.auth.issuerClientID }}
+        - -oidc-issuer-client-secret={{ .Values.kubermatic.auth.issuerClientSecret }}
+        {{- end }}
+        - -feature-gates={{ .Values.kubermatic.controller.featureGates }}
+        {{- if .Values.kubermatic.clusterNamespacePrometheus.disableDefaultRules }}
+        - -in-cluster-prometheus-disable-default-rules=true
+        {{- end }}
+        {{- if .Values.kubermatic.clusterNamespacePrometheus.rules }}
+        - -in-cluster-prometheus-rules-file=/opt/incluster-prometheus-rules/_customrules.yaml
+        {{- end }}
+        {{- if .Values.kubermatic.clusterNamespacePrometheus.disableDefaultScrapingConfigs }}
+        - -in-cluster-prometheus-disable-default-scraping-configs=true
+        {{- end }}
+        {{- if .Values.kubermatic.clusterNamespacePrometheus.scrapingConfigs }}
+        - -in-cluster-prometheus-scraping-configs-file=/opt/incluster-prometheus-scraping-configs/_custom-scraping-configs.yaml
+        {{- end }}
+        {{- if .Values.kubermatic.monitoringScrapeAnnotationPrefix }}
+        - -monitoring-scrape-annotation-prefix={{ .Values.kubermatic.monitoringScrapeAnnotationPrefix }}
+        {{- end }}
+        {{- if .Values.kubermatic.worker_name }}
+        - -worker-name={{ .Values.kubermatic.worker_name }}
+        {{- end }}
+        image: '{{ .Values.kubermatic.controller.image.repository }}:{{ .Values.kubermatic.controller.image.tag }}'
+        imagePullPolicy: {{ .Values.kubermatic.controller.image.pullPolicy }}
+        ports:
+        - name: metrics
+          containerPort: 8085
+          protocol: TCP
+        volumeMounts:
         {{- if regexMatch ".*OpenIDAuthPlugin=true.*" (default "" .Values.kubermatic.controller.featureGates) }}
         - name: dex-ca
-          secret:
-            secretName: dex-ca
+          mountPath: "/opt/dex-ca/"
+          readOnly: true
         {{- end }}
         - name: master-files
-          secret:
-            secretName: master-files
+          mountPath: "/opt/master-files/"
+          readOnly: true
         - name: datacenters
-          secret:
-            secretName: datacenters
+          mountPath: "/opt/datacenter/"
+          readOnly: true
         - name: addons
-          emptyDir: {}
+          mountPath: "/opt/addons/"
+          readOnly: true
         - name: backup-container
-          configMap:
-            name: backup-container
+          mountPath: "/opt/backup/"
+          readOnly: true
         - name: dockercfg
-          secret:
-            secretName: dockercfg
+          mountPath: "/opt/docker/"
+          readOnly: true
         {{- if .Values.kubermatic.clusterNamespacePrometheus.rules }}
         - name: in-cluster-prometheus-rules-file
-          configMap:
-            name: clusterns-prometheus-rules
+          mountPath: "/opt/incluster-prometheus-rules/"
+          readOnly: true
         {{- end }}
         {{- if .Values.kubermatic.clusterNamespacePrometheus.scrapingConfigs }}
         - name: in-cluster-prometheus-scraping-configs-file
-          configMap:
-            name: clusterns-prometheus-scraping-configs
+          mountPath: "/opt/incluster-prometheus-scraping-configs/"
+          readOnly: true
         {{- end }}
+        resources:
+{{ toYaml .Values.kubermatic.controller.resources | indent 10 }}
+      imagePullSecrets:
+      - name: dockercfg
+      volumes:
+      {{- if regexMatch ".*OpenIDAuthPlugin=true.*" (default "" .Values.kubermatic.controller.featureGates) }}
+      - name: dex-ca
+        secret:
+          secretName: dex-ca
+      {{- end }}
+      - name: master-files
+        secret:
+          secretName: master-files
+      - name: datacenters
+        secret:
+          secretName: datacenters
+      - name: addons
+        emptyDir: {}
+      - name: backup-container
+        configMap:
+          name: backup-container
+      - name: dockercfg
+        secret:
+          secretName: dockercfg
+      {{- if .Values.kubermatic.clusterNamespacePrometheus.rules }}
+      - name: in-cluster-prometheus-rules-file
+        configMap:
+          name: clusterns-prometheus-rules
+      {{- end }}
+      {{- if .Values.kubermatic.clusterNamespacePrometheus.scrapingConfigs }}
+      - name: in-cluster-prometheus-scraping-configs-file
+        configMap:
+          name: clusterns-prometheus-scraping-configs
+      {{- end }}
+      nodeSelector:
+{{ toYaml .Values.kubermatic.controller.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.kubermatic.controller.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.kubermatic.controller.tolerations | indent 8 }}

@@ -20,79 +20,70 @@ spec:
     spec:
       serviceAccountName: kubermatic
       containers:
-        - name: api
-          command:
-          - kubermatic-api
-          args:
-          - -address=0.0.0.0:8080
-          - -v=4
-          - -logtostderr
-          - -datacenters=/opt/datacenter/datacenters.yaml
-          - -oidc-url={{ .Values.kubermatic.auth.tokenIssuer }}
-          - -oidc-authenticator-client-id={{ .Values.kubermatic.auth.clientID }}
-          - -oidc-skip-tls-verify={{ default false .Values.kubermatic.auth.skipTokenIssuerTLSVerify }}
-          - -versions=/opt/master-files/versions.yaml
-          - -updates=/opt/master-files/updates.yaml
-          - -internal-address=0.0.0.0:8085
-          - -domain={{ .Values.kubermatic.domain }}
-          - -kubeconfig=/opt/.kube/kubeconfig
-          - -master-resources=/opt/master-files
-          # the following flags enable oidc kubeconfig feature/endpoint
-          - -feature-gates={{ .Values.kubermatic.api.featureGates }}
-          {{- if regexMatch ".*OIDCKubeCfgEndpoint=true.*" (default "" .Values.kubermatic.api.featureGates) }}
-          - -oidc-issuer-redirect-uri={{ .Values.kubermatic.auth.issuerRedirectURL }}
-          - -oidc-issuer-client-id={{ .Values.kubermatic.auth.issuerClientID }}
-          - -oidc-issuer-client-secret={{ .Values.kubermatic.auth.issuerClientSecret }}
-          - -oidc-issuer-cookie-hash-key={{ .Values.kubermatic.auth.issuerCookieKey }}
-          {{- end }}
-          {{- if .Values.kubermatic.worker_name }}
-          - -worker-name={{ .Values.kubermatic.worker_name }}
-          {{- end }}
-          image: '{{ .Values.kubermatic.api.image.repository }}:{{.Values.kubermatic.api.image.tag}}'
-          imagePullPolicy: {{.Values.kubermatic.api.image.pullPolicy}}
-          ports:
-            - name: metrics
-              containerPort: 8085
-            - name: http
-              containerPort: 8080
-              protocol: TCP
-          volumeMounts:
-            - name: kubeconfig
-              mountPath: "/opt/.kube/"
-              readOnly: true
-            - name: datacenters
-              mountPath: "/opt/datacenter/"
-              readOnly: true
-            - name: master-files
-              mountPath: "/opt/master-files/"
-              readOnly: true
-          resources:
-{{ toYaml .Values.kubermatic.api.resources | indent 12 }}
-      imagePullSecrets:
-        - name: dockercfg
-      tolerations:
-      - key: "only_critical"
-        operator: "Equal"
-        value: "true"
-        effect: "NoSchedule"
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            preference:
-              matchExpressions:
-              - key: "kubermatic.io/type"
-                operator: In
-                values:
-                - "stable"
-      volumes:
+      - name: api
+        command:
+        - kubermatic-api
+        args:
+        - -address=0.0.0.0:8080
+        - -v=4
+        - -logtostderr
+        - -datacenters=/opt/datacenter/datacenters.yaml
+        - -oidc-url={{ .Values.kubermatic.auth.tokenIssuer }}
+        - -oidc-authenticator-client-id={{ .Values.kubermatic.auth.clientID }}
+        - -oidc-skip-tls-verify={{ default false .Values.kubermatic.auth.skipTokenIssuerTLSVerify }}
+        - -versions=/opt/master-files/versions.yaml
+        - -updates=/opt/master-files/updates.yaml
+        - -internal-address=0.0.0.0:8085
+        - -domain={{ .Values.kubermatic.domain }}
+        - -kubeconfig=/opt/.kube/kubeconfig
+        - -master-resources=/opt/master-files
+        # the following flags enable oidc kubeconfig feature/endpoint
+        - -feature-gates={{ .Values.kubermatic.api.featureGates }}
+        {{- if regexMatch ".*OIDCKubeCfgEndpoint=true.*" (default "" .Values.kubermatic.api.featureGates) }}
+        - -oidc-issuer-redirect-uri={{ .Values.kubermatic.auth.issuerRedirectURL }}
+        - -oidc-issuer-client-id={{ .Values.kubermatic.auth.issuerClientID }}
+        - -oidc-issuer-client-secret={{ .Values.kubermatic.auth.issuerClientSecret }}
+        - -oidc-issuer-cookie-hash-key={{ .Values.kubermatic.auth.issuerCookieKey }}
+        {{- end }}
+        {{- if .Values.kubermatic.worker_name }}
+        - -worker-name={{ .Values.kubermatic.worker_name }}
+        {{- end }}
+        image: '{{ .Values.kubermatic.api.image.repository }}:{{ .Values.kubermatic.api.image.tag }}'
+        imagePullPolicy: {{ .Values.kubermatic.api.image.pullPolicy }}
+        ports:
+        - name: metrics
+          containerPort: 8085
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        volumeMounts:
         - name: kubeconfig
-          secret:
-            secretName: kubeconfig
+          mountPath: "/opt/.kube/"
+          readOnly: true
         - name: datacenters
-          secret:
-            secretName: datacenters
+          mountPath: "/opt/datacenter/"
+          readOnly: true
         - name: master-files
-          secret:
-            secretName: master-files
+          mountPath: "/opt/master-files/"
+          readOnly: true
+        resources:
+{{ toYaml .Values.kubermatic.api.resources | indent 10 }}
+      imagePullSecrets:
+      - name: dockercfg
+      volumes:
+      - name: kubeconfig
+        secret:
+          secretName: kubeconfig
+      - name: datacenters
+        secret:
+          secretName: datacenters
+      - name: master-files
+        secret:
+          secretName: master-files
+      nodeSelector:
+{{ toYaml .Values.kubermatic.api.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.kubermatic.api.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.kubermatic.api.tolerations | indent 8 }}
 {{ end }}

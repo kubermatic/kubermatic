@@ -17,12 +17,11 @@ spec:
       serviceAccountName: vpa-admission-controller
       containers:
       - name: admission-controller
-        image: {{ .Values.kubermatic.vpa.admissioncontroller.image.repository }}:{{ .Values.kubermatic.vpa.admissioncontroller.image.tag }}
+        image: '{{ .Values.kubermatic.vpa.admissioncontroller.image.repository }}:{{ .Values.kubermatic.vpa.admissioncontroller.image.tag }}'
         command: ["/admission-controller"]
-        args: [
-          "--address", ":8944",
-          "--logtostderr",
-        ]
+        args:
+        - "--address=:8944"
+        - "--logtostderr"
         env:
         - name: NAMESPACE
           valueFrom:
@@ -40,6 +39,13 @@ spec:
         - name: tls-certs
           secret:
             secretName: vpa-tls-certs
+      nodeSelector:
+{{ toYaml .Values.kubermatic.vpa.admissioncontroller.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.kubermatic.vpa.admissioncontroller.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.kubermatic.vpa.admissioncontroller.tolerations | indent 8 }}
+
 ---
 apiVersion: v1
 kind: Service
@@ -48,8 +54,8 @@ metadata:
   namespace: kube-system
 spec:
   ports:
-    - port: 443
-      targetPort: 8000
+  - port: 443
+    targetPort: 8000
   selector:
     app: vpa-admission-controller
 {{ end }}

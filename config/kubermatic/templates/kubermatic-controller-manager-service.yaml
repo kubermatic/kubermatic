@@ -7,9 +7,9 @@ metadata:
     prom-job: kubermatic-controller-manager
 spec:
   ports:
-    - name: metrics
-      port: 8085
-      protocol: TCP
-      targetPort: 8085
+  - name: metrics
+    port: 8085
+    protocol: TCP
+    targetPort: 8085
   selector:
     role: controller-manager
