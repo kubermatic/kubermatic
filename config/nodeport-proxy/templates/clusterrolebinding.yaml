@@ -7,6 +7,6 @@ roleRef:
   kind: ClusterRole
   name: nodeport-proxy
 subjects:
-  - kind: ServiceAccount
-    namespace: {{ .Release.Namespace }}
-    name: nodeport-proxy
+- kind: ServiceAccount
+  namespace: {{ .Release.Namespace }}
+  name: nodeport-proxy

@@ -23,24 +23,25 @@ spec:
     spec:
       initContainers:
       - name: copy-envoy-config
+        image: '{{ .Values.nodePortPoxy.image.repository }}:{{ .Values.nodePortPoxy.image.tag }}'
         command:
         - /bin/cp
-        args: ["/envoy.yaml", "/etc/envoy/envoy.yaml"]
-        image: {{ .Values.nodePortPoxy.image.repository }}:{{ .Values.nodePortPoxy.image.tag }}
+        args:
+        - /envoy.yaml
+        - /etc/envoy/envoy.yaml
         volumeMounts:
         - mountPath: /etc/envoy
           name: envoy-config
       containers:
       - name: envoy-manager
+        image: '{{ .Values.nodePortPoxy.image.repository }}:{{ .Values.nodePortPoxy.image.tag }}'
         command:
         - /envoy-manager
-        args: [
-          "-listen-address", ":8001",
-          "-envoy-node-name", "kube",
-          "-envoy-admin-port", "9001",
-          "-envoy-stats-port", "8002",
-        ]
-        image: {{ .Values.nodePortPoxy.image.repository }}:{{ .Values.nodePortPoxy.image.tag }}
+        args:
+        - "-listen-address=:8001"
+        - "-envoy-node-name=kube"
+        - "-envoy-admin-port=9001"
+        - "-envoy-stats-port=8002"
         ports:
         - containerPort: 8001
           name: grpc
@@ -48,15 +49,14 @@ spec:
         resources:
 {{ toYaml .Values.nodePortPoxy.resources.envoyManager | indent 10 }}
       - name: envoy
+        image: '{{ .Values.nodePortPoxy.envoy.image.repository }}:{{ .Values.nodePortPoxy.envoy.image.tag }}'
         command:
         - /usr/local/bin/envoy
-        args: [
-          "-c", "/etc/envoy/envoy.yaml",
-          "--service-cluster", "cluster0",
-          "--service-node", "kube",
-          "--v2-config-only",
-        ]
-        image: {{ .Values.nodePortPoxy.envoy.image.repository }}:{{ .Values.nodePortPoxy.envoy.image.tag }}
+        args:
+        - "-c=/etc/envoy/envoy.yaml"
+        - "--service-cluster=cluster0"
+        - "--service-node=kube"
+        - "--v2-config-only"
         lifecycle:
           preStop:
             exec:
@@ -82,15 +82,6 @@ spec:
           name: envoy-config
         resources:
 {{ toYaml .Values.nodePortPoxy.resources.envoy | indent 10 }}
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app: envoy
-              topologyKey: kubernetes.io/hostname
-            weight: 100
       imagePullSecrets:
       - name: quay
       restartPolicy: Always
@@ -98,6 +89,13 @@ spec:
       volumes:
       - emptyDir: {}
         name: envoy-config
+      nodeSelector:
+{{ toYaml .Values.nodePortPoxy.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.nodePortPoxy.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.nodePortPoxy.tolerations | indent 8 }}
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -116,14 +114,13 @@ spec:
       serviceAccountName: nodeport-proxy
       containers:
       - name: lb-updater
-        image: {{ .Values.nodePortPoxy.image.repository }}:{{ .Values.nodePortPoxy.image.tag }}
+        image: '{{ .Values.nodePortPoxy.image.repository }}:{{ .Values.nodePortPoxy.image.tag }}'
         command:
-        - "/lb-updater"
-        args: [
-          "-lb-namespace", "$(MY_NAMESPACE)",
-          "-lb-name", "nodeport-lb",
-          "-logtostderr",
-        ]
+        - /lb-updater
+        args:
+        - "-lb-namespace=$(MY_NAMESPACE)"
+        - "-lb-name=nodeport-lb"
+        - "-logtostderr"
         env:
         - name: MY_NAMESPACE
           valueFrom:
@@ -133,3 +130,9 @@ spec:
 {{ toYaml .Values.nodePortPoxy.resources.lbUpdater | indent 10 }}
       imagePullSecrets:
       - name: quay
+      nodeSelector:
+{{ toYaml .Values.nodePortPoxy.lbUpdater.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.nodePortPoxy.lbUpdater.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.nodePortPoxy.lbUpdater.tolerations | indent 8 }}
