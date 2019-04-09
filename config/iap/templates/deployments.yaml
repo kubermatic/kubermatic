@@ -66,4 +66,10 @@ spec:
         fsGroup: 65534
         runAsNonRoot: true
         runAsUser: 65534
+      nodeSelector:
+{{ toYaml $.Values.iap.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml $.Values.iap.affinity | indent 8 }}
+      tolerations:
+{{ toYaml $.Values.iap.tolerations | indent 8 }}
 {{- end }}
