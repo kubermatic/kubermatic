@@ -10,4 +10,4 @@ cd $(dirname $0)
 
 export UPGRADE_TEST_BASE_HASH=${UPGRADE_TEST_BASE_HASH:-$(git rev-parse master)}
 
-./ci/ci-run-minimal-conformance-tests.sh
+./ci-run-minimal-conformance-tests.sh
