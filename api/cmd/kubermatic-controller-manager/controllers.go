@@ -269,12 +269,7 @@ func createUpdateController(ctrlCtx *controllerContext) (runner, error) {
 		return nil, fmt.Errorf("failed to create update manager: %v", err)
 	}
 
-	return updatecontroller.New(
-		updatecontroller.NewMetrics(),
-		updateManager,
-		ctrlCtx.kubermaticClient,
-		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
-	)
+	return nil, updatecontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, updatecontroller.NewMetrics(), updateManager)
 }
 
 func createAddonController(ctrlCtx *controllerContext) (runner, error) {
