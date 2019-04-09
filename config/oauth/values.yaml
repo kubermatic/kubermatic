@@ -41,3 +41,7 @@ dex:
     limits:
       cpu: 50m
       memory: 200Mi
+
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
