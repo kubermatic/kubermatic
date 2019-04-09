@@ -13,6 +13,7 @@ func TxtFuncMap() template.FuncMap {
 	funcMap["downloadBinariesScript"] = DownloadBinariesScript
 	funcMap["kubeletSystemdUnit"] = KubeletSystemdUnit
 	funcMap["kubeletFlags"] = KubeletFlags
+	funcMap["cloudProviderFlags"] = CloudProviderFlags
 	funcMap["kernelModules"] = KernelModules
 	funcMap["kernelSettings"] = KernelSettings
 	funcMap["journalDConfig"] = JournalDConfig
