@@ -54,6 +54,7 @@ nf_conntrack_ipv4
 }
 
 // KernelSettings returns the list of kernel settings required for a kubernetes worker node
+// inotify changes according to https://github.com/kubernetes/kubernetes/issues/10421 - better than letting the kubelet die
 func KernelSettings() string {
 	return `net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
@@ -61,6 +62,7 @@ kernel.panic_on_oops = 1
 kernel.panic = 10
 net.ipv4.ip_forward = 1
 vm.overcommit_memory = 1
+fs.inotify.max_user_watches = 1048576
 `
 }
 

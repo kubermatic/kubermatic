@@ -23,9 +23,8 @@ const (
 --rotate-certificates=true \
 --cert-dir=/etc/kubernetes/pki \
 --authentication-token-webhook=true \
-{{- if .CloudProvider }}
---cloud-provider={{ .CloudProvider }} \
---cloud-config=/etc/kubernetes/cloud-config \
+{{- if or (.CloudProvider) (.IsExternal) }}
+{{ cloudProviderFlags .CloudProvider .IsExternal }} \
 {{- end }}
 {{- if and (.Hostname) (ne .CloudProvider "aws") }}
 --hostname-override={{ .Hostname }} \
@@ -53,14 +52,29 @@ RestartSec=10
 Environment="PATH=/opt/bin:/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin/"
 
 ExecStart=/opt/bin/kubelet $KUBELET_EXTRA_ARGS \
-{{ kubeletFlags .KubeletVersion .CloudProvider .Hostname .ClusterDNSIPs | indent 2 }}
+{{ kubeletFlags .KubeletVersion .CloudProvider .Hostname .ClusterDNSIPs .IsExternal | indent 2 }}
 
 [Install]
 WantedBy=multi-user.target`
 )
 
+const cpFlags = `--cloud-provider=%s \
+--cloud-config=/etc/kubernetes/cloud-config`
+
+// CloudProviderFlags returns --cloud-provider and --cloud-config flags
+func CloudProviderFlags(cpName string, external bool) (string, error) {
+	if cpName == "" && !external {
+		return "", nil
+	}
+
+	if external {
+		return "--cloud-provider=external", nil
+	}
+	return fmt.Sprintf(cpFlags, cpName), nil
+}
+
 // KubeletSystemdUnit returns the systemd unit for the kubelet
-func KubeletSystemdUnit(kubeletVersion, cloudProvider, hostname string, dnsIPs []net.IP) (string, error) {
+func KubeletSystemdUnit(kubeletVersion, cloudProvider, hostname string, dnsIPs []net.IP, external bool) (string, error) {
 	tmpl, err := template.New("kubelet-systemd-unit").Funcs(TxtFuncMap()).Parse(kubeletSystemdUnitTpl)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse kubelet-systemd-unit template: %v", err)
@@ -71,11 +85,13 @@ func KubeletSystemdUnit(kubeletVersion, cloudProvider, hostname string, dnsIPs [
 		CloudProvider  string
 		Hostname       string
 		ClusterDNSIPs  []net.IP
+		IsExternal     bool
 	}{
 		KubeletVersion: kubeletVersion,
 		CloudProvider:  cloudProvider,
 		Hostname:       hostname,
 		ClusterDNSIPs:  dnsIPs,
+		IsExternal:     external,
 	}
 	b := &bytes.Buffer{}
 	err = tmpl.Execute(b, data)
@@ -87,7 +103,7 @@ func KubeletSystemdUnit(kubeletVersion, cloudProvider, hostname string, dnsIPs [
 }
 
 // KubeletFlags returns the kubelet flags
-func KubeletFlags(version, cloudProvider, hostname string, dnsIPs []net.IP) (string, error) {
+func KubeletFlags(version, cloudProvider, hostname string, dnsIPs []net.IP, external bool) (string, error) {
 	tmpl, err := template.New("kubelet-flags").Funcs(TxtFuncMap()).Parse(kubeletFlagsTpl)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse kubelet-flags template: %v", err)
@@ -98,11 +114,13 @@ func KubeletFlags(version, cloudProvider, hostname string, dnsIPs []net.IP) (str
 		Hostname       string
 		ClusterDNSIPs  []net.IP
 		KubeletVersion string
+		IsExternal     bool
 	}{
 		CloudProvider:  cloudProvider,
 		Hostname:       hostname,
 		ClusterDNSIPs:  dnsIPs,
 		KubeletVersion: version,
+		IsExternal:     external,
 	}
 	b := &bytes.Buffer{}
 	err = tmpl.Execute(b, data)
@@ -113,6 +131,7 @@ func KubeletFlags(version, cloudProvider, hostname string, dnsIPs []net.IP) (str
 	return b.String(), nil
 }
 
+// KubeletHealthCheckSystemdUnit kubelet health checking systemd unit
 func KubeletHealthCheckSystemdUnit() string {
 	return `[Unit]
 Requires=kubelet.service
@@ -126,6 +145,7 @@ WantedBy=multi-user.target
 `
 }
 
+// ContainerRuntimeHealthCheckSystemdUnit container-runtime health checking systemd unit
 func ContainerRuntimeHealthCheckSystemdUnit() string {
 	return `[Unit]
 Requires=docker.service
