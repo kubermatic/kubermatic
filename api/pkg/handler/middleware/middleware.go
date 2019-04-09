@@ -3,15 +3,19 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/go-kit/kit/endpoint"
+	transporthttp "github.com/go-kit/kit/transport/http"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	"github.com/kubermatic/kubermatic/api/pkg/util/hash"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
@@ -21,14 +25,21 @@ type contextKey string
 
 const (
 	datacenterContextKey contextKey = "datacenter"
+
 	// ClusterProviderContextKey key under which the current ClusterProvider is kept in the ctx
 	ClusterProviderContextKey contextKey = "cluster-provider"
-	// UserInfoContextKey key under which the current UserInfo is kept in the ctx
+
+	// UserInfoContextKey key under which the current UserInfoExtractor is kept in the ctx
 	UserInfoContextKey contextKey = "user-info"
+
 	// UserCRContextKey key under which the current User (from the database) is kept in the ctx
 	UserCRContextKey contextKey = "user-cr"
+
 	// AuthenticatedUserContextKey key under which the current User (from OIDC provider) is kept in the ctx
 	AuthenticatedUserContextKey contextKey = "authenticated-user"
+
+	// rawTokenContextKey key under which the current token (OpenID ID Token) is kept in the ctx
+	rawTokenContextKey contextKey = "raw-auth-token"
 )
 
 //DCGetter defines functionality to retrieve a datacenter name
@@ -89,9 +100,9 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 	}
 }
 
-// UserInfo is a middleware that creates UserInfo object from kubermaticapiv1.User (authenticated)
+// UserInfoExtractor is a middleware that creates UserInfoExtractor object from kubermaticapiv1.User (authenticated)
 // and stores it in ctx under UserInfoContextKey key.
-func UserInfo(userProjectMapper provider.ProjectMemberMapper) endpoint.Middleware {
+func UserInfoExtractor(userProjectMapper provider.ProjectMemberMapper) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			user, ok := ctx.Value(UserCRContextKey).(*kubermaticapiv1.User)
@@ -141,6 +152,57 @@ func UserInfoUnauthorized(userProjectMapper provider.ProjectMemberMapper, userPr
 			}
 			return next(context.WithValue(ctx, UserInfoContextKey, uInfo), request)
 		}
+	}
+}
+
+// OIDCTokenVerifier knows how to verify an ID token from a request
+func OIDCTokenVerifier(o auth.OIDCVerifier) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			t := ctx.Value(rawTokenContextKey)
+			token, ok := t.(string)
+			if !ok || token == "" {
+				return nil, k8cerrors.NewNotAuthorized()
+			}
+
+			verifyCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+			defer cancel()
+			claims, err := o.Verify(verifyCtx, token)
+			if err != nil {
+				return nil, k8cerrors.NewNotAuthorized()
+			}
+
+			if claims.Subject == "" {
+				return nil, k8cerrors.NewNotAuthorized()
+			}
+
+			id, err := hash.GetUserID(claims.Subject)
+			if err != nil {
+				return nil, k8cerrors.NewNotAuthorized()
+			}
+
+			user := apiv1.User{
+				ObjectMeta: apiv1.ObjectMeta{
+					ID:   id,
+					Name: claims.Name,
+				},
+				Email: claims.Email,
+			}
+
+			if user.ID == "" {
+				return nil, k8cerrors.NewNotAuthorized()
+			}
+
+			return next(context.WithValue(ctx, AuthenticatedUserContextKey, user), request)
+		}
+	}
+}
+
+// OIDCTokenExtractor knows how to extract an ID token from the request
+func OIDCTokenExtractor(o auth.TokenExtractor) transporthttp.RequestFunc {
+	return func(ctx context.Context, r *http.Request) context.Context {
+		token := o.Extract(r)
+		return context.WithValue(ctx, rawTokenContextKey, token)
 	}
 }
 

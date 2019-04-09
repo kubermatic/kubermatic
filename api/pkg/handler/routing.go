@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"os"
 
 	"github.com/go-kit/kit/log"
@@ -32,8 +33,8 @@ type Routing struct {
 	projectProvider           provider.ProjectProvider
 	privilegedProjectProvider provider.PrivilegedProjectProvider
 	logger                    log.Logger
-	oidcAuthenticator         auth.OIDCAuthenticator
-	oidcIssuer                auth.OIDCIssuerVerifier
+	oidcExtractorVerifier     auth.OIDCExtractorVerifier
+	oidcIssuerVerifier        auth.OIDCIssuerVerifier
 	clusterProviders          map[string]provider.ClusterProvider
 	updateManager             common.UpdateManager
 	prometheusClient          prometheusapi.Client
@@ -51,7 +52,7 @@ func NewRouting(
 	serviceAccountProvider provider.ServiceAccountProvider,
 	projectProvider provider.ProjectProvider,
 	privilegedProject provider.PrivilegedProjectProvider,
-	oidcAuthenticator auth.OIDCAuthenticator,
+	oidcExtractorVerifier auth.OIDCExtractorVerifier,
 	oidcIssuerVerifier auth.OIDCIssuerVerifier,
 	updateManager common.UpdateManager,
 	prometheusClient prometheusapi.Client,
@@ -68,8 +69,8 @@ func NewRouting(
 		privilegedProjectProvider: privilegedProject,
 		cloudProviders:            cloudProviders,
 		logger:                    log.NewLogfmtLogger(os.Stderr),
-		oidcAuthenticator:         oidcAuthenticator,
-		oidcIssuer:                oidcIssuerVerifier,
+		oidcExtractorVerifier:     oidcExtractorVerifier,
+		oidcIssuerVerifier:        oidcIssuerVerifier,
 		updateManager:             updateManager,
 		prometheusClient:          prometheusClient,
 		projectMemberProvider:     projectMemberProvider,
@@ -81,6 +82,6 @@ func (r Routing) defaultServerOptions() []httptransport.ServerOption {
 	return []httptransport.ServerOption{
 		httptransport.ServerErrorLogger(r.logger),
 		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(r.oidcAuthenticator.Extractor()),
+		httptransport.ServerBefore(middleware.OIDCTokenExtractor(r.oidcExtractorVerifier)),
 	}
 }

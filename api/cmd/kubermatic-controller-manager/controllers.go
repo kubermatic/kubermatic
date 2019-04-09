@@ -278,7 +278,10 @@ func createUpdateController(ctrlCtx *controllerContext) (runner, error) {
 }
 
 func createAddonController(ctrlCtx *controllerContext) (runner, error) {
-	return addon.New(
+	return nil, addon.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
 		addon.NewMetrics(),
 		map[string]interface{}{ // addonVariables
 			"openvpn": map[string]interface{}{
@@ -289,9 +292,6 @@ func createAddonController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.openshiftAddonsPath,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.clientProvider,
-		ctrlCtx.kubermaticClient,
-		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Addons(),
-		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 	)
 }
 

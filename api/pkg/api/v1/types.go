@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/Masterminds/semver"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 
@@ -715,8 +716,8 @@ type Event struct {
 	// Type of this event (i.e. normal or warning). New types could be added in the future.
 	Type string `json:"type,omitempty"`
 
-	// The object name that those events are about.
-	InvolvedObjectName string `json:"involvedObjectName"`
+	// The object reference that those events are about.
+	InvolvedObject ObjectReference `json:"involvedObject"`
 
 	// The time at which the most recent occurrence of this event was recorded.
 	// swagger:strfmt date-time
@@ -724,6 +725,22 @@ type Event struct {
 
 	// The number of times this event has occurred.
 	Count int32 `json:"count,omitempty"`
+}
+
+// ObjectReference contains basic information about referred object.
+type ObjectReference struct {
+	// Kind of the referent.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// +optional
+	Kind string `json:"kind,omitempty"`
+	// Namespace of the referent.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
+	// Name of the referent.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+	// +optional
+	Name string `json:"name,omitempty"`
 }
 
 // KubermaticVersions describes the versions of running Kubermatic components.

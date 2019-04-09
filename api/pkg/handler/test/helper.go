@@ -2,7 +2,9 @@ package test
 
 import (
 	"crypto/sha256"
+	"crypto/sha512"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -91,7 +93,7 @@ type newRoutingFunc func(
 	serviceAccountProvider provider.ServiceAccountProvider,
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
-	oidcAuthenticator auth.OIDCAuthenticator,
+	oidcExtractor auth.OIDCExtractorVerifier,
 	oidcIssuerVerifier auth.OIDCIssuerVerifier,
 	prometheusClient prometheusapi.Client,
 	projectMemberProvider *kubernetes.ProjectMemberProvider,
@@ -105,8 +107,7 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		datacenters = buildDatacenterMeta()
 	}
 	cloudProviders := cloud.Providers(datacenters)
-	authenticator := NewAuthenticator(user)
-	issuerVerifier := NewIssuerVerifier()
+	fakeOIDCClient := NewFakeOIDCClient(user)
 
 	fakeClient := fakectrlruntimeclient.NewFakeClient(append(kubeObjects, machineObjects...)...)
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
@@ -157,8 +158,8 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		serviceAccountProvider,
 		projectProvider,
 		privilegedProjectProvider,
-		authenticator,
-		issuerVerifier,
+		fakeOIDCClient,
+		fakeOIDCClient, /*implements a different interface*/
 		prometheusClient,
 		projectMemberProvider,
 		versions,
@@ -286,12 +287,24 @@ func GenUser(id, name, email string) *kubermaticapiv1.User {
 		// the name of the object is derived from the email address and encoded as sha256
 		id = fmt.Sprintf("%x", sha256.Sum256([]byte(email)))
 	}
+
+	specID := ""
+	{
+		h := sha512.New512_224()
+		if _, err := io.WriteString(h, email); err != nil {
+			// not nice, better to use t.Error
+			panic("unable to generate a test user due to " + err.Error())
+		}
+		specID = fmt.Sprintf("%x_KUBE", h.Sum(nil))
+	}
+
 	return &kubermaticapiv1.User{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: id,
 			UID:  types.UID(fmt.Sprintf("fake-uid-%s", id)),
 		},
 		Spec: kubermaticapiv1.UserSpec{
+			ID:    specID,
 			Name:  name,
 			Email: email,
 		},

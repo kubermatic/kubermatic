@@ -2,6 +2,7 @@ package addon
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -101,7 +102,7 @@ func (f *fakeKubeconfigProvider) GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]
 }
 
 func TestController_combineManifests(t *testing.T) {
-	controller := &Controller{}
+	controller := &Reconciler{}
 
 	manifests := []*bytes.Buffer{
 		bytes.NewBufferString(testManifest1),
@@ -174,7 +175,7 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	controller := &Controller{
+	controller := &Reconciler{
 		kubernetesAddonDir: addonDir,
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
@@ -226,9 +227,9 @@ func TestController_getAddonDeploymentManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	controller := &Controller{
+	controller := &Reconciler{
 		kubernetesAddonDir: addonDir,
-		registryURI:        parceRegistryURI("bar.io"),
+		registryURI:        parseRegistryURI("bar.io"),
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 	manifests, err := controller.getAddonManifests(addon, cluster)
@@ -263,7 +264,7 @@ func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	controller := &Controller{
+	controller := &Reconciler{
 		kubernetesAddonDir: addonDir,
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
@@ -304,7 +305,7 @@ func TestController_getAddonManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	controller := &Controller{
+	controller := &Reconciler{
 		kubernetesAddonDir: addonDir,
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
@@ -329,7 +330,7 @@ func TestController_getAddonManifests(t *testing.T) {
 }
 
 func TestController_ensureAddonLabelOnManifests(t *testing.T) {
-	controller := &Controller{
+	controller := &Reconciler{
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 
@@ -356,8 +357,8 @@ func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 }
 
 func TestController_getDeleteCommand(t *testing.T) {
-	controller := &Controller{}
-	cmd := controller.getDeleteCommand("/opt/kubeconfig", "/opt/manifest.yaml", false)
+	controller := &Reconciler{}
+	cmd := controller.getDeleteCommand(context.Background(), "/opt/kubeconfig", "/opt/manifest.yaml", false)
 	expected := "kubectl --kubeconfig /opt/kubeconfig delete -f /opt/manifest.yaml"
 	got := strings.Join(cmd.Args, " ")
 	if got != expected {
@@ -366,8 +367,8 @@ func TestController_getDeleteCommand(t *testing.T) {
 }
 
 func TestController_getApplyCommand(t *testing.T) {
-	controller := &Controller{}
-	cmd := controller.getApplyCommand("/opt/kubeconfig", "/opt/manifest.yaml", labels.SelectorFromSet(map[string]string{"foo": "bar"}), false)
+	controller := &Reconciler{}
+	cmd := controller.getApplyCommand(context.Background(), "/opt/kubeconfig", "/opt/manifest.yaml", labels.SelectorFromSet(map[string]string{"foo": "bar"}), false)
 	expected := "kubectl --kubeconfig /opt/kubeconfig apply --prune -f /opt/manifest.yaml -l foo=bar"
 	got := strings.Join(cmd.Args, " ")
 	if got != expected {

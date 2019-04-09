@@ -66,7 +66,7 @@ kubermatic:
         - node-exporter
         image:
           repository: "quay.io/kubermatic/addons"
-          tag: "v0.2.2"
+          tag: "v0.2.3"
           pullPolicy: "IfNotPresent"
       openshift:
         # list of Addons to install into every user-cluster. All need to exist in the addons image
@@ -76,7 +76,7 @@ kubermatic:
         - rbac
         image:
           repository: "quay.io/kubermatic/openshift-addons"
-          tag: "v0.4"
+          tag: "v0.5"
           pullPolicy: "IfNotPresent"
     resources:
       requests:
@@ -206,7 +206,7 @@ kubermatic:
     updater:
       image:
         repository: k8s.gcr.io/vpa-updater
-        tag: 0.4.0
+        tag: 0.5.0
       resources:
         requests:
           cpu: 50m
@@ -218,19 +218,19 @@ kubermatic:
     recommender:
       image:
         repository: k8s.gcr.io/vpa-recommender
-        tag: 0.4.0
+        tag: 0.5.0
       resources:
         requests:
           cpu: 50m
           memory: 500Mi
         limits:
           cpu: 200m
-          memory: 1000Mi
+          memory: 3000Mi
 
     admissioncontroller:
       image:
         repository: k8s.gcr.io/vpa-admission-controller
-        tag: 0.4.0
+        tag: 0.5.0
       resources:
         requests:
           cpu: 50m

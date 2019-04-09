@@ -76,13 +76,12 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 					errorList = append(errorList, err.Error())
 					continue
 				}
-				if _, errGetUnsecured := privilegedProjectProvider.GetUnsecured(mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true}); errGetUnsecured != nil {
-					if !isStatus(errGetUnsecured, http.StatusNotFound) {
-						// store original error
-						errorList = append(errorList, err.Error())
-					}
-					continue
+				_, errGetUnsecured := privilegedProjectProvider.GetUnsecured(mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+				if !isStatus(errGetUnsecured, http.StatusNotFound) {
+					// store original error
+					errorList = append(errorList, err.Error())
 				}
+				continue
 			}
 
 			projectOwners, err := getOwnersForProject(userInfo, projectInternal, memberProvider, userProvider)
