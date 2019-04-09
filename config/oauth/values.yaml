@@ -1,8 +1,7 @@
-##### Kubermatic oauth
 dex:
   image:
     repository: "quay.io/dexidp/dex"
-    tag: "v2.12.0"
+    tag: "v2.15.0"
   replicas: 1
   ingress:
     host: ""
