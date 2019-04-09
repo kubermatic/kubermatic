@@ -424,11 +424,9 @@ func (p *provider) Create(machine *v1alpha1.Machine, data *cloud.MachineCreateDe
 	amiID := config.AMI
 	if amiID == "" {
 		if amiID, err = getDefaultAMIID(ec2Client, pc.OperatingSystem, config.Region); err != nil {
-			if err != nil {
-				return nil, cloudprovidererrors.TerminalError{
-					Reason:  common.InvalidConfigurationMachineError,
-					Message: fmt.Sprintf("Invalid Region and Operating System configuration: %v", err),
-				}
+			return nil, cloudprovidererrors.TerminalError{
+				Reason:  common.InvalidConfigurationMachineError,
+				Message: fmt.Sprintf("Invalid Region and Operating System configuration: %v", err),
 			}
 		}
 	}
