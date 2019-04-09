@@ -18,7 +18,7 @@ spec:
       serviceAccountName: vpn-client
       containers:
       - name: openvpn-client
-        image: kubermatic/openvpn:v0.4
+        image: quay.io/kubermatic/openvpn:v0.5
         command: ["/usr/sbin/openvpn"]
         args: ["--config", "/etc/openvpn/config/config"]
         livenessProbe:
@@ -50,7 +50,7 @@ spec:
           name: openvpn-client-certificates
           readOnly: true
       - name: dnat-controller
-        image: kubermatic/openvpn:v0.4
+        image: quay.io/kubermatic/openvpn:v0.5
         command:
         - bash
         - -ec

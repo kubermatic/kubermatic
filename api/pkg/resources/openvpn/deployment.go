@@ -112,7 +112,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:            "iptables-init",
-					Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/openvpn:v0.4",
+					Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/openvpn:v0.5",
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Command:         []string{"/bin/bash"},
 					Args: []string{
@@ -171,7 +171,7 @@ iptables -A INPUT -i tun0 -j DROP
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:                     name,
-					Image:                    data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/openvpn:v0.4",
+					Image:                    data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/openvpn:v0.5",
 					ImagePullPolicy:          corev1.PullIfNotPresent,
 					Command:                  []string{"/usr/sbin/openvpn"},
 					Args:                     vpnArgs,
@@ -224,7 +224,7 @@ iptables -A INPUT -i tun0 -j DROP
 				},
 				{
 					Name:            "ip-forward",
-					Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/openvpn:v0.4",
+					Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/openvpn:v0.5",
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Command:         []string{"/bin/bash"},
 					Args: []string{
