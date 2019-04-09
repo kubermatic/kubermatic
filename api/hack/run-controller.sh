@@ -3,6 +3,7 @@
 set -o errexit
 set -o nounset
 set -o pipefail
+set -x
 
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
 # Deploy a user-cluster/ipam-controller for which we actuallly

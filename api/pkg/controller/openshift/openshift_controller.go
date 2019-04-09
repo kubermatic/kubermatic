@@ -434,7 +434,7 @@ func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *opens
 	return []reconciling.NamedDeploymentCreatorGetter{openshiftresources.APIDeploymentCreator(ctx, osData),
 		openshiftresources.ControllerManagerDeploymentCreator(ctx, osData),
 		openshiftresources.MachineController(osData),
-		openshiftresources.MachineControllerWebhook(osData),
+		machinecontroller.WebhookDeploymentCreator(osData),
 		usercluster.DeploymentCreator(osData, true)}
 }
 
