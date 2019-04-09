@@ -11,6 +11,12 @@ import (
 	"github.com/golang/glog"
 	"github.com/heptiolabs/healthcheck"
 
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/types"
+	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -18,12 +24,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
-	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 )
 
 const (
@@ -39,7 +39,7 @@ func Add(
 	clusterURL *url.URL,
 	openvpnServerPort int,
 	registerReconciledCheck func(name string, check healthcheck.Check)) error {
-	reconcile := &reconciler{
+	reconciler := &reconciler{
 		Client:            mgr.GetClient(),
 		cache:             mgr.GetCache(),
 		openshift:         openshift,
@@ -49,56 +49,67 @@ func Add(
 		clusterURL:        clusterURL,
 		openvpnServerPort: openvpnServerPort,
 	}
-	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconcile})
+	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconciler})
 	if err != nil {
 		return err
 	}
 
-	if err = c.Watch(&source.Kind{Type: &apiregistrationv1beta1.APIService{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	mapFn := handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request {
+		return []reconcile.Request{
+			{NamespacedName: types.NamespacedName{
+				// There is no "parent object" like e.G. a cluster that can be used to reconcile, we just have a random set of resources
+				// we reconcile one after another. To ensure we always have only one reconcile running at a time, we
+				// use a static string as identifier
+				Name:      "identifier",
+				Namespace: "",
+			}}}
+	})
+
+	if err = c.Watch(&source.Kind{Type: &apiregistrationv1beta1.APIService{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
 		return err
 	}
 
-	if err = c.Watch(&source.Kind{Type: &corev1.ServiceAccount{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err = c.Watch(&source.Kind{Type: &corev1.ServiceAccount{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
 		return err
 	}
 
-	if err = c.Watch(&source.Kind{Type: &corev1.Service{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err = c.Watch(&source.Kind{Type: &corev1.Service{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
 		return err
 	}
 
-	if err = c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err = c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
 		return err
 	}
 
-	if err = c.Watch(&source.Kind{Type: &rbacv1.Role{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err = c.Watch(&source.Kind{Type: &rbacv1.Role{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
 		return err
 	}
 
-	if err = c.Watch(&source.Kind{Type: &rbacv1.RoleBinding{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err = c.Watch(&source.Kind{Type: &rbacv1.RoleBinding{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
 		return err
 	}
 
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
 		return err
 	}
 
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRoleBinding{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRoleBinding{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
 		return err
 	}
 
-	if err = c.Watch(&source.Kind{Type: &admissionregistrationv1beta1.MutatingWebhookConfiguration{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err = c.Watch(&source.Kind{Type: &admissionregistrationv1beta1.MutatingWebhookConfiguration{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
 		return err
 	}
 
-	if err = c.Watch(&source.Kind{Type: &apiextensionsv1beta1.CustomResourceDefinition{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err = c.Watch(&source.Kind{Type: &apiextensionsv1beta1.CustomResourceDefinition{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
 		return err
 	}
 
 	// A very simple but limited way to express the first successful reconciling to the seed cluster
 	registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciled_successfully_once"), func() error {
-		reconcile.rLock.Lock()
-		defer reconcile.rLock.Unlock()
-		if !reconcile.reconciledSuccessfullyOnce {
+		reconciler.rLock.Lock()
+		defer reconciler.rLock.Unlock()
+		if !reconciler.reconciledSuccessfullyOnce {
 			return errors.New("no successful reconciliation so far")
 		}
 		return nil
