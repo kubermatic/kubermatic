@@ -2,7 +2,7 @@ certManager:
   controller:
     image:
       repository: quay.io/jetstack/cert-manager-controller
-      tag: v0.6.0
+      tag: v0.7.0
       pullPolicy: IfNotPresent
 
     resources:
@@ -20,7 +20,7 @@ certManager:
   webhook:
     image:
       repository: quay.io/jetstack/cert-manager-webhook
-      tag: v0.6.0
+      tag: v0.7.0
       pullPolicy: IfNotPresent
 
     resources:
@@ -35,10 +35,16 @@ certManager:
     nodeSelector: {}
     tolerations: []
 
-  caSync:
+    # If true, the apiserver's cabundle will be automatically injected into the
+    # webhook's ValidatingWebhookConfiguration resource by the CA injector.
+    # If you're running on Kubernetes 1.11+, you can set this to false already.
+    # see https://github.com/kubernetes/kubernetes/pull/62649
+    injectAPIServerCA: false
+
+  cainjector:
     image:
-      repository: quay.io/munnerz/apiextensions-ca-helper
-      tag: v0.1.0
+      repository: quay.io/jetstack/cert-manager-cainjector
+      tag: v0.7.0
       pullPolicy: IfNotPresent
 
     resources:
@@ -49,8 +55,8 @@ certManager:
         cpu: 100m
         memory: 128Mi
 
-    affinity: {}
     nodeSelector: {}
+    affinity: {}
     tolerations: []
 
   securityContext:

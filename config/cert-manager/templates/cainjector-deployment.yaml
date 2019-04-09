@@ -1,0 +1,38 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: cainjector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cainjector
+  template:
+    metadata:
+      labels:
+        app: cainjector
+      annotations:
+        kubermatic/scrape: 'true'
+        kubermatic/scrape_port: '9402'
+        fluentbit.io/parser: glog
+    spec:
+      serviceAccountName: cainjector
+      containers:
+      - name: cainjector
+        image: '{{ .Values.certManager.cainjector.image.repository }}:{{ .Values.certManager.cainjector.image.tag }}'
+        imagePullPolicy: {{ .Values.certManager.cainjector.image.pullPolicy }}
+        args:
+        - --leader-election-namespace=$(POD_NAMESPACE)
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        resources:
+{{ toYaml .Values.certManager.cainjector.resources | indent 10 }}
+      nodeSelector:
+{{ toYaml .Values.certManager.cainjector.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.certManager.cainjector.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.certManager.cainjector.tolerations | indent 8 }}
