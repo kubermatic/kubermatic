@@ -78,3 +78,9 @@ spec:
       - name: minio-backup
         emptyDir: {}
       {{- end }}
+      nodeSelector:
+{{ toYaml .Values.minio.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.minio.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.minio.tolerations | indent 8 }}
