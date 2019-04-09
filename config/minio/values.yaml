@@ -1,12 +1,17 @@
 minio:
   image:
-    repository: "minio/minio"
-    tag: "RELEASE.2019-01-16T21-44-08Z"
-  storeSize: "100Gi"
+    repository: minio/minio
+    tag: RELEASE.2019-04-09T01-22-30Z
+  storeSize: 100Gi
   credentials:
-    accessKey: "wtupllWfpMg414ZM5YkzZiUmgjh1vZdk"
-    secretKey: "r89xkN9JvHJQppb5v7SEfkNkiC1vDcMySQFKxg6uDkE3gZfCeB7ZBfECyUOTywym"
-  backups: true
+    accessKey: wtupllWfpMg414ZM5YkzZiUmgjh1vZdk
+    secretKey: r89xkN9JvHJQppb5v7SEfkNkiC1vDcMySQFKxg6uDkE3gZfCeB7ZBfECyUOTywym
+
+  backup:
+    enabled: true
+    image:
+      repository: quay.io/kubermatic/minio-backup
+      tag: 1.0.0-1
 
   # If your cluster does not have a default storage class,
   # you can specify the class to use for Minio. Note that
