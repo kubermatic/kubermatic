@@ -100,7 +100,7 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *provider.DatacenterMeta) (cl
 				Region:     dc.Spec.Openstack.Region,
 			},
 			BlockStorage: openstack.BlockStorageOpts{
-				BSVersion:       "v2",
+				BSVersion:       "auto",
 				TrustDevicePath: false,
 				IgnoreVolumeAZ:  dc.Spec.Openstack.IgnoreVolumeAZ,
 			},
