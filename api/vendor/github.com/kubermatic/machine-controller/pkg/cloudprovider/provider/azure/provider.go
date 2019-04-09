@@ -483,7 +483,7 @@ func (p *provider) Cleanup(machine *v1alpha1.Machine, data *cloud.MachineCreateD
 	_, err = p.Get(machine)
 	// If a defunct VM got created, the `Get` call returns an error - But not because the request
 	// failed but because the VM has an invalid config hence always delete except on err == cloudprovidererrors.ErrInstanceNotFound
-	if err == nil || (err != nil && err != cloudprovidererrors.ErrInstanceNotFound) {
+	if err != cloudprovidererrors.ErrInstanceNotFound {
 		glog.Infof("deleting VM %q", machine.Name)
 		if err = deleteVMsByMachineUID(context.TODO(), config, machine.UID); err != nil {
 			return false, fmt.Errorf("failed to delete instance for  machine %q: %v", machine.Name, err)

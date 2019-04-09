@@ -641,7 +641,7 @@ func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, nam
 			ManageSecurityGroups: true,
 		},
 		BlockStorage: BlockStorageOpts{
-			BSVersion:       "v2",
+			BSVersion:       "auto",
 			TrustDevicePath: false,
 			IgnoreVolumeAZ:  true,
 		},

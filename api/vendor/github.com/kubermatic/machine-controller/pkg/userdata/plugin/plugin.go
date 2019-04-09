@@ -85,6 +85,6 @@ func (p *Plugin) printResponse(resp interface{}) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%s", string(bs))
-	return nil
+	_, err = fmt.Printf("%s", string(bs))
+	return err
 }
