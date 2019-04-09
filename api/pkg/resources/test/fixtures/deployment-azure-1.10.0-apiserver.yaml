@@ -117,7 +117,7 @@ spec:
         - https://127.0.0.1:30000
         command:
         - /usr/local/bin/kubeletdnat-controller
-        image: quay.io/kubermatic/vpnsidecar-dnat-controller:v0.2.0
+        image: 'quay.io/kubermatic/api:'
         imagePullPolicy: IfNotPresent
         name: dnat-controller
         resources:
