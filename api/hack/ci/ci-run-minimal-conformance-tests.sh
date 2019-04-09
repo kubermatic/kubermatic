@@ -171,7 +171,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --namespace $NAMESPACE \
   kubermatic-$BUILD_ID ./config/kubermatic/
 
-if [[ -n $UPGRADE_TEST_BASE_HASH ]]; then
+if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
   echodate "Upgradetest, going back to old revision"
   git checkout -
 fi
@@ -203,7 +203,7 @@ timeout -s 9 90m ./conformance-tests \
   -kubermatic-delete-cluster=false
 
 # No upgradetest, just exit
-if [[ -z $UPGRADE_TEST_BASE_HASH ]]; then
+if [[ -z ${UPGRADE_TEST_BASE_HASH:-} ]]; then
   echodate "Success!"
   exit 0
 fi
