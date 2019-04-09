@@ -19,6 +19,8 @@ import (
 )
 
 const (
+	resourceNamePrefix = "kubernetes-"
+
 	policyRoute53FullAccess = "arn:aws:iam::aws:policy/AmazonRoute53FullAccess"
 	policyEC2FullAccess     = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
 
@@ -292,18 +294,18 @@ func getSecurityGroupByID(client *ec2.EC2, vpc *ec2.Vpc, id string) (*ec2.Securi
 // Create security group ("sg") with name `name` in `vpc`. The name
 // in a sg must be unique within the vpc (no pre-existing sg with
 // that name is allowed).
-func createSecurityGroup(client *ec2.EC2, vpcID, name string) (string, error) {
-	newSecurityGroupName := fmt.Sprintf("kubermatic-%s", name)
+func createSecurityGroup(client *ec2.EC2, vpcID, clusterName string) (string, error) {
+	newSecurityGroupName := resourceNamePrefix + clusterName
 	csgOut, err := client.CreateSecurityGroup(&ec2.CreateSecurityGroupInput{
 		VpcId:       &vpcID,
 		GroupName:   aws.String(newSecurityGroupName),
-		Description: aws.String(fmt.Sprintf("Security group for kubermatic cluster-%s", name)),
+		Description: aws.String(fmt.Sprintf("Security group for the Kubernetes cluster %s", clusterName)),
 	})
 	if err != nil {
 		return "", fmt.Errorf("failed to create security group %s: %v", newSecurityGroupName, err)
 	}
 	sgid := aws.StringValue(csgOut.GroupId)
-	glog.V(6).Infof("Security group %s created with id %s.", newSecurityGroupName, sgid)
+	glog.V(2).Infof("Security group %s for cluster %s created with id %s.", newSecurityGroupName, clusterName, sgid)
 
 	// Add permissions.
 	_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
@@ -341,9 +343,9 @@ func createSecurityGroup(client *ec2.EC2, vpcID, name string) (string, error) {
 	return sgid, nil
 }
 
-func createInstanceProfile(client *iam.IAM, name string) (*iam.Role, *iam.InstanceProfile, error) {
-	kubermaticRoleName := fmt.Sprintf("kubermatic-role-%s", name)
-	kubermaticInstanceProfileName := fmt.Sprintf("kubermatic-instance-profile-%s", name)
+func createInstanceProfile(client *iam.IAM, clusterName string) (*iam.Role, *iam.InstanceProfile, error) {
+	kubermaticRoleName := resourceNamePrefix + clusterName
+	kubermaticInstanceProfileName := resourceNamePrefix + clusterName
 
 	roleName := aws.String(kubermaticRoleName)
 	paramsRole := &iam.CreateRoleInput{
