@@ -4,6 +4,7 @@ metadata:
   name: prometheus-kubermatic-config
 data:
 {{ (tpl (.Files.Glob "config/*").AsConfig .) | indent 2 }}
+
 ---
 apiVersion: v1
 kind: ConfigMap

@@ -12,6 +12,7 @@ subjects:
 - kind: ServiceAccount
   name: prometheus-kubermatic
   namespace: {{ .Release.Namespace }}
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -26,6 +27,7 @@ subjects:
 - kind: ServiceAccount
   name: prometheus-kubermatic
   namespace: {{ .Release.Namespace }}
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -40,6 +42,7 @@ subjects:
 - kind: ServiceAccount
   name: prometheus-kubermatic
   namespace: {{ .Release.Namespace }}
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

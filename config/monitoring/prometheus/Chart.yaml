@@ -2,12 +2,12 @@ name: prometheus
 version: 1.1.0
 description: Prometheus for Kubermatic
 keywords:
-  - k8s
-  - kubermatic
-  - prometheus
+- k8s
+- kubermatic
+- prometheus
 home: http://www.kubermatic.io/
 sources:
-  - https://github.com/kubermatic/kubermatic/config
+- https://github.com/kubermatic/kubermatic/config
 maintainers:
-  - name: Christoph Mewes
-    email: christoph@loodse.com
+- name: Christoph Mewes
+  email: christoph@loodse.com
