@@ -99,6 +99,12 @@ spec:
         secret:
           defaultMode: 420
           secretName: alertmanager-kubermatic
+      nodeSelector:
+{{ toYaml .Values.alertmanager.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.alertmanager.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.alertmanager.tolerations | indent 8 }}
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
