@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: envoy
 spec:
-  replicas: {{ .Values.nodePortPoxy.replicas }}
+  replicas: {{ .Values.nodePortProxy.replicas }}
   selector:
     matchLabels:
       app: nodeport-proxy
@@ -23,7 +23,7 @@ spec:
     spec:
       initContainers:
       - name: copy-envoy-config
-        image: '{{ .Values.nodePortPoxy.image.repository }}:{{ .Values.nodePortPoxy.image.tag }}'
+        image: '{{ .Values.nodePortProxy.image.repository }}:{{ .Values.nodePortProxy.image.tag }}'
         command:
         - /bin/cp
         args:
@@ -34,7 +34,7 @@ spec:
           name: envoy-config
       containers:
       - name: envoy-manager
-        image: '{{ .Values.nodePortPoxy.image.repository }}:{{ .Values.nodePortPoxy.image.tag }}'
+        image: '{{ .Values.nodePortProxy.image.repository }}:{{ .Values.nodePortProxy.image.tag }}'
         command:
         - /envoy-manager
         args:
@@ -47,9 +47,9 @@ spec:
           name: grpc
           protocol: TCP
         resources:
-{{ toYaml .Values.nodePortPoxy.resources.envoyManager | indent 10 }}
+{{ toYaml .Values.nodePortProxy.resources.envoyManager | indent 10 }}
       - name: envoy
-        image: '{{ .Values.nodePortPoxy.envoy.image.repository }}:{{ .Values.nodePortPoxy.envoy.image.tag }}'
+        image: '{{ .Values.nodePortProxy.envoy.image.repository }}:{{ .Values.nodePortProxy.envoy.image.tag }}'
         command:
         - /usr/local/bin/envoy
         args:
@@ -81,7 +81,7 @@ spec:
         - mountPath: /etc/envoy
           name: envoy-config
         resources:
-{{ toYaml .Values.nodePortPoxy.resources.envoy | indent 10 }}
+{{ toYaml .Values.nodePortProxy.resources.envoy | indent 10 }}
       imagePullSecrets:
       - name: quay
       restartPolicy: Always
@@ -90,11 +90,11 @@ spec:
       - emptyDir: {}
         name: envoy-config
       nodeSelector:
-{{ toYaml .Values.nodePortPoxy.nodeSelector | indent 8 }}
+{{ toYaml .Values.nodePortProxy.nodeSelector | indent 8 }}
       affinity:
-{{ toYaml .Values.nodePortPoxy.affinity | indent 8 }}
+{{ toYaml .Values.nodePortProxy.affinity | indent 8 }}
       tolerations:
-{{ toYaml .Values.nodePortPoxy.tolerations | indent 8 }}
+{{ toYaml .Values.nodePortProxy.tolerations | indent 8 }}
 
 ---
 apiVersion: apps/v1
@@ -114,7 +114,7 @@ spec:
       serviceAccountName: nodeport-proxy
       containers:
       - name: lb-updater
-        image: '{{ .Values.nodePortPoxy.image.repository }}:{{ .Values.nodePortPoxy.image.tag }}'
+        image: '{{ .Values.nodePortProxy.image.repository }}:{{ .Values.nodePortProxy.image.tag }}'
         command:
         - /lb-updater
         args:
@@ -127,12 +127,12 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         resources:
-{{ toYaml .Values.nodePortPoxy.resources.lbUpdater | indent 10 }}
+{{ toYaml .Values.nodePortProxy.resources.lbUpdater | indent 10 }}
       imagePullSecrets:
       - name: quay
       nodeSelector:
-{{ toYaml .Values.nodePortPoxy.lbUpdater.nodeSelector | indent 8 }}
+{{ toYaml .Values.nodePortProxy.lbUpdater.nodeSelector | indent 8 }}
       affinity:
-{{ toYaml .Values.nodePortPoxy.lbUpdater.affinity | indent 8 }}
+{{ toYaml .Values.nodePortProxy.lbUpdater.affinity | indent 8 }}
       tolerations:
-{{ toYaml .Values.nodePortPoxy.lbUpdater.tolerations | indent 8 }}
+{{ toYaml .Values.nodePortProxy.lbUpdater.tolerations | indent 8 }}

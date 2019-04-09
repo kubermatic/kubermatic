@@ -1,4 +1,4 @@
-nodePortPoxy:
+nodePortProxy:
   replicas: 3
   envoy:
     image:
