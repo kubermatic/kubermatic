@@ -34,7 +34,7 @@ spec:
           protocol: TCP
 
       - name: setup-index-pattern
-        image: "{{ .Values.logging.kibana.setupContainer.image.repository }}:{{ .Values.logging.kibana.setupContainer.image.tag }}"
+        image: '{{ .Values.logging.kibana.setupContainer.image.repository }}:{{ .Values.logging.kibana.setupContainer.image.tag }}'
         command: [/bin/bash]
         args: [/ensure-index-pattern.sh]
         resources:
@@ -57,3 +57,9 @@ spec:
       - name: config
         configMap:
           name: kibana-config
+      nodeSelector:
+{{ toYaml .Values.logging.kibana.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.logging.kibana.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.logging.kibana.tolerations | indent 8 }}
