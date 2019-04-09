@@ -23,7 +23,17 @@ logging:
           cpu: 75m
           memory: 350Mi
       nodeSelector: {}
-      nodeAffinity: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  component: elasticsearch
+                  role: master
+              topologyKey: kubernetes.io/hostname
+      tolerations: []
       storageSize: 1Gi
 
     data:
@@ -35,7 +45,17 @@ logging:
           cpu: 200m
           memory: 1536Mi
       nodeSelector: {}
-      nodeAffinity: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  component: elasticsearch
+                  role: data
+              topologyKey: kubernetes.io/hostname
+      tolerations: []
       storageSize: 10Gi
 
     curator:
@@ -66,6 +86,9 @@ logging:
         limits:
           cpu: 100m
           memory: 128Mi
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []
 
     cerebro:
       image:
@@ -81,3 +104,6 @@ logging:
           cpu: 200m
           # memory usage spikes when starting
           memory: 800Mi
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []

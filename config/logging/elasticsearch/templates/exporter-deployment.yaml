@@ -47,6 +47,12 @@ spec:
             port: http
           initialDelaySeconds: 10
           timeoutSeconds: 10
-    securityContext:
-      runAsNonRoot: true
-      runAsUser: 1000
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      nodeSelector:
+{{ toYaml .Values.logging.elasticsearch.exporter.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.logging.elasticsearch.exporter.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.logging.elasticsearch.exporter.tolerations | indent 8 }}

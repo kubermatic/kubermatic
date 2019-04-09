@@ -10,10 +10,10 @@ metadata:
     role: master
 spec:
   ports:
-    - port: 9300
-      name: transport
-    - port: 9200
-      name: http
+  - port: 9300
+    name: transport
+  - port: 9200
+    name: http
   clusterIP: None
   selector:
     component: elasticsearch

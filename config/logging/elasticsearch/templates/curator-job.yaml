@@ -17,10 +17,10 @@ spec:
             - /etc/config/config.yml
             - /etc/config/action_file.yml
             volumeMounts:
-              - name: config-volume
-                mountPath: /etc/config
-          volumes:
             - name: config-volume
-              configMap:
-                name: curator-config
+              mountPath: /etc/config
+          volumes:
+          - name: config-volume
+            configMap:
+              name: curator-config
           restartPolicy: OnFailure
