@@ -89,7 +89,7 @@ func runAllControllers(workerCnt int,
 	var g run.Group
 
 	// Add the manager first as other controllers may rely on its cache being ready
-	g.Add(func() error { return mgr.Start(done) }, func(_ error) { cancel() })
+	g.Add(func() error { return fmt.Errorf("mgr finished/died: %v", mgr.Start(done)) }, func(_ error) { cancel() })
 
 	for name, controller := range controllers {
 		execute, interrupt := getControllerStarter(workerCnt, done, cancel, name, controller)
