@@ -105,7 +105,7 @@ func createInitialNodeDeploymentWithRetries(nodeDeployment *apiv1.NodeDeployment
 			glog.V(6).Infof("retrying creating initial Node Deployments for cluster %s (%s) due to %v", cluster.Name, cluster.Spec.HumanReadableName, err)
 			return false, nil
 		}
-		glog.V(6).Infof("giving up creating initial Node Deployments for cluster %s (%s) due to an unknown err %v", cluster.Name, cluster.Spec.HumanReadableName, err)
+		glog.V(6).Infof("giving up creating initial Node Deployments for cluster %s (%s) due to an unknown err %#v", cluster.Name, cluster.Spec.HumanReadableName, err)
 		return false, err
 	})
 }

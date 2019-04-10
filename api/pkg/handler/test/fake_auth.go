@@ -69,8 +69,8 @@ type IssuerVerifier struct {
 }
 
 // Extractor knows how to extract the ID token from the request
-func (o *IssuerVerifier) Extract(_ *http.Request) string {
-	return IDToken
+func (o *IssuerVerifier) Extract(_ *http.Request) (string, error) {
+	return IDToken, nil
 }
 
 // AuthCodeURL returns a URL to OpenID provider's consent page
@@ -107,19 +107,19 @@ func (o *IssuerVerifier) Exchange(ctx context.Context, code string) (auth.OIDCTo
 }
 
 // Verify parses a raw ID Token, verifies it's been signed by the provider, preforms
-// any additional checks depending on the Config, and returns the payload as OIDCClaims.
-func (o *IssuerVerifier) Verify(ctx context.Context, token string) (auth.OIDCClaims, error) {
+// any additional checks depending on the Config, and returns the payload as TokenClaims.
+func (o *IssuerVerifier) Verify(ctx context.Context, token string) (auth.TokenClaims, error) {
 	if o == nil {
-		return auth.OIDCClaims{}, nil
+		return auth.TokenClaims{}, nil
 
 	}
 	if ctx == nil {
-		return auth.OIDCClaims{}, nil
+		return auth.TokenClaims{}, nil
 	}
 	if token != IDToken {
-		return auth.OIDCClaims{}, errors.New("incorrect code")
+		return auth.TokenClaims{}, errors.New("incorrect code")
 	}
-	return auth.OIDCClaims{
+	return auth.TokenClaims{
 		Email:   o.user.Email,
 		Subject: o.user.Email,
 		Name:    o.user.Name,
