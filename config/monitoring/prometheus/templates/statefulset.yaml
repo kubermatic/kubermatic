@@ -18,7 +18,7 @@ spec:
       annotations:
         kubermatic/scrape: 'true'
         kubermatic/scrape_port: '9090'
-        {{- if .Values.prometheus.backups }}
+        {{- if .Values.prometheus.backup.enabled }}
         backup.ark.heptio.com/backup-volumes: prometheus-backup
         pre.hook.backup.ark.heptio.com/container: backup
         pre.hook.backup.ark.heptio.com/timeout: 30m
@@ -36,7 +36,7 @@ spec:
         - --web.enable-lifecycle
         - --web.external-url=https://{{ .Values.prometheus.host | trim }}
         - --web.route-prefix=/
-        {{- if .Values.prometheus.backups }}
+        {{- if .Values.prometheus.backup.enabled }}
         - --web.enable-admin-api
         {{- end }}
         ports:
@@ -104,13 +104,13 @@ spec:
         {{- end }}
         {{- end }}
 
-      {{- if .Values.prometheus.backups }}
+      {{- if .Values.prometheus.backup.enabled }}
       - name: backup
-        image: alpine:3.7
+        image: '{{ .Values.prometheus.backup.image.repository }}:{{ .Values.prometheus.backup.image.tag }}'
         args:
         - /bin/sh
         - -c
-        - apk add --no-cache curl rsync && while true; do sleep 1h; done
+        - while true; do sleep 1h; done
         volumeMounts:
         - mountPath: /prometheus
           name: prometheus-kubermatic-db
@@ -149,7 +149,7 @@ spec:
         {{- end }}
       {{- end }}
       {{- end }}
-      {{- if .Values.prometheus.backups }}
+      {{- if .Values.prometheus.backup.enabled }}
       - name: prometheus-backup
         emptyDir: {}
       {{- end }}

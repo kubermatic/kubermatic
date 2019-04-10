@@ -9,17 +9,17 @@ spec:
     metadata:
       labels:
         app: minio
-      {{- if .Values.minio.backups }}
+      {{- if .Values.minio.backup.enabled }}
       annotations:
         backup.ark.heptio.com/backup-volumes: minio-backup
         pre.hook.backup.ark.heptio.com/container: backup
         pre.hook.backup.ark.heptio.com/timeout: 60m
-        pre.hook.backup.ark.heptio.com/command: '["/mc", "mirror", "--remove", "--quiet", "src", "/backup"]'
+        pre.hook.backup.ark.heptio.com/command: '["mc", "mirror", "--remove", "--quiet", "src", "/backup"]'
       {{- end }}
     spec:
       containers:
       - name: minio
-        image: {{ .Values.minio.image.repository }}:{{ .Values.minio.image.tag }}
+        image: '{{ .Values.minio.image.repository }}:{{ .Values.minio.image.tag }}'
         args:
         - server
         - /storage
@@ -42,13 +42,13 @@ spec:
         resources:
 {{ toYaml .Values.minio.resources.minio | indent 10 }}
 
-      {{- if .Values.minio.backups }}
+      {{- if .Values.minio.backup.enabled }}
       - name: backup
-        image: alpine:3.7
+        image: '{{ .Values.minio.backup.image.repository }}:{{ .Values.minio.backup.image.tag }}'
         args:
         - /bin/sh
         - -c
-        - wget https://dl.minio.io/client/mc/release/linux-amd64/mc && chmod +x mc && /mc config host add src http://127.0.0.1:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && while true; do sleep 1h; done
+        - mc config host add src http://127.0.0.1:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && while true; do sleep 1h; done
         env:
         - name: MINIO_ACCESS_KEY
           valueFrom:
@@ -74,7 +74,7 @@ spec:
       - name: storage
         persistentVolumeClaim:
           claimName: minio-data
-      {{- if .Values.minio.backups }}
+      {{- if .Values.minio.backup.enabled }}
       - name: minio-backup
         emptyDir: {}
       {{- end }}

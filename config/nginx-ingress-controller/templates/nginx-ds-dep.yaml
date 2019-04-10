@@ -6,6 +6,9 @@ kind: Deployment
 {{ end }}
 metadata:
   name: nginx-ingress-controller
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
 spec:
 {{ if not .Values.nginx.asDaemonSet }}
   replicas: {{ .Values.nginx.replicas }}
@@ -18,7 +21,8 @@ spec:
   template:
     metadata:
       labels:
-        app: ingress-nginx
+        app.kubernetes.io/name: ingress-nginx
+        app.kubernetes.io/part-of: ingress-nginx
       annotations:
         kubermatic/scrape: 'true'
         kubermatic/scrape_port: '10254'

@@ -3,15 +3,15 @@ kind: ClusterRole
 metadata:
   name: cert-manager
 rules:
-  - apiGroups: ["certmanager.k8s.io"]
-    resources: ["certificates", "issuers", "clusterissuers", "orders", "challenges"]
-    verbs: ["*"]
-  - apiGroups: [""]
-    resources: ["configmaps", "secrets", "events", "services", "pods"]
-    verbs: ["*"]
-  - apiGroups: ["extensions"]
-    resources: ["ingresses"]
-    verbs: ["*"]
+  - apiGroups: [certmanager.k8s.io]
+    resources: [certificates, certificates/finalizers, issuers, clusterissuers, orders, orders/finalizers, challenges]
+    verbs: ['*']
+  - apiGroups: ['']
+    resources: [configmaps, secrets, events, services, pods]
+    verbs: ['*']
+  - apiGroups: [extensions]
+    resources: [ingresses]
+    verbs: ['*']
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
@@ -23,9 +23,9 @@ roleRef:
   kind: ClusterRole
   name: cert-manager
 subjects:
-  - name: cert-manager
-    namespace: cert-manager
-    kind: ServiceAccount
+- name: cert-manager
+  namespace: '{{ .Release.Namespace }}'
+  kind: ServiceAccount
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -33,13 +33,13 @@ kind: ClusterRole
 metadata:
   name: cert-manager-view
   labels:
-    rbac.authorization.k8s.io/aggregate-to-view: "true"
-    rbac.authorization.k8s.io/aggregate-to-edit: "true"
-    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    rbac.authorization.k8s.io/aggregate-to-view: 'true'
+    rbac.authorization.k8s.io/aggregate-to-edit: 'true'
+    rbac.authorization.k8s.io/aggregate-to-admin: 'true'
 rules:
-  - apiGroups: ["certmanager.k8s.io"]
-    resources: ["certificates", "issuers"]
-    verbs: ["get", "list", "watch"]
+- apiGroups: ['certmanager.k8s.io']
+  resources: ['certificates', 'issuers']
+  verbs: ['get', 'list', 'watch']
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -47,9 +47,9 @@ kind: ClusterRole
 metadata:
   name: cert-manager-edit
   labels:
-    rbac.authorization.k8s.io/aggregate-to-edit: "true"
-    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    rbac.authorization.k8s.io/aggregate-to-edit: 'true'
+    rbac.authorization.k8s.io/aggregate-to-admin: 'true'
 rules:
-  - apiGroups: ["certmanager.k8s.io"]
-    resources: ["certificates", "issuers"]
-    verbs: ["create", "delete", "deletecollection", "patch", "update"]
+  - apiGroups: ['certmanager.k8s.io']
+    resources: ['certificates', 'issuers']
+    verbs: ['create', 'delete', 'deletecollection', 'patch', 'update']
