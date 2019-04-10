@@ -90,6 +90,18 @@ velero:
       cpu: 100m
       memory: 100Mi
 
-  affinity: {}
+  affinity:
+    # Backups are potentially long-running tasks and rescheduling Velero
+    # in the middle of them leaves you with broken, incomplete backups.
+    # Make sure to schedule Velero on long-living, stable nodes.
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+          - key: kubermatic.io/type
+            operator: In
+            values:
+            - stable
   nodeSelector: {}
   tolerations: []

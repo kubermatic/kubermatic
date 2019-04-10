@@ -11,10 +11,10 @@ spec:
         app: minio
       {{- if .Values.minio.backup.enabled }}
       annotations:
-        backup.ark.heptio.com/backup-volumes: minio-backup
-        pre.hook.backup.ark.heptio.com/container: backup
-        pre.hook.backup.ark.heptio.com/timeout: 60m
-        pre.hook.backup.ark.heptio.com/command: '["mc", "mirror", "--remove", "--quiet", "src", "/backup"]'
+        backup.velero.io/backup-volumes: minio-backup
+        pre.hook.backup.velero.io/container: backup
+        pre.hook.backup.velero.io/timeout: 60m
+        pre.hook.backup.velero.io/command: '["mc", "mirror", "--remove", "--quiet", "src", "/backup"]'
       {{- end }}
     spec:
       containers:
