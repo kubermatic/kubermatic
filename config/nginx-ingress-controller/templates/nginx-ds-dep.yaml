@@ -85,7 +85,17 @@ spec:
         resources:
 {{ toYaml .Values.nginx.resources | indent 10 }}
       tolerations:
+        {{- if .Values.nginx.ignoreMasterTaint }}
+        - key: dedicated
+          operator: Equal
+          value: master
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+        {{- end }}
+        {{- if or .Values.nginx.tolerations (not .Values.nginx.ignoreMasterTaint) }}
 {{ toYaml .Values.nginx.tolerations | indent 8 }}
+        {{- end }}
       nodeSelector:
 {{ toYaml .Values.nginx.nodeSelector | indent 8 }}
 {{ if not .Values.nginx.asDaemonSet }}

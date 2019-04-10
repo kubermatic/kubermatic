@@ -30,9 +30,9 @@ nginx:
     operator: Equal
     value: "true"
     effect: NoSchedule
-  # - key: dedicated
-  #   operator: Equal
-  #   value: master
-  #   effect: NoSchedule
-  # - key: node-role.kubernetes.io/master
-  #   effect: NoSchedule
+
+  # set this to true to automatically add these tolerations
+  # to make nginx run on master nodes:
+  #   - { key: dedicated, operator: Equal, value: master, effect: NoSchedule }
+  #   - { key: node-role.kubernetes.io/master, effect: NoSchedule }
+  ignoreMasterTaint: false
