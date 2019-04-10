@@ -184,7 +184,7 @@ type runnableWrapper struct {
 }
 
 func (w *runnableWrapper) Start(stopChan <-chan struct{}) error {
-	go w.f(stopChan)
+	w.f(stopChan)
 	return nil
 }
 
