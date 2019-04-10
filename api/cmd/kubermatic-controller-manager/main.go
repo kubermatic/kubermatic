@@ -32,10 +32,10 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
-
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 )
@@ -63,6 +63,8 @@ func main() {
 
 	kubeClient := kubernetes.NewForConfigOrDie(config)
 	kubermaticClient := kubermaticclientset.NewForConfigOrDie(config)
+
+	log.SetLogger(log.ZapLogger(false))
 
 	// Create a manager
 	mgr, err := manager.New(config, manager.Options{})
