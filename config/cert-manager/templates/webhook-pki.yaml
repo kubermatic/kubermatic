@@ -15,9 +15,10 @@ metadata:
   name: webhook-ca
 spec:
   secretName: webhook-ca
+  duration: 43800h # 5y
   issuerRef:
     name: webhook-selfsign
-  commonName: ca.webhook.cert-manager
+  commonName: 'ca.webhook.{{ .Release.Namespace }}'
   isCA: true
 
 ---
@@ -38,9 +39,10 @@ metadata:
   name: webhook-tls
 spec:
   secretName: webhook-tls
+  duration: 8760h # 1y
   issuerRef:
     name: webhook-ca
   dnsNames:
   - webhook
-  - webhook.cert-manager
-  - webhook.cert-manager.svc
+  - 'webhook.{{ .Release.Namespace }}'
+  - 'webhook.{{ .Release.Namespace }}.svc'

@@ -15,15 +15,18 @@ spec:
       serviceAccountName: kubermatic
       containers:
       - name: check-crd-migration
-        image: "quay.io/kubermatic/helm:2.11.0-2"
+        image: "quay.io/kubermatic/util:1.0.0-1"
         command: ["/bin/bash"]
         args:
         - "-c"
         - |
           set -euo pipefail
 
-          curl -L https://storage.googleapis.com/kubernetes-helm/helm-{{ .Values.kubermatic.checks.crd.helmVersion }}-linux-amd64.tar.gz | tar -xvz
-          mv linux-amd64/helm /usr/bin/helm
+          # downgrade Helm if the cluster is still running an older Tiller version
+          if [ "$HELM_VERSION" != "{{ .Values.kubermatic.checks.crd.helmVersion }}" ]; then
+            curl -L https://storage.googleapis.com/kubernetes-helm/helm-{{ .Values.kubermatic.checks.crd.helmVersion }}-linux-amd64.tar.gz | tar -xvz
+            mv linux-amd64/helm /usr/bin/helm
+          fi
 
           # Iterate over all namespaces and search for ConfigMaps with the labels NAME=kubermatic&OWNER=TILLER
           for NS in $(kubectl get ns -o json | jq -r '.items[].metadata.name');do

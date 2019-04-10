@@ -1,8 +1,13 @@
 prometheus:
-  version: v2.7.1
+  version: v2.8.1
   host: ''
   storageSize: 100Gi
-  backups: true
+
+  backup:
+    enabled: true
+    image:
+      repository: quay.io/kubermatic/util
+      tag: 1.0.0-1
 
   # Specify additional external labels which will be added to all
   # alerts sent by Prometheus.
