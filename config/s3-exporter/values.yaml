@@ -11,3 +11,6 @@ s3Exporter:
     limits:
       cpu: 30m
       memory: 32Mi
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []

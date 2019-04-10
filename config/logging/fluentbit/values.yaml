@@ -3,17 +3,17 @@ logging:
     image:
       repository: fluent/fluent-bit
       tag: 1.0.4
-      pullPolicy: "IfNotPresent"
+      pullPolicy: IfNotPresent
     configuration:
       containerRuntimeParser: docker
       outputs:
-        - |
-          Name            es
-          Match           *
-          Host            ${FLUENT_ELASTICSEARCH_HOST}
-          Port            ${FLUENT_ELASTICSEARCH_PORT}
-          Logstash_Format On
-          Retry_Limit     False
+      - |
+        Name            es
+        Match           *
+        Host            ${FLUENT_ELASTICSEARCH_HOST}
+        Port            ${FLUENT_ELASTICSEARCH_PORT}
+        Logstash_Format On
+        Retry_Limit     False
     resources:
       requests:
         cpu: 10m
@@ -21,3 +21,9 @@ logging:
       limits:
         cpu: 30m
         memory: 32Mi
+    nodeSelector: {}
+    affinity: {}
+    tolerations:
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule

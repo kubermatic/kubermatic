@@ -25,3 +25,7 @@ logging:
         limits:
           cpu: 10m
           memory: 32Mi
+
+    nodeSelector: {}
+    affinity: {}
+    tolerations: []

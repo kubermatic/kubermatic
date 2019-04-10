@@ -23,7 +23,7 @@ spec:
       serviceAccountName: node-exporter
       containers:
       - name: node-exporter
-        image: "{{ .Values.nodeExporter.image.repository }}:{{ .Values.nodeExporter.image.tag}}"
+        image: "{{ .Values.nodeExporter.image.repository }}:{{ .Values.nodeExporter.image.tag }}"
         args:
         - "--path.procfs=/host/proc"
         - "--path.sysfs=/host/sys"
@@ -43,7 +43,7 @@ spec:
           mountPath: /host/root
           mountPropagation: HostToContainer
       - name: kube-rbac-proxy
-        image: "{{ .Values.nodeExporter.rbacProxy.image.repository }}:{{ .Values.nodeExporter.rbacProxy.image.tag}}"
+        image: "{{ .Values.nodeExporter.rbacProxy.image.repository }}:{{ .Values.nodeExporter.rbacProxy.image.tag }}"
         args:
         - "--logtostderr"
         - "--secure-listen-address=$(IP):9100"
@@ -60,11 +60,6 @@ spec:
           name: https
         resources:
 {{ toYaml .Values.nodeExporter.rbacProxy.resources | indent 10 }}
-      tolerations:
-      - effect: NoExecute
-        operator: Exists
-      - effect: NoSchedule
-        operator: Exists
       volumes:
       - name: proc
         hostPath:
@@ -78,3 +73,9 @@ spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534
+      nodeSelector:
+{{ toYaml .Values.nodeExporter.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.nodeExporter.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.nodeExporter.tolerations | indent 8 }}

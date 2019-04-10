@@ -4,6 +4,6 @@ metadata:
   name: backup-container
 data:
   store-container.yaml: |
-{{ .Values.kubermatic.storeContainer |indent 4}}
+{{ .Values.kubermatic.storeContainer |indent 4 }}
   cleanup-container.yaml: |
-{{ .Values.kubermatic.cleanupContainer |indent 4}}
+{{ .Values.kubermatic.cleanupContainer |indent 4 }}

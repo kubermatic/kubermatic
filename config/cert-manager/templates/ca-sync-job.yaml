@@ -15,16 +15,22 @@ spec:
       restartPolicy: OnFailure
       containers:
       - name: ca-helper
-        image: {{ .Values.certManager.caSyncImage.repository }}:{{ .Values.certManager.caSyncImage.tag }}
-        imagePullPolicy: {{ .Values.certManager.caSyncImage.pullPolicy }}
+        image: '{{ .Values.certManager.caSync.image.repository }}:{{ .Values.certManager.caSync.image.tag }}'
+        imagePullPolicy: {{ .Values.certManager.caSync.image.pullPolicy }}
         args:
         - -config=/config/config
         volumeMounts:
         - name: config
           mountPath: /config
         resources:
-{{ toYaml .Values.certManager.resources.caSync | indent 10 }}
+{{ toYaml .Values.certManager.caSync.resources | indent 10 }}
       volumes:
       - name: config
         configMap:
           name: ca-sync
+      nodeSelector:
+{{ toYaml .Values.certManager.caSync.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.certManager.caSync.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.certManager.caSync.tolerations | indent 8 }}

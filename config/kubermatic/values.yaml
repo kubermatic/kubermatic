@@ -85,6 +85,23 @@ kubermatic:
       limits:
         cpu: 500m
         memory: 1Gi
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: kubermatic.io/type
+              operator: In
+              values:
+              - stable
+    nodeSelector: {}
+    tolerations:
+    - key: only_critical
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+
   api:
     replicas: 2
     image:
@@ -98,6 +115,23 @@ kubermatic:
       limits:
         cpu: 250m
         memory: 128Mi
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: kubermatic.io/type
+              operator: In
+              values:
+              - stable
+    nodeSelector: {}
+    tolerations:
+    - key: only_critical
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+
   ui:
     replicas: 2
     image:
@@ -119,6 +153,23 @@ kubermatic:
       limits:
         cpu: 100m
         memory: 32Mi
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: kubermatic.io/type
+              operator: In
+              values:
+              - stable
+    nodeSelector: {}
+    tolerations:
+    - key: only_critical
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+
   masterController:
     replicas: 1
     image:
@@ -132,6 +183,10 @@ kubermatic:
       limits:
         cpu: 100m
         memory: 64Mi
+    affinity: {}
+    nodeSelector: {}
+    tolerations: []
+
   storeContainer: |
     command:
     - /bin/sh
@@ -156,6 +211,7 @@ kubermatic:
     volumeMounts:
     - name: etcd-backup
       mountPath: /backup
+
   cleanupContainer: |
     command:
     - /bin/sh
@@ -214,6 +270,9 @@ kubermatic:
         limits:
           cpu: 200m
           memory: 128Mi
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
 
     recommender:
       image:
@@ -226,6 +285,9 @@ kubermatic:
         limits:
           cpu: 200m
           memory: 3000Mi
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []
 
     admissioncontroller:
       image:
@@ -238,3 +300,6 @@ kubermatic:
         limits:
           cpu: 200m
           memory: 128Mi
+      affinity: {}
+      nodeSelector: {}
+      tolerations: []

@@ -9,7 +9,7 @@ spec:
   clusterIP: None
   ports:
   - name: metrics
-    port: {{ .Values.nginx.prometheus.port }}
+    port: 10254
     protocol: TCP
   selector:
     app: ingress-nginx

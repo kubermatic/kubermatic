@@ -4,6 +4,7 @@ kind: ServiceAccount
 metadata:
   name: vpa-updater
   namespace: kube-system
+
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -22,17 +23,22 @@ spec:
       serviceAccountName: vpa-updater
       containers:
       - name: updater
-        image: {{ .Values.kubermatic.vpa.updater.image.repository }}:{{ .Values.kubermatic.vpa.updater.image.tag }}
+        image: '{{ .Values.kubermatic.vpa.updater.image.repository }}:{{ .Values.kubermatic.vpa.updater.image.tag }}'
         command: ["/updater"]
-        args: [
-          "--address", ":8943",
-          # If a container was killed by a OOM trigger an update.
-          "--evict-after-oom-treshold", "30m0s",
-          "--updater-interval", "10m0s",
-          "--logtostderr",
-        ]
+        args:
+        - "--address=:8943"
+        # If a container was killed by a OOM trigger an update.
+        - "--evict-after-oom-treshold=30m0s"
+        - "--updater-interval=10m0s"
+        - "--logtostderr"
         resources:
 {{ toYaml .Values.kubermatic.vpa.updater.resources | indent 10 }}
         ports:
         - containerPort: 8080
+      nodeSelector:
+{{ toYaml .Values.kubermatic.vpa.updater.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.kubermatic.vpa.updater.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.kubermatic.vpa.updater.tolerations | indent 8 }}
 {{ end }}

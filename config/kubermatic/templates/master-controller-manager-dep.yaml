@@ -6,7 +6,7 @@ metadata:
   labels:
     app: master-controller
 spec:
-  replicas: {{.Values.kubermatic.masterController.replicas}}
+  replicas: {{ .Values.kubermatic.masterController.replicas }}
   selector:
     matchLabels:
       app: master-controller
@@ -22,8 +22,8 @@ spec:
     spec:
       initContainers:
       - name: projects-migrator
-        image: '{{.Values.kubermatic.masterController.image.repository}}:{{.Values.kubermatic.masterController.image.tag}}'
-        imagePullPolicy: {{.Values.kubermatic.masterController.image.pullPolicy}}
+        image: '{{ .Values.kubermatic.masterController.image.repository }}:{{ .Values.kubermatic.masterController.image.tag }}'
+        imagePullPolicy: {{ .Values.kubermatic.masterController.image.pullPolicy }}
         command:
         - projects-migrator
         args:
@@ -49,8 +49,8 @@ spec:
         {{- if .Values.kubermatic.worker_name }}
         - -worker-name={{ .Values.kubermatic.worker_name }}
         {{- end }}
-        image: '{{.Values.kubermatic.masterController.image.repository}}:{{.Values.kubermatic.masterController.image.tag}}'
-        imagePullPolicy: {{.Values.kubermatic.masterController.image.pullPolicy}}
+        image: '{{ .Values.kubermatic.masterController.image.repository }}:{{ .Values.kubermatic.masterController.image.tag }}'
+        imagePullPolicy: {{ .Values.kubermatic.masterController.image.pullPolicy }}
         volumeMounts:
           - name: kubeconfig
             mountPath: "/opt/.kube/"
@@ -58,9 +58,15 @@ spec:
         resources:
 {{ toYaml .Values.kubermatic.masterController.resources | indent 10 }}
       imagePullSecrets:
-        - name: dockercfg
+      - name: dockercfg
       volumes:
-        - name: kubeconfig
-          secret:
-            secretName: kubeconfig
+      - name: kubeconfig
+        secret:
+          secretName: kubeconfig
+      nodeSelector:
+{{ toYaml .Values.kubermatic.masterController.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.kubermatic.masterController.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.kubermatic.masterController.tolerations | indent 8 }}
 {{ end }}

@@ -7,23 +7,6 @@ velero:
     tag: v0.11.0
     pullPolicy: IfNotPresent
 
-  resources:
-    velero:
-      requests:
-        cpu: 10m
-        memory: 50Mi
-      limits:
-        cpu: 100m
-        memory: 100Mi
-    restic:
-      requests:
-        cpu: 10m
-        memory: 30Mi
-      limits:
-        cpu: 200m
-        # during backups memory usage can spike, see https://github.com/restic/restic/issues/979
-        memory: 1Gi
-
   # CLI flags to pass to velero server; note that the two flags
   # `default-backup-storage-location` and `default-volume-snapshot-locations`
   # are automatically set via the configuration below
@@ -32,7 +15,20 @@ velero:
   - --backup-sync-period=1m
 
   # whether or not to create a restic daemonset
-  restic: true
+  restic:
+    deploy: true
+    resources:
+      requests:
+        cpu: 10m
+        memory: 30Mi
+      limits:
+        cpu: 200m
+        # during backups memory usage can spike, see https://github.com/restic/restic/issues/979
+        memory: 1Gi
+
+    affinity: {}
+    nodeSelector: {}
+    tolerations: []
 
   # configure the credentials used to make snapshots (when using
   # persistentVolumeProvider) and to store backups; you can enable
@@ -86,5 +82,14 @@ velero:
   podAnnotations: {}
   # iam.amazonaws.com/role: arn:aws:iam::<AWS_ACCOUNT_ID>:role/<HEPTIO_VELERO_ROLE_NAME>
 
-  tolerations: []
+  resources:
+    requests:
+      cpu: 10m
+      memory: 50Mi
+    limits:
+      cpu: 100m
+      memory: 100Mi
+
+  affinity: {}
   nodeSelector: {}
+  tolerations: []

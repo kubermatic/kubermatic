@@ -68,3 +68,7 @@ iap:
     limits:
       cpu: 100m
       memory: 50Mi
+
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []

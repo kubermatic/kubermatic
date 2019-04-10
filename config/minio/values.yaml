@@ -29,3 +29,7 @@ minio:
       limits:
         cpu: 500m
         memory: 1500Mi
+
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
