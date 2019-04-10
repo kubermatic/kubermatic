@@ -55,7 +55,7 @@ func GetAdminKubeconfigEndpoint(projectProvider provider.ProjectProvider) endpoi
 func CreateOIDCKubeconfigEndpoint(projectProvider provider.ProjectProvider, oidcIssuerVerifier auth.OIDCIssuerVerifier, oidcCfg common.OIDCConfiguration) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		oidcIssuer := oidcIssuerVerifier.(auth.OIDCIssuer)
-		oidcVerifier := oidcIssuerVerifier.(auth.OIDCVerifier)
+		oidcVerifier := oidcIssuerVerifier.(auth.TokenVerifier)
 		req := request.(CreateOIDCKubeconfigReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
