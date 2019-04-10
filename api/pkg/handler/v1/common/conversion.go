@@ -28,7 +28,18 @@ func ConvertInternalSSHKeysToExternal(internalKeys []*kubermaticapiv1.UserSSHKey
 
 // ConvertInternalEventToExternal converts Kubernetes Events to Kubermatic ones (used in the API).
 func ConvertInternalEventToExternal(event corev1.Event) apiv1.Event {
-	result := apiv1.Event{
+	switch event.InvolvedObject.Kind {
+	case "Machine":
+		event.InvolvedObject.Kind = "Node"
+		break
+	case "MachineSet":
+		event.InvolvedObject.Kind = "Node Set"
+		break
+	case "MachineDeployment":
+		event.InvolvedObject.Kind = "Node Deployment"
+	}
+
+	return apiv1.Event{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                string(event.ObjectMeta.UID),
 			Name:              event.ObjectMeta.Name,
@@ -39,10 +50,9 @@ func ConvertInternalEventToExternal(event corev1.Event) apiv1.Event {
 		InvolvedObject: apiv1.ObjectReference{
 			Name:      event.InvolvedObject.Name,
 			Namespace: event.InvolvedObject.Namespace,
-			Kind:      event.InvolvedObject.Kind,
+			Type:      event.InvolvedObject.Kind,
 		},
 		LastTimestamp: apiv1.NewTime(event.LastTimestamp.Time),
 		Count:         event.Count,
 	}
-	return result
 }
