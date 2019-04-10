@@ -9,7 +9,7 @@ keywords:
 - oidc
 home: http://www.kubermatic.io/
 sources:
-  - https://github.com/kubermatic/kubermatic/config
+- https://github.com/kubermatic/kubermatic/config
 maintainers:
-  - name: Sebastian Scheele
-    email: sebastian@loodse.com
+- name: Sebastian Scheele
+  email: sebastian@loodse.com

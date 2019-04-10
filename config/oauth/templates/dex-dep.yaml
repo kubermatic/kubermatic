@@ -44,4 +44,9 @@ spec:
           secretName: themes
 {{ if .Values.dex.grpc }}{{ toYaml .Values.dex.grpc.certVolume | trim | indent 6 }}
 {{- end }}
-
+      nodeSelector:
+{{ toYaml .Values.dex.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.dex.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.dex.tolerations | indent 8 }}

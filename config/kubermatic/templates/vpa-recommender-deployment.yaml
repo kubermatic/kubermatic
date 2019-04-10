@@ -4,6 +4,7 @@ kind: ServiceAccount
 metadata:
   name: vpa-recommender
   namespace: kube-system
+
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -24,25 +25,30 @@ spec:
       serviceAccountName: vpa-recommender
       containers:
       - name: recommender
-        image: {{ .Values.kubermatic.vpa.recommender.image.repository }}:{{ .Values.kubermatic.vpa.recommender.image.tag }}
+        image: '{{ .Values.kubermatic.vpa.recommender.image.repository }}:{{ .Values.kubermatic.vpa.recommender.image.tag }}'
         command: ["/recommender"]
-        args: [
-          "--address", ":8942",
-          "--kube-api-burst", "20",
-          "--kube-api-qps", "10",
-          "--logtostderr",
-          "--v", "4",
-          "--storage", "prometheus",
-          "--prometheus-address","http://prometheus-kubermatic.monitoring.svc.cluster.local:9090",
-          "--prometheus-cadvisor-job-name", "cadvisor-vpa",
-          "--metric-for-pod-labels", "kube_pod_labels",
-          "--pod-namespace-label", "namespace",
-          "--pod-name-label", "pod",
-          "--pod-label-prefix", "label_",
-          "--recommendation-margin-fraction", "0",
-        ]
+        args:
+        - "--address=:8942"
+        - "--kube-api-burst=20"
+        - "--kube-api-qps=10"
+        - "--logtostderr"
+        - "--v=4"
+        - "--storage=prometheus"
+        - "--prometheus-address=http://prometheus-kubermatic.monitoring.svc.cluster.local:9090"
+        - "--prometheus-cadvisor-job-name=cadvisor-vpa"
+        - "--metric-for-pod-labels=kube_pod_labels"
+        - "--pod-namespace-label=namespace"
+        - "--pod-name-label=pod"
+        - "--pod-label-prefix=label_"
+        - "--recommendation-margin-fraction=0"
         resources:
 {{ toYaml .Values.kubermatic.vpa.recommender.resources | indent 10 }}
         ports:
         - containerPort: 8942
-        {{ end }}
+      nodeSelector:
+{{ toYaml .Values.kubermatic.vpa.recommender.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.kubermatic.vpa.recommender.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.kubermatic.vpa.recommender.tolerations | indent 8 }}
+{{ end }}

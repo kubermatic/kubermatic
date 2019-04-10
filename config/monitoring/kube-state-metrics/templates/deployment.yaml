@@ -17,7 +17,7 @@ spec:
       serviceAccountName: kube-state-metrics
       containers:
       - name: kube-state-metrics
-        image: {{ .Values.kubeStateMetrics.image.repository }}:{{ .Values.kubeStateMetrics.image.tag }}
+        image: '{{ .Values.kubeStateMetrics.image.repository }}:{{ .Values.kubeStateMetrics.image.tag }}'
         ports:
         - name: http-metrics
           containerPort: 8080
@@ -37,14 +37,14 @@ spec:
         resources:
 {{ toYaml .Values.kubeStateMetrics.resizer.resources | indent 10 }}
         env:
-          - name: MY_POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
-          - name: MY_POD_NAMESPACE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         command:
           - /pod_nanny
           - --container=kube-state-metrics
@@ -54,3 +54,9 @@ spec:
           - --extra-memory=30Mi
           - --threshold=5
           - --deployment=kube-state-metrics
+      nodeSelector:
+{{ toYaml .Values.kubeStateMetrics.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.kubeStateMetrics.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.kubeStateMetrics.tolerations | indent 8 }}

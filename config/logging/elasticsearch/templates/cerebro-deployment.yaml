@@ -44,7 +44,13 @@ spec:
         - name: config
           configMap:
             name: cerebro-config
-    securityContext:
-      runAsNonRoot: true
-      runAsUser: 1000
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      nodeSelector:
+{{ toYaml .Values.logging.elasticsearch.cerebro.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.logging.elasticsearch.cerebro.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.logging.elasticsearch.cerebro.tolerations | indent 8 }}
 {{ end }}

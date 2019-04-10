@@ -1,12 +1,7 @@
-##### Kubermatic ingress
 nginx:
   hostNetwork: false
   asDaemonSet: false
   replicas: 3
-  ignoreMasterTaint: false
-  prometheus:
-    port: 10254
-    scrape: true
   image:
     repository: quay.io/kubernetes-ingress-controller/nginx-ingress-controller
     tag: 0.22.0
@@ -19,3 +14,25 @@ nginx:
     limits:
       cpu: 100m
       memory: 256Mi
+  nodeSelector: {}
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+          - key: kubermatic.io/type
+            operator: In
+            values:
+            - stable
+  tolerations:
+  - key: only_critical
+    operator: Equal
+    value: "true"
+    effect: NoSchedule
+  # - key: dedicated
+  #   operator: Equal
+  #   value: master
+  #   effect: NoSchedule
+  # - key: node-role.kubernetes.io/master
+  #   effect: NoSchedule

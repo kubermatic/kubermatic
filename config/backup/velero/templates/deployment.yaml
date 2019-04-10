@@ -80,7 +80,7 @@ spec:
           protocol: TCP
 
         resources:
-{{ toYaml .Values.velero.resources.velero | indent 10 }}
+{{ toYaml .Values.velero.resources | indent 10 }}
 
       volumes:
       - name: plugins
@@ -101,5 +101,7 @@ spec:
       serviceAccountName: velero
       nodeSelector:
 {{ toYaml .Values.velero.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.velero.affinity | indent 8 }}
       tolerations:
 {{ toYaml .Values.velero.tolerations | indent 8 }}

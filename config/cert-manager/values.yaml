@@ -1,18 +1,57 @@
 certManager:
-  image:
-    repository: quay.io/jetstack/cert-manager-controller
-    tag: v0.6.0
-    pullPolicy: IfNotPresent
+  controller:
+    image:
+      repository: quay.io/jetstack/cert-manager-controller
+      tag: v0.6.0
+      pullPolicy: IfNotPresent
 
-  webhookImage:
-    repository: quay.io/jetstack/cert-manager-webhook
-    tag: v0.6.0
-    pullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 10m
+        memory: 30Mi
+      limits:
+        cpu: 30m
+        memory: 50Mi
 
-  caSyncImage:
-    repository: quay.io/munnerz/apiextensions-ca-helper
-    tag: v0.1.0
-    pullPolicy: IfNotPresent
+    affinity: {}
+    nodeSelector: {}
+    tolerations: []
+
+  webhook:
+    image:
+      repository: quay.io/jetstack/cert-manager-webhook
+      tag: v0.6.0
+      pullPolicy: IfNotPresent
+
+    resources:
+      requests:
+        cpu: 10m
+        memory: 30Mi
+      limits:
+        cpu: 30m
+        memory: 30Mi
+
+    affinity: {}
+    nodeSelector: {}
+    tolerations: []
+
+  caSync:
+    image:
+      repository: quay.io/munnerz/apiextensions-ca-helper
+      tag: v0.1.0
+      pullPolicy: IfNotPresent
+
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+    affinity: {}
+    nodeSelector: {}
+    tolerations: []
 
   securityContext:
     enabled: false
@@ -24,33 +63,3 @@ certManager:
     # defaultIssuerKind: ""
     # defaultACMEChallengeType: ""
     # defaultACMEDNS01ChallengeProvider: ""
-
-  # It is possible to configure tolerations and a nodeSelector
-  # for the cert-managet deployments:
-  #tolerations: |
-  #  - operator: Exists
-  #nodeSelector: |
-  #  node-role.kubernetes.io/master: ""
-
-  resources:
-    certManager:
-      requests:
-        cpu: 10m
-        memory: 30Mi
-      limits:
-        cpu: 30m
-        memory: 50Mi
-    caSync:
-      requests:
-        cpu: 10m
-        memory: 32Mi
-      limits:
-        cpu: 100m
-        memory: 128Mi
-    webhook:
-      requests:
-        cpu: 10m
-        memory: 30Mi
-      limits:
-        cpu: 30m
-        memory: 30Mi

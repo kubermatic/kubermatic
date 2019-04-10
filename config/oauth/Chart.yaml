@@ -2,12 +2,12 @@ name: oauth
 version: 0.1.0
 description: Dex
 keywords:
-  - k8s
-  - kubermatic
-  - Oauth
+- k8s
+- kubermatic
+- Oauth
 home: http://www.kubermatic.io/
 sources:
-  - https://github.com/kubermatic/kubermatic/config
+- https://github.com/kubermatic/kubermatic/config
 maintainers:
-  - name: Sebastian Scheele
-    email: sebastian@loodse.com
+- name: Sebastian Scheele
+  email: sebastian@loodse.com

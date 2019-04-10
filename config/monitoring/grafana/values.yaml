@@ -14,6 +14,10 @@ grafana:
       cpu: 200m
       memory: 128Mi
 
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+
   # Control where the provisioning files are located.
   # If you want to *not* use the predefined ones, this
   # allows you to specify your own directory without

@@ -26,7 +26,9 @@ spec:
         {{- end }}
     spec:
       containers:
-      - args:
+      - name: prometheus
+        image: 'quay.io/prometheus/prometheus:{{ .Values.prometheus.version }}'
+        args:
         - --config.file=/etc/prometheus/config/prometheus.yaml
         - --storage.tsdb.no-lockfile
         - --storage.tsdb.path=/var/prometheus/data
@@ -37,7 +39,9 @@ spec:
         {{- if .Values.prometheus.backups }}
         - --web.enable-admin-api
         {{- end }}
-        image: 'quay.io/prometheus/prometheus:{{ .Values.prometheus.version }}'
+        ports:
+        - containerPort: 9090
+          name: web
         livenessProbe:
           failureThreshold: 6
           httpGet:
@@ -47,10 +51,6 @@ spec:
           periodSeconds: 5
           successThreshold: 1
           timeoutSeconds: 5
-        name: prometheus
-        ports:
-        - containerPort: 9090
-          name: web
         readinessProbe:
           failureThreshold: 120
           httpGet:
@@ -80,6 +80,7 @@ spec:
           readOnly: true
         {{- end }}
         {{- end }}
+
       - name: reloader
         image: jimmidyson/configmap-reload
         args:
@@ -102,6 +103,7 @@ spec:
           readOnly: true
         {{- end }}
         {{- end }}
+
       {{- if .Values.prometheus.backups }}
       - name: backup
         image: alpine:3.7
@@ -151,6 +153,12 @@ spec:
       - name: prometheus-backup
         emptyDir: {}
       {{- end }}
+      nodeSelector:
+{{ toYaml .Values.prometheus.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.prometheus.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.prometheus.tolerations | indent 8 }}
   volumeClaimTemplates:
   - metadata:
       name: prometheus-kubermatic-db

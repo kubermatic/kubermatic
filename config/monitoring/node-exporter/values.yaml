@@ -21,3 +21,11 @@ nodeExporter:
       limits:
         cpu: 20m
         memory: 48Mi
+
+  nodeSelector: {}
+  affinity: {}
+  tolerations:
+  - effect: NoExecute
+    operator: Exists
+  - effect: NoSchedule
+    operator: Exists

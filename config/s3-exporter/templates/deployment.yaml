@@ -21,6 +21,15 @@ spec:
       containers:
         - name: s3-exporter
           image: '{{ .Values.s3Exporter.image.repository }}:{{ .Values.s3Exporter.image.tag }}'
+          command:
+          - /usr/local/bin/s3-exporter
+          args:
+          - -v=4
+          - -logtostderr
+          - -endpoint={{ .Values.s3Exporter.endpoint }}
+          - -access-key-id=$(ACCESS_KEY_ID)
+          - -secret-access-key=$(SECRET_ACCESS_KEY)
+          - -bucket={{ .Values.s3Exporter.bucket }}
           env:
           - name: ACCESS_KEY_ID
             valueFrom:
@@ -32,14 +41,11 @@ spec:
               secretKeyRef:
                 name: s3-credentials
                 key: SECRET_ACCESS_KEY
-          command:
-            - /usr/local/bin/s3-exporter
-          args:
-            - -v=4
-            - -logtostderr
-            - -endpoint={{ .Values.s3Exporter.endpoint }}
-            - -access-key-id=$(ACCESS_KEY_ID)
-            - -secret-access-key=$(SECRET_ACCESS_KEY)
-            - -bucket={{ .Values.s3Exporter.bucket }}
           resources:
 {{ toYaml .Values.s3Exporter.resources | indent 12 }}
+      nodeSelector:
+{{ toYaml .Values.s3Exporter.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.s3Exporter.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.s3Exporter.tolerations | indent 8 }}

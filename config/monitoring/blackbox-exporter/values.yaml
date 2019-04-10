@@ -14,6 +14,10 @@ blackboxExporter:
           cpu: 100m
           memory: 32Mi
 
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+
   modules:
     # A module that requires HTTPS and HTTP 2xx codes on its targets.
     https_2xx:

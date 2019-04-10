@@ -14,37 +14,28 @@ spec:
         version: v1
     spec:
       containers:
-        - name: webserver
-          image: '{{ .Values.kubermatic.ui.image.repository }}:{{ .Values.kubermatic.ui.image.tag }}'
-          imagePullPolicy: {{ .Values.kubermatic.ui.image.pullPolicy }}
-          ports:
-            - name: http
-              containerPort: 8080
-          volumeMounts:
-            - name: config
-              mountPath: "/dist/config/"
-              readOnly: true
-          resources:
-{{ toYaml .Values.kubermatic.ui.resources | indent 12 }}
-      imagePullSecrets:
-        - name: dockercfg
-      tolerations:
-      - key: "only_critical"
-        operator: "Equal"
-        value: "true"
-        effect: "NoSchedule"
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            preference:
-              matchExpressions:
-              - key: "kubermatic.io/type"
-                operator: In
-                values:
-                - "stable"
-      volumes:
+      - name: webserver
+        image: '{{ .Values.kubermatic.ui.image.repository }}:{{ .Values.kubermatic.ui.image.tag }}'
+        imagePullPolicy: {{ .Values.kubermatic.ui.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: 8080
+        volumeMounts:
         - name: config
-          configMap:
-            name: ui-config
+          mountPath: "/dist/config/"
+          readOnly: true
+        resources:
+{{ toYaml .Values.kubermatic.ui.resources | indent 10 }}
+      imagePullSecrets:
+      - name: dockercfg
+      volumes:
+      - name: config
+        configMap:
+          name: ui-config
+      nodeSelector:
+{{ toYaml .Values.kubermatic.ui.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.kubermatic.ui.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.kubermatic.ui.tolerations | indent 8 }}
 {{ end }}

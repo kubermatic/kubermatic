@@ -20,91 +20,71 @@ spec:
       labels:
         app: ingress-nginx
       annotations:
-        kubermatic/scrape: {{ .Values.nginx.prometheus.scrape | quote }}
-        kubermatic/scrape_port: {{ .Values.nginx.prometheus.port | quote }}
+        kubermatic/scrape: 'true'
+        kubermatic/scrape_port: '10254'
     spec:
-    {{ if .Values.nginx.hostNetwork }}
-      hostNetwork: true
-    {{ end }}
+      hostNetwork: {{ .Values.nginx.hostNetwork }}
       serviceAccountName: nginx-ingress-serviceaccount
+      containers:
+      - name: nginx-ingress-controller
+        image: '{{ .Values.nginx.image.repository }}:{{ .Values.nginx.image.tag }}'
+        args:
+        - /nginx-ingress-controller
+        - --configmap=$(POD_NAMESPACE)/nginx-configuration
+        - --tcp-services-configmap=$(POD_NAMESPACE)/tcp-services
+        - --udp-services-configmap=$(POD_NAMESPACE)/udp-services
+        - --default-ssl-certificate=default/kubermatic-tls-certificates
+        - --annotations-prefix=ingress.kubernetes.io
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - NET_BIND_SERVICE
+          # www-data -> 33
+          runAsUser: 33
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        ports:
+        - name: metrics
+          containerPort: 10254
+        - name: http
+          containerPort: 80
+        - name: https
+          containerPort: 443
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 10254
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 10254
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+{{ toYaml .Values.nginx.resources | indent 10 }}
       tolerations:
-      {{ if .Values.nginx.ignoreMasterTaint }}
-      - key: dedicated
-        operator: Equal
-        value: master
-        effect: NoSchedule
-      - key: node-role.kubernetes.io/master
-        effect: NoSchedule
-      {{ end }}
-      - key: "only_critical"
-        operator: "Equal"
-        value: "true"
-        effect: "NoSchedule"
+{{ toYaml .Values.nginx.tolerations | indent 8 }}
+      nodeSelector:
+{{ toYaml .Values.nginx.nodeSelector | indent 8 }}
 {{ if not .Values.nginx.asDaemonSet }}
       affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            preference:
-              matchExpressions:
-              - key: "kubermatic.io/type"
-                operator: In
-                values:
-                - "stable"
+{{ toYaml .Values.nginx.affinity | indent 8 }}
 {{ end }}
-      containers:
-        - name: nginx-ingress-controller
-          image: {{ .Values.nginx.image.repository }}:{{ .Values.nginx.image.tag }}
-          args:
-            - /nginx-ingress-controller
-            - --configmap=$(POD_NAMESPACE)/nginx-configuration
-            - --tcp-services-configmap=$(POD_NAMESPACE)/tcp-services
-            - --udp-services-configmap=$(POD_NAMESPACE)/udp-services
-            - --default-ssl-certificate=default/kubermatic-tls-certificates
-            - --annotations-prefix=ingress.kubernetes.io
-          securityContext:
-            capabilities:
-              drop:
-              - ALL
-              add:
-              - NET_BIND_SERVICE
-            # www-data -> 33
-            runAsUser: 33
-          env:
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-          ports:
-          - name: metrics
-            containerPort: {{ .Values.nginx.prometheus.port }}
-          - name: http
-            containerPort: 80
-          - name: https
-            containerPort: 443
-          livenessProbe:
-            failureThreshold: 3
-            httpGet:
-              path: /healthz
-              port: {{ .Values.nginx.prometheus.port }}
-              scheme: HTTP
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 1
-          readinessProbe:
-            failureThreshold: 3
-            httpGet:
-              path: /healthz
-              port: {{ .Values.nginx.prometheus.port }}
-              scheme: HTTP
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 1
-          resources:
-{{ toYaml .Values.nginx.resources | indent 12 }}
-
