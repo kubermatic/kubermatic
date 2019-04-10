@@ -9,6 +9,62 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 )
 
+func TestGeneratedResourcesForGroups(t *testing.T) {
+	tests := []struct {
+		name              string
+		resurceName       string
+		expectError       bool
+		expectedResources []string
+	}{
+		{
+			name:              "scenario 1: check resources for owners",
+			resurceName:       genResourceName(rbac.OwnerGroupNamePrefix),
+			expectedResources: []string{"machinedeployments", "machinesets", "machines"},
+			expectError:       false,
+		},
+		{
+			name:              "scenario 2: check resources for editors",
+			resurceName:       genResourceName(rbac.EditorGroupNamePrefix),
+			expectedResources: []string{"machinedeployments", "machinesets", "machines"},
+			expectError:       false,
+		},
+		{
+			name:              "scenario 3: check resources for viewers",
+			resurceName:       genResourceName(rbac.ViewerGroupNamePrefix),
+			expectedResources: []string{"machinedeployments", "machinesets", "machines"},
+			expectError:       false,
+		},
+		{
+			name:        "scenario 4: incorrect resource name",
+			resurceName: rbac.ViewerGroupNamePrefix,
+			expectError: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			role, err := GenerateRBACClusterRole(test.resurceName)
+
+			if test.expectError {
+				if err == nil {
+					t.Fatalf("expected error")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("generate RBAC role err: %v", err)
+			}
+
+			actualResources := role.Rules[0].Resources
+			if !equality.Semantic.DeepEqual(actualResources, test.expectedResources) {
+				t.Fatalf("incorrect resources were returned, got: %v, want: %v", actualResources, test.expectedResources)
+			}
+
+		})
+	}
+}
+
 func TestGenerateVerbsForGroup(t *testing.T) {
 
 	tests := []struct {
