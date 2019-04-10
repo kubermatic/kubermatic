@@ -13,34 +13,28 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/robfig/cron"
 
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	kubermaticv1informers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic/v1"
-	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
-	"k8s.io/api/batch/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
-	informersbatchv1 "k8s.io/client-go/informers/batch/v1"
-	informersbatchv1beta1 "k8s.io/client-go/informers/batch/v1beta1"
-	corev1informer "k8s.io/client-go/informers/core/v1"
-	"k8s.io/client-go/kubernetes"
-	listersbatchv1 "k8s.io/client-go/listers/batch/v1"
-	listersbatchv1beta1 "k8s.io/client-go/listers/batch/v1beta1"
-	corev1lister "k8s.io/client-go/listers/core/v1"
-	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/util/workqueue"
+	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -60,13 +54,13 @@ const (
 	backupCleanupJobLabel = "kubermatic-etcd-backup-cleaner"
 	// clusterEnvVarKey defines the environment variable key for the cluster name
 	clusterEnvVarKey = "CLUSTER"
+
+	ControllerName = "kubermatic_backup_controller"
 )
 
 // Metrics contains metrics that this controller will collect and expose
 type Metrics struct {
-	Workers                  prometheus.Gauge
-	CronJobCreationTimestamp *prometheus.GaugeVec
-	CronJobUpdateTimestamp   *prometheus.GaugeVec
+	Workers prometheus.Gauge
 }
 
 // NewMetrics creates a new Metrics
@@ -80,26 +74,14 @@ func NewMetrics() *Metrics {
 			Name:      "workers",
 			Help:      "The number of running backup controller workers",
 		}),
-		CronJobCreationTimestamp: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: metricNamespace,
-			Subsystem: subsystem,
-			Name:      "cronjob_creation_timestamp_seconds",
-			Help:      "The timestamp at which a cronjob for a given cluster was created",
-		}, []string{"cluster"}),
-		CronJobUpdateTimestamp: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: metricNamespace,
-			Subsystem: subsystem,
-			Name:      "cronjob_update_timestamp_seconds",
-			Help:      "The timestamp at which a cronjob for a given cluster was last updated",
-		}, []string{"cluster"}),
 	}
 
 	cm.Workers.Set(0)
 	return cm
 }
 
-// Controller stores all components required to create backups
-type Controller struct {
+type Reconciler struct {
+	workerName       string
 	storeContainer   corev1.Container
 	cleanupContainer corev1.Container
 	// backupScheduleString is the cron string representing
@@ -110,172 +92,126 @@ type Controller struct {
 	backupContainerImage string
 
 	metrics *Metrics
-
-	queue            workqueue.RateLimitingInterface
-	kubermaticClient kubermaticclientset.Interface
-	kubernetesClient kubernetes.Interface
-	dynamicClient    ctrlruntimeclient.Client
-	clusterLister    kubermaticv1lister.ClusterLister
-	cronJobLister    listersbatchv1beta1.CronJobLister
-	jobLister        listersbatchv1.JobLister
-	secretLister     corev1lister.SecretLister
-	serviceLister    corev1lister.ServiceLister
+	ctrlruntimeclient.Client
+	recorder record.EventRecorder
 }
 
-// New creates a new Backup controller that is responsible for creating backupjobs
+// Add creates a new Backup controller that is responsible for creating backupjobs
 // for all managed user clusters
-func New(
+func Add(
+	mgr manager.Manager,
+	numWorkers int,
+	workerName string,
 	storeContainer corev1.Container,
 	cleanupContainer corev1.Container,
 	backupSchedule time.Duration,
 	backupContainerImage string,
-	metrics *Metrics,
-	kubermaticClient kubermaticclientset.Interface,
-	kubernetesClient kubernetes.Interface,
-	dynamicClient ctrlruntimeclient.Client,
-	clusterInformer kubermaticv1informers.ClusterInformer,
-	cronJobInformer informersbatchv1beta1.CronJobInformer,
-	jobInformer informersbatchv1.JobInformer,
-	secretInformer corev1informer.SecretInformer,
-	serviceInformer corev1informer.ServiceInformer,
-) (*Controller, error) {
+	metrics *Metrics) error {
 	if err := validateStoreContainer(storeContainer); err != nil {
-		return nil, err
+		return err
 	}
 	backupScheduleString, err := parseDuration(backupSchedule)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse backup duration: %v", err)
+		return fmt.Errorf("failed to parse backup duration: %v", err)
 	}
 	if backupContainerImage == "" {
 		backupContainerImage = DefaultBackupContainerImage
 	}
-	c := &Controller{
-		queue:                workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "backup_cluster"),
-		kubermaticClient:     kubermaticClient,
-		kubernetesClient:     kubernetesClient,
-		dynamicClient:        dynamicClient,
-		backupScheduleString: backupScheduleString,
+
+	if err := prometheus.Register(metrics.Workers); err != nil {
+		return fmt.Errorf("failed to register worker metrics: %v", err)
+	}
+
+	reconciler := &Reconciler{
+		workerName:           workerName,
 		storeContainer:       storeContainer,
 		cleanupContainer:     cleanupContainer,
+		backupScheduleString: backupScheduleString,
 		backupContainerImage: backupContainerImage,
 		metrics:              metrics,
+		Client:               mgr.GetClient(),
+		recorder:             mgr.GetRecorder(ControllerName),
 	}
-
-	prometheus.MustRegister(metrics.Workers)
-	prometheus.MustRegister(metrics.CronJobCreationTimestamp)
-	prometheus.MustRegister(metrics.CronJobUpdateTimestamp)
-
-	cronJobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			c.handleObject(obj.(*batchv1beta1.CronJob))
-		},
-		UpdateFunc: func(_, new interface{}) {
-			c.handleObject(new.(*batchv1beta1.CronJob))
-		},
-		DeleteFunc: func(obj interface{}) {
-			cronJob, ok := obj.(*batchv1beta1.CronJob)
-			if !ok {
-				tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
-				if !ok {
-					runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
-					return
-				}
-				cronJob, ok = tombstone.Obj.(*batchv1beta1.CronJob)
-				if !ok {
-					runtime.HandleError(fmt.Errorf("tombstone contained object that is not a cronJob %#v", obj))
-					return
-				}
-			}
-			c.handleObject(cronJob)
-		},
+	c, err := controller.New(ControllerName, mgr, controller.Options{
+		Reconciler:              reconciler,
+		MaxConcurrentReconciles: numWorkers,
 	})
-
-	clusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			c.enqueue(obj.(*kubermaticv1.Cluster))
-		},
-		UpdateFunc: func(_, new interface{}) {
-			c.enqueue(new.(*kubermaticv1.Cluster))
-		},
-		DeleteFunc: func(obj interface{}) {
-			cluster, ok := obj.(*kubermaticv1.Cluster)
-			if !ok {
-				tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
-				if !ok {
-					runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
-					return
-				}
-				cluster, ok = tombstone.Obj.(*kubermaticv1.Cluster)
-				if !ok {
-					runtime.HandleError(fmt.Errorf("tombstone contained object that is not a Cluster %#v", obj))
-					return
-				}
-			}
-			c.enqueue(cluster)
-		},
-	})
-	c.clusterLister = clusterInformer.Lister()
-	c.cronJobLister = cronJobInformer.Lister()
-	c.jobLister = jobInformer.Lister()
-	c.secretLister = secretInformer.Lister()
-	c.serviceLister = serviceInformer.Lister()
-	return c, nil
-}
-
-func (c *Controller) handleObject(obj interface{}) {
-	object, ok := obj.(metav1.Object)
-	if !ok {
-		utilruntime.HandleError(fmt.Errorf("error decoding object, invalid type"))
-		return
+	if err != nil {
+		return fmt.Errorf("failed to create controller: %v", err)
 	}
 
-	// We only care about CronJobs that are in the kube-system namespace
-	if object.GetNamespace() != metav1.NamespaceSystem {
-		return
-	}
-
-	if ownerRef := metav1.GetControllerOf(object); ownerRef != nil && ownerRef.Kind == kubermaticv1.ClusterKindName {
-		cluster, err := c.clusterLister.Get(ownerRef.Name)
-		if err != nil {
-			glog.V(4).Infof("Ignoring orphaned object '%s' from cluster '%s'", object.GetSelfLink(), ownerRef.Name)
-			return
+	cronJobMapFn := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
+		// We only care about CronJobs that are in the kube-system namespace
+		if a.Meta.GetNamespace() != metav1.NamespaceSystem {
+			return nil
 		}
-		c.enqueue(cluster)
-		return
+
+		if ownerRef := metav1.GetControllerOf(a.Meta); ownerRef != nil && ownerRef.Kind == kubermaticv1.ClusterKindName {
+			cluster := &kubermaticv1.Cluster{}
+			err := mgr.GetClient().Get(context.Background(), types.NamespacedName{Name: ownerRef.Name}, cluster)
+			if err != nil {
+				if kerrors.IsNotFound(err) {
+					return nil
+				}
+				glog.Errorf("failed to get cluster %q: %v", ownerRef.Name, err)
+			}
+			return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: ownerRef.Name}}}
+		}
+		return nil
+	})}
+
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
+		return fmt.Errorf("failed to watch Clusters: %v", err)
 	}
-}
-
-// Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
-func (c *Controller) Run(workerCount int, stopCh <-chan struct{}) {
-	defer runtime.HandleCrash()
-
-	for i := 0; i < workerCount; i++ {
-		go wait.Until(c.runWorker, time.Second, stopCh)
+	if err := c.Watch(&source.Kind{Type: &batchv1beta1.CronJob{}}, cronJobMapFn); err != nil {
+		return fmt.Errorf("failed to watch CronJobs: %v", err)
 	}
 
 	// Cleanup cleanup jobs...
-	go wait.Until(c.cleanupJobs, 30*time.Second, stopCh)
+	if err := mgr.Add(&runnableWrapper{
+		f: func(stopCh <-chan struct{}) {
+			wait.Until(reconciler.cleanupJobs, 30*time.Second, stopCh)
+		},
+	}); err != nil {
+		return fmt.Errorf("failed to add cleanup jobs runnable to mgr: %v", err)
+	}
 
-	c.metrics.Workers.Set(float64(workerCount))
-	<-stopCh
+	return nil
 }
 
-func (c *Controller) cleanupJobs() {
+type runnableWrapper struct {
+	f func(<-chan struct{})
+}
+
+func (w *runnableWrapper) Start(stopChan <-chan struct{}) error {
+	go w.f(stopChan)
+	return nil
+}
+
+func (r *Reconciler) cleanupJobs() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	selector, err := labels.Parse(fmt.Sprintf("%s=%s", resources.AppLabelKey, backupCleanupJobLabel))
 	if err != nil {
 		utilruntime.HandleError(err)
 		return
 	}
-	jobList, err := c.jobLister.List(selector)
-	if err != nil {
+
+	jobs := &batchv1.JobList{}
+	if err := r.List(ctx, &ctrlruntimeclient.ListOptions{LabelSelector: selector}, jobs); err != nil {
 		utilruntime.HandleError(fmt.Errorf("Failed to list jobs: %v", err))
 		return
 	}
 
-	for _, job := range jobList {
+	for _, job := range jobs.Items {
 		if job.Status.Succeeded >= 1 && (job.Status.CompletionTime != nil && time.Since(job.Status.CompletionTime.Time).Minutes() > 5) {
-			propagation := metav1.DeletePropagationForeground
-			if err := c.kubernetesClient.BatchV1().Jobs(metav1.NamespaceSystem).Delete(job.Name, &metav1.DeleteOptions{PropagationPolicy: &propagation}); err != nil {
+
+			modifierForegroundDeletePropagation := func(deleteOpts *ctrlruntimeclient.DeleteOptions) {
+				deletePropagationForeground := metav1.DeletePropagationForeground
+				deleteOpts.PropagationPolicy = &deletePropagationForeground
+			}
+			if err := r.Delete(ctx, &job, modifierForegroundDeletePropagation); err != nil {
 				utilruntime.HandleError(err)
 				return
 			}
@@ -283,60 +219,36 @@ func (c *Controller) cleanupJobs() {
 	}
 }
 
-func (c *Controller) runWorker() {
-	for c.processNextItem() {
-	}
-}
+func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-func (c *Controller) processNextItem() bool {
-	key, quit := c.queue.Get()
-	if quit {
-		return false
-	}
-	defer c.queue.Done(key)
-
-	if err := c.sync(key.(string)); err != nil {
-		glog.V(0).Infof("Error syncing %v: %v", key, err)
-
-		// Re-enqueue the key rate limited. Based on the rate limiter on the
-		// queue and the re-enqueue history, the key will be processed later again.
-		c.queue.AddRateLimited(key)
-		return true
-	}
-
-	// Forget about the #AddRateLimited history of the key on every successful synchronization.
-	// This ensures that future processing of updates for this key is not delayed because of
-	// an outdated error history.
-	c.queue.Forget(key)
-	return true
-}
-
-func (c *Controller) enqueue(cluster *kubermaticv1.Cluster) {
-	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(cluster)
-	if err != nil {
-		runtime.HandleError(fmt.Errorf("couldn't get key for object %#v: %v", cluster, err))
-		return
-	}
-
-	c.queue.Add(key)
-}
-
-func (c *Controller) sync(key string) error {
-	clusterFromCache, err := c.clusterLister.Get(key)
-	if err != nil {
+	cluster := &kubermaticv1.Cluster{}
+	if err := r.Get(ctx, types.NamespacedName{Name: request.Name}, cluster); err != nil {
 		if kerrors.IsNotFound(err) {
-			glog.V(2).Infof("cluster '%s' in work queue no longer exists", key)
-			return nil
+			return reconcile.Result{}, nil
 		}
-		return err
+		return reconcile.Result{}, err
 	}
 
-	if clusterFromCache.Spec.Pause {
-		glog.V(6).Infof("skipping cluster %s due to it was set to paused", key)
+	// Add a wrapping here so we can emit an event on error
+	err := r.reconcile(ctx, cluster)
+	if err != nil {
+		glog.Errorf("Failed to reconcile cluster %q: %v", request.Name, err)
+		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
+	}
+	return reconcile.Result{}, err
+}
+
+func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	if cluster.Spec.Pause {
+		glog.V(4).Infof("skipping paused cluster %s", cluster.Name)
 		return nil
 	}
 
-	cluster := clusterFromCache.DeepCopy()
+	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+		return nil
+	}
 
 	glog.V(4).Infof("syncing cluster %s", cluster.Name)
 
@@ -344,9 +256,9 @@ func (c *Controller) sync(key string) error {
 	if cluster.DeletionTimestamp != nil {
 		// Need to cleanup
 		if sets.NewString(cluster.Finalizers...).Has(cleanupFinalizer) {
-			job := c.cleanupJob(cluster)
-			if _, err = c.kubernetesClient.BatchV1().Jobs(metav1.NamespaceSystem).Create(job); err != nil {
-				// Otherwise we end up in a loop when we are able to create the job but not remove the finalizer.
+			if err := r.Create(ctx, r.cleanupJob(cluster)); err != nil {
+				// Otherwise we end up in a loop when we are able to create the job but not
+				// remove the finalizer.
 				if !kerrors.IsAlreadyExists(err) {
 					return err
 				}
@@ -355,7 +267,7 @@ func (c *Controller) sync(key string) error {
 			finalizers := sets.NewString(cluster.Finalizers...)
 			finalizers.Delete(cleanupFinalizer)
 			cluster.Finalizers = finalizers.List()
-			if cluster, err = c.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
+			if err := r.Update(ctx, cluster); err != nil {
 				return fmt.Errorf("failed to update cluster after removing cleanup finalizer: %v", err)
 			}
 		}
@@ -370,37 +282,30 @@ func (c *Controller) sync(key string) error {
 	// Always add the finalizer first
 	if !sets.NewString(cluster.Finalizers...).Has(cleanupFinalizer) {
 		cluster.Finalizers = append(cluster.Finalizers, cleanupFinalizer)
-		if cluster, err = c.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
+		if err := r.Update(ctx, cluster); err != nil {
 			return fmt.Errorf("failed to update cluster after adding cleanup finalizer: %v", err)
 		}
 	}
 
-	if err := c.ensureCronJobSecret(cluster); err != nil {
+	if err := r.ensureCronJobSecret(ctx, cluster); err != nil {
 		return fmt.Errorf("failed to create backup secret: %v", err)
 	}
 
-	return c.ensureCronJob(cluster)
+	return r.ensureCronJob(ctx, cluster)
 }
 
-func (c *Controller) getEtcdSecretName(cluster *kubermaticv1.Cluster) string {
+func (r *Reconciler) getEtcdSecretName(cluster *kubermaticv1.Cluster) string {
 	return fmt.Sprintf("cluster-%s-etcd-client-certificate", cluster.Name)
 }
 
-// TODO: Migrate this to the same pattern as the cluster controller.
-func (c *Controller) ensureCronJobSecret(cluster *kubermaticv1.Cluster) error {
-	secretName := c.getEtcdSecretName(cluster)
-
-	existing, err := c.secretLister.Secrets(metav1.NamespaceSystem).Get(secretName)
-	if err != nil && !kerrors.IsNotFound(err) {
-		return err
-	}
-	notFound := kerrors.IsNotFound(err)
+func (r *Reconciler) ensureCronJobSecret(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	secretName := r.getEtcdSecretName(cluster)
 
 	getCA := func() (*triple.KeyPair, error) {
-		return resources.GetClusterRootCA(context.Background(), cluster, c.dynamicClient)
+		return resources.GetClusterRootCA(ctx, cluster, r.Client)
 	}
 
-	_, create := certificates.GetClientCertificateCreator(
+	_, creator := certificates.GetClientCertificateCreator(
 		secretName,
 		"backup",
 		nil,
@@ -409,79 +314,44 @@ func (c *Controller) ensureCronJobSecret(cluster *kubermaticv1.Cluster) error {
 		getCA,
 	)()
 
-	se, err := create(existing.DeepCopy())
+	err := reconciling.EnsureNamedObjectV2(
+		ctx,
+		types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: secretName},
+		reconciling.SecretObjectWrapper(creator), r.Client, &corev1.Secret{})
 	if err != nil {
-		return fmt.Errorf("failed to build Secret: %v", err)
-	}
-	// This is required as we don't use the ReconcileSecrets functions which have correct wrappers.
-	se.Name = secretName
-
-	if equality.Semantic.DeepEqual(se, existing) {
-		return nil
-	}
-
-	if notFound {
-		if _, err = c.kubernetesClient.CoreV1().Secrets(metav1.NamespaceSystem).Create(se); err != nil {
-			return fmt.Errorf("failed to create Secret %s: %v", se.Name, err)
-		}
-	} else if _, err = c.kubernetesClient.CoreV1().Secrets(metav1.NamespaceSystem).Update(se); err != nil {
-		return fmt.Errorf("failed to update Secret %s: %v", se.Name, err)
+		return fmt.Errorf("failed to ensure Secret %q: %v", secretName, err)
 	}
 
 	return nil
 }
 
-func (c *Controller) ensureCronJob(cluster *kubermaticv1.Cluster) error {
-	cronJob, err := c.cronJob(cluster, nil)
+func (r *Reconciler) ensureCronJob(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	name, creator := r.cronjob(cluster)
+	err := reconciling.EnsureNamedObjectV2(ctx,
+		types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: name},
+		reconciling.CronJobObjectWrapper(creator),
+		r.Client, &batchv1beta1.CronJob{})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to ensure Cronjob kube-system/%q: %v", name, err)
 	}
 
-	existing, err := c.cronJobLister.CronJobs(metav1.NamespaceSystem).Get(cronJob.Name)
-	if err != nil {
-		if !kerrors.IsNotFound(err) {
-			return err
-		}
-		if _, err := c.kubernetesClient.BatchV1beta1().CronJobs(metav1.NamespaceSystem).Create(cronJob); err != nil {
-			if !kerrors.IsAlreadyExists(err) {
-				return fmt.Errorf("failed to create cronjob: %v", err)
-			}
-		}
-		c.metrics.CronJobCreationTimestamp.With(
-			prometheus.Labels{"cluster": cluster.Name}).Set(float64(time.Now().UnixNano()))
-		return nil
-	}
-
-	cronJob, err = c.cronJob(cluster, existing)
-	if err != nil {
-		return err
-	}
-	if equality.Semantic.DeepEqual(existing.Spec, cronJob.Spec) {
-		return nil
-	}
-
-	if _, err := c.kubernetesClient.BatchV1beta1().CronJobs(metav1.NamespaceSystem).Update(cronJob); err != nil {
-		return fmt.Errorf("failed to update cronJob: %v", err)
-	}
-	c.metrics.CronJobUpdateTimestamp.With(
-		prometheus.Labels{"cluster": cluster.Name}).Set(float64(time.Now().UnixNano()))
 	return nil
 }
 
-func (c *Controller) cleanupJob(cluster *kubermaticv1.Cluster) *v1.Job {
-	cleanupContainer := c.cleanupContainer.DeepCopy()
+func (r *Reconciler) cleanupJob(cluster *kubermaticv1.Cluster) *batchv1.Job {
+	cleanupContainer := r.cleanupContainer.DeepCopy()
 	cleanupContainer.Env = append(cleanupContainer.Env, corev1.EnvVar{
 		Name:  clusterEnvVarKey,
 		Value: cluster.Name,
 	})
-	job := &v1.Job{
+	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("remove-cluster-backups-%s", cluster.Name),
 			Labels: map[string]string{
 				resources.AppLabelKey: backupCleanupJobLabel,
 			},
 		},
-		Spec: v1.JobSpec{
+		Spec: batchv1.JobSpec{
 			BackoffLimit:          int32Ptr(10),
 			Completions:           int32Ptr(1),
 			Parallelism:           int32Ptr(1),
@@ -507,90 +377,84 @@ func (c *Controller) cleanupJob(cluster *kubermaticv1.Cluster) *v1.Job {
 	return job
 }
 
-func (c *Controller) cronJob(cluster *kubermaticv1.Cluster, existing *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
-	if existing == nil {
-		existing = &batchv1beta1.CronJob{}
-	}
-	cronJob := existing
-	// Name and Namespace
-	cronJob.Name = fmt.Sprintf("%s-%s", cronJobPrefix, cluster.Name)
-	cronJob.Namespace = metav1.NamespaceSystem
+func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster) (string, reconciling.CronJobCreator) {
+	return fmt.Sprintf("%s-%s", cronJobPrefix, cluster.Name), func(cronJob *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
+		gv := kubermaticv1.SchemeGroupVersion
+		cronJob.OwnerReferences = []metav1.OwnerReference{
+			*metav1.NewControllerRef(cluster, gv.WithKind(kubermaticv1.ClusterKindName)),
+		}
 
-	// OwnerRef
-	gv := kubermaticv1.SchemeGroupVersion
-	cronJob.OwnerReferences = []metav1.OwnerReference{
-		*metav1.NewControllerRef(cluster, gv.WithKind(kubermaticv1.ClusterKindName)),
-	}
+		// Spec
+		cronJob.Spec.Schedule = r.backupScheduleString
+		cronJob.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
+		cronJob.Spec.Suspend = boolPtr(false)
+		cronJob.Spec.SuccessfulJobsHistoryLimit = int32Ptr(int32(0))
 
-	// Spec
-	cronJob.Spec.Schedule = c.backupScheduleString
-	cronJob.Spec.ConcurrencyPolicy = batchv1beta1.ForbidConcurrent
-	cronJob.Spec.Suspend = boolPtr(false)
-	cronJob.Spec.SuccessfulJobsHistoryLimit = int32Ptr(int32(0))
-
-	endpoints := etcd.GetClientEndpoints(cluster.Status.NamespaceName)
-	cronJob.Spec.JobTemplate.Spec.Template.Spec.InitContainers = []corev1.Container{
-		{
-			Name:  "backup-creator",
-			Image: c.backupContainerImage,
-			Env: []corev1.EnvVar{
-				{
-					Name:  "ETCDCTL_API",
-					Value: "3",
+		endpoints := etcd.GetClientEndpoints(cluster.Status.NamespaceName)
+		cronJob.Spec.JobTemplate.Spec.Template.Spec.InitContainers = []corev1.Container{
+			{
+				Name:  "backup-creator",
+				Image: r.backupContainerImage,
+				Env: []corev1.EnvVar{
+					{
+						Name:  "ETCDCTL_API",
+						Value: "3",
+					},
+				},
+				Command: []string{
+					"/usr/bin/time",
+					"/usr/local/bin/etcdctl",
+					"--endpoints", strings.Join(endpoints, ","),
+					"--cacert", "/etc/etcd/client/ca.crt",
+					"--cert", "/etc/etcd/client/backup-etcd-client.crt",
+					"--key", "/etc/etcd/client/backup-etcd-client.key",
+					"snapshot", "save", "/backup/snapshot.db",
+				},
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      SharedVolumeName,
+						MountPath: "/backup",
+					},
+					{
+						Name:      r.getEtcdSecretName(cluster),
+						MountPath: "/etc/etcd/client",
+					},
 				},
 			},
-			Command: []string{
-				"/usr/bin/time",
-				"/usr/local/bin/etcdctl",
-				"--endpoints", strings.Join(endpoints, ","),
-				"--cacert", "/etc/etcd/client/ca.crt",
-				"--cert", "/etc/etcd/client/backup-etcd-client.crt",
-				"--key", "/etc/etcd/client/backup-etcd-client.key",
-				"snapshot", "save", "/backup/snapshot.db",
-			},
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      SharedVolumeName,
-					MountPath: "/backup",
+		}
+
+		storeContainer := r.storeContainer.DeepCopy()
+		storeContainer.Env = append(storeContainer.Env, corev1.EnvVar{
+			Name:  clusterEnvVarKey,
+			Value: cluster.Name,
+		})
+		storeContainer.ImagePullPolicy = corev1.PullIfNotPresent
+		storeContainer.TerminationMessagePath = corev1.TerminationMessagePathDefault
+		storeContainer.TerminationMessagePolicy = corev1.TerminationMessageReadFile
+
+		cronJob.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
+		cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{*storeContainer}
+		cronJob.Spec.JobTemplate.Spec.Template.Spec.Volumes = []corev1.Volume{
+			{
+				Name: SharedVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
-				{
-					Name:      c.getEtcdSecretName(cluster),
-					MountPath: "/etc/etcd/client",
+			},
+			{
+				Name: r.getEtcdSecretName(cluster),
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  r.getEtcdSecretName(cluster),
+						DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					},
 				},
 			},
-		},
+		}
+
+		return cronJob, nil
 	}
 
-	storeContainer := c.storeContainer.DeepCopy()
-	storeContainer.Env = append(storeContainer.Env, corev1.EnvVar{
-		Name:  clusterEnvVarKey,
-		Value: cluster.Name,
-	})
-	storeContainer.ImagePullPolicy = corev1.PullIfNotPresent
-	storeContainer.TerminationMessagePath = corev1.TerminationMessagePathDefault
-	storeContainer.TerminationMessagePolicy = corev1.TerminationMessageReadFile
-
-	cronJob.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
-	cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{*storeContainer}
-	cronJob.Spec.JobTemplate.Spec.Template.Spec.Volumes = []corev1.Volume{
-		{
-			Name: SharedVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
-		{
-			Name: c.getEtcdSecretName(cluster),
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  c.getEtcdSecretName(cluster),
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
-				},
-			},
-		},
-	}
-
-	return cronJob, nil
 }
 
 func boolPtr(b bool) *bool {
