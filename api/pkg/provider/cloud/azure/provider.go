@@ -19,6 +19,8 @@ import (
 )
 
 const (
+	resourceNamePrefix = "kubernetes-"
+
 	clusterTagKey = "cluster"
 
 	// FinalizerSecurityGroup will instruct the deletion of the security group
@@ -485,7 +487,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	location := dc.Spec.Azure.Location
 
 	if cluster.Spec.Cloud.Azure.ResourceGroup == "" {
-		cluster.Spec.Cloud.Azure.ResourceGroup = "cluster-" + cluster.Name
+		cluster.Spec.Cloud.Azure.ResourceGroup = resourceNamePrefix + cluster.Name
 
 		glog.Infof("cluster %q: ensuring resource group %q", cluster.Name, cluster.Spec.Cloud.Azure.ResourceGroup)
 		if err = ensureResourceGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
@@ -502,7 +504,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	}
 
 	if cluster.Spec.Cloud.Azure.VNetName == "" {
-		cluster.Spec.Cloud.Azure.VNetName = "cluster-" + cluster.Name
+		cluster.Spec.Cloud.Azure.VNetName = resourceNamePrefix + cluster.Name
 
 		glog.Infof("cluster %q: ensuring vnet %q", cluster.Name, cluster.Spec.Cloud.Azure.VNetName)
 		if err = ensureVNet(cluster.Spec.Cloud, location, cluster.Name); err != nil {
@@ -519,7 +521,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	}
 
 	if cluster.Spec.Cloud.Azure.SubnetName == "" {
-		cluster.Spec.Cloud.Azure.SubnetName = "cluster-" + cluster.Name
+		cluster.Spec.Cloud.Azure.SubnetName = resourceNamePrefix + cluster.Name
 
 		glog.Infof("cluster %q: ensuring subnet %q", cluster.Name, cluster.Spec.Cloud.Azure.SubnetName)
 		if err = ensureSubnet(cluster.Spec.Cloud); err != nil {
@@ -536,7 +538,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	}
 
 	if cluster.Spec.Cloud.Azure.RouteTableName == "" {
-		cluster.Spec.Cloud.Azure.RouteTableName = "cluster-" + cluster.Name
+		cluster.Spec.Cloud.Azure.RouteTableName = resourceNamePrefix + cluster.Name
 
 		glog.Infof("cluster %q: ensuring route table %q", cluster.Name, cluster.Spec.Cloud.Azure.RouteTableName)
 		if err = ensureRouteTable(cluster.Spec.Cloud, location); err != nil {
@@ -553,7 +555,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	}
 
 	if cluster.Spec.Cloud.Azure.SecurityGroup == "" {
-		cluster.Spec.Cloud.Azure.SecurityGroup = "cluster-" + cluster.Name
+		cluster.Spec.Cloud.Azure.SecurityGroup = resourceNamePrefix + cluster.Name
 
 		glog.Infof("cluster %q: ensuring security group %q", cluster.Name, cluster.Spec.Cloud.Azure.SecurityGroup)
 		if err = ensureSecurityGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
@@ -570,7 +572,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	}
 
 	if cluster.Spec.Cloud.Azure.AvailabilitySet == "" {
-		asName := "cluster-" + cluster.Name
+		asName := resourceNamePrefix + cluster.Name
 		glog.Infof("cluster %q: ensuring AvailabilitySet %q", cluster.Name, asName)
 
 		if err := ensureAvailabilitySet(asName, location, cluster.Spec.Cloud); err != nil {

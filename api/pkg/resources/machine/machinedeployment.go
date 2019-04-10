@@ -30,7 +30,7 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 	} else {
 		// GenerateName can be set only if Name is empty to avoid confusing error:
 		// https://github.com/kubernetes/kubernetes/issues/32220
-		md.GenerateName = fmt.Sprintf("kubermatic-%s-", c.Name)
+		md.GenerateName = "worker-"
 	}
 
 	md.Namespace = metav1.NamespaceSystem
@@ -45,6 +45,7 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 	md.Spec.Template.Spec.Versions.Kubelet = nd.Spec.Template.Versions.Kubelet
 
 	if len(c.Spec.MachineNetworks) > 0 {
+		// TODO(mrIncompetent): Rename this finalizer to not contain the word "kubermatic" (For whitelabeling purpose)
 		md.Spec.Template.Annotations = map[string]string{
 			"machine-controller.kubermatic.io/initializers": "ipam",
 		}
