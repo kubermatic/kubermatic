@@ -10,7 +10,7 @@ minio:
   backup:
     enabled: true
     image:
-      repository: quay.io/kubermatic/minio-backup
+      repository: quay.io/kubermatic/util
       tag: 1.0.0-1
 
   # If your cluster does not have a default storage class,

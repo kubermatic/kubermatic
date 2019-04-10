@@ -6,7 +6,7 @@ prometheus:
   backup:
     enabled: true
     image:
-      repository: quay.io/kubermatic/prometheus-backup
+      repository: quay.io/kubermatic/util
       tag: 1.0.0-1
 
   # Specify additional external labels which will be added to all
