@@ -594,3 +594,12 @@ func GenSecret(projectID, saID, name, id string) *v1.Secret {
 
 	return secret
 }
+
+func GenDefaultExpiry() (apiv1.Time, error) {
+	authenticator := serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey))
+	claim, _, err := authenticator.Authenticate(TestFakeToken)
+	if err != nil {
+		return apiv1.Time{}, err
+	}
+	return apiv1.NewTime(claim.Expiry.Time()), nil
+}

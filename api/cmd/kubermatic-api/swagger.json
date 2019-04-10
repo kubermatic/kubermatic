@@ -2254,6 +2254,52 @@
       }
     },
     "/api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens": {
+      "get": {
+        "description": "List tokens for the given service account",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "tokens"
+        ],
+        "operationId": "listServiceAccountTokens",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ServiceAccountID",
+            "name": "serviceaccount_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ServiceAccountToken",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ServiceAccountToken"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
       "post": {
         "description": "Generates a token for the given service account",
         "consumes": [

@@ -95,8 +95,6 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 	if options == nil {
 		options = &provider.ServiceAccountTokenListOptions{}
 	}
-	saCopy := *sa
-	saCopy.Name = addSAPrefix(saCopy.Name)
 
 	labelSelector, err := labels.Parse(fmt.Sprintf("%s=%s", kubermaticv1.ProjectIDLabelKey, project.Name))
 	if err != nil {
@@ -112,7 +110,7 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 		if isToken(secret) {
 			for _, owner := range secret.GetOwnerReferences() {
 				if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.UserKindName &&
-					owner.Name == saCopy.Name && owner.UID == saCopy.UID {
+					owner.Name == sa.Name && owner.UID == sa.UID {
 					resultList = append(resultList, secret)
 				}
 			}
@@ -132,7 +130,6 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 		if err != nil {
 			return nil, err
 		}
-
 	}
 
 	if len(options.TokenName) == 0 {

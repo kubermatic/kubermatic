@@ -127,3 +127,84 @@ func TestCreateTokenProject(t *testing.T) {
 		})
 	}
 }
+
+func TestListTokens(t *testing.T) {
+	t.Parallel()
+	expiry, err := test.GenDefaultExpiry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	testcases := []struct {
+		name                   string
+		existingKubermaticObjs []runtime.Object
+		existingKubernetesObjs []runtime.Object
+		expectedTokens         []apiv1.PublicServiceAccountToken
+		projectToSync          string
+		saToSync               string
+		httpStatus             int
+		existingAPIUser        apiv1.User
+	}{
+		{
+			name:       "scenario 1: list tokens",
+			httpStatus: http.StatusOK,
+			existingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				genActiveServiceAccount("1", "test-1", "editors", "plan9-ID"),
+			},
+			existingKubernetesObjs: []runtime.Object{
+				test.GenSecret("plan9-ID", "serviceaccount-1", "test-1", "1"),
+				test.GenSecret("plan10-ID", "serviceaccount-2", "test-2", "2"),
+				test.GenSecret("plan9-ID", "serviceaccount-1", "test-3", "3"),
+				test.GenSecret("plan11-ID", "serviceaccount-3", "test-4", "4"),
+			},
+			existingAPIUser: *test.GenAPIUser("john", "john@acme.com"),
+			projectToSync:   "plan9-ID",
+			saToSync:        "1",
+			expectedTokens: []apiv1.PublicServiceAccountToken{
+				genPublicServiceAccountToken("sa-token-1", "test-1", expiry),
+				genPublicServiceAccountToken("sa-token-3", "test-3", expiry),
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s/tokens", tc.projectToSync, tc.saToSync), strings.NewReader(""))
+			res := httptest.NewRecorder()
+
+			ep, _, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.httpStatus {
+				t.Fatalf("expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
+
+			actualSA := test.NewServiceAccountTokenV1SliceWrapper{}
+			actualSA.DecodeOrDie(res.Body, t).Sort()
+
+			wrappedExpectedToken := test.NewServiceAccountTokenV1SliceWrapper(tc.expectedTokens)
+			wrappedExpectedToken.Sort()
+
+			actualSA.EqualOrDie(wrappedExpectedToken, t)
+
+		})
+	}
+}
+
+func genPublicServiceAccountToken(id, name string, expiry apiv1.Time) apiv1.PublicServiceAccountToken {
+	token := apiv1.PublicServiceAccountToken{}
+	token.ID = id
+	token.Name = name
+	token.Expiry = expiry
+	return token
+}
