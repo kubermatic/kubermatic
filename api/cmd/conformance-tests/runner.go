@@ -31,6 +31,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -502,6 +503,7 @@ func (r *testRunner) setupNodes(log *logrus.Entry, scenarioName string, cluster 
 	if err != nil {
 		return fmt.Errorf("failed to get MachineDeployment from NodeDeployment: %v", err)
 	}
+
 	if err := retryNAttempts(defaultAPIRetries, func(attempt int) error {
 		if err := client.Create(context.TODO(), machineDeployment); err != nil {
 			if kerrors.IsAlreadyExists(err) {
@@ -516,6 +518,24 @@ func (r *testRunner) setupNodes(log *logrus.Entry, scenarioName string, cluster 
 		return nil
 	}); err != nil {
 		return fmt.Errorf("failed to create MachineDeployment %s after %d attempts: %v", machineDeployment.Name, defaultAPIRetries, err)
+	}
+
+	// Make sure replicas matches nodeDeployment replicas, this may differ on the second run on upgrade tests
+	// We dont explicitly catch that, as we ignore kerrors.IsAlreadyExists when creating the machineDeployment
+	// This is a very poor persons replication of `EnsureResources`, the problem is we want to use the apis `machine.Deployment`
+	// func which always returns a new MachineDeployment
+	if err := retryNAttempts(defaultAPIRetries, func(_ int) error {
+		mdName := machineDeployment.Name
+		if err := client.Get(context.TODO(), types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: mdName}, machineDeployment); err != nil {
+			return fmt.Errorf("failed to get MachineDeployment %q: %v", mdName, err)
+		}
+		if *machineDeployment.Spec.Replicas == nodeDeployment.Spec.Replicas {
+			return nil
+		}
+		machineDeployment.Spec.Replicas = &nodeDeployment.Spec.Replicas
+		return client.Update(context.TODO(), machineDeployment)
+	}); err != nil {
+		return fmt.Errorf("failed to ensure machineDeployment has desired number of replicas: %v", err)
 	}
 	log.Infof("Successfully created %d machine(s)!", machineDeployment.Spec.Replicas)
 
