@@ -27,7 +27,7 @@ const (
 	subnetFirstAddress = "192.168.1.2"
 	subnetLastAddress  = "192.168.1.254"
 
-	kubermaticNamePrefix = "kubermatic-"
+	resourceNamePrefix = "kubernetes-"
 )
 
 var (
@@ -155,7 +155,7 @@ func deleteSecurityGroup(netClient *gophercloud.ServiceClient, sgName string) er
 
 func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, clusterName string) (*ossecuritygroups.SecGroup, error) {
 	gres := ossecuritygroups.Create(netClient, ossecuritygroups.CreateOpts{
-		Name:        kubermaticNamePrefix + clusterName,
+		Name:        resourceNamePrefix + clusterName,
 		Description: "Contains security rules for the kubermatic worker nodes",
 	})
 	if gres.Err != nil {
@@ -218,7 +218,7 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, cluster
 func createKubermaticNetwork(netClient *gophercloud.ServiceClient, clusterName string) (*osnetworks.Network, error) {
 	iTrue := true
 	res := osnetworks.Create(netClient, osnetworks.CreateOpts{
-		Name:         kubermaticNamePrefix + clusterName,
+		Name:         resourceNamePrefix + clusterName,
 		AdminStateUp: &iTrue,
 	})
 	if res.Err != nil {
@@ -259,7 +259,7 @@ func deleteRouter(netClient *gophercloud.ServiceClient, routerID string) error {
 func createKubermaticSubnet(netClient *gophercloud.ServiceClient, clusterName, networkID string, dnsServers []string) (*ossubnets.Subnet, error) {
 	iTrue := true
 	res := ossubnets.Create(netClient, ossubnets.CreateOpts{
-		Name:       kubermaticNamePrefix + clusterName,
+		Name:       resourceNamePrefix + clusterName,
 		NetworkID:  networkID,
 		IPVersion:  gophercloud.IPv4,
 		CIDR:       subnetCIDR,
@@ -291,7 +291,7 @@ func createKubermaticRouter(netClient *gophercloud.ServiceClient, clusterName, e
 	}
 
 	res := osrouters.Create(netClient, osrouters.CreateOpts{
-		Name:         kubermaticNamePrefix + clusterName,
+		Name:         resourceNamePrefix + clusterName,
 		AdminStateUp: &iTrue,
 		GatewayInfo:  &gwi,
 	})

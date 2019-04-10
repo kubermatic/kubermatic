@@ -1,6 +1,6 @@
 metadata:
   creationTimestamp: null
-  generateName: machine-kubermatic-vsphere-1a2b3c4d5e-
+  generateName: worker-
   namespace: kube-system
 spec:
   metadata:
