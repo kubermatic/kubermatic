@@ -74,18 +74,24 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	}
 
 	// check that all Deployments are available
-	if err := r.ensureDeployments(cluster, data); err != nil {
-		return err
+	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		if err := r.ensureDeployments(cluster, data); err != nil {
+			return err
+		}
 	}
 
 	// check that all CronJobs are created
-	if err := r.ensureCronJobs(cluster, data); err != nil {
-		return err
+	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		if err := r.ensureCronJobs(cluster, data); err != nil {
+			return err
+		}
 	}
 
 	// check that all PodDisruptionBudgets are created
-	if err := r.ensurePodDisruptionBudgets(cluster, data); err != nil {
-		return err
+	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		if err := r.ensurePodDisruptionBudgets(cluster, data); err != nil {
+			return err
+		}
 	}
 
 	// check that all StatefulSets are created
@@ -172,22 +178,17 @@ func (r *Reconciler) ensureServices(c *kubermaticv1.Cluster, data *resources.Tem
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
 func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuthentication bool) []reconciling.NamedDeploymentCreatorGetter {
-	creators := []reconciling.NamedDeploymentCreatorGetter{
+	return []reconciling.NamedDeploymentCreatorGetter{
 		openvpn.DeploymentCreator(data),
 		dns.DeploymentCreator(data),
+		apiserver.DeploymentCreator(data, enableAPIserverOIDCAuthentication),
+		scheduler.DeploymentCreator(data),
+		controllermanager.DeploymentCreator(data),
+		machinecontroller.DeploymentCreator(data),
+		machinecontroller.WebhookDeploymentCreator(data),
+		metricsserver.DeploymentCreator(data),
+		usercluster.DeploymentCreator(data, false),
 	}
-
-	if cluster := data.Cluster(); cluster != nil && cluster.Annotations["kubermatic.io/openshift"] == "" {
-		creators = append(creators, apiserver.DeploymentCreator(data, enableAPIserverOIDCAuthentication))
-		creators = append(creators, scheduler.DeploymentCreator(data))
-		creators = append(creators, controllermanager.DeploymentCreator(data))
-		creators = append(creators, machinecontroller.DeploymentCreator(data))
-		creators = append(creators, machinecontroller.WebhookDeploymentCreator(data))
-		creators = append(creators, metricsserver.DeploymentCreator(data))
-		creators = append(creators, usercluster.DeploymentCreator(data, false))
-	}
-
-	return creators
 }
 
 func (r *Reconciler) ensureDeployments(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {

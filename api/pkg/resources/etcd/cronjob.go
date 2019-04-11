@@ -7,6 +7,7 @@ import (
 
 	"github.com/Masterminds/sprig"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -15,8 +16,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type cronJobCreatorData interface {
+	Cluster() *kubermaticv1.Cluster
+	ImageRegistry(string) string
+	GetClusterRef() metav1.OwnerReference
+}
+
 // CronJobCreator returns the func to create/update the etcd defragger cronjob
-func CronJobCreator(data *resources.TemplateData) reconciling.NamedCronJobCreatorGetter {
+func CronJobCreator(data cronJobCreatorData) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
 		return resources.EtcdDefragCronJobName, func(job *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
 			command, err := defraggerCommand(data)
@@ -75,7 +82,7 @@ type defraggerCommandTplData struct {
 	KeyFile     string
 }
 
-func defraggerCommand(data *resources.TemplateData) ([]string, error) {
+func defraggerCommand(data cronJobCreatorData) ([]string, error) {
 	tpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(defraggerCommandTpl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse etcd command template: %v", err)
