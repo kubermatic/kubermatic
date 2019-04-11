@@ -434,6 +434,8 @@ func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *opens
 	return []reconciling.NamedDeploymentCreatorGetter{openshiftresources.APIDeploymentCreator(ctx, osData),
 		openshiftresources.ControllerManagerDeploymentCreator(ctx, osData),
 		openshiftresources.MachineController(osData),
+		openvpn.DeploymentCreator(osData),
+		dns.DeploymentCreator(osData),
 		machinecontroller.WebhookDeploymentCreator(osData),
 		usercluster.DeploymentCreator(osData, true)}
 }

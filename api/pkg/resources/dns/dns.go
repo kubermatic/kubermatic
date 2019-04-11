@@ -48,8 +48,14 @@ func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 	}
 }
 
+type deploymentCreatorData interface {
+	Cluster() *kubermaticv1.Cluster
+	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
+	ImageRegistry(string) string
+}
+
 // DeploymentCreator returns the function to create and update the DNS resolver deployment
-func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.DNSResolverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.DNSResolverDeploymentName
