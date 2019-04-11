@@ -1791,18 +1791,16 @@
   revision = "c63bf6f67ab631a449b6eb76dfe29458441051e0"
 
 [[projects]]
-  digest = "1:cb58d7696403ecdf6fcdcfe5d8c0523977ecdfa0f226567d7715c7bfa471b2fc"
+  digest = "1:f9536a0685b75eef97e368e810d124641afc4185d7c619a67e3ac2f5af2fe9a1"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
     "pkg/cache",
-    "pkg/cache/informertest",
     "pkg/cache/internal",
     "pkg/client",
     "pkg/client/apiutil",
     "pkg/client/config",
     "pkg/client/fake",
     "pkg/controller",
-    "pkg/controller/controllertest",
     "pkg/event",
     "pkg/handler",
     "pkg/internal/controller",
@@ -2006,7 +2004,6 @@
     "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset",
     "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1",
     "sigs.k8s.io/controller-runtime/pkg/cache",
-    "sigs.k8s.io/controller-runtime/pkg/cache/informertest",
     "sigs.k8s.io/controller-runtime/pkg/client",
     "sigs.k8s.io/controller-runtime/pkg/client/config",
     "sigs.k8s.io/controller-runtime/pkg/client/fake",

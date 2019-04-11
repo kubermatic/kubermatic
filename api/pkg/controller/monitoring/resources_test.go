@@ -95,7 +95,7 @@ func TestCreateConfigMap(t *testing.T) {
 				return
 			}
 
-			if err := controller.ensureConfigMaps(test.cluster, data); err != nil {
+			if err := controller.ensureConfigMaps(context.Background(), test.cluster, data); err != nil {
 				t.Errorf("failed to ensure ConfigMap: %v", err)
 			}
 
