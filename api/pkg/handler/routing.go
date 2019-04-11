@@ -33,8 +33,9 @@ type Routing struct {
 	projectProvider           provider.ProjectProvider
 	privilegedProjectProvider provider.PrivilegedProjectProvider
 	logger                    log.Logger
-	oidcExtractorVerifier     auth.OIDCExtractorVerifier
 	oidcIssuerVerifier        auth.OIDCIssuerVerifier
+	tokenVerifiers            auth.TokenVerifier
+	tokenExtractors           auth.TokenExtractor
 	clusterProviders          map[string]provider.ClusterProvider
 	updateManager             common.UpdateManager
 	prometheusClient          prometheusapi.Client
@@ -52,8 +53,9 @@ func NewRouting(
 	serviceAccountProvider provider.ServiceAccountProvider,
 	projectProvider provider.ProjectProvider,
 	privilegedProject provider.PrivilegedProjectProvider,
-	oidcExtractorVerifier auth.OIDCExtractorVerifier,
 	oidcIssuerVerifier auth.OIDCIssuerVerifier,
+	tokenVerifiers auth.TokenVerifier,
+	tokenExtractors auth.TokenExtractor,
 	updateManager common.UpdateManager,
 	prometheusClient prometheusapi.Client,
 	projectMemberProvider provider.ProjectMemberProvider,
@@ -69,8 +71,9 @@ func NewRouting(
 		privilegedProjectProvider: privilegedProject,
 		cloudProviders:            cloudProviders,
 		logger:                    log.NewLogfmtLogger(os.Stderr),
-		oidcExtractorVerifier:     oidcExtractorVerifier,
 		oidcIssuerVerifier:        oidcIssuerVerifier,
+		tokenVerifiers:            tokenVerifiers,
+		tokenExtractors:           tokenExtractors,
 		updateManager:             updateManager,
 		prometheusClient:          prometheusClient,
 		projectMemberProvider:     projectMemberProvider,
@@ -82,6 +85,6 @@ func (r Routing) defaultServerOptions() []httptransport.ServerOption {
 	return []httptransport.ServerOption{
 		httptransport.ServerErrorLogger(r.logger),
 		httptransport.ServerErrorEncoder(errorEncoder),
-		httptransport.ServerBefore(middleware.OIDCTokenExtractor(r.oidcExtractorVerifier)),
+		httptransport.ServerBefore(middleware.TokenExtractor(r.tokenExtractors)),
 	}
 }
