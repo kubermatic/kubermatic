@@ -6,10 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"sync"
 
 	"github.com/golang/glog"
 	"github.com/heptiolabs/healthcheck"
+
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,16 +39,17 @@ func Add(
 	caCert *x509.Certificate,
 	clusterURL *url.URL,
 	openvpnServerPort int,
-	registerReconciledCheck func(name string, check healthcheck.Check)) error {
+	registerReconciledCheck func(name string, check healthcheck.Check),
+	openVPNCA *resources.ECDSAKeyPair) error {
 	reconciler := &reconciler{
 		Client:            mgr.GetClient(),
 		cache:             mgr.GetCache(),
 		openshift:         openshift,
-		rLock:             &sync.Mutex{},
 		namespace:         namespace,
 		caCert:            caCert,
 		clusterURL:        clusterURL,
 		openvpnServerPort: openvpnServerPort,
+		openVPNCA:         openVPNCA,
 	}
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconciler})
 	if err != nil {
@@ -107,8 +109,6 @@ func Add(
 
 	// A very simple but limited way to express the first successful reconciling to the seed cluster
 	registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciled_successfully_once"), func() error {
-		reconciler.rLock.Lock()
-		defer reconciler.rLock.Unlock()
 		if !reconciler.reconciledSuccessfullyOnce {
 			return errors.New("no successful reconciliation so far")
 		}
@@ -127,8 +127,8 @@ type reconciler struct {
 	caCert            *x509.Certificate
 	clusterURL        *url.URL
 	openvpnServerPort int
+	openVPNCA         *resources.ECDSAKeyPair
 
-	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
 }
 
@@ -139,8 +139,6 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, err
 	}
 
-	r.rLock.Lock()
-	defer r.rLock.Unlock()
 	r.reconciledSuccessfullyOnce = true
 	return reconcile.Result{}, nil
 }

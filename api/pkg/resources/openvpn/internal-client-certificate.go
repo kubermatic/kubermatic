@@ -23,16 +23,3 @@ func InternalClientCertificateCreator(data internalClientCertificateCreatorData)
 		)
 	}
 }
-
-// UserClusterClientCertificateCreator returns a function to create/update the secret with the client certificate for the openvpn client in the user
-// cluster
-func UserClusterClientCertificateCreator(ca *resources.ECDSAKeyPair) reconciling.SecretCreator {
-	return certificates.GetECDSAClientCertificateCreator(
-		resources.OpenVPNClientCertificatesSecretName,
-		"user-cluster-client",
-		[]string{},
-		resources.OpenVPNInternalClientCertSecretKey,
-		resources.OpenVPNInternalClientKeySecretKey,
-		func() (*resources.ECDSAKeyPair, error) { return ca, nil },
-	)
-}
