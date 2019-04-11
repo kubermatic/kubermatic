@@ -89,7 +89,7 @@ func runAllControllers(workerCnt int,
 	var g run.Group
 
 	// Add the manager first as other controllers may rely on its cache being ready
-	g.Add(func() error { return mgr.Start(done) }, func(_ error) { cancel() })
+	g.Add(func() error { return fmt.Errorf("mgr finished/died: %v", mgr.Start(done)) }, func(_ error) { cancel() })
 
 	for name, controller := range controllers {
 		execute, interrupt := getControllerStarter(workerCnt, done, cancel, name, controller)
@@ -179,20 +179,15 @@ func createBackupController(ctrlCtx *controllerContext) (runner, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse %s as duration: %v", ctrlCtx.runOptions.backupInterval, err)
 	}
-	return backupcontroller.New(
+	return nil, backupcontroller.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
 		*storeContainer,
 		*cleanupContainer,
 		backupInterval,
 		ctrlCtx.runOptions.backupContainerImage,
 		backupcontroller.NewMetrics(),
-		ctrlCtx.kubermaticClient,
-		ctrlCtx.kubeClient,
-		ctrlCtx.dynamicClient,
-		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
-		ctrlCtx.kubeInformerFactory.Batch().V1beta1().CronJobs(),
-		ctrlCtx.kubeInformerFactory.Batch().V1().Jobs(),
-		ctrlCtx.kubeInformerFactory.Core().V1().Secrets(),
-		ctrlCtx.kubeInformerFactory.Core().V1().Services(),
 	)
 }
 
