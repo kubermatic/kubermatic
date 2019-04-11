@@ -1,6 +1,7 @@
 package kubeletdnat
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net"
@@ -8,35 +9,35 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
+	"github.com/go-test/deep"
 	"github.com/golang/glog"
 
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
-	k8sinformersV1 "k8s.io/client-go/informers/core/v1"
-	"k8s.io/client-go/kubernetes"
-	k8slistersV1 "k8s.io/client-go/listers/core/v1"
-	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
 	// queueKey is the constant key added to the queue for deduplication.
 	queueKey = "some node"
+
+	ControllerName = "kubermatic_kubelet_dnat_controller"
 )
 
-// Controller updates iptable rules to match node addresses.
+// Reconciler updates iptable rules to match node addresses.
 // Every node address gets a translation to the respective node-access (vpn) address.
-type Controller struct {
-	client     kubernetes.Interface
-	nodeLister k8slistersV1.NodeLister
-	queue      workqueue.RateLimitingInterface
+type Reconciler struct {
+	ctrlruntimeclient.Client
 
 	nodeTranslationChainName string
 	nodeAccessNetwork        net.IP
@@ -53,83 +54,75 @@ type dnatRule struct {
 }
 
 // NewController creates a new controller for the specified data.
-func NewController(
-	client kubernetes.Interface,
-	nodeInformer k8sinformersV1.NodeInformer,
+func Add(
+	mgr manager.Manager,
 	nodeTranslationChainName string,
 	nodeAccessNetwork net.IP,
-	vpnInterface string) *Controller {
+	vpnInterface string) error {
 
-	ctrl := &Controller{
-		client:                   client,
-		nodeLister:               nodeInformer.Lister(),
-		queue:                    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "kubetlet_dnat_node"),
+	reconciler := &Reconciler{
+		Client:                   mgr.GetClient(),
 		nodeTranslationChainName: nodeTranslationChainName,
 		nodeAccessNetwork:        nodeAccessNetwork,
 		vpnInterface:             vpnInterface,
 	}
 
-	nodeInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    func(_ interface{}) { ctrl.queue.Add(queueKey) },
-		DeleteFunc: func(_ interface{}) { ctrl.queue.Add(queueKey) },
-		UpdateFunc: func(oldObj, newObj interface{}) {
-			oldNode := oldObj.(*corev1.Node)
-			newNode := newObj.(*corev1.Node)
-			if equality.Semantic.DeepEqual(oldNode.Status.Addresses, newNode.Status.Addresses) {
-				return
+	ctrlOptions := controller.Options{
+		Reconciler:              reconciler,
+		MaxConcurrentReconciles: 1,
+	}
+	c, err := controller.New(ControllerName, mgr, ctrlOptions)
+	if err != nil {
+		return err
+	}
+
+	return c.Watch(&source.Kind{Type: &corev1.Node{}}, &handler.Funcs{
+		CreateFunc:  func(e event.CreateEvent, queue workqueue.RateLimitingInterface) { queue.Add(queueKey) },
+		DeleteFunc:  func(e event.DeleteEvent, queue workqueue.RateLimitingInterface) { queue.Add(queueKey) },
+		GenericFunc: func(e event.GenericEvent, queue workqueue.RateLimitingInterface) { queue.Add(queueKey) },
+		UpdateFunc: func(e event.UpdateEvent, queue workqueue.RateLimitingInterface) {
+			newNode, ok := e.ObjectNew.(*corev1.Node)
+			if !ok {
+				glog.Warningf("Object from event was not a *corev1.Node. Instead got %T. Triggering a sync anyway", e.ObjectNew)
+				queue.Add(queueKey)
 			}
-			ctrl.queue.Add(queueKey)
+			oldNode, ok := e.ObjectOld.(*corev1.Node)
+			if !ok {
+				glog.Warningf("Object from event was not a *corev1.Node. Instead got %T. Triggering a sync anyway", e.ObjectOld)
+				queue.Add(queueKey)
+			}
+
+			// Only sync if nodes changed their addresses. Since Nodes get updated every 5 sec due to the HeartBeat
+			// it would otherwise cause a lot of useless syncs
+			if diff := deep.Equal(newNode.Status.Addresses, oldNode.Status.Addresses); diff != nil {
+				queue.Add(queueKey)
+			}
 		},
 	})
-	return ctrl
 }
 
-// Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed.
-func (ctrl *Controller) Run(stopCh <-chan struct{}) {
-	defer runtime.HandleCrash()
-	go wait.Until(func() { ctrl.queue.Add(queueKey) }, time.Second*30, stopCh)
-	go wait.Until(ctrl.runWorker, time.Second, stopCh)
-	<-stopCh
-}
+func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-func (ctrl *Controller) runWorker() {
-	for ctrl.processNextItem() {
+	// Add a wrapping here so we can emit an event on error
+	err := r.syncDnatRules(ctx)
+	if err != nil {
+		glog.Errorf("Failed reconciling: %v", err)
 	}
+	return reconcile.Result{}, err
 }
 
-func (ctrl *Controller) processNextItem() bool {
-	key, quit := ctrl.queue.Get()
-	if quit {
-		return false
-	}
-	defer ctrl.queue.Done(key)
-
-	if err := ctrl.syncDnatRules(); err != nil {
-		glog.V(0).Infof("Error syncing %v: %v", key, err)
-
-		// Re-enqueue the key rate limited. Based on the rate limiter on the
-		// queue and the re-enqueue history, the key will be processed later again.
-		ctrl.queue.AddRateLimited(key)
-		return true
-	}
-
-	// Forget about the #AddRateLimited history of the key on every successful synchronization.
-	// This ensures that future processing of updates for this key is not delayed because of
-	// an outdated error history.
-	ctrl.queue.Forget(key)
-	return true
-}
-
-func (ctrl *Controller) getDesiredRules(nodes []*corev1.Node) []string {
+func (r *Reconciler) getDesiredRules(nodes []corev1.Node) []string {
 	rules := []string{}
 	for _, node := range nodes {
-		nodeRules, err := ctrl.getRulesForNode(node)
+		nodeRules, err := r.getRulesForNode(node)
 		if err != nil {
 			glog.Errorf("could not generate rules for node %s: %v - skipping", node.Name, err)
 			continue
 		}
 		for _, rule := range nodeRules {
-			rules = append(rules, rule.RestoreLine(ctrl.nodeTranslationChainName))
+			rules = append(rules, rule.RestoreLine(r.nodeTranslationChainName))
 		}
 	}
 	sort.Strings(rules)
@@ -138,21 +131,15 @@ func (ctrl *Controller) getDesiredRules(nodes []*corev1.Node) []string {
 
 // syncDnatRules will recreate the complete set of translation rules
 // based on the list of nodes.
-func (ctrl *Controller) syncDnatRules() error {
-	glog.V(6).Infof("Syncing DNAT rules")
-
+func (r *Reconciler) syncDnatRules(ctx context.Context) error {
 	// Get nodes from lister, make a copy.
-	cachedNodes, err := ctrl.nodeLister.List(labels.Everything())
-	if err != nil {
-		return fmt.Errorf("failed to receive nodes from lister: %v", err)
-	}
-	nodes := make([]*corev1.Node, len(cachedNodes))
-	for i := range cachedNodes {
-		nodes[i] = cachedNodes[i].DeepCopy()
+	nodeList := &corev1.NodeList{}
+	if err := r.List(ctx, &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
+		return fmt.Errorf("failed to list nodes: %v", err)
 	}
 
 	// Create the set of rules from all listed nodes.
-	desiredRules := ctrl.getDesiredRules(nodes)
+	desiredRules := r.getDesiredRules(nodeList.Items)
 
 	// Get the actual state (current iptable rules)
 	allActualRules, err := execSave()
@@ -160,27 +147,27 @@ func (ctrl *Controller) syncDnatRules() error {
 		return fmt.Errorf("failed to read iptable rules: %v", err)
 	}
 	// filter out everything that's not relevant for us
-	actualRules, haveJump, haveMasquerade := ctrl.filterDnatRules(allActualRules, ctrl.nodeTranslationChainName)
+	actualRules, haveJump, haveMasquerade := r.filterDnatRules(allActualRules, r.nodeTranslationChainName)
 
 	if !equality.Semantic.DeepEqual(actualRules, desiredRules) {
 		// Need to update chain in kernel.
-		glog.V(6).Infof("Updating iptables chain in kernel (%d rules).", len(desiredRules))
-		if err := ctrl.applyRules(desiredRules); err != nil {
+		glog.V(4).Infof("Updating iptables chain in kernel (%d rules).", len(desiredRules))
+		if err := r.applyRules(desiredRules); err != nil {
 			return fmt.Errorf("failed to apply iptable rules: %v", err)
 		}
 	}
 
 	// Ensure to jump into the translation chain.
 	if !haveJump && len(desiredRules) > 0 {
-		if err := execIptables([]string{"-t", "nat", "-I", "OUTPUT", "-j", ctrl.nodeTranslationChainName}); err != nil {
+		if err := execIptables([]string{"-t", "nat", "-I", "OUTPUT", "-j", r.nodeTranslationChainName}); err != nil {
 			return fmt.Errorf("failed to create jump rule in OUTPUT chain: %v", err)
 		}
-		glog.V(2).Infof("Inserted OUTPUT rule to jump into chain %s.", ctrl.nodeTranslationChainName)
+		glog.V(2).Infof("Inserted OUTPUT rule to jump into chain %s.", r.nodeTranslationChainName)
 	}
 
 	// Ensure to masquerade outgoing vpn packets.
 	if !haveMasquerade {
-		if err := execIptables([]string{"-t", "nat", "-I", "POSTROUTING", "-o", ctrl.vpnInterface, "-j", "MASQUERADE"}); err != nil {
+		if err := execIptables([]string{"-t", "nat", "-I", "POSTROUTING", "-o", r.vpnInterface, "-j", "MASQUERADE"}); err != nil {
 			return fmt.Errorf("failed to create masquerade rule in POSTROUTING chain: %v", err)
 		}
 		glog.V(2).Infof("Inserted POSTROUTING rule to masquerade vpn traffic.")
@@ -190,7 +177,7 @@ func (ctrl *Controller) syncDnatRules() error {
 }
 
 // getNodeAddresses returns all relevant addresses of a node.
-func getNodeAddresses(node *corev1.Node) []string {
+func getNodeAddresses(node corev1.Node) []string {
 	addressTypes := []corev1.NodeAddressType{corev1.NodeExternalIP, corev1.NodeInternalIP}
 	addresses := []string{}
 	for _, addressType := range addressTypes {
@@ -204,7 +191,7 @@ func getNodeAddresses(node *corev1.Node) []string {
 	return addresses
 }
 
-func getInternalNodeAddress(node *corev1.Node) (string, error) {
+func getInternalNodeAddress(node corev1.Node) (string, error) {
 	for _, address := range node.Status.Addresses {
 		if address.Type == corev1.NodeInternalIP {
 			return address.Address, nil
@@ -215,7 +202,7 @@ func getInternalNodeAddress(node *corev1.Node) (string, error) {
 
 // getRulesForNode determines the used kubelet address of a node
 // and creates a dnatRule from it.
-func (ctrl *Controller) getRulesForNode(node *corev1.Node) ([]*dnatRule, error) {
+func (r *Reconciler) getRulesForNode(node corev1.Node) ([]*dnatRule, error) {
 	rules := []*dnatRule{}
 
 	port := int(node.Status.DaemonEndpoints.KubeletEndpoint.Port)
@@ -241,9 +228,9 @@ func (ctrl *Controller) getRulesForNode(node *corev1.Node) ([]*dnatRule, error) 
 		//    changing the first two octets of the node-ip-address into the
 		//    respective two octets of the node-access-network.
 		//    The last two octets are the last two octets of the internal address
-		l := len(ctrl.nodeAccessNetwork)
+		l := len(r.nodeAccessNetwork)
 		newAddress := fmt.Sprintf("%d.%d.%s.%s",
-			ctrl.nodeAccessNetwork[l-4], ctrl.nodeAccessNetwork[l-3],
+			r.nodeAccessNetwork[l-4], r.nodeAccessNetwork[l-3],
 			octets[2], octets[3])
 		rule.translatedAddress = newAddress
 		rule.translatedPort = rule.originalTargetPort
@@ -256,8 +243,8 @@ func (ctrl *Controller) getRulesForNode(node *corev1.Node) ([]*dnatRule, error) 
 // applyRules creates a iptables-save file and pipes it to stdin of
 // a iptables-restore process for atomically setting new rules.
 // This function replaces a complete chain (removing all pre-existing rules).
-func (ctrl *Controller) applyRules(rules []string) error {
-	restore := []string{"*nat", fmt.Sprintf(":%s - [0:0]", ctrl.nodeTranslationChainName)}
+func (r *Reconciler) applyRules(rules []string) error {
+	restore := []string{"*nat", fmt.Sprintf(":%s - [0:0]", r.nodeTranslationChainName)}
 	restore = append(restore, rules...)
 	restore = append(restore, "COMMIT")
 
@@ -349,14 +336,14 @@ func (rule *dnatRule) RestoreLine(chain string) string {
 // filterDnatRules enumerates through all given rules and returns all
 // rules matching the given chain. It also returns two booleans to
 // indicate if the jump and the masquerade rule are present.
-func (ctrl *Controller) filterDnatRules(rules []string, chain string) ([]string, bool, bool) {
+func (r *Reconciler) filterDnatRules(rules []string, chain string) ([]string, bool, bool) {
 	out := []string{}
 	haveJump := false
 	haveMasquerade := false
 
 	rulePrefix := fmt.Sprintf("-A %s ", chain)
 	jumpPattern := fmt.Sprintf("-A OUTPUT -j %s", chain)
-	masqPattern := fmt.Sprintf("-A POSTROUTING -o %s -j MASQUERADE", ctrl.vpnInterface)
+	masqPattern := fmt.Sprintf("-A POSTROUTING -o %s -j MASQUERADE", r.vpnInterface)
 	for _, rule := range rules {
 		if rule == jumpPattern {
 			haveJump = true

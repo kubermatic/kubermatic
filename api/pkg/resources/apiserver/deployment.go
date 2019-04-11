@@ -126,7 +126,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
 			}
 
-			dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(data, "dnat-controller")
+			dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(data, "dnat-controller", fmt.Sprintf("https://127.0.0.1:%d", externalNodePort))
 			if err != nil {
 				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
 			}
@@ -451,7 +451,7 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  resources.KubeletDnatControllerKubeconfigSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					DefaultMode: resources.Int32(resources.DefaultAllReadOnlyMode),
 				},
 			},
 		},
