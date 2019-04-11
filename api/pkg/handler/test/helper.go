@@ -93,8 +93,9 @@ type newRoutingFunc func(
 	serviceAccountProvider provider.ServiceAccountProvider,
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
-	oidcExtractor auth.OIDCExtractorVerifier,
 	oidcIssuerVerifier auth.OIDCIssuerVerifier,
+	tokenVerifiers auth.TokenVerifier,
+	tokenExtractors auth.TokenExtractor,
 	prometheusClient prometheusapi.Client,
 	projectMemberProvider *kubernetes.ProjectMemberProvider,
 	versions []*version.MasterVersion,
@@ -159,7 +160,8 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		projectProvider,
 		privilegedProjectProvider,
 		fakeOIDCClient,
-		fakeOIDCClient, /*implements a different interface*/
+		fakeOIDCClient, /*implements auth.TokenVerifier */
+		fakeOIDCClient, /*implements auth.TokenExtractor */
 		prometheusClient,
 		projectMemberProvider,
 		versions,
