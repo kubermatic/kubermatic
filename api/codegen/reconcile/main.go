@@ -124,11 +124,10 @@ package reconciling
 
 import (
 	"fmt"
+	"context"
 
-	informerutil "github.com/kubermatic/kubermatic/api/pkg/util/informer"
-
-  "k8s.io/apimachinery/pkg/runtime"
-	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 {{ range .Resources }}
 {{- if .ResourceImportPath }}
@@ -190,12 +189,7 @@ func {{ .ResourceName }}ObjectWrapper(create {{ .ResourceName }}Creator) ObjectC
 }
 
 // Reconcile{{ .ResourceName }}s will create and update the {{ .ResourceName }}s coming from the passed {{ .ResourceName }}Creator slice
-func Reconcile{{ .ResourceName }}s(namedGetters []Named{{ .ResourceName }}CreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &{{ .ImportAlias }}.{{ .ResourceName }}{})
-	if err != nil {
-		return fmt.Errorf("failed to get {{ .ResourceName }} informer: %v", err)
-	}
-
+func Reconcile{{ .ResourceName }}s(ctx context.Context, namedGetters []Named{{ .ResourceName }}CreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := {{ .ResourceName }}ObjectWrapper(create)
@@ -203,7 +197,7 @@ func Reconcile{{ .ResourceName }}s(namedGetters []Named{{ .ResourceName }}Creato
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &{{ .ImportAlias }}.{{ .ResourceName }}{}); err != nil {
 			return fmt.Errorf("failed to ensure {{ .ResourceName }}: %v", err)
 		}
 	}

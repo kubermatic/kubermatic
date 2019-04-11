@@ -4,11 +4,6 @@ import (
 	"log"
 	"time"
 
-	"k8s.io/api/core/v1"
-
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/tools/cache"
-
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticfakeclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
@@ -19,7 +14,6 @@ import (
 	"k8s.io/client-go/informers"
 	kubefake "k8s.io/client-go/kubernetes/fake"
 
-	ctrlruntimefakeinformer "sigs.k8s.io/controller-runtime/pkg/cache/informertest"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -37,11 +31,6 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, time.Minute*5)
 
 	dynamicClient := ctrlruntimefakeclient.NewFakeClient(kubeObjects...)
-	dynamicCache := &ctrlruntimefakeinformer.FakeInformers{
-		InformersByGVK: map[schema.GroupVersionKind]cache.SharedIndexInformer{
-			v1.SchemeGroupVersion.WithKind("ConfigMap"): kubeInformerFactory.Core().V1().ConfigMaps().Informer(),
-		},
-	}
 
 	client, err := client.NewInternal(kubeInformerFactory.Core().V1().Secrets().Lister())
 	if err != nil {
@@ -63,7 +52,6 @@ func newTestController(kubeObjects []runtime.Object, kubermaticObjects []runtime
 		"",
 		[]byte{},
 
-		dynamicCache,
 		kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 		kubeInformerFactory.Core().V1().ServiceAccounts(),
 		kubeInformerFactory.Core().V1().ConfigMaps(),

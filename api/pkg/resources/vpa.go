@@ -1,20 +1,19 @@
 package resources
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
-	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 
 	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/cache"
-
-	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
-
-	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func getVPACreatorForPodTemplate(name string, pod corev1.PodSpec, controllerRef metav1.OwnerReference) reconciling.NamedVerticalPodAutoscalerCreatorGetter {
@@ -55,17 +54,15 @@ func getVPACreatorForPodTemplate(name string, pod corev1.PodSpec, controllerRef 
 // If creator functions for VPA's for Deployments should be returned, a deployment store must be passed in. Otherwise a StatefulSet store.
 // All resources must exist in the specified namespace.
 // The VPA resource will have the same selector as the Deployment/StatefulSet. The pod container limits will be set as VPA limits.
-func getVerticalPodAutoscalersForResource(names []string, namespace string, store cache.Store) ([]reconciling.NamedVerticalPodAutoscalerCreatorGetter, error) {
+func getVerticalPodAutoscalersForResource(ctx context.Context, client ctrlruntimeclient.Client, names []string, namespace string, obj runtime.Object) ([]reconciling.NamedVerticalPodAutoscalerCreatorGetter, error) {
 	var creators []reconciling.NamedVerticalPodAutoscalerCreatorGetter
 	for _, name := range names {
 		name := name
-		key := fmt.Sprintf("%s/%s", namespace, name)
-		obj, exists, err := store.GetByKey(key)
+		key := types.NamespacedName{Namespace: namespace, Name: name}
+
+		err := client.Get(ctx, key, obj)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get object '%s' from store: %v", key, err)
-		}
-		if !exists {
-			return nil, fmt.Errorf("object '%s' does not exist in the store", key)
 		}
 
 		gv := appsv1.SchemeGroupVersion
@@ -93,23 +90,13 @@ func getVerticalPodAutoscalersForResource(names []string, namespace string, stor
 // GetVerticalPodAutoscalersForAll will return functions to create VPA resource for all supplied Deployments and StatefulSets.
 // All resources must exist in the specified namespace.
 // The VPA resource will have the same selector as the Deployment/StatefulSet. The pod container limits will be set as VPA limits.
-func GetVerticalPodAutoscalersForAll(deploymentNames, statefulSetNames []string, namespace string, dynamicCache ctrlruntimecache.Cache) ([]reconciling.NamedVerticalPodAutoscalerCreatorGetter, error) {
-	deploymentStore, err := informer.GetSyncedStoreFromDynamicFactory(dynamicCache, &appsv1.Deployment{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get Deployment store: %v", err)
-	}
-
-	deploymentVPACreators, err := getVerticalPodAutoscalersForResource(deploymentNames, namespace, deploymentStore)
+func GetVerticalPodAutoscalersForAll(ctx context.Context, client ctrlruntimeclient.Client, deploymentNames, statefulSetNames []string, namespace string) ([]reconciling.NamedVerticalPodAutoscalerCreatorGetter, error) {
+	deploymentVPACreators, err := getVerticalPodAutoscalersForResource(ctx, client, deploymentNames, namespace, &appsv1.Deployment{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create VPA creator functions for Deployments: %v", err)
 	}
 
-	statefulSetStore, err := informer.GetSyncedStoreFromDynamicFactory(dynamicCache, &appsv1.StatefulSet{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get StatefulSet store: %v", err)
-	}
-
-	statefulSetVPACreators, err := getVerticalPodAutoscalersForResource(statefulSetNames, namespace, statefulSetStore)
+	statefulSetVPACreators, err := getVerticalPodAutoscalersForResource(ctx, client, statefulSetNames, namespace, &appsv1.StatefulSet{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create VPA creator functions for StatefulSets: %v", err)
 	}

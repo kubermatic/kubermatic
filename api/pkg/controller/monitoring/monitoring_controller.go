@@ -28,7 +28,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
-	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -48,7 +47,6 @@ type Controller struct {
 	kubeClient              kubernetes.Interface
 	dynamicClient           ctrlruntimeclient.Client
 	userClusterConnProvider userClusterConnectionProvider
-	dynamicCache            ctrlruntimecache.Cache
 
 	dcs                                              map[string]provider.DatacenterMeta
 	dc                                               string
@@ -97,7 +95,6 @@ func New(
 	inClusterPrometheusScrapingConfigsFile string,
 	dockerPullConfigJSON []byte,
 
-	dynamicCache ctrlruntimecache.Cache,
 	clusterInformer kubermaticv1informers.ClusterInformer,
 	serviceAccountInformer corev1informers.ServiceAccountInformer,
 	configMapInformer corev1informers.ConfigMapInformer,
@@ -113,7 +110,6 @@ func New(
 		kubeClient:              kubeClient,
 		dynamicClient:           dynamicClient,
 		userClusterConnProvider: userClusterConnProvider,
-		dynamicCache:            dynamicCache,
 
 		queue: workqueue.NewNamedRateLimitingQueue(
 			workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute),
@@ -280,6 +276,9 @@ func (c *Controller) handleChildObject(obj interface{}) {
 }
 
 func (c *Controller) sync(key string) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	clusterFromCache, err := c.clusterLister.Get(key)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
@@ -320,47 +319,47 @@ func (c *Controller) sync(key string) error {
 	}
 
 	// check that all service accounts are created
-	if err := c.ensureServiceAccounts(cluster, data); err != nil {
+	if err := c.ensureServiceAccounts(ctx, cluster, data); err != nil {
 		return err
 	}
 
 	// check that all roles are created
-	if err := c.ensureRoles(cluster); err != nil {
+	if err := c.ensureRoles(ctx, cluster); err != nil {
 		return err
 	}
 
 	// check that all role bindings are created
-	if err := c.ensureRoleBindings(cluster); err != nil {
+	if err := c.ensureRoleBindings(ctx, cluster); err != nil {
 		return err
 	}
 
 	// check that all secrets are created
-	if err := c.ensureSecrets(cluster, data); err != nil {
+	if err := c.ensureSecrets(ctx, cluster, data); err != nil {
 		return err
 	}
 
 	// check that all ConfigMaps are available
-	if err := c.ensureConfigMaps(cluster, data); err != nil {
+	if err := c.ensureConfigMaps(ctx, cluster, data); err != nil {
 		return err
 	}
 
 	// check that all Deployments are available
-	if err := c.ensureDeployments(cluster, data); err != nil {
+	if err := c.ensureDeployments(ctx, cluster, data); err != nil {
 		return err
 	}
 
 	// check that all StatefulSets are created
-	if err := c.ensureStatefulSets(cluster, data); err != nil {
+	if err := c.ensureStatefulSets(ctx, cluster, data); err != nil {
 		return err
 	}
 
 	// check that all VerticalPodAutoscaler's are created
-	if err := c.ensureVerticalPodAutoscalers(cluster); err != nil {
+	if err := c.ensureVerticalPodAutoscalers(ctx, cluster); err != nil {
 		return err
 	}
 
 	// check that all Services's are created
-	if err := c.ensureServices(cluster, data); err != nil {
+	if err := c.ensureServices(ctx, cluster, data); err != nil {
 		return err
 	}
 
