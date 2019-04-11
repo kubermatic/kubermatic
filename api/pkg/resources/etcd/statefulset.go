@@ -37,8 +37,17 @@ const (
 	ImageTag = "v3.3.9"
 )
 
+type etcdStatefulSetCreatorData interface {
+	Cluster() *kubermaticv1.Cluster
+	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
+	HasEtcdOperatorService() (bool, error)
+	ImageRegistry(string) string
+	EtcdDiskSize() resource.Quantity
+	GetClusterRef() metav1.OwnerReference
+}
+
 // StatefulSetCreator returns the function to reconcile the etcd StatefulSet
-func StatefulSetCreator(data *resources.TemplateData, enableDataCorruptionChecks bool) reconciling.NamedStatefulSetCreatorGetter {
+func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChecks bool) reconciling.NamedStatefulSetCreatorGetter {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return resources.EtcdStatefulSetName, func(set *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 			set.Name = resources.EtcdStatefulSetName

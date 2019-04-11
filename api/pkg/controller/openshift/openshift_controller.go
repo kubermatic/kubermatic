@@ -26,6 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -54,6 +55,10 @@ type OIDCConfig struct {
 	ClientSecret string
 }
 
+type Features struct {
+	EtcdDataCorruptionChecks bool
+}
+
 type Reconciler struct {
 	client.Client
 	scheme               *runtime.Scheme
@@ -62,10 +67,12 @@ type Reconciler struct {
 	dc                   string
 	overwriteRegistry    string
 	nodeAccessNetwork    string
+	etcdDiskSize         resource.Quantity
 	dockerPullConfigJSON []byte
 	workerName           string
 	externalURL          string
 	oidc                 OIDCConfig
+	features             Features
 }
 
 func Add(
@@ -74,10 +81,13 @@ func Add(
 	workerName string,
 	dc string,
 	dcs map[string]provider.DatacenterMeta,
-	overwriteRegistry, nodeAccessNetwork string,
+	overwriteRegistry,
+	nodeAccessNetwork string,
+	etcdDiskSize resource.Quantity,
 	dockerPullConfigJSON []byte,
 	externalURL string,
 	oidcConfig OIDCConfig,
+	features Features,
 ) error {
 	dynamicClient := mgr.GetClient()
 	reconciler := &Reconciler{
@@ -88,10 +98,12 @@ func Add(
 		dcs:                  dcs,
 		overwriteRegistry:    overwriteRegistry,
 		nodeAccessNetwork:    nodeAccessNetwork,
+		etcdDiskSize:         etcdDiskSize,
 		dockerPullConfigJSON: dockerPullConfigJSON,
 		workerName:           workerName,
 		externalURL:          externalURL,
 		oidc:                 oidcConfig,
+		features:             features,
 	}
 
 	c, err := controller.New(ControllerName, mgr,
@@ -185,6 +197,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		overwriteRegistry: r.overwriteRegistry,
 		nodeAccessNetwork: r.nodeAccessNetwork,
 		oidc:              r.oidc,
+		etcdDiskSize:      r.etcdDiskSize,
 	}
 
 	if err := r.address(ctx, cluster); err != nil {
@@ -201,6 +214,10 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	if err := r.secrets(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Secrets: %v", err)
+	}
+
+	if err := r.statefulSets(ctx, osData); err != nil {
+		return nil, fmt.Errorf("failed to reconcile StatefulSets: %v", err)
 	}
 
 	// Wait until the cloud provider infra is ready before attempting
@@ -407,6 +424,27 @@ func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
 		if err := reconciling.EnsureNamedObjectV2(ctx,
 			nn(osData.Cluster().Status.NamespaceName, secretName), reconciling.SecretObjectWrapper(secretCreator), r.Client, &corev1.Secret{}); err != nil {
 			return fmt.Errorf("failed to ensure Secret %s: %v", secretName, err)
+		}
+	}
+
+	return nil
+}
+
+func GetStatefulSetCreators(osData *openshiftData, enableDataCorruptionChecks bool) []reconciling.NamedStatefulSetCreatorGetter {
+	return []reconciling.NamedStatefulSetCreatorGetter{
+		etcd.StatefulSetCreator(osData, enableDataCorruptionChecks),
+	}
+}
+
+func (r *Reconciler) statefulSets(ctx context.Context, osData *openshiftData) error {
+	for _, namedStatefulSetCreator := range GetStatefulSetCreators(osData, r.features.EtcdDataCorruptionChecks) {
+		statefulSetName, statefulSetCreator := namedStatefulSetCreator()
+		if err := reconciling.EnsureNamedObjectV2(ctx,
+			nn(osData.Cluster().Status.NamespaceName, statefulSetName),
+			reconciling.StatefulSetObjectWrapper(statefulSetCreator),
+			r.Client,
+			&appsv1.StatefulSet{}); err != nil {
+			return fmt.Errorf("failed to ensure StatefulSet %q: %v", statefulSetName, err)
 		}
 	}
 

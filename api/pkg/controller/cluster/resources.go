@@ -52,8 +52,10 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	}
 
 	// check that all StatefulSets are created
-	if err := r.ensureStatefulSets(cluster, data); err != nil {
-		return err
+	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		if err := r.ensureStatefulSets(cluster, data); err != nil {
+			return err
+		}
 	}
 
 	// Wait until the cloud provider infra is ready before attempting

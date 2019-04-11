@@ -14,7 +14,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -56,7 +55,6 @@ type Controller struct {
 	overwriteRegistry                                string
 	nodePortRange                                    string
 	nodeAccessNetwork                                string
-	etcdDiskSize                                     resource.Quantity
 	inClusterPrometheusRulesFile                     string
 	inClusterPrometheusDisableDefaultRules           bool
 	inClusterPrometheusDisableDefaultScrapingConfigs bool
@@ -92,7 +90,6 @@ func New(
 	overwriteRegistry string,
 	nodePortRange string,
 	nodeAccessNetwork string,
-	etcdDiskSize string,
 	monitoringScrapeAnnotationPrefix string,
 	inClusterPrometheusRulesFile string,
 	inClusterPrometheusDisableDefaultRules bool,
@@ -126,7 +123,6 @@ func New(
 		overwriteRegistry:                                overwriteRegistry,
 		nodePortRange:                                    nodePortRange,
 		nodeAccessNetwork:                                nodeAccessNetwork,
-		etcdDiskSize:                                     resource.MustParse(etcdDiskSize),
 		monitoringScrapeAnnotationPrefix:                 monitoringScrapeAnnotationPrefix,
 		inClusterPrometheusRulesFile:                     inClusterPrometheusRulesFile,
 		inClusterPrometheusDisableDefaultRules:           inClusterPrometheusDisableDefaultRules,

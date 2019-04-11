@@ -121,6 +121,7 @@ func createOpenshiftController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.dcs,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodeAccessNetwork,
+		ctrlCtx.runOptions.etcdDiskSize,
 		ctrlCtx.dockerPullConfigJSON,
 		ctrlCtx.runOptions.externalURL,
 		openshiftcontroller.OIDCConfig{
@@ -129,7 +130,9 @@ func createOpenshiftController(ctrlCtx *controllerContext) (runner, error) {
 			ClientSecret: ctrlCtx.runOptions.oidcIssuerClientSecret,
 			IssuerURL:    ctrlCtx.runOptions.oidcIssuerURL,
 		},
-	); err != nil {
+		openshiftcontroller.Features{
+			EtcdDataCorruptionChecks: ctrlCtx.runOptions.featureGates.Enabled(EtcdDataCorruptionChecks),
+		}); err != nil {
 		return nil, fmt.Errorf("failed to add openshift controller to mgr: %v", err)
 	}
 	return nil, nil
@@ -217,7 +220,6 @@ func createMonitoringController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodePortRange,
 		ctrlCtx.runOptions.nodeAccessNetwork,
-		ctrlCtx.runOptions.etcdDiskSize,
 		ctrlCtx.runOptions.monitoringScrapeAnnotationPrefix,
 		ctrlCtx.runOptions.inClusterPrometheusRulesFile,
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultRules,

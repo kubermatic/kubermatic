@@ -15,6 +15,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	certutil "k8s.io/client-go/util/cert"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,6 +30,7 @@ type openshiftData struct {
 	overwriteRegistry string
 	nodeAccessNetwork string
 	oidc              OIDCConfig
+	etcdDiskSize      resource.Quantity
 }
 
 func (od *openshiftData) DC() *provider.DatacenterMeta {
@@ -246,4 +248,16 @@ func (od *openshiftData) OIDCClientID() string {
 
 func (od *openshiftData) OIDCClientSecret() string {
 	return od.oidc.ClientSecret
+}
+
+// We didn't have openshift at the time we used the Etcd operator so
+// we can safely assume it doesn't exist
+// We must keep this in the etcd creators data for eternity thought, thats
+// why its implemented here
+func (od *openshiftData) HasEtcdOperatorService() (bool, error) {
+	return false, nil
+}
+
+func (od *openshiftData) EtcdDiskSize() resource.Quantity {
+	return od.etcdDiskSize
 }

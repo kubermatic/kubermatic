@@ -9,6 +9,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,4 +29,6 @@ type openshiftData interface {
 	GetRootCAWithContext(context.Context) (*triple.KeyPair, error)
 	InClusterApiserverURL() (*url.URL, error)
 	DC() *provider.DatacenterMeta
+	HasEtcdOperatorService() (bool, error)
+	EtcdDiskSize() resource.Quantity
 }
