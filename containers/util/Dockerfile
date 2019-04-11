@@ -1,6 +1,6 @@
 FROM alpine:3.9
 
-ENV MC_VERSION=RELEASE.2019-04-03T17-59-57Z \
+ENV MC_VERSION=RELEASE.2019-04-10T22-11-28Z \
     KUBECTL_VERSION=v1.14.1 \
     HELM_VERSION=v2.13.1 \
     VAULT_VERSION=0.11.6
@@ -13,7 +13,7 @@ RUN apk add --no-cache -U \
     rsync \
     unzip
 
-RUN curl -Lo /usr/bin/mc https://dl.minio.io/client/mc/release/linux-amd64/mc.${MC_VERSION} && \
+RUN curl -Lo /usr/bin/mc https://dl.minio.io/client/mc/release/linux-amd64/archive/mc.${MC_VERSION} && \
     chmod +x /usr/bin/mc
 
 RUN curl -Lo /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
