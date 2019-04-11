@@ -140,7 +140,7 @@ func (c *Controller) ensureVerticalPodAutoscalers(ctx context.Context, cluster *
 		deploymentNames,
 		statefulSetNames,
 		cluster.Status.NamespaceName,
-	)
+		c.features.VPA)
 	if err != nil {
 		return fmt.Errorf("failed to create the functions to handle VPA resources: %v", err)
 	}

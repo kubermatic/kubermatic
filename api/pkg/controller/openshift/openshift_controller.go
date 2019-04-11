@@ -32,6 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
@@ -59,6 +60,7 @@ type OIDCConfig struct {
 
 type Features struct {
 	EtcdDataCorruptionChecks bool
+	VPA                      bool
 }
 
 type Reconciler struct {
@@ -127,20 +129,26 @@ func Add(
 		}
 		return []reconcile.Request{}
 	})}
-	if err := c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, enqueueClusterForNamespacedObject); err != nil {
-		return fmt.Errorf("failed to create watch for ConfigMaps: %v", err)
-	}
-	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, enqueueClusterForNamespacedObject); err != nil {
-		return fmt.Errorf("failed to create watch for Secrets: %v", err)
-	}
-	if err := c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, enqueueClusterForNamespacedObject); err != nil {
-		return fmt.Errorf("failed to create watch for Deployments: %v", err)
-	}
-	if err := c.Watch(&source.Kind{Type: &corev1.Namespace{}}, &handler.EnqueueRequestForOwner{OwnerType: &kubermaticv1.Cluster{}}); err != nil {
-		return fmt.Errorf("failed to create watch for Namespaces: %v", err)
+
+	typesToWatch := []runtime.Object{
+		&corev1.Service{},
+		&corev1.ConfigMap{},
+		&corev1.Secret{},
+		&corev1.Namespace{},
+		&appsv1.StatefulSet{},
+		&appsv1.Deployment{},
+		&batchv1beta1.CronJob{},
+		&policyv1beta1.PodDisruptionBudget{},
+		&autoscalingv1beta2.VerticalPodAutoscaler{},
 	}
 
-	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{})
+	for _, t := range typesToWatch {
+		if err := c.Watch(&source.Kind{Type: t}, enqueueClusterForNamespacedObject); err != nil {
+			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
+		}
+	}
+
+	return nil
 }
 
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
@@ -245,6 +253,10 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	if err := r.podDisruptionBudgets(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile PodDisruptionBudgets: %v", err)
+	}
+
+	if err := r.verticalPodAutoscalers(ctx, osData); err != nil {
+		return nil, fmt.Errorf("failed to reconcile VerticalPodAutoscalers: %v", err)
 	}
 
 	if err := r.syncHeath(ctx, osData); err != nil {
@@ -538,6 +550,35 @@ func (r *Reconciler) podDisruptionBudgets(ctx context.Context, osData *openshift
 			return fmt.Errorf("failed to ensure PodDisruptionBudget %q: %v", pdbName, err)
 		}
 	}
+	return nil
+}
+
+func (r *Reconciler) verticalPodAutoscalers(ctx context.Context, osData *openshiftData) error {
+	controlPlaneDeploymentNames := []string{
+		resources.DNSResolverDeploymentName,
+		resources.MachineControllerDeploymentName,
+		resources.MachineControllerWebhookDeploymentName,
+		resources.OpenVPNServerDeploymentName,
+		openshiftresources.ApiserverDeploymentName,
+		openshiftresources.ControllerManagerDeploymentName}
+
+	creatorGetters, err := resources.GetVerticalPodAutoscalersForAll(ctx, r.Client, controlPlaneDeploymentNames, []string{resources.EtcdStatefulSetName}, osData.Cluster().Status.NamespaceName, r.features.VPA)
+	if err != nil {
+		return fmt.Errorf("failed to create the functions to handle VPA resources: %v", err)
+	}
+
+	for _, vpaCreatorGetter := range creatorGetters {
+		name, creator := vpaCreatorGetter()
+		err := reconciling.EnsureNamedObject(ctx,
+			nn(osData.Cluster().Status.NamespaceName, name),
+			reconciling.VerticalPodAutoscalerObjectWrapper(creator),
+			r.Client,
+			&autoscalingv1beta2.VerticalPodAutoscaler{})
+		if err != nil {
+			return fmt.Errorf("failed to create VerticalPodAutoscaler %q: %v", name, err)
+		}
+	}
+
 	return nil
 }
 
