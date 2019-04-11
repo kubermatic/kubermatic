@@ -88,8 +88,10 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	}
 
 	// check that all PodDisruptionBudgets are created
-	if err := r.ensurePodDisruptionBudgets(cluster, data); err != nil {
-		return err
+	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		if err := r.ensurePodDisruptionBudgets(cluster, data); err != nil {
+			return err
+		}
 	}
 
 	// check that all StatefulSets are created
