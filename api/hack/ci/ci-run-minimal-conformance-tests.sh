@@ -6,7 +6,7 @@ set -euo pipefail
 # receives a SIGINT
 set -o monitor
 
-cd $(dirname $0)/../..
+cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
 
 source ./api/hack/lib.sh
 
@@ -145,6 +145,11 @@ echodate "Deploying tiller"
 helm init --wait --service-account=tiller --tiller-namespace=$NAMESPACE
 
 echodate "Installing Kubermatic via Helm"
+
+if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
+  echodate "Upgradetest, checking out revision ${UPGRADE_TEST_BASE_HASH}"
+  git checkout $UPGRADE_TEST_BASE_HASH
+fi
 # We must delete all templates for cluster-scoped resources
 # because those already exist because of the main Kubermatic installation
 # otherwise the helm upgrade --install fails
@@ -155,18 +160,22 @@ rm -f config/kubermatic/templates/vpa-*
 retry 3 helm upgrade --install --force --wait --timeout 300 \
   --tiller-namespace=$NAMESPACE \
   --set=kubermatic.isMaster=true \
-  --set-string=kubermatic.controller.image.repository=quay.io/kubermatic/api \
-  --set-string=kubermatic.controller.image.tag=$GIT_HEAD_HASH \
+  --set-string=kubermatic.controller.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
   --set-string=kubermatic.api.image.repository=quay.io/kubermatic/api \
-  --set-string=kubermatic.api.image.tag=$GIT_HEAD_HASH \
-  --set-string=kubermatic.masterController.image.repository=quay.io/kubermatic/api \
-  --set-string=kubermatic.masterController.image.tag=$GIT_HEAD_HASH \
+  --set-string=kubermatic.api.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
+  --set-string=kubermatic.masterController.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
   --values ${VALUES_FILE} \
   --namespace $NAMESPACE \
   kubermatic-$BUILD_ID ./config/kubermatic/
+
+if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
+  echodate "Upgradetest, going back to old revision"
+  git checkout -
+fi
+
 echodate "Finished installing Kubermatic"
 
 # We build the CLI after deploying to make sure we fail fast if the helm deployment fails
@@ -181,7 +190,51 @@ timeout -s 9 90m ./conformance-tests \
   -kubeconfig=$KUBECONFIG \
   -datacenters=$DATACENTERS_FILE \
   -kubermatic-nodes=3 \
-  -kubermatic-parallel-clusters=11 \
+  -kubermatic-parallel-clusters=1 \
+  -name-prefix=prow-e2e \
+  -reports-root=/reports \
+  -cleanup-on-start=false \
+  -run-kubermatic-controller-manager=false \
+  -aws-access-key-id="$AWS_E2E_TESTS_KEY_ID" \
+  -aws-secret-access-key="$AWS_E2E_TESTS_SECRET" \
+  -versions="$VERSIONS" \
+  -providers=aws \
+  -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
+  -kubermatic-delete-cluster=false
+
+# No upgradetest, just exit
+if [[ -z ${UPGRADE_TEST_BASE_HASH:-} ]]; then
+  echodate "Success!"
+  exit 0
+fi
+
+echodate "Installing current version of Kubermatic"
+retry 3 helm upgrade --install --force --wait --timeout 300 \
+  --tiller-namespace=$NAMESPACE \
+  --set=kubermatic.isMaster=true \
+  --set-string=kubermatic.controller.image.tag=$GIT_HEAD_HASH \
+  --set-string=kubermatic.api.image.repository=quay.io/kubermatic/api \
+  --set-string=kubermatic.api.image.tag=$GIT_HEAD_HASH \
+  --set-string=kubermatic.masterController.image.tag=$GIT_HEAD_HASH \
+  --set-string=kubermatic.worker_name=$BUILD_ID \
+  --set=kubermatic.ingressClass=non-existent \
+  --set=kubermatic.checks.crd.disable=true \
+  --values ${VALUES_FILE} \
+  --namespace $NAMESPACE \
+  kubermatic-$BUILD_ID ./config/kubermatic/
+echodate "Successfully installed current version of Kubermatic"
+
+echodate "Running conformance tester with existing cluster"
+# We increase the number of nodes to make sure creation
+# of nodes still work
+timeout -s 9 60m ./conformance-tests \
+  -debug \
+  -existing-cluster-label=worker-name=$BUILD_ID \
+  -worker-name=$BUILD_ID \
+  -kubeconfig=$KUBECONFIG \
+  -datacenters=$DATACENTERS_FILE \
+  -kubermatic-nodes=5 \
+  -kubermatic-parallel-clusters=1 \
   -kubermatic-delete-cluster=true \
   -name-prefix=prow-e2e \
   -reports-root=/reports \
