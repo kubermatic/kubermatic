@@ -81,8 +81,10 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	}
 
 	// check that all CronJobs are created
-	if err := r.ensureCronJobs(cluster, data); err != nil {
-		return err
+	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		if err := r.ensureCronJobs(cluster, data); err != nil {
+			return err
+		}
 	}
 
 	// check that all PodDisruptionBudgets are created

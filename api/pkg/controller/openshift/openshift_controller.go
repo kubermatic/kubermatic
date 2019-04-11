@@ -23,6 +23,7 @@ import (
 	"github.com/golang/glog"
 
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -214,6 +215,10 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	if err := r.deployments(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Deployments: %v", err)
+	}
+
+	if err := r.cronJobs(ctx, osData); err != nil {
+		return nil, fmt.Errorf("failed to reconcile CronJobs: %v", err)
 	}
 
 	if err := r.syncHeath(ctx, osData); err != nil {
@@ -446,6 +451,23 @@ func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) err
 		if err := reconciling.EnsureNamedObjectV2(ctx,
 			nn(osData.Cluster().Status.NamespaceName, deploymentName), reconciling.DeploymentObjectWrapper(deploymentCreator), r.Client, &appsv1.Deployment{}); err != nil {
 			return fmt.Errorf("failed to ensure Deployment %s: %v", deploymentName, err)
+		}
+	}
+	return nil
+}
+
+func GetCronJobCreators(osData *openshiftData) []reconciling.NamedCronJobCreatorGetter {
+	return []reconciling.NamedCronJobCreatorGetter{
+		etcd.CronJobCreator(osData),
+	}
+}
+
+func (r *Reconciler) cronJobs(ctx context.Context, osData *openshiftData) error {
+	for _, cronJobCreator := range GetCronJobCreators(osData) {
+		cronJobName, cronJobCreator := cronJobCreator()
+		if err := reconciling.EnsureNamedObjectV2(ctx,
+			nn(osData.Cluster().Status.NamespaceName, cronJobName), reconciling.CronJobObjectWrapper(cronJobCreator), r.Client, &batchv1beta1.CronJob{}); err != nil {
+			return fmt.Errorf("failed to ensure CronJob %q: %v", cronJobName, err)
 		}
 	}
 	return nil
