@@ -39,6 +39,7 @@ type queueItem struct {
 	gvr             schema.GroupVersionResource
 	kind            string
 	name            string
+	indexKey        string
 	clusterProvider *ClusterProvider
 	cache           kcache.GenericLister
 }
@@ -110,7 +111,7 @@ func (c *resourcesController) processProjectResourcesNextItem() bool {
 	defer c.projectResourcesQueue.Done(rawItem)
 	qItem := rawItem.(queueItem)
 
-	runObj, err := qItem.cache.Get(qItem.name)
+	runObj, err := qItem.cache.Get(qItem.indexKey)
 	if err != nil {
 		glog.V(6).Infof("won't process the resource %q because it's no longer in the queue", qItem.name)
 		return true
@@ -134,9 +135,15 @@ func (c *resourcesController) processProjectResourcesNextItem() bool {
 func (c *resourcesController) enqueueProjectResource(obj interface{}, staticResource projectResource, clusterProvider *ClusterProvider, lister kcache.GenericLister) {
 	metaObj, err := meta.Accessor(obj)
 	if err != nil {
-		runtime.HandleError(fmt.Errorf("unable to get meta accessor for %#v, gvr %s", obj, staticResource.gvr.String()))
+		runtime.HandleError(fmt.Errorf("unable to get meta accessor for %#v, gvr %s, due to %v", obj, staticResource.gvr.String(), err))
+		return
 	}
 	if staticResource.shouldEnqueue != nil && !staticResource.shouldEnqueue(metaObj) {
+		return
+	}
+	indexKey, err := kcache.MetaNamespaceKeyFunc(obj)
+	if err != nil {
+		runtime.HandleError(fmt.Errorf("unable to get the index key for %#v, gvr %s, due to %v", obj, staticResource.gvr.String(), err))
 		return
 	}
 
@@ -144,6 +151,7 @@ func (c *resourcesController) enqueueProjectResource(obj interface{}, staticReso
 		gvr:             staticResource.gvr,
 		kind:            staticResource.kind,
 		name:            metaObj.GetName(),
+		indexKey:        indexKey,
 		clusterProvider: clusterProvider,
 		cache:           lister,
 	}
