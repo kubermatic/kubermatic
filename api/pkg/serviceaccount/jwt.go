@@ -11,6 +11,7 @@ import (
 // Now stubbed out to allow testing
 var Now = time.Now
 
+// TokenGenerator declares the method to generate JWT token
 type TokenGenerator interface {
 	// Generate generates a token which will identify the given
 	// ServiceAccount. privateClaims is an interface that will be
@@ -18,28 +19,30 @@ type TokenGenerator interface {
 	// the payload object. Public claims take precedent over private
 	// claims i.e. if both claims and privateClaims have an "exp" field,
 	// the value in claims will be used.
-	Generate(claims *jwt.Claims, privateClaims *TokenClaim) (string, error)
+	Generate(claims *jwt.Claims, customClaims *CustomTokenClaim) (string, error)
 }
 
+// TokenAuthenticator declares the method to check JWT token
 type TokenAuthenticator interface {
 	// Authenticate checks given token and transform it to custom claim object
-	Authenticate(tokenData string) (*jwt.Claims, *TokenClaim, error)
+	Authenticate(tokenData string) (*jwt.Claims, *CustomTokenClaim, error)
 }
 
-type TokenClaim struct {
+// CustomTokenClaim represents authenticated user
+type CustomTokenClaim struct {
 	Email     string `json:"email,omitempty"`
 	ProjectID string `json:"project_id,omitempty"`
 	TokenID   string `json:"token_id,omitempty"`
 }
 
-func Claims(email, projectID, tokenID string) (*jwt.Claims, *TokenClaim) {
+func Claims(email, projectID, tokenID string) (*jwt.Claims, *CustomTokenClaim) {
 
 	sc := &jwt.Claims{
 		IssuedAt:  jwt.NewNumericDate(Now()),
 		NotBefore: jwt.NewNumericDate(Now()),
 		Expiry:    jwt.NewNumericDate(Now().AddDate(3, 0, 0)),
 	}
-	pc := &TokenClaim{
+	pc := &CustomTokenClaim{
 		Email:     email,
 		ProjectID: projectID,
 		TokenID:   tokenID,
@@ -68,7 +71,7 @@ type jwtTokenAuthenticator struct {
 }
 
 // Generate generates new token from claims
-func (j *jwtTokenGenerator) Generate(claims *jwt.Claims, customClaims *TokenClaim) (string, error) {
+func (j *jwtTokenGenerator) Generate(claims *jwt.Claims, customClaims *CustomTokenClaim) (string, error) {
 	// claims are applied in reverse precedence
 	return jwt.Signed(j.signer).
 		Claims(customClaims).
@@ -83,8 +86,8 @@ func JWTTokenAuthenticator(privateKey []byte) TokenAuthenticator {
 	}
 }
 
-// Authenticate decrypts signed token data to TokenClaim object and checks if token expired
-func (a *jwtTokenAuthenticator) Authenticate(tokenData string) (*jwt.Claims, *TokenClaim, error) {
+// Authenticate decrypts signed token data to CustomTokenClaim object and checks if token expired
+func (a *jwtTokenAuthenticator) Authenticate(tokenData string) (*jwt.Claims, *CustomTokenClaim, error) {
 
 	tok, err := jwt.ParseSigned(tokenData)
 	if err != nil {
@@ -92,7 +95,7 @@ func (a *jwtTokenAuthenticator) Authenticate(tokenData string) (*jwt.Claims, *To
 	}
 
 	public := &jwt.Claims{}
-	customClaims := &TokenClaim{}
+	customClaims := &CustomTokenClaim{}
 
 	if err := tok.Claims(a.key, customClaims, public); err != nil {
 		return nil, nil, err

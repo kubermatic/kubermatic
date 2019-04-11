@@ -2255,7 +2255,7 @@
     },
     "/api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens": {
       "post": {
-        "description": "Adds the given token to the given service account",
+        "description": "Generates a token for the given service account",
         "consumes": [
           "application/json"
         ],

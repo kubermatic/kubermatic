@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 
@@ -343,7 +342,7 @@ type ServiceAccountListOptions struct {
 // ServiceAccountTokenProvider declares the set of methods for interacting with kubermatic service account token
 type ServiceAccountTokenProvider interface {
 	Create(userInfo *UserInfo, sa *kubermaticv1.User, tokenName, projectID string) (*v1.Secret, error)
-	List(userInfo *UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *ServiceAccountTokenListOptions) ([]*apiv1.PublicServiceAccountToken, error)
+	List(userInfo *UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *ServiceAccountTokenListOptions) ([]*v1.Secret, error)
 	GetTokenAuthenticator() serviceaccount.TokenAuthenticator
 }
 

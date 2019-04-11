@@ -1418,7 +1418,7 @@ func (r Routing) deleteServiceAccount() http.Handler {
 
 // swagger:route POST /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens tokens addTokenToServiceAccount
 //
-//     Adds the given token to the given service account
+//     Generates a token for the given service account
 //
 //     Consumes:
 //     - application/json

@@ -17,7 +17,7 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-// CreateTokenEndpoint adds the given token to the service account
+// CreateTokenEndpoint creates a token for the given service account
 func CreateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(addTokenReq)
@@ -58,11 +58,15 @@ func CreateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccoun
 
 		publicClaim, _, err := serviceAccountTokenProvider.GetTokenAuthenticator().Authenticate(string(token))
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, "can not encode expiration time")
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("unable to create a token for %s due to %v", secret.Name, err))
 		}
 
-		return convertInternalTokenToExternal(secret, apiv1.NewTime(publicClaim.Expiry.Time())), nil
+		externalToken, err := convertInternalTokenToExternal(secret, apiv1.NewTime(publicClaim.Expiry.Time()))
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, err.Error())
+		}
 
+		return externalToken, nil
 	}
 }
 
@@ -79,6 +83,9 @@ type addTokenReq struct {
 func (r addTokenReq) Validate() error {
 	if len(r.Body.Name) == 0 || len(r.ProjectID) == 0 || len(r.ServiceAccountID) == 0 {
 		return fmt.Errorf("the name, service account ID and project ID cannot be empty")
+	}
+	if len(r.Body.Name) > 50 {
+		return fmt.Errorf("the name is too long, max 50 chars")
 	}
 
 	return nil
@@ -108,12 +115,20 @@ func DecodeAddTokenReq(c context.Context, r *http.Request) (interface{}, error) 
 	return req, nil
 }
 
-func convertInternalTokenToExternal(internal *v1.Secret, expiry apiv1.Time) *apiv1.ServiceAccountToken {
+func convertInternalTokenToExternal(internal *v1.Secret, expiry apiv1.Time) (*apiv1.ServiceAccountToken, error) {
 	externalToken := &apiv1.ServiceAccountToken{}
 	externalToken.Expiry = expiry
 	externalToken.ID = internal.Name
-	externalToken.Name = internal.Labels["name"]
-	externalToken.Token = string(internal.Data["token"])
+	name, ok := internal.Labels["name"]
+	if !ok {
+		return nil, fmt.Errorf("can not find token name in secret %s", internal.Name)
+	}
+	externalToken.Name = name
+	token, ok := internal.Data["token"]
+	if !ok {
+		return nil, fmt.Errorf("can not find token data in secret %s", internal.Name)
+	}
+	externalToken.Token = string(token)
 	externalToken.CreationTimestamp = apiv1.NewTime(internal.CreationTimestamp.Time)
-	return externalToken
+	return externalToken, nil
 }

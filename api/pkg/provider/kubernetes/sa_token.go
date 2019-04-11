@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
@@ -86,8 +85,8 @@ func (p *ServiceAccountTokenProvider) Create(userInfo *provider.UserInfo, sa *ku
 	return kubernetesImpersonatedClient.CoreV1().Secrets(kubermaticNamespace).Create(secret)
 }
 
-// List gets tokens for the project
-func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *provider.ServiceAccountTokenListOptions) ([]*apiv1.PublicServiceAccountToken, error) {
+// List  gets tokens for the given service account and project
+func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *provider.ServiceAccountTokenListOptions) ([]*v1.Secret, error) {
 	if userInfo == nil {
 		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
 	}
@@ -106,17 +105,13 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 		return nil, err
 	}
 
-	resultList := make([]*apiv1.PublicServiceAccountToken, 0)
+	resultList := make([]*v1.Secret, 0)
 	for _, secret := range allSecrets {
 		if strings.HasPrefix(secret.Name, "sa-token") {
 			for _, owner := range secret.GetOwnerReferences() {
 				if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.UserKindName &&
 					owner.Name == sa.Name && owner.UID == sa.UID {
-					publicToken, err := p.convert(secret)
-					if err != nil {
-						return nil, err
-					}
-					resultList = append(resultList, publicToken)
+					resultList = append(resultList, secret)
 				}
 			}
 		}
@@ -132,7 +127,7 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 		}
 
 		tokenToGet := resultList[0]
-		_, err = kubernetesImpersonatedClient.CoreV1().Secrets(kubermaticNamespace).Get(tokenToGet.ID, metav1.GetOptions{})
+		_, err = kubernetesImpersonatedClient.CoreV1().Secrets(kubermaticNamespace).Get(tokenToGet.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -143,11 +138,14 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 		return resultList, nil
 	}
 
-	filteredList := make([]*apiv1.PublicServiceAccountToken, 0)
+	filteredList := make([]*v1.Secret, 0)
 	for _, token := range resultList {
-		if token.Name == options.TokenName {
-			filteredList = append(filteredList, token)
-			break
+		name, ok := token.Labels["name"]
+		if ok {
+			if name == options.TokenName {
+				filteredList = append(filteredList, token)
+				break
+			}
 		}
 	}
 
@@ -156,27 +154,4 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 
 func (p *ServiceAccountTokenProvider) GetTokenAuthenticator() serviceaccount.TokenAuthenticator {
 	return p.tokenAuthenticator
-}
-
-func (p *ServiceAccountTokenProvider) convert(secret *v1.Secret) (*apiv1.PublicServiceAccountToken, error) {
-	publicToken := &apiv1.PublicServiceAccountToken{
-		ObjectMeta: apiv1.ObjectMeta{
-			ID:                secret.Name,
-			Name:              secret.Labels["name"],
-			CreationTimestamp: apiv1.NewTime(secret.CreationTimestamp.Time),
-		},
-	}
-	token, ok := secret.Data[labelTokenName]
-	if !ok {
-		return nil, fmt.Errorf("token can not be found in secret %s", secret.Name)
-	}
-
-	publicClaims, _, err := p.tokenAuthenticator.Authenticate(string(token))
-	if err != nil {
-		return nil, err
-	}
-
-	publicToken.Expiry = apiv1.NewTime(publicClaims.Expiry.Time())
-
-	return publicToken, nil
 }

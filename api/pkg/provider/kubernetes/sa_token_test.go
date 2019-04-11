@@ -6,7 +6,6 @@ import (
 
 	"gopkg.in/square/go-jose.v2/jwt"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -85,7 +84,7 @@ func TestListTokens(t *testing.T) {
 		saToSync       *kubermaticv1.User
 		projectToSync  *kubermaticv1.Project
 		secrets        []*v1.Secret
-		expectedTokens []*apiv1.PublicServiceAccountToken
+		expectedTokens []*v1.Secret
 		tokenName      string
 	}{
 		{
@@ -100,10 +99,10 @@ func TestListTokens(t *testing.T) {
 				test.GenSecret("test-ID", "serviceaccount-5", "test-token-1", "4"),
 				test.GenSecret("project-ID", "serviceaccount-6", "test-token-1", "5"),
 			},
-			expectedTokens: []*apiv1.PublicServiceAccountToken{
-				genPublicToken("sa-token-3", "test-token-3"),
-				genPublicToken("sa-token-2", "test-token-2"),
-				genPublicToken("sa-token-1", "test-token-1"),
+			expectedTokens: []*v1.Secret{
+				test.GenSecret("my-first-project-ID", "serviceaccount-1", "test-token-1", "1"),
+				test.GenSecret("my-first-project-ID", "serviceaccount-1", "test-token-2", "2"),
+				test.GenSecret("my-first-project-ID", "serviceaccount-1", "test-token-3", "3"),
 			},
 		},
 		{
@@ -118,8 +117,8 @@ func TestListTokens(t *testing.T) {
 				test.GenSecret("test-ID", "serviceaccount-5", "test-token-1", "4"),
 				test.GenSecret("project-ID", "serviceaccount-6", "test-token-1", "5"),
 			},
-			expectedTokens: []*apiv1.PublicServiceAccountToken{
-				genPublicToken("sa-token-3", "test-token-3"),
+			expectedTokens: []*v1.Secret{
+				test.GenSecret("my-first-project-ID", "serviceaccount-1", "test-token-3", "3"),
 			},
 			tokenName: "test-token-3",
 		},
@@ -158,14 +157,8 @@ func TestListTokens(t *testing.T) {
 
 			sortByName(resultList)
 			sortByName(tc.expectedTokens)
-			// equality.Semantic.DeepEqual panic comparing list of PublicServiceAccountToken objects
-			for i := range tc.expectedTokens {
-				if resultList[i].ID != tc.expectedTokens[i].ID {
-					t.Fatalf("expected ID %v got %v", tc.expectedTokens[i].ID, resultList[i].ID)
-				}
-				if resultList[i].Name != tc.expectedTokens[i].Name {
-					t.Fatalf("expected Name %v got %v", tc.expectedTokens[i].Name, resultList[i].Name)
-				}
+			if !equality.Semantic.DeepEqual(resultList, tc.expectedTokens) {
+				t.Fatalf("expected  %v got %v", tc.expectedTokens, resultList)
 			}
 		})
 	}
@@ -195,31 +188,23 @@ type fakeJWTTokenGenerator struct {
 }
 
 // Generate generates new fake token
-func (j *fakeJWTTokenGenerator) Generate(claims *jwt.Claims, privateClaims *serviceaccount.TokenClaim) (string, error) {
+func (j *fakeJWTTokenGenerator) Generate(claims *jwt.Claims, privateClaims *serviceaccount.CustomTokenClaim) (string, error) {
 	return test.TestFakeToken, nil
 }
 
 type fakeJWTTokenAuthenticator struct {
 }
 
-func (a *fakeJWTTokenAuthenticator) Authenticate(tokenData string) (*jwt.Claims, *serviceaccount.TokenClaim, error) {
+func (a *fakeJWTTokenAuthenticator) Authenticate(tokenData string) (*jwt.Claims, *serviceaccount.CustomTokenClaim, error) {
 	public := &jwt.Claims{}
 	public.Expiry = jwt.NewNumericDate(test.DefaultCreationTimestamp())
 
-	return public, &serviceaccount.TokenClaim{}, nil
+	return public, &serviceaccount.CustomTokenClaim{}, nil
 }
 
-func sortByName(tokens []*apiv1.PublicServiceAccountToken) {
+func sortByName(tokens []*v1.Secret) {
 	sort.SliceStable(tokens, func(i, j int) bool {
 		mi, mj := tokens[i], tokens[j]
 		return mi.Name < mj.Name
 	})
-}
-
-func genPublicToken(id, name string) *apiv1.PublicServiceAccountToken {
-	token := &apiv1.PublicServiceAccountToken{}
-	token.Name = name
-	token.ID = id
-	token.Expiry = apiv1.NewTime(test.DefaultCreationTimestamp())
-	return token
 }
