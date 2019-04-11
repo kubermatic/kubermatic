@@ -133,6 +133,6 @@ spec:
       nodeSelector:
 {{ toYaml .Values.nodePortPoxy.lbUpdater.nodeSelector | indent 8 }}
       affinity:
-{{ toYaml .Values.nodePortProxy.lbUpdater.affinity | indent 8 }}
+{{ toYaml .Values.nodePortPoxy.lbUpdater.affinity | indent 8 }}
       tolerations:
-{{ toYaml .Values.nodePortProxy.lbUpdater.tolerations | indent 8 }}
+{{ toYaml .Values.nodePortPoxy.lbUpdater.tolerations | indent 8 }}
