@@ -79,9 +79,9 @@ type VSphereSpec struct {
 
 // AWSSpec describes a aws datacenter
 type AWSSpec struct {
-	Region        string `yaml:"region"`
-	AMI           string `yaml:"ami"`
-	ZoneCharacter string `yaml:"zone_character"`
+	Region        string    `yaml:"region"`
+	Images        ImageList `yaml:"images"`
+	ZoneCharacter string    `yaml:"zone_character"`
 }
 
 // BringYourOwnSpec describes a datacenter our of bring your own nodes
