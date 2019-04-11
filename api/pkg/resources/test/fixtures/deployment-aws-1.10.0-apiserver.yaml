@@ -106,16 +106,18 @@ spec:
           name: openvpn-client-certificates
           readOnly: true
       - args:
-        - --kubeconfig
+        - -kubeconfig
         - /etc/kubernetes/kubeconfig/kubeconfig
-        - --node-access-network
+        - -node-access-network
         - 192.0.2.0/24
         - -v
         - "4"
         - -logtostderr
+        - -master
+        - https://127.0.0.1:30000
         command:
         - /usr/local/bin/kubeletdnat-controller
-        image: quay.io/kubermatic/vpnsidecar-dnat-controller:v0.2.0
+        image: 'quay.io/kubermatic/api:'
         imagePullPolicy: IfNotPresent
         name: dnat-controller
         resources:
@@ -373,7 +375,7 @@ spec:
           secretName: front-proxy-ca
       - name: kubeletdnatcontroller-kubeconfig
         secret:
-          defaultMode: 256
+          defaultMode: 292
           secretName: kubeletdnatcontroller-kubeconfig
       - name: dex-ca
         secret:

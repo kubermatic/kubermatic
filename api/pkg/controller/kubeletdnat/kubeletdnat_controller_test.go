@@ -13,15 +13,12 @@ func TestRuleGeneration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctrl := &Controller{
-		client:                   nil,
-		nodeLister:               nil,
-		queue:                    nil,
+	ctrl := &Reconciler{
 		nodeTranslationChainName: "test-chain",
 		nodeAccessNetwork:        nodeAccessNetwork,
 	}
 
-	nodes := []*corev1.Node{
+	nodes := []corev1.Node{
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: "one"},
 			Status: corev1.NodeStatus{
