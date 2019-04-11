@@ -25,6 +25,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -174,7 +175,11 @@ func TestLoadFiles(t *testing.T) {
 				RootPath:      "vs-cluster",
 			},
 			AWS: &provider.AWSSpec{
-				AMI:           "ami-aujakj",
+				Images: provider.ImageList{
+					providerconfig.OperatingSystemUbuntu: "ubuntu-ami",
+					providerconfig.OperatingSystemCentOS: "centos-ami",
+					providerconfig.OperatingSystemCoreos: "coreos-ami",
+				},
 				Region:        "us-central1",
 				ZoneCharacter: "a",
 			},
@@ -799,8 +804,12 @@ func TestExecute(t *testing.T) {
 					Country:  "DE",
 					Spec: provider.DatacenterSpec{
 						AWS: &provider.AWSSpec{
-							Region:        "fra1",
-							AMI:           "aws-ami",
+							Region: "fra1",
+							Images: provider.ImageList{
+								providerconfig.OperatingSystemUbuntu: "ubuntu-ami",
+								providerconfig.OperatingSystemCentOS: "centos-ami",
+								providerconfig.OperatingSystemCoreos: "coreos-ami",
+							},
 							ZoneCharacter: "aws-zone-character",
 						},
 					},

@@ -1,6 +1,7 @@
 package machine
 
 import (
+	"errors"
 	"path"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -24,7 +25,30 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+func getOsName(nodeSpec apiv1.NodeSpec) (providerconfig.OperatingSystem, error) {
+	if nodeSpec.OperatingSystem.CentOS != nil {
+		return providerconfig.OperatingSystemCentOS, nil
+	}
+	if nodeSpec.OperatingSystem.Ubuntu != nil {
+		return providerconfig.OperatingSystemUbuntu, nil
+	}
+	if nodeSpec.OperatingSystem.ContainerLinux != nil {
+		return providerconfig.OperatingSystemCoreos, nil
+	}
+
+	return "", errors.New("unknown operating system")
+}
+
 func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+	osName, err := getOsName(nodeSpec)
+	if err != nil {
+		return nil, err
+	}
+	ami := dc.Spec.AWS.Images[osName]
+	if nodeSpec.Cloud.AWS.AMI != "" {
+		ami = nodeSpec.Cloud.AWS.AMI
+	}
+
 	config := aws.RawConfig{
 		SubnetID:         providerconfig.ConfigVarString{Value: c.Spec.Cloud.AWS.SubnetID},
 		VpcID:            providerconfig.ConfigVarString{Value: c.Spec.Cloud.AWS.VPCID},
@@ -35,7 +59,7 @@ func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc pro
 		InstanceType:     providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.InstanceType},
 		DiskType:         providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.VolumeType},
 		DiskSize:         nodeSpec.Cloud.AWS.VolumeSize,
-		AMI:              providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.AMI},
+		AMI:              providerconfig.ConfigVarString{Value: ami},
 	}
 	if config.DiskType.Value == "" {
 		config.DiskType.Value = ec2.VolumeTypeGp2
