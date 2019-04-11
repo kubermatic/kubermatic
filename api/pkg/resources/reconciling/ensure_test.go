@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
+	"k8s.io/apimachinery/pkg/types"
 
 	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	controllerruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -13,16 +14,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
-
-type fakeSingleItemInformer struct {
-	item   interface{}
-	exists bool
-	err    error
-}
-
-func (i *fakeSingleItemInformer) GetByKey(key string) (item interface{}, exists bool, err error) {
-	return i.item, i.exists, i.err
-}
 
 func TestEnsureObjectByAnnotation(t *testing.T) {
 	const (
@@ -143,13 +134,8 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 				client = controllerruntimefake.NewFakeClient()
 			}
 
-			store := &fakeSingleItemInformer{
-				item:   test.existingObject,
-				exists: test.existingObject != nil,
-				err:    nil,
-			}
-
-			if err := EnsureNamedObject(testResourceName, testNamespace, test.creator, store, client); err != nil {
+			name := types.NamespacedName{Namespace: testNamespace, Name: testResourceName}
+			if err := EnsureNamedObject(context.Background(), name, test.creator, client, &corev1.ConfigMap{}); err != nil {
 				t.Errorf("EnsureObject returned an error while none was expected: %v", err)
 			}
 

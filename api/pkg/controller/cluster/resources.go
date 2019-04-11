@@ -39,21 +39,21 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 
 	// check that all services are available
 	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		if err := r.ensureServices(cluster, data); err != nil {
+		if err := r.ensureServices(ctx, cluster, data); err != nil {
 			return err
 		}
 	}
 
 	// check that all secrets are available // New way of handling secrets
 	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		if err := r.ensureSecrets(cluster, data); err != nil {
+		if err := r.ensureSecrets(ctx, cluster, data); err != nil {
 			return err
 		}
 	}
 
 	// check that all StatefulSets are created
 	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		if err := r.ensureStatefulSets(cluster, data); err != nil {
+		if err := r.ensureStatefulSets(ctx, cluster, data); err != nil {
 			return err
 		}
 	}
@@ -70,34 +70,34 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 
 	if cluster.Annotations["kubermatic.io/openshift"] == "" {
 		// check that all ConfigMaps are available
-		if err := r.ensureConfigMaps(cluster, data); err != nil {
+		if err := r.ensureConfigMaps(ctx, cluster, data); err != nil {
 			return err
 		}
 	}
 
 	// check that all Deployments are available
 	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		if err := r.ensureDeployments(cluster, data); err != nil {
+		if err := r.ensureDeployments(ctx, cluster, data); err != nil {
 			return err
 		}
 	}
 
 	// check that all CronJobs are created
 	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		if err := r.ensureCronJobs(cluster, data); err != nil {
+		if err := r.ensureCronJobs(ctx, cluster, data); err != nil {
 			return err
 		}
 	}
 
 	// check that all PodDisruptionBudgets are created
 	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		if err := r.ensurePodDisruptionBudgets(cluster, data); err != nil {
+		if err := r.ensurePodDisruptionBudgets(ctx, cluster, data); err != nil {
 			return err
 		}
 	}
 
 	// check that all StatefulSets are created
-	if err := r.ensureVerticalPodAutoscalers(cluster, data); err != nil {
+	if err := r.ensureVerticalPodAutoscalers(ctx, cluster, data); err != nil {
 		return err
 	}
 
@@ -173,9 +173,9 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 	}
 }
 
-func (r *Reconciler) ensureServices(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *Reconciler) ensureServices(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetServiceCreators(data)
-	return reconciling.ReconcileServices(creators, c.Status.NamespaceName, r, r.dynamicCache, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
+	return reconciling.ReconcileServices(ctx, creators, c.Status.NamespaceName, r, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
 }
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
@@ -193,9 +193,9 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 	}
 }
 
-func (r *Reconciler) ensureDeployments(cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetDeploymentCreators(data, r.features.KubernetesOIDCAuthentication)
-	return reconciling.ReconcileDeployments(creators, cluster.Status.NamespaceName, r, r.dynamicCache, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
+	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }
 
 // GetSecretCreators returns all SecretCreators that are currently in use
@@ -234,10 +234,10 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 	return creators
 }
 
-func (r *Reconciler) ensureSecrets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *Reconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	namedSecretCreatorGetters := r.GetSecretCreators(data)
 
-	if err := reconciling.ReconcileSecrets(namedSecretCreatorGetters, c.Status.NamespaceName, r, r.dynamicCache, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetters, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return fmt.Errorf("failed to ensure that the Secret exists: %v", err)
 	}
 
@@ -253,10 +253,10 @@ func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfi
 	}
 }
 
-func (r *Reconciler) ensureConfigMaps(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *Reconciler) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetConfigMapCreators(data)
 
-	if err := reconciling.ReconcileConfigMaps(creators, c.Status.NamespaceName, r, r.dynamicCache, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
+	if err := reconciling.ReconcileConfigMaps(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)
 	}
 
@@ -279,10 +279,10 @@ func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []reconciling.
 	}
 }
 
-func (r *Reconciler) ensurePodDisruptionBudgets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *Reconciler) ensurePodDisruptionBudgets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetPodDisruptionBudgetCreators(data)
 
-	if err := reconciling.ReconcilePodDisruptionBudgets(creators, c.Status.NamespaceName, r, r.dynamicCache, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
+	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return fmt.Errorf("failed to ensure that the PodDisruptionBudget exists: %v", err)
 	}
 
@@ -296,27 +296,35 @@ func GetCronJobCreators(data *resources.TemplateData) []reconciling.NamedCronJob
 	}
 }
 
-func (r *Reconciler) ensureCronJobs(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *Reconciler) ensureCronJobs(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetCronJobCreators(data)
 
-	if err := reconciling.ReconcileCronJobs(creators, c.Status.NamespaceName, r, r.dynamicCache, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
+	if err := reconciling.ReconcileCronJobs(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return fmt.Errorf("failed to ensure that the CronJobs exists: %v", err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) ensureVerticalPodAutoscalers(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	controlPlaneDeploymentNames := []string{
-		"dns-resolver",
-		"machine-controller",
-		"machine-controller-webhook",
-		"openvpn-server",
+		resources.DNSResolverDeploymentName,
+		resources.MachineControllerDeploymentName,
+		resources.MachineControllerWebhookDeploymentName,
+		resources.OpenVPNServerDeploymentName,
 	}
+
 	if c.Annotations["kubermatic.io/openshift"] == "" {
-		controlPlaneDeploymentNames = append(controlPlaneDeploymentNames, "apiserver", "controller-manager", "scheduler", "metrics-server")
+		controlPlaneDeploymentNames = append(
+			controlPlaneDeploymentNames,
+			resources.ApiserverDeploymentName,
+			resources.ControllerManagerDeploymentName,
+			resources.SchedulerDeploymentName,
+			resources.MetricsServerDeploymentName,
+		)
 	}
-	creators, err := resources.GetVerticalPodAutoscalersForAll(controlPlaneDeploymentNames, []string{"etcd"}, c.Status.NamespaceName, r.dynamicCache)
+
+	creators, err := resources.GetVerticalPodAutoscalersForAll(ctx, r.Client, controlPlaneDeploymentNames, []string{resources.EtcdStatefulSetName}, c.Status.NamespaceName)
 	if err != nil {
 		return fmt.Errorf("failed to create the functions to handle VPA resources: %v", err)
 	}
@@ -332,7 +340,7 @@ func (r *Reconciler) ensureVerticalPodAutoscalers(c *kubermaticv1.Cluster, data 
 		}
 	}
 
-	return reconciling.ReconcileVerticalPodAutoscalers(creators, c.Status.NamespaceName, r, r.dynamicCache, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
+	return reconciling.ReconcileVerticalPodAutoscalers(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
 }
 
 // disableVPAWrapper is a wrapper function which sets the UpdateMode on the VPA to UpdateModeOff.
@@ -354,8 +362,8 @@ func disableVPAWrapper(create reconciling.VerticalPodAutoscalerCreator) reconcil
 	}
 }
 
-func (r *Reconciler) ensureStatefulSets(c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *Reconciler) ensureStatefulSets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetStatefulSetCreators(data, r.features.EtcdDataCorruptionChecks)
 
-	return reconciling.ReconcileStatefulSets(creators, c.Status.NamespaceName, r, r.dynamicCache, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
+	return reconciling.ReconcileStatefulSets(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
 }

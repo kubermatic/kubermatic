@@ -2,12 +2,11 @@
 package reconciling
 
 import (
+	"context"
 	"fmt"
 
-	informerutil "github.com/kubermatic/kubermatic/api/pkg/util/informer"
-
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
@@ -38,12 +37,7 @@ func ServiceObjectWrapper(create ServiceCreator) ObjectCreator {
 }
 
 // ReconcileServices will create and update the Services coming from the passed ServiceCreator slice
-func ReconcileServices(namedGetters []NamedServiceCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &corev1.Service{})
-	if err != nil {
-		return fmt.Errorf("failed to get Service informer: %v", err)
-	}
-
+func ReconcileServices(ctx context.Context, namedGetters []NamedServiceCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := ServiceObjectWrapper(create)
@@ -51,7 +45,7 @@ func ReconcileServices(namedGetters []NamedServiceCreatorGetter, namespace strin
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &corev1.Service{}); err != nil {
 			return fmt.Errorf("failed to ensure Service: %v", err)
 		}
 	}
@@ -77,12 +71,7 @@ func SecretObjectWrapper(create SecretCreator) ObjectCreator {
 }
 
 // ReconcileSecrets will create and update the Secrets coming from the passed SecretCreator slice
-func ReconcileSecrets(namedGetters []NamedSecretCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &corev1.Secret{})
-	if err != nil {
-		return fmt.Errorf("failed to get Secret informer: %v", err)
-	}
-
+func ReconcileSecrets(ctx context.Context, namedGetters []NamedSecretCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := SecretObjectWrapper(create)
@@ -90,7 +79,7 @@ func ReconcileSecrets(namedGetters []NamedSecretCreatorGetter, namespace string,
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &corev1.Secret{}); err != nil {
 			return fmt.Errorf("failed to ensure Secret: %v", err)
 		}
 	}
@@ -116,12 +105,7 @@ func ConfigMapObjectWrapper(create ConfigMapCreator) ObjectCreator {
 }
 
 // ReconcileConfigMaps will create and update the ConfigMaps coming from the passed ConfigMapCreator slice
-func ReconcileConfigMaps(namedGetters []NamedConfigMapCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &corev1.ConfigMap{})
-	if err != nil {
-		return fmt.Errorf("failed to get ConfigMap informer: %v", err)
-	}
-
+func ReconcileConfigMaps(ctx context.Context, namedGetters []NamedConfigMapCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := ConfigMapObjectWrapper(create)
@@ -129,7 +113,7 @@ func ReconcileConfigMaps(namedGetters []NamedConfigMapCreatorGetter, namespace s
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &corev1.ConfigMap{}); err != nil {
 			return fmt.Errorf("failed to ensure ConfigMap: %v", err)
 		}
 	}
@@ -155,12 +139,7 @@ func ServiceAccountObjectWrapper(create ServiceAccountCreator) ObjectCreator {
 }
 
 // ReconcileServiceAccounts will create and update the ServiceAccounts coming from the passed ServiceAccountCreator slice
-func ReconcileServiceAccounts(namedGetters []NamedServiceAccountCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &corev1.ServiceAccount{})
-	if err != nil {
-		return fmt.Errorf("failed to get ServiceAccount informer: %v", err)
-	}
-
+func ReconcileServiceAccounts(ctx context.Context, namedGetters []NamedServiceAccountCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := ServiceAccountObjectWrapper(create)
@@ -168,7 +147,7 @@ func ReconcileServiceAccounts(namedGetters []NamedServiceAccountCreatorGetter, n
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &corev1.ServiceAccount{}); err != nil {
 			return fmt.Errorf("failed to ensure ServiceAccount: %v", err)
 		}
 	}
@@ -194,12 +173,7 @@ func StatefulSetObjectWrapper(create StatefulSetCreator) ObjectCreator {
 }
 
 // ReconcileStatefulSets will create and update the StatefulSets coming from the passed StatefulSetCreator slice
-func ReconcileStatefulSets(namedGetters []NamedStatefulSetCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &appsv1.StatefulSet{})
-	if err != nil {
-		return fmt.Errorf("failed to get StatefulSet informer: %v", err)
-	}
-
+func ReconcileStatefulSets(ctx context.Context, namedGetters []NamedStatefulSetCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := StatefulSetObjectWrapper(create)
@@ -207,7 +181,7 @@ func ReconcileStatefulSets(namedGetters []NamedStatefulSetCreatorGetter, namespa
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &appsv1.StatefulSet{}); err != nil {
 			return fmt.Errorf("failed to ensure StatefulSet: %v", err)
 		}
 	}
@@ -233,12 +207,7 @@ func DeploymentObjectWrapper(create DeploymentCreator) ObjectCreator {
 }
 
 // ReconcileDeployments will create and update the Deployments coming from the passed DeploymentCreator slice
-func ReconcileDeployments(namedGetters []NamedDeploymentCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &appsv1.Deployment{})
-	if err != nil {
-		return fmt.Errorf("failed to get Deployment informer: %v", err)
-	}
-
+func ReconcileDeployments(ctx context.Context, namedGetters []NamedDeploymentCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := DeploymentObjectWrapper(create)
@@ -246,7 +215,7 @@ func ReconcileDeployments(namedGetters []NamedDeploymentCreatorGetter, namespace
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &appsv1.Deployment{}); err != nil {
 			return fmt.Errorf("failed to ensure Deployment: %v", err)
 		}
 	}
@@ -272,12 +241,7 @@ func PodDisruptionBudgetObjectWrapper(create PodDisruptionBudgetCreator) ObjectC
 }
 
 // ReconcilePodDisruptionBudgets will create and update the PodDisruptionBudgets coming from the passed PodDisruptionBudgetCreator slice
-func ReconcilePodDisruptionBudgets(namedGetters []NamedPodDisruptionBudgetCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &policyv1beta1.PodDisruptionBudget{})
-	if err != nil {
-		return fmt.Errorf("failed to get PodDisruptionBudget informer: %v", err)
-	}
-
+func ReconcilePodDisruptionBudgets(ctx context.Context, namedGetters []NamedPodDisruptionBudgetCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := PodDisruptionBudgetObjectWrapper(create)
@@ -285,7 +249,7 @@ func ReconcilePodDisruptionBudgets(namedGetters []NamedPodDisruptionBudgetCreato
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &policyv1beta1.PodDisruptionBudget{}); err != nil {
 			return fmt.Errorf("failed to ensure PodDisruptionBudget: %v", err)
 		}
 	}
@@ -311,12 +275,7 @@ func VerticalPodAutoscalerObjectWrapper(create VerticalPodAutoscalerCreator) Obj
 }
 
 // ReconcileVerticalPodAutoscalers will create and update the VerticalPodAutoscalers coming from the passed VerticalPodAutoscalerCreator slice
-func ReconcileVerticalPodAutoscalers(namedGetters []NamedVerticalPodAutoscalerCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &autoscalingv1beta2.VerticalPodAutoscaler{})
-	if err != nil {
-		return fmt.Errorf("failed to get VerticalPodAutoscaler informer: %v", err)
-	}
-
+func ReconcileVerticalPodAutoscalers(ctx context.Context, namedGetters []NamedVerticalPodAutoscalerCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := VerticalPodAutoscalerObjectWrapper(create)
@@ -324,7 +283,7 @@ func ReconcileVerticalPodAutoscalers(namedGetters []NamedVerticalPodAutoscalerCr
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &autoscalingv1beta2.VerticalPodAutoscaler{}); err != nil {
 			return fmt.Errorf("failed to ensure VerticalPodAutoscaler: %v", err)
 		}
 	}
@@ -350,12 +309,7 @@ func ClusterRoleBindingObjectWrapper(create ClusterRoleBindingCreator) ObjectCre
 }
 
 // ReconcileClusterRoleBindings will create and update the ClusterRoleBindings coming from the passed ClusterRoleBindingCreator slice
-func ReconcileClusterRoleBindings(namedGetters []NamedClusterRoleBindingCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &rbacv1.ClusterRoleBinding{})
-	if err != nil {
-		return fmt.Errorf("failed to get ClusterRoleBinding informer: %v", err)
-	}
-
+func ReconcileClusterRoleBindings(ctx context.Context, namedGetters []NamedClusterRoleBindingCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := ClusterRoleBindingObjectWrapper(create)
@@ -363,7 +317,7 @@ func ReconcileClusterRoleBindings(namedGetters []NamedClusterRoleBindingCreatorG
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &rbacv1.ClusterRoleBinding{}); err != nil {
 			return fmt.Errorf("failed to ensure ClusterRoleBinding: %v", err)
 		}
 	}
@@ -389,12 +343,7 @@ func ClusterRoleObjectWrapper(create ClusterRoleCreator) ObjectCreator {
 }
 
 // ReconcileClusterRoles will create and update the ClusterRoles coming from the passed ClusterRoleCreator slice
-func ReconcileClusterRoles(namedGetters []NamedClusterRoleCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &rbacv1.ClusterRole{})
-	if err != nil {
-		return fmt.Errorf("failed to get ClusterRole informer: %v", err)
-	}
-
+func ReconcileClusterRoles(ctx context.Context, namedGetters []NamedClusterRoleCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := ClusterRoleObjectWrapper(create)
@@ -402,7 +351,7 @@ func ReconcileClusterRoles(namedGetters []NamedClusterRoleCreatorGetter, namespa
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &rbacv1.ClusterRole{}); err != nil {
 			return fmt.Errorf("failed to ensure ClusterRole: %v", err)
 		}
 	}
@@ -428,12 +377,7 @@ func RoleObjectWrapper(create RoleCreator) ObjectCreator {
 }
 
 // ReconcileRoles will create and update the Roles coming from the passed RoleCreator slice
-func ReconcileRoles(namedGetters []NamedRoleCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &rbacv1.Role{})
-	if err != nil {
-		return fmt.Errorf("failed to get Role informer: %v", err)
-	}
-
+func ReconcileRoles(ctx context.Context, namedGetters []NamedRoleCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := RoleObjectWrapper(create)
@@ -441,7 +385,7 @@ func ReconcileRoles(namedGetters []NamedRoleCreatorGetter, namespace string, cli
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &rbacv1.Role{}); err != nil {
 			return fmt.Errorf("failed to ensure Role: %v", err)
 		}
 	}
@@ -467,12 +411,7 @@ func RoleBindingObjectWrapper(create RoleBindingCreator) ObjectCreator {
 }
 
 // ReconcileRoleBindings will create and update the RoleBindings coming from the passed RoleBindingCreator slice
-func ReconcileRoleBindings(namedGetters []NamedRoleBindingCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &rbacv1.RoleBinding{})
-	if err != nil {
-		return fmt.Errorf("failed to get RoleBinding informer: %v", err)
-	}
-
+func ReconcileRoleBindings(ctx context.Context, namedGetters []NamedRoleBindingCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := RoleBindingObjectWrapper(create)
@@ -480,7 +419,7 @@ func ReconcileRoleBindings(namedGetters []NamedRoleBindingCreatorGetter, namespa
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &rbacv1.RoleBinding{}); err != nil {
 			return fmt.Errorf("failed to ensure RoleBinding: %v", err)
 		}
 	}
@@ -506,12 +445,7 @@ func CustomResourceDefinitionObjectWrapper(create CustomResourceDefinitionCreato
 }
 
 // ReconcileCustomResourceDefinitions will create and update the CustomResourceDefinitions coming from the passed CustomResourceDefinitionCreator slice
-func ReconcileCustomResourceDefinitions(namedGetters []NamedCustomResourceDefinitionCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &apiextensionsv1beta1.CustomResourceDefinition{})
-	if err != nil {
-		return fmt.Errorf("failed to get CustomResourceDefinition informer: %v", err)
-	}
-
+func ReconcileCustomResourceDefinitions(ctx context.Context, namedGetters []NamedCustomResourceDefinitionCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := CustomResourceDefinitionObjectWrapper(create)
@@ -519,7 +453,7 @@ func ReconcileCustomResourceDefinitions(namedGetters []NamedCustomResourceDefini
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &apiextensionsv1beta1.CustomResourceDefinition{}); err != nil {
 			return fmt.Errorf("failed to ensure CustomResourceDefinition: %v", err)
 		}
 	}
@@ -545,12 +479,7 @@ func CronJobObjectWrapper(create CronJobCreator) ObjectCreator {
 }
 
 // ReconcileCronJobs will create and update the CronJobs coming from the passed CronJobCreator slice
-func ReconcileCronJobs(namedGetters []NamedCronJobCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &batchv1beta1.CronJob{})
-	if err != nil {
-		return fmt.Errorf("failed to get CronJob informer: %v", err)
-	}
-
+func ReconcileCronJobs(ctx context.Context, namedGetters []NamedCronJobCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := CronJobObjectWrapper(create)
@@ -558,7 +487,7 @@ func ReconcileCronJobs(namedGetters []NamedCronJobCreatorGetter, namespace strin
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &batchv1beta1.CronJob{}); err != nil {
 			return fmt.Errorf("failed to ensure CronJob: %v", err)
 		}
 	}
@@ -584,12 +513,7 @@ func MutatingWebhookConfigurationObjectWrapper(create MutatingWebhookConfigurati
 }
 
 // ReconcileMutatingWebhookConfigurations will create and update the MutatingWebhookConfigurations coming from the passed MutatingWebhookConfigurationCreator slice
-func ReconcileMutatingWebhookConfigurations(namedGetters []NamedMutatingWebhookConfigurationCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error {
-	store, err := informerutil.GetSyncedStoreFromDynamicFactory(informerFactory, &admissionregistrationv1beta1.MutatingWebhookConfiguration{})
-	if err != nil {
-		return fmt.Errorf("failed to get MutatingWebhookConfiguration informer: %v", err)
-	}
-
+func ReconcileMutatingWebhookConfigurations(ctx context.Context, namedGetters []NamedMutatingWebhookConfigurationCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := MutatingWebhookConfigurationObjectWrapper(create)
@@ -597,7 +521,7 @@ func ReconcileMutatingWebhookConfigurations(namedGetters []NamedMutatingWebhookC
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(name, namespace, createObject, store, client); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &admissionregistrationv1beta1.MutatingWebhookConfiguration{}); err != nil {
 			return fmt.Errorf("failed to ensure MutatingWebhookConfiguration: %v", err)
 		}
 	}

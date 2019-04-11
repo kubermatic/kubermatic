@@ -143,7 +143,6 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
-		ctrlCtx.dynamicClient,
 		ctrlCtx.runOptions.externalURL,
 		ctrlCtx.runOptions.dc,
 		ctrlCtx.dcs,
@@ -158,7 +157,6 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultScrapingConfigs,
 		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
 		ctrlCtx.dockerPullConfigJSON,
-		ctrlCtx.dynamicCache,
 		ctrlCtx.runOptions.oidcCAFile,
 		ctrlCtx.runOptions.oidcIssuerURL,
 		ctrlCtx.runOptions.oidcIssuerClientID,
@@ -222,7 +220,6 @@ func createMonitoringController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
 		dockerPullConfigJSON,
 
-		ctrlCtx.dynamicCache,
 		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
 		ctrlCtx.kubeInformerFactory.Core().V1().ServiceAccounts(),
 		ctrlCtx.kubeInformerFactory.Core().V1().ConfigMaps(),

@@ -22,22 +22,19 @@ import (
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	admissionregistrationclientset "k8s.io/client-go/kubernetes/typed/admissionregistration/v1beta1"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	aggregationclientset "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
-
-	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 )
 
 const (
@@ -63,7 +60,6 @@ type Features struct {
 type Reconciler struct {
 	ctrlruntimeclient.Client
 	userClusterConnProvider userClusterConnectionProvider
-	dynamicCache            ctrlruntimecache.Cache
 	workerName              string
 
 	externalURL string
@@ -95,7 +91,6 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	workerName string,
-	dynamicClient ctrlruntimeclient.Client,
 	externalURL string,
 	dc string,
 	dcs map[string]provider.DatacenterMeta,
@@ -111,7 +106,6 @@ func Add(
 	inClusterPrometheusScrapingConfigsFile string,
 	dockerPullConfigJSON []byte,
 
-	dynamicCache ctrlruntimecache.Cache,
 	oidcCAFile string,
 	oidcIssuerURL string,
 	oidcIssuerClientID string,
@@ -122,9 +116,8 @@ func Add(
 	}
 
 	reconciler := &Reconciler{
-		Client:                  dynamicClient,
+		Client:                  mgr.GetClient(),
 		userClusterConnProvider: userClusterConnProvider,
-		dynamicCache:            dynamicCache,
 		workerName:              workerName,
 
 		recorder: mgr.GetRecorder(ControllerName),

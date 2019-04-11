@@ -342,7 +342,7 @@ func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *opens
 
 	// Ensure ServiceAccount in user cluster
 	tokenOwnerServiceAccountName, tokenOwnerServiceAccountCreator := openshiftresources.TokenOwnerServiceAccount(ctx)
-	err = reconciling.EnsureNamedObjectV2(ctx,
+	err = reconciling.EnsureNamedObject(ctx,
 		nn(metav1.NamespaceSystem, tokenOwnerServiceAccountName),
 		reconciling.ServiceAccountObjectWrapper(tokenOwnerServiceAccountCreator),
 		userClusterClient,
@@ -353,7 +353,7 @@ func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *opens
 
 	// Ensure ClusterRoleBinding in user cluster
 	tokenOwnerServiceAccountClusterRoleBindingName, tokenOwnerServiceAccountClusterRoleBindingCreator := openshiftresources.TokenOwnerServiceAccountClusterRoleBinding(ctx)
-	err = reconciling.EnsureNamedObjectV2(ctx,
+	err = reconciling.EnsureNamedObject(ctx,
 		nn("", tokenOwnerServiceAccountClusterRoleBindingName),
 		reconciling.ClusterRoleBindingObjectWrapper(tokenOwnerServiceAccountClusterRoleBindingCreator),
 		userClusterClient, &rbacv1.ClusterRoleBinding{})
@@ -382,7 +382,7 @@ func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *opens
 	adminKubeconfigSecretName, adminKubeconfigCreator := resources.AdminKubeconfigCreator(osData, func(c *clientcmdapi.Config) {
 		c.AuthInfos[resources.KubeconfigDefaultContextKey].Token = string(tokenSecret.Data["token"])
 	})()
-	err = reconciling.EnsureNamedObjectV2(ctx,
+	err = reconciling.EnsureNamedObject(ctx,
 		nn(osData.Cluster().Status.NamespaceName, adminKubeconfigSecretName),
 		reconciling.SecretObjectWrapper(adminKubeconfigCreator),
 		r.Client,
@@ -431,7 +431,7 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
 	for _, namedSecretCreator := range r.getAllSecretCreators(ctx, osData) {
 		secretName, secretCreator := namedSecretCreator()
-		if err := reconciling.EnsureNamedObjectV2(ctx,
+		if err := reconciling.EnsureNamedObject(ctx,
 			nn(osData.Cluster().Status.NamespaceName, secretName), reconciling.SecretObjectWrapper(secretCreator), r.Client, &corev1.Secret{}); err != nil {
 			return fmt.Errorf("failed to ensure Secret %s: %v", secretName, err)
 		}
@@ -449,7 +449,7 @@ func GetStatefulSetCreators(osData *openshiftData, enableDataCorruptionChecks bo
 func (r *Reconciler) statefulSets(ctx context.Context, osData *openshiftData) error {
 	for _, namedStatefulSetCreator := range GetStatefulSetCreators(osData, r.features.EtcdDataCorruptionChecks) {
 		statefulSetName, statefulSetCreator := namedStatefulSetCreator()
-		if err := reconciling.EnsureNamedObjectV2(ctx,
+		if err := reconciling.EnsureNamedObject(ctx,
 			nn(osData.Cluster().Status.NamespaceName, statefulSetName),
 			reconciling.StatefulSetObjectWrapper(statefulSetCreator),
 			r.Client,
@@ -474,7 +474,7 @@ func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *opensh
 func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) error {
 	for _, namedConfigmapCreator := range r.getAllConfigmapCreators(ctx, osData) {
 		configMapName, configMapCreator := namedConfigmapCreator()
-		if err := reconciling.EnsureNamedObjectV2(ctx,
+		if err := reconciling.EnsureNamedObject(ctx,
 			nn(osData.Cluster().Status.NamespaceName, configMapName), reconciling.ConfigMapObjectWrapper(configMapCreator), r.Client, &corev1.ConfigMap{}); err != nil {
 			return fmt.Errorf("failed to ensure ConfigMap %s: %v", configMapName, err)
 		}
@@ -495,7 +495,7 @@ func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *opens
 func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) error {
 	for _, namedDeploymentCreator := range r.getAllDeploymentCreators(ctx, osData) {
 		deploymentName, deploymentCreator := namedDeploymentCreator()
-		if err := reconciling.EnsureNamedObjectV2(ctx,
+		if err := reconciling.EnsureNamedObject(ctx,
 			nn(osData.Cluster().Status.NamespaceName, deploymentName), reconciling.DeploymentObjectWrapper(deploymentCreator), r.Client, &appsv1.Deployment{}); err != nil {
 			return fmt.Errorf("failed to ensure Deployment %s: %v", deploymentName, err)
 		}
@@ -512,7 +512,7 @@ func GetCronJobCreators(osData *openshiftData) []reconciling.NamedCronJobCreator
 func (r *Reconciler) cronJobs(ctx context.Context, osData *openshiftData) error {
 	for _, cronJobCreator := range GetCronJobCreators(osData) {
 		cronJobName, cronJobCreator := cronJobCreator()
-		if err := reconciling.EnsureNamedObjectV2(ctx,
+		if err := reconciling.EnsureNamedObject(ctx,
 			nn(osData.Cluster().Status.NamespaceName, cronJobName), reconciling.CronJobObjectWrapper(cronJobCreator), r.Client, &batchv1beta1.CronJob{}); err != nil {
 			return fmt.Errorf("failed to ensure CronJob %q: %v", cronJobName, err)
 		}
@@ -530,7 +530,7 @@ func GetPodDisruptionBudgetCreators(osData *openshiftData) []reconciling.NamedPo
 func (r *Reconciler) podDisruptionBudgets(ctx context.Context, osData *openshiftData) error {
 	for _, podDisruptionBudgetCreator := range GetPodDisruptionBudgetCreators(osData) {
 		pdbName, pdbCreator := podDisruptionBudgetCreator()
-		if err := reconciling.EnsureNamedObjectV2(ctx,
+		if err := reconciling.EnsureNamedObject(ctx,
 			nn(osData.Cluster().Status.NamespaceName, pdbName),
 			reconciling.PodDisruptionBudgetObjectWrapper(pdbCreator),
 			r.Client,
@@ -629,7 +629,7 @@ func getAllServiceCreators(osData *openshiftData) []reconciling.NamedServiceCrea
 func (r *Reconciler) services(ctx context.Context, osData *openshiftData) error {
 	for _, namedServiceCreator := range getAllServiceCreators(osData) {
 		serviceName, serviceCreator := namedServiceCreator()
-		if err := reconciling.EnsureNamedObjectV2(ctx,
+		if err := reconciling.EnsureNamedObject(ctx,
 			nn(osData.Cluster().Status.NamespaceName, serviceName), reconciling.ServiceObjectWrapper(serviceCreator), r.Client, &corev1.Service{}); err != nil {
 			return fmt.Errorf("failed to ensure Service %s: %v", serviceName, err)
 		}
