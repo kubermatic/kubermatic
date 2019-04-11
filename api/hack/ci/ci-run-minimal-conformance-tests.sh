@@ -6,7 +6,7 @@ set -euo pipefail
 # receives a SIGINT
 set -o monitor
 
-cd $(dirname $0)/../..
+cd $(realpath $(dirname $0))/../../..
 
 source ./api/hack/lib.sh
 

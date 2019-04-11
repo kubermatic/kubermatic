@@ -6,7 +6,7 @@ set -euo pipefail
 # receives a SIGINT
 set -o monitor
 
-cd $(dirname $0)
+cd $(realpath $(dirname $0))
 
 export UPGRADE_TEST_BASE_HASH=${UPGRADE_TEST_BASE_HASH:-$(git rev-parse master)}
 
