@@ -82,7 +82,7 @@ spec:
         - 255.255.255.0
         command:
         - /usr/sbin/openvpn
-        image: docker.io/kubermatic/openvpn:v0.4
+        image: quay.io/kubermatic/openvpn:v0.5
         imagePullPolicy: IfNotPresent
         name: openvpn-server
         ports:
@@ -126,7 +126,7 @@ spec:
         - while true; do sysctl -w net.ipv4.ip_forward=1; sleep 30; done
         command:
         - /bin/bash
-        image: docker.io/kubermatic/openvpn:v0.4
+        image: quay.io/kubermatic/openvpn:v0.5
         imagePullPolicy: IfNotPresent
         name: ip-forward
         resources:
@@ -163,7 +163,7 @@ spec:
           iptables -A INPUT -i tun0 -j DROP
         command:
         - /bin/bash
-        image: docker.io/kubermatic/openvpn:v0.4
+        image: quay.io/kubermatic/openvpn:v0.5
         imagePullPolicy: IfNotPresent
         name: iptables-init
         resources:

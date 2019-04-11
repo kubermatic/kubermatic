@@ -77,7 +77,7 @@ spec:
         - /dev/stdout
         command:
         - /usr/sbin/openvpn
-        image: docker.io/kubermatic/openvpn:v0.4
+        image: quay.io/kubermatic/openvpn:v0.5
         imagePullPolicy: IfNotPresent
         name: openvpn-client
         resources:

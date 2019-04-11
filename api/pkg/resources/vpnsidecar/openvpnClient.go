@@ -35,7 +35,7 @@ func OpenVPNSidecarContainer(data openvpnData, name string) (*corev1.Container, 
 	procMountType := corev1.DefaultProcMount
 	return &corev1.Container{
 		Name:            name,
-		Image:           data.ImageRegistry("docker.io") + "/kubermatic/openvpn:v0.4",
+		Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/openvpn:v0.5",
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command:         []string{"/usr/sbin/openvpn"},
 		Args: []string{
