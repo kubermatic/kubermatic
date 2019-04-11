@@ -32,8 +32,10 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 	}
 
 	// Set default network configuration
-	if err := r.ensureClusterNetworkDefaults(ctx, cluster); err != nil {
-		return nil, err
+	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		if err := r.ensureClusterNetworkDefaults(ctx, cluster); err != nil {
+			return nil, err
+		}
 	}
 
 	// Deploy & Update master components for Kubernetes

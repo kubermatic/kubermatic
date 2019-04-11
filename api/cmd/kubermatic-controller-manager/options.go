@@ -50,7 +50,7 @@ type controllerRunOptions struct {
 	cleanupContainerFile                             string
 	backupContainerImage                             string
 	backupInterval                                   string
-	etcdDiskSize                                     string
+	etcdDiskSize                                     resource.Quantity
 	inClusterPrometheusRulesFile                     string
 	inClusterPrometheusDisableDefaultRules           bool
 	inClusterPrometheusDisableDefaultScrapingConfigs bool
@@ -70,6 +70,7 @@ type controllerRunOptions struct {
 func newControllerRunOptions() (controllerRunOptions, error) {
 	c := controllerRunOptions{}
 	var rawFeatureGates string
+	var rawEtcdDiskSize string
 
 	flag.StringVar(&c.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&c.masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
@@ -93,7 +94,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.cleanupContainerFile, "cleanup-container", "", "[Required] Filepath of a cleanup container yaml. The container will be used to cleanup the backup directory for a cluster after it got deleted.")
 	flag.StringVar(&c.backupContainerImage, "backup-container-init-image", backupcontroller.DefaultBackupContainerImage, "Docker image to use for the init container in the backup job, must be an etcd v3 image. Only set this if your cluster can not use the public quay.io registry")
 	flag.StringVar(&c.backupInterval, "backup-interval", backupcontroller.DefaultBackupInterval, "Interval in which the etcd gets backed up")
-	flag.StringVar(&c.etcdDiskSize, "etcd-disk-size", "5Gi", "Size for the etcd PV's. Only applies to new clusters.")
+	flag.StringVar(&rawEtcdDiskSize, "etcd-disk-size", "5Gi", "Size for the etcd PV's. Only applies to new clusters.")
 	flag.StringVar(&c.inClusterPrometheusRulesFile, "in-cluster-prometheus-rules-file", "", "The file containing the custom alerting rules for the prometheus running in the cluster-foo namespaces.")
 	flag.BoolVar(&c.inClusterPrometheusDisableDefaultRules, "in-cluster-prometheus-disable-default-rules", false, "A flag indicating whether the default rules for the prometheus running in the cluster-foo namespaces should be deployed.")
 	flag.StringVar(&c.dockerPullConfigJSONFile, "docker-pull-config-json-file", "config.json", "The file containing the docker auth config.")
@@ -112,6 +113,13 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 		return c, err
 	}
 	c.featureGates = featureGates
+
+	etcdDiskSize, err := resource.ParseQuantity(rawEtcdDiskSize)
+	if err != nil {
+		return c, fmt.Errorf("failed to parse value of flag etcd-disk-size (%q): %v", rawEtcdDiskSize, err)
+	}
+	c.etcdDiskSize = etcdDiskSize
+
 	return c, nil
 }
 
@@ -163,9 +171,6 @@ func (o controllerRunOptions) validate() error {
 	if err := o.validateCABundle(); err != nil {
 		return fmt.Errorf("validation CA bundle file failed: %v", err)
 	}
-
-	// Validate etcd disk size
-	resource.MustParse(o.etcdDiskSize)
 
 	// Validate node-port range
 	net.ParsePortRangeOrDie(o.nodePortRange)

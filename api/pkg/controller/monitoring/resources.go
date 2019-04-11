@@ -10,6 +10,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -29,7 +30,7 @@ func (c *Controller) getClusterTemplateData(ctx context.Context, client ctrlrunt
 		c.overwriteRegistry,
 		c.nodePortRange,
 		c.nodeAccessNetwork,
-		c.etcdDiskSize,
+		resource.Quantity{},
 		c.monitoringScrapeAnnotationPrefix,
 		c.inClusterPrometheusRulesFile,
 		c.inClusterPrometheusDisableDefaultRules,
