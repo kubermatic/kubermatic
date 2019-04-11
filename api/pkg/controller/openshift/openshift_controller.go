@@ -449,7 +449,7 @@ func GetStatefulSetCreators(osData *openshiftData, enableDataCorruptionChecks bo
 func (r *Reconciler) statefulSets(ctx context.Context, osData *openshiftData) error {
 	for _, namedStatefulSetCreator := range GetStatefulSetCreators(osData, r.features.EtcdDataCorruptionChecks) {
 		statefulSetName, statefulSetCreator := namedStatefulSetCreator()
-		if err := reconciling.EnsureNamedObjectV2(ctx,
+		if err := reconciling.EnsureNamedObject(ctx,
 			nn(osData.Cluster().Status.NamespaceName, statefulSetName),
 			reconciling.StatefulSetObjectWrapper(statefulSetCreator),
 			r.Client,
@@ -512,7 +512,7 @@ func GetCronJobCreators(osData *openshiftData) []reconciling.NamedCronJobCreator
 func (r *Reconciler) cronJobs(ctx context.Context, osData *openshiftData) error {
 	for _, cronJobCreator := range GetCronJobCreators(osData) {
 		cronJobName, cronJobCreator := cronJobCreator()
-		if err := reconciling.EnsureNamedObjectV2(ctx,
+		if err := reconciling.EnsureNamedObject(ctx,
 			nn(osData.Cluster().Status.NamespaceName, cronJobName), reconciling.CronJobObjectWrapper(cronJobCreator), r.Client, &batchv1beta1.CronJob{}); err != nil {
 			return fmt.Errorf("failed to ensure CronJob %q: %v", cronJobName, err)
 		}
@@ -530,7 +530,7 @@ func GetPodDisruptionBudgetCreators(osData *openshiftData) []reconciling.NamedPo
 func (r *Reconciler) podDisruptionBudgets(ctx context.Context, osData *openshiftData) error {
 	for _, podDisruptionBudgetCreator := range GetPodDisruptionBudgetCreators(osData) {
 		pdbName, pdbCreator := podDisruptionBudgetCreator()
-		if err := reconciling.EnsureNamedObjectV2(ctx,
+		if err := reconciling.EnsureNamedObject(ctx,
 			nn(osData.Cluster().Status.NamespaceName, pdbName),
 			reconciling.PodDisruptionBudgetObjectWrapper(pdbCreator),
 			r.Client,
