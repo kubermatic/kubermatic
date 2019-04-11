@@ -23,8 +23,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-
-	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 )
 
 const (
@@ -38,24 +36,18 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	}
 
 	// check that all services are available
-	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		if err := r.ensureServices(ctx, cluster, data); err != nil {
-			return err
-		}
+	if err := r.ensureServices(ctx, cluster, data); err != nil {
+		return err
 	}
 
 	// check that all secrets are available // New way of handling secrets
-	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		if err := r.ensureSecrets(ctx, cluster, data); err != nil {
-			return err
-		}
+	if err := r.ensureSecrets(ctx, cluster, data); err != nil {
+		return err
 	}
 
 	// check that all StatefulSets are created
-	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		if err := r.ensureStatefulSets(ctx, cluster, data); err != nil {
-			return err
-		}
+	if err := r.ensureStatefulSets(ctx, cluster, data); err != nil {
+		return err
 	}
 
 	// Wait until the cloud provider infra is ready before attempting
@@ -68,35 +60,27 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil
 	}
 
-	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		// check that all ConfigMaps are available
-		if err := r.ensureConfigMaps(ctx, cluster, data); err != nil {
-			return err
-		}
+	// check that all ConfigMaps are available
+	if err := r.ensureConfigMaps(ctx, cluster, data); err != nil {
+		return err
 	}
 
 	// check that all Deployments are available
-	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		if err := r.ensureDeployments(ctx, cluster, data); err != nil {
-			return err
-		}
+	if err := r.ensureDeployments(ctx, cluster, data); err != nil {
+		return err
 	}
 
 	// check that all CronJobs are created
-	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		if err := r.ensureCronJobs(ctx, cluster, data); err != nil {
-			return err
-		}
+	if err := r.ensureCronJobs(ctx, cluster, data); err != nil {
+		return err
 	}
 
 	// check that all PodDisruptionBudgets are created
-	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		if err := r.ensurePodDisruptionBudgets(ctx, cluster, data); err != nil {
-			return err
-		}
+	if err := r.ensurePodDisruptionBudgets(ctx, cluster, data); err != nil {
+		return err
 	}
 
-	// check that all StatefulSets are created
+	// check that all VerticalPodAutoscalers are created
 	if err := r.ensureVerticalPodAutoscalers(ctx, cluster, data); err != nil {
 		return err
 	}
@@ -312,54 +296,18 @@ func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, c *kuberm
 		resources.MachineControllerDeploymentName,
 		resources.MachineControllerWebhookDeploymentName,
 		resources.OpenVPNServerDeploymentName,
+		resources.ApiserverDeploymentName,
+		resources.ControllerManagerDeploymentName,
+		resources.SchedulerDeploymentName,
+		resources.MetricsServerDeploymentName,
 	}
 
-	if c.Annotations["kubermatic.io/openshift"] == "" {
-		controlPlaneDeploymentNames = append(
-			controlPlaneDeploymentNames,
-			resources.ApiserverDeploymentName,
-			resources.ControllerManagerDeploymentName,
-			resources.SchedulerDeploymentName,
-			resources.MetricsServerDeploymentName,
-		)
-	}
-
-	creators, err := resources.GetVerticalPodAutoscalersForAll(ctx, r.Client, controlPlaneDeploymentNames, []string{resources.EtcdStatefulSetName}, c.Status.NamespaceName)
+	creators, err := resources.GetVerticalPodAutoscalersForAll(ctx, r.Client, controlPlaneDeploymentNames, []string{resources.EtcdStatefulSetName}, c.Status.NamespaceName, r.features.VPA)
 	if err != nil {
 		return fmt.Errorf("failed to create the functions to handle VPA resources: %v", err)
 	}
 
-	if !r.features.VPA {
-		// If the feature is disabled, we just wrap the create function to disable the VPA.
-		// This is easier than passing a bool to all required functions.
-		for i, getNameAndCreator := range creators {
-			creators[i] = func() (string, reconciling.VerticalPodAutoscalerCreator) {
-				name, create := getNameAndCreator()
-				return name, disableVPAWrapper(create)
-			}
-		}
-	}
-
 	return reconciling.ReconcileVerticalPodAutoscalers(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
-}
-
-// disableVPAWrapper is a wrapper function which sets the UpdateMode on the VPA to UpdateModeOff.
-// This essentially disables any processing from the VerticalPodAutoscaler
-func disableVPAWrapper(create reconciling.VerticalPodAutoscalerCreator) reconciling.VerticalPodAutoscalerCreator {
-	return func(vpa *autoscalingv1beta2.VerticalPodAutoscaler) (*autoscalingv1beta2.VerticalPodAutoscaler, error) {
-		vpa, err := create(vpa)
-		if err != nil {
-			return nil, err
-		}
-
-		if vpa.Spec.UpdatePolicy == nil {
-			vpa.Spec.UpdatePolicy = &autoscalingv1beta2.PodUpdatePolicy{}
-		}
-		mode := autoscalingv1beta2.UpdateModeOff
-		vpa.Spec.UpdatePolicy.UpdateMode = &mode
-
-		return vpa, nil
-	}
 }
 
 func (r *Reconciler) ensureStatefulSets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
