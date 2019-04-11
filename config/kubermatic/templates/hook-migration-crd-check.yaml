@@ -15,7 +15,7 @@ spec:
       serviceAccountName: kubermatic
       containers:
       - name: check-crd-migration
-        image: "quay.io/kubermatic/util:1.0.0-1"
+        image: "quay.io/kubermatic/util:1.0.0-2"
         command: ["/bin/bash"]
         args:
         - "-c"
