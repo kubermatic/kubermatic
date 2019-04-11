@@ -6,7 +6,7 @@ set -euo pipefail
 # receives a SIGINT
 set -o monitor
 
-cd $(realpath $(dirname $0))/../../..
+cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
 
 source ./api/hack/lib.sh
 
