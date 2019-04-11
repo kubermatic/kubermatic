@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -42,8 +43,15 @@ const (
 	name = "openvpn-server"
 )
 
+type openVPNDeploymentCreatorData interface {
+	Cluster() *kubermaticv1.Cluster
+	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
+	NodeAccessNetwork() string
+	ImageRegistry(string) string
+}
+
 // DeploymentCreator returns the function to create and update the openvpn server deployment
-func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(data openVPNDeploymentCreatorData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.OpenVPNServerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.OpenVPNServerDeploymentName
