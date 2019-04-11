@@ -9,10 +9,9 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/kubeletdnat"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
@@ -35,12 +34,12 @@ func main() {
 		glog.Fatal(err)
 	}
 
-	kubeClient := kubernetes.NewForConfigOrDie(config)
 	// Wait until the API server is actually up
 	// This is a smallish hack to avoid dying instantly when running as sidecar to the kube API server
 	// The API server takes a few seconds to start which makes this sidecar die immediately
 	err = wait.PollImmediate(1*time.Second, 5*time.Minute, func() (bool, error) {
-		if _, err := kubeClient.CoreV1().Nodes().List(metav1.ListOptions{}); err != nil {
+		_, err := client.New(config, client.Options{})
+		if err != nil {
 			return false, nil
 		}
 		return true, nil
