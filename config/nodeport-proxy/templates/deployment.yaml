@@ -53,9 +53,12 @@ spec:
         command:
         - /usr/local/bin/envoy
         args:
-        - "-c=/etc/envoy/envoy.yaml"
-        - "--service-cluster=cluster0"
-        - "--service-node=kube"
+        - "-c"
+        - "/etc/envoy/envoy.yaml"
+        - "--service-cluster"
+        - "cluster0"
+        - "--service-node"
+        - "kube"
         - "--v2-config-only"
         lifecycle:
           preStop:
