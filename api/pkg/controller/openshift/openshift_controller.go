@@ -191,6 +191,10 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("failed to reconcile the cluster address: %v", err)
 	}
 
+	if err := r.networkDefaults(ctx, cluster); err != nil {
+		return nil, fmt.Errorf("failed to setup cluster networking defaults: %v", err)
+	}
+
 	if err := r.services(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Services: %v", err)
 	}
@@ -489,6 +493,37 @@ func (r *Reconciler) address(ctx context.Context, cluster *kubermaticv1.Cluster)
 		}
 	}
 	return nil
+}
+
+func (r *Reconciler) networkDefaults(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	var modifiers []func(*kubermaticv1.Cluster)
+
+	if len(cluster.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
+		setServiceNetwork := func(c *kubermaticv1.Cluster) {
+			c.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
+		}
+		modifiers = append(modifiers, setServiceNetwork)
+	}
+
+	if len(cluster.Spec.ClusterNetwork.Pods.CIDRBlocks) == 0 {
+		setPodNetwork := func(c *kubermaticv1.Cluster) {
+			c.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
+		}
+		modifiers = append(modifiers, setPodNetwork)
+	}
+
+	if cluster.Spec.ClusterNetwork.DNSDomain == "" {
+		setDNSDomain := func(c *kubermaticv1.Cluster) {
+			c.Spec.ClusterNetwork.DNSDomain = "cluster.local"
+		}
+		modifiers = append(modifiers, setDNSDomain)
+	}
+
+	return r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+		for _, modify := range modifiers {
+			modify(c)
+		}
+	})
 }
 
 // GetServiceCreators returns all service creators that are currently in use
