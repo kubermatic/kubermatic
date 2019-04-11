@@ -132,6 +132,7 @@ func createOpenshiftController(ctrlCtx *controllerContext) (runner, error) {
 		},
 		openshiftcontroller.Features{
 			EtcdDataCorruptionChecks: ctrlCtx.runOptions.featureGates.Enabled(EtcdDataCorruptionChecks),
+			VPA:                      ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
 		}); err != nil {
 		return nil, fmt.Errorf("failed to add openshift controller to mgr: %v", err)
 	}
@@ -230,6 +231,10 @@ func createMonitoringController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
 		ctrlCtx.kubeInformerFactory.Apps().V1().Deployments(),
 		ctrlCtx.kubeInformerFactory.Core().V1().Secrets(),
+
+		monitoring.Features{
+			VPA: ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
+		},
 	)
 }
 

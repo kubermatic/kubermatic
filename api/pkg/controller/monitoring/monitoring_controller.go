@@ -42,6 +42,11 @@ type userClusterConnectionProvider interface {
 	GetClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (kubernetes.Interface, error)
 }
 
+// Features describes the enabled features for the monitoring controller
+type Features struct {
+	VPA bool
+}
+
 // Controller stores all components required for monitoring
 type Controller struct {
 	kubeClient              kubernetes.Interface
@@ -74,6 +79,8 @@ type Controller struct {
 	clusterRoleBindingLister rbacb1lister.ClusterRoleBindingLister
 	deploymentLister         appsv1lister.DeploymentLister
 	secretLister             corev1lister.SecretLister
+
+	features Features
 }
 
 // New creates a new Monitoring controller that is responsible for
@@ -105,6 +112,8 @@ func New(
 	clusterRoleBindingInformer rbacv1informer.ClusterRoleBindingInformer,
 	deploymentInformer appsv1informer.DeploymentInformer,
 	secretInformer corev1informers.SecretInformer,
+
+	features Features,
 ) (*Controller, error) {
 	c := &Controller{
 		kubeClient:              kubeClient,
@@ -128,6 +137,8 @@ func New(
 
 		dc:  dc,
 		dcs: dcs,
+
+		features: features,
 	}
 
 	clusterInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{

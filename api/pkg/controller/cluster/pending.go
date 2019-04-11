@@ -39,8 +39,10 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 	}
 
 	// Deploy & Update master components for Kubernetes
-	if err := r.ensureResourcesAreDeployed(ctx, cluster); err != nil {
-		return nil, err
+	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		if err := r.ensureResourcesAreDeployed(ctx, cluster); err != nil {
+			return nil, err
+		}
 	}
 
 	// synchronize cluster.status.health for Kubernetes clusters
