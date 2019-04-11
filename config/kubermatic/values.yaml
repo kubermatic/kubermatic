@@ -66,7 +66,7 @@ kubermatic:
         - node-exporter
         image:
           repository: "quay.io/kubermatic/addons"
-          tag: "v0.2.4"
+          tag: "v0.2.5"
           pullPolicy: "IfNotPresent"
       openshift:
         # list of Addons to install into every user-cluster. All need to exist in the addons image
@@ -76,7 +76,7 @@ kubermatic:
         - rbac
         image:
           repository: "quay.io/kubermatic/openshift-addons"
-          tag: "v0.6"
+          tag: "v0.7"
           pullPolicy: "IfNotPresent"
     resources:
       requests:

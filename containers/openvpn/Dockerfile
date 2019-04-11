@@ -1,5 +1,5 @@
-FROM alpine:3.7
-LABEL maintainer "tobias.hintze@loodse.com"
+FROM alpine:3.9
+LABEL maintainer="tobias.hintze@loodse.com"
 
 RUN apk add -U \
 	bash \
