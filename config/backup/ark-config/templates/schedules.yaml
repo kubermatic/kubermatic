@@ -1,8 +1,0 @@
-{{- with .Values.ark.schedulesPath }}
-apiVersion: v1
-kind: List
-items:
-{{- range $filename, $content := $.Files.Glob . }}
-- {{ $.Files.Get $filename | fromYaml | toJson }}
-{{- end }}
-{{- end }}
