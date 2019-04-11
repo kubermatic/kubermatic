@@ -72,6 +72,7 @@ type Opts struct {
 	log                            *logrus.Entry
 	excludeSelector                excludeSelector
 	excludeSelectorRaw             string
+	existingClusterLabel           string
 
 	secrets secrets
 }
@@ -138,6 +139,7 @@ func main() {
 	pubkeyPath := path.Join(usr.HomeDir, ".ssh/id_rsa.pub")
 
 	flag.StringVar(&opts.kubeconfigPath, "kubeconfig", "/config/kubeconfig", "path to kubeconfig file")
+	flag.StringVar(&opts.existingClusterLabel, "existing-cluster-label", "", "label to use to select an existing cluster for testing. If provided, no cluster will be created. Sample: my=cluster")
 	flag.StringVar(&providers, "providers", "aws,digitalocean,openstack,hetzner,vsphere,azure", "comma separated list of providers to test")
 	flag.StringVar(&opts.namePrefix, "name-prefix", "", "prefix used for all cluster names")
 	flag.StringVar(&opts.repoRoot, "repo-root", "/opt/kube-test/", "Root path for the different kubernetes repositories")
@@ -206,6 +208,10 @@ func main() {
 	}
 	log := mainLog.WithFields(fields)
 	opts.log = log
+
+	if opts.existingClusterLabel != "" && opts.clusterParallelCount != 1 {
+		log.Fatalf("-cluster-parallel-count must be 1 when testing an existing cluster")
+	}
 
 	for _, s := range strings.Split(providers, ",") {
 		opts.providers.Insert(strings.ToLower(strings.TrimSpace(s)))
