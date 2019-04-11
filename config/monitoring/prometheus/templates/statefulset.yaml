@@ -19,10 +19,10 @@ spec:
         kubermatic/scrape: 'true'
         kubermatic/scrape_port: '9090'
         {{- if .Values.prometheus.backup.enabled }}
-        backup.ark.heptio.com/backup-volumes: prometheus-backup
-        pre.hook.backup.ark.heptio.com/container: backup
-        pre.hook.backup.ark.heptio.com/timeout: 30m
-        pre.hook.backup.ark.heptio.com/command: '["/bin/sh", "-c", "rm -rf /prometheus/snapshots/* && curl -s -XPOST \"http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot?skip_head=true\" && rsync --archive /prometheus/snapshots/*/ /backup"]'
+        backup.velero.io/backup-volumes: prometheus-backup
+        pre.hook.backup.velero.io/container: backup
+        pre.hook.backup.velero.io/timeout: 30m
+        pre.hook.backup.velero.io/command: '["/bin/sh", "-c", "rm -rf /prometheus/snapshots/* && curl -s -XPOST \"http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot?skip_head=true\" && rsync --archive /prometheus/snapshots/*/ /backup"]'
         {{- end }}
     spec:
       containers:

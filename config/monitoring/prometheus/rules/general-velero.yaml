@@ -1,0 +1,21 @@
+# This file has been generated, do not edit.
+groups:
+- name: velero
+  rules:
+  - alert: VeleroBackupTakesTooLong
+    annotations:
+      message: Backup schedule {{ $labels.schedule }} has been taking more than 60min
+        already.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-velerobackuptakestoolong
+    expr: (velero_backup_attempt_total - velero_backup_success_total) > 0
+    for: 60m
+    labels:
+      severity: warning
+  - alert: VeleroNoRecentBackup
+    annotations:
+      message: There has not been a successful backup for schedule {{ $labels.schedule
+        }} in the last 24 hours.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-veleronorecentbackup
+    expr: changes(velero_backup_success_total{schedule!=""}[25h]) < 1
+    labels:
+      severity: warning
