@@ -40,31 +40,39 @@ type Deletion struct {
 	userClusterClient controllerruntimeclient.Client
 }
 
-const reqeueInterval = 5 * time.Second
-
 // cleanupCluster is responsible for cleaning up a cluster
 func (d *Deletion) CleanupCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+	err := d.cleanupCluster(ctx, cluster)
+	result := &reconcile.Result{}
+	if cluster != nil && len(cluster.Finalizers) > 0 {
+		result.RequeueAfter = 10 * time.Second
+	}
+
+	return result, err
+}
+
+func (d *Deletion) cleanupCluster(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	err := d.deletingNodeCleanup(ctx, cluster)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// If we still have nodes, we must not cleanup other infrastructure at the cloud provider
 	if kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
-		return &reconcile.Result{RequeueAfter: reqeueInterval}, nil
+		return nil
 	}
 
 	// Delete Volumes and LB's inside the user cluster
 	return d.cleanupInClusterResources(ctx, cluster)
 }
 
-func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	shouldDeleteLBs := kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.InClusterLBCleanupFinalizer)
 	shouldDeletePVs := kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.InClusterPVCleanupFinalizer)
 
 	// If no relevant finalizer exists, directly return
 	if !shouldDeleteLBs && !shouldDeletePVs {
-		return nil, nil
+		return nil
 	}
 
 	// We'll set this to true in case we deleted something. This is meant to requeue as long as all resources are really gone
@@ -75,7 +83,7 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kuber
 		serviceList := &corev1.ServiceList{}
 		if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, serviceList); err != nil {
 
-			return nil, fmt.Errorf("failed to list Service's from user cluster: %v", err)
+			return fmt.Errorf("failed to list Service's from user cluster: %v", err)
 		}
 
 		for _, service := range serviceList.Items {
@@ -83,7 +91,7 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kuber
 			service := service
 			if service.Spec.Type == corev1.ServiceTypeLoadBalancer {
 				if err := d.userClusterClient.Delete(ctx, &service); err != nil {
-					return nil, fmt.Errorf("failed to delete Service '%s/%s' from user cluster: %v", service.Namespace, service.Name, err)
+					return fmt.Errorf("failed to delete Service '%s/%s' from user cluster: %v", service.Namespace, service.Name, err)
 				}
 				deletedSomeResource = true
 				err := d.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
@@ -93,7 +101,7 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kuber
 					cluster.Annotations[deletedLBAnnotationName] = cluster.Annotations[deletedLBAnnotationName] + fmt.Sprintf(",%s", string(service.UID))
 				})
 				if err != nil {
-					return nil, fmt.Errorf("failed to update cluster when trying to add UID of deleted LoadBalancer: %v", err)
+					return fmt.Errorf("failed to update cluster when trying to add UID of deleted LoadBalancer: %v", err)
 				}
 				// Wait for the update to appear in the lister as we use the data from the lister later on to verify if the LoadBalancers
 				// are gone
@@ -107,7 +115,7 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kuber
 					}
 					return false, nil
 				}); err != nil {
-					return nil, fmt.Errorf("failed to wait for deletedLBAnnotation to appear in the lister: %v", err)
+					return fmt.Errorf("failed to wait for deletedLBAnnotation to appear in the lister: %v", err)
 				}
 			}
 		}
@@ -118,12 +126,12 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kuber
 		pvcList := &corev1.PersistentVolumeClaimList{}
 		if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, pvcList); err != nil {
 
-			return nil, fmt.Errorf("failed to list PVCs from user cluster: %v", err)
+			return fmt.Errorf("failed to list PVCs from user cluster: %v", err)
 		}
 
 		for _, pvc := range pvcList.Items {
 			if err := d.userClusterClient.Delete(ctx, &pvc); err != nil {
-				return nil, fmt.Errorf("failed to delete PVC '%s/%s' from user cluster: %v", pvc.Namespace, pvc.Name, err)
+				return fmt.Errorf("failed to delete PVC '%s/%s' from user cluster: %v", pvc.Namespace, pvc.Name, err)
 			}
 			deletedSomeResource = true
 		}
@@ -131,12 +139,12 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kuber
 		// Delete PV's
 		pvList := &corev1.PersistentVolumeList{}
 		if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, pvList); err != nil {
-			return nil, fmt.Errorf("failed to list PVs from user cluster: %v", err)
+			return fmt.Errorf("failed to list PVs from user cluster: %v", err)
 		}
 
 		for _, pv := range pvList.Items {
 			if err := d.userClusterClient.Delete(ctx, &pv); err != nil {
-				return nil, fmt.Errorf("failed to delete PV '%s' from user cluster: %v", pv.Name, err)
+				return fmt.Errorf("failed to delete PV '%s' from user cluster: %v", pv.Name, err)
 			}
 			deletedSomeResource = true
 		}
@@ -149,23 +157,22 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kuber
 	// We also need to return when something was deleted so the checkIfAllLoadbalancersAreGone
 	// call gets an updated version of the cluster from the lister
 	if deletedSomeResource {
-		return &reconcile.Result{RequeueAfter: reqeueInterval}, nil
+		return nil
 	}
 
 	lbsAreGone, err := d.checkIfAllLoadbalancersAreGone(ctx, cluster)
 	if err != nil {
-		return nil, fmt.Errorf("failed to check if all Loadbalancers are gone: %v", err)
+		return fmt.Errorf("failed to check if all Loadbalancers are gone: %v", err)
 	}
 	// Return so we check again later
 	if !lbsAreGone {
-		return &reconcile.Result{RequeueAfter: reqeueInterval}, nil
+		return nil
 	}
 
-	return &reconcile.Result{RequeueAfter: reqeueInterval},
-		d.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, kubermaticapiv1.InClusterLBCleanupFinalizer)
-			c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, kubermaticapiv1.InClusterPVCleanupFinalizer)
-		})
+	return d.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, kubermaticapiv1.InClusterLBCleanupFinalizer)
+		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, kubermaticapiv1.InClusterPVCleanupFinalizer)
+	})
 }
 
 func (d *Deletion) deletingNodeCleanup(ctx context.Context, cluster *kubermaticv1.Cluster) error {
