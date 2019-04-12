@@ -318,7 +318,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context) error {
 		openvpn.ClientCertificate(r.openVPNCA),
 	}
 
-	if err := reconciling.ReconcileSecrets(creators, metav1.NamespaceSystem, r.Client, r.cache); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Secrets in kue-system Namespace: %v", err)
 	}
 
