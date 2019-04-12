@@ -730,8 +730,6 @@ type Event struct {
 // ObjectReference contains basic information about referred object.
 type ObjectReference struct {
 	// Type of the referent.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
-	// +optional
 	Type string `json:"type,omitempty"`
 	// Namespace of the referent.
 	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/

@@ -31,10 +31,8 @@ func ConvertInternalEventToExternal(event corev1.Event) apiv1.Event {
 	switch event.InvolvedObject.Kind {
 	case "Machine":
 		event.InvolvedObject.Kind = "Node"
-		break
 	case "MachineSet":
 		event.InvolvedObject.Kind = "Node Set"
-		break
 	case "MachineDeployment":
 		event.InvolvedObject.Kind = "Node Deployment"
 	}

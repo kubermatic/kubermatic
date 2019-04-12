@@ -477,10 +477,14 @@ func GenDefaultCluster() *kubermaticapiv1.Cluster {
 func GenTestMachine(name, rawProviderSpec string, labels map[string]string, ownerRef []metav1.OwnerReference) *clusterv1alpha1.Machine {
 	return &clusterv1alpha1.Machine{
 		ObjectMeta: metav1.ObjectMeta{
+			UID:             types.UID(name + "-machine"),
 			Name:            name,
 			Namespace:       metav1.NamespaceSystem,
 			Labels:          labels,
 			OwnerReferences: ownerRef,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind: "Machine",
 		},
 		Spec: clusterv1alpha1.MachineSpec{
 			ProviderSpec: clusterv1alpha1.ProviderSpec{
@@ -501,6 +505,9 @@ func GenTestMachineDeployment(name, rawProviderSpec string, selector map[string]
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: metav1.NamespaceSystem,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind: "MachineDeployment",
 		},
 		Spec: clusterv1alpha1.MachineDeploymentSpec{
 			Selector: metav1.LabelSelector{

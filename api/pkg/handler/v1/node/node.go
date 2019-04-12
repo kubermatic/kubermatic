@@ -749,7 +749,7 @@ func getMachineEvents(ctx context.Context, client ctrlruntimeclient.Client, mach
 			return nil, err
 		}
 
-		result = append(events, events...)
+		result = append(result, events...)
 	}
 
 	return result, nil
@@ -763,7 +763,7 @@ func getMachineSetEvents(ctx context.Context, client ctrlruntimeclient.Client, m
 			return nil, err
 		}
 
-		result = append(events, events...)
+		result = append(result, events...)
 	}
 
 	return result, nil
@@ -777,7 +777,7 @@ func getMachineDeploymentEvents(ctx context.Context, client ctrlruntimeclient.Cl
 			return nil, err
 		}
 
-		result = append(events, events...)
+		result = append(result, events...)
 	}
 
 	return result, nil
