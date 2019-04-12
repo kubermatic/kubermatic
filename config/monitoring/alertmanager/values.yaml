@@ -27,6 +27,7 @@ alertmanager:
       limits:
         cpu: 5m
         memory: 32Mi
+    storage: 100Mi
   nodeSelector: {}
   affinity: {}
   tolerations: []

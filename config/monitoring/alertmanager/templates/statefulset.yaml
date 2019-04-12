@@ -116,5 +116,5 @@ spec:
       - ReadWriteOnce
       resources:
         requests:
-          storage: 100Mi
+          storage: {{ .Values.alertmanager.resources.storage }}
       storageClassName: kubermatic-fast
