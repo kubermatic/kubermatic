@@ -125,17 +125,6 @@ func TestCleanupJobSpec(t *testing.T) {
 	}
 
 	cleanupJob := reconciler.cleanupJob(&kubermaticv1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"}})
-	if len(cleanupJob.OwnerReferences) != 1 {
-		t.Fatalf("cleanup job has no owner ref")
-	}
-
-	if cleanupJob.OwnerReferences[0].Kind != "Cluster" {
-		t.Errorf("cleanup jobs ownerRef.Kind is not 'Cluster' but %q", cleanupJob.OwnerReferences[0].Kind)
-	}
-
-	if cleanupJob.OwnerReferences[0].Name != "test-cluster" {
-		t.Errorf("cleanup jobs owner ref does not point to the right cluster, expected 'test-cluster', got %q", cleanupJob.OwnerReferences[0].Name)
-	}
 
 	if cleanupJob.Namespace != metav1.NamespaceSystem {
 		t.Errorf("expected cleanup jobs Namespace to be %q but was %q", metav1.NamespaceSystem, cleanupJob.Namespace)

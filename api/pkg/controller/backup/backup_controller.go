@@ -352,9 +352,6 @@ func (r *Reconciler) cleanupJob(cluster *kubermaticv1.Cluster) *batchv1.Job {
 			Labels: map[string]string{
 				resources.AppLabelKey: backupCleanupJobLabel,
 			},
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(cluster, kubermaticv1.SchemeGroupVersion.WithKind(kubermaticv1.ClusterKindName)),
-			},
 		},
 		Spec: batchv1.JobSpec{
 			BackoffLimit:          int32Ptr(10),
