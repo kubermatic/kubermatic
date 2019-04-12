@@ -5,14 +5,13 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
-	"k8s.io/apimachinery/pkg/types"
-
-	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	controllerruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	controllerruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestEnsureObjectByAnnotation(t *testing.T) {
@@ -73,6 +72,8 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 				}
 				sa.Name = testResourceName
 				sa.Namespace = testNamespace
+				// Required as we wait for the resource version to change in EnsureNamedObject & the fake client does not set it
+				sa.ResourceVersion = "jf82762lh7"
 				sa.Data = map[string]string{
 					"foo": "bar",
 				}
@@ -82,6 +83,8 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testResourceName,
 					Namespace: testNamespace,
+					// Required as we wait for the resource version to change in EnsureNamedObject & the fake client does not set it
+					ResourceVersion: "jf82762lh7",
 				},
 				Data: map[string]string{
 					"foo": "bar",

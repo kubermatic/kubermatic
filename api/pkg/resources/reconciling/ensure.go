@@ -3,6 +3,7 @@ package reconciling
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/golang/glog"
 
@@ -10,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-
+	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -68,6 +69,22 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 		if err := client.Create(ctx, obj); err != nil {
 			return fmt.Errorf("failed to create %T '%s': %v", obj, namespacedName.String(), err)
 		}
+		// Wait until the object exists in the cache
+		err = wait.PollImmediate(10*time.Millisecond, 10*time.Second, func() (bool, error) {
+			newObj := obj.DeepCopyObject()
+			if err := client.Get(ctx, namespacedName, newObj); err != nil {
+				if kubeerrors.IsNotFound(err) {
+					return false, nil
+				}
+				glog.Errorf("failed retrieving object %T %s while waiting for the cache to contain our newly created object: %v", newObj, namespacedName, err)
+				return false, nil
+			}
+			return true, nil
+		})
+		if err != nil {
+			return fmt.Errorf("failed waiting for the cache to contain our newly created object: %v", err)
+		}
+
 		glog.V(2).Infof("Created %T %s in Namespace %s", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
 		return nil
 	}
@@ -83,9 +100,28 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 		return nil
 	}
 
+	oldResourceVersion := existingObject.(metav1.Object).GetResourceVersion()
 	if err = client.Update(ctx, obj); err != nil {
 		return fmt.Errorf("failed to update object %T '%s': %v", obj, namespacedName.String(), err)
 	}
+	// Wait until the object we retrieve via "client.Get" has a different ResourceVersion than the old object
+	err = wait.PollImmediate(10*time.Millisecond, 10*time.Second, func() (bool, error) {
+		// Create a copy to have something which we can pass into the client
+		newObj := obj.DeepCopyObject()
+		if err := client.Get(ctx, namespacedName, newObj); err != nil {
+			glog.Errorf("failed retrieving object %T %s while waiting for the cache to contain our latest changes: %v", newObj, namespacedName, err)
+			return false, nil
+		}
+		// Only look for a different resource version, as there might be another change which overwrote ours
+		if newObj.(metav1.Object).GetResourceVersion() != oldResourceVersion {
+			return true, nil
+		}
+		return false, nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed waiting for the cache to contain our latest changes: %v", err)
+	}
+
 	glog.V(2).Infof("Updated %T %s in Namespace %s", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
 
 	return nil
