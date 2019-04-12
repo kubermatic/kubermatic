@@ -15,8 +15,8 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (c *Controller) getClusterTemplateData(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (*resources.TemplateData, error) {
-	dc, found := c.dcs[cluster.Spec.Cloud.DatacenterName]
+func (r *Reconciler) getClusterTemplateData(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (*resources.TemplateData, error) {
+	dc, found := r.dcs[cluster.Spec.Cloud.DatacenterName]
 	if !found {
 		return nil, fmt.Errorf("failed to get datacenter %s", cluster.Spec.Cloud.DatacenterName)
 	}
@@ -26,36 +26,36 @@ func (c *Controller) getClusterTemplateData(ctx context.Context, client ctrlrunt
 		client,
 		cluster,
 		&dc,
-		c.dc,
-		c.overwriteRegistry,
-		c.nodePortRange,
-		c.nodeAccessNetwork,
+		r.dc,
+		r.overwriteRegistry,
+		r.nodePortRange,
+		r.nodeAccessNetwork,
 		resource.Quantity{},
-		c.monitoringScrapeAnnotationPrefix,
-		c.inClusterPrometheusRulesFile,
-		c.inClusterPrometheusDisableDefaultRules,
-		c.inClusterPrometheusDisableDefaultScrapingConfigs,
-		c.inClusterPrometheusScrapingConfigsFile,
+		r.monitoringScrapeAnnotationPrefix,
+		r.inClusterPrometheusRulesFile,
+		r.inClusterPrometheusDisableDefaultRules,
+		r.inClusterPrometheusDisableDefaultScrapingConfigs,
+		r.inClusterPrometheusScrapingConfigsFile,
 		"",
 		"",
 		"",
 	), nil
 }
 
-func (c *Controller) ensureRoles(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) ensureRoles(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	getters := []reconciling.NamedRoleCreatorGetter{
 		prometheus.RoleCreator(),
 	}
 
-	return reconciling.ReconcileRoles(ctx, getters, cluster.Status.NamespaceName, c.dynamicClient, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
+	return reconciling.ReconcileRoles(ctx, getters, cluster.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }
 
-func (c *Controller) ensureRoleBindings(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) ensureRoleBindings(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	getters := []reconciling.NamedRoleBindingCreatorGetter{
 		prometheus.RoleBindingCreator(cluster.Status.NamespaceName),
 	}
 
-	return reconciling.ReconcileRoleBindings(ctx, getters, cluster.Status.NamespaceName, c.dynamicClient, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
+	return reconciling.ReconcileRoleBindings(ctx, getters, cluster.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use
@@ -67,10 +67,10 @@ func GetDeploymentCreators(data *resources.TemplateData) []reconciling.NamedDepl
 	return creators
 }
 
-func (c *Controller) ensureDeployments(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetDeploymentCreators(data)
 
-	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, c.dynamicClient, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
+	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }
 
 // GetSecretCreatorOperations returns all SecretCreators that are currently in use
@@ -86,10 +86,10 @@ func GetSecretCreatorOperations(data *resources.TemplateData) []reconciling.Name
 	}
 }
 
-func (c *Controller) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *Reconciler) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	namedSecretCreatorGetters := GetSecretCreatorOperations(data)
 
-	if err := reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetters, cluster.Status.NamespaceName, c.dynamicClient); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetters, cluster.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster))); err != nil {
 		return fmt.Errorf("failed to ensure that the Secret exists: %v", err)
 	}
 
@@ -103,10 +103,10 @@ func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfi
 	}
 }
 
-func (c *Controller) ensureConfigMaps(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *Reconciler) ensureConfigMaps(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetConfigMapCreators(data)
 
-	if err := reconciling.ReconcileConfigMaps(ctx, creators, cluster.Status.NamespaceName, c.dynamicClient); err != nil {
+	if err := reconciling.ReconcileConfigMaps(ctx, creators, cluster.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster))); err != nil {
 		return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)
 	}
 
@@ -120,13 +120,13 @@ func GetStatefulSetCreators(data *resources.TemplateData) []reconciling.NamedSta
 	}
 }
 
-func (c *Controller) ensureStatefulSets(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *Reconciler) ensureStatefulSets(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetStatefulSetCreators(data)
 
-	return reconciling.ReconcileStatefulSets(ctx, creators, cluster.Status.NamespaceName, c.dynamicClient, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
+	return reconciling.ReconcileStatefulSets(ctx, creators, cluster.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }
 
-func (c *Controller) ensureVerticalPodAutoscalers(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	deploymentNames := []string{
 		resources.KubeStateMetricsDeploymentName,
 	}
@@ -136,15 +136,15 @@ func (c *Controller) ensureVerticalPodAutoscalers(ctx context.Context, cluster *
 
 	creators, err := resources.GetVerticalPodAutoscalersForAll(
 		ctx,
-		c.dynamicClient,
+		r.Client,
 		deploymentNames,
 		statefulSetNames,
 		cluster.Status.NamespaceName,
-		c.features.VPA)
+		r.features.VPA)
 	if err != nil {
 		return fmt.Errorf("failed to create the functions to handle VPA resources: %v", err)
 	}
-	return reconciling.ReconcileVerticalPodAutoscalers(ctx, creators, cluster.Status.NamespaceName, c.dynamicClient)
+	return reconciling.ReconcileVerticalPodAutoscalers(ctx, creators, cluster.Status.NamespaceName, r.Client)
 }
 
 // GetServiceCreators returns all service creators that are currently in use
@@ -154,10 +154,10 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 	}
 }
 
-func (c *Controller) ensureServices(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *Reconciler) ensureServices(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetServiceCreators(data)
 
-	return reconciling.ReconcileServices(ctx, creators, cluster.Status.NamespaceName, c.dynamicClient, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
+	return reconciling.ReconcileServices(ctx, creators, cluster.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }
 
 // GetServiceCreators returns all service creators that are currently in use
@@ -167,8 +167,8 @@ func GetServiceAccountCreators() []reconciling.NamedServiceAccountCreatorGetter 
 	}
 }
 
-func (c *Controller) ensureServiceAccounts(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *Reconciler) ensureServiceAccounts(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetServiceAccountCreators()
 
-	return reconciling.ReconcileServiceAccounts(ctx, creators, cluster.Status.NamespaceName, c.dynamicClient, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
+	return reconciling.ReconcileServiceAccounts(ctx, creators, cluster.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster)))
 }

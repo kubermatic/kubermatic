@@ -83,13 +83,14 @@ func TestCreateConfigMap(t *testing.T) {
 						ClusterIP: "192.0.2.10",
 					},
 				},
+				test.cluster,
 			}
 			if test.configMap != nil {
 				objects = append(objects, test.configMap)
 			}
-			controller := newTestController(objects, []runtime.Object{test.cluster})
+			controller := newTestReconciler(t, objects)
 
-			data, err := controller.getClusterTemplateData(context.Background(), controller.dynamicClient, test.cluster)
+			data, err := controller.getClusterTemplateData(context.Background(), controller.Client, test.cluster)
 			if err != nil {
 				t.Fatal(err)
 				return
@@ -101,7 +102,7 @@ func TestCreateConfigMap(t *testing.T) {
 
 			keyName := types.NamespacedName{Namespace: test.cluster.Status.NamespaceName, Name: resources.PrometheusConfigConfigMapName}
 			gotConfigMap := &corev1.ConfigMap{}
-			if err := controller.dynamicClient.Get(context.Background(), keyName, gotConfigMap); err != nil {
+			if err := controller.Client.Get(context.Background(), keyName, gotConfigMap); err != nil {
 				t.Fatalf("failed to get the ConfigMap from the dynamic client: %v", err)
 			}
 
