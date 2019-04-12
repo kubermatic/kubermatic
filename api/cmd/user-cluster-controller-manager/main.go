@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"errors"
 	"flag"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"time"
@@ -18,6 +18,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/nodecsrapprover"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac-user-cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,18 +27,21 @@ import (
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
 
 type controllerRunOptions struct {
-	metricsListenAddr string
-	healthListenAddr  string
-	openshift         bool
-	networks          networkFlags
-	namespace         string
-	caPath            string
-	clusterURL        string
-	openvpnServerPort int
+	metricsListenAddr     string
+	healthListenAddr      string
+	openshift             bool
+	networks              networkFlags
+	namespace             string
+	caPath                string
+	clusterURL            string
+	openvpnServerPort     int
+	openvpnCACertFilePath string
+	openvpnCAKeyFilePath  string
 }
 
 func main() {
@@ -50,36 +54,63 @@ func main() {
 	flag.StringVar(&runOp.caPath, "ca-cert", "ca.crt", "Path to the CA cert file")
 	flag.StringVar(&runOp.clusterURL, "cluster-url", "", "Cluster URL")
 	flag.IntVar(&runOp.openvpnServerPort, "openvpn-server-port", 0, "OpenVPN server port")
+	flag.StringVar(&runOp.openvpnCACertFilePath, "openvpn-ca-cert-file", "", "Path to the OpenVPN CA cert file")
+	flag.StringVar(&runOp.openvpnCAKeyFilePath, "openvpn-ca-key-file", "", "Path to the OpenVPN CA key file")
 	flag.Parse()
 
 	if runOp.namespace == "" {
-		log.Fatal("-namespace must be set")
+		glog.Fatal("-namespace must be set")
 	}
 	if runOp.caPath == "" {
-		log.Fatal("-ca-cert must be set")
+		glog.Fatal("-ca-cert must be set")
 	}
 	if runOp.clusterURL == "" {
-		log.Fatal("-cluster-url must be set")
+		glog.Fatal("-cluster-url must be set")
 	}
 	clusterURL, err := url.Parse(runOp.clusterURL)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 	if runOp.openvpnServerPort == 0 {
-		log.Fatal("-openvpn-server-port must be set")
+		glog.Fatal("-openvpn-server-port must be set")
 	}
 
 	caBytes, err := ioutil.ReadFile(runOp.caPath)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 	certs, err := certutil.ParseCertsPEM(caBytes)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 	if len(certs) != 1 {
-		log.Fatalf("did not find exactly one but %d certificates in the given CA", len(certs))
+		glog.Fatalf("did not find exactly one but %d certificates in the given CA", len(certs))
 	}
+
+	openVPNCACertBytes, err := ioutil.ReadFile(runOp.openvpnCACertFilePath)
+	if err != nil {
+		glog.Fatalf("failed to read openvpn-ca-cert-file: %v", err)
+	}
+	openVPNCACerts, err := certutil.ParseCertsPEM(openVPNCACertBytes)
+	if err != nil {
+		glog.Fatalf("failed to parse openVPN CA file: %v", err)
+	}
+	if certsLen := len(openVPNCACerts); certsLen != 1 {
+		glog.Fatalf("did not find exactly one but %v certificates in the openVPN CA file", certsLen)
+	}
+	openVPNCAKeyBytes, err := ioutil.ReadFile(runOp.openvpnCAKeyFilePath)
+	if err != nil {
+		glog.Fatalf("failed to read openvon-ca-key-file: %v", err)
+	}
+	openVPNCAKey, err := certutil.ParsePrivateKeyPEM(openVPNCAKeyBytes)
+	if err != nil {
+		glog.Fatalf("failed to parse openVPN CA key file: %v", err)
+	}
+	openVPNECSDAKey, isECDSAKey := openVPNCAKey.(*ecdsa.PrivateKey)
+	if !isECDSAKey {
+		glog.Fatal("the openVPN private key is not an ECDSA key")
+	}
+	openVPNCACert := &resources.ECDSAKeyPair{Cert: openVPNCACerts[0], Key: openVPNECSDAKey}
 
 	var g run.Group
 
@@ -95,6 +126,8 @@ func main() {
 
 	// Create Context
 	done := ctx.Done()
+
+	log.SetLogger(log.ZapLogger(false))
 
 	mgr, err := manager.New(cfg, manager.Options{LeaderElection: true, LeaderElectionNamespace: metav1.NamespaceSystem, MetricsBindAddress: runOp.metricsListenAddr})
 	if err != nil {
@@ -117,7 +150,8 @@ func main() {
 		certs[0],
 		clusterURL,
 		runOp.openvpnServerPort,
-		healthHandler.AddReadinessCheck); err != nil {
+		healthHandler.AddReadinessCheck,
+		openVPNCACert); err != nil {
 		glog.Fatalf("failed to register user cluster controller: %v", err)
 	}
 
