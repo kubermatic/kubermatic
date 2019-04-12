@@ -16,6 +16,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -67,44 +68,22 @@ func Add(
 			}}}
 	})
 
-	if err = c.Watch(&source.Kind{Type: &apiregistrationv1beta1.APIService{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
-		return err
+	typesToWatch := []runtime.Object{
+		&apiregistrationv1beta1.APIService{},
+		&corev1.ServiceAccount{},
+		&corev1.Service{},
+		&corev1.ConfigMap{},
+		&rbacv1.Role{},
+		&rbacv1.RoleBinding{},
+		&rbacv1.ClusterRole{},
+		&rbacv1.ClusterRoleBinding{},
+		&admissionregistrationv1beta1.MutatingWebhookConfiguration{},
+		&apiextensionsv1beta1.CustomResourceDefinition{},
 	}
-
-	if err = c.Watch(&source.Kind{Type: &corev1.ServiceAccount{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
-		return err
-	}
-
-	if err = c.Watch(&source.Kind{Type: &corev1.Service{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
-		return err
-	}
-
-	if err = c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
-		return err
-	}
-
-	if err = c.Watch(&source.Kind{Type: &rbacv1.Role{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
-		return err
-	}
-
-	if err = c.Watch(&source.Kind{Type: &rbacv1.RoleBinding{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
-		return err
-	}
-
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
-		return err
-	}
-
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRoleBinding{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
-		return err
-	}
-
-	if err = c.Watch(&source.Kind{Type: &admissionregistrationv1beta1.MutatingWebhookConfiguration{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
-		return err
-	}
-
-	if err = c.Watch(&source.Kind{Type: &apiextensionsv1beta1.CustomResourceDefinition{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
-		return err
+	for _, t := range typesToWatch {
+		if err := c.Watch(&source.Kind{Type: t}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
+			return fmt.Errorf("failed to create watch for %T: %v", t, err)
+		}
 	}
 
 	// A very simple but limited way to express the first successful reconciling to the seed cluster
