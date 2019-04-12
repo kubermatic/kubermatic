@@ -1,4 +1,4 @@
-package deletion
+package clusterdeletion
 
 import (
 	"context"

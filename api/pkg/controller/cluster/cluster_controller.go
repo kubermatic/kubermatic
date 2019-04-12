@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/common/deletion"
+	"github.com/kubermatic/kubermatic/api/pkg/clusterdeletion"
 	kubermaticscheme "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -226,7 +226,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user cluster client: %v", err)
 		}
-		return deletion.New(r.Client, userClusterClient).CleanupCluster(ctx, cluster)
+		return clusterdeletion.New(r.Client, userClusterClient).CleanupCluster(ctx, cluster)
 	}
 
 	if cluster.Status.Phase == kubermaticv1.NoneClusterStatusPhase {
