@@ -8,6 +8,7 @@ import (
 	"github.com/golang/glog"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 )
@@ -65,12 +66,14 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 
 		// Only add the node deletion finalizer when the cluster is actually running
 		// Otherwise we fail to delete the nodes and are stuck in a loop
-		if !kuberneteshelper.HasFinalizer(cluster, NodeDeletionFinalizer) {
-			err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-				c.Finalizers = append(c.Finalizers, NodeDeletionFinalizer)
-			})
-			if err != nil {
-				return nil, err
+		if cluster.Annotations["kubermatic.io/openshift"] == "" {
+			if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
+				err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+					c.Finalizers = append(c.Finalizers, kubermaticapiv1.NodeDeletionFinalizer)
+				})
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 

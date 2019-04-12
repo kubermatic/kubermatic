@@ -19,7 +19,6 @@ import (
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
-	clustercontroller "github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -246,7 +245,7 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 		if err != nil {
 			return err
 		}
-		cluster.Finalizers = append(cluster.Finalizers, clustercontroller.InClusterPVCleanupFinalizer, clustercontroller.InClusterLBCleanupFinalizer)
+		cluster.Finalizers = append(cluster.Finalizers, kubermaticapiv1.InClusterPVCleanupFinalizer, kubermaticapiv1.InClusterLBCleanupFinalizer)
 		cluster, err = r.kubermaticClient.KubermaticV1().Clusters().Update(cluster)
 		return err
 

@@ -19,7 +19,6 @@ import (
 	"github.com/prometheus/common/model"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	finalizer "github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
@@ -284,10 +283,10 @@ func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 			if req.DeleteLoadBalancers {
-				existingCluster.Finalizers = kuberneteshelper.AddFinalizer(existingCluster.Finalizers, finalizer.InClusterLBCleanupFinalizer)
+				existingCluster.Finalizers = kuberneteshelper.AddFinalizer(existingCluster.Finalizers, apiv1.InClusterLBCleanupFinalizer)
 			}
 			if req.DeleteVolumes {
-				existingCluster.Finalizers = kuberneteshelper.AddFinalizer(existingCluster.Finalizers, finalizer.InClusterPVCleanupFinalizer)
+				existingCluster.Finalizers = kuberneteshelper.AddFinalizer(existingCluster.Finalizers, apiv1.InClusterPVCleanupFinalizer)
 			}
 
 			if _, err = clusterProvider.Update(userInfo, existingCluster); err != nil {
