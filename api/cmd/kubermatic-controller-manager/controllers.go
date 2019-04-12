@@ -204,9 +204,10 @@ func createMonitoringController(ctrlCtx *controllerContext) (runner, error) {
 		return nil, fmt.Errorf("failed to load ImagePullSecret from %s: %v", ctrlCtx.runOptions.dockerPullConfigJSONFile, err)
 	}
 
-	return monitoring.New(
-		ctrlCtx.kubeClient,
-		ctrlCtx.dynamicClient,
+	return nil, monitoring.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
 		ctrlCtx.clientProvider,
 
 		ctrlCtx.runOptions.dc,
@@ -220,17 +221,6 @@ func createMonitoringController(ctrlCtx *controllerContext) (runner, error) {
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultScrapingConfigs,
 		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
 		dockerPullConfigJSON,
-
-		ctrlCtx.kubermaticInformerFactory.Kubermatic().V1().Clusters(),
-		ctrlCtx.kubeInformerFactory.Core().V1().ServiceAccounts(),
-		ctrlCtx.kubeInformerFactory.Core().V1().ConfigMaps(),
-		ctrlCtx.kubeInformerFactory.Rbac().V1().Roles(),
-		ctrlCtx.kubeInformerFactory.Rbac().V1().RoleBindings(),
-		ctrlCtx.kubeInformerFactory.Core().V1().Services(),
-		ctrlCtx.kubeInformerFactory.Apps().V1().StatefulSets(),
-		ctrlCtx.kubeInformerFactory.Rbac().V1().ClusterRoleBindings(),
-		ctrlCtx.kubeInformerFactory.Apps().V1().Deployments(),
-		ctrlCtx.kubeInformerFactory.Core().V1().Secrets(),
 
 		monitoring.Features{
 			VPA: ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
