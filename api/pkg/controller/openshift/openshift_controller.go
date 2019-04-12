@@ -6,6 +6,7 @@ import (
 	"time"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/common/deletion"
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
@@ -193,6 +194,14 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	glog.V(4).Infof("Reconciling cluster %s", cluster.Name)
 
+	if cluster.DeletionTimestamp != nil {
+		userClusterClient, err := r.getUserClusterClient(ctx, cluster)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user cluster client: %v", err)
+		}
+		return deletion.New(r.Client, userClusterClient).CleanupCluster(ctx, cluster)
+	}
+
 	// Ensure Namespace
 	if err := r.ensureNamespace(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to ensure Namespace: %v", err)
@@ -343,6 +352,18 @@ func (r *Reconciler) updateCluster(ctx context.Context, c *kubermaticv1.Cluster,
 	})
 }
 
+func (r *Reconciler) getUserClusterClient(ctx context.Context, cluster *kubermaticv1.Cluster) (client.Client, error) {
+	kubeConfigSecret := &corev1.Secret{}
+	if err := r.Get(ctx, nn(cluster.Status.NamespaceName, openshiftresources.ExternalX509KubeconfigName), kubeConfigSecret); err != nil {
+		return nil, fmt.Errorf("failed to get userCluster kubeconfig secret: %v", err)
+	}
+	cfg, err := clientcmd.RESTConfigFromKubeConfig(kubeConfigSecret.Data[resources.KubeconfigSecretKey])
+	if err != nil {
+		return nil, fmt.Errorf("failed to get config from secret: %v", err)
+	}
+	return client.New(cfg, client.Options{})
+}
+
 // Openshift doesn't seem to support a token-file-based authentication at all
 // It can be passed down onto the kube-apiserver but does still not work, presumably because OS puts another authentication
 // layer on top
@@ -352,15 +373,7 @@ func (r *Reconciler) updateCluster(ctx context.Context, c *kubermaticv1.Cluster,
 // cluster, rendering our admin-kubeconfig invalid
 // TODO: Find an alternate approach or move this to a controller that has informers in both the user cluster and the seed
 func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *openshiftData) (*reconcile.Result, error) {
-	kubeConfigSecret := &corev1.Secret{}
-	if err := r.Get(ctx, nn(osData.Cluster().Status.NamespaceName, openshiftresources.ExternalX509KubeconfigName), kubeConfigSecret); err != nil {
-		return nil, fmt.Errorf("failed to get userCluster kubeconfig secret: %v", err)
-	}
-	cfg, err := clientcmd.RESTConfigFromKubeConfig(kubeConfigSecret.Data[resources.KubeconfigSecretKey])
-	if err != nil {
-		return nil, fmt.Errorf("failed to get config from secret: %v", err)
-	}
-	userClusterClient, err := client.New(cfg, client.Options{})
+	userClusterClient, err := r.getUserClusterClient(ctx, osData.Cluster())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get userClusterClient: %v", err)
 	}

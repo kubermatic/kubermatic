@@ -28,14 +28,14 @@ const (
 	deletedLBAnnotationName = "kubermatic.io/cleaned-up-loadbalancers"
 )
 
-func New(seedClient, userClusterClient controllerruntimeclient.Client) *deletion {
-	return &deletion{
+func New(seedClient, userClusterClient controllerruntimeclient.Client) *Deletion {
+	return &Deletion{
 		seedClient:        seedClient,
 		userClusterClient: userClusterClient,
 	}
 }
 
-type deletion struct {
+type Deletion struct {
 	seedClient        controllerruntimeclient.Client
 	userClusterClient controllerruntimeclient.Client
 }
@@ -43,7 +43,7 @@ type deletion struct {
 const reqeueInterval = 5 * time.Second
 
 // cleanupCluster is responsible for cleaning up a cluster
-func (d *deletion) CleanupCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (d *Deletion) CleanupCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	err := d.deletingNodeCleanup(ctx, cluster)
 	if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func (d *deletion) CleanupCluster(ctx context.Context, cluster *kubermaticv1.Clu
 	return d.cleanupInClusterResources(ctx, cluster)
 }
 
-func (d *deletion) cleanupInClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	shouldDeleteLBs := kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.InClusterLBCleanupFinalizer)
 	shouldDeletePVs := kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.InClusterPVCleanupFinalizer)
 
@@ -168,7 +168,7 @@ func (d *deletion) cleanupInClusterResources(ctx context.Context, cluster *kuber
 		})
 }
 
-func (d *deletion) deletingNodeCleanup(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (d *Deletion) deletingNodeCleanup(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
 		return nil
 	}
@@ -256,7 +256,7 @@ func (d *deletion) deletingNodeCleanup(ctx context.Context, cluster *kubermaticv
 // checkIfAllLoadbalancersAreGone checks if all the services of type LoadBalancer were successfully
 // deleted. The in-tree cloud providers do this without a finalizer and only after the service
 // object is gone from the API, the only way to check is to wait for the relevant event
-func (d *deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *kubermaticv1.Cluster) (bool, error) {
+func (d *Deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *kubermaticv1.Cluster) (bool, error) {
 	// This check is only required for in-tree cloud provider that support LoadBalancers
 	// TODO once we start external cloud controllers for one of these three: Make this check
 	// a bit smarter, external cloud controllers will most likely not emit the event we wait for
@@ -307,7 +307,7 @@ func (d *deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *
 	return true, nil
 }
 
-func (d *deletion) updateCluster(ctx context.Context, cluster *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {
+func (d *Deletion) updateCluster(ctx context.Context, cluster *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {
 	// Store it here because it may be unset later on if an update request failed
 	name := cluster.Name
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
