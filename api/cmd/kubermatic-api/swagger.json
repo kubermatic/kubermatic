@@ -4464,11 +4464,6 @@
       "type": "object",
       "title": "ObjectReference contains basic information about referred object.",
       "properties": {
-        "kind": {
-          "description": "Kind of the referent.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds\n+optional",
-          "type": "string",
-          "x-go-name": "Kind"
-        },
         "name": {
           "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\n+optional",
           "type": "string",
@@ -4478,6 +4473,11 @@
           "description": "Namespace of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/\n+optional",
           "type": "string",
           "x-go-name": "Namespace"
+        },
+        "type": {
+          "description": "Type of the referent.",
+          "type": "string",
+          "x-go-name": "Type"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
