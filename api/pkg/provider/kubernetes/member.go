@@ -69,7 +69,7 @@ func (p *ProjectMemberProvider) Create(userInfo *provider.UserInfo, project *kub
 		},
 	}
 
-	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (p *ProjectMemberProvider) List(userInfo *provider.UserInfo, project *kuber
 	// After we get the list of members we try to get at least one item using unprivileged account to see if the user have read access
 	if len(projectMembers) > 0 {
 		if !options.SkipPrivilegeVerification {
-			masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+			masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 			if err != nil {
 				return nil, err
 			}
@@ -144,7 +144,7 @@ func (p *ProjectMemberProvider) List(userInfo *provider.UserInfo, project *kuber
 // Note:
 // Use List to get binding for the specific member of the given project
 func (p *ProjectMemberProvider) Delete(userInfo *provider.UserInfo, bindingName string) error {
-	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return err
 	}
@@ -158,7 +158,7 @@ func (p *ProjectMemberProvider) Update(userInfo *provider.UserInfo, binding *kub
 		finalizers.Insert(rbac.CleanupFinalizerName)
 		binding.Finalizers = finalizers.List()
 	}
-	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}

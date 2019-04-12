@@ -6,6 +6,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/features"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 )
 
 type serverRunOptions struct {
@@ -30,6 +31,9 @@ type serverRunOptions struct {
 	oidcIssuerCookieSecureMode     bool
 	oidcSkipTLSVerify              bool
 	oidcIssuerOfflineAccessAsScope bool
+
+	//service account configuration
+	serviceAccountSigningKey string
 
 	featureGates features.FeatureGate
 }
@@ -58,6 +62,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.BoolVar(&s.oidcIssuerOfflineAccessAsScope, "oidc-issuer-offline-access-as-scope", true, "Set it to false if OIDC provider requires to set \"access_type=offline\" query param when accessing the refresh token")
 	flag.StringVar(&rawFeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for various features.")
 	flag.StringVar(&s.domain, "domain", "localhost", "A domain name on which the server is deployed")
+	flag.StringVar(&s.serviceAccountSigningKey, "service-account-signing-key", "", "Signing key authenticates the service account's token value using HMAC. It is recommended to use a key with 32 bytes or longer.")
 	flag.Parse()
 
 	featureGates, err := features.NewFeatures(rawFeatureGates)
@@ -87,18 +92,24 @@ func (o serverRunOptions) validate() error {
 			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-client-id\" flag was not specified", OIDCKubeCfgEndpoint)
 		}
 	}
+
+	if err := serviceaccount.ValidateKey([]byte(o.serviceAccountSigningKey)); err != nil {
+		return fmt.Errorf("the service-account-signing-key is incorrect due to error: %v", err)
+	}
+
 	return nil
 }
 
 type providers struct {
-	sshKey                 provider.SSHKeyProvider
-	user                   provider.UserProvider
-	serviceAccountProvider provider.ServiceAccountProvider
-	project                provider.ProjectProvider
-	privilegedProject      provider.PrivilegedProjectProvider
-	projectMember          provider.ProjectMemberProvider
-	memberMapper           provider.ProjectMemberMapper
-	cloud                  provider.CloudRegistry
-	clusters               map[string]provider.ClusterProvider
-	datacenters            map[string]provider.DatacenterMeta
+	sshKey                      provider.SSHKeyProvider
+	user                        provider.UserProvider
+	serviceAccountProvider      provider.ServiceAccountProvider
+	serviceAccountTokenProvider provider.ServiceAccountTokenProvider
+	project                     provider.ProjectProvider
+	privilegedProject           provider.PrivilegedProjectProvider
+	projectMember               provider.ProjectMemberProvider
+	memberMapper                provider.ProjectMemberMapper
+	cloud                       provider.CloudRegistry
+	clusters                    map[string]provider.ClusterProvider
+	datacenters                 map[string]provider.DatacenterMeta
 }

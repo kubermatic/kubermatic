@@ -15,9 +15,6 @@ import (
 	restclient "k8s.io/client-go/rest"
 )
 
-// kubermaticImpersonationClient gives kubermatic client set that uses user impersonation
-type kubermaticImpersonationClient func(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error)
-
 // NewProjectProvider returns a project provider
 func NewProjectProvider(createMasterImpersonatedClient kubermaticImpersonationClient, projectLister kubermaticv1lister.ProjectLister) (*ProjectProvider, error) {
 	kubermaticClient, err := createMasterImpersonatedClient(restclient.ImpersonationConfig{})
@@ -101,7 +98,7 @@ func (p *ProjectProvider) Update(userInfo *provider.UserInfo, newProject *kuberm
 	if userInfo == nil {
 		return nil, errors.New("a user is missing but required")
 	}
-	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +114,7 @@ func (p *ProjectProvider) Delete(userInfo *provider.UserInfo, projectInternalNam
 	if userInfo == nil {
 		return errors.New("a user is missing but required")
 	}
-	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return err
 	}
@@ -139,7 +136,7 @@ func (p *ProjectProvider) Get(userInfo *provider.UserInfo, projectInternalName s
 	if userInfo == nil {
 		return nil, errors.New("a user is missing but required")
 	}
-	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
@@ -198,26 +195,4 @@ func (p *ProjectProvider) List(options *provider.ProjectListOptions) ([]*kuberma
 		ret = append(ret, project)
 	}
 	return ret, nil
-}
-
-// NewKubermaticImpersonationClient creates a new default impersonation client
-// that knows how to create KubermaticV1Interface client for a impersonated user
-//
-// Note:
-// It is usually not desirable to create many RESTClient thus in the future we might
-// consider storing RESTClients in a pool for the given group name
-func NewKubermaticImpersonationClient(cfg *restclient.Config) *DefaultKubermaticImpersonationClient {
-	return &DefaultKubermaticImpersonationClient{cfg}
-}
-
-// DefaultKubermaticImpersonationClient knows how to create impersonated client set
-type DefaultKubermaticImpersonationClient struct {
-	cfg *restclient.Config
-}
-
-// CreateImpersonatedClientSet actually creates impersonated kubermatic client set for the given user.
-func (d *DefaultKubermaticImpersonationClient) CreateImpersonatedClientSet(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
-	config := *d.cfg
-	config.Impersonate = impCfg
-	return kubermaticclientv1.NewForConfig(&config)
 }

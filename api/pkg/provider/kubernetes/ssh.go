@@ -72,7 +72,7 @@ func (p *SSHKeyProvider) Create(userInfo *provider.UserInfo, project *kubermatic
 		},
 	}
 
-	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (p *SSHKeyProvider) List(project *kubermaticapiv1.Project, options *provide
 
 // Get returns a key with the given name
 func (p *SSHKeyProvider) Get(userInfo *provider.UserInfo, keyName string) (*kubermaticapiv1.UserSSHKey, error) {
-	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (p *SSHKeyProvider) Get(userInfo *provider.UserInfo, keyName string) (*kube
 
 // Delete simply deletes the given key
 func (p *SSHKeyProvider) Delete(userInfo *provider.UserInfo, keyName string) error {
-	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (p *SSHKeyProvider) Delete(userInfo *provider.UserInfo, keyName string) err
 
 // Update simply updates the given key
 func (p *SSHKeyProvider) Update(userInfo *provider.UserInfo, newKey *kubermaticapiv1.UserSSHKey) (*kubermaticapiv1.UserSSHKey, error) {
-	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}

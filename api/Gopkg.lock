@@ -1391,12 +1391,13 @@
   version = "v1.41.0"
 
 [[projects]]
-  digest = "1:f3fb9399fec4a7bf9f129d91c0d1f2916016f2655eda8bc4f6549814cb44796e"
+  digest = "1:340abc07a192e2d5ac4fd3333eb636fa280ac8ae3d5d9a5c53fd0424f275343e"
   name = "gopkg.in/square/go-jose.v2"
   packages = [
     ".",
     "cipher",
     "json",
+    "jwt",
   ]
   pruneopts = "NUT"
   revision = "f61ac651e23224d43848a8dc387dee016d7eacf9"
@@ -1932,6 +1933,8 @@
     "golang.org/x/crypto/ssh",
     "golang.org/x/oauth2",
     "google.golang.org/grpc",
+    "gopkg.in/square/go-jose.v2",
+    "gopkg.in/square/go-jose.v2/jwt",
     "gopkg.in/yaml.v2",
     "k8s.io/api/admissionregistration/v1beta1",
     "k8s.io/api/apps/v1",
