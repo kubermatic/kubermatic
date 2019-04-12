@@ -118,3 +118,19 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		t.Errorf("Expected exactly one initcontainer after manipulating cronjob, got %v", len(cronJobs.Items[0].Spec.JobTemplate.Spec.Template.Spec.InitContainers))
 	}
 }
+
+func TestCleanupJobSpec(t *testing.T) {
+	reconciler := Reconciler{
+		cleanupContainer: testCleanupContainer,
+	}
+
+	cleanupJob := reconciler.cleanupJob(&kubermaticv1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: "test-cluster"}})
+
+	if cleanupJob.Namespace != metav1.NamespaceSystem {
+		t.Errorf("expected cleanup jobs Namespace to be %q but was %q", metav1.NamespaceSystem, cleanupJob.Namespace)
+	}
+
+	if containerLen := len(cleanupJob.Spec.Template.Spec.Containers); containerLen != 1 {
+		t.Errorf("expected cleanup job to have exactly one container, got %d", containerLen)
+	}
+}

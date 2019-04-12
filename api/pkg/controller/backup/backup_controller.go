@@ -344,9 +344,11 @@ func (r *Reconciler) cleanupJob(cluster *kubermaticv1.Cluster) *batchv1.Job {
 		Name:  clusterEnvVarKey,
 		Value: cluster.Name,
 	})
-	job := &batchv1.Job{
+
+	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("remove-cluster-backups-%s", cluster.Name),
+			Name:      fmt.Sprintf("remove-cluster-backups-%s", cluster.Name),
+			Namespace: metav1.NamespaceSystem,
 			Labels: map[string]string{
 				resources.AppLabelKey: backupCleanupJobLabel,
 			},
@@ -374,7 +376,6 @@ func (r *Reconciler) cleanupJob(cluster *kubermaticv1.Cluster) *batchv1.Job {
 			},
 		},
 	}
-	return job
 }
 
 func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster) (string, reconciling.CronJobCreator) {
