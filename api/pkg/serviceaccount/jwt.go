@@ -53,6 +53,9 @@ func Claims(email, projectID, tokenID string) (*jwt.Claims, *CustomTokenClaim) {
 
 // JWTTokenGenerator returns a TokenGenerator that generates signed JWT tokens, using the given privateKey.
 func JWTTokenGenerator(privateKey []byte) (TokenGenerator, error) {
+	if err := ValidateKey(privateKey); err != nil {
+		return nil, err
+	}
 	signer, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.HS256, Key: privateKey}, &jose.SignerOptions{})
 	if err != nil {
 		return nil, err
@@ -113,4 +116,14 @@ func (a *jwtTokenAuthenticator) Authenticate(tokenData string) (*jwt.Claims, *Cu
 	}
 
 	return public, customClaims, nil
+}
+
+func ValidateKey(privateKey []byte) error {
+	if len(privateKey) == 0 {
+		return fmt.Errorf("the signing key can not be empty")
+	}
+	if len(privateKey) < 32 {
+		return fmt.Errorf("the signing key is to short, use 32 bytes or longer")
+	}
+	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"unicode/utf8"
 
 	"github.com/go-kit/kit/endpoint"
 
@@ -84,7 +85,7 @@ func (r addTokenReq) Validate() error {
 	if len(r.Body.Name) == 0 || len(r.ProjectID) == 0 || len(r.ServiceAccountID) == 0 {
 		return fmt.Errorf("the name, service account ID and project ID cannot be empty")
 	}
-	if len(r.Body.Name) > 50 {
+	if utf8.RuneCountInString(r.Body.Name) > 50 {
 		return fmt.Errorf("the name is too long, max 50 chars")
 	}
 

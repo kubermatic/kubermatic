@@ -73,9 +73,9 @@ const (
 	// TestDatacenter holds datacenter name
 	TestDatacenter = "us-central1"
 	// TestServiceAccountHashKey authenticates the service account's token value using HMAC
-	TestServiceAccountHashKey = "secret"
+	TestServiceAccountHashKey = "eyJhbGciOiJIUzI1NeyJhbGciOiJIUzI1N"
 	// TestFakeToken signed JWT token with fake data
-	TestFakeToken = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjEiLCJleHAiOjE2NDk1OTcxNTIsImlhdCI6MTU1NDkwMjc1MiwibmJmIjoxNTU0OTAyNzUyLCJwcm9qZWN0X2lkIjoiMiIsInRva2VuX2lkIjoiMyJ9.xQIWS2xbQvWeFkKafU0jsfuUdIbQw5GLt5y62A03oXM"
+	TestFakeToken = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjEiLCJleHAiOjE2NDk3NDg4NTYsImlhdCI6MTU1NTA1NDQ1NiwibmJmIjoxNTU1MDU0NDU2LCJwcm9qZWN0X2lkIjoiMSIsInRva2VuX2lkIjoiMSJ9.Q4qxzOaCvUnWfXneY654YiQjUTd_Lsmw56rE17W2ouo"
 )
 
 // GetUser is a convenience function for generating apiv1.User

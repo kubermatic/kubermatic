@@ -6,6 +6,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/features"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 )
 
 type serverRunOptions struct {
@@ -92,11 +93,8 @@ func (o serverRunOptions) validate() error {
 		}
 	}
 
-	if len(o.serviceAccountSigningKey) == 0 {
-		return fmt.Errorf("the service-account-signing-key flag was not specified")
-	}
-	if len(o.serviceAccountSigningKey) < 32 {
-		return fmt.Errorf("the service-account-signing-key is to short, use 32 bytes or longer")
+	if err := serviceaccount.ValidateKey([]byte(o.serviceAccountSigningKey)); err != nil {
+		return fmt.Errorf("the service-account-signing-key is incorrect due to error: %v", err)
 	}
 
 	return nil
