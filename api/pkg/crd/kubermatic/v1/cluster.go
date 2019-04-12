@@ -138,8 +138,12 @@ type NetworkRanges struct {
 type ClusterAddress struct {
 	// URL under which the Apiserver is available
 	URL string `json:"url"`
+	// Port is the port the API server listens on
+	Port int32 `json:"port"`
 	// ExternalName is the DNS name for this cluster
 	ExternalName string `json:"externalName"`
+	// InternalName is seed cluster internal absolute DNS name the API server
+	InternalName string `json:"internalURL"`
 	// AdminToken is the token for the kubeconfig, the user can download
 	AdminToken string `json:"adminToken"`
 	// IP is the external IP under which the apiserver is available

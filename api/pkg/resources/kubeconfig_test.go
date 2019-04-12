@@ -4,7 +4,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"net"
-	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -86,7 +85,6 @@ func (fake *fakeDataProvider) GetClusterRef() metav1.OwnerReference       { retu
 func (fake *fakeDataProvider) GetFrontProxyCA() (*triple.KeyPair, error)  { return nil, nil }
 func (fake *fakeDataProvider) GetRootCA() (*triple.KeyPair, error)        { return fake.caPair, nil }
 func (fake *fakeDataProvider) GetOpenVPNCA() (*ECDSAKeyPair, error)       { return &ECDSAKeyPair{}, nil }
-func (fake *fakeDataProvider) InClusterApiserverURL() (*url.URL, error)   { return &url.URL{}, nil }
 func (fake *fakeDataProvider) InClusterApiserverAddress() (string, error) { return "", nil }
 func (fake *fakeDataProvider) GetDexCA() ([]*x509.Certificate, error)     { return nil, nil }
 

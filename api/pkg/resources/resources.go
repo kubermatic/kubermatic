@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
-	"net/url"
 	"os"
 	"time"
 
@@ -340,32 +339,6 @@ type CRDCreateor = func(version semver.Semver, existing *apiextensionsv1beta1.Cu
 
 // APIServiceCreator defines an interface to create/update APIService's
 type APIServiceCreator = func(existing *apiregistrationv1beta1.APIService) (*apiregistrationv1beta1.APIService, error)
-
-// GetClusterApiserverAddress returns the apiserver address for the given Cluster
-func GetClusterApiserverAddress(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) (string, error) {
-	service := &corev1.Service{}
-	key := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: ApiserverExternalServiceName}
-	if err := client.Get(ctx, key, service); err != nil {
-		return "", fmt.Errorf("could not get service %s: %v", key, err)
-	}
-
-	if len(service.Spec.Ports) != 1 {
-		return "", errors.New("apiserver service does not have exactly one port")
-	}
-
-	dnsName := GetAbsoluteServiceDNSName(ApiserverExternalServiceName, cluster.Status.NamespaceName)
-	return fmt.Sprintf("%s:%d", dnsName, service.Spec.Ports[0].NodePort), nil
-}
-
-// GetClusterApiserverURL returns the apiserver url for the given Cluster
-func GetClusterApiserverURL(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) (*url.URL, error) {
-	addr, err := GetClusterApiserverAddress(ctx, cluster, client)
-	if err != nil {
-		return nil, err
-	}
-
-	return url.Parse(fmt.Sprintf("https://%s", addr))
-}
 
 // GetClusterExternalIP returns a net.IP for the given Cluster
 func GetClusterExternalIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {

@@ -3,7 +3,6 @@ package resources
 import (
 	"crypto/x509"
 	"fmt"
-	"net/url"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
@@ -61,7 +60,6 @@ func AdminKubeconfigCreator(data adminKubeconfigCreatorData, modifier ...func(*c
 
 type internalKubeconfigCreatorData interface {
 	GetRootCA() (*triple.KeyPair, error)
-	InClusterApiserverURL() (*url.URL, error)
 	Cluster() *kubermaticv1.Cluster
 }
 
@@ -78,13 +76,9 @@ func GetInternalKubeconfigCreator(name, commonName string, organizations []strin
 				return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 			}
 
-			url, err := data.InClusterApiserverURL()
-			if err != nil {
-				return nil, fmt.Errorf("failed to get internal apiserver url: %v", err)
-			}
-
 			b := se.Data[KubeconfigSecretKey]
-			valid, err := IsValidKubeconfig(b, ca.Cert, url.String(), commonName, organizations, data.Cluster().Name)
+			apiserverURL := fmt.Sprintf("https://%s:%d", data.Cluster().Address.InternalName, data.Cluster().Address.Port)
+			valid, err := IsValidKubeconfig(b, ca.Cert, apiserverURL, commonName, organizations, data.Cluster().Name)
 			if err != nil || !valid {
 				if err != nil {
 					glog.V(2).Infof("failed to validate existing kubeconfig from %s/%s %v. Regenerating it...", se.Namespace, se.Name, err)
@@ -92,7 +86,7 @@ func GetInternalKubeconfigCreator(name, commonName string, organizations []strin
 					glog.V(2).Infof("invalid/outdated kubeconfig found in %s/%s. Regenerating it...", se.Namespace, se.Name)
 				}
 
-				se.Data[KubeconfigSecretKey], err = BuildNewKubeconfigAsByte(ca, url.String(), commonName, organizations, data.Cluster().Name)
+				se.Data[KubeconfigSecretKey], err = BuildNewKubeconfigAsByte(ca, apiserverURL, commonName, organizations, data.Cluster().Name)
 				if err != nil {
 					return nil, fmt.Errorf("failed to create new kubeconfig: %v", err)
 				}

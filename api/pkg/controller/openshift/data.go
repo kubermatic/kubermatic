@@ -7,7 +7,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"net/url"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -205,18 +204,6 @@ func (od *openshiftData) GetApiserverExternalNodePort(ctx context.Context) (int3
 func (od *openshiftData) NodePortRange(_ context.Context) string {
 	//TODO: softcode this
 	return "30000-32767"
-}
-
-func (od *openshiftData) InClusterApiserverURL() (*url.URL, error) {
-	// We have to fullfull the templateData interface here which doesn't have a context as arg
-	// Needed for pkg/resources/apiserver.IsRunningInitContainer
-	ctx := context.TODO()
-	port, err := od.GetApiserverExternalNodePort(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get apiserver nodeport: %v", err)
-	}
-	dnsName := kubernetesresources.GetAbsoluteServiceDNSName(kubernetesresources.ApiserverExternalServiceName, od.cluster.Status.NamespaceName)
-	return url.Parse(fmt.Sprintf("https://%s:%d", dnsName, port))
 }
 
 func (od *openshiftData) GetOpenVPNServerPort() (int32, error) {
