@@ -2,7 +2,6 @@ package resources
 
 import (
 	"context"
-	"net/url"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -27,7 +26,6 @@ type openshiftData interface {
 	GetClusterRef() metav1.OwnerReference
 	GetRootCA() (*triple.KeyPair, error)
 	GetRootCAWithContext(context.Context) (*triple.KeyPair, error)
-	InClusterApiserverURL() (*url.URL, error)
 	DC() *provider.DatacenterMeta
 	HasEtcdOperatorService() (bool, error)
 	EtcdDiskSize() resource.Quantity

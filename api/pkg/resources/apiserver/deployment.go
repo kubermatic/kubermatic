@@ -2,7 +2,6 @@ package apiserver
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -76,17 +75,12 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				return nil, err
 			}
 
-			externalNodePort, err := data.GetApiserverExternalNodePort()
-			if err != nil {
-				return nil, err
-			}
-
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 				Labels: podLabels,
 				Annotations: map[string]string{
 					"prometheus.io/scrape_with_kube_cert": "true",
 					"prometheus.io/path":                  "/metrics",
-					"prometheus.io/port":                  strconv.Itoa(int(externalNodePort)),
+					"prometheus.io/port":                  fmt.Sprint(data.Cluster().Address.Port),
 				},
 			}
 
@@ -126,12 +120,16 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
 			}
 
-			dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(data, "dnat-controller", fmt.Sprintf("https://127.0.0.1:%d", externalNodePort))
+			dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(
+				data,
+				"dnat-controller",
+				fmt.Sprintf("https://127.0.0.1:%d", data.Cluster().Address.Port),
+			)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
 			}
 
-			flags, err := getApiserverFlags(data, externalNodePort, etcdEndpoints, enableDexCA)
+			flags, err := getApiserverFlags(data, etcdEndpoints, enableDexCA)
 			if err != nil {
 				return nil, err
 			}
@@ -156,7 +154,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 					Resources:                *resourceRequirements,
 					Ports: []corev1.ContainerPort{
 						{
-							ContainerPort: externalNodePort,
+							ContainerPort: data.Cluster().Address.Port,
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
@@ -164,7 +162,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
-								Port:   intstr.FromInt(int(externalNodePort)),
+								Port:   intstr.FromInt(int(data.Cluster().Address.Port)),
 								Scheme: "HTTPS",
 							},
 						},
@@ -177,7 +175,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
-								Port:   intstr.FromInt(int(externalNodePort)),
+								Port:   intstr.FromInt(int(data.Cluster().Address.Port)),
 								Scheme: "HTTPS",
 							},
 						},
@@ -198,7 +196,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 	}
 }
 
-func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etcdEndpoints []string, enableDexCA bool) ([]string, error) {
+func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableDexCA bool) ([]string, error) {
 	nodePortRange := data.NodePortRange()
 	if nodePortRange == "" {
 		nodePortRange = defaultNodePortRange
@@ -206,8 +204,8 @@ func getApiserverFlags(data *resources.TemplateData, externalNodePort int32, etc
 
 	flags := []string{
 		"--advertise-address", data.Cluster().Address.IP,
-		"--secure-port", fmt.Sprintf("%d", externalNodePort),
-		"--kubernetes-service-node-port", fmt.Sprintf("%d", externalNodePort),
+		"--secure-port", fmt.Sprint(data.Cluster().Address.Port),
+		"--kubernetes-service-node-port", fmt.Sprint(data.Cluster().Address.Port),
 		"--etcd-servers", strings.Join(etcdEndpoints, ","),
 		"--etcd-cafile", "/etc/etcd/pki/client/ca.crt",
 		"--etcd-certfile", "/etc/etcd/pki/client/apiserver-etcd-client.crt",
