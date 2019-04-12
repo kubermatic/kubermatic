@@ -81,7 +81,7 @@ func SyncClusterAddress(ctx context.Context,
 		glog.V(2).Infof("Set URL for cluster %s to '%s'", cluster.Name, url)
 	}
 
-	internalName := fmt.Sprintf("%s.%s.svc.cluster.local", resources.ApiserverExternalServiceName, cluster.Status.NamespaceName)
+	internalName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.ApiserverExternalServiceName, cluster.Status.NamespaceName)
 	if cluster.Address.InternalName != internalName {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.InternalName = internalName

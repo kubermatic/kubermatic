@@ -142,7 +142,7 @@ type ClusterAddress struct {
 	Port int32 `json:"port"`
 	// ExternalName is the DNS name for this cluster
 	ExternalName string `json:"externalName"`
-	// InternalName is seed cluster internal absolute DNS name the API server
+	// InternalName is the seed cluster internal absolute DNS name to the API server
 	InternalName string `json:"internalURL"`
 	// AdminToken is the token for the kubeconfig, the user can download
 	AdminToken string `json:"adminToken"`
