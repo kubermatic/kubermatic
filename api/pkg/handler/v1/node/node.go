@@ -337,17 +337,17 @@ func getMachinesForNodeDeployment(ctx context.Context, clusterProvider provider.
 
 	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
 	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, err
 	}
 
 	machineDeployment := &clusterv1alpha1.MachineDeployment{}
 	if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: nodeDeploymentID}, machineDeployment); err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, err
 	}
 
 	machines := &clusterv1alpha1.MachineList{}
 	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels)}, machines); err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, err
 	}
 	return machines, nil
 }
@@ -355,17 +355,17 @@ func getMachinesForNodeDeployment(ctx context.Context, clusterProvider provider.
 func getMachineSetsForNodeDeployment(ctx context.Context, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, cluster *v1.Cluster, nodeDeploymentID string) (*clusterv1alpha1.MachineSetList, error) {
 	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
 	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, err
 	}
 
 	machineDeployment := &clusterv1alpha1.MachineDeployment{}
 	if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: nodeDeploymentID}, machineDeployment); err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, err
 	}
 
 	machineSets := &clusterv1alpha1.MachineSetList{}
 	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels)}, machineSets); err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, err
 	}
 	return machineSets, nil
 }
@@ -373,12 +373,12 @@ func getMachineSetsForNodeDeployment(ctx context.Context, clusterProvider provid
 func getMachineDeploymentForNodeDeployment(ctx context.Context, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, cluster *v1.Cluster, nodeDeploymentID string) (*clusterv1alpha1.MachineDeployment, error) {
 	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
 	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, err
 	}
 
 	machineDeployment := &clusterv1alpha1.MachineDeployment{}
 	if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: nodeDeploymentID}, machineDeployment); err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, err
 	}
 
 	return machineDeployment, nil
@@ -698,24 +698,30 @@ func ListNodeDeploymentNodesEvents() endpoint.Endpoint {
 			eventType = corev1.EventTypeNormal
 		}
 
-		machineEvents, err := getMachineEvents(ctx, client, machines.Items)
+		for _, machine := range machines.Items {
+			kubermaticEvents, err := getEvents(ctx, client, &machine)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+
+			events = append(events, kubermaticEvents...)
+		}
+
+		for _, machineSet := range machineSets.Items {
+			kubermaticEvents, err := getEvents(ctx, client, &machineSet)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+
+			events = append(events, kubermaticEvents...)
+		}
+
+		kubermaticEvents, err := getEvents(ctx, client, machineDeployment)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineSetEvents, err := getMachineSetEvents(ctx, client, machineSets.Items)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		machineDeploymentEvents, err := getMachineDeploymentEvents(ctx, client, []clusterv1alpha1.MachineDeployment{*machineDeployment})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		events = append(events, machineEvents...)
-		events = append(events, machineSetEvents...)
-		events = append(events, machineDeploymentEvents...)
+		events = append(events, kubermaticEvents...)
 
 		if len(eventType) > 0 {
 			events = common.FilterEventsByType(events, eventType)
@@ -725,9 +731,9 @@ func ListNodeDeploymentNodesEvents() endpoint.Endpoint {
 	}
 }
 
-func getEvents(ctx context.Context, client ctrlruntimeclient.Client, involvedObjectUID types.UID) ([]apiv1.Event, error) {
+func getEvents(ctx context.Context, client ctrlruntimeclient.Client, obj metav1.Object) ([]apiv1.Event, error) {
 	events := &corev1.EventList{}
-	listOpts := &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, FieldSelector: fields.OneTermEqualSelector("involvedObject.uid", string(involvedObjectUID))}
+	listOpts := &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, FieldSelector: fields.OneTermEqualSelector("involvedObject.uid", string(obj.GetUID()))}
 	if err := client.List(ctx, listOpts, events); err != nil {
 		return nil, err
 	}
@@ -741,52 +747,10 @@ func getEvents(ctx context.Context, client ctrlruntimeclient.Client, involvedObj
 	return kubermaticEvents, nil
 }
 
-func getMachineEvents(ctx context.Context, client ctrlruntimeclient.Client, machines []clusterv1alpha1.Machine) ([]apiv1.Event, error) {
-	result := make([]apiv1.Event, 0)
-	for _, machine := range machines {
-		events, err := getEvents(ctx, client, machine.UID)
-		if err != nil {
-			return nil, err
-		}
-
-		result = append(result, events...)
-	}
-
-	return result, nil
-}
-
-func getMachineSetEvents(ctx context.Context, client ctrlruntimeclient.Client, machines []clusterv1alpha1.MachineSet) ([]apiv1.Event, error) {
-	result := make([]apiv1.Event, 0)
-	for _, machine := range machines {
-		events, err := getEvents(ctx, client, machine.UID)
-		if err != nil {
-			return nil, err
-		}
-
-		result = append(result, events...)
-	}
-
-	return result, nil
-}
-
-func getMachineDeploymentEvents(ctx context.Context, client ctrlruntimeclient.Client, deployments []clusterv1alpha1.MachineDeployment) ([]apiv1.Event, error) {
-	result := make([]apiv1.Event, 0)
-	for _, deployment := range deployments {
-		events, err := getEvents(ctx, client, deployment.UID)
-		if err != nil {
-			return nil, err
-		}
-
-		result = append(result, events...)
-	}
-
-	return result, nil
-}
-
 func getNodeList(ctx context.Context, cluster *v1.Cluster, clusterProvider provider.ClusterProvider) (*corev1.NodeList, error) {
 	client, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
 	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, err
 	}
 
 	nodeList := &corev1.NodeList{}
