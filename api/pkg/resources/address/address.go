@@ -51,7 +51,7 @@ func SyncClusterAddress(ctx context.Context,
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.IP = ip
 		})
-		glog.V(4).Infof("Set IP for cluster %s to '%s'", cluster.Name, ip)
+		glog.V(2).Infof("Set IP for cluster %s to '%s'", cluster.Name, ip)
 	}
 
 	// We fetch the Apiserver service as its a NodePort and we'll take the first NodePort (so far we only have one)
@@ -59,18 +59,34 @@ func SyncClusterAddress(ctx context.Context,
 	serviceKey := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.ApiserverExternalServiceName}
 	if err := client.Get(ctx, serviceKey, service); err != nil {
 		if kerrors.IsNotFound(err) {
-			glog.V(6).Infof("Skipping URL setting for cluster %s as no external apiserver service exists yet. Will retry later", cluster.Name)
+			glog.V(4).Infof("Skipping URL setting for cluster %s as no external apiserver service exists yet. Will retry later", cluster.Name)
 			return nil, nil
 		}
 		return nil, err
 	}
 
-	url := fmt.Sprintf("https://%s:%d", externalName, int(service.Spec.Ports[0].NodePort))
+	nodePort := service.Spec.Ports[0].NodePort
+	if cluster.Address.Port != nodePort {
+		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
+			c.Address.Port = nodePort
+		})
+		glog.V(2).Infof("Set port for cluster %s to %d", cluster.Name, nodePort)
+	}
+
+	url := fmt.Sprintf("https://%s:%d", externalName, nodePort)
 	if cluster.Address.URL != url {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.URL = url
 		})
-		glog.V(4).Infof("Set URL for cluster %s to '%s'", cluster.Name, url)
+		glog.V(2).Infof("Set URL for cluster %s to '%s'", cluster.Name, url)
+	}
+
+	internalName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.ApiserverExternalServiceName, cluster.Status.NamespaceName)
+	if cluster.Address.InternalName != internalName {
+		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
+			c.Address.InternalName = internalName
+		})
+		glog.V(2).Infof("Set internal name for cluster %s to '%s'", cluster.Name, internalName)
 	}
 
 	return modifiers, nil

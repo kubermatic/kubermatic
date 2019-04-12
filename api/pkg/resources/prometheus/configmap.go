@@ -16,6 +16,7 @@ import (
 
 type promTplModel struct {
 	TemplateData                       interface{}
+	APIServerURL                       string
 	InClusterPrometheusScrapingConfigs string
 }
 
@@ -27,7 +28,10 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 				cm.Data = map[string]string{}
 			}
 
-			model := &promTplModel{TemplateData: data}
+			model := &promTplModel{
+				TemplateData: data,
+				APIServerURL: fmt.Sprintf("%s:%d", data.Cluster().Address.InternalName, data.Cluster().Address.Port),
+			}
 			scrapingConfigsFile := data.InClusterPrometheusScrapingConfigsFile()
 			if scrapingConfigsFile != "" {
 				scrapingConfigs, err := ioutil.ReadFile(scrapingConfigsFile)
@@ -114,7 +118,7 @@ scrape_configs:
 
   kubernetes_sd_configs:
   - role: node
-    api_server: '{{ .TemplateData.InClusterApiserverAddress }}'
+    api_server: '{{ .APIServerURL }}'
     tls_config:
       ca_file: /etc/kubernetes/ca.crt
       cert_file: /etc/kubernetes/prometheus-client.crt
@@ -124,7 +128,7 @@ scrape_configs:
   - action: labelmap
     regex: __meta_kubernetes_node_label_(.+)
   - target_label: __address__
-    replacement: '{{ .TemplateData.InClusterApiserverAddress }}'
+    replacement: '{{ .APIServerURL }}'
   - source_labels: [__meta_kubernetes_node_name]
     regex: (.+)
     target_label: __metrics_path__
@@ -176,7 +180,7 @@ scrape_configs:
     key_file: /etc/kubernetes/prometheus-client.key
   kubernetes_sd_configs:
   - role: pod
-    api_server: '{{ .TemplateData.InClusterApiserverAddress }}'
+    api_server: '{{ .APIServerURL }}'
     tls_config:
       ca_file: /etc/kubernetes/ca.crt
       cert_file: /etc/kubernetes/prometheus-client.crt
@@ -195,7 +199,7 @@ scrape_configs:
     target_label: __metrics_path__
     replacement: /api/v1/namespaces/${1}/pods/${2}:${3}/proxy${4}
   - target_label: __address__
-    replacement: '{{ .TemplateData.InClusterApiserverAddress }}'
+    replacement: '{{ .APIServerURL }}'
   - source_labels: [__meta_kubernetes_namespace]
     action: replace
     target_label: namespace

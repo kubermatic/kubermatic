@@ -2,7 +2,6 @@ package machinecontroller
 
 import (
 	"fmt"
-	"net/url"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -40,7 +39,6 @@ type machinecontrollerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	ImageRegistry(string) string
 	Cluster() *kubermaticv1.Cluster
-	InClusterApiserverURL() (*url.URL, error)
 	ClusterIPByServiceName(string) (string, error)
 	DC() *provider.DatacenterMeta
 }

@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"net"
-	"net/url"
 	"strings"
 
 	"github.com/golang/glog"
@@ -191,31 +190,6 @@ func (d *TemplateData) ProviderName() string {
 		glog.V(0).Infof("could not identify cloud provider: %v", err)
 	}
 	return p
-}
-
-// GetApiserverExternalNodePort returns the nodeport of the external apiserver service
-func (d *TemplateData) GetApiserverExternalNodePort() (int32, error) {
-	service := &corev1.Service{}
-	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: ApiserverExternalServiceName}
-	if err := d.client.Get(d.ctx, key, service); err != nil {
-		return 0, fmt.Errorf("could not get service %s: %v", key, err)
-	}
-
-	return service.Spec.Ports[0].NodePort, nil
-}
-
-// InClusterApiserverAddress takes the ClusterIP and node-port of the external/secure apiserver service
-// and returns them joined by a `:`.
-// Service lookup happens within `Cluster.Status.NamespaceName`.
-func (d *TemplateData) InClusterApiserverAddress() (string, error) {
-	return GetClusterApiserverAddress(d.ctx, d.cluster, d.client)
-}
-
-// InClusterApiserverURL takes the ClusterIP and node-port of the external/secure apiserver service
-// and returns them joined by a `:` and the used protocol.
-// Service lookup happens within `Cluster.Status.NamespaceName`.
-func (d *TemplateData) InClusterApiserverURL() (*url.URL, error) {
-	return GetClusterApiserverURL(d.ctx, d.cluster, d.client)
 }
 
 // ImageRegistry returns the image registry to use or the passed in default if no override is specified

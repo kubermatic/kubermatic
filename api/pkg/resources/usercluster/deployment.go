@@ -2,7 +2,6 @@ package usercluster
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -42,7 +41,6 @@ const (
 type userclusterControllerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	ImageRegistry(string) string
-	InClusterApiserverURL() (*url.URL, error)
 	Cluster() *kubermaticv1.Cluster
 	GetOpenVPNServerPort() (int32, error)
 }
