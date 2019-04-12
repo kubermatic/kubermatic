@@ -70,6 +70,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
+	if err := r.reconcileSecrets(ctx); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -306,5 +310,17 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context) error {
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps in kube-system namespace: %v", err)
 	}
+	return nil
+}
+
+func (r *reconciler) reconcileSecrets(ctx context.Context) error {
+	creators := []reconciling.NamedSecretCreatorGetter{
+		openvpn.ClientCertificate(r.openVPNCA),
+	}
+
+	if err := reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Secrets in kue-system Namespace: %v", err)
+	}
+
 	return nil
 }

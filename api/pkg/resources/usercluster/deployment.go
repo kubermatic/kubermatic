@@ -31,7 +31,8 @@ var (
 )
 
 const (
-	name = "usercluster-controller"
+	name              = "usercluster-controller"
+	openvpnCAMountDir = "/etc/kubernetes/pki/openvpn"
 )
 
 // userclusterControllerData is the subet of the deploymentData interface
@@ -115,6 +116,8 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 						"-cluster-url", data.Cluster().Address.URL,
 						"-openvpn-server-port", fmt.Sprint(openvpnServerPort),
 						fmt.Sprintf("-openshift=%t", openshift),
+						fmt.Sprintf("-openvpn-ca-cert-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCACertKey),
+						fmt.Sprintf("-openvpn-ca-key-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCAKeyKey),
 						"-logtostderr",
 						"-v", "2",
 					}, getNetworkArgs(data)...),
@@ -156,6 +159,11 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 							MountPath: "/etc/kubernetes/pki/ca",
 							ReadOnly:  true,
 						},
+						{
+							Name:      resources.OpenVPNCASecretName,
+							MountPath: openvpnCAMountDir,
+							ReadOnly:  true,
+						},
 					},
 				},
 			}
@@ -190,6 +198,15 @@ func getVolumes() []corev1.Volume {
 							Key:  resources.CACertSecretKey,
 						},
 					},
+				},
+			},
+		},
+		{
+			Name: resources.OpenVPNCASecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.OpenVPNCASecretName,
+					DefaultMode: resources.Int32(resources.DefaultAllReadOnlyMode),
 				},
 			},
 		},

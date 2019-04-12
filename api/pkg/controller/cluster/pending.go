@@ -2,7 +2,6 @@ package cluster
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/golang/glog"
@@ -55,7 +54,7 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 
 	if cluster.Status.Health.Apiserver {
 		// Controlling of user-cluster resources
-		reachable, err := r.clusterIsReachable(cluster)
+		reachable, err := r.clusterIsReachable(ctx, cluster)
 		if err != nil {
 			return nil, err
 		}
@@ -77,15 +76,6 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 			}
 		}
 
-		client, err := r.userClusterConnProvider.GetClient(cluster)
-		if err != nil {
-			return nil, err
-		}
-
-		// TODO: Move into own controller
-		if err := r.reconcileUserClusterResources(ctx, cluster, client); err != nil {
-			return nil, fmt.Errorf("failed to reconcile user cluster resources: %v", err)
-		}
 	}
 
 	if !cluster.Status.Health.AllHealthy() {

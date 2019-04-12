@@ -25,6 +25,7 @@ spec:
         ca-secret-revision: "123456"
         cluster: de-test-01
         internal-admin-kubeconfig-secret-revision: "123456"
+        openvpn-ca-secret-revision: "123456"
     spec:
       containers:
       - args:
@@ -43,6 +44,8 @@ spec:
         - -openvpn-server-port
         - "30003"
         - -openshift=false
+        - -openvpn-ca-cert-file=/etc/kubernetes/pki/openvpn/ca.crt
+        - -openvpn-ca-key-file=/etc/kubernetes/pki/openvpn/ca.key
         - -logtostderr
         - -v
         - "2"
@@ -84,6 +87,9 @@ spec:
         - mountPath: /etc/kubernetes/pki/ca
           name: ca
           readOnly: true
+        - mountPath: /etc/kubernetes/pki/openvpn
+          name: openvpn-ca
+          readOnly: true
       imagePullSecrets:
       - name: dockercfg
       initContainers:
@@ -117,4 +123,8 @@ spec:
           - key: ca.crt
             path: ca.crt
           secretName: ca
+      - name: openvpn-ca
+        secret:
+          defaultMode: 292
+          secretName: openvpn-ca
 status: {}
