@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"sync"
 
 	"github.com/golang/glog"
 	"github.com/heptiolabs/healthcheck"
@@ -46,6 +47,7 @@ func Add(
 		Client:            mgr.GetClient(),
 		cache:             mgr.GetCache(),
 		openshift:         openshift,
+		rLock:             &sync.Mutex{},
 		namespace:         namespace,
 		caCert:            caCert,
 		clusterURL:        clusterURL,
@@ -88,6 +90,8 @@ func Add(
 
 	// A very simple but limited way to express the first successful reconciling to the seed cluster
 	registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciled_successfully_once"), func() error {
+		reconciler.rLock.Lock()
+		defer reconciler.rLock.Unlock()
 		if !reconciler.reconciledSuccessfullyOnce {
 			return errors.New("no successful reconciliation so far")
 		}
@@ -108,6 +112,7 @@ type reconciler struct {
 	openvpnServerPort int
 	openVPNCA         *resources.ECDSAKeyPair
 
+	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
 }
 
@@ -118,6 +123,8 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, err
 	}
 
+	r.rLock.Lock()
+	defer r.rLock.Unlock()
 	r.reconciledSuccessfullyOnce = true
 	return reconcile.Result{}, nil
 }
