@@ -25,10 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-const (
-	NodeDeletionFinalizer = "kubermatic.io/delete-nodes"
-)
-
 func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	data, err := r.getClusterTemplateData(ctx, cluster)
 	if err != nil {

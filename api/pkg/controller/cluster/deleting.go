@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/machine-controller/pkg/node/eviction"
@@ -23,9 +24,7 @@ import (
 )
 
 const (
-	InClusterPVCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-pv"
-	InClusterLBCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-lb"
-	deletedLBAnnotationName     = "kubermatic.io/cleaned-up-loadbalancers"
+	deletedLBAnnotationName = "kubermatic.io/cleaned-up-loadbalancers"
 )
 
 // cleanupCluster is the function which handles clusters in the deleting phase.
@@ -38,7 +37,7 @@ func (r *Reconciler) cleanupCluster(ctx context.Context, cluster *kubermaticv1.C
 	}
 
 	// If we still have nodes, we must not cleanup other infrastructure at the cloud provider
-	if kuberneteshelper.HasFinalizer(cluster, NodeDeletionFinalizer) {
+	if kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
 		return nil
 	}
 
@@ -47,8 +46,8 @@ func (r *Reconciler) cleanupCluster(ctx context.Context, cluster *kubermaticv1.C
 }
 
 func (r *Reconciler) cleanupInClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	shouldDeleteLBs := kuberneteshelper.HasFinalizer(cluster, InClusterLBCleanupFinalizer)
-	shouldDeletePVs := kuberneteshelper.HasFinalizer(cluster, InClusterPVCleanupFinalizer)
+	shouldDeleteLBs := kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.InClusterLBCleanupFinalizer)
+	shouldDeletePVs := kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.InClusterPVCleanupFinalizer)
 
 	// If no relevant finalizer exists, directly return
 	if !shouldDeleteLBs && !shouldDeletePVs {
@@ -153,13 +152,13 @@ func (r *Reconciler) cleanupInClusterResources(ctx context.Context, cluster *kub
 	}
 
 	return r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, InClusterLBCleanupFinalizer)
-		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, InClusterPVCleanupFinalizer)
+		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, kubermaticapiv1.InClusterLBCleanupFinalizer)
+		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, kubermaticapiv1.InClusterPVCleanupFinalizer)
 	})
 }
 
 func (r *Reconciler) deletingNodeCleanup(cluster *kubermaticv1.Cluster) error {
-	if !kuberneteshelper.HasFinalizer(cluster, NodeDeletionFinalizer) {
+	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
 		return nil
 	}
 
@@ -246,7 +245,7 @@ func (r *Reconciler) deletingNodeCleanup(cluster *kubermaticv1.Cluster) error {
 	}
 
 	return r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, NodeDeletionFinalizer)
+		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, kubermaticapiv1.NodeDeletionFinalizer)
 	})
 }
 

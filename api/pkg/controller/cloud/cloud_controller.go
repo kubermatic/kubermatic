@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	clustercontroller "github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
@@ -98,9 +98,9 @@ func (r *Reconciler) reconcile(_ context.Context, cluster *kubermaticv1.Cluster)
 	}
 	if cluster.DeletionTimestamp != nil {
 		finalizers := sets.NewString(cluster.Finalizers...)
-		if finalizers.Has(clustercontroller.InClusterLBCleanupFinalizer) ||
-			finalizers.Has(clustercontroller.InClusterPVCleanupFinalizer) ||
-			finalizers.Has(clustercontroller.NodeDeletionFinalizer) {
+		if finalizers.Has(kubermaticapiv1.InClusterLBCleanupFinalizer) ||
+			finalizers.Has(kubermaticapiv1.InClusterPVCleanupFinalizer) ||
+			finalizers.Has(kubermaticapiv1.NodeDeletionFinalizer) {
 			return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 		}
 		_, err = prov.CleanUpCloudProvider(cluster, r.updateCluster)
