@@ -9,7 +9,6 @@ import (
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -33,6 +32,7 @@ type ServiceAccountProvider struct {
 
 	serviceAccountLister kubermaticv1lister.UserLister
 
+	// domain name on which the server is deployed
 	domain string
 }
 
@@ -64,7 +64,7 @@ func (p *ServiceAccountProvider) Create(userInfo *provider.UserInfo, project *ku
 	user.Labels = map[string]string{ServiceAccountLabelGroup: group}
 	user.Spec.Projects = []kubermaticv1.ProjectGroup{}
 
-	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, project *kube
 	// After we get the list of SA we try to get at least one item using unprivileged account to see if the user have read access
 	if len(resultList) > 0 {
 
-		masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+		masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 		if err != nil {
 			return nil, err
 		}
@@ -140,7 +140,7 @@ func (p *ServiceAccountProvider) Get(userInfo *provider.UserInfo, name string) (
 		return nil, kerrors.NewBadRequest("service account name cannot be empty")
 	}
 
-	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +162,7 @@ func (p *ServiceAccountProvider) Update(userInfo *provider.UserInfo, serviceAcco
 		return nil, kerrors.NewBadRequest("service account name cannot be nil")
 	}
 
-	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +179,7 @@ func (p *ServiceAccountProvider) Delete(userInfo *provider.UserInfo, name string
 		return kerrors.NewBadRequest("service account name cannot be empty")
 	}
 
-	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return err
 	}

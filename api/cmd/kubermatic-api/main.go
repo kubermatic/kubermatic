@@ -42,6 +42,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
@@ -125,7 +126,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 			}
 
 			clusterProviders[ctx] = kubernetesprovider.NewClusterProvider(
-				defaultImpersonationClientForSeed.CreateImpersonatedClientSet,
+				defaultImpersonationClientForSeed.CreateImpersonatedKubermaticClientSet,
 				userClusterConnectionProvider,
 				kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(),
 				options.workerName,
@@ -140,9 +141,12 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	}
 
 	// create other providers
+	kubeClient := kubernetes.NewForConfigOrDie(config)
+	kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, informer.DefaultInformerResyncPeriod)
 	kubermaticMasterClient := kubermaticclientset.NewForConfigOrDie(config)
 	kubermaticMasterInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticMasterClient, informer.DefaultInformerResyncPeriod)
-	defaultImpersonationClient := kubernetesprovider.NewKubermaticImpersonationClient(config)
+	defaultKubermaticImpersonationClient := kubernetesprovider.NewKubermaticImpersonationClient(config)
+	defaultKubernetesImpersonationClient := kubernetesprovider.NewKubernetesImpersonationClient(config)
 
 	datacenters, err := provider.LoadDatacentersMeta(options.dcFile)
 	if err != nil {
@@ -150,24 +154,45 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	}
 	cloudProviders := cloud.Providers(datacenters)
 	userLister := kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister()
-	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultImpersonationClient.CreateImpersonatedClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
+	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
 	userProvider := kubernetesprovider.NewUserProvider(kubermaticMasterClient, userLister)
-	serviceAccountProvider := kubernetesprovider.NewServiceAccountProvider(defaultImpersonationClient.CreateImpersonatedClientSet, userLister, options.domain)
-	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultImpersonationClient.CreateImpersonatedClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userLister)
-	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultImpersonationClient.CreateImpersonatedClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().Projects().Lister())
+
+	serviceAccountTokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(options.serviceAccountSigningKey))
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create service account token generator due to %v", err)
+	}
+	serviceAccountTokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(options.serviceAccountSigningKey))
+	serviceAccountTokenProvider := kubernetesprovider.NewServiceAccountTokenProvider(defaultKubernetesImpersonationClient.CreateImpersonatedKubernetesClientSet, serviceAccountTokenGenerator, serviceAccountTokenAuth, kubeInformerFactory.Core().V1().Secrets().Lister())
+	serviceAccountProvider := kubernetesprovider.NewServiceAccountProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, userLister, options.domain)
+	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userLister)
+	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().Projects().Lister())
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create project provider due to %v", err)
 	}
 
-	privilegedProjectProvider, err := kubernetesprovider.NewPrivilegedProjectProvider(defaultImpersonationClient.CreateImpersonatedClientSet)
+	privilegedProjectProvider, err := kubernetesprovider.NewPrivilegedProjectProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet)
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create privileged project provider due to %v", err)
 	}
 
+	kubeInformerFactory.Start(wait.NeverStop)
+	kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
 	kubermaticMasterInformerFactory.Start(wait.NeverStop)
 	kubermaticMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
 
-	return providers{sshKey: sshKeyProvider, user: userProvider, serviceAccountProvider: serviceAccountProvider, project: projectProvider, privilegedProject: privilegedProjectProvider, projectMember: projectMemberProvider, memberMapper: projectMemberProvider, cloud: cloudProviders, clusters: clusterProviders, datacenters: datacenters}, nil
+	return providers{
+			sshKey:                      sshKeyProvider,
+			user:                        userProvider,
+			serviceAccountProvider:      serviceAccountProvider,
+			serviceAccountTokenProvider: serviceAccountTokenProvider,
+			project:                     projectProvider,
+			privilegedProject:           privilegedProjectProvider,
+			projectMember:               projectMemberProvider,
+			memberMapper:                projectMemberProvider,
+			cloud:                       cloudProviders,
+			clusters:                    clusterProviders,
+			datacenters:                 datacenters},
+		nil
 }
 
 func createOIDCClients(options serverRunOptions) (auth.OIDCIssuerVerifier, error) {
@@ -224,6 +249,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		prov.sshKey,
 		prov.user,
 		prov.serviceAccountProvider,
+		prov.serviceAccountTokenProvider,
 		prov.project,
 		prov.privilegedProject,
 		oidcIssuerVerifier,

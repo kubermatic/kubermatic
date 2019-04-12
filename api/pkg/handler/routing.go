@@ -1,8 +1,9 @@
 package handler
 
 import (
-	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"os"
+
+	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
@@ -25,22 +26,23 @@ type UpdateManager interface {
 
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {
-	datacenters               map[string]provider.DatacenterMeta
-	cloudProviders            provider.CloudRegistry
-	sshKeyProvider            provider.SSHKeyProvider
-	userProvider              provider.UserProvider
-	serviceAccountProvider    provider.ServiceAccountProvider
-	projectProvider           provider.ProjectProvider
-	privilegedProjectProvider provider.PrivilegedProjectProvider
-	logger                    log.Logger
-	oidcIssuerVerifier        auth.OIDCIssuerVerifier
-	tokenVerifiers            auth.TokenVerifier
-	tokenExtractors           auth.TokenExtractor
-	clusterProviders          map[string]provider.ClusterProvider
-	updateManager             common.UpdateManager
-	prometheusClient          prometheusapi.Client
-	projectMemberProvider     provider.ProjectMemberProvider
-	userProjectMapper         provider.ProjectMemberMapper
+	datacenters                 map[string]provider.DatacenterMeta
+	cloudProviders              provider.CloudRegistry
+	sshKeyProvider              provider.SSHKeyProvider
+	userProvider                provider.UserProvider
+	serviceAccountProvider      provider.ServiceAccountProvider
+	serviceAccountTokenProvider provider.ServiceAccountTokenProvider
+	projectProvider             provider.ProjectProvider
+	privilegedProjectProvider   provider.PrivilegedProjectProvider
+	logger                      log.Logger
+	oidcIssuerVerifier          auth.OIDCIssuerVerifier
+	tokenVerifiers              auth.TokenVerifier
+	tokenExtractors             auth.TokenExtractor
+	clusterProviders            map[string]provider.ClusterProvider
+	updateManager               common.UpdateManager
+	prometheusClient            prometheusapi.Client
+	projectMemberProvider       provider.ProjectMemberProvider
+	userProjectMapper           provider.ProjectMemberMapper
 }
 
 // NewRouting creates a new Routing.
@@ -51,6 +53,7 @@ func NewRouting(
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	serviceAccountProvider provider.ServiceAccountProvider,
+	serviceAccountTokenProvider provider.ServiceAccountTokenProvider,
 	projectProvider provider.ProjectProvider,
 	privilegedProject provider.PrivilegedProjectProvider,
 	oidcIssuerVerifier auth.OIDCIssuerVerifier,
@@ -62,22 +65,23 @@ func NewRouting(
 	userProjectMapper provider.ProjectMemberMapper,
 ) Routing {
 	return Routing{
-		datacenters:               datacenters,
-		clusterProviders:          newClusterProviders,
-		sshKeyProvider:            newSSHKeyProvider,
-		userProvider:              userProvider,
-		serviceAccountProvider:    serviceAccountProvider,
-		projectProvider:           projectProvider,
-		privilegedProjectProvider: privilegedProject,
-		cloudProviders:            cloudProviders,
-		logger:                    log.NewLogfmtLogger(os.Stderr),
-		oidcIssuerVerifier:        oidcIssuerVerifier,
-		tokenVerifiers:            tokenVerifiers,
-		tokenExtractors:           tokenExtractors,
-		updateManager:             updateManager,
-		prometheusClient:          prometheusClient,
-		projectMemberProvider:     projectMemberProvider,
-		userProjectMapper:         userProjectMapper,
+		datacenters:                 datacenters,
+		clusterProviders:            newClusterProviders,
+		sshKeyProvider:              newSSHKeyProvider,
+		userProvider:                userProvider,
+		serviceAccountProvider:      serviceAccountProvider,
+		serviceAccountTokenProvider: serviceAccountTokenProvider,
+		projectProvider:             projectProvider,
+		privilegedProjectProvider:   privilegedProject,
+		cloudProviders:              cloudProviders,
+		logger:                      log.NewLogfmtLogger(os.Stderr),
+		oidcIssuerVerifier:          oidcIssuerVerifier,
+		tokenVerifiers:              tokenVerifiers,
+		tokenExtractors:             tokenExtractors,
+		updateManager:               updateManager,
+		prometheusClient:            prometheusClient,
+		projectMemberProvider:       projectMemberProvider,
+		userProjectMapper:           userProjectMapper,
 	}
 }
 

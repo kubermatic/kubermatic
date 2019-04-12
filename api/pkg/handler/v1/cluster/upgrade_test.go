@@ -164,7 +164,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 				machineObj = append(machineObj, existingMachineDeployment)
 			}
 
-			ep, _, err := test.CreateTestEndpointAndGetClients(testStruct.apiUser, nil, []runtime.Object{}, machineObj, kubermaticObj, testStruct.versions, testStruct.updates, hack.NewTestRouting)
+			ep, _, _, err := test.CreateTestEndpointAndGetClients(testStruct.apiUser, nil, []runtime.Object{}, machineObj, kubermaticObj, testStruct.versions, testStruct.updates, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create testStruct endpoint due to %v", err)
 			}
@@ -251,7 +251,7 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 			kubernetesObj := []runtime.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			machineObj = append(machineObj, tc.ExistingMachineDeployments...)
-			ep, cs, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, cs, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}

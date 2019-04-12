@@ -31,5 +31,6 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
   -oidc-issuer-client-secret="$(vault kv get -field=oidc-issuer-client-secret dev/seed-clusters/dev.kubermatic.io)" \
   -oidc-issuer-redirect-uri="$(vault kv get -field=oidc-issuer-redirect-uri dev/seed-clusters/dev.kubermatic.io)" \
   -oidc-issuer-cookie-hash-key="$(vault kv get -field=oidc-issuer-cookie-hash-key dev/seed-clusters/dev.kubermatic.io)" \
+  -service-account-signing-key="$(vault kv get -field=service-account-signing-key dev/seed-clusters/dev.kubermatic.io)" \
   -logtostderr \
   -v=8 $@
