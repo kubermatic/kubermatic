@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/address"
@@ -270,6 +272,17 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	reconcileRequest, err := r.createClusterAccessToken(ctx, osData)
 	if reconcileRequest != nil || err != nil {
 		return reconcileRequest, err
+	}
+
+	// Only add the node deletion finalizer when the cluster is actually running
+	// Otherwise we fail to delete the nodes and are stuck in a loop
+	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
+		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+			c.Finalizers = append(c.Finalizers, kubermaticapiv1.NodeDeletionFinalizer)
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return nil, nil

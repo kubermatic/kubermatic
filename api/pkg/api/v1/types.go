@@ -749,3 +749,12 @@ type KubermaticVersions struct {
 	// Version of the Kubermatic API server.
 	API string `json:"api"`
 }
+
+const (
+	// NodeDeletionFinalizer indicates that the nodes still need cleanup
+	NodeDeletionFinalizer = "kubermatic.io/delete-nodes"
+	// InClusterPVCleanupFinalizer indicates that the PVs still need cleanup
+	InClusterPVCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-pv"
+	// InClusterLBCleanupFinalizer indicates that the LBs still need cleanup
+	InClusterLBCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-lb"
+)
