@@ -6,7 +6,6 @@ import (
 	"errors"
 	"flag"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"time"
@@ -28,6 +27,7 @@ import (
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
 
@@ -59,56 +59,56 @@ func main() {
 	flag.Parse()
 
 	if runOp.namespace == "" {
-		log.Fatal("-namespace must be set")
+		glog.Fatal("-namespace must be set")
 	}
 	if runOp.caPath == "" {
-		log.Fatal("-ca-cert must be set")
+		glog.Fatal("-ca-cert must be set")
 	}
 	if runOp.clusterURL == "" {
-		log.Fatal("-cluster-url must be set")
+		glog.Fatal("-cluster-url must be set")
 	}
 	clusterURL, err := url.Parse(runOp.clusterURL)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 	if runOp.openvpnServerPort == 0 {
-		log.Fatal("-openvpn-server-port must be set")
+		glog.Fatal("-openvpn-server-port must be set")
 	}
 
 	caBytes, err := ioutil.ReadFile(runOp.caPath)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 	certs, err := certutil.ParseCertsPEM(caBytes)
 	if err != nil {
-		log.Fatal(err)
+		glog.Fatal(err)
 	}
 	if len(certs) != 1 {
-		log.Fatalf("did not find exactly one but %d certificates in the given CA", len(certs))
+		glog.Fatalf("did not find exactly one but %d certificates in the given CA", len(certs))
 	}
 
 	openVPNCACertBytes, err := ioutil.ReadFile(runOp.openvpnCACertFilePath)
 	if err != nil {
-		log.Fatalf("failed to read openvpn-ca-cert-file: %v", err)
+		glog.Fatalf("failed to read openvpn-ca-cert-file: %v", err)
 	}
 	openVPNCACerts, err := certutil.ParseCertsPEM(openVPNCACertBytes)
 	if err != nil {
-		log.Fatalf("failed to parse openVPN CA file: %v", err)
+		glog.Fatalf("failed to parse openVPN CA file: %v", err)
 	}
 	if certsLen := len(openVPNCACerts); certsLen != 1 {
-		log.Fatalf("did not find exactly one but %v certificates in the openVPN CA file", certsLen)
+		glog.Fatalf("did not find exactly one but %v certificates in the openVPN CA file", certsLen)
 	}
 	openVPNCAKeyBytes, err := ioutil.ReadFile(runOp.openvpnCAKeyFilePath)
 	if err != nil {
-		log.Fatalf("failed to read openvon-ca-key-file: %v", err)
+		glog.Fatalf("failed to read openvon-ca-key-file: %v", err)
 	}
 	openVPNCAKey, err := certutil.ParsePrivateKeyPEM(openVPNCAKeyBytes)
 	if err != nil {
-		log.Fatalf("failed to parse openVPN CA key file: %v", err)
+		glog.Fatalf("failed to parse openVPN CA key file: %v", err)
 	}
 	openVPNECSDAKey, isECDSAKey := openVPNCAKey.(*ecdsa.PrivateKey)
 	if !isECDSAKey {
-		log.Fatal("the openVPN private key is not an ECDSA key")
+		glog.Fatal("the openVPN private key is not an ECDSA key")
 	}
 	openVPNCACert := &resources.ECDSAKeyPair{Cert: openVPNCACerts[0], Key: openVPNECSDAKey}
 
@@ -126,6 +126,8 @@ func main() {
 
 	// Create Context
 	done := ctx.Done()
+
+	log.SetLogger(log.ZapLogger(false))
 
 	mgr, err := manager.New(cfg, manager.Options{LeaderElection: true, LeaderElectionNamespace: metav1.NamespaceSystem, MetricsBindAddress: runOp.metricsListenAddr})
 	if err != nil {
