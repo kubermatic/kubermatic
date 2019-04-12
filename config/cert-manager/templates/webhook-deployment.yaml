@@ -24,7 +24,6 @@ spec:
         - --secure-port=6443
         - --tls-cert-file=/certs/tls.crt
         - --tls-private-key-file=/certs/tls.key
-        - --disable-admission-plugins=NamespaceLifecycle,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,Initializers
         env:
         - name: POD_NAMESPACE
           valueFrom:
