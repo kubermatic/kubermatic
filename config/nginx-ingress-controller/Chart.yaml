@@ -1,5 +1,5 @@
 name: nginx-ingress-controller
-version: 0.1.0
+version: 0.24.1
 description: nginx-ingress-controller
 keywords:
 - k8s

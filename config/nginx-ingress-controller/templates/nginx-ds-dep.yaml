@@ -35,7 +35,6 @@ spec:
         - --udp-services-configmap=$(POD_NAMESPACE)/udp-services
         - --default-ssl-certificate=default/kubermatic-tls-certificates
         - --annotations-prefix=ingress.kubernetes.io
-        - --enable-dynamic-certificates=false
         securityContext:
           capabilities:
             drop:
