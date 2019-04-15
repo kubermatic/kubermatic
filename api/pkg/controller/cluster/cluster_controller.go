@@ -3,13 +3,13 @@ package cluster
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/golang/glog"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
+	"github.com/kubermatic/kubermatic/api/pkg/clusterdeletion"
 	kubermaticscheme "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -193,6 +193,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, nil
 	}
 
+	if cluster.Annotations["kubermatic.io/openshift"] != "" {
+		return reconcile.Result{}, nil
+	}
+
 	// Add a wrapping here so we can emit an event on error
 	result, err := r.reconcile(ctx, cluster)
 	if err != nil {
@@ -218,11 +222,11 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 			}
 		}
 
-		if err := r.cleanupCluster(ctx, cluster); err != nil {
-			return nil, err
+		userClusterClient, err := r.userClusterConnProvider.GetDynamicClient(cluster)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user cluster client: %v", err)
 		}
-		//Always requeue until the cluster is deleted
-		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+		return clusterdeletion.New(r.Client, userClusterClient).CleanupCluster(ctx, cluster)
 	}
 
 	if cluster.Status.Phase == kubermaticv1.NoneClusterStatusPhase {
