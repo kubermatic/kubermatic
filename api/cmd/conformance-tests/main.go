@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
-	"os/exec"
 	"os/user"
 	"path"
 	"strings"
@@ -47,32 +46,31 @@ type excludeSelector struct {
 
 // Opts represent combination of flags and ENV options
 type Opts struct {
-	namePrefix                     string
-	providers                      sets.String
-	controlPlaneReadyWaitTimeout   time.Duration
-	deleteClusterAfterTests        bool
-	kubeconfigPath                 string
-	nodeCount                      int
-	nodeReadyWaitTimeout           time.Duration
-	publicKeys                     [][]byte
-	reportsRoot                    string
-	clusterLister                  kubermaticv1lister.ClusterLister
-	kubermaticClient               kubermaticclientset.Interface
-	seedKubeClient                 kubernetes.Interface
-	clusterClientProvider          clusterclient.UserClusterConnectionProvider
-	dcFile                         string
-	repoRoot                       string
-	dcs                            map[string]provider.DatacenterMeta
-	cleanupOnStart                 bool
-	clusterParallelCount           int
-	workerName                     string
-	homeDir                        string
-	runKubermaticControllerManager bool
-	versions                       []*semver.Semver
-	log                            *logrus.Entry
-	excludeSelector                excludeSelector
-	excludeSelectorRaw             string
-	existingClusterLabel           string
+	namePrefix                   string
+	providers                    sets.String
+	controlPlaneReadyWaitTimeout time.Duration
+	deleteClusterAfterTests      bool
+	kubeconfigPath               string
+	nodeCount                    int
+	nodeReadyWaitTimeout         time.Duration
+	publicKeys                   [][]byte
+	reportsRoot                  string
+	clusterLister                kubermaticv1lister.ClusterLister
+	kubermaticClient             kubermaticclientset.Interface
+	seedKubeClient               kubernetes.Interface
+	clusterClientProvider        clusterclient.UserClusterConnectionProvider
+	dcFile                       string
+	repoRoot                     string
+	dcs                          map[string]provider.DatacenterMeta
+	cleanupOnStart               bool
+	clusterParallelCount         int
+	workerName                   string
+	homeDir                      string
+	versions                     []*semver.Semver
+	log                          *logrus.Entry
+	excludeSelector              excludeSelector
+	excludeSelectorRaw           string
+	existingClusterLabel         string
 
 	secrets secrets
 }
@@ -154,7 +152,6 @@ func main() {
 	flag.BoolVar(&debug, "debug", false, "Enable debug logs")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
 	flag.StringVar(&opts.workerName, "worker-name", "", "name of the worker, if set the 'worker-name' label will be set on all clusters")
-	flag.BoolVar(&opts.runKubermaticControllerManager, "run-kubermatic-controller-manager", true, "should the runner run the controller-manager")
 	flag.StringVar(&sversions, "versions", "v1.10.11,v1.11.6,v1.12.4,v1.13.1", "a comma-separated list of versions to test")
 	flag.StringVar(&opts.excludeSelectorRaw, "exclude-distributions", "", "a comma-separated list of distributions that will get excluded from the tests")
 
@@ -235,28 +232,6 @@ func main() {
 
 	stopCh := kubermaticsignals.SetupSignalHandler()
 	rootCtx, rootCancel := context.WithCancel(context.Background())
-
-	if opts.runKubermaticControllerManager {
-		controllerManagerEnviron := os.Environ()
-		if opts.workerName != "" {
-			controllerManagerEnviron = append(controllerManagerEnviron, fmt.Sprintf("KUBERMATIC_WORKERNAME=%s", opts.workerName))
-		}
-		out, err := exec.Command("go", "env", "GOPATH").CombinedOutput()
-		if err != nil {
-			log.Fatalf("failed to execute command `go env GOPATH`: out=%s, err=%v", string(out), err)
-		}
-		gopath := strings.Replace(string(out), "\n", "", -1)
-		// We deliberately do not use `CommandContext` here because we expect this to be executed inside a container
-		// and we want the controller to run at least as long as the conformance tester and _not_ to be killed
-		// because the context for the latter got canceled, because otherwise we don't have cleanup
-		command := exec.Command(path.Join(gopath, "src/github.com/kubermatic/kubermatic/api/hack/run-controller.sh"))
-		command.Env = controllerManagerEnviron
-		go func() {
-			if out, err := command.CombinedOutput(); err != nil {
-				log.Fatalf("failed to run controller-manager: Output:\n---%s\n---\nerr=%v", string(out), err)
-			}
-		}()
-	}
 
 	go func() {
 		select {

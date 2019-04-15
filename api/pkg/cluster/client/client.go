@@ -71,7 +71,7 @@ func (p *provider) GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
 		return nil, err
 	}
 	d := s.Data[resources.KubeconfigSecretKey]
-	if len(d) == 0 {
+	if d == nil || len(s.Data[resources.KubeconfigSecretKey]) == 0 {
 		return nil, fmt.Errorf("no kubeconfig found")
 	}
 	return d, nil
