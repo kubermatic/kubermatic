@@ -1,8 +1,15 @@
+apiVersion: v1
 name: s3-exporter
-version: 0.1.0
+version: 0.3-1
+appVersion: v0.3
 keywords:
-- k8s
 - kubermatic
 - prometheus
 - s3
 - minio
+home: https://www.kubermatic.io/
+sources:
+- https://github.com/kubermatic/kubermatic
+maintainers:
+- name: Loodse GmbH
+  email: support@loodse.com

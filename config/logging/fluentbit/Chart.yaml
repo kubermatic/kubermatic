@@ -1,13 +1,15 @@
+apiVersion: v1
 name: fluentbit
-version: 0.1.0
+version: 1.0.4-1
+appVersion: 1.0.4
 description: fluentbit
 keywords:
-- k8s
 - kubermatic
+- logging
 - fluentbit
-home: http://www.kubermatic.io/
+home: http://fluentbit.org/
 sources:
-- https://github.com/kubermatic/kubermatic/config
+- https://github.com/kubermatic/kubermatic
 maintainers:
-- name: Sebastian Scheele
-  email: sebastian@loodse.com
+- name: Loodse GmbH
+  email: support@loodse.com

@@ -1,12 +1,13 @@
+apiVersion: v1
 name: kubermatic
 version: 0.1.0
-description: Kubermatic
+appVersion: '__KUBERMATIC_TAG__'
+description: Kubermatic chart for master and/or seed clusters.
 keywords:
-- k8s
 - kubermatic
-home: http://www.kubermatic.io/
+home: https://www.kubermatic.io/
 sources:
-- https://github.com/kubermatic
+- https://github.com/kubermatic/kubermatic
 maintainers:
-- name: Sebastian Scheele
-  email: sebastian@loodse.com
+- name: Loodse GmbH
+  email: support@loodse.com

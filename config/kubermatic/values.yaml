@@ -176,7 +176,7 @@ kubermatic:
     replicas: 1
     image:
       repository: quay.io/kubermatic/api
-      tag: __KUBERMATIC_TAG__
+      tag: "__KUBERMATIC_TAG__"
       pullPolicy: IfNotPresent
     resources:
       requests:
