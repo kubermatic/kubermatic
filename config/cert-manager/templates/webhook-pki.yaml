@@ -5,7 +5,7 @@ kind: Issuer
 metadata:
   name: webhook-selfsign
 spec:
-  selfsigned: {}
+  selfSigned: {}
 
 ---
 # Generate a CA Certificate used to sign certificates for the webhook
