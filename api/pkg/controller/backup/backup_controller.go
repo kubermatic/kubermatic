@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	ctrlruntimemetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -118,7 +119,7 @@ func Add(
 		backupContainerImage = DefaultBackupContainerImage
 	}
 
-	if err := prometheus.Register(metrics.Workers); err != nil {
+	if err := ctrlruntimemetrics.Registry.Register(metrics.Workers); err != nil {
 		return fmt.Errorf("failed to register worker metrics: %v", err)
 	}
 

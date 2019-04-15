@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
+	ctrlruntimemetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 const (
@@ -24,7 +25,8 @@ var (
 // Register the metrics that are to be monitored.
 func init() {
 	registerMetrics.Do(func() {
-		prometheus.MustRegister(workers)
+		ctrlruntimemetrics.Registry.MustRegister(workers)
 		workers.Set(0)
+		ctrlruntimemetrics.Registry.MustRegister(staleLBs)
 	})
 }

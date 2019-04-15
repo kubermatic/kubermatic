@@ -5,13 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net/http"
-	"time"
 
 	"github.com/golang/glog"
 	"github.com/oklog/run"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/collectors"
@@ -28,6 +24,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	ctrlruntimemetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
@@ -54,10 +51,11 @@ func main() {
 
 	var g run.Group
 
+	// Enable logging
 	log.SetLogger(log.ZapLogger(false))
 
 	// Create a manager
-	mgr, err := manager.New(config, manager.Options{})
+	mgr, err := manager.New(config, manager.Options{MetricsBindAddress: options.internalAddr})
 	if err != nil {
 		glog.Fatalf("failed to create mgr: %v", err)
 	}
@@ -81,7 +79,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	}
 
 	//Register the global error metric. Ensures that runtime.HandleError() increases the error metric
-	metrics.RegisterRuntimErrorMetricCounter("kubermatic_controller_manager", prometheus.DefaultRegisterer)
+	metrics.RegisterRuntimErrorMetricCounter("kubermatic_controller_manager", ctrlruntimemetrics.Registry)
 
 	dockerPullConfigJSON, err := ioutil.ReadFile(options.dockerPullConfigJSONFile)
 	if err != nil {
@@ -106,7 +104,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	}
 
 	glog.V(6).Info("Starting clusters collector")
-	collectors.MustRegisterClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetClient())
+	collectors.MustRegisterClusterCollector(ctrlruntimemetrics.Registry, ctrlCtx.mgr.GetClient())
 
 	// This group is forever waiting in a goroutine for signals to stop
 	{
@@ -119,37 +117,6 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 			}
 		}, func(err error) {
 			ctxDone()
-		})
-	}
-
-	// This group is running an internal http server with metrics and other debug information
-	{
-		m := http.NewServeMux()
-		m.Handle("/metrics", promhttp.Handler())
-
-		s := http.Server{
-			Addr:         options.internalAddr,
-			Handler:      m,
-			ReadTimeout:  5 * time.Second,
-			WriteTimeout: 10 * time.Second,
-		}
-
-		g.Add(func() error {
-			glog.Infof("Starting the internal http server: %s\n", options.internalAddr)
-			err := s.ListenAndServe()
-			if err != nil {
-				return fmt.Errorf("internal http server failed: %v", err)
-			}
-			return nil
-		}, func(err error) {
-			glog.Errorf("Stopping internal http server: %v", err)
-			timeoutCtx, cancel := context.WithTimeout(ctx, time.Second)
-			defer cancel()
-
-			glog.Info("Shutting down the internal http server")
-			if err := s.Shutdown(timeoutCtx); err != nil {
-				glog.Error("failed to shutdown the internal http server gracefully:", err)
-			}
 		})
 	}
 
