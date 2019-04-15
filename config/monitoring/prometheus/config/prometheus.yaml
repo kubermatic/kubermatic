@@ -19,29 +19,29 @@ rule_files:
 {{- end }}
 {{- end }}
 
-{{ if or .Values.prometheus.alertmanagers.files .Values.prometheus.alertmanagers.configs }}
+{{- if or .Values.prometheus.alertmanagers.files .Values.prometheus.alertmanagers.configs }}
 alerting:
   alertmanagers:
   {{- range .Values.prometheus.alertmanagers.files }}
   {{- range $filename, $content := $.Files.Glob . }}
-  - {{ ($.Files.Get $filename) | fromYaml | toJson }}
+  - {{ (tpl ($.Files.Get $filename) $) | fromYaml | toJson }}
   {{- end }}
   {{- end }}
 
   {{- range .Values.prometheus.alertmanagers.configs }}
   - {{ . | toJson }}
   {{- end }}
-{{ end }}
+{{- end }}
 
-{{ if or .Values.prometheus.scraping.files .Values.prometheus.scraping.configs }}
+{{- if or .Values.prometheus.scraping.files .Values.prometheus.scraping.configs }}
 scrape_configs:
 {{- range .Values.prometheus.scraping.files }}
 {{- range $filename, $content := $.Files.Glob . }}
-- {{ ($.Files.Get $filename) | fromYaml | toJson }}
+- {{ (tpl ($.Files.Get $filename) $) | fromYaml | toJson }}
 {{- end }}
 {{- end }}
 
 {{- range .Values.prometheus.scraping.configs }}
 - {{ . | toJson }}
 {{- end }}
-{{ end }}
+{{- end }}
