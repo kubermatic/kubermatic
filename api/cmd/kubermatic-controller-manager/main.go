@@ -15,7 +15,6 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/collectors"
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
@@ -28,8 +27,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
@@ -57,9 +54,6 @@ func main() {
 
 	var g run.Group
 
-	kubeClient := kubernetes.NewForConfigOrDie(config)
-	kubermaticClient := kubermaticclientset.NewForConfigOrDie(config)
-
 	log.SetLogger(log.ZapLogger(false))
 
 	// Create a manager
@@ -75,12 +69,10 @@ func main() {
 		glog.Fatalf("failed to add kubermatic scheme to mgr: %v", err)
 	}
 
-	dynamicClient := mgr.GetClient()
-	dynamicCache := mgr.GetCache()
 	recorder := mgr.GetRecorder(controllerName)
 
-	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
-	if _, err := informer.GetSyncedStoreFromDynamicFactory(dynamicCache, &autoscalingv1beta2.VerticalPodAutoscaler{}); err != nil {
+	// Check if the CRD for the VerticalPodAutoscaler is registered by doing a get
+	if _, err := informer.GetSyncedStoreFromDynamicFactory(mgr.GetCache(), &autoscalingv1beta2.VerticalPodAutoscaler{}); err != nil {
 		if _, crdNotRegistered := err.(*meta.NoKindMatchError); crdNotRegistered {
 			glog.Fatal(`
 The VerticalPodAutoscaler is not installed in this seed cluster.
@@ -102,20 +94,14 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 
 	// Create Context
 	done := ctx.Done()
-	go func() {
-		if err := dynamicCache.Start(done); err != nil {
-			glog.Fatal("failed to start the dynamic lister")
-		}
-	}()
 
-	ctrlCtx, err := newControllerContext(options, mgr, done, kubeClient, kubermaticClient, dynamicClient, dynamicCache)
+	ctrlCtx, err := newControllerContext(options, mgr, done)
 	if err != nil {
 		glog.Fatal(err)
 	}
 	ctrlCtx.dockerPullConfigJSON = dockerPullConfigJSON
 
-	controllers, err := createAllControllers(ctrlCtx)
-	if err != nil {
+	if err := createAllControllers(ctrlCtx); err != nil {
 		glog.Fatalf("could not create all controllers: %v", err)
 	}
 
@@ -176,7 +162,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 			}
 			callbacks := kubeleaderelection.LeaderCallbacks{
 				OnStartedLeading: func(_ context.Context) {
-					if err = runAllControllers(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh, ctxDone, ctrlCtx.mgr, controllers); err != nil {
+					if err = runAllControllers(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh, ctxDone, ctrlCtx.mgr); err != nil {
 						glog.Error(err)
 						ctxDone()
 					}
@@ -213,19 +199,11 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 func newControllerContext(
 	runOp controllerRunOptions,
 	mgr manager.Manager,
-	done <-chan struct{},
-	kubeClient kubernetes.Interface,
-	kubermaticClient kubermaticclientset.Interface,
-	dynamicClient ctrlruntimeclient.Client,
-	dynamicCache cache.Cache) (*controllerContext, error) {
+	done <-chan struct{}) (*controllerContext, error) {
 	ctrlCtx := &controllerContext{
-		mgr:              mgr,
-		runOptions:       runOp,
-		stopCh:           done,
-		kubeClient:       kubeClient,
-		kubermaticClient: kubermaticClient,
-		dynamicClient:    dynamicClient,
-		dynamicCache:     dynamicCache,
+		mgr:        mgr,
+		runOptions: runOp,
+		stopCh:     done,
 	}
 
 	var err error

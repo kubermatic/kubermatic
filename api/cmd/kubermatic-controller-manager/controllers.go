@@ -43,76 +43,51 @@ var allControllers = map[string]controllerCreator{
 	openshiftcontroller.ControllerName: createOpenshiftController,
 }
 
-type controllerCreator func(*controllerContext) (runner, error)
+type controllerCreator func(*controllerContext) error
 
 type runner interface {
 	Run(workerCount int, stopCh <-chan struct{})
 }
 
-func createAllControllers(ctrlCtx *controllerContext) (map[string]runner, error) {
-	controllers := map[string]runner{}
+func createAllControllers(ctrlCtx *controllerContext) error {
 	for name, create := range allControllers {
-		controller, err := create(ctrlCtx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create '%s' controller: %v", name, err)
-		}
-		// The controllers managed by the mgr don't have a dedicated runner
-		if controller != nil {
-			controllers[name] = controller
+		if err := create(ctrlCtx); err != nil {
+			return fmt.Errorf("failed to create %q controller: %v", name, err)
 		}
 	}
-	return controllers, nil
-}
-
-func getControllerStarter(workerCnt int, done <-chan struct{}, cancel context.CancelFunc, name string, controller runner) (func() error, func(err error)) {
-	execute := func() error {
-		glog.V(2).Infof("Starting %s controller...", name)
-		controller.Run(workerCnt, done)
-
-		err := fmt.Errorf("%s controller finished/died", name)
-		glog.V(2).Info(err)
-		return err
-	}
-
-	interrupt := func(err error) {
-		glog.V(2).Infof("Killing %s controller as group member finished/died: %v", name, err)
-		cancel()
-	}
-	return execute, interrupt
+	return nil
 }
 
 func runAllControllers(workerCnt int,
 	done <-chan struct{},
 	cancel context.CancelFunc,
-	mgr manager.Runnable,
-	controllers map[string]runner) error {
+	mgr manager.Runnable) error {
 	var g run.Group
 
-	// Add the manager first as other controllers may rely on its cache being ready
-	g.Add(func() error { return fmt.Errorf("mgr finished/died: %v", mgr.Start(done)) }, func(_ error) { cancel() })
-
-	for name, controller := range controllers {
-		execute, interrupt := getControllerStarter(workerCnt, done, cancel, name, controller)
-		g.Add(execute, interrupt)
-	}
+	g.Add(func() error {
+		return fmt.Errorf("mgr finished/died: %v", mgr.Start(done))
+	}, func(err error) {
+		glog.Errorf("Got error=%v, shuttind down....", err)
+		cancel()
+	})
 
 	return g.Run()
 }
 
-func createCloudController(ctrlCtx *controllerContext) (runner, error) {
+func createCloudController(ctrlCtx *controllerContext) error {
 	dcs, err := provider.LoadDatacentersMeta(ctrlCtx.runOptions.dcFile)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	cloudProvider := cloud.Providers(dcs)
 	predicates := workerlabel.Predicates(ctrlCtx.runOptions.workerName)
 	if err := cloudcontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, cloudProvider, predicates); err != nil {
-		return nil, fmt.Errorf("failed to add cloud controller to mgr: %v", err)
+		return fmt.Errorf("failed to add cloud controller to mgr: %v", err)
 	}
-	return nil, nil
+	return nil
 }
 
-func createOpenshiftController(ctrlCtx *controllerContext) (runner, error) {
+func createOpenshiftController(ctrlCtx *controllerContext) error {
 	if err := openshiftcontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
@@ -134,13 +109,13 @@ func createOpenshiftController(ctrlCtx *controllerContext) (runner, error) {
 			EtcdDataCorruptionChecks: ctrlCtx.runOptions.featureGates.Enabled(EtcdDataCorruptionChecks),
 			VPA:                      ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
 		}); err != nil {
-		return nil, fmt.Errorf("failed to add openshift controller to mgr: %v", err)
+		return fmt.Errorf("failed to add openshift controller to mgr: %v", err)
 	}
-	return nil, nil
+	return nil
 }
 
-func createClusterController(ctrlCtx *controllerContext) (runner, error) {
-	return nil, cluster.Add(
+func createClusterController(ctrlCtx *controllerContext) error {
+	return cluster.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
@@ -168,20 +143,20 @@ func createClusterController(ctrlCtx *controllerContext) (runner, error) {
 	)
 }
 
-func createBackupController(ctrlCtx *controllerContext) (runner, error) {
+func createBackupController(ctrlCtx *controllerContext) error {
 	storeContainer, err := getContainerFromFile(ctrlCtx.runOptions.backupContainerFile)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	cleanupContainer, err := getContainerFromFile(ctrlCtx.runOptions.cleanupContainerFile)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	backupInterval, err := time.ParseDuration(ctrlCtx.runOptions.backupInterval)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse %s as duration: %v", ctrlCtx.runOptions.backupInterval, err)
+		return fmt.Errorf("failed to parse %s as duration: %v", ctrlCtx.runOptions.backupInterval, err)
 	}
-	return nil, backupcontroller.Add(
+	return backupcontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
@@ -193,18 +168,18 @@ func createBackupController(ctrlCtx *controllerContext) (runner, error) {
 	)
 }
 
-func createMonitoringController(ctrlCtx *controllerContext) (runner, error) {
+func createMonitoringController(ctrlCtx *controllerContext) error {
 	dcs, err := provider.LoadDatacentersMeta(ctrlCtx.runOptions.dcFile)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	dockerPullConfigJSON, err := ioutil.ReadFile(ctrlCtx.runOptions.dockerPullConfigJSONFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load ImagePullSecret from %s: %v", ctrlCtx.runOptions.dockerPullConfigJSONFile, err)
+		return fmt.Errorf("failed to load ImagePullSecret from %s: %v", ctrlCtx.runOptions.dockerPullConfigJSONFile, err)
 	}
 
-	return nil, monitoring.Add(
+	return monitoring.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
@@ -252,17 +227,17 @@ func getContainerFromFile(path string) (*corev1.Container, error) {
 	return container, nil
 }
 
-func createUpdateController(ctrlCtx *controllerContext) (runner, error) {
+func createUpdateController(ctrlCtx *controllerContext) error {
 	updateManager, err := version.NewFromFiles(ctrlCtx.runOptions.versionsFile, ctrlCtx.runOptions.updatesFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create update manager: %v", err)
+		return fmt.Errorf("failed to create update manager: %v", err)
 	}
 
-	return nil, updatecontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, updatecontroller.NewMetrics(), updateManager)
+	return updatecontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, updatecontroller.NewMetrics(), updateManager)
 }
 
-func createAddonController(ctrlCtx *controllerContext) (runner, error) {
-	return nil, addon.Add(
+func createAddonController(ctrlCtx *controllerContext) error {
+	return addon.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
@@ -279,7 +254,7 @@ func createAddonController(ctrlCtx *controllerContext) (runner, error) {
 	)
 }
 
-func createAddonInstallerController(ctrlCtx *controllerContext) (runner, error) {
+func createAddonInstallerController(ctrlCtx *controllerContext) error {
 
 	kubernetesAddons := strings.Split(ctrlCtx.runOptions.kubernetesAddonsList, ",")
 	for i, a := range kubernetesAddons {
@@ -291,7 +266,7 @@ func createAddonInstallerController(ctrlCtx *controllerContext) (runner, error) 
 		openshiftAddons[i] = strings.TrimSpace(a)
 	}
 
-	return nil, addoninstaller.Add(
+	return addoninstaller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,

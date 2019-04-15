@@ -38,8 +38,8 @@ func NewFeatures(rawFeatures string) (FeatureGate, error) {
 
 // Enabled returns true if the feature gate value of a particular feature is true.
 func (f FeatureGate) Enabled(feature string) bool {
-	if enabled, ok := f[feature]; ok {
-		return enabled
+	if value, ok := f[feature]; ok {
+		return value
 	}
 
 	return false

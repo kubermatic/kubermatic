@@ -10,16 +10,12 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/features"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/net"
-	"k8s.io/client-go/kubernetes"
 	certutil "k8s.io/client-go/util/cert"
-	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -203,13 +199,11 @@ func (o controllerRunOptions) validateCABundle() error {
 	return err
 }
 
+// controllerContext holds all controllerRunOptions plus everything that
+// needs to be initialized first
 type controllerContext struct {
 	runOptions           controllerRunOptions
 	stopCh               <-chan struct{}
-	kubeClient           kubernetes.Interface
-	kubermaticClient     kubermaticclientset.Interface
-	dynamicClient        ctrlruntimeclient.Client
-	dynamicCache         ctrlruntimecache.Cache
 	mgr                  manager.Manager
 	clientProvider       client.UserClusterConnectionProvider
 	dcs                  map[string]provider.DatacenterMeta
