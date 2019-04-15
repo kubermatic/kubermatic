@@ -3,6 +3,7 @@ package reconciling
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/golang/glog"
 
@@ -10,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-
+	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -68,6 +69,13 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 		if err := client.Create(ctx, obj); err != nil {
 			return fmt.Errorf("failed to create %T '%s': %v", obj, namespacedName.String(), err)
 		}
+		// Wait until the object exists in the cache
+		createdObjectIsInCache := waitUntilObjectExistsInCacheConditionFunc(ctx, client, namespacedName, obj)
+		err = wait.PollImmediate(10*time.Millisecond, 10*time.Second, createdObjectIsInCache)
+		if err != nil {
+			return fmt.Errorf("failed waiting for the cache to contain our newly created object: %v", err)
+		}
+
 		glog.V(2).Infof("Created %T %s in Namespace %s", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
 		return nil
 	}
@@ -86,7 +94,56 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 	if err = client.Update(ctx, obj); err != nil {
 		return fmt.Errorf("failed to update object %T '%s': %v", obj, namespacedName.String(), err)
 	}
+
+	// Wait until the object we retrieve via "client.Get" has a different ResourceVersion than the old object
+	updatedObjectIsInCache := waitUntilUpdateIsInCacheConditionFunc(ctx, client, namespacedName, existingObject)
+	err = wait.PollImmediate(10*time.Millisecond, 10*time.Second, updatedObjectIsInCache)
+	if err != nil {
+		return fmt.Errorf("failed waiting for the cache to contain our latest changes: %v", err)
+	}
+
 	glog.V(2).Infof("Updated %T %s in Namespace %s", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
 
 	return nil
+}
+
+func waitUntilUpdateIsInCacheConditionFunc(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	namespacedName types.NamespacedName,
+	oldObj runtime.Object,
+) wait.ConditionFunc {
+	return func() (bool, error) {
+		// Create a copy to have something which we can pass into the client
+		currentObj := oldObj.DeepCopyObject()
+
+		if err := client.Get(ctx, namespacedName, currentObj); err != nil {
+			glog.Errorf("failed retrieving object %T %s while waiting for the cache to contain our latest changes: %v", currentObj, namespacedName, err)
+			return false, nil
+		}
+		// Check if the object from the store differs the old object
+		if !DeepEqual(currentObj.(metav1.Object), oldObj.(metav1.Object)) {
+			return true, nil
+		}
+		return false, nil
+	}
+}
+
+func waitUntilObjectExistsInCacheConditionFunc(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	namespacedName types.NamespacedName,
+	obj runtime.Object,
+) wait.ConditionFunc {
+	return func() (bool, error) {
+		newObj := obj.DeepCopyObject()
+		if err := client.Get(ctx, namespacedName, newObj); err != nil {
+			if kubeerrors.IsNotFound(err) {
+				return false, nil
+			}
+			glog.Errorf("failed retrieving object %T %s while waiting for the cache to contain our newly created object: %v", newObj, namespacedName, err)
+			return false, nil
+		}
+		return true, nil
+	}
 }
