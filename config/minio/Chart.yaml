@@ -1,13 +1,16 @@
+apiVersion: v1
 name: minio
 version: 1.0.0
+appVersion: RELEASE.2019-04-09T01-22-30Z
 description: minio
 keywords:
-- k8s
 - kubermatic
 - minio
+- s3
 home: https://www.minio.io/kubernetes.html
 sources:
 - https://www.minio.io/kubernetes.html
+- https://github.com/helm/charts/tree/master/stable/minio
 maintainers:
-- name: Henrik Schmidt
-  email: henrik@loodse.com
+- name: Loodse GmbH
+  email: support@loodse.com
