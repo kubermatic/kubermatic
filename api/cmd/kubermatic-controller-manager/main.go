@@ -15,25 +15,18 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/collectors"
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
-	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
@@ -61,9 +54,6 @@ func main() {
 
 	var g run.Group
 
-	kubeClient := kubernetes.NewForConfigOrDie(config)
-	kubermaticClient := kubermaticclientset.NewForConfigOrDie(config)
-
 	log.SetLogger(log.ZapLogger(false))
 
 	// Create a manager
@@ -79,12 +69,10 @@ func main() {
 		glog.Fatalf("failed to add kubermatic scheme to mgr: %v", err)
 	}
 
-	dynamicClient := mgr.GetClient()
-	dynamicCache := mgr.GetCache()
 	recorder := mgr.GetRecorder(controllerName)
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
-	if _, err := informer.GetSyncedStoreFromDynamicFactory(dynamicCache, &autoscalingv1beta2.VerticalPodAutoscaler{}); err != nil {
+	if _, err := informer.GetSyncedStoreFromDynamicFactory(mgr.GetCache(), &autoscalingv1beta2.VerticalPodAutoscaler{}); err != nil {
 		if _, crdNotRegistered := err.(*meta.NoKindMatchError); crdNotRegistered {
 			glog.Fatal(`
 The VerticalPodAutoscaler is not installed in this seed cluster.
@@ -106,30 +94,19 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 
 	// Create Context
 	done := ctx.Done()
-	go func() {
-		if err := dynamicCache.Start(done); err != nil {
-			glog.Fatal("failed to start the dynamic lister")
-		}
-	}()
 
-	ctrlCtx, err := newControllerContext(options, mgr, done, kubeClient, kubermaticClient, dynamicClient, dynamicCache)
+	ctrlCtx, err := newControllerContext(options, mgr, done)
 	if err != nil {
 		glog.Fatal(err)
 	}
 	ctrlCtx.dockerPullConfigJSON = dockerPullConfigJSON
 
-	controllers, err := createAllControllers(ctrlCtx)
-	if err != nil {
+	if err := createAllControllers(ctrlCtx); err != nil {
 		glog.Fatalf("could not create all controllers: %v", err)
 	}
 
-	for name, register := range collectors.AvailableCollectors {
-		glog.V(6).Infof("Starting %s collector", name)
-		register(prometheus.DefaultRegisterer, ctrlCtx.kubeInformerFactory, ctrlCtx.kubermaticInformerFactory)
-	}
-
-	// Start context (Informers)
-	ctrlCtx.Start()
+	glog.V(6).Info("Starting clusters collector")
+	collectors.MustRegisterClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetClient())
 
 	// This group is forever waiting in a goroutine for signals to stop
 	{
@@ -185,7 +162,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 			}
 			callbacks := kubeleaderelection.LeaderCallbacks{
 				OnStartedLeading: func(_ context.Context) {
-					if err = runAllControllers(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh, ctxDone, ctrlCtx.mgr, controllers); err != nil {
+					if err = runAllControllers(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh, ctxDone, ctrlCtx.mgr); err != nil {
 						glog.Error(err)
 						ctxDone()
 					}
@@ -222,42 +199,27 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 func newControllerContext(
 	runOp controllerRunOptions,
 	mgr manager.Manager,
-	done <-chan struct{},
-	kubeClient kubernetes.Interface,
-	kubermaticClient kubermaticclientset.Interface,
-	dynamicClient ctrlruntimeclient.Client,
-	dynamicCache cache.Cache) (*controllerContext, error) {
+	done <-chan struct{}) (*controllerContext, error) {
 	ctrlCtx := &controllerContext{
-		mgr:              mgr,
-		runOptions:       runOp,
-		stopCh:           done,
-		kubeClient:       kubeClient,
-		kubermaticClient: kubermaticClient,
-		dynamicClient:    dynamicClient,
-		dynamicCache:     dynamicCache,
+		mgr:        mgr,
+		runOptions: runOp,
+		stopCh:     done,
 	}
 
-	selector, err := workerlabel.LabelSelector(runOp.workerName)
-	if err != nil {
-		return nil, err
-	}
-
+	var err error
 	ctrlCtx.dcs, err = provider.LoadDatacentersMeta(ctrlCtx.runOptions.dcFile)
 	if err != nil {
 		return nil, err
 	}
 
-	ctrlCtx.kubermaticInformerFactory = kubermaticinformers.NewFilteredSharedInformerFactory(ctrlCtx.kubermaticClient, informer.DefaultInformerResyncPeriod, metav1.NamespaceAll, selector)
-	ctrlCtx.kubeInformerFactory = kubeinformers.NewSharedInformerFactory(ctrlCtx.kubeClient, informer.DefaultInformerResyncPeriod)
-
 	var clientProvider client.UserClusterConnectionProvider
 	if ctrlCtx.runOptions.kubeconfig != "" {
-		clientProvider, err = client.NewExternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
+		clientProvider, err = client.NewExternal(mgr.GetClient())
 		if err != nil {
 			return nil, fmt.Errorf("failed to get clientProvider: %v", err)
 		}
 	} else {
-		clientProvider, err = client.NewInternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
+		clientProvider, err = client.NewInternal(mgr.GetClient())
 		if err != nil {
 			return nil, fmt.Errorf("failed to get clientProvider: %v", err)
 		}
@@ -265,12 +227,4 @@ func newControllerContext(
 	ctrlCtx.clientProvider = clientProvider
 
 	return ctrlCtx, nil
-}
-
-func (ctx *controllerContext) Start() {
-	ctx.kubermaticInformerFactory.Start(ctx.stopCh)
-	ctx.kubeInformerFactory.Start(ctx.stopCh)
-
-	ctx.kubermaticInformerFactory.WaitForCacheSync(ctx.stopCh)
-	ctx.kubeInformerFactory.WaitForCacheSync(ctx.stopCh)
 }

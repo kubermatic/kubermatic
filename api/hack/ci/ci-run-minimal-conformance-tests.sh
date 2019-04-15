@@ -194,7 +194,6 @@ timeout -s 9 90m ./conformance-tests \
   -name-prefix=prow-e2e \
   -reports-root=/reports \
   -cleanup-on-start=false \
-  -run-kubermatic-controller-manager=false \
   -aws-access-key-id="$AWS_E2E_TESTS_KEY_ID" \
   -aws-secret-access-key="$AWS_E2E_TESTS_SECRET" \
   -versions="$VERSIONS" \
@@ -239,7 +238,6 @@ timeout -s 9 60m ./conformance-tests \
   -name-prefix=prow-e2e \
   -reports-root=/reports \
   -cleanup-on-start=false \
-  -run-kubermatic-controller-manager=false \
   -aws-access-key-id="$AWS_E2E_TESTS_KEY_ID" \
   -aws-secret-access-key="$AWS_E2E_TESTS_SECRET" \
   -versions="$VERSIONS" \
