@@ -15,7 +15,6 @@ import (
 	"github.com/Masterminds/sprig"
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
-	"github.com/prometheus/client_golang/prometheus"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -34,7 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	ctrlruntimemetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -46,27 +44,6 @@ const (
 	cleanupFinalizerName = "cleanup-manifests"
 )
 
-// Metrics contains metrics that this controller will collect and expose
-type Metrics struct {
-	Workers prometheus.Gauge
-}
-
-// NewMetrics creates a new Metrics
-// with default values initialized, so metrics always show up.
-func NewMetrics() *Metrics {
-	cm := &Metrics{
-		Workers: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: "kubermatic",
-			Subsystem: "addon_controller",
-			Name:      "workers",
-			Help:      "The number of running addon controller workers",
-		}),
-	}
-
-	cm.Workers.Set(0)
-	return cm
-}
-
 // KubeconfigProvider provides functionality to get a clusters admin kubeconfig
 type KubeconfigProvider interface {
 	GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
@@ -75,7 +52,6 @@ type KubeconfigProvider interface {
 // Reconciler stores necessary components that are required to manage in-cluster Add-On's
 type Reconciler struct {
 	workerName         string
-	metrics            *Metrics
 	addonVariables     map[string]interface{}
 	kubernetesAddonDir string
 	openshiftAddonDir  string
@@ -92,7 +68,6 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	workerName string,
-	metrics *Metrics,
 	addonCtxVariables map[string]interface{},
 	kubernetesAddonDir string,
 	openshiftAddonDir string,
@@ -101,7 +76,6 @@ func Add(
 
 	client := mgr.GetClient()
 	reconciler := &Reconciler{
-		metrics:            metrics,
 		addonVariables:     addonCtxVariables,
 		kubernetesAddonDir: kubernetesAddonDir,
 		openshiftAddonDir:  openshiftAddonDir,
@@ -110,8 +84,6 @@ func Add(
 		workerName:         workerName,
 		recorder:           mgr.GetRecorder(ControllerName),
 	}
-
-	ctrlruntimemetrics.Registry.MustRegister(metrics.Workers)
 
 	if overwriteRegistey != "" {
 		reconciler.registryURI = parseRegistryURI(overwriteRegistey)
@@ -496,7 +468,7 @@ func (r *Reconciler) getDeleteCommand(ctx context.Context, kubeconfigFilename, m
 	return cmd
 }
 
-func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, selector labels.Selector, openshift bool) *exec.Cmd {
+func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, selector fmt.Stringer, openshift bool) *exec.Cmd {
 	//kubectl apply --prune -f manifest.yaml -l app=nginx
 	binary := "kubectl"
 	if openshift {

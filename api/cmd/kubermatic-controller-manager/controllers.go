@@ -160,7 +160,6 @@ func createBackupController(ctrlCtx *controllerContext) error {
 		*cleanupContainer,
 		backupInterval,
 		ctrlCtx.runOptions.backupContainerImage,
-		backupcontroller.NewMetrics(),
 	)
 }
 
@@ -229,7 +228,7 @@ func createUpdateController(ctrlCtx *controllerContext) error {
 		return fmt.Errorf("failed to create update manager: %v", err)
 	}
 
-	return updatecontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, updatecontroller.NewMetrics(), updateManager)
+	return updatecontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, updateManager)
 }
 
 func createAddonController(ctrlCtx *controllerContext) error {
@@ -237,7 +236,6 @@ func createAddonController(ctrlCtx *controllerContext) error {
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
-		addon.NewMetrics(),
 		map[string]interface{}{ // addonVariables
 			"openvpn": map[string]interface{}{
 				"NodeAccessNetwork": ctrlCtx.runOptions.nodeAccessNetwork,
@@ -266,7 +264,6 @@ func createAddonInstallerController(ctrlCtx *controllerContext) error {
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
-		addoninstaller.NewMetrics(),
 		kubernetesAddons,
 		openshiftAddons)
 }

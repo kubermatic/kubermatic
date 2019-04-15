@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/prometheus/client_golang/prometheus"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
@@ -20,36 +19,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	ctrlruntimemetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const ControllerName = "kubermatic_addoninstaller_controller"
 
-// Metrics contains metrics that this controller will collect and expose
-type Metrics struct {
-	Workers prometheus.Gauge
-}
-
-// NewMetrics creates a new Metrics
-// with default values initialized, so metrics always show up.
-func NewMetrics() *Metrics {
-	cm := &Metrics{
-		Workers: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: "kubermatic",
-			Subsystem: "addon_installer_controller",
-			Name:      "workers",
-			Help:      "The number of addon installer controller workers",
-		}),
-	}
-	cm.Workers.Set(0)
-	return cm
-}
-
 type Reconciler struct {
 	workerName       string
-	metrics          *Metrics
 	kubernetesAddons []string
 	openshiftAddons  []string
 	ctrlruntimeclient.Client
@@ -60,21 +37,15 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	workerName string,
-	metrics *Metrics,
 	kubernetesAddons,
 	openshiftAddons []string) error {
 
 	reconciler := &Reconciler{
 		workerName:       workerName,
-		metrics:          metrics,
 		kubernetesAddons: kubernetesAddons,
 		openshiftAddons:  openshiftAddons,
 		Client:           mgr.GetClient(),
 		recorder:         mgr.GetRecorder(ControllerName),
-	}
-
-	if err := ctrlruntimemetrics.Registry.Register(metrics.Workers); err != nil {
-		return fmt.Errorf("failed to register metrics: %v", err)
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{
