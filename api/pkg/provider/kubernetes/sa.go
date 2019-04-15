@@ -14,7 +14,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
-const ServiceAccountLabelGroup = "initialGroup"
+const (
+	ServiceAccountLabelGroup = "initialGroup"
+	saPrefix                 = "serviceaccount-"
+)
 
 // NewServiceAccountProvider returns a service account provider
 func NewServiceAccountProvider(createMasterImpersonatedClient kubermaticImpersonationClient, serviceAccountLister kubermaticv1lister.UserLister, domain string) *ServiceAccountProvider {
@@ -48,12 +51,12 @@ func (p *ServiceAccountProvider) Create(userInfo *provider.UserInfo, project *ku
 	uniqueID := rand.String(10)
 	uniqueName := fmt.Sprintf("serviceaccount-%s", uniqueID)
 
-	user := kubermaticv1.User{}
-	user.Name = uniqueName
-	user.Spec.Email = fmt.Sprintf("%s@%s", uniqueName, p.domain)
-	user.Spec.Name = name
-	user.Spec.ID = uniqueID
-	user.OwnerReferences = []metav1.OwnerReference{
+	sa := kubermaticv1.User{}
+	sa.Name = uniqueName
+	sa.Spec.Email = fmt.Sprintf("%s@%s", uniqueName, p.domain)
+	sa.Spec.Name = name
+	sa.Spec.ID = uniqueID
+	sa.OwnerReferences = []metav1.OwnerReference{
 		{
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 			Kind:       kubermaticv1.ProjectKindName,
@@ -61,15 +64,20 @@ func (p *ServiceAccountProvider) Create(userInfo *provider.UserInfo, project *ku
 			Name:       project.Name,
 		},
 	}
-	user.Labels = map[string]string{ServiceAccountLabelGroup: group}
-	user.Spec.Projects = []kubermaticv1.ProjectGroup{}
+	sa.Labels = map[string]string{ServiceAccountLabelGroup: group}
+	sa.Spec.Projects = []kubermaticv1.ProjectGroup{}
 
 	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
-	return masterImpersonatedClient.Users().Create(&user)
+	createdSA, err := masterImpersonatedClient.Users().Create(&sa)
+	if err != nil {
+		return nil, err
+	}
+	createdSA.Name = removeSAPrefix(createdSA.Name)
+	return createdSA, nil
 }
 
 // List gets service accounts for the project
@@ -116,6 +124,11 @@ func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, project *kube
 		}
 
 	}
+
+	for _, sa := range resultList {
+		sa.Name = removeSAPrefix(sa.Name)
+	}
+
 	if len(options.ServiceAccountName) == 0 {
 		return resultList, nil
 	}
@@ -145,11 +158,13 @@ func (p *ServiceAccountProvider) Get(userInfo *provider.UserInfo, name string) (
 		return nil, err
 	}
 
+	name = addSAPrefix(name)
 	serviceAccount, err := masterImpersonatedClient.Users().Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
+	serviceAccount.Name = removeSAPrefix(serviceAccount.Name)
 	return serviceAccount, nil
 }
 
@@ -167,7 +182,14 @@ func (p *ServiceAccountProvider) Update(userInfo *provider.UserInfo, serviceAcco
 		return nil, err
 	}
 
-	return masterImpersonatedClient.Users().Update(serviceAccount)
+	serviceAccount.Name = addSAPrefix(serviceAccount.Name)
+
+	updatedSA, err := masterImpersonatedClient.Users().Update(serviceAccount)
+	if err != nil {
+		return nil, err
+	}
+	updatedSA.Name = removeSAPrefix(updatedSA.Name)
+	return updatedSA, nil
 }
 
 // Delete simply deletes the given service account
@@ -184,5 +206,18 @@ func (p *ServiceAccountProvider) Delete(userInfo *provider.UserInfo, name string
 		return err
 	}
 
+	name = addSAPrefix(name)
 	return masterImpersonatedClient.Users().Delete(name, &metav1.DeleteOptions{})
+}
+
+// removeSAPrefix removes "serviceaccount-" from a SA's ID,
+// for example given "serviceaccount-7d4b5695vb" it returns "7d4b5695vb"
+func removeSAPrefix(name string) string {
+	return strings.TrimPrefix(name, saPrefix)
+}
+
+// addSAPrefix adds "serviceaccount-" prefix to a SA's ID,
+// for example given "7d4b5695vb" it returns "serviceaccount-7d4b5695vb"
+func addSAPrefix(name string) string {
+	return fmt.Sprintf("%s%s", saPrefix, name)
 }

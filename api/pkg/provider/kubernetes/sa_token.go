@@ -93,9 +93,15 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 	if project == nil {
 		return nil, kerrors.NewBadRequest("project cannot be nil")
 	}
+	if sa == nil {
+		return nil, kerrors.NewBadRequest("sa cannot be nil")
+	}
 	if options == nil {
 		options = &provider.ServiceAccountTokenListOptions{}
 	}
+	saCopy := *sa
+	saCopy.Name = addSAPrefix(saCopy.Name)
+
 	labelSelector, err := labels.Parse(fmt.Sprintf("%s=%s", kubermaticv1.ProjectIDLabelKey, project.Name))
 	if err != nil {
 		return nil, err
@@ -110,7 +116,7 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 		if strings.HasPrefix(secret.Name, "sa-token") {
 			for _, owner := range secret.GetOwnerReferences() {
 				if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.UserKindName &&
-					owner.Name == sa.Name && owner.UID == sa.UID {
+					owner.Name == saCopy.Name && owner.UID == saCopy.UID {
 					resultList = append(resultList, secret)
 				}
 			}
