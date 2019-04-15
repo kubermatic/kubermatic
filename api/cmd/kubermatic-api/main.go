@@ -45,6 +45,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
@@ -119,8 +120,12 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 			kubermaticSeedClient := kubermaticclientset.NewForConfigOrDie(cfg)
 			kubermaticSeedInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticSeedClient, informer.DefaultInformerResyncPeriod)
 			defaultImpersonationClientForSeed := kubernetesprovider.NewKubermaticImpersonationClient(cfg)
+			seedCtrlruntimeClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
+			if err != nil {
+				return providers{}, fmt.Errorf("failed to create dynamic seed client: %v", err)
+			}
 
-			userClusterConnectionProvider, err := client.NewExternal(kubeInformerFactory.Core().V1().Secrets().Lister())
+			userClusterConnectionProvider, err := client.NewExternal(seedCtrlruntimeClient)
 			if err != nil {
 				return providers{}, fmt.Errorf("failed to get userClusterConnectionProvider: %v", err)
 			}

@@ -16,18 +16,14 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/collectors"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
-	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -123,13 +119,8 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		glog.Fatalf("could not create all controllers: %v", err)
 	}
 
-	for name, register := range collectors.AvailableCollectors {
-		glog.V(6).Infof("Starting %s collector", name)
-		register(prometheus.DefaultRegisterer, ctrlCtx.kubeInformerFactory, ctrlCtx.kubermaticInformerFactory)
-	}
-
-	// Start context (Informers)
-	ctrlCtx.Start()
+	glog.V(6).Info("Starting clusters collector")
+	collectors.MustRegisterClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetClient())
 
 	// This group is forever waiting in a goroutine for signals to stop
 	{
@@ -237,27 +228,20 @@ func newControllerContext(
 		dynamicCache:     dynamicCache,
 	}
 
-	selector, err := workerlabel.LabelSelector(runOp.workerName)
-	if err != nil {
-		return nil, err
-	}
-
+	var err error
 	ctrlCtx.dcs, err = provider.LoadDatacentersMeta(ctrlCtx.runOptions.dcFile)
 	if err != nil {
 		return nil, err
 	}
 
-	ctrlCtx.kubermaticInformerFactory = kubermaticinformers.NewFilteredSharedInformerFactory(ctrlCtx.kubermaticClient, informer.DefaultInformerResyncPeriod, metav1.NamespaceAll, selector)
-	ctrlCtx.kubeInformerFactory = kubeinformers.NewSharedInformerFactory(ctrlCtx.kubeClient, informer.DefaultInformerResyncPeriod)
-
 	var clientProvider client.UserClusterConnectionProvider
 	if ctrlCtx.runOptions.kubeconfig != "" {
-		clientProvider, err = client.NewExternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
+		clientProvider, err = client.NewExternal(mgr.GetClient())
 		if err != nil {
 			return nil, fmt.Errorf("failed to get clientProvider: %v", err)
 		}
 	} else {
-		clientProvider, err = client.NewInternal(ctrlCtx.kubeInformerFactory.Core().V1().Secrets().Lister())
+		clientProvider, err = client.NewInternal(mgr.GetClient())
 		if err != nil {
 			return nil, fmt.Errorf("failed to get clientProvider: %v", err)
 		}
@@ -265,12 +249,4 @@ func newControllerContext(
 	ctrlCtx.clientProvider = clientProvider
 
 	return ctrlCtx, nil
-}
-
-func (ctx *controllerContext) Start() {
-	ctx.kubermaticInformerFactory.Start(ctx.stopCh)
-	ctx.kubeInformerFactory.Start(ctx.stopCh)
-
-	ctx.kubermaticInformerFactory.WaitForCacheSync(ctx.stopCh)
-	ctx.kubeInformerFactory.WaitForCacheSync(ctx.stopCh)
 }
