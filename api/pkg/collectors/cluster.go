@@ -28,6 +28,7 @@ type ClusterCollector struct {
 // MustRegisterClusterCollector registers the cluster collector at the given prometheus registry
 func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlruntimeclient.Client) {
 	cc := &ClusterCollector{
+		client: client,
 		clusterCreated: prometheus.NewDesc(
 			prefix+"created",
 			"Unix creation timestamp",
