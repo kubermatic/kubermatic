@@ -27,6 +27,5 @@ func init() {
 	registerMetrics.Do(func() {
 		ctrlruntimemetrics.Registry.MustRegister(workers)
 		workers.Set(0)
-		ctrlruntimemetrics.Registry.MustRegister(staleLBs)
 	})
 }
