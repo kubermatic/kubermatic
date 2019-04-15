@@ -146,7 +146,8 @@ kubermatic:
         "share_kubeconfig": false,
         "show_demo_info": false,
         "show_terms_of_service": false,
-        "cleanup_cluster": false
+        "cleanup_cluster": false,
+        "custom_links": []
       }
     resources:
       requests:
