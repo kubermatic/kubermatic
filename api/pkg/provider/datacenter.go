@@ -1,10 +1,8 @@
 package provider
 
 import (
-	"bufio"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
@@ -117,12 +115,7 @@ type datacentersMeta struct {
 
 // LoadDatacentersMeta loads datacenter metadata from the given path.
 func LoadDatacentersMeta(path string) (map[string]DatacenterMeta, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-
-	bytes, err := ioutil.ReadAll(bufio.NewReader(f))
+	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

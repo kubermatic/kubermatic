@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -8,14 +9,13 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	admissionregistrationclientset "k8s.io/client-go/kubernetes/typed/admissionregistration/v1beta1"
-	corev1lister "k8s.io/client-go/listers/core/v1"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	aggregationclientset "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
-
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -34,38 +34,38 @@ type UserClusterConnectionProvider interface {
 // NewInternal returns a new instance of the client connection provider that
 // only works from within the seed cluster but has the advantage that it doesn't leave
 // the seed clusters network
-func NewInternal(secretLister corev1lister.SecretLister) (UserClusterConnectionProvider, error) {
+func NewInternal(seedClient ctrlruntimeclient.Client) (UserClusterConnectionProvider, error) {
 	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
 		return nil, fmt.Errorf("failed to add clusterv1alpha1 to scheme: %v", err)
 	}
-	return &provider{secretLister: secretLister, useExternalAddress: false}, nil
+	return &provider{seedClient: seedClient, useExternalAddress: false}, nil
 }
 
 // NewExternal returns a new instance of the client connection provider that
 // that uses the external cluster address and hence works from everywhere.
 // Use NewInternal if possible
-func NewExternal(secretLister corev1lister.SecretLister) (UserClusterConnectionProvider, error) {
+func NewExternal(seedClient ctrlruntimeclient.Client) (UserClusterConnectionProvider, error) {
 	if err := clusterv1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		return nil, fmt.Errorf("failed to add clusterv1alpha1 to scheme: %v", err)
 	}
-	return &provider{secretLister: secretLister, useExternalAddress: true}, nil
+	return &provider{seedClient: seedClient, useExternalAddress: true}, nil
 }
 
 type provider struct {
-	secretLister       corev1lister.SecretLister
+	seedClient         ctrlruntimeclient.Client
 	useExternalAddress bool
 }
 
 // GetAdminKubeconfig returns the admin kubeconfig for the given cluster
 func (p *provider) GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
-	var s *corev1.Secret
+	s := &corev1.Secret{}
 	var err error
 	if p.useExternalAddress {
 		// Load the admin kubeconfig secret, it uses the external apiserver address
-		s, err = p.secretLister.Secrets(c.Status.NamespaceName).Get(resources.AdminKubeconfigSecretName)
+		err = p.seedClient.Get(context.Background(), types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.AdminKubeconfigSecretName}, s)
 	} else {
 		// Load the internal admin kubeconfig secret
-		s, err = p.secretLister.Secrets(c.Status.NamespaceName).Get(resources.InternalUserClusterAdminKubeconfigSecretName)
+		err = p.seedClient.Get(context.Background(), types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.InternalUserClusterAdminKubeconfigSecretName}, s)
 	}
 	if err != nil {
 		return nil, err

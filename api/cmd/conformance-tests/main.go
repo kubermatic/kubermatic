@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
-	"os/exec"
 	"os/user"
 	"path"
 	"strings"
@@ -34,9 +33,9 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 //TODO: Move Kubernetes versions into this as well
@@ -47,32 +46,31 @@ type excludeSelector struct {
 
 // Opts represent combination of flags and ENV options
 type Opts struct {
-	namePrefix                     string
-	providers                      sets.String
-	controlPlaneReadyWaitTimeout   time.Duration
-	deleteClusterAfterTests        bool
-	kubeconfigPath                 string
-	nodeCount                      int
-	nodeReadyWaitTimeout           time.Duration
-	publicKeys                     [][]byte
-	reportsRoot                    string
-	clusterLister                  kubermaticv1lister.ClusterLister
-	kubermaticClient               kubermaticclientset.Interface
-	seedKubeClient                 kubernetes.Interface
-	clusterClientProvider          clusterclient.UserClusterConnectionProvider
-	dcFile                         string
-	repoRoot                       string
-	dcs                            map[string]provider.DatacenterMeta
-	cleanupOnStart                 bool
-	clusterParallelCount           int
-	workerName                     string
-	homeDir                        string
-	runKubermaticControllerManager bool
-	versions                       []*semver.Semver
-	log                            *logrus.Entry
-	excludeSelector                excludeSelector
-	excludeSelectorRaw             string
-	existingClusterLabel           string
+	namePrefix                   string
+	providers                    sets.String
+	controlPlaneReadyWaitTimeout time.Duration
+	deleteClusterAfterTests      bool
+	kubeconfigPath               string
+	nodeCount                    int
+	nodeReadyWaitTimeout         time.Duration
+	publicKeys                   [][]byte
+	reportsRoot                  string
+	clusterLister                kubermaticv1lister.ClusterLister
+	kubermaticClient             kubermaticclientset.Interface
+	seedKubeClient               kubernetes.Interface
+	clusterClientProvider        clusterclient.UserClusterConnectionProvider
+	dcFile                       string
+	repoRoot                     string
+	dcs                          map[string]provider.DatacenterMeta
+	cleanupOnStart               bool
+	clusterParallelCount         int
+	workerName                   string
+	homeDir                      string
+	versions                     []*semver.Semver
+	log                          *logrus.Entry
+	excludeSelector              excludeSelector
+	excludeSelectorRaw           string
+	existingClusterLabel         string
 
 	secrets secrets
 }
@@ -154,7 +152,6 @@ func main() {
 	flag.BoolVar(&debug, "debug", false, "Enable debug logs")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
 	flag.StringVar(&opts.workerName, "worker-name", "", "name of the worker, if set the 'worker-name' label will be set on all clusters")
-	flag.BoolVar(&opts.runKubermaticControllerManager, "run-kubermatic-controller-manager", true, "should the runner run the controller-manager")
 	flag.StringVar(&sversions, "versions", "v1.10.11,v1.11.6,v1.12.4,v1.13.1", "a comma-separated list of versions to test")
 	flag.StringVar(&opts.excludeSelectorRaw, "exclude-distributions", "", "a comma-separated list of distributions that will get excluded from the tests")
 
@@ -236,28 +233,6 @@ func main() {
 	stopCh := kubermaticsignals.SetupSignalHandler()
 	rootCtx, rootCancel := context.WithCancel(context.Background())
 
-	if opts.runKubermaticControllerManager {
-		controllerManagerEnviron := os.Environ()
-		if opts.workerName != "" {
-			controllerManagerEnviron = append(controllerManagerEnviron, fmt.Sprintf("KUBERMATIC_WORKERNAME=%s", opts.workerName))
-		}
-		out, err := exec.Command("go", "env", "GOPATH").CombinedOutput()
-		if err != nil {
-			log.Fatalf("failed to execute command `go env GOPATH`: out=%s, err=%v", string(out), err)
-		}
-		gopath := strings.Replace(string(out), "\n", "", -1)
-		// We deliberately do not use `CommandContext` here because we expect this to be executed inside a container
-		// and we want the controller to run at least as long as the conformance tester and _not_ to be killed
-		// because the context for the latter got canceled, because otherwise we don't have cleanup
-		command := exec.Command(path.Join(gopath, "src/github.com/kubermatic/kubermatic/api/hack/run-controller.sh"))
-		command.Env = controllerManagerEnviron
-		go func() {
-			if out, err := command.CombinedOutput(); err != nil {
-				log.Fatalf("failed to run controller-manager: Output:\n---%s\n---\nerr=%v", string(out), err)
-			}
-		}()
-	}
-
 	go func() {
 		select {
 		case <-stopCh:
@@ -284,21 +259,23 @@ func main() {
 	seedKubeClient := kubernetes.NewForConfigOrDie(config)
 	opts.seedKubeClient = seedKubeClient
 
+	seedCtrlruntimeClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
+	if err != nil {
+		log.Fatalf("failed to create ctrlruntimeclient for seed: %v", err)
+	}
+
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, informer.DefaultInformerResyncPeriod)
-	kubeInformerFactory := informers.NewSharedInformerFactory(seedKubeClient, informer.DefaultInformerResyncPeriod)
 
 	opts.clusterLister = kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister()
 
-	clusterClientProvider, err := clusterclient.NewExternal(kubeInformerFactory.Core().V1().Secrets().Lister())
+	clusterClientProvider, err := clusterclient.NewExternal(seedCtrlruntimeClient)
 	if err != nil {
 		log.Fatalf("failed to get clusterClientProvider: %v", err)
 	}
 	opts.clusterClientProvider = clusterClientProvider
 
 	kubermaticInformerFactory.Start(rootCtx.Done())
-	kubeInformerFactory.Start(rootCtx.Done())
 	kubermaticInformerFactory.WaitForCacheSync(rootCtx.Done())
-	kubeInformerFactory.WaitForCacheSync(rootCtx.Done())
 
 	if opts.cleanupOnStart {
 		if err := cleanupClusters(opts, log, kubermaticClient, clusterClientProvider); err != nil {

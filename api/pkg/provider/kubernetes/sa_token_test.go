@@ -146,7 +146,7 @@ func TestListTokens(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			resultList, err := target.List(tc.userInfo, tc.projectToSync, tc.saToSync, &provider.ServiceAccountTokenListOptions{tc.tokenName})
+			resultList, err := target.List(tc.userInfo, tc.projectToSync, tc.saToSync, &provider.ServiceAccountTokenListOptions{TokenName: tc.tokenName})
 			if err != nil {
 				t.Fatal(err)
 			}

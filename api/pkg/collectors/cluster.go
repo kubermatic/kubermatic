@@ -1,18 +1,15 @@
 package collectors
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
-	kubermaticv1listers "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-
-	"k8s.io/apimachinery/pkg/labels"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	kubeinformers "k8s.io/client-go/informers"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -21,7 +18,7 @@ const (
 
 // ClusterCollector exports metrics for cluster resources
 type ClusterCollector struct {
-	clusterLister kubermaticv1listers.ClusterLister
+	client ctrlruntimeclient.Client
 
 	clusterCreated *prometheus.Desc
 	clusterDeleted *prometheus.Desc
@@ -29,9 +26,8 @@ type ClusterCollector struct {
 }
 
 // MustRegisterClusterCollector registers the cluster collector at the given prometheus registry
-func MustRegisterClusterCollector(registry prometheus.Registerer, _ kubeinformers.SharedInformerFactory, kubermaticInformerfactory kubermaticinformers.SharedInformerFactory) {
+func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlruntimeclient.Client) {
 	cc := &ClusterCollector{
-		clusterLister: kubermaticInformerfactory.Kubermatic().V1().Clusters().Lister(),
 		clusterCreated: prometheus.NewDesc(
 			prefix+"created",
 			"Unix creation timestamp",
@@ -73,16 +69,14 @@ func (cc ClusterCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect gets called by prometheus to collect the metrics
 func (cc ClusterCollector) Collect(ch chan<- prometheus.Metric) {
-	cacheClusters, err := cc.clusterLister.List(labels.Everything())
-	if err != nil {
+	clusters := &kubermaticv1.ClusterList{}
+	if err := cc.client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, clusters); err != nil {
 		utilruntime.HandleError(fmt.Errorf("failed to list clusters from clusterLister in ClusterCollector: %v", err))
 		return
 	}
 
-	for _, cacheCluster := range cacheClusters {
-		cluster := cacheCluster.DeepCopy()
-
-		cc.collectCluster(ch, cluster)
+	for _, cluster := range clusters.Items {
+		cc.collectCluster(ch, &cluster)
 	}
 }
 
