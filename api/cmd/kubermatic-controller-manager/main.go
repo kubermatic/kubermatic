@@ -71,7 +71,7 @@ func main() {
 
 	recorder := mgr.GetRecorder(controllerName)
 
-	// Check if the CRD for the VerticalPodAutoscaler is registered by doing allocating an informer
+	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
 	if _, err := informer.GetSyncedStoreFromDynamicFactory(mgr.GetCache(), &autoscalingv1beta2.VerticalPodAutoscaler{}); err != nil {
 		if _, crdNotRegistered := err.(*meta.NoKindMatchError); crdNotRegistered {
 			glog.Fatal(`
