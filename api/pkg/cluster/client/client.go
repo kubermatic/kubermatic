@@ -58,7 +58,7 @@ type provider struct {
 
 // GetAdminKubeconfig returns the admin kubeconfig for the given cluster
 func (p *provider) GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
-	var s *corev1.Secret
+	s := &corev1.Secret{}
 	var err error
 	if p.useExternalAddress {
 		// Load the admin kubeconfig secret, it uses the external apiserver address
@@ -71,9 +71,10 @@ func (p *provider) GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
 		return nil, err
 	}
 	d := s.Data[resources.KubeconfigSecretKey]
-	if d == nil || len(s.Data[resources.KubeconfigSecretKey]) == 0 {
+	if len(d) == 0 {
 		return nil, fmt.Errorf("no kubeconfig found")
 	}
+	d := s.Data[resources.KubeconfigSecretKey]
 	return d, nil
 }
 

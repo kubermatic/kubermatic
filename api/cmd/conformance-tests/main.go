@@ -20,12 +20,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-
 	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
@@ -36,6 +30,12 @@ import (
 	kubermaticsignals "github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 //TODO: Move Kubernetes versions into this as well

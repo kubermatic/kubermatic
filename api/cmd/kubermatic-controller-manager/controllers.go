@@ -45,10 +45,6 @@ var allControllers = map[string]controllerCreator{
 
 type controllerCreator func(*controllerContext) error
 
-type runner interface {
-	Run(workerCount int, stopCh <-chan struct{})
-}
-
 func createAllControllers(ctrlCtx *controllerContext) error {
 	for name, create := range allControllers {
 		if err := create(ctrlCtx); err != nil {
