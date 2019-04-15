@@ -1,13 +1,15 @@
+apiVersion: v1
 name: oauth
-version: 0.1.0
+version: 1.0.0
+appVersion: v2.15.0
 description: Dex
 keywords:
-- k8s
 - kubermatic
-- Oauth
-home: http://www.kubermatic.io/
+- oauth
+- dex
+home: https://github.com/dexidp/dex
 sources:
-- https://github.com/kubermatic/kubermatic/config
+- https://github.com/kubermatic/kubermatic
 maintainers:
-- name: Sebastian Scheele
-  email: sebastian@loodse.com
+- name: Loodse GmbH
+  email: support@loodse.com

@@ -6,7 +6,7 @@ apk add --no-cache -U git bash openssh
 cd $(dirname $0)/../../..
 git fetch
 export LATEST_VERSION=$(git describe --tags --abbrev=0)
-sed -i "s/__KUBERMATIC_TAG__/$LATEST_VERSION/g" config/kubermatic/values.yaml
+sed -i "s/__KUBERMATIC_TAG__/$LATEST_VERSION/g" config/kubermatic/values.yaml config/kubermatic/Chart.yaml
 git config --global user.email "dev@loodse.com"
 git config --global user.name "Prow CI Robot"
 git config --global core.sshCommand 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'

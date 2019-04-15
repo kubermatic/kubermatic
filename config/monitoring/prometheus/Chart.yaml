@@ -1,13 +1,15 @@
+apiVersion: v1
 name: prometheus
 version: 1.1.0
+appVersion: v2.8.1
 description: Prometheus for Kubermatic
 keywords:
-- k8s
 - kubermatic
+- monitoring
 - prometheus
-home: http://www.kubermatic.io/
+home: https://prometheus.io/
 sources:
-- https://github.com/kubermatic/kubermatic/config
+- https://github.com/helm/charts/tree/master/stable/prometheus
 maintainers:
-- name: Christoph Mewes
-  email: christoph@loodse.com
+- name: Loodse GmbH
+  email: support@loodse.com

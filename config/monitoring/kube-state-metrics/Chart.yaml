@@ -1,14 +1,16 @@
+apiVersion: v1
 name: kube-state-metrics
-version: 0.1.0
+version: 1.0.0
+appVersion: v1.5.0
 description: Kube-State-Metrics for Kubermatic
 keywords:
-- k8s
 - kubermatic
+- monitoring
 - prometheus
 - kube-state-metrics
-home: http://www.kubermatic.io/
+home: https://github.com/kubernetes/kube-state-metrics
 sources:
-- https://github.com/kubermatic/kubermatic/config
+- https://github.com/kubermatic/kubermatic
 maintainers:
-- name: Sebastian Scheele
-  email: sebastian@loodse.com
+- name: Loodse GmbH
+  email: support@loodse.com

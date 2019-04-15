@@ -1,5 +1,13 @@
 apiVersion: v1
-appVersion: "1.0"
-description: A Helm to install IAP
 name: iap
-version: 0.1.0
+version: 1.0.0
+appVersion: v2.3.0
+description: A Helm to install Keycloak-Proxy as an identity-aware proxy.
+keywords:
+- kubermatic
+- keycloak-proxy
+- iap
+home: https://github.com/keycloak/keycloak-gatekeeper
+maintainers:
+- name: Loodse GmbH
+  email: support@loodse.com

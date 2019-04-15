@@ -1,4 +1,11 @@
 apiVersion: v1
-description: A Helm chart for Kubernetes
 name: certs
-version: 0.1.0
+version: 1.0.0
+description: Chart for creating the required certificates for Kubermatic master clusters.
+keywords:
+- kubermatic
+- tls
+home: https://www.kubermatic.io/
+maintainers:
+- name: Loodse GmbH
+  email: support@loodse.com
