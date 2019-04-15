@@ -1,5 +1,5 @@
 name: kibana
-version: 0.1.0
+version: 6.6.2
 description: kibana
 keywords:
 - k8s
