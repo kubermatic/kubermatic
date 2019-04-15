@@ -179,7 +179,7 @@ func (p *ProjectMemberProvider) MapUserToGroup(userEmail string, projectID strin
 		}
 	}
 
-	return "", kerrors.NewForbidden(schema.GroupResource{}, projectID, fmt.Errorf("The user %q doesn't belong to the given project = %s", userEmail, projectID))
+	return "", kerrors.NewForbidden(schema.GroupResource{}, projectID, fmt.Errorf("%q doesn't belong to the given project = %s", userEmail, projectID))
 }
 
 // MappingsFor returns the list of projects (bindings) for the given user

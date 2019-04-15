@@ -4,10 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
-
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
+	"net/http"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
@@ -158,11 +157,12 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProv
 			sa.Labels[serviceaccount.ServiceAccountLabelGroup] = newGroup
 		}
 
-		if _, err := serviceAccountProvider.Update(userInfo, sa); err != nil {
+		updatedSA, err := serviceAccountProvider.Update(userInfo, sa)
+		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		result := convertInternalServiceAccountToExternal(sa)
+		result := convertInternalServiceAccountToExternal(updatedSA)
 		result.Group = newGroup
 		return result, nil
 	}
