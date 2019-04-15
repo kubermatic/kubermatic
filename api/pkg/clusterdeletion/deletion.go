@@ -1,4 +1,4 @@
-package cluster
+package clusterdeletion
 
 import (
 	"context"
@@ -21,17 +21,38 @@ import (
 
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
 	deletedLBAnnotationName = "kubermatic.io/cleaned-up-loadbalancers"
 )
 
-// cleanupCluster is the function which handles clusters in the deleting phase.
-// It is responsible for cleaning up a cluster (right now: deleting nodes, deleting cloud-provider infrastructure)
-// If this function does not return a pointer to a cluster or a error, the cluster is deleted.
-func (r *Reconciler) cleanupCluster(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	err := r.deletingNodeCleanup(cluster)
+func New(seedClient, userClusterClient controllerruntimeclient.Client) *Deletion {
+	return &Deletion{
+		seedClient:        seedClient,
+		userClusterClient: userClusterClient,
+	}
+}
+
+type Deletion struct {
+	seedClient        controllerruntimeclient.Client
+	userClusterClient controllerruntimeclient.Client
+}
+
+// cleanupCluster is responsible for cleaning up a cluster
+func (d *Deletion) CleanupCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+	err := d.cleanupCluster(ctx, cluster)
+	result := &reconcile.Result{}
+	if cluster != nil && len(cluster.Finalizers) > 0 {
+		result.RequeueAfter = 10 * time.Second
+	}
+
+	return result, err
+}
+
+func (d *Deletion) cleanupCluster(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	err := d.deletingNodeCleanup(ctx, cluster)
 	if err != nil {
 		return err
 	}
@@ -42,10 +63,10 @@ func (r *Reconciler) cleanupCluster(ctx context.Context, cluster *kubermaticv1.C
 	}
 
 	// Delete Volumes and LB's inside the user cluster
-	return r.cleanupInClusterResources(ctx, cluster)
+	return d.cleanupInClusterResources(ctx, cluster)
 }
 
-func (r *Reconciler) cleanupInClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	shouldDeleteLBs := kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.InClusterLBCleanupFinalizer)
 	shouldDeletePVs := kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.InClusterPVCleanupFinalizer)
 
@@ -54,18 +75,14 @@ func (r *Reconciler) cleanupInClusterResources(ctx context.Context, cluster *kub
 		return nil
 	}
 
-	client, err := r.userClusterConnProvider.GetClient(cluster)
-	if err != nil {
-		return fmt.Errorf("failed to get kubernetes client: %v", err)
-	}
-
 	// We'll set this to true in case we deleted something. This is meant to requeue as long as all resources are really gone
 	// We'll use it for LB's and PV's as well, so the Kubernetes controller manager does the cleanup of all resources in parallel
 	var deletedSomeResource bool
 
 	if shouldDeleteLBs {
-		serviceList, err := client.CoreV1().Services(metav1.NamespaceAll).List(metav1.ListOptions{})
-		if err != nil {
+		serviceList := &corev1.ServiceList{}
+		if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, serviceList); err != nil {
+
 			return fmt.Errorf("failed to list Service's from user cluster: %v", err)
 		}
 
@@ -73,11 +90,11 @@ func (r *Reconciler) cleanupInClusterResources(ctx context.Context, cluster *kub
 			// Need to change the scope so the inline func in the updateCluster call always has the service from the current iteration
 			service := service
 			if service.Spec.Type == corev1.ServiceTypeLoadBalancer {
-				if err := client.CoreV1().Services(service.Namespace).Delete(service.Name, &metav1.DeleteOptions{}); err != nil {
+				if err := d.userClusterClient.Delete(ctx, &service); err != nil {
 					return fmt.Errorf("failed to delete Service '%s/%s' from user cluster: %v", service.Namespace, service.Name, err)
 				}
 				deletedSomeResource = true
-				err = r.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
+				err := d.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
 					if cluster.Annotations == nil {
 						cluster.Annotations = map[string]string{}
 					}
@@ -90,7 +107,7 @@ func (r *Reconciler) cleanupInClusterResources(ctx context.Context, cluster *kub
 				// are gone
 				if err := wait.Poll(10*time.Millisecond, 5*time.Second, func() (bool, error) {
 					latestCluster := &kubermaticv1.Cluster{}
-					if err := r.Get(ctx, types.NamespacedName{Name: cluster.Name}, latestCluster); err != nil {
+					if err := d.seedClient.Get(ctx, types.NamespacedName{Name: cluster.Name}, latestCluster); err != nil {
 						return false, err
 					}
 					if strings.Contains(latestCluster.Annotations[deletedLBAnnotationName], string(service.UID)) {
@@ -106,26 +123,27 @@ func (r *Reconciler) cleanupInClusterResources(ctx context.Context, cluster *kub
 
 	if shouldDeletePVs {
 		// Delete PVC's
-		pvcList, err := client.CoreV1().PersistentVolumeClaims(metav1.NamespaceAll).List(metav1.ListOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to list services from user cluster: %v", err)
+		pvcList := &corev1.PersistentVolumeClaimList{}
+		if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, pvcList); err != nil {
+
+			return fmt.Errorf("failed to list PVCs from user cluster: %v", err)
 		}
 
 		for _, pvc := range pvcList.Items {
-			if err := client.CoreV1().PersistentVolumeClaims(pvc.Namespace).Delete(pvc.Name, &metav1.DeleteOptions{}); err != nil {
+			if err := d.userClusterClient.Delete(ctx, &pvc); err != nil {
 				return fmt.Errorf("failed to delete PVC '%s/%s' from user cluster: %v", pvc.Namespace, pvc.Name, err)
 			}
 			deletedSomeResource = true
 		}
 
 		// Delete PV's
-		pvList, err := client.CoreV1().PersistentVolumes().List(metav1.ListOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to list services from user cluster: %v", err)
+		pvList := &corev1.PersistentVolumeList{}
+		if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, pvList); err != nil {
+			return fmt.Errorf("failed to list PVs from user cluster: %v", err)
 		}
 
 		for _, pv := range pvList.Items {
-			if err := client.CoreV1().PersistentVolumes().Delete(pv.Name, &metav1.DeleteOptions{}); err != nil {
+			if err := d.userClusterClient.Delete(ctx, &pv); err != nil {
 				return fmt.Errorf("failed to delete PV '%s' from user cluster: %v", pv.Name, err)
 			}
 			deletedSomeResource = true
@@ -142,7 +160,7 @@ func (r *Reconciler) cleanupInClusterResources(ctx context.Context, cluster *kub
 		return nil
 	}
 
-	lbsAreGone, err := r.checkIfAllLoadbalancersAreGone(ctx, cluster)
+	lbsAreGone, err := d.checkIfAllLoadbalancersAreGone(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to check if all Loadbalancers are gone: %v", err)
 	}
@@ -151,26 +169,19 @@ func (r *Reconciler) cleanupInClusterResources(ctx context.Context, cluster *kub
 		return nil
 	}
 
-	return r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+	return d.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, kubermaticapiv1.InClusterLBCleanupFinalizer)
 		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, kubermaticapiv1.InClusterPVCleanupFinalizer)
 	})
 }
 
-func (r *Reconciler) deletingNodeCleanup(cluster *kubermaticv1.Cluster) error {
+func (d *Deletion) deletingNodeCleanup(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
 		return nil
 	}
 
-	client, err := r.userClusterConnProvider.GetDynamicClient(cluster)
-	if err != nil {
-		return fmt.Errorf("failed to get user cluster client: %v", err)
-	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	nodes := &corev1.NodeList{}
-	if err := client.List(ctx, &controllerruntimeclient.ListOptions{}, nodes); err != nil {
+	if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, nodes); err != nil {
 		return fmt.Errorf("failed to get user cluster nodes: %v", err)
 	}
 
@@ -180,10 +191,10 @@ func (r *Reconciler) deletingNodeCleanup(cluster *kubermaticv1.Cluster) error {
 			continue
 		}
 
-		err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			// Get latest version of the node to prevent conflict errors
 			currentNode := &corev1.Node{}
-			if err := client.Get(ctx, types.NamespacedName{Name: node.Name}, currentNode); err != nil {
+			if err := d.userClusterClient.Get(ctx, types.NamespacedName{Name: node.Name}, currentNode); err != nil {
 				return err
 			}
 			if currentNode.Annotations == nil {
@@ -191,7 +202,7 @@ func (r *Reconciler) deletingNodeCleanup(cluster *kubermaticv1.Cluster) error {
 			}
 			node.Annotations[eviction.SkipEvictionAnnotationKey] = "true"
 
-			return client.Update(ctx, currentNode)
+			return d.userClusterClient.Update(ctx, currentNode)
 		})
 		if err != nil {
 			return fmt.Errorf("failed to add the annotation '%s=true' to node '%s': %v", eviction.SkipEvictionAnnotationKey, node.Name, err)
@@ -200,13 +211,13 @@ func (r *Reconciler) deletingNodeCleanup(cluster *kubermaticv1.Cluster) error {
 
 	machineDeploymentList := &clusterv1alpha1.MachineDeploymentList{}
 	listOpts := &controllerruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}
-	if err := client.List(ctx, listOpts, machineDeploymentList); err != nil {
+	if err := d.userClusterClient.List(ctx, listOpts, machineDeploymentList); err != nil {
 		return fmt.Errorf("failed to list MachineDeployments: %v", err)
 	}
 	if len(machineDeploymentList.Items) > 0 {
 		// TODO: Use DeleteCollection once https://github.com/kubernetes-sigs/controller-runtime/issues/344 is resolved
 		for _, machineDeployment := range machineDeploymentList.Items {
-			if err := client.Delete(ctx, &machineDeployment); err != nil {
+			if err := d.userClusterClient.Delete(ctx, &machineDeployment); err != nil {
 				return fmt.Errorf("failed to delete MachineDeployment %q: %v", machineDeployment.Name, err)
 			}
 		}
@@ -215,14 +226,14 @@ func (r *Reconciler) deletingNodeCleanup(cluster *kubermaticv1.Cluster) error {
 	}
 
 	machineSetList := &clusterv1alpha1.MachineSetList{}
-	if err = client.List(ctx, listOpts, machineSetList); err != nil {
+	if err := d.userClusterClient.List(ctx, listOpts, machineSetList); err != nil {
 		return fmt.Errorf("failed to list MachineSets: %v", err)
 	}
 	if len(machineSetList.Items) > 0 {
 		// TODO: Use DeleteCollection once https://github.com/kubernetes-sigs/controller-runtime/issues/344 is resolved
 		for _, machineSet := range machineSetList.Items {
-			if err := client.Delete(ctx, &machineSet); err != nil {
-				return fmt.Errorf("failed to delete MachineSet %q: %v", machineSet.Namespace, err)
+			if err := d.userClusterClient.Delete(ctx, &machineSet); err != nil {
+				return fmt.Errorf("failed to delete MachineSet %q: %v", machineSet.Name, err)
 			}
 		}
 		// Return here to make sure we don't attempt to delete Machines until the MachineSet is actually gone
@@ -230,13 +241,13 @@ func (r *Reconciler) deletingNodeCleanup(cluster *kubermaticv1.Cluster) error {
 	}
 
 	machineList := &clusterv1alpha1.MachineList{}
-	if err := client.List(ctx, listOpts, machineList); err != nil {
+	if err := d.userClusterClient.List(ctx, listOpts, machineList); err != nil {
 		return fmt.Errorf("failed to get Machines: %v", err)
 	}
 	if len(machineList.Items) > 0 {
 		// TODO: Use DeleteCollection once https://github.com/kubernetes-sigs/controller-runtime/issues/344 is resolved
 		for _, machine := range machineList.Items {
-			if err := client.Delete(ctx, &machine); err != nil {
+			if err := d.userClusterClient.Delete(ctx, &machine); err != nil {
 				return fmt.Errorf("failed to delete Machine %q: %v", machine.Name, err)
 			}
 		}
@@ -244,7 +255,7 @@ func (r *Reconciler) deletingNodeCleanup(cluster *kubermaticv1.Cluster) error {
 		return nil
 	}
 
-	return r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+	return d.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, kubermaticapiv1.NodeDeletionFinalizer)
 	})
 }
@@ -252,7 +263,7 @@ func (r *Reconciler) deletingNodeCleanup(cluster *kubermaticv1.Cluster) error {
 // checkIfAllLoadbalancersAreGone checks if all the services of type LoadBalancer were successfully
 // deleted. The in-tree cloud providers do this without a finalizer and only after the service
 // object is gone from the API, the only way to check is to wait for the relevant event
-func (r *Reconciler) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *kubermaticv1.Cluster) (bool, error) {
+func (d *Deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *kubermaticv1.Cluster) (bool, error) {
 	// This check is only required for in-tree cloud provider that support LoadBalancers
 	// TODO once we start external cloud controllers for one of these three: Make this check
 	// a bit smarter, external cloud controllers will most likely not emit the event we wait for
@@ -274,14 +285,10 @@ func (r *Reconciler) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster
 		return true, nil
 	}
 
-	userClusterDynamicClient, err := r.userClusterConnProvider.GetDynamicClient(cluster)
-	if err != nil {
-		return false, fmt.Errorf("failed to get dynamic client for user cluster: %v", err)
-	}
 	for deletedLB := range deletedLoadBalancers {
 		selector := fields.OneTermEqualSelector("involvedObject.uid", deletedLB)
 		events := &corev1.EventList{}
-		if err := userClusterDynamicClient.List(context.Background(), &controllerruntimeclient.ListOptions{FieldSelector: selector}, events); err != nil {
+		if err := d.userClusterClient.List(context.Background(), &controllerruntimeclient.ListOptions{FieldSelector: selector}, events); err != nil {
 			return false, fmt.Errorf("failed to get service events: %v", err)
 		}
 		for _, event := range events.Items {
@@ -291,7 +298,7 @@ func (r *Reconciler) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster
 		}
 
 	}
-	err = r.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
+	err := d.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
 		if deletedLoadBalancers.Len() > 0 {
 			cluster.Annotations[deletedLBAnnotationName] = strings.Join(deletedLoadBalancers.List(), ",")
 		} else {
@@ -305,4 +312,19 @@ func (r *Reconciler) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster
 		return false, nil
 	}
 	return true, nil
+}
+
+func (d *Deletion) updateCluster(ctx context.Context, cluster *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {
+	// Store it here because it may be unset later on if an update request failed
+	name := cluster.Name
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+		//Get latest version
+		if err := d.seedClient.Get(ctx, types.NamespacedName{Name: name}, cluster); err != nil {
+			return err
+		}
+		// Apply modifications
+		modify(cluster)
+		// Update the cluster
+		return d.seedClient.Update(ctx, cluster)
+	})
 }

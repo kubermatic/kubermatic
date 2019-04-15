@@ -18,38 +18,28 @@ const (
 
 func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// Create the namespace
-	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		if err := r.ensureNamespaceExists(ctx, cluster); err != nil {
-			return nil, err
-		}
+	if err := r.ensureNamespaceExists(ctx, cluster); err != nil {
+		return nil, err
 	}
 
 	// Set the hostname & url
-	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		if err := r.syncAddress(ctx, cluster); err != nil {
-			return nil, err
-		}
+	if err := r.syncAddress(ctx, cluster); err != nil {
+		return nil, err
 	}
 
 	// Set default network configuration
-	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		if err := r.ensureClusterNetworkDefaults(ctx, cluster); err != nil {
-			return nil, err
-		}
+	if err := r.ensureClusterNetworkDefaults(ctx, cluster); err != nil {
+		return nil, err
 	}
 
 	// Deploy & Update master components for Kubernetes
-	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		if err := r.ensureResourcesAreDeployed(ctx, cluster); err != nil {
-			return nil, err
-		}
+	if err := r.ensureResourcesAreDeployed(ctx, cluster); err != nil {
+		return nil, err
 	}
 
 	// synchronize cluster.status.health for Kubernetes clusters
-	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		if err := r.syncHealth(ctx, cluster); err != nil {
-			return nil, err
-		}
+	if err := r.syncHealth(ctx, cluster); err != nil {
+		return nil, err
 	}
 
 	if cluster.Status.Health.Apiserver {
@@ -65,14 +55,12 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 
 		// Only add the node deletion finalizer when the cluster is actually running
 		// Otherwise we fail to delete the nodes and are stuck in a loop
-		if cluster.Annotations["kubermatic.io/openshift"] == "" {
-			if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
-				err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-					c.Finalizers = append(c.Finalizers, kubermaticapiv1.NodeDeletionFinalizer)
-				})
-				if err != nil {
-					return nil, err
-				}
+		if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
+			err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+				c.Finalizers = append(c.Finalizers, kubermaticapiv1.NodeDeletionFinalizer)
+			})
+			if err != nil {
+				return nil, err
 			}
 		}
 
