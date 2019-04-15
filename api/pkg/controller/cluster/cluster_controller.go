@@ -193,7 +193,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, nil
 	}
 
-	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+	if cluster.Annotations["kubermatic.io/openshift"] != "" {
 		return reconcile.Result{}, nil
 	}
 
