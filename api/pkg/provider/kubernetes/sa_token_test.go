@@ -65,7 +65,7 @@ func TestCreateToken(t *testing.T) {
 			tokenLister := listers.NewSecretLister(indexer)
 
 			// act
-			target := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, tokenLister)
+			target, err := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, tokenLister)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -156,7 +156,7 @@ func TestListTokens(t *testing.T) {
 			tokenLister := listers.NewSecretLister(indexer)
 
 			// act
-			target := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, tokenLister)
+			target, err := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, tokenLister)
 			if err != nil {
 				t.Fatal(err)
 			}
