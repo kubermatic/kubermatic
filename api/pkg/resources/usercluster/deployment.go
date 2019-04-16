@@ -113,6 +113,7 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 						"-ca-cert", "/etc/kubernetes/pki/ca/ca.crt",
 						"-cluster-url", data.Cluster().Address.URL,
 						"-openvpn-server-port", fmt.Sprint(openvpnServerPort),
+						"-overwrite-registry", data.ImageRegistry(""),
 						fmt.Sprintf("-openshift=%t", openshift),
 						fmt.Sprintf("-openvpn-ca-cert-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCACertKey),
 						fmt.Sprintf("-openvpn-ca-key-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCAKeyKey),

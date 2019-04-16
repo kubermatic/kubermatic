@@ -1,0 +1,19 @@
+package resources
+
+import (
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+
+	corev1 "k8s.io/api/core/v1"
+)
+
+const (
+	ServiceAccountName = "container_linux_update_operator"
+)
+
+func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+	return func() (string, reconciling.ServiceAccountCreator) {
+		return ServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+			return sa, nil
+		}
+	}
+}

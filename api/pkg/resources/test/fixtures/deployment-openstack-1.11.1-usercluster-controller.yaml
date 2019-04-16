@@ -43,6 +43,8 @@ spec:
         - ""
         - -openvpn-server-port
         - "30003"
+        - -overwrite-registry
+        - ""
         - -openshift=false
         - -openvpn-ca-cert-file=/etc/kubernetes/pki/openvpn/ca.crt
         - -openvpn-ca-key-file=/etc/kubernetes/pki/openvpn/ca.key
