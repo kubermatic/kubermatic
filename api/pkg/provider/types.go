@@ -327,9 +327,18 @@ func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 type ServiceAccountProvider interface {
 	Create(userInfo *UserInfo, project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error)
 	List(userInfo *UserInfo, project *kubermaticv1.Project, options *ServiceAccountListOptions) ([]*kubermaticv1.User, error)
-	Get(userInfo *UserInfo, name string) (*kubermaticv1.User, error)
+	Get(userInfo *UserInfo, name string, options *ServiceAccountGetOptions) (*kubermaticv1.User, error)
 	Update(userInfo *UserInfo, serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error)
 	Delete(userInfo *UserInfo, name string) error
+}
+
+// ServiceAccountGetOptions allows to set filters that will be applied to filter the get result.
+type ServiceAccountGetOptions struct {
+	// RemovePrefix when set to false will NOT remove "serviceaccount-" prefix from the ID
+	//
+	// Note:
+	// By default the prefix IS removed, for example given "serviceaccount-7d4b5695vb" it returns "7d4b5695vb"
+	RemovePrefix bool
 }
 
 // ServiceAccountListOptions allows to set filters that will be applied to filter the result.
