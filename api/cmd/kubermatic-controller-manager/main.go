@@ -71,14 +71,6 @@ func main() {
 
 	recorder := mgr.GetRecorder(controllerName)
 
-	if err := mgr.Add(&metricsServer{
-		gatherers: []prometheus.Gatherer{
-			prometheus.DefaultGatherer, ctrlruntimemetrics.Registry},
-		listenAddress: options.internalAddr},
-	); err != nil {
-		glog.Fatalf("failed to add metrics server to mgr: %v", err)
-	}
-
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
 	if _, err := informer.GetSyncedStoreFromDynamicFactory(mgr.GetCache(), &autoscalingv1beta2.VerticalPodAutoscaler{}); err != nil {
 		if _, crdNotRegistered := err.(*meta.NoKindMatchError); crdNotRegistered {
@@ -127,6 +119,23 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 			}
 		}, func(err error) {
 			ctxDone()
+		})
+	}
+
+	// This group is running an internal http server with metrics and other debug information
+	{
+		m := &metricsServer{
+			gatherers: []prometheus.Gatherer{
+				prometheus.DefaultGatherer, ctrlruntimemetrics.Registry},
+			listenAddress: options.internalAddr,
+		}
+
+		g.Add(func() error {
+			glog.Infof("Starting the internal http server: %s\n", options.internalAddr)
+			return m.Start(stopCh)
+		}, func(err error) {
+			// No-Op because the metrics server gets the stopchannel and stops
+			// once it is closed
 		})
 	}
 
