@@ -12,8 +12,6 @@ spec:
       labels:
         app: cainjector
       annotations:
-        kubermatic/scrape: 'true'
-        kubermatic/scrape_port: '9402'
         fluentbit.io/parser: glog
     spec:
       serviceAccountName: cainjector
