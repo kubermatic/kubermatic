@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"net/http"
+
+	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
 // TokenClaims holds various claims extracted from the id_token
@@ -53,12 +55,15 @@ func (p *TokenVerifierPlugins) Verify(ctx context.Context, token string) (TokenC
 	if len(p.plugins) == 0 {
 		return TokenClaims{}, errors.New("cannot validate the token - no plugins registered")
 	}
+	errList := []error{}
 	for _, plugin := range p.plugins {
-		if claims, err := plugin.Verify(ctx, token); err == nil {
+		claims, err := plugin.Verify(ctx, token)
+		if err == nil {
 			return claims, err
 		}
+		errList = append(errList, err)
 	}
-	return TokenClaims{}, errors.New("unable to verify the given token")
+	return TokenClaims{}, k8cerrors.NewAggregate(errList)
 }
 
 var _ TokenExtractor = &TokenExtractorPlugins{}
@@ -81,10 +86,13 @@ func (p *TokenExtractorPlugins) Extract(r *http.Request) (string, error) {
 	if len(p.plugins) == 0 {
 		return "", errors.New("cannot validate the token - no plugins registered")
 	}
+	errList := []error{}
 	for _, plugin := range p.plugins {
-		if token, err := plugin.Extract(r); err == nil {
+		token, err := plugin.Extract(r)
+		if err == nil {
 			return token, err
 		}
+		errList = append(errList, err)
 	}
-	return "", errors.New("unable to verify the given token")
+	return "", k8cerrors.NewAggregate(errList)
 }
