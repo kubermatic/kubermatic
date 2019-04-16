@@ -277,7 +277,7 @@ func TestListProjectMethod(t *testing.T) {
 			},
 		},
 		{
-			Name: "scenario 1: two project providers return 404 error code, the first error is added to the final error details list",
+			Name: "scenario 2: two project providers return 404 error code, the first error is added to the final error details list",
 			ExistingKubermaticObjects: []runtime.Object{
 				// add some projects
 				test.GenProject(test.ForbiddenFakeProject, kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
@@ -330,11 +330,10 @@ func TestListProjectMethod(t *testing.T) {
 			projectsRaw, err := endpointFun(ctx, nil)
 			resultProjectList := make([]apiv1.Project, 0)
 
-			for _, project := range projectsRaw.([]*apiv1.Project) {
-				resultProjectList = append(resultProjectList, *project)
-			}
-
 			if len(tc.ExpectedErrorMsg) > 0 {
+				if err == nil {
+					t.Fatal("expected error")
+				}
 				kubermaticError, ok := err.(errors.HTTPError)
 				if !ok {
 					t.Fatal("expected HTTPError")
@@ -345,21 +344,23 @@ func TestListProjectMethod(t *testing.T) {
 				if !equality.Semantic.DeepEqual(kubermaticError.Details(), tc.ExpectedDetails) {
 					t.Fatalf("expected error details %v got %v", tc.ExpectedDetails, kubermaticError.Details())
 				}
-
 			} else {
-				if err != nil {
-					t.Fatalf("unexpected error %v", err)
+				if projectsRaw == nil {
+					t.Fatal("project endpoint can not be nil")
 				}
+
+				for _, project := range projectsRaw.([]*apiv1.Project) {
+					resultProjectList = append(resultProjectList, *project)
+				}
+
+				actualProjects := test.ProjectV1SliceWrapper(resultProjectList)
+				actualProjects.Sort()
+
+				wrappedExpectedProjects := test.ProjectV1SliceWrapper(tc.ExpectedResponse)
+				wrappedExpectedProjects.Sort()
+
+				actualProjects.EqualOrDie(wrappedExpectedProjects, t)
 			}
-
-			actualProjects := test.ProjectV1SliceWrapper(resultProjectList)
-			actualProjects.Sort()
-
-			wrappedExpectedProjects := test.ProjectV1SliceWrapper(tc.ExpectedResponse)
-			wrappedExpectedProjects.Sort()
-
-			actualProjects.EqualOrDie(wrappedExpectedProjects, t)
-
 		})
 	}
 }

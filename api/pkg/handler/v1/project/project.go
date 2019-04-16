@@ -93,7 +93,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 		}
 
 		if len(errorList) > 0 {
-			return projects, errors.NewWithDetails(http.StatusInternalServerError, "failed to get some projects, please examine details field for more info", errorList)
+			return nil, errors.NewWithDetails(http.StatusInternalServerError, "failed to get some projects, please examine details field for more info", errorList)
 		}
 		return projects, nil
 	}

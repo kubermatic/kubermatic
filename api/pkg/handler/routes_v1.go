@@ -280,6 +280,9 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens").
 		Handler(r.addTokenToServiceAccount())
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens").
+		Handler(r.listServiceAccountTokens())
 
 	//
 	// Defines set of HTTP endpoints for control plane and kubelet versions
@@ -1440,6 +1443,31 @@ func (r Routing) addTokenToServiceAccount() http.Handler {
 		)(serviceaccount.CreateTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator)),
 		serviceaccount.DecodeAddTokenReq,
 		setStatusCreatedHeader(encodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens tokens listServiceAccountTokens
+//
+//     List tokens for the given service account
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []ServiceAccountToken
+//       401: empty
+//       403: empty
+func (r Routing) listServiceAccountTokens() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(serviceaccount.ListTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator)),
+		serviceaccount.DecodeTokenReq,
+		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
