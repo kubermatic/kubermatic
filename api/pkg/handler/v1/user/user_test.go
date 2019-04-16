@@ -705,6 +705,29 @@ func TestAddUserToProject(t *testing.T) {
 				},
 			},
 		},
+
+		{
+			Name: "scenario 8: john tries to add a service account to a project",
+			Body: func() string {
+				sa := test.GenServiceAccount("1", "test-1", "editors", "plan9-ID")
+				return fmt.Sprintf(`{"email":"%s", "projects":[{"id":"plan9-ID", "group":"editors"}]}`, sa.Spec.Email)
+			}(),
+			HTTPStatus:    http.StatusBadRequest,
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/* add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("my-third-project-ID", "john@acme.com", "editors"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+			},
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
+			ExpectedResponse: `{"error":{"code":400,"message":"cannot add the given member serviceaccount-1@sa.kubermatic.io to the project plan9 because the email indicates a service account"}}`,
+		},
 	}
 
 	for _, tc := range testcases {
@@ -852,6 +875,25 @@ func TestNewUser(t *testing.T) {
 				genDefaultUser(),
 			},
 			ExistingAPIUser: genDefaultAPIUser(),
+		},
+
+		{
+			Name:             "scenario 4: creating a user with restricted email address fails",
+			ExpectedResponse: `{"error":{"code":400,"message":"cannot add a user with the given email serviceaccount-1984@sa.kubermatic.io as the name is reserved, please try a different email address"}}`,
+			HTTPStatus:       http.StatusBadRequest,
+			ExistingKubermaticObjects: []runtime.Object{
+				genDefaultUser(),
+			},
+			ExistingAPIUser: func() *apiv1.User {
+				sa := test.GenDefaultServiceAccount()
+				return &apiv1.User{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   sa.Name,
+						Name: sa.Spec.Name,
+					},
+					Email: sa.Spec.Email,
+				}
+			}(),
 		},
 	}
 
