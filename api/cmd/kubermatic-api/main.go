@@ -162,12 +162,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
 	userProvider := kubernetesprovider.NewUserProvider(kubermaticMasterClient, userLister)
 
-	serviceAccountTokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(options.serviceAccountSigningKey))
-	if err != nil {
-		return providers{}, fmt.Errorf("failed to create service account token generator due to %v", err)
-	}
-	serviceAccountTokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(options.serviceAccountSigningKey))
-	serviceAccountTokenProvider := kubernetesprovider.NewServiceAccountTokenProvider(defaultKubernetesImpersonationClient.CreateImpersonatedKubernetesClientSet, serviceAccountTokenGenerator, serviceAccountTokenAuth, kubeInformerFactory.Core().V1().Secrets().Lister())
+	serviceAccountTokenProvider := kubernetesprovider.NewServiceAccountTokenProvider(defaultKubernetesImpersonationClient.CreateImpersonatedKubernetesClientSet, kubeInformerFactory.Core().V1().Secrets().Lister())
 	serviceAccountProvider := kubernetesprovider.NewServiceAccountProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, userLister, options.domain)
 	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userLister)
 	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().Projects().Lister())
@@ -247,6 +242,12 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		}
 	}
 
+	serviceAccountTokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(options.serviceAccountSigningKey))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create service account token generator due to %v", err)
+	}
+	serviceAccountTokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(options.serviceAccountSigningKey))
+
 	r := handler.NewRouting(
 		prov.datacenters,
 		prov.clusters,
@@ -264,6 +265,8 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		prometheusClient,
 		prov.projectMember,
 		prov.memberMapper,
+		serviceAccountTokenAuth,
+		serviceAccountTokenGenerator,
 	)
 
 	registerMetrics()

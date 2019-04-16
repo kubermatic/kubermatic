@@ -3,15 +3,15 @@ package handler
 import (
 	"os"
 
-	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
-
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	prometheusapi "github.com/prometheus/client_golang/api"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 )
 
@@ -43,6 +43,8 @@ type Routing struct {
 	prometheusClient            prometheusapi.Client
 	projectMemberProvider       provider.ProjectMemberProvider
 	userProjectMapper           provider.ProjectMemberMapper
+	saTokenAuthenticator        serviceaccount.TokenAuthenticator
+	saTokenGenerator            serviceaccount.TokenGenerator
 }
 
 // NewRouting creates a new Routing.
@@ -63,6 +65,8 @@ func NewRouting(
 	prometheusClient prometheusapi.Client,
 	projectMemberProvider provider.ProjectMemberProvider,
 	userProjectMapper provider.ProjectMemberMapper,
+	saTokenAuthenticator serviceaccount.TokenAuthenticator,
+	saTokenGenerator serviceaccount.TokenGenerator,
 ) Routing {
 	return Routing{
 		datacenters:                 datacenters,
@@ -82,6 +86,8 @@ func NewRouting(
 		prometheusClient:            prometheusClient,
 		projectMemberProvider:       projectMemberProvider,
 		userProjectMapper:           userProjectMapper,
+		saTokenAuthenticator:        saTokenAuthenticator,
+		saTokenGenerator:            saTokenGenerator,
 	}
 }
 

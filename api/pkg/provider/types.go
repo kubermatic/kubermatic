@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 
 	"k8s.io/apimachinery/pkg/types"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -341,9 +340,8 @@ type ServiceAccountListOptions struct {
 
 // ServiceAccountTokenProvider declares the set of methods for interacting with kubermatic service account token
 type ServiceAccountTokenProvider interface {
-	Create(userInfo *UserInfo, sa *kubermaticv1.User, tokenName, projectID string) (*v1.Secret, error)
+	Create(userInfo *UserInfo, sa *kubermaticv1.User, projectID, tokenName, tokenID, tokenData string) (*v1.Secret, error)
 	List(userInfo *UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *ServiceAccountTokenListOptions) ([]*v1.Secret, error)
-	GetTokenAuthenticator() serviceaccount.TokenAuthenticator
 }
 
 // ServiceAccountTokenListOptions allows to set filters that will be applied to filter the result.
