@@ -102,7 +102,7 @@ func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, project *kube
 		if strings.HasPrefix(sa.Name, "serviceaccount") {
 			for _, owner := range sa.GetOwnerReferences() {
 				if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName && owner.Name == project.Name {
-					resultList = append(resultList, sa)
+					resultList = append(resultList, sa.DeepCopy())
 				}
 			}
 		}
