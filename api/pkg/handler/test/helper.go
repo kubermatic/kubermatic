@@ -109,7 +109,9 @@ type newRoutingFunc func(
 	prometheusClient prometheusapi.Client,
 	projectMemberProvider *kubernetes.ProjectMemberProvider,
 	versions []*version.MasterVersion,
-	updates []*version.MasterUpdate) http.Handler
+	updates []*version.MasterUpdate,
+	saTokenAuthenticator serviceaccount.TokenAuthenticator,
+	saTokenGenerator serviceaccount.TokenGenerator) http.Handler
 
 // CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes  for the tests
 func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, serviceaccount.TokenAuthenticator, error) {
@@ -143,7 +145,7 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	}
 
 	tokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey))
-	serviceAccountTokenProvider := kubernetes.NewServiceAccountTokenProvider(fakeKubernetesImpersonationClient, tokenGenerator, tokenAuth, kubernetesInformerFactory.Core().V1().Secrets().Lister())
+	serviceAccountTokenProvider := kubernetes.NewServiceAccountTokenProvider(fakeKubernetesImpersonationClient, kubernetesInformerFactory.Core().V1().Secrets().Lister())
 	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeKubermaticImpersonationClient, userLister, "localhost")
 	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userLister)
 	projectProvider, err := kubernetes.NewProjectProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Projects().Lister())
@@ -192,6 +194,8 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		projectMemberProvider,
 		versions,
 		updates,
+		tokenAuth,
+		tokenGenerator,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient}, serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey)), nil

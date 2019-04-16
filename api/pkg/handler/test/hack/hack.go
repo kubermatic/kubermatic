@@ -13,6 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 )
 
@@ -34,7 +35,9 @@ func NewTestRouting(
 	prometheusClient prometheusapi.Client,
 	projectMemberProvider *kubernetes.ProjectMemberProvider,
 	versions []*version.MasterVersion,
-	updates []*version.MasterUpdate) http.Handler {
+	updates []*version.MasterUpdate,
+	saTokenAuthenticator serviceaccount.TokenAuthenticator,
+	saTokenGenerator serviceaccount.TokenGenerator) http.Handler {
 
 	updateManager := version.New(versions, updates)
 	r := handler.NewRouting(
@@ -54,6 +57,8 @@ func NewTestRouting(
 		prometheusClient,
 		projectMemberProvider,
 		projectMemberProvider, /*satisfies also a different interface*/
+		saTokenAuthenticator,
+		saTokenGenerator,
 	)
 
 	mainRouter := mux.NewRouter()

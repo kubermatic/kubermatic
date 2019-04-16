@@ -13,13 +13,15 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
 	"k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 // CreateTokenEndpoint creates a token for the given service account
-func CreateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider) endpoint.Endpoint {
+func CreateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator, tokenGenerator serviceaccount.TokenGenerator) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(addTokenReq)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
@@ -47,17 +49,19 @@ func CreateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccoun
 			return nil, errors.NewAlreadyExists("token", req.Body.Name)
 		}
 
-		secret, err := serviceAccountTokenProvider.Create(userInfo, sa, req.Body.Name, project.Name)
+		tokenID := fmt.Sprintf("sa-token-%s", rand.String(10))
+
+		token, err := tokenGenerator.Generate(serviceaccount.Claims(sa.Spec.Email, project.Name, tokenID))
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, "can not generate token data")
+		}
+
+		secret, err := serviceAccountTokenProvider.Create(userInfo, sa, project.Name, req.Body.Name, tokenID, token)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		token, ok := secret.Data["token"]
-		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "can not find token data")
-		}
-
-		publicClaim, _, err := serviceAccountTokenProvider.GetTokenAuthenticator().Authenticate(string(token))
+		publicClaim, _, err := tokenAuthenticator.Authenticate(token)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("unable to create a token for %s due to %v", secret.Name, err))
 		}
