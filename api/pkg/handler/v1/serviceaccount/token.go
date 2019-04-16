@@ -74,7 +74,7 @@ func CreateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccoun
 func ListTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		resultList := make([]*apiv1.PublicServiceAccountToken, 0)
-		req := request.(listTokenReq)
+		req := request.(commonTokenReq)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		err := req.Validate()
 		if err != nil {
@@ -108,7 +108,7 @@ func ListTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountP
 		}
 
 		if len(errorList) > 0 {
-			return resultList, errors.NewWithDetails(http.StatusInternalServerError, "failed to get some service account tokens, please examine details field for more info", errorList)
+			return nil, errors.NewWithDetails(http.StatusInternalServerError, "failed to get some service account tokens, please examine details field for more info", errorList)
 		}
 
 		return resultList, nil
@@ -118,14 +118,14 @@ func ListTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountP
 // addTokenReq defines HTTP request for addTokenToServiceAccount
 // swagger:parameters addTokenToServiceAccount
 type addTokenReq struct {
-	listTokenReq
+	commonTokenReq
 	// in: body
 	Body apiv1.ServiceAccountToken
 }
 
-// listTokenReq defines HTTP request for listServiceAccountTokens
+// commonTokenReq defines HTTP request for listServiceAccountTokens
 // swagger:parameters listServiceAccountTokens
-type listTokenReq struct {
+type commonTokenReq struct {
 	common.ProjectReq
 	idReq
 }
@@ -142,8 +142,8 @@ func (r addTokenReq) Validate() error {
 	return nil
 }
 
-// Validate validates listTokenReq request
-func (r listTokenReq) Validate() error {
+// Validate validates commonTokenReq request
+func (r commonTokenReq) Validate() error {
 	if len(r.ProjectID) == 0 || len(r.ServiceAccountID) == 0 {
 		return fmt.Errorf("service account ID and project ID cannot be empty")
 	}
@@ -159,7 +159,7 @@ func DecodeAddTokenReq(c context.Context, r *http.Request) (interface{}, error) 
 	if err != nil {
 		return nil, err
 	}
-	tokenReq := rawReq.(listTokenReq)
+	tokenReq := rawReq.(commonTokenReq)
 	req.ServiceAccountID = tokenReq.ServiceAccountID
 	req.ProjectID = tokenReq.ProjectID
 
@@ -172,7 +172,7 @@ func DecodeAddTokenReq(c context.Context, r *http.Request) (interface{}, error) 
 
 // DecodeTokenReq  decodes an HTTP request into addReq
 func DecodeTokenReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req listTokenReq
+	var req commonTokenReq
 
 	prjReq, err := common.DecodeProjectRequest(c, r)
 	if err != nil {
