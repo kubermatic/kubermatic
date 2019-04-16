@@ -5,13 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net/http"
-	"time"
 
 	"github.com/golang/glog"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/collectors"
@@ -28,6 +25,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	ctrlruntimemetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
@@ -54,10 +52,12 @@ func main() {
 
 	var g run.Group
 
+	// Enable logging
 	log.SetLogger(log.ZapLogger(false))
 
-	// Create a manager
-	mgr, err := manager.New(config, manager.Options{})
+	// Create a manager, disable metrics as we have our own handler that exposes
+	// the metrics of both the ctrltuntime registry and the default registry
+	mgr, err := manager.New(config, manager.Options{MetricsBindAddress: "0"})
 	if err != nil {
 		glog.Fatalf("failed to create mgr: %v", err)
 	}
@@ -70,6 +70,14 @@ func main() {
 	}
 
 	recorder := mgr.GetRecorder(controllerName)
+
+	if err := mgr.Add(&metricsServer{
+		gatherers: []prometheus.Gatherer{
+			prometheus.DefaultGatherer, ctrlruntimemetrics.Registry},
+		listenAddress: options.internalAddr},
+	); err != nil {
+		glog.Fatalf("failed to add metrics server to mgr: %v", err)
+	}
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
 	if _, err := informer.GetSyncedStoreFromDynamicFactory(mgr.GetCache(), &autoscalingv1beta2.VerticalPodAutoscaler{}); err != nil {
@@ -119,37 +127,6 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 			}
 		}, func(err error) {
 			ctxDone()
-		})
-	}
-
-	// This group is running an internal http server with metrics and other debug information
-	{
-		m := http.NewServeMux()
-		m.Handle("/metrics", promhttp.Handler())
-
-		s := http.Server{
-			Addr:         options.internalAddr,
-			Handler:      m,
-			ReadTimeout:  5 * time.Second,
-			WriteTimeout: 10 * time.Second,
-		}
-
-		g.Add(func() error {
-			glog.Infof("Starting the internal http server: %s\n", options.internalAddr)
-			err := s.ListenAndServe()
-			if err != nil {
-				return fmt.Errorf("internal http server failed: %v", err)
-			}
-			return nil
-		}, func(err error) {
-			glog.Errorf("Stopping internal http server: %v", err)
-			timeoutCtx, cancel := context.WithTimeout(ctx, time.Second)
-			defer cancel()
-
-			glog.Info("Shutting down the internal http server")
-			if err := s.Shutdown(timeoutCtx); err != nil {
-				glog.Error("failed to shutdown the internal http server gracefully:", err)
-			}
 		})
 	}
 

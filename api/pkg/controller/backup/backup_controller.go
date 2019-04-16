@@ -10,7 +10,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 
 	"github.com/golang/glog"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/robfig/cron"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -38,7 +37,6 @@ import (
 )
 
 const (
-	metricNamespace = "kubermatic"
 	// SharedVolumeName is the name of the `emptyDir` volume the initContainer
 	// will write the backup to
 	SharedVolumeName = "etcd-backup"
@@ -58,28 +56,6 @@ const (
 	ControllerName = "kubermatic_backup_controller"
 )
 
-// Metrics contains metrics that this controller will collect and expose
-type Metrics struct {
-	Workers prometheus.Gauge
-}
-
-// NewMetrics creates a new Metrics
-// with default values initialized, so metrics always show up.
-func NewMetrics() *Metrics {
-	subsystem := "backup_controller"
-	cm := &Metrics{
-		Workers: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: metricNamespace,
-			Subsystem: subsystem,
-			Name:      "workers",
-			Help:      "The number of running backup controller workers",
-		}),
-	}
-
-	cm.Workers.Set(0)
-	return cm
-}
-
 type Reconciler struct {
 	workerName       string
 	storeContainer   corev1.Container
@@ -91,7 +67,6 @@ type Reconciler struct {
 	// It must be configurable to cover offline use cases
 	backupContainerImage string
 
-	metrics *Metrics
 	ctrlruntimeclient.Client
 	recorder record.EventRecorder
 }
@@ -105,8 +80,7 @@ func Add(
 	storeContainer corev1.Container,
 	cleanupContainer corev1.Container,
 	backupSchedule time.Duration,
-	backupContainerImage string,
-	metrics *Metrics) error {
+	backupContainerImage string) error {
 	if err := validateStoreContainer(storeContainer); err != nil {
 		return err
 	}
@@ -118,17 +92,12 @@ func Add(
 		backupContainerImage = DefaultBackupContainerImage
 	}
 
-	if err := prometheus.Register(metrics.Workers); err != nil {
-		return fmt.Errorf("failed to register worker metrics: %v", err)
-	}
-
 	reconciler := &Reconciler{
 		workerName:           workerName,
 		storeContainer:       storeContainer,
 		cleanupContainer:     cleanupContainer,
 		backupScheduleString: backupScheduleString,
 		backupContainerImage: backupContainerImage,
-		metrics:              metrics,
 		Client:               mgr.GetClient(),
 		recorder:             mgr.GetRecorder(ControllerName),
 	}
