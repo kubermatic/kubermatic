@@ -72,7 +72,6 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		storeContainer:       testStoreContainer,
 		cleanupContainer:     testCleanupContainer,
 		backupContainerImage: DefaultBackupContainerImage,
-		metrics:              NewMetrics(),
 		Client:               ctrlruntimefakeclient.NewFakeClient(caSecret, cluster),
 	}
 

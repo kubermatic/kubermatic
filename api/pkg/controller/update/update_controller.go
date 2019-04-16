@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	"github.com/prometheus/client_golang/prometheus"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
@@ -22,34 +21,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-// Metrics contains metrics that this controller will collect and expose
-type Metrics struct {
-	Workers prometheus.Gauge
-}
-
-// NewMetrics creates a new Metrics
-// with default values initialized, so metrics always show up
-func NewMetrics() *Metrics {
-	cm := &Metrics{
-		Workers: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: "kubermatic",
-			Subsystem: "update_controller",
-			Name:      "workers",
-			Help:      "The number of running Update controller workers",
-		}),
-	}
-
-	cm.Workers.Set(0)
-	return cm
-}
-
 const (
 	ControllerName = "kubermatic_update_controller"
 )
 
 type Reconciler struct {
 	workerName    string
-	metrics       *Metrics
 	updateManager Manager
 	ctrlruntimeclient.Client
 	recorder record.EventRecorder
@@ -61,17 +38,12 @@ type Manager interface {
 }
 
 // Add creates a new update controller
-func Add(mgr manager.Manager, numWorkers int, workerName string, metrics *Metrics, updateManager Manager) error {
+func Add(mgr manager.Manager, numWorkers int, workerName string, updateManager Manager) error {
 	reconciler := &Reconciler{
 		workerName:    workerName,
-		metrics:       metrics,
 		updateManager: updateManager,
 		Client:        mgr.GetClient(),
 		recorder:      mgr.GetRecorder(ControllerName),
-	}
-
-	if err := prometheus.Register(metrics.Workers); err != nil {
-		return fmt.Errorf("failed to register worker metrics: %v", err)
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{
