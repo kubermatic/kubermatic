@@ -145,12 +145,15 @@ func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, project *kube
 }
 
 // Get method returns service account with given name
-func (p *ServiceAccountProvider) Get(userInfo *provider.UserInfo, name string) (*kubermaticv1.User, error) {
+func (p *ServiceAccountProvider) Get(userInfo *provider.UserInfo, name string, options *provider.ServiceAccountGetOptions) (*kubermaticv1.User, error) {
 	if userInfo == nil {
 		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
 	}
 	if len(name) == 0 {
 		return nil, kerrors.NewBadRequest("service account name cannot be empty")
+	}
+	if options == nil {
+		options = &provider.ServiceAccountGetOptions{RemovePrefix: true}
 	}
 
 	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
@@ -164,7 +167,9 @@ func (p *ServiceAccountProvider) Get(userInfo *provider.UserInfo, name string) (
 		return nil, err
 	}
 
-	serviceAccount.Name = removeSAPrefix(serviceAccount.Name)
+	if options.RemovePrefix {
+		serviceAccount.Name = removeSAPrefix(serviceAccount.Name)
+	}
 	return serviceAccount, nil
 }
 
@@ -212,12 +217,20 @@ func (p *ServiceAccountProvider) Delete(userInfo *provider.UserInfo, name string
 
 // removeSAPrefix removes "serviceaccount-" from a SA's ID,
 // for example given "serviceaccount-7d4b5695vb" it returns "7d4b5695vb"
-func removeSAPrefix(name string) string {
-	return strings.TrimPrefix(name, saPrefix)
+func removeSAPrefix(id string) string {
+	return strings.TrimPrefix(id, saPrefix)
 }
 
 // addSAPrefix adds "serviceaccount-" prefix to a SA's ID,
 // for example given "7d4b5695vb" it returns "serviceaccount-7d4b5695vb"
-func addSAPrefix(name string) string {
-	return fmt.Sprintf("%s%s", saPrefix, name)
+func addSAPrefix(id string) string {
+	if !hasSAPrefix(id) {
+		return fmt.Sprintf("%s%s", saPrefix, id)
+	}
+	return id
+}
+
+// hasSAPrefix checks if the given id has "serviceaccount-" prefix
+func hasSAPrefix(id string) bool {
+	return strings.HasPrefix(id, saPrefix)
 }
