@@ -183,3 +183,35 @@ func isToken(secret *v1.Secret) bool {
 	}
 	return strings.HasPrefix(secret.Name, "sa-token")
 }
+
+// Get method returns token by name
+func (p *ServiceAccountTokenProvider) Get(userInfo *provider.UserInfo, name string) (*v1.Secret, error) {
+	if userInfo == nil {
+		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
+	}
+	if len(name) == 0 {
+		return nil, kerrors.NewBadRequest("service account name cannot be empty")
+	}
+
+	kubernetesImpersonatedClient, err := createKubernetesImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
+	if err != nil {
+		return nil, kerrors.NewInternalError(err)
+	}
+	return kubernetesImpersonatedClient.CoreV1().Secrets(kubermaticNamespace).Get(name, metav1.GetOptions{})
+}
+
+// Update method updates given token
+func (p *ServiceAccountTokenProvider) Update(userInfo *provider.UserInfo, secret *v1.Secret) (*v1.Secret, error) {
+	if userInfo == nil {
+		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
+	}
+	if secret == nil {
+		return nil, kerrors.NewBadRequest("secret cannot be empty")
+	}
+
+	kubernetesImpersonatedClient, err := createKubernetesImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
+	if err != nil {
+		return nil, kerrors.NewInternalError(err)
+	}
+	return kubernetesImpersonatedClient.CoreV1().Secrets(kubermaticNamespace).Update(secret)
+}

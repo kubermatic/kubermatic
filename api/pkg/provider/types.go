@@ -351,6 +351,8 @@ type ServiceAccountListOptions struct {
 type ServiceAccountTokenProvider interface {
 	Create(userInfo *UserInfo, sa *kubermaticv1.User, projectID, tokenName, tokenID, tokenData string) (*v1.Secret, error)
 	List(userInfo *UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *ServiceAccountTokenListOptions) ([]*v1.Secret, error)
+	Get(userInfo *UserInfo, name string) (*v1.Secret, error)
+	Update(userInfo *UserInfo, secret *v1.Secret) (*v1.Secret, error)
 }
 
 // ServiceAccountTokenListOptions allows to set filters that will be applied to filter the result.

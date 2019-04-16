@@ -8,6 +8,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
@@ -115,6 +116,106 @@ func ListTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountP
 	}
 }
 
+// UpdateTokenEndpoint updates and regenerates the token for the given service account
+func UpdateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator, tokenGenerator serviceaccount.TokenGenerator) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(updateTokenReq)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		err := req.Validate()
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		secret, err := updateToken(projectProvider, serviceAccountProvider, serviceAccountTokenProvider, userInfo, tokenGenerator, req.ProjectID, req.ServiceAccountID, req.TokenID, req.Body.Name, true)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		externalToken, err := convertInternalTokenToPrivateExternal(secret, tokenAuthenticator)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, err.Error())
+		}
+
+		return externalToken, nil
+	}
+}
+
+// PatchTokenEndpoint patches the token name
+func PatchTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator, tokenGenerator serviceaccount.TokenGenerator) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(patchTokenReq)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		err := req.Validate()
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		secret, err := updateToken(projectProvider, serviceAccountProvider, serviceAccountTokenProvider, userInfo, tokenGenerator, req.ProjectID, req.ServiceAccountID, req.TokenID, req.Body.Name, false)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		externalToken, err := convertInternalTokenToPublicExternal(secret, tokenAuthenticator)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, err.Error())
+		}
+
+		return externalToken, nil
+	}
+}
+
+func updateToken(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider,
+	serviceAccountTokenProvider provider.ServiceAccountTokenProvider, userInfo *provider.UserInfo, tokenGenerator serviceaccount.TokenGenerator,
+	projectID, saID, tokenID, newName string, regenerateToken bool) (*v1.Secret, error) {
+
+	project, err := projectProvider.Get(userInfo, projectID, &provider.ProjectGetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	sa, err := serviceAccountProvider.Get(userInfo, saID, &provider.ServiceAccountGetOptions{RemovePrefix: false})
+	if err != nil {
+		return nil, err
+	}
+
+	existingSecret, err := serviceAccountTokenProvider.Get(userInfo, tokenID)
+	if err != nil {
+		return nil, err
+	}
+	existingName, ok := existingSecret.Labels["name"]
+	if !ok {
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not find token name in secret %s", existingSecret.Name))
+	}
+
+	if newName != existingName {
+		// check if token name is already reserved for service account
+		existingTokenList, err := serviceAccountTokenProvider.List(userInfo, project, sa, &provider.ServiceAccountTokenListOptions{TokenName: newName})
+		if err != nil {
+			return nil, err
+		}
+		if len(existingTokenList) > 0 {
+			return nil, errors.NewAlreadyExists("token", newName)
+		}
+		existingSecret.Labels["name"] = newName
+	}
+
+	if regenerateToken {
+		token, err := tokenGenerator.Generate(serviceaccount.Claims(sa.Spec.Email, project.Name, existingSecret.Name))
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, "can not generate token data")
+		}
+
+		existingSecret.Data["token"] = []byte(token)
+	}
+
+	secret, err := serviceAccountTokenProvider.Update(userInfo, existingSecret)
+	if err != nil {
+		return nil, err
+	}
+
+	return secret, nil
+}
+
 // addTokenReq defines HTTP request for addTokenToServiceAccount
 // swagger:parameters addTokenToServiceAccount
 type addTokenReq struct {
@@ -127,7 +228,35 @@ type addTokenReq struct {
 // swagger:parameters listServiceAccountTokens
 type commonTokenReq struct {
 	common.ProjectReq
-	idReq
+	serviceAccountIDReq
+}
+
+// tokenIDReq represents a request that contains the token ID in the path
+type tokenIDReq struct {
+	// in: path
+	TokenID string `json:"token_id"`
+}
+
+// updateTokenReq defines HTTP request for updateServiceAccountToken
+// swagger:parameters updateServiceAccountToken
+type updateTokenReq struct {
+	commonTokenReq
+	tokenIDReq
+	// in: body
+	Body apiv1.PublicServiceAccountToken
+}
+
+type tokenPatch struct {
+	Name string `json:"name"`
+}
+
+// patchTokenReq defines HTTP request for patchServiceAccountToken
+// swagger:parameters patchServiceAccountToken
+type patchTokenReq struct {
+	commonTokenReq
+	tokenIDReq
+	// in: body
+	Body tokenPatch
 }
 
 // Validate validates addTokenReq request
@@ -146,6 +275,33 @@ func (r addTokenReq) Validate() error {
 func (r commonTokenReq) Validate() error {
 	if len(r.ProjectID) == 0 || len(r.ServiceAccountID) == 0 {
 		return fmt.Errorf("service account ID and project ID cannot be empty")
+	}
+
+	return nil
+}
+
+// Validate validates updateTokenReq request
+func (r updateTokenReq) Validate() error {
+	if err := r.commonTokenReq.Validate(); err != nil {
+		return err
+	}
+	if len(r.Body.Name) == 0 {
+		return fmt.Errorf("new name can not be empty")
+	}
+	if r.TokenID != r.Body.ID {
+		return fmt.Errorf("token ID mismatch, you requested to update token = %s but body contains token = %s", r.TokenID, r.Body.ID)
+	}
+
+	return nil
+}
+
+// Validate validates updateTokenReq request
+func (r patchTokenReq) Validate() error {
+	if err := r.commonTokenReq.Validate(); err != nil {
+		return err
+	}
+	if len(r.Body.Name) == 0 {
+		return fmt.Errorf("new name can not be empty")
 	}
 
 	return nil
@@ -186,6 +342,70 @@ func DecodeTokenReq(c context.Context, r *http.Request) (interface{}, error) {
 		return nil, err
 	}
 	req.ServiceAccountID = saIDReq.ServiceAccountID
+
+	return req, nil
+}
+
+// DecodeUpdateTokenReq  decodes an HTTP request into updateTokenReq
+func DecodeUpdateTokenReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req updateTokenReq
+
+	rawReq, err := DecodeTokenReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	tokenReq := rawReq.(commonTokenReq)
+	req.ServiceAccountID = tokenReq.ServiceAccountID
+	req.ProjectID = tokenReq.ProjectID
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	tokenID, err := decodeTokenIDReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.TokenID = tokenID.TokenID
+
+	return req, nil
+}
+
+// DecodePatchTokenReq  decodes an HTTP request into patchTokenReq
+func DecodePatchTokenReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req patchTokenReq
+
+	rawReq, err := DecodeTokenReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	tokenReq := rawReq.(commonTokenReq)
+	req.ServiceAccountID = tokenReq.ServiceAccountID
+	req.ProjectID = tokenReq.ProjectID
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	tokenID, err := decodeTokenIDReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.TokenID = tokenID.TokenID
+
+	return req, nil
+}
+
+func decodeTokenIDReq(c context.Context, r *http.Request) (tokenIDReq, error) {
+	var req tokenIDReq
+
+	tokenID, ok := mux.Vars(r)["token_id"]
+	if !ok {
+		return req, fmt.Errorf("'token_id' parameter is required")
+	}
+	req.TokenID = tokenID
 
 	return req, nil
 }

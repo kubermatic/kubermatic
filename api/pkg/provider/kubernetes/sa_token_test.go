@@ -179,6 +179,143 @@ func TestListTokens(t *testing.T) {
 	}
 }
 
+func TestGetToken(t *testing.T) {
+	// test data
+	testcases := []struct {
+		name          string
+		userInfo      *provider.UserInfo
+		saToSync      *kubermaticv1.User
+		projectToSync *kubermaticv1.Project
+		secrets       []*v1.Secret
+		expectedToken *v1.Secret
+		tokenToGet    string
+	}{
+		{
+			name:     "scenario 1, get token for the service account 'serviceaccount-1' in project: 'my-first-project-ID'",
+			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			saToSync: func() *kubermaticv1.User {
+				sa := createSA("test-1", "my-first-project-ID", "viewers", "1")
+				// "serviceaccount-" prefix is removed by the provider
+				sa.Name = "1"
+				return sa
+			}(),
+			projectToSync: test.GenDefaultProject(),
+			secrets: []*v1.Secret{
+				test.GenSecret("my-first-project-ID", "1", "test-token-1", "1"),
+				test.GenSecret("my-first-project-ID", "1", "test-token-2", "2"),
+				test.GenSecret("my-first-project-ID", "1", "test-token-3", "3"),
+				test.GenSecret("test-ID", "5", "test-token-1", "4"),
+				test.GenSecret("project-ID", "6", "test-token-1", "5"),
+			},
+			tokenToGet:    "sa-token-3",
+			expectedToken: test.GenSecret("my-first-project-ID", "1", "test-token-3", "3"),
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+
+			kubeObjects := []runtime.Object{}
+			for _, secret := range tc.secrets {
+				kubeObjects = append(kubeObjects, secret)
+			}
+
+			impersonationClient, _, indexer, err := createFakeKubernetesClients(kubeObjects)
+			if err != nil {
+				t.Fatalf("unable to create fake clients, err = %v", err)
+			}
+
+			tokenLister := listers.NewSecretLister(indexer)
+
+			// act
+			target, err := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, tokenLister)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			result, err := target.Get(tc.userInfo, tc.tokenToGet)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !equality.Semantic.DeepEqual(result, tc.expectedToken) {
+				t.Fatalf("expected  %v got %v", tc.expectedToken, result)
+			}
+		})
+	}
+}
+
+func TestUpdateToken(t *testing.T) {
+	// test data
+	testcases := []struct {
+		name          string
+		userInfo      *provider.UserInfo
+		saToSync      *kubermaticv1.User
+		projectToSync *kubermaticv1.Project
+		secrets       []*v1.Secret
+		expectedToken *v1.Secret
+		tokenToUpdate string
+		tokenNewName  string
+	}{
+		{
+			name:     "scenario 1, update token name",
+			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			saToSync: func() *kubermaticv1.User {
+				sa := createSA("test-1", "my-first-project-ID", "viewers", "1")
+				// "serviceaccount-" prefix is removed by the provider
+				sa.Name = "1"
+				return sa
+			}(),
+			projectToSync: test.GenDefaultProject(),
+			secrets: []*v1.Secret{
+				test.GenSecret("my-first-project-ID", "1", "test-token-1", "1"),
+				test.GenSecret("my-first-project-ID", "1", "test-token-2", "2"),
+				test.GenSecret("my-first-project-ID", "1", "test-token-3", "3"),
+				test.GenSecret("test-ID", "5", "test-token-1", "4"),
+				test.GenSecret("project-ID", "6", "test-token-1", "5"),
+			},
+			tokenToUpdate: "sa-token-3",
+			tokenNewName:  "new-updated-name",
+			expectedToken: test.GenSecret("my-first-project-ID", "1", "new-updated-name", "3"),
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+
+			kubeObjects := []runtime.Object{}
+			for _, secret := range tc.secrets {
+				kubeObjects = append(kubeObjects, secret)
+			}
+
+			impersonationClient, _, indexer, err := createFakeKubernetesClients(kubeObjects)
+			if err != nil {
+				t.Fatalf("unable to create fake clients, err = %v", err)
+			}
+
+			tokenLister := listers.NewSecretLister(indexer)
+
+			// act
+			target, err := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, tokenLister)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			result, err := target.Get(tc.userInfo, tc.tokenToUpdate)
+			if err != nil {
+				t.Fatal(err)
+			}
+			result.Labels["name"] = tc.tokenNewName
+			updated, err := target.Update(tc.userInfo, result)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !equality.Semantic.DeepEqual(updated, tc.expectedToken) {
+				t.Fatalf("expected  %v got %v", tc.expectedToken, updated)
+			}
+		})
+	}
+}
+
 // FakeKubernetesImpersonationClient gives kubernetes client set that uses user impersonation
 type FakeKubernetesImpersonationClient struct {
 	kubernetesClent *fakerestclient.Clientset
