@@ -31,6 +31,8 @@ func TestCreateToken(t *testing.T) {
 		projectToSync  string
 		expectedSecret *v1.Secret
 		tokenName      string
+		tokenID        string
+		saEmail        string
 	}{
 		{
 			name:          "scenario 1, create token",
@@ -38,6 +40,8 @@ func TestCreateToken(t *testing.T) {
 			saToSync:      createSA("test-1", "my-first-project-ID", "viewers", "1"),
 			projectToSync: "my-first-project-ID",
 			tokenName:     "test-token",
+			tokenID:       "sa-token-1",
+			saEmail:       "serviceaccount-1@sa.kubermatic.io",
 			expectedSecret: func() *v1.Secret {
 				secret := test.GenSecret("my-first-project-ID", "serviceaccount-1", "test-token", "1")
 				secret.Name = ""
@@ -54,16 +58,19 @@ func TestCreateToken(t *testing.T) {
 			}
 
 			tokenGenerator := &fakeJWTTokenGenerator{}
-			tokenAuth := &fakeJWTTokenAuthenticator{}
+			token, err := tokenGenerator.Generate(serviceaccount.Claims(tc.saEmail, tc.projectToSync, tc.tokenID))
+			if err != nil {
+				t.Fatalf("unable to generate token, err = %v", err)
+			}
 			tokenLister := listers.NewSecretLister(indexer)
 
 			// act
-			target := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, tokenGenerator, tokenAuth, tokenLister)
+			target := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, tokenLister)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			secret, err := target.Create(tc.userInfo, tc.saToSync, tc.tokenName, tc.projectToSync)
+			secret, err := target.Create(tc.userInfo, tc.saToSync, tc.projectToSync, tc.tokenName, tc.tokenID, token)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -146,12 +153,10 @@ func TestListTokens(t *testing.T) {
 				t.Fatalf("unable to create fake clients, err = %v", err)
 			}
 
-			tokenGenerator := &fakeJWTTokenGenerator{}
-			tokenAuth := &fakeJWTTokenAuthenticator{}
 			tokenLister := listers.NewSecretLister(indexer)
 
 			// act
-			target := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, tokenGenerator, tokenAuth, tokenLister)
+			target := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, tokenLister)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -200,16 +205,6 @@ type fakeJWTTokenGenerator struct {
 // Generate generates new fake token
 func (j *fakeJWTTokenGenerator) Generate(claims *jwt.Claims, privateClaims *serviceaccount.CustomTokenClaim) (string, error) {
 	return test.TestFakeToken, nil
-}
-
-type fakeJWTTokenAuthenticator struct {
-}
-
-func (a *fakeJWTTokenAuthenticator) Authenticate(tokenData string) (*jwt.Claims, *serviceaccount.CustomTokenClaim, error) {
-	public := &jwt.Claims{}
-	public.Expiry = jwt.NewNumericDate(test.DefaultCreationTimestamp())
-
-	return public, &serviceaccount.CustomTokenClaim{}, nil
 }
 
 func sortByName(tokens []*v1.Secret) {
