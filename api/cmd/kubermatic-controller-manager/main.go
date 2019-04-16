@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/oklog/run"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/collectors"
@@ -54,8 +55,9 @@ func main() {
 	// Enable logging
 	log.SetLogger(log.ZapLogger(false))
 
-	// Create a manager
-	mgr, err := manager.New(config, manager.Options{MetricsBindAddress: options.internalAddr})
+	// Create a manager, disable metrics as we have our own handler that exposes
+	// the metrics of both the ctrltuntime registry and the default registry
+	mgr, err := manager.New(config, manager.Options{MetricsBindAddress: "0"})
 	if err != nil {
 		glog.Fatalf("failed to create mgr: %v", err)
 	}
@@ -69,6 +71,14 @@ func main() {
 
 	recorder := mgr.GetRecorder(controllerName)
 
+	if err := mgr.Add(&metricsServer{
+		gatherers: []prometheus.Gatherer{
+			prometheus.DefaultGatherer, ctrlruntimemetrics.Registry},
+		listenAddress: options.internalAddr},
+	); err != nil {
+		glog.Fatalf("failed to add metrics server to mgr: %v", err)
+	}
+
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
 	if _, err := informer.GetSyncedStoreFromDynamicFactory(mgr.GetCache(), &autoscalingv1beta2.VerticalPodAutoscaler{}); err != nil {
 		if _, crdNotRegistered := err.(*meta.NoKindMatchError); crdNotRegistered {
@@ -79,7 +89,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	}
 
 	//Register the global error metric. Ensures that runtime.HandleError() increases the error metric
-	metrics.RegisterRuntimErrorMetricCounter("kubermatic_controller_manager", ctrlruntimemetrics.Registry)
+	metrics.RegisterRuntimErrorMetricCounter("kubermatic_controller_manager", prometheus.DefaultRegisterer)
 
 	dockerPullConfigJSON, err := ioutil.ReadFile(options.dockerPullConfigJSONFile)
 	if err != nil {
@@ -104,7 +114,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	}
 
 	glog.V(6).Info("Starting clusters collector")
-	collectors.MustRegisterClusterCollector(ctrlruntimemetrics.Registry, ctrlCtx.mgr.GetClient())
+	collectors.MustRegisterClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetClient())
 
 	// This group is forever waiting in a goroutine for signals to stop
 	{
