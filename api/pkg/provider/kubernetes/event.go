@@ -13,28 +13,29 @@ import (
 
 const componentName = "kubermatic-api"
 
-func NewEventRecorder(seedClusterConfig *rest.Config) *EventRecorder {
-	recorder := &EventRecorder{
-		seedClusterConfig: seedClusterConfig,
-	}
-
-	recorder.init()
-	return recorder
+func NewEventRecorder() *EventRecorder {
+	return &EventRecorder{seedClusterRecorderMap: make(map[string]record.EventRecorder)}
 }
 
 type EventRecorder struct {
-	seedClusterConfig *rest.Config
-
-	seedClusterRecorder record.EventRecorder
+	seedClusterRecorderMap map[string]record.EventRecorder
 }
 
-func (e *EventRecorder) SeedClusterRecorder() record.EventRecorder {
-	return e.seedClusterRecorder
+func (e *EventRecorder) SeedClusterRecorder(config *rest.Config) record.EventRecorder {
+	return e.getRecorderForConfig(config)
 }
 
-func (e *EventRecorder) init() {
-	kubeClient := kubernetes.NewForConfigOrDie(e.seedClusterConfig)
+func (e *EventRecorder) getRecorderForConfig(config *rest.Config) record.EventRecorder {
+	recorder, exists := e.seedClusterRecorderMap[config.Host]
+	if exists {
+		return recorder
+	}
+
+	kubeClient := kubernetes.NewForConfigOrDie(config)
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&v1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
-	e.seedClusterRecorder = eventBroadcaster.NewRecorder(scheme.Scheme, v12.EventSource{Component: componentName})
+	recorder = eventBroadcaster.NewRecorder(scheme.Scheme, v12.EventSource{Component: componentName})
+	e.seedClusterRecorderMap[config.Host] = recorder
+
+	return recorder
 }

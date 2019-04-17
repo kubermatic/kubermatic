@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -125,6 +126,12 @@ type PrivilegedClusterProvider interface {
 	//
 	// Note that the client you will get has admin privileges in the seed cluster
 	GetSeedClusterAdminClient() (ctrlruntimeclient.Client, error)
+
+	// GetSeedClusterAdminConfig returns a config that can be used to create client
+	// that gives user access to all resources in the seed cluster
+	//
+	// Note that the config you will get has admin privileges in the seed cluster
+	GetSeedClusterAdminConfig() *rest.Config
 }
 
 // SSHKeyListOptions allows to set filters that will be applied to filter the result.
@@ -382,5 +389,5 @@ type PrivilegedServiceAccountTokenProvider interface {
 }
 
 type EventRecorderProvider interface {
-	SeedClusterRecorder() record.EventRecorder
+	SeedClusterRecorder(config *rest.Config) record.EventRecorder
 }

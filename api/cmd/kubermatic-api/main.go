@@ -185,7 +185,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	kubermaticMasterInformerFactory.Start(wait.NeverStop)
 	kubermaticMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
 
-	eventRecorderProvider := kubernetesprovider.NewEventRecorder(config)
+	eventRecorderProvider := kubernetesprovider.NewEventRecorder()
 
 	return providers{
 			sshKey:                                sshKeyProvider,

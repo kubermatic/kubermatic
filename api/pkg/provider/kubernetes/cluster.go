@@ -223,6 +223,10 @@ func (p *ClusterProvider) GetSeedClusterAdminClient() (ctrlruntimeclient.Client,
 	return dynamicClient, nil
 }
 
+func (p *ClusterProvider) GetSeedClusterAdminConfig() *restclient.Config {
+	return p.seedClusterConfig
+}
+
 func (p *ClusterProvider) withImpersonation(userInfo *provider.UserInfo) k8cuserclusterclient.ConfigOption {
 	return func(cfg *restclient.Config) *restclient.Config {
 		cfg.Impersonate = restclient.ImpersonationConfig{

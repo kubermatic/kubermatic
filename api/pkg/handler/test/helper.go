@@ -201,7 +201,7 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	kubermaticInformerFactory.Start(wait.NeverStop)
 	kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
 
-	eventRecorderProvider := kubernetes.NewEventRecorder(&restclient.Config{})
+	eventRecorderProvider := kubernetes.NewEventRecorder()
 
 	// Disable the metrics endpoint in tests
 	var prometheusClient prometheusapi.Client
