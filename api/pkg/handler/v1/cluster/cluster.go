@@ -36,6 +36,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
+type NodeDeploymentEvent string
+
+const (
+	NodeDeploymentCreationStart   NodeDeploymentEvent = "NodeDeploymentCreationStart"
+	NodeDeploymentCreationSuccess NodeDeploymentEvent = "NodeDeploymentCreationSuccess"
+	NodeDeploymentCreationFail    NodeDeploymentEvent = "NodeDeploymentCreationFail"
+)
+
 func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider,
 	dcs map[string]provider.DatacenterMeta, initNodeDeploymentFailures *prometheus.CounterVec, eventRecorderProvider provider.EventRecorderProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -71,15 +79,15 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 		if req.Body.NodeDeployment != nil {
 			go func() {
 				defer utilruntime.HandleCrash()
-				eventRecorderProvider.SeedClusterRecorder().Eventf(newCluster, corev1.EventTypeNormal, "NodeDeploymentCreationInit", "Started creation of initial Node Deployment")
+				eventRecorderProvider.SeedClusterRecorder().Eventf(newCluster, corev1.EventTypeNormal, string(NodeDeploymentCreationStart), "started creation of initial node deployment %s for cluster %s", req.Body.NodeDeployment.Name, newCluster.Name)
 				err := createInitialNodeDeploymentWithRetries(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, dcs, clusterProvider, userInfo)
 				if err != nil {
-					eventRecorderProvider.SeedClusterRecorder().Eventf(newCluster, corev1.EventTypeWarning, "NodeDeploymentCreationError", "%v", err)
-					glog.Errorf("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
+					eventRecorderProvider.SeedClusterRecorder().Eventf(newCluster, corev1.EventTypeWarning, string(NodeDeploymentCreationFail), "failed to create initial node deployment %s for cluster %s: %v", req.Body.NodeDeployment.Name, newCluster.Name, err)
+					glog.V(5).Infof("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
 					initNodeDeploymentFailures.With(prometheus.Labels{"cluster": newCluster.Name, "seed_dc": req.DC}).Add(1)
 				} else {
-					eventRecorderProvider.SeedClusterRecorder().Eventf(newCluster, corev1.EventTypeNormal, "NodeDeploymentCreationSuccess", "Initial Node Deployment created successfully")
-					glog.V(2).Infof("created initial node deployment for cluster %s", newCluster.Name)
+					eventRecorderProvider.SeedClusterRecorder().Eventf(newCluster, corev1.EventTypeNormal, string(NodeDeploymentCreationSuccess), "created initial node deployment %s for cluster %s", req.Body.NodeDeployment.Name, newCluster.Name)
+					glog.V(5).Infof("created initial node deployment for cluster %s", newCluster.Name)
 				}
 			}()
 		}
