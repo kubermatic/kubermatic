@@ -57,14 +57,14 @@ func newResourcesController(metrics *Metrics, allClusterProviders []*ClusterProv
 	}
 
 	for _, clusterProvider := range allClusterProviders {
-		glog.V(6).Infof("considering %s provider for resources", clusterProvider.providerName)
+		glog.V(4).Infof("considering %s provider for resources", clusterProvider.providerName)
 		for _, resource := range c.projectResources {
 			if len(resource.destination) == 0 && !strings.HasPrefix(clusterProvider.providerName, MasterProviderPrefix) {
-				glog.V(6).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the master cluster provider", resource.gvr.String(), clusterProvider.providerName)
+				glog.V(4).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the master cluster provider", resource.gvr.String(), clusterProvider.providerName)
 				continue
 			}
 			if resource.destination == destinationSeed && !strings.HasPrefix(clusterProvider.providerName, SeedProviderPrefix) {
-				glog.V(6).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the seed cluster provider", resource.gvr.String(), clusterProvider.providerName)
+				glog.V(4).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the seed cluster provider", resource.gvr.String(), clusterProvider.providerName)
 				continue
 			}
 			if resource.gvr.Group == kubermaticv1.GroupName {
@@ -113,7 +113,7 @@ func (c *resourcesController) processProjectResourcesNextItem() bool {
 
 	runObj, err := qItem.cache.Get(qItem.indexKey)
 	if err != nil {
-		glog.V(6).Infof("won't process the resource %q because it's no longer in the queue", qItem.name)
+		glog.V(4).Infof("won't process the resource %q because it's no longer in the queue", qItem.name)
 		return true
 	}
 	resMeta, err := meta.Accessor(runObj)
@@ -229,7 +229,7 @@ func (c *resourcesController) handleErr(err error, key interface{}) {
 		return
 	}
 
-	glog.V(0).Infof("Error syncing %v: %v", key, err)
+	glog.Errorf("Error syncing %v: %v", key, err)
 
 	// Re-enqueue an item, based on the rate limiter on the
 	// queue and the re-enqueueProject history, the key will be processed later again.

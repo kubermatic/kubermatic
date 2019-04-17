@@ -72,10 +72,10 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 				defer utilruntime.HandleCrash()
 				err := createInitialNodeDeploymentWithRetries(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, dcs, clusterProvider, userInfo)
 				if err != nil {
-					glog.V(5).Infof("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
+					glog.Errorf("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
 					initNodeDeploymentFailures.With(prometheus.Labels{"cluster": newCluster.Name, "seed_dc": req.DC}).Add(1)
 				} else {
-					glog.V(5).Infof("created initial node deployment for cluster %s", newCluster.Name)
+					glog.V(2).Infof("created initial node deployment for cluster %s", newCluster.Name)
 				}
 			}()
 		}
@@ -101,10 +101,10 @@ func createInitialNodeDeploymentWithRetries(nodeDeployment *apiv1.NodeDeployment
 		case kerrors.IsServiceUnavailable(err):
 			fallthrough
 		case kerrors.IsServerTimeout(err):
-			glog.V(6).Infof("retrying creating initial Node Deployments for cluster %s (%s) due to %v", cluster.Name, cluster.Spec.HumanReadableName, err)
+			glog.V(4).Infof("retrying creating initial Node Deployments for cluster %s (%s) due to %v", cluster.Name, cluster.Spec.HumanReadableName, err)
 			return false, nil
 		}
-		glog.V(6).Infof("giving up creating initial Node Deployments for cluster %s (%s) due to an unknown err %#v", cluster.Name, cluster.Spec.HumanReadableName, err)
+		glog.V(4).Infof("giving up creating initial Node Deployments for cluster %s (%s) due to an unknown err %#v", cluster.Name, cluster.Spec.HumanReadableName, err)
 		return false, err
 	})
 }
