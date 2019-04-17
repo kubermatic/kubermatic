@@ -16,6 +16,28 @@
 * In order to provide Grafana dashboards for user cluster resource usage, the node-exporter is now deployed by default as an addon into user clusters. [#3089](https://github.com/kubermatic/kubermatic/pull/3089) ([@xrstf](https://github.com/xrstf))
 * Make the default AMI's for AWS instances configurable via the datacenters.yaml [#3169](https://github.com/kubermatic/kubermatic/pull/3169) ([@mrIncompetent](https://github.com/mrIncompetent))
 
+## Dashboard
+
+* It is now possible to edit the project name in UI [#1003](https://github.com/kubermatic/dashboard-v2/pull/1003) ([@kgroschoff](https://github.com/kgroschoff))
+* Made Nodes and Node Deployments statuses more accurate [#1016](https://github.com/kubermatic/dashboard-v2/pull/1016) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Redesign DigitalOcean sizes and OpenStack flavors option pickers [#1021](https://github.com/kubermatic/dashboard-v2/pull/1021) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Smoother operation on bad network connection thanks to changes in asset caching. [#1030](https://github.com/kubermatic/dashboard-v2/pull/1030) ([@kdomanski](https://github.com/kdomanski))
+* Added a flag allowing to change the default number of nodes created with clusters. [#1032](https://github.com/kubermatic/dashboard-v2/pull/1032) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Setting openstack tags for instances is possible via UI now. [#1038](https://github.com/kubermatic/dashboard-v2/pull/1038) ([@kgroschoff](https://github.com/kgroschoff))
+* Allowed Node Deployment naming. [#1039](https://github.com/kubermatic/dashboard-v2/pull/1039) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Adding multiple owners to a project is possible via UI now. [#1042](https://github.com/kubermatic/dashboard-v2/pull/1042) ([@kgroschoff](https://github.com/kgroschoff))
+* Allowed specifying kubelet version for Node Deployments. [#1047](https://github.com/kubermatic/dashboard-v2/pull/1047) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Events related to the Nodes are now displayed in the Node Deployment details view. [#1054](https://github.com/kubermatic/dashboard-v2/pull/1054) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Fixed reload behaviour of openstack setting fields. [#1056](https://github.com/kubermatic/dashboard-v2/pull/1056) ([@kgroschoff](https://github.com/kgroschoff))
+* Fixed a bug with the missing version in the footer. [#1067](https://github.com/kubermatic/dashboard-v2/pull/1067) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Project owners are no wvisible in project list view . [#1082](https://github.com/kubermatic/dashboard-v2/pull/1082) ([@kgroschoff](https://github.com/kgroschoff))
+* Added possibility to assign labels to nodes. [#1101](https://github.com/kubermatic/dashboard-v2/pull/1101) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Updated AWS instance types. [#1122](https://github.com/kubermatic/dashboard-v2/pull/1122) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Fixed display number of replicas if the field is empty (0 replicas). [#1126](https://github.com/kubermatic/dashboard-v2/pull/1126) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Added an option to include custom links into the application. [#1131](https://github.com/kubermatic/dashboard-v2/pull/1131) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Remove AWS instance types t3.nano & t3.micro as they are too small to schedule any workload on them [#1138](https://github.com/kubermatic/dashboard-v2/pull/1138) ([@mrIncompetent](https://github.com/mrIncompetent))
+* Redesigned the application sidebar. [#1173](https://github.com/kubermatic/dashboard-v2/pull/1173) ([@maciaszczykm](https://github.com/maciaszczykm))
+
 ### Logging & Monitoring stack
 
 * Update fluent-bit to 1.0.6 [#3222](https://github.com/kubermatic/kubermatic/pull/3222) ([@xrstf](https://github.com/xrstf))

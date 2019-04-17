@@ -713,5 +713,205 @@
     "pr_url": "https://github.com/kubermatic/kubermatic/pull/3223",
     "pr_number": 3223,
     "release_version": "2.10"
+  },
+  "1003": {
+    "commit": "5022de6942b7bba7a3c4a08b08ce0e2ec3f009f7",
+    "text": "It is now possible to edit the project name in UI.",
+    "markdown": "It is now possible to edit the project name in UI. ([#1003](https://github.com/kubermatic/dashboard-v2/pull/1003), [@kgroschoff](https://github.com/kgroschoff))",
+    "author": "kgroschoff",
+    "author_url": "https://github.com/kgroschoff",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1003",
+    "pr_number": 1003,
+    "release_version": "2.10"
+  },
+  "1016": {
+    "commit": "de9432dc98bd473e0d696ad9b8f8fbc8ffbd246c",
+    "text": "Made Nodes and Node Deployments statuses more accurate",
+    "markdown": "Made Nodes and Node Deployments statuses more accurate ([#1016](https://github.com/kubermatic/dashboard-v2/pull/1016), [@maciaszczykm](https://github.com/maciaszczykm))",
+    "author": "maciaszczykm",
+    "author_url": "https://github.com/maciaszczykm",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1016",
+    "pr_number": 1016,
+    "release_version": "2.10"
+  },
+  "1021": {
+    "commit": "94f36ffd31ad818be6d3b8c3fc542a3f64a45d4a",
+    "text": "Redesign DigitalOcean sizes and OpenStack flavors option pickers",
+    "markdown": "Redesign DigitalOcean sizes and OpenStack flavors option pickers ([#1021](https://github.com/kubermatic/dashboard-v2/pull/1021), [@maciaszczykm](https://github.com/maciaszczykm))",
+    "author": "maciaszczykm",
+    "author_url": "https://github.com/maciaszczykm",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1021",
+    "pr_number": 1021,
+    "release_version": "2.10"
+  },
+  "1030": {
+    "commit": "a55c082a61785ad34a499850ba90406889abf159",
+    "text": "Smoother operation on bad network connection thanks to changes in asset caching.",
+    "markdown": "Smoother operation on bad network connection thanks to changes in asset caching. ([#1030](https://github.com/kubermatic/dashboard-v2/pull/1030), [@kdomanski](https://github.com/kdomanski))",
+    "author": "kdomanski",
+    "author_url": "https://github.com/kdomanski",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1030",
+    "pr_number": 1030,
+    "release_version": "2.10"
+  },
+  "1032": {
+    "commit": "fc229dd0698efe063dd607a8ad4f824fa2943a31",
+    "text": "Added a flag allowing to change the default number of nodes created with clusters.",
+    "markdown": "Added a flag allowing to change the default number of nodes created with clusters. ([#1032](https://github.com/kubermatic/dashboard-v2/pull/1032), [@maciaszczykm](https://github.com/maciaszczykm))",
+    "author": "maciaszczykm",
+    "author_url": "https://github.com/maciaszczykm",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1032",
+    "pr_number": 1032,
+    "release_version": "2.10"
+  },
+  "1038": {
+    "commit": "6385a972314cb8cd7876b2c7e199e15e3f30eda9",
+    "text": "Setting openstack tags for instances is possible via UI now.",
+    "markdown": "Setting openstack tags for instances is possible via UI now. ([#1038](https://github.com/kubermatic/dashboard-v2/pull/1038), [@kgroschoff](https://github.com/kgroschoff))",
+    "author": "kgroschoff",
+    "author_url": "https://github.com/kgroschoff",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1038",
+    "pr_number": 1038,
+    "release_version": "2.10"
+  },
+  "1039": {
+    "commit": "ae936225683035ce4fd96e210b1c58093a3748c8",
+    "text": "Allowed Node Deployment naming.",
+    "markdown": "Allowed Node Deployment naming. ([#1039](https://github.com/kubermatic/dashboard-v2/pull/1039), [@maciaszczykm](https://github.com/maciaszczykm))",
+    "author": "maciaszczykm",
+    "author_url": "https://github.com/maciaszczykm",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1039",
+    "pr_number": 1039,
+    "release_version": "2.10"
+  },
+  "1042": {
+    "commit": "f74ab2a0754211aeaeef990e7710470e3167a229",
+    "text": "Adding multiple owners to a project is possible via UI now.",
+    "markdown": "Adding multiple owners to a project is possible via UI now. ([#1042](https://github.com/kubermatic/dashboard-v2/pull/1042), [@kgroschoff](https://github.com/kgroschoff))",
+    "author": "kgroschoff",
+    "author_url": "https://github.com/kgroschoff",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1042",
+    "pr_number": 1042,
+    "release_version": "2.10"
+  },
+  "1047": {
+    "commit": "9dae40b17b063418f4a7f2e73d62e9ca1b47a358",
+    "text": "Allowed specifying kubelet version for Node Deployments.",
+    "markdown": "Allowed specifying kubelet version for Node Deployments. ([#1047](https://github.com/kubermatic/dashboard-v2/pull/1047), [@maciaszczykm](https://github.com/maciaszczykm))",
+    "author": "maciaszczykm",
+    "author_url": "https://github.com/maciaszczykm",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1047",
+    "pr_number": 1047,
+    "release_version": "2.10"
+  },
+  "1054": {
+    "commit": "11c521af39e57f62a7f27f205242f4c50220d2a7",
+    "text": "Events related to the Nodes are now displayed in the Node Deployment details view.",
+    "markdown": "Events related to the Nodes are now displayed in the Node Deployment details view. ([#1054](https://github.com/kubermatic/dashboard-v2/pull/1054), [@maciaszczykm](https://github.com/maciaszczykm))",
+    "author": "maciaszczykm",
+    "author_url": "https://github.com/maciaszczykm",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1054",
+    "pr_number": 1054,
+    "release_version": "2.10"
+  },
+  "1056": {
+    "commit": "3e2ec92254a7d8565e4432ef23a95aa085d29253",
+    "text": "Fixed reload behaviour of openstack setting fields.",
+    "markdown": "Fixed reload behaviour of openstack setting fields. ([#1056](https://github.com/kubermatic/dashboard-v2/pull/1056), [@kgroschoff](https://github.com/kgroschoff))",
+    "author": "kgroschoff",
+    "author_url": "https://github.com/kgroschoff",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1056",
+    "pr_number": 1056,
+    "release_version": "2.10"
+  },
+  "1067": {
+    "commit": "03da8d19c6007fde8adff2079b28cc3283ca1e44",
+    "text": "Fixed bug with the missing version in the footer.",
+    "markdown": "Fixed bug with the missing version in the footer. ([#1067](https://github.com/kubermatic/dashboard-v2/pull/1067), [@maciaszczykm](https://github.com/maciaszczykm))",
+    "author": "maciaszczykm",
+    "author_url": "https://github.com/maciaszczykm",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1067",
+    "pr_number": 1067,
+    "release_version": "2.10"
+  },
+  "1082": {
+    "commit": "82a68c7f665caf8993d7ce5dff744f1f263e97df",
+    "text": "Project owners visible in project list view now.",
+    "markdown": "Project owners visible in project list view now. ([#1082](https://github.com/kubermatic/dashboard-v2/pull/1082), [@kgroschoff](https://github.com/kgroschoff))",
+    "author": "kgroschoff",
+    "author_url": "https://github.com/kgroschoff",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1082",
+    "pr_number": 1082,
+    "release_version": "2.10"
+  },
+  "1101": {
+    "commit": "9650b67bf752280f1b27ea2e04ce4fd4d8af6aed",
+    "text": "Added possibility to assign labels to nodes.",
+    "markdown": "Added possibility to assign labels to nodes. ([#1101](https://github.com/kubermatic/dashboard-v2/pull/1101), [@maciaszczykm](https://github.com/maciaszczykm))",
+    "author": "maciaszczykm",
+    "author_url": "https://github.com/maciaszczykm",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1101",
+    "pr_number": 1101,
+    "release_version": "2.10"
+  },
+  "1121": {
+    "commit": "c8d602003e0dc98c44a3a06831e56a748d74109e",
+    "text": "Add filtering for control plane versions restricted by kubelets inside the cluster.",
+    "markdown": "Add filtering for control plane versions restricted by kubelets inside the cluster. ([#1121](https://github.com/kubermatic/dashboard-v2/pull/1121), [@maciaszczykm](https://github.com/maciaszczykm))",
+    "author": "maciaszczykm",
+    "author_url": "https://github.com/maciaszczykm",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1121",
+    "pr_number": 1121,
+    "release_version": "2.10"
+  },
+  "1122": {
+    "commit": "03a84b4e02c3049681ed54cdc36daa75d7b63508",
+    "text": "Updated AWS instance types.",
+    "markdown": "Updated AWS instance types. ([#1122](https://github.com/kubermatic/dashboard-v2/pull/1122), [@maciaszczykm](https://github.com/maciaszczykm))",
+    "author": "maciaszczykm",
+    "author_url": "https://github.com/maciaszczykm",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1122",
+    "pr_number": 1122,
+    "release_version": "2.10"
+  },
+  "1126": {
+    "commit": "e40d96066bd0839b50477282b84eceb387bcd37e",
+    "text": "Fixed display number of replicas if the field is empty (0 replicas).",
+    "markdown": "Fixed display number of replicas if the field is empty (0 replicas). ([#1126](https://github.com/kubermatic/dashboard-v2/pull/1126), [@maciaszczykm](https://github.com/maciaszczykm))",
+    "author": "maciaszczykm",
+    "author_url": "https://github.com/maciaszczykm",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1126",
+    "pr_number": 1126,
+    "release_version": "2.10"
+  },
+  "1131": {
+    "commit": "8b7bdae1e701d74e70cd322575f1c2490f5763b8",
+    "text": "Added an option to include custom links into the application.",
+    "markdown": "Added an option to include custom links into the application. ([#1131](https://github.com/kubermatic/dashboard-v2/pull/1131), [@maciaszczykm](https://github.com/maciaszczykm))",
+    "author": "maciaszczykm",
+    "author_url": "https://github.com/maciaszczykm",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1131",
+    "pr_number": 1131,
+    "release_version": "2.10"
+  },
+  "1138": {
+    "commit": "4be6a2721c2bc2ff1f04b0455d2f89f589124954",
+    "text": "Remove AWS instance types t3.nano \u0026 t3.micro as they are too small to schedule any workload on them",
+    "markdown": "Remove AWS instance types t3.nano \u0026 t3.micro as they are too small to schedule any workload on them ([#1138](https://github.com/kubermatic/dashboard-v2/pull/1138), [@mrIncompetent](https://github.com/mrIncompetent))",
+    "author": "mrIncompetent",
+    "author_url": "https://github.com/mrIncompetent",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1138",
+    "pr_number": 1138,
+    "release_version": "2.10"
+  },
+  "1173": {
+    "commit": "5cc15fe736487173055ec9c66d89274be46c00ab",
+    "text": "Redesigned the application sidebar.",
+    "markdown": "Redesigned the application sidebar. ([#1173](https://github.com/kubermatic/dashboard-v2/pull/1173), [@maciaszczykm](https://github.com/maciaszczykm))",
+    "author": "maciaszczykm",
+    "author_url": "https://github.com/maciaszczykm",
+    "pr_url": "https://github.com/kubermatic/dashboard-v2/pull/1173",
+    "pr_number": 1173,
+    "release_version": "2.10"
   }
 }
