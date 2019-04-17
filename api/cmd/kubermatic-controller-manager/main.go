@@ -146,6 +146,15 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		})
 	}
 
+	// This group starts the controller manager
+	{
+		g.Add(func() error {
+			return mgr.Start(ctx.Done())
+		}, func(err error) {
+			// We don't need to do anything here as the routine gets stopped by the ctx
+		})
+	}
+
 	if err := g.Run(); err != nil {
 		glog.Fatal(err)
 	}
