@@ -4,10 +4,10 @@
 
 ### Kubermatic core
 
-* TODO Add docs link:  ACTION REQUIRED: The config option `Values.kubermatic.rbac` changed to `Values.kubermatic.masterController` [#3051](https://github.com/kubermatic/kubermatic/pull/3051) ([@zreigz](https://github.com/zreigz))
+* ACTION REQUIRED: The config option `Values.kubermatic.rbac` changed to `Values.kubermatic.masterController` [#3051](https://github.com/kubermatic/kubermatic/pull/3051) ([@zreigz](https://github.com/zreigz))
 * The user cluster controller manager was added. It is deployed within the cluster namespace in the seed and takes care of reconciling all resources that are inside the user cluster
 * Add feature gate to enable etcd corruption check [#2460](https://github.com/kubermatic/kubermatic/pull/2460) ([@mrIncompetent](https://github.com/mrIncompetent))
-* Kubernetes 1.10 was removed as officially supported version from Kubermatic as its EOL [#2712](https://github.com/kubermatic/kubermatic/pull/2712) ([@alvaroaleman](https://github.com/alvaroaleman))
+* Kubernetes 1.10 was removed as officially supported version from Kubermatic as it's EOL [#2712](https://github.com/kubermatic/kubermatic/pull/2712) ([@alvaroaleman](https://github.com/alvaroaleman))
 * Add short names to the ClusterAPI CRDs to allow using `kubectl get md` for `machinedeployments`, `kubectl get ms` for `machinesets` and `kubectl get ma` to get `machines`
    [#2718](https://github.com/kubermatic/kubermatic/pull/2718) ([@toschneck](https://github.com/toschneck))
 * Update canal to v2.6.12, Kubernetes Dashboard to v1.10.1 and replace kube-dns with CoreDNS 1.3.1 [#2985](https://github.com/kubermatic/kubermatic/pull/2985) ([@mrIncompetent](https://github.com/mrIncompetent))
@@ -41,7 +41,6 @@
 ### Logging & Monitoring stack
 
 * Update fluent-bit to 1.0.6 [#3222](https://github.com/kubermatic/kubermatic/pull/3222) ([@xrstf](https://github.com/xrstf))
-* Update to Prometheus 2.7.1 & Alertmanager 0.16.1 [#2728](https://github.com/kubermatic/kubermatic/pull/2728) ([@xrstf](https://github.com/xrstf))
 * Add elasticsearch-exporter to logging stack to improve monitoring [#2773](https://github.com/kubermatic/kubermatic/pull/2773) ([@xrstf](https://github.com/xrstf))
 * New alerts for cert-manager created certificates about to expire [#2787](https://github.com/kubermatic/kubermatic/pull/2787) ([@xrstf](https://github.com/xrstf))
 * Add blackbox-exporter chart [#2954](https://github.com/kubermatic/kubermatic/pull/2954) ([@xrstf](https://github.com/xrstf))
@@ -54,7 +53,6 @@
 
 * ACTION REQUIRED: update from Ark 0.10 to Velero 0.11 [#3077](https://github.com/kubermatic/kubermatic/pull/3077) ([@xrstf](https://github.com/xrstf))
 * Replace hand written go tcp proxy with Envoy within the nodeport-proxy [#2916](https://github.com/kubermatic/kubermatic/pull/2916) ([@mrIncompetent](https://github.com/mrIncompetent))
-* It is now possible to configure tolerations and nodeSelectors for the cert-manager deployments [#2879](https://github.com/kubermatic/kubermatic/pull/2879) ([@alvaroaleman](https://github.com/alvaroaleman))
 * cert-manager was updated to 0.7.0, Dex was updated to 2.15.0,Minio was updated to RELEASE.2019-04-09T01-22-30Z [#3163](https://github.com/kubermatic/kubermatic/pull/3163) ([@xrstf](https://github.com/xrstf))
 * update nginx-ingress-controller to 0.24.1 [#3200](https://github.com/kubermatic/kubermatic/pull/3200) ([@xrstf](https://github.com/xrstf))
 
