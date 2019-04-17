@@ -19,7 +19,7 @@ func (r *Reconciler) clusterIsReachable(ctx context.Context, c *kubermaticv1.Clu
 	}
 
 	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, &corev1.NamespaceList{}); err != nil {
-		glog.V(5).Infof("Cluster %q not yet reachable: %v", c.Name, err)
+		glog.V(4).Infof("Cluster %q not yet reachable: %v", c.Name, err)
 		return false, nil
 	}
 

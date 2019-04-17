@@ -85,7 +85,7 @@ func (m *Manager) GetMasterVersions() ([]*MasterVersion, error) {
 	for _, v := range m.versions {
 		autoUpdate, err := m.AutomaticUpdate(v.Version.String())
 		if err != nil {
-			glog.V(0).Infof("failed to get AutomaticUpdate for version %s: %v", v.Version.String(), err)
+			glog.Errorf("Failed to get AutomaticUpdate for version %s: %v", v.Version.String(), err)
 			continue
 		}
 		if autoUpdate != nil {

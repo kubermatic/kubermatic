@@ -187,7 +187,7 @@ func (d *TemplateData) ClusterIPByServiceName(name string) (string, error) {
 func (d *TemplateData) ProviderName() string {
 	p, err := provider.ClusterCloudProviderName(d.cluster.Spec.Cloud)
 	if err != nil {
-		glog.V(0).Infof("could not identify cloud provider: %v", err)
+		glog.Errorf("could not identify cloud provider: %v", err)
 	}
 	return p
 }

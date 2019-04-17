@@ -28,7 +28,7 @@ func (c *projectController) sync(key string) error {
 	listerProject, err := c.projectLister.Get(key)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
-			glog.V(2).Infof("project '%s' in queue no longer exists", key)
+			glog.V(4).Infof("project '%s' in queue no longer exists", key)
 			return nil
 		}
 		return err
@@ -214,7 +214,7 @@ func ensureClusterRBACRoleForResource(kubeClient kubernetes.Interface, groupName
 		return err
 	}
 	if generatedClusterRole == nil {
-		glog.V(6).Infof("skipping ClusterRole generation because the resource for group %q and resource %q will not be created", groupName, resource)
+		glog.V(4).Infof("skipping ClusterRole generation because the resource for group %q and resource %q will not be created", groupName, resource)
 		return nil
 	}
 	sharedExistingClusterRole, err := rbacLister.Get(generatedClusterRole.Name)
@@ -323,7 +323,7 @@ func ensureRBACRoleForResource(kubeClient kubernetes.Interface, groupName string
 		return err
 	}
 	if generatedRole == nil {
-		glog.V(6).Infof("skipping Role generation because the resource for group %q and resource %q in namespace %q will not be created", groupName, gvr.Resource, namespace)
+		glog.V(4).Infof("skipping Role generation because the resource for group %q and resource %q in namespace %q will not be created", groupName, gvr.Resource, namespace)
 		return nil
 	}
 	sharedExistingRole, err := rbacLister.Get(generatedRole.Name)
@@ -592,7 +592,7 @@ func shouldSkipClusterRBACRoleBindingFor(groupName, policyResource, policyAPIGro
 		return false, err
 	}
 	if generatedClusterRole == nil {
-		glog.V(6).Infof("skipping operation on ClusterRoleBinding because corresponding ClusterRole was not(will not be) created for group %q and %q resource for project %q", groupName, policyResource, projectName)
+		glog.V(4).Infof("skipping operation on ClusterRoleBinding because corresponding ClusterRole was not(will not be) created for group %q and %q resource for project %q", groupName, policyResource, projectName)
 		return true, nil
 	}
 	return false, nil
@@ -608,7 +608,7 @@ func shouldSkipRBACRoleBindingFor(groupName, policyResource, policyAPIGroups, pr
 		return false, err
 	}
 	if generatedRole == nil {
-		glog.V(6).Infof("skipping operation on RoleBinding because corresponding Role was not(will not be) created for group %q and %q resource for project %q in namespace %q", groupName, policyResource, projectName, namespace)
+		glog.V(4).Infof("skipping operation on RoleBinding because corresponding Role was not(will not be) created for group %q and %q resource for project %q in namespace %q", groupName, policyResource, projectName, namespace)
 		return true, nil
 	}
 	return false, nil
