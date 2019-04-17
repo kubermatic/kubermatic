@@ -27,7 +27,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
-	kubermaticsignals "github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
@@ -36,6 +35,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
 
 //TODO: Move Kubernetes versions into this as well
@@ -230,7 +230,7 @@ func main() {
 	opts.homeDir = homeDir
 	log = logrus.WithFields(logrus.Fields{"home": homeDir})
 
-	stopCh := kubermaticsignals.SetupSignalHandler()
+	stopCh := signals.SetupSignalHandler()
 	rootCtx, rootCancel := context.WithCancel(context.Background())
 
 	go func() {

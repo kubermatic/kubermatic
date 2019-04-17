@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/ioutil"
 
@@ -13,22 +12,18 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/collectors"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/tools/clientcmd"
-	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	ctrlruntimemetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
-
-	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
 
 const (
@@ -50,14 +45,27 @@ func main() {
 		glog.Fatal(err)
 	}
 
-	var g run.Group
-
 	// Enable logging
 	log.SetLogger(log.ZapLogger(false))
 
-	// Create a manager, disable metrics as we have our own handler that exposes
-	// the metrics of both the ctrltuntime registry and the default registry
-	mgr, err := manager.New(config, manager.Options{MetricsBindAddress: "0"})
+	mgrOptions := manager.Options{
+		// Disable metrics as we have our own handler that exposes
+		// the metrics of both the ctrltuntime registry and the default registry
+		MetricsBindAddress: "0",
+		LeaderElection:     true,
+		LeaderElectionID:   controllerName,
+	}
+	if options.kubeconfig != "" {
+		// Use default if we run outside of a cluster.
+		// If running in-cluster, the leaderelection takes the namespace from /var/run/secrets/kubernetes.io/serviceaccount/namespace
+		// That exists in every pod
+		mgrOptions.LeaderElectionNamespace = metav1.NamespaceDefault
+	}
+	if options.workerName != "" {
+		mgrOptions.LeaderElectionID = controllerName + "-" + options.workerName
+	}
+
+	mgr, err := manager.New(config, mgrOptions)
 	if err != nil {
 		glog.Fatalf("failed to create mgr: %v", err)
 	}
@@ -68,8 +76,6 @@ func main() {
 	if err := kubermaticv1.SchemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
 		glog.Fatalf("failed to add kubermatic scheme to mgr: %v", err)
 	}
-
-	recorder := mgr.GetRecorder(controllerName)
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
 	if _, err := informer.GetSyncedStoreFromDynamicFactory(mgr.GetCache(), &autoscalingv1beta2.VerticalPodAutoscaler{}); err != nil {
@@ -88,37 +94,38 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		glog.Fatalf("Failed to read dockerPullConfigJSON file %q: %v", options.dockerPullConfigJSONFile, err)
 	}
 
-	stopCh := signals.SetupSignalHandler()
-	ctx, ctxDone := context.WithCancel(context.Background())
-	defer ctxDone()
+	signalChan := signals.SetupSignalHandler()
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
 
-	// Create Context
-	done := ctx.Done()
-
-	ctrlCtx, err := newControllerContext(options, mgr, done)
+	ctrlCtx, err := newControllerContext(options, mgr, ctx.Done())
 	if err != nil {
 		glog.Fatal(err)
 	}
 	ctrlCtx.dockerPullConfigJSON = dockerPullConfigJSON
 
-	if err := createAllControllers(ctrlCtx); err != nil {
+	if err := registerAllControllers(ctrlCtx); err != nil {
 		glog.Fatalf("could not create all controllers: %v", err)
 	}
 
-	glog.V(6).Info("Starting clusters collector")
+	glog.V(4).Info("Starting clusters collector")
 	collectors.MustRegisterClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetClient())
+
+	var g run.Group
 
 	// This group is forever waiting in a goroutine for signals to stop
 	{
 		g.Add(func() error {
 			select {
-			case <-stopCh:
-				return errors.New("user requested to stop the application")
-			case <-done:
-				return errors.New("parent context has been closed - propagating the request")
+			case <-signalChan:
+				glog.Info("Received signal to stop the application")
+				// Cancel main context
+				cancelCtx()
+			case <-ctx.Done():
 			}
+			return nil
 		}, func(err error) {
-			ctxDone()
+			// We don't need to do anything here as the routine gets stopped either by a signal or by the ctx
 		})
 	}
 
@@ -132,48 +139,10 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 
 		g.Add(func() error {
 			glog.Infof("Starting the internal http server: %s\n", options.internalAddr)
-			return m.Start(stopCh)
+			return m.Start(ctx.Done())
 		}, func(err error) {
 			// No-Op because the metrics server gets the stopchannel and stops
 			// once it is closed
-		})
-	}
-
-	// This group is running the actual controller logic
-	{
-		g.Add(func() error {
-			leaderElectionClient, err := kubernetes.NewForConfig(rest.AddUserAgent(config, "kubermatic-controller-manager-leader-election"))
-			if err != nil {
-				return err
-			}
-			callbacks := kubeleaderelection.LeaderCallbacks{
-				OnStartedLeading: func(_ context.Context) {
-					if err = runAllControllers(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh, ctxDone, ctrlCtx.mgr); err != nil {
-						glog.Error(err)
-						ctxDone()
-					}
-				},
-				OnStoppedLeading: func() {
-					glog.Error("==================== OnStoppedLeading ====================")
-					ctxDone()
-				},
-			}
-
-			leaderName := controllerName
-			if options.workerName != "" {
-				leaderName = options.workerName + "-" + leaderName
-			}
-			leader, err := leaderelection.New(leaderName, leaderElectionClient, recorder, callbacks)
-			if err != nil {
-				return fmt.Errorf("failed to create a leaderelection: %v", err)
-			}
-
-			go leader.Run(ctx)
-			<-done
-			return nil
-		}, func(err error) {
-			glog.Errorf("Stopping controller: %v", err)
-			ctxDone()
 		})
 	}
 

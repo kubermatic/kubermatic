@@ -7,11 +7,11 @@ import (
 
 	"github.com/golang/glog"
 
+	"github.com/kubermatic/kubermatic/api/pkg/util/flagopts"
+
 	"k8s.io/client-go/kubernetes/scheme"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
-
-	kubermaticsignals "github.com/kubermatic/kubermatic/api/pkg/signals"
-	"github.com/kubermatic/kubermatic/api/pkg/util/flagopts"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
 
 // Opts represent combination of flags and ENV options
@@ -69,7 +69,7 @@ func main() {
 
 	glog.Info("starting")
 
-	stopCh := kubermaticsignals.SetupSignalHandler()
+	stopCh := signals.SetupSignalHandler()
 	rootCtx, rootCancel := context.WithCancel(context.Background())
 
 	go func() {

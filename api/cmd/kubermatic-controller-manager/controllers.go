@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -21,12 +20,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
-	"github.com/golang/glog"
-	"github.com/oklog/run"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 // allControllers stores the list of all controllers that we want to run,
@@ -45,29 +40,13 @@ var allControllers = map[string]controllerCreator{
 
 type controllerCreator func(*controllerContext) error
 
-func createAllControllers(ctrlCtx *controllerContext) error {
+func registerAllControllers(ctrlCtx *controllerContext) error {
 	for name, create := range allControllers {
 		if err := create(ctrlCtx); err != nil {
 			return fmt.Errorf("failed to create %q controller: %v", name, err)
 		}
 	}
 	return nil
-}
-
-func runAllControllers(workerCnt int,
-	done <-chan struct{},
-	cancel context.CancelFunc,
-	mgr manager.Runnable) error {
-	var g run.Group
-
-	g.Add(func() error {
-		return fmt.Errorf("mgr finished/died: %v", mgr.Start(done))
-	}, func(err error) {
-		glog.Errorf("Got error=%v, shuttind down....", err)
-		cancel()
-	})
-
-	return g.Run()
 }
 
 func createCloudController(ctrlCtx *controllerContext) error {
