@@ -118,7 +118,9 @@ type ClusterProvider interface {
 	//
 	// Note that the client doesn't use admin account instead it authn/authz as userInfo(email, group)
 	GetClientForCustomerCluster(*UserInfo, *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error)
+}
 
+type PrivilegedClusterProvider interface {
 	// GetSeedClusterAdminClient returns a client to interact with all resources in the seed cluster
 	//
 	// Note that the client you will get has admin privileges in the seed cluster
