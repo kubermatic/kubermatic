@@ -111,6 +111,7 @@ type providers struct {
 	projectMember                         provider.ProjectMemberProvider
 	memberMapper                          provider.ProjectMemberMapper
 	cloud                                 provider.CloudRegistry
+	eventRecorderProvider                 provider.EventRecorderProvider
 	clusters                              map[string]provider.ClusterProvider
 	datacenters                           map[string]provider.DatacenterMeta
 }

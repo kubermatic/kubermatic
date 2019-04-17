@@ -111,7 +111,8 @@ type newRoutingFunc func(
 	versions []*version.MasterVersion,
 	updates []*version.MasterUpdate,
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
-	saTokenGenerator serviceaccount.TokenGenerator) http.Handler
+	saTokenGenerator serviceaccount.TokenGenerator,
+	eventRecorderProvider provider.EventRecorderProvider) http.Handler
 
 // CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes  for the tests
 func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
@@ -191,6 +192,7 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(),
 		"",
 		rbac.ExtractGroupPrefix,
+		nil,
 	)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
 
@@ -198,6 +200,8 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	kubernetesInformerFactory.WaitForCacheSync(wait.NeverStop)
 	kubermaticInformerFactory.Start(wait.NeverStop)
 	kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
+
+	eventRecorderProvider := kubernetes.NewEventRecorder(&restclient.Config{})
 
 	// Disable the metrics endpoint in tests
 	var prometheusClient prometheusapi.Client
@@ -221,6 +225,7 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		updates,
 		tokenAuth,
 		tokenGenerator,
+		eventRecorderProvider,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil

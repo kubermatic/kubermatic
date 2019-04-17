@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
@@ -37,13 +38,15 @@ func NewClusterProvider(
 	userClusterConnProvider UserClusterConnectionProvider,
 	clusterLister kubermaticv1lister.ClusterLister,
 	workerName string,
-	extractGroupPrefix extractGroupPrefixFunc) *ClusterProvider {
+	extractGroupPrefix extractGroupPrefixFunc,
+	seedClusterConfig *restclient.Config) *ClusterProvider {
 	return &ClusterProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
 		userClusterConnProvider:      userClusterConnProvider,
 		clusterLister:                clusterLister,
 		workerName:                   workerName,
 		extractGroupPrefix:           extractGroupPrefix,
+		seedClusterConfig:            seedClusterConfig,
 	}
 }
 
@@ -62,6 +65,7 @@ type ClusterProvider struct {
 
 	workerName         string
 	extractGroupPrefix extractGroupPrefixFunc
+	seedClusterConfig  *restclient.Config
 }
 
 // New creates a brand new cluster that is bound to the given project
@@ -209,6 +213,14 @@ func (p *ClusterProvider) GetAdminClientForCustomerCluster(c *kubermaticapiv1.Cl
 // This implies that you have to make sure the user has the appropriate permissions inside the user cluster
 func (p *ClusterProvider) GetClientForCustomerCluster(userInfo *provider.UserInfo, c *kubermaticapiv1.Cluster) (ctrlruntimeclient.Client, error) {
 	return p.userClusterConnProvider.GetDynamicClient(c, p.withImpersonation(userInfo))
+}
+
+func (p *ClusterProvider) GetSeedClusterAdminClient() (ctrlruntimeclient.Client, error) {
+	dynamicClient, err := ctrlruntimeclient.New(p.seedClusterConfig, ctrlruntimeclient.Options{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create dynamic client: %v", err)
+	}
+	return dynamicClient, nil
 }
 
 func (p *ClusterProvider) withImpersonation(userInfo *provider.UserInfo) k8cuserclusterclient.ConfigOption {

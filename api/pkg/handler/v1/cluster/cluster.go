@@ -30,13 +30,14 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
 
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider,
-	dcs map[string]provider.DatacenterMeta, initNodeDeploymentFailures *prometheus.CounterVec) endpoint.Endpoint {
+	dcs map[string]provider.DatacenterMeta, initNodeDeploymentFailures *prometheus.CounterVec, eventRecorderProvider provider.EventRecorderProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -70,11 +71,14 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 		if req.Body.NodeDeployment != nil {
 			go func() {
 				defer utilruntime.HandleCrash()
+				eventRecorderProvider.SeedClusterRecorder().Eventf(newCluster, corev1.EventTypeNormal, "NodeDeploymentCreationInit", "Started creation of initial Node Deployment")
 				err := createInitialNodeDeploymentWithRetries(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, dcs, clusterProvider, userInfo)
 				if err != nil {
+					eventRecorderProvider.SeedClusterRecorder().Eventf(newCluster, corev1.EventTypeWarning, "NodeDeploymentCreationError", "%v", err)
 					glog.Errorf("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
 					initNodeDeploymentFailures.With(prometheus.Labels{"cluster": newCluster.Name, "seed_dc": req.DC}).Add(1)
 				} else {
+					eventRecorderProvider.SeedClusterRecorder().Eventf(newCluster, corev1.EventTypeNormal, "NodeDeploymentCreationSuccess", "Initial Node Deployment created successfully")
 					glog.V(2).Infof("created initial node deployment for cluster %s", newCluster.Name)
 				}
 			}()
@@ -299,6 +303,43 @@ func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		return nil, nil
+	}
+}
+
+func GetClusterEventsEndpoint() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(EventsReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		client, err := clusterProvider.GetSeedClusterAdminClient()
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		eventType := ""
+		switch req.Type {
+		case "warning":
+			eventType = corev1.EventTypeWarning
+		case "normal":
+			eventType = corev1.EventTypeNormal
+		}
+
+		events, err := common.GetEvents(ctx, client, cluster, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		if len(eventType) > 0 {
+			events = common.FilterEventsByType(events, eventType)
+		}
+
+		return events, nil
 	}
 }
 
@@ -854,4 +895,34 @@ func getClusters(clusterProvider provider.ClusterProvider, userInfo *provider.Us
 
 	apiClusters := convertInternalClustersToExternal(clusters)
 	return apiClusters, nil
+}
+
+// EventsReq defines HTTP request for getClusterEvents endpoint
+// swagger:parameters getClusterEvents
+type EventsReq struct {
+	common.GetClusterReq
+
+	// in: query
+	Type string
+}
+
+func DecodeGetClusterEvents(c context.Context, r *http.Request) (interface{}, error) {
+	var req EventsReq
+
+	clusterReqRaw, err := common.DecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	clusterReq := clusterReqRaw.(common.GetClusterReq)
+	req.GetClusterReq = clusterReq
+
+	req.Type = r.URL.Query().Get("type")
+	if len(req.Type) > 0 {
+		if req.Type == "warning" || req.Type == "normal" {
+			return req, nil
+		}
+		return nil, fmt.Errorf("wrong query paramater, unsupported type: %s", req.Type)
+	}
+
+	return req, nil
 }

@@ -26,7 +26,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
@@ -699,7 +698,7 @@ func ListNodeDeploymentNodesEvents() endpoint.Endpoint {
 		}
 
 		for _, machine := range machines.Items {
-			kubermaticEvents, err := getEvents(ctx, client, &machine)
+			kubermaticEvents, err := common.GetEvents(ctx, client, &machine, metav1.NamespaceSystem)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -708,7 +707,7 @@ func ListNodeDeploymentNodesEvents() endpoint.Endpoint {
 		}
 
 		for _, machineSet := range machineSets.Items {
-			kubermaticEvents, err := getEvents(ctx, client, &machineSet)
+			kubermaticEvents, err := common.GetEvents(ctx, client, &machineSet, metav1.NamespaceSystem)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -716,7 +715,7 @@ func ListNodeDeploymentNodesEvents() endpoint.Endpoint {
 			events = append(events, kubermaticEvents...)
 		}
 
-		kubermaticEvents, err := getEvents(ctx, client, machineDeployment)
+		kubermaticEvents, err := common.GetEvents(ctx, client, machineDeployment, metav1.NamespaceSystem)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -729,22 +728,6 @@ func ListNodeDeploymentNodesEvents() endpoint.Endpoint {
 
 		return events, nil
 	}
-}
-
-func getEvents(ctx context.Context, client ctrlruntimeclient.Client, obj metav1.Object) ([]apiv1.Event, error) {
-	events := &corev1.EventList{}
-	listOpts := &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, FieldSelector: fields.OneTermEqualSelector("involvedObject.uid", string(obj.GetUID()))}
-	if err := client.List(ctx, listOpts, events); err != nil {
-		return nil, err
-	}
-
-	kubermaticEvents := make([]apiv1.Event, 0)
-	for _, event := range events.Items {
-		kubermaticEvent := common.ConvertInternalEventToExternal(event)
-		kubermaticEvents = append(kubermaticEvents, kubermaticEvent)
-	}
-
-	return kubermaticEvents, nil
 }
 
 func getNodeList(ctx context.Context, cluster *v1.Cluster, clusterProvider provider.ClusterProvider) (*corev1.NodeList, error) {

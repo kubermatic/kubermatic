@@ -137,6 +137,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.patchCluster())
 
 	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/events").
+		Handler(r.getClusterEvents())
+
+	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig").
 		Handler(r.getClusterKubeconfig())
 
@@ -806,7 +810,7 @@ func (r Routing) createCluster(initNodeDeploymentFailures *prometheus.CounterVec
 			middleware.UserSaver(r.userProvider),
 			middleware.Datacenter(r.clusterProviders, r.datacenters),
 			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.CreateEndpoint(r.sshKeyProvider, r.cloudProviders, r.projectProvider, r.datacenters, initNodeDeploymentFailures)),
+		)(cluster.CreateEndpoint(r.sshKeyProvider, r.cloudProviders, r.projectProvider, r.datacenters, initNodeDeploymentFailures, r.eventRecorderProvider)),
 		cluster.DecodeCreateReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
@@ -911,6 +915,33 @@ func (r Routing) patchCluster() http.Handler {
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.PatchEndpoint(r.cloudProviders, r.projectProvider, r.datacenters)),
 		cluster.DecodePatchReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// getClusterEvents returns events related to the cluster.
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/events project getClusterEvents
+//
+//     Gets the events related to the specified cluster.
+//
+//     Produces:
+//     - application/yaml
+//
+//     Responses:
+//       default: errorResponse
+//       200: []Event
+//       401: empty
+//       403: empty
+func (r Routing) getClusterEvents() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.Datacenter(r.clusterProviders, r.datacenters),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(cluster.GetClusterEventsEndpoint()),
+		cluster.DecodeGetClusterEvents,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
