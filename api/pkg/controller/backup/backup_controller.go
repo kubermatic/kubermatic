@@ -380,6 +380,9 @@ func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster) (string, reconciling
 					"--key", "/etc/etcd/client/backup-etcd-client.key",
 					"snapshot", "save", "/backup/snapshot.db",
 				},
+				ImagePullPolicy:          corev1.PullIfNotPresent,
+				TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+				TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      SharedVolumeName,
