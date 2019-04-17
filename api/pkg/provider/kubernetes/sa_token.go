@@ -111,7 +111,7 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 			for _, owner := range secret.GetOwnerReferences() {
 				if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.UserKindName &&
 					owner.Name == sa.Name && owner.UID == sa.UID {
-					resultList = append(resultList, secret)
+					resultList = append(resultList, secret.DeepCopy())
 				}
 			}
 		}
@@ -163,7 +163,7 @@ func (p *ServiceAccountTokenProvider) ListUnsecured(options *provider.ServiceAcc
 	allTokens := []*v1.Secret{}
 	for _, secret := range allSecrets {
 		if isToken(secret) {
-			allTokens = append(allSecrets, secret)
+			allTokens = append(allSecrets, secret.DeepCopy())
 		}
 	}
 	if options == nil {
