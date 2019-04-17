@@ -58,17 +58,11 @@ type dCGetter interface {
 func SetClusterProvider(clusterProviders map[string]provider.ClusterProvider, datacenters map[string]provider.DatacenterMeta) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			getter := request.(dCGetter)
-			dc, exists := datacenters[getter.GetDC()]
-			if !exists {
-				return nil, errors.NewNotFound("datacenter", getter.GetDC())
+			clusterProvider, ctx, err := getClusterProvider(ctx, request, datacenters, clusterProviders)
+			if err != nil {
+				return nil, err
 			}
-			ctx = context.WithValue(ctx, datacenterContextKey, dc)
 
-			clusterProvider, exists := clusterProviders[getter.GetDC()]
-			if !exists {
-				return nil, errors.NewNotFound("cluster-provider", getter.GetDC())
-			}
 			ctx = context.WithValue(ctx, ClusterProviderContextKey, clusterProvider)
 			return next(ctx, request)
 		}
@@ -79,16 +73,9 @@ func SetClusterProvider(clusterProviders map[string]provider.ClusterProvider, da
 func SetPrivilegedClusterProvider(clusterProviders map[string]provider.ClusterProvider, datacenters map[string]provider.DatacenterMeta) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			getter := request.(dCGetter)
-			dc, exists := datacenters[getter.GetDC()]
-			if !exists {
-				return nil, errors.NewNotFound("datacenter", getter.GetDC())
-			}
-			ctx = context.WithValue(ctx, datacenterContextKey, dc)
-
-			clusterProvider, exists := clusterProviders[getter.GetDC()]
-			if !exists {
-				return nil, errors.NewNotFound("cluster-provider", getter.GetDC())
+			clusterProvider, ctx, err := getClusterProvider(ctx, request, datacenters, clusterProviders)
+			if err != nil {
+				return nil, err
 			}
 
 			privilegedClusterProvider := clusterProvider.(provider.PrivilegedClusterProvider)
@@ -258,4 +245,20 @@ func createUserInfo(user *kubermaticapiv1.User, projectID string, userProjectMap
 	}
 
 	return &provider.UserInfo{Email: user.Spec.Email, Group: group}, nil
+}
+
+func getClusterProvider(ctx context.Context, request interface{}, datacenters map[string]provider.DatacenterMeta, clusterProviders map[string]provider.ClusterProvider) (provider.ClusterProvider, context.Context, error) {
+	getter := request.(dCGetter)
+	dc, exists := datacenters[getter.GetDC()]
+	if !exists {
+		return nil, ctx, errors.NewNotFound("datacenter", getter.GetDC())
+	}
+	ctx = context.WithValue(ctx, datacenterContextKey, dc)
+
+	clusterProvider, exists := clusterProviders[getter.GetDC()]
+	if !exists {
+		return nil, ctx, errors.NewNotFound("cluster-provider", getter.GetDC())
+	}
+
+	return clusterProvider, ctx, nil
 }
