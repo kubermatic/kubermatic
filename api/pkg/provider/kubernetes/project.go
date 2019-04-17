@@ -185,14 +185,14 @@ func (p *ProjectProvider) List(options *provider.ProjectListOptions) ([]*kuberma
 			owners := project.GetOwnerReferences()
 			for _, owner := range owners {
 				if owner.UID == options.OwnerUID {
-					ret = append(ret, project)
+					ret = append(ret, project.DeepCopy())
 					continue
 				}
 			}
 			continue
 		}
 
-		ret = append(ret, project)
+		ret = append(ret, project.DeepCopy())
 	}
 	return ret, nil
 }
