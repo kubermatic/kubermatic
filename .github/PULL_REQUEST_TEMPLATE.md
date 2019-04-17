@@ -8,7 +8,7 @@ Fixes #
 **Documentation**:
 <!-- Add links to the related documentation changes related to this pull request. E.g. the link to the kubermatic/docs pullrequest. -->
 
-**Release note**:
+**Does this PR introduce a user-facing change?**:
 <!--  Write your release note:
 1. Enter your extended release note in the below block. If the PR requires additional action from users switching to the new release, include the string "action required".
 2. If  no release note is required, just write "NONE".
