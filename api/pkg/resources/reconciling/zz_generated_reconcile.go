@@ -17,6 +17,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
+	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 )
 
 // ServiceCreator defines an interface to create/update Services
@@ -523,6 +524,40 @@ func ReconcileMutatingWebhookConfigurations(ctx context.Context, namedGetters []
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &admissionregistrationv1beta1.MutatingWebhookConfiguration{}); err != nil {
 			return fmt.Errorf("failed to ensure MutatingWebhookConfiguration: %v", err)
+		}
+	}
+
+	return nil
+}
+
+// APIServiceCreator defines an interface to create/update APIServices
+type APIServiceCreator = func(existing *apiregistrationv1beta1.APIService) (*apiregistrationv1beta1.APIService, error)
+
+// NamedAPIServiceCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedAPIServiceCreatorGetter = func() (name string, create APIServiceCreator)
+
+// APIServiceObjectWrapper adds a wrapper so the APIServiceCreator matches ObjectCreator
+// This is needed as golang does not support function interface matching
+func APIServiceObjectWrapper(create APIServiceCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*apiregistrationv1beta1.APIService))
+		}
+		return create(&apiregistrationv1beta1.APIService{})
+	}
+}
+
+// ReconcileAPIServices will create and update the APIServices coming from the passed APIServiceCreator slice
+func ReconcileAPIServices(ctx context.Context, namedGetters []NamedAPIServiceCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := APIServiceObjectWrapper(create)
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &apiregistrationv1beta1.APIService{}); err != nil {
+			return fmt.Errorf("failed to ensure APIService: %v", err)
 		}
 	}
 
