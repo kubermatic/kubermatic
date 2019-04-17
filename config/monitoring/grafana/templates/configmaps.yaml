@@ -3,9 +3,11 @@ kind: ConfigMap
 metadata:
   name: grafana-datasources
 data:
-{{- range $filename, $_ := (.Files.Glob (.Values.grafana.provisioning.datasources.source | default "provisioning/datasources/*")) }}
-  {{ $filename }}: |
+{{- if .Values.grafana.provisioning.datasources.source }}
+{{- range $filename, $_ := (.Files.Glob .Values.grafana.provisioning.datasources.source) }}
+  {{ base $filename }}: |
 {{ tpl ($.Files.Get $filename) $ | indent 4 }}
+{{- end }}
 {{- end }}
 {{- if .Values.grafana.provisioning.datasources.extra }}
   _extra.yaml: |
@@ -20,9 +22,11 @@ kind: ConfigMap
 metadata:
   name: grafana-dashboards
 data:
-{{- range $filename, $_ := (.Files.Glob (.Values.grafana.provisioning.dashboards.source | default "provisioning/dashboards/*")) }}
-  {{ $filename }}: |
+{{- if .Values.grafana.provisioning.dashboards.source }}
+{{- range $filename, $_ := (.Files.Glob .Values.grafana.provisioning.dashboards.source) }}
+  {{ base $filename }}: |
 {{ tpl ($.Files.Get $filename) $ | indent 4 }}
+{{- end }}
 {{- end }}
 {{- if .Values.grafana.provisioning.dashboards.extra }}
   _extra.yaml: |

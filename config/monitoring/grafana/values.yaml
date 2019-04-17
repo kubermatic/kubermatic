@@ -89,3 +89,4 @@ grafana:
     #
     # Do not use double quotes inside this value.
     volumeDashboardNamespaceFilter: ""
+    datasourceHide: 2

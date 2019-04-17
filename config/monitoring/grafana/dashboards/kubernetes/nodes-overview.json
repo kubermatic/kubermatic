@@ -905,12 +905,8 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": true,
-          "text": "prometheus",
-          "value": "prometheus"
-        },
-        "hide": 2,
+        "current": {},
+        "hide": "<< datasourceHide | toJson >>",
         "label": null,
         "name": "datasource",
         "options": [],
