@@ -62,7 +62,7 @@ spec:
         command:
         - kubermatic-controller-manager
         args:
-        - -v=4
+        - -v=2
         - -logtostderr
         - -external-url={{ .Values.kubermatic.domain }}
         - -datacenter-name={{ .Values.kubermatic.controller.datacenterName }}
