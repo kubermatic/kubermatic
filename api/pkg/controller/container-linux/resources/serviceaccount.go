@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	ServiceAccountName = "container_linux_update_operator"
+	ServiceAccountName = "container-linux-update-operator"
 )
 
 func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {

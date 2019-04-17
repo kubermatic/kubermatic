@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	ClusterRoleBindingName = "container_linux_update_operator"
+	ClusterRoleBindingName = "container-linux-update-operator"
 )
 
 func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
