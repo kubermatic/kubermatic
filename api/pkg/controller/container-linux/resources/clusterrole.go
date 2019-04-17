@@ -15,6 +15,7 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 		return ClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Rules = []rbacv1.PolicyRule{
 				{
+					APIGroups: []string{""},
 					Resources: []string{"nodes"},
 					Verbs: []string{
 						"get",
@@ -24,6 +25,7 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 					},
 				},
 				{
+					APIGroups: []string{""},
 					Resources: []string{"configmaps"},
 					Verbs: []string{
 						"create",
@@ -34,6 +36,7 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 					},
 				},
 				{
+					APIGroups: []string{""},
 					Resources: []string{"events"},
 					Verbs: []string{
 						"create",
@@ -41,6 +44,7 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 					},
 				},
 				{
+					APIGroups: []string{""},
 					Resources: []string{"pods"},
 					Verbs: []string{
 						"get",
