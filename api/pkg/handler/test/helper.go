@@ -114,7 +114,7 @@ type newRoutingFunc func(
 	saTokenGenerator serviceaccount.TokenGenerator) http.Handler
 
 // CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes  for the tests
-func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, serviceaccount.TokenAuthenticator, error) {
+func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
 	datacenters := dc
 	if datacenters == nil {
 		datacenters = buildDatacenterMeta()
@@ -141,24 +141,24 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	userProvider := kubernetes.NewUserProvider(kubermaticClient, userLister)
 	tokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(TestServiceAccountHashKey))
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	tokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey))
 	serviceAccountTokenProvider, err := kubernetes.NewServiceAccountTokenProvider(fakeKubernetesImpersonationClient, kubernetesInformerFactory.Core().V1().Secrets().Lister())
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeKubermaticImpersonationClient, userLister, "localhost")
 	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userLister)
 	projectProvider, err := kubernetes.NewProjectProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Projects().Lister())
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	privilegedProjectProvider, err := kubernetes.NewPrivilegedProjectProvider(fakeKubermaticImpersonationClient)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	fUserClusterConnection := &fakeUserClusterConnection{fakeClient}
@@ -201,12 +201,12 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		tokenGenerator,
 	)
 
-	return mainRouter, &ClientsSets{kubermaticClient, fakeClient}, serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey)), nil
+	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, tokenAuth, tokenGenerator}, nil
 }
 
 // CreateTestEndpoint does exactly the same as CreateTestEndpointAndGetClients except it omits ClientsSets when returning
 func CreateTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, routingFunc newRoutingFunc) (http.Handler, error) {
-	router, _, _, err := CreateTestEndpointAndGetClients(user, nil, kubeObjects, nil, kubermaticObjects, versions, updates, routingFunc)
+	router, _, err := CreateTestEndpointAndGetClients(user, nil, kubeObjects, nil, kubermaticObjects, versions, updates, routingFunc)
 	return router, err
 }
 
@@ -263,6 +263,9 @@ func (f *fakeUserClusterConnection) GetAdminKubeconfig(c *kubermaticapiv1.Cluste
 type ClientsSets struct {
 	FakeKubermaticClient *kubermaticfakeclentset.Clientset
 	FakeClient           ctrlruntimeclient.Client
+
+	TokenAuthenticator serviceaccount.TokenAuthenticator
+	TokenGenerator     serviceaccount.TokenGenerator
 }
 
 // generateTestKubeconfig returns test kubeconfig yaml structure

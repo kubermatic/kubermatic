@@ -86,7 +86,7 @@ func TestCreateTokenProject(t *testing.T) {
 			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s/tokens", tc.projectToSync, tc.saToSync), strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 
-			ep, _, tokenAuthenticator, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, fakeClients, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -110,7 +110,7 @@ func TestCreateTokenProject(t *testing.T) {
 					t.Fatalf("expected token name %s got %s", tc.expectedName, saToken.Name)
 				}
 
-				_, saTokenClaim, err := tokenAuthenticator.Authenticate(saToken.Token)
+				_, saTokenClaim, err := fakeClients.TokenAuthenticator.Authenticate(saToken.Token)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -178,7 +178,7 @@ func TestListTokens(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s/tokens", tc.projectToSync, tc.saToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
-			ep, _, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
