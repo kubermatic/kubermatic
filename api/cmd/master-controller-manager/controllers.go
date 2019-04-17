@@ -9,6 +9,7 @@ import (
 	"github.com/oklog/run"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
+	seedproxy "github.com/kubermatic/kubermatic/api/pkg/controller/seed-proxy"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/service-account"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-project-binding"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
@@ -29,9 +30,10 @@ func noop(workerCount int, stopCh <-chan struct{}) error { <-stopCh; return nil 
 // each entry holds the name of the controller and the corresponding
 // start function that will essentially run the controller
 var allControllers = map[string]controllerCreator{
-	"RBAC":               createRBACContoller,
-	"UserProjectBinding": createUserProjectBindingController,
-	"ServiceAccounts":    createServiceAccountsController,
+	// "RBAC":               createRBACContoller,
+	// "UserProjectBinding": createUserProjectBindingController,
+	// "ServiceAccounts":    createServiceAccountsController,
+	"SeedProxy": createSeedProxyController,
 }
 
 func createAllControllers(ctrlCtx *controllerContext) (map[string]runnerFn, error) {
@@ -161,6 +163,13 @@ func createUserProjectBindingController(ctrlCtx *controllerContext) (runnerFn, e
 
 func createServiceAccountsController(ctrlCtx *controllerContext) (runnerFn, error) {
 	if err := serviceaccount.Add(ctrlCtx.mgr); err != nil {
+		return nil, err
+	}
+	return noop, nil
+}
+
+func createSeedProxyController(ctrlCtx *controllerContext) (runnerFn, error) {
+	if err := seedproxy.Add(ctrlCtx.mgr, 1); err != nil {
 		return nil, err
 	}
 	return noop, nil
