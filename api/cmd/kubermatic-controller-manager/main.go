@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/go-logr/logr"
 	"github.com/golang/glog"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
@@ -14,21 +15,21 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/migrations"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 
 	"k8s.io/apimachinery/pkg/api/meta"
+	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	ctrlruntimemetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
-
-	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 const (
@@ -36,24 +37,23 @@ const (
 )
 
 func main() {
-
 	options, err := newControllerRunOptions()
 	if err != nil {
 		glog.Fatalf("failed to create controller run options due to = %v", err)
 	}
+
 	if err := options.validate(); err != nil {
 		glog.Fatal(err)
 	}
+	log := kubermaticlog.New(options.log.debug, kubermaticlog.Format(options.log.format))
 
 	config, err := clientcmd.BuildConfigFromFlags(options.masterURL, options.kubeconfig)
 	if err != nil {
 		glog.Fatal(err)
 	}
 
-	var g run.Group
-
-	// Enable logging
-	log.SetLogger(log.ZapLogger(false))
+	// Set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(log)
 
 	// Create a manager, disable metrics as we have our own handler that exposes
 	// the metrics of both the ctrltuntime registry and the default registry
@@ -88,7 +88,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		glog.Fatalf("Failed to read dockerPullConfigJSON file %q: %v", options.dockerPullConfigJSONFile, err)
 	}
 
-	ctrlCtx, err := newControllerContext(options, mgr)
+	ctrlCtx, err := newControllerContext(options, mgr, log)
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -101,6 +101,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	glog.V(4).Info("Starting clusters collector")
 	collectors.MustRegisterClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetClient())
 
+	var g run.Group
 	// This group is forever waiting in a goroutine for signals to stop
 	{
 		signalCtx, stopWaitingForSignal := context.WithCancel(context.Background())
@@ -195,10 +196,12 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 func newControllerContext(
 	runOp controllerRunOptions,
 	mgr manager.Manager,
+	log logr.Logger,
 ) (*controllerContext, error) {
 	ctrlCtx := &controllerContext{
 		mgr:        mgr,
 		runOptions: runOp,
+		log:        log,
 	}
 
 	var err error

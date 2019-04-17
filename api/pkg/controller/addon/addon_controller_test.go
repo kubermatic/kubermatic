@@ -17,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 var testManifests = []string{
@@ -179,11 +180,13 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	log := ctrlruntimelog.ZapLogger(true)
+
 	controller := &Reconciler{
 		kubernetesAddonDir: addonDir,
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
-	manifests, err := controller.getAddonManifests(addon, cluster)
+	manifests, err := controller.getAddonManifests(log, addon, cluster)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -201,7 +204,7 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 	}
 
 	cluster = setupTestCluster("172.25.0.0/16")
-	manifests, err = controller.getAddonManifests(addon, cluster)
+	manifests, err = controller.getAddonManifests(log, addon, cluster)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,12 +234,14 @@ func TestController_getAddonDeploymentManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	log := ctrlruntimelog.ZapLogger(true)
+
 	controller := &Reconciler{
 		kubernetesAddonDir: addonDir,
 		overwriteRegistry:  "bar.io",
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
-	manifests, err := controller.getAddonManifests(addon, cluster)
+	manifests, err := controller.getAddonManifests(log, addon, cluster)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -268,11 +273,13 @@ func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	log := ctrlruntimelog.ZapLogger(true)
+
 	controller := &Reconciler{
 		kubernetesAddonDir: addonDir,
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
-	manifests, err := controller.getAddonManifests(addon, cluster)
+	manifests, err := controller.getAddonManifests(log, addon, cluster)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -302,6 +309,9 @@ func TestController_getAddonManifests(t *testing.T) {
 	if err := ioutil.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifests[0]), 0644); err != nil {
 		t.Fatal(err)
 	}
+
+	log := ctrlruntimelog.ZapLogger(true)
+
 	multilineManifest := fmt.Sprintf(`%s
 ---
 %s`, testManifests[1], testManifests[2])
@@ -313,7 +323,7 @@ func TestController_getAddonManifests(t *testing.T) {
 		kubernetesAddonDir: addonDir,
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
-	manifests, err := controller.getAddonManifests(addon, cluster)
+	manifests, err := controller.getAddonManifests(log, addon, cluster)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -430,13 +440,14 @@ Error from server (NotFound): error when stopping "/tmp/cluster-rwhxp9j5j-metric
 }
 
 func TestHugeManifest(t *testing.T) {
+	log := ctrlruntimelog.ZapLogger(true)
 	cluster := setupTestCluster("10.10.10.0/24")
 	addon := setupTestAddon("istio")
 	r := &Reconciler{
 		kubernetesAddonDir: "./testdata",
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
-	if _, _, _, err := r.setupManifestInteraction(addon, cluster); err != nil {
+	if _, _, _, err := r.setupManifestInteraction(log, addon, cluster); err != nil {
 		t.Fatalf("failed to setup manifest interaction: %v", err)
 	}
 }

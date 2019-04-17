@@ -9,9 +9,11 @@ import (
 	"path"
 	"strings"
 
+	"github.com/go-logr/logr"
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	"github.com/kubermatic/kubermatic/api/pkg/features"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -51,6 +53,7 @@ type controllerRunOptions struct {
 	inClusterPrometheusScrapingConfigsFile           string
 	monitoringScrapeAnnotationPrefix                 string
 	dockerPullConfigJSONFile                         string
+	log                                              logOptions
 
 	// OIDC configuration
 	oidcCAFile             string
@@ -59,6 +62,13 @@ type controllerRunOptions struct {
 	oidcIssuerClientSecret string
 
 	featureGates features.FeatureGate
+}
+
+type logOptions struct {
+	// Enable debug logs
+	debug bool
+	// Log format (JSON or plain text)
+	format string
 }
 
 func newControllerRunOptions() (controllerRunOptions, error) {
@@ -100,6 +110,8 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.oidcIssuerURL, "oidc-issuer-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.StringVar(&c.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
 	flag.StringVar(&c.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
+	flag.BoolVar(&c.log.debug, "log-debug", false, "Enables debug logging")
+	flag.StringVar(&c.log.format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.Parse()
 
 	featureGates, err := features.NewFeatures(rawFeatureGates)
@@ -186,6 +198,10 @@ func (o controllerRunOptions) validate() error {
 		return errors.New("The metrics-server addon must be disabled, it is now deployed inside the seed cluster")
 	}
 
+	if !kubermaticlog.AvailableFormats.Has(o.log.format) {
+		return errors.New("invalid log-format specified. Available: " + kubermaticlog.AvailableFormats.String())
+	}
+
 	return nil
 }
 
@@ -212,4 +228,5 @@ type controllerContext struct {
 	clientProvider       client.UserClusterConnectionProvider
 	dcs                  map[string]provider.DatacenterMeta
 	dockerPullConfigJSON []byte
+	log                  logr.Logger
 }
