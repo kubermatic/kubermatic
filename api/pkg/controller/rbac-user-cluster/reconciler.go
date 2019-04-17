@@ -59,7 +59,7 @@ func (r *reconciler) ensureRBACClusterRole(resourceName string) error {
 		if err := r.client.Update(r.ctx, defaultClusterRole); err != nil {
 			return fmt.Errorf("failed to update the RBAC Cluster Role: %v", err)
 		}
-		glog.V(4).Infof("Updated the ClusterCole %s", defaultClusterRole.Name)
+		glog.V(2).Infof("Updated the ClusterCole %s", defaultClusterRole.Name)
 	}
 
 	return nil
@@ -88,7 +88,7 @@ func (r *reconciler) ensureRBACClusterRoleBinding(resourceName string) error {
 		if err := r.client.Update(r.ctx, defaultClusterBinding); err != nil {
 			return fmt.Errorf("failed to update the RBAC ClusterRoleBinding: %v", err)
 		}
-		glog.V(4).Infof("Updated the ClusterColeBinding %s", defaultClusterBinding.Name)
+		glog.V(2).Infof("Updated the ClusterColeBinding %s", defaultClusterBinding.Name)
 	}
 	return nil
 }

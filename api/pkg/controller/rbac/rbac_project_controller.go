@@ -152,7 +152,7 @@ func handleErr(err error, key interface{}, queue workqueue.RateLimitingInterface
 		return
 	}
 
-	glog.V(0).Infof("Error syncing %v: %v", key, err)
+	glog.Errorf("Error syncing %v: %v", key, err)
 
 	// Re-enqueue an item, based on the rate limiter on the
 	// queue and the re-enqueueProject history, the key will be processed later again.

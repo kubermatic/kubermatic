@@ -117,7 +117,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	// Wait until the Apiserver is running to ensure the namespace exists at least.
 	// Just checking for cluster.status.namespaceName is not enough as it gets set before the namespace exists
 	if !cluster.Status.Health.Apiserver {
-		glog.V(8).Infof("skipping addon sync for cluster %s as the apiserver is not running yet", cluster.Name)
+		glog.V(4).Infof("skipping addon sync for cluster %s as the apiserver is not running yet", cluster.Name)
 		return &reconcile.Result{RequeueAfter: 1 * time.Second}, nil
 	}
 
@@ -147,7 +147,6 @@ func (r *Reconciler) ensureAddons(ctx context.Context, cluster *kubermaticv1.Clu
 
 func (r *Reconciler) createAddon(ctx context.Context, addonName string, cluster *kubermaticv1.Cluster) error {
 	gv := kubermaticv1.SchemeGroupVersion
-	glog.V(8).Infof("Create addon %s for the cluster %s", addonName, cluster.Name)
 
 	addon := &kubermaticv1.Addon{
 		ObjectMeta: metav1.ObjectMeta{
@@ -175,6 +174,8 @@ func (r *Reconciler) createAddon(ctx context.Context, addonName string, cluster 
 	if err := r.Create(ctx, addon); err != nil {
 		return fmt.Errorf("failed to create addon %q: %v", addonName, err)
 	}
+
+	glog.V(2).Infof("Created addon %s for cluster %s", addonName, cluster.Name)
 
 	err := wait.Poll(10*time.Millisecond, 10*time.Second, func() (bool, error) {
 		err := r.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: addon.Name}, &kubermaticv1.Addon{})

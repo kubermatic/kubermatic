@@ -84,7 +84,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 func (r *Reconciler) reconcile(_ context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	if cluster.Spec.Pause {
-		glog.V(6).Infof("skipping paused cluster %s", cluster.Name)
+		glog.V(4).Infof("skipping paused cluster %s", cluster.Name)
 		return nil, nil
 	}
 

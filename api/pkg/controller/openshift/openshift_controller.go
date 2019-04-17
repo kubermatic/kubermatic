@@ -167,7 +167,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	if cluster.Spec.Pause {
-		glog.V(6).Infof("skipping paused cluster %s", cluster.Name)
+		glog.V(4).Infof("skipping paused cluster %s", cluster.Name)
 		return reconcile.Result{}, nil
 	}
 

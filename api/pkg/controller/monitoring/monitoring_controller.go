@@ -177,7 +177,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	// Wait until the UCCM is ready - otherwise we deploy with missing RBAC resources
 	if !cluster.Status.Health.UserClusterControllerManager {
-		glog.V(6).Infof("skipping cluster %s because the UserClusterControllerManager is not ready yet", cluster.Name)
+		glog.V(4).Infof("skipping cluster %s because the UserClusterControllerManager is not ready yet", cluster.Name)
 		return reconcile.Result{RequeueAfter: healthCheckPeriod}, nil
 	}
 

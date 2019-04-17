@@ -67,7 +67,7 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 	}
 
 	if !cluster.Status.Health.AllHealthy() {
-		glog.V(5).Infof("Cluster %q not yet healthy: %+v", cluster.Name, cluster.Status.Health)
+		glog.V(4).Infof("Cluster %q not yet healthy: %+v", cluster.Name, cluster.Status.Health)
 		return &reconcile.Result{RequeueAfter: reachableCheckPeriod}, nil
 	}
 

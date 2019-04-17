@@ -39,7 +39,7 @@ func SyncClusterAddress(ctx context.Context,
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.ExternalName = externalName
 		})
-		glog.V(4).Infof("Set external name for cluster %s to %q", cluster.Name, externalName)
+		glog.V(2).Infof("Set external name for cluster %s to %q", cluster.Name, externalName)
 	}
 
 	// Always lookup IP address, in case it changes (IP's on AWS LB's change)
@@ -111,7 +111,7 @@ func GetExternalIPv4(hostname string) (string, error) {
 
 	//Just one ipv4
 	if len(ips) > 1 {
-		glog.V(6).Infof("lookup of %s returned multiple ipv4 addresses (%v). Picking the first one after sorting: %s", hostname, ips, ips[0])
+		glog.V(4).Infof("lookup of %s returned multiple ipv4 addresses (%v). Picking the first one after sorting: %s", hostname, ips, ips[0])
 	}
 	return ips[0], nil
 }

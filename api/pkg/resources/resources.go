@@ -500,9 +500,12 @@ func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 
 	certPool := x509.NewCertPool()
 	certPool.AddCert(ca)
-	if _, err := cert.Verify(x509.VerifyOptions{Roots: certPool,
-		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}}); err != nil {
-		glog.V(4).Infof("Certificate verification for CN %s failed due to: %v", commonName, err)
+	verifyOptions := x509.VerifyOptions{
+		Roots:     certPool,
+		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+	}
+	if _, err := cert.Verify(verifyOptions); err != nil {
+		glog.Errorf("Certificate verification for CN %s failed due to: %v", commonName, err)
 		return false
 	}
 
@@ -529,9 +532,12 @@ func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 
 	certPool := x509.NewCertPool()
 	certPool.AddCert(ca)
-	if _, err := cert.Verify(x509.VerifyOptions{Roots: certPool,
-		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}}); err != nil {
-		glog.V(4).Infof("Certificate verification for CN %s failed due to: %v", commonName, err)
+	verifyOptions := x509.VerifyOptions{
+		Roots:     certPool,
+		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+	}
+	if _, err := cert.Verify(verifyOptions); err != nil {
+		glog.Errorf("Certificate verification for CN %s failed due to: %v", commonName, err)
 		return false
 	}
 
