@@ -36,7 +36,7 @@
 * Events related to the Nodes are now displayed in the Node Deployment details view. [#1054](https://github.com/kubermatic/dashboard-v2/pull/1054) ([@maciaszczykm](https://github.com/maciaszczykm))
 * Fixed reload behaviour of openstack setting fields. [#1056](https://github.com/kubermatic/dashboard-v2/pull/1056) ([@kgroschoff](https://github.com/kgroschoff))
 * Fixed a bug with the missing version in the footer. [#1067](https://github.com/kubermatic/dashboard-v2/pull/1067) ([@maciaszczykm](https://github.com/maciaszczykm))
-* Project owners are no wvisible in project list view . [#1082](https://github.com/kubermatic/dashboard-v2/pull/1082) ([@kgroschoff](https://github.com/kgroschoff))
+* Project owners are now visible in project list view . [#1082](https://github.com/kubermatic/dashboard-v2/pull/1082) ([@kgroschoff](https://github.com/kgroschoff))
 * Added possibility to assign labels to nodes. [#1101](https://github.com/kubermatic/dashboard-v2/pull/1101) ([@maciaszczykm](https://github.com/maciaszczykm))
 * Updated AWS instance types. [#1122](https://github.com/kubermatic/dashboard-v2/pull/1122) ([@maciaszczykm](https://github.com/maciaszczykm))
 * Fixed display number of replicas if the field is empty (0 replicas). [#1126](https://github.com/kubermatic/dashboard-v2/pull/1126) ([@maciaszczykm](https://github.com/maciaszczykm))
