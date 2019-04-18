@@ -1,7 +1,6 @@
-package main
+package migrations
 
 import (
-	"flag"
 	"fmt"
 	"strings"
 	"sync"
@@ -20,13 +19,10 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 type cleanupContext struct {
@@ -47,37 +43,37 @@ type KeyTask func(key *kubermaticv1.UserSSHKey, ctx *cleanupContext) error
 // In case of an error, the correspondent error will be returned, else nil.
 type UserTask func(user *kubermaticv1.User, ctx *cleanupContext) error
 
-func main() {
-	var kubeconfig, masterURL, workerName string
+// RunAll runs all migrations
+func RunAll(config *rest.Config, workerName string) error {
 
-	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
-	flag.StringVar(&workerName, "worker-name", "", "Name of the current worker, only clusters with a matching label will be cleaned up.")
-	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
-	flag.Parse()
-
-	var err error
-	ctx := cleanupContext{}
-	ctx.config, err = clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
+	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		glog.Fatal(err)
+		return fmt.Errorf("failed to create kubeClient: %v", err)
+	}
+	kubermatiClient, err := kubermaticclientset.NewForConfig(config)
+	if err != nil {
+		return fmt.Errorf("failed to create Kuermatic client: %v", err)
 	}
 
-	ctx.config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
-	ctx.config.APIPath = "/apis"
-	ctx.kubeClient = kubernetes.NewForConfigOrDie(ctx.config)
-	ctx.kubermaticClient = kubermaticclientset.NewForConfigOrDie(ctx.config)
-
-	if err := cleanupClusters(workerName, &ctx); err != nil {
-		glog.Fatalf("failed to cleanup clusters: %v", err)
+	ctx := &cleanupContext{
+		kubeClient:       kubeClient,
+		kubermaticClient: kubermatiClient,
+		config:           config,
 	}
 
-	if err := cleanupUsers(&ctx); err != nil {
-		glog.Fatalf("failed to cleanup users: %v", err)
+	if err := cleanupClusters(workerName, ctx); err != nil {
+		return fmt.Errorf("failed to cleanup clusters: %v", err)
 	}
 
-	if err := cleanupKeys(&ctx); err != nil {
-		glog.Fatalf("failed to cleanup keys: %v", err)
+	if err := cleanupUsers(ctx); err != nil {
+		return fmt.Errorf("failed to cleanup users: %v", err)
 	}
+
+	if err := cleanupKeys(ctx); err != nil {
+		return fmt.Errorf("failed to cleanup keys: %v", err)
+	}
+
+	return nil
 }
 
 func cleanupClusters(workerName string, ctx *cleanupContext) error {
