@@ -189,7 +189,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				},
 			}
 
-			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(name, data.Cluster().Name, nil))
+			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
 
 			return dep, nil
 		}

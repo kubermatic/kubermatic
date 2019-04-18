@@ -184,7 +184,7 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 				},
 			}
 
-			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(ApiserverDeploymentName, data.Cluster().Name, nil))
+			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(ApiserverDeploymentName, data.Cluster().Name)
 
 			return dep, nil
 		}

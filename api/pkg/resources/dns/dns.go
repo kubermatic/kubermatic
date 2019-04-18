@@ -126,7 +126,7 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(resources.DNSResolverDeploymentName, data.Cluster().Name, nil))
+			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.DNSResolverDeploymentName, data.Cluster().Name)
 
 			return dep, nil
 		}

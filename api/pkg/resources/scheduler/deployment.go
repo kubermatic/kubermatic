@@ -148,7 +148,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				},
 			}
 
-			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(name, data.Cluster().Name, nil))
+			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
 
 			return dep, nil
 		}
