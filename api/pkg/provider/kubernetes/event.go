@@ -13,14 +13,18 @@ import (
 
 const componentName = "kubermatic-api"
 
+// NewEventRecorder returns a new event recorder provider object. See EventRecorder for more information.
 func NewEventRecorder() *EventRecorder {
 	return &EventRecorder{seedClusterRecorderMap: make(map[string]record.EventRecorder)}
 }
 
+// EventRecorder gives option to record events for objects. They can be then read from them using K8S API.
 type EventRecorder struct {
 	seedClusterRecorderMap map[string]record.EventRecorder
 }
 
+// SeedClusterRecorder returns a event recorder that will be able to record event for objects in the cluster
+// referred by provided cluster config.
 func (e *EventRecorder) SeedClusterRecorder(config *rest.Config) record.EventRecorder {
 	return e.getRecorderForConfig(config)
 }

@@ -215,6 +215,9 @@ func (p *ClusterProvider) GetClientForCustomerCluster(userInfo *provider.UserInf
 	return p.userClusterConnProvider.GetDynamicClient(c, p.withImpersonation(userInfo))
 }
 
+// GetSeedClusterAdminClient returns a client to interact with the seed cluster resources.
+//
+// Note that this client has admin privileges in the seed cluster.
 func (p *ClusterProvider) GetSeedClusterAdminClient() (ctrlruntimeclient.Client, error) {
 	dynamicClient, err := ctrlruntimeclient.New(p.seedClusterConfig, ctrlruntimeclient.Options{})
 	if err != nil {
@@ -223,6 +226,9 @@ func (p *ClusterProvider) GetSeedClusterAdminClient() (ctrlruntimeclient.Client,
 	return dynamicClient, nil
 }
 
+// GetSeedClusterAdminConfig returns a config that gives access to the seed cluster.
+//
+// Note that this config has admin privileges in the seed cluster.
 func (p *ClusterProvider) GetSeedClusterAdminConfig() *restclient.Config {
 	return p.seedClusterConfig
 }

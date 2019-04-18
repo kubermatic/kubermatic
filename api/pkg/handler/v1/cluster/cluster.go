@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
+// NodeDeploymentEvent represents type of events related to Node Deployment
 type NodeDeploymentEvent string
 
 const (

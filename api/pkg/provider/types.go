@@ -121,6 +121,8 @@ type ClusterProvider interface {
 	GetClientForCustomerCluster(*UserInfo, *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error)
 }
 
+// PrivilegedClusterProvider declares the set of methods for interacting with the seed clusters
+// as an admin.
 type PrivilegedClusterProvider interface {
 	// GetSeedClusterAdminClient returns a client to interact with all resources in the seed cluster
 	//
@@ -388,6 +390,9 @@ type PrivilegedServiceAccountTokenProvider interface {
 	ListUnsecured(*ServiceAccountTokenListOptions) ([]*v1.Secret, error)
 }
 
+// EventRecorderProvider allows to record events for objects that can be read using K8S API.
 type EventRecorderProvider interface {
+	// SeedClusterRecorder returns a event recorder that will be able to record event for objects in the cluster
+	//// referred by provided cluster config.
 	SeedClusterRecorder(config *rest.Config) record.EventRecorder
 }

@@ -26,6 +26,7 @@ func FilterEventsByType(events []v1.Event, eventType string) []v1.Event {
 	return resultEvents
 }
 
+// GetEvents returns events related to an object in a given namespace.
 func GetEvents(ctx context.Context, client ctrlruntimeclient.Client, obj v12.Object, objNamespace string) ([]v1.Event, error) {
 	events := &v13.EventList{}
 	listOpts := &ctrlruntimeclient.ListOptions{
