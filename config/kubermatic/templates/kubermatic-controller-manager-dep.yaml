@@ -26,17 +26,6 @@ spec:
     spec:
       serviceAccountName: kubermatic
       initContainers:
-      - name: controller-manager-cleanup
-        image: '{{ .Values.kubermatic.controller.image.repository }}:{{ .Values.kubermatic.controller.image.tag }}'
-        imagePullPolicy: {{ .Values.kubermatic.controller.image.pullPolicy }}
-        command:
-        - kubermatic-controller-manager-cleanup
-        args:
-        - -v=4
-        - -logtostderr
-        {{- if .Values.kubermatic.worker_name }}
-        - -worker-name={{ .Values.kubermatic.worker_name }}
-        {{- end }}
       - name: copy-addons-kubernetes
         image: '{{ .Values.kubermatic.controller.addons.kubernetes.image.repository }}:{{ .Values.kubermatic.controller.addons.kubernetes.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.controller.addons.kubernetes.image.pullPolicy }}
