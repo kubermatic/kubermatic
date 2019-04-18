@@ -35,6 +35,8 @@ func DaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemonSetCr
 			// The agent should only run on ContainerLinux nodes
 			ds.Spec.Template.Spec.NodeSelector = map[string]string{NodeSelectorLabelKey: NodeSelectorLabelValue}
 
+			ds.Spec.Template.Spec.ServiceAccountName = ServiceAccountName
+
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "update-agent",

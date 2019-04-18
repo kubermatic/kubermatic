@@ -40,6 +40,7 @@ func DeploymentCreator(getRegistry GetImageRegistry) reconciling.NamedDeployment
 			labels := map[string]string{"app": "container-linux-update-operator"}
 			dep.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
 			dep.Spec.Template.ObjectMeta.Labels = labels
+			dep.Spec.Template.Spec.ServiceAccountName = ServiceAccountName
 
 			// The operator should only run on ContainerLinux nodes
 			dep.Spec.Template.Spec.NodeSelector = map[string]string{NodeSelectorLabelKey: NodeSelectorLabelValue}
