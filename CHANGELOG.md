@@ -15,6 +15,12 @@
 * Avoid the name "kubermatic" for cloud provider resources visible by end users [#3152](https://github.com/kubermatic/kubermatic/pull/3152) ([@mrIncompetent](https://github.com/mrIncompetent))
 * In order to provide Grafana dashboards for user cluster resource usage, the node-exporter is now deployed by default as an addon into user clusters. [#3089](https://github.com/kubermatic/kubermatic/pull/3089) ([@xrstf](https://github.com/xrstf))
 * Make the default AMI's for AWS instances configurable via the datacenters.yaml [#3169](https://github.com/kubermatic/kubermatic/pull/3169) ([@mrIncompetent](https://github.com/mrIncompetent))
+* Vertical Pod Autoscaler is not deployed by default anymore [#2805](https://github.com/kubermatic/kubermatic/pull/2805) ([@xrstf](https://github.com/xrstf))
+* Initial node deployments are now created inside the same API call as the cluster, fixing spurious issues where the creation didn't happen [#2989](https://github.com/kubermatic/kubermatic/pull/2989) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Errors when reconciling MachineDeployments and MachineSets will now result in an event on the object [#2923](https://github.com/kubermatic/kubermatic/pull/2923) ([@alvaroaleman](https://github.com/alvaroaleman))
+* Filter out not valid VM types for azure provider [#2736](https://github.com/kubermatic/kubermatic/pull/2736) ([@zreigz](https://github.com/zreigz))
+* Mark cluster upgrades as restricted if kubelet version is incompatible. [#2976](https://github.com/kubermatic/kubermatic/pull/2976) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Enable automatic detection of the OpenStack BlockStorage API version within the cloud config [#3112](https://github.com/kubermatic/kubermatic/pull/3112) ([@mrIncompetent](https://github.com/mrIncompetent))
 
 ## Dashboard
 
@@ -48,6 +54,13 @@
 * Add Grafana dashboards for kubelet metrics [#3081](https://github.com/kubermatic/kubermatic/pull/3081) ([@xrstf](https://github.com/xrstf))
 * Prometheus was updated to 2.8.1 (Alertmanager 0.16.2), Grafana was updated to 6.1.3 [#3163](https://github.com/kubermatic/kubermatic/pull/3163) ([@xrstf](https://github.com/xrstf))
 * Alertmanager PVC size is configurable [#3199](https://github.com/kubermatic/kubermatic/pull/3199) ([@kron4eg](https://github.com/kron4eg))
+* Add lifecycle hooks to the Elasticsearch StatefulSet to make starting/stopping more graceful [#2933](https://github.com/kubermatic/kubermatic/pull/2933) ([@mrIncompetent](https://github.com/mrIncompetent))
+* Pod annotations are no longer logged in Elasticsearch [#2959](https://github.com/kubermatic/kubermatic/pull/2959) ([@xrstf](https://github.com/xrstf))
+* Improve Prometheus backups in high traffic environments [#3047](https://github.com/kubermatic/kubermatic/pull/3047) ([@xrstf](https://github.com/xrstf))
+* Fix VolumeSnapshotLocations for Ark configuration [#3076](https://github.com/kubermatic/kubermatic/pull/3076) ([@xrstf](https://github.com/xrstf))
+* node-exporter is not exposed on all host interfaces anymore [#3085](https://github.com/kubermatic/kubermatic/pull/3085) ([@xrstf](https://github.com/xrstf))
+* Improve Kibana usability by auto-provisioning index patterns [#3099](https://github.com/kubermatic/kubermatic/pull/3099) ([@xrstf](https://github.com/xrstf))
+* Configurable Prometheus backup timeout to accomodate larger seed clusters [#3223](https://github.com/kubermatic/kubermatic/pull/3223) ([@xrstf](https://github.com/xrstf))
 
 ### Other
 
@@ -55,28 +68,13 @@
 * Replace hand written go tcp proxy with Envoy within the nodeport-proxy [#2916](https://github.com/kubermatic/kubermatic/pull/2916) ([@mrIncompetent](https://github.com/mrIncompetent))
 * cert-manager was updated to 0.7.0, Dex was updated to 2.15.0,Minio was updated to RELEASE.2019-04-09T01-22-30Z [#3163](https://github.com/kubermatic/kubermatic/pull/3163) ([@xrstf](https://github.com/xrstf))
 * update nginx-ingress-controller to 0.24.1 [#3200](https://github.com/kubermatic/kubermatic/pull/3200) ([@xrstf](https://github.com/xrstf))
+* Allow scheduling Helm charts using affinities, node selectors and tolerations for more stable clusters [#3155](https://github.com/kubermatic/kubermatic/pull/3155) ([@xrstf](https://github.com/xrstf))
+* Helm charts: Define configurable resource constraints [#3012](https://github.com/kubermatic/kubermatic/pull/3012) ([@xrstf](https://github.com/xrstf))
+* improve Helm charts metadata to make Helm-based workflows easier and aid in cluster updates [#3221](https://github.com/kubermatic/kubermatic/pull/3221) ([@xrstf](https://github.com/xrstf))
 
 ## Bugfixes
 
-* Filter out not valid VM types for azure provider [#2736](https://github.com/kubermatic/kubermatic/pull/2736) ([@zreigz](https://github.com/zreigz))
 * Fixed invalid variable caching in Grafana dashboards [#2792](https://github.com/kubermatic/kubermatic/pull/2792) ([@xrstf](https://github.com/xrstf))
-* Vertical Pod Autoscaler is not deployed by default anymore [#2805](https://github.com/kubermatic/kubermatic/pull/2805) ([@xrstf](https://github.com/xrstf))
-* The memory requests/limits of the Kubermatic controller manager were increased to 256Mi/512Mi to keep up with added features [#2871](https://github.com/kubermatic/kubermatic/pull/2871) ([@alvaroaleman](https://github.com/alvaroaleman))
-* Errors when reconciling MachineDeployments and MachineSets will now result in an event on the object [#2923](https://github.com/kubermatic/kubermatic/pull/2923) ([@alvaroaleman](https://github.com/alvaroaleman))
-* Add lifecycle hooks to the Elasticsearch StatefulSet to make starting/stopping more graceful [#2933](https://github.com/kubermatic/kubermatic/pull/2933) ([@mrIncompetent](https://github.com/mrIncompetent))
-* Pod annotations are no longer logged in Elasticsearch [#2959](https://github.com/kubermatic/kubermatic/pull/2959) ([@xrstf](https://github.com/xrstf))
-* Mark cluster upgrades as restricted if kubelet version is incompatible. [#2976](https://github.com/kubermatic/kubermatic/pull/2976) ([@maciaszczykm](https://github.com/maciaszczykm))
-* Initial node deployments are now created inside the same API call as the cluster, fixing spurious issues where the creation didn't happen [#2989](https://github.com/kubermatic/kubermatic/pull/2989) ([@maciaszczykm](https://github.com/maciaszczykm))
-* Helm charts: Define configurable resource constraints [#3012](https://github.com/kubermatic/kubermatic/pull/3012) ([@xrstf](https://github.com/xrstf))
-user need to set a new parameter `--domain` for a domain name on which the server is deployed [#3037](https://github.com/kubermatic/kubermatic/pull/3037) ([@zreigz](https://github.com/zreigz))
-* Improve Prometheus backups in high traffic environments [#3047](https://github.com/kubermatic/kubermatic/pull/3047) ([@xrstf](https://github.com/xrstf))
-* fix VolumeSnapshotLocations for Ark configuration [#3076](https://github.com/kubermatic/kubermatic/pull/3076) ([@xrstf](https://github.com/xrstf))
-* node-exporter is not exposed on all host interfaces anymore [#3085](https://github.com/kubermatic/kubermatic/pull/3085) ([@xrstf](https://github.com/xrstf))
-* improve Kibana usability by auto-provisioning index patterns [#3099](https://github.com/kubermatic/kubermatic/pull/3099) ([@xrstf](https://github.com/xrstf))
-* Enable automatic detection of the OpenStack BlockStorage API version within the cloud config [#3112](https://github.com/kubermatic/kubermatic/pull/3112) ([@mrIncompetent](https://github.com/mrIncompetent))
-* allow scheduling Helm charts using affinities, node selectors and tolerations for more stable clusters [#3155](https://github.com/kubermatic/kubermatic/pull/3155) ([@xrstf](https://github.com/xrstf))
-* improve Helm charts metadata to make Helm-based workflows easier and aid in cluster updates [#3221](https://github.com/kubermatic/kubermatic/pull/3221) ([@xrstf](https://github.com/xrstf))
-* configurable Prometheus backup timeout to accomodate larger seed clusters [#3223](https://github.com/kubermatic/kubermatic/pull/3223) ([@xrstf](https://github.com/xrstf))
 
 
 ### [v2.9.3]()
