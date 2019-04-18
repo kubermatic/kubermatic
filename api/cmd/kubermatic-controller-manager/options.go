@@ -203,7 +203,6 @@ func (o controllerRunOptions) validateCABundle() error {
 // needs to be initialized first
 type controllerContext struct {
 	runOptions           controllerRunOptions
-	stopCh               <-chan struct{}
 	mgr                  manager.Manager
 	clientProvider       client.UserClusterConnectionProvider
 	dcs                  map[string]provider.DatacenterMeta
