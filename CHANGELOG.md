@@ -24,6 +24,7 @@
 
 ## Dashboard
 
+* The color scheme of the Dashboard was changed
 * It is now possible to edit the project name in UI [#1003](https://github.com/kubermatic/dashboard-v2/pull/1003) ([@kgroschoff](https://github.com/kgroschoff))
 * Made Nodes and Node Deployments statuses more accurate [#1016](https://github.com/kubermatic/dashboard-v2/pull/1016) ([@maciaszczykm](https://github.com/maciaszczykm))
 * Redesign DigitalOcean sizes and OpenStack flavors option pickers [#1021](https://github.com/kubermatic/dashboard-v2/pull/1021) ([@maciaszczykm](https://github.com/maciaszczykm))
