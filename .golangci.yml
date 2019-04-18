@@ -38,3 +38,4 @@ issues:
   - "`store` can be `github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/cache.KeyGetter`"
   - 'func `\(\*ClusterProvider\)\.withImpersonation` is unused'
   - "`osData` can be `github.com/kubermatic/kubermatic/api/pkg/resources.RoleBindingDataProvider`"
+  - "cyclomatic complexity 31 of func `main` is high"

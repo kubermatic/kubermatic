@@ -224,6 +224,40 @@ func ReconcileDeployments(ctx context.Context, namedGetters []NamedDeploymentCre
 	return nil
 }
 
+// DaemonSetCreator defines an interface to create/update DaemonSets
+type DaemonSetCreator = func(existing *appsv1.DaemonSet) (*appsv1.DaemonSet, error)
+
+// NamedDaemonSetCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedDaemonSetCreatorGetter = func() (name string, create DaemonSetCreator)
+
+// DaemonSetObjectWrapper adds a wrapper so the DaemonSetCreator matches ObjectCreator
+// This is needed as golang does not support function interface matching
+func DaemonSetObjectWrapper(create DaemonSetCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*appsv1.DaemonSet))
+		}
+		return create(&appsv1.DaemonSet{})
+	}
+}
+
+// ReconcileDaemonSets will create and update the DaemonSets coming from the passed DaemonSetCreator slice
+func ReconcileDaemonSets(ctx context.Context, namedGetters []NamedDaemonSetCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := DaemonSetObjectWrapper(create)
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &appsv1.DaemonSet{}); err != nil {
+			return fmt.Errorf("failed to ensure DaemonSet: %v", err)
+		}
+	}
+
+	return nil
+}
+
 // PodDisruptionBudgetCreator defines an interface to create/update PodDisruptionBudgets
 type PodDisruptionBudgetCreator = func(existing *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error)
 
