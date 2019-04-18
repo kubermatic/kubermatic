@@ -2453,7 +2453,11 @@
             "name": "Body",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/tokenPatch"
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "uint8"
+              }
             }
           }
         ],
@@ -5446,16 +5450,6 @@
       "type": "object",
       "title": "Version represents a single semantic version.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/Masterminds/semver"
-    },
-    "tokenPatch": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "x-go-name": "Name"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler/v1/serviceaccount"
     }
   },
   "responses": {

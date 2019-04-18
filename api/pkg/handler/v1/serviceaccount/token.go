@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"unicode/utf8"
 
@@ -149,8 +150,15 @@ func PatchTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccount
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
+		tokenReq := &apiv1.PublicServiceAccountToken{}
+		if err := json.Unmarshal(req.Body, tokenReq); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+		if len(tokenReq.Name) == 0 {
+			return nil, errors.NewBadRequest("new name can not be empty")
+		}
 
-		secret, err := updateToken(projectProvider, serviceAccountProvider, serviceAccountTokenProvider, userInfo, tokenGenerator, req.ProjectID, req.ServiceAccountID, req.TokenID, req.Body.Name, false)
+		secret, err := updateToken(projectProvider, serviceAccountProvider, serviceAccountTokenProvider, userInfo, tokenGenerator, req.ProjectID, req.ServiceAccountID, req.TokenID, tokenReq.Name, false)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -246,17 +254,13 @@ type updateTokenReq struct {
 	Body apiv1.PublicServiceAccountToken
 }
 
-type tokenPatch struct {
-	Name string `json:"name"`
-}
-
 // patchTokenReq defines HTTP request for patchServiceAccountToken
 // swagger:parameters patchServiceAccountToken
 type patchTokenReq struct {
 	commonTokenReq
 	tokenIDReq
 	// in: body
-	Body tokenPatch
+	Body []byte
 }
 
 // Validate validates addTokenReq request
@@ -300,8 +304,8 @@ func (r patchTokenReq) Validate() error {
 	if err := r.commonTokenReq.Validate(); err != nil {
 		return err
 	}
-	if len(r.Body.Name) == 0 {
-		return fmt.Errorf("new name can not be empty")
+	if len(r.Body) == 0 {
+		return fmt.Errorf("body can not be empty")
 	}
 
 	return nil
@@ -384,7 +388,8 @@ func DecodePatchTokenReq(c context.Context, r *http.Request) (interface{}, error
 	req.ServiceAccountID = tokenReq.ServiceAccountID
 	req.ProjectID = tokenReq.ProjectID
 
-	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+	req.Body, err = ioutil.ReadAll(r.Body)
+	if err != nil {
 		return nil, err
 	}
 
