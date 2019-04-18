@@ -184,7 +184,7 @@ func ControllerManagerDeploymentCreator(ctx context.Context, data openshiftData)
 				},
 			}
 
-			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.AppClusterLabel(ControllerManagerDeploymentName, data.Cluster().Name, nil))
+			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(ControllerManagerDeploymentName, data.Cluster().Name)
 
 			return dep, nil
 		}
