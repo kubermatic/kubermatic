@@ -43,7 +43,12 @@ func MachineSetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGett
 			crd.Spec.Names.Plural = "machinesets"
 			crd.Spec.Names.Singular = "machineset"
 			crd.Spec.Names.ShortNames = []string{"ms"}
-			crd.Spec.Subresources = &apiextensionsv1beta1.CustomResourceSubresources{Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{}}
+			crd.Spec.Subresources = &apiextensionsv1beta1.CustomResourceSubresources{
+				Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{},
+				Scale: &apiextensionsv1beta1.CustomResourceSubresourceScale{
+					SpecReplicasPath:   ".spec.replicas",
+					StatusReplicasPath: ".status.replicas",
+				}}
 
 			return crd, nil
 		}
@@ -62,7 +67,12 @@ func MachineDeploymentCRDCreator() reconciling.NamedCustomResourceDefinitionCrea
 			crd.Spec.Names.Plural = "machinedeployments"
 			crd.Spec.Names.Singular = "machinedeployment"
 			crd.Spec.Names.ShortNames = []string{"md"}
-			crd.Spec.Subresources = &apiextensionsv1beta1.CustomResourceSubresources{Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{}}
+			crd.Spec.Subresources = &apiextensionsv1beta1.CustomResourceSubresources{
+				Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{},
+				Scale: &apiextensionsv1beta1.CustomResourceSubresourceScale{
+					SpecReplicasPath:   ".spec.replicas",
+					StatusReplicasPath: ".status.replicas",
+				}}
 
 			return crd, nil
 		}
