@@ -19,8 +19,9 @@ const (
 )
 
 var (
-	deploymentReplicas int32 = 1
-	deploymentMaxSurge       = intstr.FromInt(1)
+	deploymentReplicas       int32 = 1
+	deploymentMaxSurge             = intstr.FromInt(1)
+	deploymentMaxUnavailable       = intstr.FromString("25%")
 )
 
 type GetImageRegistry func(reg string) string
@@ -33,7 +34,8 @@ func DeploymentCreator(getRegistry GetImageRegistry) reconciling.NamedDeployment
 			dep.Spec.Strategy = appsv1.DeploymentStrategy{
 				Type: appsv1.RollingUpdateDeploymentStrategyType,
 				RollingUpdate: &appsv1.RollingUpdateDeployment{
-					MaxSurge: &deploymentMaxSurge,
+					MaxSurge:       &deploymentMaxSurge,
+					MaxUnavailable: &deploymentMaxUnavailable,
 				},
 			}
 
@@ -56,7 +58,8 @@ func DeploymentCreator(getRegistry GetImageRegistry) reconciling.NamedDeployment
 							Name: "POD_NAMESPACE",
 							ValueFrom: &corev1.EnvVarSource{
 								FieldRef: &corev1.ObjectFieldSelector{
-									FieldPath: "metadata.namespace",
+									APIVersion: "v1",
+									FieldPath:  "metadata.namespace",
 								},
 							},
 						},
