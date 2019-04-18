@@ -179,14 +179,19 @@ func (r *Reconciler) fetchServiceAccountSecret(ctx context.Context, client ctrlr
 }
 
 func (r *Reconciler) ensureMaster(ctx context.Context, contextName string, credentials *corev1.Secret) error {
-	glog.V(6).Info("Reconciling service account secret in master cluster...")
+	glog.V(6).Info("Reconciling secrets in master cluster...")
 	if err := r.ensureMasterSecrets(ctx, contextName, credentials); err != nil {
-		return fmt.Errorf("failed to ensure service account: %v", err)
+		return fmt.Errorf("failed to ensure secrets: %v", err)
 	}
 
-	glog.V(6).Info("Reconciling deployment in master cluster...")
+	glog.V(6).Info("Reconciling deployments in master cluster...")
 	if err := r.ensureMasterDeployments(ctx, contextName); err != nil {
 		return fmt.Errorf("failed to ensure deployments: %v", err)
+	}
+
+	glog.V(6).Info("Reconciling services in master cluster...")
+	if err := r.ensureMasterServices(ctx, contextName); err != nil {
+		return fmt.Errorf("failed to ensure services: %v", err)
 	}
 
 	// glog.V(6).Info("Reconciling roles in seed cluster...")
@@ -221,6 +226,18 @@ func (r *Reconciler) ensureMasterDeployments(ctx context.Context, contextName st
 
 	if err := reconciling.ReconcileDeployments(ctx, creators, KubermaticNamespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments in the namespace %s: %v", KubermaticNamespace, err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) ensureMasterServices(ctx context.Context, contextName string) error {
+	creators := []reconciling.NamedServiceCreatorGetter{
+		masterServiceCreator(contextName),
+	}
+
+	if err := reconciling.ReconcileServices(ctx, creators, KubermaticNamespace, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Services in the namespace %s: %v", KubermaticNamespace, err)
 	}
 
 	return nil
