@@ -59,7 +59,6 @@ spec:
         - "cluster0"
         - "--service-node"
         - "kube"
-        - "--v2-config-only"
         lifecycle:
           preStop:
             exec:
