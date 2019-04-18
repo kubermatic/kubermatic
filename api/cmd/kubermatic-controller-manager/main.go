@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/ioutil"
 
@@ -89,14 +88,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		glog.Fatalf("Failed to read dockerPullConfigJSON file %q: %v", options.dockerPullConfigJSONFile, err)
 	}
 
-	stopCh := signals.SetupSignalHandler()
-	ctx, ctxDone := context.WithCancel(context.Background())
-	defer ctxDone()
-
-	// Create Context
-	done := ctx.Done()
-
-	ctrlCtx, err := newControllerContext(options, mgr, done)
+	ctrlCtx, err := newControllerContext(options, mgr)
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -106,25 +98,31 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		glog.Fatalf("could not create all controllers: %v", err)
 	}
 
-	glog.V(6).Info("Starting clusters collector")
+	glog.V(4).Info("Starting clusters collector")
 	collectors.MustRegisterClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetClient())
 
 	// This group is forever waiting in a goroutine for signals to stop
 	{
+		signalCtx, stopWaitingForSignal := context.WithCancel(context.Background())
+		defer stopWaitingForSignal()
+		signalChan := signals.SetupSignalHandler()
 		g.Add(func() error {
 			select {
-			case <-stopCh:
-				return errors.New("user requested to stop the application")
-			case <-done:
-				return errors.New("parent context has been closed - propagating the request")
+			case <-signalChan:
+				glog.Info("Received a signal to stop")
+				return nil
+			case <-signalCtx.Done():
+				return nil
 			}
 		}, func(err error) {
-			ctxDone()
+			stopWaitingForSignal()
 		})
 	}
 
 	// This group is running an internal http server with metrics and other debug information
 	{
+		metricsServerCtx, stopMetricsServer := context.WithCancel(context.Background())
+		defer stopMetricsServer()
 		m := &metricsServer{
 			gatherers: []prometheus.Gatherer{
 				prometheus.DefaultGatherer, ctrlruntimemetrics.Registry},
@@ -132,35 +130,43 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		}
 
 		g.Add(func() error {
-			glog.Infof("Starting the internal http server: %s\n", options.internalAddr)
-			return m.Start(stopCh)
+			glog.Infof("Starting the internal HTTP server: %s\n", options.internalAddr)
+			return m.Start(metricsServerCtx.Done())
 		}, func(err error) {
-			// No-Op because the metrics server gets the stopchannel and stops
-			// once it is closed
+			stopMetricsServer()
 		})
 	}
 
 	// This group is running the actual controller logic
 	{
+		leaderCtx, stopLeaderElection := context.WithCancel(context.Background())
+		defer stopLeaderElection()
 		g.Add(func() error {
 			leaderElectionClient, err := kubernetes.NewForConfig(rest.AddUserAgent(config, "kubermatic-controller-manager-leader-election"))
 			if err != nil {
 				return err
 			}
 			callbacks := kubeleaderelection.LeaderCallbacks{
-				OnStartedLeading: func(_ context.Context) {
+				OnStartedLeading: func(ctx context.Context) {
+					glog.Info("Acquired the leader lease")
+
+					glog.Info("Executing migrations...")
 					if err := migrations.RunAll(ctrlCtx.mgr.GetConfig(), ctrlCtx.runOptions.workerName); err != nil {
 						glog.Errorf("failed to run migrations: %v", err)
-						ctxDone()
+						stopLeaderElection()
 					}
-					if err = runAllControllers(ctrlCtx.runOptions.workerCount, ctrlCtx.stopCh, ctxDone, ctrlCtx.mgr); err != nil {
-						glog.Error(err)
-						ctxDone()
+					glog.Info("Migrations executed successfully")
+
+					glog.Info("Starting the controller-manager...")
+					if err := mgr.Start(ctx.Done()); err != nil {
+						glog.Errorf("The controller-manager stopped with an error: %v", err)
+						stopLeaderElection()
 					}
 				},
 				OnStoppedLeading: func() {
-					glog.Error("==================== OnStoppedLeading ====================")
-					ctxDone()
+					// Gets called when we could not renew the lease or the parent context was closed
+					glog.Info("Shutting down the controller-manager...")
+					stopLeaderElection()
 				},
 			}
 
@@ -173,12 +179,10 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 				return fmt.Errorf("failed to create a leaderelection: %v", err)
 			}
 
-			go leader.Run(ctx)
-			<-done
+			leader.Run(leaderCtx)
 			return nil
 		}, func(err error) {
-			glog.Errorf("Stopping controller: %v", err)
-			ctxDone()
+			stopLeaderElection()
 		})
 	}
 
@@ -190,11 +194,10 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 func newControllerContext(
 	runOp controllerRunOptions,
 	mgr manager.Manager,
-	done <-chan struct{}) (*controllerContext, error) {
+) (*controllerContext, error) {
 	ctrlCtx := &controllerContext{
 		mgr:        mgr,
 		runOptions: runOp,
-		stopCh:     done,
 	}
 
 	var err error
