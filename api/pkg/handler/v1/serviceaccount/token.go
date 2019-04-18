@@ -172,6 +172,30 @@ func PatchTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccount
 	}
 }
 
+// DeleteTokenEndpoint deletes the token from service account
+func DeleteTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(deleteTokenReq)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		err := req.Validate()
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		_, err = serviceAccountProvider.Get(userInfo, req.ServiceAccountID, &provider.ServiceAccountGetOptions{RemovePrefix: false})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return nil, serviceAccountTokenProvider.Delete(userInfo, req.TokenID)
+	}
+}
+
 func updateToken(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider,
 	serviceAccountTokenProvider provider.ServiceAccountTokenProvider, userInfo *provider.UserInfo, tokenGenerator serviceaccount.TokenGenerator,
 	projectID, saID, tokenID, newName string, regenerateToken bool) (*v1.Secret, error) {
@@ -267,6 +291,13 @@ type patchTokenReq struct {
 	Body []byte
 }
 
+// deleteTokenReq defines HTTP request for deleteServiceAccountToken
+// swagger:parameters deleteServiceAccountToken
+type deleteTokenReq struct {
+	commonTokenReq
+	tokenIDReq
+}
+
 // Validate validates addTokenReq request
 func (r addTokenReq) Validate() error {
 	if len(r.Body.Name) == 0 || len(r.ProjectID) == 0 || len(r.ServiceAccountID) == 0 {
@@ -293,6 +324,9 @@ func (r updateTokenReq) Validate() error {
 	if err := r.commonTokenReq.Validate(); err != nil {
 		return err
 	}
+	if len(r.TokenID) == 0 {
+		return fmt.Errorf("token ID cannot be empty")
+	}
 	if len(r.Body.Name) == 0 {
 		return fmt.Errorf("new name can not be empty")
 	}
@@ -308,8 +342,23 @@ func (r patchTokenReq) Validate() error {
 	if err := r.commonTokenReq.Validate(); err != nil {
 		return err
 	}
+	if len(r.TokenID) == 0 {
+		return fmt.Errorf("token ID cannot be empty")
+	}
 	if len(r.Body) == 0 {
 		return fmt.Errorf("body can not be empty")
+	}
+
+	return nil
+}
+
+// Validate validates updateTokenReq request
+func (r deleteTokenReq) Validate() error {
+	if err := r.commonTokenReq.Validate(); err != nil {
+		return err
+	}
+	if len(r.TokenID) == 0 {
+		return fmt.Errorf("token ID cannot be empty")
 	}
 
 	return nil
@@ -396,6 +445,28 @@ func DecodePatchTokenReq(c context.Context, r *http.Request) (interface{}, error
 	if err != nil {
 		return nil, err
 	}
+
+	tokenID, err := decodeTokenIDReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.TokenID = tokenID.TokenID
+
+	return req, nil
+}
+
+// DecodeDeleteTokenReq  decodes an HTTP request into deleteTokenReq
+func DecodeDeleteTokenReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req deleteTokenReq
+
+	rawReq, err := DecodeTokenReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	tokenReq := rawReq.(commonTokenReq)
+	req.ServiceAccountID = tokenReq.ServiceAccountID
+	req.ProjectID = tokenReq.ProjectID
 
 	tokenID, err := decodeTokenIDReq(c, r)
 	if err != nil {
