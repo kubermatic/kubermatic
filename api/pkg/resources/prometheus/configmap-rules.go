@@ -26,6 +26,14 @@ groups:
     labels:
       kubermatic: federate
 
+  - alert: KubernetesAdmissionWebhookHighRejectionRate
+    annotations:
+      message: '{{ $labels.operation }} requests for Machine objects are failing (Admission) with a high rate. Consider checking the affected objects'
+    expr: rate(apiserver_admission_webhook_admission_latencies_seconds_count{name="machine-controller.kubermatic.io-machines",rejected="true"}[5m]) > 0.01
+    for: 5m
+    labels:
+      severity: warning
+
 - name: kubermatic.etcd
   rules:
   - record: job:etcd_server_has_leader:sum
