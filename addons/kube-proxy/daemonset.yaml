@@ -29,6 +29,13 @@ spec:
         - --config=/var/lib/kube-proxy/config.conf
         securityContext:
           privileged: true
+        resources:
+          requests:
+            cpu: 75m
+            memory: 50Mi
+          limits:
+            cpu: 250m
+            memory: 250Mi
         volumeMounts:
         - mountPath: /var/lib/kube-proxy
           name: kube-proxy

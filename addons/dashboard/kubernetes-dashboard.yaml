@@ -132,6 +132,13 @@ spec:
             port: 8443
           initialDelaySeconds: 30
           timeoutSeconds: 30
+        resources:
+          requests:
+            cpu: "75m"
+            memory: "50Mi"
+          limits:
+            cpu: "75m"
+            memory: "50Mi"
       volumes:
       - name: kubernetes-dashboard-certs
         secret:
