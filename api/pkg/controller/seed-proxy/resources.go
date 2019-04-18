@@ -1,9 +1,12 @@
 package seedproxy
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
+	"text/template"
 
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -12,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 func secretName(contextName string) string {
@@ -142,24 +146,30 @@ func masterDeploymentCreator(contextName string) reconciling.NamedDeploymentCrea
 
 			d.Spec.Template.Labels = labels()
 			d.Spec.Template.Labels["prometheus.io/scrape"] = "true"
-			d.Spec.Template.Labels["prometheus.io/port"] = "8001"
+			d.Spec.Template.Labels["prometheus.io/port"] = fmt.Sprintf("%d", KubectlProxyPort)
 
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:    "prometheus",
-					Image:   "quay.io/kubermatic/util:1.0.0-2",
-					Command: []string{"/bin/bash"},
-					Args:    []string{"-c", strings.TrimSpace(proxyScript)},
+					Name:            "prometheus",
+					Image:           "quay.io/kubermatic/util:1.0.0-2",
+					ImagePullPolicy: corev1.PullIfNotPresent,
+					Command:         []string{"/bin/bash"},
+					Args:            []string{"-c", strings.TrimSpace(proxyScript)},
 					Env: []corev1.EnvVar{
 						{
 							Name:  "KUBERNETES_CONTEXT",
 							Value: contextName,
 						},
+						{
+							Name:  "PROXY_PORT",
+							Value: fmt.Sprintf("%d", KubectlProxyPort),
+						},
 					},
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "http",
-							ContainerPort: 8001,
+							ContainerPort: KubectlProxyPort,
+							Protocol:      corev1.ProtocolTCP,
 						},
 					},
 					VolumeMounts: []corev1.VolumeMount{
@@ -179,6 +189,8 @@ func masterDeploymentCreator(contextName string) reconciling.NamedDeploymentCrea
 							corev1.ResourceMemory: resource.MustParse("32Mi"),
 						},
 					},
+					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+					TerminationMessagePath:   "/dev/termination-log",
 				},
 			}
 
@@ -187,7 +199,8 @@ func masterDeploymentCreator(contextName string) reconciling.NamedDeploymentCrea
 					Name: "serviceaccount",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName: secretName,
+							DefaultMode: i32ptr(420),
+							SecretName:  secretName,
 						},
 					},
 				},
@@ -219,10 +232,12 @@ func masterServiceCreator(contextName string) reconciling.NamedServiceCreatorGet
 			s.Spec.Ports = []corev1.ServicePort{
 				{
 					Name: "http",
-					Port: 8001,
+					Port: KubectlProxyPort,
 					TargetPort: intstr.IntOrString{
-						StrVal: "http",
+						IntVal: KubectlProxyPort,
+						// StrVal: "http",
 					},
+					Protocol: corev1.ProtocolTCP,
 				},
 			}
 
@@ -233,6 +248,59 @@ func masterServiceCreator(contextName string) reconciling.NamedServiceCreatorGet
 	}
 }
 
+func masterGrafanaConfigmapCreator(datacenters map[string]provider.DatacenterMeta, kubeconfig *clientcmdapi.Config) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
+		return MasterGrafanaConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			labels := func() map[string]string {
+				return map[string]string{
+					"app.kubernetes.io/name": "seed-proxy",
+				}
+			}
+
+			c.Name = MasterGrafanaConfigMapName
+			c.Namespace = MasterGrafanaNamespace
+			c.Data = make(map[string]string)
+
+			c.Labels = labels()
+			c.Labels["app.kubernetes.io/managed-by"] = ControllerName
+
+			for dcName, dc := range datacenters {
+				if dc.IsSeed {
+					filename := fmt.Sprintf("prometheus-%s.yaml", dcName)
+
+					config, err := buildGrafanaDatasource(dcName, kubeconfig)
+					if err != nil {
+						return nil, fmt.Errorf("failed to build Grafana config for seed %s: %v", dcName, err)
+					}
+
+					c.Data[filename] = config
+				}
+			}
+
+			return c, nil
+		}
+	}
+}
+
+func buildGrafanaDatasource(contextName string, kubeconfig *clientcmdapi.Config) (string, error) {
+	data := map[string]interface{}{
+		"ContextName":               contextName,
+		"ServiceName":               serviceName(contextName),
+		"ServiceNamespace":          KubermaticNamespace,
+		"ProxyPort":                 KubectlProxyPort,
+		"SeedPrometheusNamespace":   SeedPrometheusNamespace,
+		"SeedPrometheusServiceName": "prometheus-kubermatic",
+		"SeedPrometheusPortName":    "http",
+	}
+
+	var buffer bytes.Buffer
+
+	tpl := template.Must(template.New("base").Parse(grafanaDatasource))
+	err := tpl.Execute(&buffer, data)
+
+	return strings.TrimSpace(buffer.String()), err
+}
+
 func i32ptr(i int32) *int32 {
 	return &i
 }
@@ -240,15 +308,29 @@ func i32ptr(i int32) *int32 {
 const proxyScript = `
 set -euo pipefail
 
-echo "Starting kubectl proxy for $KUBERNETES_CONTEXT on port 8001..."
+echo "Starting kubectl proxy for $KUBERNETES_CONTEXT on port $PROXY_PORT..."
 
 while true; do
   kubectl proxy \
 	 --address=0.0.0.0 \
-	 --port=8001 \
+	 --port=$PROXY_PORT \
 	 --accept-hosts='' \
 	 --accept-paths='^/api/v1/namespaces/monitoring/services/.*/proxy/.*$' \
 	 --reject-methods='^(POST|PUT|PATCH|DELETE)$'
   sleep 1
 done
+`
+
+const grafanaDatasource = `
+# This file has been generated by the Kubermatic master-controller-manager.
+apiVersion: 1
+datasources:
+- version: 1
+  name: Seed {{ .ContextName }}
+  org_id: 1
+  type: prometheus
+  access: proxy
+  url: http://{{ .ServiceName }}.{{ .ServiceNamespace }}.svc.cluster.local:{{ .ProxyPort }}/api/v1/namespaces/{{ .SeedPrometheusNamespace }}/services/{{ .SeedPrometheusServiceName }}:{{ .SeedPrometheusPortName }}/proxy/
+
+  editable: false
 `

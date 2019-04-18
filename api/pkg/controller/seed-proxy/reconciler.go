@@ -33,11 +33,15 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	defer cancel()
 
 	glog.V(4).Info("Reconciling seed proxies...")
-
 	for name := range r.kubeconfig.Contexts {
 		if err := r.reconcileContext(ctx, name); err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to reconcile seed %s: %v", name, err)
 		}
+	}
+
+	glog.V(4).Info("Reconciling Grafana provisioning...")
+	if err := r.reconcileGrafana(ctx); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to reconcile Grafana: %v", err)
 	}
 
 	return reconcile.Result{}, nil
@@ -194,15 +198,10 @@ func (r *Reconciler) ensureMaster(ctx context.Context, contextName string, crede
 		return fmt.Errorf("failed to ensure services: %v", err)
 	}
 
-	// glog.V(6).Info("Reconciling roles in seed cluster...")
-	// if err := r.ensureSeedRoles(ctx, client); err != nil {
-	// 	return fmt.Errorf("failed to ensure role: %v", err)
-	// }
-
-	// glog.V(6).Info("Reconciling role bindings in seed cluster...")
-	// if err := r.ensureSeedRoleBindings(ctx, client); err != nil {
-	// 	return fmt.Errorf("failed to ensure role binding: %v", err)
-	// }
+	glog.V(6).Info("Reconciling services in master cluster...")
+	if err := r.ensureMasterServices(ctx, contextName); err != nil {
+		return fmt.Errorf("failed to ensure services: %v", err)
+	}
 
 	return nil
 }
@@ -243,61 +242,22 @@ func (r *Reconciler) ensureMasterServices(ctx context.Context, contextName strin
 	return nil
 }
 
-// func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-// 	glog.V(4).Infof("Reconciling cluster %s", cluster.Name)
+func (r *Reconciler) reconcileGrafana(ctx context.Context) error {
+	if err := r.ensureMasterGrafanaProvisioning(ctx); err != nil {
+		return err
+	}
 
-// 	ctx, cancel := context.WithCancel(context.Background())
-// 	defer cancel()
+	return nil
+}
 
-// 	data, err := r.getClusterTemplateData(context.Background(), r.Client, cluster)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+func (r *Reconciler) ensureMasterGrafanaProvisioning(ctx context.Context) error {
+	creators := []reconciling.NamedConfigMapCreatorGetter{
+		masterGrafanaConfigmapCreator(r.datacenters, r.kubeconfig),
+	}
 
-// 	// check that all service accounts are created
-// 	if err := r.ensureServiceAccounts(ctx, cluster, data); err != nil {
-// 		return nil, err
-// 	}
+	if err := reconciling.ReconcileConfigMaps(ctx, creators, MasterGrafanaNamespace, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile ConfigMaps in the namespace %s: %v", MasterGrafanaNamespace, err)
+	}
 
-// 	// check that all roles are created
-// 	if err := r.ensureRoles(ctx, cluster); err != nil {
-// 		return nil, err
-// 	}
-
-// 	// check that all role bindings are created
-// 	if err := r.ensureRoleBindings(ctx, cluster); err != nil {
-// 		return nil, err
-// 	}
-
-// 	// check that all secrets are created
-// 	if err := r.ensureSecrets(ctx, cluster, data); err != nil {
-// 		return nil, err
-// 	}
-
-// 	// check that all ConfigMaps are available
-// 	if err := r.ensureConfigMaps(ctx, cluster, data); err != nil {
-// 		return nil, err
-// 	}
-
-// 	// check that all Deployments are available
-// 	if err := r.ensureDeployments(ctx, cluster, data); err != nil {
-// 		return nil, err
-// 	}
-
-// 	// check that all StatefulSets are created
-// 	if err := r.ensureStatefulSets(ctx, cluster, data); err != nil {
-// 		return nil, err
-// 	}
-
-// 	// check that all VerticalPodAutoscaler's are created
-// 	if err := r.ensureVerticalPodAutoscalers(ctx, cluster); err != nil {
-// 		return nil, err
-// 	}
-
-// 	// check that all Services's are created
-// 	if err := r.ensureServices(ctx, cluster, data); err != nil {
-// 		return nil, err
-// 	}
-
-// 	return &reconcile.Result{}, nil
-// }
+	return nil
+}
