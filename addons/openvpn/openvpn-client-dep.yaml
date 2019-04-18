@@ -21,6 +21,13 @@ spec:
         image: quay.io/kubermatic/openvpn:v0.5
         command: ["/usr/sbin/openvpn"]
         args: ["--config", "/etc/openvpn/config/config"]
+        resources:
+          requests:
+            cpu: 5m
+            memory: 5Mi
+          limits:
+            cpu: 100m
+            memory: 32Mi
         livenessProbe:
           exec:
             command:
@@ -87,6 +94,13 @@ spec:
         securityContext:
           capabilities:
             add: ["NET_ADMIN"]
+        resources:
+          requests:
+            cpu: 25m
+            memory: 25Mi
+          limits:
+            cpu: 100m
+            memory: 50Mi
       restartPolicy: Always
       terminationGracePeriodSeconds: 5
       volumes:

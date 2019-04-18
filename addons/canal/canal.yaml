@@ -194,6 +194,14 @@ spec:
         - name: kube-flannel
           image: quay.io/coreos/flannel:v0.9.1
           command: [ "/opt/bin/flanneld", "--ip-masq", "--kube-subnet-mgr" ]
+          # Taken from https://github.com/Dieken/flannel/blob/master/Documentation/kube-flannel.yml#L127
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "50Mi"
+            limits:
+              cpu: "100m"
+              memory: "50Mi"
           securityContext:
             privileged: true
           env:
