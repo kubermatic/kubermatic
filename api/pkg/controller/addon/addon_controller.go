@@ -154,13 +154,18 @@ func parseRegistryURI(uri string) string {
 func (r *Reconciler) reconcile(ctx context.Context, addon *kubermaticv1.Addon) error {
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, types.NamespacedName{Name: addon.Spec.Cluster.Name}, cluster); err != nil {
-		if kerrors.IsNotFound(err) && addon.DeletionTimestamp != nil {
+		// If its not a NotFound return it
+		if !kerrors.IsNotFound(err) {
+			return err
+		}
+
+		// Cluster does not exist - If the addon has the deletion timestamp - we shall delete it
+		if addon.DeletionTimestamp != nil {
 			if err := r.removeCleanupFinalizer(ctx, addon); err != nil {
 				return fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
 			}
-			return nil
 		}
-		return err
+		return nil
 	}
 
 	if cluster.Spec.Pause {
