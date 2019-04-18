@@ -169,7 +169,7 @@ func createServiceAccountsController(ctrlCtx *controllerContext) (runnerFn, erro
 }
 
 func createSeedProxyController(ctrlCtx *controllerContext) (runnerFn, error) {
-	if err := seedproxy.Add(ctrlCtx.mgr, 1); err != nil {
+	if err := seedproxy.Add(ctrlCtx.mgr, 1, ctrlCtx.kubeconfig, ctrlCtx.datacenters); err != nil {
 		return nil, err
 	}
 	return noop, nil

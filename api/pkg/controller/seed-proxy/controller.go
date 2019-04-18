@@ -6,15 +6,18 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -22,18 +25,23 @@ import (
 )
 
 const (
-	healthCheckPeriod   = 5 * time.Second
-	ControllerName      = "seed-proxy-controller"
-	KubermaticNamespace = "kubermatic"
-	KubeconfigSecret    = "kubeconfig"
-	DatacentersSecret   = "datacenters"
-	OwnerLabel          = "kubermatic.io/controller"
-	OwnerLabelValue     = ControllerName
+	healthCheckPeriod             = 5 * time.Second
+	ControllerName                = "seed-proxy-controller"
+	KubermaticNamespace           = "kubermatic"
+	KubeconfigSecret              = "kubeconfig"
+	DatacentersSecret             = "datacenters"
+	OwnerLabel                    = "kubermatic.io/controller"
+	OwnerLabelValue               = ControllerName
+	ServiceAccountName            = "seed-proxy"
+	ServiceAccountNamespace       = metav1.NamespaceSystem
+	SeedPrometheusNamespace       = "monitoring"
+	SeedPrometheusRoleName        = "seed-proxy-prometheus"
+	SeedPrometheusRoleBindingName = "seed-proxy-prometheus"
 )
 
-// userClusterConnectionProvider offers functions to retrieve clients for the given user clusters
-type userClusterConnectionProvider interface {
-	GetClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (kubernetes.Interface, error)
+// seedClusterConnectionProvider offers functions to retrieve clients for the given seed clusters
+type seedClusterConnectionProvider interface {
+	GetClient(*kubermaticv1.Cluster) (kubernetes.Interface, error)
 }
 
 // Add creates a new Monitoring controller that is responsible for
@@ -41,12 +49,16 @@ type userClusterConnectionProvider interface {
 func Add(
 	mgr manager.Manager,
 	numWorkers int,
-	// userClusterConnProvider userClusterConnectionProvider,
+	// userClusterConnProvider seedClusterConnectionProvider,
+	kubeconfig *clientcmdapi.Config,
+	datacenters map[string]provider.DatacenterMeta,
 ) error {
 	reconciler := &Reconciler{
 		Client: mgr.GetClient(),
 		// userClusterConnProvider: userClusterConnProvider,
-		recorder: mgr.GetRecorder(ControllerName),
+		recorder:    mgr.GetRecorder(ControllerName),
+		kubeconfig:  kubeconfig,
+		datacenters: datacenters,
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}
@@ -55,7 +67,16 @@ func Add(
 		return err
 	}
 
-	eventHandler := &handler.EnqueueRequestForObject{}
+	eventHandler := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
+		return []reconcile.Request{
+			{
+				NamespacedName: types.NamespacedName{
+					Namespace: "",
+					Name:      "seed-proxy-reconcile",
+				},
+			},
+		}
+	})}
 
 	type watcher struct {
 		obj  runtime.Object
