@@ -49,6 +49,11 @@ func main() {
 				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
 			},
 			{
+				ResourceName: "DaemonSet",
+				ImportAlias:  "appsv1",
+				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
+			},
+			{
 				ResourceName:       "PodDisruptionBudget",
 				ImportAlias:        "policyv1beta1",
 				ResourceImportPath: "k8s.io/api/policy/v1beta1",

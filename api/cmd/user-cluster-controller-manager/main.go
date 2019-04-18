@@ -14,6 +14,7 @@ import (
 	"github.com/heptiolabs/healthcheck"
 	"github.com/oklog/run"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/container-linux"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/ipam"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/nodecsrapprover"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac-user-cluster"
@@ -42,6 +43,7 @@ type controllerRunOptions struct {
 	openvpnServerPort     int
 	openvpnCACertFilePath string
 	openvpnCAKeyFilePath  string
+	overwriteRegistry     string
 }
 
 func main() {
@@ -56,6 +58,7 @@ func main() {
 	flag.IntVar(&runOp.openvpnServerPort, "openvpn-server-port", 0, "OpenVPN server port")
 	flag.StringVar(&runOp.openvpnCACertFilePath, "openvpn-ca-cert-file", "", "Path to the OpenVPN CA cert file")
 	flag.StringVar(&runOp.openvpnCAKeyFilePath, "openvpn-ca-key-file", "", "Path to the OpenVPN CA key file")
+	flag.StringVar(&runOp.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.Parse()
 
 	if runOp.namespace == "" {
@@ -100,7 +103,7 @@ func main() {
 	}
 	openVPNCAKeyBytes, err := ioutil.ReadFile(runOp.openvpnCAKeyFilePath)
 	if err != nil {
-		glog.Fatalf("failed to read openvon-ca-key-file: %v", err)
+		glog.Fatalf("failed to read openvpn-ca-key-file: %v", err)
 	}
 	openVPNCAKey, err := certutil.ParsePrivateKeyPEM(openVPNCAKeyBytes)
 	if err != nil {
@@ -174,6 +177,10 @@ func main() {
 			glog.Fatalf("failed to add nodecsrapprover controller: %v", err)
 		}
 		glog.Infof("Registered nodecsrapprover controller")
+	}
+
+	if err := containerlinux.Add(mgr, runOp.overwriteRegistry); err != nil {
+		glog.Fatalf("failed to register the ContainerLinux controller: %v", err)
 	}
 
 	// This group is forever waiting in a goroutine for signals to stop
