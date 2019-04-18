@@ -175,7 +175,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				},
 			}
 
-			set.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(baseLabels)
+			set.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.EtcdStatefulSetName, data.Cluster().Name)
 
 			set.Spec.Template.Spec.Volumes = volumes
 
