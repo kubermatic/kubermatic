@@ -16,6 +16,7 @@ const (
 
 var (
 	daemonSetMaxUnavailable = intstr.FromInt(1)
+	hostPathType            = corev1.HostPathUnset
 )
 
 func DaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemonSetCreatorGetter {
@@ -48,7 +49,8 @@ func DaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemonSetCr
 							Name: "UPDATE_AGENT_NODE",
 							ValueFrom: &corev1.EnvVarSource{
 								FieldRef: &corev1.ObjectFieldSelector{
-									FieldPath: "spec.nodeName",
+									APIVersion: "v1",
+									FieldPath:  "spec.nodeName",
 								},
 							},
 						},
@@ -56,7 +58,8 @@ func DaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemonSetCr
 							Name: "POD_NAMESPACE",
 							ValueFrom: &corev1.EnvVarSource{
 								FieldRef: &corev1.ObjectFieldSelector{
-									FieldPath: "metadata.namespace",
+									APIVersion: "v1",
+									FieldPath:  "metadata.namespace",
 								},
 							},
 						},
@@ -90,6 +93,7 @@ func DaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemonSetCr
 					VolumeSource: corev1.VolumeSource{
 						HostPath: &corev1.HostPathVolumeSource{
 							Path: "/var/run/dbus",
+							Type: &hostPathType,
 						},
 					},
 				},
@@ -98,6 +102,7 @@ func DaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemonSetCr
 					VolumeSource: corev1.VolumeSource{
 						HostPath: &corev1.HostPathVolumeSource{
 							Path: "/etc/coreos",
+							Type: &hostPathType,
 						},
 					},
 				},
@@ -106,6 +111,7 @@ func DaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemonSetCr
 					VolumeSource: corev1.VolumeSource{
 						HostPath: &corev1.HostPathVolumeSource{
 							Path: "/usr/share/coreos",
+							Type: &hostPathType,
 						},
 					},
 				},
@@ -114,6 +120,7 @@ func DaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemonSetCr
 					VolumeSource: corev1.VolumeSource{
 						HostPath: &corev1.HostPathVolumeSource{
 							Path: "/etc/os-release",
+							Type: &hostPathType,
 						},
 					},
 				},
