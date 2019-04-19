@@ -192,7 +192,11 @@ func updateToken(projectProvider provider.ProjectProvider, serviceAccountProvide
 	}
 	existingName, ok := existingSecret.Labels["name"]
 	if !ok {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not find token name in secret %s", existingSecret.Name))
+		return nil, fmt.Errorf("can not find token name in secret %s", existingSecret.Name)
+	}
+
+	if newName == existingName && !regenerateToken {
+		return existingSecret, nil
 	}
 
 	if newName != existingName {
@@ -210,7 +214,7 @@ func updateToken(projectProvider provider.ProjectProvider, serviceAccountProvide
 	if regenerateToken {
 		token, err := tokenGenerator.Generate(serviceaccount.Claims(sa.Spec.Email, project.Name, existingSecret.Name))
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, "can not generate token data")
+			return nil, fmt.Errorf("can not generate token data")
 		}
 
 		existingSecret.Data["token"] = []byte(token)
