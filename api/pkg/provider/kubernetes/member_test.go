@@ -7,28 +7,23 @@ import (
 	"github.com/go-test/deep"
 
 	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
-	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	restclient "k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
 )
 
 func TestCreateBinding(t *testing.T) {
 	// test data
 	kubermaticObjects := []runtime.Object{}
-	impersonationClient, _, indexer, err := createFakeClients(kubermaticObjects)
+	impersonationClient, _, indexer, err := createFakeKubermaticClients(kubermaticObjects)
 	if err != nil {
 		t.Fatalf("unable to create fake clients, err = %v", err)
 	}
 	authenticatedUser := createAuthenitactedUser()
-	existingProject := test.GenDefaultProject()
+	existingProject := genDefaultProject()
 	memberEmail := ""
 	groupName := fmt.Sprintf("owners-%s", existingProject.Name)
 	bindingLister := kubermaticv1lister.NewUserProjectBindingLister(indexer)
@@ -68,7 +63,7 @@ func TestListBinding(t *testing.T) {
 		{
 			name:              "scenario 1: list bindings for the given project",
 			authenticatedUser: createAuthenitactedUser(),
-			projectToSync:     test.GenDefaultProject(),
+			projectToSync:     genDefaultProject(),
 			existingBindings: []*kubermaticv1.UserProjectBinding{
 				createBinding("abcdBinding", "my-first-project-ID", "bob@acme.com", "owners"),
 				createBinding("cdBinding", "my-first-project-ID", "bob@acme.com", "owners"),
@@ -82,9 +77,9 @@ func TestListBinding(t *testing.T) {
 		{
 			name:              "scenario 1: filter out service accounts from bindings for the given project",
 			authenticatedUser: createAuthenitactedUser(),
-			projectToSync:     test.GenDefaultProject(),
+			projectToSync:     genDefaultProject(),
 			existingSA: []*kubermaticv1.User{
-				test.GenServiceAccount("1", "test", "editors", "my-first-project-ID"),
+				genServiceAccount("1", "test", "editors", "my-first-project-ID"),
 			},
 			existingBindings: []*kubermaticv1.UserProjectBinding{
 
@@ -116,7 +111,7 @@ func TestListBinding(t *testing.T) {
 				saObjects = append(saObjects, sa)
 			}
 			kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
-			impersonationClient := &FakeImpersonationClient{kubermaticClient}
+			impersonationClient := &fakeKubermaticImpersonationClient{kubermaticClient}
 
 			bindingIndexer, err := createIndexer(bindingObjects)
 			if err != nil {
@@ -154,57 +149,4 @@ func TestListBinding(t *testing.T) {
 			}
 		})
 	}
-}
-
-// fakeImpersonationClient gives kubermatic client set that uses user impersonation
-type FakeImpersonationClient struct {
-	kubermaticClent *kubermaticfakeclentset.Clientset
-}
-
-func (f *FakeImpersonationClient) CreateFakeImpersonatedClientSet(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
-	return f.kubermaticClent.KubermaticV1(), nil
-}
-
-func createFakeClients(kubermaticObjects []runtime.Object) (*FakeImpersonationClient, *kubermaticfakeclentset.Clientset, cache.Indexer, error) {
-	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
-
-	indexer, err := createIndexer(kubermaticObjects)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	return &FakeImpersonationClient{kubermaticClient}, kubermaticClient, indexer, nil
-}
-
-func createIndexer(kubermaticObjects []runtime.Object) (cache.Indexer, error) {
-	indexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
-	for _, obj := range kubermaticObjects {
-		err := indexer.Add(obj)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return indexer, nil
-}
-
-func createAuthenitactedUser() *kubermaticv1.User {
-	testUserID := "1233"
-	testUserName := "user1"
-	testUserEmail := "john@acme.com"
-	return &kubermaticv1.User{
-		ObjectMeta: metav1.ObjectMeta{},
-		Spec: kubermaticv1.UserSpec{
-			Name:  testUserName,
-			ID:    testUserID,
-			Email: testUserEmail,
-		},
-	}
-
-}
-
-func createBinding(name, projectID, email, group string) *kubermaticv1.UserProjectBinding {
-	binding := test.GenBinding(projectID, email, group)
-	binding.Kind = kubermaticv1.UserProjectBindingKind
-	binding.Name = name
-	return binding
 }

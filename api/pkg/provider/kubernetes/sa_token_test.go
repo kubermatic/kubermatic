@@ -1,13 +1,9 @@
 package kubernetes_test
 
 import (
-	"sort"
 	"testing"
 
-	"gopkg.in/square/go-jose.v2/jwt"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
@@ -15,11 +11,7 @@ import (
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
-	kubernetesclient "k8s.io/client-go/kubernetes"
-	fakerestclient "k8s.io/client-go/kubernetes/fake"
 	listers "k8s.io/client-go/listers/core/v1"
-	restclient "k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
 )
 
 func TestCreateToken(t *testing.T) {
@@ -43,7 +35,7 @@ func TestCreateToken(t *testing.T) {
 			tokenID:       "sa-token-1",
 			saEmail:       "serviceaccount-1@sa.kubermatic.io",
 			expectedSecret: func() *v1.Secret {
-				secret := test.GenSecret("my-first-project-ID", "serviceaccount-1", "test-token", "1")
+				secret := genSecret("my-first-project-ID", "serviceaccount-1", "test-token", "1")
 				secret.Name = ""
 				return secret
 			}(),
@@ -103,18 +95,18 @@ func TestListTokens(t *testing.T) {
 				sa.Name = "1"
 				return sa
 			}(),
-			projectToSync: test.GenDefaultProject(),
+			projectToSync: genDefaultProject(),
 			secrets: []*v1.Secret{
-				test.GenSecret("my-first-project-ID", "1", "test-token-1", "1"),
-				test.GenSecret("my-first-project-ID", "1", "test-token-2", "2"),
-				test.GenSecret("my-first-project-ID", "1", "test-token-3", "3"),
-				test.GenSecret("test-ID", "5", "test-token-1", "4"),
-				test.GenSecret("project-ID", "6", "test-token-1", "5"),
+				genSecret("my-first-project-ID", "1", "test-token-1", "1"),
+				genSecret("my-first-project-ID", "1", "test-token-2", "2"),
+				genSecret("my-first-project-ID", "1", "test-token-3", "3"),
+				genSecret("test-ID", "5", "test-token-1", "4"),
+				genSecret("project-ID", "6", "test-token-1", "5"),
 			},
 			expectedTokens: []*v1.Secret{
-				test.GenSecret("my-first-project-ID", "1", "test-token-1", "1"),
-				test.GenSecret("my-first-project-ID", "1", "test-token-2", "2"),
-				test.GenSecret("my-first-project-ID", "1", "test-token-3", "3"),
+				genSecret("my-first-project-ID", "1", "test-token-1", "1"),
+				genSecret("my-first-project-ID", "1", "test-token-2", "2"),
+				genSecret("my-first-project-ID", "1", "test-token-3", "3"),
 			},
 		},
 		{
@@ -126,16 +118,16 @@ func TestListTokens(t *testing.T) {
 				sa.Name = "1"
 				return sa
 			}(),
-			projectToSync: test.GenDefaultProject(),
+			projectToSync: genDefaultProject(),
 			secrets: []*v1.Secret{
-				test.GenSecret("my-first-project-ID", "1", "test-token-1", "1"),
-				test.GenSecret("my-first-project-ID", "1", "test-token-2", "2"),
-				test.GenSecret("my-first-project-ID", "1", "test-token-3", "3"),
-				test.GenSecret("test-ID", "5", "test-token-1", "4"),
-				test.GenSecret("project-ID", "6", "test-token-1", "5"),
+				genSecret("my-first-project-ID", "1", "test-token-1", "1"),
+				genSecret("my-first-project-ID", "1", "test-token-2", "2"),
+				genSecret("my-first-project-ID", "1", "test-token-3", "3"),
+				genSecret("test-ID", "5", "test-token-1", "4"),
+				genSecret("project-ID", "6", "test-token-1", "5"),
 			},
 			expectedTokens: []*v1.Secret{
-				test.GenSecret("my-first-project-ID", "1", "test-token-3", "3"),
+				genSecret("my-first-project-ID", "1", "test-token-3", "3"),
 			},
 			tokenName: "test-token-3",
 		},
@@ -170,8 +162,8 @@ func TestListTokens(t *testing.T) {
 				t.Fatalf("expected equal lengths got %d expected %d", len(resultList), len(tc.expectedTokens))
 			}
 
-			sortByName(resultList)
-			sortByName(tc.expectedTokens)
+			sortTokenByName(resultList)
+			sortTokenByName(tc.expectedTokens)
 			if !equality.Semantic.DeepEqual(resultList, tc.expectedTokens) {
 				t.Fatalf("expected  %v got %v", tc.expectedTokens, resultList)
 			}
@@ -199,16 +191,16 @@ func TestGetToken(t *testing.T) {
 				sa.Name = "1"
 				return sa
 			}(),
-			projectToSync: test.GenDefaultProject(),
+			projectToSync: genDefaultProject(),
 			secrets: []*v1.Secret{
-				test.GenSecret("my-first-project-ID", "1", "test-token-1", "1"),
-				test.GenSecret("my-first-project-ID", "1", "test-token-2", "2"),
-				test.GenSecret("my-first-project-ID", "1", "test-token-3", "3"),
-				test.GenSecret("test-ID", "5", "test-token-1", "4"),
-				test.GenSecret("project-ID", "6", "test-token-1", "5"),
+				genSecret("my-first-project-ID", "1", "test-token-1", "1"),
+				genSecret("my-first-project-ID", "1", "test-token-2", "2"),
+				genSecret("my-first-project-ID", "1", "test-token-3", "3"),
+				genSecret("test-ID", "5", "test-token-1", "4"),
+				genSecret("project-ID", "6", "test-token-1", "5"),
 			},
 			tokenToGet:    "sa-token-3",
-			expectedToken: test.GenSecret("my-first-project-ID", "1", "test-token-3", "3"),
+			expectedToken: genSecret("my-first-project-ID", "1", "test-token-3", "3"),
 		},
 	}
 	for _, tc := range testcases {
@@ -265,17 +257,17 @@ func TestUpdateToken(t *testing.T) {
 				sa.Name = "1"
 				return sa
 			}(),
-			projectToSync: test.GenDefaultProject(),
+			projectToSync: genDefaultProject(),
 			secrets: []*v1.Secret{
-				test.GenSecret("my-first-project-ID", "1", "test-token-1", "1"),
-				test.GenSecret("my-first-project-ID", "1", "test-token-2", "2"),
-				test.GenSecret("my-first-project-ID", "1", "test-token-3", "3"),
-				test.GenSecret("test-ID", "5", "test-token-1", "4"),
-				test.GenSecret("project-ID", "6", "test-token-1", "5"),
+				genSecret("my-first-project-ID", "1", "test-token-1", "1"),
+				genSecret("my-first-project-ID", "1", "test-token-2", "2"),
+				genSecret("my-first-project-ID", "1", "test-token-3", "3"),
+				genSecret("test-ID", "5", "test-token-1", "4"),
+				genSecret("project-ID", "6", "test-token-1", "5"),
 			},
 			tokenToUpdate: "sa-token-3",
 			tokenNewName:  "new-updated-name",
-			expectedToken: test.GenSecret("my-first-project-ID", "1", "new-updated-name", "3"),
+			expectedToken: genSecret("my-first-project-ID", "1", "new-updated-name", "3"),
 		},
 	}
 	for _, tc := range testcases {
@@ -314,39 +306,4 @@ func TestUpdateToken(t *testing.T) {
 			}
 		})
 	}
-}
-
-// FakeKubernetesImpersonationClient gives kubernetes client set that uses user impersonation
-type FakeKubernetesImpersonationClient struct {
-	kubernetesClent *fakerestclient.Clientset
-}
-
-func (f *FakeKubernetesImpersonationClient) CreateKubernetesFakeImpersonatedClientSet(impCfg restclient.ImpersonationConfig) (kubernetesclient.Interface, error) {
-	return f.kubernetesClent, nil
-}
-
-func createFakeKubernetesClients(kubermaticObjects []runtime.Object) (*FakeKubernetesImpersonationClient, *fakerestclient.Clientset, cache.Indexer, error) {
-	kubermaticClient := fakerestclient.NewSimpleClientset(kubermaticObjects...)
-
-	indexer, err := createIndexer(kubermaticObjects)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	return &FakeKubernetesImpersonationClient{kubermaticClient}, kubermaticClient, indexer, nil
-}
-
-type fakeJWTTokenGenerator struct {
-}
-
-// Generate generates new fake token
-func (j *fakeJWTTokenGenerator) Generate(claims *jwt.Claims, privateClaims *serviceaccount.CustomTokenClaim) (string, error) {
-	return test.TestFakeToken, nil
-}
-
-func sortByName(tokens []*v1.Secret) {
-	sort.SliceStable(tokens, func(i, j int) bool {
-		mi, mj := tokens[i], tokens[j]
-		return mi.Name < mj.Name
-	})
 }
