@@ -13,6 +13,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
 
@@ -23,6 +24,8 @@ func main() {
 	chainNameFlag := flag.String("chain-name", "node-access-dnat", "Name of the chain in nat table.")
 	vpnInterfaceFlag := flag.String("vpn-interface", "tun0", "Name of the vpn interface.")
 	flag.Parse()
+
+	log.SetLogger(log.ZapLogger(false))
 
 	nodeAccessNetwork, _, err := net.ParseCIDR(*networkFlag)
 	if err != nil {
