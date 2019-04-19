@@ -49,7 +49,7 @@ func (p *ServiceAccountProvider) Create(userInfo *provider.UserInfo, project *ku
 	}
 
 	uniqueID := rand.String(10)
-	uniqueName := fmt.Sprintf("serviceaccount-%s", uniqueID)
+	uniqueName := fmt.Sprintf("%s%s", saPrefix, uniqueID)
 
 	sa := kubermaticv1.User{}
 	sa.Name = uniqueName
@@ -99,7 +99,7 @@ func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, project *kube
 
 	resultList := make([]*kubermaticv1.User, 0)
 	for _, sa := range serviceAccounts {
-		if strings.HasPrefix(sa.Name, "serviceaccount") {
+		if hasSAPrefix(sa.Name) {
 			for _, owner := range sa.GetOwnerReferences() {
 				if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName && owner.Name == project.Name {
 					resultList = append(resultList, sa.DeepCopy())
@@ -215,6 +215,12 @@ func (p *ServiceAccountProvider) Delete(userInfo *provider.UserInfo, name string
 	return masterImpersonatedClient.Users().Delete(name, &metav1.DeleteOptions{})
 }
 
+// IsServiceAccounts determines whether the given email address
+// belongs to a service account
+func IsServiceAccount(email string) bool {
+	return hasSAPrefix(email)
+}
+
 // removeSAPrefix removes "serviceaccount-" from a SA's ID,
 // for example given "serviceaccount-7d4b5695vb" it returns "7d4b5695vb"
 func removeSAPrefix(id string) string {
@@ -231,6 +237,6 @@ func addSAPrefix(id string) string {
 }
 
 // hasSAPrefix checks if the given id has "serviceaccount-" prefix
-func hasSAPrefix(id string) bool {
-	return strings.HasPrefix(id, saPrefix)
+func hasSAPrefix(sa string) bool {
+	return strings.HasPrefix(sa, saPrefix)
 }
