@@ -545,6 +545,7 @@ func TestDeleteToken(t *testing.T) {
 		tokenToDelete          string
 		httpStatus             int
 		existingAPIUser        apiv1.User
+		expectedResponse       string
 	}{
 		{
 			name:       "scenario 1: delete token",
@@ -565,10 +566,11 @@ func TestDeleteToken(t *testing.T) {
 				test.GenSecret("plan9-ID", "serviceaccount-1", "test-3", "3"),
 				test.GenSecret("plan11-ID", "serviceaccount-3", "test-4", "4"),
 			},
-			existingAPIUser: *test.GenAPIUser("john", "john@acme.com"),
-			projectToSync:   "plan9-ID",
-			saToSync:        "1",
-			tokenToDelete:   "sa-token-3",
+			existingAPIUser:  *test.GenAPIUser("john", "john@acme.com"),
+			projectToSync:    "plan9-ID",
+			saToSync:         "1",
+			tokenToDelete:    "sa-token-3",
+			expectedResponse: "{}",
 		},
 	}
 
@@ -591,6 +593,8 @@ func TestDeleteToken(t *testing.T) {
 			if res.Code != tc.httpStatus {
 				t.Fatalf("expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
 			}
+
+			test.CompareWithResult(t, res, tc.expectedResponse)
 
 			if _, err := clientset.FakeKubernetesCoreClient.CoreV1().Secrets("kubermatic").Get(tc.tokenToDelete, metav1.GetOptions{}); err == nil {
 				t.Fatalf("failed to delete token %s", tc.tokenToDelete)

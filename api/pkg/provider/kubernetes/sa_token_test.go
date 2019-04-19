@@ -1,10 +1,7 @@
 package kubernetes_test
 
 import (
-	"sort"
 	"testing"
-
-	"gopkg.in/square/go-jose.v2/jwt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
@@ -14,12 +11,9 @@ import (
 
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	kubernetesclient "k8s.io/client-go/kubernetes"
-	fakerestclient "k8s.io/client-go/kubernetes/fake"
 	listers "k8s.io/client-go/listers/core/v1"
-	restclient "k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
 )
 
 func TestCreateToken(t *testing.T) {
@@ -385,39 +379,4 @@ func TestDeleteToken(t *testing.T) {
 			}
 		})
 	}
-}
-
-// FakeKubernetesImpersonationClient gives kubernetes client set that uses user impersonation
-type FakeKubernetesImpersonationClient struct {
-	kubernetesClent *fakerestclient.Clientset
-}
-
-func (f *FakeKubernetesImpersonationClient) CreateKubernetesFakeImpersonatedClientSet(impCfg restclient.ImpersonationConfig) (kubernetesclient.Interface, error) {
-	return f.kubernetesClent, nil
-}
-
-func createFakeKubernetesClients(kubermaticObjects []runtime.Object) (*FakeKubernetesImpersonationClient, *fakerestclient.Clientset, cache.Indexer, error) {
-	kubermaticClient := fakerestclient.NewSimpleClientset(kubermaticObjects...)
-
-	indexer, err := createIndexer(kubermaticObjects)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	return &FakeKubernetesImpersonationClient{kubermaticClient}, kubermaticClient, indexer, nil
-}
-
-type fakeJWTTokenGenerator struct {
-}
-
-// Generate generates new fake token
-func (j *fakeJWTTokenGenerator) Generate(claims *jwt.Claims, privateClaims *serviceaccount.CustomTokenClaim) (string, error) {
-	return test.TestFakeToken, nil
-}
-
-func sortByName(tokens []*v1.Secret) {
-	sort.SliceStable(tokens, func(i, j int) bool {
-		mi, mj := tokens[i], tokens[j]
-		return mi.Name < mj.Name
-	})
 }

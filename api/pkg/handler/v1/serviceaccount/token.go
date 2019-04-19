@@ -187,12 +187,15 @@ func DeleteTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccoun
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		_, err = serviceAccountProvider.Get(userInfo, req.ServiceAccountID, &provider.ServiceAccountGetOptions{RemovePrefix: false})
+		_, err = serviceAccountProvider.Get(userInfo, req.ServiceAccountID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return nil, serviceAccountTokenProvider.Delete(userInfo, req.TokenID)
+		if err := serviceAccountTokenProvider.Delete(userInfo, req.TokenID); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		return nil, nil
 	}
 }
 
