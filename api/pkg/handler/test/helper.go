@@ -15,6 +15,9 @@ import (
 	"github.com/golang/glog"
 	prometheusapi "github.com/prometheus/client_golang/api"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
@@ -186,13 +189,14 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	}
 
 	fUserClusterConnection := &fakeUserClusterConnection{fakeClient}
+	fSeedClusterConnection := &fakeSeedClusterConnection{fakeClient}
 	clusterProvider := kubernetes.NewClusterProvider(
 		fakeKubermaticImpersonationClient,
 		fUserClusterConnection,
 		kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(),
 		"",
 		rbac.ExtractGroupPrefix,
-		nil,
+		fSeedClusterConnection,
 	)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
 
@@ -284,6 +288,18 @@ func (f *fakeUserClusterConnection) GetDynamicClient(_ *kubermaticapiv1.Cluster,
 
 func (f *fakeUserClusterConnection) GetAdminKubeconfig(c *kubermaticapiv1.Cluster) ([]byte, error) {
 	return []byte(generateTestKubeconfig(ClusterID, IDToken)), nil
+}
+
+type fakeSeedClusterConnection struct {
+	fakeDynamicClient ctrlruntimeclient.Client
+}
+
+func (f *fakeSeedClusterConnection) GetSeedClusterAdminClient() ctrlruntimeclient.Client {
+	return f.fakeDynamicClient
+}
+
+func (f *fakeSeedClusterConnection) GetSeedClusterAdminConfig() *restclient.Config {
+	return &restclient.Config{}
 }
 
 // ClientsSets a simple wrapper that holds fake client sets
@@ -634,6 +650,26 @@ func GenDefaultExpiry() (apiv1.Time, error) {
 		return apiv1.Time{}, err
 	}
 	return apiv1.NewTime(claim.Expiry.Time()), nil
+}
+
+func GenTestEvent(eventName, eventType, eventReason, eventMessage, kind, uid string) *corev1.Event {
+	return &corev1.Event{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      eventName,
+			Namespace: metav1.NamespaceSystem,
+		},
+		InvolvedObject: corev1.ObjectReference{
+			UID:       types.UID(uid),
+			Name:      "testMachine",
+			Namespace: metav1.NamespaceSystem,
+			Kind:      kind,
+		},
+		Reason:  eventReason,
+		Message: eventMessage,
+		Source:  corev1.EventSource{Component: "eventTest"},
+		Count:   1,
+		Type:    eventType,
+	}
 }
 
 // AuthorizeRequestFunc is a helper function for authorizing a request

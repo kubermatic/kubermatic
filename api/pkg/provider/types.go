@@ -127,7 +127,7 @@ type PrivilegedClusterProvider interface {
 	// GetSeedClusterAdminClient returns a client to interact with all resources in the seed cluster
 	//
 	// Note that the client you will get has admin privileges in the seed cluster
-	GetSeedClusterAdminClient() (ctrlruntimeclient.Client, error)
+	GetSeedClusterAdminClient() ctrlruntimeclient.Client
 
 	// GetSeedClusterAdminConfig returns a config that can be used to create client
 	// that gives user access to all resources in the seed cluster

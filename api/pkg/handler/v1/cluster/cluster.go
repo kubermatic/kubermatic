@@ -323,13 +323,9 @@ func GetClusterEventsEndpoint() endpoint.Endpoint {
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		client := privilegedClusterProvider.GetSeedClusterAdminClient()
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		client, err := privilegedClusterProvider.GetSeedClusterAdminClient()
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

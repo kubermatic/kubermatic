@@ -2,7 +2,6 @@ package kubernetes
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
@@ -21,7 +20,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// UserClusterConnectionProvider offers functions to interact with a user cluster
+// UserClusterConnectionProvider offers functions to interact with an user cluster
 type UserClusterConnectionProvider interface {
 	GetDynamicClient(*kubermaticapiv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 	GetAdminKubeconfig(*kubermaticapiv1.Cluster) ([]byte, error)
@@ -39,14 +38,14 @@ func NewClusterProvider(
 	clusterLister kubermaticv1lister.ClusterLister,
 	workerName string,
 	extractGroupPrefix extractGroupPrefixFunc,
-	seedClusterConfig *restclient.Config) *ClusterProvider {
+	seedClusterConnProvider k8cuserclusterclient.SeedClusterConnectionProvider) *ClusterProvider {
 	return &ClusterProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
 		userClusterConnProvider:      userClusterConnProvider,
 		clusterLister:                clusterLister,
 		workerName:                   workerName,
 		extractGroupPrefix:           extractGroupPrefix,
-		seedClusterConfig:            seedClusterConfig,
+		seedClusterConnProvider:      seedClusterConnProvider,
 	}
 }
 
@@ -63,9 +62,9 @@ type ClusterProvider struct {
 	// clusterLister provide access to local cache that stores cluster objects
 	clusterLister kubermaticv1lister.ClusterLister
 
-	workerName         string
-	extractGroupPrefix extractGroupPrefixFunc
-	seedClusterConfig  *restclient.Config
+	workerName              string
+	extractGroupPrefix      extractGroupPrefixFunc
+	seedClusterConnProvider k8cuserclusterclient.SeedClusterConnectionProvider
 }
 
 // New creates a brand new cluster that is bound to the given project
@@ -218,19 +217,15 @@ func (p *ClusterProvider) GetClientForCustomerCluster(userInfo *provider.UserInf
 // GetSeedClusterAdminClient returns a client to interact with the seed cluster resources.
 //
 // Note that this client has admin privileges in the seed cluster.
-func (p *ClusterProvider) GetSeedClusterAdminClient() (ctrlruntimeclient.Client, error) {
-	dynamicClient, err := ctrlruntimeclient.New(p.seedClusterConfig, ctrlruntimeclient.Options{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create dynamic client: %v", err)
-	}
-	return dynamicClient, nil
+func (p *ClusterProvider) GetSeedClusterAdminClient() ctrlruntimeclient.Client {
+	return p.seedClusterConnProvider.GetSeedClusterAdminClient()
 }
 
 // GetSeedClusterAdminConfig returns a config that gives access to the seed cluster.
 //
 // Note that this config has admin privileges in the seed cluster.
 func (p *ClusterProvider) GetSeedClusterAdminConfig() *restclient.Config {
-	return p.seedClusterConfig
+	return p.seedClusterConnProvider.GetSeedClusterAdminConfig()
 }
 
 func (p *ClusterProvider) withImpersonation(userInfo *provider.UserInfo) k8cuserclusterclient.ConfigOption {
