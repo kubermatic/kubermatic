@@ -44,7 +44,7 @@ data:
 
       kubernetes_sd_configs:
       - role: node
-        api_server: 'apiserver-external.cluster-de-test-01.svc.cluster.local.:30000'
+        api_server: 'https://apiserver-external.cluster-de-test-01.svc.cluster.local.:30000'
         tls_config:
           ca_file: /etc/kubernetes/ca.crt
           cert_file: /etc/kubernetes/prometheus-client.crt
@@ -106,7 +106,7 @@ data:
         key_file: /etc/kubernetes/prometheus-client.key
       kubernetes_sd_configs:
       - role: pod
-        api_server: 'apiserver-external.cluster-de-test-01.svc.cluster.local.:30000'
+        api_server: 'https://apiserver-external.cluster-de-test-01.svc.cluster.local.:30000'
         tls_config:
           ca_file: /etc/kubernetes/ca.crt
           cert_file: /etc/kubernetes/prometheus-client.crt
