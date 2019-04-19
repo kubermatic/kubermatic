@@ -17,14 +17,13 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-const serviceAccount = "serviceaccount"
-
 // NewProjectMemberProvider returns a project members provider
-func NewProjectMemberProvider(createMasterImpersonatedClient kubermaticImpersonationClient, membersLister kubermaticv1lister.UserProjectBindingLister, userLister kubermaticv1lister.UserLister) *ProjectMemberProvider {
+func NewProjectMemberProvider(createMasterImpersonatedClient kubermaticImpersonationClient, membersLister kubermaticv1lister.UserProjectBindingLister, userLister kubermaticv1lister.UserLister, isServiceAccountFunc func(string) bool) *ProjectMemberProvider {
 	return &ProjectMemberProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
 		membersLister:                  membersLister,
 		userLister:                     userLister,
+		isServiceAccountFunc:           isServiceAccountFunc,
 	}
 }
 
@@ -40,10 +39,18 @@ type ProjectMemberProvider struct {
 
 	// userLister local cache that stores users
 	userLister kubermaticv1lister.UserLister
+
+	// since service account are special type of user this functions
+	// helps to determine if the given email address belongs to a service account
+	isServiceAccountFunc func(email string) bool
 }
 
 // Create creates a binding for the given member and the given project
 func (p *ProjectMemberProvider) Create(userInfo *provider.UserInfo, project *kubermaticapiv1.Project, memberEmail, group string) (*kubermaticapiv1.UserProjectBinding, error) {
+	if p.isServiceAccountFunc(memberEmail) {
+		return nil, fmt.Errorf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name)
+	}
+
 	finalizers := []string{}
 	if rbac.ExtractGroupPrefix(group) == rbac.OwnerGroupNamePrefix {
 		finalizers = append(finalizers, rbac.CleanupFinalizerName)
@@ -89,14 +96,8 @@ func (p *ProjectMemberProvider) List(userInfo *provider.UserInfo, project *kuber
 
 			// The provider should serve only regular users as a members.
 			// The ServiceAccount is another type of the user and should not be append to project members.
-			// This code checks if member is a regular user or service account and omits service account types.
-			if strings.HasPrefix(member.Spec.UserEmail, serviceAccount) {
-				userEmailParts := strings.Split(member.Spec.UserEmail, "@")
-				if len(userEmailParts) == 2 {
-					if _, err := p.userLister.Get(userEmailParts[0]); err == nil {
-						continue
-					}
-				}
+			if p.isServiceAccountFunc(member.Spec.UserEmail) {
+				continue
 			}
 			projectMembers = append(projectMembers, member.DeepCopy())
 		}

@@ -20,10 +20,11 @@ const (
 )
 
 // NewUserProvider returns a user provider
-func NewUserProvider(client kubermaticclientset.Interface, userLister kubermaticv1lister.UserLister) *UserProvider {
+func NewUserProvider(client kubermaticclientset.Interface, userLister kubermaticv1lister.UserLister, isServiceAccountFunc func(email string) bool) *UserProvider {
 	return &UserProvider{
-		client:     client,
-		userLister: userLister,
+		client:               client,
+		userLister:           userLister,
+		isServiceAccountFunc: isServiceAccountFunc,
 	}
 }
 
@@ -31,6 +32,9 @@ func NewUserProvider(client kubermaticclientset.Interface, userLister kubermatic
 type UserProvider struct {
 	client     kubermaticclientset.Interface
 	userLister kubermaticv1lister.UserLister
+	// since service account are special type of user this functions
+	// helps to determine if the given email address belongs to a service account
+	isServiceAccountFunc func(email string) bool
 }
 
 // UserByID returns a user by the given ID
@@ -79,6 +83,10 @@ func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
 func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, error) {
 	if len(id) == 0 || len(name) == 0 || len(email) == 0 {
 		return nil, kerrors.NewBadRequest("Email, ID and Name cannot be empty when creating a new user resource")
+	}
+
+	if p.isServiceAccountFunc(email) {
+		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add a user with the given email %s as the name is reserved, please try a different email address", email))
 	}
 
 	uniqueObjectName := fmt.Sprintf("%x", sha256.Sum256([]byte(email)))

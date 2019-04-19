@@ -34,7 +34,7 @@ func TestCreateBinding(t *testing.T) {
 	bindingLister := kubermaticv1lister.NewUserProjectBindingLister(indexer)
 	userLister := kubermaticv1lister.NewUserLister(indexer)
 	// act
-	target := kubernetes.NewProjectMemberProvider(impersonationClient.CreateFakeImpersonatedClientSet, bindingLister, userLister)
+	target := kubernetes.NewProjectMemberProvider(impersonationClient.CreateFakeImpersonatedClientSet, bindingLister, userLister, kubernetes.IsServiceAccount)
 	result, err := target.Create(&provider.UserInfo{Email: authenticatedUser.Spec.Email, Group: fmt.Sprintf("owners-%s", existingProject.Name)}, existingProject, memberEmail, groupName)
 
 	// validate
@@ -99,7 +99,6 @@ func TestListBinding(t *testing.T) {
 			expectedBindings: []*kubermaticv1.UserProjectBinding{
 				createBinding("abcdBinding", "my-first-project-ID", "bob@acme.com", "owners"),
 				createBinding("cdBinding", "my-first-project-ID", "bob@acme.com", "owners"),
-				createBinding("fakeServiceAccount", "my-first-project-ID", "serviceaccount-test@localhost", "editors"),
 			},
 		},
 	}
@@ -131,7 +130,7 @@ func TestListBinding(t *testing.T) {
 			bindingLister := kubermaticv1lister.NewUserProjectBindingLister(bindingIndexer)
 			userLister := kubermaticv1lister.NewUserLister(saIndexer)
 			// act
-			target := kubernetes.NewProjectMemberProvider(impersonationClient.CreateFakeImpersonatedClientSet, bindingLister, userLister)
+			target := kubernetes.NewProjectMemberProvider(impersonationClient.CreateFakeImpersonatedClientSet, bindingLister, userLister, kubernetes.IsServiceAccount)
 			result, err := target.List(&provider.UserInfo{Email: tc.authenticatedUser.Spec.Email, Group: fmt.Sprintf("owners-%s", tc.projectToSync.Name)}, tc.projectToSync, nil)
 
 			// validate
