@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"net"
 	"time"
@@ -9,9 +10,10 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/kubeletdnat"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
@@ -34,14 +36,20 @@ func main() {
 		glog.Fatal(err)
 	}
 
-	// Wait until the API server is actually up
+	// Wait until the API server is actually up & the corev1 api groups is available.
 	// This is a smallish hack to avoid dying instantly when running as sidecar to the kube API server
 	// The API server takes a few seconds to start which makes this sidecar die immediately
 	err = wait.PollImmediate(1*time.Second, 5*time.Minute, func() (bool, error) {
-		_, err := client.New(config, client.Options{})
+		client, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
 		if err != nil {
 			return false, nil
 		}
+
+		nodeList := &corev1.NodeList{}
+		if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
+			return false, nil
+		}
+
 		return true, nil
 	})
 	if err != nil {
