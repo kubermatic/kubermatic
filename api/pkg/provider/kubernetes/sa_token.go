@@ -190,7 +190,7 @@ func (p *ServiceAccountTokenProvider) Get(userInfo *provider.UserInfo, name stri
 		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
 	}
 	if len(name) == 0 {
-		return nil, kerrors.NewBadRequest("service account name cannot be empty")
+		return nil, kerrors.NewBadRequest("token name cannot be empty")
 	}
 
 	kubernetesImpersonatedClient, err := createKubernetesImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
@@ -214,4 +214,20 @@ func (p *ServiceAccountTokenProvider) Update(userInfo *provider.UserInfo, secret
 		return nil, kerrors.NewInternalError(err)
 	}
 	return kubernetesImpersonatedClient.CoreV1().Secrets(kubermaticNamespace).Update(secret)
+}
+
+// Delete method deletes given token
+func (p *ServiceAccountTokenProvider) Delete(userInfo *provider.UserInfo, name string) error {
+	if userInfo == nil {
+		return kerrors.NewBadRequest("userInfo cannot be nil")
+	}
+	if len(name) == 0 {
+		return kerrors.NewBadRequest("token name cannot be empty")
+	}
+
+	kubernetesImpersonatedClient, err := createKubernetesImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
+	if err != nil {
+		return kerrors.NewInternalError(err)
+	}
+	return kubernetesImpersonatedClient.CoreV1().Secrets(kubermaticNamespace).Delete(name, &metav1.DeleteOptions{})
 }

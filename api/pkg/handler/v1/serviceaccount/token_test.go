@@ -12,6 +12,8 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -527,6 +529,75 @@ func TestUpdateToken(t *testing.T) {
 
 			} else {
 				test.CompareWithResult(t, res, tc.expectedErrorMsg)
+			}
+		})
+	}
+}
+
+func TestDeleteToken(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		name                   string
+		existingKubermaticObjs []runtime.Object
+		existingKubernetesObjs []runtime.Object
+		projectToSync          string
+		saToSync               string
+		tokenToDelete          string
+		httpStatus             int
+		existingAPIUser        apiv1.User
+		expectedResponse       string
+	}{
+		{
+			name:       "scenario 1: delete token",
+			httpStatus: http.StatusOK,
+			existingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				genActiveServiceAccount("1", "test-1", "editors", "plan9-ID"),
+			},
+			existingKubernetesObjs: []runtime.Object{
+				test.GenSecret("plan9-ID", "serviceaccount-1", "test-1", "1"),
+				test.GenSecret("plan10-ID", "serviceaccount-2", "test-2", "2"),
+				test.GenSecret("plan9-ID", "serviceaccount-1", "test-3", "3"),
+				test.GenSecret("plan11-ID", "serviceaccount-3", "test-4", "4"),
+			},
+			existingAPIUser:  *test.GenAPIUser("john", "john@acme.com"),
+			projectToSync:    "plan9-ID",
+			saToSync:         "1",
+			tokenToDelete:    "sa-token-3",
+			expectedResponse: "{}",
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s/tokens/%s", tc.projectToSync, tc.saToSync, tc.tokenToDelete), strings.NewReader(""))
+			res := httptest.NewRecorder()
+
+			ep, clientset, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			if _, err := clientset.FakeKubernetesCoreClient.CoreV1().Secrets("kubermatic").Get(tc.tokenToDelete, metav1.GetOptions{}); err != nil {
+				t.Fatalf("failed to check token %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.httpStatus {
+				t.Fatalf("expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.expectedResponse)
+
+			if _, err := clientset.FakeKubernetesCoreClient.CoreV1().Secrets("kubermatic").Get(tc.tokenToDelete, metav1.GetOptions{}); err == nil {
+				t.Fatalf("failed to delete token %s", tc.tokenToDelete)
 			}
 		})
 	}

@@ -223,7 +223,7 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		tokenGenerator,
 	)
 
-	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, tokenAuth, tokenGenerator}, nil
+	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
 }
 
 // CreateTestEndpoint does exactly the same as CreateTestEndpointAndGetClients except it omits ClientsSets when returning
@@ -285,6 +285,8 @@ func (f *fakeUserClusterConnection) GetAdminKubeconfig(c *kubermaticapiv1.Cluste
 type ClientsSets struct {
 	FakeKubermaticClient *kubermaticfakeclentset.Clientset
 	FakeClient           ctrlruntimeclient.Client
+	// this client is used for unprivileged methods where impersonated client is used
+	FakeKubernetesCoreClient kubernetesclientset.Interface
 
 	TokenAuthenticator serviceaccount.TokenAuthenticator
 	TokenGenerator     serviceaccount.TokenGenerator
