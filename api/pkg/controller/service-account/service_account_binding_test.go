@@ -7,8 +7,10 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/api/equality"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
@@ -31,8 +33,8 @@ func TestReconcileBinding(t *testing.T) {
 			name:   "scenario 1: this test creates binding for service account",
 			saName: "serviceaccount-abcd",
 			existingKubermaticObjects: []runtime.Object{
-				test.GenDefaultProject(),
-				test.GenServiceAccount("abcd", "test", "editors", "my-first-project-ID"),
+				genProject("my-first-project-ID"),
+				genServiceAccount("abcd", "test", "editors", "my-first-project-ID"),
 			},
 			expectedBinding: genSABinding("my-first-project-ID", "serviceaccount-abcd", "serviceaccount-abcd@sa.kubermatic.io", "editors"),
 		},
@@ -40,8 +42,8 @@ func TestReconcileBinding(t *testing.T) {
 			name:   "scenario 2: this test update binding group from viewers to editors",
 			saName: "serviceaccount-abcd",
 			existingKubermaticObjects: []runtime.Object{
-				test.GenDefaultProject(),
-				test.GenServiceAccount("abcd", "test", "editors", "my-first-project-ID"),
+				genProject("my-first-project-ID"),
+				genServiceAccount("abcd", "test", "editors", "my-first-project-ID"),
 				genSABinding("my-first-project-ID", "serviceaccount-abcd", "serviceaccount-abcd@sa.kubermatic.io", "viewers"),
 			},
 			expectedBinding: genSABinding("my-first-project-ID", "serviceaccount-abcd", "serviceaccount-abcd@sa.kubermatic.io", "editors"),
@@ -100,4 +102,30 @@ func genSABinding(projectID, saName, email, group string) *kubermaticv1.UserProj
 	binding.Labels = map[string]string{kubermaticv1.ProjectIDLabelKey: projectID}
 	binding.Spec.Group = fmt.Sprintf("%s-%s", group, projectID)
 	return binding
+}
+
+func genProject(name string) *kubermaticv1.Project {
+	return &kubermaticv1.Project{
+		Spec: kubermaticv1.ProjectSpec{Name: name},
+		Status: kubermaticv1.ProjectStatus{
+			Phase: kubermaticv1.ProjectActive,
+		},
+	}
+}
+
+func genServiceAccount(id, name, group, projectName string) *kubermaticv1.User {
+	user := &kubermaticv1.User{}
+	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: fmt.Sprintf("%s-%s", group, projectName)}
+	user.OwnerReferences = []metav1.OwnerReference{
+		{
+			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+			Kind:       kubermaticv1.ProjectKindName,
+			Name:       projectName,
+			UID:        types.UID(id),
+		},
+	}
+	user.Name = fmt.Sprintf("serviceaccount-%s", id)
+	user.Spec.Email = "serviceaccount-abcd@sa.kubermatic.io"
+
+	return user
 }
