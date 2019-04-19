@@ -289,6 +289,9 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPatch).
 		Path("/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}").
 		Handler(r.patchServiceAccountToken())
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}").
+		Handler(r.deleteServiceAccountToken())
 
 	//
 	// Defines set of HTTP endpoints for control plane and kubelet versions
@@ -1529,6 +1532,31 @@ func (r Routing) patchServiceAccountToken() http.Handler {
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(serviceaccount.PatchTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator)),
 		serviceaccount.DecodePatchTokenReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id} tokens deleteServiceAccountToken
+//
+//     Deletes the token
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteServiceAccountToken() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(serviceaccount.DeleteTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider)),
+		serviceaccount.DecodeDeleteTokenReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

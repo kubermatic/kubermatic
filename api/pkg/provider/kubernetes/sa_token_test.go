@@ -4,12 +4,14 @@ import (
 	"testing"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	listers "k8s.io/client-go/listers/core/v1"
 )
@@ -303,6 +305,77 @@ func TestUpdateToken(t *testing.T) {
 
 			if !equality.Semantic.DeepEqual(updated, tc.expectedToken) {
 				t.Fatalf("expected  %v got %v", tc.expectedToken, updated)
+			}
+		})
+	}
+}
+
+func TestDeleteToken(t *testing.T) {
+	// test data
+	testcases := []struct {
+		name          string
+		userInfo      *provider.UserInfo
+		saToSync      *kubermaticv1.User
+		projectToSync *kubermaticv1.Project
+		secrets       []*v1.Secret
+		tokenToDelete string
+	}{
+		{
+			name:     "scenario 1, delete token from service account 'serviceaccount-1' in project: 'my-first-project-ID'",
+			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			saToSync: func() *kubermaticv1.User {
+				sa := createSA("test-1", "my-first-project-ID", "viewers", "1")
+				// "serviceaccount-" prefix is removed by the provider
+				sa.Name = "1"
+				return sa
+			}(),
+			projectToSync: test.GenDefaultProject(),
+			secrets: []*v1.Secret{
+				test.GenSecret("my-first-project-ID", "1", "test-token-1", "1"),
+				test.GenSecret("my-first-project-ID", "1", "test-token-2", "2"),
+				test.GenSecret("my-first-project-ID", "1", "test-token-3", "3"),
+				test.GenSecret("test-ID", "5", "test-token-1", "4"),
+				test.GenSecret("project-ID", "6", "test-token-1", "5"),
+			},
+			tokenToDelete: "sa-token-3",
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+
+			kubeObjects := []runtime.Object{}
+			for _, secret := range tc.secrets {
+				kubeObjects = append(kubeObjects, secret)
+			}
+
+			impersonationClient, _, indexer, err := createFakeKubernetesClients(kubeObjects)
+			if err != nil {
+				t.Fatalf("unable to create fake clients, err = %v", err)
+			}
+
+			tokenLister := listers.NewSecretLister(indexer)
+
+			// act
+			target, err := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, tokenLister)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// check if token exists first
+			existingToken, err := target.Get(tc.userInfo, tc.tokenToDelete)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// delete token
+			if err := target.Delete(tc.userInfo, existingToken.Name); err != nil {
+				t.Fatal(err)
+			}
+
+			// validate
+			_, err = target.Get(tc.userInfo, tc.tokenToDelete)
+			if !errors.IsNotFound(err) {
+				t.Fatalf("expected not found error")
 			}
 		})
 	}

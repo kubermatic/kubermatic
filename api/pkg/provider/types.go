@@ -353,6 +353,7 @@ type ServiceAccountTokenProvider interface {
 	List(userInfo *UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *ServiceAccountTokenListOptions) ([]*v1.Secret, error)
 	Get(userInfo *UserInfo, name string) (*v1.Secret, error)
 	Update(userInfo *UserInfo, secret *v1.Secret) (*v1.Secret, error)
+	Delete(userInfo *UserInfo, name string) error
 }
 
 // ServiceAccountTokenListOptions allows to set filters that will be applied to filter the result.
