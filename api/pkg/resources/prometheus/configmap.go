@@ -118,7 +118,7 @@ scrape_configs:
 
   kubernetes_sd_configs:
   - role: node
-    api_server: '{{ .APIServerURL }}'
+    api_server: 'https://{{ .APIServerURL }}'
     tls_config:
       ca_file: /etc/kubernetes/ca.crt
       cert_file: /etc/kubernetes/prometheus-client.crt
@@ -180,7 +180,7 @@ scrape_configs:
     key_file: /etc/kubernetes/prometheus-client.key
   kubernetes_sd_configs:
   - role: pod
-    api_server: '{{ .APIServerURL }}'
+    api_server: 'https://{{ .APIServerURL }}'
     tls_config:
       ca_file: /etc/kubernetes/ca.crt
       cert_file: /etc/kubernetes/prometheus-client.crt

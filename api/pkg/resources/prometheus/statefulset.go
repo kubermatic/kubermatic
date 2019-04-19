@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -16,7 +15,7 @@ import (
 
 const (
 	name = "prometheus"
-	tag  = "v2.7.1"
+	tag  = "v2.9.1"
 
 	volumeConfigName = "config"
 	volumeDataName   = "data"
@@ -80,12 +79,6 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 			if data.Cluster().Spec.ComponentsOverride.Prometheus.Resources != nil {
 				resourceRequirements = *data.Cluster().Spec.ComponentsOverride.Prometheus.Resources
 			}
-
-			apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
-			if err != nil {
-				return nil, err
-			}
-			set.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
 
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -151,7 +144,7 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 						PeriodSeconds:       5,
 						TimeoutSeconds:      3,
 						FailureThreshold:    6,
-						InitialDelaySeconds: 30,
+						InitialDelaySeconds: 5,
 						SuccessThreshold:    1,
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
