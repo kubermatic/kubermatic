@@ -28,9 +28,6 @@ import (
 )
 
 const (
-	// queueKey is the constant key added to the queue for deduplication.
-	queueKey = "some node"
-
 	ControllerName = "kubermatic_kubelet_dnat_controller"
 )
 
@@ -77,25 +74,25 @@ func Add(
 	}
 
 	return c.Watch(&source.Kind{Type: &corev1.Node{}}, &handler.Funcs{
-		CreateFunc:  func(e event.CreateEvent, queue workqueue.RateLimitingInterface) { queue.Add(queueKey) },
-		DeleteFunc:  func(e event.DeleteEvent, queue workqueue.RateLimitingInterface) { queue.Add(queueKey) },
-		GenericFunc: func(e event.GenericEvent, queue workqueue.RateLimitingInterface) { queue.Add(queueKey) },
+		CreateFunc:  func(e event.CreateEvent, queue workqueue.RateLimitingInterface) { queue.Add(reconcile.Request{}) },
+		DeleteFunc:  func(e event.DeleteEvent, queue workqueue.RateLimitingInterface) { queue.Add(reconcile.Request{}) },
+		GenericFunc: func(e event.GenericEvent, queue workqueue.RateLimitingInterface) { queue.Add(reconcile.Request{}) },
 		UpdateFunc: func(e event.UpdateEvent, queue workqueue.RateLimitingInterface) {
 			newNode, ok := e.ObjectNew.(*corev1.Node)
 			if !ok {
 				glog.Warningf("Object from event was not a *corev1.Node. Instead got %T. Triggering a sync anyway", e.ObjectNew)
-				queue.Add(queueKey)
+				queue.Add(reconcile.Request{})
 			}
 			oldNode, ok := e.ObjectOld.(*corev1.Node)
 			if !ok {
 				glog.Warningf("Object from event was not a *corev1.Node. Instead got %T. Triggering a sync anyway", e.ObjectOld)
-				queue.Add(queueKey)
+				queue.Add(reconcile.Request{})
 			}
 
 			// Only sync if nodes changed their addresses. Since Nodes get updated every 5 sec due to the HeartBeat
 			// it would otherwise cause a lot of useless syncs
 			if diff := deep.Equal(newNode.Status.Addresses, oldNode.Status.Addresses); diff != nil {
-				queue.Add(queueKey)
+				queue.Add(reconcile.Request{})
 			}
 		},
 	})
