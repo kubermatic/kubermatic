@@ -283,6 +283,12 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens").
 		Handler(r.listServiceAccountTokens())
+	mux.Methods(http.MethodPut).
+		Path("/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}").
+		Handler(r.updateServiceAccountToken())
+	mux.Methods(http.MethodPatch).
+		Path("/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}").
+		Handler(r.patchServiceAccountToken())
 
 	//
 	// Defines set of HTTP endpoints for control plane and kubelet versions
@@ -1456,7 +1462,7 @@ func (r Routing) addTokenToServiceAccount() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: []ServiceAccountToken
+//       200: []PublicServiceAccountToken
 //       401: empty
 //       403: empty
 func (r Routing) listServiceAccountTokens() http.Handler {
@@ -1467,6 +1473,62 @@ func (r Routing) listServiceAccountTokens() http.Handler {
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(serviceaccount.ListTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator)),
 		serviceaccount.DecodeTokenReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id} tokens updateServiceAccountToken
+//
+//     Updates and regenerates the token
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ServiceAccountToken
+//       401: empty
+//       403: empty
+func (r Routing) updateServiceAccountToken() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(serviceaccount.UpdateTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator)),
+		serviceaccount.DecodeUpdateTokenReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PATCH /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id} tokens patchServiceAccountToken
+//
+//     Patches the token name
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: PublicServiceAccountToken
+//       401: empty
+//       403: empty
+func (r Routing) patchServiceAccountToken() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(serviceaccount.PatchTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator)),
+		serviceaccount.DecodePatchTokenReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
