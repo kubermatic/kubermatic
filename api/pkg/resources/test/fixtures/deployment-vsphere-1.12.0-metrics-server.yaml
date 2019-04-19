@@ -57,7 +57,7 @@ spec:
         - --logtostderr
         command:
         - /metrics-server
-        image: gcr.io/google_containers/metrics-server-amd64:v0.3.1
+        image: gcr.io/google_containers/metrics-server-amd64:v0.3.2
         imagePullPolicy: IfNotPresent
         name: metrics-server
         resources:

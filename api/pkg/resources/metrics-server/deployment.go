@@ -31,7 +31,7 @@ var (
 const (
 	name = "metrics-server"
 
-	tag = "v0.3.1"
+	tag = "v0.3.2"
 )
 
 // DeploymentCreator returns the function to create and update the metrics server deployment
