@@ -206,8 +206,8 @@ type addReq struct {
 	Body apiv1.ServiceAccount
 }
 
-// idReq represents a request that contains service account ID in the path
-type idReq struct {
+// serviceAccountIDReq represents a request that contains service account ID in the path
+type serviceAccountIDReq struct {
 	// in: path
 	ServiceAccountID string `json:"serviceaccount_id"`
 }
@@ -216,14 +216,14 @@ type idReq struct {
 // swagger:parameters updateServiceAccount
 type updateReq struct {
 	addReq
-	idReq
+	serviceAccountIDReq
 }
 
 // deleteReq defines HTTP request for deleteServiceAccount
 // swagger:parameters deleteServiceAccount
 type deleteReq struct {
 	common.ProjectReq
-	idReq
+	serviceAccountIDReq
 }
 
 // Validate validates DeleteEndpoint request
@@ -322,8 +322,8 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func decodeServiceAccountIDReq(c context.Context, r *http.Request) (idReq, error) {
-	var req idReq
+func decodeServiceAccountIDReq(c context.Context, r *http.Request) (serviceAccountIDReq, error) {
+	var req serviceAccountIDReq
 
 	saID, ok := mux.Vars(r)["serviceaccount_id"]
 	if !ok {
