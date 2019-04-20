@@ -80,18 +80,33 @@ groups:
 
   - alert: KubeClientCertificateExpiration
     annotations:
-      message: Kubernetes API certificate is expiring in less than 7 days.
+      message: A client certificate used to authenticate to the apiserver is expiring in less than 7 days.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclientcertificateexpiration
     expr: |
+      apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
+      and
       histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 604800
     labels:
       severity: warning
+    runbook:
+      steps:
+      - Check the [Kubernetes documentation](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/) on how to renew certificates.
+      - If your certificate has already expired, the steps in the documentation might not work. Check [Github](https://github.com/kubernetes/kubeadm/issues/581#issuecomment-421477139)
+        for hints about fixing your cluster.
 
   - alert: KubeClientCertificateExpiration
     annotations:
-      message: Kubernetes API certificate is expiring in less than 24 hours.
+      message: A client certificate used to authenticate to the apiserver is expiring in less than 24 hours.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclientcertificateexpiration
     expr: |
+      apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
+      and
       histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 86400
     labels:
       severity: critical
+    runbook:
+      steps:
+      - Urgently renew your certificates. Expired certificates can make fixing the cluster difficult to begin with.
+      - Check the [Kubernetes documentation](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/) on how to renew certificates.
+      - If your certificate has already expired, the steps in the documentation might not work. Check [Github](https://github.com/kubernetes/kubeadm/issues/581#issuecomment-421477139)
+        for hints about fixing your cluster.
