@@ -90,6 +90,7 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *provider.DatacenterMeta) (cl
 		}
 	} else if cloud.Openstack != nil {
 		manageSecurityGroups := dc.Spec.Openstack.ManageSecurityGroups
+		trustDevicePath := dc.Spec.Openstack.TrustDevicePath
 		openstackCloudConfig := &openstack.CloudConfig{
 			Global: openstack.GlobalOpts{
 				AuthURL:    dc.Spec.Openstack.AuthURL,
@@ -101,7 +102,7 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *provider.DatacenterMeta) (cl
 			},
 			BlockStorage: openstack.BlockStorageOpts{
 				BSVersion:       "auto",
-				TrustDevicePath: false,
+				TrustDevicePath: trustDevicePath != nil && *trustDevicePath,
 				IgnoreVolumeAZ:  dc.Spec.Openstack.IgnoreVolumeAZ,
 			},
 			LoadBalancer: openstack.LoadBalancerOpts{
