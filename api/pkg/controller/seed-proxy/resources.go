@@ -30,13 +30,23 @@ func serviceName(contextName string) string {
 	return fmt.Sprintf("seed-proxy-%s", contextName)
 }
 
+func defaultLabels(name string, instance string) map[string]string {
+	labels := map[string]string{
+		NameLabel:      name,
+		ManagedByLabel: ManagedByLabelValue,
+	}
+
+	if instance != "" {
+		labels[InstanceLabel] = instance
+	}
+
+	return labels
+}
+
 func seedServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return ServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-			sa.Labels = map[string]string{
-				"app.kubernetes.io/name":       ServiceAccountName,
-				"app.kubernetes.io/managed-by": ControllerName,
-			}
+			sa.Labels = defaultLabels(ServiceAccountName, "")
 
 			return sa, nil
 		}
@@ -48,10 +58,7 @@ func seedPrometheusRoleCreator() reconciling.NamedRoleCreatorGetter {
 		return SeedPrometheusRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Name = SeedPrometheusRoleName
 			r.Namespace = SeedPrometheusNamespace
-			r.Labels = map[string]string{
-				"app.kubernetes.io/name":       SeedPrometheusRoleName,
-				"app.kubernetes.io/managed-by": ControllerName,
-			}
+			r.Labels = defaultLabels(SeedPrometheusRoleName, "")
 
 			r.Rules = []rbacv1.PolicyRule{
 				{
@@ -71,10 +78,7 @@ func seedPrometheusRoleBindingCreator() reconciling.NamedRoleBindingCreatorGette
 		return SeedPrometheusRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Name = SeedPrometheusRoleBindingName
 			rb.Namespace = SeedPrometheusNamespace
-			rb.Labels = map[string]string{
-				"app.kubernetes.io/name":       SeedPrometheusRoleName,
-				"app.kubernetes.io/managed-by": ControllerName,
-			}
+			rb.Labels = defaultLabels(SeedPrometheusRoleBindingName, "")
 
 			rb.RoleRef = rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,
@@ -102,11 +106,7 @@ func masterSecretCreator(contextName string, credentials *corev1.Secret) reconci
 		return name, func(s *corev1.Secret) (*corev1.Secret, error) {
 			s.Name = name
 			s.Namespace = KubermaticNamespace
-			s.Labels = map[string]string{
-				"app.kubernetes.io/name":       "seed-proxy",
-				"app.kubernetes.io/instance":   contextName,
-				"app.kubernetes.io/managed-by": ControllerName,
-			}
+			s.Labels = defaultLabels("seed-proxy", contextName)
 
 			if s.Data == nil {
 				s.Data = make(map[string][]byte)
@@ -129,15 +129,15 @@ func masterDeploymentCreator(contextName string) reconciling.NamedDeploymentCrea
 		return name, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			labels := func() map[string]string {
 				return map[string]string{
-					"app.kubernetes.io/name":     "seed-proxy",
-					"app.kubernetes.io/instance": contextName,
+					NameLabel:     DeploymentName,
+					InstanceLabel: contextName,
 				}
 			}
 
 			d.Name = name
 			d.Namespace = KubermaticNamespace
 			d.Labels = labels()
-			d.Labels["app.kubernetes.io/managed-by"] = ControllerName
+			d.Labels[ManagedByLabel] = ManagedByLabelValue
 
 			d.Spec.Replicas = i32ptr(1)
 			d.Spec.Selector = &metav1.LabelSelector{
@@ -218,8 +218,8 @@ func masterServiceCreator(contextName string) reconciling.NamedServiceCreatorGet
 		return name, func(s *corev1.Service) (*corev1.Service, error) {
 			labels := func() map[string]string {
 				return map[string]string{
-					"app.kubernetes.io/name":     "seed-proxy",
-					"app.kubernetes.io/instance": contextName,
+					NameLabel:     name,
+					InstanceLabel: contextName,
 				}
 			}
 
@@ -227,7 +227,7 @@ func masterServiceCreator(contextName string) reconciling.NamedServiceCreatorGet
 			s.Namespace = KubermaticNamespace
 
 			s.Labels = labels()
-			s.Labels["app.kubernetes.io/managed-by"] = ControllerName
+			s.Labels[ManagedByLabel] = ManagedByLabelValue
 
 			s.Spec.Ports = []corev1.ServicePort{
 				{
@@ -253,7 +253,7 @@ func masterGrafanaConfigmapCreator(datacenters map[string]provider.DatacenterMet
 		return MasterGrafanaConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			labels := func() map[string]string {
 				return map[string]string{
-					"app.kubernetes.io/name": "seed-proxy",
+					NameLabel: MasterGrafanaConfigMapName,
 				}
 			}
 
@@ -262,7 +262,7 @@ func masterGrafanaConfigmapCreator(datacenters map[string]provider.DatacenterMet
 			c.Data = make(map[string]string)
 
 			c.Labels = labels()
-			c.Labels["app.kubernetes.io/managed-by"] = ControllerName
+			c.Labels[ManagedByLabel] = ManagedByLabelValue
 
 			for dcName, dc := range datacenters {
 				if dc.IsSeed {
@@ -331,6 +331,5 @@ datasources:
   type: prometheus
   access: proxy
   url: http://{{ .ServiceName }}.{{ .ServiceNamespace }}.svc.cluster.local:{{ .ProxyPort }}/api/v1/namespaces/{{ .SeedPrometheusNamespace }}/services/{{ .SeedPrometheusServiceName }}:{{ .SeedPrometheusPortName }}/proxy/
-
   editable: false
 `

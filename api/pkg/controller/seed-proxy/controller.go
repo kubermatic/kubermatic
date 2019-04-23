@@ -2,7 +2,6 @@ package seedproxy
 
 import (
 	"fmt"
-	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -23,13 +22,11 @@ import (
 )
 
 const (
-	healthCheckPeriod             = 5 * time.Second
 	ControllerName                = "seed-proxy-controller"
 	KubermaticNamespace           = "kubermatic"
 	KubeconfigSecret              = "kubeconfig"
 	DatacentersSecret             = "datacenters"
-	OwnerLabel                    = "kubermatic.io/controller"
-	OwnerLabelValue               = ControllerName
+	DeploymentName                = "seed-proxy"
 	ServiceAccountName            = "seed-proxy"
 	ServiceAccountNamespace       = metav1.NamespaceSystem
 	SeedPrometheusNamespace       = "monitoring"
@@ -38,6 +35,10 @@ const (
 	MasterGrafanaNamespace        = "monitoring-master"
 	MasterGrafanaConfigMapName    = "grafana-seed-proxies"
 	KubectlProxyPort              = 8001
+	NameLabel                     = "app.kubernetes.io/name"
+	InstanceLabel                 = "app.kubernetes.io/instance"
+	ManagedByLabel                = "app.kubernetes.io/managed-by"
+	ManagedByLabelValue           = ControllerName
 )
 
 // Add creates a new Monitoring controller that is responsible for
@@ -81,6 +82,7 @@ func Add(
 		{obj: &appsv1.Deployment{}, pred: deploymentPredicate()},
 		{obj: &corev1.Service{}, pred: servicePredicate()},
 		{obj: &corev1.Secret{}, pred: secretsPredicate()},
+		{obj: &corev1.ConfigMap{}, pred: configMapPredicate()},
 	}
 
 	for _, t := range typesToWatch {
@@ -98,18 +100,21 @@ func secretsPredicate() predicate.Funcs {
 	})
 }
 
+func managedByController(meta metav1.Object) bool {
+	labels := meta.GetLabels()
+	return labels[ManagedByLabel] == ManagedByLabelValue
+}
+
 func deploymentPredicate() predicate.Funcs {
-	return makePredicateFuncs(func(meta metav1.Object) bool {
-		labels := meta.GetLabels()
-		return meta.GetNamespace() == KubermaticNamespace && labels[OwnerLabel] == OwnerLabelValue
-	})
+	return makePredicateFuncs(managedByController)
 }
 
 func servicePredicate() predicate.Funcs {
-	return makePredicateFuncs(func(meta metav1.Object) bool {
-		labels := meta.GetLabels()
-		return meta.GetNamespace() == KubermaticNamespace && labels[OwnerLabel] == OwnerLabelValue
-	})
+	return makePredicateFuncs(managedByController)
+}
+
+func configMapPredicate() predicate.Funcs {
+	return makePredicateFuncs(managedByController)
 }
 
 func makePredicateFuncs(pred func(metav1.Object) bool) predicate.Funcs {
