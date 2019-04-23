@@ -150,7 +150,7 @@ func masterDeploymentCreator(contextName string) reconciling.NamedDeploymentCrea
 
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:            "prometheus",
+					Name:            "proxy",
 					Image:           "quay.io/kubermatic/util:1.0.0-2",
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Command:         []string{"/bin/bash"},
