@@ -164,6 +164,10 @@ func masterDeploymentCreator(contextName string) reconciling.NamedDeploymentCrea
 							Name:  "PROXY_PORT",
 							Value: fmt.Sprintf("%d", KubectlProxyPort),
 						},
+						{
+							Name:  "TARGET_NAMESPACE",
+							Value: SeedPrometheusNamespace,
+						},
 					},
 					Ports: []corev1.ContainerPort{
 						{
@@ -310,15 +314,12 @@ set -euo pipefail
 
 echo "Starting kubectl proxy for $KUBERNETES_CONTEXT on port $PROXY_PORT..."
 
-while true; do
-  kubectl proxy \
-	 --address=0.0.0.0 \
-	 --port=$PROXY_PORT \
-	 --accept-hosts='' \
-	 --accept-paths='^/api/v1/namespaces/monitoring/services/.*/proxy/.*$' \
-	 --reject-methods='^(POST|PUT|PATCH|DELETE)$'
-  sleep 1
-done
+kubectl proxy \
+  --address=0.0.0.0 \
+  --port=$PROXY_PORT \
+  --accept-hosts='' \
+  --accept-paths="^/api/v1/namespaces/$TARGET_NAMESPACE/services/.*/proxy/.*$" \
+  --reject-methods='^(POST|PUT|PATCH|DELETE)$'
 `
 
 const grafanaDatasource = `
