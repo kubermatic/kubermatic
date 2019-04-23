@@ -138,6 +138,7 @@ spec:
             add:
             - NET_ADMIN
           procMount: Default
+          runAsUser: 0
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
