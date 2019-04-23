@@ -1737,11 +1737,8 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "text": "prometheus",
-          "value": "prometheus"
-        },
-        "hide": 2,
+        "current": {},
+        "hide": "<< datasourceHide | toJson >>",
         "label": "Data Source",
         "name": "datasource",
         "options": [],

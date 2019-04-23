@@ -1,39 +1,48 @@
 apiVersion: v1
-kind: List
-items:
-- apiVersion: v1
-  kind: ConfigMap
-  metadata:
-    name: grafana-datasources
-  data:
-{{ (.Files.Glob (.Values.grafana.provisioning.datasources.source | default "provisioning/datasources/*")).AsConfig | indent 4 }}
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+data:
+{{- if .Values.grafana.provisioning.datasources.source }}
+{{- range $filename, $_ := (.Files.Glob .Values.grafana.provisioning.datasources.source) }}
+  {{ base $filename }}: |
+{{ tpl ($.Files.Get $filename) $ | indent 4 }}
+{{- end }}
+{{- end }}
 {{- if .Values.grafana.provisioning.datasources.extra }}
-    _extra.yaml: |
-      apiVersion: 1
-      datasources:
-{{ toYaml .Values.grafana.provisioning.datasources.extra | indent 6 }}
+  _extra.yaml: |
+    apiVersion: 1
+    datasources:
+{{ toYaml .Values.grafana.provisioning.datasources.extra | indent 4 }}
 {{- end }}
 
-- apiVersion: v1
-  kind: ConfigMap
-  metadata:
-    name: grafana-dashboards
-  data:
-{{ (.Files.Glob (.Values.grafana.provisioning.dashboards.source | default "provisioning/dashboards/*")).AsConfig | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+data:
+{{- if .Values.grafana.provisioning.dashboards.source }}
+{{- range $filename, $_ := (.Files.Glob .Values.grafana.provisioning.dashboards.source) }}
+  {{ base $filename }}: |
+{{ tpl ($.Files.Get $filename) $ | indent 4 }}
+{{- end }}
+{{- end }}
 {{- if .Values.grafana.provisioning.dashboards.extra }}
-    _extra.yaml: |
-      apiVersion: 1
-      providers:
-{{ toYaml .Values.grafana.provisioning.dashboards.extra | indent 6 }}
+  _extra.yaml: |
+    apiVersion: 1
+    providers:
+{{ toYaml .Values.grafana.provisioning.dashboards.extra | indent 4 }}
 {{- end }}
 
-- apiVersion: v1
-  kind: ConfigMap
-  metadata:
-    name: grafana-dashboard-definitions
-  data:
-    # See the README.md for more details on how dashboards are treated as templates.
-    {{- range $file, $content := (.Files.Glob "dashboards/**") }}
-    {{ $file | replace "dashboards/" "" | replace "/" "-" }}: |
-{{ (regexReplaceAllLiteral "\\n\\s+" ((tpl (($.Files.Get $file) | replace "{{" "_{_{" | replace "}}" "_}_}" | replace "[[ " "{{ .Values.grafana.dashboards." | replace "]]" "}}" | replace "\"<< " "{{ .Values.grafana.dashboards." | replace ">>\"" "}}") $) | replace "_{_{" "{{" | replace "_}_}" "}}") " ") | indent 6 }}
-    {{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-definitions
+data:
+  # See the README.md for more details on how dashboards are treated as templates.
+  {{- range $file, $content := (.Files.Glob "dashboards/**") }}
+  {{ $file | replace "dashboards/" "" | replace "/" "-" }}: |
+{{ ((tpl (($.Files.Get $file) | replace "{{" "_{_{" | replace "}}" "_}_}" | replace "[[ " "{{ .Values.grafana.dashboards." | replace "]]" "}}" | replace "\"<< " "{{ .Values.grafana.dashboards." | replace ">>\"" "}}") $) | replace "_{_{" "{{" | replace "_}_}" "}}") | fromJson | toJson | indent 4 }}
+  {{- end }}
