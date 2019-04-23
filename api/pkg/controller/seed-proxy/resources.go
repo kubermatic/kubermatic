@@ -134,6 +134,16 @@ func masterDeploymentCreator(contextName string) reconciling.NamedDeploymentCrea
 				}
 			}
 
+			probe := corev1.Probe{
+				InitialDelaySeconds: 3,
+				TimeoutSeconds:      2,
+				Handler: corev1.Handler{
+					TCPSocket: &corev1.TCPSocketAction{
+						Port: intstr.Parse("http"),
+					},
+				},
+			}
+
 			d.Name = name
 			d.Namespace = KubermaticNamespace
 			d.Labels = labels()
@@ -195,6 +205,7 @@ func masterDeploymentCreator(contextName string) reconciling.NamedDeploymentCrea
 					},
 					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 					TerminationMessagePath:   "/dev/termination-log",
+					ReadinessProbe:           &probe,
 				},
 			}
 
