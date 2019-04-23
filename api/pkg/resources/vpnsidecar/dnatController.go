@@ -48,6 +48,7 @@ func DnatControllerContainer(data dnatControllerData, name, apiserverAddress str
 			Capabilities: &corev1.Capabilities{
 				Add: []corev1.Capability{"NET_ADMIN"},
 			},
+			RunAsUser: resources.Int64(0),
 			ProcMount: &procMountType,
 		},
 		TerminationMessagePath:   corev1.TerminationMessagePathDefault,
