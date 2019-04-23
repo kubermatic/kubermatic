@@ -33,7 +33,7 @@ func serviceName(contextName string) string {
 func defaultLabels(name string, instance string) map[string]string {
 	labels := map[string]string{
 		NameLabel:      name,
-		ManagedByLabel: ManagedByLabelValue,
+		ManagedByLabel: ControllerName,
 	}
 
 	if instance != "" {
@@ -137,7 +137,7 @@ func masterDeploymentCreator(contextName string) reconciling.NamedDeploymentCrea
 			d.Name = name
 			d.Namespace = KubermaticNamespace
 			d.Labels = labels()
-			d.Labels[ManagedByLabel] = ManagedByLabelValue
+			d.Labels[ManagedByLabel] = ControllerName
 
 			d.Spec.Replicas = i32ptr(1)
 			d.Spec.Selector = &metav1.LabelSelector{
@@ -227,7 +227,7 @@ func masterServiceCreator(contextName string) reconciling.NamedServiceCreatorGet
 			s.Namespace = KubermaticNamespace
 
 			s.Labels = labels()
-			s.Labels[ManagedByLabel] = ManagedByLabelValue
+			s.Labels[ManagedByLabel] = ControllerName
 
 			s.Spec.Ports = []corev1.ServicePort{
 				{
@@ -262,7 +262,7 @@ func masterGrafanaConfigmapCreator(datacenters map[string]provider.DatacenterMet
 			c.Data = make(map[string]string)
 
 			c.Labels = labels()
-			c.Labels[ManagedByLabel] = ManagedByLabelValue
+			c.Labels[ManagedByLabel] = ControllerName
 
 			for dcName, dc := range datacenters {
 				if dc.IsSeed {

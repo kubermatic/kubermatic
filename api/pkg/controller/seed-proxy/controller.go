@@ -24,8 +24,6 @@ import (
 const (
 	ControllerName                = "seed-proxy-controller"
 	KubermaticNamespace           = "kubermatic"
-	KubeconfigSecret              = "kubeconfig"
-	DatacentersSecret             = "datacenters"
 	DeploymentName                = "seed-proxy"
 	ServiceAccountName            = "seed-proxy"
 	ServiceAccountNamespace       = metav1.NamespaceSystem
@@ -38,7 +36,6 @@ const (
 	NameLabel                     = "app.kubernetes.io/name"
 	InstanceLabel                 = "app.kubernetes.io/instance"
 	ManagedByLabel                = "app.kubernetes.io/managed-by"
-	ManagedByLabelValue           = ControllerName
 )
 
 // Add creates a new Monitoring controller that is responsible for
@@ -96,7 +93,7 @@ func Add(
 
 func managedByController(meta metav1.Object) bool {
 	labels := meta.GetLabels()
-	return labels[ManagedByLabel] == ManagedByLabelValue
+	return labels[ManagedByLabel] == ControllerName
 }
 
 func secretsPredicate() predicate.Funcs {

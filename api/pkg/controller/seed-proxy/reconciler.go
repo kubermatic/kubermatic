@@ -21,7 +21,6 @@ import (
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
-	// userClusterConnProvider userClusterConnectionProvider
 	kubeconfig  *clientcmdapi.Config
 	datacenters map[string]provider.DatacenterMeta
 
@@ -66,18 +65,19 @@ func (r *Reconciler) reconcileContext(ctx context.Context, contextName string) e
 		return fmt.Errorf("failed to create client for seed: %v", err)
 	}
 
-	if err := r.ensureSeed(ctx, client); err != nil {
-		return fmt.Errorf("failed to ensure seed %s: %v", contextName, err)
+	glog.V(4).Infof("Reconciling seed cluster %s...", contextName)
+	if err := r.reconcileSeed(ctx, client); err != nil {
+		return fmt.Errorf("failed to reconcile seed: %v", err)
 	}
 
-	glog.V(6).Info("Fetching service account details from seed cluster...")
+	glog.V(4).Info("Fetching service account details from seed cluster...")
 	serviceAccountSecret, err := r.fetchServiceAccountSecret(ctx, client)
 	if err != nil {
-		return fmt.Errorf("failed to ensure seed %s: %v", contextName, err)
+		return fmt.Errorf("failed to fetch service account: %v", err)
 	}
 
-	if err := r.ensureMaster(ctx, contextName, serviceAccountSecret); err != nil {
-		return fmt.Errorf("failed to ensure master: %v", err)
+	if err := r.reconcileMaster(ctx, contextName, serviceAccountSecret); err != nil {
+		return fmt.Errorf("failed to reconcile master: %v", err)
 	}
 
 	return nil
@@ -99,18 +99,18 @@ func (r *Reconciler) seedClusterClient(contextName string) (ctrlruntimeclient.Cl
 	return ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
 }
 
-func (r *Reconciler) ensureSeed(ctx context.Context, client ctrlruntimeclient.Client) error {
-	glog.V(6).Info("Reconciling service accounts in seed cluster...")
+func (r *Reconciler) reconcileSeed(ctx context.Context, client ctrlruntimeclient.Client) error {
+	glog.V(4).Info("Reconciling service accounts...")
 	if err := r.ensureSeedServiceAccounts(ctx, client); err != nil {
 		return fmt.Errorf("failed to ensure service account: %v", err)
 	}
 
-	glog.V(6).Info("Reconciling roles in seed cluster...")
+	glog.V(4).Info("Reconciling roles...")
 	if err := r.ensureSeedRoles(ctx, client); err != nil {
 		return fmt.Errorf("failed to ensure role: %v", err)
 	}
 
-	glog.V(6).Info("Reconciling role bindings in seed cluster...")
+	glog.V(4).Info("Reconciling role bindings...")
 	if err := r.ensureSeedRoleBindings(ctx, client); err != nil {
 		return fmt.Errorf("failed to ensure role binding: %v", err)
 	}
@@ -182,23 +182,18 @@ func (r *Reconciler) fetchServiceAccountSecret(ctx context.Context, client ctrlr
 	return secret, nil
 }
 
-func (r *Reconciler) ensureMaster(ctx context.Context, contextName string, credentials *corev1.Secret) error {
-	glog.V(6).Info("Reconciling secrets in master cluster...")
+func (r *Reconciler) reconcileMaster(ctx context.Context, contextName string, credentials *corev1.Secret) error {
+	glog.V(4).Info("Reconciling secrets...")
 	if err := r.ensureMasterSecrets(ctx, contextName, credentials); err != nil {
 		return fmt.Errorf("failed to ensure secrets: %v", err)
 	}
 
-	glog.V(6).Info("Reconciling deployments in master cluster...")
+	glog.V(4).Info("Reconciling deployments...")
 	if err := r.ensureMasterDeployments(ctx, contextName); err != nil {
 		return fmt.Errorf("failed to ensure deployments: %v", err)
 	}
 
-	glog.V(6).Info("Reconciling services in master cluster...")
-	if err := r.ensureMasterServices(ctx, contextName); err != nil {
-		return fmt.Errorf("failed to ensure services: %v", err)
-	}
-
-	glog.V(6).Info("Reconciling services in master cluster...")
+	glog.V(4).Info("Reconciling services...")
 	if err := r.ensureMasterServices(ctx, contextName); err != nil {
 		return fmt.Errorf("failed to ensure services: %v", err)
 	}
@@ -243,6 +238,7 @@ func (r *Reconciler) ensureMasterServices(ctx context.Context, contextName strin
 }
 
 func (r *Reconciler) reconcileGrafana(ctx context.Context) error {
+	glog.V(4).Info("Reconciling Grafana provisioning...")
 	if err := r.ensureMasterGrafanaProvisioning(ctx); err != nil {
 		return err
 	}
