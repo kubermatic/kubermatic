@@ -168,6 +168,12 @@ write_files:
     systemctl restart systemd-modules-load.service
     sysctl --system
 
+    # Make sure we always disable swap - Otherwise the kubelet won't start
+    cp /etc/fstab /etc/fstab.orig
+    cat /etc/fstab.orig | awk '$3 ~ /^swap$/ && $1 !~ /^#/ {$0="# commented out by cloudinit\n#"$0} 1' > /etc/fstab.noswap
+    mv /etc/fstab.noswap /etc/fstab
+    swapoff -a
+
     {{ if ne .CloudProvider "aws" }}
     # The normal way of setting it via cloud-init is broken:
     # https://bugs.launchpad.net/cloud-init/+bug/1662542

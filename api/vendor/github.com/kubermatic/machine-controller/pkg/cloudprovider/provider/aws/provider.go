@@ -150,7 +150,7 @@ func getDefaultAMIID(client *ec2.EC2, os providerconfig.OperatingSystem, region 
 	cacheKey := fmt.Sprintf("ami-id-%s-%s", region, os)
 	amiID, found := cache.Get(cacheKey)
 	if found {
-		glog.V(4).Info("found AMI-ID in cache!")
+		glog.V(3).Info("found AMI-ID in cache!")
 		return amiID.(string), nil
 	}
 
@@ -549,7 +549,7 @@ func (p *provider) Cleanup(machine *v1alpha1.Machine, _ *cloud.MachineCreateDele
 	}
 
 	if *tOut.TerminatingInstances[0].PreviousState.Name != *tOut.TerminatingInstances[0].CurrentState.Name {
-		glog.V(4).Infof("successfully triggered termination of instance %s at aws", instance.ID())
+		glog.V(3).Infof("successfully triggered termination of instance %s at aws", instance.ID())
 	}
 
 	return false, nil
