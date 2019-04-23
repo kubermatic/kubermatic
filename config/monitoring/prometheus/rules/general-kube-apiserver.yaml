@@ -69,17 +69,23 @@ groups:
       severity: warning
   - alert: KubeClientCertificateExpiration
     annotations:
-      message: Kubernetes API certificate is expiring in less than 7 days.
+      message: A client certificate used to authenticate to the apiserver is expiring
+        in less than 7 days.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclientcertificateexpiration
     expr: |
+      apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
+      and
       histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 604800
     labels:
       severity: warning
   - alert: KubeClientCertificateExpiration
     annotations:
-      message: Kubernetes API certificate is expiring in less than 24 hours.
+      message: A client certificate used to authenticate to the apiserver is expiring
+        in less than 24 hours.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclientcertificateexpiration
     expr: |
+      apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
+      and
       histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 86400
     labels:
       severity: critical
