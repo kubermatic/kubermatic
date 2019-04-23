@@ -44,6 +44,9 @@ type OpenstackSpec struct {
 	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
 	// To make this change backwards compatible, this will default to true.
 	ManageSecurityGroups *bool `yaml:"manage_security_groups"`
+	// Gets mapped to the "trust-device-path" setting in the cloud config.
+	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
+	TrustDevicePath *bool `yaml:"trust_device_path"`
 }
 
 // AzureSpec describes an Azure cloud datacenter
