@@ -17,6 +17,10 @@ data:
         inCluster: true
     web:
       http: 0.0.0.0:5556
+{{ if .Values.dex.expiry }}
+    expiry:
+{{ toYaml .Values.dex.expiry | indent 6 }}
+{{- end }}
 {{ if .Values.dex.grpc }}
     enablePasswordDB: true
     grpc:
