@@ -221,7 +221,9 @@ write_files:
     apt-get update
 
     # Make sure we always disable swap - Otherwise the kubelet won't start'.
-    systemctl mask swap.target
+    cp /etc/fstab /etc/fstab.orig
+    cat /etc/fstab.orig | awk '$3 ~ /^swap$/ && $1 !~ /^#/ {$0="# commented out by cloudinit\n#"$0} 1' > /etc/fstab.noswap
+    mv /etc/fstab.noswap /etc/fstab
     swapoff -a
 
     export CR_PKG='docker-ce=5:18.09.2~3-0~ubuntu-bionic'

@@ -46,10 +46,10 @@ func (ne *NodeEviction) Run() error {
 	}
 	node := listerNode.DeepCopy()
 	if _, exists := node.Annotations[SkipEvictionAnnotationKey]; exists {
-		glog.V(4).Infof("Skipping eviction for node %s as it has a %s annotation", ne.nodeName, SkipEvictionAnnotationKey)
+		glog.V(3).Infof("Skipping eviction for node %s as it has a %s annotation", ne.nodeName, SkipEvictionAnnotationKey)
 		return nil
 	}
-	glog.V(4).Infof("Starting to evict node %s", ne.nodeName)
+	glog.V(3).Infof("Starting to evict node %s", ne.nodeName)
 
 	if err := ne.cordonNode(node); err != nil {
 		return fmt.Errorf("failed to cordon node %s: %v", ne.nodeName, err)
@@ -71,7 +71,7 @@ func (ne *NodeEviction) Run() error {
 	if err := ne.waitForDeletion(podsToEvict); err != nil {
 		return fmt.Errorf("failed waiting for pods of node %s to be deleted: %v", ne.nodeName, err)
 	}
-	glog.V(4).Infof("All pods of node %s were successfully evicted", ne.nodeName)
+	glog.V(3).Infof("All pods of node %s were successfully evicted", ne.nodeName)
 
 	return nil
 }
