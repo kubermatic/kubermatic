@@ -6,6 +6,9 @@ dex:
   ingress:
     host: ""
     path: "/dex"
+  expiry:
+    signingKeys: "6h"
+    idTokens: "24h"
 #  connectors:
 #  - type: github
 #    id: github
