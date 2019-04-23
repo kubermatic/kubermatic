@@ -153,7 +153,7 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	{
 		// if the API users is actually a service account use JWTTokenAuthentication
 		// that knows how to extract and verify the token
-		if strings.HasSuffix(user.Email, "@sa.kubermatic.io") {
+		if strings.HasPrefix(user.Email, "serviceaccount-") {
 			saExtractorVerifier := auth.NewServiceAccountAuthClient(
 				auth.NewHeaderBearerTokenExtractor("Authorization"),
 				serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey)),
@@ -162,10 +162,10 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 			verifiers = append(verifiers, saExtractorVerifier)
 			extractors = append(extractors, saExtractorVerifier)
 
-		} else {
 			// for normal users we use OIDCClient which is broken at the moment
 			// because the tests don't send a token in the Header instead
 			// the client spits out a hardcoded value
+		} else {
 			fakeOIDCClient := NewFakeOIDCClient(user)
 			verifiers = append(verifiers, fakeOIDCClient)
 			extractors = append(extractors, fakeOIDCClient)
@@ -373,8 +373,8 @@ func GenUser(id, name, email string) *kubermaticapiv1.User {
 	}
 }
 
-// GenServiceAccount generates a Service Account resource
-func GenServiceAccount(id, name, group, projectName string) *kubermaticapiv1.User {
+// GenInactiveServiceAccount generates a Service Account resource
+func GenInactiveServiceAccount(id, name, group, projectName string) *kubermaticapiv1.User {
 	user := GenUser(id, name, fmt.Sprintf("serviceaccount-%s@sa.kubermatic.io", id))
 	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: fmt.Sprintf("%s-%s", group, projectName)}
 	user.OwnerReferences = []metav1.OwnerReference{
@@ -390,6 +390,16 @@ func GenServiceAccount(id, name, group, projectName string) *kubermaticapiv1.Use
 	user.UID = ""
 
 	return user
+}
+
+func GenServiceAccount(id, name, group, projectName string) *kubermaticapiv1.User {
+	sa := GenInactiveServiceAccount(id, name, group, projectName)
+	sa.Labels = map[string]string{}
+	return sa
+}
+
+func GenDefaultServiceAccount() *kubermaticapiv1.User {
+	return GenServiceAccount("1984", "default", "editors", GenDefaultProject().Name)
 }
 
 // GenAPIUser generates a API user
