@@ -35,7 +35,9 @@ const (
 --anonymous-auth=false \
 --protect-kernel-defaults=true \
 --cluster-dns={{ .ClusterDNSIPs | join "," }} \
---cluster-domain=cluster.local`
+--cluster-domain=cluster.local \
+--kube-reserved=cpu=100m,memory=100Mi,ephemeral-storage=1Gi \
+--system-reserved=cpu=100m,memory=100Mi,ephemeral-storage=1Gi`
 
 	kubeletSystemdUnitTpl = `[Unit]
 After=docker.service
@@ -48,6 +50,8 @@ Documentation=https://kubernetes.io/docs/home/
 Restart=always
 StartLimitInterval=0
 RestartSec=10
+CPUAccounting=true
+MemoryAccounting=true
 
 Environment="PATH=/opt/bin:/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin/"
 
@@ -155,6 +159,5 @@ After=docker.service
 ExecStart=/opt/bin/health-monitor.sh container-runtime
 
 [Install]
-WantedBy=multi-user.target
-`
+WantedBy=multi-user.target`
 }
