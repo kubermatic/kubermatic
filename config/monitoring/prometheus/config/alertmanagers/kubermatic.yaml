@@ -3,7 +3,7 @@ kubernetes_sd_configs:
   role: endpoints
   namespaces:
     names:
-    - monitoring
+    - '{{ .Release.Namespace }}'
 scheme: http
 path_prefix: /
 timeout: 10s

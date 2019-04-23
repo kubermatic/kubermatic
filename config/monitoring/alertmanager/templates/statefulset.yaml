@@ -24,9 +24,9 @@ spec:
         - --web.listen-address=:9093
         - --web.external-url=https://{{ .Values.alertmanager.host | trim }}
         - --web.route-prefix=/
-        - --cluster.peer=alertmanager-kubermatic-0.alertmanager-kubermatic.monitoring.svc.cluster.local:6783
-        - --cluster.peer=alertmanager-kubermatic-1.alertmanager-kubermatic.monitoring.svc.cluster.local:6783
-        - --cluster.peer=alertmanager-kubermatic-2.alertmanager-kubermatic.monitoring.svc.cluster.local:6783
+        - --cluster.peer=alertmanager-kubermatic-0.alertmanager-kubermatic.{{ .Release.Namespace }}.svc.cluster.local:6783
+        - --cluster.peer=alertmanager-kubermatic-1.alertmanager-kubermatic.{{ .Release.Namespace }}.svc.cluster.local:6783
+        - --cluster.peer=alertmanager-kubermatic-2.alertmanager-kubermatic.{{ .Release.Namespace }}.svc.cluster.local:6783
         env:
         - name: POD_IP
           valueFrom:

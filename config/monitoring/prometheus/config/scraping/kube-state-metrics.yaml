@@ -8,7 +8,7 @@ kubernetes_sd_configs:
   role: endpoints
   namespaces:
     names:
-    - monitoring
+    - '{{ .Release.Namespace }}'
 relabel_configs:
 - source_labels: [__meta_kubernetes_service_label_app]
   separator: ;
