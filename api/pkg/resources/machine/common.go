@@ -160,6 +160,10 @@ func getOpenstackProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, 
 		config.FloatingIPPool = providerconfig.ConfigVarString{Value: c.Spec.Cloud.Openstack.FloatingIPPool}
 	}
 
+	if dc.Spec.Openstack.TrustDevicePath != nil {
+		config.TrustDevicePath = providerconfig.ConfigVarBool{Value: *dc.Spec.Openstack.TrustDevicePath}
+	}
+
 	config.Tags = map[string]string{}
 	for key, value := range nodeSpec.Cloud.Openstack.Tags {
 		config.Tags[key] = value
