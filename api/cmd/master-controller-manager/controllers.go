@@ -30,10 +30,10 @@ func noop(workerCount int, stopCh <-chan struct{}) error { <-stopCh; return nil 
 // each entry holds the name of the controller and the corresponding
 // start function that will essentially run the controller
 var allControllers = map[string]controllerCreator{
-	// "RBAC":               createRBACContoller,
-	// "UserProjectBinding": createUserProjectBindingController,
-	// "ServiceAccounts":    createServiceAccountsController,
-	"SeedProxy": createSeedProxyController,
+	"RBAC":               createRBACContoller,
+	"UserProjectBinding": createUserProjectBindingController,
+	"ServiceAccounts":    createServiceAccountsController,
+	"SeedProxy":          createSeedProxyController,
 }
 
 func createAllControllers(ctrlCtx *controllerContext) (map[string]runnerFn, error) {
