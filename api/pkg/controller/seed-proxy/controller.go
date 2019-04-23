@@ -94,15 +94,13 @@ func Add(
 	return nil
 }
 
-func secretsPredicate() predicate.Funcs {
-	return makePredicateFuncs(func(meta metav1.Object) bool {
-		return meta.GetNamespace() == KubermaticNamespace && (meta.GetName() == KubeconfigSecret || meta.GetName() == DatacentersSecret)
-	})
-}
-
 func managedByController(meta metav1.Object) bool {
 	labels := meta.GetLabels()
 	return labels[ManagedByLabel] == ManagedByLabelValue
+}
+
+func secretsPredicate() predicate.Funcs {
+	return makePredicateFuncs(managedByController)
 }
 
 func deploymentPredicate() predicate.Funcs {
