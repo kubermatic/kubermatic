@@ -48,7 +48,7 @@ type ProjectMemberProvider struct {
 // Create creates a binding for the given member and the given project
 func (p *ProjectMemberProvider) Create(userInfo *provider.UserInfo, project *kubermaticapiv1.Project, memberEmail, group string) (*kubermaticapiv1.UserProjectBinding, error) {
 	if p.isServiceAccountFunc(memberEmail) {
-		return nil, fmt.Errorf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name)
+		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name))
 	}
 
 	finalizers := []string{}

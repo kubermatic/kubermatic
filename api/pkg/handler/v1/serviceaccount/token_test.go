@@ -45,9 +45,9 @@ func TestCreateTokenProject(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-3@sa.kubermatic.io", "viewers"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				genActiveServiceAccount("1", "test-1", "editors", "plan9-ID"),
-				genActiveServiceAccount("2", "test-2", "editors", "test-ID"),
-				genActiveServiceAccount("3", "test-3", "viewers", "plan9-ID"),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenServiceAccount("2", "test-2", "editors", "test-ID"),
+				test.GenServiceAccount("3", "test-3", "viewers", "plan9-ID"),
 			},
 			existingKubernetesObjs: []runtime.Object{},
 			existingAPIUser:        *test.GenAPIUser("john", "john@acme.com"),
@@ -68,9 +68,9 @@ func TestCreateTokenProject(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-3@sa.kubermatic.io", "viewers"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				genActiveServiceAccount("1", "test-1", "editors", "plan9-ID"),
-				genActiveServiceAccount("2", "test-2", "editors", "test-ID"),
-				genActiveServiceAccount("3", "test-3", "viewers", "plan9-ID"),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenServiceAccount("2", "test-2", "editors", "test-ID"),
+				test.GenServiceAccount("3", "test-3", "viewers", "plan9-ID"),
 			},
 			existingKubernetesObjs: []runtime.Object{
 				test.GenSecret("plan9-ID", "serviceaccount-1", "test", "1"),
@@ -156,7 +156,7 @@ func TestListTokens(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				genActiveServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []runtime.Object{
 				test.GenSecret("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -225,11 +225,11 @@ func TestServiceAccountCanGetProject(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				genActiveServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			/*given sa and secret it knows how to generate a valid token*/
 			authReqestFunc: test.AuthorizeRequest(
-				genActiveServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 				test.GenSecret("plan9-ID", "serviceaccount-1", "test-1", "1")),
 			existingKubernetesObjs: []runtime.Object{
 				test.GenSecret("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -301,7 +301,7 @@ func TestPatchToken(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				genActiveServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []runtime.Object{
 				test.GenSecret("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -324,7 +324,7 @@ func TestPatchToken(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				genActiveServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []runtime.Object{
 				test.GenSecret("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -347,7 +347,7 @@ func TestPatchToken(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				genActiveServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []runtime.Object{
 				test.GenSecret("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -431,7 +431,7 @@ func TestUpdateToken(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				genActiveServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []runtime.Object{
 				test.GenSecret("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -454,7 +454,7 @@ func TestUpdateToken(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				genActiveServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []runtime.Object{
 				test.GenSecret("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -477,7 +477,7 @@ func TestUpdateToken(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				genActiveServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []runtime.Object{
 				test.GenSecret("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -558,7 +558,7 @@ func TestDeleteToken(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				genActiveServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []runtime.Object{
 				test.GenSecret("plan9-ID", "serviceaccount-1", "test-1", "1"),
