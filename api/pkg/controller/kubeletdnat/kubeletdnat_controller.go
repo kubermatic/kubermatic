@@ -263,6 +263,9 @@ func execIptables(args []string) error {
 func execSave() ([]string, error) {
 	cmd := exec.Command("iptables-save", []string{"-t", "nat"}...)
 	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute %q: %v. Output: \n%s", strings.Join(cmd.Args, " "), err, out)
+	}
 	return strings.Split(string(out), "\n"), err
 }
 
