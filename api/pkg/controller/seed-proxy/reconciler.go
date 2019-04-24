@@ -19,7 +19,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// Reconciler stores all components required for monitoring
+// Reconciler (re)stores all components required for proxying requests to
+// seed clusters. It also takes care of creating a nice ConfigMap for
+// Grafana's provisioning mechanism.
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
@@ -29,6 +31,10 @@ type Reconciler struct {
 	recorder record.EventRecorder
 }
 
+// Reconcile acts upon requests and will restore the state of resources
+// for the given seed cluster context (the request's name). Will return
+// an error if any API operation failed, otherwise will return an empty
+// dummy Result struct.
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

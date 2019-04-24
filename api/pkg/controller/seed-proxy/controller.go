@@ -22,24 +22,69 @@ import (
 )
 
 const (
-	ControllerName                = "seed-proxy-controller"
-	KubermaticNamespace           = "kubermatic"
-	DeploymentName                = "seed-proxy"
-	ServiceAccountName            = "seed-proxy"
-	ServiceAccountNamespace       = metav1.NamespaceSystem
-	SeedPrometheusNamespace       = "monitoring"
-	SeedPrometheusRoleName        = "seed-proxy-prometheus"
+	// ControllerName is the name of this very controller.
+	ControllerName = "seed-proxy-controller"
+
+	// KubermaticNamespace is the namespace inside the
+	// master where Kubermatic has been installed to and
+	// where the master-level components will be created in.
+	KubermaticNamespace = "kubermatic"
+
+	// DeploymentName is the name used for deployments.
+	DeploymentName = "seed-proxy"
+
+	// ServiceAccountName is the name used for service accounts
+	// inside the seed cluster.
+	ServiceAccountName = "seed-proxy"
+
+	// ServiceAccountNamespace is the namespace inside the seed
+	// cluster where the service account will be created.
+	ServiceAccountNamespace = metav1.NamespaceSystem
+
+	// SeedPrometheusNamespace is the namespace inside the seed
+	// cluster where Prometheus is installed.
+	SeedPrometheusNamespace = "monitoring"
+
+	// SeedPrometheusRoleName is the name inside the seed
+	// used for the new role used for proxying to Prometheus.
+	SeedPrometheusRoleName = "seed-proxy-prometheus"
+
+	// SeedPrometheusRoleName is the name inside the seed
+	// used for the new role binding used for proxying to Prometheus.
 	SeedPrometheusRoleBindingName = "seed-proxy-prometheus"
-	MasterGrafanaNamespace        = "monitoring-master"
-	MasterGrafanaConfigMapName    = "grafana-seed-proxies"
-	KubectlProxyPort              = 8001
-	NameLabel                     = "app.kubernetes.io/name"
-	InstanceLabel                 = "app.kubernetes.io/instance"
-	ManagedByLabel                = "app.kubernetes.io/managed-by"
+
+	// MasterGrafanaNamespace is the namespace inside the master
+	// cluster where Grafana is installed and where the ConfigMap
+	// should be created in.
+	MasterGrafanaNamespace = "monitoring-master"
+
+	// MasterGrafanaConfigMapName is the name used for the newly
+	// created Grafana ConfigMap.
+	MasterGrafanaConfigMapName = "grafana-seed-proxies"
+
+	// KubectlProxyPort is the port used by kubectl to provide the
+	// proxy connection on. This is not the port on which any of the
+	// target applications inside the seed (Prometheus, Grafana)
+	// listen on.
+	KubectlProxyPort = 8001
+
+	// NameLabel is the recommended name for an identifying label.
+	NameLabel = "app.kubernetes.io/name"
+
+	// InstanceLabel is the recommended label for distinguishing
+	// multiple elements of the same name. The label is used to store
+	// the seed cluster name.
+	InstanceLabel = "app.kubernetes.io/instance"
+
+	// ManagedByLabel is the label used to identify the resources
+	// created by this controller.
+	ManagedByLabel = "app.kubernetes.io/managed-by"
 )
 
-// Add creates a new Monitoring controller that is responsible for
-// operating the monitoring components for all managed user clusters
+// Add creates a new Seed-Proxy controller that is responsible for
+// establishing ServiceAccounts in all seeds and setting up proxy
+// pods to allow access to monitoring applications inside the seed
+// clusters, like Prometheus and Grafana.
 func Add(
 	mgr manager.Manager,
 	numWorkers int,
