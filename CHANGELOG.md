@@ -21,6 +21,16 @@
 * Filter out not valid VM types for azure provider [#2736](https://github.com/kubermatic/kubermatic/pull/2736) ([@zreigz](https://github.com/zreigz))
 * Mark cluster upgrades as restricted if kubelet version is incompatible. [#2976](https://github.com/kubermatic/kubermatic/pull/2976) ([@maciaszczykm](https://github.com/maciaszczykm))
 * Enable automatic detection of the OpenStack BlockStorage API version within the cloud config [#3112](https://github.com/kubermatic/kubermatic/pull/3112) ([@mrIncompetent](https://github.com/mrIncompetent))
+* Add the ContainerLinuxUpdateOperator to all clusters that use ContainerLinux nodes [#3239](https://github.com/kubermatic/kubermatic/pull/3239) ([@mrIncompetent](https://github.com/mrIncompetent))
+* The trust-device-path cloud config property of Openstack clusters can be configured via datacenters.yaml. [#3265](https://github.com/kubermatic/kubermatic/pull/3265) ([@nikhita](https://github.com/nikhita))
+* Set AntiAffinity for pods to prevent situations where the API servers of all clusters got scheduled on a single node [#3269](https://github.com/kubermatic/kubermatic/pull/3269) ([@mrIncompetent](https://github.com/mrIncompetent))
+* Set resource requests & limits for all addons [#3270](https://github.com/kubermatic/kubermatic/pull/3270) ([@mrIncompetent](https://github.com/mrIncompetent))
+* Add Kubernetes v1.14.1 to the list of supported versions [#3273](https://github.com/kubermatic/kubermatic/pull/3273) ([@mrIncompetent](https://github.com/mrIncompetent))
+* A small amount of resources gets reserved on each node for the Kubelet and system services [#3298](https://github.com/kubermatic/kubermatic/pull/3298) ([@alvaroaleman](https://github.com/alvaroaleman))
+* Update etcd to v3.3.12 [#3288](https://github.com/kubermatic/kubermatic/pull/3288) ([@mrIncompetent](https://github.com/mrIncompetent))
+* Update the metrics-server to v0.3.2 [#3289](https://github.com/kubermatic/kubermatic/pull/3289) ([@mrIncompetent](https://github.com/mrIncompetent))
+* Update the user cluster Prometheus to v2.9.1 [#3287](https://github.com/kubermatic/kubermatic/pull/3287) ([@mrIncompetent](https://github.com/mrIncompetent))
+* It is now possible to scale MachineDeployments and MachineSets via `kubectl scale` [#3277](https://github.com/kubermatic/kubermatic/pull/3277) ([@alvaroaleman](https://github.com/alvaroaleman))
 
 ## Dashboard
 
@@ -72,10 +82,13 @@
 * Allow scheduling Helm charts using affinities, node selectors and tolerations for more stable clusters [#3155](https://github.com/kubermatic/kubermatic/pull/3155) ([@xrstf](https://github.com/xrstf))
 * Helm charts: Define configurable resource constraints [#3012](https://github.com/kubermatic/kubermatic/pull/3012) ([@xrstf](https://github.com/xrstf))
 * improve Helm charts metadata to make Helm-based workflows easier and aid in cluster updates [#3221](https://github.com/kubermatic/kubermatic/pull/3221) ([@xrstf](https://github.com/xrstf))
+* dex keys expirations can now be configured in helm chart [#3301](https://github.com/kubermatic/kubermatic/pull/3301) ([@kron4eg](https://github.com/kron4eg))
+* Update the nodeport-proxy Envoy to v1.10 [#3274](https://github.com/kubermatic/kubermatic/pull/3274) ([@mrIncompetent](https://github.com/mrIncompetent))
 
 ## Bugfixes
 
 * Fixed invalid variable caching in Grafana dashboards [#2792](https://github.com/kubermatic/kubermatic/pull/2792) ([@xrstf](https://github.com/xrstf))
+* Migrations are now executed only after the leader lease was acquired [#3276](https://github.com/kubermatic/kubermatic/pull/3276) ([@alvaroaleman](https://github.com/alvaroaleman))
 
 
 ### [v2.9.3]()
