@@ -309,6 +309,7 @@ func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error
 		openshiftresources.ControllerManagerDeploymentName: {healthy: &currentHealth.Controller, minReady: 1},
 		resources.MachineControllerDeploymentName:          {healthy: &currentHealth.MachineController, minReady: 1},
 		resources.OpenVPNServerDeploymentName:              {healthy: &currentHealth.OpenVPN, minReady: 1},
+		resources.UserClusterControllerDeploymentName:      {healthy: &currentHealth.UserClusterControllerManager, minReady: 1},
 	}
 
 	var err error
