@@ -21,6 +21,8 @@ versions:
   default: false
 - version: "1.12.7"
   default: false
+- version: "1.12.8"
+  default: false
 # Kubernetes 1.13
 - version: "1.13.0"
   default: false
