@@ -15,6 +15,9 @@ import (
 	"github.com/golang/glog"
 	prometheusapi "github.com/prometheus/client_golang/api"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
@@ -38,7 +41,6 @@ import (
 	"k8s.io/client-go/informers"
 	kubernetesclientset "k8s.io/client-go/kubernetes"
 	fakerestclient "k8s.io/client-go/kubernetes/fake"
-	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
@@ -111,7 +113,8 @@ type newRoutingFunc func(
 	versions []*version.MasterVersion,
 	updates []*version.MasterUpdate,
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
-	saTokenGenerator serviceaccount.TokenGenerator) http.Handler
+	saTokenGenerator serviceaccount.TokenGenerator,
+	eventRecorderProvider provider.EventRecorderProvider) http.Handler
 
 // CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes  for the tests
 func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
@@ -191,6 +194,8 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(),
 		"",
 		rbac.ExtractGroupPrefix,
+		fakeClient,
+		kubernetesClient,
 	)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
 
@@ -198,6 +203,8 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	kubernetesInformerFactory.WaitForCacheSync(wait.NeverStop)
 	kubermaticInformerFactory.Start(wait.NeverStop)
 	kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
+
+	eventRecorderProvider := kubernetes.NewEventRecorder()
 
 	// Disable the metrics endpoint in tests
 	var prometheusClient prometheusapi.Client
@@ -221,6 +228,7 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		updates,
 		tokenAuth,
 		tokenGenerator,
+		eventRecorderProvider,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
@@ -639,6 +647,26 @@ func GenDefaultExpiry() (apiv1.Time, error) {
 		return apiv1.Time{}, err
 	}
 	return apiv1.NewTime(claim.Expiry.Time()), nil
+}
+
+func GenTestEvent(eventName, eventType, eventReason, eventMessage, kind, uid string) *corev1.Event {
+	return &corev1.Event{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      eventName,
+			Namespace: metav1.NamespaceSystem,
+		},
+		InvolvedObject: corev1.ObjectReference{
+			UID:       types.UID(uid),
+			Name:      "testMachine",
+			Namespace: metav1.NamespaceSystem,
+			Kind:      kind,
+		},
+		Reason:  eventReason,
+		Message: eventMessage,
+		Source:  corev1.EventSource{Component: "eventTest"},
+		Count:   1,
+		Type:    eventType,
+	}
 }
 
 // AuthorizeRequestFunc is a helper function for authorizing a request

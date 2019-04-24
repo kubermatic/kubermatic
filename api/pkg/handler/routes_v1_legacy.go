@@ -56,7 +56,7 @@ func (r Routing) getNodeForClusterLegacy() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.Datacenter(r.clusterProviders, r.datacenters),
+			middleware.SetClusterProvider(r.clusterProviders, r.datacenters),
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(node.GetNodeForClusterLegacyEndpoint(r.projectProvider)),
 		node.DecodeGetNodeForClusterLegacy,
@@ -89,7 +89,7 @@ func (r Routing) createNodeForClusterLegacy() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.Datacenter(r.clusterProviders, r.datacenters),
+			middleware.SetClusterProvider(r.clusterProviders, r.datacenters),
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(node.CreateNodeForClusterLegacyEndpoint()),
 		node.DecodeCreateNodeForClusterLegacy,
@@ -118,7 +118,7 @@ func (r Routing) listNodesForClusterLegacy() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.Datacenter(r.clusterProviders, r.datacenters),
+			middleware.SetClusterProvider(r.clusterProviders, r.datacenters),
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(node.ListNodesForClusterLegacyEndpoint(r.projectProvider)),
 		node.DecodeListNodesForClusterLegacy,
@@ -147,7 +147,7 @@ func (r Routing) deleteNodeForClusterLegacy() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.Datacenter(r.clusterProviders, r.datacenters),
+			middleware.SetClusterProvider(r.clusterProviders, r.datacenters),
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(node.DeleteNodeForClusterLegacyEndpoint(r.projectProvider)),
 		node.DecodeDeleteNodeForClusterLegacy,

@@ -45,6 +45,7 @@ type Routing struct {
 	userProjectMapper           provider.ProjectMemberMapper
 	saTokenAuthenticator        serviceaccount.TokenAuthenticator
 	saTokenGenerator            serviceaccount.TokenGenerator
+	eventRecorderProvider       provider.EventRecorderProvider
 }
 
 // NewRouting creates a new Routing.
@@ -67,6 +68,7 @@ func NewRouting(
 	userProjectMapper provider.ProjectMemberMapper,
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
 	saTokenGenerator serviceaccount.TokenGenerator,
+	eventRecorderProvider provider.EventRecorderProvider,
 ) Routing {
 	return Routing{
 		datacenters:                 datacenters,
@@ -88,6 +90,7 @@ func NewRouting(
 		userProjectMapper:           userProjectMapper,
 		saTokenAuthenticator:        saTokenAuthenticator,
 		saTokenGenerator:            saTokenGenerator,
+		eventRecorderProvider:       eventRecorderProvider,
 	}
 }
 
