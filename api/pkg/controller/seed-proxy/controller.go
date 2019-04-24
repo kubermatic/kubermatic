@@ -75,11 +75,12 @@ func Add(
 		pred predicate.Funcs
 	}
 
+	ownedByPred := makePredicateFuncs(managedByController)
 	typesToWatch := []watcher{
-		{obj: &appsv1.Deployment{}, pred: deploymentPredicate()},
-		{obj: &corev1.Service{}, pred: servicePredicate()},
-		{obj: &corev1.Secret{}, pred: secretsPredicate()},
-		{obj: &corev1.ConfigMap{}, pred: configMapPredicate()},
+		{obj: &appsv1.Deployment{}, pred: ownedByPred},
+		{obj: &corev1.Service{}, pred: ownedByPred},
+		{obj: &corev1.Secret{}, pred: ownedByPred},
+		{obj: &corev1.ConfigMap{}, pred: ownedByPred},
 	}
 
 	for _, t := range typesToWatch {
@@ -94,22 +95,6 @@ func Add(
 func managedByController(meta metav1.Object) bool {
 	labels := meta.GetLabels()
 	return labels[ManagedByLabel] == ControllerName
-}
-
-func secretsPredicate() predicate.Funcs {
-	return makePredicateFuncs(managedByController)
-}
-
-func deploymentPredicate() predicate.Funcs {
-	return makePredicateFuncs(managedByController)
-}
-
-func servicePredicate() predicate.Funcs {
-	return makePredicateFuncs(managedByController)
-}
-
-func configMapPredicate() predicate.Funcs {
-	return makePredicateFuncs(managedByController)
 }
 
 func makePredicateFuncs(pred func(metav1.Object) bool) predicate.Funcs {
