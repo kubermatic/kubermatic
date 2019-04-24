@@ -95,16 +95,28 @@ func cleanupClusters(workerName string, ctx *cleanupContext) error {
 		return err
 	}
 
+	errCh := make(chan error)
 	w := sync.WaitGroup{}
 	w.Add(len(clusters.Items))
 	for i := range clusters.Items {
 		go func(c *kubermaticv1.Cluster) {
 			defer w.Done()
 
-			cleanupCluster(c, ctx)
+			if err := cleanupCluster(c, ctx); err != nil {
+				errCh <- err
+			}
 		}(&clusters.Items[i])
 	}
 	w.Wait()
+
+	close(errCh)
+	errs := []error{}
+	for err := range errCh {
+		errs = append(errs, err)
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("%v", errs)
+	}
 
 	return nil
 }
@@ -178,8 +190,10 @@ func removeWorkerLabelFromCluster(cluster *kubermaticv1.Cluster, kubermaticClien
 	return err
 }
 
-func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
+func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 	glog.Infof("Cleaning up cluster %s", cluster.Name)
+
+	errCh := make(chan error)
 
 	tasks := []ClusterTask{
 		cleanupPrometheus,
@@ -210,11 +224,22 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
 
 			if err != nil {
 				glog.Error(err)
+				errCh <- err
 			}
 		}(task)
 	}
 
 	w.Wait()
+
+	errs := []error{}
+	for err := range errCh {
+		errs = append(errs, err)
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("%v", errs)
+	}
+
+	return nil
 }
 
 func cleanupKey(key *kubermaticv1.UserSSHKey, ctx *cleanupContext) {
