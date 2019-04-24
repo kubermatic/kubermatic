@@ -4,6 +4,8 @@ import (
 	"errors"
 	"strings"
 
+	"k8s.io/client-go/kubernetes"
+
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -38,14 +40,16 @@ func NewClusterProvider(
 	clusterLister kubermaticv1lister.ClusterLister,
 	workerName string,
 	extractGroupPrefix extractGroupPrefixFunc,
-	seedClusterConnProvider k8cuserclusterclient.SeedClusterConnectionProvider) *ClusterProvider {
+	client ctrlruntimeclient.Client,
+	k8sClient kubernetes.Interface) *ClusterProvider {
 	return &ClusterProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
 		userClusterConnProvider:      userClusterConnProvider,
 		clusterLister:                clusterLister,
 		workerName:                   workerName,
 		extractGroupPrefix:           extractGroupPrefix,
-		seedClusterConnProvider:      seedClusterConnProvider,
+		client:                       client,
+		k8sClient:                    k8sClient,
 	}
 }
 
@@ -62,9 +66,10 @@ type ClusterProvider struct {
 	// clusterLister provide access to local cache that stores cluster objects
 	clusterLister kubermaticv1lister.ClusterLister
 
-	workerName              string
-	extractGroupPrefix      extractGroupPrefixFunc
-	seedClusterConnProvider k8cuserclusterclient.SeedClusterConnectionProvider
+	workerName         string
+	extractGroupPrefix extractGroupPrefixFunc
+	client             ctrlruntimeclient.Client
+	k8sClient          kubernetes.Interface
 }
 
 // New creates a brand new cluster that is bound to the given project
@@ -214,18 +219,18 @@ func (p *ClusterProvider) GetClientForCustomerCluster(userInfo *provider.UserInf
 	return p.userClusterConnProvider.GetDynamicClient(c, p.withImpersonation(userInfo))
 }
 
-// GetSeedClusterAdminClient returns a client to interact with the seed cluster resources.
+// GetSeedClusterAdminRuntimeClient returns a runtime client to interact with the seed cluster resources.
 //
 // Note that this client has admin privileges in the seed cluster.
-func (p *ClusterProvider) GetSeedClusterAdminClient() ctrlruntimeclient.Client {
-	return p.seedClusterConnProvider.GetSeedClusterAdminClient()
+func (p *ClusterProvider) GetSeedClusterAdminRuntimeClient() ctrlruntimeclient.Client {
+	return p.client
 }
 
-// GetSeedClusterAdminConfig returns a config that gives access to the seed cluster.
+// GetSeedClusterAdminClient returns a kubernetes client to interact with the seed cluster resources.
 //
-// Note that this config has admin privileges in the seed cluster.
-func (p *ClusterProvider) GetSeedClusterAdminConfig() *restclient.Config {
-	return p.seedClusterConnProvider.GetSeedClusterAdminConfig()
+// Note that this client has admin privileges in the seed cluster.
+func (p *ClusterProvider) GetSeedClusterAdminClient() kubernetes.Interface {
+	return p.k8sClient
 }
 
 func (p *ClusterProvider) withImpersonation(userInfo *provider.UserInfo) k8cuserclusterclient.ConfigOption {

@@ -136,7 +136,8 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 				kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(),
 				options.workerName,
 				rbac.ExtractGroupPrefix,
-				client.NewSeedClient(seedCtrlruntimeClient, cfg),
+				seedCtrlruntimeClient,
+				kubeClient,
 			)
 
 			kubeInformerFactory.Start(wait.NeverStop)

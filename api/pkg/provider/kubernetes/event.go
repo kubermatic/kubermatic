@@ -1,13 +1,12 @@
 package kubernetes
 
 import (
-	v12 "k8s.io/api/core/v1"
+	apicorev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/scheme"
 
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/typed/core/v1"
-	"k8s.io/client-go/rest"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/record"
 )
 
@@ -23,23 +22,24 @@ type EventRecorder struct {
 	seedClusterRecorderMap map[string]record.EventRecorder
 }
 
-// SeedClusterRecorder returns a event recorder that will be able to record event for objects in the cluster
-// referred by provided cluster config.
-func (e *EventRecorder) SeedClusterRecorder(config *rest.Config) record.EventRecorder {
-	return e.getRecorderForConfig(config)
+// SeedClusterRecorder returns an event recorder that will be able to record events for objects in the cluster
+// accessible using provided client.
+func (e *EventRecorder) SeedClusterRecorder(client kubernetes.Interface) record.EventRecorder {
+	return e.getRecorderForClient(client)
 }
 
-func (e *EventRecorder) getRecorderForConfig(config *rest.Config) record.EventRecorder {
-	recorder, exists := e.seedClusterRecorderMap[config.Host]
+func (e *EventRecorder) getRecorderForClient(client kubernetes.Interface) record.EventRecorder {
+	coreV1Client := client.CoreV1()
+	host := coreV1Client.RESTClient().Get().URL().Host
+	recorder, exists := e.seedClusterRecorderMap[host]
 	if exists {
 		return recorder
 	}
 
-	kubeClient := kubernetes.NewForConfigOrDie(config)
 	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartRecordingToSink(&v1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
-	recorder = eventBroadcaster.NewRecorder(scheme.Scheme, v12.EventSource{Component: componentName})
-	e.seedClusterRecorderMap[config.Host] = recorder
+	eventBroadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: coreV1Client.Events("")})
+	recorder = eventBroadcaster.NewRecorder(scheme.Scheme, apicorev1.EventSource{Component: componentName})
+	e.seedClusterRecorderMap[host] = recorder
 
 	return recorder
 }

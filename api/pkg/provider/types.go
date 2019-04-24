@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"k8s.io/client-go/rest"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -13,7 +13,7 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	v1 "k8s.io/api/core/v1"
+	apicorev1 "k8s.io/api/core/v1"
 )
 
 var (
@@ -124,16 +124,15 @@ type ClusterProvider interface {
 // PrivilegedClusterProvider declares the set of methods for interacting with the seed clusters
 // as an admin.
 type PrivilegedClusterProvider interface {
-	// GetSeedClusterAdminClient returns a client to interact with all resources in the seed cluster
+	// GetSeedClusterAdminRuntimeClient returns a runtime client to interact with all resources in the seed cluster
 	//
 	// Note that the client you will get has admin privileges in the seed cluster
-	GetSeedClusterAdminClient() ctrlruntimeclient.Client
+	GetSeedClusterAdminRuntimeClient() ctrlruntimeclient.Client
 
-	// GetSeedClusterAdminConfig returns a config that can be used to create client
-	// that gives user access to all resources in the seed cluster
+	// GetSeedClusterAdminClient returns a kubernetes client to interact with all resources in the seed cluster
 	//
-	// Note that the config you will get has admin privileges in the seed cluster
-	GetSeedClusterAdminConfig() *rest.Config
+	// Note that the client you will get has admin privileges in the seed cluster
+	GetSeedClusterAdminClient() kubernetes.Interface
 }
 
 // SSHKeyListOptions allows to set filters that will be applied to filter the result.
@@ -367,10 +366,10 @@ type ServiceAccountListOptions struct {
 
 // ServiceAccountTokenProvider declares the set of methods for interacting with kubermatic service account token
 type ServiceAccountTokenProvider interface {
-	Create(userInfo *UserInfo, sa *kubermaticv1.User, projectID, tokenName, tokenID, tokenData string) (*v1.Secret, error)
-	List(userInfo *UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *ServiceAccountTokenListOptions) ([]*v1.Secret, error)
-	Get(userInfo *UserInfo, name string) (*v1.Secret, error)
-	Update(userInfo *UserInfo, secret *v1.Secret) (*v1.Secret, error)
+	Create(userInfo *UserInfo, sa *kubermaticv1.User, projectID, tokenName, tokenID, tokenData string) (*apicorev1.Secret, error)
+	List(userInfo *UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *ServiceAccountTokenListOptions) ([]*apicorev1.Secret, error)
+	Get(userInfo *UserInfo, name string) (*apicorev1.Secret, error)
+	Update(userInfo *UserInfo, secret *apicorev1.Secret) (*apicorev1.Secret, error)
 	Delete(userInfo *UserInfo, name string) error
 }
 
@@ -387,12 +386,12 @@ type PrivilegedServiceAccountTokenProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
 	// gets resources from the cache
-	ListUnsecured(*ServiceAccountTokenListOptions) ([]*v1.Secret, error)
+	ListUnsecured(*ServiceAccountTokenListOptions) ([]*apicorev1.Secret, error)
 }
 
 // EventRecorderProvider allows to record events for objects that can be read using K8S API.
 type EventRecorderProvider interface {
 	// SeedClusterRecorder returns a event recorder that will be able to record event for objects in the cluster
-	//// referred by provided cluster config.
-	SeedClusterRecorder(config *rest.Config) record.EventRecorder
+	// referred by provided cluster config.
+	SeedClusterRecorder(client kubernetes.Interface) record.EventRecorder
 }

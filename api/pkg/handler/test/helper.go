@@ -188,14 +188,14 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 	}
 
 	fUserClusterConnection := &fakeUserClusterConnection{fakeClient}
-	fSeedClusterConnection := &fakeSeedClusterConnection{fakeClient}
 	clusterProvider := kubernetes.NewClusterProvider(
 		fakeKubermaticImpersonationClient,
 		fUserClusterConnection,
 		kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(),
 		"",
 		rbac.ExtractGroupPrefix,
-		fSeedClusterConnection,
+		fakeClient,
+		kubernetesClient,
 	)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
 
@@ -287,18 +287,6 @@ func (f *fakeUserClusterConnection) GetDynamicClient(_ *kubermaticapiv1.Cluster,
 
 func (f *fakeUserClusterConnection) GetAdminKubeconfig(c *kubermaticapiv1.Cluster) ([]byte, error) {
 	return []byte(generateTestKubeconfig(ClusterID, IDToken)), nil
-}
-
-type fakeSeedClusterConnection struct {
-	fakeDynamicClient ctrlruntimeclient.Client
-}
-
-func (f *fakeSeedClusterConnection) GetSeedClusterAdminClient() ctrlruntimeclient.Client {
-	return f.fakeDynamicClient
-}
-
-func (f *fakeSeedClusterConnection) GetSeedClusterAdminConfig() *restclient.Config {
-	return &restclient.Config{}
 }
 
 // ClientsSets a simple wrapper that holds fake client sets

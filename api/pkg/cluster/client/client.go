@@ -170,34 +170,3 @@ func (p *provider) GetDynamicClient(c *kubermaticv1.Cluster, options ...ConfigOp
 	}
 	return dynamicClient, nil
 }
-
-// SeedClusterConnectionProvider offers functions to interact with a seed cluster
-type SeedClusterConnectionProvider interface {
-	GetSeedClusterAdminClient() ctrlruntimeclient.Client
-	GetSeedClusterAdminConfig() *restclient.Config
-}
-
-// NewSeedClient returns a new instance of the client connection provider that
-// gives user access to the seed cluster client and config
-func NewSeedClient(seedClient ctrlruntimeclient.Client, seedConfig *restclient.Config) SeedClusterConnectionProvider {
-	return &seedProvider{seedClient: seedClient, seedConfig: seedConfig}
-}
-
-type seedProvider struct {
-	seedClient ctrlruntimeclient.Client
-	seedConfig *restclient.Config
-}
-
-// GetSeedClusterAdminClient returns a client to interact with the seed cluster resources.
-//
-// Note that this client has admin privileges in the seed cluster.
-func (s *seedProvider) GetSeedClusterAdminClient() ctrlruntimeclient.Client {
-	return s.seedClient
-}
-
-// GetSeedClusterAdminConfig returns a config that gives access to the seed cluster.
-//
-// Note that this config has admin privileges in the seed cluster.
-func (s *seedProvider) GetSeedClusterAdminConfig() *restclient.Config {
-	return s.seedConfig
-}

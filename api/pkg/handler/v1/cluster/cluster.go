@@ -53,7 +53,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		seedConfig := privilegedClusterProvider.GetSeedClusterAdminConfig()
+		k8sClient := privilegedClusterProvider.GetSeedClusterAdminClient()
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -82,14 +82,14 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 		if req.Body.NodeDeployment != nil {
 			go func() {
 				defer utilruntime.HandleCrash()
-				eventRecorderProvider.SeedClusterRecorder(seedConfig).Eventf(newCluster, corev1.EventTypeNormal, string(NodeDeploymentCreationStart), "started creation of initial node deployment %s for cluster %s", req.Body.NodeDeployment.Name, newCluster.Name)
+				eventRecorderProvider.SeedClusterRecorder(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(NodeDeploymentCreationStart), "started creation of initial node deployment %s for cluster %s", req.Body.NodeDeployment.Name, newCluster.Name)
 				err := createInitialNodeDeploymentWithRetries(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, dcs, clusterProvider, userInfo)
 				if err != nil {
-					eventRecorderProvider.SeedClusterRecorder(seedConfig).Eventf(newCluster, corev1.EventTypeWarning, string(NodeDeploymentCreationFail), "failed to create initial node deployment %s for cluster %s: %v", req.Body.NodeDeployment.Name, newCluster.Name, err)
-					glog.V(5).Infof("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
+					eventRecorderProvider.SeedClusterRecorder(k8sClient).Eventf(newCluster, corev1.EventTypeWarning, string(NodeDeploymentCreationFail), "failed to create initial node deployment %s for cluster %s: %v", req.Body.NodeDeployment.Name, newCluster.Name, err)
+					glog.Errorf("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
 					initNodeDeploymentFailures.With(prometheus.Labels{"cluster": newCluster.Name, "seed_dc": req.DC}).Add(1)
 				} else {
-					eventRecorderProvider.SeedClusterRecorder(seedConfig).Eventf(newCluster, corev1.EventTypeNormal, string(NodeDeploymentCreationSuccess), "created initial node deployment %s for cluster %s", req.Body.NodeDeployment.Name, newCluster.Name)
+					eventRecorderProvider.SeedClusterRecorder(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(NodeDeploymentCreationSuccess), "created initial node deployment %s for cluster %s", req.Body.NodeDeployment.Name, newCluster.Name)
 					glog.V(5).Infof("created initial node deployment for cluster %s", newCluster.Name)
 				}
 			}()
@@ -323,7 +323,7 @@ func GetClusterEventsEndpoint() endpoint.Endpoint {
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		client := privilegedClusterProvider.GetSeedClusterAdminClient()
+		client := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
