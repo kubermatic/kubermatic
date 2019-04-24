@@ -30,6 +30,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	prometheusapi "github.com/prometheus/client_golang/api"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
@@ -45,7 +46,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
@@ -136,6 +136,8 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 				kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(),
 				options.workerName,
 				rbac.ExtractGroupPrefix,
+				seedCtrlruntimeClient,
+				kubeClient,
 			)
 
 			kubeInformerFactory.Start(wait.NeverStop)
@@ -184,6 +186,8 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	kubermaticMasterInformerFactory.Start(wait.NeverStop)
 	kubermaticMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
 
+	eventRecorderProvider := kubernetesprovider.NewEventRecorder()
+
 	return providers{
 			sshKey:                                sshKeyProvider,
 			user:                                  userProvider,
@@ -195,6 +199,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 			projectMember:                         projectMemberProvider,
 			memberMapper:                          projectMemberProvider,
 			cloud:                                 cloudProviders,
+			eventRecorderProvider:                 eventRecorderProvider,
 			clusters:                              clusterProviders,
 			datacenters:                           datacenters},
 		nil
@@ -278,6 +283,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		prov.memberMapper,
 		serviceAccountTokenAuth,
 		serviceAccountTokenGenerator,
+		prov.eventRecorderProvider,
 	)
 
 	registerMetrics()
