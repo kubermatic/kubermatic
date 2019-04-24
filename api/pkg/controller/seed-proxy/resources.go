@@ -137,6 +137,9 @@ func masterDeploymentCreator(contextName string) reconciling.NamedDeploymentCrea
 			probe := corev1.Probe{
 				InitialDelaySeconds: 3,
 				TimeoutSeconds:      2,
+				PeriodSeconds:       10,
+				SuccessThreshold:    1,
+				FailureThreshold:    3,
 				Handler: corev1.Handler{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.Parse("http"),
