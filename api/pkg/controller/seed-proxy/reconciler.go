@@ -8,7 +8,9 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -31,11 +33,14 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	glog.V(4).Info("Reconciling seed proxies...")
-	for name := range r.kubeconfig.Contexts {
-		if err := r.reconcileContext(ctx, name); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to reconcile seed %s: %v", name, err)
-		}
+	glog.V(4).Info("Garbage-collecting orphaned resources...")
+	if err := r.garbageCollect(ctx); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to garbage collect: %v", err)
+	}
+
+	glog.V(4).Infof("Reconciling seed cluster %s...", request.Name)
+	if err := r.reconcileContext(ctx, request.Name); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to reconcile: %v", err)
 	}
 
 	glog.V(4).Info("Reconciling Grafana provisioning...")
@@ -44,6 +49,121 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	return reconcile.Result{}, nil
+}
+
+func (r *Reconciler) garbageCollect(ctx context.Context) error {
+	options := &ctrlruntimeclient.ListOptions{
+		LabelSelector: labels.SelectorFromSet(labels.Set{
+			ManagedByLabel: ControllerName,
+		}),
+	}
+
+	if err := r.garbageCollectServices(ctx, options); err != nil {
+		return fmt.Errorf("failed to garbage collect Services: %v", err)
+	}
+
+	if err := r.garbageCollectDeployments(ctx, options); err != nil {
+		return fmt.Errorf("failed to garbage collect Deployments: %v", err)
+	}
+
+	if err := r.garbageCollectConfigMaps(ctx, options); err != nil {
+		return fmt.Errorf("failed to garbage collect ConfigMaps: %v", err)
+	}
+
+	if err := r.garbageCollectSecrets(ctx, options); err != nil {
+		return fmt.Errorf("failed to garbage collect Secrets: %v", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) garbageCollectServices(ctx context.Context, opt *ctrlruntimeclient.ListOptions) error {
+	list := &corev1.ServiceList{}
+
+	if err := r.List(ctx, opt, list); err != nil {
+		return fmt.Errorf("failed to list Services: %v", err)
+	}
+
+	for _, item := range list.Items {
+		meta := item.GetObjectMeta()
+		seed := meta.GetLabels()[InstanceLabel]
+
+		if r.unknownSeed(seed) {
+			glog.V(4).Infof("Deleting orphaned Service %s/%s referencing non-existing seed '%s'...", item.Namespace, item.Name, seed)
+			if err := r.Delete(ctx, &item); err != nil {
+				return fmt.Errorf("failed to delete Service: %v", err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *Reconciler) garbageCollectSecrets(ctx context.Context, opt *ctrlruntimeclient.ListOptions) error {
+	list := &corev1.SecretList{}
+
+	if err := r.List(ctx, opt, list); err != nil {
+		return fmt.Errorf("failed to list Secrets: %v", err)
+	}
+
+	for _, item := range list.Items {
+		meta := item.GetObjectMeta()
+		seed := meta.GetLabels()[InstanceLabel]
+
+		if r.unknownSeed(seed) {
+			glog.V(4).Infof("Deleting orphaned Secret %s/%s referencing non-existing seed '%s'...", item.Namespace, item.Name, seed)
+			if err := r.Delete(ctx, &item); err != nil {
+				return fmt.Errorf("failed to delete Secret: %v", err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *Reconciler) garbageCollectConfigMaps(ctx context.Context, opt *ctrlruntimeclient.ListOptions) error {
+	// We have one ConfigMap for all seeds, so if there is at least one seed left,
+	// rely on the reconciling to trim unused elements from the ConfigMap.
+	if len(r.kubeconfig.Contexts) > 0 {
+		return nil
+	}
+
+	list := &corev1.ConfigMapList{}
+
+	if err := r.List(ctx, opt, list); err != nil {
+		return fmt.Errorf("failed to list ConfigMaps: %v", err)
+	}
+
+	for _, item := range list.Items {
+		glog.V(4).Infof("Deleting orphaned ConfigMap %s/%s...", item.Namespace, item.Name)
+		if err := r.Delete(ctx, &item); err != nil {
+			return fmt.Errorf("failed to delete ConfigMap: %v", err)
+		}
+	}
+
+	return nil
+}
+
+func (r *Reconciler) garbageCollectDeployments(ctx context.Context, opt *ctrlruntimeclient.ListOptions) error {
+	list := &appsv1.DeploymentList{}
+
+	if err := r.List(ctx, opt, list); err != nil {
+		return fmt.Errorf("failed to list Deployments: %v", err)
+	}
+
+	for _, item := range list.Items {
+		meta := item.GetObjectMeta()
+		seed := meta.GetLabels()[InstanceLabel]
+
+		if r.unknownSeed(seed) {
+			glog.V(4).Infof("Deleting orphaned Deployment %s/%s referencing non-existing seed '%s'...", item.Namespace, item.Name, seed)
+			if err := r.Delete(ctx, &item); err != nil {
+				return fmt.Errorf("failed to delete Deployment: %v", err)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (r *Reconciler) reconcileContext(ctx context.Context, contextName string) error {
@@ -65,7 +185,7 @@ func (r *Reconciler) reconcileContext(ctx context.Context, contextName string) e
 		return fmt.Errorf("failed to create client for seed: %v", err)
 	}
 
-	glog.V(4).Infof("Reconciling seed cluster %s...", contextName)
+	glog.V(4).Info("Reconciling seed cluster...")
 	if err := r.reconcileSeed(ctx, client); err != nil {
 		return fmt.Errorf("failed to reconcile seed: %v", err)
 	}
@@ -238,7 +358,6 @@ func (r *Reconciler) ensureMasterServices(ctx context.Context, contextName strin
 }
 
 func (r *Reconciler) reconcileGrafana(ctx context.Context) error {
-	glog.V(4).Info("Reconciling Grafana provisioning...")
 	if err := r.ensureMasterGrafanaProvisioning(ctx); err != nil {
 		return err
 	}
@@ -256,4 +375,10 @@ func (r *Reconciler) ensureMasterGrafanaProvisioning(ctx context.Context) error 
 	}
 
 	return nil
+}
+
+func (r *Reconciler) unknownSeed(seed string) bool {
+	_, ok := r.kubeconfig.Contexts[seed]
+
+	return !ok
 }
