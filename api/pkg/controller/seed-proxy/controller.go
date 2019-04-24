@@ -60,14 +60,17 @@ func Add(
 	}
 
 	eventHandler := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
-		return []reconcile.Request{
-			{
+		requests := make([]reconcile.Request, 0)
+
+		for name := range kubeconfig.Contexts {
+			requests = append(requests, reconcile.Request{
 				NamespacedName: types.NamespacedName{
-					Namespace: "",
-					Name:      "seed-proxy-reconcile",
+					Name: name,
 				},
-			},
+			})
 		}
+
+		return requests
 	})}
 
 	type watcher struct {
