@@ -178,8 +178,8 @@ echodate "Finished installing Kubermatic"
 # We build the CLI after deploying to make sure we fail fast if the helm deployment fails
 echodate "Building conformance-tests cli"
 time go build -v github.com/kubermatic/kubermatic/api/cmd/conformance-tests
-
 echodate "Finished building conformance-tests cli"
+
 if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
   echodate "Upgradetest, going back to old revision"
   git checkout -

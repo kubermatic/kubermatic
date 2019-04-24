@@ -516,7 +516,7 @@ func (r *testRunner) setupNodes(log *logrus.Entry, scenarioName string, cluster 
 		nodeDeployment.Spec.Replicas = nodeDeployment.Spec.Replicas - machinesWithoutOwner
 		return nil
 	}); err != nil {
-		return fmt.Errorf("failed to cleanup machines that are not owned by a MachineDeployment: %v", err)
+		return fmt.Errorf("failed to get existing machines in order to adjust NodeDeployment: %v", err)
 	}
 	// Explicitly set name. machine.MachineDeployment sets generateName if the name
 	// is unset but need a deterministic name because we retry creation and dont
