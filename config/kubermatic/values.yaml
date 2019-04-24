@@ -11,8 +11,6 @@ kubermatic:
     clientID: ""
     # skip tls verification on the token issuer
     skipTokenIssuerTLSVerify: "false"
-    # the service account signing key. Must be 32 bytes or longer
-    serviceAccountKey: ""
   # base64 encoded datacenters.yaml
   datacenters: ""
   # external domain for the kubermatic installation. For example 'dev.kubermatic.io'

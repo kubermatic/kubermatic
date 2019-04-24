@@ -37,7 +37,6 @@ spec:
         - -domain={{ .Values.kubermatic.domain }}
         - -kubeconfig=/opt/.kube/kubeconfig
         - -master-resources=/opt/master-files
-        - -service-account-signing-key={{ .Values.kubermatic.auth.serviceAccountKey }}
         # the following flags enable oidc kubeconfig feature/endpoint
         - -feature-gates={{ .Values.kubermatic.api.featureGates }}
         {{- if regexMatch ".*OIDCKubeCfgEndpoint=true.*" (default "" .Values.kubermatic.api.featureGates) }}

@@ -253,12 +253,6 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		}
 	}
 
-	serviceAccountTokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(options.serviceAccountSigningKey))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create service account token generator due to %v", err)
-	}
-	serviceAccountTokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(options.serviceAccountSigningKey))
-
 	r := handler.NewRouting(
 		prov.datacenters,
 		prov.clusters,
@@ -276,8 +270,8 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		prometheusClient,
 		prov.projectMember,
 		prov.memberMapper,
-		serviceAccountTokenAuth,
-		serviceAccountTokenGenerator,
+		nil,
+		nil,
 	)
 
 	registerMetrics()
