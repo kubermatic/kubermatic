@@ -36,6 +36,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/retry"
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -494,6 +496,28 @@ func (r *testRunner) setupNodes(log *logrus.Entry, scenarioName string, cluster 
 		})
 	}
 
+	// When there are machines not owned by a MachineDeployment, we must decrement
+	// the nodeDeployments replicas by their count, this is needed in upgrade tests
+	if err := retryNAttempts(defaultAPIRetries, func(_ int) error {
+		if r.existingClusterLabel == "" {
+			return nil
+		}
+		machineList := &clusterv1alpha1.MachineList{}
+		if err := client.List(context.TODO(), &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineList); err != nil {
+			return fmt.Errorf("failed to list machines: %v", err)
+		}
+		machinesWithoutOwner := int32(0)
+		for _, machine := range machineList.Items {
+			if len(machine.OwnerReferences) > 0 {
+				continue
+			}
+			machinesWithoutOwner++
+		}
+		nodeDeployment.Spec.Replicas = nodeDeployment.Spec.Replicas - machinesWithoutOwner
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to cleanup machines that are not owned by a MachineDeployment: %v", err)
+	}
 	// Explicitly set name. machine.MachineDeployment sets generateName if the name
 	// is unset but need a deterministic name because we retry creation and dont
 	// want to accidentally create multiple MachineDeployments
