@@ -287,7 +287,7 @@ func (r *Reconciler) fetchServiceAccountSecret(ctx context.Context, client ctrlr
 		Name:      ServiceAccountName,
 	}
 
-	if err := r.Get(ctx, name, sa); err != nil {
+	if err := client.Get(ctx, name, sa); err != nil {
 		return nil, fmt.Errorf("could not find ServiceAccount '%s'", name)
 	}
 
