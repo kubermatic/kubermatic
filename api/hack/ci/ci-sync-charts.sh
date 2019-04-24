@@ -11,13 +11,13 @@ git config --global user.email "dev@loodse.com"
 git config --global user.name "Prow CI Robot"
 git config --global core.sshCommand 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
 
-if ! git describe --exact-match --tags HEAD &>/dev/null; then
-  echo "No tag matches current HEAD, exitting..."
-  exit 0
-fi
+#if ! git describe --exact-match --tags HEAD &>/dev/null; then
+#  echo "No tag matches current HEAD, exitting..."
+#  exit 0
+#fi
 
-export INSTALLER_BRANCH="$(git branch --contains HEAD --all \
-  |tr -d ' '|grep -E 'remotes/origin/release/v2.[0-9]+$'|cut -d '/' -f3-)"
+git fetch
+export INSTALLER_BRANCH="$(git branch --contains HEAD --all |tr -d ' '|grep -E 'remotes/origin/release/v2.[0-9]+$'|cut -d '/' -f3-)"
 
 export CHARTS='kubermatic cert-manager certs nginx-ingress-controller nodeport-proxy oauth minio iap'
 export MONITORING_CHARTS='alertmanager blackbox-exporter grafana kube-state-metrics node-exporter prometheus'
@@ -33,6 +33,9 @@ if [ ! -z "${COMMIT}" ]; then
   COMMIT="local folder"
 fi
 
+
+echo "INSTALLER_BRANCH is $INSTALLER_BRANCH"
+sleep 1d
 # create fresh clone of the installer repository
 rm -rf ${TARGET_DIR}
 mkdir ${TARGET_DIR}
