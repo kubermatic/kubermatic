@@ -562,7 +562,7 @@ func (r *testRunner) setupNodes(log *logrus.Entry, scenarioName string, cluster 
 	}
 	log.Infof("Successfully created %d machine(s)!", machineDeployment.Spec.Replicas)
 
-	if err := r.waitForReadyNodes(log, clusterKubeClient, int(*machineDeployment.Spec.Replicas)); err != nil {
+	if err := r.waitForReadyNodes(log, clusterKubeClient, r.nodeCount); err != nil {
 		return fmt.Errorf("failed waiting for nodes to become ready: %v", err)
 	}
 	return nil
