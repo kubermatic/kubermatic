@@ -172,17 +172,18 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --namespace $NAMESPACE \
   kubermatic-$BUILD_ID ./config/kubermatic/
 
-if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
-  echodate "Upgradetest, going back to old revision"
-  git checkout -
-fi
 
 echodate "Finished installing Kubermatic"
 
 # We build the CLI after deploying to make sure we fail fast if the helm deployment fails
 echodate "Building conformance-tests cli"
 time go build -v github.com/kubermatic/kubermatic/api/cmd/conformance-tests
+
 echodate "Finished building conformance-tests cli"
+if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
+  echodate "Upgradetest, going back to old revision"
+  git checkout -
+fi
 
 echodate "Starting conformance tests"
 timeout -s 9 90m ./conformance-tests \
@@ -225,7 +226,12 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   kubermatic-$BUILD_ID ./config/kubermatic/
 echodate "Successfully installed current version of Kubermatic"
 
+# We have to rebuild it so it is based on the newer Kubermatic
+echodate "Building conformance-tests cli"
+time go build -v github.com/kubermatic/kubermatic/api/cmd/conformance-tests
+
 echodate "Running conformance tester with existing cluster"
+
 # We increase the number of nodes to make sure creation
 # of nodes still work
 timeout -s 9 60m ./conformance-tests \
