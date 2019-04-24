@@ -19,9 +19,11 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 )
 
@@ -55,6 +57,7 @@ func RunAll(config *rest.Config, workerName string) error {
 		return fmt.Errorf("failed to create Kuermatic client: %v", err)
 	}
 
+	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
 	ctx := &cleanupContext{
 		kubeClient:       kubeClient,
 		kubermaticClient: kubermatiClient,
