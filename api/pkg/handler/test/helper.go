@@ -682,7 +682,9 @@ func AuthorizeRequest(sa *kubermaticapiv1.User, s *v1.Secret) AuthorizeRequestFu
 		if owner.Kind != kubermaticapiv1.ProjectKindName || owner.APIVersion != kubermaticapiv1.SchemeGroupVersion.String() {
 			return fmt.Errorf("the given sa %s should belong (owner) to a project but it doesn't", sa.Name)
 		}
-		token, err := tokenGenerator.Generate(serviceaccount.Claims(sa.Spec.Email, owner.Name, s.Name))
+
+		tokenName := strings.TrimPrefix(s.Name, "sa-token-")
+		token, err := tokenGenerator.Generate(serviceaccount.Claims(sa.Spec.Email, owner.Name, tokenName))
 		if err != nil {
 			return err
 		}

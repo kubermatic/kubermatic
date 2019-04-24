@@ -1,6 +1,7 @@
 package kubernetes_test
 
 import (
+	"strings"
 	"testing"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -106,9 +107,9 @@ func TestListTokens(t *testing.T) {
 				genSecret("project-ID", "6", "test-token-1", "5"),
 			},
 			expectedTokens: []*v1.Secret{
-				genSecret("my-first-project-ID", "1", "test-token-1", "1"),
-				genSecret("my-first-project-ID", "1", "test-token-2", "2"),
-				genSecret("my-first-project-ID", "1", "test-token-3", "3"),
+				rmTokenPrefix(genSecret("my-first-project-ID", "1", "test-token-1", "1")),
+				rmTokenPrefix(genSecret("my-first-project-ID", "1", "test-token-2", "2")),
+				rmTokenPrefix(genSecret("my-first-project-ID", "1", "test-token-3", "3")),
 			},
 		},
 		{
@@ -129,7 +130,7 @@ func TestListTokens(t *testing.T) {
 				genSecret("project-ID", "6", "test-token-1", "5"),
 			},
 			expectedTokens: []*v1.Secret{
-				genSecret("my-first-project-ID", "1", "test-token-3", "3"),
+				rmTokenPrefix(genSecret("my-first-project-ID", "1", "test-token-3", "3")),
 			},
 			tokenName: "test-token-3",
 		},
@@ -155,7 +156,7 @@ func TestListTokens(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			resultList, err := target.List(tc.userInfo, tc.projectToSync, tc.saToSync, &provider.ServiceAccountTokenListOptions{TokenName: tc.tokenName})
+			resultList, err := target.List(tc.userInfo, tc.projectToSync, tc.saToSync, &provider.ServiceAccountTokenListOptions{TokenID: tc.tokenName})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -202,7 +203,7 @@ func TestGetToken(t *testing.T) {
 				genSecret("project-ID", "6", "test-token-1", "5"),
 			},
 			tokenToGet:    "sa-token-3",
-			expectedToken: genSecret("my-first-project-ID", "1", "test-token-3", "3"),
+			expectedToken: rmTokenPrefix(genSecret("my-first-project-ID", "1", "test-token-3", "3")),
 		},
 	}
 	for _, tc := range testcases {
@@ -269,7 +270,7 @@ func TestUpdateToken(t *testing.T) {
 			},
 			tokenToUpdate: "sa-token-3",
 			tokenNewName:  "new-updated-name",
-			expectedToken: genSecret("my-first-project-ID", "1", "new-updated-name", "3"),
+			expectedToken: rmTokenPrefix(genSecret("my-first-project-ID", "1", "new-updated-name", "3")),
 		},
 	}
 	for _, tc := range testcases {
@@ -379,4 +380,9 @@ func TestDeleteToken(t *testing.T) {
 			}
 		})
 	}
+}
+
+func rmTokenPrefix(token *v1.Secret) *v1.Secret {
+	token.Name = strings.TrimPrefix(token.Name, "sa-token-")
+	return token
 }
