@@ -89,11 +89,6 @@ func main() {
 }
 
 func createInitProviders(options serverRunOptions) (providers, error) {
-	config, err := clientcmd.BuildConfigFromFlags("", options.kubeconfig)
-	if err != nil {
-		return providers{}, fmt.Errorf("unable to build client configuration from kubeconfig due to %v", err)
-	}
-
 	// create cluster providers - one foreach context
 	clusterProviders := map[string]provider.ClusterProvider{}
 	{
@@ -120,7 +115,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 			kubermaticSeedClient := kubermaticclientset.NewForConfigOrDie(cfg)
 			kubermaticSeedInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticSeedClient, informer.DefaultInformerResyncPeriod)
 			defaultImpersonationClientForSeed := kubernetesprovider.NewKubermaticImpersonationClient(cfg)
-			seedCtrlruntimeClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
+			seedCtrlruntimeClient, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
 			if err != nil {
 				return providers{}, fmt.Errorf("failed to create dynamic seed client: %v", err)
 			}
@@ -145,30 +140,35 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		}
 	}
 
+	masterCfg, err := clientcmd.BuildConfigFromFlags("", options.kubeconfig)
+	if err != nil {
+		return providers{}, fmt.Errorf("unable to build client configuration from kubeconfig due to %v", err)
+	}
+
 	// create other providers
-	kubeClient := kubernetes.NewForConfigOrDie(config)
-	kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, informer.DefaultInformerResyncPeriod)
-	kubermaticMasterClient := kubermaticclientset.NewForConfigOrDie(config)
+	kubeMasterClient := kubernetes.NewForConfigOrDie(masterCfg)
+	kubeMasterInformerFactory := informers.NewSharedInformerFactory(kubeMasterClient, informer.DefaultInformerResyncPeriod)
+	kubermaticMasterClient := kubermaticclientset.NewForConfigOrDie(masterCfg)
 	kubermaticMasterInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticMasterClient, informer.DefaultInformerResyncPeriod)
-	defaultKubermaticImpersonationClient := kubernetesprovider.NewKubermaticImpersonationClient(config)
-	defaultKubernetesImpersonationClient := kubernetesprovider.NewKubernetesImpersonationClient(config)
+	defaultKubermaticImpersonationClient := kubernetesprovider.NewKubermaticImpersonationClient(masterCfg)
+	defaultKubernetesImpersonationClient := kubernetesprovider.NewKubernetesImpersonationClient(masterCfg)
 
 	datacenters, err := provider.LoadDatacentersMeta(options.dcFile)
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to load datacenter yaml %q: %v", options.dcFile, err)
 	}
 	cloudProviders := cloud.Providers(datacenters)
-	userLister := kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister()
+	userMasterLister := kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister()
 	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
-	userProvider := kubernetesprovider.NewUserProvider(kubermaticMasterClient, userLister, kubernetesprovider.IsServiceAccount)
+	userProvider := kubernetesprovider.NewUserProvider(kubermaticMasterClient, userMasterLister, kubernetesprovider.IsServiceAccount)
 
-	serviceAccountTokenProvider, err := kubernetesprovider.NewServiceAccountTokenProvider(defaultKubernetesImpersonationClient.CreateImpersonatedKubernetesClientSet, kubeInformerFactory.Core().V1().Secrets().Lister())
+	serviceAccountTokenProvider, err := kubernetesprovider.NewServiceAccountTokenProvider(defaultKubernetesImpersonationClient.CreateImpersonatedKubernetesClientSet, kubeMasterInformerFactory.Core().V1().Secrets().Lister())
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create service account token provider due to %v", err)
 	}
-	serviceAccountProvider := kubernetesprovider.NewServiceAccountProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, userLister, options.domain)
+	serviceAccountProvider := kubernetesprovider.NewServiceAccountProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, userMasterLister, options.domain)
 
-	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userLister, kubernetesprovider.IsServiceAccount)
+	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userMasterLister, kubernetesprovider.IsServiceAccount)
 	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().Projects().Lister())
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create project provider due to %v", err)
@@ -179,8 +179,8 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		return providers{}, fmt.Errorf("failed to create privileged project provider due to %v", err)
 	}
 
-	kubeInformerFactory.Start(wait.NeverStop)
-	kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
+	kubeMasterInformerFactory.Start(wait.NeverStop)
+	kubeMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
 	kubermaticMasterInformerFactory.Start(wait.NeverStop)
 	kubermaticMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
 
