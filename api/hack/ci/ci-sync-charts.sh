@@ -16,8 +16,15 @@ if ! git describe --exact-match --tags HEAD &>/dev/null; then
   exit 0
 fi
 
+git remote add origin git@github.com:kubermatic/kubermatic.git
+git fetch origin
 export INSTALLER_BRANCH="$(git branch --contains HEAD --all \
   |tr -d ' '|grep -E 'remotes/origin/release/v2.[0-9]+$'|cut -d '/' -f3-)"
+
+if [[ -z ${INSTALLER_BRANCH} ]]; then
+  echo "Error, the INSTALLER_BRANCH varible was empty"
+  exit 1
+fi
 
 export CHARTS='kubermatic cert-manager certs nginx-ingress-controller nodeport-proxy oauth minio iap'
 export MONITORING_CHARTS='alertmanager blackbox-exporter grafana kube-state-metrics node-exporter prometheus'
@@ -38,7 +45,7 @@ rm -rf ${TARGET_DIR}
 mkdir ${TARGET_DIR}
 git clone git@github.com:kubermatic/kubermatic-installer.git ${TARGET_DIR}
 cd ${TARGET_DIR}
-git checkout ${INSTALLER_BRANCH}
+git checkout ${INSTALLER_BRANCH} || git checkout -b ${INSTALLER_BRANCH}
 cd ..
 
 # re-assemble example values.yaml
