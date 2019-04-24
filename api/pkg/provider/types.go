@@ -4,16 +4,15 @@ import (
 	"errors"
 	"fmt"
 
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/record"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
-	"k8s.io/apimachinery/pkg/types"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-
 	apicorev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/client-go/tools/record"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -391,7 +390,7 @@ type PrivilegedServiceAccountTokenProvider interface {
 
 // EventRecorderProvider allows to record events for objects that can be read using K8S API.
 type EventRecorderProvider interface {
-	// SeedClusterRecorder returns a event recorder that will be able to record event for objects in the cluster
+	// ClusterRecorderFor returns a event recorder that will be able to record event for objects in the cluster
 	// referred by provided cluster config.
-	SeedClusterRecorder(client kubernetes.Interface) record.EventRecorder
+	ClusterRecorderFor(client kubernetes.Interface) record.EventRecorder
 }
