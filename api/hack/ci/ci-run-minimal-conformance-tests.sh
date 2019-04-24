@@ -164,6 +164,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set-string=kubermatic.api.image.repository=quay.io/kubermatic/api \
   --set-string=kubermatic.api.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
   --set-string=kubermatic.masterController.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
+  --set-string=kubermatic.rbac.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
@@ -171,17 +172,18 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --namespace $NAMESPACE \
   kubermatic-$BUILD_ID ./config/kubermatic/
 
-if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
-  echodate "Upgradetest, going back to old revision"
-  git checkout -
-fi
 
 echodate "Finished installing Kubermatic"
 
 # We build the CLI after deploying to make sure we fail fast if the helm deployment fails
 echodate "Building conformance-tests cli"
 time go build -v github.com/kubermatic/kubermatic/api/cmd/conformance-tests
+
 echodate "Finished building conformance-tests cli"
+if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
+  echodate "Upgradetest, going back to old revision"
+  git checkout -
+fi
 
 echodate "Starting conformance tests"
 timeout -s 9 90m ./conformance-tests \
@@ -194,6 +196,7 @@ timeout -s 9 90m ./conformance-tests \
   -name-prefix=prow-e2e \
   -reports-root=/reports \
   -cleanup-on-start=false \
+  -run-kubermatic-controller-manager=false \
   -aws-access-key-id="$AWS_E2E_TESTS_KEY_ID" \
   -aws-secret-access-key="$AWS_E2E_TESTS_SECRET" \
   -versions="$VERSIONS" \
@@ -215,6 +218,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set-string=kubermatic.api.image.repository=quay.io/kubermatic/api \
   --set-string=kubermatic.api.image.tag=$GIT_HEAD_HASH \
   --set-string=kubermatic.masterController.image.tag=$GIT_HEAD_HASH \
+  --set-string=kubermatic.rbac.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
@@ -223,7 +227,12 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   kubermatic-$BUILD_ID ./config/kubermatic/
 echodate "Successfully installed current version of Kubermatic"
 
+# We have to rebuild it so it is based on the newer Kubermatic
+echodate "Building conformance-tests cli"
+time go build -v github.com/kubermatic/kubermatic/api/cmd/conformance-tests
+
 echodate "Running conformance tester with existing cluster"
+
 # We increase the number of nodes to make sure creation
 # of nodes still work
 timeout -s 9 60m ./conformance-tests \
