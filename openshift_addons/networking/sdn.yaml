@@ -104,7 +104,7 @@ spec:
         env:
         - name: OPENSHIFT_DNS_DOMAIN
           value: cluster.local
-        image: docker.io/openshift/origin-node:v3.11
+        image: '{{ Registry "docker.io" }}/openshift/origin-node:v3.11'
         imagePullPolicy: IfNotPresent
         name: sdn
         ports:
