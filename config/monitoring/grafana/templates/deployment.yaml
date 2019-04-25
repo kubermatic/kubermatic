@@ -26,8 +26,9 @@ spec:
 
           target=/etc/grafana/provisioning/datasources
 
-          create_symlinks() {
-            local base="$(realpath $1)/" # keep a trailing slash for the rel trim later
+          provide_datasources() {
+            local index="$1"
+            local base="$(realpath $2)"
 
             if [ ! -d "$base" ]; then
               echo "Error: directory $1 does not exist, check your Helm chart configuration and mounts!"
@@ -35,19 +36,18 @@ spec:
             fi
 
             for abs in $(find "$base" -maxdepth 1 -name '*.yaml'); do
-              relative="${abs#$base}"
-              filename=$(echo "$relative" | sed 's#/#-#g')
+              filename="$index-$(basename "$abs")"
 
-              echo "Symlinking $abs to $filename"
-              ln -s "$abs" "$target/$filename"
+              echo "Copying $abs to $filename"
+              cp "$abs" "$target/$filename"
             done
           }
 
           mkdir -p "$target"
           rm -rf "$target/*"
 
-          {{- range .Values.grafana.provisioning.datasources.paths }}
-          create_symlinks "{{ . }}"
+          {{- range $idx, $path := .Values.grafana.provisioning.datasources.paths }}
+          provide_datasources "$(printf "%02d" {{ $idx }})" "{{ $path }}"
           {{- end }}
 
           echo "Datasource provisioning completed successfully."
