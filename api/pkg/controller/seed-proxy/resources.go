@@ -89,8 +89,8 @@ func seedPrometheusRoleBindingCreator() reconciling.NamedRoleBindingCreatorGette
 			rb.Subjects = []rbacv1.Subject{
 				{
 					Kind:      rbacv1.ServiceAccountKind,
-					Name:      SeedPrometheusRoleName,
 					Namespace: ServiceAccountNamespace,
+					Name:      SeedServiceAccountName,
 				},
 			}
 
