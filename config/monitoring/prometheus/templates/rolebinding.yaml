@@ -32,7 +32,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: '{{ template "name" . }}'
-  namespace: '{{ .Release.Namespace }}'
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -40,4 +39,3 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: '{{ template "name" . }}'
-  namespace: '{{ .Release.Namespace }}'
