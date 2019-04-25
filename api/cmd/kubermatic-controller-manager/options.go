@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
+	"path"
 	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
@@ -112,6 +113,10 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 		return c, fmt.Errorf("failed to parse value of flag etcd-disk-size (%q): %v", rawEtcdDiskSize, err)
 	}
 	c.etcdDiskSize = etcdDiskSize
+
+	if c.overwriteRegistry != "" {
+		c.overwriteRegistry = path.Clean(strings.TrimSpace(c.overwriteRegistry))
+	}
 
 	return c, nil
 }

@@ -18,7 +18,7 @@ spec:
       hostNetwork: true
       containers:
       - name: startup-script
-        image: quay.io/kubermatic/startup-script:v0.1.0
+        image: '{{ Registry "quay.io" }}/kubermatic/startup-script:v0.1.0'
         securityContext:
           privileged: true
         env:

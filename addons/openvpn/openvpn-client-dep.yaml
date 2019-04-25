@@ -18,7 +18,7 @@ spec:
       serviceAccountName: vpn-client
       containers:
       - name: openvpn-client
-        image: quay.io/kubermatic/openvpn:v0.5
+        image: '{{ Registry "quay.io" }}/kubermatic/openvpn:v0.5'
         command: ["/usr/sbin/openvpn"]
         args: ["--config", "/etc/openvpn/config/config"]
         resources:
@@ -57,7 +57,7 @@ spec:
           name: openvpn-client-certificates
           readOnly: true
       - name: dnat-controller
-        image: quay.io/kubermatic/openvpn:v0.5
+        image: '{{ Registry "quay.io" }}/kubermatic/openvpn:v0.5'
         command:
         - bash
         - -ec
