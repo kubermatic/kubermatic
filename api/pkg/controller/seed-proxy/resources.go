@@ -49,8 +49,8 @@ func defaultLabels(name string, instance string) map[string]string {
 
 func seedServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 	return func() (string, reconciling.ServiceAccountCreator) {
-		return ServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-			sa.Labels = defaultLabels(ServiceAccountName, "")
+		return SeedServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+			sa.Labels = defaultLabels(SeedServiceAccountName, "")
 
 			return sa, nil
 		}
@@ -94,8 +94,8 @@ func seedPrometheusRoleBindingCreator() reconciling.NamedRoleBindingCreatorGette
 			rb.Subjects = []rbacv1.Subject{
 				{
 					Kind:      rbacv1.ServiceAccountKind,
-					Namespace: ServiceAccountNamespace,
 					Name:      SeedServiceAccountName,
+					Namespace: SeedServiceAccountNamespace,
 				},
 			}
 
@@ -110,7 +110,7 @@ func masterSecretCreator(contextName string, credentials *corev1.Secret) reconci
 	return func() (string, reconciling.SecretCreator) {
 		return name, func(s *corev1.Secret) (*corev1.Secret, error) {
 			s.Name = name
-			s.Namespace = KubermaticNamespace
+			s.Namespace = MasterTargetNamespace
 			s.Labels = defaultLabels("seed-proxy", contextName)
 
 			if s.Data == nil {
@@ -134,7 +134,7 @@ func masterDeploymentCreator(contextName string) reconciling.NamedDeploymentCrea
 		return name, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			labels := func() map[string]string {
 				return map[string]string{
-					NameLabel:     DeploymentName,
+					NameLabel:     MasterDeploymentName,
 					InstanceLabel: contextName,
 				}
 			}
@@ -153,7 +153,7 @@ func masterDeploymentCreator(contextName string) reconciling.NamedDeploymentCrea
 			}
 
 			d.Name = name
-			d.Namespace = KubermaticNamespace
+			d.Namespace = MasterTargetNamespace
 			d.Labels = labels()
 			d.Labels[ManagedByLabel] = ControllerName
 
@@ -239,18 +239,13 @@ func masterServiceCreator(contextName string) reconciling.NamedServiceCreatorGet
 
 	return func() (string, reconciling.ServiceCreator) {
 		return name, func(s *corev1.Service) (*corev1.Service, error) {
-			labels := func() map[string]string {
-				return map[string]string{
-					NameLabel:     name,
-					InstanceLabel: contextName,
-				}
-			}
-
 			s.Name = name
-			s.Namespace = KubermaticNamespace
-
-			s.Labels = labels()
-			s.Labels[ManagedByLabel] = ControllerName
+			s.Namespace = MasterTargetNamespace
+			s.Labels = map[string]string{
+				NameLabel:      MasterServiceName,
+				InstanceLabel:  contextName,
+				ManagedByLabel: ControllerName,
+			}
 
 			s.Spec.Ports = []corev1.ServicePort{
 				{
@@ -264,7 +259,10 @@ func masterServiceCreator(contextName string) reconciling.NamedServiceCreatorGet
 				},
 			}
 
-			s.Spec.Selector = labels()
+			s.Spec.Selector = map[string]string{
+				NameLabel:     MasterServiceName,
+				InstanceLabel: contextName,
+			}
 
 			return s, nil
 		}
@@ -307,11 +305,11 @@ func masterGrafanaConfigmapCreator(datacenters map[string]provider.DatacenterMet
 
 func buildGrafanaDatasource(contextName string, kubeconfig *clientcmdapi.Config) (string, error) {
 	data := map[string]interface{}{
-		"ContextName":               contextName,
-		"ServiceName":               serviceName(contextName),
-		"ServiceNamespace":          KubermaticNamespace,
-		"ProxyPort":                 KubectlProxyPort,
-		"SeedPrometheusNamespace":   SeedPrometheusNamespace,
+		"ContextName":             contextName,
+		"ServiceName":             serviceName(contextName),
+		"ServiceNamespace":        MasterTargetNamespace,
+		"ProxyPort":               KubectlProxyPort,
+		"SeedPrometheusNamespace": SeedPrometheusNamespace,
 		"SeedPrometheusService":   fullPrometheusService(),
 	}
 

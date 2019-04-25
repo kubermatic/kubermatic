@@ -249,8 +249,8 @@ func (r *Reconciler) ensureSeedServiceAccounts(ctx context.Context, client ctrlr
 		seedServiceAccountCreator(),
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(ctx, creators, ServiceAccountNamespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", ServiceAccountNamespace, err)
+	if err := reconciling.ReconcileServiceAccounts(ctx, creators, SeedServiceAccountNamespace, client); err != nil {
+		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", SeedServiceAccountNamespace, err)
 	}
 
 	return nil
@@ -283,8 +283,8 @@ func (r *Reconciler) ensureSeedRoleBindings(ctx context.Context, client ctrlrunt
 func (r *Reconciler) fetchServiceAccountSecret(ctx context.Context, client ctrlruntimeclient.Client) (*corev1.Secret, error) {
 	sa := &corev1.ServiceAccount{}
 	name := types.NamespacedName{
-		Namespace: ServiceAccountNamespace,
-		Name:      ServiceAccountName,
+		Namespace: SeedServiceAccountNamespace,
+		Name:      SeedServiceAccountName,
 	}
 
 	if err := client.Get(ctx, name, sa); err != nil {
@@ -297,7 +297,7 @@ func (r *Reconciler) fetchServiceAccountSecret(ctx context.Context, client ctrlr
 
 	secret := &corev1.Secret{}
 	name = types.NamespacedName{
-		Namespace: ServiceAccountNamespace,
+		Namespace: SeedServiceAccountNamespace,
 		Name:      sa.Secrets[0].Name,
 	}
 
@@ -332,8 +332,8 @@ func (r *Reconciler) ensureMasterSecrets(ctx context.Context, contextName string
 		masterSecretCreator(contextName, credentials),
 	}
 
-	if err := reconciling.ReconcileSecrets(ctx, creators, KubermaticNamespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile Secrets in the namespace %s: %v", KubermaticNamespace, err)
+	if err := reconciling.ReconcileSecrets(ctx, creators, MasterTargetNamespace, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Secrets in the namespace %s: %v", MasterTargetNamespace, err)
 	}
 
 	return nil
@@ -344,8 +344,8 @@ func (r *Reconciler) ensureMasterDeployments(ctx context.Context, contextName st
 		masterDeploymentCreator(contextName),
 	}
 
-	if err := reconciling.ReconcileDeployments(ctx, creators, KubermaticNamespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile Deployments in the namespace %s: %v", KubermaticNamespace, err)
+	if err := reconciling.ReconcileDeployments(ctx, creators, MasterTargetNamespace, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Deployments in the namespace %s: %v", MasterTargetNamespace, err)
 	}
 
 	return nil
@@ -356,8 +356,8 @@ func (r *Reconciler) ensureMasterServices(ctx context.Context, contextName strin
 		masterServiceCreator(contextName),
 	}
 
-	if err := reconciling.ReconcileServices(ctx, creators, KubermaticNamespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile Services in the namespace %s: %v", KubermaticNamespace, err)
+	if err := reconciling.ReconcileServices(ctx, creators, MasterTargetNamespace, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Services in the namespace %s: %v", MasterTargetNamespace, err)
 	}
 
 	return nil

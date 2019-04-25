@@ -25,33 +25,16 @@ const (
 	// ControllerName is the name of this very controller.
 	ControllerName = "seed-proxy-controller"
 
-	// KubermaticNamespace is the namespace inside the
-	// master where Kubermatic has been installed to and
-	// where the master-level components will be created in.
-	KubermaticNamespace = "kubermatic"
+	// MasterTargetNamespace is the namespace inside the
+	// master where the components will be created in.
+	MasterTargetNamespace = "kubermatic"
 
-	// DeploymentName is the name used for deployments.
-	DeploymentName = "seed-proxy"
+	// MasterDeploymentName is the name used for deployments'
+	// NameLabel value.
+	MasterDeploymentName = "seed-proxy"
 
-	// ServiceAccountName is the name used for service accounts
-	// inside the seed cluster.
-	ServiceAccountName = "seed-proxy"
-
-	// ServiceAccountNamespace is the namespace inside the seed
-	// cluster where the service account will be created.
-	ServiceAccountNamespace = metav1.NamespaceSystem
-
-	// SeedPrometheusNamespace is the namespace inside the seed
-	// cluster where Prometheus is installed.
-	SeedPrometheusNamespace = "monitoring"
-
-	// SeedPrometheusRoleName is the name inside the seed
-	// used for the new role used for proxying to Prometheus.
-	SeedPrometheusRoleName = "seed-proxy-prometheus"
-
-	// SeedPrometheusRoleName is the name inside the seed
-	// used for the new role binding used for proxying to Prometheus.
-	SeedPrometheusRoleBindingName = "seed-proxy-prometheus"
+	// MasterServiceName is the name used for services' NameLabel value.
+	MasterServiceName = "seed-proxy"
 
 	// MasterGrafanaNamespace is the namespace inside the master
 	// cluster where Grafana is installed and where the ConfigMap
@@ -61,6 +44,34 @@ const (
 	// MasterGrafanaConfigMapName is the name used for the newly
 	// created Grafana ConfigMap.
 	MasterGrafanaConfigMapName = "grafana-seed-proxies"
+
+	// SeedServiceAccountName is the name used for service accounts
+	// inside the seed cluster.
+	SeedServiceAccountName = "seed-proxy"
+
+	// SeedServiceAccountNamespace is the namespace inside the seed
+	// cluster where the service account will be created.
+	SeedServiceAccountNamespace = metav1.NamespaceSystem
+
+	// SeedPrometheusNamespace is the namespace inside the seed
+	// cluster where Prometheus is installed.
+	SeedPrometheusNamespace = "monitoring"
+
+	// SeedPrometheusServiceName is the service that is provided by
+	// Prometheus inside the seed cluster.
+	SeedPrometheusServiceName = "prometheus-kubermatic"
+
+	// SeedPrometheusServicePort is the port name that is provided by
+	// Prometheus inside the seed cluster.
+	SeedPrometheusServicePort = "web"
+
+	// SeedPrometheusRoleName is the name inside the seed
+	// used for the new role used for proxying to Prometheus.
+	SeedPrometheusRoleName = "seed-proxy-prometheus"
+
+	// SeedPrometheusRoleBindingName is the name inside the seed
+	// used for the new role binding used for proxying to Prometheus.
+	SeedPrometheusRoleBindingName = "seed-proxy-prometheus"
 
 	// KubectlProxyPort is the port used by kubectl to provide the
 	// proxy connection on. This is not the port on which any of the
