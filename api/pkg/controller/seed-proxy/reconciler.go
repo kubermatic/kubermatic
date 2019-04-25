@@ -8,7 +8,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -57,58 +56,18 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	return reconcile.Result{}, nil
 }
 
+// garbageCollect finds secrets referencing non-existing seeds and deletes
+// those. It relies on the owner references on all other master-cluster
+// resources to let the apiserver remove them automatically.
 func (r *Reconciler) garbageCollect(ctx context.Context) error {
+	list := &corev1.SecretList{}
 	options := &ctrlruntimeclient.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labels.Set{
 			ManagedByLabel: ControllerName,
 		}),
 	}
 
-	if err := r.garbageCollectServices(ctx, options); err != nil {
-		return fmt.Errorf("failed to garbage collect Services: %v", err)
-	}
-
-	if err := r.garbageCollectDeployments(ctx, options); err != nil {
-		return fmt.Errorf("failed to garbage collect Deployments: %v", err)
-	}
-
-	if err := r.garbageCollectConfigMaps(ctx, options); err != nil {
-		return fmt.Errorf("failed to garbage collect ConfigMaps: %v", err)
-	}
-
-	if err := r.garbageCollectSecrets(ctx, options); err != nil {
-		return fmt.Errorf("failed to garbage collect Secrets: %v", err)
-	}
-
-	return nil
-}
-
-func (r *Reconciler) garbageCollectServices(ctx context.Context, opt *ctrlruntimeclient.ListOptions) error {
-	list := &corev1.ServiceList{}
-
-	if err := r.List(ctx, opt, list); err != nil {
-		return fmt.Errorf("failed to list Services: %v", err)
-	}
-
-	for _, item := range list.Items {
-		meta := item.GetObjectMeta()
-		seed := meta.GetLabels()[InstanceLabel]
-
-		if r.unknownSeed(seed) {
-			glog.V(4).Infof("Deleting orphaned Service %s/%s referencing non-existing seed '%s'...", item.Namespace, item.Name, seed)
-			if err := r.Delete(ctx, &item); err != nil {
-				return fmt.Errorf("failed to delete Service: %v", err)
-			}
-		}
-	}
-
-	return nil
-}
-
-func (r *Reconciler) garbageCollectSecrets(ctx context.Context, opt *ctrlruntimeclient.ListOptions) error {
-	list := &corev1.SecretList{}
-
-	if err := r.List(ctx, opt, list); err != nil {
+	if err := r.List(ctx, options, list); err != nil {
 		return fmt.Errorf("failed to list Secrets: %v", err)
 	}
 
@@ -120,51 +79,6 @@ func (r *Reconciler) garbageCollectSecrets(ctx context.Context, opt *ctrlruntime
 			glog.V(4).Infof("Deleting orphaned Secret %s/%s referencing non-existing seed '%s'...", item.Namespace, item.Name, seed)
 			if err := r.Delete(ctx, &item); err != nil {
 				return fmt.Errorf("failed to delete Secret: %v", err)
-			}
-		}
-	}
-
-	return nil
-}
-
-func (r *Reconciler) garbageCollectConfigMaps(ctx context.Context, opt *ctrlruntimeclient.ListOptions) error {
-	// We have one ConfigMap for all seeds, so if there is at least one seed left,
-	// rely on the reconciling to trim unused elements from the ConfigMap.
-	if len(r.kubeconfig.Contexts) > 0 {
-		return nil
-	}
-
-	list := &corev1.ConfigMapList{}
-
-	if err := r.List(ctx, opt, list); err != nil {
-		return fmt.Errorf("failed to list ConfigMaps: %v", err)
-	}
-
-	for _, item := range list.Items {
-		glog.V(4).Infof("Deleting orphaned ConfigMap %s/%s...", item.Namespace, item.Name)
-		if err := r.Delete(ctx, &item); err != nil {
-			return fmt.Errorf("failed to delete ConfigMap: %v", err)
-		}
-	}
-
-	return nil
-}
-
-func (r *Reconciler) garbageCollectDeployments(ctx context.Context, opt *ctrlruntimeclient.ListOptions) error {
-	list := &appsv1.DeploymentList{}
-
-	if err := r.List(ctx, opt, list); err != nil {
-		return fmt.Errorf("failed to list Deployments: %v", err)
-	}
-
-	for _, item := range list.Items {
-		meta := item.GetObjectMeta()
-		seed := meta.GetLabels()[InstanceLabel]
-
-		if r.unknownSeed(seed) {
-			glog.V(4).Infof("Deleting orphaned Deployment %s/%s referencing non-existing seed '%s'...", item.Namespace, item.Name, seed)
-			if err := r.Delete(ctx, &item); err != nil {
-				return fmt.Errorf("failed to delete Deployment: %v", err)
 			}
 		}
 	}
@@ -310,38 +224,49 @@ func (r *Reconciler) fetchServiceAccountSecret(ctx context.Context, client ctrlr
 
 func (r *Reconciler) reconcileMaster(ctx context.Context, contextName string, credentials *corev1.Secret) error {
 	glog.V(4).Info("Reconciling secrets...")
-	if err := r.ensureMasterSecrets(ctx, contextName, credentials); err != nil {
+	secret, err := r.ensureMasterSecrets(ctx, contextName, credentials)
+	if err != nil {
 		return fmt.Errorf("failed to ensure secrets: %v", err)
 	}
 
 	glog.V(4).Info("Reconciling deployments...")
-	if err := r.ensureMasterDeployments(ctx, contextName); err != nil {
+	if err := r.ensureMasterDeployments(ctx, contextName, secret); err != nil {
 		return fmt.Errorf("failed to ensure deployments: %v", err)
 	}
 
 	glog.V(4).Info("Reconciling services...")
-	if err := r.ensureMasterServices(ctx, contextName); err != nil {
+	if err := r.ensureMasterServices(ctx, contextName, secret); err != nil {
 		return fmt.Errorf("failed to ensure services: %v", err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) ensureMasterSecrets(ctx context.Context, contextName string, credentials *corev1.Secret) error {
+func (r *Reconciler) ensureMasterSecrets(ctx context.Context, contextName string, credentials *corev1.Secret) (*corev1.Secret, error) {
 	creators := []reconciling.NamedSecretCreatorGetter{
 		masterSecretCreator(contextName, credentials),
 	}
 
 	if err := reconciling.ReconcileSecrets(ctx, creators, MasterTargetNamespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile Secrets in the namespace %s: %v", MasterTargetNamespace, err)
+		return nil, fmt.Errorf("failed to reconcile Secrets in the namespace %s: %v", MasterTargetNamespace, err)
 	}
 
-	return nil
+	secret := &corev1.Secret{}
+	name := types.NamespacedName{
+		Namespace: MasterTargetNamespace,
+		Name:      secretName(contextName),
+	}
+
+	if err := r.Get(ctx, name, secret); err != nil {
+		return nil, fmt.Errorf("could not find Secret '%s'", name)
+	}
+
+	return secret, nil
 }
 
-func (r *Reconciler) ensureMasterDeployments(ctx context.Context, contextName string) error {
+func (r *Reconciler) ensureMasterDeployments(ctx context.Context, contextName string, secret *corev1.Secret) error {
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		masterDeploymentCreator(contextName),
+		masterDeploymentCreator(contextName, secret),
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, creators, MasterTargetNamespace, r.Client); err != nil {
@@ -351,9 +276,9 @@ func (r *Reconciler) ensureMasterDeployments(ctx context.Context, contextName st
 	return nil
 }
 
-func (r *Reconciler) ensureMasterServices(ctx context.Context, contextName string) error {
+func (r *Reconciler) ensureMasterServices(ctx context.Context, contextName string, secret *corev1.Secret) error {
 	creators := []reconciling.NamedServiceCreatorGetter{
-		masterServiceCreator(contextName),
+		masterServiceCreator(contextName, secret),
 	}
 
 	if err := reconciling.ReconcileServices(ctx, creators, MasterTargetNamespace, r.Client); err != nil {

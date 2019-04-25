@@ -47,6 +47,12 @@ func defaultLabels(name string, instance string) map[string]string {
 	return labels
 }
 
+func ownerReferences(secret *corev1.Secret) []metav1.OwnerReference {
+	return []metav1.OwnerReference{
+		*metav1.NewControllerRef(secret, secret.GroupVersionKind()),
+	}
+}
+
 func seedServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return SeedServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
@@ -126,9 +132,8 @@ func masterSecretCreator(contextName string, credentials *corev1.Secret) reconci
 	}
 }
 
-func masterDeploymentCreator(contextName string) reconciling.NamedDeploymentCreatorGetter {
+func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconciling.NamedDeploymentCreatorGetter {
 	name := deploymentName(contextName)
-	secretName := secretName(contextName)
 
 	return func() (string, reconciling.DeploymentCreator) {
 		return name, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -154,6 +159,7 @@ func masterDeploymentCreator(contextName string) reconciling.NamedDeploymentCrea
 
 			d.Name = name
 			d.Namespace = MasterTargetNamespace
+			d.OwnerReferences = ownerReferences(secret)
 			d.Labels = labels()
 			d.Labels[ManagedByLabel] = ControllerName
 
@@ -181,10 +187,6 @@ func masterDeploymentCreator(contextName string) reconciling.NamedDeploymentCrea
 						{
 							Name:  "PROXY_PORT",
 							Value: fmt.Sprintf("%d", KubectlProxyPort),
-						},
-						{
-							Name:  "TARGET_NAMESPACE",
-							Value: SeedPrometheusNamespace,
 						},
 					},
 					Ports: []corev1.ContainerPort{
@@ -223,7 +225,7 @@ func masterDeploymentCreator(contextName string) reconciling.NamedDeploymentCrea
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							DefaultMode: i32ptr(420),
-							SecretName:  secretName,
+							SecretName:  secret.Name,
 						},
 					},
 				},
@@ -234,13 +236,14 @@ func masterDeploymentCreator(contextName string) reconciling.NamedDeploymentCrea
 	}
 }
 
-func masterServiceCreator(contextName string) reconciling.NamedServiceCreatorGetter {
+func masterServiceCreator(contextName string, secret *corev1.Secret) reconciling.NamedServiceCreatorGetter {
 	name := serviceName(contextName)
 
 	return func() (string, reconciling.ServiceCreator) {
 		return name, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Name = name
 			s.Namespace = MasterTargetNamespace
+			s.OwnerReferences = ownerReferences(secret)
 			s.Labels = map[string]string{
 				NameLabel:      MasterServiceName,
 				InstanceLabel:  contextName,
