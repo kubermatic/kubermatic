@@ -1,14 +1,8 @@
-FROM alpine:3.9
+FROM debian:buster
 
 LABEL maintainer="sebastian@loodse.com"
 
-RUN apk add -U \
-	bash \
-	ca-certificates \
-	curl \
-	iptables \
-	tar \
-	--no-cache
+RUN apt update && apt install -y curl iptables
 
 ADD https://storage.googleapis.com/kubernetes-release/release/v1.13.5/bin/linux/amd64/kubectl /usr/local/bin/kubectl
 RUN chmod +x /usr/local/bin/kubectl && \
