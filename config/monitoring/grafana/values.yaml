@@ -38,7 +38,15 @@ grafana:
       #  type: file
 
     datasources:
+      # read datasources from this path in the Helm chart; this is
+      # evaluated during deployment, not during Grafana runtime!
       source: provisioning/datasources/*
+
+      # If you have more datasources from additional volumes,
+      # specify their mount paths here to have them symlinked to
+      # /etc/grafana/provisioning/datasources.
+      paths:
+      - /etc/grafana/provisioning/default-datasources
 
       # You can specify additional datasources inline as well.
       #extra:
