@@ -21,7 +21,7 @@ spec:
       serviceAccountName: node-exporter
       containers:
       - name: node-exporter
-        image: 'quay.io/prometheus/node-exporter:v0.17.0'
+        image: '{{ Registry "quay.io" }}/prometheus/node-exporter:v0.17.0'
         args:
         - '--path.procfs=/host/proc'
         - '--path.sysfs=/host/sys'
@@ -47,7 +47,7 @@ spec:
           mountPropagation: HostToContainer
 
       - name: kube-rbac-proxy
-        image: 'quay.io/coreos/kube-rbac-proxy:v0.4.1'
+        image: '{{ Registry "quay.io" }}/coreos/kube-rbac-proxy:v0.4.1'
         args:
         - '--logtostderr'
         - '--secure-listen-address=$(IP):9100'

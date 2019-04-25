@@ -163,7 +163,7 @@ spec:
       serviceAccount: hcloud-csi
       containers:
         - name: csi-attacher
-          image: quay.io/k8scsi/csi-attacher:v1.0.1
+          image: '{{ Registry "quay.io" }}/k8scsi/csi-attacher:v1.0.1'
           args:
             - --csi-address=/var/lib/csi/sockets/pluginproxy/csi.sock
             - --v=5
@@ -176,7 +176,7 @@ spec:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
         - name: csi-provisioner
-          image: quay.io/k8scsi/csi-provisioner:v1.0.1
+          image: '{{ Registry "quay.io" }}/k8scsi/csi-provisioner:v1.0.1'
           args:
             - --provisioner=csi.hetzner.cloud
             - --csi-address=/var/lib/csi/sockets/pluginproxy/csi.sock
@@ -190,7 +190,7 @@ spec:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
         - name: csi-cluster-driver-registrar
-          image: quay.io/k8scsi/csi-cluster-driver-registrar:v1.0.1
+          image: '{{ Registry "quay.io" }}/k8scsi/csi-cluster-driver-registrar:v1.0.1'
           args:
             - --pod-info-mount-version="v1"
             - --csi-address=/var/lib/csi/sockets/pluginproxy/csi.sock
@@ -199,7 +199,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: hcloud-csi-driver
-          image: hetznercloud/hcloud-csi-driver:1.0.0
+          image: '{{ Registry "docker.io" }}/hetznercloud/hcloud-csi-driver:1.0.0'
           imagePullPolicy: Always
           env:
             - name: CSI_ENDPOINT
@@ -241,7 +241,7 @@ spec:
       hostNetwork: true
       containers:
         - name: csi-node-driver-registrar
-          image: quay.io/k8scsi/csi-node-driver-registrar:v1.0.1
+          image: '{{ Registry "quay.io" }}/k8scsi/csi-node-driver-registrar:v1.0.1'
           args:
             - --v=5
             - --csi-address=/csi/csi.sock
@@ -260,7 +260,7 @@ spec:
           securityContext:
             privileged: true
         - name: hcloud-csi-driver
-          image: hetznercloud/hcloud-csi-driver:1.0.0
+          image: '{{ Registry "docker.io" }}hetznercloud/hcloud-csi-driver:1.0.0'
           imagePullPolicy: Always
           env:
             - name: CSI_ENDPOINT

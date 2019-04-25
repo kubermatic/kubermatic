@@ -94,7 +94,7 @@ spec:
           fi
           /usr/share/openvswitch/scripts/ovs-ctl start --no-ovsdb-server --system-id=random
           while true; do sleep 5; done
-        image: docker.io/openshift/origin-node:v3.11
+        image: '{{ Registry "docker.io" }}/openshift/origin-node:v3.11'
         imagePullPolicy: IfNotPresent
         name: openvswitch
         resources:
