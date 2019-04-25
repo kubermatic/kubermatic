@@ -34,8 +34,9 @@ func MachineController(osData openshiftData) reconciling.NamedDeploymentCreatorG
 					"-c",
 					"set -e && cp /usr/local/bin/userdata-openshift /target/machine-controller-userdata-centos",
 				},
-				TerminationMessagePath: corev1.TerminationMessagePathDefault,
-				VolumeMounts:           []corev1.VolumeMount{{Name: "userdata-plugins", MountPath: "/target"}},
+				TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+				TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+				VolumeMounts:             []corev1.VolumeMount{{Name: "userdata-plugins", MountPath: "/target"}},
 			})
 			for idx := range d.Spec.Template.Spec.Containers {
 				if d.Spec.Template.Spec.Containers[idx].Name != "machine-controller" {
