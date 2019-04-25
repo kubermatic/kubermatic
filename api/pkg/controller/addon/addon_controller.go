@@ -55,7 +55,7 @@ type Reconciler struct {
 	addonVariables     map[string]interface{}
 	kubernetesAddonDir string
 	openshiftAddonDir  string
-	registryURI        string
+	overwriteRegistry  string
 	ctrlruntimeclient.Client
 	recorder record.EventRecorder
 
@@ -83,10 +83,7 @@ func Add(
 		Client:             client,
 		workerName:         workerName,
 		recorder:           mgr.GetRecorder(ControllerName),
-	}
-
-	if overwriteRegistey != "" {
-		reconciler.registryURI = parseRegistryURI(overwriteRegistey)
+		overwriteRegistry:  overwriteRegistey,
 	}
 
 	ctrlOptions := controller.Options{
@@ -145,10 +142,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		r.recorder.Eventf(addon, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
 	}
 	return reconcile.Result{}, err
-}
-
-func parseRegistryURI(uri string) string {
-	return path.Clean(uri) + "/"
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, addon *kubermaticv1.Addon) error {
@@ -227,13 +220,24 @@ func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, addon *kubermat
 }
 
 type templateData struct {
-	Addon             *kubermaticv1.Addon
-	Kubeconfig        string
-	Cluster           *kubermaticv1.Cluster
-	Variables         map[string]interface{}
-	OverwriteRegistry string
-	DNSClusterIP      string
-	ClusterCIDR       string
+	Addon        *kubermaticv1.Addon
+	Kubeconfig   string
+	Cluster      *kubermaticv1.Cluster
+	Variables    map[string]interface{}
+	DNSClusterIP string
+	ClusterCIDR  string
+}
+
+func (r *Reconciler) GetTemplateFuncs() template.FuncMap {
+	funcs := sprig.TxtFuncMap()
+	funcs["Registry"] = func(registry string) string {
+		if r.overwriteRegistry != "" {
+			return r.overwriteRegistry
+		}
+		return registry
+	}
+
+	return funcs
 }
 
 func (r *Reconciler) getAddonManifests(addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]*bytes.Buffer, error) {
@@ -259,14 +263,15 @@ func (r *Reconciler) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 		return nil, err
 	}
 
+	templateFuncs := r.GetTemplateFuncs()
+
 	data := &templateData{
-		Variables:         make(map[string]interface{}),
-		Cluster:           cluster,
-		Addon:             addon,
-		Kubeconfig:        string(kubeconfig),
-		OverwriteRegistry: r.registryURI,
-		DNSClusterIP:      clusterIP,
-		ClusterCIDR:       cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
+		Variables:    make(map[string]interface{}),
+		Cluster:      cluster,
+		Addon:        addon,
+		Kubeconfig:   string(kubeconfig),
+		DNSClusterIP: clusterIP,
+		ClusterCIDR:  cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
 	}
 
 	// Add addon variables if available.
@@ -295,7 +300,7 @@ func (r *Reconciler) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 		}
 
 		tplName := fmt.Sprintf("%s-%s", addon.Name, info.Name())
-		tpl, err := template.New(tplName).Funcs(sprig.TxtFuncMap()).Parse(string(fbytes))
+		tpl, err := template.New(tplName).Funcs(templateFuncs).Parse(string(fbytes))
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse file %s: %v", filename, err)
 		}

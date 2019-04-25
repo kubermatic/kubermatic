@@ -65,11 +65,11 @@ kind: Deployment
 metadata:
   name: test-deployment
 spec:
-	template:
-	  spec:
-	    containers:
-	    - name: nginx
-	      image: {{default "foo.io/" .OverwriteRegistry}}test:1.2.3
+  template:
+    spec:
+      containers:
+      - name: nginx
+        image: {{Registry "foo.io" }}/test:1.2.3
 `
 
 	testManifestKubeDNS = `apiVersion: v1
@@ -86,7 +86,7 @@ spec:
   selector:
     k8s-app: kube-dns
   clusterIP: {{.DNSClusterIP}}
-	clusterCIDR: "{{first .Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks}}"
+  clusterCIDR: "{{first .Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks}}"
 `
 )
 
@@ -229,7 +229,7 @@ func TestController_getAddonDeploymentManifests(t *testing.T) {
 
 	controller := &Reconciler{
 		kubernetesAddonDir: addonDir,
-		registryURI:        parseRegistryURI("bar.io"),
+		overwriteRegistry:  "bar.io",
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 	manifests, err := controller.getAddonManifests(addon, cluster)
