@@ -3,6 +3,12 @@ prometheus:
   host: ''
   storageSize: 100Gi
 
+  # If you install Prometheus using a different Helm release name,
+  # you can override the name used for the resources, e.g. to have
+  # multiple Prometheus installed into distinct namespaces but still
+  # have the same Service names, ConfigMap names etc.
+  #nameOverride: prometheus
+
   backup:
     enabled: true
     image:
