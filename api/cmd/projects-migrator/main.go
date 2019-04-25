@@ -901,6 +901,21 @@ func doesUserOwnProjectAs(user kubermaticv1.User, ctx migrationContext, groupPre
 		}
 	}
 
+	// Under normal conditions, the RBAC controller generates UserProjectBindings for project's owners (it examines OnwerReferences).
+	// however a faulty controller might have not created bindings.
+	// so as a last resort examine OwnerReferences
+	allProjects, err := ctx.masterKubermaticClient.KubermaticV1().Projects().List(metav1.ListOptions{})
+	if err != nil {
+		return "", err
+	}
+	for _, project := range allProjects.Items {
+		if ownerName := isOwnedByUser(project.OwnerReferences); len(ownerName) > 0 {
+			if user.Name == ownerName {
+				return project.Name, nil
+			}
+		}
+	}
+
 	// the user doesn't have a project
 	return "", nil
 }
