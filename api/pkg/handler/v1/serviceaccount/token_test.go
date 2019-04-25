@@ -168,8 +168,8 @@ func TestListTokens(t *testing.T) {
 			projectToSync:   "plan9-ID",
 			saToSync:        "1",
 			expectedTokens: []apiv1.PublicServiceAccountToken{
-				genPublicServiceAccountToken("sa-token-1", "test-1", expiry),
-				genPublicServiceAccountToken("sa-token-3", "test-3", expiry),
+				genPublicServiceAccountToken("1", "test-1", expiry),
+				genPublicServiceAccountToken("3", "test-3", expiry),
 			},
 		},
 	}
@@ -230,7 +230,7 @@ func TestServiceAccountCanGetProject(t *testing.T) {
 			/*given sa and secret it knows how to generate a valid token*/
 			authReqestFunc: test.AuthorizeRequest(
 				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
-				test.GenSecret("plan9-ID", "serviceaccount-1", "test-1", "1")),
+				test.GenSecret("plan9-ID", "serviceaccount-1", "sa-token-1", "1")),
 			existingKubernetesObjs: []runtime.Object{
 				test.GenSecret("plan9-ID", "serviceaccount-1", "test-1", "1"),
 				test.GenSecret("plan10-ID", "serviceaccount-2", "test-2", "2"),
@@ -309,8 +309,8 @@ func TestPatchToken(t *testing.T) {
 			existingAPIUser: *test.GenAPIUser("john", "john@acme.com"),
 			projectToSync:   "plan9-ID",
 			saToSync:        "1",
-			tokenToSync:     "sa-token-1",
-			expectedToken:   genPublicServiceAccountToken("sa-token-1", "test-new-name", expiry),
+			tokenToSync:     "1",
+			expectedToken:   genPublicServiceAccountToken("1", "test-new-name", expiry),
 		},
 		{
 			name:       "scenario 2: changed name is empty",
@@ -422,7 +422,7 @@ func TestUpdateToken(t *testing.T) {
 		{
 			name:       "scenario 1: change token name successfully and regenerate token",
 			httpStatus: http.StatusOK,
-			body:       `{"name":"test-new-name", "id":"sa-token-1"}`,
+			body:       `{"name":"test-new-name", "id":"1"}`,
 			existingKubermaticObjs: []runtime.Object{
 				/*add projects*/
 				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
@@ -439,8 +439,8 @@ func TestUpdateToken(t *testing.T) {
 			existingAPIUser: *test.GenAPIUser("john", "john@acme.com"),
 			projectToSync:   "plan9-ID",
 			saToSync:        "1",
-			tokenToSync:     "sa-token-1",
-			expectedToken:   genPublicServiceAccountToken("sa-token-1", "test-new-name", expiry),
+			tokenToSync:     "1",
+			expectedToken:   genPublicServiceAccountToken("1", "test-new-name", expiry),
 		},
 		{
 			name:       "scenario 2: changed name is empty",

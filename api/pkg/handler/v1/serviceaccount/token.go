@@ -43,7 +43,7 @@ func CreateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccoun
 		}
 
 		// check if token name is already reserved for service account
-		existingTokenList, err := serviceAccountTokenProvider.List(userInfo, project, sa, &provider.ServiceAccountTokenListOptions{TokenName: req.Body.Name})
+		existingTokenList, err := serviceAccountTokenProvider.List(userInfo, project, sa, &provider.ServiceAccountTokenListOptions{TokenID: req.Body.Name})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -51,7 +51,7 @@ func CreateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccoun
 			return nil, errors.NewAlreadyExists("token", req.Body.Name)
 		}
 
-		tokenID := fmt.Sprintf("sa-token-%s", rand.String(10))
+		tokenID := rand.String(10)
 
 		token, err := tokenGenerator.Generate(serviceaccount.Claims(sa.Spec.Email, project.Name, tokenID))
 		if err != nil {
@@ -228,7 +228,7 @@ func updateToken(projectProvider provider.ProjectProvider, serviceAccountProvide
 
 	if newName != existingName {
 		// check if token name is already reserved for service account
-		existingTokenList, err := serviceAccountTokenProvider.List(userInfo, project, sa, &provider.ServiceAccountTokenListOptions{TokenName: newName})
+		existingTokenList, err := serviceAccountTokenProvider.List(userInfo, project, sa, &provider.ServiceAccountTokenListOptions{TokenID: newName})
 		if err != nil {
 			return nil, err
 		}

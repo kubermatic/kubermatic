@@ -19,6 +19,7 @@ import (
 const (
 	kubermaticNamespace = "kubermatic"
 	labelTokenName      = "token"
+	tokenPrefix         = "sa-token-"
 )
 
 // NewServiceAccountProvider returns a service account provider
@@ -56,7 +57,7 @@ func (p *ServiceAccountTokenProvider) Create(userInfo *provider.UserInfo, sa *ku
 	}
 
 	secret := &v1.Secret{}
-	secret.Name = tokenID
+	secret.Name = addTokenPrefix(tokenID)
 	secret.OwnerReferences = []metav1.OwnerReference{
 		{
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -78,7 +79,12 @@ func (p *ServiceAccountTokenProvider) Create(userInfo *provider.UserInfo, sa *ku
 		return nil, kerrors.NewInternalError(err)
 	}
 
-	return kubernetesImpersonatedClient.CoreV1().Secrets(kubermaticNamespace).Create(secret)
+	createdToken, err := kubernetesImpersonatedClient.CoreV1().Secrets(kubermaticNamespace).Create(secret)
+	if err != nil {
+		return nil, err
+	}
+	createdToken.Name = removeTokenPrefix(createdToken.Name)
+	return createdToken, nil
 }
 
 // List  gets tokens for the given service account and project
@@ -132,7 +138,11 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 		}
 	}
 
-	if len(options.TokenName) == 0 {
+	for _, token := range resultList {
+		token.Name = removeTokenPrefix(token.Name)
+	}
+
+	if len(options.TokenID) == 0 {
 		return resultList, nil
 	}
 
@@ -140,7 +150,7 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 	for _, token := range resultList {
 		name, ok := token.Labels["name"]
 		if ok {
-			if name == options.TokenName {
+			if name == options.TokenID {
 				filteredList = append(filteredList, token)
 				break
 			}
@@ -163,18 +173,20 @@ func (p *ServiceAccountTokenProvider) ListUnsecured(options *provider.ServiceAcc
 	allTokens := []*v1.Secret{}
 	for _, secret := range allSecrets {
 		if isToken(secret) {
-			allTokens = append(allSecrets, secret.DeepCopy())
+			sCpy := secret.DeepCopy()
+			sCpy.Name = removeTokenPrefix(sCpy.Name)
+			allTokens = append(allTokens, sCpy)
 		}
 	}
 	if options == nil {
 		return allTokens, nil
 	}
 	for _, token := range allTokens {
-		if token.Name == options.TokenName {
-			return []*v1.Secret{token.DeepCopy()}, nil
+		if token.Name == options.TokenID {
+			return []*v1.Secret{token}, nil
 		}
 	}
-	return nil, kerrors.NewNotFound(v1.SchemeGroupVersion.WithResource("secret").GroupResource(), options.TokenName)
+	return nil, kerrors.NewNotFound(v1.SchemeGroupVersion.WithResource("secret").GroupResource(), options.TokenID)
 }
 
 func isToken(secret *v1.Secret) bool {
@@ -192,12 +204,19 @@ func (p *ServiceAccountTokenProvider) Get(userInfo *provider.UserInfo, name stri
 	if len(name) == 0 {
 		return nil, kerrors.NewBadRequest("token name cannot be empty")
 	}
+	name = addTokenPrefix(name)
 
 	kubernetesImpersonatedClient, err := createKubernetesImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
 	if err != nil {
 		return nil, kerrors.NewInternalError(err)
 	}
-	return kubernetesImpersonatedClient.CoreV1().Secrets(kubermaticNamespace).Get(name, metav1.GetOptions{})
+
+	token, err := kubernetesImpersonatedClient.CoreV1().Secrets(kubermaticNamespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	token.Name = removeTokenPrefix(token.Name)
+	return token, nil
 }
 
 // Update method updates given token
@@ -208,12 +227,20 @@ func (p *ServiceAccountTokenProvider) Update(userInfo *provider.UserInfo, secret
 	if secret == nil {
 		return nil, kerrors.NewBadRequest("secret cannot be empty")
 	}
+	secretCpy := *secret
+	secretCpy.Name = addTokenPrefix(secretCpy.Name)
 
 	kubernetesImpersonatedClient, err := createKubernetesImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
 	if err != nil {
 		return nil, kerrors.NewInternalError(err)
 	}
-	return kubernetesImpersonatedClient.CoreV1().Secrets(kubermaticNamespace).Update(secret)
+
+	updatedToken, err := kubernetesImpersonatedClient.CoreV1().Secrets(kubermaticNamespace).Update(&secretCpy)
+	if err != nil {
+		return nil, err
+	}
+	updatedToken.Name = removeTokenPrefix(updatedToken.Name)
+	return updatedToken, nil
 }
 
 // Delete method deletes given token
@@ -224,10 +251,31 @@ func (p *ServiceAccountTokenProvider) Delete(userInfo *provider.UserInfo, name s
 	if len(name) == 0 {
 		return kerrors.NewBadRequest("token name cannot be empty")
 	}
+	name = addTokenPrefix(name)
 
 	kubernetesImpersonatedClient, err := createKubernetesImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
 	if err != nil {
 		return kerrors.NewInternalError(err)
 	}
 	return kubernetesImpersonatedClient.CoreV1().Secrets(kubermaticNamespace).Delete(name, &metav1.DeleteOptions{})
+}
+
+// removeTokenPrefix removes "sa-token-" from a token's ID
+// for example given "sa-token-gmtzqz692d" it returns "gmtzqz692d"
+func removeTokenPrefix(id string) string {
+	return strings.TrimPrefix(id, tokenPrefix)
+}
+
+// addTokenPrefix adds "sa-token-" prefix to a token's ID,
+// for example given "gmtzqz692d" it returns "sa-token-gmtzqz692d"
+func addTokenPrefix(id string) string {
+	if !hasTokenPrefix(id) {
+		return fmt.Sprintf("%s%s", tokenPrefix, id)
+	}
+	return id
+}
+
+// hasTokenPrefix checks if the given id has "sa-token-" prefix
+func hasTokenPrefix(token string) bool {
+	return strings.HasPrefix(token, tokenPrefix)
 }
