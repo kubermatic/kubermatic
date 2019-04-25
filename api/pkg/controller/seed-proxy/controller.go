@@ -129,21 +129,33 @@ func Add(
 		return requests
 	})}
 
-	type watcher struct {
-		obj  runtime.Object
-		pred predicate.Funcs
+	ownedByPred := predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return managedByController(e.Meta)
+		},
+
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			return managedByController(e.MetaOld) || managedByController(e.MetaNew)
+		},
+
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return managedByController(e.Meta)
+		},
+
+		GenericFunc: func(e event.GenericEvent) bool {
+			return managedByController(e.Meta)
+		},
 	}
 
-	ownedByPred := makePredicateFuncs(managedByController)
-	typesToWatch := []watcher{
-		{obj: &appsv1.Deployment{}, pred: ownedByPred},
-		{obj: &corev1.Service{}, pred: ownedByPred},
-		{obj: &corev1.Secret{}, pred: ownedByPred},
-		{obj: &corev1.ConfigMap{}, pred: ownedByPred},
+	typesToWatch := []runtime.Object{
+		&appsv1.Deployment{},
+		&corev1.Service{},
+		&corev1.Secret{},
+		&corev1.ConfigMap{},
 	}
 
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t.obj}, eventHandler, t.pred); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, eventHandler, ownedByPred); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
 		}
 	}
@@ -154,24 +166,4 @@ func Add(
 func managedByController(meta metav1.Object) bool {
 	labels := meta.GetLabels()
 	return labels[ManagedByLabel] == ControllerName
-}
-
-func makePredicateFuncs(pred func(metav1.Object) bool) predicate.Funcs {
-	return predicate.Funcs{
-		CreateFunc: func(e event.CreateEvent) bool {
-			return pred(e.Meta)
-		},
-
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			return pred(e.MetaOld) || pred(e.MetaNew)
-		},
-
-		DeleteFunc: func(e event.DeleteEvent) bool {
-			return pred(e.Meta)
-		},
-
-		GenericFunc: func(e event.GenericEvent) bool {
-			return pred(e.Meta)
-		},
-	}
 }
