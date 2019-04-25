@@ -1,3 +1,4 @@
+{{- if not .Values.prometheus.migration.enabled }}
 apiVersion: apps/v1beta2
 kind: StatefulSet
 metadata:
@@ -19,7 +20,7 @@ spec:
         kubermatic/scrape: 'true'
         kubermatic/scrape_port: '9090'
         {{- if .Values.prometheus.backup.enabled }}
-        backup.velero.io/backup-volumes: prometheus-backup
+        backup.velero.io/backup-volumes: backup
         pre.hook.backup.velero.io/container: backup
         pre.hook.backup.velero.io/timeout: '{{ .Values.prometheus.backup.timeout | default "60m" }}'
         pre.hook.backup.velero.io/command: '["/bin/sh", "-c", "rm -rf /prometheus/snapshots/* && curl -s -XPOST \"http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot?skip_head=true\" && rsync --archive /prometheus/snapshots/*/ /backup"]'
@@ -170,13 +171,15 @@ spec:
         requests:
           storage: {{ .Values.prometheus.storageSize }}
       storageClassName: kubermatic-fast
+{{ end }}
+
 ---
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
-  name: prometheus-kubermatic
+  name: '{{ template "name" . }}'
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app: prometheus-kubermatic
+      app: '{{ template "name" . }}'
