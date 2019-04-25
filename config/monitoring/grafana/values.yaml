@@ -43,8 +43,10 @@ grafana:
       source: provisioning/datasources/*
 
       # If you have more datasources from additional volumes,
-      # specify their mount paths here to have them symlinked to
-      # /etc/grafana/provisioning/datasources.
+      # specify their mount paths here to have them copied to
+      # /etc/grafana/provisioning/datasources. Files will get
+      # a prefix to ensure that identical filenames from
+      # multiple paths do not overwrite each other.
       paths:
       - /etc/grafana/provisioning/default-datasources
 
