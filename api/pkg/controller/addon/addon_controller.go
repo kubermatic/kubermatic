@@ -143,6 +143,15 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	if err != nil {
 		glog.Errorf("Failed to reconcile addon %s: %v", addon.Name, err)
 		r.recorder.Eventf(addon, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
+		reconcilingError := err
+		//Get the cluster so we can report an event to it
+		cluster := &kubermaticv1.Cluster{}
+		if err := r.Get(ctx, types.NamespacedName{Name: addon.Spec.Cluster.Name}, cluster); err != nil {
+			glog.Errorf("failed to get cluster for reporting error onto it: %v", err)
+		} else {
+			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError",
+				"failed to reconcile Addon %q: %v", addon.Name, reconcilingError)
+		}
 	}
 	return reconcile.Result{}, err
 }
