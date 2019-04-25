@@ -374,8 +374,8 @@ type ServiceAccountTokenProvider interface {
 
 // ServiceAccountTokenListOptions allows to set filters that will be applied to filter the result.
 type ServiceAccountTokenListOptions struct {
-	// TokenName list only tokens with the specified name
-	TokenName string
+	// TokenID list only tokens with the specified name
+	TokenID string
 }
 
 // PrivilegedServiceAccountTokenProvider declares the set of method for interacting with kubermatic's sa's tokens and uses privileged account for it
