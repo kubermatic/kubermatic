@@ -30,6 +30,10 @@ func serviceName(contextName string) string {
 	return fmt.Sprintf("seed-proxy-%s", contextName)
 }
 
+func fullPrometheusService() string {
+	return fmt.Sprintf("%s:%s", SeedPrometheusServiceName, SeedPrometheusServicePort)
+}
+
 func defaultLabels(name string, instance string) map[string]string {
 	labels := map[string]string{
 		NameLabel:      name,
@@ -62,9 +66,10 @@ func seedPrometheusRoleCreator() reconciling.NamedRoleCreatorGetter {
 
 			r.Rules = []rbacv1.PolicyRule{
 				{
-					APIGroups: []string{""},
-					Resources: []string{"services/proxy"},
-					Verbs:     []string{"get", "list", "watch", "create"},
+					APIGroups:     []string{""},
+					Resources:     []string{"services/proxy"},
+					ResourceNames: []string{fullPrometheusService()},
+					Verbs:         []string{"get"},
 				},
 			}
 
@@ -307,8 +312,7 @@ func buildGrafanaDatasource(contextName string, kubeconfig *clientcmdapi.Config)
 		"ServiceNamespace":          KubermaticNamespace,
 		"ProxyPort":                 KubectlProxyPort,
 		"SeedPrometheusNamespace":   SeedPrometheusNamespace,
-		"SeedPrometheusServiceName": "prometheus-kubermatic",
-		"SeedPrometheusPortName":    "http",
+		"SeedPrometheusService":   fullPrometheusService(),
 	}
 
 	var buffer bytes.Buffer
@@ -331,9 +335,7 @@ echo "Starting kubectl proxy for $KUBERNETES_CONTEXT on port $PROXY_PORT..."
 kubectl proxy \
   --address=0.0.0.0 \
   --port=$PROXY_PORT \
-  --accept-hosts='' \
-  --accept-paths="^/api/v1/namespaces/$TARGET_NAMESPACE/services/.*/proxy/.*$" \
-  --reject-methods='^(POST|PUT|PATCH|DELETE)$'
+  --accept-hosts=''
 `
 
 const grafanaDatasource = `
@@ -345,6 +347,6 @@ datasources:
   org_id: 1
   type: prometheus
   access: proxy
-  url: http://{{ .ServiceName }}.{{ .ServiceNamespace }}.svc.cluster.local:{{ .ProxyPort }}/api/v1/namespaces/{{ .SeedPrometheusNamespace }}/services/{{ .SeedPrometheusServiceName }}:{{ .SeedPrometheusPortName }}/proxy/
+  url: http://{{ .ServiceName }}.{{ .ServiceNamespace }}.svc.cluster.local:{{ .ProxyPort }}/api/v1/namespaces/{{ .SeedPrometheusNamespace }}/services/{{ .SeedPrometheusService }}/proxy/
   editable: false
 `
