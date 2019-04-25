@@ -80,6 +80,8 @@ kubermatic:
           repository: "quay.io/kubermatic/openshift-addons"
           tag: "v0.9"
           pullPolicy: "IfNotPresent"
+    # Specify a custom docker registry which will be used for all images (user cluster control plane + addons)
+    overwriteRegistry: ""
     resources:
       requests:
         cpu: 200m
