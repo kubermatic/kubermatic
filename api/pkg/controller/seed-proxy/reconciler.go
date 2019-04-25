@@ -49,7 +49,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	glog.V(4).Info("Reconciling Grafana provisioning...")
-	if err := r.reconcileGrafana(ctx); err != nil {
+	if err := r.ensureMasterGrafanaProvisioning(ctx); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile Grafana: %v", err)
 	}
 
@@ -283,14 +283,6 @@ func (r *Reconciler) ensureMasterServices(ctx context.Context, contextName strin
 
 	if err := reconciling.ReconcileServices(ctx, creators, MasterTargetNamespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Services in the namespace %s: %v", MasterTargetNamespace, err)
-	}
-
-	return nil
-}
-
-func (r *Reconciler) reconcileGrafana(ctx context.Context) error {
-	if err := r.ensureMasterGrafanaProvisioning(ctx); err != nil {
-		return err
 	}
 
 	return nil
