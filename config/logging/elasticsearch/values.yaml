@@ -2,7 +2,7 @@ logging:
   elasticsearch:
     image:
       repository: docker.elastic.co/elasticsearch/elasticsearch-oss
-      tag: "6.6.2"
+      tag: "7.0.0"
       pullPolicy: IfNotPresent
 
     cluster:
@@ -63,7 +63,7 @@ logging:
       interval: 5
       image:
         repository: quay.io/kubermatic/elasticsearch-curator
-        tag: "5.6.0-1"
+        tag: "5.7.4-1"
         pullPolicy: IfNotPresent
 
     init:
@@ -92,8 +92,8 @@ logging:
 
     cerebro:
       image:
-        repository: yannart/cerebro
-        tag: "0.8.1"
+        repository: lmenezes/cerebro
+        tag: "0.8.3"
         pullPolicy: IfNotPresent
       deploy: false
       resources:
