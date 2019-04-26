@@ -24,6 +24,50 @@ func MachineCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter 
 			crd.Spec.Names.Plural = "machines"
 			crd.Spec.Names.Singular = "machine"
 			crd.Spec.Names.ShortNames = []string{"ma"}
+			crd.Spec.AdditionalPrinterColumns = []apiextensionsv1beta1.CustomResourceColumnDefinition{
+				{
+					Name:     "CreationTimestamp",
+					Type:     "date",
+					JSONPath: ".metadata.creationTimestamp",
+					Priority: 10,
+				},
+				{
+					Name:     "DeletionTimestamp",
+					Type:     "date",
+					JSONPath: ".metadata.deletionTimestamp",
+					Priority: 0,
+				},
+				{
+					Name:     "MachineSet",
+					Type:     "string",
+					JSONPath: ".metadata.ownerReferences[0].Name",
+					Priority: 0,
+				},
+				{
+					Name:     "Address",
+					Type:     "string",
+					JSONPath: ".status.addresses[0].address",
+					Priority: 0,
+				},
+				{
+					Name:     "Provider",
+					Type:     "string",
+					JSONPath: ".spec.providerSpec.value.cloudProvider",
+					Priority: 10,
+				},
+				{
+					Name:     "OS",
+					Type:     "string",
+					JSONPath: ".spec.providerSpec.value.operatingSystem",
+					Priority: 10,
+				},
+				{
+					Name:     "KubeletVersion",
+					Type:     "string",
+					JSONPath: ".spec.versions.kubelet",
+					Priority: 10,
+				},
+			}
 
 			return crd, nil
 		}
@@ -49,6 +93,50 @@ func MachineSetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGett
 					SpecReplicasPath:   ".spec.replicas",
 					StatusReplicasPath: ".status.replicas",
 				}}
+			crd.Spec.AdditionalPrinterColumns = []apiextensionsv1beta1.CustomResourceColumnDefinition{
+				{
+					Name:     "CreationTimestamp",
+					Type:     "date",
+					JSONPath: ".metadata.creationTimestamp",
+					Priority: 10,
+				},
+				{
+					Name:     "DeletionTimestamp",
+					Type:     "date",
+					JSONPath: ".metadata.deletionTimestamp",
+					Priority: 0,
+				},
+				{
+					Name:     "Replicas",
+					Type:     "string",
+					JSONPath: ".spec.replicas",
+					Priority: 0,
+				},
+				{
+					Name:     "MachineDeployment",
+					Type:     "string",
+					JSONPath: ".metadata.ownerReferences[0].Name",
+					Priority: 0,
+				},
+				{
+					Name:     "Provider",
+					Type:     "string",
+					JSONPath: ".spec.template.spec.providerSpec.value.cloudProvider",
+					Priority: 10,
+				},
+				{
+					Name:     "OS",
+					Type:     "string",
+					JSONPath: ".spec.template.spec.providerSpec.value.operatingSystem",
+					Priority: 10,
+				},
+				{
+					Name:     "KubeletVersion",
+					Type:     "string",
+					JSONPath: ".spec.template.spec.ersions.kubelet",
+					Priority: 10,
+				},
+			}
 
 			return crd, nil
 		}
@@ -73,6 +161,44 @@ func MachineDeploymentCRDCreator() reconciling.NamedCustomResourceDefinitionCrea
 					SpecReplicasPath:   ".spec.replicas",
 					StatusReplicasPath: ".status.replicas",
 				}}
+			crd.Spec.AdditionalPrinterColumns = []apiextensionsv1beta1.CustomResourceColumnDefinition{
+				{
+					Name:     "CreationTimestamp",
+					Type:     "date",
+					JSONPath: ".metadata.creationTimestamp",
+					Priority: 10,
+				},
+				{
+					Name:     "DeletionTimestamp",
+					Type:     "date",
+					JSONPath: ".metadata.deletionTimestamp",
+					Priority: 0,
+				},
+				{
+					Name:     "Replicas",
+					Type:     "string",
+					JSONPath: ".spec.replicas",
+					Priority: 0,
+				},
+				{
+					Name:     "Provider",
+					Type:     "string",
+					JSONPath: ".spec.template.spec.providerSpec.value.cloudProvider",
+					Priority: 10,
+				},
+				{
+					Name:     "OS",
+					Type:     "string",
+					JSONPath: ".spec.template.spec.providerSpec.value.operatingSystem",
+					Priority: 10,
+				},
+				{
+					Name:     "KubeletVersion",
+					Type:     "string",
+					JSONPath: ".spec.template.spec.ersions.kubelet",
+					Priority: 10,
+				},
+			}
 
 			return crd, nil
 		}
