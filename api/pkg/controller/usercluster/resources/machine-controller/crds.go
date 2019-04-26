@@ -50,6 +50,12 @@ func MachineCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter 
 					Priority: 0,
 				},
 				{
+					Name:     "Node",
+					Type:     "string",
+					JSONPath: ".status.nodeRef.name",
+					Priority: 0,
+				},
+				{
 					Name:     "Provider",
 					Type:     "string",
 					JSONPath: ".spec.providerSpec.value.cloudProvider",
