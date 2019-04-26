@@ -13,6 +13,8 @@ spec:
     metadata:
       labels:
         app: grafana
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmaps.yaml") . | sha256sum }}
     spec:
       {{ if .Values.grafana.provisioning.datasources.paths }}
       initContainers:
