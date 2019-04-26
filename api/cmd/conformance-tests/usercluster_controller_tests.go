@@ -1,29 +1,33 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac-user-cluster"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
+	appsv1 "k8s.io/api/apps/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *testRunner) testUserclusterControllerRBAC(log *logrus.Entry, cluster *kubermaticv1.Cluster, kubeClient, seedKubeClient kubernetes.Interface) error {
+func (r *testRunner) testUserclusterControllerRBAC(log *logrus.Entry, cluster *kubermaticv1.Cluster, userClusterClient, seedClusterClient ctrlruntimeclient.Client) error {
 	log.Info("Testing user cluster RBAC controller")
-
+	ctx := context.Background()
 	clusterNamespace := fmt.Sprintf("cluster-%s", cluster.Name)
 
 	// check if usercluster-controller was deployed on seed cluster
-	deployment, err := seedKubeClient.ExtensionsV1beta1().Deployments(clusterNamespace).Get(resources.UserClusterControllerDeploymentName, metav1.GetOptions{})
-	if err != nil {
+	deployment := &appsv1.Deployment{}
+	if err := seedClusterClient.Get(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: resources.UserClusterControllerDeploymentName}, deployment); err != nil {
 		return fmt.Errorf("failed to get Deployment: %s, error: %v", resources.UserClusterControllerDeploymentName, err)
 	}
+
 	if deployment.Status.AvailableReplicas == 0 {
 		return fmt.Errorf("%s deployment is not ready", resources.UserClusterControllerDeploymentName)
 	}
@@ -31,8 +35,8 @@ func (r *testRunner) testUserclusterControllerRBAC(log *logrus.Entry, cluster *k
 	// check user cluster resources: ClusterRoles and ClusterRoleBindings
 	for _, resourceName := range rbacResourceNames() {
 		log.Info("Getting a Cluster Role: ", resourceName)
-		clusterRole, err := kubeClient.RbacV1().ClusterRoles().Get(resourceName, metav1.GetOptions{})
-		if err != nil {
+		clusterRole := &rbacv1.ClusterRole{}
+		if err := userClusterClient.Get(ctx, types.NamespacedName{Name: resourceName}, clusterRole); err != nil {
 			return fmt.Errorf("failed to get Cluster Role: %s, error: %v", clusterRole, err)
 		}
 
@@ -46,8 +50,8 @@ func (r *testRunner) testUserclusterControllerRBAC(log *logrus.Entry, cluster *k
 		}
 
 		log.Info("Getting a Cluster Role Binding: ", resourceName)
-		clusterRoleBinding, err := kubeClient.RbacV1().ClusterRoleBindings().Get(resourceName, metav1.GetOptions{})
-		if err != nil {
+		clusterRoleBinding := &rbacv1.ClusterRoleBinding{}
+		if err := userClusterClient.Get(ctx, types.NamespacedName{Name: resourceName}, clusterRoleBinding); err != nil {
 			return fmt.Errorf("failed to get Cluster Role Binding: %s, error: %v", resourceName, err)
 		}
 

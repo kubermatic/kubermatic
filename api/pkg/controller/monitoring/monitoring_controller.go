@@ -17,7 +17,6 @@ import (
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -37,7 +36,7 @@ const (
 
 // userClusterConnectionProvider offers functions to retrieve clients for the given user clusters
 type userClusterConnectionProvider interface {
-	GetClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (kubernetes.Interface, error)
+	GetClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
 
 // Features describes the enabled features for the monitoring controller
