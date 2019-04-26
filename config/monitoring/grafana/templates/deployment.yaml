@@ -13,7 +13,63 @@ spec:
     metadata:
       labels:
         app: grafana
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmaps.yaml") . | sha256sum }}
     spec:
+      {{ if .Values.grafana.provisioning.datasources.paths }}
+      initContainers:
+      - image: quay.io/kubermatic/util:1.0.0-2
+        name: datasource-assembler
+        command: [/bin/bash]
+        args:
+        - -c
+        - |
+          set -euo pipefail
+
+          target=/etc/grafana/provisioning/datasources
+
+          provide_datasources() {
+            local index="$1"
+            local base="$(realpath $2)"
+
+            if [ ! -d "$base" ]; then
+              echo "Error: directory $1 does not exist, check your Helm chart configuration and mounts!"
+              exit 1
+            fi
+
+            for abs in $(find "$base" -maxdepth 1 -name '*.yaml'); do
+              filename="$index-$(basename "$abs")"
+
+              echo "Copying $abs to $filename"
+              cp "$abs" "$target/$filename"
+            done
+          }
+
+          mkdir -p "$target"
+          rm -rf "$target/*"
+
+          {{- range $idx, $path := .Values.grafana.provisioning.datasources.paths }}
+          provide_datasources "$(printf "%02d" {{ $idx }})" "{{ $path }}"
+          {{- end }}
+
+          echo "Datasource provisioning completed successfully."
+
+        volumeMounts:
+        - mountPath: /etc/grafana/provisioning/datasources
+          name: grafana-datasources
+          readOnly: false
+        - mountPath: /etc/grafana/provisioning/default-datasources
+          name: grafana-default-datasources
+          readOnly: true
+        {{- if .Values.grafana.volumes }}
+        {{- range .Values.grafana.volumes }}
+        - mountPath: {{ .mountPath }}
+          name: {{ .name }}
+          readOnly: true
+        {{- end }}
+        {{- end }}
+      {{ end }}
+
       containers:
       - image: '{{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}'
         name: grafana
@@ -31,6 +87,9 @@ spec:
           readOnly: true
         - mountPath: /etc/grafana/provisioning/datasources
           name: grafana-datasources
+          readOnly: false
+        - mountPath: /etc/grafana/provisioning/default-datasources
+          name: grafana-default-datasources
           readOnly: true
         - mountPath: /etc/grafana/provisioning/dashboards
           name: grafana-dashboards
@@ -45,6 +104,7 @@ spec:
           readOnly: true
         {{- end }}
         {{- end }}
+
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534
@@ -52,10 +112,12 @@ spec:
       volumes:
       - emptyDir: {}
         name: grafana-storage
+      - emptyDir: {}
+        name: grafana-datasources
       - name: grafana-config
         secret:
           secretName: grafana-config
-      - name: grafana-datasources
+      - name: grafana-default-datasources
         configMap:
           name: grafana-datasources
       - name: grafana-dashboards
