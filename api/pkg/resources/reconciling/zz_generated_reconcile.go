@@ -211,33 +211,7 @@ func DeploymentObjectWrapper(create DeploymentCreator) ObjectCreator {
 func ReconcileDeployments(ctx context.Context, namedGetters []NamedDeploymentCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-
-		defaultContainer := func(c *corev1.Container) {
-			if c.ImagePullPolicy == "" {
-				c.ImagePullPolicy = corev1.PullIfNotPresent
-			}
-			if c.TerminationMessagePath == "" {
-				c.TerminationMessagePath = corev1.TerminationMessagePathDefault
-			}
-			if c.TerminationMessagePolicy == "" {
-				c.TerminationMessagePolicy = corev1.TerminationMessageReadFile
-			}
-		}
-
-		create = func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d, err := create(d)
-			if err != nil {
-				return nil, err
-			}
-			for idx, _ := range d.Spec.Template.Spec.InitContainers {
-				defaultContainer(&d.Spec.Template.Spec.Containers[idx])
-			}
-			for idx, _ := range d.Spec.Template.Spec.Containers {
-				defaultContainer(&d.Spec.Template.Spec.Containers[idx])
-			}
-			return d, nil
-		}
-
+		create = DefaultDeployment(create)
 		createObject := DeploymentObjectWrapper(create)
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)

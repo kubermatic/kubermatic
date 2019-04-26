@@ -47,6 +47,7 @@ func main() {
 				ResourceName: "Deployment",
 				ImportAlias:  "appsv1",
 				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
+				DefaultingFunc: "DefaultDeployment",
 			},
 			{
 				ResourceName: "DaemonSet",
@@ -147,7 +148,7 @@ import (
 )
 
 {{ range .Resources }}
-{{ namedReconcileFunc .ResourceName .ImportAlias }}
+{{ namedReconcileFunc .ResourceName .ImportAlias .DefaultingFunc }}
 {{- end }}
 
 `))
@@ -157,16 +158,21 @@ type reconcileFunctionData struct {
 	ResourceName       string
 	ResourceImportPath string
 	ImportAlias        string
+	// Optional: A defaulting func for the given object type
+	// Must be defined inside the resources package
+	DefaultingFunc string
 }
 
-func namedReconcileFunc(resourceName, importAlias string) (string, error) {
+func namedReconcileFunc(resourceName, importAlias, defaultingFunc string) (string, error) {
 	b := &bytes.Buffer{}
 	err := namedReconcileFunctionTemplate.Execute(b, struct {
-		ResourceName string
-		ImportAlias  string
+		ResourceName   string
+		ImportAlias    string
+		DefaultingFunc string
 	}{
-		ResourceName: resourceName,
-		ImportAlias:  importAlias,
+		ResourceName:   resourceName,
+		ImportAlias:    importAlias,
+		DefaultingFunc: defaultingFunc,
 	})
 	if err != nil {
 		return "", err
@@ -202,35 +208,9 @@ func {{ .ResourceName }}ObjectWrapper(create {{ .ResourceName }}Creator) ObjectC
 func Reconcile{{ .ResourceName }}s(ctx context.Context, namedGetters []Named{{ .ResourceName }}CreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-{{ if eq .ResourceName "Deployments" }}
-
-		defaultContainer := func(c *corev1.Container) {
-			if c.ImagePullPolicy == "" {
-				c.ImagePullPolicy = corev1.PullIfNotPresent
-			}
-			if c.TerminationMessagePath == "" {
-				c.TerminationMessagePath = corev1.TerminationMessagePathDefault
-			}
-			if c.TerminationMessagePolicy == "" {
-				c.TerminationMessagePolicy = corev1.TerminationMessageReadFile
-			}
-		}
-
-		create = func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d, err := create(d)
-			if err != nil {
-				return nil, err
-			}
-			for idx, _ := range d.Spec.Template.Spec.InitContainers {
-				defaultContainer(&d.Spec.Template.Spec.Containers[idx])
-			}
-			for idx, _ := range d.Spec.Template.Spec.Containers {
-				defaultContainer(&d.Spec.Template.Spec.Containers[idx])
-			}
-			return d, nil
-		}
-
-{{ end }}
+{{- if .DefaultingFunc }}
+		create = {{ .DefaultingFunc }}(create)
+{{- end }}
 		createObject := {{ .ResourceName }}ObjectWrapper(create)
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
