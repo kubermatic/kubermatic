@@ -97,7 +97,7 @@ prometheus:
   # Once the migration has finished and you set the flag to false again,
   # you can safely remove the old `prometheus-kubermatic-db-...` PVCs.
   migration:
-    enabled: true
+    enabled: false
     image:
       repository: quay.io/kubermatic/util
       tag: 1.0.0-2
