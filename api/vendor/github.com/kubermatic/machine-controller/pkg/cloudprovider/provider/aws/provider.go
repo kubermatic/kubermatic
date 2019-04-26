@@ -1,3 +1,19 @@
+/*
+Copyright 2019 The Machine Controller Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package aws
 
 import (
@@ -106,6 +122,7 @@ type RawConfig struct {
 	SubnetID         providerconfig.ConfigVarString   `json:"subnetId"`
 	SecurityGroupIDs []providerconfig.ConfigVarString `json:"securityGroupIDs"`
 	InstanceProfile  providerconfig.ConfigVarString   `json:"instanceProfile"`
+	IsSpotInstance   *bool                            `json:"isSpotInstance,omitempty"`
 
 	InstanceType providerconfig.ConfigVarString `json:"instanceType"`
 	AMI          providerconfig.ConfigVarString `json:"ami"`
@@ -125,6 +142,7 @@ type Config struct {
 	SubnetID         string
 	SecurityGroupIDs []string
 	InstanceProfile  string
+	IsSpotInstance   *bool
 
 	InstanceType string
 	AMI          string
@@ -268,6 +286,7 @@ func (p *provider) getConfig(s v1alpha1.ProviderSpec) (*Config, *providerconfig.
 		return nil, nil, nil, err
 	}
 	c.Tags = rawConfig.Tags
+	c.IsSpotInstance = rawConfig.IsSpotInstance
 
 	return &c, &pconfig, &rawConfig, err
 }
@@ -457,8 +476,14 @@ func (p *provider) Create(machine *v1alpha1.Machine, data *cloud.MachineCreateDe
 		})
 	}
 
+	var instanceMarketOptions *ec2.InstanceMarketOptionsRequest
+	if config.IsSpotInstance != nil && *config.IsSpotInstance {
+		instanceMarketOptions = &ec2.InstanceMarketOptionsRequest{MarketType: aws.String(ec2.MarketTypeSpot)}
+	}
+
 	instanceRequest := &ec2.RunInstancesInput{
-		ImageId: aws.String(amiID),
+		ImageId:               aws.String(amiID),
+		InstanceMarketOptions: instanceMarketOptions,
 		BlockDeviceMappings: []*ec2.BlockDeviceMapping{
 			{
 				DeviceName: aws.String(rootDevicePath),
