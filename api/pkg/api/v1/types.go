@@ -327,6 +327,7 @@ type CreateClusterSpec struct {
 // swagger:model Cluster
 type Cluster struct {
 	ObjectMeta `json:",inline"`
+	Type       string        `json:"type"`
 	Spec       ClusterSpec   `json:"spec"`
 	Status     ClusterStatus `json:"status"`
 }

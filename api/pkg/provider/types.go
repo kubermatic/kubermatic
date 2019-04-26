@@ -87,7 +87,7 @@ type ProjectListOptions struct {
 // This provider is Project and RBAC compliant
 type ClusterProvider interface {
 	// New creates a brand new cluster that is bound to the given project
-	New(project *kubermaticv1.Project, userInfo *UserInfo, spec *kubermaticv1.ClusterSpec) (*kubermaticv1.Cluster, error)
+	New(project *kubermaticv1.Project, userInfo *UserInfo, spec *kubermaticv1.ClusterSpec, clusterType string) (*kubermaticv1.Cluster, error)
 
 	// List gets all clusters that belong to the given project
 	// If you want to filter the result please take a look at ClusterListOptions

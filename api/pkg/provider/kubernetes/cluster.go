@@ -72,7 +72,7 @@ type ClusterProvider struct {
 }
 
 // New creates a brand new cluster that is bound to the given project
-func (p *ClusterProvider) New(project *kubermaticapiv1.Project, userInfo *provider.UserInfo, spec *kubermaticapiv1.ClusterSpec) (*kubermaticapiv1.Cluster, error) {
+func (p *ClusterProvider) New(project *kubermaticapiv1.Project, userInfo *provider.UserInfo, spec *kubermaticapiv1.ClusterSpec, clusterType string) (*kubermaticapiv1.Cluster, error) {
 	if project == nil || userInfo == nil || spec == nil {
 		return nil, errors.New("project and/or userInfo and/or spec is missing but required")
 	}
@@ -97,6 +97,12 @@ func (p *ClusterProvider) New(project *kubermaticapiv1.Project, userInfo *provid
 			NamespaceName: NamespaceName(name),
 		},
 		Address: kubermaticapiv1.ClusterAddress{},
+	}
+
+	if clusterType == "openshift" {
+		cluster.Annotations = map[string]string{
+			"kubermatic.io/openshift": "true",
+		}
 	}
 
 	seedImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)

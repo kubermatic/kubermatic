@@ -265,3 +265,40 @@ func genSecret(projectID, saID, name, id string) *v1.Secret {
 
 	return secret
 }
+
+func genClusterSpec(name string) *kubermaticapiv1.ClusterSpec {
+	return &kubermaticapiv1.ClusterSpec{
+		Cloud: kubermaticapiv1.CloudSpec{
+			DatacenterName: "FakeDatacenter",
+			Fake:           &kubermaticapiv1.FakeCloudSpec{Token: "SecretToken"},
+		},
+		HumanReadableName: name,
+	}
+}
+
+func genCluster(name, clusterType, projectID, workerName, userEmail string) *kubermaticapiv1.Cluster {
+	cluster := &kubermaticapiv1.Cluster{}
+
+	labels := map[string]string{
+		kubermaticapiv1.ProjectIDLabelKey: projectID,
+	}
+	if len(workerName) > 0 {
+		labels[kubermaticapiv1.WorkerNameLabelKey] = workerName
+	}
+
+	cluster.Labels = labels
+	cluster.Name = name
+	cluster.Status = kubermaticapiv1.ClusterStatus{
+		UserEmail:     userEmail,
+		NamespaceName: fmt.Sprintf("cluster-%s", name),
+	}
+	cluster.Address = kubermaticapiv1.ClusterAddress{}
+
+	if clusterType == "openshift" {
+		cluster.Annotations = map[string]string{
+			"kubermatic.io/openshift": "true",
+		}
+	}
+	cluster.Spec = *genClusterSpec(name)
+	return cluster
+}
