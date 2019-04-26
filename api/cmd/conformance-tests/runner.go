@@ -707,7 +707,10 @@ func (r *testRunner) waitForControlPlane(log *logrus.Entry, clusterName string) 
 	})
 	// Timeout or other error
 	if err != nil {
-		// Be helpful and log which pods are not ready
+		// Be helpful and log what is not ready
+		if err := r.logNotReadyControlplaneComponents(clusterName); err != nil {
+			r.log.Infof("failed to log not ready controlplane compoenents: %v", err)
+		}
 		if err := r.logNotReadyControlplanePods(clusterName); err != nil {
 			r.log.Infof("failed to log not ready controlplane pods: %v", err)
 		}
@@ -981,5 +984,39 @@ func (r *testRunner) logNotReadyControlplanePods(clusterName string) error {
 		}
 	}
 	r.log.Infof("Failed because these controlplane pods didn't get ready: %v", notReadyControlPlanePods.List())
+	return nil
+}
+
+func (r *testRunner) logNotReadyControlplaneComponents(clusterName string) error {
+	cluster, err := r.clusterLister.Get(clusterName)
+	if err != nil {
+		return err
+	}
+	notReadyComponents := []string{}
+	if !cluster.Status.Health.ClusterHealthStatus.Apiserver {
+		notReadyComponents = append(notReadyComponents, "apiserver")
+	}
+	if !cluster.Status.Health.ClusterHealthStatus.Scheduler {
+		notReadyComponents = append(notReadyComponents, "scheduler")
+	}
+	if !cluster.Status.Health.ClusterHealthStatus.Controller {
+		notReadyComponents = append(notReadyComponents, "controller")
+	}
+	if !cluster.Status.Health.ClusterHealthStatus.MachineController {
+		notReadyComponents = append(notReadyComponents, "machine-controller")
+	}
+	if !cluster.Status.Health.ClusterHealthStatus.Etcd {
+		notReadyComponents = append(notReadyComponents, "etcd")
+	}
+	if !cluster.Status.Health.ClusterHealthStatus.OpenVPN {
+		notReadyComponents = append(notReadyComponents, "openvpn")
+	}
+	if !cluster.Status.Health.ClusterHealthStatus.CloudProviderInfrastructure {
+		notReadyComponents = append(notReadyComponents, "cloudProviderInfrastructure")
+	}
+	if !cluster.Status.Health.ClusterHealthStatus.UserClusterControllerManager {
+		notReadyComponents = append(notReadyComponents, "userClusterControllerManager")
+	}
+	r.log.Infof("Failed because the following control plane components were not ready: %v", notReadyComponents)
 	return nil
 }
