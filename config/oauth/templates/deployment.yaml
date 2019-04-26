@@ -11,8 +11,8 @@ spec:
       labels:
         app: dex
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/dex-config.yaml") . | sha256sum }}
-        checksum/themes: {{ include (print $.Template.BasePath "/themes-secret.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
     spec:
       serviceAccountName: dex
       containers:
