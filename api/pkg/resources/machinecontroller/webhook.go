@@ -69,20 +69,17 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:            Name,
-					Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
-					ImagePullPolicy: corev1.PullIfNotPresent,
-					Command:         []string{"/usr/local/bin/webhook"},
+					Name:    Name,
+					Image:   data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
+					Command: []string{"/usr/local/bin/webhook"},
 					Args: []string{
 						"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 						"-logtostderr",
 						"-v", "4",
 						"-listen-address", "0.0.0.0:9876",
 					},
-					Env:                      getEnvVars(data),
-					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-					Resources:                webhookResourceRequirements,
+					Env:       getEnvVars(data),
+					Resources: webhookResourceRequirements,
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
