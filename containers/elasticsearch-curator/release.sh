@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 NUMBER=1
-VERSION=5.6.0
+VERSION=5.7.4
 
 set -euox pipefail
 
