@@ -26,13 +26,13 @@ func MachineCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter 
 			crd.Spec.Names.ShortNames = []string{"ma"}
 			crd.Spec.AdditionalPrinterColumns = []apiextensionsv1beta1.CustomResourceColumnDefinition{
 				{
-					Name:     "CreationTimestamp",
+					Name:     "Age",
 					Type:     "date",
 					JSONPath: ".metadata.creationTimestamp",
 					Priority: 10,
 				},
 				{
-					Name:     "DeletionTimestamp",
+					Name:     "Deleted",
 					Type:     "date",
 					JSONPath: ".metadata.deletionTimestamp",
 					Priority: 0,
@@ -40,7 +40,7 @@ func MachineCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter 
 				{
 					Name:     "MachineSet",
 					Type:     "string",
-					JSONPath: ".metadata.ownerReferences[0].Name",
+					JSONPath: ".metadata.ownerReferences[0].name",
 					Priority: 0,
 				},
 				{
@@ -62,7 +62,7 @@ func MachineCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter 
 					Priority: 10,
 				},
 				{
-					Name:     "KubeletVersion",
+					Name:     "Version",
 					Type:     "string",
 					JSONPath: ".spec.versions.kubelet",
 					Priority: 10,
@@ -95,13 +95,13 @@ func MachineSetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGett
 				}}
 			crd.Spec.AdditionalPrinterColumns = []apiextensionsv1beta1.CustomResourceColumnDefinition{
 				{
-					Name:     "CreationTimestamp",
+					Name:     "Age",
 					Type:     "date",
 					JSONPath: ".metadata.creationTimestamp",
 					Priority: 10,
 				},
 				{
-					Name:     "DeletionTimestamp",
+					Name:     "Deleted",
 					Type:     "date",
 					JSONPath: ".metadata.deletionTimestamp",
 					Priority: 0,
@@ -115,7 +115,7 @@ func MachineSetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGett
 				{
 					Name:     "MachineDeployment",
 					Type:     "string",
-					JSONPath: ".metadata.ownerReferences[0].Name",
+					JSONPath: ".metadata.ownerReferences[0].name",
 					Priority: 0,
 				},
 				{
@@ -131,9 +131,9 @@ func MachineSetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGett
 					Priority: 10,
 				},
 				{
-					Name:     "KubeletVersion",
+					Name:     "Version",
 					Type:     "string",
-					JSONPath: ".spec.template.spec.ersions.kubelet",
+					JSONPath: ".spec.template.spec.versions.kubelet",
 					Priority: 10,
 				},
 			}
@@ -163,13 +163,13 @@ func MachineDeploymentCRDCreator() reconciling.NamedCustomResourceDefinitionCrea
 				}}
 			crd.Spec.AdditionalPrinterColumns = []apiextensionsv1beta1.CustomResourceColumnDefinition{
 				{
-					Name:     "CreationTimestamp",
+					Name:     "Age",
 					Type:     "date",
 					JSONPath: ".metadata.creationTimestamp",
 					Priority: 10,
 				},
 				{
-					Name:     "DeletionTimestamp",
+					Name:     "Deleted",
 					Type:     "date",
 					JSONPath: ".metadata.deletionTimestamp",
 					Priority: 0,
@@ -193,9 +193,9 @@ func MachineDeploymentCRDCreator() reconciling.NamedCustomResourceDefinitionCrea
 					Priority: 10,
 				},
 				{
-					Name:     "KubeletVersion",
+					Name:     "Version",
 					Type:     "string",
-					JSONPath: ".spec.template.spec.ersions.kubelet",
+					JSONPath: ".spec.template.spec.versions.kubelet",
 					Priority: 10,
 				},
 			}
