@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -11,14 +12,15 @@ import (
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/machine-controller/pkg/node/eviction"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
-
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -52,8 +54,11 @@ func (d *Deletion) CleanupCluster(ctx context.Context, cluster *kubermaticv1.Clu
 }
 
 func (d *Deletion) cleanupCluster(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	err := d.deletingNodeCleanup(ctx, cluster)
-	if err != nil {
+	// Delete Volumes and LB's inside the user cluster
+	if err := d.cleanupInClusterResources(ctx, cluster); err != nil {
+		return err
+	}
+	if err := d.deletingNodeCleanup(ctx, cluster); err != nil {
 		return err
 	}
 
@@ -62,8 +67,7 @@ func (d *Deletion) cleanupCluster(ctx context.Context, cluster *kubermaticv1.Clu
 		return nil
 	}
 
-	// Delete Volumes and LB's inside the user cluster
-	return d.cleanupInClusterResources(ctx, cluster)
+	return nil
 }
 
 func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster) error {
@@ -122,10 +126,19 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kuber
 	}
 
 	if shouldDeletePVs {
+		// Delete all workloads that use PVs. We must do this before we clean up the node, otherwise
+		// we end up in a deadlock when CSI is used
+		cleanedSomethingUp, err := d.cleanupPVUsingWorkloads(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to clean up PV using workloads from user cluster: %v", err)
+		}
+		if cleanedSomethingUp {
+			return nil
+		}
+
 		// Delete PVC's
 		pvcList := &corev1.PersistentVolumeClaimList{}
 		if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, pvcList); err != nil {
-
 			return fmt.Errorf("failed to list PVCs from user cluster: %v", err)
 		}
 
@@ -327,4 +340,89 @@ func (d *Deletion) updateCluster(ctx context.Context, cluster *kubermaticv1.Clus
 		// Update the cluster
 		return d.seedClient.Update(ctx, cluster)
 	})
+}
+
+func (d *Deletion) cleanupPVUsingWorkloads(ctx context.Context) (bool, error) {
+	podList := &corev1.PodList{}
+	if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, podList); err != nil {
+		return false, fmt.Errorf("failed to list Pods from user cluster: %v", err)
+	}
+
+	pvUsingPods := []*corev1.Pod{}
+	for _, pod := range podList.Items {
+		if podUsesPV(&pod) {
+			pvUsingPods = append(pvUsingPods, &pod)
+		}
+	}
+
+	hasPVUsingPods := len(pvUsingPods) > 0
+
+	wg := &sync.WaitGroup{}
+	wg.Add(len(pvUsingPods))
+	errs := []error{}
+	errLock := &sync.Mutex{}
+	for _, pod := range pvUsingPods {
+		go func(p *corev1.Pod) {
+			if err := d.resolveAndDeleteTopLevelUserClusterOwner(ctx, "Pod", p.Namespace, p.Name); err != nil {
+				errLock.Lock()
+				defer errLock.Unlock()
+				errs = append(errs, err)
+			}
+			wg.Done()
+		}(pod)
+	}
+	wg.Wait()
+
+	if len(errs) > 0 {
+		return hasPVUsingPods, fmt.Errorf("%v", errs)
+	}
+
+	return hasPVUsingPods, nil
+}
+
+func (d *Deletion) resolveAndDeleteTopLevelUserClusterOwner(ctx context.Context, kind, namespace, name string) error {
+	object, err := getObjectForKind(kind)
+	if err != nil {
+		return err
+	}
+	if err := d.userClusterClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, object); err != nil {
+		return fmt.Errorf("failed to get object %q/%q of kind %q: %v", namespace, name, kind, err)
+	}
+	metav1Object, ok := object.(metav1.Object)
+	if !ok {
+		return fmt.Errorf("failed to assert object %q/%q of kind %q as metav1.Object", namespace, name, kind)
+	}
+	for _, ownerRef := range metav1Object.GetOwnerReferences() {
+		if err := d.resolveAndDeleteTopLevelUserClusterOwner(ctx, ownerRef.Kind, metav1Object.GetNamespace(), ownerRef.Name); err != nil {
+			return err
+		}
+	}
+
+	return d.userClusterClient.Delete(ctx, object)
+}
+
+func podUsesPV(p *corev1.Pod) bool {
+	for _, volume := range p.Spec.Volumes {
+		if volume.VolumeSource.PersistentVolumeClaim != nil {
+			return true
+		}
+	}
+	return false
+}
+
+func getObjectForKind(kind string) (runtime.Object, error) {
+	switch kind {
+	case "DaemonSet":
+		return &appsv1.DaemonSet{}, nil
+	case "StatefulSet":
+		return &appsv1.StatefulSet{}, nil
+	case "ReplicaSet":
+		return &appsv1.ReplicaSet{}, nil
+	case "Deployment":
+		return &appsv1.Deployment{}, nil
+	case "Pod":
+		return &corev1.Pod{}, nil
+	default:
+		return nil, fmt.Errorf("kind %q is unknown", kind)
+	}
 }
