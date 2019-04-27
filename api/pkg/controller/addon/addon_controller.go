@@ -338,7 +338,7 @@ func (r *Reconciler) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 			if len(b) == 0 {
 				break
 			}
-			allManifests = append(allManifests, bytes.NewBuffer(bytes.TrimSpace(b)))
+			allManifests = append(allManifests, bytes.NewBuffer(b))
 		}
 	}
 
