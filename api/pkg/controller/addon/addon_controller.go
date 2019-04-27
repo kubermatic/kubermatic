@@ -1,6 +1,7 @@
 package addon
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -325,23 +326,19 @@ func (r *Reconciler) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 			continue
 		}
 
-		reader := kyaml.NewDocumentDecoder(ioutil.NopCloser(bufferAll))
-		size := bufferAll.Len()
+		reader := kyaml.NewYAMLReader(bufio.NewReader(bufferAll))
 		for {
-			fullB := make([]byte, size)
-			n, err := reader.Read(fullB)
+			b, err := reader.Read()
 			if err != nil {
-				if err == io.ErrShortBuffer {
-					size = n
-					continue
-				}
 				if err == io.EOF {
 					break
 				}
-				return nil, err
+				return nil, fmt.Errorf("failed reading from YAML reader: %v", err)
 			}
-			croppedB := fullB[:n]
-			allManifests = append(allManifests, bytes.NewBuffer(croppedB))
+			if len(b) == 0 {
+				break
+			}
+			allManifests = append(allManifests, bytes.NewBuffer(bytes.TrimSpace(b)))
 		}
 	}
 

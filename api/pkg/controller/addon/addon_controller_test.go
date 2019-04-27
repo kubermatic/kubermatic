@@ -318,14 +318,14 @@ func TestController_getAddonManifests(t *testing.T) {
 		t.Fatalf("invalid number of manifests returned. Expected 3, Got %d", len(manifests))
 	}
 
-	if manifests[0].String() != testManifest1 {
-		t.Fatalf("invalid manifest returned. Expected \n%s, Got \n%s", manifests[0].String(), testManifest1)
+	if trimmedManifest := strings.TrimSpace(testManifest1); trimmedManifest != manifests[0].String() {
+		t.Errorf("invalid manifest returned. Expected \n%q\n, Got \n%q", trimmedManifest, manifests[0].String())
 	}
-	if manifests[1].String() != testManifest2 {
-		t.Fatalf("invalid manifest returned. Expected \n%s, Got \n%s", manifests[1].String(), testManifest2)
+	if trimmedManifest := strings.TrimSpace(testManifest2); trimmedManifest != manifests[1].String() {
+		t.Errorf("invalid manifest returned. Expected \n%q\n, Got \n%q", trimmedManifest, manifests[1].String())
 	}
-	if manifests[2].String() != testManifest3 {
-		t.Fatalf("invalid manifest returned. Expected \n%s, Got \n%s", manifests[2].String(), testManifest3)
+	if trimmedManifest := strings.TrimSpace(testManifest3); trimmedManifest != manifests[2].String() {
+		t.Errorf("invalid manifest returned. Expected \n%q\n, Got \n%q", trimmedManifest, manifests[2].String())
 	}
 }
 
@@ -418,5 +418,17 @@ Error from server (NotFound): error when stopping "/tmp/cluster-rwhxp9j5j-metric
 				t.Errorf("expected to get %v, got %v", test.success, res)
 			}
 		})
+	}
+}
+
+func TestHugeManifest(t *testing.T) {
+	cluster := setupTestCluster("10.10.10.0/24")
+	addon := setupTestAddon("istio")
+	r := &Reconciler{
+		kubernetesAddonDir: "./testdata",
+		KubeconfigProvider: &fakeKubeconfigProvider{},
+	}
+	if _, err := r.getAddonManifests(addon, cluster); err != nil {
+		t.Fatalf("failed to get addon manifest: %v", err)
 	}
 }
