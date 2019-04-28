@@ -33,6 +33,8 @@ const (
 	Name = "machine-controller"
 
 	tag = "v1.1.5"
+
+	nodeLocalDNSCacheAddress = "169.254.20.10"
 )
 
 type machinecontrollerData interface {
@@ -41,6 +43,7 @@ type machinecontrollerData interface {
 	Cluster() *kubermaticv1.Cluster
 	ClusterIPByServiceName(string) (string, error)
 	DC() *provider.DatacenterMeta
+	NodeLocalDNSCacheEnabled() bool
 }
 
 // DeploymentCreator returns the function to create and update the machine controller deployment
@@ -90,9 +93,12 @@ func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCr
 			}
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
 
-			clusterDNSIP, err := resources.UserClusterDNSResolverIP(data.Cluster())
-			if err != nil {
-				return nil, err
+			clusterDNSIP := nodeLocalDNSCacheAddress
+			if !data.NodeLocalDNSCacheEnabled() {
+				clusterDNSIP, err = resources.UserClusterDNSResolverIP(data.Cluster())
+				if err != nil {
+					return nil, err
+				}
 			}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{

@@ -248,3 +248,8 @@ func (od *openshiftData) HasEtcdOperatorService() (bool, error) {
 func (od *openshiftData) EtcdDiskSize() resource.Quantity {
 	return od.etcdDiskSize
 }
+
+// Openshift has its own DNS cache, so this is always false
+func (od *openshiftData) NodeLocalDNSCacheEnabled() bool {
+	return false
+}
