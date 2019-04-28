@@ -528,6 +528,7 @@ func TestLoadFiles(t *testing.T) {
 					"test",
 					"https://dev.kubermatic.io/dex",
 					"kubermaticIssuer",
+					true,
 				)
 
 				var deploymentCreators []reconciling.NamedDeploymentCreatorGetter
