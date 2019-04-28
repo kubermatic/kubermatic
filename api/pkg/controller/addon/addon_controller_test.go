@@ -428,7 +428,7 @@ func TestHugeManifest(t *testing.T) {
 		kubernetesAddonDir: "./testdata",
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
-	if _, err := r.getAddonManifests(addon, cluster); err != nil {
-		t.Fatalf("failed to get addon manifest: %v", err)
+	if _, _, _, err := r.setupManifestInteraction(addon, cluster); err != nil {
+		t.Fatalf("failed to setup manifest interaction: %v", err)
 	}
 }
