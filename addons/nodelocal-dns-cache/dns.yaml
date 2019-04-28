@@ -25,7 +25,7 @@ data:
         reload
         loop
         bind 169.254.20.10
-        forward . 10.96.0.10 {
+        forward . {{.DNSClusterIP}} {
                 force_tcp
         }
         prometheus :9253
@@ -37,7 +37,7 @@ data:
         reload
         loop
         bind 169.254.20.10
-        forward . 10.96.0.10 {
+        forward . {{.DNSClusterIP}} {
                 force_tcp
         }
         prometheus :9253
@@ -48,7 +48,7 @@ data:
         reload
         loop
         bind 169.254.20.10
-        forward . 10.96.0.10 {
+        forward . {{.DNSClusterIP}} {
                 force_tcp
         }
         prometheus :9253
@@ -143,3 +143,6 @@ spec:
           items:
             - key: Corefile
               path: Corefile
+      # Minimize downtime during a rolling upgrade or deletion; tell Kubernetes to do a "force
+      # deletion": https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods.
+      terminationGracePeriodSeconds: 0
