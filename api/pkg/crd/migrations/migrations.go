@@ -37,14 +37,6 @@ type cleanupContext struct {
 // In case of an error, the correspondent error will be returned, else nil.
 type ClusterTask func(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error
 
-// KeyTask represents a cleanup action, taking the current key for which the cleanup should be executed and the current context.
-// In case of an error, the correspondent error will be returned, else nil.
-type KeyTask func(key *kubermaticv1.UserSSHKey, ctx *cleanupContext) error
-
-// UserTask represents a cleanup action, taking the current user for which the cleanup should be executed and the current context.
-// In case of an error, the correspondent error will be returned, else nil.
-type UserTask func(user *kubermaticv1.User, ctx *cleanupContext) error
-
 // RunAll runs all migrations
 func RunAll(config *rest.Config, workerName string) error {
 	// required when performing calls against manually crafted URL's
@@ -85,12 +77,12 @@ func cleanupClusters(workerName string, ctx *cleanupContext) error {
 	// We remove these empty labels first, since the label selector below expects
 	// them to be absent for empty worker label.
 	if err := purgeEmptyWorkerLabels(ctx.kubermaticClient); err != nil {
-		glog.Fatalf("failed to remove empty worker labels: %v", err)
+		return fmt.Errorf("failed to remove empty worker labels: %v", err)
 	}
 
 	selector, err := workerlabel.LabelSelector(workerName)
 	if err != nil {
-		glog.Fatal(err)
+		return err
 	}
 	options := metav1.ListOptions{}
 	selector(&options)
@@ -99,16 +91,26 @@ func cleanupClusters(workerName string, ctx *cleanupContext) error {
 		return err
 	}
 
+	var errs []error
+	errLock := &sync.Mutex{}
 	w := sync.WaitGroup{}
 	w.Add(len(clusters.Items))
 	for i := range clusters.Items {
 		go func(c *kubermaticv1.Cluster) {
 			defer w.Done()
 
-			cleanupCluster(c, ctx)
+			if err := cleanupCluster(c, ctx); err != nil {
+				errLock.Lock()
+				defer errLock.Unlock()
+				errs = append(errs, err)
+			}
 		}(&clusters.Items[i])
 	}
 	w.Wait()
+
+	if len(errs) > 0 {
+		return fmt.Errorf("%v", errs)
+	}
 
 	return nil
 }
@@ -116,19 +118,29 @@ func cleanupClusters(workerName string, ctx *cleanupContext) error {
 func cleanupKeys(ctx *cleanupContext) error {
 	keys, err := ctx.kubermaticClient.KubermaticV1().UserSSHKeys().List(metav1.ListOptions{})
 	if err != nil {
-		glog.Fatal(err)
+		return err
 	}
 
 	w := sync.WaitGroup{}
 	w.Add(len(keys.Items))
+	var errs []error
+	errLock := &sync.Mutex{}
 
 	for i := range keys.Items {
 		go func(key *kubermaticv1.UserSSHKey) {
 			defer w.Done()
-			cleanupKey(key, ctx)
+			if err := cleanupKey(key, ctx); err != nil {
+				errLock.Lock()
+				defer errLock.Unlock()
+				errs = append(errs, err)
+			}
 		}(&keys.Items[i])
 	}
 	w.Wait()
+
+	if len(errs) > 0 {
+		return fmt.Errorf("%v", errs)
+	}
 
 	return nil
 }
@@ -136,19 +148,29 @@ func cleanupKeys(ctx *cleanupContext) error {
 func cleanupUsers(ctx *cleanupContext) error {
 	userList, err := ctx.kubermaticClient.KubermaticV1().Users().List(metav1.ListOptions{})
 	if err != nil {
-		glog.Fatal(err)
+		return err
 	}
 
 	w := sync.WaitGroup{}
 	w.Add(len(userList.Items))
+	var errs []error
+	errLock := &sync.Mutex{}
 
 	for i := range userList.Items {
 		go func(user *kubermaticv1.User) {
 			defer w.Done()
-			cleanupUser(user, ctx)
+			if err := cleanupUser(user, ctx); err != nil {
+				errLock.Lock()
+				defer errLock.Unlock()
+				errs = append(errs, err)
+			}
 		}(&userList.Items[i])
 	}
 	w.Wait()
+
+	if len(errs) > 0 {
+		return fmt.Errorf("%v", errs)
+	}
 
 	return nil
 }
@@ -182,7 +204,7 @@ func removeWorkerLabelFromCluster(cluster *kubermaticv1.Cluster, kubermaticClien
 	return err
 }
 
-func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
+func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 	glog.Infof("Cleaning up cluster %s", cluster.Name)
 
 	tasks := []ClusterTask{
@@ -206,6 +228,8 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
 
 	w := sync.WaitGroup{}
 	w.Add(len(tasks))
+	var errs []error
+	errLock := &sync.Mutex{}
 
 	for _, task := range tasks {
 		go func(t ClusterTask) {
@@ -214,59 +238,30 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) {
 
 			if err != nil {
 				glog.Error(err)
+				errLock.Lock()
+				defer errLock.Unlock()
+				errs = append(errs, err)
 			}
 		}(task)
 	}
 
 	w.Wait()
+
+	if len(errs) > 0 {
+		return fmt.Errorf("%v", errs)
+	}
+
+	return nil
 }
 
-func cleanupKey(key *kubermaticv1.UserSSHKey, ctx *cleanupContext) {
+func cleanupKey(key *kubermaticv1.UserSSHKey, ctx *cleanupContext) error {
 	glog.Infof("Cleaning up SSHKey %s", key.Name)
-
-	tasks := []KeyTask{
-		migrateSSHKeyOwner,
-	}
-
-	w := sync.WaitGroup{}
-	w.Add(len(tasks))
-
-	for _, task := range tasks {
-		go func(t KeyTask) {
-			defer w.Done()
-			err := t(key, ctx)
-
-			if err != nil {
-				glog.Error(err)
-			}
-		}(task)
-	}
-
-	w.Wait()
+	return migrateSSHKeyOwner(key, ctx)
 }
 
-func cleanupUser(user *kubermaticv1.User, ctx *cleanupContext) {
+func cleanupUser(user *kubermaticv1.User, ctx *cleanupContext) error {
 	glog.Infof("Cleaning up User %s (%s)", user.Name, user.Spec.Email)
-
-	tasks := []UserTask{
-		migrateUserID,
-	}
-
-	w := sync.WaitGroup{}
-	w.Add(len(tasks))
-
-	for _, task := range tasks {
-		go func(t UserTask) {
-			defer w.Done()
-			err := t(user, ctx)
-
-			if err != nil {
-				glog.Error(err)
-			}
-		}(task)
-	}
-
-	w.Wait()
+	return migrateUserID(user, ctx)
 }
 
 func deleteResourceIgnoreNonExistent(namespace string, group string, version string, kind string, name string, ctx *cleanupContext) error {
