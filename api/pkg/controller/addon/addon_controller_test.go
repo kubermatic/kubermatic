@@ -16,10 +16,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	kyaml "k8s.io/apimachinery/pkg/util/yaml"
 )
 
-const (
-	testManifest1 = `kind: ConfigMap
+var testManifests = []string{
+	`kind: ConfigMap
 apiVersion: v1
 metadata:
   name: test1
@@ -28,8 +29,9 @@ metadata:
     app: test
 data:
   foo: bar
-`
-	testManifest2 = `kind: ConfigMap
+`,
+
+	`kind: ConfigMap
 apiVersion: v1
 metadata:
   name: test2
@@ -37,8 +39,9 @@ metadata:
   labels:
     app: test
 data:
-  foo: bar`
-	testManifest3 = `kind: ConfigMap
+  foo: bar`,
+
+	`kind: ConfigMap
 apiVersion: v1
 metadata:
   name: test3
@@ -47,19 +50,10 @@ metadata:
     app: test
 data:
   foo: bar
-`
+`}
 
-	testManifest1WithLabel = `apiVersion: v1
-data:
-  foo: bar
-kind: ConfigMap
-metadata:
-  labels:
-    app: test
-    kubermatic-addon: test
-  name: test1
-  namespace: kube-system
-`
+const (
+	testManifest1WithLabel = `{"apiVersion":"v1","data":{"foo":"bar"},"kind":"ConfigMap","metadata":{"labels":{"app":"test","kubermatic-addon":"test"},"name":"test1","namespace":"kube-system"}}`
 
 	testManifest1WithDeployment = `apiVersion: apps/v1
 kind: Deployment
@@ -93,7 +87,7 @@ spec:
 
 var (
 	// testManifest1 & testManifest3 have a linebreak at the end, testManifest2 not
-	combinedTestManifest = fmt.Sprintf("%s---\n%s\n---\n%s", testManifest1, testManifest2, testManifest3)
+	combinedTestManifest = fmt.Sprintf("%s---\n%s\n---\n%s", testManifests[0], testManifests[1], testManifests[2])
 )
 
 type fakeKubeconfigProvider struct{}
@@ -105,10 +99,9 @@ func (f *fakeKubeconfigProvider) GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]
 func TestController_combineManifests(t *testing.T) {
 	controller := &Reconciler{}
 
-	manifests := []*bytes.Buffer{
-		bytes.NewBufferString(testManifest1),
-		bytes.NewBufferString(testManifest2),
-		bytes.NewBufferString(testManifest3),
+	var manifests []*bytes.Buffer
+	for _, m := range testManifests {
+		manifests = append(manifests, bytes.NewBufferString(m))
 	}
 
 	manifest := controller.combineManifests(manifests)
@@ -189,11 +182,11 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 	}
 	fmt.Println(manifests)
 	expectedIP := "10.10.10.10"
-	if !strings.Contains(manifests[0].String(), expectedIP) {
+	if !strings.Contains(string(manifests[0].Raw), expectedIP) {
 		t.Fatalf("invalid IP returned. Expected \n%s, Got \n%s", expectedIP, manifests[0].String())
 	}
 	expectedCIDR := "172.25.0.0/16"
-	if !strings.Contains(manifests[0].String(), expectedCIDR) {
+	if !strings.Contains(string(manifests[0].Raw), expectedCIDR) {
 		t.Fatalf("invalid CIDR returned. Expected \n%s, Got \n%s", expectedCIDR, manifests[0].String())
 	}
 
@@ -206,7 +199,7 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 		t.Fatalf("invalid number of manifests returned. Expected 1, Got %d", len(manifests))
 	}
 	expectedIP = "172.25.0.10"
-	if !strings.Contains(manifests[0].String(), expectedIP) {
+	if !strings.Contains(string(manifests[0].Raw), expectedIP) {
 		t.Fatalf("invalid registryURI returned. Expected \n%s, Got \n%s", expectedIP, manifests[0].String())
 	}
 }
@@ -243,7 +236,7 @@ func TestController_getAddonDeploymentManifests(t *testing.T) {
 	}
 
 	expectedRegURL := "bar.io/test:1.2.3"
-	if !strings.Contains(manifests[0].String(), expectedRegURL) {
+	if !strings.Contains(string(manifests[0].Raw), expectedRegURL) {
 		t.Fatalf("invalid registryURI returned. Expected \n%s, Got \n%s", expectedRegURL, manifests[0].String())
 	}
 }
@@ -279,7 +272,7 @@ func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 	}
 
 	expectedRegURL := "foo.io/test:1.2.3"
-	if !strings.Contains(manifests[0].String(), expectedRegURL) {
+	if !strings.Contains(string(manifests[0].Raw), expectedRegURL) {
 		t.Fatalf("invalid registryURI returned. Expected \n%s, Got \n%s", expectedRegURL, manifests[0].String())
 	}
 }
@@ -296,12 +289,12 @@ func TestController_getAddonManifests(t *testing.T) {
 	if err := os.Mkdir(path.Join(addonDir, addon.Spec.Name), 0777); err != nil {
 		t.Fatal(err)
 	}
-	if err := ioutil.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifest1), 0644); err != nil {
+	if err := ioutil.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifests[0]), 0644); err != nil {
 		t.Fatal(err)
 	}
 	multilineManifest := fmt.Sprintf(`%s
 ---
-%s`, testManifest2, testManifest3)
+%s`, testManifests[1], testManifests[2])
 	if err := ioutil.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest2.yaml"), []byte(multilineManifest), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -319,15 +312,18 @@ func TestController_getAddonManifests(t *testing.T) {
 		t.Fatalf("invalid number of manifests returned. Expected 3, Got %d", len(manifests))
 	}
 
-	if trimmedManifest := strings.TrimSpace(testManifest1); trimmedManifest != manifests[0].String() {
-		t.Errorf("invalid manifest returned. Expected \n%q\n, Got \n%q", trimmedManifest, manifests[0].String())
+	for idx, _ := range testManifests {
+		testManifestDecoder := kyaml.NewYAMLToJSONDecoder(bytes.NewBuffer([]byte(testManifests[idx])))
+		expected := runtime.RawExtension{}
+		if err := testManifestDecoder.Decode(&expected); err != nil {
+			t.Fatalf("decoding of test manifest failed: %v", err)
+		}
+
+		if string(expected.Raw) != string(manifests[idx].Raw) {
+			t.Errorf("Invalid manifest returned, expected \n%q\n, got \n%q", string(expected.Raw), string(manifests[idx].Raw))
+		}
 	}
-	if trimmedManifest := strings.TrimSpace(testManifest2); trimmedManifest != manifests[1].String() {
-		t.Errorf("invalid manifest returned. Expected \n%q\n, Got \n%q", trimmedManifest, manifests[1].String())
-	}
-	if trimmedManifest := strings.TrimSpace(testManifest3); trimmedManifest != manifests[2].String() {
-		t.Errorf("invalid manifest returned. Expected \n%q\n, Got \n%q", trimmedManifest, manifests[2].String())
-	}
+
 }
 
 func TestController_ensureAddonLabelOnManifests(t *testing.T) {
@@ -335,7 +331,11 @@ func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 
-	manifests := []runtime.RawExtension{{Raw: []byte(testManifest1)}}
+	manifest := runtime.RawExtension{}
+	decoder := kyaml.NewYAMLToJSONDecoder(bytes.NewBuffer([]byte(testManifests[0])))
+	if err := decoder.Decode(&manifest); err != nil {
+		t.Fatalf("decoding failed: %v", err)
+	}
 
 	addon := &kubermaticv1.Addon{
 		ObjectMeta: metav1.ObjectMeta{
@@ -345,13 +345,12 @@ func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 			Name: "test",
 		},
 	}
-	labeledManifests, err := controller.ensureAddonLabelOnManifests(addon, manifests)
+	labeledManifests, err := controller.ensureAddonLabelOnManifests(addon, []runtime.RawExtension{manifest})
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	if labeledManifests[0].String() != testManifest1WithLabel {
-		t.Fatalf("invalid labeled manifest returned. Expected \n%s, Got \n%s", testManifest1WithLabel, labeledManifests[0].String())
+	if strings.TrimSpace(labeledManifests[0].String()) != testManifest1WithLabel {
+		t.Fatalf("invalid labeled manifest returned. Expected \n%q, Got \n%q", testManifest1WithLabel, labeledManifests[0].String())
 	}
 }
 
