@@ -98,11 +98,11 @@ func (r *Reconciler) labelAllContainerLinuxNodes(ctx context.Context) (bool, err
 				if err := r.Get(ctx, types.NamespacedName{Name: node.Name}, newNode); err != nil {
 					return err
 				}
-				if node.Labels == nil {
-					node.Labels = map[string]string{}
+				if newNode.Labels == nil {
+					newNode.Labels = map[string]string{}
 				}
-				node.Labels[resources.NodeSelectorLabelKey] = resources.NodeSelectorLabelValue
-				return r.Client.Update(ctx, &node)
+				newNode.Labels[resources.NodeSelectorLabelKey] = resources.NodeSelectorLabelValue
+				return r.Client.Update(ctx, newNode)
 			}); err != nil {
 				return false, fmt.Errorf("failed to update node %q: %v", node.Name, err)
 			}
