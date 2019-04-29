@@ -1,6 +1,7 @@
 package addon
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -249,8 +250,8 @@ func (r *Reconciler) GetTemplateFuncs() template.FuncMap {
 	return funcs
 }
 
-func (r *Reconciler) getAddonManifests(addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]*bytes.Buffer, error) {
-	var allManifests []*bytes.Buffer
+func (r *Reconciler) getAddonManifests(addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]runtime.RawExtension, error) {
+	var allManifests []runtime.RawExtension
 
 	addonDir := r.kubernetesAddonDir
 	if isOpenshift(cluster) {
@@ -325,23 +326,30 @@ func (r *Reconciler) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 			continue
 		}
 
-		reader := kyaml.NewDocumentDecoder(ioutil.NopCloser(bufferAll))
-		size := bufferAll.Len()
+		reader := kyaml.NewYAMLReader(bufio.NewReader(bufferAll))
 		for {
-			fullB := make([]byte, size)
-			n, err := reader.Read(fullB)
+			b, err := reader.Read()
 			if err != nil {
-				if err == io.ErrShortBuffer {
-					size = n
-					continue
-				}
 				if err == io.EOF {
 					break
 				}
-				return nil, err
+				return nil, fmt.Errorf("failed reading from YAML reader: %v", err)
 			}
-			croppedB := fullB[:n]
-			allManifests = append(allManifests, bytes.NewBuffer(croppedB))
+			b = bytes.TrimSpace(b)
+			if len(b) == 0 {
+				continue
+			}
+			decoder := kyaml.NewYAMLToJSONDecoder(bytes.NewBuffer(b))
+			raw := runtime.RawExtension{}
+			if err := decoder.Decode(&raw); err != nil {
+				return nil, fmt.Errorf("decoding failed: %v", err)
+			}
+			if len(raw.Raw) == 0 {
+				// This can happen if the manifest contains only comments, e.G. because it comes from Helm
+				// something like `# Source: istio/charts/galley/templates/validatingwebhookconfiguration.yaml.tpl`
+				continue
+			}
+			allManifests = append(allManifests, raw)
 		}
 	}
 
@@ -363,18 +371,14 @@ func (r *Reconciler) combineManifests(manifests []*bytes.Buffer) *bytes.Buffer {
 
 // ensureAddonLabelOnManifests adds the addonLabelKey label to all manifests.
 // For this to happen we need to decode all yaml files to json, parse them, add the label and finally encode to yaml again
-func (r *Reconciler) ensureAddonLabelOnManifests(addon *kubermaticv1.Addon, manifests []*bytes.Buffer) ([]*bytes.Buffer, error) {
+func (r *Reconciler) ensureAddonLabelOnManifests(addon *kubermaticv1.Addon, manifests []runtime.RawExtension) ([]*bytes.Buffer, error) {
+	var rawManifests []*bytes.Buffer
+
 	wantLabels := r.getAddonLabel(addon)
 	for _, m := range manifests {
-		decoder := kyaml.NewYAMLToJSONDecoder(m)
-		raw := runtime.RawExtension{}
-		if err := decoder.Decode(&raw); err != nil {
-			return nil, err
-		}
-
 		parsedUnstructuredObj := &metav1unstructured.Unstructured{}
-		if _, _, err := metav1unstructured.UnstructuredJSONScheme.Decode(raw.Raw, nil, parsedUnstructuredObj); err != nil {
-			return nil, err
+		if _, _, err := metav1unstructured.UnstructuredJSONScheme.Decode(m.Raw, nil, parsedUnstructuredObj); err != nil {
+			return nil, fmt.Errorf("parsing unstructured failed: %v", err)
 		}
 
 		existingLabels := parsedUnstructuredObj.GetLabels()
@@ -390,21 +394,20 @@ func (r *Reconciler) ensureAddonLabelOnManifests(addon *kubermaticv1.Addon, mani
 
 		jsonBuffer := &bytes.Buffer{}
 		if err := metav1unstructured.UnstructuredJSONScheme.Encode(parsedUnstructuredObj, jsonBuffer); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("encoding json failed: %v", err)
 		}
 
+		// Must be encoding back to yaml, otherwise kubectl fails to apply because it tries to parse the whole
+		// thing as json
 		yamlBytes, err := yaml.JSONToYAML(jsonBuffer.Bytes())
 		if err != nil {
 			return nil, err
 		}
 
-		m.Reset()
-		if _, err := m.Write(yamlBytes); err != nil {
-			return nil, err
-		}
+		rawManifests = append(rawManifests, bytes.NewBuffer(yamlBytes))
 	}
 
-	return manifests, nil
+	return rawManifests, nil
 }
 
 func (r *Reconciler) getAddonLabel(addon *kubermaticv1.Addon) map[string]string {
@@ -455,13 +458,13 @@ func (r *Reconciler) setupManifestInteraction(addon *kubermaticv1.Addon, cluster
 		return "", "", nil, fmt.Errorf("failed to get addon manifests: %v", err)
 	}
 
-	manifests, err = r.ensureAddonLabelOnManifests(addon, manifests)
+	rawManifests, err := r.ensureAddonLabelOnManifests(addon, manifests)
 	if err != nil {
 		return "", "", nil, fmt.Errorf("failed to add the addon specific label to all addon resources: %v", err)
 	}
 
-	manifest := r.combineManifests(manifests)
-	manifestFilename, manifestDone, err := r.writeCombinedManifest(manifest, addon, cluster)
+	rawManifest := r.combineManifests(rawManifests)
+	manifestFilename, manifestDone, err := r.writeCombinedManifest(rawManifest, addon, cluster)
 	if err != nil {
 		return "", "", nil, fmt.Errorf("failed to write all addon resources into a combined manifest file: %v", err)
 	}
