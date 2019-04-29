@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -992,31 +993,10 @@ func (r *testRunner) logNotReadyControlplaneComponents(clusterName string) error
 	if err != nil {
 		return err
 	}
-	notReadyComponents := []string{}
-	if !cluster.Status.Health.ClusterHealthStatus.Apiserver {
-		notReadyComponents = append(notReadyComponents, "apiserver")
+	clusterHealthStatus, err := json.Marshal(cluster.Status.Health.ClusterHealthStatus)
+	if err != nil {
+		return fmt.Errorf("failed to marshal cluster health status: %v", err)
 	}
-	if !cluster.Status.Health.ClusterHealthStatus.Scheduler {
-		notReadyComponents = append(notReadyComponents, "scheduler")
-	}
-	if !cluster.Status.Health.ClusterHealthStatus.Controller {
-		notReadyComponents = append(notReadyComponents, "controller")
-	}
-	if !cluster.Status.Health.ClusterHealthStatus.MachineController {
-		notReadyComponents = append(notReadyComponents, "machine-controller")
-	}
-	if !cluster.Status.Health.ClusterHealthStatus.Etcd {
-		notReadyComponents = append(notReadyComponents, "etcd")
-	}
-	if !cluster.Status.Health.ClusterHealthStatus.OpenVPN {
-		notReadyComponents = append(notReadyComponents, "openvpn")
-	}
-	if !cluster.Status.Health.ClusterHealthStatus.CloudProviderInfrastructure {
-		notReadyComponents = append(notReadyComponents, "cloudProviderInfrastructure")
-	}
-	if !cluster.Status.Health.ClusterHealthStatus.UserClusterControllerManager {
-		notReadyComponents = append(notReadyComponents, "userClusterControllerManager")
-	}
-	r.log.Infof("Failed because the following control plane components were not ready: %v", notReadyComponents)
+	r.log.Infof("ClusterHealthStatus: %q", string(clusterHealthStatus))
 	return nil
 }
