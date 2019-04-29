@@ -319,14 +319,14 @@ func TestController_getAddonManifests(t *testing.T) {
 		t.Fatalf("invalid number of manifests returned. Expected 3, Got %d", len(manifests))
 	}
 
-	if trimmedManifest := strings.TrimSpace(testManifest1); trimmedManifest != strings.TrimSpace(manifests[0].String()) {
-		t.Errorf("invalid manifest returned. Expected \n%q\n, Got \n%q", trimmedManifest, strings.TrimSpace(manifests[0].String()))
+	if trimmedManifest := strings.TrimSpace(testManifest1); trimmedManifest != manifests[0].String() {
+		t.Errorf("invalid manifest returned. Expected \n%q\n, Got \n%q", trimmedManifest, manifests[0].String())
 	}
-	if trimmedManifest := strings.TrimSpace(testManifest2); trimmedManifest != strings.TrimSpace(manifests[1].String()) {
-		t.Errorf("invalid manifest returned. Expected \n%q\n, Got \n%q", trimmedManifest, strings.TrimSpace(manifests[1].String()))
+	if trimmedManifest := strings.TrimSpace(testManifest2); trimmedManifest != manifests[1].String() {
+		t.Errorf("invalid manifest returned. Expected \n%q\n, Got \n%q", trimmedManifest, manifests[1].String())
 	}
-	if trimmedManifest := strings.TrimSpace(testManifest3); trimmedManifest != strings.TrimSpace(manifests[2].String()) {
-		t.Errorf("invalid manifest returned. Expected \n%q\n, Got \n%q", trimmedManifest, strings.TrimSpace(manifests[2].String()))
+	if trimmedManifest := strings.TrimSpace(testManifest3); trimmedManifest != manifests[2].String() {
+		t.Errorf("invalid manifest returned. Expected \n%q\n, Got \n%q", trimmedManifest, manifests[2].String())
 	}
 }
 
