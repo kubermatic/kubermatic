@@ -14,6 +14,7 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig"
+	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -391,7 +392,14 @@ func (r *Reconciler) ensureAddonLabelOnManifests(addon *kubermaticv1.Addon, mani
 			return nil, fmt.Errorf("encoding json failed: %v", err)
 		}
 
-		rawManifests = append(rawManifests, jsonBuffer)
+		// Must be encoding back to yaml, otherwise kubectl fails to apply because it tries to parse the whole
+		// thing as json
+		yamlBytes, err := yaml.JSONToYAML(jsonBuffer.Bytes())
+		if err != nil {
+			return nil, err
+		}
+
+		rawManifests = append(rawManifests, bytes.NewBuffer(yamlBytes))
 	}
 
 	return rawManifests, nil

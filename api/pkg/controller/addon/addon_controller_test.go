@@ -53,7 +53,17 @@ data:
 `}
 
 const (
-	testManifest1WithLabel = `{"apiVersion":"v1","data":{"foo":"bar"},"kind":"ConfigMap","metadata":{"labels":{"app":"test","kubermatic-addon":"test"},"name":"test1","namespace":"kube-system"}}`
+	testManifest1WithLabel = `apiVersion: v1
+data:
+  foo: bar
+kind: ConfigMap
+metadata:
+  labels:
+    app: test
+    kubermatic-addon: test
+  name: test1
+  namespace: kube-system
+`
 
 	testManifest1WithDeployment = `apiVersion: apps/v1
 kind: Deployment
@@ -349,7 +359,7 @@ func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.TrimSpace(labeledManifests[0].String()) != testManifest1WithLabel {
+	if labeledManifests[0].String() != testManifest1WithLabel {
 		t.Fatalf("invalid labeled manifest returned. Expected \n%q, Got \n%q", testManifest1WithLabel, labeledManifests[0].String())
 	}
 }
