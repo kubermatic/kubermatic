@@ -138,15 +138,12 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
-					Name:                     name,
-					Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
-					ImagePullPolicy:          corev1.PullIfNotPresent,
-					Command:                  []string{"/hyperkube", "controller-manager"},
-					Args:                     flags,
-					Env:                      getEnvVars(data.Cluster()),
-					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-					Resources:                resourceRequirements,
+					Name:      name,
+					Image:     data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
+					Command:   []string{"/hyperkube", "controller-manager"},
+					Args:      flags,
+					Env:       getEnvVars(data.Cluster()),
+					Resources: resourceRequirements,
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: getHealthGetAction(data),

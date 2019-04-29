@@ -106,13 +106,10 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
-					Name:                     name,
-					Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
-					ImagePullPolicy:          corev1.PullIfNotPresent,
-					Command:                  []string{"/hyperkube", "scheduler"},
-					Args:                     flags,
-					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+					Name:    name,
+					Image:   data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
+					Command: []string{"/hyperkube", "scheduler"},
+					Args:    flags,
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      resources.SchedulerKubeconfigSecretName,

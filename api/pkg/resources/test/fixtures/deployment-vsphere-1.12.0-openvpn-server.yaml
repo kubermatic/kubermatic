@@ -83,7 +83,6 @@ spec:
         command:
         - /usr/sbin/openvpn
         image: quay.io/kubermatic/openvpn:v0.5
-        imagePullPolicy: IfNotPresent
         name: openvpn-server
         ports:
         - containerPort: 1194
@@ -109,8 +108,6 @@ spec:
         securityContext:
           privileged: true
           procMount: Default
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/openvpn/pki/server
           name: openvpn-server-certificates
@@ -127,7 +124,6 @@ spec:
         command:
         - /bin/bash
         image: quay.io/kubermatic/openvpn:v0.5
-        imagePullPolicy: IfNotPresent
         name: ip-forward
         resources:
           limits:
@@ -139,8 +135,6 @@ spec:
         securityContext:
           privileged: true
           procMount: Default
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
       imagePullSecrets:
       - name: dockercfg
       initContainers:
@@ -164,7 +158,6 @@ spec:
         command:
         - /bin/bash
         image: quay.io/kubermatic/openvpn:v0.5
-        imagePullPolicy: IfNotPresent
         name: iptables-init
         resources:
           limits:
@@ -178,8 +171,6 @@ spec:
             add:
             - NET_ADMIN
           procMount: Default
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
       volumes:
       - name: ca
         secret:

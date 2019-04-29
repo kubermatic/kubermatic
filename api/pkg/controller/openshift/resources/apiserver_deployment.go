@@ -99,16 +99,13 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 			dep.Spec.Template.Spec.Volumes = volumes
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
-					Name:            "etcd-running",
-					Image:           data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + etcd.ImageTag,
-					ImagePullPolicy: corev1.PullIfNotPresent,
+					Name:  "etcd-running",
+					Image: data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + etcd.ImageTag,
 					Command: []string{
 						"/bin/sh",
 						"-ec",
 						fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/pki/client/ca.crt --cert=/etc/etcd/pki/client/apiserver-etcd-client.crt --key=/etc/etcd/pki/client/apiserver-etcd-client.key --dial-timeout=2s --endpoints='%s' endpoint health; do echo waiting for etcd; sleep 2; done;", strings.Join(etcdEndpoints, ",")),
 					},
-					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      resources.ApiserverEtcdClientCertificateSecretName,
@@ -138,15 +135,12 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 				*openvpnSidecar,
 				*dnatControllerSidecar,
 				{
-					Name:                     ApiserverDeploymentName,
-					Image:                    data.ImageRegistry(resources.RegistryDocker) + "/openshift/origin-control-plane:v3.11",
-					ImagePullPolicy:          corev1.PullIfNotPresent,
-					Command:                  []string{"/usr/bin/openshift", "start", "master", "api"},
-					Args:                     []string{"--config=/etc/origin/master/master-config.yaml"},
-					Env:                      getAPIServerEnvVars(data.Cluster()),
-					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-					Resources:                *resourceRequirements,
+					Name:      ApiserverDeploymentName,
+					Image:     data.ImageRegistry(resources.RegistryDocker) + "/openshift/origin-control-plane:v3.11",
+					Command:   []string{"/usr/bin/openshift", "start", "master", "api"},
+					Args:      []string{"--config=/etc/origin/master/master-config.yaml"},
+					Env:       getAPIServerEnvVars(data.Cluster()),
+					Resources: *resourceRequirements,
 					Ports: []corev1.ContainerPort{
 						{
 							ContainerPort: externalNodePort,

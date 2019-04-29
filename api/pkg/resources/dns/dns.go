@@ -93,13 +93,10 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
-					Name:                     resources.DNSResolverDeploymentName,
-					Image:                    data.ImageRegistry(resources.RegistryGCR) + "/google_containers/coredns:1.1.3",
-					ImagePullPolicy:          corev1.PullIfNotPresent,
-					Args:                     []string{"-conf", "/etc/coredns/Corefile"},
-					Resources:                defaultResourceRequirements,
-					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+					Name:      resources.DNSResolverDeploymentName,
+					Image:     data.ImageRegistry(resources.RegistryGCR) + "/google_containers/coredns:1.1.3",
+					Args:      []string{"-conf", "/etc/coredns/Corefile"},
+					Resources: defaultResourceRequirements,
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      resources.DNSResolverConfigMapName,

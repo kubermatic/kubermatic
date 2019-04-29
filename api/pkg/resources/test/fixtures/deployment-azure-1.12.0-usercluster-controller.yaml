@@ -62,7 +62,6 @@ spec:
               apiVersion: v1
               fieldPath: metadata.namespace
         image: 'quay.io/kubermatic/api:'
-        imagePullPolicy: IfNotPresent
         name: usercluster-controller
         readinessProbe:
           failureThreshold: 5
@@ -80,8 +79,6 @@ spec:
           requests:
             cpu: 25m
             memory: 32Mi
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
           name: internal-admin-kubeconfig

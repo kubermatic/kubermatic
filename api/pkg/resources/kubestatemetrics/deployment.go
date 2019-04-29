@@ -65,17 +65,14 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:            name,
-					Image:           data.ImageRegistry(resources.RegistryQuay) + "/coreos/kube-state-metrics:" + version,
-					ImagePullPolicy: corev1.PullIfNotPresent,
-					Command:         []string{"/kube-state-metrics"},
+					Name:    name,
+					Image:   data.ImageRegistry(resources.RegistryQuay) + "/coreos/kube-state-metrics:" + version,
+					Command: []string{"/kube-state-metrics"},
 					Args: []string{
 						"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 						"--port", "8080",
 						"--telemetry-port", "8081",
 					},
-					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      resources.KubeStateMetricsKubeconfigSecretName,

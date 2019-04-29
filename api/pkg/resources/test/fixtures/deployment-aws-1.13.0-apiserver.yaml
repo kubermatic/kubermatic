@@ -93,7 +93,6 @@ spec:
         command:
         - /usr/sbin/openvpn
         image: quay.io/kubermatic/openvpn:v0.5
-        imagePullPolicy: IfNotPresent
         name: openvpn-client
         resources:
           limits:
@@ -105,8 +104,6 @@ spec:
         securityContext:
           privileged: true
           procMount: Default
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/openvpn/pki/client
           name: openvpn-client-certificates
@@ -139,8 +136,6 @@ spec:
             - NET_ADMIN
           procMount: Default
           runAsUser: 0
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
           name: kubeletdnatcontroller-kubeconfig
@@ -238,7 +233,6 @@ spec:
         - name: AWS_AVAILABILITY_ZONE
           value: aws-availability-zone
         image: gcr.io/google_containers/hyperkube-amd64:v1.13.0
-        imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 8
           httpGet:
@@ -269,8 +263,6 @@ spec:
           requests:
             cpu: 100m
             memory: 256Mi
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/kubernetes/tls
           name: apiserver-tls
@@ -325,11 +317,8 @@ spec:
           put kubermatic/quorum-check something; do echo waiting for etcd; sleep 2;
           done;
         image: gcr.io/etcd-development/etcd:v3.3.12
-        imagePullPolicy: IfNotPresent
         name: etcd-running
         resources: {}
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/etcd/pki/client
           name: apiserver-etcd-client-certificate
