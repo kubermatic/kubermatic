@@ -108,6 +108,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		r.oidcCAFile,
 		r.oidcIssuerURL,
 		r.oidcIssuerClientID,
+		r.nodeLocalDNSCacheEnabled,
 	), nil
 }
 

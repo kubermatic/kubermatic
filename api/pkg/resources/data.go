@@ -39,6 +39,7 @@ type TemplateData struct {
 	oidcCAFile                                       string
 	oidcIssuerURL                                    string
 	oidcIssuerClientID                               string
+	nodeLocalDNSCacheEnabled                         bool
 }
 
 // NewTemplateData returns an instance of TemplateData
@@ -59,7 +60,8 @@ func NewTemplateData(
 	inClusterPrometheusScrapingConfigsFile string,
 	oidcCAFile string,
 	oidcURL string,
-	oidcIssuerClientID string) *TemplateData {
+	oidcIssuerClientID string,
+	nodeLocalDNSCacheEnabled bool) *TemplateData {
 	return &TemplateData{
 		ctx:                                    ctx,
 		client:                                 client,
@@ -78,6 +80,7 @@ func NewTemplateData(
 		oidcCAFile:                                       oidcCAFile,
 		oidcIssuerURL:                                    oidcURL,
 		oidcIssuerClientID:                               oidcIssuerClientID,
+		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
 	}
 }
 
@@ -244,4 +247,8 @@ func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
 	}
 
 	return service.Spec.Ports[0].NodePort, nil
+}
+
+func (d *TemplateData) NodeLocalDNSCacheEnabled() bool {
+	return d.nodeLocalDNSCacheEnabled
 }
