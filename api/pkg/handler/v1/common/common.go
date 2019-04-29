@@ -1,6 +1,8 @@
 package common
 
 import (
+	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -38,4 +40,13 @@ type ServerMetrics struct {
 	HTTPRequestsTotal          *prometheus.CounterVec
 	HTTPRequestsDuration       *prometheus.HistogramVec
 	InitNodeDeploymentFailures *prometheus.CounterVec
+}
+
+// IsBringYourOwnProvider determines whether the spec holds BringYourOwn provider
+func IsBringYourOwnProvider(spec v1.CloudSpec) (bool, error) {
+	providerName, err := provider.ClusterCloudProviderName(spec)
+	if err != nil {
+		return false, err
+	}
+	return providerName == provider.BringYourOwnCloudProvider, nil
 }
