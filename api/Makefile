@@ -34,7 +34,7 @@ showenv:
 check: gofmt lint
 
 test:
-	$(GO) test ./...
+	CGO_ENABLED=1 $(GO) test -race ./...
 
 test-update:
 	-$(GO) test ./... -update

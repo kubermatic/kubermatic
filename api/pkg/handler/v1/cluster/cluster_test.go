@@ -26,6 +26,11 @@ import (
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
+func init() {
+	// Mock timezone to keep creation timestamp always the same.
+	time.Local = time.UTC
+}
+
 func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
@@ -826,8 +831,6 @@ func TestGetClusterHealth(t *testing.T) {
 func TestPatchCluster(t *testing.T) {
 	t.Parallel()
 
-	// Mock timezone to keep creation timestamp always the same.
-	time.Local = time.UTC
 	cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 	cluster.Spec.Cloud.DatacenterName = "us-central1"
 
