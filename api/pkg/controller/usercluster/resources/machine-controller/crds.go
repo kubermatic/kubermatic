@@ -24,6 +24,48 @@ func MachineCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter 
 			crd.Spec.Names.Plural = "machines"
 			crd.Spec.Names.Singular = "machine"
 			crd.Spec.Names.ShortNames = []string{"ma"}
+			crd.Spec.AdditionalPrinterColumns = []apiextensionsv1beta1.CustomResourceColumnDefinition{
+				{
+					Name:     "Age",
+					Type:     "date",
+					JSONPath: ".metadata.creationTimestamp",
+				},
+				{
+					Name:     "Deleted",
+					Type:     "date",
+					JSONPath: ".metadata.deletionTimestamp",
+				},
+				{
+					Name:     "MachineSet",
+					Type:     "string",
+					JSONPath: ".metadata.ownerReferences[0].name",
+				},
+				{
+					Name:     "Address",
+					Type:     "string",
+					JSONPath: ".status.addresses[0].address",
+				},
+				{
+					Name:     "Node",
+					Type:     "string",
+					JSONPath: ".status.nodeRef.name",
+				},
+				{
+					Name:     "Provider",
+					Type:     "string",
+					JSONPath: ".spec.providerSpec.value.cloudProvider",
+				},
+				{
+					Name:     "OS",
+					Type:     "string",
+					JSONPath: ".spec.providerSpec.value.operatingSystem",
+				},
+				{
+					Name:     "Version",
+					Type:     "string",
+					JSONPath: ".spec.versions.kubelet",
+				},
+			}
 
 			return crd, nil
 		}
@@ -49,6 +91,48 @@ func MachineSetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGett
 					SpecReplicasPath:   ".spec.replicas",
 					StatusReplicasPath: ".status.replicas",
 				}}
+			crd.Spec.AdditionalPrinterColumns = []apiextensionsv1beta1.CustomResourceColumnDefinition{
+				{
+					Name:     "Age",
+					Type:     "date",
+					JSONPath: ".metadata.creationTimestamp",
+				},
+				{
+					Name:     "Deleted",
+					Type:     "date",
+					JSONPath: ".metadata.deletionTimestamp",
+				},
+				{
+					Name:     "Replicas",
+					Type:     "string",
+					JSONPath: ".spec.replicas",
+				},
+				{
+					Name:     "AvailableReplicas",
+					Type:     "string",
+					JSONPath: ".status.availableReplicas",
+				},
+				{
+					Name:     "MachineDeployment",
+					Type:     "string",
+					JSONPath: ".metadata.ownerReferences[0].name",
+				},
+				{
+					Name:     "Provider",
+					Type:     "string",
+					JSONPath: ".spec.template.spec.providerSpec.value.cloudProvider",
+				},
+				{
+					Name:     "OS",
+					Type:     "string",
+					JSONPath: ".spec.template.spec.providerSpec.value.operatingSystem",
+				},
+				{
+					Name:     "Version",
+					Type:     "string",
+					JSONPath: ".spec.template.spec.versions.kubelet",
+				},
+			}
 
 			return crd, nil
 		}
@@ -73,6 +157,43 @@ func MachineDeploymentCRDCreator() reconciling.NamedCustomResourceDefinitionCrea
 					SpecReplicasPath:   ".spec.replicas",
 					StatusReplicasPath: ".status.replicas",
 				}}
+			crd.Spec.AdditionalPrinterColumns = []apiextensionsv1beta1.CustomResourceColumnDefinition{
+				{
+					Name:     "Age",
+					Type:     "date",
+					JSONPath: ".metadata.creationTimestamp",
+				},
+				{
+					Name:     "Deleted",
+					Type:     "date",
+					JSONPath: ".metadata.deletionTimestamp",
+				},
+				{
+					Name:     "Replicas",
+					Type:     "string",
+					JSONPath: ".spec.replicas",
+				},
+				{
+					Name:     "AvailableReplicas",
+					Type:     "string",
+					JSONPath: ".status.availableReplicas",
+				},
+				{
+					Name:     "Provider",
+					Type:     "string",
+					JSONPath: ".spec.template.spec.providerSpec.value.cloudProvider",
+				},
+				{
+					Name:     "OS",
+					Type:     "string",
+					JSONPath: ".spec.template.spec.providerSpec.value.operatingSystem",
+				},
+				{
+					Name:     "Version",
+					Type:     "string",
+					JSONPath: ".spec.template.spec.versions.kubelet",
+				},
+			}
 
 			return crd, nil
 		}
