@@ -66,6 +66,7 @@ type Reconciler struct {
 	// Annotation prefix to discover user cluster resources
 	// example: kubermatic.io -> kubermatic.io/path,kubermatic.io/port
 	monitoringScrapeAnnotationPrefix string
+	nodeLocalDNSCacheEnabled         bool
 
 	features Features
 }
@@ -89,6 +90,7 @@ func Add(
 	inClusterPrometheusDisableDefaultScrapingConfigs bool,
 	inClusterPrometheusScrapingConfigsFile string,
 	dockerPullConfigJSON []byte,
+	nodeLocalDNSCacheEnabled bool,
 
 	features Features,
 ) error {
@@ -108,6 +110,7 @@ func Add(
 		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
 		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
 		dockerPullConfigJSON:                             dockerPullConfigJSON,
+		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
 
 		dc:  dc,
 		dcs: dcs,
