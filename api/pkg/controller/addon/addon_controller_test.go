@@ -15,6 +15,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -334,9 +335,7 @@ func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 
-	manifests := []*bytes.Buffer{
-		bytes.NewBufferString(testManifest1),
-	}
+	manifests := []runtime.RawExtension{{Raw: []byte(testManifest1)}}
 
 	addon := &kubermaticv1.Addon{
 		ObjectMeta: metav1.ObjectMeta{
