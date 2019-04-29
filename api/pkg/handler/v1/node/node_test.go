@@ -28,6 +28,11 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+func init() {
+	// Mock timezone to keep creation timestamp always the same.
+	time.Local = time.UTC
+}
+
 func TestDeleteNodeForCluster(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
@@ -1018,9 +1023,6 @@ func TestPatchNodeDeployment(t *testing.T) {
 	var replicas int32 = 1
 	var replicasUpdated int32 = 3
 	var kubeletVerUpdated = "v9.8.0"
-
-	// Mock timezone to keep creation timestamp always the same.
-	time.Local = time.UTC
 
 	testcases := []struct {
 		Name                       string
