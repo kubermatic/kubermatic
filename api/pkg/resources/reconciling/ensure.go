@@ -76,7 +76,7 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 			return fmt.Errorf("failed waiting for the cache to contain our newly created object: %v", err)
 		}
 
-		glog.V(2).Infof("Created %T %s in Namespace %s", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
+		glog.V(2).Infof("Created %T %s in Namespace %q", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
 		return nil
 	}
 
@@ -102,7 +102,7 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 		return fmt.Errorf("failed waiting for the cache to contain our latest changes: %v", err)
 	}
 
-	glog.V(2).Infof("Updated %T %s in Namespace %s", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
+	glog.V(2).Infof("Updated %T %s in Namespace %q", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
 
 	return nil
 }
