@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -707,7 +708,10 @@ func (r *testRunner) waitForControlPlane(log *logrus.Entry, clusterName string) 
 	})
 	// Timeout or other error
 	if err != nil {
-		// Be helpful and log which pods are not ready
+		// Be helpful and log what is not ready
+		if err := r.logNotReadyControlplaneComponents(clusterName); err != nil {
+			r.log.Infof("failed to log not ready controlplane compoenents: %v", err)
+		}
 		if err := r.logNotReadyControlplanePods(clusterName); err != nil {
 			r.log.Infof("failed to log not ready controlplane pods: %v", err)
 		}
@@ -981,5 +985,18 @@ func (r *testRunner) logNotReadyControlplanePods(clusterName string) error {
 		}
 	}
 	r.log.Infof("Failed because these controlplane pods didn't get ready: %v", notReadyControlPlanePods.List())
+	return nil
+}
+
+func (r *testRunner) logNotReadyControlplaneComponents(clusterName string) error {
+	cluster, err := r.clusterLister.Get(clusterName)
+	if err != nil {
+		return err
+	}
+	clusterHealthStatus, err := json.Marshal(cluster.Status.Health.ClusterHealthStatus)
+	if err != nil {
+		return fmt.Errorf("failed to marshal cluster health status: %v", err)
+	}
+	r.log.Infof("ClusterHealthStatus: %q", string(clusterHealthStatus))
 	return nil
 }
