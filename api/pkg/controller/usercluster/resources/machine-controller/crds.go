@@ -29,49 +29,41 @@ func MachineCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter 
 					Name:     "Age",
 					Type:     "date",
 					JSONPath: ".metadata.creationTimestamp",
-					Priority: 10,
 				},
 				{
 					Name:     "Deleted",
 					Type:     "date",
 					JSONPath: ".metadata.deletionTimestamp",
-					Priority: 0,
 				},
 				{
 					Name:     "MachineSet",
 					Type:     "string",
 					JSONPath: ".metadata.ownerReferences[0].name",
-					Priority: 0,
 				},
 				{
 					Name:     "Address",
 					Type:     "string",
 					JSONPath: ".status.addresses[0].address",
-					Priority: 0,
 				},
 				{
 					Name:     "Node",
 					Type:     "string",
 					JSONPath: ".status.nodeRef.name",
-					Priority: 0,
 				},
 				{
 					Name:     "Provider",
 					Type:     "string",
 					JSONPath: ".spec.providerSpec.value.cloudProvider",
-					Priority: 10,
 				},
 				{
 					Name:     "OS",
 					Type:     "string",
 					JSONPath: ".spec.providerSpec.value.operatingSystem",
-					Priority: 10,
 				},
 				{
 					Name:     "Version",
 					Type:     "string",
 					JSONPath: ".spec.versions.kubelet",
-					Priority: 10,
 				},
 			}
 
@@ -104,43 +96,41 @@ func MachineSetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGett
 					Name:     "Age",
 					Type:     "date",
 					JSONPath: ".metadata.creationTimestamp",
-					Priority: 10,
 				},
 				{
 					Name:     "Deleted",
 					Type:     "date",
 					JSONPath: ".metadata.deletionTimestamp",
-					Priority: 0,
 				},
 				{
 					Name:     "Replicas",
 					Type:     "string",
 					JSONPath: ".spec.replicas",
-					Priority: 0,
+				},
+				{
+					Name:     "AvailableReplicas",
+					Type:     "string",
+					JSONPath: ".status.availableReplicas",
 				},
 				{
 					Name:     "MachineDeployment",
 					Type:     "string",
 					JSONPath: ".metadata.ownerReferences[0].name",
-					Priority: 0,
 				},
 				{
 					Name:     "Provider",
 					Type:     "string",
 					JSONPath: ".spec.template.spec.providerSpec.value.cloudProvider",
-					Priority: 10,
 				},
 				{
 					Name:     "OS",
 					Type:     "string",
 					JSONPath: ".spec.template.spec.providerSpec.value.operatingSystem",
-					Priority: 10,
 				},
 				{
 					Name:     "Version",
 					Type:     "string",
 					JSONPath: ".spec.template.spec.versions.kubelet",
-					Priority: 10,
 				},
 			}
 
@@ -172,37 +162,36 @@ func MachineDeploymentCRDCreator() reconciling.NamedCustomResourceDefinitionCrea
 					Name:     "Age",
 					Type:     "date",
 					JSONPath: ".metadata.creationTimestamp",
-					Priority: 10,
 				},
 				{
 					Name:     "Deleted",
 					Type:     "date",
 					JSONPath: ".metadata.deletionTimestamp",
-					Priority: 0,
 				},
 				{
 					Name:     "Replicas",
 					Type:     "string",
 					JSONPath: ".spec.replicas",
-					Priority: 0,
+				},
+				{
+					Name:     "AvailableReplicas",
+					Type:     "string",
+					JSONPath: ".status.availableReplicas",
 				},
 				{
 					Name:     "Provider",
 					Type:     "string",
 					JSONPath: ".spec.template.spec.providerSpec.value.cloudProvider",
-					Priority: 10,
 				},
 				{
 					Name:     "OS",
 					Type:     "string",
 					JSONPath: ".spec.template.spec.providerSpec.value.operatingSystem",
-					Priority: 10,
 				},
 				{
 					Name:     "Version",
 					Type:     "string",
 					JSONPath: ".spec.template.spec.versions.kubelet",
-					Priority: 10,
 				},
 			}
 
