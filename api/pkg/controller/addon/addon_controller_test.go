@@ -312,7 +312,7 @@ func TestController_getAddonManifests(t *testing.T) {
 		t.Fatalf("invalid number of manifests returned. Expected 3, Got %d", len(manifests))
 	}
 
-	for idx, _ := range testManifests {
+	for idx := range testManifests {
 		testManifestDecoder := kyaml.NewYAMLToJSONDecoder(bytes.NewBuffer([]byte(testManifests[idx])))
 		expected := runtime.RawExtension{}
 		if err := testManifestDecoder.Decode(&expected); err != nil {
