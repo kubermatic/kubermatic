@@ -34,10 +34,9 @@ type openvpnData interface {
 func OpenVPNSidecarContainer(data openvpnData, name string) (*corev1.Container, error) {
 	procMountType := corev1.DefaultProcMount
 	return &corev1.Container{
-		Name:            name,
-		Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/openvpn:v0.5",
-		ImagePullPolicy: corev1.PullIfNotPresent,
-		Command:         []string{"/usr/sbin/openvpn"},
+		Name:    name,
+		Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/openvpn:v0.5",
+		Command: []string{"/usr/sbin/openvpn"},
 		Args: []string{
 			"--client",
 			"--proto", "tcp",
@@ -63,9 +62,7 @@ func OpenVPNSidecarContainer(data openvpnData, name string) (*corev1.Container, 
 			Privileged: resources.Bool(true),
 			ProcMount:  &procMountType,
 		},
-		TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-		TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-		Resources:                vpnClientResourceRequirements,
+		Resources: vpnClientResourceRequirements,
 		VolumeMounts: []corev1.VolumeMount{
 			{
 				MountPath: "/etc/openvpn/pki/client",

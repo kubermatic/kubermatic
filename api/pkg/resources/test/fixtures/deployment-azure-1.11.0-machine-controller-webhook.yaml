@@ -34,7 +34,6 @@ spec:
         command:
         - /usr/local/bin/webhook
         image: docker.io/kubermatic/machine-controller:v1.1.5
-        imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 8
           httpGet:
@@ -62,8 +61,6 @@ spec:
           requests:
             cpu: 10m
             memory: 32Mi
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
           name: machinecontroller-kubeconfig

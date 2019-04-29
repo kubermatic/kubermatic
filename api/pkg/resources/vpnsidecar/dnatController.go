@@ -51,9 +51,7 @@ func DnatControllerContainer(data dnatControllerData, name, apiserverAddress str
 			RunAsUser: resources.Int64(0),
 			ProcMount: &procMountType,
 		},
-		TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-		TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-		Resources:                dnatControllerResourceRequirements,
+		Resources: dnatControllerResourceRequirements,
 		VolumeMounts: []corev1.VolumeMount{
 			{
 				MountPath: "/etc/kubernetes/kubeconfig",

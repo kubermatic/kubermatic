@@ -101,10 +101,9 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:            name,
-					Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
-					ImagePullPolicy: corev1.PullIfNotPresent,
-					Command:         []string{"/usr/local/bin/user-cluster-controller-manager"},
+					Name:    name,
+					Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
+					Command: []string{"/usr/local/bin/user-cluster-controller-manager"},
 					Args: append([]string{
 						"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 						"-metrics-listen-address", "0.0.0.0:8085",
@@ -131,9 +130,7 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 							},
 						},
 					},
-					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-					Resources:                defaultResourceRequirements,
+					Resources: defaultResourceRequirements,
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{

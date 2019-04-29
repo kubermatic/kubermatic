@@ -44,7 +44,6 @@ spec:
         - name: AWS_SECRET_ACCESS_KEY
           value: aws-secret-access-key
         image: docker.io/kubermatic/machine-controller:v1.1.5
-        imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -63,8 +62,6 @@ spec:
           requests:
             cpu: 25m
             memory: 32Mi
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
           name: machinecontroller-kubeconfig

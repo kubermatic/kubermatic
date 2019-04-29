@@ -88,10 +88,9 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:            name,
-					Image:           data.ImageRegistry(resources.RegistryGCR) + "/google_containers/metrics-server-amd64:" + tag,
-					ImagePullPolicy: corev1.PullIfNotPresent,
-					Command:         []string{"/metrics-server"},
+					Name:    name,
+					Image:   data.ImageRegistry(resources.RegistryGCR) + "/google_containers/metrics-server-amd64:" + tag,
+					Command: []string{"/metrics-server"},
 					Args: []string{
 						"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 						"--authentication-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
@@ -103,9 +102,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 						"--v", "1",
 						"--logtostderr",
 					},
-					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-					Resources:                defaultResourceRequirements,
+					Resources: defaultResourceRequirements,
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      resources.MetricsServerKubeconfigSecretName,

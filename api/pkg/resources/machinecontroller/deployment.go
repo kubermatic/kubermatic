@@ -96,10 +96,9 @@ func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCr
 			}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:            Name,
-					Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
-					ImagePullPolicy: corev1.PullIfNotPresent,
-					Command:         []string{"/usr/local/bin/machine-controller"},
+					Name:    Name,
+					Image:   data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
+					Command: []string{"/usr/local/bin/machine-controller"},
 					Args: []string{
 						"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 						"-logtostderr",
@@ -107,10 +106,8 @@ func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCr
 						"-cluster-dns", clusterDNSIP,
 						"-internal-listen-address", "0.0.0.0:8085",
 					},
-					Env:                      getEnvVars(data),
-					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-					Resources:                controllerResourceRequirements,
+					Env:       getEnvVars(data),
+					Resources: controllerResourceRequirements,
 					LivenessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{

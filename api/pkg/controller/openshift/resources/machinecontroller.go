@@ -26,17 +26,14 @@ func MachineController(osData openshiftData) reconciling.NamedDeploymentCreatorG
 			d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, corev1.Volume{Name: "userdata-plugins",
 				VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}})
 			d.Spec.Template.Spec.InitContainers = append(d.Spec.Template.Spec.InitContainers, corev1.Container{
-				Name:            "copy-userdata-plugin",
-				Image:           osData.ImageRegistry(resources.RegistryQuay) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
-				ImagePullPolicy: corev1.PullIfNotPresent,
+				Name:  "copy-userdata-plugin",
+				Image: osData.ImageRegistry(resources.RegistryQuay) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
 				Command: []string{
 					"/bin/sh",
 					"-c",
 					"set -e && cp /usr/local/bin/userdata-openshift /target/machine-controller-userdata-centos",
 				},
-				TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-				TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-				VolumeMounts:             []corev1.VolumeMount{{Name: "userdata-plugins", MountPath: "/target"}},
+				VolumeMounts: []corev1.VolumeMount{{Name: "userdata-plugins", MountPath: "/target"}},
 			})
 			for idx := range d.Spec.Template.Spec.Containers {
 				if d.Spec.Template.Spec.Containers[idx].Name != "machine-controller" {

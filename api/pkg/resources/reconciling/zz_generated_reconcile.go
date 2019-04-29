@@ -211,6 +211,7 @@ func DeploymentObjectWrapper(create DeploymentCreator) ObjectCreator {
 func ReconcileDeployments(ctx context.Context, namedGetters []NamedDeploymentCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		create = DefaultDeployment(create)
 		createObject := DeploymentObjectWrapper(create)
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
