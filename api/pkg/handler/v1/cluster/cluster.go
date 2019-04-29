@@ -80,6 +80,16 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 
 		// Create the initial node deployment in the background.
 		if req.Body.NodeDeployment != nil {
+			// for BringYourOwn provider we don't create ND
+			isBYO, err := common.IsBringYourOwnProvider(spec.Cloud)
+			if err != nil {
+				return nil, errors.NewBadRequest("failed to create an initial node deployment due to an invalid spec: %v", err)
+			}
+			if isBYO {
+				glog.V(5).Infof("KubeAdm provider detected an initial node deployment won't be created for cluster %s", newCluster.Name)
+				return convertInternalClusterToExternal(newCluster), nil
+			}
+
 			go func() {
 				defer utilruntime.HandleCrash()
 				eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationStart), "started creation of initial node deployment %s for cluster %s", req.Body.NodeDeployment.Name, newCluster.Name)

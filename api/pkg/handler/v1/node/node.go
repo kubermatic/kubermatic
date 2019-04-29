@@ -84,6 +84,14 @@ func CreateNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
+		isBYO, err := common.IsBringYourOwnProvider(cluster.Spec.Cloud)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if isBYO {
+			return nil, k8cerrors.NewBadRequest("You cannot create a node deployment for KubeAdm provider")
+		}
+
 		keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: req.ClusterID})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
