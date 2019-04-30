@@ -72,11 +72,11 @@ type ClusterProvider struct {
 }
 
 // New creates a brand new cluster that is bound to the given project
-func (p *ClusterProvider) New(project *kubermaticapiv1.Project, userInfo *provider.UserInfo, spec *kubermaticapiv1.ClusterSpec) (*kubermaticapiv1.Cluster, error) {
-	if project == nil || userInfo == nil || spec == nil {
-		return nil, errors.New("project and/or userInfo and/or spec is missing but required")
+func (p *ClusterProvider) New(project *kubermaticapiv1.Project, userInfo *provider.UserInfo, cluster *kubermaticapiv1.Cluster) (*kubermaticapiv1.Cluster, error) {
+	if project == nil || userInfo == nil || cluster == nil {
+		return nil, errors.New("project and/or userInfo and/or cluster is missing but required")
 	}
-	spec.HumanReadableName = strings.TrimSpace(spec.HumanReadableName)
+	cluster.Spec.HumanReadableName = strings.TrimSpace(cluster.Spec.HumanReadableName)
 
 	labels := map[string]string{
 		kubermaticapiv1.ProjectIDLabelKey: project.Name,
@@ -86,12 +86,13 @@ func (p *ClusterProvider) New(project *kubermaticapiv1.Project, userInfo *provid
 	}
 
 	name := rand.String(10)
-	cluster := &kubermaticapiv1.Cluster{
+	newCluster := &kubermaticapiv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: labels,
-			Name:   name,
+			Annotations: cluster.Annotations,
+			Labels:      labels,
+			Name:        name,
 		},
-		Spec: *spec,
+		Spec: cluster.Spec,
 		Status: kubermaticapiv1.ClusterStatus{
 			UserEmail:     userInfo.Email,
 			NamespaceName: NamespaceName(name),
@@ -103,12 +104,12 @@ func (p *ClusterProvider) New(project *kubermaticapiv1.Project, userInfo *provid
 	if err != nil {
 		return nil, err
 	}
-	cluster, err = seedImpersonatedClient.Clusters().Create(cluster)
+	newCluster, err = seedImpersonatedClient.Clusters().Create(newCluster)
 	if err != nil {
 		return nil, err
 	}
 
-	return cluster, nil
+	return newCluster, nil
 }
 
 // List gets all clusters that belong to the given project

@@ -45,10 +45,20 @@ const (
 	nodeDeploymentCreationFail    NodeDeploymentEvent = "NodeDeploymentCreationFail"
 )
 
+// clusterTypes holds a list of supported cluster types
+var clusterTypes = []string{
+	apiv1.OpenShiftClusterType,
+	apiv1.KubernetesClusterType,
+}
+
 func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider,
 	dcs map[string]provider.DatacenterMeta, initNodeDeploymentFailures *prometheus.CounterVec, eventRecorderProvider provider.EventRecorderProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateReq)
+		err := req.Validate()
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
@@ -73,7 +83,15 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 			return nil, errors.NewAlreadyExists("cluster", spec.HumanReadableName)
 		}
 
-		newCluster, err := clusterProvider.New(project, userInfo, spec)
+		partialCluster := &kubermaticapiv1.Cluster{}
+		partialCluster.Spec = *spec
+		if req.Body.Cluster.Type == "openshift" {
+			partialCluster.Annotations = map[string]string{
+				"kubermatic.io/openshift": "true",
+			}
+		}
+
+		newCluster, err := clusterProvider.New(project, userInfo, partialCluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -466,7 +484,7 @@ func ListSSHKeysEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider
 }
 
 func convertInternalClusterToExternal(internalCluster *kubermaticapiv1.Cluster) *apiv1.Cluster {
-	return &apiv1.Cluster{
+	cluster := &apiv1.Cluster{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internalCluster.Name,
 			Name:              internalCluster.Spec.HumanReadableName,
@@ -488,7 +506,17 @@ func convertInternalClusterToExternal(internalCluster *kubermaticapiv1.Cluster) 
 			Version: internalCluster.Spec.Version,
 			URL:     internalCluster.Address.URL,
 		},
+		Type: apiv1.KubernetesClusterType,
 	}
+
+	isOpenShift, ok := internalCluster.Annotations["kubermatic.io/openshift"]
+	if ok {
+		if isOpenShift == "true" {
+			cluster.Type = apiv1.OpenShiftClusterType
+		}
+	}
+
+	return cluster
 }
 
 func convertInternalClustersToExternal(internalClusters []*kubermaticapiv1.Cluster) []*apiv1.Cluster {
@@ -676,6 +704,20 @@ type CreateReq struct {
 	Body apiv1.CreateClusterSpec
 }
 
+// Validate validates DeleteEndpoint request
+func (r CreateReq) Validate() error {
+	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
+		return fmt.Errorf("the service account ID and datacenter cannot be empty")
+	}
+
+	for _, clusterType := range clusterTypes {
+		if clusterType == r.Body.Cluster.Type {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid cluster type %s", r.Body.Cluster.Type)
+}
+
 func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req CreateReq
 
@@ -687,6 +729,10 @@ func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
+	}
+
+	if len(req.Body.Cluster.Type) == 0 {
+		req.Body.Cluster.Type = apiv1.KubernetesClusterType
 	}
 
 	return req, nil
