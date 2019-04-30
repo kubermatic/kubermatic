@@ -145,7 +145,7 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kuberma
 func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedServiceCreatorGetter {
 	return []reconciling.NamedServiceCreatorGetter{
 		apiserver.InternalServiceCreator(),
-		apiserver.ExternalServiceCreator(),
+		apiserver.ExternalServiceCreator(corev1.ServiceTypeNodePort),
 		openvpn.ServiceCreator(),
 		etcd.ServiceCreator(data),
 		dns.ServiceCreator(),

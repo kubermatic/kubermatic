@@ -1,6 +1,8 @@
 package apiserver
 
 import (
+	"fmt"
+
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -33,14 +35,19 @@ func InternalServiceCreator() reconciling.NamedServiceCreatorGetter {
 }
 
 // ExternalServiceCreator returns the function to reconcile the external API server service
-func ExternalServiceCreator() reconciling.NamedServiceCreatorGetter {
+func ExternalServiceCreator(serviceType corev1.ServiceType) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.ApiserverExternalServiceName, func(se *corev1.Service) (*corev1.Service, error) {
+			if serviceType != corev1.ServiceTypeNodePort && serviceType != corev1.ServiceTypeLoadBalancer {
+				return nil, fmt.Errorf("service.spec.type must be either NodePort or LoadBalanancer, was %q", serviceType)
+			}
 			se.Name = resources.ApiserverExternalServiceName
 			se.Annotations = map[string]string{
 				"nodeport-proxy.k8s.io/expose": "true",
 			}
-			se.Spec.Type = corev1.ServiceTypeNodePort
+			if se.Spec.Type == "" {
+				se.Spec.Type = serviceType
+			}
 			se.Spec.Selector = map[string]string{
 				resources.AppLabelKey: name,
 			}

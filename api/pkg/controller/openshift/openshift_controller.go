@@ -676,7 +676,7 @@ func (r *Reconciler) networkDefaults(ctx context.Context, cluster *kubermaticv1.
 func getAllServiceCreators(osData *openshiftData) []reconciling.NamedServiceCreatorGetter {
 	return []reconciling.NamedServiceCreatorGetter{
 		apiserver.InternalServiceCreator(),
-		apiserver.ExternalServiceCreator(),
+		apiserver.ExternalServiceCreator(corev1.ServiceTypeNodePort),
 		openvpn.ServiceCreator(),
 		etcd.ServiceCreator(osData),
 		dns.ServiceCreator(),
