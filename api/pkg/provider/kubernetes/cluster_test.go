@@ -68,8 +68,8 @@ func TestCreateCluster(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			partialCluster := &provider.PartialCluster{}
-			partialCluster.ClusterSpec = tc.spec
+			partialCluster := &kubermaticv1.Cluster{}
+			partialCluster.Spec = *tc.spec
 			if tc.clusterType == "openshift" {
 				partialCluster.Annotations = map[string]string{
 					"kubermatic.io/openshift": "true",

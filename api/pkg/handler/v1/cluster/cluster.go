@@ -83,8 +83,8 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 			return nil, errors.NewAlreadyExists("cluster", spec.HumanReadableName)
 		}
 
-		partialCluster := &provider.PartialCluster{}
-		partialCluster.ClusterSpec = spec
+		partialCluster := &kubermaticapiv1.Cluster{}
+		partialCluster.Spec = *spec
 		if req.Body.Cluster.Type == "openshift" {
 			partialCluster.Annotations = map[string]string{
 				"kubermatic.io/openshift": "true",
