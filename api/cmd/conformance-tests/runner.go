@@ -474,8 +474,14 @@ func (r *testRunner) executeGinkgoRunWithRetries(log *logrus.Entry, run *ginkgoR
 	return ginkgoRes, err
 }
 
-func (r *testRunner) setupNodes(log *logrus.Entry, scenarioName string, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, nodeDeployment *kubermaticapiv1.NodeDeployment, dc provider.DatacenterMeta) error {
-	log.Info("Creating machineDeployment..")
+func (r *testRunner) setupNodes(parentLog *logrus.Entry, scenarioName string, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, nodeDeployment *kubermaticapiv1.NodeDeployment, dc provider.DatacenterMeta) error {
+	ctx := context.Background()
+	log := parentLog.WithFields(logrus.Fields{
+		"nd-node-count": nodeDeployment.Spec.Replicas,
+		"node-count":    r.nodeCount,
+	})
+
+	log.Info("Creating machineDeployment...")
 	client, err := r.clusterClientProvider.GetClient(cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get the machine client for the cluster: %v", err)
@@ -497,16 +503,24 @@ func (r *testRunner) setupNodes(log *logrus.Entry, scenarioName string, cluster 
 			return nil
 		}
 		machineList := &clusterv1alpha1.MachineList{}
-		if err := client.List(context.TODO(), &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineList); err != nil {
+		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineList); err != nil {
 			return fmt.Errorf("failed to list machines: %v", err)
 		}
+		log.Infof("Found %d already existing Machines from a former run", len(machineList.Items))
 		machinesWithoutOwner := int32(0)
-		for _, machine := range machineList.Items {
-			if len(machine.OwnerReferences) > 0 {
+		for _, m := range machineList.Items {
+			if len(m.OwnerReferences) > 0 {
 				continue
 			}
+			log.WithFields(logrus.Fields{"machine": m.Name}).Infof("Found machine without OwnerReference.")
 			machinesWithoutOwner++
 		}
+		log.Infof(
+			"Reducing the number of replicas for the new MachineDeployment by %d so we end up with a total of %d Nodes, due to %d already existing Machines from a former test run",
+			machinesWithoutOwner,
+			nodeDeployment.Spec.Replicas,
+			machinesWithoutOwner,
+		)
 		nodeDeployment.Spec.Replicas = nodeDeployment.Spec.Replicas - machinesWithoutOwner
 		return nil
 	}); err != nil {
@@ -521,14 +535,13 @@ func (r *testRunner) setupNodes(log *logrus.Entry, scenarioName string, cluster 
 		return fmt.Errorf("failed to get MachineDeployment from NodeDeployment: %v", err)
 	}
 
+	log = log.WithField("machineDeployment", machineDeployment.Name)
 	if err := retryNAttempts(defaultAPIRetries, func(attempt int) error {
-		if err := client.Create(context.TODO(), machineDeployment); err != nil {
+		if err := client.Create(ctx, machineDeployment); err != nil {
 			if kerrors.IsAlreadyExists(err) {
 				return nil
 			}
-			log.WithField("machineDeployment", machineDeployment.Name).
-				Warnf("[Attempt %d/%d] Failed to create MachineDeployment: %v. Retrying",
-					attempt, defaultAPIRetries, err)
+			log.Warnf("[Attempt %d/%d] Failed to create MachineDeployment: %v. Retrying", attempt, defaultAPIRetries, err)
 			time.Sleep(defaultUserClusterPollInterval)
 			return err
 		}
@@ -543,18 +556,27 @@ func (r *testRunner) setupNodes(log *logrus.Entry, scenarioName string, cluster 
 	// func which always returns a new MachineDeployment
 	if err := retryNAttempts(defaultAPIRetries, func(_ int) error {
 		mdName := machineDeployment.Name
-		if err := client.Get(context.TODO(), types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: mdName}, machineDeployment); err != nil {
+		if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: mdName}, machineDeployment); err != nil {
 			return fmt.Errorf("failed to get MachineDeployment %q: %v", mdName, err)
 		}
 		if *machineDeployment.Spec.Replicas == nodeDeployment.Spec.Replicas {
+			log.Debugf("Found an existing MachineDeployment with %d replicas. Not going to update the replicas", nodeDeployment.Spec.Replicas)
 			return nil
 		}
-		machineDeployment.Spec.Replicas = &nodeDeployment.Spec.Replicas
-		return client.Update(context.TODO(), machineDeployment)
+
+		// Create a copy to avoid changing the ND when changing the MD
+		replicas := nodeDeployment.Spec.Replicas
+		log.Infof(
+			"Found an existing MachineDeployment with %d replicas. Updating to %d replicas",
+			nodeDeployment.Spec.Replicas,
+			*machineDeployment.Spec.Replicas,
+		)
+		machineDeployment.Spec.Replicas = &replicas
+		return client.Update(ctx, machineDeployment)
 	}); err != nil {
 		return fmt.Errorf("failed to ensure machineDeployment has desired number of replicas: %v", err)
 	}
-	log.Infof("Successfully created %d machine(s)!", machineDeployment.Spec.Replicas)
+	log.Infof("Successfully created %d machine(s)!", *machineDeployment.Spec.Replicas)
 
 	if err := r.waitForReadyNodes(log, userClusterClient, r.nodeCount); err != nil {
 		return fmt.Errorf("failed waiting for nodes to become ready: %v", err)
