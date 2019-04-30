@@ -318,6 +318,13 @@ type CreateClusterSpec struct {
 	NodeDeployment *NodeDeployment `json:"nodeDeployment,omitempty"`
 }
 
+const (
+	// OpenShiftClusterType defines the OpenShift cluster type
+	OpenShiftClusterType string = "openshift"
+	// KubernetesClusterType defines the Kubernetes cluster type
+	KubernetesClusterType string = "kubernetes"
+)
+
 // Cluster defines the cluster resource
 //
 // Note:
@@ -327,6 +334,7 @@ type CreateClusterSpec struct {
 // swagger:model Cluster
 type Cluster struct {
 	ObjectMeta `json:",inline"`
+	Type       string        `json:"type"`
 	Spec       ClusterSpec   `json:"spec"`
 	Status     ClusterStatus `json:"status"`
 }

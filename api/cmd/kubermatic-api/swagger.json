@@ -3706,6 +3706,10 @@
         },
         "status": {
           "$ref": "#/definitions/ClusterStatus"
+        },
+        "type": {
+          "type": "string",
+          "x-go-name": "Type"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
