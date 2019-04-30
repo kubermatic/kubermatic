@@ -568,8 +568,8 @@ func (r *testRunner) setupNodes(parentLog *logrus.Entry, scenarioName string, cl
 		replicas := nodeDeployment.Spec.Replicas
 		log.Infof(
 			"Found an existing MachineDeployment with %d replicas. Updating to %d replicas",
-			nodeDeployment.Spec.Replicas,
 			*machineDeployment.Spec.Replicas,
+			replicas,
 		)
 		machineDeployment.Spec.Replicas = &replicas
 		return client.Update(ctx, machineDeployment)
