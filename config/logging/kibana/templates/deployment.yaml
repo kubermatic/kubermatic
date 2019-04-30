@@ -26,7 +26,7 @@ spec:
         resources:
 {{ toYaml .Values.logging.kibana.resources | indent 10 }}
         env:
-        - name: ELASTICSEARCH_URL
+        - name: ELASTICSEARCH_HOSTS
           value: http://es-data:9200
         ports:
         - containerPort: 5601
@@ -40,7 +40,7 @@ spec:
         resources:
 {{ toYaml .Values.logging.kibana.setupContainer.resources | indent 10 }}
         env:
-        - name: ELASTICSEARCH_URL
+        - name: ELASTICSEARCH_HOSTS
           value: http://es-data:9200
         - name: KIBANA_URL
           value: http://127.0.0.1:5601

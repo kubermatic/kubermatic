@@ -18,7 +18,7 @@ ensure_index_pattern() {
 
    # Check if the index pattern already exists.
    patterns=$(kibana "${KIBANA_URL}/api/saved_objects/_find?type=index-pattern&search_fields=title&search=logstash-\\*" | jq '.total')
-   if [ "$patterns" -eq 1 ]; then
+   if [ "$patterns" -ge 1 ]; then
       return 0
    fi
 
