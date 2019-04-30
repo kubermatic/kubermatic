@@ -43,15 +43,12 @@ const (
 	nodeDeploymentCreationStart   NodeDeploymentEvent = "NodeDeploymentCreationStart"
 	nodeDeploymentCreationSuccess NodeDeploymentEvent = "NodeDeploymentCreationSuccess"
 	nodeDeploymentCreationFail    NodeDeploymentEvent = "NodeDeploymentCreationFail"
-
-	openShiftClusterType  = "openshift"
-	kubernetesClusterType = "kubernetes"
 )
 
-// serviceAccountGroupsPrefixes holds a list of groups with prefixes that we will generate RBAC Roles/Binding for service account.
+// clusterTypes holds a list of supported cluster types
 var clusterTypes = []string{
-	openShiftClusterType,
-	kubernetesClusterType,
+	apiv1.OpenShiftClusterType,
+	apiv1.KubernetesClusterType,
 }
 
 func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider,
@@ -86,7 +83,15 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 			return nil, errors.NewAlreadyExists("cluster", spec.HumanReadableName)
 		}
 
-		newCluster, err := clusterProvider.New(project, userInfo, spec, req.Body.Cluster.Type)
+		partialCluster := &provider.PartialCluster{}
+		partialCluster.ClusterSpec = spec
+		if req.Body.Cluster.Type == "openshift" {
+			partialCluster.Annotations = map[string]string{
+				"kubermatic.io/openshift": "true",
+			}
+		}
+
+		newCluster, err := clusterProvider.New(project, userInfo, partialCluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -501,13 +506,13 @@ func convertInternalClusterToExternal(internalCluster *kubermaticapiv1.Cluster) 
 			Version: internalCluster.Spec.Version,
 			URL:     internalCluster.Address.URL,
 		},
-		Type: kubernetesClusterType,
+		Type: apiv1.KubernetesClusterType,
 	}
 
 	isOpenShift, ok := internalCluster.Annotations["kubermatic.io/openshift"]
 	if ok {
 		if isOpenShift == "true" {
-			cluster.Type = openShiftClusterType
+			cluster.Type = apiv1.OpenShiftClusterType
 		}
 	}
 
@@ -727,7 +732,7 @@ func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
 	}
 
 	if len(req.Body.Cluster.Type) == 0 {
-		req.Body.Cluster.Type = kubernetesClusterType
+		req.Body.Cluster.Type = apiv1.KubernetesClusterType
 	}
 
 	return req, nil

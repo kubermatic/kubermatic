@@ -318,6 +318,13 @@ type CreateClusterSpec struct {
 	NodeDeployment *NodeDeployment `json:"nodeDeployment,omitempty"`
 }
 
+const (
+	// OpenShiftClusterType defines the OpenShift cluster type
+	OpenShiftClusterType string = "openshift"
+	// KubernetesClusterType defines the Kubernetes cluster type
+	KubernetesClusterType string = "kubernetes"
+)
+
 // Cluster defines the cluster resource
 //
 // Note:

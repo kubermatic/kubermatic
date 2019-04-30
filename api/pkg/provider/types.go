@@ -83,11 +83,20 @@ type ProjectListOptions struct {
 	OwnerUID types.UID
 }
 
+// PartialCluster defines the partial cluster resources
+type PartialCluster struct {
+	// ClusterSpec defines the cluster specification
+	ClusterSpec *kubermaticv1.ClusterSpec
+
+	// Annotations defines the cluster annotations
+	Annotations map[string]string
+}
+
 // ClusterProvider declares the set of methods for interacting with clusters
 // This provider is Project and RBAC compliant
 type ClusterProvider interface {
 	// New creates a brand new cluster that is bound to the given project
-	New(project *kubermaticv1.Project, userInfo *UserInfo, spec *kubermaticv1.ClusterSpec, clusterType string) (*kubermaticv1.Cluster, error)
+	New(project *kubermaticv1.Project, userInfo *UserInfo, partialCluster *PartialCluster) (*kubermaticv1.Cluster, error)
 
 	// List gets all clusters that belong to the given project
 	// If you want to filter the result please take a look at ClusterListOptions
