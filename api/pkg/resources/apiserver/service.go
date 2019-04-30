@@ -48,6 +48,15 @@ func ExternalServiceCreator(serviceType corev1.ServiceType) reconciling.NamedSer
 			if se.Spec.Type == "" {
 				se.Spec.Type = serviceType
 			}
+			if se.Annotations == nil {
+				se.Annotations = map[string]string{}
+			}
+			if se.Spec.Type == corev1.ServiceTypeNodePort {
+				se.Annotations["nodeport-proxy.k8s.io/expose"] = "true"
+			} else {
+				delete(se.Annotations, "nodeport-proxy.k8s.io/expose")
+			}
+
 			se.Spec.Selector = map[string]string{
 				resources.AppLabelKey: name,
 			}

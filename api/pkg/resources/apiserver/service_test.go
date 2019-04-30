@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestExternalServiceCreator(t *testing.T) {
@@ -13,6 +14,7 @@ func TestExternalServiceCreator(t *testing.T) {
 		inputService        *corev1.Service
 		errExpected         bool
 		expectedServiceType corev1.ServiceType
+		annotationExpected  bool
 	}{
 		{
 			name:             "Err when servicetype clusterIP",
@@ -29,10 +31,18 @@ func TestExternalServiceCreator(t *testing.T) {
 			inputServiceType:    corev1.ServiceTypeNodePort,
 			errExpected:         false,
 			expectedServiceType: corev1.ServiceTypeNodePort,
+			annotationExpected:  true,
 		},
 		{
-			name:                "No err when servicetype LoadBalancer",
-			inputServiceType:    corev1.ServiceTypeLoadBalancer,
+			name:             "No err when servicetype LoadBalancer",
+			inputServiceType: corev1.ServiceTypeLoadBalancer,
+			inputService: &corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"nodeport-proxy.k8s.io/expose": "true",
+					},
+				},
+			},
 			errExpected:         false,
 			expectedServiceType: corev1.ServiceTypeLoadBalancer,
 		},
@@ -57,6 +67,7 @@ func TestExternalServiceCreator(t *testing.T) {
 			},
 			errExpected:         false,
 			expectedServiceType: corev1.ServiceTypeNodePort,
+			annotationExpected:  true,
 		},
 	}
 
@@ -76,6 +87,11 @@ func TestExternalServiceCreator(t *testing.T) {
 
 			if service.Spec.Type != tc.expectedServiceType {
 				t.Errorf("Expected service type to be %q but was %q", tc.expectedServiceType, service.Spec.Type)
+			}
+
+			if (service.Annotations["nodeport-proxy.k8s.io/expose"] != "") != tc.annotationExpected {
+				t.Errorf("Expected annotation 'nodeport-proxy.k8s.io/expose' to exist=%t but had value %q",
+					tc.annotationExpected, service.Annotations["nodeport-proxy.k8s.io/expose"])
 			}
 		})
 	}
