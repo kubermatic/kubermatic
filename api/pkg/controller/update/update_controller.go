@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/glog"
 
+	"github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
@@ -34,7 +35,7 @@ type Reconciler struct {
 
 // Manager specifies a set of methods to find suitable update versions for clusters
 type Manager interface {
-	AutomaticUpdate(from string) (*version.MasterVersion, error)
+	AutomaticUpdate(from, clusterType string) (*version.MasterVersion, error)
 }
 
 // Add creates a new update controller
@@ -93,7 +94,12 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil
 	}
 
-	update, err := r.updateManager.AutomaticUpdate(cluster.Spec.Version.String())
+	clusterType := v1.KubernetesClusterType
+	if _, ok := cluster.Annotations["kubermatic.io/openshift"]; ok {
+		clusterType = v1.OpenShiftClusterType
+	}
+
+	update, err := r.updateManager.AutomaticUpdate(cluster.Spec.Version.String(), clusterType)
 	if err != nil {
 		return fmt.Errorf("failed to get automatic update for cluster for version %s: %v", cluster.Spec.Version.String(), err)
 	}

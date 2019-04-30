@@ -627,7 +627,7 @@ func (r Routing) getMasterVersions() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 		)(cluster.GetMasterVersionsEndpoint(r.updateManager)),
-		decodeEmptyReq,
+		cluster.DecodeClusterTypeReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

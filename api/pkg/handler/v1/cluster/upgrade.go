@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Masterminds/semver"
 	"net/http"
 
+	"github.com/Masterminds/semver"
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -51,21 +51,29 @@ func GetUpgradesEndpoint(updateManager common.UpdateManager, projectProvider pro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		versions, err := updateManager.GetPossibleUpdates(cluster.Spec.Version.String())
+		clusterType := apiv1.KubernetesClusterType
+		if _, ok := cluster.Annotations["kubermatic.io/openshift"]; ok {
+			clusterType = apiv1.OpenShiftClusterType
+		}
+
+		versions, err := updateManager.GetPossibleUpdates(cluster.Spec.Version.String(), clusterType)
 		if err != nil {
 			return nil, err
 		}
 
 		var upgrades []*apiv1.MasterVersion
 		for _, v := range versions {
-			isRestrictedByKubeletVersions, err := isRestrictedByKubeletVersions(v, machineDeployments.Items)
-			if err != nil {
-				return nil, err
+			isRestricted := false
+			if clusterType == apiv1.KubernetesClusterType {
+				isRestricted, err = isRestrictedByKubeletVersions(v, machineDeployments.Items)
+				if err != nil {
+					return nil, err
+				}
 			}
 
 			upgrades = append(upgrades, &apiv1.MasterVersion{
 				Version:                    v.Version,
-				RestrictedByKubeletVersion: isRestrictedByKubeletVersions,
+				RestrictedByKubeletVersion: isRestricted,
 			})
 		}
 
@@ -112,7 +120,7 @@ func GetNodeUpgrades(updateManager common.UpdateManager) endpoint.Endpoint {
 			return nil, fmt.Errorf("failed to parse control plane version: %v", err)
 		}
 
-		versions, err := updateManager.GetMasterVersions()
+		versions, err := updateManager.GetMasterVersions(apiv1.KubernetesClusterType)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get master versions: %v", err)
 		}
@@ -223,12 +231,44 @@ func UpgradeNodeDeploymentsEndpoint(projectProvider provider.ProjectProvider) en
 
 func GetMasterVersionsEndpoint(updateManager common.UpdateManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		versions, err := updateManager.GetMasterVersions()
+		req := request.(TypeReq)
+		err := req.Validate()
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+		versions, err := updateManager.GetMasterVersions(req.Type)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get master versions: %v", err)
 		}
 		return convertVersionsToExternal(versions), nil
 	}
+}
+
+// TypeReq represents a request that contains the cluster type
+type TypeReq struct {
+	// in: query
+	Type string `json:"type"`
+}
+
+func (r TypeReq) Validate() error {
+	for _, clusterType := range clusterTypes {
+		if clusterType == r.Type {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid cluster type %s", r.Type)
+}
+
+// DecodeAddReq  decodes an HTTP request into TypeReq
+func DecodeClusterTypeReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req TypeReq
+
+	req.Type = r.URL.Query().Get("type")
+	if len(req.Type) == 0 {
+		req.Type = apiv1.KubernetesClusterType
+	}
+
+	return req, nil
 }
 
 func convertVersionsToExternal(versions []*version.MasterVersion) []*apiv1.MasterVersion {
