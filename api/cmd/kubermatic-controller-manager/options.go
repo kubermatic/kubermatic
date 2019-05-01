@@ -131,7 +131,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	return c, nil
 }
 
-func (o controllerRunOptions) validate() error {
+func (o *controllerRunOptions) validate() error {
 
 	if o.featureGates.Enabled(OpenIDAuthPlugin) {
 		if len(o.oidcIssuerURL) == 0 {
