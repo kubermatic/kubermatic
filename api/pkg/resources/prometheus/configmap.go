@@ -134,6 +134,31 @@ scrape_configs:
     target_label: __metrics_path__
     replacement: /api/v1/nodes/${1}/proxy/metrics
 
+- job_name: cadvisor
+  scheme: https
+  tls_config:
+    ca_file: /etc/kubernetes/ca.crt
+    cert_file: /etc/kubernetes/prometheus-client.crt
+    key_file: /etc/kubernetes/prometheus-client.key
+
+  kubernetes_sd_configs:
+  - role: node
+    api_server: 'https://{{ .APIServerURL }}'
+    tls_config:
+      ca_file: /etc/kubernetes/ca.crt
+      cert_file: /etc/kubernetes/prometheus-client.crt
+      key_file: /etc/kubernetes/prometheus-client.key
+
+  relabel_configs:
+  - action: labelmap
+    regex: __meta_kubernetes_node_label_(.+)
+  - target_label: __address__
+    replacement: '{{ .APIServerURL }}'
+  - source_labels: [__meta_kubernetes_node_name]
+    regex: (.+)
+    target_label: __metrics_path__
+    replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+
 - job_name: 'kubernetes-control-plane'
   kubernetes_sd_configs:
   - role: pod
