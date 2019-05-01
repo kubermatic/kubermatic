@@ -169,3 +169,13 @@ spec:
         requests:
           storage: {{ .Values.prometheus.storageSize }}
       storageClassName: kubermatic-fast
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: prometheus-kubermatic
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: prometheus-kubermatic
