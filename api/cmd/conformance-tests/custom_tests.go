@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -9,34 +10,36 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *testRunner) testPVC(log *logrus.Entry, kubeClient kubernetes.Interface, attempt int) error {
+func (r *testRunner) testPVC(log *logrus.Entry, userClusterClient ctrlruntimeclient.Client, attempt int) error {
 	log.Info("Testing support for PVC's...")
 
-	nsName := fmt.Sprintf("pvc-test-%d", attempt)
-	ns, err := kubeClient.CoreV1().Namespaces().Create(&corev1.Namespace{
+	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: nsName,
+			Name: fmt.Sprintf("pvc-test-%d", attempt),
 		},
-	})
-	if err != nil {
+	}
+	if err := userClusterClient.Create(context.Background(), ns); err != nil {
 		return fmt.Errorf("failed to create namespace: %v", err)
 	}
 
 	log.Info("Creating a StatefulSet with PVC...")
 	labels := map[string]string{"app": "data-writer"}
 	// Creating a simple StatefulSet with 1 replica which writes to the PV. That way we know if storage can be provisioned and consumed
-	set, err := kubeClient.AppsV1().StatefulSets(ns.Name).Create(&appsv1.StatefulSet{
+	set := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "data-writer",
+			Name:      "data-writer",
+			Namespace: ns.Name,
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
@@ -95,18 +98,20 @@ func (r *testRunner) testPVC(log *logrus.Entry, kubeClient kubernetes.Interface,
 				},
 			},
 		},
-	})
-	if err != nil {
+	}
+	if err := userClusterClient.Create(context.Background(), set); err != nil {
 		return fmt.Errorf("failed to create statefulset: %v", err)
 	}
 
 	log.Info("Waiting until the StatefulSet is ready...")
-	err = wait.Poll(10*time.Second, 10*time.Minute, func() (done bool, err error) {
-		currentSet, err := kubeClient.AppsV1().StatefulSets(ns.Name).Get(set.Name, metav1.GetOptions{})
-		if err != nil {
+	err := wait.Poll(10*time.Second, 10*time.Minute, func() (done bool, err error) {
+		currentSet := &appsv1.StatefulSet{}
+		name := types.NamespacedName{Namespace: ns.Name, Name: set.Name}
+		if err := userClusterClient.Get(context.Background(), name, currentSet); err != nil {
 			log.Warnf("failed to load StatefulSet %s/%s from API server during PVC test: %v", ns.Name, set.Name, err)
 			return false, nil
 		}
+
 		if currentSet.Status.ReadyReplicas == 1 {
 			return true, nil
 		}
@@ -120,24 +125,24 @@ func (r *testRunner) testPVC(log *logrus.Entry, kubeClient kubernetes.Interface,
 	return nil
 }
 
-func (r *testRunner) testLB(log *logrus.Entry, kubeClient kubernetes.Interface, attempt int) error {
+func (r *testRunner) testLB(log *logrus.Entry, userClusterClient ctrlruntimeclient.Client, attempt int) error {
 	log.Info("Testing support for LB's...")
 
-	nsName := fmt.Sprintf("lb-test-%d", attempt)
-	ns, err := kubeClient.CoreV1().Namespaces().Create(&corev1.Namespace{
+	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: nsName,
+			Name: fmt.Sprintf("lb-test-%d", attempt),
 		},
-	})
-	if err != nil {
+	}
+	if err := userClusterClient.Create(context.Background(), ns); err != nil {
 		return fmt.Errorf("failed to create namespace: %v", err)
 	}
 
 	log.Info("Creating a Service of type LoadBalancer...")
 	labels := map[string]string{"app": "hello"}
-	service, err := kubeClient.CoreV1().Services(ns.Name).Create(&corev1.Service{
+	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test",
+			Name:      "test",
+			Namespace: ns.Name,
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeLoadBalancer,
@@ -149,15 +154,16 @@ func (r *testRunner) testLB(log *logrus.Entry, kubeClient kubernetes.Interface, 
 				},
 			},
 		},
-	})
-	if err != nil {
+	}
+	if err := userClusterClient.Create(context.Background(), service); err != nil {
 		return fmt.Errorf("failed to create Service: %v", err)
 	}
 
-	_, err = kubeClient.CoreV1().Pods(ns.Name).Create(&corev1.Pod{
+	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "hello-kubernetes",
-			Labels: labels,
+			Name:      "hello-kubernetes",
+			Namespace: ns.Name,
+			Labels:    labels,
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
@@ -174,16 +180,17 @@ func (r *testRunner) testLB(log *logrus.Entry, kubeClient kubernetes.Interface, 
 				},
 			},
 		},
-	})
-	if err != nil {
+	}
+
+	if err := userClusterClient.Create(context.Background(), pod); err != nil {
 		return fmt.Errorf("failed to create Pod: %v", err)
 	}
 
 	var host string
 	log.Debug("Waiting until the Service has a public IP/Name...")
-	err = wait.Poll(10*time.Second, defaultTimeout, func() (done bool, err error) {
-		currentService, err := kubeClient.CoreV1().Services(ns.Name).Get(service.Name, metav1.GetOptions{})
-		if err != nil {
+	err := wait.Poll(10*time.Second, defaultTimeout, func() (done bool, err error) {
+		currentService := &corev1.Service{}
+		if err := userClusterClient.Get(context.Background(), types.NamespacedName{Namespace: ns.Name, Name: service.Name}, currentService); err != nil {
 			log.Warnf("failed to load Service %s/%s from API server during LB test: %v", ns.Name, service.Name, err)
 			return false, nil
 		}

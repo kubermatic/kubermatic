@@ -8,14 +8,10 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	admissionregistrationclientset "k8s.io/client-go/kubernetes/typed/admissionregistration/v1beta1"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	aggregationclientset "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -23,12 +19,8 @@ import (
 // UserClusterConnectionProvider describes the interface available for accessing
 // resources inside the user cluster
 type UserClusterConnectionProvider interface {
-	GetClient(*kubermaticv1.Cluster, ...ConfigOption) (kubernetes.Interface, error)
-	GetApiextensionsClient(*kubermaticv1.Cluster, ...ConfigOption) (apiextensionsclientset.Interface, error)
-	GetAdmissionRegistrationClient(*kubermaticv1.Cluster, ...ConfigOption) (admissionregistrationclientset.AdmissionregistrationV1beta1Interface, error)
-	GetKubeAggregatorClient(*kubermaticv1.Cluster, ...ConfigOption) (aggregationclientset.Interface, error)
-	GetDynamicClient(*kubermaticv1.Cluster, ...ConfigOption) (ctrlruntimeclient.Client, error)
-	GetAdminKubeconfig(*kubermaticv1.Cluster) ([]byte, error)
+	GetClient(*kubermaticv1.Cluster, ...ConfigOption) (ctrlruntimeclient.Client, error)
+	GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
 }
 
 // NewInternal returns a new instance of the client connection provider that
@@ -116,50 +108,8 @@ func (p *provider) GetClientConfig(c *kubermaticv1.Cluster, options ...ConfigOpt
 	return clientConfig, err
 }
 
-// GetClient returns a kubernetes client to interact with the given cluster
-func (p *provider) GetClient(c *kubermaticv1.Cluster, options ...ConfigOption) (kubernetes.Interface, error) {
-	config, err := p.GetClientConfig(c, options...)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	return client, nil
-}
-
-// GetApiextensionsClient returns a client to interact with apiextension resources for the given cluster
-func (p *provider) GetApiextensionsClient(c *kubermaticv1.Cluster, options ...ConfigOption) (apiextensionsclientset.Interface, error) {
-	config, err := p.GetClientConfig(c, options...)
-	if err != nil {
-		return nil, err
-	}
-	return apiextensionsclientset.NewForConfig(config)
-}
-
-// GetAdmissionRegistrationClient returns a client to interact with admissionregistration resources
-func (p *provider) GetAdmissionRegistrationClient(c *kubermaticv1.Cluster, options ...ConfigOption) (admissionregistrationclientset.AdmissionregistrationV1beta1Interface, error) {
-	config, err := p.GetClientConfig(c, options...)
-	if err != nil {
-		return nil, err
-	}
-	return admissionregistrationclientset.NewForConfig(config)
-}
-
-// GetKubeAggregatorClient returns a client to interact with the aggregation API for the given cluster
-func (p *provider) GetKubeAggregatorClient(c *kubermaticv1.Cluster, options ...ConfigOption) (aggregationclientset.Interface, error) {
-	config, err := p.GetClientConfig(c, options...)
-	if err != nil {
-		return nil, err
-	}
-	return aggregationclientset.NewForConfig(config)
-}
-
-// GetDynamicClient returns a dynamic client
-func (p *provider) GetDynamicClient(c *kubermaticv1.Cluster, options ...ConfigOption) (ctrlruntimeclient.Client, error) {
+// GetClient returns a dynamic client
+func (p *provider) GetClient(c *kubermaticv1.Cluster, options ...ConfigOption) (ctrlruntimeclient.Client, error) {
 	config, err := p.GetClientConfig(c, options...)
 	if err != nil {
 		return nil, err

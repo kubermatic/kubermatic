@@ -16,19 +16,15 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	admissionregistrationclientset "k8s.io/client-go/kubernetes/typed/admissionregistration/v1beta1"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
-	aggregationclientset "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -43,11 +39,7 @@ const (
 
 // userClusterConnectionProvider offers functions to retrieve clients for the given user clusters
 type userClusterConnectionProvider interface {
-	GetClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (kubernetes.Interface, error)
-	GetApiextensionsClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (apiextensionsclientset.Interface, error)
-	GetAdmissionRegistrationClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (admissionregistrationclientset.AdmissionregistrationV1beta1Interface, error)
-	GetKubeAggregatorClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (aggregationclientset.Interface, error)
-	GetDynamicClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
+	GetClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
 
 type Features struct {
@@ -225,7 +217,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 			}
 		}
 
-		userClusterClient, err := r.userClusterConnProvider.GetDynamicClient(cluster)
+		userClusterClient, err := r.userClusterConnProvider.GetClient(cluster)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user cluster client: %v", err)
 		}
