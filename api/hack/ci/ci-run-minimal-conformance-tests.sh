@@ -20,6 +20,10 @@ export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos}
 
 if [[ -n ${OPENSHIFT:-} ]]; then
   OPENSHIFT_ARG="-openshift=true"
+  OPENSHIFT_HELM_ARGS="--set-string=kubermatic.controller.featureGates=OpenIDAuthPlugin=true
+ --set-string=kubermatic.auth.tokenIssuer=$OIDC_ISSUER_URL
+ --set-string=kubermatic.auth.issuerClientID=$OIDC_ISSUER_CLIENT_ID
+ --set-string=kubermatic.auth.issuerClientSecret=$OIDC_ISSUER_CLIENT_SECRET"
 fi
 
 function cleanup {
@@ -172,6 +176,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
+  ${OPENSHIFT_HELM_ARGS:-} \
   --values ${VALUES_FILE} \
   --namespace $NAMESPACE \
   kubermatic-$BUILD_ID ./config/kubermatic/
@@ -227,6 +232,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
+  ${OPENSHIFT_HELM_ARGS:-} \
   --values ${VALUES_FILE} \
   --namespace $NAMESPACE \
   kubermatic-$BUILD_ID ./config/kubermatic/
