@@ -211,16 +211,16 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		apiServerExposeStrategy: r.apiServerExposeStrategy,
 	}
 
-	if err := r.address(ctx, cluster); err != nil {
-		return nil, fmt.Errorf("failed to reconcile the cluster address: %v", err)
-	}
-
 	if err := r.networkDefaults(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to setup cluster networking defaults: %v", err)
 	}
 
 	if err := r.services(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Services: %v", err)
+	}
+
+	if err := r.address(ctx, cluster); err != nil {
+		return nil, fmt.Errorf("failed to reconcile the cluster address: %v", err)
 	}
 
 	if err := r.secrets(ctx, osData); err != nil {

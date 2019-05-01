@@ -36,6 +36,11 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return err
 	}
 
+	// Set the hostname & url
+	if err := r.syncAddress(ctx, cluster); err != nil {
+		return fmt.Errorf("failed to sync address: %v", err)
+	}
+
 	// check that all secrets are available // New way of handling secrets
 	if err := r.ensureSecrets(ctx, cluster, data); err != nil {
 		return err
