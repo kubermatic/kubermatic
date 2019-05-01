@@ -18,6 +18,10 @@ echodate "Testing versions: ${VERSIONS}"
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos}
 
+if [[ -n ${OPENSHIFT:-} ]]; then
+  OPENSHIFT_ARG="-openshift=true"
+fi
+
 function cleanup {
   testRC=$?
 
@@ -202,6 +206,7 @@ timeout -s 9 90m ./conformance-tests \
   -versions="$VERSIONS" \
   -providers=aws \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
+  ${OPENSHIFT_ARG:-} \
   -kubermatic-delete-cluster=false
 
 # No upgradetest, just exit
@@ -252,4 +257,5 @@ timeout -s 9 60m ./conformance-tests \
   -versions="$VERSIONS" \
   -providers=aws \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
+  ${OPENSHIFT_ARG:-} \
   -kubermatic-delete-cluster=false
