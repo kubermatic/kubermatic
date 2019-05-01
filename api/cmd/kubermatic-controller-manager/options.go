@@ -17,6 +17,7 @@ import (
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/net"
 	certutil "k8s.io/client-go/util/cert"
@@ -55,6 +56,8 @@ type controllerRunOptions struct {
 	monitoringScrapeAnnotationPrefix                 string
 	dockerPullConfigJSONFile                         string
 	log                                              kubermaticlog.Options
+	apiserverExposeStrategy                          string
+	apiServerExposeStrategyParsed                    corev1.ServiceType
 
 	// OIDC configuration
 	oidcCAFile             string
@@ -96,6 +99,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.inClusterPrometheusRulesFile, "in-cluster-prometheus-rules-file", "", "The file containing the custom alerting rules for the prometheus running in the cluster-foo namespaces.")
 	flag.BoolVar(&c.inClusterPrometheusDisableDefaultRules, "in-cluster-prometheus-disable-default-rules", false, "A flag indicating whether the default rules for the prometheus running in the cluster-foo namespaces should be deployed.")
 	flag.StringVar(&c.dockerPullConfigJSONFile, "docker-pull-config-json-file", "config.json", "The file containing the docker auth config.")
+	flag.StringVar(&c.apiserverExposeStrategy, "apiserver-expose-strategy", "NodePort", "The strategy to expose the apiserver with, either NodePort which creates a NodePort with a `nodeport-proxy.k8s.io/expose: true` annotation or LoadBalancer, which creates a LoadBalancer")
 	flag.BoolVar(&c.inClusterPrometheusDisableDefaultScrapingConfigs, "in-cluster-prometheus-disable-default-scraping-configs", false, "A flag indicating whether the default scraping configs for the prometheus running in the cluster-foo namespaces should be deployed.")
 	flag.StringVar(&c.inClusterPrometheusScrapingConfigsFile, "in-cluster-prometheus-scraping-configs-file", "", "The file containing the custom scraping configs for the prometheus running in the cluster-foo namespaces.")
 	flag.StringVar(&c.monitoringScrapeAnnotationPrefix, "monitoring-scrape-annotation-prefix", "monitoring.kubermatic.io", "The prefix for monitoring annotations in the user cluster. Default: monitoring.kubermatic.io -> monitoring.kubermatic.io/port, monitoring.kubermatic.io/path")
@@ -194,6 +198,15 @@ func (o controllerRunOptions) validate() error {
 
 	if err := o.log.Validate(); err != nil {
 		return err
+	}
+
+	switch o.apiserverExposeStrategy {
+	case "NodePort":
+		o.apiServerExposeStrategyParsed = corev1.ServiceTypeNodePort
+	case "LoadBalancer":
+		o.apiServerExposeStrategyParsed = corev1.ServiceTypeLoadBalancer
+	default:
+		return fmt.Errorf("--apiserver-expose-strategy must be either `NodePort` or `LoadBalancer`, got %q", o.apiserverExposeStrategy)
 	}
 
 	return nil

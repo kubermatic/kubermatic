@@ -69,18 +69,19 @@ type Features struct {
 
 type Reconciler struct {
 	client.Client
-	scheme               *runtime.Scheme
-	recorder             record.EventRecorder
-	dcs                  map[string]provider.DatacenterMeta
-	dc                   string
-	overwriteRegistry    string
-	nodeAccessNetwork    string
-	etcdDiskSize         resource.Quantity
-	dockerPullConfigJSON []byte
-	workerName           string
-	externalURL          string
-	oidc                 OIDCConfig
-	features             Features
+	scheme                  *runtime.Scheme
+	recorder                record.EventRecorder
+	dcs                     map[string]provider.DatacenterMeta
+	dc                      string
+	overwriteRegistry       string
+	nodeAccessNetwork       string
+	etcdDiskSize            resource.Quantity
+	dockerPullConfigJSON    []byte
+	workerName              string
+	externalURL             string
+	oidc                    OIDCConfig
+	apiServerExposeStrategy corev1.ServiceType
+	features                Features
 }
 
 func Add(
@@ -95,22 +96,24 @@ func Add(
 	dockerPullConfigJSON []byte,
 	externalURL string,
 	oidcConfig OIDCConfig,
+	apiServerExposeStrategy corev1.ServiceType,
 	features Features,
 ) error {
 	reconciler := &Reconciler{
-		Client:               mgr.GetClient(),
-		scheme:               mgr.GetScheme(),
-		recorder:             mgr.GetRecorder(ControllerName),
-		dc:                   dc,
-		dcs:                  dcs,
-		overwriteRegistry:    overwriteRegistry,
-		nodeAccessNetwork:    nodeAccessNetwork,
-		etcdDiskSize:         etcdDiskSize,
-		dockerPullConfigJSON: dockerPullConfigJSON,
-		workerName:           workerName,
-		externalURL:          externalURL,
-		oidc:                 oidcConfig,
-		features:             features,
+		Client:                  dynamicClient,
+		scheme:                  mgr.GetScheme(),
+		recorder:                mgr.GetRecorder(ControllerName),
+		dc:                      dc,
+		dcs:                     dcs,
+		overwriteRegistry:       overwriteRegistry,
+		nodeAccessNetwork:       nodeAccessNetwork,
+		etcdDiskSize:            etcdDiskSize,
+		dockerPullConfigJSON:    dockerPullConfigJSON,
+		workerName:              workerName,
+		externalURL:             externalURL,
+		oidc:                    oidcConfig,
+		apiServerExposeStrategy: apiServerExposeStrategy,
+		features:                features,
 	}
 
 	c, err := controller.New(ControllerName, mgr,
@@ -198,13 +201,14 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
 	}
 	osData := &openshiftData{
-		cluster:           cluster,
-		client:            r.Client,
-		dc:                &dc,
-		overwriteRegistry: r.overwriteRegistry,
-		nodeAccessNetwork: r.nodeAccessNetwork,
-		oidc:              r.oidc,
-		etcdDiskSize:      r.etcdDiskSize,
+		cluster:                 cluster,
+		client:                  r.Client,
+		dc:                      &dc,
+		overwriteRegistry:       r.overwriteRegistry,
+		nodeAccessNetwork:       r.nodeAccessNetwork,
+		oidc:                    r.oidc,
+		etcdDiskSize:            r.etcdDiskSize,
+		apiServerExposeStrategy: r.apiServerExposeStrategy,
 	}
 
 	if err := r.address(ctx, cluster); err != nil {
@@ -676,7 +680,7 @@ func (r *Reconciler) networkDefaults(ctx context.Context, cluster *kubermaticv1.
 func getAllServiceCreators(osData *openshiftData) []reconciling.NamedServiceCreatorGetter {
 	return []reconciling.NamedServiceCreatorGetter{
 		apiserver.InternalServiceCreator(),
-		apiserver.ExternalServiceCreator(corev1.ServiceTypeNodePort),
+		apiserver.ExternalServiceCreator(osData.APIServerExposeStrategy()),
 		openvpn.ServiceCreator(),
 		etcd.ServiceCreator(osData),
 		dns.ServiceCreator(),

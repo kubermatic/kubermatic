@@ -21,6 +21,9 @@ kubermatic:
   kubeconfig: ""
   # The prefix for monitoring annotations in the user cluster. Default: monitoring.kubermatic.io -> monitoring.kubermatic.io/scrape, monitoring.kubermatic.io/path
   monitoringScrapeAnnotationPrefix: ""
+  # The strategy to expose the apiserver with, either "NodePort" which creates a NodePort with a "nodeport-proxy.k8s.io/expose": "true" annotation to expose all
+  # clusters on one central Service of type LoadBalancer via the NodePort proxy or "LoadBalancer" to create a LoadBalancer service per cluster
+  apiServerExposeStrategy: "NodePort"
 
   # helm hooks/checks
   checks:
