@@ -6,7 +6,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -26,12 +25,14 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("150m"),
 		},
 	}
+
+	certDirSize = resource.MustParse("1Mi")
 )
 
 const (
 	name = "metrics-server"
 
-	tag = "v0.3.2"
+	tag = "v0.5.0"
 )
 
 // DeploymentCreator returns the function to create and update the metrics server deployment
@@ -76,43 +77,70 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			}
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
 
-			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
-			if err != nil {
-				return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
-			}
-
-			dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(data, "dnat-controller", "")
-			if err != nil {
-				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
-			}
-
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:    name,
-					Image:   data.ImageRegistry(resources.RegistryGCR) + "/google_containers/metrics-server-amd64:" + tag,
-					Command: []string{"/metrics-server"},
+					Name:            name,
+					Image:           data.ImageRegistry(resources.RegistryDocker) + "/directxman12/k8s-prometheus-adapter-amd64:" + tag,
+					ImagePullPolicy: corev1.PullIfNotPresent,
+					Command:         []string{"/adapter"},
 					Args: []string{
-						"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+						"--secure-port", "6443",
+						"--logtostderr",
+						"--v", "2",
+						"--cert-dir", "/etc/adapter-certs",
+						"--prometheus-url", "http://prometheus:9090/",
+						"--metrics-relist-interval", "1m",
+						"--config", "/etc/adapter/config.yaml",
+						"--lister-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 						"--authentication-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 						"--authorization-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-						"--kubelet-port", "10250",
-						"--kubelet-insecure-tls",
-						// We use the same as the API server as we use the same dnat-controller
-						"--kubelet-preferred-address-types", "ExternalIP,InternalIP",
-						"--v", "1",
-						"--logtostderr",
 					},
 					Resources: defaultResourceRequirements,
+					ReadinessProbe: &corev1.Probe{
+						Handler: corev1.Handler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/healthz",
+								Port:   intstr.FromInt(6443),
+								Scheme: "HTTPS",
+							},
+						},
+						FailureThreshold: 3,
+						PeriodSeconds:    5,
+						SuccessThreshold: 1,
+						TimeoutSeconds:   15,
+					},
+					LivenessProbe: &corev1.Probe{
+						Handler: corev1.Handler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/healthz",
+								Port:   intstr.FromInt(6443),
+								Scheme: "HTTPS",
+							},
+						},
+						InitialDelaySeconds: 60,
+						FailureThreshold:    8,
+						PeriodSeconds:       10,
+						SuccessThreshold:    1,
+						TimeoutSeconds:      30,
+					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      resources.MetricsServerKubeconfigSecretName,
 							MountPath: "/etc/kubernetes/kubeconfig",
 							ReadOnly:  true,
 						},
+						{
+							Name:      resources.MetricsServerConfigConfigMapName,
+							MountPath: "/etc/adapter",
+							ReadOnly:  true,
+						},
+						{
+							Name:      "cert-dir",
+							MountPath: "/etc/adapter-certs",
+							ReadOnly:  false,
+						},
 					},
 				},
-				*openvpnSidecar,
-				*dnatControllerSidecar,
 			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
@@ -136,20 +164,21 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.OpenVPNClientCertificatesSecretName,
+			Name: resources.MetricsServerConfigConfigMapName,
 			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.OpenVPNClientCertificatesSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: resources.MetricsServerConfigConfigMapName,
+					},
+					DefaultMode: resources.Int32(resources.DefaultAllReadOnlyMode),
 				},
 			},
 		},
 		{
-			Name: resources.KubeletDnatControllerKubeconfigSecretName,
+			Name: "cert-dir",
 			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.KubeletDnatControllerKubeconfigSecretName,
-					DefaultMode: resources.Int32(resources.DefaultAllReadOnlyMode),
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					SizeLimit: &certDirSize,
 				},
 			},
 		},

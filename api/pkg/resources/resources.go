@@ -154,6 +154,8 @@ const (
 	ClusterInfoConfigMapName = "cluster-info"
 	//PrometheusConfigConfigMapName is the name for the configmap containing the prometheus config
 	PrometheusConfigConfigMapName = "prometheus"
+	// MetricsServerConfigConfigMapName is the name for the ConfigMap containing the metrics server config
+	MetricsServerConfigConfigMapName = "metrics-server-config"
 
 	//PrometheusServiceAccountName is the name for the Prometheus serviceaccount
 	PrometheusServiceAccountName = "prometheus"
