@@ -162,7 +162,7 @@ func TestSyncClusterAddress(t *testing.T) {
 			client := fakectrlruntimeclient.NewFakeClient(service)
 
 			nodeDCs := map[string]provider.DatacenterMeta{
-				fakeDCName: provider.DatacenterMeta{
+				fakeDCName: {
 					SeedDNSOverwrite: &tc.seedDNSOverwrite,
 				},
 			}
