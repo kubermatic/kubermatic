@@ -13,12 +13,12 @@ import (
 func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return resources.MetricsServerPodDisruptionBudgetName, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
-			maxUnavailable := intstr.FromInt(1)
+			minAvailable := intstr.FromInt(1)
 			pdb.Spec = policyv1beta1.PodDisruptionBudgetSpec{
 				Selector: &metav1.LabelSelector{
 					MatchLabels: resources.BaseAppLabel(name, nil),
 				},
-				MaxUnavailable: &maxUnavailable,
+				MinAvailable: &minAvailable,
 			}
 			return pdb, nil
 		}
