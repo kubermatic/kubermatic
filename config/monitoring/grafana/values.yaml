@@ -15,7 +15,15 @@ grafana:
       memory: 128Mi
 
   nodeSelector: {}
-  affinity: {}
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app: grafana
+          topologyKey: kubernetes.io/hostname
+        weight: 100
   tolerations: []
 
   # Control where the provisioning files are located.
