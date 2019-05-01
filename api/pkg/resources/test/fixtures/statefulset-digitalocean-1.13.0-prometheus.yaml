@@ -94,7 +94,7 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
       serviceAccountName: prometheus
-      terminationGracePeriodSeconds: 600
+      terminationGracePeriodSeconds: 0
       volumes:
       - configMap:
           defaultMode: 256
