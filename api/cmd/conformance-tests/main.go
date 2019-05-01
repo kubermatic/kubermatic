@@ -318,14 +318,18 @@ func getScenarios(opts Opts, log *logrus.Entry) []testScenario {
 		// Openshift is only supported on CentOS
 		opts.excludeSelector.Distributions[providerconfig.OperatingSystemUbuntu] = true
 		opts.excludeSelector.Distributions[providerconfig.OperatingSystemCoreos] = true
+		opts.excludeSelector.Distributions[providerconfig.OperatingSystemCentOS] = false
 		// We only support one version of openshift
 		opts.versions = []*semver.Semver{semver.NewSemverOrDie("3.11.0")}
+		log.Infof("Distributions: %+T", opts.excludeSelector.Distributions)
+		log.Infof("Versions: %+T", opts.versions)
 	}
 
 	var scenarios []testScenario
 	if opts.providers.Has("aws") {
 		log.Info("Adding AWS scenarios")
 		scenarios = append(scenarios, getAWSScenarios(opts.versions)...)
+		log.Infof("Got %d aws scenarios", len(scenarios))
 	}
 	if opts.providers.Has("digitalocean") {
 		log.Info("Adding Digitalocean scenarios")
@@ -367,6 +371,8 @@ func getScenarios(opts Opts, log *logrus.Entry) []testScenario {
 			}
 		}
 	}
+
+	log.Infof("After filtering %d scenarios were left", len(filteredScenarios))
 
 	// Shuffle scenarios - avoids timeouts caused by quota issues
 	return shuffle(filteredScenarios)
