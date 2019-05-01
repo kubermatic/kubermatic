@@ -315,7 +315,7 @@ func getScenarios(opts Opts, log *logrus.Entry) []testScenario {
 	var scenarios []testScenario
 	if opts.providers.Has("aws") {
 		log.Info("Adding AWS scenarios")
-		scenarios = append(scenarios, getAWSScenarios(opts.excludeSelector, opts.versions)...)
+		scenarios = append(scenarios, getAWSScenarios(opts.versions)...)
 	}
 	if opts.providers.Has("digitalocean") {
 		log.Info("Adding Digitalocean scenarios")
@@ -337,9 +337,28 @@ func getScenarios(opts Opts, log *logrus.Entry) []testScenario {
 		log.Info("Adding Azure scenarios")
 		scenarios = append(scenarios, getAzureScenarios(opts.versions)...)
 	}
+
+	var filteredScenarios []testScenario
+	for _, scenario := range scenarios {
+		nd := scenario.Nodes(1)
+		if nd.Spec.Template.OperatingSystem.Ubuntu != nil {
+			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemUbuntu] {
+				filteredScenarios = append(filteredScenarios, scenario)
+			}
+		}
+		if nd.Spec.Template.OperatingSystem.ContainerLinux != nil {
+			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemCoreos] {
+				filteredScenarios = append(filteredScenarios, scenario)
+			}
+		}
+		if nd.Spec.Template.OperatingSystem.CentOS != nil {
+			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemCentOS] {
+				filteredScenarios = append(filteredScenarios, scenario)
+			}
+		}
+	}
 	// Shuffle scenarios - avoids timeouts caused by quota issues
-	scenarios = shuffle(scenarios)
-	return scenarios
+	return shuffle(filteredScenarios)
 }
 
 func setupHomeDir(log *logrus.Entry) (string, []byte, error) {
