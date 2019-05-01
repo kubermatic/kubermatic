@@ -304,7 +304,7 @@ func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, c *kuberm
 		return fmt.Errorf("failed to create the functions to handle VPA resources: %v", err)
 	}
 
-	return reconciling.ReconcileVerticalPodAutoscalers(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
+	return reconciling.ReconcileVerticalPodAutoscalers(ctx, creators, c.Status.NamespaceName, r.Client)
 }
 
 func (r *Reconciler) ensureStatefulSets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
