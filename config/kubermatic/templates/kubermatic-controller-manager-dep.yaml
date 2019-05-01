@@ -172,3 +172,13 @@ spec:
 {{ toYaml .Values.kubermatic.controller.affinity | indent 8 }}
       tolerations:
 {{ toYaml .Values.kubermatic.controller.tolerations | indent 8 }}
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: controller-manager-v1
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      role: controller-manager

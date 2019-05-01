@@ -95,6 +95,14 @@ kubermatic:
               operator: In
               values:
               - stable
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                role: controller-manager
+            topologyKey: kubernetes.io/hostname
+          weight: 10
     nodeSelector: {}
     tolerations:
     - key: only_critical
@@ -125,6 +133,14 @@ kubermatic:
               operator: In
               values:
               - stable
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                role: kubermatic-api
+            topologyKey: kubernetes.io/hostname
+          weight: 10
     nodeSelector: {}
     tolerations:
     - key: only_critical
@@ -164,6 +180,14 @@ kubermatic:
               operator: In
               values:
               - stable
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                role: kubermatic-ui
+            topologyKey: kubernetes.io/hostname
+          weight: 10
     nodeSelector: {}
     tolerations:
     - key: only_critical
