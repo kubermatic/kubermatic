@@ -21,20 +21,16 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
-	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	kubermaticsignals "github.com/kubermatic/kubermatic/api/pkg/signals"
-	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -55,9 +51,7 @@ type Opts struct {
 	nodeReadyWaitTimeout         time.Duration
 	publicKeys                   [][]byte
 	reportsRoot                  string
-	clusterLister                kubermaticv1lister.ClusterLister
-	kubermaticClient             kubermaticclientset.Interface
-	seedKubeClient               kubernetes.Interface
+	seedClusterClient            ctrlruntimeclient.Client
 	clusterClientProvider        clusterclient.UserClusterConnectionProvider
 	dcFile                       string
 	repoRoot                     string
@@ -255,31 +249,27 @@ func main() {
 		log.Fatal(err)
 	}
 
-	kubermaticClient := kubermaticclientset.NewForConfigOrDie(config)
-	opts.kubermaticClient = kubermaticClient
-	seedKubeClient := kubernetes.NewForConfigOrDie(config)
-	opts.seedKubeClient = seedKubeClient
-
-	seedCtrlruntimeClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
-	if err != nil {
-		log.Fatalf("failed to create ctrlruntimeclient for seed: %v", err)
+	if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
+		log.Fatalf("failed to add kubermatic scheme to mgr: %v", err)
+	}
+	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
+		log.Fatalf("failed to add clusterv1alpha1 to scheme: %v", err)
 	}
 
-	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, informer.DefaultInformerResyncPeriod)
+	seedClusterClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	opts.seedClusterClient = seedClusterClient
 
-	opts.clusterLister = kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister()
-
-	clusterClientProvider, err := clusterclient.NewExternal(seedCtrlruntimeClient)
+	clusterClientProvider, err := clusterclient.NewExternal(seedClusterClient)
 	if err != nil {
 		log.Fatalf("failed to get clusterClientProvider: %v", err)
 	}
 	opts.clusterClientProvider = clusterClientProvider
 
-	kubermaticInformerFactory.Start(rootCtx.Done())
-	kubermaticInformerFactory.WaitForCacheSync(rootCtx.Done())
-
 	if opts.cleanupOnStart {
-		if err := cleanupClusters(opts, log, kubermaticClient, clusterClientProvider); err != nil {
+		if err := cleanupClusters(opts, log, seedClusterClient, clusterClientProvider); err != nil {
 			log.Fatalf("failed to cleanup old clusters: %v", err)
 		}
 	}
@@ -294,22 +284,23 @@ func main() {
 	log.Infof("Whole suite took: %.2f seconds", time.Since(start).Seconds())
 }
 
-func cleanupClusters(opts Opts, log *logrus.Entry, kubermaticClient kubermaticclientset.Interface, clusterClientProvider clusterclient.UserClusterConnectionProvider) error {
+func cleanupClusters(opts Opts, log *logrus.Entry, seedClusterClient ctrlruntimeclient.Client, clusterClientProvider clusterclient.UserClusterConnectionProvider) error {
 	if opts.namePrefix == "" {
 		log.Fatalf("cleanup-on-start was specified but name-prefix is empty")
 	}
-	clusterList, err := kubermaticClient.KubermaticV1().Clusters().List(metav1.ListOptions{})
-	if err != nil {
+	clusterList := &kubermaticv1.ClusterList{}
+	if err := seedClusterClient.List(context.Background(), &ctrlruntimeclient.ListOptions{}, clusterList); err != nil {
 		return err
 	}
+
 	var wg sync.WaitGroup
 	for _, cluster := range clusterList.Items {
 		if strings.HasPrefix(cluster.Name, opts.namePrefix) {
 			wg.Add(1)
-			go func(cluster v1.Cluster) {
+			go func(cluster kubermaticv1.Cluster) {
 				clusterDeleteLog := logrus.WithFields(logrus.Fields{"cluster": cluster.Name})
 				defer wg.Done()
-				if err := tryToDeleteClusterWithRetries(clusterDeleteLog, &cluster, clusterClientProvider, kubermaticClient); err != nil {
+				if err := tryToDeleteClusterWithRetries(clusterDeleteLog, &cluster, clusterClientProvider, seedClusterClient); err != nil {
 					clusterDeleteLog.Errorf("failed to delete cluster: %v", err)
 				}
 			}(cluster)

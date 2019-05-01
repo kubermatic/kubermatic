@@ -41,7 +41,10 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 	md.Spec.Template.Labels = md.Spec.Selector.MatchLabels
 	md.Spec.Template.Spec.Labels = nd.Spec.Template.Labels
 
-	md.Spec.Replicas = &nd.Spec.Replicas
+	// Create a copy to avoid changing the ND when changing the MD
+	replicas := nd.Spec.Replicas
+	md.Spec.Replicas = &replicas
+
 	md.Spec.Template.Spec.Versions.Kubelet = nd.Spec.Template.Versions.Kubelet
 
 	if len(c.Spec.MachineNetworks) > 0 {
