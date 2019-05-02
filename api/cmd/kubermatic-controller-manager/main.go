@@ -154,6 +154,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 					if err := migrations.RunAll(ctrlCtx.mgr.GetConfig(), ctrlCtx.runOptions.workerName); err != nil {
 						glog.Errorf("failed to run migrations: %v", err)
 						stopLeaderElection()
+						return
 					}
 					glog.Info("Migrations executed successfully")
 
