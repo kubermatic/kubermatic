@@ -532,14 +532,7 @@ func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *opens
 }
 
 func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) error {
-	for _, namedDeploymentCreator := range r.getAllDeploymentCreators(ctx, osData) {
-		deploymentName, deploymentCreator := namedDeploymentCreator()
-		if err := reconciling.EnsureNamedObject(ctx,
-			nn(osData.Cluster().Status.NamespaceName, deploymentName), reconciling.DeploymentObjectWrapper(deploymentCreator), r.Client, &appsv1.Deployment{}); err != nil {
-			return fmt.Errorf("failed to ensure Deployment %s: %v", deploymentName, err)
-		}
-	}
-	return nil
+	return reconciling.ReconcileDeployments(ctx, r.getAllDeploymentCreators(ctx, osData), osData.Cluster().Status.NamespaceName, r.Client)
 }
 
 func GetCronJobCreators(osData *openshiftData) []reconciling.NamedCronJobCreatorGetter {

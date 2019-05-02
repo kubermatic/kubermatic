@@ -18,6 +18,15 @@ echodate "Testing versions: ${VERSIONS}"
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos}
 
+if [[ -n ${OPENSHIFT:-} ]]; then
+  OPENSHIFT_ARG="-openshift=true"
+  OPENSHIFT_HELM_ARGS="--set-string=kubermatic.controller.featureGates=OpenIDAuthPlugin=true
+ --set-string=kubermatic.auth.caBundle=$(cat /etc/oidc-data/oidc-ca-file|base64 -w0)
+ --set-string=kubermatic.auth.tokenIssuer=$OIDC_ISSUER_URL
+ --set-string=kubermatic.auth.issuerClientID=$OIDC_ISSUER_CLIENT_ID
+ --set-string=kubermatic.auth.issuerClientSecret=$OIDC_ISSUER_CLIENT_SECRET"
+fi
+
 function cleanup {
   testRC=$?
 
@@ -168,6 +177,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
+  ${OPENSHIFT_HELM_ARGS:-} \
   --values ${VALUES_FILE} \
   --namespace $NAMESPACE \
   kubermatic-$BUILD_ID ./config/kubermatic/
@@ -202,6 +212,7 @@ timeout -s 9 90m ./conformance-tests \
   -versions="$VERSIONS" \
   -providers=aws \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
+  ${OPENSHIFT_ARG:-} \
   -kubermatic-delete-cluster=false
 
 # No upgradetest, just exit
@@ -222,6 +233,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
+  ${OPENSHIFT_HELM_ARGS:-} \
   --values ${VALUES_FILE} \
   --namespace $NAMESPACE \
   kubermatic-$BUILD_ID ./config/kubermatic/
@@ -252,4 +264,5 @@ timeout -s 9 60m ./conformance-tests \
   -versions="$VERSIONS" \
   -providers=aws \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
+  ${OPENSHIFT_ARG:-} \
   -kubermatic-delete-cluster=false
