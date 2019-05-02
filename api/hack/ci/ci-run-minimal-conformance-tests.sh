@@ -21,6 +21,7 @@ export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos}
 if [[ -n ${OPENSHIFT:-} ]]; then
   OPENSHIFT_ARG="-openshift=true"
   OPENSHIFT_HELM_ARGS="--set-string=kubermatic.controller.featureGates=OpenIDAuthPlugin=true
+ --set-string=kubermatic.auth.caBundle=$(echo -n $OIDC_CA_BUNDLE|base64 -w0)
  --set-string=kubermatic.auth.tokenIssuer=$OIDC_ISSUER_URL
  --set-string=kubermatic.auth.issuerClientID=$OIDC_ISSUER_CLIENT_ID
  --set-string=kubermatic.auth.issuerClientSecret=$OIDC_ISSUER_CLIENT_SECRET"
