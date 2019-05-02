@@ -75,6 +75,7 @@ func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
 		seedClusterClient:            opts.seedClusterClient,
 		log:                          opts.log,
 		existingClusterLabel:         opts.existingClusterLabel,
+		openshift:                    opts.openshift,
 	}
 }
 
@@ -88,6 +89,7 @@ type testRunner struct {
 	workerName  string
 	homeDir     string
 	log         *logrus.Entry
+	openshift   bool
 
 	controlPlaneReadyWaitTimeout time.Duration
 	deleteClusterAfterTests      bool
@@ -304,11 +306,9 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 	if err != nil {
 		return nil, fmt.Errorf("failed to test cluster: %v", err)
 	}
-
 	if report == nil {
 		return nil, errors.New("no report generated")
 	}
-
 	return report, nil
 }
 
@@ -348,6 +348,18 @@ func (r *testRunner) testCluster(
 
 	report := &reporters.JUnitTestSuite{
 		Name: scenarioName,
+	}
+
+	testCase := reporters.JUnitTestCase{
+		Name:      "[Kubermatic] Test cluster becomes ready, nodes join and kubermatic-managed pods get ready",
+		ClassName: "Kubermatic custom tests",
+	}
+	report.TestCases = append(report.TestCases, testCase)
+	report.Tests++
+
+	if r.openshift {
+		// Openshift supports neither the conformance tests nor PVs/LBs yet :/
+		return report, nil
 	}
 
 	ginkgoRuns, err := r.getGinkgoRuns(log, scenarioName, kubeconfigFilename, cloudConfigFilename, cluster, nd, dc)
@@ -639,6 +651,13 @@ func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*k
 	}
 	if r.workerName != "" {
 		cluster.Labels[kubermaticv1.WorkerNameLabelKey] = r.workerName
+	}
+
+	if r.openshift {
+		if cluster.Annotations == nil {
+			cluster.Annotations = map[string]string{}
+		}
+		cluster.Annotations["kubermatic.io/openshift"] = "true"
 	}
 
 	log.Info("Creating cluster...")
