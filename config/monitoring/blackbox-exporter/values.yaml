@@ -15,7 +15,15 @@ blackboxExporter:
           memory: 32Mi
 
   nodeSelector: {}
-  affinity: {}
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app: blackbox-exporter
+          topologyKey: kubernetes.io/hostname
+        weight: 100
   tolerations: []
 
   modules:

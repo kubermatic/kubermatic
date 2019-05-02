@@ -29,5 +29,13 @@ alertmanager:
         memory: 32Mi
     storage: 100Mi
   nodeSelector: {}
-  affinity: {}
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app: alertmanager-kubermatic
+          topologyKey: kubernetes.io/hostname
+        weight: 100
   tolerations: []

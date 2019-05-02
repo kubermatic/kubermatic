@@ -23,5 +23,13 @@ kubeStateMetrics:
         memory: 48Mi
 
   nodeSelector: {}
-  affinity: {}
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app: kube-state-metrics
+          topologyKey: kubernetes.io/hostname
+        weight: 100
   tolerations: []
