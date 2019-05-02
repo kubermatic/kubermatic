@@ -88,7 +88,7 @@ func cleanupClusters(workerName string, ctx *cleanupContext) error {
 	selector(&options)
 	clusters, err := ctx.kubermaticClient.KubermaticV1().Clusters().List(options)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to list clusters: %v", err)
 	}
 
 	var errs []error
@@ -100,6 +100,7 @@ func cleanupClusters(workerName string, ctx *cleanupContext) error {
 			defer w.Done()
 
 			if err := cleanupCluster(c, ctx); err != nil {
+				err = fmt.Errorf("failed to cleanup cluster %q: %v", c.Name, err)
 				errLock.Lock()
 				defer errLock.Unlock()
 				errs = append(errs, err)
@@ -205,6 +206,11 @@ func removeWorkerLabelFromCluster(cluster *kubermaticv1.Cluster, kubermaticClien
 }
 
 func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	if cluster.Status.NamespaceName == "" {
+		glog.Infof("Skipping cleanup of cluster %q because its namespace is unset", cluster.Name)
+		return nil
+	}
+
 	glog.Infof("Cleaning up cluster %s", cluster.Name)
 
 	tasks := []ClusterTask{
@@ -265,6 +271,10 @@ func cleanupUser(user *kubermaticv1.User, ctx *cleanupContext) error {
 }
 
 func deleteResourceIgnoreNonExistent(namespace string, group string, version string, kind string, name string, ctx *cleanupContext) error {
+	if namespace == "" || group == "" || version == "" || kind == "" || name == "" {
+		return fmt.Errorf("failed to delete resource: All of namespace(%q), group(%q), version(%q), kind(%q) and name(%q) must be set",
+			namespace, group, version, kind, name)
+	}
 	client, err := rest.UnversionedRESTClientFor(ctx.config)
 	if err != nil {
 		return err
@@ -279,13 +289,13 @@ func deleteResourceIgnoreNonExistent(namespace string, group string, version str
 		Error()
 
 	if err != nil && k8serrors.IsNotFound(err) {
-		glog.Infof("Skipping %s of kind %s in %s because it doesn't exist.", name, kind, namespace)
+		glog.Infof("Skipping %q of kind %q in namespace %q because it doesn't exist.", name, kind, namespace)
 		return nil
 	} else if err == nil {
-		glog.Infof("Deleted %s of kind %s in %s.", name, kind, namespace)
+		glog.Infof("Deleted %q of kind %q in namespace %q.", name, kind, namespace)
 	}
 
-	return err
+	return fmt.Errorf("failed to delete %q of kind %q in namespace %q", name, kind, namespace)
 }
 
 func cleanupPrometheus(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
