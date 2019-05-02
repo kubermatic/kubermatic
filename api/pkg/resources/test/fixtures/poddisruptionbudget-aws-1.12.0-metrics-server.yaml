@@ -1,7 +1,7 @@
 metadata:
   creationTimestamp: null
 spec:
-  maxUnavailable: 1
+  minAvailable: 1
   selector:
     matchLabels:
       app: metrics-server

@@ -109,5 +109,13 @@ prometheus:
           memory: 32Mi
 
   nodeSelector: {}
-  affinity: {}
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app: prometheus-kubermatic
+          topologyKey: kubernetes.io/hostname
+        weight: 100
   tolerations: []

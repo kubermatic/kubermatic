@@ -257,6 +257,7 @@ func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []reconciling.
 		etcd.PodDisruptionBudgetCreator(data),
 		apiserver.PodDisruptionBudgetCreator(),
 		metricsserver.PodDisruptionBudgetCreator(),
+		dns.PodDisruptionBudgetCreator(),
 	}
 }
 
