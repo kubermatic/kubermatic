@@ -38,6 +38,9 @@ function cleanup {
     echodate "tests failed, describing cluster"
     # TODO: If this runs on something other than AWS, we need to adjust the egrep expression
     kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Secret Access Key|Access Key Id'
+
+    echodate "Getting controllre manager logs"
+    kubectl logs -n $NAMESPACE  $(kubectl get pod -n $NAMESPACE -l role=controller-manager |tail -n 1|awk '{print $1}')
   fi
 
   # Delete addons from all clusters that have our worker-name label
