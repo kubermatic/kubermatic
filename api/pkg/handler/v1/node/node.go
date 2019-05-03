@@ -774,6 +774,8 @@ func apiNodeStatus(status apiv1.NodeStatus, inputNode *corev1.Node, hideInitialN
 	status.NodeInfo.OperatingSystem = inputNode.Status.NodeInfo.OperatingSystem
 	status.NodeInfo.KubeletVersion = inputNode.Status.NodeInfo.KubeletVersion
 	status.NodeInfo.Architecture = inputNode.Status.NodeInfo.Architecture
+	status.NodeInfo.ContainerRuntimeVersion = inputNode.Status.NodeInfo.ContainerRuntimeVersion
+	status.NodeInfo.KernelVersion = inputNode.Status.NodeInfo.KernelVersion
 	return status
 }
 
