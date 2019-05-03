@@ -38,4 +38,14 @@ spec:
 {{ toYaml .Values.kubermatic.ui.affinity | indent 8 }}
       tolerations:
 {{ toYaml .Values.kubermatic.ui.tolerations | indent 8 }}
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: kubermatic-ui-v2
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      role: kubermatic-ui
 {{ end }}

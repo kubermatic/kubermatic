@@ -58,6 +58,8 @@ const (
 	DNSResolverConfigMapName = "dns-resolver"
 	//DNSResolverServiceName is the name of the dns resolvers service
 	DNSResolverServiceName = "dns-resolver"
+	//DNSResolverPodDisruptionBudetName is the name of the dns resolvers pdb
+	DNSResolverPodDisruptionBudetName = "dns-resolver"
 	//DNSResolverVPAName is the name of the dns resolvers VerticalPodAutoscaler
 	KubeStateMetricsDeploymentName = "kube-state-metrics"
 	// UserClusterControllerDeploymentName is the name of the usercluster-controller deployment

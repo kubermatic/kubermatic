@@ -87,3 +87,13 @@ spec:
 {{ toYaml .Values.grafana.affinity | indent 8 }}
       tolerations:
 {{ toYaml .Values.grafana.tolerations | indent 8 }}
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: grafana
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: grafana

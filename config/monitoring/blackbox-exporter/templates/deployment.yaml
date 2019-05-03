@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   name: blackbox-exporter
 spec:
+  replicas: 1
   strategy:
     type: Recreate
   template:
@@ -36,3 +37,13 @@ spec:
 {{ toYaml .Values.blackboxExporter.affinity | indent 8 }}
       tolerations:
 {{ toYaml .Values.blackboxExporter.tolerations | indent 8 }}
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: blackbox-exporter
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: blackbox-exporter

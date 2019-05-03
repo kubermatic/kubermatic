@@ -562,6 +562,7 @@ func GetPodDisruptionBudgetCreators(osData *openshiftData) []reconciling.NamedPo
 	return []reconciling.NamedPodDisruptionBudgetCreatorGetter{
 		etcd.PodDisruptionBudgetCreator(osData),
 		apiserver.PodDisruptionBudgetCreator(),
+		dns.PodDisruptionBudgetCreator(),
 	}
 }
 

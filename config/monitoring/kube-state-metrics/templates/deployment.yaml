@@ -60,3 +60,13 @@ spec:
 {{ toYaml .Values.kubeStateMetrics.affinity | indent 8 }}
       tolerations:
 {{ toYaml .Values.kubeStateMetrics.tolerations | indent 8 }}
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: kube-state-metrics
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: kube-state-metrics
