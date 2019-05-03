@@ -23,7 +23,7 @@ spec:
         checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") $ | sha256sum }}
     spec:
       containers:
-      - name: keycloak-proxy
+      - name: keycloak-gatekeeper
         image: "{{ $.Values.iap.image.repository }}:{{ $.Values.iap.image.tag }}"
         imagePullPolicy: {{ $.Values.iap.image.pullPolicy }}
         args:
