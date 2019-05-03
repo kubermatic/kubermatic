@@ -19,7 +19,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 // UserClusterConnectionProvider describes the interface available for accessing
@@ -68,7 +67,7 @@ type provider struct {
 	clusterRESTMapper map[string]meta.RESTMapper
 }
 
-func (p *provider) getMapper(c *kubermaticv1.Cluster) (meta.RESTMapper, error) {
+func (p *provider) getMapper(c *kubermaticv1.Cluster, config *restclient.Config) (meta.RESTMapper, error) {
 	p.mapperLock.Lock()
 	defer p.mapperLock.Unlock()
 
@@ -76,14 +75,10 @@ func (p *provider) getMapper(c *kubermaticv1.Cluster) (meta.RESTMapper, error) {
 		return mapper, nil
 	}
 
-	// We need the raw admin config - we could use an impersonated as well, but there's no benefit.
-	adminConfig, err := p.GetClientConfig(c)
+	mapper, err := restmapper.NewDynamicRESTMapper(config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create the admin config for the REST mapper: %v", err)
+		return nil, err
 	}
-	mapper := restmapper.NewInvalidationRESTMapper(func() (meta.RESTMapper, error) {
-		return apiutil.NewDiscoveryRESTMapper(adminConfig)
-	})
 	glog.Infof("Created a mapper for cluster %s", c.Name)
 	p.clusterRESTMapper[c.Name] = mapper
 
@@ -152,13 +147,14 @@ func (p *provider) GetClientConfig(c *kubermaticv1.Cluster, options ...ConfigOpt
 
 // GetClient returns a dynamic client
 func (p *provider) GetClient(c *kubermaticv1.Cluster, options ...ConfigOption) (ctrlruntimeclient.Client, error) {
-	mapper, err := p.getMapper(c)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get the REST mapper for the client: %v", err)
-	}
 	config, err := p.GetClientConfig(c, options...)
 	if err != nil {
 		return nil, err
+	}
+
+	mapper, err := p.getMapper(c, config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the REST mapper for the client: %v", err)
 	}
 
 	dynamicClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{Mapper: mapper})
