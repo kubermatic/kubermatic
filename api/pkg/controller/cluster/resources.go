@@ -41,6 +41,11 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return fmt.Errorf("failed to sync address: %v", err)
 	}
 
+	// We should not proceed without having an IP address. Its required for all Kubeconfigs & triggers errors otherwise.
+	if cluster.Address.IP == "" {
+		return nil
+	}
+
 	// check that all secrets are available // New way of handling secrets
 	if err := r.ensureSecrets(ctx, cluster, data); err != nil {
 		return err
