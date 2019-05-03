@@ -89,6 +89,7 @@ func TestSyncClusterAddress(t *testing.T) {
 					{
 						Port:       int32(32000),
 						TargetPort: intstr.FromInt(32000),
+						NodePort:   32000,
 					},
 				},
 			},
@@ -105,6 +106,7 @@ func TestSyncClusterAddress(t *testing.T) {
 					{
 						Port:       int32(32000),
 						TargetPort: intstr.FromInt(32000),
+						NodePort:   32000,
 					},
 				},
 			},
@@ -193,7 +195,7 @@ func TestSyncClusterAddress(t *testing.T) {
 			}
 
 			if cluster.Address.Port != tc.expectedPort {
-				t.Errorf("Expected Port to be %q but was %q", tc.expectedPort, cluster.Address.Port)
+				t.Errorf("Expected Port to be %d but was %d", tc.expectedPort, cluster.Address.Port)
 			}
 
 			if cluster.Address.URL != tc.expectedURL {
