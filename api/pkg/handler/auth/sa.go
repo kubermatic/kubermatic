@@ -45,6 +45,14 @@ func (s *ServiceAccountAuthClient) Verify(ctx context.Context, token string) (To
 	if len(tokenList) > 1 {
 		return TokenClaims{}, fmt.Errorf("sa: found more than one token with the given id %s", customClaims.TokenID)
 	}
+	rawToken := tokenList[0]
+	tokenFromDB, ok := rawToken.Data["token"]
+	if !ok {
+		return TokenClaims{}, fmt.Errorf("sa: cannot verify the token (%s) because the corresponding token in the database is invalid", customClaims.TokenID)
+	}
+	if string(tokenFromDB) != token {
+		return TokenClaims{}, fmt.Errorf("sa: the token %s has been revoked for %s", customClaims.TokenID, customClaims.Email)
+	}
 
 	return TokenClaims{
 		Name:    customClaims.TokenID,

@@ -33,7 +33,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -617,7 +617,7 @@ func CheckStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t 
 	}
 }
 
-func GenSecret(projectID, saID, name, id string) *v1.Secret {
+func GenDefaultSaToken(projectID, saID, name, id string) *v1.Secret {
 	secret := &v1.Secret{}
 	secret.Name = fmt.Sprintf("sa-token-%s", id)
 	secret.Type = "Opaque"
@@ -669,12 +669,12 @@ func GenTestEvent(eventName, eventType, eventReason, eventMessage, kind, uid str
 	}
 }
 
-// AuthorizeRequestFunc is a helper function for authorizing a request
-type AuthorizeRequestFunc func(serviceaccount.TokenGenerator, *http.Request) error
+// StoreTokenAndAuthRequestFunc is a helper function for authorizing a request
+type StoreTokenAndAuthRequestFunc func(kubernetesclientset.Interface, serviceaccount.TokenGenerator, *http.Request) error
 
-// AuthorizeRequest given a ServiceAccount and a Secrets knows how to generate and add a valid token that is used for authentication
-func AuthorizeRequest(sa *kubermaticapiv1.User, s *v1.Secret) AuthorizeRequestFunc {
-	return func(tokenGenerator serviceaccount.TokenGenerator, req *http.Request) error {
+// StoreTokenAndAuthRequest given a ServiceAccount and a Secrets knows how to generate and add a valid token that is used for authentication
+func StoreSecretAndAuthRequest(sa *kubermaticapiv1.User, s *v1.Secret) StoreTokenAndAuthRequestFunc {
+	return func(fakeKubeClient kubernetesclientset.Interface, tokenGenerator serviceaccount.TokenGenerator, req *http.Request) error {
 		if len(sa.OwnerReferences) <= 0 {
 			return fmt.Errorf("haven't found an owner for the given sa %s", sa.Name)
 		}
@@ -688,7 +688,10 @@ func AuthorizeRequest(sa *kubermaticapiv1.User, s *v1.Secret) AuthorizeRequestFu
 		if err != nil {
 			return err
 		}
+
 		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-		return nil
+		s.Data["token"] = []byte(token)
+		_, err = fakeKubeClient.CoreV1().Secrets("kubermatic").Create(s)
+		return err
 	}
 }
