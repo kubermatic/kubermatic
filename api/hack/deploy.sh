@@ -37,6 +37,8 @@ function deploy {
   retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} upgrade --install --atomic ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
 }
 
+sed -i "s/__KUBERMATIC_TAG__/$GIT_HEAD_HASH/g" ./config/kubermatic/Chart.yaml
+
 echodate "Initializing Tiller in namespace ${TILLER_NAMESPACE}"
 # In clusters which have not been initialized yet, this will fail
 helm version --tiller-namespace ${TILLER_NAMESPACE} || true
