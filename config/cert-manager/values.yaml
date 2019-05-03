@@ -2,7 +2,7 @@ certManager:
   controller:
     image:
       repository: quay.io/jetstack/cert-manager-controller
-      tag: v0.7.1
+      tag: v0.7.2
       pullPolicy: IfNotPresent
 
     resources:
@@ -20,7 +20,7 @@ certManager:
   webhook:
     image:
       repository: quay.io/jetstack/cert-manager-webhook
-      tag: v0.7.1
+      tag: v0.7.2
       pullPolicy: IfNotPresent
 
     resources:
@@ -44,7 +44,7 @@ certManager:
   cainjector:
     image:
       repository: quay.io/jetstack/cert-manager-cainjector
-      tag: v0.7.1
+      tag: v0.7.2
       pullPolicy: IfNotPresent
 
     resources:
