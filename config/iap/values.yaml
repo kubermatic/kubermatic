@@ -5,7 +5,7 @@ iap:
     #   client_id: alertmanager
     #   client_secret: xxx
     #   encryption_key: xxx
-    #   config: ## see https://github.com/gambol99/keycloak-proxy#configuration
+    #   config: ## see https://www.keycloak.org/docs/latest/securing_apps/index.html#example-usage-and-configuration
     #   ## example configuration allowing access only to the mygroup from mygithuborg organization
     #     scopes:
     #     - "groups"
@@ -23,7 +23,7 @@ iap:
     #   client_id: grafana
     #   client_secret: xxx
     #   encryption_key: xxx
-    #   config: {} ## see https://github.com/gambol99/keycloak-proxy#configuration
+    #   config: {} ## see https://www.keycloak.org/docs/latest/securing_apps/index.html#example-usage-and-configuration
     #   upstream_service: grafana.monitoring.svc.cluster.local
     #   upstream_port: 3000
     #   ingress:
@@ -34,7 +34,7 @@ iap:
     #   client_id: kibana
     #   client_secret: xxx
     #   encryption_key: xxx
-    #   config: {} ## see https://github.com/gambol99/keycloak-proxy#configuration
+    #   config: {} ## see https://www.keycloak.org/docs/latest/securing_apps/index.html#example-usage-and-configuration
     #   upstream_service: kibana.logging.svc.cluster.local
     #   upstream_port: 5601
     #   ingress:
@@ -45,7 +45,7 @@ iap:
     #   client_id: prometheus
     #   client_secret: xxx
     #   encryption_key: xxx
-    #   config: {} ## see https://github.com/gambol99/keycloak-proxy#configuration
+    #   config: {} ## see https://www.keycloak.org/docs/latest/securing_apps/index.html#example-usage-and-configuration
     #   upstream_service: prometheus-kubermatic.monitoring.svc.cluster.local
     #   upstream_port: 9090
     #   ingress:
@@ -57,8 +57,8 @@ iap:
   port: 3000
 
   image:
-    repository: quay.io/gambol99/keycloak-proxy
-    tag: v2.3.0
+    repository: keycloak/keycloak-gatekeeper
+    tag: 6.0.1
     pullPolicy: IfNotPresent
 
   resources:
