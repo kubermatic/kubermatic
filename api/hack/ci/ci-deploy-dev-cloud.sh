@@ -31,6 +31,8 @@ export HELM_EXTRA_ARGS="--set=kubermatic.controller.image.tag=${GIT_HEAD_HASH} \
     --set=kubermatic.api.image.tag=${GIT_HEAD_HASH} \
     --set=kubermatic.masterController.image.tag=${GIT_HEAD_HASH}"
 
+sed -i "s/__KUBERMATIC_TAG__/$GIT_HEAD_HASH/g" ./config/kubermatic/Chart.yaml
+
 # deploy to dev
 vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > ${KUBECONFIG}
 vault kv get -field=values.yaml dev/seed-clusters/dev.kubermatic.io > ${VALUES_FILE}
