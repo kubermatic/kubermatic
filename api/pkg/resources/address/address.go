@@ -22,7 +22,6 @@ func SyncClusterAddress(ctx context.Context,
 	client ctrlruntimeclient.Client,
 	externalURL, seedDCName string,
 	nodeDCs map[string]provider.DatacenterMeta) ([]func(*kubermaticv1.Cluster), error) {
-
 	var modifiers []func(*kubermaticv1.Cluster)
 
 	nodeDc, found := nodeDCs[cluster.Spec.Cloud.DatacenterName]
@@ -44,6 +43,7 @@ func SyncClusterAddress(ctx context.Context,
 		return nil, fmt.Errorf("expected serviceType to be NodePort or LoadBalancer, was %q", service.Spec.Type)
 	}
 
+	// External Name
 	externalName := ""
 	if service.Spec.Type == corev1.ServiceTypeLoadBalancer {
 		externalName = service.Spec.LoadBalancerIP
@@ -58,6 +58,7 @@ func SyncClusterAddress(ctx context.Context,
 		glog.V(2).Infof("Set external name for cluster %s to %q", cluster.Name, externalName)
 	}
 
+	// Internal name
 	internalName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.ApiserverExternalServiceName, cluster.Status.NamespaceName)
 	if cluster.Address.InternalName != internalName {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
@@ -66,6 +67,7 @@ func SyncClusterAddress(ctx context.Context,
 		glog.V(2).Infof("Set internal name for cluster %s to '%s'", cluster.Name, internalName)
 	}
 
+	// IP
 	ip := ""
 	if service.Spec.Type == corev1.ServiceTypeLoadBalancer {
 		ip = service.Spec.LoadBalancerIP
@@ -95,7 +97,11 @@ func SyncClusterAddress(ctx context.Context,
 		return nil, fmt.Errorf("service %q has no port configured", serviceKey.String())
 	}
 
+	// Port
 	port := service.Spec.Ports[0].Port
+	if service.Spec.Type == corev1.ServiceTypeNodePort {
+		port = service.Spec.Ports[0].NodePort
+	}
 	if cluster.Address.Port != port {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.Port = port
@@ -103,6 +109,7 @@ func SyncClusterAddress(ctx context.Context,
 		glog.V(2).Infof("Set port for cluster %s to %d", cluster.Name, port)
 	}
 
+	// URL
 	url := fmt.Sprintf("https://%s:%d", externalName, port)
 	if cluster.Address.URL != url {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
