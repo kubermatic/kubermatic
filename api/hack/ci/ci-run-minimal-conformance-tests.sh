@@ -90,20 +90,24 @@ echodate "Successfully got secrets from Vault"
 
 
 # Build kubermatic binaries and push the image to quay
-docker ps &>/dev/null || start-docker.sh
-echodate "Logging into quay"
-docker login -u $QUAY_IO_USERNAME -p $QUAY_IO_PASSWORD quay.io
-echodate "Successfully logged into quay"
-
-echodate "Building binaries"
-time make -C api build
-cd api
-echodate "Building quay image"
-time docker build -t quay.io/kubermatic/api:${GIT_HEAD_HASH} .
-echodate "Pushing quay image"
-time retry 5 docker push quay.io/kubermatic/api:${GIT_HEAD_HASH}
-echodate "Finished building and pushing quay image"
-cd -
+if ! curl -Ss --fail \
+    "https://${QUAY_IO_USERNAME}:${QUAY_IO_PASSWORD}@quay.io/v1/repositories/kubermatic/api/tags/${GIT_HEAD_HASH}" &>/dev/null; then
+  docker ps &>/dev/null || start-docker.sh
+  echodate "Logging into quay"
+  docker login -u $QUAY_IO_USERNAME -p $QUAY_IO_PASSWORD quay.io
+  echodate "Successfully logged into quay"
+  echodate "Building binaries"
+  time make -C api build
+  cd api
+  echodate "Building quay image"
+  time docker build -t quay.io/kubermatic/api:${GIT_HEAD_HASH} .
+  echodate "Pushing quay image"
+  time retry 5 docker push quay.io/kubermatic/api:${GIT_HEAD_HASH}
+  echodate "Finished building and pushing quay image"
+  cd -
+else
+  echodate "Omitting building of binaries and docker image, as tag ${GIT_HEAD_HASH} already exists on quay"
+fi
 
 INITIAL_MANIFESTS=$(cat <<EOF
 apiVersion: v1
