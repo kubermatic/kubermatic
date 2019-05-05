@@ -81,7 +81,8 @@ echodate "Successfully got secrets from Vault"
 
 
 # Build kubermatic binaries and push the image to quay
-if ! curl --fail "https://${QUAY_IO_USERNAME}:${QUAY_IO_PASSWORD}@quay.io/v1/repositories/kubermatic/api/tags/${GIT_HEAD_HASH}"; then
+if ! curl -Ss --fail \
+    "https://${QUAY_IO_USERNAME}:${QUAY_IO_PASSWORD}@quay.io/v1/repositories/kubermatic/api/tags/${GIT_HEAD_HASH}" &>/dev/null; then
   docker ps &>/dev/null || start-docker.sh
   echodate "Logging into quay"
   docker login -u $QUAY_IO_USERNAME -p $QUAY_IO_PASSWORD quay.io
