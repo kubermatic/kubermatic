@@ -108,6 +108,7 @@ func statusOK(res http.ResponseWriter, _ *http.Request) {
 
 func setStatusCreatedHeader(f func(context.Context, http.ResponseWriter, interface{}) error) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, r http.ResponseWriter, i interface{}) error {
+		r.Header().Set(headerContentType, contentTypeJSON)
 		r.WriteHeader(http.StatusCreated)
 		return f(ctx, r, i)
 	}

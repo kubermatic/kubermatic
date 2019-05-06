@@ -11,6 +11,7 @@ import (
 // ProjectReq represents a request for project-specific data
 type ProjectReq struct {
 	// in: path
+	// required: true
 	ProjectID string `json:"project_id"`
 }
 
@@ -48,6 +49,7 @@ func DecodeGetProject(c context.Context, r *http.Request) (interface{}, error) {
 type DCReq struct {
 	ProjectReq
 	// in: path
+	// required: true
 	DC string `json:"dc"`
 }
 
@@ -73,6 +75,7 @@ func DecodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
 type GetClusterReq struct {
 	DCReq
 	// in: path
+	// required: true
 	ClusterID string `json:"cluster_id"`
 }
 

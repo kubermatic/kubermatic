@@ -145,6 +145,9 @@ func cmd() *cobra.Command {
 			for i := 0; i < 3; i++ {
 				var err error
 				provider, err = oidc.NewProvider(ctx, issuerURL)
+				if err == nil {
+					break
+				}
 				if err != nil {
 					fmt.Printf("Failed to query provider %q: %v, trying one more time", issuerURL, err)
 				}

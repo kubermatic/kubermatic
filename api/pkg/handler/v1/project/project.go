@@ -27,12 +27,12 @@ func CreateEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint 
 			return nil, errors.NewBadRequest("invalid request")
 		}
 
-		if len(projectRq.Name) == 0 {
+		if len(projectRq.Body.Name) == 0 {
 			return nil, errors.NewBadRequest("the name of the project cannot be empty")
 		}
 
 		user := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
-		kubermaticProject, err := projectProvider.New(user, projectRq.Name)
+		kubermaticProject, err := projectProvider.New(user, projectRq.Body.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -260,15 +260,20 @@ func DecodeUpdateRq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
+// projectReq defines HTTP request for createProject endpoint
+// swagger:parameters createProject
 type projectReq struct {
-	Name string `json:"name"`
+	// in:body
+	Body struct {
+		Name string `json:"name"`
+	}
 }
 
 // DecodeCreate decodes an HTTP request into projectReq
 func DecodeCreate(c context.Context, r *http.Request) (interface{}, error) {
 	var req projectReq
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
 	}
 
