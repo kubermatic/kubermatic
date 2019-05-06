@@ -98,7 +98,8 @@ type secrets struct {
 		Password string
 	}
 	Packet struct {
-		APIKey string
+		APIKey    string
+		ProjectID string
 	}
 }
 
@@ -170,6 +171,7 @@ func main() {
 	flag.StringVar(&opts.secrets.Azure.TenantID, "azure-tenant-id", "", "Azure: TenantID")
 	flag.StringVar(&opts.secrets.Azure.SubscriptionID, "azure-subscription-id", "", "Azure: SubscriptionID")
 	flag.StringVar(&opts.secrets.Packet.APIKey, "packet-api-key", "", "Packet: APIKey")
+	flag.StringVar(&opts.secrets.Packet.ProjectID, "packet-project-id", "", "Packet: ProjectID")
 
 	flag.Parse()
 
@@ -351,6 +353,10 @@ func getScenarios(opts Opts, log *logrus.Entry) []testScenario {
 	if opts.providers.Has("azure") {
 		log.Info("Adding Azure scenarios")
 		scenarios = append(scenarios, getAzureScenarios(opts.versions)...)
+	}
+	if opts.providers.Has("packet") {
+		log.Info("Adding Packet scenarios")
+		scenarios = append(scenarios, getPacketScenarios(opts.versions)...)
 	}
 
 	var filteredScenarios []testScenario
