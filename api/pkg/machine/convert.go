@@ -9,6 +9,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/packet"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
@@ -132,6 +133,18 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			Memory:          int(config.MemoryMB),
 			Template:        config.TemplateVMName.Value,
 			TemplateNetName: config.TemplateNetName.Value,
+		}
+	case providerconfig.CloudProviderPacket:
+		config := &packet.RawConfig{}
+		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
+			return nil, fmt.Errorf("failed to parse packet config: %v", err)
+		}
+		cloudSpec.Packet = &apiv1.PacketNodeSpec{
+			InstanceType: config.InstanceType.Value,
+			OS:           config.OS.Value,
+		}
+		for _, v := range config.Tags {
+			cloudSpec.Packet.Tags = append(cloudSpec.Packet.Tags, v.Value)
 		}
 	default:
 		return nil, fmt.Errorf("unknown cloud provider %q", decodedProviderSpec.CloudProvider)
