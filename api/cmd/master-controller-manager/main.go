@@ -13,6 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
@@ -21,12 +22,14 @@ import (
 	kuberinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 type controllerRunOptions struct {
 	kubeconfig   string
+	dcFile       string
 	masterURL    string
 	internalAddr string
 
@@ -43,6 +46,8 @@ type controllerContext struct {
 	kubeMasterInformerFactory       kuberinformers.SharedInformerFactory
 
 	mgr               manager.Manager
+	kubeconfig        *clientcmdapi.Config
+	datacenters       map[string]provider.DatacenterMeta
 	labelSelectorFunc func(*metav1.ListOptions)
 }
 
@@ -50,6 +55,7 @@ func main() {
 	var g run.Group
 	ctrlCtx := &controllerContext{}
 	flag.StringVar(&ctrlCtx.runOptions.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&ctrlCtx.runOptions.dcFile, "datacenters", "", "The datacenters.yaml file path")
 	flag.StringVar(&ctrlCtx.runOptions.masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&ctrlCtx.runOptions.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.IntVar(&ctrlCtx.runOptions.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
@@ -83,6 +89,16 @@ func main() {
 	ctrlCtx.kubermaticMasterInformerFactory = externalversions.NewFilteredSharedInformerFactory(ctrlCtx.kubermaticMasterClient, informer.DefaultInformerResyncPeriod, metav1.NamespaceAll, selector)
 	ctrlCtx.kubeMasterInformerFactory = kuberinformers.NewSharedInformerFactory(ctrlCtx.kubeMasterClient, informer.DefaultInformerResyncPeriod)
 	ctrlCtx.labelSelectorFunc = selector
+
+	ctrlCtx.datacenters, err = provider.LoadDatacentersMeta(ctrlCtx.runOptions.dcFile)
+	if err != nil {
+		glog.Fatal(err)
+	}
+
+	ctrlCtx.kubeconfig, err = clientcmd.LoadFromFile(ctrlCtx.runOptions.kubeconfig)
+	if err != nil {
+		glog.Fatal(err)
+	}
 
 	{
 		cfg, err := clientcmd.BuildConfigFromFlags(ctrlCtx.runOptions.masterURL, ctrlCtx.runOptions.kubeconfig)
