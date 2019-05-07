@@ -72,7 +72,7 @@ spec:
           claimName: prometheus-kubermatic-db-prometheus-kubermatic-{{ . }}
       - name: db-new-{{ . }}
         persistentVolumeClaim:
-          claimName: db-prometheus-{{ . }}
+          claimName: db-{{ template "name" $ }}-{{ . }}
       {{- end }}
 
 {{- range (until 2) }}
@@ -80,7 +80,7 @@ spec:
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: db-prometheus-{{ . }}
+  name: db-{{ template "name" $ }}-{{ . }}
   annotations:
     "helm.sh/resource-policy": keep
 spec:
