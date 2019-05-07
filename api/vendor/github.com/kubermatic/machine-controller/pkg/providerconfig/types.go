@@ -299,7 +299,7 @@ func (configVarResolver *ConfigVarResolver) GetConfigVarStringValueOrEnv(configV
 
 	envVal, envValFound := os.LookupEnv(envVarName)
 	if !envValFound {
-		return "", fmt.Errorf("all machanisms(value, secret, configMap) of getting the value failed, including reading from environment variable = %s which was not set", envVarName)
+		return "", fmt.Errorf("all mechanisms(value, secret, configMap) of getting the value failed, including reading from environment variable = %s which was not set", envVarName)
 	}
 	return envVal, nil
 }
@@ -326,7 +326,7 @@ func (configVarResolver *ConfigVarResolver) GetConfigVarBoolValueOrEnv(configVar
 	if stringVal == "" {
 		envVal, envValFound := os.LookupEnv(envVarName)
 		if !envValFound {
-			return false, fmt.Errorf("all machanisms(value, secret, configMap) of getting the value failed, including reading from environment variable = %s which was not set", envVarName)
+			return false, fmt.Errorf("all mechanisms(value, secret, configMap) of getting the value failed, including reading from environment variable = %s which was not set", envVarName)
 		}
 		stringVal = envVal
 	}

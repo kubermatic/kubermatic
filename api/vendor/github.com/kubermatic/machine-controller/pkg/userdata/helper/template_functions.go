@@ -17,6 +17,7 @@ limitations under the License.
 package helper
 
 import (
+	"regexp"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
@@ -37,4 +38,14 @@ func TxtFuncMap() template.FuncMap {
 	funcMap["containerRuntimeHealthCheckSystemdUnit"] = ContainerRuntimeHealthCheckSystemdUnit
 
 	return funcMap
+}
+
+// CleanupTemplateOutput postprocesses the output of the template processing. Those
+// may exist due to the working of template functions like those of the sprig package
+// or template condition.
+func CleanupTemplateOutput(output string) (string, error) {
+	// Valid YAML files are not allowed to have empty lines containing spaces or tabs.
+	// So far only cleanup.
+	woBlankLines := regexp.MustCompile(`(?m)^[ \t]+$`).ReplaceAllString(output, "")
+	return woBlankLines, nil
 }

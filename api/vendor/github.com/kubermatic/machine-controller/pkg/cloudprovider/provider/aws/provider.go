@@ -95,7 +95,8 @@ var (
 		providerconfig.OperatingSystemCentOS: {
 			description: "CentOS Linux 7 x86_64 HVM EBS*",
 			// The AWS marketplace ID from AWS
-			owner: "679593333241",
+			owner:       "679593333241",
+			productCode: "aw0evgkw8e5c1q413zgy5pjce",
 		},
 		providerconfig.OperatingSystemUbuntu: {
 			// Be as precise as possible - otherwise we might get a nightly dev build
@@ -154,6 +155,7 @@ type Config struct {
 type amiFilter struct {
 	description string
 	owner       string
+	productCode string
 }
 
 func getDefaultAMIID(client *ec2.EC2, os providerconfig.OperatingSystem, region string) (string, error) {
@@ -172,7 +174,7 @@ func getDefaultAMIID(client *ec2.EC2, os providerconfig.OperatingSystem, region 
 		return amiID.(string), nil
 	}
 
-	imagesOut, err := client.DescribeImages(&ec2.DescribeImagesInput{
+	describeImagesInput := &ec2.DescribeImagesInput{
 		Owners: aws.StringSlice([]string{filter.owner}),
 		Filters: []*ec2.Filter{
 			{
@@ -187,8 +189,21 @@ func getDefaultAMIID(client *ec2.EC2, os providerconfig.OperatingSystem, region 
 				Name:   aws.String("root-device-type"),
 				Values: aws.StringSlice([]string{"ebs"}),
 			},
+			{
+				Name:   aws.String("architecture"),
+				Values: aws.StringSlice([]string{"x86_64"}),
+			},
 		},
-	})
+	}
+
+	if filter.productCode != "" {
+		describeImagesInput.Filters = append(describeImagesInput.Filters, &ec2.Filter{
+			Name:   aws.String("product-code"),
+			Values: aws.StringSlice([]string{filter.productCode}),
+		})
+	}
+
+	imagesOut, err := client.DescribeImages(describeImagesInput)
 	if err != nil {
 		return "", err
 	}
