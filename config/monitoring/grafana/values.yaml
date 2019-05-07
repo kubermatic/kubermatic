@@ -46,6 +46,10 @@ grafana:
       #  type: file
 
     datasources:
+      # Kubernetes Service names to configure as data sources
+      prometheusServices:
+      - prometheus
+
       # read datasources from this path in the Helm chart; this is
       # evaluated during deployment, not during Grafana runtime!
       source: provisioning/datasources/*

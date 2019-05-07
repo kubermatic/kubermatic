@@ -46,7 +46,7 @@ iap:
     #   client_secret: xxx
     #   encryption_key: xxx
     #   config: {} ## see https://www.keycloak.org/docs/latest/securing_apps/index.html#example-usage-and-configuration
-    #   upstream_service: prometheus-kubermatic.monitoring.svc.cluster.local
+    #   upstream_service: prometheus.monitoring.svc.cluster.local
     #   upstream_port: 9090
     #   ingress:
     #     host: "prometheus.kubermatic.tld"
