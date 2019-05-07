@@ -54,7 +54,7 @@ spec:
             cpu: {{ .Values.nodePortPoxy.resources.envoyManager.limits.cpu | default .Values.nodePortProxy.resources.envoyManager.limits.cpu }}
             memory: {{ .Values.nodePortPoxy.resources.envoyManager.limits.memory | default .Values.nodePortProxy.resources.envoyManager.limits.memory }}
       - name: envoy
-        image: '{{ .Values.nodePortPoxy.envoy.image.repository }}:{{ .Values.nodePortPoxy.envoy.image.tag }}'
+        image: '{{ .Values.nodePortPoxy.envoy.image.repository | default .Values.nodePortProxy.envoy.image.repository }}:{{ .Values.nodePortPoxy.envoy.image.tag | default .Values.nodePortProxy.envoy.image.tag }}'
         command:
         - /usr/local/bin/envoy
         args:
