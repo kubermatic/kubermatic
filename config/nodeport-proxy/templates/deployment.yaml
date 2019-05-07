@@ -49,7 +49,7 @@ spec:
         resources:
 {{ toYaml .Values.nodePortPoxy.resources.envoyManager | indent 10 }}
       - name: envoy
-        image: '{{ .Values.nodePortPoxy.envoy.image.repository }}:{{ .Values.nodePortPoxy.envoy.image.tag }}'
+        image: '{{ .Values.nodePortPoxy.envoy.image.repository | default .Values.nodePortProxy.envoy.image.repository }}:{{ .Values.nodePortPoxy.envoy.image.tag | default .Values.nodePortProxy.envoy.image.tag }}'
         command:
         - /usr/local/bin/envoy
         args:
