@@ -126,7 +126,8 @@ func (r *reconciler) reconcileRoles(ctx context.Context) error {
 			namespacedName,
 			reconciling.RoleObjectWrapper(roleCreator),
 			r.Client,
-			&rbacv1.Role{}); err != nil {
+			&rbacv1.Role{},
+			false); err != nil {
 			return fmt.Errorf("failed to reconcile Role %q: %v", namespacedName.String(), err)
 		}
 	}
@@ -169,7 +170,8 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 			namespacedName,
 			reconciling.RoleBindingObjectWrapper(roleBindingCreator),
 			r.Client,
-			&rbacv1.RoleBinding{}); err != nil {
+			&rbacv1.RoleBinding{},
+			false); err != nil {
 			return fmt.Errorf("failed to reconcile RoleBinding %q: %v", namespacedName.String(), err)
 		}
 	}
