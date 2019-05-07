@@ -134,7 +134,7 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 			}
 
 			name := types.NamespacedName{Namespace: testNamespace, Name: testResourceName}
-			if err := EnsureNamedObject(context.Background(), name, test.creator, client, &corev1.ConfigMap{}); err != nil {
+			if err := EnsureNamedObject(context.Background(), name, test.creator, client, &corev1.ConfigMap{}, false); err != nil {
 				t.Errorf("EnsureObject returned an error while none was expected: %v", err)
 			}
 

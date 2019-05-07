@@ -58,6 +58,7 @@ func main() {
 				ResourceName:       "PodDisruptionBudget",
 				ImportAlias:        "policyv1beta1",
 				ResourceImportPath: "k8s.io/api/policy/v1beta1",
+				RequiresRecreate:   true,
 			},
 			{
 				ResourceName:       "VerticalPodAutoscaler",
@@ -148,7 +149,7 @@ import (
 )
 
 {{ range .Resources }}
-{{ namedReconcileFunc .ResourceName .ImportAlias .DefaultingFunc }}
+{{ namedReconcileFunc .ResourceName .ImportAlias .DefaultingFunc .RequiresRecreate }}
 {{- end }}
 
 `))
@@ -161,19 +162,25 @@ type reconcileFunctionData struct {
 	// Optional: A defaulting func for the given object type
 	// Must be defined inside the resources package
 	DefaultingFunc string
+	// Whether the resource must be recreated instead of updated. Required
+	// e.G. for PDBs
+	RequiresRecreate bool
 }
 
-func namedReconcileFunc(resourceName, importAlias, defaultingFunc string) (string, error) {
+func namedReconcileFunc(resourceName, importAlias, defaultingFunc string, requiresRecreate bool) (string, error) {
 	b := &bytes.Buffer{}
 	err := namedReconcileFunctionTemplate.Execute(b, struct {
-		ResourceName   string
-		ImportAlias    string
-		DefaultingFunc string
+		ResourceName     string
+		ImportAlias      string
+		DefaultingFunc   string
+		RequiresRecreate bool
 	}{
-		ResourceName:   resourceName,
-		ImportAlias:    importAlias,
-		DefaultingFunc: defaultingFunc,
+		ResourceName:     resourceName,
+		ImportAlias:      importAlias,
+		DefaultingFunc:   defaultingFunc,
+		RequiresRecreate: requiresRecreate,
 	})
+
 	if err != nil {
 		return "", err
 	}
@@ -216,7 +223,7 @@ func Reconcile{{ .ResourceName }}s(ctx context.Context, namedGetters []Named{{ .
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &{{ .ImportAlias }}.{{ .ResourceName }}{}); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &{{ .ImportAlias }}.{{ .ResourceName }}{}, {{ .RequiresRecreate}}); err != nil {
 			return fmt.Errorf("failed to ensure {{ .ResourceName }}: %v", err)
 		}
 	}

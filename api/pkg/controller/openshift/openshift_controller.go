@@ -385,7 +385,8 @@ func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *opens
 		nn(metav1.NamespaceSystem, tokenOwnerServiceAccountName),
 		reconciling.ServiceAccountObjectWrapper(tokenOwnerServiceAccountCreator),
 		userClusterClient,
-		&corev1.ServiceAccount{})
+		&corev1.ServiceAccount{},
+		false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create TokenOwnerServiceAccount in user cluster: %v", err)
 	}
@@ -395,7 +396,8 @@ func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *opens
 	err = reconciling.EnsureNamedObject(ctx,
 		nn("", tokenOwnerServiceAccountClusterRoleBindingName),
 		reconciling.ClusterRoleBindingObjectWrapper(tokenOwnerServiceAccountClusterRoleBindingCreator),
-		userClusterClient, &rbacv1.ClusterRoleBinding{})
+		userClusterClient, &rbacv1.ClusterRoleBinding{},
+		false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create TokenOwnerServiceAccountClusterRoleBinding in user cluster: %v", err)
 	}
@@ -425,7 +427,8 @@ func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *opens
 		nn(osData.Cluster().Status.NamespaceName, adminKubeconfigSecretName),
 		reconciling.SecretObjectWrapper(adminKubeconfigCreator),
 		r.Client,
-		&corev1.Secret{})
+		&corev1.Secret{},
+		false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to ensure token secret: %v", err)
 	}
@@ -471,7 +474,7 @@ func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
 	for _, namedSecretCreator := range r.getAllSecretCreators(ctx, osData) {
 		secretName, secretCreator := namedSecretCreator()
 		if err := reconciling.EnsureNamedObject(ctx,
-			nn(osData.Cluster().Status.NamespaceName, secretName), reconciling.SecretObjectWrapper(secretCreator), r.Client, &corev1.Secret{}); err != nil {
+			nn(osData.Cluster().Status.NamespaceName, secretName), reconciling.SecretObjectWrapper(secretCreator), r.Client, &corev1.Secret{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Secret %s: %v", secretName, err)
 		}
 	}
@@ -492,7 +495,8 @@ func (r *Reconciler) statefulSets(ctx context.Context, osData *openshiftData) er
 			nn(osData.Cluster().Status.NamespaceName, statefulSetName),
 			reconciling.StatefulSetObjectWrapper(statefulSetCreator),
 			r.Client,
-			&appsv1.StatefulSet{}); err != nil {
+			&appsv1.StatefulSet{},
+			false); err != nil {
 			return fmt.Errorf("failed to ensure StatefulSet %q: %v", statefulSetName, err)
 		}
 	}
@@ -514,7 +518,7 @@ func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) erro
 	for _, namedConfigmapCreator := range r.getAllConfigmapCreators(ctx, osData) {
 		configMapName, configMapCreator := namedConfigmapCreator()
 		if err := reconciling.EnsureNamedObject(ctx,
-			nn(osData.Cluster().Status.NamespaceName, configMapName), reconciling.ConfigMapObjectWrapper(configMapCreator), r.Client, &corev1.ConfigMap{}); err != nil {
+			nn(osData.Cluster().Status.NamespaceName, configMapName), reconciling.ConfigMapObjectWrapper(configMapCreator), r.Client, &corev1.ConfigMap{}, false); err != nil {
 			return fmt.Errorf("failed to ensure ConfigMap %s: %v", configMapName, err)
 		}
 	}
@@ -545,7 +549,7 @@ func (r *Reconciler) cronJobs(ctx context.Context, osData *openshiftData) error 
 	for _, cronJobCreator := range GetCronJobCreators(osData) {
 		cronJobName, cronJobCreator := cronJobCreator()
 		if err := reconciling.EnsureNamedObject(ctx,
-			nn(osData.Cluster().Status.NamespaceName, cronJobName), reconciling.CronJobObjectWrapper(cronJobCreator), r.Client, &batchv1beta1.CronJob{}); err != nil {
+			nn(osData.Cluster().Status.NamespaceName, cronJobName), reconciling.CronJobObjectWrapper(cronJobCreator), r.Client, &batchv1beta1.CronJob{}, false); err != nil {
 			return fmt.Errorf("failed to ensure CronJob %q: %v", cronJobName, err)
 		}
 	}
@@ -567,7 +571,8 @@ func (r *Reconciler) podDisruptionBudgets(ctx context.Context, osData *openshift
 			nn(osData.Cluster().Status.NamespaceName, pdbName),
 			reconciling.PodDisruptionBudgetObjectWrapper(pdbCreator),
 			r.Client,
-			&policyv1beta1.PodDisruptionBudget{}); err != nil {
+			&policyv1beta1.PodDisruptionBudget{},
+			true); err != nil {
 			return fmt.Errorf("failed to ensure PodDisruptionBudget %q: %v", pdbName, err)
 		}
 	}
@@ -594,7 +599,8 @@ func (r *Reconciler) verticalPodAutoscalers(ctx context.Context, osData *openshi
 			nn(osData.Cluster().Status.NamespaceName, name),
 			reconciling.VerticalPodAutoscalerObjectWrapper(creator),
 			r.Client,
-			&autoscalingv1beta2.VerticalPodAutoscaler{})
+			&autoscalingv1beta2.VerticalPodAutoscaler{},
+			false)
 		if err != nil {
 			return fmt.Errorf("failed to create VerticalPodAutoscaler %q: %v", name, err)
 		}
@@ -692,7 +698,7 @@ func (r *Reconciler) services(ctx context.Context, osData *openshiftData) error 
 	for _, namedServiceCreator := range getAllServiceCreators(osData) {
 		serviceName, serviceCreator := namedServiceCreator()
 		if err := reconciling.EnsureNamedObject(ctx,
-			nn(osData.Cluster().Status.NamespaceName, serviceName), reconciling.ServiceObjectWrapper(serviceCreator), r.Client, &corev1.Service{}); err != nil {
+			nn(osData.Cluster().Status.NamespaceName, serviceName), reconciling.ServiceObjectWrapper(serviceCreator), r.Client, &corev1.Service{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Service %s: %v", serviceName, err)
 		}
 	}
