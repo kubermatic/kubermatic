@@ -37,6 +37,9 @@ spec:
           - name: kubeconfig
             mountPath: "/opt/.kube/"
             readOnly: true
+          - name: datacenters
+            mountPath: "/opt/datacenter/"
+            readOnly: true
       containers:
       - name: master-controller
         command:
@@ -46,6 +49,7 @@ spec:
         - -v=4
         - -logtostderr
         - -kubeconfig=/opt/.kube/kubeconfig
+        - -datacenters=/opt/datacenter/datacenters.yaml
         {{- if .Values.kubermatic.worker_name }}
         - -worker-name={{ .Values.kubermatic.worker_name }}
         {{- end }}
@@ -63,6 +67,9 @@ spec:
       - name: kubeconfig
         secret:
           secretName: kubeconfig
+      - name: datacenters
+        secret:
+          secretName: datacenters
       nodeSelector:
 {{ toYaml .Values.kubermatic.masterController.nodeSelector | indent 8 }}
       affinity:
