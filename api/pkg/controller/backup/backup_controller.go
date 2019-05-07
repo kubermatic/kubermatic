@@ -286,7 +286,7 @@ func (r *Reconciler) ensureCronJobSecret(ctx context.Context, cluster *kubermati
 	err := reconciling.EnsureNamedObject(
 		ctx,
 		types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: secretName},
-		reconciling.SecretObjectWrapper(creator), r.Client, &corev1.Secret{})
+		reconciling.SecretObjectWrapper(creator), r.Client, &corev1.Secret{}, false)
 	if err != nil {
 		return fmt.Errorf("failed to ensure Secret %q: %v", secretName, err)
 	}
@@ -299,7 +299,7 @@ func (r *Reconciler) ensureCronJob(ctx context.Context, cluster *kubermaticv1.Cl
 	err := reconciling.EnsureNamedObject(ctx,
 		types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: name},
 		reconciling.CronJobObjectWrapper(creator),
-		r.Client, &batchv1beta1.CronJob{})
+		r.Client, &batchv1beta1.CronJob{}, false)
 	if err != nil {
 		return fmt.Errorf("failed to ensure Cronjob kube-system/%q: %v", name, err)
 	}

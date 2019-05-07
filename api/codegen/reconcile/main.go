@@ -57,6 +57,7 @@ func main() {
 				ResourceName:       "PodDisruptionBudget",
 				ImportAlias:        "policyv1beta1",
 				ResourceImportPath: "k8s.io/api/policy/v1beta1",
+				RequiresRecreate:   true,
 			},
 			{
 				ResourceName:       "VerticalPodAutoscaler",
@@ -147,7 +148,7 @@ import (
 )
 
 {{ range .Resources }}
-{{ namedReconcileFunc .ResourceName .ImportAlias }}
+{{ namedReconcileFunc .ResourceName .ImportAlias .RequiresRecreate }}
 {{- end }}
 
 `))
@@ -157,17 +158,21 @@ type reconcileFunctionData struct {
 	ResourceName       string
 	ResourceImportPath string
 	ImportAlias        string
+	RequiresRecreate   bool
 }
 
-func namedReconcileFunc(resourceName, importAlias string) (string, error) {
+func namedReconcileFunc(resourceName, importAlias string, requiresRecreate bool) (string, error) {
 	b := &bytes.Buffer{}
 	err := namedReconcileFunctionTemplate.Execute(b, struct {
-		ResourceName string
-		ImportAlias  string
+		ResourceName     string
+		ImportAlias      string
+		RequiresRecreate bool
 	}{
-		ResourceName: resourceName,
-		ImportAlias:  importAlias,
+		ResourceName:     resourceName,
+		ImportAlias:      importAlias,
+		RequiresRecreate: requiresRecreate,
 	})
+
 	if err != nil {
 		return "", err
 	}
@@ -207,7 +212,7 @@ func Reconcile{{ .ResourceName }}s(ctx context.Context, namedGetters []Named{{ .
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &{{ .ImportAlias }}.{{ .ResourceName }}{}); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &{{ .ImportAlias }}.{{ .ResourceName }}{}, {{ .RequiresRecreate}}); err != nil {
 			return fmt.Errorf("failed to ensure {{ .ResourceName }}: %v", err)
 		}
 	}

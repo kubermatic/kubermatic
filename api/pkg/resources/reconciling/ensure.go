@@ -46,7 +46,7 @@ func createWithName(rawcreate ObjectCreator, name string) ObjectCreator {
 }
 
 // EnsureNamedObject will generate the Object with the passed create function & create or update it in Kubernetes if necessary.
-func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName, rawcreate ObjectCreator, client ctrlruntimeclient.Client, emptyObject runtime.Object) error {
+func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName, rawcreate ObjectCreator, client ctrlruntimeclient.Client, emptyObject runtime.Object, requiresRecreate bool) error {
 	// A wrapper to ensure we always set the Namespace and Name. This is useful as we call create twice
 	create := createWithNamespace(rawcreate, namespacedName.Namespace)
 	create = createWithName(create, namespacedName.Name)
@@ -91,8 +91,17 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 		return nil
 	}
 
-	if err = client.Update(ctx, obj); err != nil {
-		return fmt.Errorf("failed to update object %T '%s': %v", obj, namespacedName.String(), err)
+	if !requiresRecreate {
+		if err := client.Update(ctx, obj); err != nil {
+			return fmt.Errorf("failed to update object %T '%s': %v", obj, namespacedName.String(), err)
+		}
+	} else {
+		if err := client.Delete(ctx, obj.DeepCopyObject()); err != nil {
+			return fmt.Errorf("failed to delete object %T %q: %v", obj, namespacedName.String(), err)
+		}
+		if err := client.Create(ctx, obj); err != nil {
+			return fmt.Errorf("failed to create object %T %q: %v", obj, namespacedName.String(), err)
+		}
 	}
 
 	// Wait until the object we retrieve via "client.Get" has a different ResourceVersion than the old object
