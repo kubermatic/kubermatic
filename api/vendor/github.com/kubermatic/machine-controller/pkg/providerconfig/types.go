@@ -1,3 +1,19 @@
+/*
+Copyright 2019 The Machine Controller Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package providerconfig
 
 import (
@@ -36,6 +52,7 @@ const (
 	CloudProviderDigitalocean CloudProvider = "digitalocean"
 	CloudProviderOpenstack    CloudProvider = "openstack"
 	CloudProviderGoogle       CloudProvider = "gce"
+	CloudProviderPacket       CloudProvider = "packet"
 	CloudProviderHetzner      CloudProvider = "hetzner"
 	CloudProviderLinode       CloudProvider = "linode"
 	CloudProviderVsphere      CloudProvider = "vsphere"
@@ -282,7 +299,7 @@ func (configVarResolver *ConfigVarResolver) GetConfigVarStringValueOrEnv(configV
 
 	envVal, envValFound := os.LookupEnv(envVarName)
 	if !envValFound {
-		return "", fmt.Errorf("all machanisms(value, secret, configMap) of getting the value failed, including reading from environment variable = %s which was not set", envVarName)
+		return "", fmt.Errorf("all mechanisms(value, secret, configMap) of getting the value failed, including reading from environment variable = %s which was not set", envVarName)
 	}
 	return envVal, nil
 }
@@ -309,7 +326,7 @@ func (configVarResolver *ConfigVarResolver) GetConfigVarBoolValueOrEnv(configVar
 	if stringVal == "" {
 		envVal, envValFound := os.LookupEnv(envVarName)
 		if !envValFound {
-			return false, fmt.Errorf("all machanisms(value, secret, configMap) of getting the value failed, including reading from environment variable = %s which was not set", envVarName)
+			return false, fmt.Errorf("all mechanisms(value, secret, configMap) of getting the value failed, including reading from environment variable = %s which was not set", envVarName)
 		}
 		stringVal = envVal
 	}

@@ -1,52 +1,54 @@
+/*
+Copyright 2019 The Machine Controller Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+//
+// UserData plugin for CoreOS.
+//
+
 package coreos
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"net"
 	"text/template"
 
 	"github.com/Masterminds/semver"
-	"k8s.io/apimachinery/pkg/runtime"
+
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
-	"github.com/kubermatic/machine-controller/pkg/userdata/cloud"
 	userdatahelper "github.com/kubermatic/machine-controller/pkg/userdata/helper"
-
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
-func getConfig(r runtime.RawExtension) (*Config, error) {
-	p := Config{}
-	if len(r.Raw) == 0 {
-		return &p, nil
-	}
-
-	if err := json.Unmarshal(r.Raw, &p); err != nil {
-		return nil, err
-	}
-	return &p, nil
-}
-
-// Config TODO
-type Config struct {
-	DisableAutoUpdate bool `json:"disableAutoUpdate"`
-}
-
-// Provider is a pkg/userdata.Provider implementation
+// Provider is a pkg/userdata/plugin.Provider implementation.
 type Provider struct{}
 
-// UserData renders user-data template
+// UserData renders user-data template to string.
 func (p Provider) UserData(
 	spec clusterv1alpha1.MachineSpec,
 	kubeconfig *clientcmdapi.Config,
-	ccProvider cloud.ConfigProvider,
+	cloudConfig string,
+	cloudProviderName string,
 	clusterDNSIPs []net.IP,
+	externalCloudProvider bool,
 ) (string, error) {
 
-	tmpl, err := template.New("user-data").Funcs(userdatahelper.TxtFuncMap()).Parse(ctTemplate)
+	tmpl, err := template.New("user-data").Funcs(userdatahelper.TxtFuncMap()).Parse(userDataTemplate)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse user-data template: %v", err)
 	}
@@ -56,21 +58,16 @@ func (p Provider) UserData(
 		return "", fmt.Errorf("invalid kubelet version: %v", err)
 	}
 
-	cpConfig, cpName, err := ccProvider.GetCloudConfig(spec)
-	if err != nil {
-		return "", fmt.Errorf("failed to get cloud config: %v", err)
-	}
-
 	pconfig, err := providerconfig.GetConfig(spec.ProviderSpec)
 	if err != nil {
 		return "", fmt.Errorf("failed to get provider config: %v", err)
 	}
 
 	if pconfig.OverwriteCloudConfig != nil {
-		cpConfig = *pconfig.OverwriteCloudConfig
+		cloudConfig = *pconfig.OverwriteCloudConfig
 	}
 
-	coreosConfig, err := getConfig(pconfig.OperatingSystemSpec)
+	coreosConfig, err := LoadConfig(pconfig.OperatingSystemSpec)
 	if err != nil {
 		return "", fmt.Errorf("failed to get coreos config from provider config: %v", err)
 	}
@@ -96,29 +93,30 @@ func (p Provider) UserData(
 		ClusterDNSIPs     []net.IP
 		KubernetesCACert  string
 		KubeletVersion    string
+		IsExternal        bool
 	}{
 		MachineSpec:       spec,
 		ProviderSpec:      pconfig,
 		CoreOSConfig:      coreosConfig,
 		Kubeconfig:        kubeconfigString,
-		CloudProvider:     cpName,
-		CloudConfig:       cpConfig,
+		CloudProvider:     cloudProviderName,
+		CloudConfig:       cloudConfig,
 		HyperkubeImageTag: fmt.Sprintf("v%s", kubeletVersion.String()),
 		ClusterDNSIPs:     clusterDNSIPs,
 		KubernetesCACert:  kubernetesCACert,
 		KubeletVersion:    kubeletVersion.String(),
+		IsExternal:        externalCloudProvider,
 	}
 	b := &bytes.Buffer{}
 	err = tmpl.Execute(b, data)
 	if err != nil {
 		return "", fmt.Errorf("failed to execute user-data template: %v", err)
 	}
-
-	return b.String(), nil
+	return userdatahelper.CleanupTemplateOutput(b.String())
 }
 
-const ctTemplate = `
-passwd:
+// UserData template.
+const userDataTemplate = `passwd:
   users:
     - name: core
       ssh_authorized_keys:
@@ -198,6 +196,8 @@ systemd:
         After=docker.service
         [Service]
         TimeoutStartSec=5min
+        CPUAccounting=true
+        MemoryAccounting=true
         Environment=KUBELET_IMAGE=docker://k8s.gcr.io/hyperkube-amd64:{{ .HyperkubeImageTag }}
         Environment="RKT_RUN_ARGS=--uuid-file-save=/var/cache/kubelet-pod.uuid \
           --insecure-options=image \
@@ -220,7 +220,7 @@ systemd:
         ExecStartPre=-/usr/bin/rkt rm --uuid-file=/var/cache/kubelet-pod.uuid
         ExecStartPre=-/bin/rm -rf /var/lib/rkt/cas/tmp/
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
-{{ kubeletFlags .KubeletVersion .CloudProvider .MachineSpec.Name .ClusterDNSIPs | indent 10 }}
+{{ kubeletFlags .KubeletVersion .CloudProvider .MachineSpec.Name .ClusterDNSIPs .IsExternal | indent 10 }}
         ExecStop=-/usr/bin/rkt stop --uuid-file=/var/cache/kubelet-pod.uuid
         Restart=always
         RestartSec=10
@@ -291,7 +291,6 @@ storage:
       contents:
         inline: |
 {{ .KubernetesCACert | indent 10 }}
-
 {{ if ne .CloudProvider "aws" }}
     - path: /etc/hostname
       filesystem: root
@@ -334,5 +333,4 @@ storage:
         inline: |
           #!/bin/bash
           set -xeuo pipefail
-{{ downloadBinariesScript .KubeletVersion false | indent 10 }}
-`
+{{ downloadBinariesScript .KubeletVersion false | indent 10 }}`

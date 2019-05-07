@@ -1,3 +1,19 @@
+/*
+Copyright 2019 The Machine Controller Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package helper
 
 import (
@@ -54,6 +70,7 @@ nf_conntrack_ipv4
 }
 
 // KernelSettings returns the list of kernel settings required for a kubernetes worker node
+// inotify changes according to https://github.com/kubernetes/kubernetes/issues/10421 - better than letting the kubelet die
 func KernelSettings() string {
 	return `net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
@@ -61,6 +78,7 @@ kernel.panic_on_oops = 1
 kernel.panic = 10
 net.ipv4.ip_forward = 1
 vm.overcommit_memory = 1
+fs.inotify.max_user_watches = 1048576
 `
 }
 

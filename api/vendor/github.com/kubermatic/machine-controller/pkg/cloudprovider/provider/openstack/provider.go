@@ -1,3 +1,19 @@
+/*
+Copyright 2019 The Machine Controller Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package openstack
 
 import (
@@ -65,6 +81,7 @@ type RawConfig struct {
 	Subnet           providerconfig.ConfigVarString   `json:"subnet"`
 	FloatingIPPool   providerconfig.ConfigVarString   `json:"floatingIpPool"`
 	AvailabilityZone providerconfig.ConfigVarString   `json:"availabilityZone"`
+	TrustDevicePath  providerconfig.ConfigVarBool     `json:"trustDevicePath"`
 	// This tag is related to server metadata, not compute server's tag
 	Tags map[string]string `json:"tags"`
 }
@@ -86,6 +103,7 @@ type Config struct {
 	Subnet           string
 	FloatingIPPool   string
 	AvailabilityZone string
+	TrustDevicePath  bool
 
 	Tags map[string]string
 }
@@ -175,6 +193,10 @@ func (p *provider) getConfig(s v1alpha1.ProviderSpec) (*Config, *providerconfig.
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	c.TrustDevicePath, err = p.configVarResolver.GetConfigVarBoolValue(rawConfig.TrustDevicePath)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 	c.Tags = rawConfig.Tags
 	if c.Tags == nil {
 		c.Tags = map[string]string{}
@@ -233,13 +255,13 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 	}
 
 	if c.Region == "" {
-		glog.V(4).Infof("Trying to default region for machine '%s'...", spec.Name)
+		glog.V(3).Infof("Trying to default region for machine '%s'...", spec.Name)
 		regions, err := getRegions(client)
 		if err != nil {
 			return spec, osErrorToTerminalError(err, "failed to get regions")
 		}
 		if len(regions) == 1 {
-			glog.V(4).Infof("Defaulted region for machine '%s' to '%s'", spec.Name, regions[0].ID)
+			glog.V(3).Infof("Defaulted region for machine '%s' to '%s'", spec.Name, regions[0].ID)
 			rawConfig.Region.Value = regions[0].ID
 		} else {
 			return spec, fmt.Errorf("could not default region because got '%v' results", len(regions))
@@ -247,25 +269,25 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 	}
 
 	if c.AvailabilityZone == "" {
-		glog.V(4).Infof("Trying to default availability zone for machine '%s'...", spec.Name)
+		glog.V(3).Infof("Trying to default availability zone for machine '%s'...", spec.Name)
 		availabilityZones, err := getAvailabilityZones(client, c.Region)
 		if err != nil {
 			return spec, osErrorToTerminalError(err, "failed to get availability zones")
 		}
 		if len(availabilityZones) == 1 {
-			glog.V(4).Infof("Defaulted availability zone for machine '%s' to '%s'", spec.Name, availabilityZones[0].ZoneName)
+			glog.V(3).Infof("Defaulted availability zone for machine '%s' to '%s'", spec.Name, availabilityZones[0].ZoneName)
 			rawConfig.AvailabilityZone.Value = availabilityZones[0].ZoneName
 		}
 	}
 
 	if c.Network == "" {
-		glog.V(4).Infof("Trying to default network for machine '%s'...", spec.Name)
+		glog.V(3).Infof("Trying to default network for machine '%s'...", spec.Name)
 		net, err := getDefaultNetwork(client, c.Region)
 		if err != nil {
 			return spec, osErrorToTerminalError(err, "failed to default network")
 		}
 		if net != nil {
-			glog.V(4).Infof("Defaulted network for machine '%s' to '%s'", spec.Name, net.Name)
+			glog.V(3).Infof("Defaulted network for machine '%s' to '%s'", spec.Name, net.Name)
 			// Use the id as the name may not be unique
 			rawConfig.Network.Value = net.ID
 		}
@@ -286,7 +308,7 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 			return spec, osErrorToTerminalError(err, "error defaulting subnet")
 		}
 		if subnet != nil {
-			glog.V(4).Infof("Defaulted subnet for machine '%s' to '%s'", spec.Name, *subnet)
+			glog.V(3).Infof("Defaulted subnet for machine '%s' to '%s'", spec.Name, *subnet)
 			rawConfig.Subnet.Value = *subnet
 		}
 	}
@@ -641,8 +663,8 @@ func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, nam
 			ManageSecurityGroups: true,
 		},
 		BlockStorage: BlockStorageOpts{
-			BSVersion:       "v2",
-			TrustDevicePath: false,
+			BSVersion:       "auto",
+			TrustDevicePath: c.TrustDevicePath,
 			IgnoreVolumeAZ:  true,
 		},
 		Version: spec.Versions.Kubelet,

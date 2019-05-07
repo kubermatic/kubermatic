@@ -104,7 +104,7 @@
   version = "v9"
 
 [[projects]]
-  digest = "1:3a0f1f257d0bc75c8c00646614161d24eccd878ccb698302d07236d600cd3b5a"
+  digest = "1:dd6f171b5480aa1cd279ac141429372ea63ef199e647eda39720a2405768de00"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -116,6 +116,7 @@
     "aws/credentials",
     "aws/credentials/ec2rolecreds",
     "aws/credentials/endpointcreds",
+    "aws/credentials/processcreds",
     "aws/credentials/stscreds",
     "aws/csm",
     "aws/defaults",
@@ -140,8 +141,8 @@
     "service/sts",
   ]
   pruneopts = "NUT"
-  revision = "ceab7b7ac6f535d1397f124620720b5145f1ad59"
-  version = "v1.15.88"
+  revision = "02b04d9dc048b05d3b3926aae2ee7621778f03f1"
+  version = "v1.19.25"
 
 [[projects]]
   branch = "master"
@@ -679,11 +680,11 @@
   version = "v1.4.0"
 
 [[projects]]
-  digest = "1:ac6d01547ec4f7f673311b4663909269bfb8249952de3279799289467837c3cc"
+  digest = "1:1f2aebae7e7c856562355ec0198d8ca2fa222fb05e5b1b66632a1fce39631885"
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "0b12d6b5"
+  revision = "c2b33e84"
 
 [[projects]]
   digest = "1:f37ee0958bc31d86520f1e98fb9c13a99f174f8d7f9747f777caeb2b0c5640b3"
@@ -726,9 +727,10 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:ec595db2829abd8f1dd08cf7f75658574e7220c12c631cb19da00906d5fa9462"
+  digest = "1:4a18c7cd27270416e89b30e3afe4f1b0dd9289ce855c5d081c7556f11776ce12"
   name = "github.com/kubermatic/machine-controller"
   packages = [
+    "pkg/apis/plugin",
     "pkg/cloudprovider/cloud",
     "pkg/cloudprovider/common/ssh",
     "pkg/cloudprovider/errors",
@@ -744,15 +746,15 @@
     "pkg/node/eviction",
     "pkg/providerconfig",
     "pkg/userdata/centos",
-    "pkg/userdata/cloud",
     "pkg/userdata/convert",
     "pkg/userdata/coreos",
     "pkg/userdata/helper",
+    "pkg/userdata/plugin",
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "48a443c218bbb6a83f5d67fcf5c9f854c356763e"
-  version = "v1.1.0"
+  revision = "8f9bbf5209cd6ca767e80eec220d991f01b81e4b"
+  version = "v1.1.6"
 
 [[projects]]
   digest = "1:d244f8666a838fe6ad70ec8fe77f50ebc29fdc3331a2729ba5886bef8435d10d"
@@ -1661,7 +1663,7 @@
   revision = "0317810137be915b9cf888946c6e115c1bfac693"
 
 [[projects]]
-  digest = "1:36c29171bb333484f3618f8184be674aa0b5c4e25b4884ce135f64bbf585a191"
+  digest = "1:5ca79fc2b967ffcb59c3a194bc491a249f5b6a3ef0c908c4774d91d1b4a4d4f6"
   name = "sigs.k8s.io/cluster-api"
   packages = [
     "pkg/apis/cluster/common",
@@ -1678,7 +1680,7 @@
     "pkg/client/listers_generated/cluster/v1alpha1",
   ]
   pruneopts = "NUT"
-  revision = "813b1fec840d79b37fe86778237b6db6d1cb959d"
+  revision = "c63bf6f67ab631a449b6eb76dfe29458441051e0"
 
 [[projects]]
   digest = "1:452f509ecc63fd978d5537eb7586064a5b645bf8a0a325b60db9bcef638d452e"

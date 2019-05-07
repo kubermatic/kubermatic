@@ -1,3 +1,19 @@
+/*
+Copyright 2019 The Machine Controller Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package azure
 
 import (
@@ -483,7 +499,7 @@ func (p *provider) Cleanup(machine *v1alpha1.Machine, data *cloud.MachineCreateD
 	_, err = p.Get(machine)
 	// If a defunct VM got created, the `Get` call returns an error - But not because the request
 	// failed but because the VM has an invalid config hence always delete except on err == cloudprovidererrors.ErrInstanceNotFound
-	if err == nil || (err != nil && err != cloudprovidererrors.ErrInstanceNotFound) {
+	if err != cloudprovidererrors.ErrInstanceNotFound {
 		glog.Infof("deleting VM %q", machine.Name)
 		if err = deleteVMsByMachineUID(context.TODO(), config, machine.UID); err != nil {
 			return false, fmt.Errorf("failed to delete instance for  machine %q: %v", machine.Name, err)
