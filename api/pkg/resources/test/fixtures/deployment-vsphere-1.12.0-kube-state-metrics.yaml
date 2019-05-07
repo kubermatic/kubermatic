@@ -11,6 +11,8 @@ spec:
   strategy: {}
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: "true"
       creationTimestamp: null
       labels:
         app: kube-state-metrics
