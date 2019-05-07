@@ -158,7 +158,7 @@ spec:
       nodeSelector:
 {{ toYaml .Values.prometheus.nodeSelector | indent 8 }}
       affinity:
-{{ toYaml .Values.prometheus.affinity | indent 8 }}
+{{ (tpl (toYaml .Values.prometheus.affinity) .) | fromYaml | toYaml | indent 8 }}
       tolerations:
 {{ toYaml .Values.prometheus.tolerations | indent 8 }}
   volumeClaimTemplates:
