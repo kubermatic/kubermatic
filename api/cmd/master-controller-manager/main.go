@@ -66,12 +66,12 @@ func main() {
 
 	config, err := clientcmd.BuildConfigFromFlags(ctrlCtx.runOptions.masterURL, ctrlCtx.runOptions.kubeconfig)
 	if err != nil {
-		glog.Fatal(err)
+		glog.Fatalf("Failed to create the config for the kubernetes client: %v", err)
 	}
 
 	selector, err := workerlabel.LabelSelector(ctrlCtx.runOptions.workerName)
 	if err != nil {
-		glog.Fatal(err)
+		glog.Fatalf("Failed to create the label selector for the given worker name '%s': %v", ctrlCtx.runOptions.workerName, err)
 	}
 
 	// register the global error metric. Ensures that runtime.HandleError() increases the error metric
@@ -92,12 +92,12 @@ func main() {
 
 	ctrlCtx.datacenters, err = provider.LoadDatacentersMeta(ctrlCtx.runOptions.dcFile)
 	if err != nil {
-		glog.Fatal(err)
+		glog.Fatalf("Failed to read the datacenters definition: %v", err)
 	}
 
 	ctrlCtx.kubeconfig, err = clientcmd.LoadFromFile(ctrlCtx.runOptions.kubeconfig)
 	if err != nil {
-		glog.Fatal(err)
+		glog.Fatalf("Failed to read the kubeconfig: %v", err)
 	}
 
 	{
