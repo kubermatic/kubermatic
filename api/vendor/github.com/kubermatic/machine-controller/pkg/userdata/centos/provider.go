@@ -1,52 +1,54 @@
+/*
+Copyright 2019 The Machine Controller Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+//
+// UserData plugin for CentOS.
+//
+
 package centos
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
 	"text/template"
 
 	"github.com/Masterminds/semver"
-	"k8s.io/apimachinery/pkg/runtime"
+
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
-	"github.com/kubermatic/machine-controller/pkg/userdata/cloud"
 	userdatahelper "github.com/kubermatic/machine-controller/pkg/userdata/helper"
-
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
-func getConfig(r runtime.RawExtension) (*Config, error) {
-	p := Config{}
-	if len(r.Raw) == 0 {
-		return &p, nil
-	}
-	if err := json.Unmarshal(r.Raw, &p); err != nil {
-		return nil, err
-	}
-	return &p, nil
-}
-
-// Config TODO
-type Config struct {
-	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
-}
-
-// Provider is a pkg/userdata.Provider implementation
+// Provider is a pkg/userdata/plugin.Provider implementation.
 type Provider struct{}
 
-// UserData renders user-data template
+// UserData renders user-data template to string.
 func (p Provider) UserData(
 	spec clusterv1alpha1.MachineSpec,
 	kubeconfig *clientcmdapi.Config,
-	ccProvider cloud.ConfigProvider,
+	cloudConfig string,
+	cloudProviderName string,
 	clusterDNSIPs []net.IP,
+	externalCloudProvider bool,
 ) (string, error) {
-
-	tmpl, err := template.New("user-data").Funcs(userdatahelper.TxtFuncMap()).Parse(ctTemplate)
+	tmpl, err := template.New("user-data").Funcs(userdatahelper.TxtFuncMap()).Parse(userDataTemplate)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse user-data template: %v", err)
 	}
@@ -56,25 +58,20 @@ func (p Provider) UserData(
 		return "", fmt.Errorf("invalid kubelet version: '%v'", err)
 	}
 
-	cpConfig, cpName, err := ccProvider.GetCloudConfig(spec)
-	if err != nil {
-		return "", fmt.Errorf("failed to get cloud config: %v", err)
-	}
-
 	pconfig, err := providerconfig.GetConfig(spec.ProviderSpec)
 	if err != nil {
 		return "", fmt.Errorf("failed to get provider config: %v", err)
 	}
 
 	if pconfig.OverwriteCloudConfig != nil {
-		cpConfig = *pconfig.OverwriteCloudConfig
+		cloudConfig = *pconfig.OverwriteCloudConfig
 	}
 
 	if pconfig.Network != nil {
 		return "", errors.New("static IP config is not supported with CentOS")
 	}
 
-	osConfig, err := getConfig(pconfig.OperatingSystemSpec)
+	centosConfig, err := LoadConfig(pconfig.OperatingSystemSpec)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse OperatingSystemSpec: '%v'", err)
 	}
@@ -105,27 +102,30 @@ func (p Provider) UserData(
 		ServerAddr       string
 		Kubeconfig       string
 		KubernetesCACert string
+		IsExternal       bool
 	}{
 		MachineSpec:      spec,
 		ProviderSpec:     pconfig,
-		OSConfig:         osConfig,
-		CloudProvider:    cpName,
-		CloudConfig:      cpConfig,
+		OSConfig:         centosConfig,
+		CloudProvider:    cloudProviderName,
+		CloudConfig:      cloudConfig,
 		KubeletVersion:   kubeletVersion.String(),
 		ClusterDNSIPs:    clusterDNSIPs,
 		ServerAddr:       serverAddr,
 		Kubeconfig:       kubeconfigString,
 		KubernetesCACert: kubernetesCACert,
+		IsExternal:       externalCloudProvider,
 	}
 	b := &bytes.Buffer{}
 	err = tmpl.Execute(b, data)
 	if err != nil {
 		return "", fmt.Errorf("failed to execute user-data template: %v", err)
 	}
-	return b.String(), nil
+	return userdatahelper.CleanupTemplateOutput(b.String())
 }
 
-const ctTemplate = `#cloud-config
+// UserData template.
+const userDataTemplate = `#cloud-config
 {{ if ne .CloudProvider "aws" }}
 hostname: {{ .MachineSpec.Name }}
 # Never set the hostname on AWS nodes. Kubernetes(kube-proxy) requires the hostname to be the private dns name
@@ -184,6 +184,11 @@ write_files:
     systemctl restart systemd-modules-load.service
     sysctl --system
 
+    # Make sure we always disable swap - Otherwise the kubelet won't start
+    cp /etc/fstab /etc/fstab.orig
+    cat /etc/fstab.orig | awk '$3 ~ /^swap$/ && $1 !~ /^#/ {$0="# commented out by cloudinit\n#"$0} 1' > /etc/fstab.noswap
+    mv /etc/fstab.noswap /etc/fstab
+    swapoff -a
     {{ if ne .CloudProvider "aws" }}
     # The normal way of setting it via cloud-init is broken:
     # https://bugs.launchpad.net/cloud-init/+bug/1662542
@@ -223,7 +228,7 @@ write_files:
 
 - path: "/etc/systemd/system/kubelet.service"
   content: |
-{{ kubeletSystemdUnit .KubeletVersion .CloudProvider .MachineSpec.Name .ClusterDNSIPs | indent 4 }}
+{{ kubeletSystemdUnit .KubeletVersion .CloudProvider .MachineSpec.Name .ClusterDNSIPs .IsExternal | indent 4 }}
 
 - path: "/etc/systemd/system/kubelet.service.d/extras.conf"
   content: |

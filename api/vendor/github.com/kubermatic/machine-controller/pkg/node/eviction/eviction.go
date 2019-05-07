@@ -1,3 +1,19 @@
+/*
+Copyright 2019 The Machine Controller Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package eviction
 
 import (
@@ -46,10 +62,10 @@ func (ne *NodeEviction) Run() error {
 	}
 	node := listerNode.DeepCopy()
 	if _, exists := node.Annotations[SkipEvictionAnnotationKey]; exists {
-		glog.V(4).Infof("Skipping eviction for node %s as it has a %s annotation", ne.nodeName, SkipEvictionAnnotationKey)
+		glog.V(3).Infof("Skipping eviction for node %s as it has a %s annotation", ne.nodeName, SkipEvictionAnnotationKey)
 		return nil
 	}
-	glog.V(4).Infof("Starting to evict node %s", ne.nodeName)
+	glog.V(3).Infof("Starting to evict node %s", ne.nodeName)
 
 	if err := ne.cordonNode(node); err != nil {
 		return fmt.Errorf("failed to cordon node %s: %v", ne.nodeName, err)
@@ -71,7 +87,7 @@ func (ne *NodeEviction) Run() error {
 	if err := ne.waitForDeletion(podsToEvict); err != nil {
 		return fmt.Errorf("failed waiting for pods of node %s to be deleted: %v", ne.nodeName, err)
 	}
-	glog.V(4).Infof("All pods of node %s were successfully evicted", ne.nodeName)
+	glog.V(3).Infof("All pods of node %s were successfully evicted", ne.nodeName)
 
 	return nil
 }
