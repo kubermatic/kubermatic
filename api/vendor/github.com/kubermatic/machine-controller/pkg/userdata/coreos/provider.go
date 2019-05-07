@@ -112,13 +112,11 @@ func (p Provider) UserData(
 	if err != nil {
 		return "", fmt.Errorf("failed to execute user-data template: %v", err)
 	}
-
-	return b.String(), nil
+	return userdatahelper.CleanupTemplateOutput(b.String())
 }
 
 // UserData template.
-const userDataTemplate = `
-passwd:
+const userDataTemplate = `passwd:
   users:
     - name: core
       ssh_authorized_keys:
@@ -293,7 +291,6 @@ storage:
       contents:
         inline: |
 {{ .KubernetesCACert | indent 10 }}
-
 {{ if ne .CloudProvider "aws" }}
     - path: /etc/hostname
       filesystem: root
@@ -336,5 +333,4 @@ storage:
         inline: |
           #!/bin/bash
           set -xeuo pipefail
-{{ downloadBinariesScript .KubeletVersion false | indent 10 }}
-`
+{{ downloadBinariesScript .KubeletVersion false | indent 10 }}`
