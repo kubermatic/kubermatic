@@ -557,6 +557,14 @@ data:
         labels:
           severity: critical
 
+      - alert: KubeStateMetricsDown
+        annotations:
+          message: Kube-state-metrics has disappeared from Prometheus target discovery.
+        expr: absent(up{job="kube-state-metrics"} == 1)
+        for: 15m
+        labels:
+          severity: critical
+
       - alert: EtcdDown
         annotations:
           message: Etcd has disappeared from Prometheus target discovery.
