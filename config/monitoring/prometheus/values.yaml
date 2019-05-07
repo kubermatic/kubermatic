@@ -143,7 +143,7 @@ prometheus:
       - podAffinityTerm:
           labelSelector:
             matchLabels:
-              app: prometheus-kubermatic
+              app: '{{ template "name" . }}'
           topologyKey: kubernetes.io/hostname
         weight: 100
   tolerations: []
