@@ -122,8 +122,7 @@ func (p Provider) UserData(
 	if err != nil {
 		return "", fmt.Errorf("failed to execute user-data template: %v", err)
 	}
-
-	return b.String(), nil
+	return userdatahelper.CleanupTemplateOutput(b.String())
 }
 
 // UserData template.
