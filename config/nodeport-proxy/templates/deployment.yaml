@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: envoy
 spec:
-  replicas: {{ .Values.nodePortPoxy.replicas }}
+  replicas: {{ .Values.nodePortPoxy.replicas | default .Values.nodePortProxy.replicas  }}
   selector:
     matchLabels:
       app: nodeport-proxy
@@ -23,7 +23,7 @@ spec:
     spec:
       initContainers:
       - name: copy-envoy-config
-        image: '{{ .Values.nodePortPoxy.image.repository }}:{{ .Values.nodePortPoxy.image.tag }}'
+        image: '{{ .Values.nodePortPoxy.image.repository | default .Values.nodePortProxy.image.repository }}:{{ .Values.nodePortPoxy.image.tag | default .Values.nodePortProxy.image.tag }}'
         command:
         - /bin/cp
         args:
@@ -34,7 +34,7 @@ spec:
           name: envoy-config
       containers:
       - name: envoy-manager
-        image: '{{ .Values.nodePortPoxy.image.repository }}:{{ .Values.nodePortPoxy.image.tag }}'
+        image: '{{ .Values.nodePortPoxy.image.repository | default .Values.nodePortProxy.image.repository }}:{{ .Values.nodePortPoxy.image.tag | default .Values.nodePortProxy.image.tag }}'
         command:
         - /envoy-manager
         args:
@@ -47,7 +47,12 @@ spec:
           name: grpc
           protocol: TCP
         resources:
-{{ toYaml .Values.nodePortPoxy.resources.envoyManager | indent 10 }}
+          requests:
+            cpu: {{ .Values.nodePortPoxy.resources.envoyManager.requests.cpu | default .Values.nodePortProxy.resources.envoyManager.requests.cpu }}
+            memory: {{ .Values.nodePortPoxy.resources.envoyManager.requests.memory | default .Values.nodePortProxy.resources.envoyManager.requests.memory }}
+          limits:
+            cpu: {{ .Values.nodePortPoxy.resources.envoyManager.limits.cpu | default .Values.nodePortProxy.resources.envoyManager.limits.cpu }}
+            memory: {{ .Values.nodePortPoxy.resources.envoyManager.limits.memory | default .Values.nodePortProxy.resources.envoyManager.limits.memory }}
       - name: envoy
         image: '{{ .Values.nodePortPoxy.envoy.image.repository }}:{{ .Values.nodePortPoxy.envoy.image.tag }}'
         command:
@@ -83,7 +88,12 @@ spec:
         - mountPath: /etc/envoy
           name: envoy-config
         resources:
-{{ toYaml .Values.nodePortPoxy.resources.envoy | indent 10 }}
+          requests:
+            cpu: {{ .Values.nodePortPoxy.resources.envoy.requests.cpu | default .Values.nodePortProxy.resources.envoy.requests.cpu }}
+            memory: {{ .Values.nodePortPoxy.resources.envoy.requests.memory | default .Values.nodePortProxy.resources.envoy.requests.memory }}
+          limits:
+            cpu: {{ .Values.nodePortPoxy.resources.envoy.limits.cpu | default .Values.nodePortProxy.resources.envoy.limits.cpu }}
+            memory: {{ .Values.nodePortPoxy.resources.envoy.limits.memory | default .Values.nodePortProxy.resources.envoy.limits.memory }}
       imagePullSecrets:
       - name: quay
       restartPolicy: Always
@@ -92,11 +102,26 @@ spec:
       - emptyDir: {}
         name: envoy-config
       nodeSelector:
-{{ toYaml .Values.nodePortPoxy.nodeSelector | indent 8 }}
+{{ toYaml (.Values.nodePortPoxy.nodeSelector | default .Values.nodePortProxy.nodeSelector) | indent 8 }}
       affinity:
-{{ toYaml .Values.nodePortPoxy.affinity | indent 8 }}
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+{{ toYaml (.Values.nodePortPoxy.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | default .Values.nodePortProxy.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution) | indent 12 }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+{{ toYaml (.Values.nodePortPoxy.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms | default .Values.nodePortProxy.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms) | indent 14 }}
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+{{ toYaml (.Values.nodePortPoxy.affinity.podAffinity.preferredDuringSchedulingIgnoredDuringExecution | default .Values.nodePortProxy.affinity.podAffinity.preferredDuringSchedulingIgnoredDuringExecution) | indent 12 }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+{{ toYaml (.Values.nodePortPoxy.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution | default .Values.nodePortProxy.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution) | indent 12 }}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+{{ toYaml (.Values.nodePortPoxy.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution | default .Values.nodePortProxy.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution) | indent 12 }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+{{ toYaml (.Values.nodePortPoxy.affinity.podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution | default .Values.nodePortProxy.affinity.podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution) | indent 12 }}
       tolerations:
-{{ toYaml .Values.nodePortPoxy.tolerations | indent 8 }}
+{{ toYaml (.Values.nodePortPoxy.tolerations | default .Values.nodePortProxy.tolerations) | indent 8 }}
 
 ---
 apiVersion: apps/v1
@@ -116,7 +141,7 @@ spec:
       serviceAccountName: nodeport-proxy
       containers:
       - name: lb-updater
-        image: '{{ .Values.nodePortPoxy.image.repository }}:{{ .Values.nodePortPoxy.image.tag }}'
+        image: '{{ .Values.nodePortPoxy.image.repository | default .Values.nodePortProxy.image.repository }}:{{ .Values.nodePortPoxy.image.tag | default .Values.nodePortProxy.image.tag }}'
         command:
         - /lb-updater
         args:
@@ -129,12 +154,17 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         resources:
-{{ toYaml .Values.nodePortPoxy.resources.lbUpdater | indent 10 }}
+          requests:
+            cpu: {{ .Values.nodePortPoxy.resources.lbUpdater.requests.cpu | default .Values.nodePortProxy.resources.lbUpdater.requests.cpu }}
+            memory: {{ .Values.nodePortPoxy.resources.lbUpdater.requests.memory | default .Values.nodePortProxy.resources.lbUpdater.requests.memory }}
+          limits:
+            cpu: {{ .Values.nodePortPoxy.resources.lbUpdater.limits.cpu | default .Values.nodePortProxy.resources.lbUpdater.limits.cpu }}
+            memory: {{ .Values.nodePortPoxy.resources.lbUpdater.limits.memory | default .Values.nodePortProxy.resources.lbUpdater.limits.memory }}
       imagePullSecrets:
       - name: quay
       nodeSelector:
-{{ toYaml .Values.nodePortPoxy.lbUpdater.nodeSelector | indent 8 }}
+{{ toYaml (.Values.nodePortPoxy.lbUpdater.nodeSelector | default .Values.nodePortProxy.lbUpdater.nodeSelector) | indent 8 }}
       affinity:
-{{ toYaml .Values.nodePortPoxy.lbUpdater.affinity | indent 8 }}
+{{ toYaml (.Values.nodePortPoxy.lbUpdater.affinity | default .Values.nodePortProxy.lbUpdater.affinity) | indent 8 }}
       tolerations:
-{{ toYaml .Values.nodePortPoxy.lbUpdater.tolerations | indent 8 }}
+{{ toYaml (.Values.nodePortPoxy.lbUpdater.tolerations | default .Values.nodePortProxy.lbUpdater.tolerations) | indent 8 }}
