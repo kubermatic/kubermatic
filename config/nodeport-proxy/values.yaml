@@ -13,13 +13,8 @@ nodePortProxy:
   # The only reason all these fields are defined explicitly is so that
   # we can properly merge any potential overwrites.
   affinity:
-    nodeAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution: []
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms: []
-    podAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution: []
-      requiredDuringSchedulingIgnoredDuringExecution: []
+    nodeAffinity: {}
+    podAffinity: {}
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
       - podAffinityTerm:
@@ -66,9 +61,6 @@ nodePortPoxy:
     image: {}
   nodeSelector: {}
   affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution: {}
-    podAffinity: {}
     podAntiAffinity: {}
   tolerations: []
   resources:
