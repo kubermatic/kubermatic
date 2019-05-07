@@ -34,7 +34,7 @@ spec:
         - "--logtostderr"
         - "--v=4"
         - "--storage=prometheus"
-        - "--prometheus-address=http://prometheus-kubermatic.monitoring.svc.cluster.local:9090"
+        - "--prometheus-address=http://prometheus.monitoring.svc.cluster.local:9090"
         - "--prometheus-cadvisor-job-name=cadvisor-vpa"
         - "--metric-for-pod-labels=kube_pod_labels"
         - "--pod-namespace-label=namespace"
