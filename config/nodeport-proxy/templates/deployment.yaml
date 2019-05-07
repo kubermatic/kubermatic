@@ -105,16 +105,9 @@ spec:
 {{ toYaml (.Values.nodePortPoxy.nodeSelector | default .Values.nodePortProxy.nodeSelector) | indent 8 }}
       affinity:
         nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-{{ toYaml (.Values.nodePortPoxy.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | default .Values.nodePortProxy.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution) | indent 12 }}
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-{{ toYaml (.Values.nodePortPoxy.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms | default .Values.nodePortProxy.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms) | indent 14 }}
+{{ toYaml (.Values.nodePortPoxy.affinity.nodeAffinity | default .Values.nodePortProxy.affinity.nodeAffinity) | indent 10 }}
         podAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-{{ toYaml (.Values.nodePortPoxy.affinity.podAffinity.preferredDuringSchedulingIgnoredDuringExecution | default .Values.nodePortProxy.affinity.podAffinity.preferredDuringSchedulingIgnoredDuringExecution) | indent 12 }}
-          requiredDuringSchedulingIgnoredDuringExecution:
-{{ toYaml (.Values.nodePortPoxy.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution | default .Values.nodePortProxy.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution) | indent 12 }}
+{{ toYaml (.Values.nodePortPoxy.affinity.podAffinity | default .Values.nodePortProxy.affinity.podAffinity) | indent 10 }}
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
 {{ toYaml (.Values.nodePortPoxy.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution | default .Values.nodePortProxy.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution) | indent 12 }}
