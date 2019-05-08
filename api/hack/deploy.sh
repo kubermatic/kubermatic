@@ -60,7 +60,6 @@ if [[ "${1}" = "master" ]]; then
 fi
 
 deploy "minio" "minio" ./config/minio/
-deploy "minio" "minio" ./config/minio/
 # The NodePort proxy is only relevant in cloud environments (Where LB services can be used)
 if [[ "${DEPLOY_NODEPORT_PROXY}" = true ]]; then
   deploy "s3-exporter" "s3-exporter" ./config/s3-exporter/
