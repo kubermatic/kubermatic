@@ -18,3 +18,28 @@ spec:
     targetPort: 6783
   selector:
     app: {{ template "name" . }}
+
+---
+# This server is provided to retain backwards compatibility with
+# existing user clusters which have not yet been reconciled to
+# use the new default Alertmanager service name.
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager-kubermatic
+  labels:
+    app: {{ template "name" . }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - name: web
+    port: 9093
+    protocol: TCP
+    targetPort: 9093
+  - name: mesh
+    port: 6783
+    protocol: TCP
+    targetPort: 6783
+  selector:
+    app: {{ template "name" . }}
