@@ -2,6 +2,8 @@
 package restmapper
 
 import (
+	"sync"
+
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -11,7 +13,9 @@ import (
 )
 
 type DynamicRESTMapper struct {
-	client   discovery.DiscoveryInterface
+	client discovery.DiscoveryInterface
+
+	lock     sync.RWMutex
 	delegate meta.RESTMapper
 }
 
@@ -37,7 +41,13 @@ func (drm *DynamicRESTMapper) reload() error {
 	if err != nil {
 		return err
 	}
-	drm.delegate = restmapper.NewDiscoveryRESTMapper(gr)
+
+	// The discovery takes some time
+	newMapper := restmapper.NewDiscoveryRESTMapper(gr)
+
+	drm.lock.Lock()
+	defer drm.lock.Unlock()
+	drm.delegate = newMapper
 	return nil
 }
 
@@ -54,58 +64,65 @@ func (drm *DynamicRESTMapper) reloadOnError(err error) bool {
 	return err == nil
 }
 
+func (drm *DynamicRESTMapper) mapper() meta.RESTMapper {
+	drm.lock.RLock()
+	defer drm.lock.RUnlock()
+
+	return drm.delegate
+}
+
 func (drm *DynamicRESTMapper) KindFor(resource schema.GroupVersionResource) (schema.GroupVersionKind, error) {
-	gvk, err := drm.delegate.KindFor(resource)
+	gvk, err := drm.mapper().KindFor(resource)
 	if drm.reloadOnError(err) {
-		gvk, err = drm.delegate.KindFor(resource)
+		gvk, err = drm.mapper().KindFor(resource)
 	}
 	return gvk, err
 }
 
 func (drm *DynamicRESTMapper) KindsFor(resource schema.GroupVersionResource) ([]schema.GroupVersionKind, error) {
-	gvks, err := drm.delegate.KindsFor(resource)
+	gvks, err := drm.mapper().KindsFor(resource)
 	if drm.reloadOnError(err) {
-		gvks, err = drm.delegate.KindsFor(resource)
+		gvks, err = drm.mapper().KindsFor(resource)
 	}
 	return gvks, err
 }
 
 func (drm *DynamicRESTMapper) ResourceFor(input schema.GroupVersionResource) (schema.GroupVersionResource, error) {
-	gvr, err := drm.delegate.ResourceFor(input)
+	gvr, err := drm.mapper().ResourceFor(input)
 	if drm.reloadOnError(err) {
-		gvr, err = drm.delegate.ResourceFor(input)
+		gvr, err = drm.mapper().ResourceFor(input)
 	}
 	return gvr, err
 }
 
 func (drm *DynamicRESTMapper) ResourcesFor(input schema.GroupVersionResource) ([]schema.GroupVersionResource, error) {
-	gvrs, err := drm.delegate.ResourcesFor(input)
+	gvrs, err := drm.mapper().ResourcesFor(input)
 	if drm.reloadOnError(err) {
-		gvrs, err = drm.delegate.ResourcesFor(input)
+		gvrs, err = drm.mapper().ResourcesFor(input)
 	}
 	return gvrs, err
 }
 
 func (drm *DynamicRESTMapper) RESTMapping(gk schema.GroupKind, versions ...string) (*meta.RESTMapping, error) {
-	m, err := drm.delegate.RESTMapping(gk, versions...)
+	m, err := drm.mapper().RESTMapping(gk, versions...)
 	if drm.reloadOnError(err) {
-		m, err = drm.delegate.RESTMapping(gk, versions...)
+		m, err = drm.mapper().RESTMapping(gk, versions...)
 	}
 	return m, err
 }
 
 func (drm *DynamicRESTMapper) RESTMappings(gk schema.GroupKind, versions ...string) ([]*meta.RESTMapping, error) {
-	ms, err := drm.delegate.RESTMappings(gk, versions...)
+	ms, err := drm.mapper().RESTMappings(gk, versions...)
 	if drm.reloadOnError(err) {
-		ms, err = drm.delegate.RESTMappings(gk, versions...)
+		ms, err = drm.mapper().RESTMappings(gk, versions...)
 	}
 	return ms, err
 }
 
 func (drm *DynamicRESTMapper) ResourceSingularizer(resource string) (singular string, err error) {
-	s, err := drm.delegate.ResourceSingularizer(resource)
+	s, err := drm.mapper().ResourceSingularizer(resource)
 	if drm.reloadOnError(err) {
-		s, err = drm.delegate.ResourceSingularizer(resource)
+		s, err = drm.mapper().ResourceSingularizer(resource)
 	}
 	return s, err
 }

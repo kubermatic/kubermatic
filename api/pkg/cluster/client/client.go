@@ -38,7 +38,6 @@ func NewInternal(seedClient ctrlruntimeclient.Client) (UserClusterConnectionProv
 	return &provider{
 		seedClient:         seedClient,
 		useExternalAddress: false,
-		mapperLock:         &sync.Mutex{},
 		clusterRESTMapper:  map[string]meta.RESTMapper{},
 	}, nil
 }
@@ -53,7 +52,6 @@ func NewExternal(seedClient ctrlruntimeclient.Client) (UserClusterConnectionProv
 	return &provider{
 		seedClient:         seedClient,
 		useExternalAddress: true,
-		mapperLock:         &sync.Mutex{},
 		clusterRESTMapper:  map[string]meta.RESTMapper{},
 	}, nil
 }
@@ -62,12 +60,12 @@ type provider struct {
 	seedClient         ctrlruntimeclient.Client
 	useExternalAddress bool
 
-	mapperLock *sync.Mutex
+	mapperLock sync.Mutex
 	// We keep the existing cluster mappings to avoid the discovery on each call to the API server
 	clusterRESTMapper map[string]meta.RESTMapper
 }
 
-func (p *provider) getMapper(c *kubermaticv1.Cluster, config *restclient.Config) (meta.RESTMapper, error) {
+func (p *provider) mapper(c *kubermaticv1.Cluster, config *restclient.Config) (meta.RESTMapper, error) {
 	p.mapperLock.Lock()
 	defer p.mapperLock.Unlock()
 
@@ -79,7 +77,7 @@ func (p *provider) getMapper(c *kubermaticv1.Cluster, config *restclient.Config)
 	if err != nil {
 		return nil, err
 	}
-	glog.Infof("Created a mapper for cluster %s", c.Name)
+	glog.V(4).Infof("Created a mapper for cluster %s", c.Name)
 	p.clusterRESTMapper[c.Name] = mapper
 
 	return mapper, nil
@@ -152,9 +150,10 @@ func (p *provider) GetClient(c *kubermaticv1.Cluster, options ...ConfigOption) (
 		return nil, err
 	}
 
-	mapper, err := p.getMapper(c, config)
+	mapper, err := p.mapper(c, config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get the REST mapper for the client: %v", err)
+		glog.Errorf("failed to get the REST mapper for the client: %v", err)
+		return ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
 	}
 
 	dynamicClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{Mapper: mapper})
