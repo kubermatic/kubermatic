@@ -18,6 +18,9 @@ echodate "Testing versions: ${VERSIONS}"
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos}
 
+# if no provider argument has been specified, default to aws
+provider=${PROVIDER:-"aws"}
+
 function cleanup {
   testRC=$?
 
@@ -27,10 +30,15 @@ function cleanup {
   # Try being a little helpful
   if [[ ${testRC} -ne 0 ]]; then
     echodate "tests failed, describing cluster"
-    # TODO: If this runs on something other than AWS, we need to adjust the egrep expression
-    kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Secret Access Key|Access Key Id'
 
-    echodate "Getting controllre manager logs"
+    if [[ $provider = "aws" ]]; then
+      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Secret Access Key|Access Key Id'
+    elif [[ $provider = "packet" ]]; then
+      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'APIKey|ProjectID'
+    else
+      echo "Provider $provider is not yet supported."
+    fi
+
     kubectl logs -n $NAMESPACE  $(kubectl get pod -n $NAMESPACE -l role=controller-manager |tail -n 1|awk '{print $1}')
   fi
 
@@ -193,7 +201,16 @@ if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
 fi
 
 echodate "Starting conformance tests"
-timeout -s 9 90m ./conformance-tests \
+
+if [[ $provider = "aws" ]]; then
+  EXTRA_ARGS="-aws-access-key-id=${AWS_E2E_TESTS_KEY_ID}
+     -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}"
+elif [[ $provider = "packet" ]]; then
+  EXTRA_ARGS="-packet-api-key=${PACKET_API_KEY}
+     -packet-project-id=${PACKET_PROJECT_ID}"
+fi
+
+timeout -s 9 90m ./conformance-tests $EXTRA_ARGS \
   -debug \
   -worker-name=$BUILD_ID \
   -kubeconfig=$KUBECONFIG \
@@ -204,10 +221,8 @@ timeout -s 9 90m ./conformance-tests \
   -reports-root=/reports \
   -cleanup-on-start=false \
   -run-kubermatic-controller-manager=false \
-  -aws-access-key-id="$AWS_E2E_TESTS_KEY_ID" \
-  -aws-secret-access-key="$AWS_E2E_TESTS_SECRET" \
   -versions="$VERSIONS" \
-  -providers=aws \
+  -providers=$provider \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
   -kubermatic-delete-cluster=false
 
@@ -242,7 +257,7 @@ echodate "Running conformance tester with existing cluster"
 
 # We increase the number of nodes to make sure creation
 # of nodes still work
-timeout -s 9 60m ./conformance-tests \
+timeout -s 9 60m ./conformance-tests $EXTRA_ARGS \
   -debug \
   -existing-cluster-label=worker-name=$BUILD_ID \
   -worker-name=$BUILD_ID \
@@ -254,9 +269,7 @@ timeout -s 9 60m ./conformance-tests \
   -name-prefix=prow-e2e \
   -reports-root=/reports \
   -cleanup-on-start=false \
-  -aws-access-key-id="$AWS_E2E_TESTS_KEY_ID" \
-  -aws-secret-access-key="$AWS_E2E_TESTS_SECRET" \
   -versions="$VERSIONS" \
-  -providers=aws \
+  -providers=$provider \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
   -kubermatic-delete-cluster=false
