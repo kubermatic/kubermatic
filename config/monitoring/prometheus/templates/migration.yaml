@@ -1,0 +1,94 @@
+{{- if .Values.prometheus.migration.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: '{{ template "name" . }}-migration'
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: migrate-volumes
+        image: '{{ .Values.prometheus.migration.image.repository }}:{{ .Values.prometheus.migration.image.tag }}'
+        command: [/bin/bash]
+        args:
+        - -c
+        - |
+          set -euo pipefail
+
+          migrate() {
+            local ordinal="$1"
+
+            echo "Migrating volume for Prometheus replica $ordinal..."
+
+            lockfile=/prometheus/new-$ordinal/.migrated
+
+            if [ -f $lockfile ]; then
+              echo "Target volume has already been migrated, skipping rsync."
+              return 0
+            fi
+
+            rsync \
+              --archive \
+              --delete \
+              --hard-links \
+              --whole-file \
+              /prometheus/old-$ordinal/ /prometheus/new-$ordinal/
+
+            echo $(date) > $lockfile
+
+            echo "Volume was successfully migrated."
+          }
+
+          {{- range (until 2) }}
+          migrate {{ . }}
+          {{- end }}
+
+          echo "Migration completed!"
+          echo "Please disable the prometheus.migration.enabled flag in your values.yaml now."
+          echo "To force a re-run, delete the $lockfile from the volume."
+
+        volumeMounts:
+        {{- range (until 2) }}
+        - name: db-old-{{ . }}
+          mountPath: /prometheus/old-{{ . }}
+          readOnly: false
+          subPath: prometheus-db
+        - name: db-new-{{ . }}
+          mountPath: /prometheus/new-{{ . }}
+          readOnly: false
+          subPath: prometheus-db
+        {{- end }}
+        securityContext:
+          runAsNonRoot: false
+          runAsUser: 0
+        resources:
+{{ toYaml .Values.prometheus.containers.migration.resources | indent 10 }}
+
+      volumes:
+      {{- range (until 2) }}
+      - name: db-old-{{ . }}
+        persistentVolumeClaim:
+          claimName: prometheus-kubermatic-db-prometheus-kubermatic-{{ . }}
+      - name: db-new-{{ . }}
+        persistentVolumeClaim:
+          claimName: db-{{ template "name" $ }}-{{ . }}
+      {{- end }}
+
+{{- range (until 2) }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: db-{{ template "name" $ }}-{{ . }}
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  storageClassName: kubermatic-fast
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ $.Values.prometheus.storageSize }}
+{{- end }}
+{{ end }}
