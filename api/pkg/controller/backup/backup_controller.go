@@ -120,6 +120,7 @@ func Add(
 			err := mgr.GetClient().Get(context.Background(), types.NamespacedName{Name: ownerRef.Name}, cluster)
 			if err != nil {
 				if kerrors.IsNotFound(err) {
+					glog.V(4).Infof("Couldn't find cluster %q", ownerRef.Name)
 					return nil
 				}
 				glog.Errorf("failed to get cluster %q: %v", ownerRef.Name, err)
