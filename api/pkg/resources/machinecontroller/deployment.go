@@ -181,5 +181,9 @@ func getEnvVars(data machinecontrollerData) []corev1.EnvVar {
 		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", Value: data.Cluster().Spec.Cloud.VSphere.InfraManagementUser.Username})
 		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", Value: data.Cluster().Spec.Cloud.VSphere.InfraManagementUser.Password})
 	}
+	if data.Cluster().Spec.Cloud.Packet != nil {
+		vars = append(vars, corev1.EnvVar{Name: "PACKET_API_KEY", Value: data.Cluster().Spec.Cloud.Packet.APIKey})
+		vars = append(vars, corev1.EnvVar{Name: "PACKET_PROJECT_ID", Value: data.Cluster().Spec.Cloud.Packet.ProjectID})
+	}
 	return vars
 }

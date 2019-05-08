@@ -89,6 +89,11 @@ type AWSSpec struct {
 type BringYourOwnSpec struct {
 }
 
+// PacketSpec describes a packet datacenter
+type PacketSpec struct {
+	Facilities []string `yaml:"facilities"`
+}
+
 // DatacenterSpec describes mutually points to provider datacenter spec
 type DatacenterSpec struct {
 	Digitalocean *DigitaloceanSpec `yaml:"digitalocean,omitempty"`
@@ -96,6 +101,7 @@ type DatacenterSpec struct {
 	AWS          *AWSSpec          `yaml:"aws,omitempty"`
 	Azure        *AzureSpec        `yaml:"azure,omitempty"`
 	Openstack    *OpenstackSpec    `yaml:"openstack,omitempty"`
+	Packet       *PacketSpec       `yaml:"packet,omitempty"`
 	Hetzner      *HetznerSpec      `yaml:"hetzner,omitempty"`
 	VSphere      *VSphereSpec      `yaml:"vsphere,omitempty"`
 }

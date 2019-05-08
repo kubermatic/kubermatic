@@ -97,6 +97,10 @@ type secrets struct {
 		Username string
 		Password string
 	}
+	Packet struct {
+		APIKey    string
+		ProjectID string
+	}
 }
 
 const (
@@ -133,7 +137,7 @@ func main() {
 
 	flag.StringVar(&opts.kubeconfigPath, "kubeconfig", "/config/kubeconfig", "path to kubeconfig file")
 	flag.StringVar(&opts.existingClusterLabel, "existing-cluster-label", "", "label to use to select an existing cluster for testing. If provided, no cluster will be created. Sample: my=cluster")
-	flag.StringVar(&providers, "providers", "aws,digitalocean,openstack,hetzner,vsphere,azure", "comma separated list of providers to test")
+	flag.StringVar(&providers, "providers", "aws,digitalocean,openstack,hetzner,vsphere,azure,packet", "comma separated list of providers to test")
 	flag.StringVar(&opts.namePrefix, "name-prefix", "", "prefix used for all cluster names")
 	flag.StringVar(&opts.repoRoot, "repo-root", "/opt/kube-test/", "Root path for the different kubernetes repositories")
 	flag.IntVar(&opts.nodeCount, "kubermatic-nodes", 3, "number of worker nodes")
@@ -166,6 +170,8 @@ func main() {
 	flag.StringVar(&opts.secrets.Azure.ClientSecret, "azure-client-secret", "", "Azure: ClientSecret")
 	flag.StringVar(&opts.secrets.Azure.TenantID, "azure-tenant-id", "", "Azure: TenantID")
 	flag.StringVar(&opts.secrets.Azure.SubscriptionID, "azure-subscription-id", "", "Azure: SubscriptionID")
+	flag.StringVar(&opts.secrets.Packet.APIKey, "packet-api-key", "", "Packet: APIKey")
+	flag.StringVar(&opts.secrets.Packet.ProjectID, "packet-project-id", "", "Packet: ProjectID")
 
 	flag.Parse()
 
@@ -347,6 +353,10 @@ func getScenarios(opts Opts, log *logrus.Entry) []testScenario {
 	if opts.providers.Has("azure") {
 		log.Info("Adding Azure scenarios")
 		scenarios = append(scenarios, getAzureScenarios(opts.versions)...)
+	}
+	if opts.providers.Has("packet") {
+		log.Info("Adding Packet scenarios")
+		scenarios = append(scenarios, getPacketScenarios(opts.versions)...)
 	}
 
 	var filteredScenarios []testScenario

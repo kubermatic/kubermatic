@@ -86,6 +86,11 @@ type OpenstackDatacenterSpec struct {
 	EnforceFloatingIP bool      `json:"enforce_floating_ip"`
 }
 
+// PacketDatacenterSpec specifies a datacenter of Packet.
+type PacketDatacenterSpec struct {
+	Facilities []string `json:"facilities"`
+}
+
 // DatacenterSpec specifies the data for a datacenter.
 type DatacenterSpec struct {
 	Seed         string                       `json:"seed"`
@@ -97,6 +102,7 @@ type DatacenterSpec struct {
 	AWS          *AWSDatacenterSpec           `json:"aws,omitempty"`
 	Azure        *AzureDatacenterSpec         `json:"azure,omitempty"`
 	Openstack    *OpenstackDatacenterSpec     `json:"openstack,omitempty"`
+	Packet       *PacketDatacenterSpec        `json:"packet,omitempty"`
 	Hetzner      *HetznerDatacenterSpec       `json:"hetzner,omitempty"`
 	VSphere      *VSphereDatacenterSpec       `json:"vsphere,omitempty"`
 }
@@ -367,6 +373,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 			AWS:            newPublicAWSCloudSpec(cs.Cloud.AWS),
 			Azure:          newPublicAzureCloudSpec(cs.Cloud.Azure),
 			Openstack:      newPublicOpenstackCloudSpec(cs.Cloud.Openstack),
+			Packet:         newPublicPacketCloudSpec(cs.Cloud.Packet),
 			Hetzner:        newPublicHetznerCloudSpec(cs.Cloud.Hetzner),
 			VSphere:        newPublicVSphereCloudSpec(cs.Cloud.VSphere),
 		},
@@ -386,6 +393,7 @@ type PublicCloudSpec struct {
 	AWS            *PublicAWSCloudSpec          `json:"aws,omitempty"`
 	Azure          *PublicAzureCloudSpec        `json:"azure,omitempty"`
 	Openstack      *PublicOpenstackCloudSpec    `json:"openstack,omitempty"`
+	Packet         *PublicPacketCloudSpec       `json:"packet,omitempty"`
 	Hetzner        *PublicHetznerCloudSpec      `json:"hetzner,omitempty"`
 	VSphere        *PublicVSphereCloudSpec      `json:"vsphere,omitempty"`
 }
@@ -482,6 +490,17 @@ func newPublicOpenstackCloudSpec(internal *kubermaticv1.OpenstackCloudSpec) (pub
 	}
 }
 
+// PublicPacketCloudSpec is a public counterpart of apiv1.PacketCloudSpec.
+type PublicPacketCloudSpec struct{}
+
+func newPublicPacketCloudSpec(internal *kubermaticv1.PacketCloudSpec) (public *PublicPacketCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicPacketCloudSpec{}
+}
+
 // ClusterStatus defines the cluster status
 type ClusterStatus struct {
 	// Version actual version of the kubernetes master components
@@ -522,6 +541,7 @@ type NodeCloudSpec struct {
 	AWS          *AWSNodeSpec          `json:"aws,omitempty"`
 	Azure        *AzureNodeSpec        `json:"azure,omitempty"`
 	Openstack    *OpenstackNodeSpec    `json:"openstack,omitempty"`
+	Packet       *PacketNodeSpec       `json:"packet,omitempty"`
 	Hetzner      *HetznerNodeSpec      `json:"hetzner,omitempty"`
 	VSphere      *VSphereNodeSpec      `json:"vsphere,omitempty"`
 }
@@ -655,6 +675,20 @@ type AWSNodeSpec struct {
 	AMI string `json:"ami"`
 	// additional instance tags
 	Tags map[string]string `json:"tags"`
+}
+
+// PacketNodeSpec specifies packet specific node settings
+// swagger:model PacketNodeSpec
+type PacketNodeSpec struct {
+	// InstanceType denotes the plan to which the device will be provisioned.
+	// required: true
+	InstanceType string `json:"instanceType"`
+	// OS denotes the operating system with which the device will be provisioned.
+	// required: true
+	OS string `json:"os"`
+	// additional instance tags
+	// required: false
+	Tags []string `json:"tags"`
 }
 
 // NodeResources cpu and memory of a node

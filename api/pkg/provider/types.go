@@ -30,6 +30,7 @@ const (
 	AWSCloudProvider          = "aws"
 	AzureCloudProvider        = "azure"
 	OpenstackCloudProvider    = "openstack"
+	PacketCloudProvider       = "packet"
 	HetznerCloudProvider      = "hetzner"
 	VSphereCloudProvider      = "vsphere"
 
@@ -269,6 +270,9 @@ func ClusterCloudProviderName(spec kubermaticv1.CloudSpec) (string, error) {
 	if spec.Openstack != nil {
 		clouds = append(clouds, OpenstackCloudProvider)
 	}
+	if spec.Packet != nil {
+		clouds = append(clouds, PacketCloudProvider)
+	}
 	if spec.Hetzner != nil {
 		clouds = append(clouds, HetznerCloudProvider)
 	}
@@ -320,6 +324,9 @@ func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 	}
 	if spec.Openstack != nil {
 		clouds = append(clouds, OpenstackCloudProvider)
+	}
+	if spec.Packet != nil {
+		clouds = append(clouds, PacketCloudProvider)
 	}
 	if spec.Hetzner != nil {
 		clouds = append(clouds, HetznerCloudProvider)

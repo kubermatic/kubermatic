@@ -226,6 +226,7 @@ type CloudSpec struct {
 	AWS          *AWSCloudSpec          `json:"aws,omitempty"`
 	Azure        *AzureCloudSpec        `json:"azure,omitempty"`
 	Openstack    *OpenstackCloudSpec    `json:"openstack,omitempty"`
+	Packet       *PacketCloudSpec       `json:"packet,omitempty"`
 	Hetzner      *HetznerCloudSpec      `json:"hetzner,omitempty"`
 	VSphere      *VSphereCloudSpec      `json:"vsphere,omitempty"`
 }
@@ -335,6 +336,13 @@ type OpenstackCloudSpec struct {
 	FloatingIPPool string `json:"floatingIpPool"`
 	RouterID       string `json:"routerID"`
 	SubnetID       string `json:"subnetID"`
+}
+
+// PacketCloudSpec specifies access data to a Packet cloud.
+type PacketCloudSpec struct {
+	APIKey       string `json:"apiKey"`
+	ProjectID    string `json:"projectID"`
+	BillingCycle string `json:"billingCycle"`
 }
 
 // ClusterHealthStatus stores health information of the components of a cluster.
