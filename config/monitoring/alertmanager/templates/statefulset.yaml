@@ -5,7 +5,7 @@ metadata:
   labels:
     app: {{ template "name" . }}
 spec:
-  replicas: 3
+  replicas: {{ .Values.alertmanager.replicas }}
   revisionHistoryLimit: 10
   selector:
     matchLabels:
