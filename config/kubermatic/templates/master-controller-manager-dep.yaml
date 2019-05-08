@@ -37,9 +37,6 @@ spec:
           - name: kubeconfig
             mountPath: "/opt/.kube/"
             readOnly: true
-          - name: datacenters
-            mountPath: "/opt/datacenter/"
-            readOnly: true
       containers:
       - name: master-controller
         command:
@@ -58,6 +55,9 @@ spec:
         volumeMounts:
           - name: kubeconfig
             mountPath: "/opt/.kube/"
+            readOnly: true
+          - name: datacenters
+            mountPath: "/opt/datacenter/"
             readOnly: true
         resources:
 {{ toYaml .Values.kubermatic.masterController.resources | indent 10 }}
