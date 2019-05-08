@@ -27,7 +27,7 @@ spec:
         command:
         - projects-migrator
         args:
-        - -v=3
+        - -v=2
         - -logtostderr
         - -kubeconfig=/opt/.kube/kubeconfig
         {{- with .Values.kubermatic.projects_migrator }}

@@ -25,7 +25,7 @@ spec:
         - kubermatic-api
         args:
         - -address=0.0.0.0:8080
-        - -v=4
+        - -v=2
         - -logtostderr
         - -datacenters=/opt/datacenter/datacenters.yaml
         - -oidc-url={{ .Values.kubermatic.auth.tokenIssuer }}
