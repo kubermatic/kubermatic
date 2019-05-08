@@ -1,9 +1,11 @@
+{{ range .Values.grafana.provisioning.datasources.prometheusServices }}
 apiVersion: 1
 datasources:
-- name: prometheus
+- name: {{ . }}
   type: prometheus
   access: proxy
   org_id: 1
-  url: 'http://prometheus-kubermatic.{{ .Release.Namespace }}.svc.cluster.local:9090'
+  url: 'http://{{ . }}.{{ $.Release.Namespace }}.svc.cluster.local:9090'
   version: 1
   editable: false
+{{ end }}

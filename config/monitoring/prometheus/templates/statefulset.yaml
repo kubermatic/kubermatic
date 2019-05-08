@@ -1,25 +1,26 @@
+{{- if not .Values.prometheus.migration.enabled }}
 apiVersion: apps/v1beta2
 kind: StatefulSet
 metadata:
-  name: prometheus-kubermatic
+  name: '{{ template "name" . }}'
 spec:
   replicas: 2
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app: prometheus-kubermatic
-  serviceName: prometheus-kubermatic
+      app: '{{ template "name" . }}'
+  serviceName: '{{ template "name" . }}'
   updateStrategy:
     type: RollingUpdate
   template:
     metadata:
       labels:
-        app: prometheus-kubermatic
+        app: '{{ template "name" . }}'
       annotations:
         kubermatic/scrape: 'true'
         kubermatic/scrape_port: '9090'
         {{- if .Values.prometheus.backup.enabled }}
-        backup.velero.io/backup-volumes: prometheus-backup
+        backup.velero.io/backup-volumes: backup
         pre.hook.backup.velero.io/container: backup
         pre.hook.backup.velero.io/timeout: '{{ .Values.prometheus.backup.timeout | default "60m" }}'
         pre.hook.backup.velero.io/command: '["/bin/sh", "-c", "rm -rf /prometheus/snapshots/* && curl -s -XPOST \"http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot?skip_head=true\" && rsync --archive /prometheus/snapshots/*/ /backup"]'
@@ -63,20 +64,20 @@ spec:
         resources:
 {{ toYaml .Values.prometheus.containers.prometheus.resources | indent 10 }}
         volumeMounts:
-        - mountPath: /etc/prometheus/config/
-          name: prometheus-kubermatic-config
+        - name: config
+          mountPath: /etc/prometheus/config/
           readOnly: false
-        - mountPath: /etc/prometheus/rules/
-          name: prometheus-kubermatic-rules
+        - name: rules
+          mountPath: /etc/prometheus/rules/
           readOnly: false
-        - mountPath: /var/prometheus/data
-          name: prometheus-kubermatic-db
+        - name: db
+          mountPath: /var/prometheus/data
           readOnly: false
           subPath: prometheus-db
         {{- if .Values.prometheus.volumes }}
         {{- range .Values.prometheus.volumes }}
-        - mountPath: {{ .mountPath }}
-          name: {{ .name }}
+        - name: {{ .name }}
+          mountPath: {{ .mountPath }}
           readOnly: true
         {{- end }}
         {{- end }}
@@ -90,16 +91,16 @@ spec:
         resources:
 {{ toYaml .Values.prometheus.containers.reloader.resources | indent 10 }}
         volumeMounts:
-        - mountPath: /etc/prometheus/config/
-          name: prometheus-kubermatic-config
+        - name: config
+          mountPath: /etc/prometheus/config/
           readOnly: false
-        - mountPath: /etc/prometheus/rules/
-          name: prometheus-kubermatic-rules
+        - name: rules
+          mountPath: /etc/prometheus/rules/
           readOnly: false
         {{- if .Values.prometheus.volumes }}
         {{- range .Values.prometheus.volumes }}
-        - mountPath: {{ .mountPath }}
-          name: {{ .name }}
+        - name: {{ .name }}
+          mountPath: {{ .mountPath }}
           readOnly: true
         {{- end }}
         {{- end }}
@@ -112,12 +113,12 @@ spec:
         - -c
         - while true; do sleep 1h; done
         volumeMounts:
-        - mountPath: /prometheus
-          name: prometheus-kubermatic-db
+        - name: db
+          mountPath: /prometheus
           readOnly: false
           subPath: prometheus-db
-        - mountPath: /backup
-          name: prometheus-backup
+        - name: backup
+          mountPath: /backup
           readOnly: false
         securityContext:
           runAsNonRoot: false
@@ -125,18 +126,19 @@ spec:
         resources:
 {{ toYaml .Values.prometheus.containers.backup.resources | indent 10 }}
       {{- end }}
-      serviceAccountName: prometheus-kubermatic
+
+      serviceAccountName: '{{ template "name" . }}'
       securityContext:
         fsGroup: 2000
         runAsNonRoot: true
         runAsUser: 1000
       volumes:
-      - name: prometheus-kubermatic-config
+      - name: config
         configMap:
-          name: prometheus-kubermatic-config
-      - name: prometheus-kubermatic-rules
+          name: '{{ template "name" . }}-config'
+      - name: rules
         configMap:
-          name: prometheus-kubermatic-rules
+          name: '{{ template "name" . }}-rules'
       {{- if .Values.prometheus.volumes }}
       {{- range .Values.prometheus.volumes }}
       - name: {{ .name }}
@@ -150,18 +152,18 @@ spec:
       {{- end }}
       {{- end }}
       {{- if .Values.prometheus.backup.enabled }}
-      - name: prometheus-backup
+      - name: backup
         emptyDir: {}
       {{- end }}
       nodeSelector:
 {{ toYaml .Values.prometheus.nodeSelector | indent 8 }}
       affinity:
-{{ toYaml .Values.prometheus.affinity | indent 8 }}
+{{ (tpl (toYaml .Values.prometheus.affinity) .) | fromYaml | toYaml | indent 8 }}
       tolerations:
 {{ toYaml .Values.prometheus.tolerations | indent 8 }}
   volumeClaimTemplates:
   - metadata:
-      name: prometheus-kubermatic-db
+      name: db
     spec:
       accessModes:
       - ReadWriteOnce
@@ -169,13 +171,15 @@ spec:
         requests:
           storage: {{ .Values.prometheus.storageSize }}
       storageClassName: kubermatic-fast
+{{ end }}
+
 ---
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
-  name: prometheus-kubermatic
+  name: '{{ template "name" . }}'
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app: prometheus-kubermatic
+      app: '{{ template "name" . }}'
