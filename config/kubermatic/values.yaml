@@ -204,10 +204,10 @@ kubermatic:
     resources:
       requests:
         cpu: 50m
-        memory: 32Mi
+        memory: 128Mi
       limits:
         cpu: 100m
-        memory: 64Mi
+        memory: 256Mi
     affinity: {}
     nodeSelector: {}
     tolerations: []
