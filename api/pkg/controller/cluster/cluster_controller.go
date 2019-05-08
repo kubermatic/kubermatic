@@ -177,8 +177,11 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	defer cancel()
 
 	cluster := &kubermaticv1.Cluster{}
+	// Ignore the namespace in the request
+	request.NamespacedName.Namespace = ""
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if kubeapierrors.IsNotFound(err) {
+			glog.V(4).Infof("Couldn't find cluster %q", request.NamespacedName.String())
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
