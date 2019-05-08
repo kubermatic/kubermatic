@@ -1,22 +1,11 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": "-- Grafana --",
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
-  "editable": true,
+  "editable": "<< editable | default false | toJson >>",
   "gnetId": null,
-  "graphTooltip": 0,
-  "id": 20,
-  "iteration": 1557307790512,
+  "graphTooltip": 1,
+  "hideControls": "<< hideControls | default false | toJson >>",
   "links": [],
   "panels": [
     {
@@ -39,6 +28,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "prometheus",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -113,6 +103,7 @@
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -150,6 +141,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "prometheus",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -226,6 +218,7 @@
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -263,6 +256,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "prometheus",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -339,6 +333,7 @@
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -376,6 +371,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "prometheus",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -452,6 +448,7 @@
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -489,6 +486,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "prometheus",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -565,6 +563,7 @@
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -602,6 +601,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "prometheus",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -678,6 +678,7 @@
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -715,6 +716,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "prometheus",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -791,6 +793,7 @@
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -828,6 +831,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "prometheus",
+      "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -904,6 +908,7 @@
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -963,6 +968,7 @@
       },
       "dataFormat": "tsbuckets",
       "datasource": "prometheus",
+      "editable": "<< editable | default false | toJson >>",
       "gridPos": {
         "h": 9,
         "w": 8,
@@ -1001,6 +1007,7 @@
         }
       ],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "$controller",
       "tooltip": {
@@ -1008,6 +1015,7 @@
         "showHistogram": false
       },
       "tooltipDecimals": 0,
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "heatmap",
       "xAxis": {
         "show": true
@@ -1042,6 +1050,7 @@
       },
       "dataFormat": "tsbuckets",
       "datasource": "prometheus",
+      "editable": "<< editable | default false | toJson >>",
       "gridPos": {
         "h": 9,
         "w": 8,
@@ -1082,6 +1091,7 @@
         }
       ],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "$controller",
       "tooltip": {
@@ -1089,6 +1099,7 @@
         "showHistogram": false
       },
       "tooltipDecimals": 0,
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "heatmap",
       "xAxis": {
         "show": true
@@ -1123,6 +1134,7 @@
       },
       "dataFormat": "tsbuckets",
       "datasource": "prometheus",
+      "editable": "<< editable | default false | toJson >>",
       "gridPos": {
         "h": 9,
         "w": 8,
@@ -1163,6 +1175,7 @@
         }
       ],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "$controller",
       "tooltip": {
@@ -1170,6 +1183,7 @@
         "showHistogram": false
       },
       "tooltipDecimals": 0,
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "heatmap",
       "xAxis": {
         "show": true
@@ -1204,6 +1218,7 @@
       },
       "dataFormat": "tsbuckets",
       "datasource": "prometheus",
+      "editable": "<< editable | default false | toJson >>",
       "gridPos": {
         "h": 9,
         "w": 8,
@@ -1244,6 +1259,7 @@
         }
       ],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "$controller",
       "tooltip": {
@@ -1251,6 +1267,7 @@
         "showHistogram": false
       },
       "tooltipDecimals": 0,
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "heatmap",
       "xAxis": {
         "show": true
@@ -1285,6 +1302,7 @@
       },
       "dataFormat": "tsbuckets",
       "datasource": "prometheus",
+      "editable": "<< editable | default false | toJson >>",
       "gridPos": {
         "h": 9,
         "w": 8,
@@ -1325,6 +1343,7 @@
         }
       ],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "$controller",
       "tooltip": {
@@ -1332,6 +1351,7 @@
         "showHistogram": false
       },
       "tooltipDecimals": 0,
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "heatmap",
       "xAxis": {
         "show": true
@@ -1366,6 +1386,7 @@
       },
       "dataFormat": "tsbuckets",
       "datasource": "prometheus",
+      "editable": "<< editable | default false | toJson >>",
       "gridPos": {
         "h": 9,
         "w": 8,
@@ -1406,6 +1427,7 @@
         }
       ],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "$controller",
       "tooltip": {
@@ -1413,6 +1435,7 @@
         "showHistogram": false
       },
       "tooltipDecimals": 0,
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "heatmap",
       "xAxis": {
         "show": true
@@ -1447,6 +1470,7 @@
       },
       "dataFormat": "tsbuckets",
       "datasource": "prometheus",
+      "editable": "<< editable | default false | toJson >>",
       "gridPos": {
         "h": 9,
         "w": 8,
@@ -1487,6 +1511,7 @@
         }
       ],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "$controller",
       "tooltip": {
@@ -1494,6 +1519,7 @@
         "showHistogram": false
       },
       "tooltipDecimals": 0,
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "heatmap",
       "xAxis": {
         "show": true
@@ -1528,6 +1554,7 @@
       },
       "dataFormat": "tsbuckets",
       "datasource": "prometheus",
+      "editable": "<< editable | default false | toJson >>",
       "gridPos": {
         "h": 9,
         "w": 8,
@@ -1568,6 +1595,7 @@
         }
       ],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "$controller",
       "tooltip": {
@@ -1575,6 +1603,7 @@
         "showHistogram": false
       },
       "tooltipDecimals": 0,
+      "transparent": "<< transparentPanels | default true | toJson >>",
       "type": "heatmap",
       "xAxis": {
         "show": true
@@ -1595,6 +1624,7 @@
       "yBucketSize": null
     }
   ],
+  "refresh": "<< refresh | default `30s` | toJson >>",
   "schemaVersion": 18,
   "style": "dark",
   "tags": [],
@@ -1602,11 +1632,7 @@
     "list": [
       {
         "allValue": "*",
-        "current": {
-          "tags": [],
-          "text": "All",
-          "value": "$__all"
-        },
+        "current": {},
         "datasource": "prometheus",
         "definition": "label_values(controller_runtime_reconcile_time_seconds_bucket,controller)",
         "hide": 0,
@@ -1614,55 +1640,9 @@
         "label": "Controller",
         "multi": false,
         "name": "controller",
-        "options": [
-          {
-            "selected": true,
-            "text": "All",
-            "value": "$__all"
-          },
-          {
-            "selected": false,
-            "text": "kubermatic_addon_controller",
-            "value": "kubermatic_addon_controller"
-          },
-          {
-            "selected": false,
-            "text": "kubermatic_addoninstaller_controller",
-            "value": "kubermatic_addoninstaller_controller"
-          },
-          {
-            "selected": false,
-            "text": "kubermatic_backup_controller",
-            "value": "kubermatic_backup_controller"
-          },
-          {
-            "selected": false,
-            "text": "kubermatic_cloud_controller",
-            "value": "kubermatic_cloud_controller"
-          },
-          {
-            "selected": false,
-            "text": "kubermatic_kubernetes_controller",
-            "value": "kubermatic_kubernetes_controller"
-          },
-          {
-            "selected": false,
-            "text": "kubermatic_monitoring_controller",
-            "value": "kubermatic_monitoring_controller"
-          },
-          {
-            "selected": false,
-            "text": "kubermatic_openshift_controller",
-            "value": "kubermatic_openshift_controller"
-          },
-          {
-            "selected": false,
-            "text": "kubermatic_update_controller",
-            "value": "kubermatic_update_controller"
-          }
-        ],
+        "options": [],
         "query": "label_values(controller_runtime_reconcile_time_seconds_bucket,controller)",
-        "refresh": 0,
+        "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 1,
@@ -1675,7 +1655,7 @@
     ]
   },
   "time": {
-    "from": "now-30m",
+    "from": "<< defaultRange | toJson >>",
     "to": "now"
   },
   "timepicker": {
