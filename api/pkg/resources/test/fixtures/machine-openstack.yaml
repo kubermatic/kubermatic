@@ -23,7 +23,7 @@ spec:
         subnet: os-subnet-id
         tags:
           foo: bar
-          kubermatic-cluster: openstackcluster-1a2b3c4d5e
+          kubernetes-cluster: openstackcluster-1a2b3c4d5e
         tenantName: ""
         tokenId: ""
         trustDevicePath: false
