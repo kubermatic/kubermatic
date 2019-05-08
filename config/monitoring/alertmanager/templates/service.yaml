@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: alertmanager-kubermatic
+  name: {{ template "name" . }}
   labels:
-    app: alertmanager-kubermatic
+    app: {{ template "name" . }}
 spec:
   type: ClusterIP
   clusterIP: None
@@ -17,4 +17,4 @@ spec:
     protocol: TCP
     targetPort: 6783
   selector:
-    app: alertmanager-kubermatic
+    app: {{ template "name" . }}

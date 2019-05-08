@@ -4,14 +4,17 @@ alertmanager:
     tag: v0.17.0
     pullPolicy: IfNotPresent
   host: ""
+  replicas: 3
+  storageSize: 1Gi
+  storageClass: kubermatic-fast
   config:
     global:
       slack_api_url: https://hooks.slack.com/services/YOUR_KEYS_HERE
     route:
-      receiver: 'default'
+      receiver: default
       repeat_interval: 1h
     receivers:
-    - name: 'default'
+    - name: default
       slack_configs:
       - channel: '#alerting'
         send_resolved: true
@@ -30,7 +33,14 @@ alertmanager:
       limits:
         cpu: 5m
         memory: 32Mi
-    storage: 100Mi
+    migration:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi
   nodeSelector: {}
   affinity:
     podAntiAffinity:
@@ -38,7 +48,21 @@ alertmanager:
       - podAffinityTerm:
           labelSelector:
             matchLabels:
-              app: alertmanager-kubermatic
+              app: '{{ template "name" . }}'
           topologyKey: kubernetes.io/hostname
         weight: 100
   tolerations: []
+
+  # When upgrading the chart from 1.x => 2.0, the naming for volumes
+  # has changed and without a migration your existing Alertmanager database
+  # would not be used anymore. Set the enabled flag to true to let an
+  # init container copy the data over. A lockfile is created so that when
+  # the pod for whatever reason restarts the migration is not executed
+  # again.
+  # Once the migration has finished and you set the flag to false again,
+  # you can safely remove the old `alertmanager-kubermatic-db-...` PVCs.
+  migration:
+    enabled: false
+    image:
+      repository: quay.io/kubermatic/util
+      tag: 1.0.0-2

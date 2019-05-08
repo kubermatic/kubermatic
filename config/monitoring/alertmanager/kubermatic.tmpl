@@ -1,4 +1,6 @@
-{* regular Slack alerts *}
+{* A nice, compact set of templates for pretty Slack Alerts. *}
+{* Capable of displaying the user-cluster from which alerts originate. *}
+{* Shows a pretty flag if the seed cluster name matches regex. *}
 
 {{ define "slack.kubermatic.pretty.runbook" }}{{ with .Annotations.runbook_url }}<{{ .}}|:notebook:>{{ end }}{{ end }}
 {{ define "slack.kubermatic.titlelink" }}{{ end }}
