@@ -5,7 +5,7 @@ alertmanager:
     pullPolicy: IfNotPresent
   host: ""
   replicas: 3
-  storageSize: 1Gi
+  storageSize: 100Mi
   storageClass: kubermatic-fast
   config:
     global:
