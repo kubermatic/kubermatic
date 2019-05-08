@@ -14,6 +14,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/packet"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
@@ -212,6 +213,35 @@ func getDigitaloceanProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpe
 	config.Tags = make([]providerconfig.ConfigVarString, len(tags.List()))
 	for i, tag := range tags.List() {
 		config.Tags[i].Value = tag
+	}
+
+	ext := &runtime.RawExtension{}
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	ext.Raw = b
+	return ext, nil
+}
+
+func getPacketProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+	config := packet.RawConfig{
+		InstanceType: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Packet.InstanceType},
+		OS:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Packet.OS},
+	}
+
+	tags := sets.NewString(nodeSpec.Cloud.Packet.Tags...)
+	tags.Insert("kubernetes", "kubernetes-cluster-"+c.Name)
+	config.Tags = make([]providerconfig.ConfigVarString, len(tags.List()))
+	for i, tag := range tags.List() {
+		config.Tags[i].Value = tag
+	}
+
+	facilities := sets.NewString(dc.Spec.Packet.Facilities...)
+	config.Facilities = make([]providerconfig.ConfigVarString, len(facilities.List()))
+	for i, facility := range facilities.List() {
+		config.Facilities[i].Value = facility
 	}
 
 	ext := &runtime.RawExtension{}

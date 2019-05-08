@@ -3668,6 +3668,9 @@
         "openstack": {
           "$ref": "#/definitions/OpenstackCloudSpec"
         },
+        "packet": {
+          "$ref": "#/definitions/PacketCloudSpec"
+        },
         "vsphere": {
           "$ref": "#/definitions/VSphereCloudSpec"
         }
@@ -3921,6 +3924,9 @@
         },
         "openstack": {
           "$ref": "#/definitions/OpenstackDatacenterSpec"
+        },
+        "packet": {
+          "$ref": "#/definitions/PacketDatacenterSpec"
         },
         "provider": {
           "type": "string",
@@ -4580,6 +4586,9 @@
         "openstack": {
           "$ref": "#/definitions/OpenstackNodeSpec"
         },
+        "packet": {
+          "$ref": "#/definitions/PacketNodeSpec"
+        },
         "vsphere": {
           "$ref": "#/definitions/VSphereNodeSpec"
         }
@@ -5060,6 +5069,68 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "PacketCloudSpec": {
+      "type": "object",
+      "title": "PacketCloudSpec specifies access data to a Packet cloud.",
+      "properties": {
+        "apiKey": {
+          "type": "string",
+          "x-go-name": "APIKey"
+        },
+        "billingCycle": {
+          "type": "string",
+          "x-go-name": "BillingCycle"
+        },
+        "projectID": {
+          "type": "string",
+          "x-go-name": "ProjectID"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "PacketDatacenterSpec": {
+      "type": "object",
+      "title": "PacketDatacenterSpec specifies a datacenter of Packet.",
+      "properties": {
+        "facilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Facilities"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "PacketNodeSpec": {
+      "description": "PacketNodeSpec specifies packet specific node settings",
+      "type": "object",
+      "required": [
+        "instanceType",
+        "os"
+      ],
+      "properties": {
+        "instanceType": {
+          "description": "InstanceType denotes the plan to which the device will be provisioned.",
+          "type": "string",
+          "x-go-name": "InstanceType"
+        },
+        "os": {
+          "description": "OS denotes the operating system with which the device will be provisioned.",
+          "type": "string",
+          "x-go-name": "OS"
+        },
+        "tags": {
+          "description": "additional instance tags",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Tags"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "Preferences": {
       "type": "object",
       "properties": {
@@ -5179,6 +5250,9 @@
         "openstack": {
           "$ref": "#/definitions/PublicOpenstackCloudSpec"
         },
+        "packet": {
+          "$ref": "#/definitions/PublicPacketCloudSpec"
+        },
         "vsphere": {
           "$ref": "#/definitions/PublicVSphereCloudSpec"
         }
@@ -5209,6 +5283,11 @@
           "x-go-name": "FloatingIPPool"
         }
       },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "PublicPacketCloudSpec": {
+      "type": "object",
+      "title": "PublicPacketCloudSpec is a public counterpart of apiv1.PacketCloudSpec.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "PublicServiceAccountToken": {
