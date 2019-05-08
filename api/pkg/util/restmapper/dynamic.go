@@ -71,6 +71,8 @@ func (drm *DynamicRESTMapper) mapper() meta.RESTMapper {
 	return drm.delegate
 }
 
+// KindFor takes a partial resource and returns back the single match.
+// It returns an error if there are multiple matches.
 func (drm *DynamicRESTMapper) KindFor(resource schema.GroupVersionResource) (schema.GroupVersionKind, error) {
 	gvk, err := drm.mapper().KindFor(resource)
 	if drm.reloadOnError(err) {
@@ -79,6 +81,8 @@ func (drm *DynamicRESTMapper) KindFor(resource schema.GroupVersionResource) (sch
 	return gvk, err
 }
 
+// KindsFor takes a partial resource and returns back the list of
+// potential kinds in priority order.
 func (drm *DynamicRESTMapper) KindsFor(resource schema.GroupVersionResource) ([]schema.GroupVersionKind, error) {
 	gvks, err := drm.mapper().KindsFor(resource)
 	if drm.reloadOnError(err) {
@@ -87,6 +91,8 @@ func (drm *DynamicRESTMapper) KindsFor(resource schema.GroupVersionResource) ([]
 	return gvks, err
 }
 
+// ResourceFor takes a partial resource and returns back the single
+// match. It returns an error if there are multiple matches.
 func (drm *DynamicRESTMapper) ResourceFor(input schema.GroupVersionResource) (schema.GroupVersionResource, error) {
 	gvr, err := drm.mapper().ResourceFor(input)
 	if drm.reloadOnError(err) {
@@ -95,6 +101,8 @@ func (drm *DynamicRESTMapper) ResourceFor(input schema.GroupVersionResource) (sc
 	return gvr, err
 }
 
+// ResourcesFor takes a partial resource and returns back the list of
+// potential resource in priority order.
 func (drm *DynamicRESTMapper) ResourcesFor(input schema.GroupVersionResource) ([]schema.GroupVersionResource, error) {
 	gvrs, err := drm.mapper().ResourcesFor(input)
 	if drm.reloadOnError(err) {
@@ -103,6 +111,8 @@ func (drm *DynamicRESTMapper) ResourcesFor(input schema.GroupVersionResource) ([
 	return gvrs, err
 }
 
+// RESTMapping identifies a preferred resource mapping for the
+// provided group kind.
 func (drm *DynamicRESTMapper) RESTMapping(gk schema.GroupKind, versions ...string) (*meta.RESTMapping, error) {
 	m, err := drm.mapper().RESTMapping(gk, versions...)
 	if drm.reloadOnError(err) {
@@ -111,6 +121,9 @@ func (drm *DynamicRESTMapper) RESTMapping(gk schema.GroupKind, versions ...strin
 	return m, err
 }
 
+// RESTMappings returns the RESTMappings for the provided group kind
+// in a rough internal preferred order. If no kind is found, it will
+// return a NoResourceMatchError.
 func (drm *DynamicRESTMapper) RESTMappings(gk schema.GroupKind, versions ...string) ([]*meta.RESTMapping, error) {
 	ms, err := drm.mapper().RESTMappings(gk, versions...)
 	if drm.reloadOnError(err) {
@@ -119,6 +132,8 @@ func (drm *DynamicRESTMapper) RESTMappings(gk schema.GroupKind, versions ...stri
 	return ms, err
 }
 
+// ResourceSingularizer converts a resource name from plural to
+// singular (e.g., from pods to pod).
 func (drm *DynamicRESTMapper) ResourceSingularizer(resource string) (singular string, err error) {
 	s, err := drm.mapper().ResourceSingularizer(resource)
 	if drm.reloadOnError(err) {
