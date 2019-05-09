@@ -3,11 +3,16 @@ package client
 import (
 	"context"
 	"fmt"
+	"sync"
+
+	"github.com/golang/glog"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/util/restmapper"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
@@ -30,7 +35,11 @@ func NewInternal(seedClient ctrlruntimeclient.Client) (UserClusterConnectionProv
 	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
 		return nil, fmt.Errorf("failed to add clusterv1alpha1 to scheme: %v", err)
 	}
-	return &provider{seedClient: seedClient, useExternalAddress: false}, nil
+	return &provider{
+		seedClient:         seedClient,
+		useExternalAddress: false,
+		clusterRESTMapper:  map[string]meta.RESTMapper{},
+	}, nil
 }
 
 // NewExternal returns a new instance of the client connection provider that
@@ -40,12 +49,38 @@ func NewExternal(seedClient ctrlruntimeclient.Client) (UserClusterConnectionProv
 	if err := clusterv1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		return nil, fmt.Errorf("failed to add clusterv1alpha1 to scheme: %v", err)
 	}
-	return &provider{seedClient: seedClient, useExternalAddress: true}, nil
+	return &provider{
+		seedClient:         seedClient,
+		useExternalAddress: true,
+		clusterRESTMapper:  map[string]meta.RESTMapper{},
+	}, nil
 }
 
 type provider struct {
 	seedClient         ctrlruntimeclient.Client
 	useExternalAddress bool
+
+	mapperLock sync.Mutex
+	// We keep the existing cluster mappings to avoid the discovery on each call to the API server
+	clusterRESTMapper map[string]meta.RESTMapper
+}
+
+func (p *provider) mapper(c *kubermaticv1.Cluster, config *restclient.Config) (meta.RESTMapper, error) {
+	p.mapperLock.Lock()
+	defer p.mapperLock.Unlock()
+
+	if mapper, found := p.clusterRESTMapper[c.Name]; found {
+		return mapper, nil
+	}
+
+	mapper, err := restmapper.NewDynamicRESTMapper(config)
+	if err != nil {
+		return nil, err
+	}
+	glog.V(4).Infof("Created a mapper for cluster %s", c.Name)
+	p.clusterRESTMapper[c.Name] = mapper
+
+	return mapper, nil
 }
 
 // GetAdminKubeconfig returns the admin kubeconfig for the given cluster
@@ -114,7 +149,14 @@ func (p *provider) GetClient(c *kubermaticv1.Cluster, options ...ConfigOption) (
 	if err != nil {
 		return nil, err
 	}
-	dynamicClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
+
+	mapper, err := p.mapper(c, config)
+	if err != nil {
+		glog.Errorf("failed to get the REST mapper for the client: %v", err)
+		return ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
+	}
+
+	dynamicClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{Mapper: mapper})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create dynamic client: %v", err)
 	}
