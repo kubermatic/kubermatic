@@ -39,6 +39,10 @@ spec:
         {{- if .Values.prometheus.backup.enabled }}
         - --web.enable-admin-api
         {{- end }}
+        env:
+        # prevent excessive memory usage until Prometheus 2.10
+        - name: GODEBUG
+          value: madvdontneed=1
         ports:
         - containerPort: 9090
           name: web
