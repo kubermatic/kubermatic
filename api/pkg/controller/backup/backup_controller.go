@@ -116,15 +116,6 @@ func Add(
 		}
 
 		if ownerRef := metav1.GetControllerOf(a.Meta); ownerRef != nil && ownerRef.Kind == kubermaticv1.ClusterKindName {
-			cluster := &kubermaticv1.Cluster{}
-			err := mgr.GetClient().Get(context.Background(), types.NamespacedName{Name: ownerRef.Name}, cluster)
-			if err != nil {
-				if kerrors.IsNotFound(err) {
-					glog.V(4).Infof("Couldn't find cluster %q", ownerRef.Name)
-					return nil
-				}
-				glog.Errorf("failed to get cluster %q: %v", ownerRef.Name, err)
-			}
 			return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: ownerRef.Name}}}
 		}
 		return nil
