@@ -33,7 +33,15 @@ spec:
         - --config.file=/etc/prometheus/config/prometheus.yaml
         - --storage.tsdb.no-lockfile
         - --storage.tsdb.path=/var/prometheus/data
-        - --storage.tsdb.retention.time=360h
+        {{- with .Values.prometheus.tsdb.retentionTime }}
+        - --storage.tsdb.retention.time={{ . }}
+        {{- end }}
+        {{- with .Values.prometheus.tsdb.minBlockDuration }}
+        - --storage.tsdb.min-block-duration={{ . }}
+        {{- end }}
+        {{- with .Values.prometheus.tsdb.maxBlockDuration }}
+        - --storage.tsdb.max-block-duration={{ . }}
+        {{- end }}
         - --web.enable-lifecycle
         - --web.external-url=https://{{ .Values.prometheus.host | trim }}
         - --web.route-prefix=/
