@@ -185,7 +185,7 @@ func (v *Provider) GetNetworks(spec kubermaticv1.CloudSpec) ([]Network, error) {
 }
 
 // DefaultCloudSpec adds defaults to the cloud spec
-func (v *Provider) DefaultCloudSpec(spec kubermaticv1.CloudSpec) error {
+func (v *Provider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	dc, found := v.dcs[spec.DatacenterName]
 	if !found || dc.Spec.VSphere == nil {
 		return fmt.Errorf("invalid datacenter %q", spec.DatacenterName)
