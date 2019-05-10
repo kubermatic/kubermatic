@@ -1,7 +1,7 @@
 nodeExporter:
   image:
     repository: quay.io/prometheus/node-exporter
-    tag: v0.17.0
+    tag: v0.18.0
   resources:
     requests:
       cpu: 10m
