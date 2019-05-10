@@ -60,7 +60,16 @@ On Kubernetes v1.11
 - Our controller sees a difference between the object in Kubernetes and the one generated locally (`procMount` got removed)
 - The controller updates the object (We now reached an endless loop of updates)
 
-### Caveat
+### Mitigation
 
 In case of differences between the controllers & kubernetes defaulting, 
 we created an alert for dev.kubermatic.io which gets triggered on excessive update actions. `KubermaticControllerManagerHighPutRate`
+
+To figure out which fields of an object are affected by the defaulting, increase the loglevel of the Kubermatic controller manager to 4 (`-v=4`).
+The Kubermatic controller manager will now log the difference between the object coming from Kubernetes and the one generated locally:
+```
+Object *v1.Deployment cluster-sdj8g66xcv/openvpn-server differs from the one, generated: [Spec.Template.Spec.InitContainers.slice[0].SecurityContext.ProcMount: v1.ProcMountType != <nil pointer> Spec.Template.Spec.Containers.slice[0].SecurityContext.ProcMount: v1.ProcMountType != <nil pointer> Spec.Template.Spec.Containers.slice[1].SecurityContext.ProcMount: v1.ProcMountType != <nil pointer>]
+```
+
+Based on that information the fields can be set in the code.
+If the field is not specific to a certain resource, a [defaulting wrapper can be introduced/updated](https://github.com/kubermatic/kubermatic/blob/master/api/pkg/resources/reconciling/wrapper.go#L44) 
