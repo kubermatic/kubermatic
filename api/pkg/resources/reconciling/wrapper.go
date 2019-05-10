@@ -23,7 +23,7 @@ func OwnerRefWrapper(ref metav1.OwnerReference) ObjectModifier {
 }
 
 // DefaultContainer defaults all Container attributes to the same values as they would get from the Kubernetes API
-func DefaultContainer(c *corev1.Container) {
+func DefaultContainer(c *corev1.Container, procMountType *corev1.ProcMountType) {
 	if c.ImagePullPolicy == "" {
 		c.ImagePullPolicy = corev1.PullIfNotPresent
 	}
@@ -33,20 +33,40 @@ func DefaultContainer(c *corev1.Container) {
 	if c.TerminationMessagePolicy == "" {
 		c.TerminationMessagePolicy = corev1.TerminationMessageReadFile
 	}
+
+	// This attribut was added in 1.12
+	if c.SecurityContext != nil {
+		c.SecurityContext.ProcMount = procMountType
+	}
 }
 
 // DefaultDeployment defaults all Deployment attributes to the same values as they would et from the Kubernetes API
 func DefaultDeployment(creator DeploymentCreator) DeploymentCreator {
 	return func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+
+		// Find out the procMountType before running the creator
+		initContaineProcMountType := map[string]*corev1.ProcMountType{}
+		containerProcMountType := map[string]*corev1.ProcMountType{}
+		for _, container := range d.Spec.Template.Spec.InitContainers {
+			if container.SecurityContext != nil {
+				initContaineProcMountType[container.Name] = container.SecurityContext.ProcMount
+			}
+		}
+		for _, container := range d.Spec.Template.Spec.Containers {
+			if container.SecurityContext != nil {
+				containerProcMountType[container.Name] = container.SecurityContext.ProcMount
+			}
+		}
+
 		d, err := creator(d)
 		if err != nil {
 			return nil, err
 		}
-		for idx := range d.Spec.Template.Spec.InitContainers {
-			DefaultContainer(&d.Spec.Template.Spec.InitContainers[idx])
+		for idx, container := range d.Spec.Template.Spec.InitContainers {
+			DefaultContainer(&d.Spec.Template.Spec.InitContainers[idx], initContaineProcMountType[container.Name])
 		}
-		for idx := range d.Spec.Template.Spec.Containers {
-			DefaultContainer(&d.Spec.Template.Spec.Containers[idx])
+		for idx, container := range d.Spec.Template.Spec.Containers {
+			DefaultContainer(&d.Spec.Template.Spec.Containers[idx], containerProcMountType[container.Name])
 		}
 		return d, nil
 	}
