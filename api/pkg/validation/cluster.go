@@ -122,6 +122,9 @@ func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 	if newSpec.VSphere == nil && oldSpec.VSphere != nil {
 		return ErrCloudChangeNotAllowed
 	}
+	if newSpec.Packet == nil && oldSpec.Packet != nil {
+		return ErrCloudChangeNotAllowed
+	}
 	if newSpec.DatacenterName != oldSpec.DatacenterName {
 		return errors.New("changing the datacenter is not allowed")
 	}
