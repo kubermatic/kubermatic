@@ -225,6 +225,14 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:6b2fc71062354c8eb3fa9d20a4b9adb7a9148706cecc9140db2c28b4f094b992"
+  name = "github.com/dexidp/dex"
+  packages = ["api"]
+  pruneopts = "NUT"
+  revision = "60f47c4228b7719889eee4ca6c4c6cc60834d910"
+  version = "v2.16.0"
+
+[[projects]]
   digest = "1:7a6852b35eb5bbc184561443762d225116ae630c26a7c4d90546619f1e7d2ad2"
   name = "github.com/dgrijalva/jwt-go"
   packages = ["."]
@@ -1209,11 +1217,13 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0f4fa941e8b77e71e438a0d648fe5c622f7bc6489271a7c894258b06412d07b6"
+  digest = "1:8784e446ce8df05cfcbc00e060612d7eeb54f4cfe6525354a60c27666c75da6b"
   name = "golang.org/x/crypto"
   packages = [
     "argon2",
+    "bcrypt",
     "blake2b",
+    "blowfish",
     "curve25519",
     "ed25519",
     "ed25519/internal/edwards25519",
@@ -1857,6 +1867,7 @@
     "github.com/aws/aws-sdk-go/service/ec2",
     "github.com/aws/aws-sdk-go/service/iam",
     "github.com/coreos/go-oidc",
+    "github.com/dexidp/dex/api",
     "github.com/digitalocean/godo",
     "github.com/envoyproxy/go-control-plane/envoy/api/v2",
     "github.com/envoyproxy/go-control-plane/envoy/api/v2/core",
@@ -1932,9 +1943,12 @@
     "github.com/vmware/govmomi/find",
     "github.com/vmware/govmomi/simulator",
     "github.com/vmware/govmomi/vim25/types",
+    "golang.org/x/crypto/bcrypt",
     "golang.org/x/crypto/ssh",
+    "golang.org/x/net/context",
     "golang.org/x/oauth2",
     "google.golang.org/grpc",
+    "google.golang.org/grpc/credentials",
     "gopkg.in/square/go-jose.v2",
     "gopkg.in/square/go-jose.v2/jwt",
     "gopkg.in/yaml.v2",
