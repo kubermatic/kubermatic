@@ -613,7 +613,7 @@ func ensureAvailabilitySet(name, location string, cloud kubermaticv1.CloudSpec) 
 	return err
 }
 
-func (a *azure) DefaultCloudSpec(cloud kubermaticv1.CloudSpec) error {
+func (a *azure) DefaultCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
 

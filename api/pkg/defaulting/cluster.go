@@ -23,7 +23,7 @@ func DefaultCreateClusterSpec(
 		return nil
 	}
 
-	if err := cloudProvider.DefaultCloudSpec(spec.Cloud); err != nil {
+	if err := cloudProvider.DefaultCloudSpec(&spec.Cloud); err != nil {
 		return fmt.Errorf("failed to default cloud spec: %v", err)
 	}
 
