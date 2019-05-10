@@ -15,7 +15,7 @@ import (
 
 	"github.com/Masterminds/sprig"
 	"github.com/ghodss/yaml"
-	"github.com/go-logr/logr"
+	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -52,7 +52,7 @@ type KubeconfigProvider interface {
 
 // Reconciler stores necessary components that are required to manage in-cluster Add-On's
 type Reconciler struct {
-	log                logr.Logger
+	log                *zap.SugaredLogger
 	workerName         string
 	addonVariables     map[string]interface{}
 	kubernetesAddonDir string
@@ -68,16 +68,16 @@ type Reconciler struct {
 // managing in-cluster addons
 func Add(
 	mgr manager.Manager,
-	log logr.Logger,
+	log *zap.SugaredLogger,
 	numWorkers int,
 	workerName string,
 	addonCtxVariables map[string]interface{},
 	kubernetesAddonDir string,
 	openshiftAddonDir string,
 	overwriteRegistey string,
-	KubeconfigProvider KubeconfigProvider,
+	kubeconfigProvider KubeconfigProvider,
 ) error {
-	log = log.WithName(ControllerName)
+	log = log.Named(ControllerName)
 	client := mgr.GetClient()
 
 	reconciler := &Reconciler{
@@ -85,7 +85,7 @@ func Add(
 		addonVariables:     addonCtxVariables,
 		kubernetesAddonDir: kubernetesAddonDir,
 		openshiftAddonDir:  openshiftAddonDir,
-		KubeconfigProvider: KubeconfigProvider,
+		KubeconfigProvider: kubeconfigProvider,
 		Client:             client,
 		workerName:         workerName,
 		recorder:           mgr.GetRecorder(ControllerName),
@@ -132,8 +132,8 @@ func Add(
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	log := r.log.WithValues("request", request)
-	log.V(1).Info("Processing")
+	log := r.log.With("request", request)
+	log.Debug("Processing")
 
 	addon := &kubermaticv1.Addon{}
 	if err := r.Get(ctx, request.NamespacedName, addon); err != nil {
@@ -142,7 +142,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		}
 		return reconcile.Result{}, err
 	}
-	log = r.log.WithValues("cluster", addon.Spec.Cluster.Name)
+	log = r.log.With("cluster", addon.Spec.Cluster.Name)
 
 	// Add a wrapping here so we can emit an event on error
 	err := r.reconcile(ctx, log, addon)
@@ -162,7 +162,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	return reconcile.Result{}, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, log logr.Logger, addon *kubermaticv1.Addon) error {
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon) error {
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, types.NamespacedName{Name: addon.Spec.Cluster.Name}, cluster); err != nil {
 		// If its not a NotFound return it
@@ -180,7 +180,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log logr.Logger, addon *kube
 	}
 
 	if cluster.Spec.Pause {
-		log.V(1).Info("Skipping because the cluster is paused")
+		log.Debug("Skipping because the cluster is paused")
 		return nil
 	}
 
@@ -192,13 +192,13 @@ func (r *Reconciler) reconcile(ctx context.Context, log logr.Logger, addon *kube
 	// This could lead though to a potential leak of resources in case addons deploy LB's or PV's.
 	// The correct way of handling it though should be a optional cleanup routine in the cluster controller, which will delete all PV's and LB's inside the cluster cluster.
 	if cluster.DeletionTimestamp != nil {
-		log.V(1).Info("Skipping because the cluster is being deleted")
+		log.Debug("Skipping because the cluster is being deleted")
 		return nil
 	}
 
 	// When the apiserver is not healthy, we must skip it
 	if !cluster.Status.Health.Apiserver {
-		log.V(1).Info("Skipping because the API server is not running")
+		log.Debug("Skipping because the API server is not running")
 		return nil
 	}
 
@@ -224,7 +224,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log logr.Logger, addon *kube
 	return nil
 }
 
-func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log logr.Logger, addon *kubermaticv1.Addon) error {
+func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon) error {
 	finalizers := sets.NewString(addon.Finalizers...)
 	if finalizers.Has(cleanupFinalizerName) {
 		finalizers.Delete(cleanupFinalizerName)
@@ -258,7 +258,7 @@ func (r *Reconciler) GetTemplateFuncs() template.FuncMap {
 	return funcs
 }
 
-func (r *Reconciler) getAddonManifests(log logr.Logger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]runtime.RawExtension, error) {
+func (r *Reconciler) getAddonManifests(log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]runtime.RawExtension, error) {
 	var allManifests []runtime.RawExtension
 
 	addonDir := r.kubernetesAddonDir
@@ -305,14 +305,14 @@ func (r *Reconciler) getAddonManifests(log logr.Logger, addon *kubermaticv1.Addo
 
 	for _, info := range infos {
 		filename := path.Join(manifestPath, info.Name())
-		infoLog := log.WithValues("file", filename)
+		infoLog := log.With("file", filename)
 
 		if info.IsDir() {
-			infoLog.V(1).Info("Found directory in manifest path. Ignoring.")
+			infoLog.Debug("Found directory in manifest path. Ignoring.")
 			continue
 		}
 
-		infoLog.V(1).Info("Processing file %s")
+		infoLog.Debug("Processing file")
 
 		fbytes, err := ioutil.ReadFile(filename)
 		if err != nil {
@@ -332,7 +332,7 @@ func (r *Reconciler) getAddonManifests(log logr.Logger, addon *kubermaticv1.Addo
 
 		sd := strings.TrimSpace(bufferAll.String())
 		if len(sd) == 0 {
-			infoLog.V(1).Info("Skipping file as its empty after parsing")
+			infoLog.Debug("Skipping file as its empty after parsing")
 			continue
 		}
 
@@ -428,7 +428,7 @@ func (r *Reconciler) getAddonLabel(addon *kubermaticv1.Addon) map[string]string 
 
 type fileHandlingDone func()
 
-func getFileDeleteFinalizer(log logr.Logger, filename string) fileHandlingDone {
+func getFileDeleteFinalizer(log *zap.SugaredLogger, filename string) fileHandlingDone {
 	return func() {
 		if err := os.RemoveAll(filename); err != nil {
 			log.Error(err, "Failed to delete file", "file", filename)
@@ -436,18 +436,18 @@ func getFileDeleteFinalizer(log logr.Logger, filename string) fileHandlingDone {
 	}
 }
 
-func (r *Reconciler) writeCombinedManifest(log logr.Logger, manifest *bytes.Buffer, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, fileHandlingDone, error) {
+func (r *Reconciler) writeCombinedManifest(log *zap.SugaredLogger, manifest *bytes.Buffer, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, fileHandlingDone, error) {
 	//Write combined Manifest to disk
 	manifestFilename := path.Join("/tmp", fmt.Sprintf("cluster-%s-%s.yaml", cluster.Name, addon.Name))
 	if err := ioutil.WriteFile(manifestFilename, manifest.Bytes(), 0644); err != nil {
 		return "", nil, fmt.Errorf("failed to write combined manifest to %s: %v", manifestFilename, err)
 	}
-	log.Info("Wrote combined manifest", "file", manifestFilename, "content", manifest.String())
+	log.Debug("Wrote combined manifest", "file", manifestFilename, "content", manifest.String())
 
 	return manifestFilename, getFileDeleteFinalizer(log, manifestFilename), nil
 }
 
-func (r *Reconciler) writeAdminKubeconfig(log logr.Logger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, fileHandlingDone, error) {
+func (r *Reconciler) writeAdminKubeconfig(log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, fileHandlingDone, error) {
 	// Write kubeconfig to disk
 	kubeconfig, err := r.KubeconfigProvider.GetAdminKubeconfig(cluster)
 	if err != nil {
@@ -457,12 +457,12 @@ func (r *Reconciler) writeAdminKubeconfig(log logr.Logger, addon *kubermaticv1.A
 	if err := ioutil.WriteFile(kubeconfigFilename, kubeconfig, 0644); err != nil {
 		return "", nil, fmt.Errorf("failed to write admin kubeconfig for cluster %s: %v", cluster.Name, err)
 	}
-	log.V(1).Info("Wrote admin kubeconfig", "file", kubeconfigFilename)
+	log.Debug("Wrote admin kubeconfig", "file", kubeconfigFilename)
 
 	return kubeconfigFilename, getFileDeleteFinalizer(log, kubeconfigFilename), nil
 }
 
-func (r *Reconciler) setupManifestInteraction(log logr.Logger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, string, fileHandlingDone, error) {
+func (r *Reconciler) setupManifestInteraction(log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, string, fileHandlingDone, error) {
 	manifests, err := r.getAddonManifests(log, addon, cluster)
 	if err != nil {
 		return "", "", nil, fmt.Errorf("failed to get addon manifests: %v", err)
@@ -520,7 +520,7 @@ func (r *Reconciler) ensureFinalizerIsSet(ctx context.Context, addon *kubermatic
 	return r.Client.Update(ctx, addon)
 }
 
-func (r *Reconciler) ensureIsInstalled(ctx context.Context, log logr.Logger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
 	kubeconfigFilename, manifestFilename, done, err := r.setupManifestInteraction(log, addon, cluster)
 	if err != nil {
 		return err
@@ -533,25 +533,25 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log logr.Logger, add
 	}
 	sd := strings.TrimSpace(string(d))
 	if len(sd) == 0 {
-		log.V(1).Info("Skipping addon installation as the manifest is empty after parsing")
+		log.Debug("Skipping addon installation as the manifest is empty after parsing")
 		return nil
 	}
 
 	// We delete all resources with this label which are not in the combined manifest
 	selector := labels.SelectorFromSet(r.getAddonLabel(addon))
 	cmd := r.getApplyCommand(ctx, kubeconfigFilename, manifestFilename, selector, isOpenshift(cluster))
-	cmdLog := log.WithValues("cmd", strings.Join(cmd.Args, " "))
+	cmdLog := log.With("cmd", strings.Join(cmd.Args, " "))
 
-	cmdLog.V(1).Info("Applying manifest...")
+	cmdLog.Debug("Applying manifest...")
 	out, err := cmd.CombinedOutput()
-	cmdLog.V(1).Info("Finished executing command", "output", string(out))
+	cmdLog.Debug("Finished executing command", "output", string(out))
 	if err != nil {
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %v\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
 	}
 	return err
 }
 
-func (r *Reconciler) cleanupManifests(ctx context.Context, log logr.Logger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
 	kubeconfigFilename, manifestFilename, done, err := r.setupManifestInteraction(log, addon, cluster)
 	if err != nil {
 		return err
@@ -559,11 +559,11 @@ func (r *Reconciler) cleanupManifests(ctx context.Context, log logr.Logger, addo
 	defer done()
 
 	cmd := r.getDeleteCommand(ctx, kubeconfigFilename, manifestFilename, isOpenshift(cluster))
-	cmdLog := log.WithValues("cmd", strings.Join(cmd.Args, " "))
+	cmdLog := log.With("cmd", strings.Join(cmd.Args, " "))
 
-	cmdLog.V(1).Info("Deleting resources...")
+	cmdLog.Debug("Deleting resources...")
 	out, err := cmd.CombinedOutput()
-	cmdLog.V(1).Info("Finished executing command", "output", string(out))
+	cmdLog.Debug("Finished executing command", "output", string(out))
 	if err != nil {
 		if wasKubectlDeleteSuccessful(string(out)) {
 			return nil

@@ -11,13 +11,13 @@ import (
 	"testing"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
-	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 var testManifests = []string{
@@ -180,7 +180,7 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	log := ctrlruntimelog.ZapLogger(true)
+	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 
 	controller := &Reconciler{
 		kubernetesAddonDir: addonDir,
@@ -234,7 +234,7 @@ func TestController_getAddonDeploymentManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	log := ctrlruntimelog.ZapLogger(true)
+	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 
 	controller := &Reconciler{
 		kubernetesAddonDir: addonDir,
@@ -273,7 +273,7 @@ func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	log := ctrlruntimelog.ZapLogger(true)
+	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 
 	controller := &Reconciler{
 		kubernetesAddonDir: addonDir,
@@ -310,7 +310,7 @@ func TestController_getAddonManifests(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	log := ctrlruntimelog.ZapLogger(true)
+	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 
 	multilineManifest := fmt.Sprintf(`%s
 ---
@@ -440,7 +440,7 @@ Error from server (NotFound): error when stopping "/tmp/cluster-rwhxp9j5j-metric
 }
 
 func TestHugeManifest(t *testing.T) {
-	log := ctrlruntimelog.ZapLogger(true)
+	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 	cluster := setupTestCluster("10.10.10.0/24")
 	addon := setupTestAddon("istio")
 	r := &Reconciler{

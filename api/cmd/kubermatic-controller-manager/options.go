@@ -9,7 +9,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/go-logr/logr"
+	"go.uber.org/zap"
+
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	"github.com/kubermatic/kubermatic/api/pkg/features"
@@ -198,8 +199,8 @@ func (o controllerRunOptions) validate() error {
 		return errors.New("The metrics-server addon must be disabled, it is now deployed inside the seed cluster")
 	}
 
-	if !kubermaticlog.AvailableFormats.Has(o.log.format) {
-		return errors.New("invalid log-format specified. Available: " + kubermaticlog.AvailableFormats.String())
+	if !kubermaticlog.AvailableFormats.Contains(o.log.format) {
+		return fmt.Errorf("invalid log-format specified %q; available: %s", o.log.format, kubermaticlog.AvailableFormats.String())
 	}
 
 	return nil
@@ -228,5 +229,5 @@ type controllerContext struct {
 	clientProvider       client.UserClusterConnectionProvider
 	dcs                  map[string]provider.DatacenterMeta
 	dockerPullConfigJSON []byte
-	log                  logr.Logger
+	log                  *zap.SugaredLogger
 }
