@@ -302,7 +302,7 @@ groups:
   - alert: KubernetesControllerManagerDown
     annotations:
       message: Kubernetes controller-manager has disappeared from Prometheus target discovery.
-    expr: absent(up{job="controller-manager"} == 1)
+    expr: absent(up{job="controller-manager"} == 1) and absent(up{job="openshift-controller-manager"} == 1)
     for: 15m
     labels:
       severity: critical
@@ -310,7 +310,7 @@ groups:
   - alert: KubernetesSchedulerDown
     annotations:
       message: Kubernetes scheduler has disappeared from Prometheus target discovery.
-    expr: absent(up{job="scheduler"} == 1)
+    expr: absent(up{job="scheduler"} == 1) and absent(up{job="openshift-controller-manager"} == 1)
     for: 15m
     labels:
       severity: critical
