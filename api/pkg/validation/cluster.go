@@ -122,6 +122,9 @@ func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 	if newSpec.VSphere == nil && oldSpec.VSphere != nil {
 		return ErrCloudChangeNotAllowed
 	}
+	if newSpec.Packet == nil && oldSpec.Packet != nil {
+		return ErrCloudChangeNotAllowed
+	}
 	if newSpec.DatacenterName != oldSpec.DatacenterName {
 		return errors.New("changing the datacenter is not allowed")
 	}
@@ -265,9 +268,18 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc provider.DatacenterMeta) 
 		}
 
 		if spec.VSphere.Password == "" {
-			return errors.New("no password provided")
+			return errors.New("no password specified")
 		}
+		return nil
+	}
 
+	if spec.Packet != nil {
+		if spec.Packet.APIKey == "" {
+			return errors.New("no API key specified")
+		}
+		if spec.Packet.ProjectID == "" {
+			return errors.New("no project ID specified")
+		}
 		return nil
 	}
 
