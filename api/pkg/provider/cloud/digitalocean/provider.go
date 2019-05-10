@@ -20,7 +20,7 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 	}
 }
 
-func (do *digitalocean) DefaultCloudSpec(spec kubermaticv1.CloudSpec) error {
+func (do *digitalocean) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
