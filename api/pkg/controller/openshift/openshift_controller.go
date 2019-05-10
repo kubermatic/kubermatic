@@ -8,6 +8,7 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/clusterdeletion"
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
+	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -96,9 +97,8 @@ func Add(
 	oidcConfig OIDCConfig,
 	features Features,
 ) error {
-	dynamicClient := mgr.GetClient()
 	reconciler := &Reconciler{
-		Client:               dynamicClient,
+		Client:               mgr.GetClient(),
 		scheme:               mgr.GetScheme(),
 		recorder:             mgr.GetRecorder(ControllerName),
 		dc:                   dc,
@@ -119,20 +119,6 @@ func Add(
 		return err
 	}
 
-	enqueueClusterForNamespacedObject := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
-		clusterList := &kubermaticv1.ClusterList{}
-		if err := dynamicClient.List(context.Background(), &client.ListOptions{}, clusterList); err != nil {
-			// TODO: Is there a better way to handle errors that occur here?
-			glog.Errorf("failed to list Clusters: %v", err)
-		}
-		for _, cluster := range clusterList.Items {
-			if cluster.Status.NamespaceName == a.Meta.GetNamespace() {
-				return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: cluster.Name}}}
-			}
-		}
-		return []reconcile.Request{}
-	})}
-
 	typesToWatch := []runtime.Object{
 		&corev1.Service{},
 		&corev1.ConfigMap{},
@@ -146,7 +132,7 @@ func Add(
 	}
 
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, enqueueClusterForNamespacedObject); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
 		}
 	}
