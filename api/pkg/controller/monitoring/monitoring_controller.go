@@ -8,6 +8,7 @@ import (
 	"github.com/golang/glog"
 
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
+	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
@@ -123,8 +124,6 @@ func Add(
 		return err
 	}
 
-	ownerHandler := &handler.EnqueueRequestForOwner{IsController: true, OwnerType: &kubermaticv1.Cluster{}}
-
 	typesToWatch := []runtime.Object{
 		&corev1.ServiceAccount{},
 		&rbacv1.Role{},
@@ -138,7 +137,7 @@ func Add(
 	}
 
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, ownerHandler); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
 		}
 	}
@@ -151,8 +150,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	defer cancel()
 
 	cluster := &kubermaticv1.Cluster{}
-	// Ignore the namespace in the request
-	request.NamespacedName.Namespace = ""
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if kubeapierrors.IsNotFound(err) {
 			glog.V(4).Infof("Couldn't find cluster %q", request.NamespacedName.String())
