@@ -37,7 +37,7 @@ type amazonEc2 struct {
 	dcs map[string]provider.DatacenterMeta
 }
 
-func (a *amazonEc2) DefaultCloudSpec(spec kubermaticv1.CloudSpec) error {
+func (a *amazonEc2) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
