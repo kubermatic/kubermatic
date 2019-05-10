@@ -240,6 +240,59 @@ func TestGetClusterUpgrades(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "upgrade not available for OpenShift (versions 3.11.*)",
+			cluster: func() *kubermaticv1.Cluster {
+				c := test.GenCluster("foo", "foo", "project", time.Now())
+				c.Labels = map[string]string{"user": test.UserName}
+				c.Annotations = map[string]string{"kubermatic.io/openshift": "true"}
+				c.Spec.Version = *ksemver.NewSemverOrDie("3.11.0")
+				return c
+			}(),
+			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(),
+			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
+			apiUser:                    *test.GenDefaultAPIUser(),
+			wantUpdates:                []*apiv1.MasterVersion{},
+			versions: []*version.MasterVersion{
+				{
+					Version: semver.MustParse("1.7.0"),
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("3.11.0"),
+					Default: true,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("3.11.1"),
+					Default: false,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("3.11.2"),
+					Default: false,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("3.11.3"),
+					Default: false,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("5.2"),
+					Default: false,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+			},
+			updates: []*version.MasterUpdate{
+				{
+					From:      "3.11.0",
+					To:        "3.11.*",
+					Automatic: true,
+					Type:      apiv1.OpenShiftClusterType,
+				},
+			},
+		},
 	}
 	for _, testStruct := range tests {
 		t.Run(testStruct.name, func(t *testing.T) {

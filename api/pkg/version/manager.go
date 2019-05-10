@@ -55,17 +55,6 @@ func NewFromFiles(versionsFilename, updatesFilename string) (*Manager, error) {
 		if len(update.Type) == 0 {
 			update.Type = v1.KubernetesClusterType
 		}
-		// sanity check if OpenShift update from version 3.11 or 3.11.*
-		if update.Type == v1.OpenShiftClusterType {
-			forbiddenUpdate, err := regexp.MatchString(`^3\.11(\.(\*|\d+))?$`, update.From)
-			if err != nil {
-				return nil, fmt.Errorf("failed to validate version %s: %v", update.From, err)
-			}
-			if forbiddenUpdate {
-				return nil, fmt.Errorf("the OpenShift can not be updated from version 3.11")
-			}
-
-		}
 	}
 
 	versions, err := LoadVersions(versionsFilename)
@@ -176,6 +165,18 @@ func (m *Manager) GetPossibleUpdates(sfrom, ctype string) ([]*MasterVersion, err
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %v", sfrom, err)
 	}
+	var possibleVersions []*MasterVersion
+
+	// can't upgrade OpenShift from version 3.11 or 3.11.*
+	if ctype == v1.OpenShiftClusterType {
+		forbiddenUpdate, err := regexp.MatchString(`^3\.11(\.(\*|\d+))?$`, sfrom)
+		if err != nil {
+			return nil, fmt.Errorf("failed to validate version %s: %v", sfrom, err)
+		}
+		if forbiddenUpdate {
+			return possibleVersions, nil
+		}
+	}
 
 	var toConstraints []*semver.Constraints
 	for _, u := range m.updates {
@@ -196,7 +197,6 @@ func (m *Manager) GetPossibleUpdates(sfrom, ctype string) ([]*MasterVersion, err
 		}
 	}
 
-	var possibleVersions []*MasterVersion
 	for _, c := range toConstraints {
 		for _, v := range m.versions {
 			if c.Check(v.Version) && !from.Equal(v.Version) && v.Type == ctype {
