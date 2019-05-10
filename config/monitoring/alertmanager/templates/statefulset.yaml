@@ -105,7 +105,7 @@ spec:
       nodeSelector:
 {{ toYaml .Values.alertmanager.nodeSelector | indent 8 }}
       affinity:
-{{ toYaml .Values.alertmanager.affinity | indent 8 }}
+{{ tpl (toYaml .Values.alertmanager.affinity) . | fromYaml | toYaml | indent 8 }}
       tolerations:
 {{ toYaml .Values.alertmanager.tolerations | indent 8 }}
   updateStrategy:
