@@ -4,31 +4,33 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
 
-	"github.com/golang/glog"
+	"github.com/go-logr/zapr"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/zap"
 
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/collectors"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/migrations"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 
 	"k8s.io/apimachinery/pkg/api/meta"
+	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	ctrlruntimemetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
-
-	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 const (
@@ -36,37 +38,39 @@ const (
 )
 
 func main() {
-
 	options, err := newControllerRunOptions()
 	if err != nil {
-		glog.Fatalf("failed to create controller run options due to = %v", err)
+		fmt.Printf("Failed to create controller run options due to = %v\n", err)
+		os.Exit(1)
 	}
+
 	if err := options.validate(); err != nil {
-		glog.Fatal(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
+	rawLog := kubermaticlog.New(options.log.Debug, kubermaticlog.Format(options.log.Format))
+	log := rawLog.Sugar()
 
 	config, err := clientcmd.BuildConfigFromFlags(options.masterURL, options.kubeconfig)
 	if err != nil {
-		glog.Fatal(err)
+		log.Fatal(err)
 	}
 
-	var g run.Group
-
-	// Enable logging
-	log.SetLogger(log.ZapLogger(false))
+	// Set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.Log = ctrlruntimelog.NewDelegatingLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
 
 	// Create a manager, disable metrics as we have our own handler that exposes
 	// the metrics of both the ctrltuntime registry and the default registry
 	mgr, err := manager.New(config, manager.Options{MetricsBindAddress: "0"})
 	if err != nil {
-		glog.Fatalf("failed to create mgr: %v", err)
+		log.Fatalf("failed to create mgr: %v", err)
 	}
 	// Add all custom type schemes to our scheme. Otherwise we won't get a informer
 	if err := autoscalingv1beta2.AddToScheme(mgr.GetScheme()); err != nil {
-		glog.Fatalf("failed to add the autoscaling.k8s.io scheme to mgr: %v", err)
+		log.Fatalf("failed to add the autoscaling.k8s.io scheme to mgr: %v", err)
 	}
 	if err := kubermaticv1.SchemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
-		glog.Fatalf("failed to add kubermatic scheme to mgr: %v", err)
+		log.Fatalf("failed to add kubermatic scheme to mgr: %v", err)
 	}
 
 	recorder := mgr.GetRecorder(controllerName)
@@ -74,7 +78,7 @@ func main() {
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
 	if _, err := informer.GetSyncedStoreFromDynamicFactory(mgr.GetCache(), &autoscalingv1beta2.VerticalPodAutoscaler{}); err != nil {
 		if _, crdNotRegistered := err.(*meta.NoKindMatchError); crdNotRegistered {
-			glog.Fatal(`
+			log.Fatal(`
 The VerticalPodAutoscaler is not installed in this seed cluster.
 Please install the VerticalPodAutoscaler according to the documentation: https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler#installation`)
 		}
@@ -85,22 +89,23 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 
 	dockerPullConfigJSON, err := ioutil.ReadFile(options.dockerPullConfigJSONFile)
 	if err != nil {
-		glog.Fatalf("Failed to read dockerPullConfigJSON file %q: %v", options.dockerPullConfigJSONFile, err)
+		log.Fatalf("Failed to read dockerPullConfigJSON file %q: %v", options.dockerPullConfigJSONFile, err)
 	}
 
-	ctrlCtx, err := newControllerContext(options, mgr)
+	ctrlCtx, err := newControllerContext(options, mgr, log)
 	if err != nil {
-		glog.Fatal(err)
+		log.Fatal(err)
 	}
 	ctrlCtx.dockerPullConfigJSON = dockerPullConfigJSON
 
 	if err := createAllControllers(ctrlCtx); err != nil {
-		glog.Fatalf("could not create all controllers: %v", err)
+		log.Fatalf("could not create all controllers: %v", err)
 	}
 
-	glog.V(4).Info("Starting clusters collector")
+	log.Debug("Starting clusters collector")
 	collectors.MustRegisterClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetClient())
 
+	var g run.Group
 	// This group is forever waiting in a goroutine for signals to stop
 	{
 		signalCtx, stopWaitingForSignal := context.WithCancel(context.Background())
@@ -109,7 +114,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		g.Add(func() error {
 			select {
 			case <-signalChan:
-				glog.Info("Received a signal to stop")
+				log.Info("Received a signal to stop")
 				return nil
 			case <-signalCtx.Done():
 				return nil
@@ -130,7 +135,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		}
 
 		g.Add(func() error {
-			glog.Infof("Starting the internal HTTP server: %s\n", options.internalAddr)
+			log.Infof("Starting the internal HTTP server: %s\n", options.internalAddr)
 			return m.Start(metricsServerCtx.Done())
 		}, func(err error) {
 			stopMetricsServer()
@@ -148,25 +153,25 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 			}
 			callbacks := kubeleaderelection.LeaderCallbacks{
 				OnStartedLeading: func(ctx context.Context) {
-					glog.Info("Acquired the leader lease")
+					log.Info("Acquired the leader lease")
 
-					glog.Info("Executing migrations...")
+					log.Info("Executing migrations...")
 					if err := migrations.RunAll(ctrlCtx.mgr.GetConfig(), ctrlCtx.runOptions.workerName); err != nil {
-						glog.Errorf("failed to run migrations: %v", err)
+						log.Errorf("failed to run migrations: %v", err)
 						stopLeaderElection()
 						return
 					}
-					glog.Info("Migrations executed successfully")
+					log.Info("Migrations executed successfully")
 
-					glog.Info("Starting the controller-manager...")
+					log.Info("Starting the controller-manager...")
 					if err := mgr.Start(ctx.Done()); err != nil {
-						glog.Errorf("The controller-manager stopped with an error: %v", err)
+						log.Errorf("The controller-manager stopped with an error: %v", err)
 						stopLeaderElection()
 					}
 				},
 				OnStoppedLeading: func() {
 					// Gets called when we could not renew the lease or the parent context was closed
-					glog.Info("Shutting down the controller-manager...")
+					log.Info("Shutting down the controller-manager...")
 					stopLeaderElection()
 				},
 			}
@@ -188,17 +193,19 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	}
 
 	if err := g.Run(); err != nil {
-		glog.Fatal(err)
+		log.Fatal(err)
 	}
 }
 
 func newControllerContext(
 	runOp controllerRunOptions,
 	mgr manager.Manager,
+	log *zap.SugaredLogger,
 ) (*controllerContext, error) {
 	ctrlCtx := &controllerContext{
 		mgr:        mgr,
 		runOptions: runOp,
+		log:        log,
 	}
 
 	var err error

@@ -9,9 +9,12 @@ import (
 	"path"
 	"strings"
 
+	"go.uber.org/zap"
+
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	"github.com/kubermatic/kubermatic/api/pkg/features"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -51,6 +54,7 @@ type controllerRunOptions struct {
 	inClusterPrometheusScrapingConfigsFile           string
 	monitoringScrapeAnnotationPrefix                 string
 	dockerPullConfigJSONFile                         string
+	log                                              kubermaticlog.Options
 
 	// OIDC configuration
 	oidcCAFile             string
@@ -100,6 +104,8 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.oidcIssuerURL, "oidc-issuer-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.StringVar(&c.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
 	flag.StringVar(&c.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
+	flag.BoolVar(&c.log.Debug, "log-debug", false, "Enables debug logging")
+	flag.StringVar(&c.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.Parse()
 
 	featureGates, err := features.NewFeatures(rawFeatureGates)
@@ -186,6 +192,10 @@ func (o controllerRunOptions) validate() error {
 		return errors.New("The metrics-server addon must be disabled, it is now deployed inside the seed cluster")
 	}
 
+	if err := o.log.Validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -212,4 +222,5 @@ type controllerContext struct {
 	clientProvider       client.UserClusterConnectionProvider
 	dcs                  map[string]provider.DatacenterMeta
 	dockerPullConfigJSON []byte
+	log                  *zap.SugaredLogger
 }

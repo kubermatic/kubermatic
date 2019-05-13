@@ -32,5 +32,7 @@ KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
   -oidc-issuer-client-id=$(vault kv get -field=oidc-issuer-client-id dev/seed-clusters/dev.kubermatic.io) \
   -oidc-issuer-client-secret=$(vault kv get -field=oidc-issuer-client-secret dev/seed-clusters/dev.kubermatic.io) \
   -monitoring-scrape-annotation-prefix='kubermatic.io' \
+  -log-debug=true \
+  -log-format=Console \
   -logtostderr=1 \
-  -v=6 $@ 2>&1|tee /tmp/kubermatic-controller-manager.log
+  -v=4 $@ 2>&1|tee /tmp/kubermatic-controller-manager.log

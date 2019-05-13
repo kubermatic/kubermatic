@@ -215,6 +215,7 @@ func createUpdateController(ctrlCtx *controllerContext) error {
 func createAddonController(ctrlCtx *controllerContext) error {
 	return addon.Add(
 		ctrlCtx.mgr,
+		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		map[string]interface{}{ // addonVariables
