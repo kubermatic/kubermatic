@@ -173,3 +173,14 @@ subjects:
 - kind: ServiceAccount
   name: coredns
   namespace: kube-system
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: coredns
+  namespace: kube-system
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      k8s-app: kube-dns
