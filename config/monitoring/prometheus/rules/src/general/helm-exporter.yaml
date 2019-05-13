@@ -1,0 +1,20 @@
+groups:
+- name: helm-exporter
+  rules:
+  - alert: HelmReleaseNotDeployed
+    annotations:
+      message:
+        The Helm release `{{ $labels.release }}` (`{{ $labels.chart }}` chart in namespace `{{ $labels.exported_namespace }}`)
+        in version {{ $labels.version }} has not been ready for more than 15 minutes.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-helmreleasenotdeployed
+    expr: helm_chart_info != 1
+    for: 15m
+    labels:
+      severity: warning
+    runbook:
+      steps:
+      - Check the installed Helm releases via `helm --tiller-namespace kubermtic-installer ls`.
+      - If all releases are status `DEPLOYED`, make sure the helme-exporter is looking at the correct Tiller by checking
+        the `values.yaml` flag `helmExporter.tillerNamespace`.
+      - If Helm cannot repair the chart automatically, delete/purge the chart (`helm delete --purge [RELEASE]`) and
+        re-install the chart again. Re-installing charts will not affect any existing data in existing PersistentVolumeClaims.

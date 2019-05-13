@@ -1,0 +1,14 @@
+# This file has been generated, do not edit.
+groups:
+- name: helm-exporter
+  rules:
+  - alert: HelmReleaseNotDeployed
+    annotations:
+      message: The Helm release `{{ $labels.release }}` (`{{ $labels.chart }}` chart
+        in namespace `{{ $labels.exported_namespace }}`) in version {{ $labels.version
+        }} has not been ready for more than 15 minutes.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-helmreleasenotdeployed
+    expr: helm_chart_info != 1
+    for: 15m
+    labels:
+      severity: warning

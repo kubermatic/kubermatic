@@ -71,6 +71,7 @@ deploy "prometheus" "monitoring" ./config/monitoring/prometheus/
 deploy "node-exporter" "monitoring" ./config/monitoring/node-exporter/
 deploy "kube-state-metrics" "monitoring" ./config/monitoring/kube-state-metrics/
 deploy "grafana" "monitoring" ./config/monitoring/grafana/
+deploy "helm-exporter" "monitoring" ./config/monitoring/helm-exporter/
 if [[ "${DEPLOY_ALERTMANAGER}" = true ]]; then
   deploy "alertmanager" "monitoring" ./config/monitoring/alertmanager/
 fi

@@ -1,0 +1,13 @@
+helmExporter:
+  replicas: 1
+  tillerNamespace: kubermatic-installer
+  image:
+    repository: sstarcher/helm-exporter
+    tag: 0.4.0
+    pullPolicy: IfNotPresent
+  nameOverride: ''
+
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
