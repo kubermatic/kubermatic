@@ -333,7 +333,7 @@ func (r *Reconciler) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 				if err == io.EOF {
 					break
 				}
-				return nil, fmt.Errorf("failed reading from YAML reader: %v", err)
+				return nil, fmt.Errorf("failed reading from YAML reader for file %s: %v", filename, err)
 			}
 			b = bytes.TrimSpace(b)
 			if len(b) == 0 {
@@ -342,7 +342,7 @@ func (r *Reconciler) getAddonManifests(addon *kubermaticv1.Addon, cluster *kuber
 			decoder := kyaml.NewYAMLToJSONDecoder(bytes.NewBuffer(b))
 			raw := runtime.RawExtension{}
 			if err := decoder.Decode(&raw); err != nil {
-				return nil, fmt.Errorf("decoding failed: %v", err)
+				return nil, fmt.Errorf("decoding failed for file %s: %v", filename, err)
 			}
 			if len(raw.Raw) == 0 {
 				// This can happen if the manifest contains only comments, e.G. because it comes from Helm
