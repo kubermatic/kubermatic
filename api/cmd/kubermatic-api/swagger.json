@@ -4787,6 +4787,14 @@
         "operatingSystem": {
           "$ref": "#/definitions/OperatingSystemSpec"
         },
+        "taints": {
+          "description": "List of taints to set on new nodes",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TaintSpec"
+          },
+          "x-go-name": "Taints"
+        },
         "versions": {
           "$ref": "#/definitions/NodeVersionInfo"
         }
@@ -5571,6 +5579,25 @@
           "description": "Token the JWT token",
           "type": "string",
           "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "TaintSpec": {
+      "description": "TaintSpec defines a node taint",
+      "type": "object",
+      "properties": {
+        "effect": {
+          "type": "string",
+          "x-go-name": "Effect"
+        },
+        "key": {
+          "type": "string",
+          "x-go-name": "Key"
+        },
+        "value": {
+          "type": "string",
+          "x-go-name": "Value"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
