@@ -1,0 +1,96 @@
+{{- if .Values.alertmanager.migration.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: '{{ template "name" . }}-migration'
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: migrate-volumes
+        image: '{{ .Values.alertmanager.migration.image.repository }}:{{ .Values.alertmanager.migration.image.tag }}'
+        command: [/bin/bash]
+        args:
+        - -c
+        - |
+          set -euo pipefail
+
+          migrate() {
+            local ordinal="$1"
+
+            echo "Migrating volume for Alertmanager replica $ordinal..."
+
+            lockfile=/alertmanager/new-$ordinal/.migrated
+
+            if [ -f $lockfile ]; then
+              echo "Target volume has already been migrated, skipping rsync."
+              return 0
+            fi
+
+            rsync \
+              --archive \
+              --delete \
+              --hard-links \
+              --whole-file \
+              /alertmanager/old-$ordinal/ /alertmanager/new-$ordinal/
+
+            echo $(date) > $lockfile
+
+            echo "Volume was successfully migrated."
+          }
+
+          {{- range (until (int .Values.alertmanager.replicas)) }}
+          migrate {{ . }}
+          {{- end }}
+
+          echo "Migration completed!"
+          echo "Please disable the alertmanager.migration.enabled flag in your values.yaml now."
+          echo "To force a re-run, delete the .migrated lock file from the volume."
+
+        volumeMounts:
+        {{- range (until (int .Values.alertmanager.replicas)) }}
+        - name: db-old-{{ . }}
+          mountPath: /alertmanager/old-{{ . }}
+          readOnly: false
+          subPath: alertmanager-db
+        - name: db-new-{{ . }}
+          mountPath: /alertmanager/new-{{ . }}
+          readOnly: false
+          subPath: alertmanager-db
+        {{- end }}
+        securityContext:
+          runAsNonRoot: false
+          runAsUser: 0
+        resources:
+{{ toYaml .Values.alertmanager.resources.migration | indent 10 }}
+
+      volumes:
+      {{- range (until (int .Values.alertmanager.replicas)) }}
+      - name: db-old-{{ . }}
+        persistentVolumeClaim:
+          claimName: alertmanager-kubermatic-db-alertmanager-kubermatic-{{ . }}
+      - name: db-new-{{ . }}
+        persistentVolumeClaim:
+          claimName: db-{{ template "name" $ }}-{{ . }}
+      {{- end }}
+
+{{- range (until (int .Values.alertmanager.replicas)) }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: db-{{ template "name" $ }}-{{ . }}
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  {{- with $.Values.alertmanager.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ $.Values.alertmanager.resources.storage | default $.Values.alertmanager.storageSize }}
+{{- end }}
+{{ end }}
