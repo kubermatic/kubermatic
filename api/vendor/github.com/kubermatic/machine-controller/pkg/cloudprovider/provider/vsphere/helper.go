@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"os/exec"
 	"text/template"
@@ -40,14 +41,10 @@ import (
 )
 
 const (
-	snapshotName     = "machine-controller"
-	snapshotDesc     = "Snapshot created by machine-controller"
 	localTempDir     = "/tmp"
 	metaDataTemplate = `instance-id: {{ .InstanceID}}
 	local-hostname: {{ .Hostname }}`
 )
-
-var errSnapshotNotFound = errors.New("no snapshot with given name found")
 
 func createClonedVM(ctx context.Context, vmName string, config *Config, dc *object.Datacenter, f *find.Finder, containerLinuxUserdata string) (*object.VirtualMachine, error) {
 	templateVM, err := f.VirtualMachine(ctx, config.TemplateVMName)
@@ -77,20 +74,6 @@ func createClonedVM(ctx context.Context, vmName string, config *Config, dc *obje
 		}
 		targetVMFolder = datacenterFolders.VmFolder
 	}
-
-	// Create snapshot of the template VM if not already snapshotted.
-	snapshot, err := findSnapshot(ctx, templateVM, snapshotName)
-	if err != nil {
-		if err != errSnapshotNotFound {
-			return nil, fmt.Errorf("failed to find snapshot: %v", err)
-		}
-		snapshot, err = createSnapshot(ctx, templateVM, snapshotName, snapshotDesc)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create snapshot: %v", err)
-		}
-	}
-
-	snapshotRef := snapshot.Reference()
 
 	var vAppAconfig *types.VmConfigSpec
 	if containerLinuxUserdata != "" {
@@ -140,6 +123,26 @@ func createClonedVM(ctx context.Context, vmName string, config *Config, dc *obje
 	}
 
 	diskUUIDEnabled := true
+
+	deviceSpecs := []types.BaseVirtualDeviceConfigSpec{}
+	if config.DiskSizeGB != nil {
+		disks, err := getDisksFromVM(ctx, templateVM)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get disks from VM: %v", err)
+		}
+		// If this is wrong, the resulting error is `Invalid operation for device '0`
+		// so verify again this is legit
+		if err := validateDiskResizing(disks, *config.DiskSizeGB); err != nil {
+			return nil, err
+		}
+
+		glog.V(4).Infof("Increasing disk size to %d GB", *config.DiskSizeGB)
+		disk := disks[0]
+		disk.CapacityInBytes = *config.DiskSizeGB * int64(math.Pow(1024, 3))
+		diskspec := &types.VirtualDeviceConfigSpec{Operation: types.VirtualDeviceConfigSpecOperationEdit, Device: disk}
+		deviceSpecs = append(deviceSpecs, diskspec)
+	}
+
 	desiredConfig := types.VirtualMachineConfigSpec{
 		Flags: &types.VirtualMachineFlagInfo{
 			DiskUuidEnabled: &diskUUIDEnabled,
@@ -150,7 +153,8 @@ func createClonedVM(ctx context.Context, vmName string, config *Config, dc *obje
 	}
 
 	// Create a cloned VM from the template VM's snapshot
-	clonedVMTask, err := templateVM.Clone(ctx, targetVMFolder, vmName, types.VirtualMachineCloneSpec{Snapshot: &snapshotRef})
+	clonedVMTask, err := templateVM.Clone(ctx, targetVMFolder, vmName, types.VirtualMachineCloneSpec{
+		Config: &types.VirtualMachineConfigSpec{DeviceChange: deviceSpecs}})
 	if err != nil {
 		return nil, fmt.Errorf("failed to clone template vm: %v", err)
 	}
@@ -255,57 +259,6 @@ func getNetworkFromVM(ctx context.Context, vm *object.VirtualMachine, netName st
 	}
 
 	return nil, fmt.Errorf("no accessible network with the name %s found", netName)
-}
-
-func createSnapshot(ctx context.Context, vm *object.VirtualMachine, snapshotName string, snapshotDesc string) (object.Reference, error) {
-	task, err := vm.CreateSnapshot(ctx, snapshotName, snapshotDesc, false, false)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create snapshot: %v", err)
-	}
-
-	taskInfo, err := task.WaitForResult(ctx, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error waiting for task completion: %v", err)
-	}
-	glog.Infof("taskInfo.Result is %s", taskInfo.Result)
-	return taskInfo.Result.(object.Reference), nil
-}
-
-func findSnapshot(ctx context.Context, vm *object.VirtualMachine, name string) (object.Reference, error) {
-	var moVirtualMachine mo.VirtualMachine
-
-	if err := vm.Properties(ctx, vm.Reference(), []string{"snapshot"}, &moVirtualMachine); err != nil {
-		return nil, fmt.Errorf("failed to get vm properties: %v", err)
-	}
-
-	if moVirtualMachine.Snapshot == nil {
-		return nil, errSnapshotNotFound
-	}
-
-	snapshotCandidates := []object.Reference{}
-	for _, snapshotTree := range moVirtualMachine.Snapshot.RootSnapshotList {
-		addMatchingSnapshotToList(&snapshotCandidates, snapshotTree, name)
-	}
-
-	switch len(snapshotCandidates) {
-	case 0:
-		return nil, errSnapshotNotFound
-	case 1:
-		return snapshotCandidates[0], nil
-	default:
-		glog.Warningf("VM %s seems to have more than one snapshots with name %s. Using a random snapshot.", vm, name)
-		return snapshotCandidates[0], nil
-	}
-}
-
-// VirtualMachineSnapshotTree is a tree (As the name suggests) so we need to use recursion to get all elements
-func addMatchingSnapshotToList(list *[]object.Reference, tree types.VirtualMachineSnapshotTree, name string) {
-	for _, childTree := range tree.ChildSnapshotList {
-		addMatchingSnapshotToList(list, childTree, name)
-	}
-	if tree.Name == name || tree.Snapshot.Value == name {
-		*list = append(*list, &tree.Snapshot)
-	}
 }
 
 func uploadAndAttachISO(ctx context.Context, f *find.Finder, vmRef *object.VirtualMachine, localIsoFilePath, datastoreName string) error {
@@ -430,5 +383,61 @@ func removeFloppyDevice(ctx context.Context, virtualMachine *object.VirtualMachi
 		return fmt.Errorf("failed to remove floppy device: %v", err)
 	}
 
+	return nil
+}
+
+func getValueForField(ctx context.Context, vm *object.VirtualMachine, fieldName string) (string, error) {
+	var mvm mo.VirtualMachine
+	if err := vm.Properties(ctx, vm.Reference(), nil, &mvm); err != nil {
+		return "", fmt.Errorf("failed to get properties: %v", err)
+	}
+
+	var key int32
+	for _, availableField := range mvm.AvailableField {
+		if availableField.Name == fieldName {
+			key = availableField.Key
+			break
+		}
+	}
+
+	for _, value := range mvm.Value {
+		if value.GetCustomFieldValue().Key == key {
+			stringVal, ok := value.(*types.CustomFieldStringValue)
+			if ok {
+				return stringVal.Value, nil
+			}
+			break
+		}
+	}
+
+	return "", nil
+}
+
+func getDisksFromVM(ctx context.Context, vm *object.VirtualMachine) ([]*types.VirtualDisk, error) {
+	var props mo.VirtualMachine
+	if err := vm.Properties(ctx, vm.Reference(), nil, &props); err != nil {
+		return nil, fmt.Errorf("error getting VM template reference: %v", err)
+	}
+	l := object.VirtualDeviceList(props.Config.Hardware.Device)
+	disks := l.SelectByType((*types.VirtualDisk)(nil))
+
+	var result []*types.VirtualDisk
+	for _, disk := range disks {
+		if assertedDisk := disk.(*types.VirtualDisk); assertedDisk != nil {
+			result = append(result, assertedDisk)
+		}
+	}
+	return result, nil
+}
+
+func validateDiskResizing(disks []*types.VirtualDisk, requestedSize int64) error {
+	if diskLen := len(disks); diskLen != 1 {
+		return fmt.Errorf("expected vm to have exactly one disk, got %d", diskLen)
+	}
+	requestedCapacityInBytes := requestedSize * int64(math.Pow(1024, 3))
+	if requestedCapacityInBytes < disks[0].CapacityInBytes {
+		attachedDiskSizeInGiB := disks[0].CapacityInBytes / int64(math.Pow(1024, 3))
+		return fmt.Errorf("requested diskSizeGB %d is smaller than size of attached disk(%dGiB)", requestedSize, attachedDiskSizeInGiB)
+	}
 	return nil
 }
