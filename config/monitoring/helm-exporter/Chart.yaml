@@ -1,0 +1,16 @@
+apiVersion: v1
+name: helm-exporter
+version: 1.0.0
+appVersion: 0.4.0
+description: Exports Helm release information to Prometheus
+keywords:
+- kubermatic
+- monitoring
+- helm
+- helm-exporter
+home: https://github.com/sstarcher/helm-exporter
+sources:
+- https://github.com/sstarcher/helm-exporter
+maintainers:
+- name: Loodse GmbH
+  email: support@loodse.com
