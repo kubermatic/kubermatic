@@ -2,6 +2,21 @@
 
 
 [[projects]]
+  digest = "1:0cb15db3c4421094556e11d635346083e2b5b01860e779ab6848b8fee5fd79e7"
+  name = "cloud.google.com/go"
+  packages = [
+    "compute/metadata",
+    "internal/version",
+    "logging",
+    "logging/apiv2",
+    "logging/internal",
+    "monitoring/apiv3",
+  ]
+  pruneopts = "NUT"
+  revision = "c9474f2f8deb81759839474b6bd1726bbfe1c1c4"
+  version = "v0.36.0"
+
+[[projects]]
   digest = "1:0fad274b7020f925782293ed0c8d0aa4e3b2d19f61f2b1cbbab57c4372b78fe7"
   name = "github.com/Azure/azure-sdk-for-go"
   packages = [
@@ -521,7 +536,7 @@
   revision = "c65c006176ff7ff98bb916961c7abbc6b0afc0aa"
 
 [[projects]]
-  digest = "1:5ae5b54d7cd695bafa92bf426b7c3d046f907260ec0fcb4fe5c368d937597c00"
+  digest = "1:4dacf728c83400b3e9d1d3025dd3c1e93e9a1b033726d1b193dc209f3fa9cb7a"
   name = "github.com/golang/protobuf"
   packages = [
     "proto",
@@ -529,7 +544,10 @@
     "ptypes",
     "ptypes/any",
     "ptypes/duration",
+    "ptypes/empty",
+    "ptypes/struct",
     "ptypes/timestamp",
+    "ptypes/wrappers",
   ]
   pruneopts = "NUT"
   revision = "aa810b61a9c79d51363740d207bb46cf8e620ed5"
@@ -566,6 +584,14 @@
   pruneopts = "NUT"
   revision = "9b3b1e0f5f99ae461456d768e7d301a7acdaa2d8"
   version = "v1.1.0"
+
+[[projects]]
+  digest = "1:fa300677001e58a995e10afe4e251d2a6e30d3815a234d553b5810db7795d5a2"
+  name = "github.com/googleapis/gax-go"
+  packages = ["v2"]
+  pruneopts = "NUT"
+  revision = "beaecbbdd8af86aa3acf14180d53828ce69400b2"
+  version = "v2.0.4"
 
 [[projects]]
   digest = "1:06a7dadb7b760767341ffb6c8d377238d68a1226f2b21b5d497d2e3f6ecf6b4e"
@@ -778,7 +804,7 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:ae1cb87b3e86b188ea0fbbd0627c1bf45c348d849f2431e32e2d8c46624e05a8"
+  digest = "1:4935124fc567c12e8a9bff9a8f9ef746aa72e352e063cd2b6285ab00b170fabf"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/apis/plugin",
@@ -789,6 +815,7 @@
     "pkg/cloudprovider/provider/aws",
     "pkg/cloudprovider/provider/azure",
     "pkg/cloudprovider/provider/digitalocean",
+    "pkg/cloudprovider/provider/gce",
     "pkg/cloudprovider/provider/hetzner",
     "pkg/cloudprovider/provider/openstack",
     "pkg/cloudprovider/provider/packet",
@@ -1169,6 +1196,32 @@
   version = "v0.19.0"
 
 [[projects]]
+  digest = "1:a138a5db9d54fe88ac6e41d943dab87c5d8b1a91931fea478ba50825155f8fe2"
+  name = "go.opencensus.io"
+  packages = [
+    ".",
+    "internal",
+    "internal/tagencoding",
+    "metric/metricdata",
+    "metric/metricproducer",
+    "plugin/ocgrpc",
+    "plugin/ochttp",
+    "plugin/ochttp/propagation/b3",
+    "resource",
+    "stats",
+    "stats/internal",
+    "stats/view",
+    "tag",
+    "trace",
+    "trace/internal",
+    "trace/propagation",
+    "trace/tracestate",
+  ]
+  pruneopts = "NUT"
+  revision = "df6e2001952312404b06f5f6f03fcb4aec1648e5"
+  version = "v0.21.0"
+
+[[projects]]
   digest = "1:22f696cee54865fb8e9ff91df7b633f6b8f22037a8015253c6b6a71ca82219c7"
   name = "go.uber.org/atomic"
   packages = ["."]
@@ -1250,14 +1303,25 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:18ea6608ec97c224944a364885957fb39e51d85a1a7b5231f5f70d0da41c8558"
+  digest = "1:169c27544e7f54a861a05cd84078b494eaf3e41543f0dfd4dd215fa32139cd40"
   name = "golang.org/x/oauth2"
   packages = [
     ".",
+    "google",
     "internal",
+    "jws",
+    "jwt",
   ]
   pruneopts = "NUT"
   revision = "28207608b83849a028d4f12e46533a6b6894ecaf"
+
+[[projects]]
+  branch = "master"
+  digest = "1:382bb5a7fb4034db3b6a2d19e5a4a6bcf52f4750530603c01ca18a172fa3089b"
+  name = "golang.org/x/sync"
+  packages = ["semaphore"]
+  pruneopts = "NUT"
+  revision = "112230192c580c3556b8cee6403af37a4fc5f28c"
 
 [[projects]]
   branch = "master"
@@ -1320,15 +1384,42 @@
   revision = "1c3d964395ce8f04f3b03b30aaed0b096c08c3c6"
 
 [[projects]]
-  digest = "1:655acbef8faad33db29b6a35655341fb4a594e87e56635f05a3e70ed0bd7bd95"
+  digest = "1:f2bea127e9472641b831158233ae841800faa502767b0c7d3aa7b5ccc9142456"
+  name = "google.golang.org/api"
+  packages = [
+    "compute/v1",
+    "gensupport",
+    "googleapi",
+    "googleapi/internal/uritemplates",
+    "googleapi/transport",
+    "internal",
+    "iterator",
+    "option",
+    "support/bundler",
+    "transport",
+    "transport/grpc",
+    "transport/http",
+    "transport/http/internal/propagation",
+  ]
+  pruneopts = "NUT"
+  revision = "19e022d8cf43ce81f046bae8cc18c5397cc7732f"
+  version = "v0.1.0"
+
+[[projects]]
+  digest = "1:b400989fa9ecf8f825e9092d41c9779444afeda5d5ce7f5c9d4a9ca9d05c949c"
   name = "google.golang.org/appengine"
   packages = [
+    ".",
     "internal",
+    "internal/app_identity",
     "internal/base",
     "internal/datastore",
     "internal/log",
+    "internal/modules",
     "internal/remote_api",
+    "internal/socket",
     "internal/urlfetch",
+    "socket",
     "urlfetch",
   ]
   pruneopts = "NUT"
@@ -1337,14 +1428,25 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:077c1c599507b3b3e9156d17d36e1e61928ee9b53a5b420f10f28ebd4a0b275c"
+  digest = "1:62a9b55c6bcb73998c9be44090c7c0cf372f6b43fa873a2c4a0507508f762f5b"
   name = "google.golang.org/genproto"
-  packages = ["googleapis/rpc/status"]
+  packages = [
+    "googleapis/api/annotations",
+    "googleapis/api/distribution",
+    "googleapis/api/label",
+    "googleapis/api/metric",
+    "googleapis/api/monitoredres",
+    "googleapis/logging/type",
+    "googleapis/logging/v2",
+    "googleapis/monitoring/v3",
+    "googleapis/rpc/status",
+    "protobuf/field_mask",
+  ]
   pruneopts = "NUT"
   revision = "082222b4a5c572e33e82ee9162d1352c7cf38682"
 
 [[projects]]
-  digest = "1:4837585442801f3c7ebd044a96fce852242529a73bdd96fcba2119ff74987b0b"
+  digest = "1:26ad31c404ea7ee468ae1c684abdafdae159994a2862a4a583bfd7b07ede5b6f"
   name = "google.golang.org/grpc"
   packages = [
     ".",
@@ -1356,6 +1458,7 @@
     "connectivity",
     "credentials",
     "credentials/internal",
+    "credentials/oauth",
     "encoding",
     "encoding/proto",
     "grpclog",
@@ -1902,6 +2005,7 @@
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean",
+    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/packet",
@@ -1934,6 +2038,8 @@
     "github.com/vmware/govmomi/vim25/types",
     "golang.org/x/crypto/ssh",
     "golang.org/x/oauth2",
+    "golang.org/x/oauth2/google",
+    "google.golang.org/api/compute/v1",
     "google.golang.org/grpc",
     "gopkg.in/square/go-jose.v2",
     "gopkg.in/square/go-jose.v2/jwt",
