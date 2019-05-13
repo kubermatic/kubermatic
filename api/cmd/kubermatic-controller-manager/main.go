@@ -48,7 +48,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	rawLog := kubermaticlog.New(options.log.debug, kubermaticlog.Format(options.log.format))
+	rawLog := kubermaticlog.New(options.log.Debug, kubermaticlog.Format(options.log.Format))
 	log := rawLog.Sugar()
 
 	config, err := clientcmd.BuildConfigFromFlags(options.masterURL, options.kubeconfig)
