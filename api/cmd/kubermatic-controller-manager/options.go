@@ -54,7 +54,7 @@ type controllerRunOptions struct {
 	inClusterPrometheusScrapingConfigsFile           string
 	monitoringScrapeAnnotationPrefix                 string
 	dockerPullConfigJSONFile                         string
-	log                                              logOptions
+	log                                              kubermaticlog.Options
 
 	// OIDC configuration
 	oidcCAFile             string
@@ -63,13 +63,6 @@ type controllerRunOptions struct {
 	oidcIssuerClientSecret string
 
 	featureGates features.FeatureGate
-}
-
-type logOptions struct {
-	// Enable debug logs
-	debug bool
-	// Log format (JSON or plain text)
-	format string
 }
 
 func newControllerRunOptions() (controllerRunOptions, error) {
@@ -111,8 +104,8 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.oidcIssuerURL, "oidc-issuer-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.StringVar(&c.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
 	flag.StringVar(&c.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
-	flag.BoolVar(&c.log.debug, "log-debug", false, "Enables debug logging")
-	flag.StringVar(&c.log.format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
+	flag.BoolVar(&c.log.Debug, "log-debug", false, "Enables debug logging")
+	flag.StringVar(&c.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.Parse()
 
 	featureGates, err := features.NewFeatures(rawFeatureGates)
@@ -199,8 +192,8 @@ func (o controllerRunOptions) validate() error {
 		return errors.New("The metrics-server addon must be disabled, it is now deployed inside the seed cluster")
 	}
 
-	if !kubermaticlog.AvailableFormats.Contains(o.log.format) {
-		return fmt.Errorf("invalid log-format specified %q; available: %s", o.log.format, kubermaticlog.AvailableFormats.String())
+	if err := o.log.Validate(); err != nil {
+		return err
 	}
 
 	return nil

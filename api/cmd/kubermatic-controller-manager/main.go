@@ -40,12 +40,12 @@ const (
 func main() {
 	options, err := newControllerRunOptions()
 	if err != nil {
-		fmt.Printf("Failed to create controller run options due to = %v", err)
+		fmt.Printf("Failed to create controller run options due to = %v\n", err)
 		os.Exit(1)
 	}
 
 	if err := options.validate(); err != nil {
-		fmt.Print(err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 	rawLog := kubermaticlog.New(options.log.debug, kubermaticlog.Format(options.log.format))

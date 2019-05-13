@@ -110,7 +110,7 @@ func Add(
 		addonList := &kubermaticv1.AddonList{}
 		listOptions := &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
 		if err := client.List(context.Background(), listOptions, addonList); err != nil {
-			log.Error(err, "Failed to get addons for cluster", "cluster", cluster.Name)
+			log.Errorw("Failed to get addons for cluster", zap.Error(err), "cluster", cluster.Name)
 			return nil
 		}
 		var requests []reconcile.Request
@@ -147,13 +147,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// Add a wrapping here so we can emit an event on error
 	err := r.reconcile(ctx, log, addon)
 	if err != nil {
-		log.Error(err, "Reconciling failed")
+		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Eventf(addon, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
 		reconcilingError := err
 		//Get the cluster so we can report an event to it
 		cluster := &kubermaticv1.Cluster{}
 		if err := r.Get(ctx, types.NamespacedName{Name: addon.Spec.Cluster.Name}, cluster); err != nil {
-			log.Error(err, "failed to get cluster for reporting error onto it")
+			log.Errorw("failed to get cluster for reporting error onto it", zap.Error(err))
 		} else {
 			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError",
 				"failed to reconcile Addon %q: %v", addon.Name, reconcilingError)
@@ -232,7 +232,7 @@ func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.Sugare
 		if err := r.Client.Update(ctx, addon); err != nil {
 			return err
 		}
-		log.Info("Removed the cleanup finalizer", "finalizer", cleanupFinalizerName)
+		log.Infow("Removed the cleanup finalizer", "finalizer", cleanupFinalizerName)
 	}
 	return nil
 }
@@ -431,7 +431,7 @@ type fileHandlingDone func()
 func getFileDeleteFinalizer(log *zap.SugaredLogger, filename string) fileHandlingDone {
 	return func() {
 		if err := os.RemoveAll(filename); err != nil {
-			log.Error(err, "Failed to delete file", "file", filename)
+			log.Errorw("Failed to delete file", zap.Error(err), "file", filename)
 		}
 	}
 }
@@ -442,7 +442,7 @@ func (r *Reconciler) writeCombinedManifest(log *zap.SugaredLogger, manifest *byt
 	if err := ioutil.WriteFile(manifestFilename, manifest.Bytes(), 0644); err != nil {
 		return "", nil, fmt.Errorf("failed to write combined manifest to %s: %v", manifestFilename, err)
 	}
-	log.Debug("Wrote combined manifest", "file", manifestFilename, "content", manifest.String())
+	log.Debugw("Wrote combined manifest", "file", manifestFilename, "content", manifest.String())
 
 	return manifestFilename, getFileDeleteFinalizer(log, manifestFilename), nil
 }
@@ -457,7 +457,7 @@ func (r *Reconciler) writeAdminKubeconfig(log *zap.SugaredLogger, addon *kuberma
 	if err := ioutil.WriteFile(kubeconfigFilename, kubeconfig, 0644); err != nil {
 		return "", nil, fmt.Errorf("failed to write admin kubeconfig for cluster %s: %v", cluster.Name, err)
 	}
-	log.Debug("Wrote admin kubeconfig", "file", kubeconfigFilename)
+	log.Debugw("Wrote admin kubeconfig", "file", kubeconfigFilename)
 
 	return kubeconfigFilename, getFileDeleteFinalizer(log, kubeconfigFilename), nil
 }
@@ -544,7 +544,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 
 	cmdLog.Debug("Applying manifest...")
 	out, err := cmd.CombinedOutput()
-	cmdLog.Debug("Finished executing command", "output", string(out))
+	cmdLog.Debugw("Finished executing command", "output", string(out))
 	if err != nil {
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %v\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
 	}
@@ -563,7 +563,7 @@ func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogge
 
 	cmdLog.Debug("Deleting resources...")
 	out, err := cmd.CombinedOutput()
-	cmdLog.Debug("Finished executing command", "output", string(out))
+	cmdLog.Debugw("Finished executing command", "output", string(out))
 	if err != nil {
 		if wasKubectlDeleteSuccessful(string(out)) {
 			return nil

@@ -1,6 +1,7 @@
 package log
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -9,6 +10,21 @@ import (
 
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
+
+// Options exports a options struct to be used by cmd's
+type Options struct {
+	// Enable debug logs
+	Debug bool
+	// Log format (JSON or plain text)
+	Format string
+}
+
+func (o *Options) Validate() error {
+	if !AvailableFormats.Contains(o.Format) {
+		return fmt.Errorf("invalid log-format specified %q; available: %s", o.Format, AvailableFormats.String())
+	}
+	return nil
+}
 
 type Format string
 

@@ -42,9 +42,20 @@ clusterLog.Info("Something good happened")
 
 To add fields for a single statement:
 ```go
+// Derive a new log object
 log.With("cluster", "some-cluster").Info("Something good happened")
+// Use the "*w" functions of the SugardLogger
+log.Infow("Something good happened", "cluster", "some-cluster")
 // Will output:
 // {"level":"info","time":"2019-04-29T15:23:06.186+0200","caller":"test/example.go:24","msg":"Something good happened","cluster":"some-cluster"}
+// {"level":"info","time":"2019-04-29T15:23:06.186+0200","caller":"test/example.go:24","msg":"Something good happened","cluster":"some-cluster"}
+```
+
+For logging errors include the passed up error as field in the log message:
+```go
+// zap.Error is a helper method which sets the error as field "error" & prints the error based on the available implementations.
+// For more details: https://github.com/uber-go/zap/blob/master/error.go#L38
+log.Errorw("Failed to reconcile cluster", zap.Error(err))
 ```
 
 ## Handling old code
