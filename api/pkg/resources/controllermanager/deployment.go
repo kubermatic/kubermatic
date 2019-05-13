@@ -69,6 +69,19 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 			volumes := getVolumes()
+			if data.Cluster().Spec.Cloud.GCP != nil {
+				serviceAccountVolume := corev1.Volume{
+					Name: cloudconfig.GoogleServiceAccountVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName:  resources.GoogleServiceAccountSecretName,
+							DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+						},
+					},
+				}
+				volumes = append(volumes, serviceAccountVolume)
+			}
+
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 			if err != nil {
 				return nil, err
@@ -130,6 +143,14 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				// Required because of https://github.com/kubernetes/kubernetes/issues/65145
 				controllerManagerMounts = append(controllerManagerMounts, fakeVMWareUUIDMount)
 			}
+			if data.Cluster().Spec.Cloud.GCP != nil {
+				serviceAccountMount := corev1.VolumeMount{
+					Name:      cloudconfig.GoogleServiceAccountVolumeName,
+					MountPath: "/etc/gcp",
+					ReadOnly:  true,
+				}
+				controllerManagerMounts = append(controllerManagerMounts, serviceAccountMount)
+			}
 
 			resourceRequirements := defaultResourceRequirements
 			if data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources != nil {
@@ -182,7 +203,6 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 		"--cluster-signing-cert-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--cluster-signing-key-file", "/etc/kubernetes/pki/ca/ca.key",
 		"--cluster-cidr", cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
-		"--configure-cloud-routes=false",
 		"--allocate-node-cidrs=true",
 		"--controllers", "*,bootstrapsigner,tokencleaner",
 		"--use-service-account-credentials=true",
@@ -206,18 +226,27 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 	if cluster.Spec.Cloud.AWS != nil {
 		flags = append(flags, "--cloud-provider", "aws")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
+		flags = append(flags, "--configure-cloud-routes", "false")
 	}
 	if cluster.Spec.Cloud.Openstack != nil {
 		flags = append(flags, "--cloud-provider", "openstack")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
+		flags = append(flags, "--configure-cloud-routes", "false")
 	}
 	if cluster.Spec.Cloud.VSphere != nil {
 		flags = append(flags, "--cloud-provider", "vsphere")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
+		flags = append(flags, "--configure-cloud-routes", "false")
 	}
 	if cluster.Spec.Cloud.Azure != nil {
 		flags = append(flags, "--cloud-provider", "azure")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
+		flags = append(flags, "--configure-cloud-routes", "false")
+	}
+	if cluster.Spec.Cloud.GCP != nil {
+		flags = append(flags, "--cloud-provider", "gce")
+		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
+		flags = append(flags, "--configure-cloud-routes", "true")
 	}
 
 	if cluster.Spec.Version.Semver().Minor() >= 12 {
@@ -310,6 +339,9 @@ func getEnvVars(cluster *kubermaticv1.Cluster) []corev1.EnvVar {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: cluster.Spec.Cloud.AWS.SecretAccessKey})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_AVAILABILITY_ZONE", Value: cluster.Spec.Cloud.AWS.AvailabilityZone})
+	}
+	if cluster.Spec.Cloud.GCP != nil {
+		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_APPLICATION_CREDENTIALS", Value: "/etc/gcp/serviceAccount"})
 	}
 	return vars
 }

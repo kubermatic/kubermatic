@@ -2,6 +2,7 @@ package machine
 
 import (
 	"errors"
+	"fmt"
 	"path"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -12,6 +13,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/packet"
@@ -242,6 +244,37 @@ func getPacketProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc 
 	config.Facilities = make([]providerconfig.ConfigVarString, len(facilities.List()))
 	for i, facility := range facilities.List() {
 		config.Facilities[i].Value = facility
+	}
+
+	ext := &runtime.RawExtension{}
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	ext.Raw = b
+	return ext, nil
+}
+
+func getGCPProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+	config := gce.CloudProviderSpec{
+		Zone:                  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.GCP.Zone},
+		MachineType:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.GCP.MachineType},
+		DiskSize:              nodeSpec.Cloud.GCP.DiskSize,
+		DiskType:              providerconfig.ConfigVarString{Value: nodeSpec.Cloud.GCP.DiskType},
+		AssignPublicIPAddress: providerconfig.ConfigVarBool{Value: true},
+		Preemptible:           providerconfig.ConfigVarBool{Value: nodeSpec.Cloud.GCP.Preemptible},
+		Network:               providerconfig.ConfigVarString{Value: c.Spec.Cloud.GCP.Network},
+		Subnetwork:            providerconfig.ConfigVarString{Value: c.Spec.Cloud.GCP.Subnetwork},
+	}
+
+	tags := sets.NewString(nodeSpec.Cloud.GCP.Tags...)
+	tags.Insert(fmt.Sprintf("kubernetes-cluster-%s", c.Name))
+	config.Tags = tags.List()
+
+	config.Labels = map[string]string{}
+	for key, value := range nodeSpec.Cloud.GCP.Labels {
+		config.Labels[key] = value
 	}
 
 	ext := &runtime.RawExtension{}

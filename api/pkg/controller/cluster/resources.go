@@ -13,7 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
+	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
@@ -210,6 +210,10 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 
 	if len(data.OIDCCAFile()) > 0 {
 		creators = append(creators, apiserver.DexCACertificateCreator(data.GetDexCA))
+	}
+
+	if data.Cluster().Spec.Cloud.GCP != nil {
+		creators = append(creators, resources.ServiceAccountSecretCreator(data.Cluster().Spec.Cloud.GCP.ServiceAccount))
 	}
 
 	return creators
