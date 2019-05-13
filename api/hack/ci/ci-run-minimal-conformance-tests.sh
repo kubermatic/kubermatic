@@ -44,6 +44,8 @@ function cleanup {
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Secret Access Key|Access Key Id'
     elif [[ $provider = "packet" ]]; then
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'APIKey|ProjectID'
+    elif [[ $provider = "gcp" ]]; then
+      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Service Account'
     else
       echo "Provider $provider is not yet supported."
     fi
@@ -218,6 +220,8 @@ if [[ $provider = "aws" ]]; then
 elif [[ $provider = "packet" ]]; then
   EXTRA_ARGS="-packet-api-key=${PACKET_API_KEY}
      -packet-project-id=${PACKET_PROJECT_ID}"
+elif [[ $provider = "gcp" ]]; then
+  EXTRA_ARGS="-gcp-service-account=${GOOGLE_SERVICE_ACCOUNT}"
 fi
 
 timeout -s 9 90m ./conformance-tests $EXTRA_ARGS \
