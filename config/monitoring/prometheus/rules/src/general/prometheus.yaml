@@ -36,8 +36,8 @@ groups:
       severity: critical
     runbook:
       steps:
-      - Check Alertmanager pod's logs via `kubectl -n monitoring logs alertmanager-kubermatic-0`, `-1` and `-2`.
-      - Check the `alertmanager-kubermatic` secret via `kubectl -n monitoring get secret alertmanager-kubermatic -o yaml`.
+      - Check Alertmanager pod's logs via `kubectl -n monitoring logs alertmanager-0`, `-1` and `-2`.
+      - Check the `alertmanager` secret via `kubectl -n monitoring get secret alertmanager -o yaml`.
 
   - alert: PromAlertsFailed
     annotations:

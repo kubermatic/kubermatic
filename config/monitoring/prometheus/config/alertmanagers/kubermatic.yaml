@@ -10,7 +10,7 @@ timeout: 10s
 relabel_configs:
 - source_labels: [__meta_kubernetes_service_name]
   separator: ;
-  regex: alertmanager-kubermatic
+  regex: alertmanager
   replacement: $1
   action: keep
 - source_labels: [__meta_kubernetes_endpoint_port_name]
