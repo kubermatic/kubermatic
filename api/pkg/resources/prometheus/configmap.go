@@ -312,7 +312,7 @@ alerting:
   alertmanagers:
   - dns_sd_configs:
     - names:
-      - 'alertmanager-kubermatic.monitoring.svc.cluster.local'
+      - 'alertmanager.monitoring.svc.cluster.local'
       type: A
       port: 9093
 `

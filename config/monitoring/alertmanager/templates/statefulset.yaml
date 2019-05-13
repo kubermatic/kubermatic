@@ -1,40 +1,43 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  name: {{ template "name" . }}
   labels:
-    app: alertmanager-kubermatic
-  name: alertmanager-kubermatic
+    app: {{ template "name" . }}
 spec:
-  replicas: 3
+  replicas: {{ .Values.alertmanager.replicas }}
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app: alertmanager-kubermatic
-  serviceName: alertmanager-kubermatic
+      app: {{ template "name" . }}
+  serviceName: {{ template "name" . }}
   template:
     metadata:
       labels:
-        app: alertmanager-kubermatic
+        app: {{ template "name" . }}
     spec:
       containers:
-      - args:
+      - name: alertmanager
+        image: '{{ .Values.alertmanager.image.repository }}:{{ .Values.alertmanager.version | default .Values.alertmanager.image.tag }}'
+        imagePullPolicy: {{ .Values.alertmanager.image.pullPolicy }}
+        args:
         - --config.file=/etc/alertmanager/config/alertmanager.yaml
         - --cluster.listen-address=$(POD_IP):6783
         - --storage.path=/alertmanager
         - --web.listen-address=:9093
         - --web.external-url=https://{{ .Values.alertmanager.host | trim }}
         - --web.route-prefix=/
-        - --cluster.peer=alertmanager-kubermatic-0.alertmanager-kubermatic.{{ .Release.Namespace }}.svc.cluster.local:6783
-        - --cluster.peer=alertmanager-kubermatic-1.alertmanager-kubermatic.{{ .Release.Namespace }}.svc.cluster.local:6783
-        - --cluster.peer=alertmanager-kubermatic-2.alertmanager-kubermatic.{{ .Release.Namespace }}.svc.cluster.local:6783
+        {{- if gt .Values.alertmanager.replicas 1.0 }}
+        {{- range (until (int .Values.alertmanager.replicas)) }}
+        - --cluster.peer={{ template "name" $ }}-{{ . }}.{{ template "name" $ }}.{{ $.Release.Namespace }}.svc.cluster.local:6783
+        {{- end }}
+        {{- end }}
         env:
         - name: POD_IP
           valueFrom:
             fieldRef:
               apiVersion: v1
               fieldPath: status.podIP
-        image: '{{ .Values.alertmanager.image.repository }}:{{ .Values.alertmanager.version | default .Values.alertmanager.image.tag }}'
-        imagePullPolicy: {{ .Values.alertmanager.image.pullPolicy }}
         livenessProbe:
           failureThreshold: 10
           httpGet:
@@ -44,7 +47,6 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 3
-        name: alertmanager
         ports:
         - containerPort: 9093
           name: web
@@ -70,8 +72,9 @@ spec:
         - mountPath: /etc/alertmanager/config
           name: config-volume
         - mountPath: /alertmanager
-          name: alertmanager-kubermatic-db
+          name: db
           subPath: alertmanager-db
+
       - name: reloader
         image: jimmidyson/configmap-reload
         imagePullPolicy: IfNotPresent
@@ -98,33 +101,24 @@ spec:
       - name: config-volume
         secret:
           defaultMode: 420
-          secretName: alertmanager-kubermatic
+          secretName: {{ template "name" . }}
       nodeSelector:
 {{ toYaml .Values.alertmanager.nodeSelector | indent 8 }}
       affinity:
-{{ toYaml .Values.alertmanager.affinity | indent 8 }}
+{{ tpl (toYaml .Values.alertmanager.affinity) . | fromYaml | toYaml | indent 8 }}
       tolerations:
 {{ toYaml .Values.alertmanager.tolerations | indent 8 }}
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      creationTimestamp: null
-      name: alertmanager-kubermatic-db
+      name: db
     spec:
+      {{- with .Values.alertmanager.storageClass }}
+      storageClassName: {{ . }}
+      {{- end }}
       accessModes:
       - ReadWriteOnce
       resources:
         requests:
-          storage: {{ .Values.alertmanager.resources.storage }}
-      storageClassName: kubermatic-fast
----
-apiVersion: policy/v1beta1
-kind: PodDisruptionBudget
-metadata:
-  name: alertmanager-kubermatic
-spec:
-  minAvailable: 1
-  selector:
-    matchLabels:
-      app: alertmanager-kubermatic
+          storage: {{ .Values.alertmanager.resources.storage | default .Values.alertmanager.storageSize }}

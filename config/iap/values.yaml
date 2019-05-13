@@ -13,7 +13,7 @@ iap:
     #     - uri: "/*"
     #       groups:
     #       - "mygithuborg:mygroup"
-    #   upstream_service: alertmanager-kubermatic.monitoring.svc.cluster.local
+    #   upstream_service: alertmanager.monitoring.svc.cluster.local
     #   upstream_port: 9093
     #   ingress:
     #     host: "alertmanager.kubermatic.tld"
