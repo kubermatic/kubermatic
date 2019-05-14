@@ -114,7 +114,6 @@ spec:
         - /etc/kubernetes/pki/ca/ca.key
         - --cluster-cidr
         - 172.25.0.0/16
-        - --configure-cloud-routes=false
         - --allocate-node-cidrs=true
         - --controllers
         - '*,bootstrapsigner,tokencleaner'
@@ -125,6 +124,8 @@ spec:
         - vsphere
         - --cloud-config
         - /etc/kubernetes/cloud/config
+        - --configure-cloud-routes
+        - "false"
         - --authentication-kubeconfig
         - /etc/kubernetes/kubeconfig/kubeconfig
         - --client-ca-file
