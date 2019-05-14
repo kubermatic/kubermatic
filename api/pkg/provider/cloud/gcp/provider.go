@@ -94,25 +94,23 @@ func (g *gcp) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 
 // CleanUpCloudProvider removes firewall rules and related finalizer.
 func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	for _, finalizer := range cluster.Finalizers {
-		if finalizer == firewallCleanupFinalizer {
-			svc, projectID, err := connectToComputeService(cluster.Spec.Cloud.GCP.ServiceAccount)
-			if err != nil {
-				return nil, err
-			}
+	if kuberneteshelper.HasFinalizer(cluster, firewallCleanupFinalizer) {
+		svc, projectID, err := connectToComputeService(cluster.Spec.Cloud.GCP.ServiceAccount)
+		if err != nil {
+			return nil, err
+		}
 
-			firewallService := compute.NewFirewallsService(svc)
-			_, err = firewallService.Delete(projectID, cluster.Spec.Cloud.GCP.FirewallRuleName).Do()
-			if err != nil {
-				return nil, fmt.Errorf("failed to delete firewall %s: %v", cluster.Spec.Cloud.GCP.FirewallRuleName, err)
-			}
+		firewallService := compute.NewFirewallsService(svc)
+		_, err = firewallService.Delete(projectID, cluster.Spec.Cloud.GCP.FirewallRuleName).Do()
+		if err != nil {
+			return nil, fmt.Errorf("failed to delete firewall %s: %v", cluster.Spec.Cloud.GCP.FirewallRuleName, err)
+		}
 
-			cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-				cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, firewallCleanupFinalizer)
-			})
-			if err != nil {
-				return nil, fmt.Errorf("failed to remove %s finalizer: %v", firewallCleanupFinalizer, err)
-			}
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, firewallCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to remove %s finalizer: %v", firewallCleanupFinalizer, err)
 		}
 	}
 
@@ -166,6 +164,21 @@ func createFirewallRule(spec kubermaticv1.GCPCloudSpec, clusterName string) (str
 			},
 			{
 				IPProtocol: "udp",
+			},
+			{
+				IPProtocol: "icmp",
+			},
+			{
+				IPProtocol: "esp",
+			},
+			{
+				IPProtocol: "ah",
+			},
+			{
+				IPProtocol: "sctp",
+			},
+			{
+				IPProtocol: "ipip",
 			},
 		},
 		TargetTags: []string{tag},

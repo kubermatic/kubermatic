@@ -4274,10 +4274,6 @@
       "description": "GCPNodeSpec gcp specific node settings",
       "type": "object",
       "properties": {
-        "assignPublicIPAddress": {
-          "type": "boolean",
-          "x-go-name": "AssignPublicIPAddress"
-        },
         "diskSize": {
           "type": "integer",
           "format": "int64",

@@ -153,14 +153,13 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			return nil, fmt.Errorf("failed to parse gcp config: %v", err)
 		}
 		cloudSpec.GCP = &apiv1.GCPNodeSpec{
-			Zone:                  config.Zone.Value,
-			MachineType:           config.MachineType.Value,
-			DiskSize:              config.DiskSize,
-			DiskType:              config.DiskType.Value,
-			AssignPublicIPAddress: config.AssignPublicIPAddress.Value,
-			Preemptible:           config.Preemptible.Value,
-			Labels:                config.Labels,
-			Tags:                  config.Tags,
+			Zone:        config.Zone.Value,
+			MachineType: config.MachineType.Value,
+			DiskSize:    config.DiskSize,
+			DiskType:    config.DiskType.Value,
+			Preemptible: config.Preemptible.Value,
+			Labels:      config.Labels,
+			Tags:        config.Tags,
 		}
 	default:
 		return nil, fmt.Errorf("unknown cloud provider %q", decodedProviderSpec.CloudProvider)

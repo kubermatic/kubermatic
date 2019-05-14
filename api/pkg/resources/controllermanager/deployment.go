@@ -71,7 +71,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			volumes := getVolumes()
 			if data.Cluster().Spec.Cloud.GCP != nil {
 				serviceAccountVolume := corev1.Volume{
-					Name: cloudconfig.GoogleServiceAccountVolumeName,
+					Name: resources.GoogleServiceAccountVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName:  resources.GoogleServiceAccountSecretName,
@@ -145,7 +145,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			}
 			if data.Cluster().Spec.Cloud.GCP != nil {
 				serviceAccountMount := corev1.VolumeMount{
-					Name:      cloudconfig.GoogleServiceAccountVolumeName,
+					Name:      resources.GoogleServiceAccountVolumeName,
 					MountPath: "/etc/gcp",
 					ReadOnly:  true,
 				}

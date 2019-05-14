@@ -199,7 +199,6 @@ const (
 	// It is required when activating the vsphere cloud-provider in the controller
 	// manager on a non-ESXi host
 	// Upstream issue: https://github.com/kubernetes/kubernetes/issues/65145
-	FakeVMWareUUIDKeyName          = "fakeVmwareUUID"
-	fakeVMWareUUID                 = "VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00"
-	GoogleServiceAccountVolumeName = "google-service-account-volume"
+	FakeVMWareUUIDKeyName = "fakeVmwareUUID"
+	fakeVMWareUUID        = "VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00"
 )

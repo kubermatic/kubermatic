@@ -716,14 +716,13 @@ type PacketNodeSpec struct {
 // GCPNodeSpec gcp specific node settings
 // swagger:model GCPNodeSpec
 type GCPNodeSpec struct {
-	Zone                  string            `json:"zone"`
-	MachineType           string            `json:"machineType"`
-	DiskSize              int64             `json:"diskSize"`
-	DiskType              string            `json:"diskType"`
-	Preemptible           bool              `json:"preemptible"`
-	AssignPublicIPAddress bool              `json:"assignPublicIPAddress"`
-	Labels                map[string]string `json:"labels"`
-	Tags                  []string          `json:"tags"`
+	Zone        string            `json:"zone"`
+	MachineType string            `json:"machineType"`
+	DiskSize    int64             `json:"diskSize"`
+	DiskType    string            `json:"diskType"`
+	Preemptible bool              `json:"preemptible"`
+	Labels      map[string]string `json:"labels"`
+	Tags        []string          `json:"tags"`
 }
 
 // NodeResources cpu and memory of a node
