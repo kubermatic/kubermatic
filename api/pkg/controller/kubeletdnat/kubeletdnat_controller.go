@@ -149,7 +149,7 @@ func (r *Reconciler) syncDnatRules(ctx context.Context) error {
 	if !equality.Semantic.DeepEqual(actualRules, desiredRules) || !haveJump || !haveMasquerade {
 		// Need to update chain in kernel.
 		glog.V(4).Infof("Updating iptables chain in kernel (%d rules).", len(desiredRules))
-		if err := r.applyDNATRules(desiredRules); err != nil {
+		if err := r.applyDNATRules(desiredRules, haveJump, haveMasquerade); err != nil {
 			return fmt.Errorf("failed to apply iptable rules: %v", err)
 		}
 	}
@@ -224,15 +224,21 @@ func (r *Reconciler) getRulesForNode(node corev1.Node) ([]*dnatRule, error) {
 // applyRules creates a iptables-save file and pipes it to stdin of
 // a iptables-restore process for atomically setting new rules.
 // This function replaces a complete chain (removing all pre-existing rules).
-func (r *Reconciler) applyDNATRules(rules []string) error {
-	restore := []string{"*nat",
-		":POSTROUTING ACCEPT [0:0]",
-		"-F POSTROUTING",
-		fmt.Sprintf("-I POSTROUTING -o %s -j MASQUERADE", r.vpnInterface),
-		":OUTPUT ACCEPT [0:0]",
-		"-F OUTPUT",
-		fmt.Sprintf(":%s - [0:0]", r.nodeTranslationChainName),
-		fmt.Sprintf("-I OUTPUT -j %s", r.nodeTranslationChainName)}
+func (r *Reconciler) applyDNATRules(rules []string, haveJump, haveMasquerade bool) error {
+	restore := []string{
+		"*nat",
+		fmt.Sprintf(":%s - [0:0]", r.nodeTranslationChainName)}
+
+	if !haveJump {
+		restore = append(restore,
+			fmt.Sprintf("-I OUTPUT -j %s", r.nodeTranslationChainName))
+	}
+
+	if !haveMasquerade {
+		restore = append(restore,
+			fmt.Sprintf("-I POSTROUTING -o %s -j MASQUERADE", r.vpnInterface))
+	}
+
 	restore = append(restore, rules...)
 	restore = append(restore, "COMMIT")
 
