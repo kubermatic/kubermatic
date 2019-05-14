@@ -145,6 +145,10 @@ const (
 	DexCASecretName = "dex-ca"
 	// DexCAFileName is the name of Dex CA bundle file
 	DexCAFileName = "caBundle.pem"
+	// GoogleServiceAccountSecretName is the name of the secret that contains the Google Service Acccount.
+	GoogleServiceAccountSecretName = "google-service-account"
+	// GoogleServiceAccountVolumeName is the name of the volume containing the Google Service Account secret.
+	GoogleServiceAccountVolumeName = "google-service-account-volume"
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
@@ -260,7 +264,7 @@ const (
 	// InternalUserClusterAdminKubeconfigSecretName is the name of the secret containing an admin kubeconfig that can only be used from
 	// within the seed cluster
 	InternalUserClusterAdminKubeconfigSecretName = "internal-admin-kubeconfig"
-	// UserClusterControllerCertUsername is the name of the user coming from kubeconfig cert
+	// InternalUserClusterAdminKubeconfigCertUsername is the name of the user coming from kubeconfig cert
 	InternalUserClusterAdminKubeconfigCertUsername = "kubermatic-controllers"
 )
 

@@ -139,6 +139,12 @@ func apiSpec(dc *provider.DatacenterMeta) (*apiv1.DatacenterSpec, error) {
 		spec.Packet = &apiv1.PacketDatacenterSpec{
 			Facilities: dc.Spec.Packet.Facilities,
 		}
+	case dc.Spec.GCP != nil:
+		spec.GCP = &apiv1.GCPDatacenterSpec{
+			Region:       dc.Spec.GCP.Region,
+			ZoneSuffixes: dc.Spec.GCP.ZoneSuffixes,
+			Regional:     dc.Spec.GCP.Regional,
+		}
 	}
 
 	return spec, nil

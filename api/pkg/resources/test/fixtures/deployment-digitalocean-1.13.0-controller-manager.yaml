@@ -114,7 +114,6 @@ spec:
         - /etc/kubernetes/pki/ca/ca.key
         - --cluster-cidr
         - 172.25.0.0/16
-        - --configure-cloud-routes=false
         - --allocate-node-cidrs=true
         - --controllers
         - '*,bootstrapsigner,tokencleaner'
