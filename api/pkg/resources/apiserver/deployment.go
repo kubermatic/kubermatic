@@ -231,8 +231,14 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
 		"--requestheader-group-headers", "X-Remote-Group",
 		"--requestheader-username-headers", "X-Remote-User",
-		"--kubelet-preferred-address-types", "ExternalIP,InternalIP",
 	}
+
+	if data.Cluster().Spec.Cloud.GCP != nil {
+		flags = append(flags, "--kubelet-preferred-address-types", "InternalIP")
+	} else {
+		flags = append(flags, "--kubelet-preferred-address-types", "ExternalIP,InternalIP")
+	}
+
 	var featureGates []string
 
 	if data.Cluster().Spec.Version.Semver().Minor() == 10 {
