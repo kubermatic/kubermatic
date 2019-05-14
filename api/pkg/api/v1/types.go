@@ -907,4 +907,6 @@ const (
 	InClusterPVCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-pv"
 	// InClusterLBCleanupFinalizer indicates that the LBs still need cleanup
 	InClusterLBCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-lb"
+	// CredentialsSecretsCleanupFinalizer indicates that secrets for credentials still need cleanup
+	CredentialsSecretsCleanupFinalizer = "kubermatic.io/cleanup-credentials-secrets"
 )

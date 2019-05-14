@@ -293,12 +293,15 @@ func validateHetznerCloudSpec(spec *kubermaticv1.HetznerCloudSpec) error {
 
 func validatePacketCloudSpec(spec *kubermaticv1.PacketCloudSpec) error {
 	if spec.APIKey == "" {
-		return errors.New("no API key specified")
+		if err := provider.ValidateSecretKeySelector(spec.APIKeyReference, "apiKey"); err != nil {
+			return err
+		}
 	}
 	if spec.ProjectID == "" {
-		return errors.New("no project ID specified")
+		if err := provider.ValidateSecretKeySelector(spec.ProjectIDReference, "projectID"); err != nil {
+			return err
+		}
 	}
-
 	return nil
 }
 

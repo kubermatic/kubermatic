@@ -8,6 +8,7 @@ package models
 import (
 	strfmt "github.com/go-openapi/strfmt"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/swag"
 )
 
@@ -15,18 +16,69 @@ import (
 // swagger:model PacketCloudSpec
 type PacketCloudSpec struct {
 
-	// API key
+	// APIKey is deprecated. Please use APIKeyReference instead.
 	APIKey string `json:"apiKey,omitempty"`
 
 	// billing cycle
 	BillingCycle string `json:"billingCycle,omitempty"`
 
-	// project ID
+	// ProjectID is deprecated. Please use ProjectIDReference instead.
 	ProjectID string `json:"projectID,omitempty"`
+
+	// api key reference
+	APIKeyReference GlobalSecretKeySelector `json:"apiKeyReference,omitempty"`
+
+	// project ID reference
+	ProjectIDReference GlobalSecretKeySelector `json:"projectIDReference,omitempty"`
 }
 
 // Validate validates this packet cloud spec
 func (m *PacketCloudSpec) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateAPIKeyReference(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateProjectIDReference(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *PacketCloudSpec) validateAPIKeyReference(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.APIKeyReference) { // not required
+		return nil
+	}
+
+	if err := m.APIKeyReference.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("apiKeyReference")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *PacketCloudSpec) validateProjectIDReference(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.ProjectIDReference) { // not required
+		return nil
+	}
+
+	if err := m.ProjectIDReference.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("projectIDReference")
+		}
+		return err
+	}
+
 	return nil
 }
 

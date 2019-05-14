@@ -127,6 +127,7 @@ type providers struct {
 	serviceAccountProvider                provider.ServiceAccountProvider
 	serviceAccountTokenProvider           provider.ServiceAccountTokenProvider
 	privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider
+	credentialsProvider                   provider.CredentialsProvider
 	project                               provider.ProjectProvider
 	privilegedProject                     provider.PrivilegedProjectProvider
 	projectMember                         provider.ProjectMemberProvider

@@ -119,6 +119,7 @@ type newRoutingFunc func(
 	serviceAccountTokenProvider provider.ServiceAccountTokenProvider,
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	credentialsProvider provider.CredentialsProvider,
 	oidcIssuerVerifier auth.OIDCIssuerVerifier,
 	tokenVerifiers auth.TokenVerifier,
 	tokenExtractors auth.TokenExtractor,
@@ -162,6 +163,11 @@ func initTestEndpoint(user apiv1.User, seeds map[string]*kubermaticv1.Seed, kube
 	}
 	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeKubermaticImpersonationClient, userLister, "localhost")
 	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userLister, kubernetes.IsServiceAccount)
+	credentialsProvider, err := kubernetes.NewCredentialsProvider(fakeKubernetesImpersonationClient, kubernetesInformerFactory.Core().V1().Secrets().Lister())
+	if err != nil {
+		return nil, nil, err
+	}
+
 	verifiers := []auth.TokenVerifier{}
 	extractors := []auth.TokenExtractor{}
 	{
@@ -230,6 +236,7 @@ func initTestEndpoint(user apiv1.User, seeds map[string]*kubermaticv1.Seed, kube
 		serviceAccountTokenProvider,
 		projectProvider,
 		privilegedProjectProvider,
+		credentialsProvider,
 		fakeOIDCClient,
 		tokenVerifiers,
 		tokenExtractors,

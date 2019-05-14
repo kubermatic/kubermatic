@@ -56,7 +56,7 @@ func (s *packetScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 			Type: "kubernetes",
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: "packet-ams1",
+					DatacenterName: "packet-ewr1",
 					Packet: &apimodels.PacketCloudSpec{
 						APIKey:    secrets.Packet.APIKey,
 						ProjectID: secrets.Packet.ProjectID,

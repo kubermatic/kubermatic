@@ -36,6 +36,7 @@ type Routing struct {
 	serviceAccountTokenProvider provider.ServiceAccountTokenProvider
 	projectProvider             provider.ProjectProvider
 	privilegedProjectProvider   provider.PrivilegedProjectProvider
+	credentialsProvider         provider.CredentialsProvider
 	logger                      log.Logger
 	oidcIssuerVerifier          auth.OIDCIssuerVerifier
 	tokenVerifiers              auth.TokenVerifier
@@ -62,6 +63,7 @@ func NewRouting(
 	serviceAccountTokenProvider provider.ServiceAccountTokenProvider,
 	projectProvider provider.ProjectProvider,
 	privilegedProject provider.PrivilegedProjectProvider,
+	credentialsProvider provider.CredentialsProvider,
 	oidcIssuerVerifier auth.OIDCIssuerVerifier,
 	tokenVerifiers auth.TokenVerifier,
 	tokenExtractors auth.TokenExtractor,
@@ -84,6 +86,7 @@ func NewRouting(
 		serviceAccountTokenProvider: serviceAccountTokenProvider,
 		projectProvider:             projectProvider,
 		privilegedProjectProvider:   privilegedProject,
+		credentialsProvider:         credentialsProvider,
 		logger:                      log.NewLogfmtLogger(os.Stderr),
 		oidcIssuerVerifier:          oidcIssuerVerifier,
 		tokenVerifiers:              tokenVerifiers,

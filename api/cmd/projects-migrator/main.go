@@ -669,6 +669,11 @@ func migrateToProject(ctx migrationContext) error {
 					}
 					clusterResource.Labels[kubermaticv1.ProjectIDLabelKey] = project.Name
 					if !ctx.dryRun {
+						kubeClient := clusterResourcesProviderTuple.provider.kubeClient
+						if err := createSecretsForCredentials(&clusterResource, kubeClient); err != nil {
+							return err
+						}
+
 						kubermaticClient := clusterResourcesProviderTuple.provider.kubermaticClient
 						_, err := kubermaticClient.KubermaticV1().Clusters().Update(&clusterResource)
 						if err != nil {
