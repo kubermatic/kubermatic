@@ -683,9 +683,6 @@ type PacketNodeSpec struct {
 	// InstanceType denotes the plan to which the device will be provisioned.
 	// required: true
 	InstanceType string `json:"instanceType"`
-	// OS denotes the operating system with which the device will be provisioned.
-	// required: true
-	OS string `json:"os"`
 	// additional instance tags
 	// required: false
 	Tags []string `json:"tags"`

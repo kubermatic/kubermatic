@@ -87,7 +87,6 @@ func (s *packetScenario) Nodes(num int) *kubermaticapiv1.NodeDeployment {
 				Cloud: kubermaticapiv1.NodeCloudSpec{
 					Packet: &kubermaticapiv1.PacketNodeSpec{
 						InstanceType: "t1.small.x86",
-						OS:           "coreos",
 					},
 				},
 				Versions: kubermaticapiv1.NodeVersionInfo{

@@ -228,7 +228,6 @@ func getDigitaloceanProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpe
 func getPacketProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
 	config := packet.RawConfig{
 		InstanceType: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Packet.InstanceType},
-		OS:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Packet.OS},
 	}
 
 	tags := sets.NewString(nodeSpec.Cloud.Packet.Tags...)

@@ -5106,19 +5106,13 @@
       "description": "PacketNodeSpec specifies packet specific node settings",
       "type": "object",
       "required": [
-        "instanceType",
-        "os"
+        "instanceType"
       ],
       "properties": {
         "instanceType": {
           "description": "InstanceType denotes the plan to which the device will be provisioned.",
           "type": "string",
           "x-go-name": "InstanceType"
-        },
-        "os": {
-          "description": "OS denotes the operating system with which the device will be provisioned.",
-          "type": "string",
-          "x-go-name": "OS"
         },
         "tags": {
           "description": "additional instance tags",
