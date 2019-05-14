@@ -213,7 +213,7 @@ func (d *Deletion) deletingNodeCleanup(ctx context.Context, cluster *kubermaticv
 			if currentNode.Annotations == nil {
 				currentNode.Annotations = map[string]string{}
 			}
-			node.Annotations[eviction.SkipEvictionAnnotationKey] = "true"
+			currentNode.Annotations[eviction.SkipEvictionAnnotationKey] = "true"
 
 			return d.userClusterClient.Update(ctx, currentNode)
 		})
