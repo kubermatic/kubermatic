@@ -46,6 +46,7 @@ function cleanup {
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'APIKey|ProjectID'
     else
       echo "Provider $provider is not yet supported."
+      exit 1
     fi
 
     kubectl logs -n $NAMESPACE  $(kubectl get pod -n $NAMESPACE -l role=controller-manager |tail -n 1|awk '{print $1}')
