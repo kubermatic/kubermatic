@@ -258,13 +258,14 @@ func getPacketProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc 
 
 func getGCPProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
 	config := gce.CloudProviderSpec{
-		Zone:        providerconfig.ConfigVarString{Value: nodeSpec.Cloud.GCP.Zone},
-		MachineType: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.GCP.MachineType},
-		DiskSize:    nodeSpec.Cloud.GCP.DiskSize,
-		DiskType:    providerconfig.ConfigVarString{Value: nodeSpec.Cloud.GCP.DiskType},
-		Preemptible: providerconfig.ConfigVarBool{Value: nodeSpec.Cloud.GCP.Preemptible},
-		Network:     providerconfig.ConfigVarString{Value: c.Spec.Cloud.GCP.Network},
-		Subnetwork:  providerconfig.ConfigVarString{Value: c.Spec.Cloud.GCP.Subnetwork},
+		Zone:                  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.GCP.Zone},
+		MachineType:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.GCP.MachineType},
+		DiskSize:              nodeSpec.Cloud.GCP.DiskSize,
+		DiskType:              providerconfig.ConfigVarString{Value: nodeSpec.Cloud.GCP.DiskType},
+		Preemptible:           providerconfig.ConfigVarBool{Value: nodeSpec.Cloud.GCP.Preemptible},
+		Network:               providerconfig.ConfigVarString{Value: c.Spec.Cloud.GCP.Network},
+		Subnetwork:            providerconfig.ConfigVarString{Value: c.Spec.Cloud.GCP.Subnetwork},
+		AssignPublicIPAddress: providerconfig.ConfigVarBool{Value: true},
 	}
 
 	tags := sets.NewString(nodeSpec.Cloud.GCP.Tags...)
