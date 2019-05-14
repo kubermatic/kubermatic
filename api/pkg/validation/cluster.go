@@ -286,7 +286,7 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc provider.DatacenterMeta) 
 		return nil
 	}
 
-	if spec.GCP != nil && spec.GCP.ServiceAccount != "" {
+	if spec.GCP != nil && spec.GCP.ServiceAccount == "" {
 		return errors.New("no serviceAccount specified")
 	}
 
