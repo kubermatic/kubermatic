@@ -229,6 +229,7 @@ type CloudSpec struct {
 	Packet       *PacketCloudSpec       `json:"packet,omitempty"`
 	Hetzner      *HetznerCloudSpec      `json:"hetzner,omitempty"`
 	VSphere      *VSphereCloudSpec      `json:"vsphere,omitempty"`
+	GCP          *GCPCloudSpec          `json:"gcp,omitempty"`
 }
 
 // ClusterHealth stores health information of a cluster and the timestamp of the last change.
@@ -343,6 +344,14 @@ type PacketCloudSpec struct {
 	APIKey       string `json:"apiKey"`
 	ProjectID    string `json:"projectID"`
 	BillingCycle string `json:"billingCycle"`
+}
+
+// GCPCloudSpec specifies access data to GCP.
+type GCPCloudSpec struct {
+	ServiceAccount   string `json:"serviceAccount"`
+	Network          string `json:"network"`
+	Subnetwork       string `json:"subnetwork"`
+	FirewallRuleName string `json:"firewallRuleName"`
 }
 
 // ClusterHealthStatus stores health information of the components of a cluster.

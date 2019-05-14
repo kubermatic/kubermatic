@@ -91,6 +91,13 @@ type PacketDatacenterSpec struct {
 	Facilities []string `json:"facilities"`
 }
 
+// GCPDatacenterSpec specifies a datacenter of GCP.
+type GCPDatacenterSpec struct {
+	Region       string   `json:"region"`
+	ZoneSuffixes []string `json:"zone_suffixes"`
+	Regional     bool     `json:"regional"`
+}
+
 // DatacenterSpec specifies the data for a datacenter.
 type DatacenterSpec struct {
 	Seed         string                       `json:"seed"`
@@ -103,6 +110,7 @@ type DatacenterSpec struct {
 	Azure        *AzureDatacenterSpec         `json:"azure,omitempty"`
 	Openstack    *OpenstackDatacenterSpec     `json:"openstack,omitempty"`
 	Packet       *PacketDatacenterSpec        `json:"packet,omitempty"`
+	GCP          *GCPDatacenterSpec           `json:"gcp,omitempty"`
 	Hetzner      *HetznerDatacenterSpec       `json:"hetzner,omitempty"`
 	VSphere      *VSphereDatacenterSpec       `json:"vsphere,omitempty"`
 }
@@ -376,6 +384,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 			Packet:         newPublicPacketCloudSpec(cs.Cloud.Packet),
 			Hetzner:        newPublicHetznerCloudSpec(cs.Cloud.Hetzner),
 			VSphere:        newPublicVSphereCloudSpec(cs.Cloud.VSphere),
+			GCP:            newPublicGCPCloudSpec(cs.Cloud.GCP),
 		},
 		Version:         cs.Version,
 		MachineNetworks: cs.MachineNetworks,
@@ -396,6 +405,7 @@ type PublicCloudSpec struct {
 	Packet         *PublicPacketCloudSpec       `json:"packet,omitempty"`
 	Hetzner        *PublicHetznerCloudSpec      `json:"hetzner,omitempty"`
 	VSphere        *PublicVSphereCloudSpec      `json:"vsphere,omitempty"`
+	GCP            *PublicGCPCloudSpec          `json:"gcp,omitempty"`
 }
 
 // PublicFakeCloudSpec is a public counterpart of apiv1.FakeCloudSpec.
@@ -501,6 +511,17 @@ func newPublicPacketCloudSpec(internal *kubermaticv1.PacketCloudSpec) (public *P
 	return &PublicPacketCloudSpec{}
 }
 
+// PublicGCPCloudSpec is a public counterpart of apiv1.GCPCloudSpec.
+type PublicGCPCloudSpec struct{}
+
+func newPublicGCPCloudSpec(internal *kubermaticv1.GCPCloudSpec) (public *PublicGCPCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicGCPCloudSpec{}
+}
+
 // ClusterStatus defines the cluster status
 type ClusterStatus struct {
 	// Version actual version of the kubernetes master components
@@ -544,6 +565,7 @@ type NodeCloudSpec struct {
 	Packet       *PacketNodeSpec       `json:"packet,omitempty"`
 	Hetzner      *HetznerNodeSpec      `json:"hetzner,omitempty"`
 	VSphere      *VSphereNodeSpec      `json:"vsphere,omitempty"`
+	GCP          *GCPNodeSpec          `json:"gcp,omitempty"`
 }
 
 // UbuntuSpec ubuntu specific settings
@@ -689,6 +711,18 @@ type PacketNodeSpec struct {
 	// additional instance tags
 	// required: false
 	Tags []string `json:"tags"`
+}
+
+// GCPNodeSpec gcp specific node settings
+// swagger:model GCPNodeSpec
+type GCPNodeSpec struct {
+	Zone        string            `json:"zone"`
+	MachineType string            `json:"machineType"`
+	DiskSize    int64             `json:"diskSize"`
+	DiskType    string            `json:"diskType"`
+	Preemptible bool              `json:"preemptible"`
+	Labels      map[string]string `json:"labels"`
+	Tags        []string          `json:"tags"`
 }
 
 // NodeResources cpu and memory of a node

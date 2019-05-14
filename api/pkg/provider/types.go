@@ -33,6 +33,7 @@ const (
 	PacketCloudProvider       = "packet"
 	HetznerCloudProvider      = "hetzner"
 	VSphereCloudProvider      = "vsphere"
+	GCPCloudProvider          = "google"
 
 	DefaultSSHPort     = 22
 	DefaultKubeletPort = 10250
@@ -279,6 +280,9 @@ func ClusterCloudProviderName(spec kubermaticv1.CloudSpec) (string, error) {
 	if spec.VSphere != nil {
 		clouds = append(clouds, VSphereCloudProvider)
 	}
+	if spec.GCP != nil {
+		clouds = append(clouds, GCPCloudProvider)
+	}
 	if len(clouds) == 0 {
 		return "", nil
 	}
@@ -336,6 +340,9 @@ func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
 	}
 	if spec.Azure != nil {
 		clouds = append(clouds, AzureCloudProvider)
+	}
+	if spec.GCP != nil {
+		clouds = append(clouds, GCPCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil

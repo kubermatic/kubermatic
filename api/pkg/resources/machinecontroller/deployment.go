@@ -185,5 +185,8 @@ func getEnvVars(data machinecontrollerData) []corev1.EnvVar {
 		vars = append(vars, corev1.EnvVar{Name: "PACKET_API_KEY", Value: data.Cluster().Spec.Cloud.Packet.APIKey})
 		vars = append(vars, corev1.EnvVar{Name: "PACKET_PROJECT_ID", Value: data.Cluster().Spec.Cloud.Packet.ProjectID})
 	}
+	if data.Cluster().Spec.Cloud.GCP != nil {
+		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_SERVICE_ACCOUNT", Value: data.Cluster().Spec.Cloud.GCP.ServiceAccount})
+	}
 	return vars
 }

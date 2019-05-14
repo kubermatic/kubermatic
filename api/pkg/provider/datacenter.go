@@ -94,6 +94,13 @@ type PacketSpec struct {
 	Facilities []string `yaml:"facilities"`
 }
 
+// GCPSpec describes a GCP datacenter
+type GCPSpec struct {
+	Region       string   `yaml:"region"`
+	ZoneSuffixes []string `yaml:"zone_suffixes"`
+	Regional     bool     `yaml:"regional,omitempty"`
+}
+
 // DatacenterSpec describes mutually points to provider datacenter spec
 type DatacenterSpec struct {
 	Digitalocean *DigitaloceanSpec `yaml:"digitalocean,omitempty"`
@@ -104,6 +111,7 @@ type DatacenterSpec struct {
 	Packet       *PacketSpec       `yaml:"packet,omitempty"`
 	Hetzner      *HetznerSpec      `yaml:"hetzner,omitempty"`
 	VSphere      *VSphereSpec      `yaml:"vsphere,omitempty"`
+	GCP          *GCPSpec          `yaml:"gcp,omitempty"`
 }
 
 // DatacenterMeta describes a Kubermatic datacenter.

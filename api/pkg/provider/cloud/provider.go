@@ -7,6 +7,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/bringyourown"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/digitalocean"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/fake"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/gcp"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/hetzner"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/packet"
@@ -25,5 +26,6 @@ func Providers(dcs map[string]provider.DatacenterMeta) provider.CloudRegistry {
 		provider.HetznerCloudProvider:      hetzner.NewCloudProvider(dcs),
 		provider.VSphereCloudProvider:      vsphere.NewCloudProvider(dcs),
 		provider.FakeCloudProvider:         fake.NewCloudProvider(),
+		provider.GCPCloudProvider:          gcp.NewCloudProvider(dcs),
 	}
 }

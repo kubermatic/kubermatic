@@ -3662,6 +3662,9 @@
         "fake": {
           "$ref": "#/definitions/FakeCloudSpec"
         },
+        "gcp": {
+          "$ref": "#/definitions/GCPCloudSpec"
+        },
         "hetzner": {
           "$ref": "#/definitions/HetznerCloudSpec"
         },
@@ -3914,6 +3917,9 @@
         },
         "digitalocean": {
           "$ref": "#/definitions/DigitialoceanDatacenterSpec"
+        },
+        "gcp": {
+          "$ref": "#/definitions/GCPDatacenterSpec"
         },
         "hetzner": {
           "$ref": "#/definitions/HetznerDatacenterSpec"
@@ -4218,6 +4224,93 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "GCPCloudSpec": {
+      "type": "object",
+      "title": "GCPCloudSpec specifies access data to GCP.",
+      "properties": {
+        "firewallRuleName": {
+          "type": "string",
+          "x-go-name": "FirewallRuleName"
+        },
+        "network": {
+          "type": "string",
+          "x-go-name": "Network"
+        },
+        "serviceAccount": {
+          "type": "string",
+          "x-go-name": "ServiceAccount"
+        },
+        "subnetwork": {
+          "type": "string",
+          "x-go-name": "Subnetwork"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "GCPDatacenterSpec": {
+      "type": "object",
+      "title": "GCPDatacenterSpec specifies a datacenter of GCP.",
+      "properties": {
+        "region": {
+          "type": "string",
+          "x-go-name": "Region"
+        },
+        "regional": {
+          "type": "boolean",
+          "x-go-name": "Regional"
+        },
+        "zone_suffixes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "ZoneSuffixes"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "GCPNodeSpec": {
+      "description": "GCPNodeSpec gcp specific node settings",
+      "type": "object",
+      "properties": {
+        "diskSize": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "DiskSize"
+        },
+        "diskType": {
+          "type": "string",
+          "x-go-name": "DiskType"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Labels"
+        },
+        "machineType": {
+          "type": "string",
+          "x-go-name": "MachineType"
+        },
+        "preemptible": {
+          "type": "boolean",
+          "x-go-name": "Preemptible"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Tags"
+        },
+        "zone": {
+          "type": "string",
+          "x-go-name": "Zone"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "HetznerCloudSpec": {
       "type": "object",
@@ -4579,6 +4672,9 @@
         },
         "digitalocean": {
           "$ref": "#/definitions/DigitaloceanNodeSpec"
+        },
+        "gcp": {
+          "$ref": "#/definitions/GCPNodeSpec"
         },
         "hetzner": {
           "$ref": "#/definitions/HetznerNodeSpec"
@@ -5244,6 +5340,9 @@
         "fake": {
           "$ref": "#/definitions/PublicFakeCloudSpec"
         },
+        "gcp": {
+          "$ref": "#/definitions/PublicGCPCloudSpec"
+        },
         "hetzner": {
           "$ref": "#/definitions/PublicHetznerCloudSpec"
         },
@@ -5267,6 +5366,11 @@
     "PublicFakeCloudSpec": {
       "type": "object",
       "title": "PublicFakeCloudSpec is a public counterpart of apiv1.FakeCloudSpec.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "PublicGCPCloudSpec": {
+      "type": "object",
+      "title": "PublicGCPCloudSpec is a public counterpart of apiv1.GCPCloudSpec.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "PublicHetznerCloudSpec": {
