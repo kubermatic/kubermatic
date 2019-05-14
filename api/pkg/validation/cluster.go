@@ -125,6 +125,9 @@ func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 	if newSpec.Packet == nil && oldSpec.Packet != nil {
 		return ErrCloudChangeNotAllowed
 	}
+	if newSpec.GCP == nil && oldSpec.GCP != nil {
+		return ErrCloudChangeNotAllowed
+	}
 	if newSpec.DatacenterName != oldSpec.DatacenterName {
 		return errors.New("changing the datacenter is not allowed")
 	}
@@ -281,6 +284,10 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc provider.DatacenterMeta) 
 			return errors.New("no project ID specified")
 		}
 		return nil
+	}
+
+	if spec.GCP != nil && spec.GCP.ServiceAccount != "" {
+		return errors.New("no serviceAccount specified")
 	}
 
 	return errors.New("no cloud provider specified")
