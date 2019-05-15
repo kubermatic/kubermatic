@@ -81,7 +81,6 @@ func New(debug bool, format Format) *zap.Logger {
 
 	opts := []zap.Option{
 		zap.AddCaller(),
-		zap.AddCallerSkip(1),
 		zap.ErrorOutput(sink),
 	}
 
