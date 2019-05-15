@@ -510,6 +510,7 @@ func TestCreateNodeDeployment(t *testing.T) {
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genTestCluster(true)),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
+
 		// scenario 5
 		{
 			Name:                   "scenario 5: set taints",
