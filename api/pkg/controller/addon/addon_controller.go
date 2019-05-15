@@ -185,6 +185,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 	}
 
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+		log.Debug("Skipping because the cluster has a different worker name set")
 		return nil
 	}
 

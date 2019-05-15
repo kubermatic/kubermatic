@@ -133,6 +133,7 @@ func createBackupController(ctrlCtx *controllerContext) error {
 		return fmt.Errorf("failed to parse %s as duration: %v", ctrlCtx.runOptions.backupInterval, err)
 	}
 	return backupcontroller.Add(
+		ctrlCtx.log,
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
@@ -243,6 +244,7 @@ func createAddonInstallerController(ctrlCtx *controllerContext) error {
 	}
 
 	return addoninstaller.Add(
+		ctrlCtx.log,
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,

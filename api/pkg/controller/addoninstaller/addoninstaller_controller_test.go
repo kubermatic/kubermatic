@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -106,11 +107,12 @@ func TestCreateAddon(t *testing.T) {
 			client := ctrlruntimefakeclient.NewFakeClient(objs...)
 
 			reconciler := Reconciler{
+				log:              kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 				Client:           client,
 				kubernetesAddons: addons,
 			}
 
-			if _, err := reconciler.reconcile(context.Background(), test.cluster); err != nil {
+			if _, err := reconciler.reconcile(context.Background(), reconciler.log, test.cluster); err != nil {
 				t.Fatalf("Reconciliation failed: %v", err)
 			}
 

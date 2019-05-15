@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/glog"
+	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
@@ -13,6 +13,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -26,6 +27,7 @@ import (
 const ControllerName = "kubermatic_addoninstaller_controller"
 
 type Reconciler struct {
+	log              *zap.SugaredLogger
 	workerName       string
 	kubernetesAddons []string
 	openshiftAddons  []string
@@ -34,13 +36,16 @@ type Reconciler struct {
 }
 
 func Add(
+	log *zap.SugaredLogger,
 	mgr manager.Manager,
 	numWorkers int,
 	workerName string,
 	kubernetesAddons,
 	openshiftAddons []string) error {
+	log = log.Named(ControllerName)
 
 	reconciler := &Reconciler{
+		log:              log,
 		workerName:       workerName,
 		kubernetesAddons: kubernetesAddons,
 		openshiftAddons:  openshiftAddons,
@@ -63,8 +68,9 @@ func Add(
 	enqueueClusterForNamespacedObject := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
 		clusterList := &kubermaticv1.ClusterList{}
 		if err := mgr.GetClient().List(context.Background(), &ctrlruntimeclient.ListOptions{}, clusterList); err != nil {
-			// TODO: Is there a better way to handle errors that occur here?
-			glog.Errorf("failed to list Clusters: %v", err)
+			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %v", err))
+			log.Errorw("Failed to list clusters", zap.Error(err))
+			return []reconcile.Request{}
 		}
 		for _, cluster := range clusterList.Items {
 			if cluster.Status.NamespaceName == a.Meta.GetNamespace() {
@@ -83,69 +89,81 @@ func Add(
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	log := r.log.With("request", request)
+	log.Debug("Processing")
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if kerrors.IsNotFound(err) {
+			log.Debug("Skipping because the cluster is already gone")
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := r.reconcile(ctx, cluster)
+	result, err := r.reconcile(ctx, log, cluster)
 	if result == nil {
 		result = &reconcile.Result{}
 	}
 	if err != nil {
-		glog.Errorf("Failed to reconcile cluster %q: %v", request.NamespacedName.String(), err)
+		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
 	}
 	return *result, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+	isOpenShiftCluster := cluster.Annotations["kubermatic.io/openshift"] != ""
+	log = log.With("is_openshift_cluster", isOpenShiftCluster)
+
 	if cluster.Spec.Pause {
-		glog.V(4).Infof("skipping paused cluster %s", cluster.Name)
+		log.Debug("Skipping because the cluster is paused")
 		return nil, nil
 	}
 
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+		log.Debug("Skipping because the cluster has a different worker name set")
 		return nil, nil
 	}
 
 	// Wait until the Apiserver is running to ensure the namespace exists at least.
 	// Just checking for cluster.status.namespaceName is not enough as it gets set before the namespace exists
 	if !cluster.Status.Health.Apiserver {
-		glog.V(4).Infof("skipping addon sync for cluster %s as the apiserver is not running yet", cluster.Name)
+		log.Debug("Skipping because the API server is not running")
 		return &reconcile.Result{RequeueAfter: 1 * time.Second}, nil
 	}
 
-	if cluster.Annotations["kubermatic.io/openshift"] == "" {
-		return nil, r.ensureAddons(ctx, cluster, r.kubernetesAddons)
+	// This controller handles Kubernetes & OpenShift cluster.
+	// Based on the type we install different default addons
+	if isOpenShiftCluster {
+		return nil, r.ensureAddons(ctx, log, cluster, r.openshiftAddons)
 	}
 
-	return nil, r.ensureAddons(ctx, cluster, r.openshiftAddons)
+	return nil, r.ensureAddons(ctx, log, cluster, r.kubernetesAddons)
 }
 
-func (r *Reconciler) ensureAddons(ctx context.Context, cluster *kubermaticv1.Cluster, addons []string) error {
+func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, addons []string) error {
 	for _, addonName := range addons {
 		addon := &kubermaticv1.Addon{}
-		err := r.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: addonName}, addon)
+		name := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: addonName}
+		addonLog := log.With("addon", name)
+		err := r.Get(ctx, name, addon)
 		if err == nil {
+			addonLog.Debug("Addon already exists")
 			continue
 		}
 		if !kerrors.IsNotFound(err) {
 			return fmt.Errorf("failed to get addon %q: %v", addonName, err)
 		}
-		if err := r.createAddon(ctx, addonName, cluster); err != nil {
+		if err := r.createAddon(ctx, addonLog, addonName, cluster); err != nil {
 			return fmt.Errorf("failed to create addon %q: %v", addonName, err)
 		}
 	}
 	return nil
 }
 
-func (r *Reconciler) createAddon(ctx context.Context, addonName string, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) createAddon(ctx context.Context, log *zap.SugaredLogger, addonName string, cluster *kubermaticv1.Cluster) error {
 	gv := kubermaticv1.SchemeGroupVersion
 
 	addon := &kubermaticv1.Addon{
@@ -175,7 +193,7 @@ func (r *Reconciler) createAddon(ctx context.Context, addonName string, cluster 
 		return fmt.Errorf("failed to create addon %q: %v", addonName, err)
 	}
 
-	glog.V(2).Infof("Created addon %s for cluster %s", addonName, cluster.Name)
+	log.Info("Addon successfully created")
 
 	err := wait.Poll(10*time.Millisecond, 10*time.Second, func() (bool, error) {
 		err := r.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: addon.Name}, &kubermaticv1.Addon{})
