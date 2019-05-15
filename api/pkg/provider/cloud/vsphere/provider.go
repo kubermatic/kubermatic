@@ -111,7 +111,7 @@ func (v *Provider) createVMFolderForCluster(cluster *kubermaticv1.Cluster, updat
 
 	if !kuberneteshelper.HasFinalizer(cluster, folderCleanupFinalizer) {
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = append(cluster.Finalizers, folderCleanupFinalizer)
+			kuberneteshelper.AddFinalizer(cluster, folderCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
@@ -245,7 +245,7 @@ func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		}
 		// Folder is not there anymore, maybe someone deleted it manually
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, folderCleanupFinalizer)
+			kuberneteshelper.RemoveFinalizer(cluster, folderCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
@@ -262,7 +262,7 @@ func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	}
 
 	cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, folderCleanupFinalizer)
+		kuberneteshelper.RemoveFinalizer(cluster, folderCleanupFinalizer)
 	})
 	if err != nil {
 		return nil, err

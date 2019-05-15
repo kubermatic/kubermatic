@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
@@ -239,9 +240,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 				}
 			}
 
-			finalizers := sets.NewString(cluster.Finalizers...)
-			finalizers.Delete(cleanupFinalizer)
-			cluster.Finalizers = finalizers.List()
+			kuberneteshelper.RemoveFinalizer(cluster, cleanupFinalizer)
 			if err := r.Update(ctx, cluster); err != nil {
 				return fmt.Errorf("failed to update cluster after removing cleanup finalizer: %v", err)
 			}
@@ -256,8 +255,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 
 	// Always add the finalizer first
-	if !sets.NewString(cluster.Finalizers...).Has(cleanupFinalizer) {
-		cluster.Finalizers = append(cluster.Finalizers, cleanupFinalizer)
+	if !kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer) {
+		kuberneteshelper.AddFinalizer(cluster, cleanupFinalizer)
 		if err := r.Update(ctx, cluster); err != nil {
 			return fmt.Errorf("failed to update cluster after adding cleanup finalizer: %v", err)
 		}

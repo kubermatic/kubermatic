@@ -496,7 +496,7 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 			return nil, fmt.Errorf("createSecurityGroup for cluster %s did not return sg id", cluster.Name)
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = append(cluster.Finalizers, securityGroupCleanupFinalizer)
+			kuberneteshelper.AddFinalizer(cluster, securityGroupCleanupFinalizer)
 			cluster.Spec.Cloud.AWS.SecurityGroupID = securityGroupID
 		})
 		if err != nil {
@@ -515,7 +515,7 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 			return nil, fmt.Errorf("failed to create instance profile: %v", err)
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = append(cluster.Finalizers, instanceProfileCleanupFinalizer)
+			kuberneteshelper.AddFinalizer(cluster, instanceProfileCleanupFinalizer)
 			cluster.Spec.Cloud.AWS.RoleName = *role.RoleName
 			cluster.Spec.Cloud.AWS.InstanceProfileName = *instanceProfile.InstanceProfileName
 		})
@@ -542,7 +542,7 @@ func (a *amazonEc2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 			return nil, err
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = append(cluster.Finalizers, tagCleanupFinalizer)
+			kuberneteshelper.AddFinalizer(cluster, tagCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
@@ -597,7 +597,7 @@ func (a *amazonEc2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 			}
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, securityGroupCleanupFinalizer)
+			kuberneteshelper.RemoveFinalizer(cluster, securityGroupCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
@@ -646,7 +646,7 @@ func (a *amazonEc2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 			}
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, instanceProfileCleanupFinalizer)
+			kuberneteshelper.RemoveFinalizer(cluster, instanceProfileCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
@@ -658,7 +658,7 @@ func (a *amazonEc2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 			return nil, err
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, tagCleanupFinalizer)
+			kuberneteshelper.RemoveFinalizer(cluster, tagCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
