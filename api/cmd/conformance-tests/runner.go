@@ -8,6 +8,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -76,20 +77,22 @@ func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
 		log:                          opts.log,
 		existingClusterLabel:         opts.existingClusterLabel,
 		openshift:                    opts.openshift,
+		printGinkoLogs:               opts.printGinkoLogs,
 	}
 }
 
 type testRunner struct {
-	scenarios   []testScenario
-	secrets     secrets
-	namePrefix  string
-	repoRoot    string
-	reportsRoot string
-	PublicKeys  [][]byte
-	workerName  string
-	homeDir     string
-	log         *logrus.Entry
-	openshift   bool
+	scenarios      []testScenario
+	secrets        secrets
+	namePrefix     string
+	repoRoot       string
+	reportsRoot    string
+	PublicKeys     [][]byte
+	workerName     string
+	homeDir        string
+	log            *logrus.Entry
+	openshift      bool
+	printGinkoLogs bool
 
 	controlPlaneReadyWaitTimeout time.Duration
 	deleteClusterAfterTests      bool
@@ -476,6 +479,12 @@ func (r *testRunner) executeGinkgoRunWithRetries(log *logrus.Entry, run *ginkgoR
 				msg = fmt.Sprintf("%s. Retrying...", msg)
 			}
 			log.Info(msg)
+			if r.printGinkoLogs {
+				if err := printFileUnbuffered(ginkgoRes.logfile); err != nil {
+					log.Infof("error printing ginkgo logfile: %v", err)
+				}
+				log.Info("Successfully printed logfile")
+			}
 			continue
 		}
 
@@ -1042,4 +1051,14 @@ func (r *testRunner) logNotReadyControlPlaneComponents(clusterName string) error
 	}
 	r.log.Infof("ClusterHealthStatus: %q", string(clusterHealthStatus))
 	return nil
+}
+
+func printFileUnbuffered(filename string) error {
+	fd, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer fd.Close()
+	_, err = io.Copy(os.Stdout, fd)
+	return err
 }
