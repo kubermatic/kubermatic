@@ -284,10 +284,13 @@ func (r *Reconciler) ensureCronJobSecret(ctx context.Context, cluster *kubermati
 		getCA,
 	)()
 
+	wrappedCreator := reconciling.SecretObjectWrapper(creator)
+	wrappedCreator = reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster))(wrappedCreator)
+
 	err := reconciling.EnsureNamedObject(
 		ctx,
 		types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: secretName},
-		reconciling.SecretObjectWrapper(creator), r.Client, &corev1.Secret{}, false)
+		wrappedCreator, r.Client, &corev1.Secret{}, false)
 	if err != nil {
 		return fmt.Errorf("failed to ensure Secret %q: %v", secretName, err)
 	}
