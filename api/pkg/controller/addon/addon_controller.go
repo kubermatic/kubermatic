@@ -179,6 +179,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 		return nil
 	}
 
+	if cluster.DeletionTimestamp != nil {
+		log.Debug("Skipping addon because cluster is deleted")
+		return nil
+	}
+
 	if cluster.Spec.Pause {
 		log.Debug("Skipping because the cluster is paused")
 		return nil
