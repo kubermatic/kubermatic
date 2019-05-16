@@ -16,18 +16,24 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func OpenstackSizeEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackSizeEndpoint(providers provider.CloudRegistry, datacenters map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
 		}
 
-		return getOpenstackSizes(providers, req.Username, req.Password, req.Tenant, req.Domain, req.DatacenterName)
+		datacenterName := req.DatacenterName
+		datacenter, found := datacenters[datacenterName]
+		if !found {
+			return nil, fmt.Errorf("incorrect datacenter name %s", datacenterName)
+		}
+
+		return getOpenstackSizes(providers, req.Username, req.Password, req.Tenant, req.Domain, datacenterName, datacenter)
 	}
 }
 
-func OpenstackSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry, datacenters map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -37,11 +43,17 @@ func OpenstackSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider
 
 		openstackSpec := cluster.Spec.Cloud.Openstack
 		datacenterName := cluster.Spec.Cloud.DatacenterName
-		return getOpenstackSizes(providers, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.Domain, datacenterName)
+
+		datacenter, found := datacenters[datacenterName]
+		if !found {
+			return nil, fmt.Errorf("incorrect datacenter name %s", datacenterName)
+		}
+
+		return getOpenstackSizes(providers, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.Domain, datacenterName, datacenter)
 	}
 }
 
-func getOpenstackSizes(providers provider.CloudRegistry, username, passowrd, tenant, domain, datacenterName string) ([]apiv1.OpenstackSize, error) {
+func getOpenstackSizes(providers provider.CloudRegistry, username, passowrd, tenant, domain, datacenterName string, datacenter provider.DatacenterMeta) ([]apiv1.OpenstackSize, error) {
 	osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
 	if !ok {
 		return nil, fmt.Errorf("unable to get %s provider", provider.OpenstackCloudProvider)
@@ -76,10 +88,22 @@ func getOpenstackSizes(providers provider.CloudRegistry, username, passowrd, ten
 			Region:   dc.Spec.Openstack.Region,
 			IsPublic: flavor.IsPublic,
 		}
-		apiSizes = append(apiSizes, apiSize)
+		if MeetsOpenstackNodeSizeRequirement(apiSize, datacenter.Spec.Openstack.NodeSizeRequirements) {
+			apiSizes = append(apiSizes, apiSize)
+		}
 	}
 
 	return apiSizes, nil
+}
+
+func MeetsOpenstackNodeSizeRequirement(apiSize apiv1.OpenstackSize, requirements provider.OpenstackNodeSizeRequirements) bool {
+	if apiSize.VCPUs < requirements.MinimumVCPUs {
+		return false
+	}
+	if apiSize.Memory < requirements.MinimumMemory {
+		return false
+	}
+	return true
 }
 
 func OpenstackTenantEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {

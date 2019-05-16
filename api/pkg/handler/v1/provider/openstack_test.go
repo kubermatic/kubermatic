@@ -14,8 +14,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
+	providerv1 "github.com/kubermatic/kubermatic/api/pkg/handler/v1/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
@@ -238,6 +240,88 @@ func TestOpenstackEndpoints(t *testing.T) {
 
 			router.ServeHTTP(res, req)
 			compareJSON(t, res, tc.ExpectedResponse)
+		})
+	}
+}
+
+func TestMeetsOpentackNodeSizeRequirement(t *testing.T) {
+	tests := []struct {
+		name                string
+		apiSize             apiv1.OpenstackSize
+		nodeSizeRequirement provider.OpenstackNodeSizeRequirements
+		meetsRequirement    bool
+	}{
+		{
+			name: "not enough memory",
+			apiSize: apiv1.OpenstackSize{
+				Memory: 2048,
+				VCPUs:  2,
+			},
+			nodeSizeRequirement: provider.OpenstackNodeSizeRequirements{
+				MinimumMemory: 4096,
+				MinimumVCPUs:  1,
+			},
+			meetsRequirement: false,
+		},
+		{
+			name: "not enough cpu",
+			apiSize: apiv1.OpenstackSize{
+				Memory: 2048,
+				VCPUs:  2,
+			},
+			nodeSizeRequirement: provider.OpenstackNodeSizeRequirements{
+				MinimumMemory: 1024,
+				MinimumVCPUs:  4,
+			},
+			meetsRequirement: false,
+		},
+		{
+			name: "meets requirements",
+			apiSize: apiv1.OpenstackSize{
+				Memory: 2048,
+				VCPUs:  2,
+			},
+			nodeSizeRequirement: provider.OpenstackNodeSizeRequirements{
+				MinimumMemory: 1024,
+				MinimumVCPUs:  1,
+			},
+			meetsRequirement: true,
+		},
+		{
+			name: "no requirements",
+			apiSize: apiv1.OpenstackSize{
+				Memory: 2048,
+				VCPUs:  2,
+			},
+			nodeSizeRequirement: provider.OpenstackNodeSizeRequirements{},
+			meetsRequirement:    true,
+		},
+		{
+			name: "required cpu equals size",
+			apiSize: apiv1.OpenstackSize{
+				VCPUs: 2,
+			},
+			nodeSizeRequirement: provider.OpenstackNodeSizeRequirements{
+				MinimumVCPUs: 2,
+			},
+			meetsRequirement: true,
+		},
+		{
+			name: "required memory equals size",
+			apiSize: apiv1.OpenstackSize{
+				Memory: 2,
+			},
+			nodeSizeRequirement: provider.OpenstackNodeSizeRequirements{
+				MinimumMemory: 2,
+			},
+			meetsRequirement: true,
+		},
+	}
+	for _, testToRun := range tests {
+		t.Run(testToRun.name, func(t *testing.T) {
+			if providerv1.MeetsOpenstackNodeSizeRequirement(testToRun.apiSize, testToRun.nodeSizeRequirement) != testToRun.meetsRequirement {
+				t.Errorf("expected result to be %v, but got %v", testToRun.meetsRequirement, !testToRun.meetsRequirement)
+			}
 		})
 	}
 }
