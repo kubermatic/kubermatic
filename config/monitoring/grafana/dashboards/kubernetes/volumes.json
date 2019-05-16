@@ -421,9 +421,7 @@
           "to": "null"
         }
       ],
-      "scopedVars": {
-        "namespace": {}
-      },
+      "scopedVars": {},
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
         "full": true,
@@ -507,9 +505,7 @@
           "to": "null"
         }
       ],
-      "scopedVars": {
-        "namespace": {}
-      },
+      "scopedVars": {},
       "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
         "full": true,
@@ -577,9 +573,7 @@
       "points": false,
       "renderer": "flot",
       "repeatDirection": "h",
-      "scopedVars": {
-        "namespace": {}
-      },
+      "scopedVars": {},
       "seriesOverrides": [],
       "spaceLength": 10,
       "stack": false,
@@ -688,9 +682,7 @@
           "to": "null"
         }
       ],
-      "scopedVars": {
-        "namespace": {}
-      },
+      "scopedVars": {},
       "sparkline": {
         "fillColor": "rgb(80, 134, 66, 0.18)",
         "full": true,
@@ -774,9 +766,7 @@
           "to": "null"
         }
       ],
-      "scopedVars": {
-        "namespace": {}
-      },
+      "scopedVars": {},
       "sparkline": {
         "fillColor": "rgb(234, 100, 96, 0.18)",
         "full": true,
