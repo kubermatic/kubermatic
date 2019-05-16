@@ -118,10 +118,10 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	// Based on the type we install different default addons
 	var addonsToInstall []string
 	if cluster.Annotations["kubermatic.io/openshift"] != "" {
-		log = log.With("cluster_type", "openshift")
+		log = log.With("clustertype", "openshift")
 		addonsToInstall = r.openshiftAddons
 	} else {
-		log = log.With("cluster_type", "kubernetes")
+		log = log.With("clustertype", "kubernetes")
 		addonsToInstall = r.kubernetesAddons
 	}
 
