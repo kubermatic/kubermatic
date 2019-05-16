@@ -28,11 +28,11 @@ type OIDCConfiguration struct {
 
 // UpdateManager specifies a set of methods to handle cluster versions & updates
 type UpdateManager interface {
-	GetVersion(string) (*version.MasterVersion, error)
-	GetMasterVersions() ([]*version.MasterVersion, error)
+	GetVersion(from, clusterType string) (*version.MasterVersion, error)
+	GetMasterVersions(string) ([]*version.MasterVersion, error)
 	GetDefault() (*version.MasterVersion, error)
-	AutomaticUpdate(from string) (*version.MasterVersion, error)
-	GetPossibleUpdates(from string) ([]*version.MasterVersion, error)
+	AutomaticUpdate(from, clusterType string) (*version.MasterVersion, error)
+	GetPossibleUpdates(from, clusterType string) ([]*version.MasterVersion, error)
 }
 
 // ServerMetrics defines metrics used by the API.

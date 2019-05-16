@@ -62,12 +62,15 @@ func TestGetClusterUpgrades(t *testing.T) {
 			versions: []*version.MasterVersion{
 				{
 					Version: semver.MustParse("1.6.0"),
+					Type:    apiv1.KubernetesClusterType,
 				},
 				{
 					Version: semver.MustParse("1.6.1"),
+					Type:    apiv1.KubernetesClusterType,
 				},
 				{
 					Version: semver.MustParse("1.7.0"),
+					Type:    apiv1.KubernetesClusterType,
 				},
 			},
 			updates: []*version.MasterUpdate{
@@ -75,11 +78,13 @@ func TestGetClusterUpgrades(t *testing.T) {
 					From:      "1.6.0",
 					To:        "1.6.1",
 					Automatic: false,
+					Type:      apiv1.KubernetesClusterType,
 				},
 				{
 					From:      "1.6.x",
 					To:        "1.7.0",
 					Automatic: false,
+					Type:      apiv1.KubernetesClusterType,
 				},
 			},
 		},
@@ -112,12 +117,15 @@ func TestGetClusterUpgrades(t *testing.T) {
 			versions: []*version.MasterVersion{
 				{
 					Version: semver.MustParse("1.6.0"),
+					Type:    apiv1.KubernetesClusterType,
 				},
 				{
 					Version: semver.MustParse("1.6.1"),
+					Type:    apiv1.KubernetesClusterType,
 				},
 				{
 					Version: semver.MustParse("1.7.0"),
+					Type:    apiv1.KubernetesClusterType,
 				},
 			},
 			updates: []*version.MasterUpdate{
@@ -125,11 +133,13 @@ func TestGetClusterUpgrades(t *testing.T) {
 					From:      "1.6.0",
 					To:        "1.6.1",
 					Automatic: false,
+					Type:      apiv1.KubernetesClusterType,
 				},
 				{
 					From:      "1.6.x",
 					To:        "1.7.0",
 					Automatic: false,
+					Type:      apiv1.KubernetesClusterType,
 				},
 			},
 		},
@@ -148,9 +158,140 @@ func TestGetClusterUpgrades(t *testing.T) {
 			versions: []*version.MasterVersion{
 				{
 					Version: semver.MustParse("1.6.0"),
+					Type:    apiv1.KubernetesClusterType,
 				},
 			},
 			updates: []*version.MasterUpdate{},
+		},
+		{
+			name: "upgrade available for OpenShift",
+			cluster: func() *kubermaticv1.Cluster {
+				c := test.GenCluster("foo", "foo", "project", time.Now())
+				c.Labels = map[string]string{"user": test.UserName}
+				c.Annotations = map[string]string{"kubermatic.io/openshift": "true"}
+				c.Spec.Version = *ksemver.NewSemverOrDie("5.1")
+				return c
+			}(),
+			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(),
+			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
+			apiUser:                    *test.GenDefaultAPIUser(),
+			wantUpdates: []*apiv1.MasterVersion{
+				{
+					Version: semver.MustParse("5.2"),
+				},
+			},
+			versions: []*version.MasterVersion{
+				{
+					Version: semver.MustParse("1.6.0"),
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("1.6.1"),
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("1.7.0"),
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("3.11"),
+					Default: true,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("4.1"),
+					Default: false,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("4.2"),
+					Default: false,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("5.1"),
+					Default: false,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("5.2"),
+					Default: false,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+			},
+			updates: []*version.MasterUpdate{
+				{
+					From:      "1.6.0",
+					To:        "1.6.1",
+					Automatic: false,
+					Type:      apiv1.KubernetesClusterType,
+				},
+				{
+					From:      "1.6.x",
+					To:        "1.7.0",
+					Automatic: false,
+					Type:      apiv1.KubernetesClusterType,
+				},
+				{
+					From:      "5.1.0",
+					To:        "5.2.0",
+					Automatic: true,
+					Type:      apiv1.OpenShiftClusterType,
+				},
+			},
+		},
+		{
+			name: "upgrade not available for OpenShift (versions 3.11.*)",
+			cluster: func() *kubermaticv1.Cluster {
+				c := test.GenCluster("foo", "foo", "project", time.Now())
+				c.Labels = map[string]string{"user": test.UserName}
+				c.Annotations = map[string]string{"kubermatic.io/openshift": "true"}
+				c.Spec.Version = *ksemver.NewSemverOrDie("3.11.0")
+				return c
+			}(),
+			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(),
+			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
+			apiUser:                    *test.GenDefaultAPIUser(),
+			wantUpdates:                []*apiv1.MasterVersion{},
+			versions: []*version.MasterVersion{
+				{
+					Version: semver.MustParse("1.7.0"),
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("3.11.0"),
+					Default: true,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("3.11.1"),
+					Default: false,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("3.11.2"),
+					Default: false,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("3.11.3"),
+					Default: false,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("5.2"),
+					Default: false,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+			},
+			updates: []*version.MasterUpdate{
+				{
+					From:      "3.11.0",
+					To:        "3.11.*",
+					Automatic: true,
+					Type:      apiv1.OpenShiftClusterType,
+				},
+			},
 		},
 	}
 	for _, testStruct := range tests {
@@ -307,39 +448,51 @@ func TestGetNodeUpgrades(t *testing.T) {
 			existingVersions: []*version.MasterVersion{
 				{
 					Version: semver.MustParse("0.0.1"),
+					Type:    apiv1.KubernetesClusterType,
 				},
 				{
 					Version: semver.MustParse("0.1.0"),
+					Type:    apiv1.KubernetesClusterType,
 				},
 				{
 					Version: semver.MustParse("1.0.0"),
+					Type:    apiv1.KubernetesClusterType,
 				},
 				{
 					Version: semver.MustParse("1.4.0"),
+					Type:    apiv1.KubernetesClusterType,
 				},
 				{
 					Version: semver.MustParse("1.4.1"),
+					Type:    apiv1.KubernetesClusterType,
 				},
 				{
 					Version: semver.MustParse("1.5.0"),
+					Type:    apiv1.KubernetesClusterType,
 				},
 				{
 					Version: semver.MustParse("1.5.1"),
+					Type:    apiv1.KubernetesClusterType,
 				},
 				{
 					Version: semver.MustParse("1.6.0"),
+					Type:    apiv1.KubernetesClusterType,
 				},
 				{
 					Version: semver.MustParse("1.6.1"),
+					Type:    apiv1.KubernetesClusterType,
 				},
 				{
 					Version: semver.MustParse("1.7.0"),
+					Type:    apiv1.KubernetesClusterType,
 				},
 				{
 					Version: semver.MustParse("1.7.1"),
+					Type:    apiv1.KubernetesClusterType,
 				},
 				{
 					Version: semver.MustParse("2.0.0"),
+					Type:    apiv1.KubernetesClusterType,
 				},
 			},
 			expectedOutput: []*apiv1.MasterVersion{
@@ -367,6 +520,154 @@ func TestGetNodeUpgrades(t *testing.T) {
 	for _, testStruct := range tests {
 		t.Run(testStruct.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/upgrades/node?control_plane_version=%s", testStruct.controlPlaneVersion), nil)
+			res := httptest.NewRecorder()
+			ep, err := test.CreateTestEndpoint(testStruct.apiUser, nil, testStruct.existingKubermaticObjs,
+				testStruct.existingVersions, testStruct.existingUpdates, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create testStruct endpoint due to %v", err)
+			}
+			ep.ServeHTTP(res, req)
+			if res.Code != http.StatusOK {
+				t.Fatalf("Expected status code to be 200, got %d\nResponse body: %q", res.Code, res.Body.String())
+			}
+
+			var response []*apiv1.MasterVersion
+			err = json.Unmarshal(res.Body.Bytes(), &response)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := deep.Equal(response, testStruct.expectedOutput); diff != nil {
+				t.Fatalf("got different versions response than expected. Diff: %v", diff)
+			}
+		})
+	}
+}
+
+func TestGetMasterVersionsEndpoint(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name                   string
+		clusterType            string
+		apiUser                apiv1.User
+		existingUpdates        []*version.MasterUpdate
+		existingVersions       []*version.MasterVersion
+		expectedOutput         []*apiv1.MasterVersion
+		existingKubermaticObjs []runtime.Object
+	}{
+		{
+			name:                   "get all OpenShift versions",
+			clusterType:            apiv1.OpenShiftClusterType,
+			apiUser:                *test.GenDefaultAPIUser(),
+			existingKubermaticObjs: []runtime.Object{test.GenDefaultUser()},
+			existingUpdates:        []*version.MasterUpdate{},
+			existingVersions: []*version.MasterVersion{
+				{
+					Version: semver.MustParse("1.13.5"),
+					Default: true,
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("3.11.5"),
+					Default: true,
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("3.11"),
+					Default: false,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("4.1"),
+					Default: true,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("4.2"),
+					Default: true,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("4.3"),
+					Default: true,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+			},
+			expectedOutput: []*apiv1.MasterVersion{
+				{
+					Version: semver.MustParse("3.11"),
+					Default: false,
+				},
+				{
+					Version: semver.MustParse("4.1"),
+					Default: true,
+				},
+				{
+					Version: semver.MustParse("4.2"),
+					Default: true,
+				},
+				{
+					Version: semver.MustParse("4.3"),
+					Default: true,
+				},
+			},
+		},
+		{
+			name:                   "get default only kubernetes versions",
+			clusterType:            "",
+			apiUser:                *test.GenDefaultAPIUser(),
+			existingKubermaticObjs: []runtime.Object{test.GenDefaultUser()},
+			existingUpdates:        []*version.MasterUpdate{},
+			existingVersions: []*version.MasterVersion{
+				{
+					Version: semver.MustParse("1.13.5"),
+					Default: true,
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("3.11.5"),
+					Default: true,
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("3.11"),
+					Default: false,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("4.1"),
+					Default: true,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("4.2"),
+					Default: true,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("4.3"),
+					Default: true,
+					Type:    apiv1.OpenShiftClusterType,
+				},
+			},
+			expectedOutput: []*apiv1.MasterVersion{
+				{
+					Version: semver.MustParse("1.13.5"),
+					Default: true,
+				},
+				{
+					Version: semver.MustParse("3.11.5"),
+					Default: true,
+				},
+			},
+		},
+	}
+	for _, testStruct := range tests {
+		t.Run(testStruct.name, func(t *testing.T) {
+			if len(testStruct.clusterType) > 0 {
+				testStruct.clusterType = fmt.Sprintf("?type=%s", testStruct.clusterType)
+			}
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/upgrades/cluster%s", testStruct.clusterType), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(testStruct.apiUser, nil, testStruct.existingKubermaticObjs,
 				testStruct.existingVersions, testStruct.existingUpdates, hack.NewTestRouting)
