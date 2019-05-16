@@ -146,28 +146,12 @@ func (r *Reconciler) syncDnatRules(ctx context.Context) error {
 	// filter out everything that's not relevant for us
 	actualRules, haveJump, haveMasquerade := r.filterDnatRules(allActualRules, r.nodeTranslationChainName)
 
-	if !equality.Semantic.DeepEqual(actualRules, desiredRules) {
+	if !equality.Semantic.DeepEqual(actualRules, desiredRules) || !haveJump || !haveMasquerade {
 		// Need to update chain in kernel.
 		glog.V(4).Infof("Updating iptables chain in kernel (%d rules).", len(desiredRules))
-		if err := r.applyRules(desiredRules); err != nil {
+		if err := r.applyDNATRules(desiredRules, haveJump, haveMasquerade); err != nil {
 			return fmt.Errorf("failed to apply iptable rules: %v", err)
 		}
-	}
-
-	// Ensure to jump into the translation chain.
-	if !haveJump && len(desiredRules) > 0 {
-		if err := execIptables([]string{"-t", "nat", "-I", "OUTPUT", "-j", r.nodeTranslationChainName}); err != nil {
-			return fmt.Errorf("failed to create jump rule in OUTPUT chain: %v", err)
-		}
-		glog.V(2).Infof("Inserted OUTPUT rule to jump into chain %s.", r.nodeTranslationChainName)
-	}
-
-	// Ensure to masquerade outgoing vpn packets.
-	if !haveMasquerade {
-		if err := execIptables([]string{"-t", "nat", "-I", "POSTROUTING", "-o", r.vpnInterface, "-j", "MASQUERADE"}); err != nil {
-			return fmt.Errorf("failed to create masquerade rule in POSTROUTING chain: %v", err)
-		}
-		glog.V(2).Infof("Inserted POSTROUTING rule to masquerade vpn traffic.")
 	}
 
 	return nil
@@ -240,24 +224,25 @@ func (r *Reconciler) getRulesForNode(node corev1.Node) ([]*dnatRule, error) {
 // applyRules creates a iptables-save file and pipes it to stdin of
 // a iptables-restore process for atomically setting new rules.
 // This function replaces a complete chain (removing all pre-existing rules).
-func (r *Reconciler) applyRules(rules []string) error {
-	restore := []string{"*nat", fmt.Sprintf(":%s - [0:0]", r.nodeTranslationChainName)}
+func (r *Reconciler) applyDNATRules(rules []string, haveJump, haveMasquerade bool) error {
+	restore := []string{
+		"*nat",
+		fmt.Sprintf(":%s - [0:0]", r.nodeTranslationChainName)}
+
+	if !haveJump {
+		restore = append(restore,
+			fmt.Sprintf("-I OUTPUT -j %s", r.nodeTranslationChainName))
+	}
+
+	if !haveMasquerade {
+		restore = append(restore,
+			fmt.Sprintf("-I POSTROUTING -o %s -j MASQUERADE", r.vpnInterface))
+	}
+
 	restore = append(restore, rules...)
 	restore = append(restore, "COMMIT")
 
 	return execRestore(restore)
-}
-
-func execIptables(args []string) error {
-	cmd := exec.Command("iptables", args...)
-	out, err := cmd.CombinedOutput()
-	if err == nil {
-		return nil
-	}
-	if len(out) > 0 {
-		return fmt.Errorf("iptables with arguments %v failed: %v (output: %s)", args, err, string(out))
-	}
-	return fmt.Errorf("iptables with arguments %v failed: %v", args, err)
 }
 
 func execSave() ([]string, error) {
