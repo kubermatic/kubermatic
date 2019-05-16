@@ -178,6 +178,11 @@ func (r *Reconciler) reconcile(ctx context.Context, addon *kubermaticv1.Addon) e
 		return nil
 	}
 
+	if cluster.DeletionTimestamp != nil {
+		log.Debug("Skipping addon because cluster is deleted")
+		return nil
+	}
+
 	if cluster.Spec.Pause {
 		glog.V(4).Infof("skipping paused cluster %s", cluster.Name)
 		return nil
