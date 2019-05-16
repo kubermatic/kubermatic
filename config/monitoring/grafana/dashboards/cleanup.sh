@@ -12,6 +12,7 @@ for dashboard in */*.json; do
     jq '(.templating.list[] | select(.type=="query") | .refresh) = 2' | \
     jq '(.templating.list[] | select(.type=="query") | .current) = {}' | \
     jq '(.templating.list[] | select(.type=="datasource") | .current) = {}' | \
+    jq '(.panels[] | select(.scopedVars!=null) | .scopedVars) = {}' | \
     jq '(.templating.list[] | select(.type=="datasource") | .hide) = "<< datasourceHide | toJson >>"' | \
     jq '(.annotations.list) = []' | \
     jq '(.links) = []' | \
@@ -25,6 +26,7 @@ for dashboard in */*.json; do
     jq '(.time.to) = "now"' | \
     jq '(.timezone) = ""' | \
     jq '(.graphTooltip) = 1' | \
+    jq 'del(.panels[] | select(.repeatPanelId!=null))' | \
     jq 'del(.id)' | \
     jq 'del(.iteration)' | \
     jq --sort-keys '.' > "$tmpfile"
