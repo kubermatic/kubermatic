@@ -18,6 +18,16 @@ iap:
     #   ingress:
     #     host: "alertmanager.kubermatic.tld"
     #     annotations: {}
+    #   # List of URL prefixes for which nginx should be configured to route requests
+    #   # directly to the upstream service instead of to the Keycloak Proxy;
+    #   # this can be useful for health check which should not generate load on the
+    #   # identity aware proxy (Dex for example creates AuthRequest CRDs for each
+    #   # opened session).
+    #   # Be careful to not accidentally expose a health endpoint that in case of errors
+    #   # or bad configuration can respond with confidential data (error messages,
+    #   # stack traces, configuration, ...).
+    #   passthrough:
+    #   - /-/healthy # exposes nothing
     # grafana:
     #   name: grafana
     #   client_id: grafana
@@ -29,6 +39,8 @@ iap:
     #   ingress:
     #     host: "grafana.kubermatic.tld"
     #     annotations: {}
+    #   annotations:
+    #   - /api/health # exposes Grafana version and Git hash
     # kibana:
     #   name: kibana
     #   client_id: kibana
@@ -40,6 +52,8 @@ iap:
     #   ingress:
     #     host: "kibana.kubermatic.tld"
     #     annotations: {}
+    #   passthrough:
+    #   - /ui/favicons/favicon.ico # exposes nothing
     # prometheus:
     #   name: prometheus
     #   client_id: prometheus
@@ -52,6 +66,8 @@ iap:
     #     host: "prometheus.kubermatic.tld"
     #     annotations:
     #       ingress.kubernetes.io/upstream-hash-by: "ip_hash" ## needed for prometheus federations
+    #   passthrough:
+    #   - /-/healthy # exposes nothing
 
   discovery_url: https://kubermatic.tld/dex/.well-known/openid-configuration
   port: 3000
