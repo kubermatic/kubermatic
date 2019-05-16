@@ -6,6 +6,7 @@ import (
 
 	kubermaticscheme "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -69,6 +70,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 	}
 
 	reconciler := &Reconciler{
+		log:                  kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 		storeContainer:       testStoreContainer,
 		cleanupContainer:     testCleanupContainer,
 		backupContainerImage: DefaultBackupContainerImage,

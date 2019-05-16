@@ -50,6 +50,11 @@ func main() {
 	}
 	rawLog := kubermaticlog.New(options.log.Debug, kubermaticlog.Format(options.log.Format))
 	log := rawLog.Sugar()
+	defer func() {
+		if err := log.Sync(); err != nil {
+			fmt.Println(err)
+		}
+	}()
 
 	config, err := clientcmd.BuildConfigFromFlags(options.masterURL, options.kubeconfig)
 	if err != nil {
