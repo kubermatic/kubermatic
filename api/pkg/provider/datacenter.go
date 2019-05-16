@@ -46,7 +46,15 @@ type OpenstackSpec struct {
 	ManageSecurityGroups *bool `yaml:"manage_security_groups"`
 	// Gets mapped to the "trust-device-path" setting in the cloud config.
 	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
-	TrustDevicePath *bool `yaml:"trust_device_path"`
+	TrustDevicePath      *bool                         `yaml:"trust_device_path"`
+	NodeSizeRequirements OpenstackNodeSizeRequirements `yaml:"node_size_requirements"`
+}
+
+type OpenstackNodeSizeRequirements struct {
+	// VCPUs is the minimum required amount of (virtual) CPUs
+	MinimumVCPUs int `yaml:"minimum_vcpus"`
+	// MinimumMemory is the minimum required amount of memory, measured in MB
+	MinimumMemory int `yaml:"minimum_memory"`
 }
 
 // AzureSpec describes an Azure cloud datacenter
