@@ -116,6 +116,36 @@ func TestEnsureBackupCronJob(t *testing.T) {
 	if len(cronJobs.Items[0].Spec.JobTemplate.Spec.Template.Spec.InitContainers) != 1 {
 		t.Errorf("Expected exactly one initcontainer after manipulating cronjob, got %v", len(cronJobs.Items[0].Spec.JobTemplate.Spec.Template.Spec.InitContainers))
 	}
+
+	secrets := &corev1.SecretList{}
+	listOpts := &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}
+	if err := reconciler.List(context.Background(), listOpts, secrets); err != nil {
+		t.Fatalf("failed to list secrets: %v", err)
+	}
+
+	if len(secrets.Items) != 1 {
+		t.Fatalf("Expected exactly one secret, got %d", len(secrets.Items))
+	}
+
+	expectedName := "cluster-test-cluster-etcd-client-certificate"
+	secret := secrets.Items[0]
+	if secret.Name != expectedName {
+		t.Fatalf("Expected secret name to be %q but was %q", expectedName, secret.Name)
+	}
+
+	if len(secret.OwnerReferences) != 1 {
+		t.Fatalf("Expectede exactly one owner reference on the secret, got %d", len(secret.OwnerReferences))
+	}
+
+	if secret.OwnerReferences[0].Kind != "Cluster" {
+		t.Errorf("Expected ownerRef.Kind to be 'Cluster' but was %q", secret.OwnerReferences[0].Kind)
+	}
+	if secret.OwnerReferences[0].APIVersion != "kubermatic.k8s.io/v1" {
+		t.Errorf("Expected ownerRef.APIVersion to be 'kubermatic.k8s.io/v1' but was %q", secret.OwnerReferences[0].APIVersion)
+	}
+	if secret.OwnerReferences[0].Name != "test-cluster" {
+		t.Errorf("Expected ownerRef.Name to be 'test-cluster' but was %q", secret.OwnerReferences[0].Name)
+	}
 }
 
 func TestCleanupJobSpec(t *testing.T) {
