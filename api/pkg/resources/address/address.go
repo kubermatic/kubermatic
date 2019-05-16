@@ -60,7 +60,7 @@ func SyncClusterAddress(ctx context.Context,
 	if err := client.Get(ctx, serviceKey, service); err != nil {
 		if kerrors.IsNotFound(err) {
 			glog.V(4).Infof("Skipping URL setting for cluster %s as no external apiserver service exists yet. Will retry later", cluster.Name)
-			return nil, nil
+			return modifiers, nil
 		}
 		return nil, err
 	}
