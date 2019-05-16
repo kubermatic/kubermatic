@@ -114,8 +114,16 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	isOpenShiftCluster := cluster.Annotations["kubermatic.io/openshift"] != ""
-	log = log.With("is_openshift_cluster", isOpenShiftCluster)
+	// This controller handles Kubernetes & OpenShift cluster.
+	// Based on the type we install different default addons
+	var addonsToInstall []string
+	if cluster.Annotations["kubermatic.io/openshift"] != "" {
+		log = log.With("cluster_type", "openshift")
+		addonsToInstall = r.openshiftAddons
+	} else {
+		log = log.With("cluster_type", "kubernetes")
+		addonsToInstall = r.kubernetesAddons
+	}
 
 	if cluster.Spec.Pause {
 		log.Debug("Skipping because the cluster is paused")
@@ -134,13 +142,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return &reconcile.Result{RequeueAfter: 1 * time.Second}, nil
 	}
 
-	// This controller handles Kubernetes & OpenShift cluster.
-	// Based on the type we install different default addons
-	if isOpenShiftCluster {
-		return nil, r.ensureAddons(ctx, log, cluster, r.openshiftAddons)
-	}
-
-	return nil, r.ensureAddons(ctx, log, cluster, r.kubernetesAddons)
+	return nil, r.ensureAddons(ctx, log, cluster, addonsToInstall)
 }
 
 func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, addons []string) error {
