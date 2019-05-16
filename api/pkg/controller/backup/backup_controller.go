@@ -6,15 +6,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
-
-	"github.com/golang/glog"
 	"github.com/robfig/cron"
+	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	batchv1 "k8s.io/api/batch/v1"
@@ -57,6 +56,7 @@ const (
 )
 
 type Reconciler struct {
+	log              *zap.SugaredLogger
 	workerName       string
 	storeContainer   corev1.Container
 	cleanupContainer corev1.Container
@@ -74,13 +74,16 @@ type Reconciler struct {
 // Add creates a new Backup controller that is responsible for creating backupjobs
 // for all managed user clusters
 func Add(
+	log *zap.SugaredLogger,
 	mgr manager.Manager,
 	numWorkers int,
 	workerName string,
 	storeContainer corev1.Container,
 	cleanupContainer corev1.Container,
 	backupSchedule time.Duration,
-	backupContainerImage string) error {
+	backupContainerImage string,
+) error {
+	log = log.Named(ControllerName)
 	if err := validateStoreContainer(storeContainer); err != nil {
 		return err
 	}
@@ -93,6 +96,7 @@ func Add(
 	}
 
 	reconciler := &Reconciler{
+		log:                  log,
 		workerName:           workerName,
 		storeContainer:       storeContainer,
 		cleanupContainer:     cleanupContainer,
@@ -152,6 +156,7 @@ func (w *runnableWrapper) Start(stopChan <-chan struct{}) error {
 func (r *Reconciler) cleanupJobs() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	log := r.log.Named("job_cleanup")
 
 	selector, err := labels.Parse(fmt.Sprintf("%s=%s", resources.AppLabelKey, backupCleanupJobLabel))
 	if err != nil {
@@ -161,6 +166,7 @@ func (r *Reconciler) cleanupJobs() {
 
 	jobs := &batchv1.JobList{}
 	if err := r.List(ctx, &ctrlruntimeclient.ListOptions{LabelSelector: selector}, jobs); err != nil {
+		log.Errorw("Failed to list jobs", "selector", selector.String(), zap.Error(err))
 		utilruntime.HandleError(fmt.Errorf("Failed to list jobs: %v", err))
 		return
 	}
@@ -172,10 +178,17 @@ func (r *Reconciler) cleanupJobs() {
 				deletePropagationForeground := metav1.DeletePropagationForeground
 				deleteOpts.PropagationPolicy = &deletePropagationForeground
 			}
+			jobName := types.NamespacedName{Name: job.Name, Namespace: job.Namespace}
 			if err := r.Delete(ctx, &job, modifierForegroundDeletePropagation); err != nil {
+				log.Errorw(
+					"Failed to delete cleanup job",
+					zap.Error(err),
+					"job_name", jobName,
+				)
 				utilruntime.HandleError(err)
 				return
 			}
+			log.Infow("Deleted the cleanup job", "job_name", jobName)
 		}
 	}
 }
@@ -183,6 +196,8 @@ func (r *Reconciler) cleanupJobs() {
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	log := r.log.With("request", request)
+	log.Debug("Processing")
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, types.NamespacedName{Name: request.Name}, cluster); err != nil {
@@ -193,25 +208,24 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	err := r.reconcile(ctx, cluster)
+	err := r.reconcile(ctx, log, cluster)
 	if err != nil {
-		glog.Errorf("Failed to reconcile cluster %q: %v", request.Name, err)
+		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
 	}
 	return reconcile.Result{}, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
 	if cluster.Spec.Pause {
-		glog.V(4).Infof("skipping paused cluster %s", cluster.Name)
+		log.Debug("Skipping because the cluster is paused")
 		return nil
 	}
 
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+		log.Debug("Skipping because the cluster has a different worker name set")
 		return nil
 	}
-
-	glog.V(4).Infof("syncing cluster %s", cluster.Name)
 
 	// Cluster got deleted - regardless if the cluster was ever running, we cleanup
 	if cluster.DeletionTimestamp != nil {
@@ -235,8 +249,9 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil
 	}
 
-	// Wait until we have a running cluster
-	if cluster.Status.NamespaceName == "" || !cluster.Status.Health.Etcd {
+	// Wait until we have a running etcd
+	if !cluster.Status.Health.Etcd {
+		log.Debug("Skipping because the cluster has no running etcd yet")
 		return nil
 	}
 
