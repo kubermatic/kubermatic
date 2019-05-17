@@ -10,7 +10,7 @@ spec:
   updateStrategy:
     type: RollingUpdate
   serviceName: es-data
-  replicas: {{ .Values.logging.elasticsearch.data.replicas }}
+  replicas: {{ .Values.logging.elasticsearch.dataReplicas | default .Values.logging.elasticsearch.data.replicas }}
   selector:
     matchLabels:
       component: elasticsearch
@@ -118,7 +118,7 @@ spec:
               - /bin/bash
               - /post-start-hook.sh
         resources:
-{{ toYaml .Values.logging.elasticsearch.data.resources | indent 10 }}
+{{ toYaml (.Values.logging.elasticsearch.resources.data | default .Values.logging.elasticsearch.data.resources) | indent 10 }}
         volumeMounts:
         - name: storage
           mountPath: /usr/share/elasticsearch/data
@@ -154,4 +154,4 @@ spec:
       accessModes: [ ReadWriteOnce ]
       resources:
         requests:
-          storage: {{ .Values.logging.elasticsearch.data.storageSize }}
+          storage: {{ .Values.logging.elasticsearch.storageSize | default .Values.logging.elasticsearch.data.storageSize }}
