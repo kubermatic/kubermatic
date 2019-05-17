@@ -7,6 +7,7 @@ metadata:
   labels:
     app: iap
     target: {{ .name }}
+    kind: proxy
 spec:
   type: ClusterIP
   ports:
@@ -17,4 +18,22 @@ spec:
   selector:
     app: iap
     target: {{ .name }}
+
+{{- if .passthrough }}
+---
+# This service is used to allow the ingress to access services in other namespaces.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name }}-upstream
+  labels:
+    app: iap
+    target: {{ .name }}
+    kind: upstream
+spec:
+  type: ExternalName
+  externalName: {{ .upstream_service }}
+  ports:
+  - port: {{ .upstream_port }}
+{{- end }}
 {{- end }}

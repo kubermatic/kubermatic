@@ -39,7 +39,7 @@ iap:
     #   ingress:
     #     host: "grafana.kubermatic.tld"
     #     annotations: {}
-    #   annotations:
+    #   passthrough:
     #   - /api/health # exposes Grafana version and Git hash
     # kibana:
     #   name: kibana
