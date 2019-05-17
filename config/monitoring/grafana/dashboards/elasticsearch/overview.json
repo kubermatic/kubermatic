@@ -220,6 +220,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
+      "datasource": "$datasource",
       "editable": "<< editable | default false | toJson >>",
       "format": "none",
       "gauge": {
@@ -272,7 +273,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "elasticsearch_cluster_health_number_of_data_nodes{cluster=~\"$cluster\"}",
+          "expr": "sum(elasticsearch_cluster_health_number_of_data_nodes{cluster=~\"$cluster\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -302,6 +303,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
+      "datasource": "$datasource",
       "editable": "<< editable | default false | toJson >>",
       "format": "none",
       "gauge": {
@@ -354,7 +356,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "elasticsearch_cluster_health_number_of_pending_tasks{cluster=~\"$cluster\"}",
+          "expr": "sum(elasticsearch_cluster_health_number_of_pending_tasks{cluster=~\"$cluster\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -397,6 +399,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
+      "datasource": "$datasource",
       "editable": "<< editable | default false | toJson >>",
       "format": "none",
       "gauge": {
@@ -449,7 +452,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "elasticsearch_cluster_health_active_shards{cluster=~\"$cluster\"}",
+          "expr": "sum(elasticsearch_cluster_health_active_shards{cluster=~\"$cluster\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -479,6 +482,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
+      "datasource": "$datasource",
       "editable": "<< editable | default false | toJson >>",
       "format": "none",
       "gauge": {
@@ -531,7 +535,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "elasticsearch_cluster_health_active_primary_shards{cluster=~\"$cluster\"}",
+          "expr": "sum(elasticsearch_cluster_health_active_primary_shards{cluster=~\"$cluster\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -561,6 +565,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
+      "datasource": "$datasource",
       "editable": "<< editable | default false | toJson >>",
       "format": "none",
       "gauge": {
@@ -613,7 +618,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "elasticsearch_cluster_health_initializing_shards{cluster=~\"$cluster\"}",
+          "expr": "sum(elasticsearch_cluster_health_initializing_shards{cluster=~\"$cluster\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -643,6 +648,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
+      "datasource": "$datasource",
       "editable": "<< editable | default false | toJson >>",
       "format": "none",
       "gauge": {
@@ -695,7 +701,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "elasticsearch_cluster_health_relocating_shards{cluster=~\"$cluster\"}",
+          "expr": "sum(elasticsearch_cluster_health_relocating_shards{cluster=~\"$cluster\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -725,6 +731,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
+      "datasource": "$datasource",
       "editable": "<< editable | default false | toJson >>",
       "format": "none",
       "gauge": {
@@ -777,7 +784,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "elasticsearch_cluster_health_unassigned_shards{cluster=~\"$cluster\"}",
+          "expr": "sum(elasticsearch_cluster_health_unassigned_shards{cluster=~\"$cluster\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -807,6 +814,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
+      "datasource": "$datasource",
       "editable": "<< editable | default false | toJson >>",
       "format": "none",
       "gauge": {
@@ -859,7 +867,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "elasticsearch_cluster_health_delayed_unassigned_shards{cluster=~\"$cluster\"}",
+          "expr": "sum(elasticsearch_cluster_health_delayed_unassigned_shards{cluster=~\"$cluster\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
@@ -921,7 +929,7 @@
         "values": true
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
       "percentage": false,
@@ -1011,7 +1019,7 @@
         "values": true
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
       "percentage": false,
@@ -1078,6 +1086,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
+      "datasource": "$datasource",
       "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
@@ -1111,7 +1120,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(elasticsearch_indices_indexing_index_total{cluster=~\"$cluster\"}[1h])",
+          "expr": "avg by (name) (rate(elasticsearch_indices_indexing_index_total{cluster=~\"$cluster\"}[1h]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{name}}",
@@ -1165,6 +1174,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
+      "datasource": "$datasource",
       "editable": "<< editable | default false | toJson >>",
       "fill": 1,
       "gridPos": {
@@ -1198,7 +1208,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(elasticsearch_indices_search_fetch_total{cluster=~\"$cluster\"}[1h])",
+          "expr": "avg by (name) (rate(elasticsearch_indices_search_fetch_total{cluster=~\"$cluster\"}[1h]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{name}}",
@@ -1275,7 +1285,7 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
       "percentage": false,
@@ -1288,7 +1298,8 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(elasticsearch_thread_pool_queue_count{cluster=~\"$cluster\", type!=\"management\"}) by (type)",
+          "expr": "sum by (type) (elasticsearch_thread_pool_queue_count{cluster=~\"$cluster\", type!=\"management\"})",
+          "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
           "legendFormat": "Type: {{type}}",
@@ -1377,7 +1388,7 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
       "percentage": false,
@@ -1390,7 +1401,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(elasticsearch_thread_pool_active_count{cluster=~\"$cluster\", type!=\"management\"}) by (type)",
+          "expr": "sum by (type) (elasticsearch_thread_pool_active_count{cluster=~\"$cluster\", type!=\"management\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1467,7 +1478,7 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
       "percentage": false,
@@ -1480,7 +1491,8 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(elasticsearch_thread_pool_rejected_count{cluster=~\"$cluster\", type!=\"management\"}[5m])",
+          "expr": "avg by (name, type) (rate(elasticsearch_thread_pool_rejected_count{cluster=~\"$cluster\", type!=\"management\"}[5m]))",
+          "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
           "legendFormat": "{{ name }} {{ type }}",
@@ -1556,7 +1568,7 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
       "percentage": false,
@@ -1569,7 +1581,8 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "irate(elasticsearch_jvm_gc_collection_seconds_sum{cluster=~\"$cluster\"}[1m])",
+          "expr": "avg by (name, gc) (irate(elasticsearch_jvm_gc_collection_seconds_sum{cluster=~\"$cluster\"}[1m]))",
+          "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
           "legendFormat": "{{ name }} {{ gc }}",
@@ -1647,7 +1660,7 @@
         "values": true
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
       "percentage": false,
@@ -1660,7 +1673,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg_over_time(elasticsearch_jvm_memory_used_bytes{area=\"heap\",cluster=~\"$cluster\"}[15m]) / elasticsearch_jvm_memory_max_bytes{area=\"heap\",cluster=~\"$cluster\"}",
+          "expr": "avg by (name) (avg_over_time(elasticsearch_jvm_memory_used_bytes{area=\"heap\",cluster=~\"$cluster\"}[15m]) / elasticsearch_jvm_memory_max_bytes{area=\"heap\",cluster=~\"$cluster\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1740,7 +1753,7 @@
         "values": true
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
       "percentage": false,

@@ -4,6 +4,7 @@
   },
   "description": "ElasticSearch cluster stats",
   "editable": "<< editable | default false | toJson >>",
+  "gnetId": null,
   "graphTooltip": 1,
   "hideControls": "<< hideControls | default false | toJson >>",
   "links": [],
@@ -1321,10 +1322,10 @@
         "x": 0,
         "y": 8
       },
-      "id": 92,
+      "id": 97,
       "panels": [],
       "repeat": null,
-      "title": "JVM Garbage Collection",
+      "title": "Documents",
       "type": "row"
     },
     {
@@ -1333,6 +1334,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
+      "decimals": 2,
       "editable": "<< editable | default false | toJson >>",
       "error": false,
       "fill": 1,
@@ -1344,7 +1346,7 @@
         "y": 9
       },
       "height": "400",
-      "id": 7,
+      "id": 1,
       "legend": {
         "alignAsTable": true,
         "avg": true,
@@ -1370,29 +1372,29 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": false,
+      "stack": true,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "irate(elasticsearch_jvm_gc_collection_seconds_count{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+          "expr": "avg by (name) (elasticsearch_indices_docs{cluster=\"$cluster\",name=~\"$name\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{name}} - {{gc}}",
+          "legendFormat": "{{name}}",
           "metric": "",
           "refId": "A",
-          "step": 10
+          "step": 20
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "GC count",
+      "title": "Documents count on node",
       "tooltip": {
         "msResolution": false,
         "shared": true,
-        "sort": 2,
+        "sort": 0,
         "value_type": "cumulative"
       },
       "transparent": "<< transparentPanels | default true | toJson >>",
@@ -1406,8 +1408,9 @@
       },
       "yaxes": [
         {
+          "decimals": 2,
           "format": "short",
-          "label": "GCs",
+          "label": "",
           "logBase": 1,
           "max": null,
           "min": null,
@@ -1444,7 +1447,106 @@
         "y": 9
       },
       "height": "400",
-      "id": 27,
+      "id": 24,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "hideEmpty": false,
+        "hideZero": false,
+        "max": true,
+        "min": true,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "connected",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "avg by (name) (irate(elasticsearch_indices_indexing_index_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "{{name}}",
+          "metric": "",
+          "refId": "A",
+          "step": 20
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Documents indexed rate",
+      "tooltip": {
+        "msResolution": false,
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "transparent": "<< transparentPanels | default true | toJson >>",
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": "index calls/s",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "$datasource",
+      "description": "Count of deleted documents on this node",
+      "editable": "<< editable | default false | toJson >>",
+      "error": false,
+      "fill": 1,
+      "grid": {},
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 0,
+        "y": 19
+      },
+      "height": "400",
+      "id": 25,
       "legend": {
         "alignAsTable": true,
         "avg": true,
@@ -1470,29 +1572,29 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": false,
+      "stack": true,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "irate(elasticsearch_jvm_gc_collection_seconds_sum{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+          "expr": "avg by (name) (irate(elasticsearch_indices_docs_deleted{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{name}} - {{gc}}",
+          "legendFormat": "{{name}}",
           "metric": "",
           "refId": "A",
-          "step": 10
+          "step": 20
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "GC time",
+      "title": "Documents deleted rate",
       "tooltip": {
         "msResolution": false,
         "shared": true,
-        "sort": 2,
+        "sort": 0,
         "value_type": "cumulative"
       },
       "transparent": "<< transparentPanels | default true | toJson >>",
@@ -1506,8 +1608,494 @@
       },
       "yaxes": [
         {
-          "format": "s",
-          "label": "Time",
+          "format": "short",
+          "label": "Documents/s",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "$datasource",
+      "decimals": 2,
+      "editable": "<< editable | default false | toJson >>",
+      "error": false,
+      "fill": 1,
+      "grid": {},
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 8,
+        "y": 19
+      },
+      "height": "400",
+      "id": 26,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "hideEmpty": false,
+        "hideZero": false,
+        "max": true,
+        "min": true,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "connected",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "avg by (name) (rate(elasticsearch_indices_merges_docs_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "{{name}}",
+          "metric": "",
+          "refId": "A",
+          "step": 20
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Documents merged rate",
+      "tooltip": {
+        "msResolution": false,
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "transparent": "<< transparentPanels | default true | toJson >>",
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 2,
+          "format": "short",
+          "label": "Documents/s",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "$datasource",
+      "editable": "<< editable | default false | toJson >>",
+      "error": false,
+      "fill": 1,
+      "grid": {},
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 16,
+        "y": 19
+      },
+      "height": "400",
+      "id": 52,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "hideEmpty": false,
+        "hideZero": false,
+        "max": true,
+        "min": true,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "connected",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "avg by (name) (irate(elasticsearch_indices_merges_total_size_bytes_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "{{name}}",
+          "metric": "",
+          "refId": "A",
+          "step": 20
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Documents merged bytes",
+      "tooltip": {
+        "msResolution": false,
+        "shared": true,
+        "sort": 0,
+        "value_type": "cumulative"
+      },
+      "transparent": "<< transparentPanels | default true | toJson >>",
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": null,
+          "format": "decbytes",
+          "label": "Bytes/s",
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 29
+      },
+      "id": 103,
+      "panels": [],
+      "repeat": null,
+      "title": "Indices: Count of documents and Total size",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "$datasource",
+      "editable": "<< editable | default false | toJson >>",
+      "fill": 1,
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 30
+      },
+      "id": 75,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": false,
+        "max": true,
+        "min": true,
+        "rightSide": true,
+        "show": true,
+        "sort": "avg",
+        "sortDesc": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "avg by (index) (elasticsearch_indices_docs_primary{instance=~\"$instance\"})",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "{{index}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Count of documents with only primary shards",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "transparent": "<< transparentPanels | default true | toJson >>",
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "$datasource",
+      "editable": "<< editable | default false | toJson >>",
+      "fill": 1,
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 37
+      },
+      "id": 83,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": false,
+        "max": true,
+        "min": true,
+        "rightSide": true,
+        "show": true,
+        "sort": "avg",
+        "sortDesc": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "avg by (index) (elasticsearch_indices_store_size_bytes_primary{instance=~\"$instance\"})",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "{{index}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Total size of stored index data in bytes with only primary shards on all nodes",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "transparent": "<< transparentPanels | default true | toJson >>",
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "bytes",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "$datasource",
+      "editable": "<< editable | default false | toJson >>",
+      "fill": 1,
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 44
+      },
+      "id": 76,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": false,
+        "max": true,
+        "min": true,
+        "rightSide": true,
+        "show": true,
+        "sort": "avg",
+        "sortDesc": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "avg by (index) (elasticsearch_indices_store_size_bytes_total{instance=~\"$instance\"})",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "{{index}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Total size of stored index data in bytes with all shards on all nodes",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "transparent": "<< transparentPanels | default true | toJson >>",
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "bytes",
+          "label": null,
           "logBase": 1,
           "max": null,
           "min": null,
@@ -1533,7 +2121,222 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 19
+        "y": 51
+      },
+      "id": 92,
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "$datasource",
+          "editable": true,
+          "error": false,
+          "fill": 1,
+          "grid": {},
+          "gridPos": {
+            "h": 10,
+            "w": 12,
+            "x": 0,
+            "y": 9
+          },
+          "height": "400",
+          "id": 7,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
+            "hideEmpty": false,
+            "hideZero": false,
+            "max": true,
+            "min": true,
+            "rightSide": false,
+            "show": true,
+            "sort": "avg",
+            "sortDesc": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "connected",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "sum by (name, gc) (irate(elasticsearch_jvm_gc_collection_seconds_count{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "{{name}} - {{gc}}",
+              "metric": "",
+              "refId": "A",
+              "step": 10
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "GC count",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 2,
+            "value_type": "cumulative"
+          },
+          "transparent": true,
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": "GCs",
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "$datasource",
+          "editable": true,
+          "error": false,
+          "fill": 1,
+          "grid": {},
+          "gridPos": {
+            "h": 10,
+            "w": 12,
+            "x": 12,
+            "y": 9
+          },
+          "height": "400",
+          "id": 27,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
+            "hideEmpty": false,
+            "hideZero": false,
+            "max": true,
+            "min": true,
+            "rightSide": false,
+            "show": true,
+            "sort": "avg",
+            "sortDesc": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "connected",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "sum by (name, gc) (irate(elasticsearch_jvm_gc_collection_seconds_sum{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
+              "format": "time_series",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "{{name}} - {{gc}}",
+              "metric": "",
+              "refId": "A",
+              "step": 10
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "GC time",
+          "tooltip": {
+            "msResolution": false,
+            "shared": true,
+            "sort": 2,
+            "value_type": "cumulative"
+          },
+          "transparent": true,
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "s",
+              "label": "Time",
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        }
+      ],
+      "repeat": null,
+      "title": "JVM Garbage Collection",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 52
       },
       "id": 93,
       "panels": [
@@ -1548,7 +2351,7 @@
             "h": 7,
             "w": 12,
             "x": 0,
-            "y": 25
+            "y": 10
           },
           "id": 77,
           "legend": {
@@ -1576,7 +2379,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "irate(elasticsearch_indices_translog_operations{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "sum by (name) (irate(elasticsearch_indices_translog_operations{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}",
@@ -1585,6 +2388,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Total translog operations",
           "tooltip": {
@@ -1592,6 +2396,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -1617,7 +2422,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -1630,7 +2439,7 @@
             "h": 7,
             "w": 12,
             "x": 12,
-            "y": 25
+            "y": 10
           },
           "id": 78,
           "legend": {
@@ -1658,7 +2467,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "irate(elasticsearch_indices_translog_size_in_bytes{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "sum by (name) (irate(elasticsearch_indices_translog_size_in_bytes{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}",
@@ -1667,6 +2476,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Total translog size in bytes",
           "tooltip": {
@@ -1674,6 +2484,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -1699,7 +2510,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
       "repeat": null,
@@ -1712,7 +2527,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 53
       },
       "id": 94,
       "panels": [
@@ -1727,7 +2542,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 26
+            "y": 11
           },
           "id": 79,
           "legend": {
@@ -1757,7 +2572,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_breakers_tripped{cluster=\"$cluster\",name=~\"$name\"}",
+              "expr": "sum by (name, breaker) (elasticsearch_breakers_tripped{cluster=\"$cluster\",name=~\"$name\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: {{breaker}}",
@@ -1766,6 +2581,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Tripped for breakers",
           "tooltip": {
@@ -1773,6 +2589,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -1798,7 +2615,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -1811,7 +2632,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 33
+            "y": 18
           },
           "id": 80,
           "legend": {
@@ -1841,14 +2662,14 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_breakers_estimated_size_bytes{cluster=\"$cluster\",name=~\"$name\"}",
+              "expr": "sum by (name, breaker) (elasticsearch_breakers_estimated_size_bytes{cluster=\"$cluster\",name=~\"$name\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: {{breaker}}",
               "refId": "A"
             },
             {
-              "expr": "elasticsearch_breakers_limit_size_bytes{cluster=\"$cluster\",name=~\"$name\"}",
+              "expr": "sum by (name, breaker) (elasticsearch_breakers_limit_size_bytes{cluster=\"$cluster\",name=~\"$name\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: limit for {{breaker}}",
@@ -1857,6 +2678,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Estimated size in bytes of breaker",
           "tooltip": {
@@ -1864,6 +2686,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -1889,7 +2712,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
       "repeat": null,
@@ -1902,7 +2729,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 21
+        "y": 54
       },
       "id": 95,
       "panels": [
@@ -1920,7 +2747,7 @@
             "h": 10,
             "w": 12,
             "x": 0,
-            "y": 34
+            "y": 6
           },
           "height": "400",
           "id": 30,
@@ -1953,7 +2780,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_os_load1{cluster=\"$cluster\",name=~\"$name\"}",
+              "expr": "avg by (name) (elasticsearch_os_load1{cluster=\"$cluster\",name=~\"$name\"})",
               "format": "time_series",
               "instant": false,
               "interval": "",
@@ -1964,7 +2791,7 @@
               "step": 20
             },
             {
-              "expr": "elasticsearch_os_load5{cluster=\"$cluster\",name=~\"$name\"}",
+              "expr": "avg by (name) (elasticsearch_os_load5{cluster=\"$cluster\",name=~\"$name\"})",
               "format": "time_series",
               "instant": false,
               "interval": "",
@@ -1975,7 +2802,7 @@
               "step": 20
             },
             {
-              "expr": "elasticsearch_os_load15{cluster=\"$cluster\",name=~\"$name\"}",
+              "expr": "avg by (name) (elasticsearch_os_load15{cluster=\"$cluster\",name=~\"$name\"})",
               "format": "time_series",
               "instant": false,
               "interval": "",
@@ -1988,6 +2815,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Load average",
           "tooltip": {
@@ -1996,7 +2824,7 @@
             "sort": 2,
             "value_type": "cumulative"
           },
-          "transparent": false,
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -2010,7 +2838,7 @@
               "format": "short",
               "label": "CPU usage",
               "logBase": 1,
-              "max": 100,
+              "max": null,
               "min": 0,
               "show": true
             },
@@ -2022,7 +2850,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -2038,7 +2870,7 @@
             "h": 10,
             "w": 12,
             "x": 12,
-            "y": 34
+            "y": 6
           },
           "height": "400",
           "id": 88,
@@ -2071,7 +2903,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_process_cpu_percent{cluster=\"$cluster\",name=~\"$name\"}",
+              "expr": "avg by (name) (elasticsearch_process_cpu_percent{cluster=\"$cluster\",name=~\"$name\"})",
               "format": "time_series",
               "instant": false,
               "interval": "",
@@ -2084,6 +2916,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "CPU usage",
           "tooltip": {
@@ -2092,7 +2925,7 @@
             "sort": 2,
             "value_type": "cumulative"
           },
-          "transparent": false,
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -2118,7 +2951,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -2134,7 +2971,7 @@
             "h": 10,
             "w": 12,
             "x": 0,
-            "y": 41
+            "y": 16
           },
           "height": "400",
           "id": 31,
@@ -2167,7 +3004,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_jvm_memory_used_bytes{cluster=\"$cluster\",name=~\"$name\"}",
+              "expr": "avg by (name, area) (elasticsearch_jvm_memory_used_bytes{cluster=\"$cluster\",name=~\"$name\"})",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
@@ -2177,7 +3014,7 @@
               "step": 20
             },
             {
-              "expr": "elasticsearch_jvm_memory_max_bytes{cluster=\"$cluster\",name=~\"$name\"}",
+              "expr": "avg by (name, area) (elasticsearch_jvm_memory_max_bytes{cluster=\"$cluster\",name=~\"$name\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}} max: {{area}}",
@@ -2185,7 +3022,7 @@
               "step": 20
             },
             {
-              "expr": "elasticsearch_jvm_memory_pool_peak_used_bytes{cluster=\"$cluster\",name=~\"$name\"}",
+              "expr": "avg by (name, pool) (elasticsearch_jvm_memory_pool_peak_used_bytes{cluster=\"$cluster\",name=~\"$name\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}} peak used pool: {{pool}}",
@@ -2195,6 +3032,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "JVM memory usage",
           "tooltip": {
@@ -2203,7 +3041,7 @@
             "sort": 2,
             "value_type": "cumulative"
           },
-          "transparent": false,
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -2229,7 +3067,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -2245,7 +3087,7 @@
             "h": 10,
             "w": 12,
             "x": 12,
-            "y": 41
+            "y": 16
           },
           "height": "400",
           "id": 54,
@@ -2278,7 +3120,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_jvm_memory_committed_bytes{cluster=\"$cluster\",name=~\"$name\"}",
+              "expr": "avg by (name, area) (elasticsearch_jvm_memory_committed_bytes{cluster=\"$cluster\",name=~\"$name\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}} committed: {{area}}",
@@ -2286,7 +3128,7 @@
               "step": 20
             },
             {
-              "expr": "elasticsearch_jvm_memory_max_bytes{cluster=\"$cluster\",name=~\"$name\"}",
+              "expr": "avg by (name, area) (elasticsearch_jvm_memory_max_bytes{cluster=\"$cluster\",name=~\"$name\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}} max: {{area}}",
@@ -2296,6 +3138,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "JVM memory committed",
           "tooltip": {
@@ -2304,7 +3147,7 @@
             "sort": 2,
             "value_type": "cumulative"
           },
-          "transparent": false,
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -2330,7 +3173,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
       "repeat": null,
@@ -2343,7 +3190,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 22
+        "y": 55
       },
       "id": 96,
       "panels": [
@@ -2361,7 +3208,7 @@
             "h": 10,
             "w": 12,
             "x": 0,
-            "y": 42
+            "y": 7
           },
           "height": "400",
           "id": 32,
@@ -2394,11 +3241,11 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "1-(elasticsearch_filesystem_data_available_bytes{cluster=\"$cluster\",name=~\"$name\"}/elasticsearch_filesystem_data_size_bytes{cluster=\"$cluster\",name=~\"$name\"})",
+              "expr": "sum by (name) (1-(elasticsearch_filesystem_data_available_bytes{cluster=\"$cluster\",name=~\"$name\"}/elasticsearch_filesystem_data_size_bytes{cluster=\"$cluster\",name=~\"$name\"}))",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
-              "legendFormat": "{{name}}: {{path}}",
+              "legendFormat": "{{name}}",
               "metric": "",
               "refId": "A",
               "step": 20
@@ -2421,6 +3268,7 @@
             }
           ],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Disk usage",
           "tooltip": {
@@ -2429,7 +3277,7 @@
             "sort": 2,
             "value_type": "cumulative"
           },
-          "transparent": false,
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -2455,7 +3303,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -2471,7 +3323,7 @@
             "h": 10,
             "w": 12,
             "x": 12,
-            "y": 42
+            "y": 7
           },
           "height": "400",
           "id": 47,
@@ -2509,7 +3361,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "irate(elasticsearch_transport_tx_size_bytes_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name) (irate(elasticsearch_transport_tx_size_bytes_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: sent ",
@@ -2517,7 +3369,7 @@
               "step": 20
             },
             {
-              "expr": "-irate(elasticsearch_transport_rx_size_bytes_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name) (-irate(elasticsearch_transport_rx_size_bytes_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: received",
@@ -2527,6 +3379,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Network usage",
           "tooltip": {
@@ -2535,7 +3388,7 @@
             "sort": 2,
             "value_type": "cumulative"
           },
-          "transparent": false,
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -2561,7 +3414,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
       "repeat": null,
@@ -2574,497 +3431,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 23
-      },
-      "id": 97,
-      "panels": [
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "$datasource",
-          "decimals": 2,
-          "editable": true,
-          "error": false,
-          "fill": 1,
-          "grid": {},
-          "gridPos": {
-            "h": 10,
-            "w": 12,
-            "x": 0,
-            "y": 43
-          },
-          "height": "400",
-          "id": 1,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
-            "hideEmpty": false,
-            "hideZero": false,
-            "max": true,
-            "min": true,
-            "rightSide": false,
-            "show": true,
-            "sort": "avg",
-            "sortDesc": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "connected",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": true,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "elasticsearch_indices_docs{cluster=\"$cluster\",name=~\"$name\"}",
-              "format": "time_series",
-              "interval": "",
-              "intervalFactor": 2,
-              "legendFormat": "{{name}}",
-              "metric": "",
-              "refId": "A",
-              "step": 20
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Documents count on node",
-          "tooltip": {
-            "msResolution": false,
-            "shared": true,
-            "sort": 0,
-            "value_type": "cumulative"
-          },
-          "transparent": false,
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "decimals": 2,
-              "format": "short",
-              "label": "",
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": false
-            }
-          ]
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "$datasource",
-          "editable": true,
-          "error": false,
-          "fill": 1,
-          "grid": {},
-          "gridPos": {
-            "h": 10,
-            "w": 12,
-            "x": 12,
-            "y": 43
-          },
-          "height": "400",
-          "id": 24,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
-            "hideEmpty": false,
-            "hideZero": false,
-            "max": true,
-            "min": true,
-            "rightSide": false,
-            "show": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "connected",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": true,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "irate(elasticsearch_indices_indexing_index_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
-              "format": "time_series",
-              "interval": "",
-              "intervalFactor": 2,
-              "legendFormat": "{{name}}",
-              "metric": "",
-              "refId": "A",
-              "step": 20
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Documents indexed rate",
-          "tooltip": {
-            "msResolution": false,
-            "shared": true,
-            "sort": 0,
-            "value_type": "cumulative"
-          },
-          "transparent": false,
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "format": "short",
-              "label": "index calls/s",
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": false
-            }
-          ]
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "$datasource",
-          "description": "Count of deleted documents on this node",
-          "editable": true,
-          "error": false,
-          "fill": 1,
-          "grid": {},
-          "gridPos": {
-            "h": 10,
-            "w": 8,
-            "x": 0,
-            "y": 50
-          },
-          "height": "400",
-          "id": 25,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
-            "hideEmpty": false,
-            "hideZero": false,
-            "max": true,
-            "min": true,
-            "rightSide": false,
-            "show": true,
-            "sort": "avg",
-            "sortDesc": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "connected",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": true,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "irate(elasticsearch_indices_docs_deleted{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
-              "format": "time_series",
-              "interval": "",
-              "intervalFactor": 2,
-              "legendFormat": "{{name}}",
-              "metric": "",
-              "refId": "A",
-              "step": 20
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Documents deleted rate",
-          "tooltip": {
-            "msResolution": false,
-            "shared": true,
-            "sort": 0,
-            "value_type": "cumulative"
-          },
-          "transparent": false,
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "format": "short",
-              "label": "Documents/s",
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": false
-            }
-          ]
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "$datasource",
-          "decimals": 2,
-          "editable": true,
-          "error": false,
-          "fill": 1,
-          "grid": {},
-          "gridPos": {
-            "h": 10,
-            "w": 8,
-            "x": 8,
-            "y": 50
-          },
-          "height": "400",
-          "id": 26,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
-            "hideEmpty": false,
-            "hideZero": false,
-            "max": true,
-            "min": true,
-            "rightSide": false,
-            "show": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "connected",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": true,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "rate(elasticsearch_indices_merges_docs_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
-              "format": "time_series",
-              "interval": "",
-              "intervalFactor": 2,
-              "legendFormat": "{{name}}",
-              "metric": "",
-              "refId": "A",
-              "step": 20
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Documents merged rate",
-          "tooltip": {
-            "msResolution": false,
-            "shared": true,
-            "sort": 0,
-            "value_type": "cumulative"
-          },
-          "transparent": false,
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "decimals": 2,
-              "format": "short",
-              "label": "Documents/s",
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": false
-            }
-          ]
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "$datasource",
-          "editable": true,
-          "error": false,
-          "fill": 1,
-          "grid": {},
-          "gridPos": {
-            "h": 10,
-            "w": 8,
-            "x": 16,
-            "y": 50
-          },
-          "height": "400",
-          "id": 52,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": true,
-            "hideEmpty": false,
-            "hideZero": false,
-            "max": true,
-            "min": true,
-            "rightSide": false,
-            "show": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "connected",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": true,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "irate(elasticsearch_indices_merges_total_size_bytes_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
-              "format": "time_series",
-              "interval": "",
-              "intervalFactor": 2,
-              "legendFormat": "{{name}}",
-              "metric": "",
-              "refId": "A",
-              "step": 20
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Documents merged bytes",
-          "tooltip": {
-            "msResolution": false,
-            "shared": true,
-            "sort": 0,
-            "value_type": "cumulative"
-          },
-          "transparent": false,
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "decimals": null,
-              "format": "decbytes",
-              "label": "Bytes/s",
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": false
-            }
-          ]
-        }
-      ],
-      "repeat": null,
-      "title": "Documents",
-      "type": "row"
-    },
-    {
-      "collapsed": true,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 24
+        "y": 56
       },
       "id": 98,
       "panels": [
@@ -3082,7 +3449,7 @@
             "h": 10,
             "w": 12,
             "x": 0,
-            "y": 51
+            "y": 9
           },
           "height": "400",
           "id": 33,
@@ -3113,7 +3480,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "irate(elasticsearch_indices_search_query_time_seconds{cluster=\"$cluster\",name=~\"$name\"}[$interval]) ",
+              "expr": "avg by (name) (irate(elasticsearch_indices_search_query_time_seconds{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
@@ -3125,6 +3492,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Query time",
           "tooltip": {
@@ -3133,7 +3501,7 @@
             "sort": 0,
             "value_type": "cumulative"
           },
-          "transparent": false,
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -3159,7 +3527,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -3175,7 +3547,7 @@
             "h": 10,
             "w": 12,
             "x": 12,
-            "y": 51
+            "y": 9
           },
           "height": "400",
           "id": 5,
@@ -3206,7 +3578,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "irate(elasticsearch_indices_indexing_index_time_seconds_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name) (irate(elasticsearch_indices_indexing_index_time_seconds_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
@@ -3218,6 +3590,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Indexing time",
           "tooltip": {
@@ -3226,7 +3599,7 @@
             "sort": 0,
             "value_type": "cumulative"
           },
-          "transparent": false,
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -3252,7 +3625,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -3268,7 +3645,7 @@
             "h": 10,
             "w": 12,
             "x": 0,
-            "y": 58
+            "y": 19
           },
           "height": "400",
           "id": 3,
@@ -3301,7 +3678,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "irate(elasticsearch_indices_merges_total_time_seconds_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name) (irate(elasticsearch_indices_merges_total_time_seconds_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
@@ -3313,6 +3690,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Merging time",
           "tooltip": {
@@ -3321,7 +3699,7 @@
             "sort": 2,
             "value_type": "cumulative"
           },
-          "transparent": false,
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -3347,7 +3725,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -3363,7 +3745,7 @@
             "h": 10,
             "w": 12,
             "x": 12,
-            "y": 58
+            "y": 19
           },
           "height": "400",
           "id": 87,
@@ -3396,7 +3778,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "irate(elasticsearch_indices_store_throttle_time_seconds_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name) (irate(elasticsearch_indices_store_throttle_time_seconds_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
@@ -3408,6 +3790,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Throttle time for index store",
           "tooltip": {
@@ -3416,7 +3799,7 @@
             "sort": 2,
             "value_type": "cumulative"
           },
-          "transparent": false,
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -3442,7 +3825,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
       "repeat": null,
@@ -3455,7 +3842,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 25
+        "y": 57
       },
       "id": 99,
       "panels": [
@@ -3473,7 +3860,7 @@
             "h": 10,
             "w": 24,
             "x": 0,
-            "y": 59
+            "y": 10
           },
           "height": "400",
           "id": 48,
@@ -3506,7 +3893,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "rate(elasticsearch_indices_indexing_index_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name) (rate(elasticsearch_indices_indexing_index_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
@@ -3516,7 +3903,7 @@
               "step": 10
             },
             {
-              "expr": "rate(elasticsearch_indices_search_query_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name) (rate(elasticsearch_indices_search_query_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: query",
@@ -3524,7 +3911,7 @@
               "step": 10
             },
             {
-              "expr": "rate(elasticsearch_indices_search_fetch_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name) (rate(elasticsearch_indices_search_fetch_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: fetch",
@@ -3532,7 +3919,7 @@
               "step": 10
             },
             {
-              "expr": "rate(elasticsearch_indices_merges_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name) (rate(elasticsearch_indices_merges_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: merges",
@@ -3540,7 +3927,7 @@
               "step": 10
             },
             {
-              "expr": "rate(elasticsearch_indices_refresh_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (Name) (rate(elasticsearch_indices_refresh_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: refresh",
@@ -3548,7 +3935,7 @@
               "step": 10
             },
             {
-              "expr": "rate(elasticsearch_indices_flush_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (Name) (rate(elasticsearch_indices_flush_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: flush",
@@ -3556,7 +3943,7 @@
               "step": 10
             },
             {
-              "expr": "rate(elasticsearch_indices_get_exists_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (Name) (rate(elasticsearch_indices_get_exists_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: get_exists",
@@ -3564,7 +3951,7 @@
               "step": 10
             },
             {
-              "expr": "rate(elasticsearch_indices_get_missing_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (Name) (rate(elasticsearch_indices_get_missing_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: get_missing",
@@ -3572,7 +3959,7 @@
               "step": 10
             },
             {
-              "expr": "rate(elasticsearch_indices_get_tota{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (Name) (rate(elasticsearch_indices_get_tota{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: get",
@@ -3580,7 +3967,7 @@
               "step": 10
             },
             {
-              "expr": "rate(elasticsearch_indices_indexing_delete_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (Name) (rate(elasticsearch_indices_indexing_delete_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: indexing_delete",
@@ -3590,6 +3977,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Total Operations  rate",
           "tooltip": {
@@ -3598,7 +3986,7 @@
             "sort": 2,
             "value_type": "cumulative"
           },
-          "transparent": false,
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -3624,7 +4012,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -3640,7 +4032,7 @@
             "h": 10,
             "w": 24,
             "x": 0,
-            "y": 66
+            "y": 20
           },
           "height": "400",
           "id": 49,
@@ -3673,7 +4065,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "irate(elasticsearch_indices_indexing_index_time_seconds_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name) (irate(elasticsearch_indices_indexing_index_time_seconds_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
@@ -3683,7 +4075,7 @@
               "step": 10
             },
             {
-              "expr": "irate(elasticsearch_indices_search_query_time_seconds{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name) (irate(elasticsearch_indices_search_query_time_seconds{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: query",
@@ -3691,7 +4083,7 @@
               "step": 10
             },
             {
-              "expr": "irate(elasticsearch_indices_search_fetch_time_seconds{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name) (irate(elasticsearch_indices_search_fetch_time_seconds{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: fetch",
@@ -3699,7 +4091,7 @@
               "step": 10
             },
             {
-              "expr": "irate(elasticsearch_indices_merges_total_time_seconds_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name) (irate(elasticsearch_indices_merges_total_time_seconds_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: merges",
@@ -3707,7 +4099,7 @@
               "step": 10
             },
             {
-              "expr": "irate(elasticsearch_indices_refresh_time_seconds_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name) (irate(elasticsearch_indices_refresh_time_seconds_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: refresh",
@@ -3715,7 +4107,7 @@
               "step": 10
             },
             {
-              "expr": "irate(elasticsearch_indices_flush_time_seconds{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name) (irate(elasticsearch_indices_flush_time_seconds{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: flush",
@@ -3723,7 +4115,7 @@
               "step": 10
             },
             {
-              "expr": "irate(elasticsearch_indices_get_exists_time_seconds{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (Name) (irate(elasticsearch_indices_get_exists_time_seconds{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: get_exists",
@@ -3731,7 +4123,7 @@
               "step": 10
             },
             {
-              "expr": "irate(elasticsearch_indices_get_time_seconds{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (Name) (irate(elasticsearch_indices_get_time_seconds{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: get_time",
@@ -3739,7 +4131,7 @@
               "step": 10
             },
             {
-              "expr": "irate(elasticsearch_indices_get_missing_time_seconds{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (Name) (irate(elasticsearch_indices_get_missing_time_seconds{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: get_missing",
@@ -3747,7 +4139,7 @@
               "step": 10
             },
             {
-              "expr": "irate(elasticsearch_indices_indexing_delete_time_seconds_total{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (Name) (irate(elasticsearch_indices_indexing_delete_time_seconds_total{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: indexing_delete",
@@ -3755,7 +4147,7 @@
               "step": 10
             },
             {
-              "expr": "irate(elasticsearch_indices_get_time_seconds{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (Name) (irate(elasticsearch_indices_get_time_seconds{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: get",
@@ -3765,6 +4157,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Total Operations time",
           "tooltip": {
@@ -3773,7 +4166,7 @@
             "sort": 2,
             "value_type": "cumulative"
           },
-          "transparent": false,
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -3799,7 +4192,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
       "repeat": null,
@@ -3812,7 +4209,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 58
       },
       "id": 100,
       "panels": [
@@ -3829,7 +4226,7 @@
             "h": 19,
             "w": 6,
             "x": 0,
-            "y": 67
+            "y": 11
           },
           "id": 45,
           "legend": {
@@ -3859,7 +4256,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "irate(elasticsearch_thread_pool_rejected_count{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name, type) (irate(elasticsearch_thread_pool_rejected_count{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: {{ type }}",
@@ -3869,6 +4266,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Thread Pool operations rejected",
           "tooltip": {
@@ -3877,6 +4275,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -3902,7 +4301,11 @@
               "min": null,
               "show": true
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -3917,7 +4320,7 @@
             "h": 19,
             "w": 6,
             "x": 6,
-            "y": 67
+            "y": 11
           },
           "id": 46,
           "legend": {
@@ -3947,7 +4350,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_thread_pool_active_count{cluster=\"$cluster\",name=~\"$name\"}",
+              "expr": "avg by (name, type) (elasticsearch_thread_pool_active_count{cluster=\"$cluster\",name=~\"$name\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: {{ type }}",
@@ -3957,6 +4360,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Thread Pool operations queued",
           "tooltip": {
@@ -3965,6 +4369,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -3990,7 +4395,11 @@
               "min": null,
               "show": true
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -4005,7 +4414,7 @@
             "h": 19,
             "w": 6,
             "x": 12,
-            "y": 67
+            "y": 11
           },
           "height": "",
           "id": 43,
@@ -4036,7 +4445,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_thread_pool_active_count{cluster=\"$cluster\",name=~\"$name\"}",
+              "expr": "avg by (name, type) (elasticsearch_thread_pool_active_count{cluster=\"$cluster\",name=~\"$name\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: {{ type }}",
@@ -4046,6 +4455,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Thread Pool threads active",
           "tooltip": {
@@ -4054,6 +4464,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4079,7 +4490,11 @@
               "min": null,
               "show": true
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -4094,7 +4509,7 @@
             "h": 19,
             "w": 6,
             "x": 18,
-            "y": 67
+            "y": 11
           },
           "id": 44,
           "legend": {
@@ -4124,7 +4539,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "irate(elasticsearch_thread_pool_completed_count{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name, type) (irate(elasticsearch_thread_pool_completed_count{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}: {{ type }}",
@@ -4134,6 +4549,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Thread Pool operations completed",
           "tooltip": {
@@ -4142,6 +4558,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4167,7 +4584,11 @@
               "min": null,
               "show": true
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
       "repeat": null,
@@ -4180,7 +4601,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 59
       },
       "id": 101,
       "panels": [
@@ -4198,7 +4619,7 @@
             "h": 10,
             "w": 12,
             "x": 0,
-            "y": 68
+            "y": 12
           },
           "height": "400",
           "id": 4,
@@ -4231,7 +4652,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_fielddata_memory_size_bytes{cluster=\"$cluster\",name=~\"$name\"}",
+              "expr": "avg by (name) (elasticsearch_indices_fielddata_memory_size_bytes{cluster=\"$cluster\",name=~\"$name\"})",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
@@ -4243,6 +4664,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Field data memory size",
           "tooltip": {
@@ -4251,7 +4673,7 @@
             "sort": 0,
             "value_type": "cumulative"
           },
-          "transparent": false,
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4277,7 +4699,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -4293,7 +4719,7 @@
             "h": 10,
             "w": 12,
             "x": 12,
-            "y": 68
+            "y": 12
           },
           "height": "400",
           "id": 34,
@@ -4326,7 +4752,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "rate(elasticsearch_indices_fielddata_evictions{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name) (rate(elasticsearch_indices_fielddata_evictions{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
@@ -4338,6 +4764,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Field data evictions",
           "tooltip": {
@@ -4346,7 +4773,7 @@
             "sort": 0,
             "value_type": "cumulative"
           },
-          "transparent": false,
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4372,7 +4799,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -4388,7 +4819,7 @@
             "h": 10,
             "w": 8,
             "x": 0,
-            "y": 75
+            "y": 22
           },
           "height": "400",
           "id": 35,
@@ -4421,7 +4852,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_query_cache_memory_size_bytes{cluster=\"$cluster\",name=~\"$name\"}",
+              "expr": "avg by (name) (elasticsearch_indices_query_cache_memory_size_bytes{cluster=\"$cluster\",name=~\"$name\"})",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
@@ -4433,6 +4864,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Query cache size",
           "tooltip": {
@@ -4441,7 +4873,7 @@
             "sort": 0,
             "value_type": "cumulative"
           },
-          "transparent": false,
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4467,7 +4899,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -4483,7 +4919,7 @@
             "h": 10,
             "w": 8,
             "x": 8,
-            "y": 75
+            "y": 22
           },
           "height": "400",
           "id": 36,
@@ -4516,7 +4952,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "rate(elasticsearch_indices_query_cache_evictions{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name) (rate(elasticsearch_indices_query_cache_evictions{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
@@ -4528,6 +4964,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Query cache evictions",
           "tooltip": {
@@ -4536,7 +4973,7 @@
             "sort": 0,
             "value_type": "cumulative"
           },
-          "transparent": false,
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4562,7 +4999,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -4578,7 +5019,7 @@
             "h": 10,
             "w": 8,
             "x": 16,
-            "y": 75
+            "y": 22
           },
           "height": "400",
           "id": 84,
@@ -4611,7 +5052,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "rate(elasticsearch_indices_filter_cache_evictions{cluster=\"$cluster\",name=~\"$name\"}[$interval])",
+              "expr": "avg by (name) (rate(elasticsearch_indices_filter_cache_evictions{cluster=\"$cluster\",name=~\"$name\"}[$interval]))",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
@@ -4623,6 +5064,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Evictions from filter cache",
           "tooltip": {
@@ -4631,7 +5073,7 @@
             "sort": 0,
             "value_type": "cumulative"
           },
-          "transparent": false,
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4657,7 +5099,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
       "repeat": null,
@@ -4670,7 +5116,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 28
+        "y": 60
       },
       "id": 102,
       "panels": [
@@ -4685,7 +5131,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 76
+            "y": 13
           },
           "id": 85,
           "legend": {
@@ -4715,7 +5161,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segments_count{cluster=\"$cluster\",name=~\"$name\"}",
+              "expr": "avg by (name) (elasticsearch_indices_segments_count{cluster=\"$cluster\",name=~\"$name\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}",
@@ -4724,6 +5170,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Count of index segments",
           "tooltip": {
@@ -4731,6 +5178,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4756,7 +5204,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -4769,7 +5221,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 83
+            "y": 20
           },
           "id": 86,
           "legend": {
@@ -4799,7 +5251,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segments_memory_bytes{cluster=\"$cluster\",name=~\"$name\"}",
+              "expr": "avg by (name) (elasticsearch_indices_segments_memory_bytes{cluster=\"$cluster\",name=~\"$name\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{name}}",
@@ -4808,6 +5260,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Current memory size of segments in bytes",
           "tooltip": {
@@ -4815,6 +5268,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -4840,7 +5294,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
       "repeat": null,
@@ -4853,274 +5311,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 29
-      },
-      "id": 103,
-      "panels": [
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "$datasource",
-          "fill": 1,
-          "gridPos": {
-            "h": 7,
-            "w": 24,
-            "x": 0,
-            "y": 84
-          },
-          "id": 75,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": false,
-            "max": true,
-            "min": true,
-            "rightSide": true,
-            "show": true,
-            "sort": "avg",
-            "sortDesc": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "null",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "elasticsearch_indices_docs_primary{instance=~\"$instance\"}",
-              "format": "time_series",
-              "intervalFactor": 2,
-              "legendFormat": "{{index}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Count of documents with only primary shards",
-          "tooltip": {
-            "shared": true,
-            "sort": 2,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": false
-            }
-          ]
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "$datasource",
-          "fill": 1,
-          "gridPos": {
-            "h": 7,
-            "w": 24,
-            "x": 0,
-            "y": 91
-          },
-          "id": 83,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": false,
-            "max": true,
-            "min": true,
-            "rightSide": true,
-            "show": true,
-            "sort": "avg",
-            "sortDesc": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "null",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "elasticsearch_indices_store_size_bytes_primary{instance=~\"$instance\"}",
-              "format": "time_series",
-              "intervalFactor": 2,
-              "legendFormat": "{{index}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Total size of stored index data in bytes with only primary shards on all nodes",
-          "tooltip": {
-            "shared": true,
-            "sort": 2,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "format": "bytes",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": false
-            }
-          ]
-        },
-        {
-          "aliasColors": {},
-          "bars": false,
-          "dashLength": 10,
-          "dashes": false,
-          "datasource": "$datasource",
-          "fill": 1,
-          "gridPos": {
-            "h": 7,
-            "w": 24,
-            "x": 0,
-            "y": 98
-          },
-          "id": 76,
-          "legend": {
-            "alignAsTable": true,
-            "avg": true,
-            "current": false,
-            "max": true,
-            "min": true,
-            "rightSide": true,
-            "show": true,
-            "sort": "avg",
-            "sortDesc": true,
-            "total": false,
-            "values": true
-          },
-          "lines": true,
-          "linewidth": 1,
-          "links": [],
-          "nullPointMode": "null",
-          "percentage": false,
-          "pointradius": 5,
-          "points": false,
-          "renderer": "flot",
-          "seriesOverrides": [],
-          "spaceLength": 10,
-          "stack": false,
-          "steppedLine": false,
-          "targets": [
-            {
-              "expr": "elasticsearch_indices_store_size_bytes_total{instance=~\"$instance\"}",
-              "format": "time_series",
-              "intervalFactor": 2,
-              "legendFormat": "{{index}}",
-              "refId": "A"
-            }
-          ],
-          "thresholds": [],
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Total size of stored index data in bytes with all shards on all nodes",
-          "tooltip": {
-            "shared": true,
-            "sort": 2,
-            "value_type": "individual"
-          },
-          "type": "graph",
-          "xaxis": {
-            "buckets": null,
-            "mode": "time",
-            "name": null,
-            "show": true,
-            "values": []
-          },
-          "yaxes": [
-            {
-              "format": "bytes",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": true
-            },
-            {
-              "format": "short",
-              "label": null,
-              "logBase": 1,
-              "max": null,
-              "min": null,
-              "show": false
-            }
-          ]
-        }
-      ],
-      "repeat": null,
-      "title": "Indices: Count of documents and Total size",
-      "type": "row"
-    },
-    {
-      "collapsed": true,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 30
+        "y": 61
       },
       "id": 104,
       "panels": [
@@ -5135,7 +5326,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 99
+            "y": 21
           },
           "id": 61,
           "legend": {
@@ -5166,7 +5357,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_index_writer_memory_bytes_primary{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_index_writer_memory_bytes_primary{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -5175,6 +5366,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Index writer with only primary shards on all nodes in bytes",
           "tooltip": {
@@ -5182,6 +5374,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -5207,7 +5400,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -5220,7 +5417,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 106
+            "y": 28
           },
           "id": 62,
           "legend": {
@@ -5251,7 +5448,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_index_writer_memory_bytes_total{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_index_writer_memory_bytes_total{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -5260,6 +5457,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Index writer with all shards on all nodes in bytes",
           "tooltip": {
@@ -5267,6 +5465,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -5292,7 +5491,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
       "repeat": null,
@@ -5305,7 +5508,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 31
+        "y": 62
       },
       "id": 105,
       "panels": [
@@ -5320,7 +5523,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 107
+            "y": 22
           },
           "id": 55,
           "legend": {
@@ -5350,7 +5553,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_count_primary{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_count_primary{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -5359,6 +5562,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Segments with only primary shards on all nodes",
           "tooltip": {
@@ -5366,6 +5570,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -5391,7 +5596,11 @@
               "min": null,
               "show": true
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -5404,7 +5613,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 114
+            "y": 29
           },
           "id": 56,
           "legend": {
@@ -5434,7 +5643,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_count_total{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_count_total{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -5443,6 +5652,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Segments with all shards on all nodes",
           "tooltip": {
@@ -5450,6 +5660,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -5475,7 +5686,11 @@
               "min": null,
               "show": true
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -5488,7 +5703,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 121
+            "y": 36
           },
           "id": 65,
           "legend": {
@@ -5518,7 +5733,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_memory_bytes_primary{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_memory_bytes_primary{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -5527,6 +5742,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Size of segments with only primary shards on all nodes in bytes",
           "tooltip": {
@@ -5534,6 +5750,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -5559,7 +5776,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -5572,7 +5793,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 128
+            "y": 43
           },
           "id": 66,
           "legend": {
@@ -5602,7 +5823,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_memory_bytes_total{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_memory_bytes_total{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -5611,6 +5832,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Size of segments with all shards on all nodes in bytes",
           "tooltip": {
@@ -5618,6 +5840,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -5643,7 +5866,11 @@
               "min": null,
               "show": true
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
       "repeat": null,
@@ -5656,7 +5883,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 32
+        "y": 63
       },
       "id": 106,
       "panels": [
@@ -5671,7 +5898,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 129
+            "y": 17
           },
           "id": 57,
           "legend": {
@@ -5701,7 +5928,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_doc_values_memory_bytes_primary{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_doc_values_memory_bytes_primary{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -5710,6 +5937,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Doc values with only primary shards on all nodes in bytes",
           "tooltip": {
@@ -5717,6 +5945,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -5742,7 +5971,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -5755,7 +5988,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 136
+            "y": 24
           },
           "id": 58,
           "legend": {
@@ -5785,7 +6018,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_doc_values_memory_bytes_total{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_doc_values_memory_bytes_total{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -5794,6 +6027,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Doc values with all shards on all nodes in bytes",
           "tooltip": {
@@ -5801,6 +6035,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -5826,7 +6061,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
       "repeat": null,
@@ -5839,7 +6078,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 33
+        "y": 64
       },
       "id": 107,
       "panels": [
@@ -5854,7 +6093,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 137
+            "y": 18
           },
           "id": 59,
           "legend": {
@@ -5884,7 +6123,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_fields_memory_bytes_primary{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_fields_memory_bytes_primary{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -5893,6 +6132,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Size of fields with only primary shards on all nodes in bytes",
           "tooltip": {
@@ -5900,6 +6140,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -5925,7 +6166,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -5938,7 +6183,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 144
+            "y": 25
           },
           "id": 60,
           "legend": {
@@ -5968,7 +6213,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_fields_memory_bytes_total{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_fields_memory_bytes_total{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -5977,6 +6222,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Size of fields with all shards on all nodes in bytes",
           "tooltip": {
@@ -5984,6 +6230,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6009,7 +6256,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
       "repeat": null,
@@ -6022,7 +6273,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 34
+        "y": 65
       },
       "id": 108,
       "panels": [
@@ -6037,7 +6288,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 145
+            "y": 19
           },
           "id": 63,
           "legend": {
@@ -6067,7 +6318,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_fixed_bit_set_memory_bytes_primary{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_fixed_bit_set_memory_bytes_primary{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -6076,6 +6327,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Size of fixed bit with only primary shards on all nodes in bytes",
           "tooltip": {
@@ -6083,6 +6335,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6108,7 +6361,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -6121,7 +6378,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 152
+            "y": 26
           },
           "id": 64,
           "legend": {
@@ -6151,7 +6408,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_fixed_bit_set_memory_bytes_total{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_fixed_bit_set_memory_bytes_total{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -6160,6 +6417,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Size of fixed bit with all shards on all nodes in bytes",
           "tooltip": {
@@ -6167,6 +6425,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6192,7 +6451,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
       "repeat": null,
@@ -6205,7 +6468,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 35
+        "y": 66
       },
       "id": 109,
       "panels": [
@@ -6220,7 +6483,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 153
+            "y": 20
           },
           "id": 67,
           "legend": {
@@ -6250,7 +6513,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_norms_memory_bytes_primary{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_norms_memory_bytes_primary{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -6259,6 +6522,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Size of norms with only primary shards on all nodes in bytes",
           "tooltip": {
@@ -6266,6 +6530,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6291,7 +6556,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -6304,7 +6573,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 160
+            "y": 27
           },
           "id": 68,
           "legend": {
@@ -6334,7 +6603,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_norms_memory_bytes_total{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_norms_memory_bytes_total{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -6343,6 +6612,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Size of norms with all shards on all nodes in bytes",
           "tooltip": {
@@ -6350,6 +6620,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6375,7 +6646,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
       "repeat": null,
@@ -6388,7 +6663,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 36
+        "y": 67
       },
       "id": 110,
       "panels": [
@@ -6403,7 +6678,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 161
+            "y": 21
           },
           "id": 69,
           "legend": {
@@ -6433,7 +6708,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_points_memory_bytes_primary{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_points_memory_bytes_primary{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -6442,6 +6717,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Size of points with only primary shards on all nodes in bytes",
           "tooltip": {
@@ -6449,6 +6725,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6474,7 +6751,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -6487,7 +6768,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 168
+            "y": 28
           },
           "id": 70,
           "legend": {
@@ -6517,7 +6798,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_points_memory_bytes_total{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_points_memory_bytes_total{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -6526,6 +6807,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Size of points with all shards on all nodes in bytes",
           "tooltip": {
@@ -6533,6 +6815,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6558,7 +6841,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
       "repeat": null,
@@ -6571,7 +6858,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 37
+        "y": 68
       },
       "id": 111,
       "panels": [
@@ -6586,7 +6873,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 169
+            "y": 22
           },
           "id": 71,
           "legend": {
@@ -6616,7 +6903,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_terms_memory_primary{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_terms_memory_primary{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -6625,6 +6912,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Size of terms with only primary shards on all nodes in bytes",
           "tooltip": {
@@ -6632,6 +6920,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6657,7 +6946,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -6670,7 +6963,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 176
+            "y": 29
           },
           "id": 72,
           "legend": {
@@ -6700,7 +6993,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_terms_memory_total{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_terms_memory_total{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -6709,6 +7002,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Number of terms with all shards on all nodes in bytes",
           "tooltip": {
@@ -6716,6 +7010,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6741,7 +7036,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
       "repeat": null,
@@ -6754,7 +7053,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 38
+        "y": 69
       },
       "id": 112,
       "panels": [
@@ -6769,7 +7068,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 177
+            "y": 23
           },
           "id": 73,
           "legend": {
@@ -6800,7 +7099,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_version_map_memory_bytes_primary{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_version_map_memory_bytes_primary{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -6809,6 +7108,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Size of version map with only primary shards on all nodes in bytes",
           "tooltip": {
@@ -6816,6 +7116,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6841,7 +7142,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         },
         {
           "aliasColors": {},
@@ -6854,7 +7159,7 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 184
+            "y": 30
           },
           "id": 74,
           "legend": {
@@ -6885,7 +7190,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "elasticsearch_indices_segment_version_map_memory_bytes_total{instance=~\"$instance\"}",
+              "expr": "avg by (index) (elasticsearch_indices_segment_version_map_memory_bytes_total{instance=~\"$instance\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{index}}",
@@ -6894,6 +7199,7 @@
           ],
           "thresholds": [],
           "timeFrom": null,
+          "timeRegions": [],
           "timeShift": null,
           "title": "Size of version map with all shards on all nodes in bytes",
           "tooltip": {
@@ -6901,6 +7207,7 @@
             "sort": 2,
             "value_type": "individual"
           },
+          "transparent": true,
           "type": "graph",
           "xaxis": {
             "buckets": null,
@@ -6926,7 +7233,11 @@
               "min": null,
               "show": false
             }
-          ]
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
         }
       ],
       "repeat": null,
@@ -6958,16 +7269,13 @@
         "auto": true,
         "auto_count": 30,
         "auto_min": "10s",
-        "current": {
-          "text": "auto",
-          "value": "$__auto_interval_interval"
-        },
+        "current": {},
         "hide": 0,
         "label": "Interval",
         "name": "interval",
         "options": [
           {
-            "selected": true,
+            "selected": false,
             "text": "auto",
             "value": "$__auto_interval_interval"
           },
@@ -6982,7 +7290,7 @@
             "value": "10m"
           },
           {
-            "selected": false,
+            "selected": true,
             "text": "30m",
             "value": "30m"
           },
