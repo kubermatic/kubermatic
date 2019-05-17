@@ -18,7 +18,7 @@ spec:
         app: elasticsearch-exporter
       annotations:
         kubermatic/scrape: "true"
-        kubermatic/scrape_port: "9108"
+        kubermatic/scrape_port: "9114"
     spec:
       containers:
       - name: exporter
@@ -27,13 +27,23 @@ spec:
         command:
         - elasticsearch_exporter
         args:
-        - '-es.uri=http://es-data:9200'
-        - '-es.all={{ .Values.logging.elasticsearch.exporter.all }}'
-        - '-es.indices={{ .Values.logging.elasticsearch.exporter.indices }}'
+        - '--es.uri=http://es-data:9200'
+        {{- if .Values.logging.elasticsearch.exporter.all }}
+        - '--es.all'
+        {{- end }}
+        {{- if .Values.logging.elasticsearch.exporter.indices }}
+        - '--es.indices'
+        {{- end }}
+        {{- if .Values.logging.elasticsearch.exporter.indices_settings }}
+        - '--es.indices_settings'
+        {{- end }}
+        {{- if .Values.logging.elasticsearch.exporter.shards }}
+        - '--es.shards'
+        {{- end }}
         resources:
 {{ toYaml .Values.logging.elasticsearch.exporter.resources | indent 10 }}
         ports:
-        - containerPort: 9108
+        - containerPort: 9114
           name: http
         livenessProbe:
           httpGet:

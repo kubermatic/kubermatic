@@ -75,10 +75,15 @@ logging:
     exporter:
       image:
         repository: justwatch/elasticsearch_exporter
-        tag: "1.0.2"
+        tag: "1.1.0rc1"
         pullPolicy: IfNotPresent
+
+      # see https://github.com/justwatchcom/elasticsearch_exporter#configuration
       all: true
-      indices: false
+      indices: true
+      indices_settings: true
+      shards: true
+
       resources:
         requests:
           cpu: 100m
@@ -86,6 +91,7 @@ logging:
         limits:
           cpu: 100m
           memory: 128Mi
+
       nodeSelector: {}
       affinity: {}
       tolerations: []
