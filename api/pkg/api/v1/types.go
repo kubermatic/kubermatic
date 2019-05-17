@@ -602,6 +602,13 @@ type NodeVersionInfo struct {
 	Kubelet string `json:"kubelet"`
 }
 
+// TaintSpec defines a node taint
+type TaintSpec struct {
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+	Effect string `json:"effect"`
+}
+
 // NodeSpec node specification
 // swagger:model NodeSpec
 type NodeSpec struct {
@@ -615,6 +622,8 @@ type NodeSpec struct {
 	// It will be applied to Nodes allowing users run their apps on specific Node using labelSelector.
 	// required: false
 	Labels map[string]string `json:"labels,omitempty"`
+	// List of taints to set on new nodes
+	Taints []TaintSpec `json:"taints,omitempty"`
 }
 
 // DigitaloceanNodeSpec digitalocean node settings

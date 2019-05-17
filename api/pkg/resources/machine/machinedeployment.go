@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/Masterminds/semver"
 
@@ -15,9 +16,11 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/sets"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
@@ -40,6 +43,16 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 	}
 	md.Spec.Template.Labels = md.Spec.Selector.MatchLabels
 	md.Spec.Template.Spec.Labels = nd.Spec.Template.Labels
+
+	var taints []corev1.Taint
+	for _, taint := range nd.Spec.Template.Taints {
+		taints = append(taints, corev1.Taint{
+			Value:  taint.Value,
+			Key:    taint.Key,
+			Effect: corev1.TaintEffect(taint.Effect),
+		})
+	}
+	md.Spec.Template.Spec.Taints = taints
 
 	// Create a copy to avoid changing the ND when changing the MD
 	replicas := nd.Spec.Replicas
@@ -208,6 +221,24 @@ func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semver.Version) (*a
 		nd.Spec.Template.Versions.Kubelet = kubeletVersion.String()
 	} else {
 		nd.Spec.Template.Versions.Kubelet = controlPlaneVersion.String()
+	}
+
+	// The default
+	allowedTaintEffects := sets.NewString(
+		string(corev1.TaintEffectNoExecute),
+		string(corev1.TaintEffectNoSchedule),
+		string(corev1.TaintEffectPreferNoSchedule),
+	)
+	for _, taint := range nd.Spec.Template.Taints {
+		if taint.Key == "" {
+			return nil, errors.New("taint key must be set")
+		}
+		if taint.Value == "" {
+			return nil, errors.New("taint value must be set")
+		}
+		if !allowedTaintEffects.Has(taint.Effect) {
+			return nil, fmt.Errorf("taint effect '%s' not allowed. Allowed: %s", taint.Effect, strings.Join(allowedTaintEffects.List(), ", "))
+		}
 	}
 
 	return nd, nil
