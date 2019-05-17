@@ -23,12 +23,12 @@ spec:
   - host: {{ .ingress.host | trim }}
     http:
       paths:
-      {{- $upstream_service := .upstream_service }}
+      {{- $name := .name }}
       {{- $upstream_port := .upstream_port }}
       {{- range .passthrough }}
       - path: "{{ . }}"
         backend:
-          serviceName: {{ $upstream_service }}
+          serviceName: {{ $name }}-upstream
           servicePort: {{ $upstream_port }}
       {{- end }}
       - path: "/"
