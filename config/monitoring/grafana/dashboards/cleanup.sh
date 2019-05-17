@@ -12,6 +12,7 @@ for dashboard in */*.json; do
     jq '(.templating.list[] | select(.type=="query") | .refresh) = 2' | \
     jq '(.templating.list[] | select(.type=="query") | .current) = {}' | \
     jq '(.templating.list[] | select(.type=="datasource") | .current) = {}' | \
+    jq '(.templating.list[] | select(.type=="interval") | .current) = {}' | \
     jq '(.panels[] | select(.scopedVars!=null) | .scopedVars) = {}' | \
     jq '(.templating.list[] | select(.type=="datasource") | .hide) = "<< datasourceHide | toJson >>"' | \
     jq '(.annotations.list) = []' | \
