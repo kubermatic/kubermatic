@@ -80,6 +80,7 @@ func createOpenshiftController(ctrlCtx *controllerContext) error {
 			ClientSecret: ctrlCtx.runOptions.oidcIssuerClientSecret,
 			IssuerURL:    ctrlCtx.runOptions.oidcIssuerURL,
 		},
+		ctrlCtx.runOptions.kubermaticAPIImage,
 		openshiftcontroller.Features{
 			EtcdDataCorruptionChecks: ctrlCtx.runOptions.featureGates.Enabled(EtcdDataCorruptionChecks),
 			VPA:                      ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
@@ -112,6 +113,7 @@ func createClusterController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.oidcIssuerURL,
 		ctrlCtx.runOptions.oidcIssuerClientID,
 		strings.Contains(ctrlCtx.runOptions.kubernetesAddonsList, "nodelocal-dns-cache"),
+		ctrlCtx.runOptions.kubermaticAPIImage,
 		cluster.Features{
 			VPA:                      ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
 			EtcdDataCorruptionChecks: ctrlCtx.runOptions.featureGates.Enabled(EtcdDataCorruptionChecks),

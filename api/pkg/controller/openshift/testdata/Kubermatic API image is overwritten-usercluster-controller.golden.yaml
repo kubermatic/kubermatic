@@ -1,0 +1,131 @@
+metadata:
+  creationTimestamp: null
+  labels:
+    app: usercluster-controller
+  name: usercluster-controller
+  namespace: test-cluster-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: usercluster-controller
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8085"
+        prometheus.io/scrape: "true"
+      creationTimestamp: null
+      labels:
+        app: usercluster-controller
+        ca-secret-revision: ""
+        cluster: test-cluster
+        internal-admin-kubeconfig-secret-revision: ""
+        openvpn-ca-secret-revision: ""
+    spec:
+      containers:
+      - args:
+        - -kubeconfig
+        - /etc/kubernetes/kubeconfig/kubeconfig
+        - -metrics-listen-address
+        - 0.0.0.0:8085
+        - -health-listen-address
+        - 0.0.0.0:8086
+        - -namespace
+        - $(NAMESPACE)
+        - -ca-cert
+        - /etc/kubernetes/pki/ca/ca.crt
+        - -cluster-url
+        - ""
+        - -openvpn-server-port
+        - "0"
+        - -overwrite-registry
+        - ""
+        - -openshift=true
+        - -openvpn-ca-cert-file=/etc/kubernetes/pki/openvpn/ca.crt
+        - -openvpn-ca-key-file=/etc/kubernetes/pki/openvpn/ca.key
+        - -logtostderr
+        - -v
+        - "2"
+        command:
+        - /usr/local/bin/user-cluster-controller-manager
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: 'docker.io/my.corp/kubermatic:'
+        imagePullPolicy: IfNotPresent
+        name: usercluster-controller
+        readinessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /ready
+            port: 8086
+            scheme: HTTP
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 15
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 25m
+            memory: 32Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/kubernetes/kubeconfig
+          name: internal-admin-kubeconfig
+          readOnly: true
+        - mountPath: /etc/kubernetes/pki/ca
+          name: ca
+          readOnly: true
+        - mountPath: /etc/kubernetes/pki/openvpn
+          name: openvpn-ca
+          readOnly: true
+      imagePullSecrets:
+      - name: dockercfg
+      initContainers:
+      - args:
+        - -endpoint
+        - https://:0/healthz
+        - -insecure
+        - -retries
+        - "100"
+        - -retry-wait
+        - "2"
+        - -timeout
+        - "1"
+        command:
+        - /usr/local/bin/http-prober
+        image: quay.io/kubermatic/http-prober:v0.1
+        imagePullPolicy: IfNotPresent
+        name: apiserver-running
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      volumes:
+      - name: internal-admin-kubeconfig
+        secret:
+          defaultMode: 292
+          secretName: internal-admin-kubeconfig
+      - name: ca
+        secret:
+          defaultMode: 292
+          items:
+          - key: ca.crt
+            path: ca.crt
+          secretName: ca
+      - name: openvpn-ca
+        secret:
+          defaultMode: 292
+          secretName: openvpn-ca
+status: {}

@@ -55,6 +55,7 @@ type controllerRunOptions struct {
 	monitoringScrapeAnnotationPrefix                 string
 	dockerPullConfigJSONFile                         string
 	log                                              kubermaticlog.Options
+	kubermaticAPIImage                               string
 
 	// OIDC configuration
 	oidcCAFile             string
@@ -106,6 +107,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
 	flag.BoolVar(&c.log.Debug, "log-debug", false, "Enables debug logging")
 	flag.StringVar(&c.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
+	flag.StringVar(&c.kubermaticAPIImage, "kubermatic-api-image", "quay.io/kubermatic/api", "The location from which to pull the Kubermatic API image")
 	flag.Parse()
 
 	featureGates, err := features.NewFeatures(rawFeatureGates)

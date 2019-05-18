@@ -80,6 +80,7 @@ type Reconciler struct {
 	workerName           string
 	externalURL          string
 	oidc                 OIDCConfig
+	kubermaticAPIImage   string
 	features             Features
 }
 
@@ -95,6 +96,7 @@ func Add(
 	dockerPullConfigJSON []byte,
 	externalURL string,
 	oidcConfig OIDCConfig,
+	kubermaticAPIImage string,
 	features Features,
 ) error {
 	reconciler := &Reconciler{
@@ -110,6 +112,7 @@ func Add(
 		workerName:           workerName,
 		externalURL:          externalURL,
 		oidc:                 oidcConfig,
+		kubermaticAPIImage:   kubermaticAPIImage,
 		features:             features,
 	}
 
@@ -198,13 +201,14 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
 	}
 	osData := &openshiftData{
-		cluster:           cluster,
-		client:            r.Client,
-		dc:                &dc,
-		overwriteRegistry: r.overwriteRegistry,
-		nodeAccessNetwork: r.nodeAccessNetwork,
-		oidc:              r.oidc,
-		etcdDiskSize:      r.etcdDiskSize,
+		cluster:            cluster,
+		client:             r.Client,
+		dc:                 &dc,
+		overwriteRegistry:  r.overwriteRegistry,
+		nodeAccessNetwork:  r.nodeAccessNetwork,
+		oidc:               r.oidc,
+		etcdDiskSize:       r.etcdDiskSize,
+		kubermaticAPIImage: r.kubermaticAPIImage,
 	}
 
 	if err := r.address(ctx, cluster); err != nil {

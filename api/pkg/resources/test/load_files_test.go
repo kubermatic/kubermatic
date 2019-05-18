@@ -529,6 +529,7 @@ func TestLoadFiles(t *testing.T) {
 					"https://dev.kubermatic.io/dex",
 					"kubermaticIssuer",
 					true,
+					"quay.io/kubermatic/api",
 				)
 
 				var deploymentCreators []reconciling.NamedDeploymentCreatorGetter

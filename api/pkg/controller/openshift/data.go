@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -23,13 +24,14 @@ import (
 // openshiftData implements the openshiftData interface which is
 // passed into all creator funcs and contains all data they need
 type openshiftData struct {
-	cluster           *kubermaticv1.Cluster
-	client            client.Client
-	dc                *provider.DatacenterMeta
-	overwriteRegistry string
-	nodeAccessNetwork string
-	oidc              OIDCConfig
-	etcdDiskSize      resource.Quantity
+	cluster            *kubermaticv1.Cluster
+	client             client.Client
+	dc                 *provider.DatacenterMeta
+	overwriteRegistry  string
+	nodeAccessNetwork  string
+	oidc               OIDCConfig
+	etcdDiskSize       resource.Quantity
+	kubermaticAPIImage string
 }
 
 func (od *openshiftData) DC() *provider.DatacenterMeta {
@@ -252,4 +254,17 @@ func (od *openshiftData) EtcdDiskSize() resource.Quantity {
 // Openshift has its own DNS cache, so this is always false
 func (od *openshiftData) NodeLocalDNSCacheEnabled() bool {
 	return false
+}
+
+func (od *openshiftData) KubermaticAPIImage() string {
+	apiImageSplit := strings.Split(od.kubermaticAPIImage, "/")
+	var registry, imageWithoutRegistry string
+	if len(apiImageSplit) != 3 {
+		registry = "docker.io"
+		imageWithoutRegistry = strings.Join(apiImageSplit, "/")
+	} else {
+		registry = apiImageSplit[0]
+		imageWithoutRegistry = strings.Join(apiImageSplit[1:], "/")
+	}
+	return od.ImageRegistry(registry) + "/" + imageWithoutRegistry
 }
