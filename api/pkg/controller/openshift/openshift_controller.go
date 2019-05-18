@@ -100,7 +100,7 @@ func Add(
 	features Features,
 ) error {
 	reconciler := &Reconciler{
-		Client:                  dynamicClient,
+		Client:                  mgr.GetClient(),
 		scheme:                  mgr.GetScheme(),
 		recorder:                mgr.GetRecorder(ControllerName),
 		dc:                      dc,

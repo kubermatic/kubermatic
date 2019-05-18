@@ -55,6 +55,7 @@ type controllerRunOptions struct {
 	inClusterPrometheusScrapingConfigsFile           string
 	monitoringScrapeAnnotationPrefix                 string
 	dockerPullConfigJSONFile                         string
+	log                                              kubermaticlog.Options
 	apiServerExposeStrategy                          corev1.ServiceType
 
 	// OIDC configuration
@@ -206,15 +207,6 @@ func (o controllerRunOptions) validate() error {
 
 	if err := o.log.Validate(); err != nil {
 		return err
-	}
-
-	switch o.apiserverExposeStrategy {
-	case "NodePort":
-		o.apiServerExposeStrategyParsed = corev1.ServiceTypeNodePort
-	case "LoadBalancer":
-		o.apiServerExposeStrategyParsed = corev1.ServiceTypeLoadBalancer
-	default:
-		return fmt.Errorf("--apiserver-expose-strategy must be either `NodePort` or `LoadBalancer`, got %q", o.apiserverExposeStrategy)
 	}
 
 	return nil

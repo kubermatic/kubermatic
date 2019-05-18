@@ -87,12 +87,6 @@ func SyncClusterAddress(ctx context.Context,
 		glog.V(2).Infof("Set IP for cluster %s to '%s'", cluster.Name, ip)
 	}
 
-	// We fetch the Apiserver service as its a NodePort and we'll take the first NodePort (so far we only have one)
-	service := &corev1.Service{}
-	serviceKey := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.ApiserverExternalServiceName}
-	if err := client.Get(ctx, serviceKey, service); err != nil {
-		return nil, err
-	}
 	if len(service.Spec.Ports) < 1 {
 		return nil, fmt.Errorf("service %q has no port configured", serviceKey.String())
 	}
