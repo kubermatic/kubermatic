@@ -66,6 +66,7 @@ type Opts struct {
 	excludeSelectorRaw           string
 	existingClusterLabel         string
 	openshift                    bool
+	printGinkoLogs               bool
 
 	secrets secrets
 }
@@ -158,6 +159,7 @@ func main() {
 	flag.StringVar(&opts.excludeSelectorRaw, "exclude-distributions", "", "a comma-separated list of distributions that will get excluded from the tests")
 	_ = flag.Bool("run-kubermatic-controller-manager", false, "Unused, but kept for compatibility reasons")
 	flag.BoolVar(&opts.openshift, "openshift", false, "Whether to create an openshift cluster")
+	flag.BoolVar(&opts.printGinkoLogs, "print-ginkgo-logs", false, "Whether to print ginkgo logs when ginkgo encountered failures")
 
 	flag.StringVar(&opts.secrets.AWS.AccessKeyID, "aws-access-key-id", "", "AWS: AccessKeyID")
 	flag.StringVar(&opts.secrets.AWS.SecretAccessKey, "aws-secret-access-key", "", "AWS: SecretAccessKey")

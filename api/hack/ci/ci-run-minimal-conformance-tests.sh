@@ -240,7 +240,8 @@ timeout -s 9 90m ./conformance-tests $EXTRA_ARGS \
   -providers=$provider \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
   ${OPENSHIFT_ARG:-} \
-  -kubermatic-delete-cluster=false
+  -kubermatic-delete-cluster=false \
+  -print-ginkgo-logs=true
 
 # No upgradetest, just exit
 if [[ -z ${UPGRADE_TEST_BASE_HASH:-} ]]; then
@@ -290,4 +291,5 @@ timeout -s 9 60m ./conformance-tests $EXTRA_ARGS \
   -providers=$provider \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
   ${OPENSHIFT_ARG:-} \
-  -kubermatic-delete-cluster=false
+  -kubermatic-delete-cluster=false \
+  -print-ginkgo-logs=true
