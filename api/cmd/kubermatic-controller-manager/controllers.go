@@ -81,7 +81,7 @@ func createOpenshiftController(ctrlCtx *controllerContext) error {
 			IssuerURL:    ctrlCtx.runOptions.oidcIssuerURL,
 		},
 		ctrlCtx.runOptions.apiServerExposeStrategy,
-		ctrlCtx.runOptions.kubermaticAPIImage,
+		ctrlCtx.runOptions.kubermaticImage,
 		openshiftcontroller.Features{
 			EtcdDataCorruptionChecks: ctrlCtx.runOptions.featureGates.Enabled(EtcdDataCorruptionChecks),
 			VPA:                      ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
@@ -115,7 +115,7 @@ func createClusterController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.oidcCAFile,
 		ctrlCtx.runOptions.oidcIssuerURL,
 		ctrlCtx.runOptions.oidcIssuerClientID,
-		ctrlCtx.runOptions.kubermaticAPIImage,
+		ctrlCtx.runOptions.kubermaticImage,
 		cluster.Features{
 			VPA:                      ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
 			EtcdDataCorruptionChecks: ctrlCtx.runOptions.featureGates.Enabled(EtcdDataCorruptionChecks),

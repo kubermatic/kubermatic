@@ -40,7 +40,7 @@ type TemplateData struct {
 	oidcIssuerURL                                    string
 	oidcIssuerClientID                               string
 	nodeLocalDNSCacheEnabled                         bool
-	kubermaticAPIImage                               string
+	kubermaticImage                                  string
 	apiserverExposeStrategy                          corev1.ServiceType
 }
 
@@ -64,7 +64,7 @@ func NewTemplateData(
 	oidcURL string,
 	oidcIssuerClientID string,
 	nodeLocalDNSCacheEnabled bool,
-	kubermaticAPIImage string,
+	kubermaticImage string,
 	apiserverExposeStrategy corev1.ServiceType) *TemplateData {
 	return &TemplateData{
 		ctx:                                    ctx,
@@ -85,7 +85,7 @@ func NewTemplateData(
 		oidcIssuerURL:                                    oidcURL,
 		oidcIssuerClientID:                               oidcIssuerClientID,
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
-		kubermaticAPIImage:                               kubermaticAPIImage,
+		kubermaticImage:                                  kubermaticImage,
 		apiserverExposeStrategy:                          apiserverExposeStrategy,
 	}
 }
@@ -260,7 +260,7 @@ func (d *TemplateData) NodeLocalDNSCacheEnabled() bool {
 }
 
 func (d *TemplateData) KubermaticAPIImage() string {
-	apiImageSplit := strings.Split(d.kubermaticAPIImage, "/")
+	apiImageSplit := strings.Split(d.kubermaticImage, "/")
 	var registry, imageWithoutRegistry string
 	if len(apiImageSplit) != 3 {
 		registry = "docker.io"

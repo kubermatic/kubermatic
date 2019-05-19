@@ -32,7 +32,7 @@ type openshiftData struct {
 	oidc                    OIDCConfig
 	etcdDiskSize            resource.Quantity
 	apiServerExposeStrategy corev1.ServiceType
-	kubermaticAPIImage      string
+	kubermaticImage         string
 }
 
 func (od *openshiftData) DC() *provider.DatacenterMeta {
@@ -258,7 +258,7 @@ func (od *openshiftData) NodeLocalDNSCacheEnabled() bool {
 }
 
 func (od *openshiftData) KubermaticAPIImage() string {
-	apiImageSplit := strings.Split(od.kubermaticAPIImage, "/")
+	apiImageSplit := strings.Split(od.kubermaticImage, "/")
 	var registry, imageWithoutRegistry string
 	if len(apiImageSplit) != 3 {
 		registry = "docker.io"
