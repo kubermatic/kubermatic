@@ -39,6 +39,7 @@ type TemplateData struct {
 	oidcCAFile                                       string
 	oidcIssuerURL                                    string
 	oidcIssuerClientID                               string
+	kubermaticImage                                  string
 }
 
 // NewTemplateData returns an instance of TemplateData
@@ -59,7 +60,8 @@ func NewTemplateData(
 	inClusterPrometheusScrapingConfigsFile string,
 	oidcCAFile string,
 	oidcURL string,
-	oidcIssuerClientID string) *TemplateData {
+	oidcIssuerClientID string,
+	kubermaticImage string) *TemplateData {
 	return &TemplateData{
 		ctx:                                    ctx,
 		client:                                 client,
@@ -78,6 +80,7 @@ func NewTemplateData(
 		oidcCAFile:                                       oidcCAFile,
 		oidcIssuerURL:                                    oidcURL,
 		oidcIssuerClientID:                               oidcIssuerClientID,
+		kubermaticImage:                                  kubermaticImage,
 	}
 }
 
@@ -244,4 +247,17 @@ func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
 	}
 
 	return service.Spec.Ports[0].NodePort, nil
+}
+
+func (d *TemplateData) KubermaticAPIImage() string {
+	apiImageSplit := strings.Split(d.kubermaticImage, "/")
+	var registry, imageWithoutRegistry string
+	if len(apiImageSplit) != 3 {
+		registry = "docker.io"
+		imageWithoutRegistry = strings.Join(apiImageSplit, "/")
+	} else {
+		registry = apiImageSplit[0]
+		imageWithoutRegistry = strings.Join(apiImageSplit[1:], "/")
+	}
+	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
 }

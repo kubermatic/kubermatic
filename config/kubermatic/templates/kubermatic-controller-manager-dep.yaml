@@ -95,6 +95,9 @@ spec:
         {{- if .Values.kubermatic.worker_name }}
         - -worker-name={{ .Values.kubermatic.worker_name }}
         {{- end }}
+        {{- if .Values.kubermatic.kubermaticImage }}
+        - -kubermatic-image={{ .Values.kubermatic.kubermaticImage }}
+        {{- end }}
         image: '{{ .Values.kubermatic.controller.image.repository }}:{{ .Values.kubermatic.controller.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.controller.image.pullPolicy }}
         ports:

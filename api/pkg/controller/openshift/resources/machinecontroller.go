@@ -27,7 +27,7 @@ func MachineController(osData openshiftData) reconciling.NamedDeploymentCreatorG
 				VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}})
 			d.Spec.Template.Spec.InitContainers = append(d.Spec.Template.Spec.InitContainers, corev1.Container{
 				Name:            "copy-userdata-plugin",
-				Image:           osData.ImageRegistry(resources.RegistryQuay) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
+				Image:           osData.KubermaticAPIImage() + ":" + resources.KUBERMATICCOMMIT,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command: []string{
 					"/bin/sh",

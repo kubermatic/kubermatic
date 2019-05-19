@@ -50,6 +50,7 @@ type controllerRunOptions struct {
 	inClusterPrometheusScrapingConfigsFile           string
 	monitoringScrapeAnnotationPrefix                 string
 	dockerPullConfigJSONFile                         string
+	kubermaticImage                                  string
 
 	// OIDC configuration
 	oidcCAFile             string
@@ -99,6 +100,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.oidcIssuerURL, "oidc-issuer-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.StringVar(&c.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
 	flag.StringVar(&c.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
+	flag.StringVar(&c.kubermaticImage, "kubermatic-image", "quay.io/kubermatic/api", "The location from which to pull the Kubermatic image")
 	flag.Parse()
 
 	featureGates, err := features.NewFeatures(rawFeatureGates)

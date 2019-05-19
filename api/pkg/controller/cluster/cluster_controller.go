@@ -79,6 +79,7 @@ type Reconciler struct {
 	inClusterPrometheusScrapingConfigsFile           string
 	monitoringScrapeAnnotationPrefix                 string
 	dockerPullConfigJSON                             []byte
+	kubermaticImage                                  string
 
 	oidcCAFile         string
 	oidcIssuerURL      string
@@ -110,6 +111,7 @@ func Add(
 	oidcCAFile string,
 	oidcIssuerURL string,
 	oidcIssuerClientID string,
+	kubermaticImage string,
 	features Features) error {
 
 	if err := kubermaticscheme.AddToScheme(scheme.Scheme); err != nil {
@@ -133,6 +135,7 @@ func Add(
 		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
 		monitoringScrapeAnnotationPrefix:                 monitoringScrapeAnnotationPrefix,
 		dockerPullConfigJSON:                             dockerPullConfigJSON,
+		kubermaticImage:                                  kubermaticImage,
 
 		externalURL: externalURL,
 		dc:          dc,
