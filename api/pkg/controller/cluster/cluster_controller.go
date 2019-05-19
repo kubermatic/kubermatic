@@ -72,6 +72,7 @@ type Reconciler struct {
 	monitoringScrapeAnnotationPrefix                 string
 	dockerPullConfigJSON                             []byte
 	nodeLocalDNSCacheEnabled                         bool
+	kubermaticImage                                  string
 	apiServerExposeStrategy                          corev1.ServiceType
 
 	oidcCAFile         string
@@ -106,6 +107,7 @@ func Add(
 	oidcCAFile string,
 	oidcIssuerURL string,
 	oidcIssuerClientID string,
+	kubermaticImage string,
 	features Features) error {
 
 	if err := kubermaticscheme.AddToScheme(scheme.Scheme); err != nil {
@@ -130,6 +132,7 @@ func Add(
 		monitoringScrapeAnnotationPrefix:                 monitoringScrapeAnnotationPrefix,
 		dockerPullConfigJSON:                             dockerPullConfigJSON,
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
+		kubermaticImage:                                  kubermaticImage,
 		apiServerExposeStrategy:                          apiServerExposeStrategy,
 
 		externalURL: externalURL,

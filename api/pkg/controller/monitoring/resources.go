@@ -41,6 +41,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, client ctrlrunt
 		"",
 		"",
 		r.nodeLocalDNSCacheEnabled,
+		"",
 		// This is only used for the external APIServer service and not valid there
 		// as this controller should never try to manage it
 		corev1.ServiceTypeClusterIP,

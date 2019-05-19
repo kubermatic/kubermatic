@@ -363,6 +363,7 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		"",
 		"",
 		true,
+		"",
 		corev1.ServiceTypeNodePort,
 	), nil
 }
