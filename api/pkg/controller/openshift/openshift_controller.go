@@ -69,19 +69,20 @@ type Features struct {
 
 type Reconciler struct {
 	client.Client
-	scheme               *runtime.Scheme
-	recorder             record.EventRecorder
-	dcs                  map[string]provider.DatacenterMeta
-	dc                   string
-	overwriteRegistry    string
-	nodeAccessNetwork    string
-	etcdDiskSize         resource.Quantity
-	dockerPullConfigJSON []byte
-	workerName           string
-	externalURL          string
-	oidc                 OIDCConfig
-	kubermaticAPIImage   string
-	features             Features
+	scheme                  *runtime.Scheme
+	recorder                record.EventRecorder
+	dcs                     map[string]provider.DatacenterMeta
+	dc                      string
+	overwriteRegistry       string
+	nodeAccessNetwork       string
+	etcdDiskSize            resource.Quantity
+	dockerPullConfigJSON    []byte
+	workerName              string
+	externalURL             string
+	oidc                    OIDCConfig
+	apiServerExposeStrategy corev1.ServiceType
+	kubermaticAPIImage      string
+	features                Features
 }
 
 func Add(
@@ -96,6 +97,7 @@ func Add(
 	dockerPullConfigJSON []byte,
 	externalURL string,
 	oidcConfig OIDCConfig,
+	apiServerExposeStrategy corev1.ServiceType,
 	kubermaticAPIImage string,
 	features Features,
 ) error {
@@ -201,18 +203,15 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
 	}
 	osData := &openshiftData{
-		cluster:            cluster,
-		client:             r.Client,
-		dc:                 &dc,
-		overwriteRegistry:  r.overwriteRegistry,
-		nodeAccessNetwork:  r.nodeAccessNetwork,
-		oidc:               r.oidc,
-		etcdDiskSize:       r.etcdDiskSize,
-		kubermaticAPIImage: r.kubermaticAPIImage,
-	}
-
-	if err := r.address(ctx, cluster); err != nil {
-		return nil, fmt.Errorf("failed to reconcile the cluster address: %v", err)
+		cluster:                 cluster,
+		client:                  r.Client,
+		dc:                      &dc,
+		overwriteRegistry:       r.overwriteRegistry,
+		nodeAccessNetwork:       r.nodeAccessNetwork,
+		oidc:                    r.oidc,
+		etcdDiskSize:            r.etcdDiskSize,
+		apiServerExposeStrategy: r.apiServerExposeStrategy,
+		kubermaticAPIImage:      r.kubermaticAPIImage,
 	}
 
 	if err := r.networkDefaults(ctx, cluster); err != nil {
@@ -221,6 +220,10 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	if err := r.services(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Services: %v", err)
+	}
+
+	if err := r.address(ctx, cluster); err != nil {
+		return nil, fmt.Errorf("failed to reconcile the cluster address: %v", err)
 	}
 
 	if err := r.secrets(ctx, osData); err != nil {
@@ -680,7 +683,7 @@ func (r *Reconciler) networkDefaults(ctx context.Context, cluster *kubermaticv1.
 func getAllServiceCreators(osData *openshiftData) []reconciling.NamedServiceCreatorGetter {
 	return []reconciling.NamedServiceCreatorGetter{
 		apiserver.InternalServiceCreator(),
-		apiserver.ExternalServiceCreator(),
+		apiserver.ExternalServiceCreator(osData.APIServerExposeStrategy()),
 		openvpn.ServiceCreator(),
 		etcd.ServiceCreator(osData),
 		dns.ServiceCreator(),

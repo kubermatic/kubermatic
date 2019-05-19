@@ -98,6 +98,8 @@ spec:
         {{- end }}
         {{- if .Values.kubermatic.kubermaticAPIImage }}
         - -kubermatic-api-image=.Values.kubermatic.kubermaticAPIImage
+        {{- if .Values.kubermatic.apiServerExposeStrategy }}
+        - -apiserver-expose-strategy={{ .Values.kubermatic.apiServerExposeStrategy }}
         {{- end }}
         image: '{{ .Values.kubermatic.controller.image.repository }}:{{ .Values.kubermatic.controller.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.controller.image.pullPolicy }}

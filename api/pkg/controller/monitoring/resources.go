@@ -12,6 +12,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"k8s.io/apimachinery/pkg/api/resource"
 
+	corev1 "k8s.io/api/core/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -41,6 +42,9 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, client ctrlrunt
 		"",
 		r.nodeLocalDNSCacheEnabled,
 		"",
+		// This is only used for the external APIServer service and not valid there
+		// as this controller should never try to manage it
+		corev1.ServiceTypeClusterIP,
 	), nil
 }
 
