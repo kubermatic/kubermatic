@@ -40,6 +40,7 @@ type TemplateData struct {
 	oidcIssuerURL                                    string
 	oidcIssuerClientID                               string
 	nodeLocalDNSCacheEnabled                         bool
+	apiserverExposeStrategy                          corev1.ServiceType
 }
 
 // NewTemplateData returns an instance of TemplateData
@@ -61,7 +62,8 @@ func NewTemplateData(
 	oidcCAFile string,
 	oidcURL string,
 	oidcIssuerClientID string,
-	nodeLocalDNSCacheEnabled bool) *TemplateData {
+	nodeLocalDNSCacheEnabled bool,
+	apiserverExposeStrategy corev1.ServiceType) *TemplateData {
 	return &TemplateData{
 		ctx:                                    ctx,
 		client:                                 client,
@@ -81,6 +83,7 @@ func NewTemplateData(
 		oidcIssuerURL:                                    oidcURL,
 		oidcIssuerClientID:                               oidcIssuerClientID,
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
+		apiserverExposeStrategy:                          apiserverExposeStrategy,
 	}
 }
 
@@ -251,4 +254,8 @@ func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
 
 func (d *TemplateData) NodeLocalDNSCacheEnabled() bool {
 	return d.nodeLocalDNSCacheEnabled
+}
+
+func (d *TemplateData) APIServerExposeStrategy() corev1.ServiceType {
+	return d.apiserverExposeStrategy
 }

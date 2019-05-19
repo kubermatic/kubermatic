@@ -80,6 +80,7 @@ func createOpenshiftController(ctrlCtx *controllerContext) error {
 			ClientSecret: ctrlCtx.runOptions.oidcIssuerClientSecret,
 			IssuerURL:    ctrlCtx.runOptions.oidcIssuerURL,
 		},
+		ctrlCtx.runOptions.apiServerExposeStrategy,
 		openshiftcontroller.Features{
 			EtcdDataCorruptionChecks: ctrlCtx.runOptions.featureGates.Enabled(EtcdDataCorruptionChecks),
 			VPA:                      ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
@@ -108,10 +109,11 @@ func createClusterController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultScrapingConfigs,
 		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
 		ctrlCtx.dockerPullConfigJSON,
+		strings.Contains(ctrlCtx.runOptions.kubernetesAddonsList, "nodelocal-dns-cache"),
+		ctrlCtx.runOptions.apiServerExposeStrategy,
 		ctrlCtx.runOptions.oidcCAFile,
 		ctrlCtx.runOptions.oidcIssuerURL,
 		ctrlCtx.runOptions.oidcIssuerClientID,
-		strings.Contains(ctrlCtx.runOptions.kubernetesAddonsList, "nodelocal-dns-cache"),
 		cluster.Features{
 			VPA:                      ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
 			EtcdDataCorruptionChecks: ctrlCtx.runOptions.featureGates.Enabled(EtcdDataCorruptionChecks),

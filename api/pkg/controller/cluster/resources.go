@@ -36,6 +36,16 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return err
 	}
 
+	// Set the hostname & url
+	if err := r.syncAddress(ctx, cluster); err != nil {
+		return fmt.Errorf("failed to sync address: %v", err)
+	}
+
+	// We should not proceed without having an IP address. Its required for all Kubeconfigs & triggers errors otherwise.
+	if cluster.Address.IP == "" {
+		return nil
+	}
+
 	// check that all secrets are available // New way of handling secrets
 	if err := r.ensureSecrets(ctx, cluster, data); err != nil {
 		return err
@@ -109,6 +119,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		r.oidcIssuerURL,
 		r.oidcIssuerClientID,
 		r.nodeLocalDNSCacheEnabled,
+		r.apiServerExposeStrategy,
 	), nil
 }
 
@@ -145,7 +156,7 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kuberma
 func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedServiceCreatorGetter {
 	return []reconciling.NamedServiceCreatorGetter{
 		apiserver.InternalServiceCreator(),
-		apiserver.ExternalServiceCreator(),
+		apiserver.ExternalServiceCreator(data.APIServerExposeStrategy()),
 		openvpn.ServiceCreator(),
 		etcd.ServiceCreator(data),
 		dns.ServiceCreator(),

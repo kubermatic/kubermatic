@@ -529,6 +529,7 @@ func TestLoadFiles(t *testing.T) {
 					"https://dev.kubermatic.io/dex",
 					"kubermaticIssuer",
 					true,
+					corev1.ServiceTypeNodePort,
 				)
 
 				var deploymentCreators []reconciling.NamedDeploymentCreatorGetter
