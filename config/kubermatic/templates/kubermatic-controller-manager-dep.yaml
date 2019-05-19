@@ -97,7 +97,8 @@ spec:
         - -worker-name={{ .Values.kubermatic.worker_name }}
         {{- end }}
         {{- if .Values.kubermatic.kubermaticAPIImage }}
-        - -kubermatic-api-image=.Values.kubermatic.kubermaticAPIImage
+        - -kubermatic-api-image={{ .Values.kubermatic.kubermaticAPIImage }}
+        {{- end }}
         {{- if .Values.kubermatic.apiServerExposeStrategy }}
         - -apiserver-expose-strategy={{ .Values.kubermatic.apiServerExposeStrategy }}
         {{- end }}
