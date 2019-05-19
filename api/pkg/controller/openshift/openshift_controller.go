@@ -81,6 +81,7 @@ type Reconciler struct {
 	externalURL             string
 	oidc                    OIDCConfig
 	apiServerExposeStrategy corev1.ServiceType
+	kubermaticImage         string
 	features                Features
 }
 
@@ -97,6 +98,7 @@ func Add(
 	externalURL string,
 	oidcConfig OIDCConfig,
 	apiServerExposeStrategy corev1.ServiceType,
+	kubermaticImage string,
 	features Features,
 ) error {
 	reconciler := &Reconciler{
@@ -113,6 +115,7 @@ func Add(
 		externalURL:             externalURL,
 		oidc:                    oidcConfig,
 		apiServerExposeStrategy: apiServerExposeStrategy,
+		kubermaticImage:         kubermaticImage,
 		features:                features,
 	}
 
@@ -209,6 +212,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		oidc:                    r.oidc,
 		etcdDiskSize:            r.etcdDiskSize,
 		apiServerExposeStrategy: r.apiServerExposeStrategy,
+		kubermaticImage:         r.kubermaticImage,
 	}
 
 	if err := r.networkDefaults(ctx, cluster); err != nil {

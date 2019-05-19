@@ -40,6 +40,7 @@ type TemplateData struct {
 	oidcIssuerURL                                    string
 	oidcIssuerClientID                               string
 	nodeLocalDNSCacheEnabled                         bool
+	kubermaticImage                                  string
 	apiserverExposeStrategy                          corev1.ServiceType
 }
 
@@ -63,6 +64,7 @@ func NewTemplateData(
 	oidcURL string,
 	oidcIssuerClientID string,
 	nodeLocalDNSCacheEnabled bool,
+	kubermaticImage string,
 	apiserverExposeStrategy corev1.ServiceType) *TemplateData {
 	return &TemplateData{
 		ctx:                                    ctx,
@@ -83,6 +85,7 @@ func NewTemplateData(
 		oidcIssuerURL:                                    oidcURL,
 		oidcIssuerClientID:                               oidcIssuerClientID,
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
+		kubermaticImage:                                  kubermaticImage,
 		apiserverExposeStrategy:                          apiserverExposeStrategy,
 	}
 }
@@ -254,6 +257,19 @@ func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
 
 func (d *TemplateData) NodeLocalDNSCacheEnabled() bool {
 	return d.nodeLocalDNSCacheEnabled
+}
+
+func (d *TemplateData) KubermaticAPIImage() string {
+	apiImageSplit := strings.Split(d.kubermaticImage, "/")
+	var registry, imageWithoutRegistry string
+	if len(apiImageSplit) != 3 {
+		registry = "docker.io"
+		imageWithoutRegistry = strings.Join(apiImageSplit, "/")
+	} else {
+		registry = apiImageSplit[0]
+		imageWithoutRegistry = strings.Join(apiImageSplit[1:], "/")
+	}
+	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
 }
 
 func (d *TemplateData) APIServerExposeStrategy() corev1.ServiceType {
