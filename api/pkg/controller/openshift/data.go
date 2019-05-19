@@ -23,13 +23,14 @@ import (
 // openshiftData implements the openshiftData interface which is
 // passed into all creator funcs and contains all data they need
 type openshiftData struct {
-	cluster           *kubermaticv1.Cluster
-	client            client.Client
-	dc                *provider.DatacenterMeta
-	overwriteRegistry string
-	nodeAccessNetwork string
-	oidc              OIDCConfig
-	etcdDiskSize      resource.Quantity
+	cluster                 *kubermaticv1.Cluster
+	client                  client.Client
+	dc                      *provider.DatacenterMeta
+	overwriteRegistry       string
+	nodeAccessNetwork       string
+	oidc                    OIDCConfig
+	etcdDiskSize            resource.Quantity
+	apiServerExposeStrategy corev1.ServiceType
 }
 
 func (od *openshiftData) DC() *provider.DatacenterMeta {
@@ -252,4 +253,8 @@ func (od *openshiftData) EtcdDiskSize() resource.Quantity {
 // Openshift has its own DNS cache, so this is always false
 func (od *openshiftData) NodeLocalDNSCacheEnabled() bool {
 	return false
+}
+
+func (od *openshiftData) APIServerExposeStrategy() corev1.ServiceType {
+	return od.apiServerExposeStrategy
 }

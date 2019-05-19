@@ -72,6 +72,7 @@ type Reconciler struct {
 	monitoringScrapeAnnotationPrefix                 string
 	dockerPullConfigJSON                             []byte
 	nodeLocalDNSCacheEnabled                         bool
+	apiServerExposeStrategy                          corev1.ServiceType
 
 	oidcCAFile         string
 	oidcIssuerURL      string
@@ -99,11 +100,12 @@ func Add(
 	inClusterPrometheusDisableDefaultScrapingConfigs bool,
 	inClusterPrometheusScrapingConfigsFile string,
 	dockerPullConfigJSON []byte,
+	nodeLocalDNSCacheEnabled bool,
+	apiServerExposeStrategy corev1.ServiceType,
 
 	oidcCAFile string,
 	oidcIssuerURL string,
 	oidcIssuerClientID string,
-	nodeLocalDNSCacheEnabled bool,
 	features Features) error {
 
 	if err := kubermaticscheme.AddToScheme(scheme.Scheme); err != nil {
@@ -128,6 +130,7 @@ func Add(
 		monitoringScrapeAnnotationPrefix:                 monitoringScrapeAnnotationPrefix,
 		dockerPullConfigJSON:                             dockerPullConfigJSON,
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
+		apiServerExposeStrategy:                          apiServerExposeStrategy,
 
 		externalURL: externalURL,
 		dc:          dc,
