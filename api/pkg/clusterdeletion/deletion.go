@@ -183,8 +183,8 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kuber
 	}
 
 	return d.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, kubermaticapiv1.InClusterLBCleanupFinalizer)
-		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, kubermaticapiv1.InClusterPVCleanupFinalizer)
+		kuberneteshelper.RemoveFinalizer(c, kubermaticapiv1.InClusterLBCleanupFinalizer)
+		kuberneteshelper.RemoveFinalizer(c, kubermaticapiv1.InClusterPVCleanupFinalizer)
 	})
 }
 
@@ -269,7 +269,7 @@ func (d *Deletion) deletingNodeCleanup(ctx context.Context, cluster *kubermaticv
 	}
 
 	return d.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-		c.Finalizers = kuberneteshelper.RemoveFinalizer(c.Finalizers, kubermaticapiv1.NodeDeletionFinalizer)
+		kuberneteshelper.RemoveFinalizer(c, kubermaticapiv1.NodeDeletionFinalizer)
 	})
 }
 

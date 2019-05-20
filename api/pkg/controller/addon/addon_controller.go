@@ -18,6 +18,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -27,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
-	"k8s.io/apimachinery/pkg/util/sets"
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -231,10 +231,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 }
 
 func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon) error {
-	finalizers := sets.NewString(addon.Finalizers...)
-	if finalizers.Has(cleanupFinalizerName) {
-		finalizers.Delete(cleanupFinalizerName)
-		addon.Finalizers = finalizers.List()
+	if kuberneteshelper.HasFinalizer(addon, cleanupFinalizerName) {
+		kuberneteshelper.RemoveFinalizer(addon, cleanupFinalizerName)
 		if err := r.Client.Update(ctx, addon); err != nil {
 			return err
 		}
@@ -517,12 +515,11 @@ func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, ma
 }
 
 func (r *Reconciler) ensureFinalizerIsSet(ctx context.Context, addon *kubermaticv1.Addon) error {
-	finalizers := sets.NewString(addon.Finalizers...)
-	if finalizers.Has(cleanupFinalizerName) {
+	if kuberneteshelper.HasFinalizer(addon, cleanupFinalizerName) {
 		return nil
 	}
 
-	addon.Finalizers = append(addon.Finalizers, cleanupFinalizerName)
+	kuberneteshelper.AddFinalizer(addon, cleanupFinalizerName)
 	return r.Client.Update(ctx, addon)
 }
 

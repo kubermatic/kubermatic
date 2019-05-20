@@ -52,7 +52,7 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 		// Otherwise we fail to delete the nodes and are stuck in a loop
 		if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
 			err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-				c.Finalizers = append(c.Finalizers, kubermaticapiv1.NodeDeletionFinalizer)
+				kuberneteshelper.AddFinalizer(c, kubermaticapiv1.NodeDeletionFinalizer)
 			})
 			if err != nil {
 				return nil, err

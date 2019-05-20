@@ -326,10 +326,10 @@ func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 			if req.DeleteLoadBalancers {
-				existingCluster.Finalizers = kuberneteshelper.AddFinalizer(existingCluster.Finalizers, apiv1.InClusterLBCleanupFinalizer)
+				kuberneteshelper.AddFinalizer(existingCluster, apiv1.InClusterLBCleanupFinalizer)
 			}
 			if req.DeleteVolumes {
-				existingCluster.Finalizers = kuberneteshelper.AddFinalizer(existingCluster.Finalizers, apiv1.InClusterPVCleanupFinalizer)
+				kuberneteshelper.AddFinalizer(existingCluster, apiv1.InClusterPVCleanupFinalizer)
 			}
 
 			if _, err = clusterProvider.Update(userInfo, existingCluster); err != nil {

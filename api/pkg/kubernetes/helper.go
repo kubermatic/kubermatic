@@ -13,18 +13,18 @@ func HasFinalizer(o metav1.Object, name string) bool {
 	return sets.NewString(o.GetFinalizers()...).Has(name)
 }
 
-// RemoveFinalizer removes the given finalizer and returns the cleaned list
-func RemoveFinalizer(finalizers []string, toRemove string) []string {
-	set := sets.NewString(finalizers...)
+// RemoveFinalizer removes the given finalizer from the object
+func RemoveFinalizer(obj metav1.Object, toRemove string) {
+	set := sets.NewString(obj.GetFinalizers()...)
 	set.Delete(toRemove)
-	return set.List()
+	obj.SetFinalizers(set.List())
 }
 
 // AddFinalizer will add the given finalizer to the object. It uses a StringSet to avoid duplicates
-func AddFinalizer(finalizers []string, toAdd string) []string {
-	set := sets.NewString(finalizers...)
-	set.Insert(toAdd)
-	return set.List()
+func AddFinalizer(obj metav1.Object, finalizer string) {
+	set := sets.NewString(obj.GetFinalizers()...)
+	set.Insert(finalizer)
+	obj.SetFinalizers(set.List())
 }
 
 // GenerateToken generates a new, random token that can be used
