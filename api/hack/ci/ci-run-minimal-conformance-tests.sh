@@ -105,7 +105,7 @@ if ! curl -Ss --fail "http://registry.registry.svc.cluster.local.:5000/v2/kuberm
   mkdir -p /etc/docker
   echo '{"insecure-registries": ["registry.registry.svc.cluster.local.:5000", "registry.registry.svc.cluster.local:5000"]}' \
     >/etc/docker/daemon.json
-  docker ps &>/dev/null || start-docker.sh
+  docker ps &>/dev/null || start-docker.sh || sleep 2h
   echodate "Building binaries"
   time make -C api build
   cd api
