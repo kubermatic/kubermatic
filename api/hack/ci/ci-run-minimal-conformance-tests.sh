@@ -192,7 +192,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set-string=kubermatic.api.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
   --set-string=kubermatic.masterController.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
   --set-string=kubermatic.masterController.image.repository=127.0.0.1:5000/kubermatic/api \
-  --set-string=kubermaticImage=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermatic.kubermaticImage=127.0.0.1:5000/kubermatic/api \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
@@ -260,7 +260,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set-string=kubermatic.api.image.tag=${GIT_HEAD_HASH} \
   --set-string=kubermatic.masterController.image.tag=${GIT_HEAD_HASH} \
   --set-string=kubermatic.masterController.image.repository=127.0.0.1:5000/kubermatic/api \
-  --set-string=kubermaticImage=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermatic.kubermaticImage=127.0.0.1:5000/kubermatic/api \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
