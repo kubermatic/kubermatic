@@ -154,7 +154,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.SecurityGroups = g.Name
-			cluster.Finalizers = kubernetes.AddFinalizer(cluster.Finalizers, SecurityGroupCleanupFinalizer)
+			kubernetes.AddFinalizer(cluster, SecurityGroupCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
@@ -168,7 +168,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.Network = network.Name
-			cluster.Finalizers = kubernetes.AddFinalizer(cluster.Finalizers, NetworkCleanupFinalizer)
+			kubernetes.AddFinalizer(cluster, NetworkCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
@@ -188,7 +188,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.SubnetID = subnet.ID
-			cluster.Finalizers = kubernetes.AddFinalizer(cluster.Finalizers, SubnetCleanupFinalizer)
+			kubernetes.AddFinalizer(cluster, SubnetCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
@@ -207,7 +207,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 				}
 				cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 					cluster.Spec.Cloud.Openstack.RouterID = router.ID
-					cluster.Finalizers = kubernetes.AddFinalizer(cluster.Finalizers, RouterCleanupFinalizer)
+					kubernetes.AddFinalizer(cluster, RouterCleanupFinalizer)
 				})
 				if err != nil {
 					return nil, err
@@ -234,7 +234,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = kubernetes.AddFinalizer(cluster.Finalizers, RouterSubnetLinkCleanupFinalizer)
+			kubernetes.AddFinalizer(cluster, RouterSubnetLinkCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
@@ -260,7 +260,7 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = kubernetes.RemoveFinalizer(cluster.Finalizers, SecurityGroupCleanupFinalizer)
+			kubernetes.RemoveFinalizer(cluster, SecurityGroupCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
@@ -274,7 +274,7 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 			}
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = kubernetes.RemoveFinalizer(cluster.Finalizers, RouterSubnetLinkCleanupFinalizer)
+			kubernetes.RemoveFinalizer(cluster, RouterSubnetLinkCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
@@ -286,7 +286,7 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 			return nil, fmt.Errorf("failed to delete subnet '%s': %v", cluster.Spec.Cloud.Openstack.SubnetID, err)
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = kubernetes.RemoveFinalizer(cluster.Finalizers, SubnetCleanupFinalizer)
+			kubernetes.RemoveFinalizer(cluster, SubnetCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
@@ -301,7 +301,7 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = kubernetes.RemoveFinalizer(cluster.Finalizers, NetworkCleanupFinalizer)
+			kubernetes.RemoveFinalizer(cluster, NetworkCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
@@ -316,7 +316,7 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = kubernetes.RemoveFinalizer(cluster.Finalizers, RouterCleanupFinalizer)
+			kubernetes.RemoveFinalizer(cluster, RouterCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
@@ -325,7 +325,7 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 
 	if kubernetes.HasFinalizer(cluster, OldNetworkCleanupFinalizer) {
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = kubernetes.RemoveFinalizer(cluster.Finalizers, OldNetworkCleanupFinalizer)
+			kubernetes.RemoveFinalizer(cluster, OldNetworkCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err

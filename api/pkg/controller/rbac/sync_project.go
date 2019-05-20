@@ -7,6 +7,7 @@ import (
 	"github.com/golang/glog"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -74,17 +75,13 @@ func (c *projectController) sync(key string) error {
 }
 
 func (c *projectController) ensureCleanupFinalizerExists(project *kubermaticv1.Project) error {
-	var err error
-	if !sets.NewString(project.Finalizers...).Has(CleanupFinalizerName) {
-		finalizers := sets.NewString(project.Finalizers...)
-		finalizers.Insert(CleanupFinalizerName)
-		project.Finalizers = finalizers.List()
-		project, err = c.masterClusterProvider.kubermaticClient.KubermaticV1().Projects().Update(project)
-		if err != nil {
+	if !kuberneteshelper.HasFinalizer(project, CleanupFinalizerName) {
+		kuberneteshelper.AddFinalizer(project, CleanupFinalizerName)
+		if _, err := c.masterClusterProvider.kubermaticClient.KubermaticV1().Projects().Update(project); err != nil {
 			return err
 		}
 	}
-	return err
+	return nil
 }
 
 func (c *projectController) ensureProjectIsInActivePhase(project *kubermaticv1.Project) error {
@@ -517,9 +514,7 @@ func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) 
 		}
 	}
 
-	finalizers := sets.NewString(project.Finalizers...)
-	finalizers.Delete(CleanupFinalizerName)
-	project.Finalizers = finalizers.List()
+	kuberneteshelper.RemoveFinalizer(project, CleanupFinalizerName)
 	_, err := c.masterClusterProvider.kubermaticClient.KubermaticV1().Projects().Update(project)
 	return err
 }

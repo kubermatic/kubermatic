@@ -69,7 +69,7 @@ func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update prov
 
 	if !kuberneteshelper.HasFinalizer(cluster, firewallCleanupFinalizer) {
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = append(cluster.Finalizers, firewallCleanupFinalizer)
+			kuberneteshelper.AddFinalizer(cluster, firewallCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
@@ -107,7 +107,7 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = kuberneteshelper.RemoveFinalizer(cluster.Finalizers, firewallCleanupFinalizer)
+			kuberneteshelper.RemoveFinalizer(cluster, firewallCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to remove %s finalizer: %v", firewallCleanupFinalizer, err)

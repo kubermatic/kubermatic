@@ -7,10 +7,10 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -136,10 +136,8 @@ func (r *reconcileSyncProjectBinding) ensureNotProjectOwnerForBinding(projectBin
 }
 
 func (r *reconcileSyncProjectBinding) removeFinalizerFromBinding(projectBinding *kubermaticv1.UserProjectBinding) error {
-	if sets.NewString(projectBinding.Finalizers...).Has(rbac.CleanupFinalizerName) {
-		finalizers := sets.NewString(projectBinding.Finalizers...)
-		finalizers.Delete(rbac.CleanupFinalizerName)
-		projectBinding.Finalizers = finalizers.List()
+	if kuberneteshelper.HasFinalizer(projectBinding, rbac.CleanupFinalizerName) {
+		kuberneteshelper.RemoveFinalizer(projectBinding, rbac.CleanupFinalizerName)
 		return r.Update(r.ctx, projectBinding)
 
 	}
