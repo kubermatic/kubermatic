@@ -103,9 +103,9 @@ echodate "Successfully got secrets from Vault"
 # Build kubermatic binaries and push the image
 if ! curl -Ss --fail "http://registry.registry.svc.cluster.local.:5000/v2/kubermatic/api/tags/list"|grep -q ${GIT_HEAD_HASH}; then
   mkdir -p /etc/docker
-  echo '{"insecure-registries": ["registry.registry.svc.cluster.local.:5000", "registry.registry.svc.cluster.local:5000"]}' \
+  echo '{"insecure-registries": ["registry.registry.svc.cluster.local:5000"]}' \
     >/etc/docker/daemon.json
-  docker ps &>/dev/null || start-docker.sh || sleep 2h
+  docker ps &>/dev/null || start-docker.sh || { cat /var/log/docker.log; exit 1; }
   echodate "Building binaries"
   time make -C api build
   cd api
