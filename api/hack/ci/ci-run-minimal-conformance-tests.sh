@@ -100,24 +100,23 @@ vault kv get -field=datacenters.yaml \
 echodate "Successfully got secrets from Vault"
 
 
-# Build kubermatic binaries and push the image to quay
-if ! curl -Ss --fail \
-    "https://${QUAY_IO_USERNAME}:${QUAY_IO_PASSWORD}@quay.io/v1/repositories/kubermatic/api/tags/${GIT_HEAD_HASH}" &>/dev/null; then
+# Build kubermatic binaries and push the image
+if ! curl -Ss --fail "http://registry.registry.svc.cluster.local.:5000/v2/kubermatic/api/tags/list"|grep -q ${GIT_HEAD_HASH}; then
+  mkdir -p /etc/docker
+  echo '{"insecure-registries": ["registry.registry.svc.cluster.local.:5000", "registry.registry.svc.cluster.local:5000"]}' \
+    >/etc/docker/daemon.json
   docker ps &>/dev/null || start-docker.sh
-  echodate "Logging into quay"
-  docker login -u $QUAY_IO_USERNAME -p $QUAY_IO_PASSWORD quay.io
-  echodate "Successfully logged into quay"
   echodate "Building binaries"
   time make -C api build
   cd api
-  echodate "Building quay image"
-  time docker build -t quay.io/kubermatic/api:${GIT_HEAD_HASH} .
-  echodate "Pushing quay image"
-  time retry 5 docker push quay.io/kubermatic/api:${GIT_HEAD_HASH}
-  echodate "Finished building and pushing quay image"
+  echodate "Building docker image"
+  time docker build -t registry.registry.svc.cluster.local:5000/kubermatic/api:${GIT_HEAD_HASH} .
+  echodate "Pushing docker image"
+  time retry 5 docker push registry.registry.svc.cluster.local:5000/kubermatic/api:${GIT_HEAD_HASH}
+  echodate "Finished building and pushing docker image"
   cd -
 else
-  echodate "Omitting building of binaries and docker image, as tag ${GIT_HEAD_HASH} already exists on quay"
+  echodate "Omitting building of binaries and docker image, as tag ${GIT_HEAD_HASH} already exists in local registry"
 fi
 
 INITIAL_MANIFESTS=$(cat <<EOF
@@ -188,10 +187,12 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --tiller-namespace=$NAMESPACE \
   --set=kubermatic.isMaster=true \
   --set-string=kubermatic.controller.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
-  --set-string=kubermatic.api.image.repository=quay.io/kubermatic/api \
+  --set-string=kubermatic.controller.image.repository=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermatic.api.image.repository=127.0.0.1:5000/kubermatic/api \
   --set-string=kubermatic.api.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
   --set-string=kubermatic.masterController.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
-  --set-string=kubermatic.rbac.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
+  --set-string=kubermatic.masterController.image.repository=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermaticImage=127.0.0.1:5000/kubermatic/api \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
@@ -253,11 +254,13 @@ echodate "Installing current version of Kubermatic"
 retry 3 helm upgrade --install --force --wait --timeout 300 \
   --tiller-namespace=$NAMESPACE \
   --set=kubermatic.isMaster=true \
-  --set-string=kubermatic.controller.image.tag=$GIT_HEAD_HASH \
-  --set-string=kubermatic.api.image.repository=quay.io/kubermatic/api \
-  --set-string=kubermatic.api.image.tag=$GIT_HEAD_HASH \
-  --set-string=kubermatic.masterController.image.tag=$GIT_HEAD_HASH \
-  --set-string=kubermatic.rbac.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
+  --set-string=kubermatic.controller.image.tag=${GIT_HEAD_HASH} \
+  --set-string=kubermatic.controller.image.repository=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermatic.api.image.repository=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermatic.api.image.tag=${GIT_HEAD_HASH} \
+  --set-string=kubermatic.masterController.image.tag=${GIT_HEAD_HASH} \
+  --set-string=kubermatic.masterController.image.repository=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermaticImage=127.0.0.1:5000/kubermatic/api \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
