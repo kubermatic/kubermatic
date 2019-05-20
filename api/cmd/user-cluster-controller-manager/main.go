@@ -132,7 +132,12 @@ func main() {
 
 	log.SetLogger(log.ZapLogger(false))
 
-	mgr, err := manager.New(cfg, manager.Options{LeaderElection: true, LeaderElectionNamespace: metav1.NamespaceSystem, MetricsBindAddress: runOp.metricsListenAddr})
+	mgr, err := manager.New(cfg, manager.Options{
+		LeaderElection:          true,
+		LeaderElectionNamespace: metav1.NamespaceSystem,
+		LeaderElectionID:        "user-cluster-controller-leader-lock",
+		MetricsBindAddress:      runOp.metricsListenAddr,
+	})
 	if err != nil {
 		glog.Fatal(err)
 	}
