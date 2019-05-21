@@ -124,8 +124,7 @@ spec:
         - openstack
         - --cloud-config
         - /etc/kubernetes/cloud/config
-        - --configure-cloud-routes
-        - "false"
+        - --configure-cloud-routes=false
         command:
         - /hyperkube
         - controller-manager
