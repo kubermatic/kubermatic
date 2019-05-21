@@ -7,12 +7,23 @@ metadata:
     app.kubernetes.io/version: '{{ .Values.logging.fluentbit.image.tag }}'
     app.kubernetes.io/managed-by: helm
 spec:
+  selector:
+    matchLabels:
+      k8s-app: fluent-bit-logging
+      version: v1
+      kubernetes.io/cluster-service: "true"
   updateStrategy:
     type: RollingUpdate
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: fluent-bit
+        # TODO: Be bold at some point and adjust these labels to the same
+        # labels used by the DaemonSet. It's not possible without re-creating
+        # the entire DaemonSet, so it's a somewhat breaking change for little
+        # wins, but still worth it for the cleanup itself.
+        k8s-app: fluent-bit-logging
+        version: v1
+        kubernetes.io/cluster-service: "true"
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/port: '2020'
