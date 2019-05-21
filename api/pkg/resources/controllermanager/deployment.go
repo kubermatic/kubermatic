@@ -226,27 +226,27 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 	if cluster.Spec.Cloud.AWS != nil {
 		flags = append(flags, "--cloud-provider", "aws")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		flags = append(flags, "--configure-cloud-routes", "false")
+		flags = append(flags, "--configure-cloud-routes=false")
 	}
 	if cluster.Spec.Cloud.Openstack != nil {
 		flags = append(flags, "--cloud-provider", "openstack")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		flags = append(flags, "--configure-cloud-routes", "false")
+		flags = append(flags, "--configure-cloud-routes=false")
 	}
 	if cluster.Spec.Cloud.VSphere != nil {
 		flags = append(flags, "--cloud-provider", "vsphere")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		flags = append(flags, "--configure-cloud-routes", "false")
+		flags = append(flags, "--configure-cloud-routes=false")
 	}
 	if cluster.Spec.Cloud.Azure != nil {
 		flags = append(flags, "--cloud-provider", "azure")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		flags = append(flags, "--configure-cloud-routes", "false")
+		flags = append(flags, "--configure-cloud-routes=false")
 	}
 	if cluster.Spec.Cloud.GCP != nil {
 		flags = append(flags, "--cloud-provider", "gce")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		flags = append(flags, "--configure-cloud-routes", "true")
+		flags = append(flags, "--configure-cloud-routes=true")
 	}
 
 	if cluster.Spec.Version.Semver().Minor() >= 12 {
@@ -266,7 +266,7 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 		if cluster.Spec.Version.Semver().Patch() > 0 {
 			// Force the authentication lookup to succeed, otherwise if it fails all requests will be treated as anonymous and thus fail
 			// Both the flag and the issue only exist in 1.13.1 and above
-			flags = append(flags, "--authentication-tolerate-lookup-failure", "false")
+			flags = append(flags, "--authentication-tolerate-lookup-failure=false")
 		}
 	}
 
