@@ -16,13 +16,3 @@ spec:
   {{- range $key, $val := .Values.certificates.domains }}
   - {{ $val }}
   {{- end }}
-  acme:
-    # A pairing of domains to challenge types for the ACME provider to use
-    # when attempting to validate domain ownership for the listed domains
-    config:
-    - domains:
-      {{- range $key, $val := .Values.certificates.domains }}
-      - {{ $val }}
-      {{- end }}
-      http01:
-        ingress: cert-manager-acme-challenge-kubermatic-all

@@ -11,5 +11,18 @@ spec:
     # Name of a secret used to store the ACME account private key
     privateKeySecretRef:
       name: letsencrypt-acme-account-key
-    # Enable the HTTP-01 challenge provider
+
+    # The HTTP01 and DNS01 fields are now **deprecated**.
+    # We leave them in place here so that any Certificates that still
+    # specify a ``certificate.spec.acme`` stanza will continue to operate
+    # correctly.
+    # cert-manager will decide which configuration to use based on whether
+    # the Certificate contains a ``certificate.spec.acme`` stanza.
     http01: {}
+
+    # Configure the challenge solvers.
+    solvers:
+    - selector: {} # empty selector matches every certificate
+      http01:
+        ingress:
+          class: nginx

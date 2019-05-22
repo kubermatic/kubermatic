@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: cainjector
 spec:
-  replicas: 1
+  replicas: {{ .Values.certManager.cainjector.replicas }}
   selector:
     matchLabels:
       app: cainjector
