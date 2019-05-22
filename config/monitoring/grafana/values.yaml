@@ -2,9 +2,10 @@ grafana:
   user: YWRtaW4= # admin
   password: bG9vZHNlMTIz # loodse123
 
+  replicas: 1
   image:
     repository: grafana/grafana
-    tag: 6.1.6
+    tag: 6.2.0
 
   resources:
     requests:
