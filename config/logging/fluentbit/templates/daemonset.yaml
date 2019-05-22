@@ -1,23 +1,32 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: fluent-bit
   labels:
-    k8s-app: fluent-bit-logging
-    version: v1
-    kubernetes.io/cluster-service: "true"
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/version: '{{ .Values.logging.fluentbit.image.tag }}'
+    app.kubernetes.io/managed-by: helm
 spec:
+  selector:
+    matchLabels:
+      k8s-app: fluent-bit-logging
+      version: v1
+      kubernetes.io/cluster-service: "true"
   updateStrategy:
     type: RollingUpdate
   template:
     metadata:
       labels:
+        # TODO: Be bold at some point and adjust these labels to the same
+        # labels used by the DaemonSet. It's not possible without re-creating
+        # the entire DaemonSet, so it's a somewhat breaking change for little
+        # wins, but still worth it for the cleanup itself.
         k8s-app: fluent-bit-logging
         version: v1
         kubernetes.io/cluster-service: "true"
       annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "2020"
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '2020'
         prometheus.io/path: /api/v1/metrics/prometheus
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
@@ -30,16 +39,16 @@ spec:
         - containerPort: 2020
         env:
         - name: FLUENT_ELASTICSEARCH_HOST
-          value: "es-data"
+          value: es-data
         - name: FLUENT_ELASTICSEARCH_PORT
-          value: "9200"
+          value: '9200'
         volumeMounts:
         - name: varlog
           mountPath: /var/log
         - name: varlibdockercontainers
           mountPath: /var/lib/docker/containers
           readOnly: true
-        - name: fluent-bit-config
+        - name: config
           mountPath: /fluent-bit/etc/
         resources:
 {{ toYaml .Values.logging.fluentbit.resources | indent 10 }}
@@ -51,9 +60,9 @@ spec:
       - name: varlibdockercontainers
         hostPath:
           path: /var/lib/docker/containers
-      - name: fluent-bit-config
+      - name: config
         configMap:
-          name: fluent-bit-config
+          name: fluent-bit
       nodeSelector:
 {{ toYaml .Values.logging.fluentbit.nodeSelector | indent 8 }}
       affinity:
