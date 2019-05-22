@@ -10,6 +10,7 @@ spec:
   rules:
   - http:
       paths:
+      # there must always be at least one path defined for an Ingress
       - path: /.really-not-used
         backend:
           serviceName: does-not-exist
