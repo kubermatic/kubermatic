@@ -90,6 +90,18 @@ iap:
       cpu: 100m
       memory: 50Mi
 
-  affinity: {}
+  # You can use Go templating inside affinities and access
+  # the deployment's values directly (e.g. via .name or .client_id).
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app: iap
+              target: '{{ .name }}'
+          topologyKey: kubernetes.io/hostname
+        weight: 10
+
   nodeSelector: {}
   tolerations: []
