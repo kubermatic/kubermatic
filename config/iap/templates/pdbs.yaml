@@ -1,0 +1,13 @@
+{{- range .Values.iap.deployments }}
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: iap-{{ .name }}
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: iap
+      target: {{ .name }}
+{{- end }}
