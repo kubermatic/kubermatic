@@ -1,7 +1,7 @@
 iap:
   # replicas per deployment; you can set this explicitly per deployment
   # to override this
-  replicas: 1
+  replicas: 2
 
   deployments:
     # alertmanager:

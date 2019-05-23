@@ -2,7 +2,7 @@ dex:
   image:
     repository: "quay.io/dexidp/dex"
     tag: "v2.16.0"
-  replicas: 1
+  replicas: 2
   ingress:
     host: ""
     path: "/dex"
