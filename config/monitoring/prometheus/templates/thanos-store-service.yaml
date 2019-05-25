@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/managed-by: helm
 spec:
   type: ClusterIP
-  clusterIP: None
+  clusterIP: None # disable cluster IP so Thanos' DNS discovery can find all pods behind this service
   ports:
   - port: 10901
     protocol: TCP
