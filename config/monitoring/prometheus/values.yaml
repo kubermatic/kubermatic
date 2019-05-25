@@ -93,6 +93,32 @@ prometheus:
   #  mountPath: /initech/recordings
   #  secretName: initech-recording-rules-secret
 
+  thanos:
+    enabled: true
+    image:
+      repository: improbable/thanos
+      tag: v0.3.1
+
+    store:
+      replicas: 2
+      indexCacheSize: 500MB
+      chunkPoolSize: 2GB
+
+    querier:
+      replicas: 2
+
+    compactor:
+      retention:
+        resolutionRaw: 7d
+        resolution5m: 30d
+        resolution1h: 365h
+
+    # Configure the target object score according to
+    # https://thanos.io/storage.md/
+    objstore:
+      # type:
+      # config:
+
   # When upgrading the chart from 1.x => 2.0, the naming for volumes
   # has changed and without a migration your existing Prometheus database
   # would not be used anymore. Set the enabled flag to true to let an
@@ -140,6 +166,14 @@ prometheus:
         limits:
           cpu: 5m
           memory: 32Mi
+    thanosSidecar:
+      resources: {}
+    thanosStore:
+      resources: {}
+    thanosQuerier:
+      resources: {}
+    thanosCompactor:
+      resources: {}
 
   nodeSelector: {}
   affinity:

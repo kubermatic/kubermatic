@@ -2,10 +2,14 @@ global:
   scrape_interval: 30s
   scrape_timeout: 10s
   evaluation_interval: 30s
-  {{- if .Values.prometheus.externalLabels }}
+  {{- if or .Values.prometheus.externalLabels .Values.prometheus.thanos.enabled }}
   external_labels:
     {{- range $k, $v := .Values.prometheus.externalLabels }}
     {{ $k }}: {{ $v | quote }}
+    {{- end }}
+    {{- if .Values.prometheus.thanos.enabled }}
+    # Each Prometheus has to have unique labels.
+    replica: $(POD_NAME)
     {{- end }}
   {{- end }}
 
