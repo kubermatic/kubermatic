@@ -23,8 +23,7 @@ spec:
     spec:
       containers:
       - name: thanos
-        # move to v0.3.2 once available
-        image: '{{ .Values.prometheus.thanos.image.repository }}:master-2019-02-21-0c730c1'
+        image: '{{ .Values.prometheus.thanos.image.repository }}:{{ .Values.prometheus.thanos.image.tag }}'
         args:
         - store
         - --cluster.disable
