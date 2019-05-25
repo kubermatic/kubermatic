@@ -11,21 +11,3 @@ spec:
     targetPort: web
   selector:
     app: '{{ template "name" . }}'
-
-# {{- if .Values.prometheus.thanos.enabled }}
-# ---
-# apiVersion: v1
-# kind: Service
-# metadata:
-#   name: '{{ template "name" . }}-sidecar'
-#   labels:
-#     app: '{{ template "name" . }}'
-# spec:
-#   ports:
-#   - port: 10901
-#     protocol: TCP
-#     targetPort: grpc
-#     name: grpc
-#   selector:
-#     app: '{{ template "name" . }}'
-# {{- end }}
