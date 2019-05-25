@@ -185,4 +185,18 @@ prometheus:
               app: '{{ template "name" . }}'
           topologyKey: kubernetes.io/hostname
         weight: 100
+      - podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: thanos-querier
+              app.kubernetes.io/instance: '{{ template "name" . }}'
+          topologyKey: kubernetes.io/hostname
+        weight: 100
+      - podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: thanos-store
+              app.kubernetes.io/instance: '{{ template "name" . }}'
+          topologyKey: kubernetes.io/hostname
+        weight: 100
   tolerations: []
