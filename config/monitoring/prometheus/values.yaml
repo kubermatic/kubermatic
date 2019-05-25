@@ -5,8 +5,6 @@ prometheus:
 
   tsdb:
     retentionTime: 15d
-    minBlockDuration: 2h
-    maxBlockDuration: 12h
 
   # If you install Prometheus using a different Helm release name,
   # you can override the name used for the resources, e.g. to have
@@ -93,6 +91,13 @@ prometheus:
   #  mountPath: /initech/recordings
   #  secretName: initech-recording-rules-secret
 
+  # Thanos can be used to handle long-term storage of metrics by
+  # shipping the data blocks into an object storage like Minio.
+  # When enabling Thanos it's advised to disable backups, as blocks
+  # are already backed up, and to lower the retentionTime to something
+  # short like 24 hours.
+  # Enabling Thanos always disables block compaction in Prometheus and
+  # enables the lifecycle and admin API.
   thanos:
     enabled: false
     image:
@@ -104,17 +109,48 @@ prometheus:
       indexCacheSize: 500MB
       chunkPoolSize: 2GB
 
-    querier:
+      nodeSelector: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: thanos-store
+                  app.kubernetes.io/instance: '{{ template "name" . }}'
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      tolerations: []
+
+    query:
       replicas: 2
 
-    compactor:
+      nodeSelector: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: thanos-query
+                  app.kubernetes.io/instance: '{{ template "name" . }}'
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      tolerations: []
+
+    compact:
       retention:
+        # Setting any of these to "0d" disables the compaction level.
         resolutionRaw: 7d
         resolution5m: 30d
         resolution1h: 365h
 
-    # Configure the target object score according to
-    # https://thanos.io/storage.md/
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []
+
+    # Configure the target object score according to https://thanos.io/storage.md/.
+    # Make sure to manually create the target bucket.
     objstore:
       # type:
       # config:
@@ -170,9 +206,9 @@ prometheus:
       resources: {}
     thanosStore:
       resources: {}
-    thanosQuerier:
+    thanosQuery:
       resources: {}
-    thanosCompactor:
+    thanosCompact:
       resources: {}
 
   nodeSelector: {}
@@ -183,20 +219,6 @@ prometheus:
           labelSelector:
             matchLabels:
               app: '{{ template "name" . }}'
-          topologyKey: kubernetes.io/hostname
-        weight: 100
-      - podAffinityTerm:
-          labelSelector:
-            matchLabels:
-              app.kubernetes.io/name: thanos-querier
-              app.kubernetes.io/instance: '{{ template "name" . }}'
-          topologyKey: kubernetes.io/hostname
-        weight: 100
-      - podAffinityTerm:
-          labelSelector:
-            matchLabels:
-              app.kubernetes.io/name: thanos-store
-              app.kubernetes.io/instance: '{{ template "name" . }}'
           topologyKey: kubernetes.io/hostname
         weight: 100
   tolerations: []

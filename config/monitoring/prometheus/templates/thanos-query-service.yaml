@@ -1,0 +1,21 @@
+{{- if .Values.prometheus.thanos.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "name" . }}-thanos-query
+  labels:
+    app.kubernetes.io/name: thanos-query
+    app.kubernetes.io/instance: {{ template "name" . }}
+    app.kubernetes.io/version: '{{ .Values.prometheus.thanos.image.tag }}'
+    app.kubernetes.io/managed-by: helm
+spec:
+  type: ClusterIP
+  ports:
+  - port: 10902
+    protocol: TCP
+    targetPort: http
+    name: http
+  selector:
+    app.kubernetes.io/name: thanos-query
+    app.kubernetes.io/instance: {{ template "name" . }}
+{{- end }}

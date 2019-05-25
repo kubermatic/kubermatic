@@ -51,11 +51,11 @@ spec:
         secret:
           secretName: '{{ template "name" . }}-thanos'
       nodeSelector:
-{{ toYaml .Values.prometheus.nodeSelector | indent 8 }}
+{{ toYaml .Values.prometheus.thanos.store.nodeSelector | indent 8 }}
       affinity:
-{{ (tpl (toYaml .Values.prometheus.affinity) .) | fromYaml | toYaml | indent 8 }}
+{{ (tpl (toYaml .Values.prometheus.thanos.store.affinity) .) | fromYaml | toYaml | indent 8 }}
       tolerations:
-{{ toYaml .Values.prometheus.tolerations | indent 8 }}
+{{ toYaml .Values.prometheus.thanos.store.tolerations | indent 8 }}
 
 ---
 apiVersion: policy/v1beta1

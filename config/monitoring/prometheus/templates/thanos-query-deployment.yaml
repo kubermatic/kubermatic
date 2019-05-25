@@ -2,22 +2,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "name" . }}-thanos-querier
+  name: {{ template "name" . }}-thanos-query
   labels:
-    app.kubernetes.io/name: thanos-querier
+    app.kubernetes.io/name: thanos-query
     app.kubernetes.io/instance: {{ template "name" . }}
     app.kubernetes.io/version: '{{ .Values.prometheus.thanos.image.tag }}'
     app.kubernetes.io/managed-by: helm
 spec:
-  replicas: {{ .Values.prometheus.thanos.querier.replicas }}
+  replicas: {{ .Values.prometheus.thanos.query.replicas }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: thanos-querier
+      app.kubernetes.io/name: thanos-query
       app.kubernetes.io/instance: {{ template "name" . }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: thanos-querier
+        app.kubernetes.io/name: thanos-query
         app.kubernetes.io/instance: {{ template "name" . }}
     spec:
       containers:
@@ -38,23 +38,23 @@ spec:
             path: /-/healthy
             port: http
         resources:
-{{ toYaml .Values.prometheus.containers.thanosQuerier.resources | indent 10 }}
+{{ toYaml .Values.prometheus.containers.thanosQuery.resources | indent 10 }}
       nodeSelector:
-{{ toYaml .Values.prometheus.nodeSelector | indent 8 }}
+{{ toYaml .Values.prometheus.thanos.query.nodeSelector | indent 8 }}
       affinity:
-{{ (tpl (toYaml .Values.prometheus.affinity) .) | fromYaml | toYaml | indent 8 }}
+{{ (tpl (toYaml .Values.prometheus.thanos.query.affinity) .) | fromYaml | toYaml | indent 8 }}
       tolerations:
-{{ toYaml .Values.prometheus.tolerations | indent 8 }}
+{{ toYaml .Values.prometheus.thanos.query.tolerations | indent 8 }}
 
 ---
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
-  name: '{{ template "name" . }}-thanos-querier'
+  name: '{{ template "name" . }}-thanos-query'
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: thanos-querier
+      app.kubernetes.io/name: thanos-query
       app.kubernetes.io/instance: {{ template "name" . }}
 {{- end }}
