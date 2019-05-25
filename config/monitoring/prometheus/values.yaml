@@ -94,7 +94,7 @@ prometheus:
   #  secretName: initech-recording-rules-secret
 
   thanos:
-    enabled: true
+    enabled: false
     image:
       repository: improbable/thanos
       tag: v0.3.1
