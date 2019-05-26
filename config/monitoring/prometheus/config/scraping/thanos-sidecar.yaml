@@ -1,5 +1,5 @@
 {{ if .Values.prometheus.thanos.enabled }}
-job_name: 'thanos'
+job_name: thanos-sidecar
 kubernetes_sd_configs:
 - role: pod
 relabel_configs:
