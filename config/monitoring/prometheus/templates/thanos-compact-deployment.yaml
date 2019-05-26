@@ -19,6 +19,9 @@ spec:
       labels:
         app.kubernetes.io/name: thanos-compact
         app.kubernetes.io/instance: {{ template "name" . }}
+      annotations:
+        kubermatic/scrape: 'true'
+        kubermatic/scrape_port: '10902'
     spec:
       containers:
       - name: thanos

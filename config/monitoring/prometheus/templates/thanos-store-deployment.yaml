@@ -20,6 +20,9 @@ spec:
         app.kubernetes.io/name: thanos-store
         app.kubernetes.io/instance: {{ template "name" . }}
         thanos.io/store-api: 'true'
+      annotations:
+        kubermatic/scrape: 'true'
+        kubermatic/scrape_port: '10902'
     spec:
       containers:
       - name: thanos

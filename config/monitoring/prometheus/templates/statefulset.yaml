@@ -18,7 +18,9 @@ spec:
         app: {{ template "name" . }} # deprecated
         app.kubernetes.io/name: prometheus
         app.kubernetes.io/instance: {{ template "name" . }}
+        {{- if .Values.prometheus.thanos.enabled }}
         thanos.io/store-api: 'true'
+        {{- end }}
       annotations:
         kubermatic/scrape: 'true'
         kubermatic/scrape_port: '9090'
