@@ -48,7 +48,6 @@ type Opts struct {
 	deleteClusterAfterTests      bool
 	kubeconfigPath               string
 	nodeCount                    int
-	nodeReadyWaitTimeout         time.Duration
 	publicKeys                   [][]byte
 	reportsRoot                  string
 	seedClusterClient            ctrlruntimeclient.Client
@@ -153,7 +152,6 @@ func main() {
 	flag.StringVar(&opts.reportsRoot, "reports-root", "/opt/reports", "Root for reports")
 	flag.BoolVar(&opts.cleanupOnStart, "cleanup-on-start", false, "Cleans up all clusters on start and exit afterwards - must be used with name-prefix.")
 	flag.DurationVar(&opts.controlPlaneReadyWaitTimeout, "kubermatic-cluster-timeout", defaultTimeout, "cluster creation timeout")
-	flag.DurationVar(&opts.nodeReadyWaitTimeout, "kubermatic-nodes-timeout", defaultTimeout, "nodes creation timeout")
 	flag.BoolVar(&opts.deleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster at the exit")
 	flag.BoolVar(&debug, "debug", false, "Enable debug logs")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
