@@ -91,7 +91,7 @@ func (s *vSphereScenario) Nodes(num int) *kubermaticapiv1.NodeDeployment {
 			Template: kubermaticapiv1.NodeSpec{
 				Cloud: kubermaticapiv1.NodeCloudSpec{
 					VSphere: &kubermaticapiv1.VSphereNodeSpec{
-						Template: fmt.Sprintf("%s-template", osName),
+						Template: fmt.Sprintf("machine-controller-e2e-%s", osName),
 						CPUs:     2,
 						Memory:   2048,
 					},
