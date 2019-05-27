@@ -245,8 +245,8 @@ elif [[ $provider == "gcp" ]]; then
 elif [[ $provider == "azure" ]]; then
   EXTRA_ARGS="-azure-client-id=${AZURE_E2E_TESTS_CLIENT_ID}
     -azure-client-secret=${AZURE_E2E_TESTS_CLIENT_SECRET}
-    -azure-tenant-id=${AZURE_E2E_TESTS_SUBSCRIPTION_ID}
-    -azure-subscription-id=${AZURE_E2E_TESTS_TENANT_ID}"
+    -azure-tenant-id=${AZURE_E2E_TESTS_TENANT_ID}
+    -azure-subscription-id=${AZURE_E2E_TESTS_SUBSCRIPTION_ID}"
 elif [[ $provider == "digitalocean" ]]; then
   EXTRA_ARGS="-digitalocean-token=${DO_E2E_TESTS_TOKEN}"
 elif [[ $provider == "hetzner" ]]; then
