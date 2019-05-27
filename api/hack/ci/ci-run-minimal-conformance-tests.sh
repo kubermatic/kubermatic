@@ -46,6 +46,8 @@ function cleanup {
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'APIKey|ProjectID'
     elif [[ $provider = "gcp" ]]; then
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Service Account'
+    elif [[ $provider == "azure" ]]; then
+      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'ClientID|ClientSecret|SubscriptionID|TenantID'
     else
       echo "Provider $provider is not yet supported."
       exit 1
@@ -216,14 +218,19 @@ fi
 
 echodate "Starting conformance tests"
 
-if [[ $provider = "aws" ]]; then
+if [[ $provider == "aws" ]]; then
   EXTRA_ARGS="-aws-access-key-id=${AWS_E2E_TESTS_KEY_ID}
      -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}"
-elif [[ $provider = "packet" ]]; then
+elif [[ $provider == "packet" ]]; then
   EXTRA_ARGS="-packet-api-key=${PACKET_API_KEY}
      -packet-project-id=${PACKET_PROJECT_ID}"
-elif [[ $provider = "gcp" ]]; then
+elif [[ $provider == "gcp" ]]; then
   EXTRA_ARGS="-gcp-service-account=${GOOGLE_SERVICE_ACCOUNT}"
+elif [[ $provider == "azure" ]]; then
+  EXTRA_ARGS="-azure-client-id=${AZURE_E2E_TESTS_CLIENT_ID}
+    -azure-client-secret=${AZURE_E2E_TESTS_CLIENT_SECRET}
+    -azure-tenant-id=${AZURE_E2E_TESTS_SUBSCRIPTION_ID}
+    -azure-subscription-id=${AZURE_E2E_TESTS_TENANT_ID}"
 fi
 
 timeout -s 9 90m ./conformance-tests $EXTRA_ARGS \
