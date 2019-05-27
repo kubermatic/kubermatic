@@ -6,8 +6,7 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/golang/glog"
-
+	"github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
@@ -71,7 +70,7 @@ func errorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 	w.WriteHeader(errorCode)
 	err = encodeJSON(ctx, w, e)
 	if err != nil {
-		glog.Info(err)
+		log.GetLogger().Error(err)
 	}
 }
 

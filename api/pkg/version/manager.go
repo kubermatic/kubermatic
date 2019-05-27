@@ -6,8 +6,9 @@ import (
 	"regexp"
 
 	"github.com/Masterminds/semver"
-	"github.com/golang/glog"
+
 	"github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 )
 
 var (
@@ -102,7 +103,7 @@ func (m *Manager) GetMasterVersions(clusterType string) ([]*MasterVersion, error
 		if v.Type == clusterType {
 			autoUpdate, err := m.AutomaticUpdate(v.Version.String(), clusterType)
 			if err != nil {
-				glog.Errorf("Failed to get AutomaticUpdate for version %s: %v", v.Version.String(), err)
+				kubermaticlog.GetLogger().Errorf("Failed to get AutomaticUpdate for version %s: %v", v.Version.String(), err)
 				continue
 			}
 			if autoUpdate != nil {

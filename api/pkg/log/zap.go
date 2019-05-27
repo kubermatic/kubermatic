@@ -87,3 +87,27 @@ func New(debug bool, format Format) *zap.Logger {
 	coreLog := zapcore.NewCore(&ctrlruntimelog.KubeAwareEncoder{Encoder: enc}, sink, lvl)
 	return zap.New(coreLog, opts...)
 }
+
+var defaultLogger *zap.SugaredLogger
+
+func init() {
+	defaultLogger = NewDefault().Sugar()
+}
+
+// NewDefault creates new default logger
+func NewDefault() *zap.Logger {
+	return New(false, FormatJSON)
+}
+
+// SetLogger setter method
+func SetLogger(logger *zap.SugaredLogger) {
+	defaultLogger = logger
+}
+
+// GetLogger getter method
+func GetLogger() *zap.SugaredLogger {
+	if defaultLogger == nil {
+		defaultLogger = NewDefault().Sugar()
+	}
+	return defaultLogger
+}

@@ -26,7 +26,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/golang/glog"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	prometheusapi "github.com/prometheus/client_golang/api"
@@ -38,6 +37,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	metricspkg "github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
@@ -56,36 +56,46 @@ import (
 func main() {
 	options, err := newServerRunOptions()
 	if err != nil {
-		glog.Fatalf("failed to create server run options due to = %v", err)
+		fmt.Printf("failed to create server run options due to = %v\n", err)
+		os.Exit(1)
 	}
 	if err := options.validate(); err != nil {
-		glog.Fatalf("incorrect flags were passed to the server, err  = %v", err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
+	rawLog := kubermaticlog.New(options.log.Debug, kubermaticlog.Format(options.log.Format))
+	log := rawLog.Sugar()
+	defer func() {
+		if err := log.Sync(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+	kubermaticlog.SetLogger(log)
 
 	providers, err := createInitProviders(options)
 	if err != nil {
-		glog.Fatalf("failed to create and initialize providers due to %v", err)
+		log.Fatalf("failed to create and initialize providers due to %v", err)
 	}
 	oidcIssuerVerifier, err := createOIDCClients(options)
 	if err != nil {
-		glog.Fatalf("failed to create an openid authenticator for issuer %s (oidcClientID=%s) due to %v", options.oidcURL, options.oidcAuthenticatorClientID, err)
+		log.Fatalf("failed to create an openid authenticator for issuer %s (oidcClientID=%s) due to %v", options.oidcURL, options.oidcAuthenticatorClientID, err)
 	}
 	tokenVerifiers, tokenExtractors, err := createAuthClients(options, providers)
 	if err != nil {
-		glog.Fatalf("failed to create auth clients due to %v", err)
+		log.Fatalf("failed to create auth clients due to %v", err)
 	}
 	updateManager, err := version.NewFromFiles(options.versionsFile, options.updatesFile)
 	if err != nil {
-		glog.Fatal(fmt.Sprintf("failed to create update manager due to %v", err))
+		log.Fatal(fmt.Sprintf("failed to create update manager due to %v", err))
 	}
 	apiHandler, err := createAPIHandler(options, providers, oidcIssuerVerifier, tokenVerifiers, tokenExtractors, updateManager)
 	if err != nil {
-		glog.Fatalf(fmt.Sprintf("failed to create API Handler due to %v", err))
+		log.Fatalf(fmt.Sprintf("failed to create API Handler due to %v", err))
 	}
 
 	go metricspkg.ServeForever(options.internalAddr, "/metrics")
-	glog.Info(fmt.Sprintf("Listening on %s", options.listenAddress))
-	glog.Fatal(http.ListenAndServe(options.listenAddress, handlers.CombinedLoggingHandler(os.Stdout, apiHandler)))
+	log.Info(fmt.Sprintf("Listening on %s", options.listenAddress))
+	log.Fatal(http.ListenAndServe(options.listenAddress, handlers.CombinedLoggingHandler(os.Stdout, apiHandler)))
 }
 
 func createInitProviders(options serverRunOptions) (providers, error) {
@@ -108,8 +118,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 			if err != nil {
 				return providers{}, fmt.Errorf("unable to create client config for %s due to %v", ctx, err)
 			}
-			glog.V(2).Infof("adding %s as seed", ctx)
-
+			kubermaticlog.GetLogger().Infof("adding %s as seed", ctx)
 			kubeClient := kubernetes.NewForConfigOrDie(cfg)
 			kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, informer.DefaultInformerResyncPeriod)
 			kubermaticSeedClient := kubermaticclientset.NewForConfigOrDie(cfg)
