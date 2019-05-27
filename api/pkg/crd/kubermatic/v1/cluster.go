@@ -293,6 +293,7 @@ type VSphereCloudSpec struct {
 	Username  string `json:"username"`
 	Password  string `json:"password"`
 	VMNetName string `json:"vmNetName"`
+	Folder    string `json:"folder,omitempty"`
 
 	// This user will be used for everything except cloud provider functionality
 	InfraManagementUser VSphereCredentials `json:"infraManagementUser"`

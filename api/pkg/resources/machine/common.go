@@ -3,7 +3,6 @@ package machine
 import (
 	"errors"
 	"fmt"
-	"path"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
 
@@ -122,7 +121,6 @@ func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc p
 }
 
 func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
-	folderPath := path.Join(dc.Spec.VSphere.RootPath, c.ObjectMeta.Name)
 
 	config := vsphere.RawConfig{
 		TemplateVMName:  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.VSphere.Template},
@@ -133,7 +131,7 @@ func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 		Datacenter:      providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Datacenter},
 		Datastore:       providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Datastore},
 		Cluster:         providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Cluster},
-		Folder:          providerconfig.ConfigVarString{Value: folderPath},
+		Folder:          providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.Folder},
 		AllowInsecure:   providerconfig.ConfigVarBool{Value: dc.Spec.VSphere.AllowInsecure},
 	}
 

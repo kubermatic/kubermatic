@@ -5665,6 +5665,10 @@
       "type": "object",
       "title": "VSphereCloudSpec specifies access data to VSphere cloud.",
       "properties": {
+        "folder": {
+          "type": "string",
+          "x-go-name": "Folder"
+        },
         "infraManagementUser": {
           "$ref": "#/definitions/VSphereCredentials"
         },

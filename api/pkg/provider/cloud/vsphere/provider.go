@@ -80,6 +80,11 @@ func (v *Provider) getVsphereRootPath(spec kubermaticv1.CloudSpec) (string, erro
 
 // createVMFolderForCluster adds a vm folder beneath the rootpath set in the datacenter.yamls with the name of the cluster.
 func (v *Provider) createVMFolderForCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	// Don't add the finalizer if the folder is passed in
+	if cluster.Spec.Cloud.VSphere.Folder != "" {
+		return cluster, nil
+	}
+
 	dcRootPath, err := v.getVsphereRootPath(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, err
@@ -99,7 +104,7 @@ func (v *Provider) createVMFolderForCluster(cluster *kubermaticv1.Cluster, updat
 	if err != nil {
 		return nil, fmt.Errorf("couldn't find rootpath, see: %v", err)
 	}
-	_, err = finder.Folder(ctx, cluster.ObjectMeta.Name)
+	_, err = finder.Folder(ctx, cluster.Name)
 	if err != nil {
 		if _, ok := err.(*find.NotFoundError); !ok {
 			return nil, fmt.Errorf("Failed to get cluster folder: %v", err)
@@ -109,13 +114,14 @@ func (v *Provider) createVMFolderForCluster(cluster *kubermaticv1.Cluster, updat
 		}
 	}
 
-	if !kuberneteshelper.HasFinalizer(cluster, folderCleanupFinalizer) {
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			kuberneteshelper.AddFinalizer(cluster, folderCleanupFinalizer)
-		})
-		if err != nil {
-			return nil, err
+	cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		if !kuberneteshelper.HasFinalizer(cluster, folderCleanupFinalizer) {
+			cluster.Finalizers = append(cluster.Finalizers, folderCleanupFinalizer)
 		}
+		cluster.Spec.Cloud.VSphere.Folder = fmt.Sprintf("%s/%s", rootFolder, cluster.Name)
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return cluster, nil
