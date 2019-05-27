@@ -1,3 +1,25 @@
+### [v2.10.1]()
+
+**Bugfix:**
+
+- A bug that caused errors on very big addon manifests was fixed [#3366](https://github.com/kubermatic/kubermatic/issues/3366) ([alvaroaleman](https://github.com/alvaroaleman))
+- fixed kube-state-metrics in user-clusters not being scraped [#3431](https://github.com/kubermatic/kubermatic/issues/3431) ([kubermatic-bot](https://github.com/kubermatic-bot))
+- Updated the machine-controller to fix the wrong CentOS image for AWS instances [#3432](https://github.com/kubermatic/kubermatic/issues/3432) ([mrIncompetent](https://github.com/mrIncompetent))
+- vSphere VMs are cleaned up on ISO failure.  [#3474](https://github.com/kubermatic/kubermatic/issues/3474) ([nikhita](https://github.com/nikhita))
+
+
+**Misc:**
+
+- updated Prometheus to `v2.9.2` [#3348](https://github.com/kubermatic/kubermatic/issues/3348) ([kubermatic-bot](https://github.com/kubermatic-bot))
+- Draining of nodes now times out after 2h [#3354](https://github.com/kubermatic/kubermatic/issues/3354) ([kubermatic-bot](https://github.com/kubermatic-bot))
+- the API stops creating an initial node deployment for new cluster for KubeAdm providers. [#3373](https://github.com/kubermatic/kubermatic/issues/3373) ([kubermatic-bot](https://github.com/kubermatic-bot))
+- More details are shown when using `kubectl get machine/machineset/machinedeployment` [#3377](https://github.com/kubermatic/kubermatic/issues/3377) ([kubermatic-bot](https://github.com/kubermatic-bot))
+- Pod AntiAffinity and PDBs were added to the Kubermatic control plane components and the monitoring stack to spread them out if possible and reduce the chance of unavailability [#3400](https://github.com/kubermatic/kubermatic/issues/3400) ([kubermatic-bot](https://github.com/kubermatic-bot))
+- Support for Kubernetes 1.11.10 was added [#3429](https://github.com/kubermatic/kubermatic/issues/3429) ([kubermatic-bot](https://github.com/kubermatic-bot))
+
+
+
+
 ### [v2.10.0]()
 
 ## Features
