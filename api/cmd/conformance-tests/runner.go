@@ -881,18 +881,7 @@ func (r *testRunner) getGinkgoRuns(
 			fmt.Sprintf("--cloud-config-file=%s", cloudConfigFilename),
 		}
 
-		if cluster.Spec.Cloud.AWS != nil {
-			args = append(args, "--provider=aws")
-			args = append(args, fmt.Sprintf("--gce-zone=%s%s", dc.Spec.AWS.Region, dc.Spec.AWS.ZoneCharacter))
-		} else if cluster.Spec.Cloud.Azure != nil {
-			args = append(args, "--provider=azure")
-		} else if cluster.Spec.Cloud.Openstack != nil {
-			args = append(args, "--provider=openstack")
-		} else if cluster.Spec.Cloud.VSphere != nil {
-			args = append(args, "--provider=vsphere")
-		} else {
-			args = append(args, "--provider=local")
-		}
+		args = append(args, "--provider=local")
 
 		if nd.Spec.Template.OperatingSystem.Ubuntu != nil {
 			args = append(args, "--node-os-distro=ubuntu")
