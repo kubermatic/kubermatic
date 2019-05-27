@@ -40,6 +40,7 @@ function cleanup {
   if [[ ${testRC} -ne 0 ]]; then
     echodate "tests failed, describing cluster"
 
+    # Describe cluster
     if [[ $provider == "aws" ]]; then
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Secret Access Key|Access Key Id'
     elif [[ $provider == "packet" ]]; then
@@ -50,12 +51,25 @@ function cleanup {
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'ClientID|ClientSecret|SubscriptionID|TenantID'
     elif [[ $provider == "digitalocean" ]]; then
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Token'
+    elif [[ $provider == "hetzner" ]]; then
+      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Token'
+    elif [[ $provider == "openstack" ]]; then
+      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Domain|Tenant|Username|Password'
+    elif [[ $provider == "vsphere" ]]; then
+      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Username|Password'
     else
       echo "Provider $provider is not yet supported."
       exit 1
     fi
 
+    # Controller manager logs
     kubectl logs -n $NAMESPACE  $(kubectl get pod -n $NAMESPACE -l role=controller-manager |tail -n 1|awk '{print $1}')
+
+    # Display machine events, we don't have to worry about secrets here as they are stored in the machine-controllers env
+    TMP_KUBECONFIG=$(mktemp);
+    USERCLUSTER_NS=$(kubectl get cluster -o name -l worker-name=${BUILD_ID} |sed 's#.kubermatic.k8s.io/#-#g')
+    kubectl get secret -n ${USERCLUSTER_NS} admin-kubeconfig -o go-template='{{ index .data "kubeconfig" }}' | base64 -d > $TMP_KUBECONFIG
+    kubectl --kubeconfig=${TMP_KUBECONFIG} describe machine -n kube-system
   fi
 
   # Delete addons from all clusters that have our worker-name label
@@ -235,6 +249,16 @@ elif [[ $provider == "azure" ]]; then
     -azure-subscription-id=${AZURE_E2E_TESTS_TENANT_ID}"
 elif [[ $provider == "digitalocean" ]]; then
   EXTRA_ARGS="-digitalocean-token=${DO_E2E_TESTS_TOKEN}"
+elif [[ $provider == "hetzner" ]]; then
+  EXTRA_ARGS="-hetzner-token=${HZ_E2E_TOKEN}"
+elif [[ $provider == "openstack" ]]; then
+  EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
+    -openstack-tenant=${OS_TENANT_NAME}
+    -openstack-username=${OS_USERNAME}
+    -openstack-password=${OS_PASSWORD}"
+elif [[ $provider == "vsphere" ]]; then
+  EXTRA_ARGS="-vsphere-username=${VSPHERE_E2E_USERNAME}
+    -vsphere-password=${VSPHERE_E2E_PASSWORD}"
 fi
 
 timeout -s 9 90m ./conformance-tests $EXTRA_ARGS \

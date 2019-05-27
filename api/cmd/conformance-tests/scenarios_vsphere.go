@@ -69,7 +69,7 @@ func (s *vSphereScenario) Cluster(secrets secrets) *kubermaticv1.Cluster {
 				DNSDomain: "cluster.local",
 			},
 			Cloud: kubermaticv1.CloudSpec{
-				DatacenterName: "vsphere-hetzner",
+				DatacenterName: "prow-build-cluster",
 				VSphere: &kubermaticv1.VSphereCloudSpec{
 					Username: secrets.VSphere.Username,
 					Password: secrets.VSphere.Password,
