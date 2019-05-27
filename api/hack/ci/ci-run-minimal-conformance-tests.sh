@@ -40,14 +40,16 @@ function cleanup {
   if [[ ${testRC} -ne 0 ]]; then
     echodate "tests failed, describing cluster"
 
-    if [[ $provider = "aws" ]]; then
+    if [[ $provider == "aws" ]]; then
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Secret Access Key|Access Key Id'
-    elif [[ $provider = "packet" ]]; then
+    elif [[ $provider == "packet" ]]; then
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'APIKey|ProjectID'
-    elif [[ $provider = "gcp" ]]; then
+    elif [[ $provider == "gcp" ]]; then
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Service Account'
     elif [[ $provider == "azure" ]]; then
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'ClientID|ClientSecret|SubscriptionID|TenantID'
+    elif [[ $provider == "digitalocean" ]]; then
+      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Token'
     else
       echo "Provider $provider is not yet supported."
       exit 1
@@ -231,6 +233,8 @@ elif [[ $provider == "azure" ]]; then
     -azure-client-secret=${AZURE_E2E_TESTS_CLIENT_SECRET}
     -azure-tenant-id=${AZURE_E2E_TESTS_SUBSCRIPTION_ID}
     -azure-subscription-id=${AZURE_E2E_TESTS_TENANT_ID}"
+elif [[ $provider == "digitalocean" ]]; then
+  EXTRA_ARGS="-digitalocean-token=${DO_E2E_TESTS_TOKEN}"
 fi
 
 timeout -s 9 90m ./conformance-tests $EXTRA_ARGS \
