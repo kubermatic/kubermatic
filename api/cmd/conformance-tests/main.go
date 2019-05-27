@@ -108,13 +108,14 @@ type secrets struct {
 }
 
 const (
-	defaultTimeout                 = 10 * time.Minute
 	defaultUserClusterPollInterval = 10 * time.Second
 	defaultAPIRetries              = 100
 
 	controlPlaneReadyPollPeriod = 5 * time.Second
 	nodesReadyPollPeriod        = 5 * time.Second
 )
+
+var defaultTimeout = 10 * time.Minute
 
 var (
 	providers  string
@@ -132,6 +133,8 @@ func main() {
 		publicKeys: [][]byte{},
 		versions:   []*semver.Semver{},
 	}
+
+	defaultTimeoutMinutes := 10
 
 	usr, err := user.Current()
 	if err != nil {
@@ -158,6 +161,7 @@ func main() {
 	flag.StringVar(&sversions, "versions", "v1.10.11,v1.11.6,v1.12.4,v1.13.1", "a comma-separated list of versions to test")
 	flag.StringVar(&opts.excludeSelectorRaw, "exclude-distributions", "", "a comma-separated list of distributions that will get excluded from the tests")
 	_ = flag.Bool("run-kubermatic-controller-manager", false, "Unused, but kept for compatibility reasons")
+	flag.IntVar(&defaultTimeoutMinutes, "default-timeout-minutes", 10, "The default timeout in minutes")
 	flag.BoolVar(&opts.openshift, "openshift", false, "Whether to create an openshift cluster")
 	flag.BoolVar(&opts.printGinkoLogs, "print-ginkgo-logs", false, "Whether to print ginkgo logs when ginkgo encountered failures")
 
@@ -180,6 +184,8 @@ func main() {
 	flag.StringVar(&opts.secrets.GCP.ServiceAccount, "gcp-service-account", "", "GCP: Service Account")
 
 	flag.Parse()
+
+	defaultTimeout = time.Duration(defaultTimeoutMinutes) * time.Minute
 
 	if debug {
 		mainLog.SetLevel(logrus.DebugLevel)

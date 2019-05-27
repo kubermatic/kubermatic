@@ -17,6 +17,7 @@ export NAMESPACE="prow-kubermatic-${BUILD_ID}"
 echodate "Testing versions: ${VERSIONS}"
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos}
+export DEFAULT_TIMEOUT_MINUTES=${DEFAULT_TIMEOUT_MINUTES:-10}
 
 # if no provider argument has been specified, default to aws
 provider=${PROVIDER:-"aws"}
@@ -277,7 +278,8 @@ timeout -s 9 90m ./conformance-tests $EXTRA_ARGS \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
   ${OPENSHIFT_ARG:-} \
   -kubermatic-delete-cluster=false \
-  -print-ginkgo-logs=true
+  -print-ginkgo-logs=true \
+  -default-timeout-minutes=${DEFAULT_TIMEOUT_MINUTES}
 
 # No upgradetest, just exit
 if [[ -z ${UPGRADE_TEST_BASE_HASH:-} ]]; then
@@ -330,4 +332,5 @@ timeout -s 9 60m ./conformance-tests $EXTRA_ARGS \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
   ${OPENSHIFT_ARG:-} \
   -kubermatic-delete-cluster=false \
-  -print-ginkgo-logs=true
+  -print-ginkgo-logs=true \
+  -default-timeout-minutes=${DEFAULT_TIMEOUT_MINUTES}
