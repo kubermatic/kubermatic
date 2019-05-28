@@ -424,10 +424,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a630cba9cb07e32082bf314f5c13e5906cf557c04db3351aed7314255131616d"
+  digest = "1:4493a5de5ae6e54fcedc502715c0254fd0dec1cd872fa6ca99f28e61cebc4d11"
   name = "github.com/go-openapi/runtime"
   packages = [
     ".",
+    "client",
     "logger",
     "middleware",
     "middleware/denco",
@@ -1995,6 +1996,12 @@
     "github.com/go-kit/kit/log",
     "github.com/go-kit/kit/transport/http",
     "github.com/go-logr/zapr",
+    "github.com/go-openapi/errors",
+    "github.com/go-openapi/runtime",
+    "github.com/go-openapi/runtime/client",
+    "github.com/go-openapi/strfmt",
+    "github.com/go-openapi/swag",
+    "github.com/go-openapi/validate",
     "github.com/go-swagger/go-swagger/cmd/swagger",
     "github.com/go-test/deep",
     "github.com/gogo/protobuf/proto",

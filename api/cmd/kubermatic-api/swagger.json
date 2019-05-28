@@ -182,6 +182,21 @@
         ],
         "summary": "Creates a brand new project.",
         "operationId": "createProject",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "x-go-name": "Name"
+                }
+              }
+            }
+          }
+        ],
         "responses": {
           "201": {
             "description": "Project",
@@ -264,7 +279,7 @@
           }
         ],
         "responses": {
-          "201": {
+          "200": {
             "description": "Project",
             "schema": {
               "$ref": "#/definitions/Project"
@@ -5781,5 +5796,17 @@
         "$ref": "#/definitions/ErrorDetails"
       }
     }
-  }
+  },
+  "securityDefinitions": {
+    "api_key": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "api_key": []
+    }
+  ]
 }

@@ -5,6 +5,8 @@ SDIR=$(dirname $0)
 CONTROLLER_IMAGE="quay.io/kubermatic/cluster-exposer:v1.0.0"
 
 function cleanup {
+    cat ${SDIR}/../../pkg/test/e2e/api/utils/oidc-proxy-client/_build/oidc-proxy-client-errors
+
 	kubectl delete service -l "prow.k8s.io/id=$PROW_JOB_ID"
 
 	# Kill all descendant processes
@@ -47,10 +49,13 @@ export KUBERMATIC_OIDC_REDIRECT_URI="http://localhost:8000"
 (
 cd ${SDIR}/../../pkg/test/e2e/api/utils/oidc-proxy-client
 make build
-#TODO stop redirecting stdout and stderr to /dev/null because it makes troubleshooting harder
-make run > /dev/null 2> /dev/null &
+make run > /dev/null 2> ./_build/oidc-proxy-client-errors &
 )
 
-# Step4: run e2e tests
+# TODO check if oidc-proxy-client is available on port 5556 before running e2e tests
+
+# Step 4: run e2e tests
 echo "running the API E2E tests"
-# TODO: run api e2e test
+more /etc/hosts
+go test -tags=e2e ${SDIR}/../../pkg/test/e2e/api -v
+
