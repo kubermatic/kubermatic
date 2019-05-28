@@ -67,10 +67,11 @@ function cleanup {
     kubectl logs -n $NAMESPACE  $(kubectl get pod -n $NAMESPACE -l role=controller-manager |tail -n 1|awk '{print $1}')
 
     # Display machine events, we don't have to worry about secrets here as they are stored in the machine-controllers env
+    # Except for vSphere
     TMP_KUBECONFIG=$(mktemp);
     USERCLUSTER_NS=$(kubectl get cluster -o name -l worker-name=${BUILD_ID} |sed 's#.kubermatic.k8s.io/#-#g')
     kubectl get secret -n ${USERCLUSTER_NS} admin-kubeconfig -o go-template='{{ index .data "kubeconfig" }}' | base64 -d > $TMP_KUBECONFIG
-    kubectl --kubeconfig=${TMP_KUBECONFIG} describe machine -n kube-system
+    kubectl --kubeconfig=${TMP_KUBECONFIG} describe machine -n kube-system|egrep -vi 'password|user'
   fi
 
   # Delete addons from all clusters that have our worker-name label
