@@ -17,6 +17,7 @@ import (
 	prometheusv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
+	"k8s.io/client-go/tools/record"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -43,6 +44,7 @@ const (
 	nodeDeploymentCreationStart   NodeDeploymentEvent = "NodeDeploymentCreationStart"
 	nodeDeploymentCreationSuccess NodeDeploymentEvent = "NodeDeploymentCreationSuccess"
 	nodeDeploymentCreationFail    NodeDeploymentEvent = "NodeDeploymentCreationFail"
+	nodeDeploymentCreationRetry   NodeDeploymentEvent = "NodeDeploymentCreationRetry"
 )
 
 // clusterTypes holds a list of supported cluster types
@@ -110,14 +112,15 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 
 			go func() {
 				defer utilruntime.HandleCrash()
-				eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationStart), "started creation of initial node deployment")
-				err := createInitialNodeDeploymentWithRetries(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, dcs, clusterProvider, userInfo)
+				ndName := getNodeDeploymentDisplayName(req.Body.NodeDeployment)
+				eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationStart), "started creation of initial node deployment%s", ndName)
+				err := createInitialNodeDeploymentWithRetries(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, dcs, clusterProvider, userInfo, eventRecorderProvider.ClusterRecorderFor(k8sClient))
 				if err != nil {
-					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeWarning, string(nodeDeploymentCreationFail), "failed to create initial node deployment: %v", err)
+					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeWarning, string(nodeDeploymentCreationFail), "failed to create initial node deployment%s: %v", ndName, err)
 					glog.Errorf("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
 					initNodeDeploymentFailures.With(prometheus.Labels{"cluster": newCluster.Name, "seed_dc": req.DC}).Add(1)
 				} else {
-					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationSuccess), "created initial node deployment")
+					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationSuccess), "created initial node deployment%s", ndName)
 					glog.V(5).Infof("created initial node deployment for cluster %s", newCluster.Name)
 				}
 			}()
@@ -129,7 +132,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 
 func createInitialNodeDeploymentWithRetries(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticapiv1.Cluster,
 	project *kubermaticapiv1.Project, sshKeyProvider provider.SSHKeyProvider, dcs map[string]provider.DatacenterMeta,
-	clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo) error {
+	clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, eventRecorder record.EventRecorder) error {
 	return wait.Poll(5*time.Second, 30*time.Minute, func() (bool, error) {
 		err := createInitialNodeDeployment(nodeDeployment, cluster, project, sshKeyProvider, dcs, clusterProvider, userInfo)
 		switch {
@@ -144,6 +147,7 @@ func createInitialNodeDeploymentWithRetries(nodeDeployment *apiv1.NodeDeployment
 		case kerrors.IsServiceUnavailable(err):
 			fallthrough
 		case kerrors.IsServerTimeout(err):
+			eventRecorder.Eventf(cluster, corev1.EventTypeNormal, string(nodeDeploymentCreationRetry), "retrying creating initial Node Deployments%s for cluster %s (%s) due to %v", getNodeDeploymentDisplayName(nodeDeployment), cluster.Name, cluster.Spec.HumanReadableName, err)
 			glog.V(4).Infof("retrying creating initial Node Deployments for cluster %s (%s) due to %v", cluster.Name, cluster.Spec.HumanReadableName, err)
 			return false, nil
 		}
@@ -189,6 +193,14 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 	}
 
 	return client.Create(ctx, md)
+}
+
+func getNodeDeploymentDisplayName(nd *apiv1.NodeDeployment) string {
+	if len(nd.Name) != 0 {
+		return " " + nd.Name
+	}
+
+	return ""
 }
 
 func GetEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
