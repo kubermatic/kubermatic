@@ -30,3 +30,6 @@ spec:
   - JSONPath: .spec.version
     name: Version
     type: string
+  - JSONPath: .spec.pause
+    name: Paused
+    type: boolean
