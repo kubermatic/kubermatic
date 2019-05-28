@@ -1,3 +1,19 @@
+// Kubermatic API.
+// Kubermatic API. This describes possible operations which can be made against the Kubermatic API.
+//
+//     Schemes: http, https
+//     Host: localhost
+//
+//     Security:
+//     - api_key:
+//
+//     SecurityDefinitions:
+//     api_key:
+//          type: apiKey
+//          name: Authorization
+//          in: header
+//
+// swagger:meta
 package handler
 
 import (
@@ -744,7 +760,7 @@ func (r Routing) createProject() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: Project
+//       200: Project
 //       400: empty
 //       404: empty
 //       500: empty

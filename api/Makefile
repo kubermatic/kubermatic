@@ -34,7 +34,7 @@ showenv:
 check: gofmt lint
 
 test:
-	CGO_ENABLED=1 $(GO) test -race ./...
+	CGO_ENABLED=1 $(GO) test -tags=unit -race ./...
 
 test-update:
 	-$(GO) test ./... -update
@@ -83,6 +83,7 @@ run-master-controller-manager:
 verify: gofmt
 		./hack/verify-codegen.sh
 		./hack/verify-swagger.sh
+		./hack/verify-api-client.sh
 
 check-dependencies:
 	# We need mercurial for bitbucket.org/ww/goautoneg, otherwise dep hangs forever
