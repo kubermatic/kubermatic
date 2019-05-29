@@ -70,7 +70,7 @@ func errorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 	w.WriteHeader(errorCode)
 	err = encodeJSON(ctx, w, e)
 	if err != nil {
-		log.GetLogger().Error(err)
+		log.Logger.Error(err)
 	}
 }
 

@@ -53,7 +53,7 @@ func init() {
 	// scheme multiple times it is an unprotected concurrent map access and these tests
 	// are very good at making that panic
 	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		kubermaticlog.GetLogger().Fatalf("failed to add clusterv1alpha1 scheme to scheme.Scheme: %v", err)
+		kubermaticlog.Logger.Fatalw("failed to add clusterv1alpha1 scheme to scheme.Scheme", "error", err)
 	}
 }
 

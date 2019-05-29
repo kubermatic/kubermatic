@@ -76,7 +76,7 @@ func (p *provider) mapper(c *kubermaticv1.Cluster, config *restclient.Config) (m
 	if err != nil {
 		return nil, err
 	}
-	log.GetLogger().Infof("Created a mapper for cluster %s", c.Name)
+	log.Logger.Infow("mapper created", "cluster", c.Name)
 	p.clusterRESTMapper[c.Name] = mapper
 
 	return mapper, nil
@@ -151,7 +151,7 @@ func (p *provider) GetClient(c *kubermaticv1.Cluster, options ...ConfigOption) (
 
 	mapper, err := p.mapper(c, config)
 	if err != nil {
-		log.GetLogger().Errorf("failed to get the REST mapper for the client: %v", err)
+		log.Logger.Errorf("failed to get the REST mapper for the client: %v", err)
 		return ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
 	}
 

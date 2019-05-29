@@ -70,32 +70,32 @@ func main() {
 			fmt.Println(err)
 		}
 	}()
-	kubermaticlog.SetLogger(log)
+	kubermaticlog.Logger = log
 
 	providers, err := createInitProviders(options)
 	if err != nil {
-		log.Fatalf("failed to create and initialize providers due to %v", err)
+		log.Fatalw("failed to create and initialize providers", "error", err)
 	}
 	oidcIssuerVerifier, err := createOIDCClients(options)
 	if err != nil {
-		log.Fatalf("failed to create an openid authenticator for issuer %s (oidcClientID=%s) due to %v", options.oidcURL, options.oidcAuthenticatorClientID, err)
+		log.Fatalw("failed to create an openid authenticator", "issuer", options.oidcURL, "oidcClientID", options.oidcAuthenticatorClientID, "error", err)
 	}
 	tokenVerifiers, tokenExtractors, err := createAuthClients(options, providers)
 	if err != nil {
-		log.Fatalf("failed to create auth clients due to %v", err)
+		log.Fatalw("failed to create auth clients", "error", err)
 	}
 	updateManager, err := version.NewFromFiles(options.versionsFile, options.updatesFile)
 	if err != nil {
-		log.Fatal(fmt.Sprintf("failed to create update manager due to %v", err))
+		log.Fatalw("failed to create update manager", "error", err)
 	}
 	apiHandler, err := createAPIHandler(options, providers, oidcIssuerVerifier, tokenVerifiers, tokenExtractors, updateManager)
 	if err != nil {
-		log.Fatalf(fmt.Sprintf("failed to create API Handler due to %v", err))
+		log.Fatalw("failed to create API Handler", "error", err)
 	}
 
 	go metricspkg.ServeForever(options.internalAddr, "/metrics")
-	log.Info(fmt.Sprintf("Listening on %s", options.listenAddress))
-	log.Fatal(http.ListenAndServe(options.listenAddress, handlers.CombinedLoggingHandler(os.Stdout, apiHandler)))
+	log.Infow("the API server listening", "listenAddress", options.listenAddress)
+	log.Fatalw("failed to start API server", "error", http.ListenAndServe(options.listenAddress, handlers.CombinedLoggingHandler(os.Stdout, apiHandler)))
 }
 
 func createInitProviders(options serverRunOptions) (providers, error) {
@@ -118,7 +118,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 			if err != nil {
 				return providers{}, fmt.Errorf("unable to create client config for %s due to %v", ctx, err)
 			}
-			kubermaticlog.GetLogger().Infof("adding %s as seed", ctx)
+			kubermaticlog.Logger.Infow("adding seed", "seed", ctx)
 			kubeClient := kubernetes.NewForConfigOrDie(cfg)
 			kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, informer.DefaultInformerResyncPeriod)
 			kubermaticSeedClient := kubermaticclientset.NewForConfigOrDie(cfg)

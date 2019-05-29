@@ -74,7 +74,7 @@ func main() {
 			fmt.Println(err)
 		}
 	}()
-	kubermaticlog.SetLogger(log)
+	kubermaticlog.Logger = log
 
 	// Required to be able to use cluster-api types with the dynamic client
 	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
@@ -105,7 +105,7 @@ func main() {
 	if err = ctl.create(rootCtx); err != nil {
 		if runOpts.DeleteOnError {
 			if errd := ctl.delete(); errd != nil {
-				log.Errorf("can't delete cluster %s: %+v", ctl.clusterName, err)
+				log.Errorf("can't delete cluster %s: %+v", ctl.clusterName, errd)
 			}
 		}
 		log.Error(err)

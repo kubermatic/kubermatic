@@ -30,7 +30,7 @@ func ListEndpoint(dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 
 			spec, err := apiSpec(&dc)
 			if err != nil {
-				log.GetLogger().Errorf("api spec error in dc %q: %v", dcName, err)
+				log.Logger.Errorf("api spec error in dc %q: %v", dcName, err)
 				continue
 			}
 

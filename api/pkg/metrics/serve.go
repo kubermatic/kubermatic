@@ -14,9 +14,9 @@ var once = &sync.Once{}
 // ServeForever the prometheus metrics endpoint
 func ServeForever(addr, path string) {
 	once.Do(func() {
-		log.GetLogger().Infof("Prometheus metrics exposed on: %s%s", addr, path)
+		log.Logger.Infow("the Prometheus exposed metrics", "listenAddress", addr, "path", path)
 
 		http.Handle(path, promhttp.Handler())
-		log.GetLogger().Fatal(http.ListenAndServe(addr, nil))
+		log.Logger.Fatal(http.ListenAndServe(addr, nil))
 	})
 }

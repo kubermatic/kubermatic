@@ -49,7 +49,7 @@ func New(datacenters map[string]provider.DatacenterMeta) provider.CloudProvider 
 
 	return &azure{
 		dcs: datacenters,
-		log: log.GetLogger(),
+		log: log.Logger,
 	}
 }
 

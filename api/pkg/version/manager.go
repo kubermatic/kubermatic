@@ -103,7 +103,7 @@ func (m *Manager) GetMasterVersions(clusterType string) ([]*MasterVersion, error
 		if v.Type == clusterType {
 			autoUpdate, err := m.AutomaticUpdate(v.Version.String(), clusterType)
 			if err != nil {
-				kubermaticlog.GetLogger().Errorf("Failed to get AutomaticUpdate for version %s: %v", v.Version.String(), err)
+				kubermaticlog.Logger.Errorf("Failed to get AutomaticUpdate for version %s: %v", v.Version.String(), err)
 				continue
 			}
 			if autoUpdate != nil {
