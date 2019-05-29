@@ -1,19 +1,3 @@
-// Kubermatic API.
-// Kubermatic API. This describes possible operations which can be made against the Kubermatic API.
-//
-//     Schemes: http, https
-//     Host: localhost
-//
-//     Security:
-//     - api_key:
-//
-//     SecurityDefinitions:
-//     api_key:
-//          type: apiKey
-//          name: Authorization
-//          in: header
-//
-// swagger:meta
 package handler
 
 import (

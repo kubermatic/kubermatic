@@ -5802,17 +5802,5 @@
         "$ref": "#/definitions/ErrorDetails"
       }
     }
-  },
-  "securityDefinitions": {
-    "api_key": {
-      "type": "apiKey",
-      "name": "Authorization",
-      "in": "header"
-    }
-  },
-  "security": [
-    {
-      "api_key": []
-    }
-  ]
+  }
 }

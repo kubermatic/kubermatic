@@ -83,7 +83,6 @@ run-master-controller-manager:
 verify: gofmt
 		./hack/verify-codegen.sh
 		./hack/verify-swagger.sh
-		./hack/verify-api-client.sh
 
 check-dependencies:
 	# We need mercurial for bitbucket.org/ww/goautoneg, otherwise dep hangs forever
