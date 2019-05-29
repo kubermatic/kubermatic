@@ -94,19 +94,19 @@ func (ctl *clusterCreator) create(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	ctl.log.With("cluster", crdCluster.Name)
-	ctl.log.Info("cluster created")
+	log := ctl.log.With("cluster", crdCluster.Name)
+	log.Info("cluster created")
 
-	ctl.log.Info("waiting for cluster to become healthy")
+	log.Info("waiting for cluster to become healthy")
 	err = wait.Poll(
 		1*time.Second,
 		ctl.runOpts.ClusterTimeout,
 		ctl.healthyClusterCond(ctx, crdCluster.Name))
 	if err != nil {
-		ctl.log.Infow("cluster failed to come up", "status", crdCluster.Status.Health.ClusterHealthStatus)
+		log.Infow("cluster failed to come up", "status", crdCluster.Status.Health.ClusterHealthStatus)
 		return err
 	}
-	ctl.log.Info("cluster control plane is up")
+	log.Info("cluster control plane is up")
 
 	// refresh cluster object
 	crdCluster, err = ctl.kubermaticClient.
@@ -116,7 +116,7 @@ func (ctl *clusterCreator) create(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	ctl.log.Debugw("seed cluster", "namespace", crdCluster.Status.NamespaceName)
+	log.Debugw("seed cluster", "namespace", crdCluster.Status.NamespaceName)
 	fmt.Println(crdCluster.ObjectMeta.Name) // log to STDOUT, for saving in shell
 
 	if err = ctl.installAddons(crdCluster); err != nil {
@@ -145,14 +145,14 @@ func (ctl *clusterCreator) create(ctx context.Context) error {
 	if err = ctl.createMachineDeployment(clusterAdminRestConfig, dc, crdCluster, nodeTemplate); err != nil {
 		return err
 	}
-	ctl.log.Info("waiting for machines to boot")
+	log.Info("waiting for machines to boot")
 
 	err = wait.Poll(1*time.Second, ctl.runOpts.NodesTimeout, ctl.nodesReadyCond(ctx))
 	if err != nil {
 		return err
 	}
-	ctl.log.Info("all nodes are ready")
-	ctl.log.Infow("target cluster", "adminconfig", ctl.runOpts.Output)
+	log.Info("all nodes are ready")
+	log.Infow("target cluster", "adminconfig", ctl.runOpts.Output)
 
 	return ioutil.WriteFile(ctl.runOpts.Output, clusterKubeConfig, 0600)
 }
@@ -239,8 +239,8 @@ func (ctl *clusterCreator) createMachineDeployment(restConfig *rest.Config, dc p
 	if err := client.Create(context.TODO(), md); err != nil {
 		return fmt.Errorf("failed to create MachineDeployment: %v", err)
 	}
-	ctl.log.With("machine deployment", md.Name)
-	ctl.log.Info("machine deployment created")
+	log := ctl.log.With("machine deployment", md.Name)
+	log.Info("machine deployment created")
 	return nil
 }
 
