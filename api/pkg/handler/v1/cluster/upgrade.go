@@ -98,13 +98,22 @@ func isRestrictedByKubeletVersions(controlPlaneVersion *version.MasterVersion, m
 // NodeUpgradesReq defines HTTP request for getNodeUpgrades
 // swagger:parameters getNodeUpgrades
 type NodeUpgradesReq struct {
+	TypeReq
 	// in: query
 	ControlPlaneVersion string
 }
 
 func DecodeNodeUpgradesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req NodeUpgradesReq
+
+	clusterTypeReq, err := DecodeClusterTypeReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.TypeReq = clusterTypeReq.(TypeReq)
+
 	req.ControlPlaneVersion = r.URL.Query().Get("control_plane_version")
+
 	return req, nil
 }
 
@@ -114,13 +123,17 @@ func GetNodeUpgrades(updateManager common.UpdateManager) endpoint.Endpoint {
 		if !ok {
 			return nil, errors.NewWrongRequest(request, NodeUpgradesReq{})
 		}
+		err := req.TypeReq.Validate()
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
 
 		controlPlaneVersion, err := semver.NewVersion(req.ControlPlaneVersion)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse control plane version: %v", err)
 		}
 
-		versions, err := updateManager.GetMasterVersions(apiv1.KubernetesClusterType)
+		versions, err := updateManager.GetMasterVersions(req.Type)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get master versions: %v", err)
 		}

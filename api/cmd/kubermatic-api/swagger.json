@@ -3189,6 +3189,12 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "Type",
+            "name": "type",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "name": "ControlPlaneVersion",
             "in": "query"
           }

@@ -516,6 +516,54 @@ func TestGetNodeUpgrades(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:                   "only 2 minor versions for OpenShift cluster",
+			controlPlaneVersion:    "4.10.0&type=openshift",
+			apiUser:                *test.GenDefaultAPIUser(),
+			existingKubermaticObjs: []runtime.Object{test.GenDefaultUser()},
+			existingUpdates: []*version.MasterUpdate{
+				{
+					From:      "4.10.0",
+					To:        "4.10.1",
+					Automatic: false,
+					Type:      apiv1.OpenShiftClusterType,
+				},
+			},
+			existingVersions: []*version.MasterVersion{
+				{
+					Version: semver.MustParse("1.7.1"),
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("2.0.0"),
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("4.10.0"),
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("4.10.1"),
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("4.11.0"),
+					Type:    apiv1.OpenShiftClusterType,
+				},
+				{
+					Version: semver.MustParse("5.10.0"),
+					Type:    apiv1.OpenShiftClusterType,
+				},
+			},
+			expectedOutput: []*apiv1.MasterVersion{
+				{
+					Version: semver.MustParse("4.10.0"),
+				},
+				{
+					Version: semver.MustParse("4.10.1"),
+				},
+			},
+		},
 	}
 	for _, testStruct := range tests {
 		t.Run(testStruct.name, func(t *testing.T) {
