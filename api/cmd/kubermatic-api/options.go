@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/features"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 )
@@ -20,6 +21,7 @@ type serverRunOptions struct {
 	versionsFile    string
 	updatesFile     string
 	domain          string
+	log             kubermaticlog.Options
 
 	// OIDC configuration
 	oidcURL                        string
@@ -63,6 +65,8 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&rawFeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for various features.")
 	flag.StringVar(&s.domain, "domain", "localhost", "A domain name on which the server is deployed")
 	flag.StringVar(&s.serviceAccountSigningKey, "service-account-signing-key", "", "Signing key authenticates the service account's token value using HMAC. It is recommended to use a key with 32 bytes or longer.")
+	flag.BoolVar(&s.log.Debug, "log-debug", false, "Enables debug logging")
+	flag.StringVar(&s.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.Parse()
 
 	featureGates, err := features.NewFeatures(rawFeatureGates)

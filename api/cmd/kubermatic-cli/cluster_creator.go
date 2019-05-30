@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"time"
 
-	log "github.com/golang/glog"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
 	corev1 "k8s.io/api/core/v1"
@@ -24,6 +24,7 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -49,6 +50,7 @@ func newClusterCreator(runOpts Opts) (*clusterCreator, error) {
 		runOpts:          runOpts,
 		seedClient:       kubernetes.NewForConfigOrDie(kubeconfig),
 		kubermaticClient: kubermaticclientset.NewForConfigOrDie(kubeconfig),
+		log:              kubermaticlog.Logger,
 	}, nil
 }
 
@@ -58,6 +60,7 @@ type clusterCreator struct {
 	targetClient     *kubernetes.Clientset
 	kubermaticClient *kubermaticclientset.Clientset
 	clusterName      string
+	log              *zap.SugaredLogger
 }
 
 func (ctl *clusterCreator) create(ctx context.Context) error {
@@ -91,7 +94,8 @@ func (ctl *clusterCreator) create(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	log.Infof("created cluster named: %s", crdCluster.Name)
+	log := ctl.log.With("cluster", crdCluster.Name)
+	log.Info("cluster created")
 
 	log.Info("waiting for cluster to become healthy")
 	err = wait.Poll(
@@ -99,7 +103,7 @@ func (ctl *clusterCreator) create(ctx context.Context) error {
 		ctl.runOpts.ClusterTimeout,
 		ctl.healthyClusterCond(ctx, crdCluster.Name))
 	if err != nil {
-		log.Infof("Cluster failed to come up. Health status: %+v", crdCluster.Status.Health.ClusterHealthStatus)
+		log.Infow("cluster failed to come up", "status", crdCluster.Status.Health.ClusterHealthStatus)
 		return err
 	}
 	log.Info("cluster control plane is up")
@@ -112,8 +116,7 @@ func (ctl *clusterCreator) create(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	log.Infof("seed cluster namespace: %s", crdCluster.Status.NamespaceName)
-	log.Info("cluster name:")
+	log.Debugw("seed cluster", "namespace", crdCluster.Status.NamespaceName)
 	fmt.Println(crdCluster.ObjectMeta.Name) // log to STDOUT, for saving in shell
 
 	if err = ctl.installAddons(crdCluster); err != nil {
@@ -149,7 +152,7 @@ func (ctl *clusterCreator) create(ctx context.Context) error {
 		return err
 	}
 	log.Info("all nodes are ready")
-	log.Infof("target cluster adminconfig: %s", ctl.runOpts.Output)
+	log.Infow("target cluster", "adminconfig", ctl.runOpts.Output)
 
 	return ioutil.WriteFile(ctl.runOpts.Output, clusterKubeConfig, 0600)
 }
@@ -236,8 +239,8 @@ func (ctl *clusterCreator) createMachineDeployment(restConfig *rest.Config, dc p
 	if err := client.Create(context.TODO(), md); err != nil {
 		return fmt.Errorf("failed to create MachineDeployment: %v", err)
 	}
-
-	log.Infof("created machine deployment: %s", md.Name)
+	log := ctl.log.With("machine deployment", md.Name)
+	log.Info("machine deployment created")
 	return nil
 }
 
@@ -322,7 +325,7 @@ func (ctl *clusterCreator) installAddons(cluster *kubermaticv1.Cluster) error {
 			}
 			return err
 		}
-		log.Infof("created addon: %s", addon)
+		ctl.log.Infow("created", "addon", addon)
 	}
 
 	return nil

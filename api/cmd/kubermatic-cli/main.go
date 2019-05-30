@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
+	"os"
 	"time"
-
-	"github.com/golang/glog"
 
 	"k8s.io/client-go/kubernetes/scheme"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	kubermaticsignals "github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/flagopts"
 )
@@ -27,6 +28,7 @@ type Opts struct {
 	Nodes               int
 	NodesTimeout        time.Duration
 	Output              string
+	log                 kubermaticlog.Options
 }
 
 func main() {
@@ -55,19 +57,31 @@ func main() {
 	flag.StringVar(&runOpts.Output, "output", "usercluster_kubeconfig", "path to generated usercluster kubeconfig")
 	flag.Var(&runOpts.Addons, "addons", "comma separated list of addons")
 	flag.Var(&runOpts.Kubeconf, "kubeconfig", "path to kubeconfig file")
+	flag.BoolVar(&runOpts.log.Debug, "log-debug", false, "Enables debug logging")
+	flag.StringVar(&runOpts.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 
 	if err := flag.CommandLine.Set("logtostderr", "1"); err != nil {
-		glog.Fatal("can't set flag `logtostderr` to `1`")
+		fmt.Println("can't set flag `logtostderr` to `1`")
+		os.Exit(1)
 	}
 
 	flag.Parse()
 
+	rawLog := kubermaticlog.New(runOpts.log.Debug, kubermaticlog.Format(runOpts.log.Format))
+	log := rawLog.Sugar()
+	defer func() {
+		if err := log.Sync(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+	kubermaticlog.Logger = log
+
 	// Required to be able to use cluster-api types with the dynamic client
 	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		glog.Fatalf("failed to register clusterv1alpha1 scheme: %v", err)
+		log.Fatalf("failed to register clusterv1alpha1 scheme: %v", err)
 	}
 
-	glog.Info("starting")
+	log.Info("starting")
 
 	stopCh := kubermaticsignals.SetupSignalHandler()
 	rootCtx, rootCancel := context.WithCancel(context.Background())
@@ -76,25 +90,27 @@ func main() {
 		select {
 		case <-stopCh:
 			rootCancel()
-			glog.Info("user requested to stop the application")
+			log.Info("user requested to stop the application")
 		case <-rootCtx.Done():
-			glog.Info("context has been closed")
+			log.Info("context has been closed")
 		}
 	}()
 
 	ctl, err := newClusterCreator(runOpts)
 	if err != nil {
-		glog.Exit(err)
+		log.Error(err)
+		os.Exit(1)
 	}
 
 	if err = ctl.create(rootCtx); err != nil {
 		if runOpts.DeleteOnError {
 			if errd := ctl.delete(); errd != nil {
-				glog.Errorf("can't delete cluster %s: %+v", ctl.clusterName, err)
+				log.Errorf("can't delete cluster %s: %+v", ctl.clusterName, errd)
 			}
 		}
-		glog.Exit(err)
+		log.Error(err)
+		os.Exit(1)
 	}
 
-	glog.Info("cluster and machines created")
+	log.Info("cluster and machines created")
 }
