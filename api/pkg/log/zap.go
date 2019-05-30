@@ -11,6 +11,12 @@ import (
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
+func init() {
+	Logger = NewDefault().Sugar()
+}
+
+var Logger *zap.SugaredLogger
+
 // Options exports a options struct to be used by cmd's
 type Options struct {
 	// Enable debug logs
@@ -86,4 +92,9 @@ func New(debug bool, format Format) *zap.Logger {
 
 	coreLog := zapcore.NewCore(&ctrlruntimelog.KubeAwareEncoder{Encoder: enc}, sink, lvl)
 	return zap.New(coreLog, opts...)
+}
+
+// NewDefault creates new default logger
+func NewDefault() *zap.Logger {
+	return New(false, FormatJSON)
 }

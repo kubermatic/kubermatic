@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/golang/glog"
+	"go.uber.org/zap"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-04-01/compute"
@@ -39,12 +41,15 @@ const (
 
 type azure struct {
 	dcs map[string]provider.DatacenterMeta
+	log *zap.SugaredLogger
 }
 
 // New returns a new Azure provider.
 func New(datacenters map[string]provider.DatacenterMeta) provider.CloudProvider {
+
 	return &azure{
 		dcs: datacenters,
+		log: log.Logger,
 	}
 }
 
@@ -157,8 +162,9 @@ func deleteSecurityGroup(cloud kubermaticv1.CloudSpec) error {
 
 func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var err error
+	logger := a.log.With("cluster", cluster.Name)
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerSecurityGroup) {
-		glog.Infof("cluster %q: deleting security group %q", cluster.Name, cluster.Spec.Cloud.Azure.SecurityGroup)
+		logger.Infow("deleting security group", "group", cluster.Spec.Cloud.Azure.SecurityGroup)
 		if err := deleteSecurityGroup(cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
 				return cluster, fmt.Errorf("failed to delete security group %q: %v", cluster.Spec.Cloud.Azure.SecurityGroup, err)
@@ -173,7 +179,7 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 	}
 
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerRouteTable) {
-		glog.Infof("cluster %q: deleting route table %q", cluster.Name, cluster.Spec.Cloud.Azure.RouteTableName)
+		logger.Infow("deleting route table", "routeTableName", cluster.Spec.Cloud.Azure.RouteTableName)
 		if err := deleteRouteTable(cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
 				return cluster, fmt.Errorf("failed to delete route table %q: %v", cluster.Spec.Cloud.Azure.RouteTableName, err)
@@ -188,7 +194,7 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 	}
 
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerSubnet) {
-		glog.Infof("cluster %q: deleting subnet %q", cluster.Name, cluster.Spec.Cloud.Azure.SubnetName)
+		logger.Infow("deleting subnet", "subnet", cluster.Spec.Cloud.Azure.SubnetName)
 		if err := deleteSubnet(cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
 				return cluster, fmt.Errorf("failed to delete sub-network %q: %v", cluster.Spec.Cloud.Azure.SubnetName, err)
@@ -203,7 +209,7 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 	}
 
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerVNet) {
-		glog.Infof("cluster %q: deleting vnet %q", cluster.Name, cluster.Spec.Cloud.Azure.VNetName)
+		logger.Infow("deleting vnet", "vnet", cluster.Spec.Cloud.Azure.VNetName)
 		if err := deleteVNet(cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
 				return cluster, fmt.Errorf("failed to delete virtual network %q: %v", cluster.Spec.Cloud.Azure.VNetName, err)
@@ -219,7 +225,7 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 	}
 
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerResourceGroup) {
-		glog.Infof("cluster %q: deleting resource group %q", cluster.Name, cluster.Spec.Cloud.Azure.ResourceGroup)
+		logger.Infow("deleting resource group", "resourceGroup", cluster.Spec.Cloud.Azure.ResourceGroup)
 		if err := deleteResourceGroup(cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
 				return cluster, fmt.Errorf("failed to delete resource group %q: %v", cluster.Spec.Cloud.Azure.ResourceGroup, err)
@@ -235,7 +241,7 @@ func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 	}
 
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerAvailabilitySet) {
-		glog.Infof("cluster %q: deleting availability set %q", cluster.Name, cluster.Spec.Cloud.Azure.AvailabilitySet)
+		logger.Infow("deleting availability set", "availabilitySet", cluster.Spec.Cloud.Azure.AvailabilitySet)
 		if err := deleteAvailabilitySet(cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
 				return cluster, fmt.Errorf("failed to delete availability set %q: %v", cluster.Spec.Cloud.Azure.AvailabilitySet, err)
@@ -475,6 +481,7 @@ func ensureRouteTable(cloud kubermaticv1.CloudSpec, location string) error {
 
 func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var err error
+	logger := a.log.With("cluster", cluster.Name)
 	dc, ok := a.dcs[cluster.Spec.Cloud.DatacenterName]
 	if !ok {
 		return nil, fmt.Errorf("could not find datacenter %s", cluster.Spec.Cloud.DatacenterName)
@@ -489,7 +496,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	if cluster.Spec.Cloud.Azure.ResourceGroup == "" {
 		cluster.Spec.Cloud.Azure.ResourceGroup = resourceNamePrefix + cluster.Name
 
-		glog.Infof("cluster %q: ensuring resource group %q", cluster.Name, cluster.Spec.Cloud.Azure.ResourceGroup)
+		logger.Infow("ensuring resource group", "resourceGroup", cluster.Spec.Cloud.Azure.ResourceGroup)
 		if err = ensureResourceGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
 			return cluster, err
 		}
@@ -506,7 +513,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	if cluster.Spec.Cloud.Azure.VNetName == "" {
 		cluster.Spec.Cloud.Azure.VNetName = resourceNamePrefix + cluster.Name
 
-		glog.Infof("cluster %q: ensuring vnet %q", cluster.Name, cluster.Spec.Cloud.Azure.VNetName)
+		logger.Infow("ensuring vnet", "vnet", cluster.Spec.Cloud.Azure.VNetName)
 		if err = ensureVNet(cluster.Spec.Cloud, location, cluster.Name); err != nil {
 			return cluster, err
 		}
@@ -523,7 +530,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	if cluster.Spec.Cloud.Azure.SubnetName == "" {
 		cluster.Spec.Cloud.Azure.SubnetName = resourceNamePrefix + cluster.Name
 
-		glog.Infof("cluster %q: ensuring subnet %q", cluster.Name, cluster.Spec.Cloud.Azure.SubnetName)
+		logger.Infow("ensuring subnet", "subnet", cluster.Spec.Cloud.Azure.SubnetName)
 		if err = ensureSubnet(cluster.Spec.Cloud); err != nil {
 			return cluster, err
 		}
@@ -540,7 +547,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	if cluster.Spec.Cloud.Azure.RouteTableName == "" {
 		cluster.Spec.Cloud.Azure.RouteTableName = resourceNamePrefix + cluster.Name
 
-		glog.Infof("cluster %q: ensuring route table %q", cluster.Name, cluster.Spec.Cloud.Azure.RouteTableName)
+		logger.Infow("ensuring route table", "routeTableName", cluster.Spec.Cloud.Azure.RouteTableName)
 		if err = ensureRouteTable(cluster.Spec.Cloud, location); err != nil {
 			return cluster, err
 		}
@@ -557,7 +564,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	if cluster.Spec.Cloud.Azure.SecurityGroup == "" {
 		cluster.Spec.Cloud.Azure.SecurityGroup = resourceNamePrefix + cluster.Name
 
-		glog.Infof("cluster %q: ensuring security group %q", cluster.Name, cluster.Spec.Cloud.Azure.SecurityGroup)
+		logger.Infow("ensuring security group", "securityGroup", cluster.Spec.Cloud.Azure.SecurityGroup)
 		if err = ensureSecurityGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
 			return cluster, err
 		}
@@ -573,7 +580,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 
 	if cluster.Spec.Cloud.Azure.AvailabilitySet == "" {
 		asName := resourceNamePrefix + cluster.Name
-		glog.Infof("cluster %q: ensuring AvailabilitySet %q", cluster.Name, asName)
+		logger.Infow("ensuring AvailabilitySet", "availabilitySet", asName)
 
 		if err := ensureAvailabilitySet(asName, location, cluster.Spec.Cloud); err != nil {
 			return nil, fmt.Errorf("failed to ensure AvailabilitySet exists: %v", err)
