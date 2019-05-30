@@ -13,6 +13,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kubermatic/kubermatic/api/pkg/credentials"
+
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+
 	prometheusapi "github.com/prometheus/client_golang/api"
 
 	corev1 "k8s.io/api/core/v1"
@@ -115,10 +119,10 @@ type newRoutingFunc func(
 	updates []*version.MasterUpdate,
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
 	saTokenGenerator serviceaccount.TokenGenerator,
-	eventRecorderProvider provider.EventRecorderProvider) http.Handler
+	eventRecorderProvider provider.EventRecorderProvider,
+	credentialManager common.CredentialManager) http.Handler
 
-// CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes  for the tests
-func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
+func initTestEndpoint(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, credentialsManager common.CredentialManager, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
 	datacenters := dc
 	if datacenters == nil {
 		datacenters = buildDatacenterMeta()
@@ -230,9 +234,21 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.Dat
 		tokenAuth,
 		tokenGenerator,
 		eventRecorderProvider,
+		credentialsManager,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
+}
+
+// CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes  for the tests
+func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
+	return initTestEndpoint(user, dc, kubeObjects, machineObjects, kubermaticObjects, versions, updates, credentials.New(), routingFunc)
+}
+
+func CreateCredentialTestEndpoint(credentialsManager common.CredentialManager, routingFunc newRoutingFunc) (http.Handler, error) {
+	apiUser := GenDefaultAPIUser()
+	router, _, err := initTestEndpoint(*apiUser, nil, nil, nil, nil, nil, nil, credentialsManager, routingFunc)
+	return router, err
 }
 
 // CreateTestEndpoint does exactly the same as CreateTestEndpointAndGetClients except it omits ClientsSets when returning

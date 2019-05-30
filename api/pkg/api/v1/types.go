@@ -134,6 +134,12 @@ type DigitaloceanSizeList struct {
 	Optimized []DigitaloceanSize `json:"optimized"`
 }
 
+// CredentialList represents a object for provider credential names.
+// swagger:model CredentialList
+type CredentialList struct {
+	Names []string `json:"names,omitempty"`
+}
+
 // DigitaloceanSize is the object representing digitalocean sizes.
 // swagger:model DigitaloceanSize
 type DigitaloceanSize struct {
