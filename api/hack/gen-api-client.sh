@@ -4,11 +4,40 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+function cleanup() {
+    rm -f $TMP_SWAGGER
+
+    cd ${API_DIR}/cmd/kubermatic-api/
+    sed -i -e '1,16d' ../../pkg/handler/routes_v1.go
+}
+trap cleanup EXIT SIGINT SIGTERM
+
+SWAGGER_META="// Kubermatic API.
+// Kubermatic API. This describes possible operations which can be made against the Kubermatic API.
+//
+//     Schemes: https, http
+//     Host: localhost
+//
+//     Security:
+//     - api_key:
+//
+//     SecurityDefinitions:
+//     api_key:
+//          type: apiKey
+//          name: Authorization
+//          in: header
+//
+// swagger:meta
+"
 API_DIR="$(go env GOPATH)/src/github.com/kubermatic/kubermatic/api"
 SWAGGER_FILE="swagger.json"
+TMP_SWAGGER="${SWAGGER_FILE}.tmp"
 
 cd ${API_DIR}/vendor/github.com/go-swagger/go-swagger/cmd/swagger
 go install
 cd ${API_DIR}/cmd/kubermatic-api/
+
+echo "${SWAGGER_META}$(cat ../../pkg/handler/routes_v1.go)" > ../../pkg/handler/routes_v1.go
+swagger generate spec --scan-models -o ${TMP_SWAGGER}
 mkdir -p ../../pkg/test/e2e/api/utils/apiclient/
-swagger generate client -q -f ${SWAGGER_FILE} -t ../../pkg/test/e2e/api/utils/apiclient/
+swagger generate client -q -f ${TMP_SWAGGER} -t ../../pkg/test/e2e/api/utils/apiclient/
