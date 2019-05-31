@@ -63,6 +63,8 @@ type GetNodeUpgradesParams struct {
 
 	/*ControlPlaneVersion*/
 	ControlPlaneVersion *string
+	/*Type*/
+	Type *string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -113,6 +115,17 @@ func (o *GetNodeUpgradesParams) SetControlPlaneVersion(controlPlaneVersion *stri
 	o.ControlPlaneVersion = controlPlaneVersion
 }
 
+// WithType adds the typeVar to the get node upgrades params
+func (o *GetNodeUpgradesParams) WithType(typeVar *string) *GetNodeUpgradesParams {
+	o.SetType(typeVar)
+	return o
+}
+
+// SetType adds the type to the get node upgrades params
+func (o *GetNodeUpgradesParams) SetType(typeVar *string) {
+	o.Type = typeVar
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetNodeUpgradesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -131,6 +144,22 @@ func (o *GetNodeUpgradesParams) WriteToRequest(r runtime.ClientRequest, reg strf
 		qControlPlaneVersion := qrControlPlaneVersion
 		if qControlPlaneVersion != "" {
 			if err := r.SetQueryParam("ControlPlaneVersion", qControlPlaneVersion); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	if o.Type != nil {
+
+		// query param type
+		var qrType string
+		if o.Type != nil {
+			qrType = *o.Type
+		}
+		qType := qrType
+		if qType != "" {
+			if err := r.SetQueryParam("type", qType); err != nil {
 				return err
 			}
 		}
