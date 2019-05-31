@@ -150,7 +150,7 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 						SuccessThreshold:    1,
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path:   "/-/healthy",
+								Path:   "/-/ready",
 								Port:   intstr.FromString("web"),
 								Scheme: corev1.URISchemeHTTP,
 							},
