@@ -1,10 +1,10 @@
 package version
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/Masterminds/semver"
-	"github.com/go-test/deep"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 )
@@ -246,10 +246,32 @@ func TestGetMasterVersions(t *testing.T) {
 				t.Fatalf("Unexpected error: %v", err)
 			}
 
-			// equality.Semantic.DeepEqual panic comparing version.MasterVersion types
-			if diff := deep.Equal(versions, tc.expectedVersions); diff != nil {
-				t.Fatalf("version list %v is not the same as expected %v", versions, tc.expectedVersions)
-			}
+			compareVersions(t, versions, tc.expectedVersions)
 		})
+	}
+}
+
+func sortMasterVersion(versions []*MasterVersion) {
+	sort.SliceStable(versions, func(i, j int) bool {
+		mi, mj := versions[i], versions[j]
+		return mi.Version.LessThan(mj.Version)
+	})
+}
+
+func compareVersions(t *testing.T, versions, expected []*MasterVersion) {
+	if len(versions) != len(expected) {
+		t.Fatalf("got different lengths, got %d expected %d", len(versions), len(expected))
+	}
+
+	sortMasterVersion(versions)
+	sortMasterVersion(expected)
+
+	for i, version := range versions {
+		if !version.Version.Equal(expected[i].Version) {
+			t.Fatalf("expected version %v got %v", expected[i].Version, version.Version)
+		}
+		if version.Default != expected[i].Default {
+			t.Fatalf("expected flag %v got %v", expected[i].Default, version.Default)
+		}
 	}
 }
