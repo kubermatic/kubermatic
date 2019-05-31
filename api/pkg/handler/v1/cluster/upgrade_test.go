@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/go-test/deep"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
@@ -320,9 +319,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if diff := deep.Equal(gotUpdates, testStruct.wantUpdates); diff != nil {
-				t.Fatalf("got different upgrade response than expected. Diff: %v", diff)
-			}
+			test.CompareVersions(t, gotUpdates, testStruct.wantUpdates)
 		})
 	}
 }
@@ -585,9 +582,7 @@ func TestGetNodeUpgrades(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if diff := deep.Equal(response, testStruct.expectedOutput); diff != nil {
-				t.Fatalf("got different versions response than expected. Diff: %v", diff)
-			}
+			test.CompareVersions(t, response, testStruct.expectedOutput)
 		})
 	}
 }
@@ -724,7 +719,7 @@ func TestGetMasterVersionsEndpoint(t *testing.T) {
 			}
 			ep.ServeHTTP(res, req)
 			if res.Code != http.StatusOK {
-				t.Fatalf("Expected status code to be 200, got %d\nResponse body: %q", res.Code, res.Body.String())
+				t.Fatalf("expected status code to be 200, got %d\nResponse body: %q", res.Code, res.Body.String())
 			}
 
 			var response []*apiv1.MasterVersion
@@ -733,9 +728,7 @@ func TestGetMasterVersionsEndpoint(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if diff := deep.Equal(response, testStruct.expectedOutput); diff != nil {
-				t.Fatalf("got different versions response than expected. Diff: %v", diff)
-			}
+			test.CompareVersions(t, response, testStruct.expectedOutput)
 		})
 	}
 }

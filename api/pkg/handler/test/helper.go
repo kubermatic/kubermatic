@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -666,5 +667,30 @@ func GenTestEvent(eventName, eventType, eventReason, eventMessage, kind, uid str
 		Source:  corev1.EventSource{Component: "eventTest"},
 		Count:   1,
 		Type:    eventType,
+	}
+}
+
+func sortMasterVersion(versions []*apiv1.MasterVersion) {
+	sort.SliceStable(versions, func(i, j int) bool {
+		mi, mj := versions[i], versions[j]
+		return mi.Version.LessThan(mj.Version)
+	})
+}
+
+func CompareVersions(t *testing.T, versions, expected []*apiv1.MasterVersion) {
+	if len(versions) != len(expected) {
+		t.Fatalf("got different lengths, got %d expected %d", len(versions), len(expected))
+	}
+
+	sortMasterVersion(versions)
+	sortMasterVersion(expected)
+
+	for i, version := range versions {
+		if !version.Version.Equal(expected[i].Version) {
+			t.Fatalf("expected version %v got %v", expected[i].Version, version.Version)
+		}
+		if version.Default != expected[i].Default {
+			t.Fatalf("expected flag %v got %v", expected[i].Default, version.Default)
+		}
 	}
 }
