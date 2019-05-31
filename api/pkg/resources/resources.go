@@ -223,6 +223,10 @@ const (
 	PrometheusClusterRoleBindingName = "system:external-prometheus"
 	//MetricsServerResourceReaderClusterRoleBindingName is the name for the metrics server ClusterRoleBinding
 	MetricsServerResourceReaderClusterRoleBindingName = "system:metrics-server"
+	// ClusterAutoscalerClusterRoleName is the name of the clusterrole for the cluster autoscaler
+	ClusterAutoscalerClusterRoleName = "system:kubermatic-cluster-autoscaler"
+	// ClusterAutoscalerClusterRoleBindingName is the name of the clusterrolebinding for the CA
+	ClusterAutoscalerClusterRoleBindingName = "system:kubermatic-cluster-autoscaler"
 
 	// EtcdPodDisruptionBudgetName is the name of the PDB for the etcd StatefulSet
 	EtcdPodDisruptionBudgetName = "etcd"

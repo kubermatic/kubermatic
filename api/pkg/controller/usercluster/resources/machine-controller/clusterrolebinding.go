@@ -11,7 +11,6 @@ import (
 
 // ClusterRoleBinding returns a ClusterRoleBinding for the machine-controller.
 func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
-	// TemplateData actually not needed, no ownerrefs set in user-cluster
 	return createClusterRoleBindingCreator("controller",
 		resources.MachineControllerClusterRoleName, rbacv1.Subject{
 			Kind:     "User",
