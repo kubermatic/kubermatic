@@ -172,7 +172,9 @@ kubermatic:
         "show_demo_info": false,
         "show_terms_of_service": false,
         "cleanup_cluster": false,
-        "custom_links": []
+        "custom_links": [],
+        "hide_kubernetes": false,
+        "hide_openshift": false
       }
     resources:
       requests:
