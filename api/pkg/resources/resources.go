@@ -64,6 +64,8 @@ const (
 	KubeStateMetricsDeploymentName = "kube-state-metrics"
 	// UserClusterControllerDeploymentName is the name of the usercluster-controller deployment
 	UserClusterControllerDeploymentName = "usercluster-controller"
+	// ClusterAutoscalerDeploymentName is the name of the cluster-autoscaler depoyment
+	ClusterAutoscalerDeploymentName = "cluster-autoscaler"
 
 	//PrometheusStatefulSetName is the name for the prometheus StatefulSet
 	PrometheusStatefulSetName = "prometheus"
@@ -113,6 +115,9 @@ const (
 	MachineControllerWebhookServingCertKeyKeyName = "key.pem"
 	//PrometheusApiserverClientCertificateSecretName is the name for the secret containing the client certificate used by prometheus to access the apiserver
 	PrometheusApiserverClientCertificateSecretName = "prometheus-apiserver-certificate"
+	// ClusterAutoscalerKubeconfigSecretName is the name of the kubeconfig secret used for
+	// the cluster-autoscaler
+	ClusterAutoscalerKubeconfigSecretName = "cluster-autoscaler-kubeconfig"
 
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
@@ -184,6 +189,8 @@ const (
 	KubeletDnatControllerCertUsername = "kubermatic:kubeletdnat-controller"
 	// PrometheusCertUsername is the name of the user coming from kubeconfig cert
 	PrometheusCertUsername = "prometheus"
+	// ClusterAutoscalerCertUsername is the name of the user coming from the CA kubeconfig cert
+	ClusterAutoscalerCertUsername = "kubermatic:cluster-autoscaler"
 
 	// KubeletDnatControllerClusterRoleName is the name for the KubeletDnatController cluster role
 	KubeletDnatControllerClusterRoleName = "system:kubermatic-kubeletdnat-controller"
