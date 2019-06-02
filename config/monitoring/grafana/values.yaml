@@ -5,7 +5,7 @@ grafana:
   replicas: 1
   image:
     repository: grafana/grafana
-    tag: 6.2.0
+    tag: 6.2.1
 
   resources:
     requests:
