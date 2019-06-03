@@ -28,7 +28,7 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 			var tag string
 			switch data.Cluster().Spec.Version.Minor() {
 			case 14:
-				tag = "vertical-pod-autoscaler-0.3.0-439-g7ce0c1ada-dirty"
+				tag = "fe5bee817ad9d37c8ce5e473af201c2f3fdf5b94-1"
 			}
 			if tag == "" {
 				return nil, fmt.Errorf("No matching autoscaler tag found for version %d", data.Cluster().Spec.Version.Minor())
@@ -92,7 +92,7 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    resources.ClusterAutoscalerDeploymentName,
-					Image:   data.ImageRegistry(resources.RegistryDocker) + "/alvaroaleman/cluster-autoscaler:" + tag,
+					Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/kubernetes-cluster-autoscaler:" + tag,
 					Command: []string{"/cluster-autoscaler"},
 					Args: []string{
 						"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
@@ -102,6 +102,8 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 						// because the DS pods on them alone manage to get the utilization above the 0.5 threshold.
 						"--scale-down-utilization-threshold", "0.7",
 					},
+					// This likely won't be enough for bigger clusters, see https://github.com/kubermatic/kubermatic/issues/3568
+					// for details on how we want to fix this: https://github.com/kubermatic/kubermatic/issues/3568
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceMemory: resource.MustParse("32Mi"),
