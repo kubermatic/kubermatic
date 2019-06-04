@@ -46,6 +46,8 @@ function cleanup {
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'APIKey|ProjectID'
     elif [[ $provider = "gcp" ]]; then
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Service Account'
+    elif [[ $provider = "digitalocean" ]]; then
+      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Token'
     else
       echo "Provider $provider is not yet supported."
       exit 1
