@@ -26,9 +26,14 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.ClusterAutoscalerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			var tag string
-			switch data.Cluster().Spec.Version.Minor() {
-			case 14:
-				tag = "fe5bee817ad9d37c8ce5e473af201c2f3fdf5b94-1"
+			isOpenshift := data.Cluster().Annotations["kubermatic.io/openshift"] != ""
+			if isOpenshift {
+				tag = "f1df2eb00ad9782b0c23184194008fc3068ad52c-1"
+			} else {
+				switch data.Cluster().Spec.Version.Minor() {
+				case 14:
+					tag = "fe5bee817ad9d37c8ce5e473af201c2f3fdf5b94-1"
+				}
 			}
 			if tag == "" {
 				return nil, fmt.Errorf("No matching autoscaler tag found for version %d", data.Cluster().Spec.Version.Minor())
@@ -101,6 +106,9 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 						// scale it down. Default is 0.5. Increased, because otherwise small nodes never get scaled down
 						// because the DS pods on them alone manage to get the utilization above the 0.5 threshold.
 						"--scale-down-utilization-threshold", "0.7",
+						// For debugging you can add the following to increase verbosity and make scale down kick in without
+						// delay:
+						// -v=4 --scale-down-delay-after-failure=1s --scale-down-delay-after-add=1s
 					},
 					// This likely won't be enough for bigger clusters, see https://github.com/kubermatic/kubermatic/issues/3568
 					// for details on how we want to fix this: https://github.com/kubermatic/kubermatic/issues/3568
