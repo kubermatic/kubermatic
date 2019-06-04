@@ -49,6 +49,21 @@ func DigitaloceanSizeEndpoint() endpoint.Endpoint {
 	}
 }
 
+// DigitaloceanCredentialEndpoint returns custom credential list name for DigitalOcean provider
+func DigitaloceanCredentialEndpoint(credentialManager common.CredentialManager) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		credentials := apiv1.CredentialList{}
+		names := make([]string, 0)
+		if credentialManager.GetCredentials().Digitalocean != nil {
+			for _, do := range credentialManager.GetCredentials().Digitalocean {
+				names = append(names, do.Name)
+			}
+		}
+		credentials.Names = names
+		return credentials, nil
+	}
+}
+
 func digitaloceanSize(ctx context.Context, token string) (apiv1.DigitaloceanSizeList, error) {
 	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	client := godo.NewClient(oauth2.NewClient(context.Background(), static))

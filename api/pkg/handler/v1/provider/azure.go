@@ -153,6 +153,21 @@ func AzureSizeEndpoint() endpoint.Endpoint {
 	}
 }
 
+// AzureCredentialEndpoint returns custom credential list name for Azure provider
+func AzureCredentialEndpoint(credentialManager common.CredentialManager) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		credentials := apiv1.CredentialList{}
+		names := make([]string, 0)
+		if credentialManager.GetCredentials().Azure != nil {
+			for _, do := range credentialManager.GetCredentials().Azure {
+				names = append(names, do.Name)
+			}
+		}
+		credentials.Names = names
+		return credentials, nil
+	}
+}
+
 func azureSize(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location string) (apiv1.AzureSizeList, error) {
 	sizesClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
 	if err != nil {

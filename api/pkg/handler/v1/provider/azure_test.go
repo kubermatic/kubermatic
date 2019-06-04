@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kubermatic/kubermatic/api/pkg/credentials"
+
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-04-01/compute"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -95,6 +97,56 @@ func TestAzureSizeEndpoint(t *testing.T) {
 				compareJSON(t, res, tc.expectedResponse)
 			}
 
+		})
+	}
+}
+
+func TestAzureCredentialEndpoint(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		name             string
+		credentials      []credentials.AzureCredentials
+		httpStatus       int
+		expectedResponse string
+	}{
+		{
+			name:             "test no credentials for Azure",
+			httpStatus:       http.StatusOK,
+			expectedResponse: "{}",
+		},
+		{
+			name: "test list of credential names for Azure",
+			credentials: []credentials.AzureCredentials{
+				{Name: "first", ClientID: "test-first", ClientSecret: "secret-first", SubscriptionID: "subscription-first", TenantID: "tenant-first"},
+				{Name: "second", ClientID: "test-second", ClientSecret: "secret-second", SubscriptionID: "subscription-second", TenantID: "tenant-second"},
+			},
+			httpStatus:       http.StatusOK,
+			expectedResponse: `{"names":["first","second"]}`,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+
+			req := httptest.NewRequest("GET", "/api/v1/providers/azure/credentials", strings.NewReader(""))
+
+			credentialsManager := credentials.New()
+			cred := credentialsManager.GetCredentials()
+			cred.Azure = tc.credentials
+
+			res := httptest.NewRecorder()
+			router, err := test.CreateCredentialTestEndpoint(credentialsManager, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v\n", err)
+			}
+			router.ServeHTTP(res, req)
+
+			// validate
+			assert.Equal(t, tc.httpStatus, res.Code)
+
+			if res.Code == http.StatusOK {
+				compareJSON(t, res, tc.expectedResponse)
+			}
 		})
 	}
 }

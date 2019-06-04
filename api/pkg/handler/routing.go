@@ -46,6 +46,7 @@ type Routing struct {
 	saTokenAuthenticator        serviceaccount.TokenAuthenticator
 	saTokenGenerator            serviceaccount.TokenGenerator
 	eventRecorderProvider       provider.EventRecorderProvider
+	credentialManager           common.CredentialManager
 }
 
 // NewRouting creates a new Routing.
@@ -69,6 +70,7 @@ func NewRouting(
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
 	saTokenGenerator serviceaccount.TokenGenerator,
 	eventRecorderProvider provider.EventRecorderProvider,
+	credentialManager common.CredentialManager,
 ) Routing {
 	return Routing{
 		datacenters:                 datacenters,
@@ -91,6 +93,7 @@ func NewRouting(
 		saTokenAuthenticator:        saTokenAuthenticator,
 		saTokenGenerator:            saTokenGenerator,
 		eventRecorderProvider:       eventRecorderProvider,
+		credentialManager:           credentialManager,
 	}
 }
 

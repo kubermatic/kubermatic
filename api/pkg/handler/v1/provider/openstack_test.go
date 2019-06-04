@@ -3,6 +3,8 @@ package provider_test
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/kubermatic/kubermatic/api/pkg/credentials"
+	"github.com/stretchr/testify/assert"
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -321,6 +323,56 @@ func TestMeetsOpentackNodeSizeRequirement(t *testing.T) {
 		t.Run(testToRun.name, func(t *testing.T) {
 			if providerv1.MeetsOpenstackNodeSizeRequirement(testToRun.apiSize, testToRun.nodeSizeRequirement) != testToRun.meetsRequirement {
 				t.Errorf("expected result to be %v, but got %v", testToRun.meetsRequirement, !testToRun.meetsRequirement)
+			}
+		})
+	}
+}
+
+func TestOpenstackCredentialEndpoint(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		name             string
+		credentials      []credentials.OpenstackCredentials
+		httpStatus       int
+		expectedResponse string
+	}{
+		{
+			name:             "test no credentials for OpenStack",
+			httpStatus:       http.StatusOK,
+			expectedResponse: "{}",
+		},
+		{
+			name: "test list of credential names for OpenStack",
+			credentials: []credentials.OpenstackCredentials{
+				{Name: "first"},
+				{Name: "second"},
+			},
+			httpStatus:       http.StatusOK,
+			expectedResponse: `{"names":["first","second"]}`,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+
+			req := httptest.NewRequest("GET", "/api/v1/providers/openstack/credentials", strings.NewReader(""))
+
+			credentialsManager := credentials.New()
+			cred := credentialsManager.GetCredentials()
+			cred.Openstack = tc.credentials
+
+			res := httptest.NewRecorder()
+			router, err := test.CreateCredentialTestEndpoint(credentialsManager, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v\n", err)
+			}
+			router.ServeHTTP(res, req)
+
+			// validate
+			assert.Equal(t, tc.httpStatus, res.Code)
+
+			if res.Code == http.StatusOK {
+				compareJSON(t, res, tc.expectedResponse)
 			}
 		})
 	}
