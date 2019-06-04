@@ -54,7 +54,7 @@ spec:
         readinessProbe:
           failureThreshold: 120
           httpGet:
-            path: /-/healthy
+            path: /-/ready
             port: web
           initialDelaySeconds: 15
           periodSeconds: 5
