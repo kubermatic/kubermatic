@@ -38,7 +38,14 @@ versions:
   default: false
 - version: "1.13.5"
   default: true
+# Insecure https://github.com/kubernetes/kubernetes/issues/78308
+#- version: "1.13.6"
+#  default: false
 - version: "v1.14.0"
   default: false
 - version: "v1.14.1"
   default: false
+# Insecure https://github.com/kubernetes/kubernetes/issues/78308
+#- version: "v1.14.2"
+#  default: false
+# OpenShift 3.11
