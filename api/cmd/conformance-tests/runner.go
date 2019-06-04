@@ -64,7 +64,6 @@ func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
 		secrets:                      opts.secrets,
 		namePrefix:                   opts.namePrefix,
 		clusterClientProvider:        opts.clusterClientProvider,
-		nodesReadyWaitTimeout:        opts.nodeReadyWaitTimeout,
 		dcs:                          opts.dcs,
 		nodeCount:                    opts.nodeCount,
 		repoRoot:                     opts.repoRoot,
@@ -96,7 +95,6 @@ type testRunner struct {
 
 	controlPlaneReadyWaitTimeout time.Duration
 	deleteClusterAfterTests      bool
-	nodesReadyWaitTimeout        time.Duration
 	nodeCount                    int
 	clusterParallelCount         int
 
@@ -692,7 +690,7 @@ func (r *testRunner) waitForReadyNodes(log *logrus.Entry, client ctrlruntimeclie
 		return false
 	}
 
-	err := wait.Poll(nodesReadyPollPeriod, r.nodesReadyWaitTimeout, func() (done bool, err error) {
+	err := wait.Poll(nodesReadyPollPeriod, defaultTimeout, func() (done bool, err error) {
 		ctx := context.Background()
 		nodeList := &corev1.NodeList{}
 		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
@@ -995,8 +993,10 @@ func supportsStorage(cluster *kubermaticv1.Cluster) bool {
 	return cluster.Spec.Cloud.Openstack != nil ||
 		cluster.Spec.Cloud.Azure != nil ||
 		cluster.Spec.Cloud.AWS != nil ||
-		cluster.Spec.Cloud.VSphere != nil ||
-		cluster.Spec.Cloud.Hetzner != nil
+		cluster.Spec.Cloud.VSphere != nil
+
+	// Currently broken, see https://github.com/kubermatic/kubermatic/issues/3312
+	//cluster.Spec.Cloud.Hetzner != nil
 }
 
 func supportsLBs(cluster *kubermaticv1.Cluster) bool {
