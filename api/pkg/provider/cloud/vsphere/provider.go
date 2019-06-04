@@ -118,7 +118,7 @@ func (v *Provider) createVMFolderForCluster(cluster *kubermaticv1.Cluster, updat
 		if !kuberneteshelper.HasFinalizer(cluster, folderCleanupFinalizer) {
 			cluster.Finalizers = append(cluster.Finalizers, folderCleanupFinalizer)
 		}
-		cluster.Spec.Cloud.VSphere.Folder = fmt.Sprintf("%s/%s", rootFolder, cluster.Name)
+		cluster.Spec.Cloud.VSphere.Folder = fmt.Sprintf("%s/%s", dcRootPath, cluster.Name)
 	})
 	if err != nil {
 		return nil, err

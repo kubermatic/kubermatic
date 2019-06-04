@@ -17,6 +17,7 @@ export NAMESPACE="prow-kubermatic-${BUILD_ID}"
 echodate "Testing versions: ${VERSIONS}"
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos}
+export DEFAULT_TIMEOUT_MINUTES=${DEFAULT_TIMEOUT_MINUTES:-10}
 
 # if no provider argument has been specified, default to aws
 provider=${PROVIDER:-"aws"}
@@ -40,18 +41,37 @@ function cleanup {
   if [[ ${testRC} -ne 0 ]]; then
     echodate "tests failed, describing cluster"
 
-    if [[ $provider = "aws" ]]; then
+    # Describe cluster
+    if [[ $provider == "aws" ]]; then
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Secret Access Key|Access Key Id'
-    elif [[ $provider = "packet" ]]; then
+    elif [[ $provider == "packet" ]]; then
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'APIKey|ProjectID'
-    elif [[ $provider = "gcp" ]]; then
+    elif [[ $provider == "gcp" ]]; then
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Service Account'
+    elif [[ $provider == "azure" ]]; then
+      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'ClientID|ClientSecret|SubscriptionID|TenantID'
+    elif [[ $provider == "digitalocean" ]]; then
+      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Token'
+    elif [[ $provider == "hetzner" ]]; then
+      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Token'
+    elif [[ $provider == "openstack" ]]; then
+      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Domain|Tenant|Username|Password'
+    elif [[ $provider == "vsphere" ]]; then
+      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Username|Password'
     else
       echo "Provider $provider is not yet supported."
       exit 1
     fi
 
+    # Controller manager logs
     kubectl logs -n $NAMESPACE  $(kubectl get pod -n $NAMESPACE -l role=controller-manager |tail -n 1|awk '{print $1}')
+
+    # Display machine events, we don't have to worry about secrets here as they are stored in the machine-controllers env
+    # Except for vSphere
+    TMP_KUBECONFIG=$(mktemp);
+    USERCLUSTER_NS=$(kubectl get cluster -o name -l worker-name=${BUILD_ID} |sed 's#.kubermatic.k8s.io/#-#g')
+    kubectl get secret -n ${USERCLUSTER_NS} admin-kubeconfig -o go-template='{{ index .data "kubeconfig" }}' | base64 -d > $TMP_KUBECONFIG
+    kubectl --kubeconfig=${TMP_KUBECONFIG} describe machine -n kube-system|egrep -vi 'password|user'
   fi
 
   # Delete addons from all clusters that have our worker-name label
@@ -216,14 +236,31 @@ fi
 
 echodate "Starting conformance tests"
 
-if [[ $provider = "aws" ]]; then
+if [[ $provider == "aws" ]]; then
   EXTRA_ARGS="-aws-access-key-id=${AWS_E2E_TESTS_KEY_ID}
      -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}"
-elif [[ $provider = "packet" ]]; then
+elif [[ $provider == "packet" ]]; then
   EXTRA_ARGS="-packet-api-key=${PACKET_API_KEY}
      -packet-project-id=${PACKET_PROJECT_ID}"
-elif [[ $provider = "gcp" ]]; then
+elif [[ $provider == "gcp" ]]; then
   EXTRA_ARGS="-gcp-service-account=${GOOGLE_SERVICE_ACCOUNT}"
+elif [[ $provider == "azure" ]]; then
+  EXTRA_ARGS="-azure-client-id=${AZURE_E2E_TESTS_CLIENT_ID}
+    -azure-client-secret=${AZURE_E2E_TESTS_CLIENT_SECRET}
+    -azure-tenant-id=${AZURE_E2E_TESTS_TENANT_ID}
+    -azure-subscription-id=${AZURE_E2E_TESTS_SUBSCRIPTION_ID}"
+elif [[ $provider == "digitalocean" ]]; then
+  EXTRA_ARGS="-digitalocean-token=${DO_E2E_TESTS_TOKEN}"
+elif [[ $provider == "hetzner" ]]; then
+  EXTRA_ARGS="-hetzner-token=${HZ_E2E_TOKEN}"
+elif [[ $provider == "openstack" ]]; then
+  EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
+    -openstack-tenant=${OS_TENANT_NAME}
+    -openstack-username=${OS_USERNAME}
+    -openstack-password=${OS_PASSWORD}"
+elif [[ $provider == "vsphere" ]]; then
+  EXTRA_ARGS="-vsphere-username=${VSPHERE_E2E_USERNAME}
+    -vsphere-password=${VSPHERE_E2E_PASSWORD}"
 fi
 
 timeout -s 9 90m ./conformance-tests $EXTRA_ARGS \
@@ -242,7 +279,8 @@ timeout -s 9 90m ./conformance-tests $EXTRA_ARGS \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
   ${OPENSHIFT_ARG:-} \
   -kubermatic-delete-cluster=false \
-  -print-ginkgo-logs=true
+  -print-ginkgo-logs=true \
+  -default-timeout-minutes=${DEFAULT_TIMEOUT_MINUTES}
 
 # No upgradetest, just exit
 if [[ -z ${UPGRADE_TEST_BASE_HASH:-} ]]; then
@@ -295,4 +333,5 @@ timeout -s 9 60m ./conformance-tests $EXTRA_ARGS \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
   ${OPENSHIFT_ARG:-} \
   -kubermatic-delete-cluster=false \
-  -print-ginkgo-logs=true
+  -print-ginkgo-logs=true \
+  -default-timeout-minutes=${DEFAULT_TIMEOUT_MINUTES}
