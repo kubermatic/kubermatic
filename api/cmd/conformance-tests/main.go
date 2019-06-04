@@ -52,7 +52,6 @@ type Opts struct {
 	deleteClusterAfterTests      bool
 	kubeconfigPath               string
 	nodeCount                    int
-	nodeReadyWaitTimeout         time.Duration
 	publicKeys                   [][]byte
 	reportsRoot                  string
 	clusterLister                kubermaticv1lister.ClusterLister
@@ -106,13 +105,14 @@ type secrets struct {
 }
 
 const (
-	defaultTimeout                 = 10 * time.Minute
 	defaultUserClusterPollInterval = 10 * time.Second
 	defaultAPIRetries              = 100
 
 	controlPlaneReadyPollPeriod = 5 * time.Second
 	nodesReadyPollPeriod        = 5 * time.Second
 )
+
+var defaultTimeout = 10 * time.Minute
 
 var (
 	providers  string
@@ -131,6 +131,8 @@ func main() {
 		versions:   []*semver.Semver{},
 	}
 
+	defaultTimeoutMinutes := 10
+
 	usr, err := user.Current()
 	if err != nil {
 		mainLog.Fatal(err)
@@ -148,7 +150,6 @@ func main() {
 	flag.StringVar(&opts.reportsRoot, "reports-root", "/opt/reports", "Root for reports")
 	flag.BoolVar(&opts.cleanupOnStart, "cleanup-on-start", false, "Cleans up all clusters on start and exit afterwards - must be used with name-prefix.")
 	flag.DurationVar(&opts.controlPlaneReadyWaitTimeout, "kubermatic-cluster-timeout", defaultTimeout, "cluster creation timeout")
-	flag.DurationVar(&opts.nodeReadyWaitTimeout, "kubermatic-nodes-timeout", defaultTimeout, "nodes creation timeout")
 	flag.BoolVar(&opts.deleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster at the exit")
 	flag.BoolVar(&debug, "debug", false, "Enable debug logs")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
@@ -156,6 +157,7 @@ func main() {
 	flag.StringVar(&sversions, "versions", "v1.10.11,v1.11.6,v1.12.4,v1.13.1", "a comma-separated list of versions to test")
 	flag.StringVar(&opts.excludeSelectorRaw, "exclude-distributions", "", "a comma-separated list of distributions that will get excluded from the tests")
 	_ = flag.Bool("run-kubermatic-controller-manager", false, "Unused, but kept for compatibility reasons")
+	flag.IntVar(&defaultTimeoutMinutes, "default-timeout-minutes", 10, "The default timeout in minutes")
 
 	flag.BoolVar(&opts.printGinkoLogs, "print-ginkgo-logs", false, "Whether to print ginkgo logs when ginkgo encountered failures")
 	flag.StringVar(&opts.secrets.AWS.AccessKeyID, "aws-access-key-id", "", "AWS: AccessKeyID")
@@ -174,6 +176,8 @@ func main() {
 	flag.StringVar(&opts.secrets.Azure.SubscriptionID, "azure-subscription-id", "", "Azure: SubscriptionID")
 
 	flag.Parse()
+
+	defaultTimeout = time.Duration(defaultTimeoutMinutes) * time.Minute
 
 	if debug {
 		mainLog.SetLevel(logrus.DebugLevel)
