@@ -1,10 +1,12 @@
 package common
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/credentials"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 // OIDCConfiguration is a struct that holds
@@ -33,6 +35,11 @@ type UpdateManager interface {
 	GetDefault() (*version.MasterVersion, error)
 	AutomaticUpdate(from, clusterType string) (*version.MasterVersion, error)
 	GetPossibleUpdates(from, clusterType string) ([]*version.MasterVersion, error)
+}
+
+// UpdateManager specifies a set of methods to handle credentials for specific provider
+type CredentialManager interface {
+	GetCredentials() *credentials.Credentials
 }
 
 // ServerMetrics defines metrics used by the API.

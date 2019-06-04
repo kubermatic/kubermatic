@@ -50,6 +50,21 @@ func VsphereNetworksNoCredentialsEndpoint(projectProvider provider.ProjectProvid
 	}
 }
 
+// VsphereCredentialEndpoint returns custom credential list name for Vsphere provider
+func VsphereCredentialEndpoint(credentialManager common.CredentialManager) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		credentials := apiv1.CredentialList{}
+		names := make([]string, 0)
+		if credentialManager.GetCredentials().VSphere != nil {
+			for _, do := range credentialManager.GetCredentials().VSphere {
+				names = append(names, do.Name)
+			}
+		}
+		credentials.Names = names
+		return credentials, nil
+	}
+}
+
 func getVsphereNetworks(providers provider.CloudRegistry, username, password, datacenterName string) ([]apiv1.VSphereNetwork, error) {
 	vsProviderInterface, ok := providers[provider.VSphereCloudProvider]
 	if !ok {
