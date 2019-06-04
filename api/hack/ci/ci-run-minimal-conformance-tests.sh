@@ -226,6 +226,8 @@ elif [[ $provider = "packet" ]]; then
      -packet-project-id=${PACKET_PROJECT_ID}"
 elif [[ $provider = "gcp" ]]; then
   EXTRA_ARGS="-gcp-service-account=${GOOGLE_SERVICE_ACCOUNT}"
+elif [[ $provider = "digitalocean" ]]; then
+  EXTRA_ARGS="-digitalocean-token=${DO_E2E_TESTS_TOKEN}"
 fi
 
 timeout -s 9 90m ./conformance-tests $EXTRA_ARGS \
