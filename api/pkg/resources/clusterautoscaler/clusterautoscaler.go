@@ -25,16 +25,7 @@ type clusterautoscalerData interface {
 func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.ClusterAutoscalerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			var tag string
-			isOpenshift := data.Cluster().Annotations["kubermatic.io/openshift"] != ""
-			if isOpenshift {
-				tag = "f1df2eb00ad9782b0c23184194008fc3068ad52c-1"
-			} else {
-				switch data.Cluster().Spec.Version.Minor() {
-				case 14:
-					tag = "fe5bee817ad9d37c8ce5e473af201c2f3fdf5b94-1"
-				}
-			}
+			tag := getTag(data.Cluster())
 			if tag == "" {
 				return nil, fmt.Errorf("No matching autoscaler tag found for version %d", data.Cluster().Spec.Version.Minor())
 			}
@@ -149,4 +140,20 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 			return dep, nil
 		}
 	}
+}
+
+// getTag returns the correct tag for the cluster version. We need to have a distinct CA
+// version for each Kubernetes version, because the CA imports the scheduler code and the
+// behaviour of that imported code has to match with what the actual scheduler does
+func getTag(cluster *kubermaticv1.Cluster) string {
+	if cluster.Annotations["kubermatic.io/openshift"] != "" {
+		return "f1df2eb00ad9782b0c23184194008fc3068ad52c-1"
+	}
+
+	switch cluster.Spec.Version.Minor() {
+	case 14:
+		return "fe5bee817ad9d37c8ce5e473af201c2f3fdf5b94-1"
+	}
+
+	return ""
 }

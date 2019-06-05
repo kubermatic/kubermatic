@@ -526,14 +526,19 @@ func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) erro
 }
 
 func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *openshiftData) []reconciling.NamedDeploymentCreatorGetter {
-	return []reconciling.NamedDeploymentCreatorGetter{openshiftresources.APIDeploymentCreator(ctx, osData),
+	creators := []reconciling.NamedDeploymentCreatorGetter{openshiftresources.APIDeploymentCreator(ctx, osData),
 		openshiftresources.ControllerManagerDeploymentCreator(ctx, osData),
 		openshiftresources.MachineController(osData),
 		openvpn.DeploymentCreator(osData),
 		dns.DeploymentCreator(osData),
 		machinecontroller.WebhookDeploymentCreator(osData),
-		usercluster.DeploymentCreator(osData, true),
-		clusterautoscaler.DeploymentCreator(osData)}
+		usercluster.DeploymentCreator(osData, true)}
+
+	if osData.Cluster().Annotations[kubermaticv1.AnnotationNameClusterAutoscalerEnabled] != "" {
+		creators = append(creators, clusterautoscaler.DeploymentCreator(osData))
+	}
+
+	return creators
 }
 
 func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) error {

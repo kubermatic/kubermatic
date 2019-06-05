@@ -185,7 +185,8 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		metricsserver.DeploymentCreator(data),
 		usercluster.DeploymentCreator(data, false),
 	}
-	if data.Cluster().Spec.Version.Minor() > 13 {
+	if data.Cluster().Annotations[kubermaticv1.AnnotationNameClusterAutoscalerEnabled] != "" &&
+		data.Cluster().Spec.Version.Minor() > 13 {
 		deployments = append(deployments, clusterautoscaler.DeploymentCreator(data))
 	}
 
