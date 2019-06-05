@@ -54,7 +54,7 @@ var clusterTypes = []string{
 }
 
 func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider,
-	dcs map[string]provider.DatacenterMeta, initNodeDeploymentFailures *prometheus.CounterVec, eventRecorderProvider provider.EventRecorderProvider) endpoint.Endpoint {
+	dcs map[string]provider.DatacenterMeta, initNodeDeploymentFailures *prometheus.CounterVec, eventRecorderProvider provider.EventRecorderProvider, credentialManager common.CredentialManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateReq)
 		err := req.Validate()
@@ -68,6 +68,15 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 		k8sClient := privilegedClusterProvider.GetSeedClusterAdminClient()
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		credentialName := req.Body.Cluster.Credential
+		if len(credentialName) > 0 {
+			cloudSpec, err := credentialManager.SetCloudCredentials(credentialName, req.Body.Cluster.Spec.Cloud)
+			if err != nil {
+				return nil, errors.NewBadRequest("invalid credentials: %v", err)
+			}
+			req.Body.Cluster.Spec.Cloud = *cloudSpec
 		}
 
 		// Create the cluster.

@@ -3,14 +3,15 @@ package provider_test
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/kubermatic/kubermatic/api/pkg/credentials"
-	"github.com/stretchr/testify/assert"
 	"html/template"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/kubermatic/kubermatic/api/pkg/credentials"
+	"github.com/stretchr/testify/assert"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,10 +31,7 @@ var (
 
 const tokenID = "cbc36478b0bd8e67e89469c7749d4127"
 const datacenterName = "ap-northeast-1"
-const userName = "OSuser"
-const userPass = "OSpass"
 const region = "RegionOne"
-const domain = "OSdomain"
 
 type ServerTemplateData struct {
 	URL     string
@@ -87,9 +85,9 @@ func SetupOpenstackServer(t *testing.T) {
 	data := ServerTemplateData{
 		URL:     openstackServer.URL,
 		TokenID: tokenID,
-		User:    userName,
-		Pass:    userPass,
-		Domain:  domain,
+		User:    test.TestOSuserName,
+		Pass:    test.TestOSuserPass,
+		Domain:  test.TestOSdomain,
 		Region:  region,
 	}
 
@@ -160,6 +158,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 		Name              string
 		URL               string
 		QueryParams       map[string]string
+		Credential        string
 		OpenstackURL      string
 		OpenstackResponse string
 		ExpectedResponse  string
@@ -180,7 +179,26 @@ func TestOpenstackEndpoints(t *testing.T) {
 			]`,
 		},
 		{
+			Name:       "test tenants endpoint with predefined credentials",
+			Credential: test.TestOSCredential,
+			URL:        "/api/v1/providers/openstack/tenants",
+			ExpectedResponse: `[
+				{"id":"456788", "name": "a project name"},
+				{"id":"456789", "name": "another domain"}
+			]`,
+		},
+		{
 			Name:        "test subnets endpoint",
+			URL:         "/api/v1/providers/openstack/subnets",
+			QueryParams: map[string]string{"network_id": "foo"},
+			ExpectedResponse: `[
+				{"id": "08eae331-0402-425a-923c-34f7cfe39c1b", "name": "private-subnet"},
+				{"id": "54d6f61d-db07-451c-9ab3-b9609b6b6f0b", "name": "my_subnet"}
+			]`,
+		},
+		{
+			Name:        "test subnets endpoint with predefined credentials",
+			Credential:  test.TestOSCredential,
 			URL:         "/api/v1/providers/openstack/subnets",
 			QueryParams: map[string]string{"network_id": "foo"},
 			ExpectedResponse: `[
@@ -196,8 +214,32 @@ func TestOpenstackEndpoints(t *testing.T) {
 			]`,
 		},
 		{
+			Name:       "test networks endpoint with predefined credentials",
+			Credential: test.TestOSCredential,
+			URL:        "/api/v1/providers/openstack/networks",
+			ExpectedResponse: `[
+				{"id": "71c1e68c-171a-4aa2-aca5-50ea153a3718", "name": "net2", "external": false}
+			]`,
+		},
+		{
 			Name: "test sizes endpoint",
 			URL:  "/api/v1/providers/openstack/sizes",
+			ExpectedResponse: `[
+				{
+					"disk":40, "isPublic":true, "memory":4096, "region":"RegionOne", "slug":"m1.medium", "swap":0, "vcpus":2
+				},
+				{
+					"disk":80, "isPublic":true, "memory":8192, "region":"RegionOne", "slug":"m1.large", "swap":0, "vcpus":4
+				},
+				{
+					"disk":1, "isPublic":true, "memory":512, "region":"RegionOne", "slug":"m1.tiny.specs", "swap":0, "vcpus":1
+				}
+			]`,
+		},
+		{
+			Name:       "test sizes endpoint with predefined credentials",
+			Credential: test.TestOSCredential,
+			URL:        "/api/v1/providers/openstack/sizes",
 			ExpectedResponse: `[
 				{
 					"disk":40, "isPublic":true, "memory":4096, "region":"RegionOne", "slug":"m1.medium", "swap":0, "vcpus":2
@@ -228,9 +270,13 @@ func TestOpenstackEndpoints(t *testing.T) {
 			}
 
 			req.Header.Add("DatacenterName", datacenterName)
-			req.Header.Add("Username", userName)
-			req.Header.Add("Password", userPass)
-			req.Header.Add("Domain", domain)
+			if len(tc.Credential) > 0 {
+				req.Header.Add("Credential", test.TestOSCredential)
+			} else {
+				req.Header.Add("Username", test.TestOSuserName)
+				req.Header.Add("Password", test.TestOSuserPass)
+				req.Header.Add("Domain", test.TestOSdomain)
+			}
 
 			apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName, false)
 
