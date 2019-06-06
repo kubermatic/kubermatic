@@ -3,23 +3,25 @@ package main
 import (
 	"flag"
 	"net"
-	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
+	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
+
 	envoyv2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoydiscoveryv2 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	envoycache "github.com/envoyproxy/go-control-plane/pkg/cache"
 	xds "github.com/envoyproxy/go-control-plane/pkg/server"
-	kubeinformers "k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes"
-	kubecache "k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/util/workqueue"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 var (
@@ -33,7 +35,6 @@ var (
 
 const (
 	exposeAnnotationKey   = "nodeport-proxy.k8s.io/expose"
-	eventValue            = ""
 	clusterConnectTimeout = 1 * time.Second
 )
 
@@ -80,41 +81,30 @@ func main() {
 		mainLog.Fatal(err)
 	}
 
-	client, err := kubernetes.NewForConfig(config)
+	mgr, err := manager.New(config, manager.Options{})
 	if err != nil {
 		mainLog.Fatal(err)
 	}
 
-	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(client, 10*time.Hour)
-
-	podInformer := kubeInformerFactory.Core().V1().Pods().Informer()
-	podLister := kubeInformerFactory.Core().V1().Pods().Lister()
-	serviceInformer := kubeInformerFactory.Core().V1().Services().Informer()
-	serviceLister := kubeInformerFactory.Core().V1().Services().Lister()
-
-	m := controller{
-		podLister:           podLister,
-		serviceLister:       serviceLister,
+	r := reconciler{
+		Client:              mgr.GetClient(),
 		envoySnapshotCache:  snapshotCache,
-		syncLock:            &sync.Mutex{},
 		log:                 mainLog.WithField("annotation", exposeAnnotationKey),
 		lastAppliedSnapshot: envoycache.NewSnapshot("v0.0.0", nil, nil, nil, nil),
-		queue:               workqueue.NewRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute)),
+	}
+	ctrl, err := controller.New("envoy-manager", mgr,
+		controller.Options{Reconciler: r, MaxConcurrentReconciles: 1})
+	if err != nil {
+		mainLog.Fatalf("failed to construct mgr: %v", err)
 	}
 
-	podInformer.AddEventHandler(kubecache.ResourceEventHandlerFuncs{
-		AddFunc:    func(_ interface{}) { m.queue.Add(eventValue) },
-		DeleteFunc: func(_ interface{}) { m.queue.Add(eventValue) },
-		UpdateFunc: func(_, _ interface{}) { m.queue.Add(eventValue) },
-	})
-	serviceInformer.AddEventHandler(kubecache.ResourceEventHandlerFuncs{
-		AddFunc:    func(_ interface{}) { m.queue.Add(eventValue) },
-		DeleteFunc: func(_ interface{}) { m.queue.Add(eventValue) },
-		UpdateFunc: func(_, _ interface{}) { m.queue.Add(eventValue) },
-	})
+	for _, t := range []runtime.Object{&corev1.Pod{}, &corev1.Service{}} {
+		if err := ctrl.Watch(&source.Kind{Type: t}, controllerutil.EnqueueConst("")); err != nil {
+			mainLog.Fatalf("failed to watch %t: %v", t, err)
+		}
+	}
 
-	kubeInformerFactory.Start(stopCh)
-	kubeInformerFactory.WaitForCacheSync(stopCh)
-
-	m.Run(stopCh)
+	if err := mgr.Start(stopCh); err != nil {
+		mainLog.Printf("Manager ended with err: %v", err)
+	}
 }

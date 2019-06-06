@@ -2,9 +2,7 @@ package main
 
 import (
 	"bytes"
-	"sync"
 	"testing"
-	"time"
 
 	"github.com/go-test/deep"
 	"github.com/gogo/protobuf/proto"
@@ -23,10 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes/fake"
-	"k8s.io/client-go/util/workqueue"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestSync(t *testing.T) {
@@ -567,16 +562,7 @@ func TestSync(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			client := fake.NewSimpleClientset(test.resources...)
-
-			informerFactory := informers.NewSharedInformerFactory(client, 30*time.Minute)
-
-			podLister := informerFactory.Core().V1().Pods().Lister()
-			serviceLister := informerFactory.Core().V1().Services().Lister()
-
-			informerFactory.Start(wait.NeverStop)
-			informerFactory.WaitForCacheSync(wait.NeverStop)
-
+			client := fakectrlruntimeclient.NewFakeClient(test.resources...)
 			logOutput := &bytes.Buffer{}
 			mainLog := logrus.New()
 			mainLog.SetLevel(logrus.DebugLevel)
@@ -586,17 +572,14 @@ func TestSync(t *testing.T) {
 
 			snapshotCache := envoycache.NewSnapshotCache(true, hasher{}, log)
 
-			c := controller{
-				podLister:           podLister,
-				serviceLister:       serviceLister,
+			c := reconciler{
+				Client:              client,
 				envoySnapshotCache:  snapshotCache,
-				syncLock:            &sync.Mutex{},
 				log:                 log,
 				lastAppliedSnapshot: envoycache.NewSnapshot("v0.0.0", nil, nil, nil, nil),
-				queue:               workqueue.NewRateLimitingQueue(workqueue.NewItemExponentialFailureRateLimiter(1*time.Second, 5*time.Minute)),
 			}
 
-			if err := c.Sync(); err != nil {
+			if err := c.sync(); err != nil {
 				t.Fatalf("failed to execute controller sync func: %v", err)
 			}
 

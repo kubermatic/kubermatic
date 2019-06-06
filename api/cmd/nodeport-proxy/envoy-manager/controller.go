@@ -1,10 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -26,53 +26,19 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/wait"
-	corev1lister "k8s.io/client-go/listers/core/v1"
-	"k8s.io/client-go/util/workqueue"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-type controller struct {
-	log   *logrus.Entry
-	queue workqueue.RateLimitingInterface
+type reconciler struct {
+	log *logrus.Entry
+	ctrlruntimeclient.Client
 
-	podLister     corev1lister.PodLister
-	serviceLister corev1lister.ServiceLister
-
-	syncLock            *sync.Mutex
 	envoySnapshotCache  envoycache.SnapshotCache
 	lastAppliedSnapshot envoycache.Snapshot
 }
 
-func (c *controller) Run(stopCh <-chan struct{}) {
-	defer c.queue.ShutDown()
-
-	go wait.Until(c.runWorker, time.Second, stopCh)
-
-	<-stopCh
-}
-
-func (c *controller) runWorker() {
-	for c.processNextWorkItem() {
-	}
-}
-
-func (c *controller) processNextWorkItem() bool {
-	key, quit := c.queue.Get()
-	if quit {
-		return false
-	}
-
-	defer c.queue.Done(key)
-
-	if err := c.Sync(); err != nil {
-		c.log.Errorf("failed to sync: %v", err)
-		c.queue.AddRateLimited(key)
-	}
-
-	return true
-}
-
-func (c *controller) getInitialResources() (listeners []envoycache.Resource, clusters []envoycache.Resource, err error) {
+func (c *reconciler) getInitialResources() (listeners []envoycache.Resource, clusters []envoycache.Resource, err error) {
 	adminCluster := &envoyv2.Cluster{
 		Name:           "service_stats",
 		ConnectTimeout: 50 * time.Millisecond,
@@ -199,13 +165,20 @@ func (c *controller) getInitialResources() (listeners []envoycache.Resource, clu
 	return listeners, clusters, nil
 }
 
-func (c *controller) Sync() error {
-	c.syncLock.Lock()
-	defer c.syncLock.Unlock()
-
-	listerServices, err := c.serviceLister.List(labels.Everything())
+func (c reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
+	err := c.sync()
 	if err != nil {
-		return errors.Wrap(err, "failed to list service's from lister")
+		c.log.WithError(err).Print("Failed to reconcile")
+	}
+	return reconcile.Result{}, err
+}
+
+func (c *reconciler) sync() error {
+	ctx := context.Background()
+
+	services := &corev1.ServiceList{}
+	if err := c.List(ctx, &ctrlruntimeclient.ListOptions{}, services); err != nil {
+		return errors.Wrap(err, "failed to list service's")
 	}
 
 	listeners, clusters, err := c.getInitialResources()
@@ -213,8 +186,8 @@ func (c *controller) Sync() error {
 		return errors.Wrap(err, "failed to get initial config")
 	}
 
-	for _, service := range listerServices {
-		serviceKey := ServiceKey(service)
+	for _, service := range services.Items {
+		serviceKey := ServiceKey(&service)
 
 		// Only cover services which have the annotation: true
 		if strings.ToLower(service.Annotations[exposeAnnotationKey]) != "true" {
@@ -228,7 +201,7 @@ func (c *controller) Sync() error {
 			return nil
 		}
 
-		pods, err := c.getReadyServicePods(service)
+		pods, err := c.getReadyServicePods(&service)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("failed to get pod's for service '%s'", serviceKey))
 		}
@@ -368,25 +341,28 @@ func (c *controller) Sync() error {
 	return nil
 }
 
-func (c *controller) getReadyServicePods(service *corev1.Service) ([]*corev1.Pod, error) {
+func (c *reconciler) getReadyServicePods(service *corev1.Service) ([]*corev1.Pod, error) {
 	key := ServiceKey(service)
 	var readyPods []*corev1.Pod
 
 	// As we take the service selector as input, we can assume that its validated
-	selector := labels.SelectorFromValidatedSet(service.Spec.Selector)
-	servicePods, err := c.podLister.Pods(service.Namespace).List(selector)
-	if err != nil {
-		return readyPods, errors.Wrap(err, fmt.Sprintf("failed to list pod's for service '%s' via selector: '%s'", key, selector.String()))
+	opts := &ctrlruntimeclient.ListOptions{
+		LabelSelector: labels.SelectorFromValidatedSet(service.Spec.Selector),
+		Namespace:     service.Namespace,
+	}
+	servicePods := &corev1.PodList{}
+	if err := c.List(context.Background(), opts, servicePods); err != nil {
+		return readyPods, errors.Wrap(err, fmt.Sprintf("failed to list pod's for service '%s' via selector: '%s'", key, opts.LabelSelector.String()))
 	}
 
-	if len(servicePods) == 0 {
+	if len(servicePods.Items) == 0 {
 		return readyPods, nil
 	}
 
 	// Filter for ready pods
-	for _, pod := range servicePods {
-		if PodIsReady(pod) {
-			readyPods = append(readyPods, pod)
+	for _, pod := range servicePods.Items {
+		if PodIsReady(&pod) {
+			readyPods = append(readyPods, &pod)
 		} else {
 			// Only log when we do not add pods as the caller is responsible for logging the final pods
 			c.log.Debugf("Skipping pod %s/%s for service %s/%s. The pod ist not ready", pod.Namespace, pod.Name, service.Namespace, service.Name)
