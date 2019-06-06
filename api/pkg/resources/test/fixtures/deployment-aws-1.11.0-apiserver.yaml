@@ -222,7 +222,7 @@ spec:
         - /etc/kubernetes/dex/ca/caBundle.pem
         command:
         - /hyperkube
-        - apiserver
+        - kube-apiserver
         env:
         - name: AWS_ACCESS_KEY_ID
           value: aws-access-key-id

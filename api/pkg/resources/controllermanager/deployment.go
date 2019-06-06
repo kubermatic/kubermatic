@@ -161,7 +161,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				{
 					Name:      name,
 					Image:     data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
-					Command:   []string{"/hyperkube", "controller-manager"},
+					Command:   []string{"/hyperkube", "kube-controller-manager"},
 					Args:      flags,
 					Env:       getEnvVars(data.Cluster()),
 					Resources: resourceRequirements,

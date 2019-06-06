@@ -222,7 +222,7 @@ spec:
         - /etc/kubernetes/dex/ca/caBundle.pem
         command:
         - /hyperkube
-        - apiserver
+        - kube-apiserver
         image: gcr.io/google_containers/hyperkube-amd64:v1.11.0
         livenessProbe:
           failureThreshold: 8

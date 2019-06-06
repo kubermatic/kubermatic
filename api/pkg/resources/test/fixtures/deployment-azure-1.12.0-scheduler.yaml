@@ -106,7 +106,7 @@ spec:
         - ScheduleDaemonSetPods=false
         command:
         - /hyperkube
-        - scheduler
+        - kube-scheduler
         image: gcr.io/google_containers/hyperkube-amd64:v1.12.0
         livenessProbe:
           failureThreshold: 8

@@ -137,7 +137,7 @@ spec:
         - "0"
         command:
         - /hyperkube
-        - controller-manager
+        - kube-controller-manager
         env:
         - name: AWS_ACCESS_KEY_ID
           value: aws-access-key-id

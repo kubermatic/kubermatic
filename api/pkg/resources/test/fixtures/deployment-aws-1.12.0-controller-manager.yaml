@@ -132,7 +132,7 @@ spec:
         - --authentication-skip-lookup=true
         command:
         - /hyperkube
-        - controller-manager
+        - kube-controller-manager
         env:
         - name: AWS_ACCESS_KEY_ID
           value: aws-access-key-id
