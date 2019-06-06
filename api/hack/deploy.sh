@@ -25,6 +25,7 @@ DEPLOY_ALERTMANAGER=${DEPLOY_ALERTMANAGER:-true}
 DEPLOY_MINIO=${DEPLOY_MINIO:-true}
 DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 TILLER_NAMESPACE=${TILLER_NAMESPACE:-kubermatic}
+HELM_INIT_ARGS=${HELM_INIT_ARGS:-""}
 
 cd "$(dirname "$0")/../../"
 
@@ -40,14 +41,14 @@ function deploy {
   retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} upgrade --install --atomic --timeout $timeout ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
 }
 
-sed -i "s/__KUBERMATIC_TAG__/$GIT_HEAD_HASH/g" ./config/kubermatic/Chart.yaml
+sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/kubermatic/Chart.yaml
 
 echodate "Initializing Tiller in namespace ${TILLER_NAMESPACE}"
 # In clusters which have not been initialized yet, this will fail
 helm version --tiller-namespace ${TILLER_NAMESPACE} || true
 kubectl create serviceaccount -n ${TILLER_NAMESPACE} tiller-sa || true
 kubectl create clusterrolebinding tiller-cluster-role --clusterrole=cluster-admin --serviceaccount=${TILLER_NAMESPACE}:tiller-sa  || true
-retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} init --service-account tiller-sa --replicas 3 --history-max 10 --upgrade --force-upgrade --wait
+retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} init --service-account tiller-sa --replicas 3 --history-max 10 --upgrade --force-upgrade --wait ${HELM_INIT_ARGS}
 echodate "Tiller initialized successfully"
 
 echodate "Deploying ${DEPLOY_STACK} stack..."
