@@ -388,16 +388,47 @@ func ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 					},
 				},
 				{
-					Name: to.StringPtr("deny_all"),
+					Name: to.StringPtr("deny_all_tcp"),
 					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 						Direction:                network.SecurityRuleDirectionInbound,
-						Protocol:                 "*",
+						Protocol:                 "TCP",
 						SourceAddressPrefix:      to.StringPtr("*"),
 						SourcePortRange:          to.StringPtr("*"),
 						DestinationPortRange:     to.StringPtr("*"),
 						DestinationAddressPrefix: to.StringPtr("*"),
 						Access:                   network.SecurityRuleAccessDeny,
 						Priority:                 to.Int32Ptr(800),
+					},
+				},
+				{
+					Name: to.StringPtr("deny_all_udp"),
+					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
+						Direction:                network.SecurityRuleDirectionInbound,
+						Protocol:                 "UDP",
+						SourceAddressPrefix:      to.StringPtr("*"),
+						SourcePortRange:          to.StringPtr("*"),
+						DestinationPortRange:     to.StringPtr("*"),
+						DestinationAddressPrefix: to.StringPtr("*"),
+						Access:                   network.SecurityRuleAccessDeny,
+						Priority:                 to.Int32Ptr(801),
+					},
+				},
+				// Alright, so here's the deal. We need to allow ICMP, but on Azure it is not possible
+				// to specify ICMP as a protocol in a rule - only TCP or UDP.
+				// Therefore we're hacking around it by first blocking all incoming TCP and UDP
+				// and if these don't match, we have an "allow all" rule. Dirty, but the only way.
+				// See also: https://tinyurl.com/azure-allow-icmp
+				{
+					Name: to.StringPtr("icmp_by_allow_all"),
+					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
+						Direction:                network.SecurityRuleDirectionInbound,
+						Protocol:                 "*",
+						SourceAddressPrefix:      to.StringPtr("*"),
+						SourcePortRange:          to.StringPtr("*"),
+						DestinationAddressPrefix: to.StringPtr("*"),
+						DestinationPortRange:     to.StringPtr("*"),
+						Access:                   network.SecurityRuleAccessAllow,
+						Priority:                 to.Int32Ptr(900),
 					},
 				},
 				// outbound
