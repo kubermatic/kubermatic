@@ -28,6 +28,10 @@ var (
 	ErrInstanceNotFound = errors.New("instance not found")
 )
 
+func IsNotFound(err error) bool {
+	return err == ErrInstanceNotFound
+}
+
 // TerminalError is a helper struct that holds errors of type "terminal"
 type TerminalError struct {
 	Reason  common.MachineStatusError

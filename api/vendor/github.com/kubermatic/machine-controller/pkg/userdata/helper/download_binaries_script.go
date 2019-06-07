@@ -23,20 +23,20 @@ import (
 )
 
 const (
-	downloadBinariesTpl = `#setup some common directories
+	downloadBinariesTpl = `{{- /*setup some common directories */ -}}
 mkdir -p /opt/bin/
 mkdir -p /var/lib/calico
 mkdir -p /etc/kubernetes/manifests
 mkdir -p /etc/cni/net.d
 mkdir -p /opt/cni/bin
 
-# cni
+{{- /* # cni */}}
 if [ ! -f /opt/cni/bin/loopback ]; then
     curl -L https://github.com/containernetworking/plugins/releases/download/v0.6.0/cni-plugins-amd64-v0.6.0.tgz | tar -xvzC /opt/cni/bin -f -
 fi
 
 {{- if .DownloadKubelet }}
-# kubelet
+{{- /* kubelet */}}
 if [ ! -f /opt/bin/kubelet ]; then
     curl -Lfo /opt/bin/kubelet https://storage.googleapis.com/kubernetes-release/release/v{{ .KubeletVersion }}/bin/linux/amd64/kubelet
     chmod +x /opt/bin/kubelet

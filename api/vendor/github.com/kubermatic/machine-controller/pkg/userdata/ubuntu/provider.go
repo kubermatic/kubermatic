@@ -129,14 +129,16 @@ func (p Provider) UserData(
 const userDataTemplate = `#cloud-config
 {{ if ne .CloudProvider "aws" }}
 hostname: {{ .MachineSpec.Name }}
-# Never set the hostname on AWS nodes. Kubernetes(kube-proxy) requires the hostname to be the private dns name
+{{- /* Never set the hostname on AWS nodes. Kubernetes(kube-proxy) requires the hostname to be the private dns name */}}
 {{ end }}
 
 ssh_pwauth: no
 
+{{- if .ProviderSpec.SSHPublicKeys }}
 ssh_authorized_keys:
 {{- range .ProviderSpec.SSHPublicKeys }}
 - "{{ . }}"
+{{- end }}
 {{- end }}
 
 write_files:
@@ -228,14 +230,14 @@ write_files:
     #!/bin/bash
     set -xeuo pipefail
 
-    # As we added some modules and don't want to reboot, restart the service
+{{- /* As we added some modules and don't want to reboot, restart the service */}}
     systemctl restart systemd-modules-load.service
     sysctl --system
 
     apt-key add /opt/docker.asc
     apt-get update
 
-    # Make sure we always disable swap - Otherwise the kubelet won't start'.
+{{- /* Make sure we always disable swap - Otherwise the kubelet won't start'. */}}
     cp /etc/fstab /etc/fstab.orig
     cat /etc/fstab.orig | awk '$3 ~ /^swap$/ && $1 !~ /^#/ {$0="# commented out by cloudinit\n#"$0} 1' > /etc/fstab.noswap
     mv /etc/fstab.noswap /etc/fstab
@@ -264,7 +266,7 @@ write_files:
       ipvsadm{{ if eq .CloudProvider "vsphere" }} \
       open-vm-tools{{ end }}
 
-    # If something failed during package installation but docker got installed, we need to put it on hold
+{{- /* If something failed during package installation but docker got installed, we need to put it on hold */}}
     apt-mark hold docker.io || true
     apt-mark hold docker-ce || true
 

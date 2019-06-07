@@ -117,11 +117,13 @@ func (p Provider) UserData(
 
 // UserData template.
 const userDataTemplate = `passwd:
+{{- if ne (len .ProviderSpec.SSHPublicKeys) 0 }}
   users:
     - name: core
       ssh_authorized_keys:
         {{range .ProviderSpec.SSHPublicKeys}}- {{.}}
         {{end}}
+{{- end }}
 
 {{- if .ProviderSpec.Network }}
 networkd:

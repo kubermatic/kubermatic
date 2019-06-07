@@ -93,11 +93,13 @@ func (ne *NodeEviction) Run() error {
 }
 
 func (ne *NodeEviction) cordonNode(node *corev1.Node) error {
-	_, err := ne.updateNode(func(n *corev1.Node) {
-		n.Spec.Unschedulable = true
-	})
-	if err != nil {
-		return err
+	if !node.Spec.Unschedulable {
+		_, err := ne.updateNode(func(n *corev1.Node) {
+			n.Spec.Unschedulable = true
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	// Be paranoid and wait until the change got propagated to the lister

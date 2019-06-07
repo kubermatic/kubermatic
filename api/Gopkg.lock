@@ -813,11 +813,10 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:4935124fc567c12e8a9bff9a8f9ef746aa72e352e063cd2b6285ab00b170fabf"
+  digest = "1:11100cc3b768ae71140c2e38ddc9ae7a61645e720449d0cf524952f6178140cb"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/apis/plugin",
-    "pkg/cloudprovider/cloud",
     "pkg/cloudprovider/common/ssh",
     "pkg/cloudprovider/errors",
     "pkg/cloudprovider/instance",
@@ -829,6 +828,7 @@
     "pkg/cloudprovider/provider/openstack",
     "pkg/cloudprovider/provider/packet",
     "pkg/cloudprovider/provider/vsphere",
+    "pkg/cloudprovider/types",
     "pkg/ini",
     "pkg/kubernetes",
     "pkg/node/eviction",
@@ -841,8 +841,8 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "baf02a6c95d73585093188378d7336c983770ead"
-  version = "v1.1.7"
+  revision = "44919d7c387fce1ff4972c56479230ff1f5fa783"
+  version = "v1.1.10"
 
 [[projects]]
   digest = "1:0dbba7d4d4f3eeb01acd81af338ff4a3c4b0bb814d87368ea536e616f383240d"
@@ -1903,14 +1903,14 @@
   revision = "0317810137be915b9cf888946c6e115c1bfac693"
 
 [[projects]]
-  digest = "1:4f2774f427f8e71498be86cabf0129951c72181ba69f2a3c73d693808fc503bd"
+  digest = "1:63ea39743dfa0c5d53e2ef1551ca6d9b80d868364b098193b7135e032fb3e487"
   name = "sigs.k8s.io/cluster-api"
   packages = [
     "pkg/apis/cluster/common",
     "pkg/apis/cluster/v1alpha1",
   ]
   pruneopts = "NUT"
-  revision = "c63bf6f67ab631a449b6eb76dfe29458441051e0"
+  revision = "2ec456177c0e8f0a903f4e746d44baaae54cc591"
 
 [[projects]]
   digest = "1:f9536a0685b75eef97e368e810d124641afc4185d7c619a67e3ac2f5af2fe9a1"

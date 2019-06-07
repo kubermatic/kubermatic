@@ -18,6 +18,7 @@ package openstack
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -34,9 +35,9 @@ import (
 	osnetworks "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	"github.com/gophercloud/gophercloud/pagination"
 
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/cloud"
 	cloudprovidererrors "github.com/kubermatic/machine-controller/pkg/cloudprovider/errors"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
+	cloudprovidertypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -59,31 +60,31 @@ type provider struct {
 }
 
 // New returns a openstack provider
-func New(configVarResolver *providerconfig.ConfigVarResolver) cloud.Provider {
+func New(configVarResolver *providerconfig.ConfigVarResolver) cloudprovidertypes.Provider {
 	return &provider{configVarResolver: configVarResolver}
 }
 
 type RawConfig struct {
 	// Auth details
-	IdentityEndpoint providerconfig.ConfigVarString `json:"identityEndpoint"`
-	Username         providerconfig.ConfigVarString `json:"username"`
-	Password         providerconfig.ConfigVarString `json:"password"`
-	DomainName       providerconfig.ConfigVarString `json:"domainName"`
-	TenantName       providerconfig.ConfigVarString `json:"tenantName"`
-	TokenID          providerconfig.ConfigVarString `json:"tokenId"`
-	Region           providerconfig.ConfigVarString `json:"region"`
+	IdentityEndpoint providerconfig.ConfigVarString `json:"identityEndpoint,omitempty"`
+	Username         providerconfig.ConfigVarString `json:"username,omitempty"`
+	Password         providerconfig.ConfigVarString `json:"password,omitempty"`
+	DomainName       providerconfig.ConfigVarString `json:"domainName,omitempty"`
+	TenantName       providerconfig.ConfigVarString `json:"tenantName,omitempty"`
+	TokenID          providerconfig.ConfigVarString `json:"tokenId,omitempty"`
+	Region           providerconfig.ConfigVarString `json:"region,omitempty"`
 
 	// Machine details
 	Image            providerconfig.ConfigVarString   `json:"image"`
 	Flavor           providerconfig.ConfigVarString   `json:"flavor"`
-	SecurityGroups   []providerconfig.ConfigVarString `json:"securityGroups"`
-	Network          providerconfig.ConfigVarString   `json:"network"`
-	Subnet           providerconfig.ConfigVarString   `json:"subnet"`
-	FloatingIPPool   providerconfig.ConfigVarString   `json:"floatingIpPool"`
-	AvailabilityZone providerconfig.ConfigVarString   `json:"availabilityZone"`
+	SecurityGroups   []providerconfig.ConfigVarString `json:"securityGroups,omitempty"`
+	Network          providerconfig.ConfigVarString   `json:"network,omitempty"`
+	Subnet           providerconfig.ConfigVarString   `json:"subnet,omitempty"`
+	FloatingIPPool   providerconfig.ConfigVarString   `json:"floatingIpPool,omitempty"`
+	AvailabilityZone providerconfig.ConfigVarString   `json:"availabilityZone,omitempty"`
 	TrustDevicePath  providerconfig.ConfigVarBool     `json:"trustDevicePath"`
 	// This tag is related to server metadata, not compute server's tag
-	Tags map[string]string `json:"tags"`
+	Tags map[string]string `json:"tags,omitempty"`
 }
 
 type Config struct {
@@ -326,6 +327,14 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 		return fmt.Errorf("failed to parse config: %v", err)
 	}
 
+	if c.Image == "" {
+		return errors.New("image must be configured")
+	}
+
+	if c.Flavor == "" {
+		return errors.New("flavor must be configured")
+	}
+
 	client, err := getClient(c)
 	if err != nil {
 		return fmt.Errorf("failed to get a openstack client: %v", err)
@@ -379,7 +388,7 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 	return nil
 }
 
-func (p *provider) Create(machine *v1alpha1.Machine, machineCreateDeleteData *cloud.MachineCreateDeleteData, userdata string) (instance.Instance, error) {
+func (p *provider) Create(machine *v1alpha1.Machine, data *cloudprovidertypes.ProviderData, userdata string) (instance.Instance, error) {
 	c, _, _, err := p.getConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return nil, cloudprovidererrors.TerminalError{
@@ -453,7 +462,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, machineCreateDeleteData *cl
 
 	// Find a free FloatingIP or allocate a new one
 	if c.FloatingIPPool != "" {
-		if err := assignFloatingIPToInstance(machineCreateDeleteData.Updater, machine, client, server.ID, c.FloatingIPPool, c.Region, network); err != nil {
+		if err := assignFloatingIPToInstance(data.Update, machine, client, server.ID, c.FloatingIPPool, c.Region, network); err != nil {
 			defer deleteInstanceDueToFatalLogged(computeClient, server.ID)
 			return nil, fmt.Errorf("failed to assign a floating ip to instance %s: %v", server.ID, err)
 		}
@@ -505,17 +514,17 @@ func deleteInstanceDueToFatalLogged(computeClient *gophercloud.ServiceClient, se
 	glog.V(0).Infof("Instance %s got deleted", serverID)
 }
 
-func (p *provider) Cleanup(machine *v1alpha1.Machine, machineCreateDeleteData *cloud.MachineCreateDeleteData) (bool, error) {
+func (p *provider) Cleanup(machine *v1alpha1.Machine, data *cloudprovidertypes.ProviderData) (bool, error) {
 	var hasFloatingIPReleaseFinalizer bool
 	if finalizers := sets.NewString(machine.Finalizers...); finalizers.Has(floatingIPReleaseFinalizer) {
 		hasFloatingIPReleaseFinalizer = true
 	}
 
-	instance, err := p.Get(machine)
+	instance, err := p.Get(machine, data)
 	if err != nil {
 		if err == cloudprovidererrors.ErrInstanceNotFound {
 			if hasFloatingIPReleaseFinalizer {
-				if err := p.cleanupFloatingIP(machine, machineCreateDeleteData.Updater); err != nil {
+				if err := p.cleanupFloatingIP(machine, data.Update); err != nil {
 					return false, fmt.Errorf("failed to clean up floating ip: %v", err)
 				}
 			}
@@ -547,13 +556,13 @@ func (p *provider) Cleanup(machine *v1alpha1.Machine, machineCreateDeleteData *c
 	}
 
 	if hasFloatingIPReleaseFinalizer {
-		return false, p.cleanupFloatingIP(machine, machineCreateDeleteData.Updater)
+		return false, p.cleanupFloatingIP(machine, data.Update)
 	}
 
 	return false, nil
 }
 
-func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
+func (p *provider) Get(machine *v1alpha1.Machine, _ *cloudprovidertypes.ProviderData) (instance.Instance, error) {
 	c, _, _, err := p.getConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return nil, cloudprovidererrors.TerminalError{
@@ -778,7 +787,7 @@ type forbiddenResponse struct {
 	} `json:"forbidden"`
 }
 
-func (p *provider) cleanupFloatingIP(machine *v1alpha1.Machine, updater cloud.MachineUpdater) error {
+func (p *provider) cleanupFloatingIP(machine *v1alpha1.Machine, updater cloudprovidertypes.MachineUpdater) error {
 	floatingIPID, exists := machine.Annotations[floatingIPIDAnnotationKey]
 	if !exists {
 		return osErrorToTerminalError(fmt.Errorf("failed to release floating ip"),
@@ -804,7 +813,7 @@ func (p *provider) cleanupFloatingIP(machine *v1alpha1.Machine, updater cloud.Ma
 	if err := osfloatingips.Delete(netClient, floatingIPID).ExtractErr(); err != nil && err.Error() != "Resource not found" {
 		return fmt.Errorf("failed to delete floating ip %s: %v", floatingIPID, err)
 	}
-	if _, err := updater(machine, func(m *v1alpha1.Machine) {
+	if err := updater(machine, func(m *v1alpha1.Machine) {
 		finalizers := sets.NewString(m.Finalizers...)
 		finalizers.Delete(floatingIPReleaseFinalizer)
 		m.Finalizers = finalizers.List()
@@ -815,7 +824,7 @@ func (p *provider) cleanupFloatingIP(machine *v1alpha1.Machine, updater cloud.Ma
 	return nil
 }
 
-func assignFloatingIPToInstance(machineUpdater cloud.MachineUpdater, machine *v1alpha1.Machine, client *gophercloud.ProviderClient, instanceID, floatingIPPoolName, region string, network *osnetworks.Network) error {
+func assignFloatingIPToInstance(machineUpdater cloudprovidertypes.MachineUpdater, machine *v1alpha1.Machine, client *gophercloud.ProviderClient, instanceID, floatingIPPoolName, region string, network *osnetworks.Network) error {
 	port, err := getInstancePort(client, region, instanceID, network.ID)
 	if err != nil {
 		return fmt.Errorf("failed to get instance port for network %s in region %s: %v", network.ID, region, err)
@@ -848,7 +857,7 @@ func assignFloatingIPToInstance(machineUpdater cloud.MachineUpdater, machine *v1
 		if ip, err = createFloatingIP(client, region, port.ID, floatingIPPool); err != nil {
 			return osErrorToTerminalError(err, "failed to allocate a floating ip")
 		}
-		if _, err = machineUpdater(machine, func(m *v1alpha1.Machine) {
+		if err := machineUpdater(machine, func(m *v1alpha1.Machine) {
 			m.Finalizers = append(m.Finalizers, floatingIPReleaseFinalizer)
 			if m.Annotations == nil {
 				m.Annotations = map[string]string{}
