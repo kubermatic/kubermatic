@@ -165,6 +165,7 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *provider.DatacenterMeta) (cl
 			return "", errors.New("empty project_id")
 		}
 
+		tag := fmt.Sprintf("kubernetes-cluster-%s", cluster.Name)
 		localZone := dc.Spec.GCP.Region + "-" + dc.Spec.GCP.ZoneSuffixes[0]
 		var multizone bool
 		if len(dc.Spec.GCP.ZoneSuffixes) > 1 {
@@ -183,6 +184,7 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *provider.DatacenterMeta) (cl
 				NetworkName:    cloud.GCP.Network,
 				SubnetworkName: cloud.GCP.Subnetwork,
 				TokenURL:       "nil",
+				NodeTags:       []string{tag},
 			},
 		}
 		cloudConfig, err = gcpCloudConfig.AsString()
