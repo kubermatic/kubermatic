@@ -15,6 +15,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/nodeportproxy"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
@@ -92,6 +93,12 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return err
 	}
 
+	if r.apiServerExposeStrategy == corev1.ServiceTypeLoadBalancer {
+		if err := nodeportproxy.EnsureResources(ctx, r.Client, data); err != nil {
+			return fmt.Errorf("failed to ensure NodePortProxy resources: %v", err)
+		}
+	}
+
 	return nil
 }
 
@@ -157,8 +164,8 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kuberma
 // GetServiceCreators returns all service creators that are currently in use
 func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedServiceCreatorGetter {
 	return []reconciling.NamedServiceCreatorGetter{
-		apiserver.InternalServiceCreator(),
 		apiserver.ExternalServiceCreator(data.APIServerExposeStrategy()),
+		apiserver.InternalServiceCreator(data.Cluster().Address.Port),
 		openvpn.ServiceCreator(),
 		etcd.ServiceCreator(data),
 		dns.ServiceCreator(),

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/nodeportproxy"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -11,22 +12,36 @@ import (
 )
 
 // InternalServiceCreator returns the function to reconcile the internal API server service
-func InternalServiceCreator() reconciling.NamedServiceCreatorGetter {
+func InternalServiceCreator(apiserverPort int32) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.ApiserverInternalServiceName, func(se *corev1.Service) (*corev1.Service, error) {
+			// Validation checks if port > 1 and < 65535 and because we do not have a DAG yet to properly
+			// model our dependencies, this service gets created at a point in time where we don't know
+			// the port yet
+			if apiserverPort == 0 {
+				apiserverPort = 1
+			}
 			se.Name = resources.ApiserverInternalServiceName
 			se.Labels = resources.BaseAppLabel(name, nil)
+			if se.Annotations == nil {
+				se.Annotations = map[string]string{}
+			}
+			// We always set this because we don't know the expose strategy and don't need to
+			// This has no effect when we expose via NodePorts
+			se.Annotations[nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey] = "true"
 
-			se.Spec.Type = corev1.ServiceTypeClusterIP
+			if se.Spec.Type == "" {
+				se.Spec.Type = corev1.ServiceTypeNodePort
+			}
 			se.Spec.Selector = map[string]string{
 				resources.AppLabelKey: name,
 			}
 			se.Spec.Ports = []corev1.ServicePort{
 				{
-					Name:       "insecure",
-					Port:       8080,
+					Name:       "kube-apiserver",
+					Port:       apiserverPort,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt(8080),
+					TargetPort: intstr.FromInt(int(apiserverPort)),
 				},
 			}
 			return se, nil
@@ -42,9 +57,6 @@ func ExternalServiceCreator(serviceType corev1.ServiceType) reconciling.NamedSer
 				return nil, fmt.Errorf("service.spec.type must be either NodePort or LoadBalanancer, was %q", serviceType)
 			}
 			se.Name = resources.ApiserverExternalServiceName
-			se.Annotations = map[string]string{
-				"nodeport-proxy.k8s.io/expose": "true",
-			}
 			if se.Spec.Type == "" {
 				se.Spec.Type = serviceType
 			}

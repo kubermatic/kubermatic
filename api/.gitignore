@@ -9,6 +9,7 @@ secrets.yaml
 template/coreos
 !handler/fixtures/*
 _build/*
+**/_build
 _artifacts/*
 handler/swagger/index.json
 handler/swagger/api/index.json

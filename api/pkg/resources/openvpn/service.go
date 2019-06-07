@@ -2,6 +2,7 @@ package openvpn
 
 import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/nodeportproxy"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -14,8 +15,14 @@ func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 		return resources.OpenVPNServerServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.OpenVPNServerServiceName
 			se.Labels = resources.BaseAppLabel(name, nil)
+
+			// Always set both annotations, we can't say for sure which expose strategy is being
+			// used here, because we don't change it for existing clusters
+			// Depending on what the configured expose strategy is, one of the two annotations will
+			// not have any effect
 			se.Annotations = map[string]string{
-				"nodeport-proxy.k8s.io/expose": "true",
+				"nodeport-proxy.k8s.io/expose":                           "true",
+				nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey: "true",
 			}
 			se.Spec.Selector = map[string]string{
 				resources.AppLabelKey: name,
