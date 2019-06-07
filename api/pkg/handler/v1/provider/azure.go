@@ -146,10 +146,27 @@ func AzureSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, dc
 	}
 }
 
-func AzureSizeEndpoint() endpoint.Endpoint {
+func AzureSizeEndpoint(credentialManager common.CredentialManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AzureSizeReq)
-		return azureSize(ctx, req.SubscriptionID, req.ClientID, req.ClientSecret, req.TenantID, req.Location)
+
+		subscriptionID := req.SubscriptionID
+		clientID := req.ClientID
+		clientSecret := req.ClientSecret
+		tenantID := req.TenantID
+
+		if len(req.Credential) > 0 && credentialManager.GetCredentials().Azure != nil {
+			for _, credential := range credentialManager.GetCredentials().Azure {
+				if credential.Name == req.Credential {
+					subscriptionID = credential.SubscriptionID
+					clientID = credential.ClientID
+					clientSecret = credential.ClientSecret
+					tenantID = credential.TenantID
+					break
+				}
+			}
+		}
+		return azureSize(ctx, subscriptionID, clientID, clientSecret, tenantID, req.Location)
 	}
 }
 
@@ -248,6 +265,7 @@ type AzureSizeReq struct {
 	ClientID       string
 	ClientSecret   string
 	Location       string
+	Credential     string
 }
 
 func DecodeAzureSizesReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -258,5 +276,6 @@ func DecodeAzureSizesReq(c context.Context, r *http.Request) (interface{}, error
 	req.ClientID = r.Header.Get("ClientID")
 	req.ClientSecret = r.Header.Get("ClientSecret")
 	req.Location = r.Header.Get("Location")
+	req.Credential = r.Header.Get("Credential")
 	return req, nil
 }

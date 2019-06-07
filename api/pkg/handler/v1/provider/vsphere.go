@@ -16,14 +16,27 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func VsphereNetworksEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+func VsphereNetworksEndpoint(providers provider.CloudRegistry, credentialManager common.CredentialManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(VSphereNetworksReq)
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = VSphereNetworksReq, got = %T", request)
 		}
 
-		return getVsphereNetworks(providers, req.Username, req.Password, req.DatacenterName)
+		username := req.Username
+		password := req.Password
+
+		if len(req.Credential) > 0 && credentialManager.GetCredentials().VSphere != nil {
+			for _, credential := range credentialManager.GetCredentials().VSphere {
+				if credential.Name == req.Credential {
+					username = credential.Username
+					password = credential.Password
+					break
+				}
+			}
+		}
+
+		return getVsphereNetworks(providers, username, password, req.DatacenterName)
 	}
 }
 
@@ -102,6 +115,7 @@ type VSphereNetworksReq struct {
 	Username       string
 	Password       string
 	DatacenterName string
+	Credential     string
 }
 
 func DecodeVSphereNetworksReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -110,6 +124,7 @@ func DecodeVSphereNetworksReq(c context.Context, r *http.Request) (interface{}, 
 	req.Username = r.Header.Get("Username")
 	req.Password = r.Header.Get("Password")
 	req.DatacenterName = r.Header.Get("DatacenterName")
+	req.Credential = r.Header.Get("Credential")
 
 	return req, nil
 }

@@ -83,6 +83,16 @@ const (
 	TestServiceAccountHashKey = "eyJhbGciOiJIUzI1NeyJhbGciOiJIUzI1N"
 	// TestFakeToken signed JWT token with fake data
 	TestFakeToken = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjEiLCJleHAiOjE2NDk3NDg4NTYsImlhdCI6MTU1NTA1NDQ1NiwibmJmIjoxNTU1MDU0NDU2LCJwcm9qZWN0X2lkIjoiMSIsInRva2VuX2lkIjoiMSJ9.Q4qxzOaCvUnWfXneY654YiQjUTd_Lsmw56rE17W2ouo"
+	// TestOSdomain OpenStack domain
+	TestOSdomain = "OSdomain"
+	// TestOSuserPass OpenStack user password
+	TestOSuserPass = "OSpass"
+	// TestOSuserName OpenStack user name
+	TestOSuserName = "OSuser"
+	// TestOSCredential OpenStack provider credential name
+	TestOSCredential = "testOpenstack"
+	// TestFakeCredential Fake provider credential name
+	TestFakeCredential = "pluton"
 )
 
 // GetUser is a convenience function for generating apiv1.User
@@ -242,7 +252,14 @@ func initTestEndpoint(user apiv1.User, dc map[string]provider.DatacenterMeta, ku
 
 // CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes  for the tests
 func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
-	return initTestEndpoint(user, dc, kubeObjects, machineObjects, kubermaticObjects, versions, updates, credentials.New(), routingFunc)
+	credentialManager := credentials.New()
+	credentialManager.GetCredentials().Fake = []credentials.FakeCredentials{
+		{Name: TestFakeCredential, Token: "dummy_pluton_token"},
+	}
+	credentialManager.GetCredentials().Openstack = []credentials.OpenstackCredentials{
+		{Name: TestOSCredential, Username: TestOSuserName, Password: TestOSuserPass, Domain: TestOSdomain},
+	}
+	return initTestEndpoint(user, dc, kubeObjects, machineObjects, kubermaticObjects, versions, updates, credentialManager, routingFunc)
 }
 
 func CreateCredentialTestEndpoint(credentialsManager common.CredentialManager, routingFunc newRoutingFunc) (http.Handler, error) {
