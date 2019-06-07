@@ -262,7 +262,7 @@ func getGCPProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc pro
 		Preemptible:           providerconfig.ConfigVarBool{Value: nodeSpec.Cloud.GCP.Preemptible},
 		Network:               providerconfig.ConfigVarString{Value: c.Spec.Cloud.GCP.Network},
 		Subnetwork:            providerconfig.ConfigVarString{Value: c.Spec.Cloud.GCP.Subnetwork},
-		AssignPublicIPAddress: providerconfig.ConfigVarBool{Value: true},
+		AssignPublicIPAddress: &providerconfig.ConfigVarBool{Value: true},
 	}
 
 	tags := sets.NewString(nodeSpec.Cloud.GCP.Tags...)
