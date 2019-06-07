@@ -993,7 +993,8 @@ func supportsStorage(cluster *kubermaticv1.Cluster) bool {
 	return cluster.Spec.Cloud.Openstack != nil ||
 		cluster.Spec.Cloud.Azure != nil ||
 		cluster.Spec.Cloud.AWS != nil ||
-		cluster.Spec.Cloud.VSphere != nil
+		cluster.Spec.Cloud.VSphere != nil ||
+		cluster.Spec.Cloud.GCP != nil
 
 	// Currently broken, see https://github.com/kubermatic/kubermatic/issues/3312
 	//cluster.Spec.Cloud.Hetzner != nil
@@ -1001,7 +1002,8 @@ func supportsStorage(cluster *kubermaticv1.Cluster) bool {
 
 func supportsLBs(cluster *kubermaticv1.Cluster) bool {
 	return cluster.Spec.Cloud.Azure != nil ||
-		cluster.Spec.Cloud.AWS != nil
+		cluster.Spec.Cloud.AWS != nil ||
+		cluster.Spec.Cloud.GCP != nil
 }
 
 func (r *testRunner) logNotReadyControlPlanePods(clusterName string) error {
