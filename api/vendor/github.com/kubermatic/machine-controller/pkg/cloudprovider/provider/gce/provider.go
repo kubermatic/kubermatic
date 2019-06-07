@@ -33,9 +33,9 @@ import (
 	"sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
 	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/cloud"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/errors"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
+	cloudprovidertypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 )
 
@@ -64,7 +64,7 @@ const (
 )
 
 // Compile time verification of Provider implementing cloud.Provider.
-var _ cloud.Provider = New(nil)
+var _ cloudprovidertypes.Provider = New(nil)
 
 // Provider implements the cloud.Provider interface for the Google Cloud Platform.
 type Provider struct {
@@ -127,7 +127,11 @@ func (p *Provider) Validate(spec v1alpha1.MachineSpec) error {
 }
 
 // Get retrieves a node instance that is associated with the given machine.
-func (p *Provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
+func (p *Provider) Get(machine *v1alpha1.Machine, _ *cloudprovidertypes.ProviderData) (instance.Instance, error) {
+	return p.get(machine)
+}
+
+func (p *Provider) get(machine *v1alpha1.Machine) (*googleInstance, error) {
 	// Read configuration.
 	cfg, err := newConfig(p.resolver, machine.Spec.ProviderSpec)
 	if err != nil {
@@ -174,6 +178,7 @@ func (p *Provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, nam
 			Regional:       cfg.regional,
 			NetworkName:    cfg.network,
 			SubnetworkName: cfg.subnetwork,
+			NodeTags:       cfg.tags,
 		},
 	}
 	config, err = cc.AsString()
@@ -186,7 +191,7 @@ func (p *Provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, nam
 // Create inserts a cloud instance according to the given machine.
 func (p *Provider) Create(
 	machine *v1alpha1.Machine,
-	data *cloud.MachineCreateDeleteData,
+	data *cloudprovidertypes.ProviderData,
 	userdata string,
 ) (instance.Instance, error) {
 	// Read configuration.
@@ -255,14 +260,11 @@ func (p *Provider) Create(
 		return nil, newError(common.InvalidConfigurationMachineError, errInsertInstance, err)
 	}
 	// Retrieve it to get a full qualified instance.
-	return p.Get(machine)
+	return p.Get(machine, data)
 }
 
 // Cleanup deletes the instance associated with the machine and all associated resources.
-func (p *Provider) Cleanup(
-	machine *v1alpha1.Machine,
-	data *cloud.MachineCreateDeleteData,
-) (bool, error) {
+func (p *Provider) Cleanup(machine *v1alpha1.Machine, data *cloudprovidertypes.ProviderData) (bool, error) {
 	// Read configuration.
 	cfg, err := newConfig(p.resolver, machine.Spec.ProviderSpec)
 	if err != nil {
@@ -323,11 +325,14 @@ func (p *Provider) MigrateUID(machine *v1alpha1.Machine, newUID types.UID) error
 		return newError(common.InvalidConfigurationMachineError, errConnect, err)
 	}
 	// Retrieve instance.
-	inst, err := p.Get(machine)
+	inst, err := p.get(machine)
 	if err != nil {
+		if err == errors.ErrInstanceNotFound {
+			return nil
+		}
 		return err
 	}
-	ci := inst.(*googleInstance).ci
+	ci := inst.ci
 	// Create new labels and set them.
 	labels := ci.Labels
 	if labels == nil {

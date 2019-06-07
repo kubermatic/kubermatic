@@ -39,7 +39,8 @@ const cloudConfigTemplate = "[global]\n" +
 	"subnetwork-name = {{ .Global.SubnetworkName | iniEscape }}\n" +
 	"token-url = {{ .Global.TokenURL | iniEscape }}\n" +
 	"multizone = {{ .Global.MultiZone }}\n" +
-	"regional = {{ .Global.Regional }}\n"
+	"regional = {{ .Global.Regional }}\n" +
+	"{{ range .Global.NodeTags }}node-tags = {{ . | iniEscape }}\n{{end}}"
 
 // GlobalOpts contains the values of the global section of the cloud configuration.
 type GlobalOpts struct {
@@ -50,6 +51,7 @@ type GlobalOpts struct {
 	TokenURL       string
 	MultiZone      bool
 	Regional       bool
+	NodeTags       []string
 }
 
 // CloudConfig contains only the section global.

@@ -27,7 +27,9 @@ const (
 	kubeletFlagsTpl = `--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf \
 --kubeconfig=/etc/kubernetes/kubelet.conf \
 --pod-manifest-path=/etc/kubernetes/manifests \
+{{- if semverCompare "<1.15.0-0" .KubeletVersion }}
 --allow-privileged=true \
+{{- end }}
 --network-plugin=cni \
 --cni-conf-dir=/etc/cni/net.d \
 --cni-bin-dir=/opt/cni/bin \

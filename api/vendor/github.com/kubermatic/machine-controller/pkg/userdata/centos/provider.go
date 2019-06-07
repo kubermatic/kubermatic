@@ -128,7 +128,7 @@ func (p Provider) UserData(
 const userDataTemplate = `#cloud-config
 {{ if ne .CloudProvider "aws" }}
 hostname: {{ .MachineSpec.Name }}
-# Never set the hostname on AWS nodes. Kubernetes(kube-proxy) requires the hostname to be the private dns name
+{{- /* Never set the hostname on AWS nodes. Kubernetes(kube-proxy) requires the hostname to be the private dns name */}}
 {{ end }}
 
 {{- if .OSConfig.DistUpgradeOnBoot }}
@@ -180,18 +180,18 @@ write_files:
 
     setenforce 0 || true
 
-    # As we added some modules and don't want to reboot, restart the service
+{{- /* As we added some modules and don't want to reboot, restart the service */}}
     systemctl restart systemd-modules-load.service
     sysctl --system
 
-    # Make sure we always disable swap - Otherwise the kubelet won't start
+{{- /* Make sure we always disable swap - Otherwise the kubelet won't start */}}
     cp /etc/fstab /etc/fstab.orig
     cat /etc/fstab.orig | awk '$3 ~ /^swap$/ && $1 !~ /^#/ {$0="# commented out by cloudinit\n#"$0} 1' > /etc/fstab.noswap
     mv /etc/fstab.noswap /etc/fstab
     swapoff -a
     {{ if ne .CloudProvider "aws" }}
-    # The normal way of setting it via cloud-init is broken:
-    # https://bugs.launchpad.net/cloud-init/+bug/1662542
+{{- /*  The normal way of setting it via cloud-init is broken, see */}}
+{{- /*  https://bugs.launchpad.net/cloud-init/+bug/1662542 */}}
     hostnamectl set-hostname {{ .MachineSpec.Name }}
     {{ end }}
 
