@@ -14,5 +14,7 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
   -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
   -internal-address=127.0.0.1:8086 \
   -worker-name="$(tr -cd '[:alnum:]' <<< $KUBERMATIC_WORKERNAME | tr '[:upper:]' '[:lower:]')" \
+  -log-debug=true \
+  -log-format=Console \
   -logtostderr=1 \
   -v=6 $@
