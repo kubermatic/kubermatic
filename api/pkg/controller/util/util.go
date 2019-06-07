@@ -30,3 +30,20 @@ func EnqueueClusterForNamespacedObject(client ctrlruntimeclient.Client) *handler
 		return []reconcile.Request{}
 	})}
 }
+
+// EnqueueConst enqueues a constant. It is meant for controllers that don't have a parent object
+// they could enc and instead reconcile everything at once.
+// The queueKey will be defaulted if empty
+func EnqueueConst(queueKey string) *handler.EnqueueRequestsFromMapFunc {
+	if queueKey == "" {
+		queueKey = "const"
+	}
+
+	return &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request {
+		return []reconcile.Request{
+			{NamespacedName: types.NamespacedName{
+				Name:      queueKey,
+				Namespace: "",
+			}}}
+	})}
+}

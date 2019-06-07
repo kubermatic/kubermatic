@@ -5,207 +5,94 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"os"
-	"os/signal"
 	"sort"
-	"syscall"
-	"time"
 
 	"github.com/golang/glog"
-	"github.com/oklog/run"
+
+	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
-	coreinformers "k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes"
-	corev1lister "k8s.io/client-go/listers/core/v1"
-	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/workqueue"
+	ctrltuntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const exposeAnnotationKey = "nodeport-proxy.k8s.io/expose"
 
 var (
-	kubeconfig  string
-	master      string
 	lbName      string
 	lbNamespace string
 )
 
 func main() {
-	flag.StringVar(&kubeconfig, "kubeconfig", "", "absolute path to the kubeconfig file")
-	flag.StringVar(&master, "master", "", "master url")
 	flag.StringVar(&lbName, "lb-name", "nodeport-lb", "name of the LoadBalancer service to manage.")
 	flag.StringVar(&lbNamespace, "lb-namespace", "nodeport-proxy", "namespace of the LoadBalancer service to manage. Needs to exist")
 	flag.Parse()
 
-	config, err := clientcmd.BuildConfigFromFlags(master, kubeconfig)
+	config, err := ctrlruntimeconfig.GetConfig()
 	if err != nil {
-		glog.Fatal(err)
+		glog.Fatalf("Failed to get config: %v", err)
 	}
 
-	client, err := kubernetes.NewForConfig(config)
+	stopCh := signals.SetupSignalHandler()
+
+	mgr, err := manager.New(config, manager.Options{})
 	if err != nil {
-		glog.Fatal(err)
+		glog.Fatalf("failed to construct mgr: %v", err)
 	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	kubeInformerFactory := coreinformers.NewSharedInformerFactory(client, 30*time.Minute)
-
-	u := LBUpdater{
-		client: client,
-		lister: kubeInformerFactory.Core().V1().Services().Lister(),
-		queue:  workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "services"),
-
+	r := &LBUpdater{
+		ctx:         ctx,
+		client:      mgr.GetClient(),
 		lbNamespace: lbNamespace,
 		lbName:      lbName,
 	}
 
-	kubeInformerFactory.Core().V1().Services().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    func(obj interface{}) { u.enqueue(obj.(*corev1.Service)) },
-		UpdateFunc: func(oldObj, newObj interface{}) { u.enqueue(newObj.(*corev1.Service)) },
-		DeleteFunc: func(obj interface{}) {
-			s, ok := obj.(*corev1.Service)
-			if !ok {
-				tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
-				if !ok {
-					runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
-					return
-				}
-				s, ok = tombstone.Obj.(*corev1.Service)
-				if !ok {
-					runtime.HandleError(fmt.Errorf("tombstone contained object that is not a Service %#v", obj))
-					return
-				}
-			}
-			u.enqueue(s)
-		},
-	})
-
-	kubeInformerFactory.Start(wait.NeverStop)
-	kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
-
-	if _, err = kubeInformerFactory.Core().V1().Services().Lister().Services(lbNamespace).Get(lbName); err != nil {
-		glog.Fatalf("failed to get service %s/%s from lister: %v", lbNamespace, lbName, err)
+	ctrl, err := controller.New("lb-updater", mgr,
+		controller.Options{Reconciler: r, MaxConcurrentReconciles: 1})
+	if err != nil {
+		glog.Fatalf("failed to construct controller: %v", err)
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	var gr run.Group
-	{
-		sig := make(chan os.Signal, 2)
-		signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
-
-		gr.Add(func() error {
-			<-sig
-			return nil
-		}, func(err error) {
-			cancel()
-			close(sig)
-		})
+	if err := ctrl.Watch(&source.Kind{Type: &corev1.Service{}}, controllerutil.EnqueueConst("")); err != nil {
+		glog.Fatalf("Failed to add watch for Service: %v", err)
 	}
-	{
-		gr.Add(func() error {
-			u.Run(1, ctx.Done())
-			return nil
-		}, func(err error) {
-			cancel()
-		})
-	}
-
-	if err := gr.Run(); err != nil {
-		glog.Fatal(err)
+	if err := mgr.Start(stopCh); err != nil {
+		glog.Fatalf("manager ended: %v", err)
 	}
 }
 
 // LBUpdater has all APIs to synchronize and updateLB the services and nodeports.
 type LBUpdater struct {
-	queue  workqueue.RateLimitingInterface
-	client kubernetes.Interface
-	lister corev1lister.ServiceLister
+	ctx    context.Context
+	client ctrltuntimeclient.Client
 
 	lbNamespace string
 	lbName      string
 }
 
-func (u *LBUpdater) enqueue(s *corev1.Service) {
-	u.enqueueAfter(s, 0)
-}
-
-func (u *LBUpdater) enqueueAfter(s *corev1.Service, duration time.Duration) {
-	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(s)
-	if err != nil {
-		runtime.HandleError(fmt.Errorf("couldn't get key for object %#v: %v", s, err))
-		return
-	}
-
-	u.queue.AddAfter(key, duration)
-}
-
-func (u *LBUpdater) runWorker() {
-	for u.processNextItem() {
-	}
-}
-
-func (u *LBUpdater) processNextItem() bool {
-	key, quit := u.queue.Get()
-	if quit {
-		return false
-	}
-
-	defer u.queue.Done(key)
-
-	err := u.syncLB(key.(string))
-
-	u.handleErr(err, key)
-	return true
-}
-
-// handleErr checks if an error happened and makes sure we will retry later.
-func (u *LBUpdater) handleErr(err error, key interface{}) {
-	if err == nil {
-		// Forget about the #AddRateLimited history of the key on every successful synchronization.
-		// This ensures that future processing of updates for this key is not delayed because of
-		// an outdated error history.
-		u.queue.Forget(key)
-		return
-	}
-
-	glog.Errorf("Error syncing Service %v: %v", key, err)
-
-	// Re-enqueue the key rate limited. Based on the rate limiter on the
-	// queue and the re-enqueue history, the key will be processed later again.
-	u.queue.AddRateLimited(key)
-}
-
-// Run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
-func (u *LBUpdater) Run(workerCount int, stopCh <-chan struct{}) {
-	defer runtime.HandleCrash()
-
-	for i := 0; i < workerCount; i++ {
-		go wait.Until(u.runWorker, time.Second, stopCh)
-	}
-
-	<-stopCh
+func (u *LBUpdater) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	return reconcile.Result{}, u.syncLB(request.NamespacedName.String())
 }
 
 func (u *LBUpdater) syncLB(s string) error {
 	glog.V(4).Infof("Syncing LB as Service %s got modified", s)
 
-	cacheServices, err := u.lister.List(labels.Everything())
-	if err != nil {
-		return fmt.Errorf("failed to retrieve services from lister: %v", err)
-	}
-	services := make([]*corev1.Service, len(cacheServices))
-	for i := range cacheServices {
-		services[i] = cacheServices[i].DeepCopy()
+	services := &corev1.ServiceList{}
+	if err := u.client.List(u.ctx, &ctrltuntimeclient.ListOptions{}, services); err != nil {
+		return fmt.Errorf("failed to list services: %v", err)
 	}
 
 	var wantLBPorts []corev1.ServicePort
-	for _, service := range services {
+	for _, service := range services.Items {
 		if service.Annotations[exposeAnnotationKey] != "true" {
 			glog.V(4).Infof("skipping service %s/%s as the annotation %s is not set to 'true'", service.Namespace, service.Name, exposeAnnotationKey)
 			continue
@@ -235,11 +122,11 @@ func (u *LBUpdater) syncLB(s string) error {
 		return nil
 	}
 
-	cacheLb, err := u.lister.Services(u.lbNamespace).Get(u.lbName)
-	if err != nil {
+	lb := &corev1.Service{}
+	if err := u.client.Get(u.ctx, types.NamespacedName{Namespace: u.lbNamespace, Name: u.lbName}, lb); err != nil {
 		return fmt.Errorf("failed to get service %s/%s from lister: %v", u.lbNamespace, u.lbName, err)
+
 	}
-	lb := cacheLb.DeepCopy()
 
 	//We need to sort both port list to be able to compare them for equality
 	sort.Slice(wantLBPorts, func(i, j int) bool {
@@ -255,8 +142,7 @@ func (u *LBUpdater) syncLB(s string) error {
 	if !equality.Semantic.DeepEqual(wantLBPorts, lb.Spec.Ports) {
 		glog.Infof("Updating LB ports...")
 		lb.Spec.Ports = wantLBPorts
-		lb, err = u.client.CoreV1().Services(u.lbNamespace).Update(lb)
-		if err != nil {
+		if err := u.client.Update(u.ctx, lb); err != nil {
 			return fmt.Errorf("failed to update LB service %s/%s: %v", u.lbNamespace, u.lbName, err)
 		}
 
