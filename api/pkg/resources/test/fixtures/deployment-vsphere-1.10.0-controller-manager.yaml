@@ -127,7 +127,7 @@ spec:
         - --configure-cloud-routes=false
         command:
         - /hyperkube
-        - controller-manager
+        - kube-controller-manager
         image: gcr.io/google_containers/hyperkube-amd64:v1.10.0
         livenessProbe:
           failureThreshold: 8

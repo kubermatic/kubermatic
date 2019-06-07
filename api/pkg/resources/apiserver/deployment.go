@@ -142,7 +142,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				{
 					Name:      name,
 					Image:     data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
-					Command:   []string{"/hyperkube", "apiserver"},
+					Command:   []string{"/hyperkube", "kube-apiserver"},
 					Env:       getEnvVars(data.Cluster()),
 					Args:      flags,
 					Resources: *resourceRequirements,
