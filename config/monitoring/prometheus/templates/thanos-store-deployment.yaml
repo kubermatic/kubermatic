@@ -29,7 +29,6 @@ spec:
         image: '{{ .Values.prometheus.thanos.image.repository }}:{{ .Values.prometheus.thanos.image.tag }}'
         args:
         - store
-        - --cluster.disable
         - --index-cache-size={{ .Values.prometheus.thanos.store.indexCacheSize }}
         - --chunk-pool-size={{ .Values.prometheus.thanos.store.chunkPoolSize }}
         - --data-dir=/var/store-data
