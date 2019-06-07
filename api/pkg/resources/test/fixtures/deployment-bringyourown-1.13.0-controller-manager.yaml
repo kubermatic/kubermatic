@@ -132,7 +132,7 @@ spec:
         - "0"
         command:
         - /hyperkube
-        - controller-manager
+        - kube-controller-manager
         image: gcr.io/google_containers/hyperkube-amd64:v1.13.0
         livenessProbe:
           failureThreshold: 8

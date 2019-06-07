@@ -108,7 +108,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				{
 					Name:    name,
 					Image:   data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
-					Command: []string{"/hyperkube", "scheduler"},
+					Command: []string{"/hyperkube", "kube-scheduler"},
 					Args:    flags,
 					VolumeMounts: []corev1.VolumeMount{
 						{

@@ -104,7 +104,7 @@ spec:
         - /etc/kubernetes/kubeconfig/kubeconfig
         command:
         - /hyperkube
-        - scheduler
+        - kube-scheduler
         image: gcr.io/google_containers/hyperkube-amd64:v1.10.0
         livenessProbe:
           failureThreshold: 8
