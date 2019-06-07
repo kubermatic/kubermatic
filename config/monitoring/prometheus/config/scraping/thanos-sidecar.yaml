@@ -24,4 +24,6 @@ relabel_configs:
   target_label: pod
   replacement: $1
   action: replace
+{{ else }}
+job_name: thanos-sidecar
 {{ end }}
