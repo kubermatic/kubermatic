@@ -34,13 +34,16 @@ spec:
       containers:
       - name: prometheus
         image: 'quay.io/prometheus/prometheus:{{ .Values.prometheus.version }}'
-        {{- if .Values.prometheus.thanos.enabled }}
         command: [/bin/sh]
         args:
         - -c
         - |
           set -euo pipefail
 
+          echo "Cleaning up block compaction leftovers..."
+          find /var/prometheus/data -type d -name '*.tmp' -maxdepth 1 -print -exec rm -r {} \;
+
+          {{- if .Values.prometheus.thanos.enabled }}
           config=/etc/prometheus-shared/prometheus.yaml
 
           echo "Waiting for $config..."
@@ -57,20 +60,19 @@ spec:
             --web.enable-lifecycle \
             --web.external-url=https://{{ .Values.prometheus.host | trim }} \
             --web.enable-admin-api
-        {{- else }}
-        args:
-        - --config.file=/etc/prometheus/config/prometheus.yaml
-        - --storage.tsdb.no-lockfile
-        - --storage.tsdb.path=/var/prometheus/data
-        {{- with .Values.prometheus.tsdb.retentionTime }}
-        - --storage.tsdb.retention.time={{ . }}
-        {{- end }}
-        - --web.enable-lifecycle
-        - --web.external-url=https://{{ .Values.prometheus.host | trim }}
-        {{- if .Values.prometheus.backup.enabled }}
-        - --web.enable-admin-api
-        {{- end }}
-        {{- end }}
+          {{- else }}
+          echo "Starting Prometheus..."
+          exec /bin/prometheus \
+            --config.file=/etc/prometheus/config/prometheus.yaml \
+            --storage.tsdb.no-lockfile \
+            --storage.tsdb.path=/var/prometheus/data \
+            --storage.tsdb.retention.time={{ .Values.prometheus.tsdb.retentionTime | default "24h" }} \
+            --web.enable-lifecycle \
+            --web.external-url=https://{{ .Values.prometheus.host | trim }} \
+            {{- if .Values.prometheus.backup.enabled }}
+            --web.enable-admin-api
+            {{- end }}
+          {{- end }}
         env:
         # prevent excessive memory usage until Prometheus 2.10
         - name: GODEBUG
