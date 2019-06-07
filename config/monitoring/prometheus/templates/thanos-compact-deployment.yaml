@@ -1,0 +1,59 @@
+{{- if .Values.prometheus.thanos.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "name" . }}-thanos-compact
+  labels:
+    app.kubernetes.io/name: thanos-compact
+    app.kubernetes.io/instance: {{ template "name" . }}
+    app.kubernetes.io/version: '{{ .Values.prometheus.thanos.image.tag }}'
+    app.kubernetes.io/managed-by: helm
+spec:
+  replicas: 1 # compactors cannot run in parallel, never run more than one replica
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos-compact
+      app.kubernetes.io/instance: {{ template "name" . }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: thanos-compact
+        app.kubernetes.io/instance: {{ template "name" . }}
+      annotations:
+        kubermatic/scrape: 'true'
+        kubermatic/scrape_port: '10902'
+    spec:
+      containers:
+      - name: thanos
+        image: '{{ .Values.prometheus.thanos.image.repository }}:{{ .Values.prometheus.thanos.image.tag }}'
+        args:
+        - compact
+        - --data-dir=/var/compact-data
+        - --objstore.config-file=/etc/thanos/objstore.yaml
+        - --retention.resolution-raw={{ .Values.prometheus.thanos.compact.retention.resolutionRaw }}
+        - --retention.resolution-5m={{ .Values.prometheus.thanos.compact.retention.resolution5m }}
+        - --retention.resolution-1h={{ .Values.prometheus.thanos.compact.retention.resolution1h }}
+        - --wait
+        ports:
+        - name: http
+          containerPort: 10902
+        volumeMounts:
+        - name: scratch
+          mountPath: /var/compact-data
+        - name: thanos
+          mountPath: /etc/thanos
+        resources:
+{{ toYaml .Values.prometheus.containers.thanosCompact.resources | indent 10 }}
+      volumes:
+      - name: scratch
+        emptyDir: {}
+      - name: thanos
+        secret:
+          secretName: '{{ template "name" . }}-thanos'
+      nodeSelector:
+{{ toYaml .Values.prometheus.thanos.compact.nodeSelector | indent 8 }}
+      affinity:
+{{ (tpl (toYaml .Values.prometheus.thanos.compact.affinity) .) | fromYaml | toYaml | indent 8 }}
+      tolerations:
+{{ toYaml .Values.prometheus.thanos.compact.tolerations | indent 8 }}
+{{- end }}

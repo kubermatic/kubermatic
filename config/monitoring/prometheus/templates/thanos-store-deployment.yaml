@@ -1,0 +1,72 @@
+{{- if .Values.prometheus.thanos.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "name" . }}-thanos-store
+  labels:
+    app.kubernetes.io/name: thanos-store
+    app.kubernetes.io/instance: {{ template "name" . }}
+    app.kubernetes.io/version: '{{ .Values.prometheus.thanos.image.tag }}'
+    app.kubernetes.io/managed-by: helm
+spec:
+  replicas: {{ .Values.prometheus.thanos.store.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos-store
+      app.kubernetes.io/instance: {{ template "name" . }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: thanos-store
+        app.kubernetes.io/instance: {{ template "name" . }}
+        thanos.io/store-api: 'true'
+      annotations:
+        kubermatic/scrape: 'true'
+        kubermatic/scrape_port: '10902'
+    spec:
+      containers:
+      - name: thanos
+        image: '{{ .Values.prometheus.thanos.image.repository }}:{{ .Values.prometheus.thanos.image.tag }}'
+        args:
+        - store
+        - --index-cache-size={{ .Values.prometheus.thanos.store.indexCacheSize }}
+        - --chunk-pool-size={{ .Values.prometheus.thanos.store.chunkPoolSize }}
+        - --data-dir=/var/store-data
+        - --objstore.config-file=/etc/thanos/objstore.yaml
+        ports:
+        - name: http
+          containerPort: 10902
+        - name: grpc
+          containerPort: 10901
+        volumeMounts:
+        - name: scratch
+          mountPath: /var/store-data
+        - name: thanos
+          mountPath: /etc/thanos
+        resources:
+{{ toYaml .Values.prometheus.containers.thanosStore.resources | indent 10 }}
+      volumes:
+      - name: scratch
+        emptyDir: {}
+      - name: thanos
+        secret:
+          secretName: '{{ template "name" . }}-thanos'
+      nodeSelector:
+{{ toYaml .Values.prometheus.thanos.store.nodeSelector | indent 8 }}
+      affinity:
+{{ (tpl (toYaml .Values.prometheus.thanos.store.affinity) .) | fromYaml | toYaml | indent 8 }}
+      tolerations:
+{{ toYaml .Values.prometheus.thanos.store.tolerations | indent 8 }}
+
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: '{{ template "name" . }}-thanos-store'
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos-store
+      app.kubernetes.io/instance: {{ template "name" . }}
+{{- end }}
