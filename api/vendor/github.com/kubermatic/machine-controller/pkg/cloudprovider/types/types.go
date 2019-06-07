@@ -14,13 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cloud
+package types
 
 import (
+	"context"
+
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
 
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
 	listerscorev1 "k8s.io/client-go/listers/core/v1"
+	"k8s.io/client-go/util/retry"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
@@ -43,19 +48,19 @@ type Provider interface {
 	// See v1alpha1.MachineStatus for more info and TerminalError type
 	//
 	// In case the instance cannot be found, github.com/kubermatic/machine-controller/pkg/cloudprovider/errors/ErrInstanceNotFound will be returned
-	Get(machine *clusterv1alpha1.Machine) (instance.Instance, error)
+	Get(machine *clusterv1alpha1.Machine, data *ProviderData) (instance.Instance, error)
 
 	// GetCloudConfig will return the cloud provider specific cloud-config, which gets consumed by the kubelet
 	GetCloudConfig(spec clusterv1alpha1.MachineSpec) (config string, name string, err error)
 
 	// Create creates a cloud instance according to the given machine
-	Create(machine *clusterv1alpha1.Machine, data *MachineCreateDeleteData, userdata string) (instance.Instance, error)
+	Create(machine *clusterv1alpha1.Machine, data *ProviderData, userdata string) (instance.Instance, error)
 
 	// Cleanup will delete the instance associated with the machine and all associated resources.
 	// If all resources have been cleaned up, true will be returned.
 	// In case the cleanup involves ansynchronous deletion of resources & those resources are not gone yet,
 	// false should be returned. This is to indicate that the cleanup is not done, but needs to be called again at a later point
-	Cleanup(machine *clusterv1alpha1.Machine, data *MachineCreateDeleteData) (bool, error)
+	Cleanup(machine *clusterv1alpha1.Machine, data *ProviderData) (bool, error)
 
 	// MachineMetricsLabels returns labels used for the Prometheus metrics
 	// about created machines, e.g. instance type, instance size, region
@@ -73,11 +78,42 @@ type Provider interface {
 	SetMetricsForMachines(machines clusterv1alpha1.MachineList) error
 }
 
-// MachineUpdater defines a function to persist an update to a machine
-type MachineUpdater func(*clusterv1alpha1.Machine, func(*clusterv1alpha1.Machine)) (*clusterv1alpha1.Machine, error)
+// MachineModifier defines a function to modify a machine
+type MachineModifier func(*clusterv1alpha1.Machine)
 
-// MachineCreateDeleteData is the struct the cloud providers get when creating or deleting an instance
-type MachineCreateDeleteData struct {
-	Updater  MachineUpdater
+// MachineUpdater defines a function to persist an update to a machine
+type MachineUpdater func(*clusterv1alpha1.Machine, ...MachineModifier) error
+
+// ProviderData is the struct the cloud providers get when creating or deleting an instance
+type ProviderData struct {
+	Update   MachineUpdater
 	PVLister listerscorev1.PersistentVolumeLister
+}
+
+// GetMachineUpdater returns an MachineUpdater based on the passed in context and ctrlruntimeclient.Client
+func GetMachineUpdater(ctx context.Context, client ctrlruntimeclient.Client) MachineUpdater {
+	return func(machine *clusterv1alpha1.Machine, modifiers ...MachineModifier) error {
+		if len(modifiers) == 0 {
+			return nil
+		}
+
+		// Store name here, because the machine can be nil if an update failed
+		namespacedName := types.NamespacedName{Namespace: machine.Namespace, Name: machine.Name}
+		return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			if err := client.Get(ctx, namespacedName, machine); err != nil {
+				return err
+			}
+
+			// Check if we actually change something and only update if that is the case
+			unmodifiedMachine := machine.DeepCopy()
+			for _, modify := range modifiers {
+				modify(machine)
+			}
+			if equality.Semantic.DeepEqual(unmodifiedMachine, machine) {
+				return nil
+			}
+
+			return client.Update(ctx, machine)
+		})
+	}
 }

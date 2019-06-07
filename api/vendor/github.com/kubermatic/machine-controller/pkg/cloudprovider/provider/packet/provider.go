@@ -26,9 +26,9 @@ import (
 	"github.com/golang/glog"
 	"github.com/packethost/packngo"
 
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/cloud"
 	cloudprovidererrors "github.com/kubermatic/machine-controller/pkg/cloudprovider/errors"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
+	cloudprovidertypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -44,18 +44,17 @@ const (
 )
 
 // New returns a Packet provider
-func New(configVarResolver *providerconfig.ConfigVarResolver) cloud.Provider {
+func New(configVarResolver *providerconfig.ConfigVarResolver) cloudprovidertypes.Provider {
 	return &provider{configVarResolver: configVarResolver}
 }
 
 type RawConfig struct {
-	APIKey       providerconfig.ConfigVarString   `json:"apiKey"`
-	ProjectID    providerconfig.ConfigVarString   `json:"projectID"`
+	APIKey       providerconfig.ConfigVarString   `json:"apiKey,omitempty"`
+	ProjectID    providerconfig.ConfigVarString   `json:"projectID,omitempty"`
 	BillingCycle providerconfig.ConfigVarString   `json:"billingCycle"`
 	InstanceType providerconfig.ConfigVarString   `json:"instanceType"`
 	Facilities   []providerconfig.ConfigVarString `json:"facilities"`
-	OS           providerconfig.ConfigVarString   `json:"os"`
-	Tags         []providerconfig.ConfigVarString `json:"tags"`
+	Tags         []providerconfig.ConfigVarString `json:"tags,omitempty"`
 }
 
 type Config struct {
@@ -64,7 +63,6 @@ type Config struct {
 	BillingCycle string
 	InstanceType string
 	Facilities   []string
-	OS           string
 	Tags         []string
 }
 
@@ -207,7 +205,7 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 	return nil
 }
 
-func (p *provider) Create(machine *v1alpha1.Machine, _ *cloud.MachineCreateDeleteData, userdata string) (instance.Instance, error) {
+func (p *provider) Create(machine *v1alpha1.Machine, _ *cloudprovidertypes.ProviderData, userdata string) (instance.Instance, error) {
 	c, _, pc, err := p.getConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return nil, cloudprovidererrors.TerminalError{
@@ -247,8 +245,8 @@ func (p *provider) Create(machine *v1alpha1.Machine, _ *cloud.MachineCreateDelet
 	return &packetDevice{device: device}, nil
 }
 
-func (p *provider) Cleanup(machine *v1alpha1.Machine, _ *cloud.MachineCreateDeleteData) (bool, error) {
-	instance, err := p.Get(machine)
+func (p *provider) Cleanup(machine *v1alpha1.Machine, data *cloudprovidertypes.ProviderData) (bool, error) {
+	instance, err := p.Get(machine, data)
 	if err != nil {
 		if err == cloudprovidererrors.ErrInstanceNotFound {
 			return true, nil
@@ -287,7 +285,7 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 	return spec, nil
 }
 
-func (p *provider) Get(machine *v1alpha1.Machine) (instance.Instance, error) {
+func (p *provider) Get(machine *v1alpha1.Machine, _ *cloudprovidertypes.ProviderData) (instance.Instance, error) {
 	device, _, err := p.getPacketDevice(machine)
 	if err != nil {
 		return nil, err
