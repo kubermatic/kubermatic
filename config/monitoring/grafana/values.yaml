@@ -46,9 +46,12 @@ grafana:
       #  type: file
 
     datasources:
-      # Kubernetes Service names to configure as data sources
+      # Kubernetes Service names to configure as data sources.
+      # Names can take the form of `service[.namespace=Release.Namespace][:port=9090]`
+      # and the service name itself must be unique.
       prometheusServices:
       - prometheus
+      # - prometheus-thanos-query:10902
 
       # read datasources from this path in the Helm chart; this is
       # evaluated during deployment, not during Grafana runtime!

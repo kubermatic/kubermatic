@@ -1,0 +1,62 @@
+{{- if .Values.prometheus.thanos.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "name" . }}-thanos-query
+  labels:
+    app.kubernetes.io/name: thanos-query
+    app.kubernetes.io/instance: {{ template "name" . }}
+    app.kubernetes.io/version: '{{ .Values.prometheus.thanos.image.tag }}'
+    app.kubernetes.io/managed-by: helm
+spec:
+  replicas: {{ .Values.prometheus.thanos.query.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos-query
+      app.kubernetes.io/instance: {{ template "name" . }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: thanos-query
+        app.kubernetes.io/instance: {{ template "name" . }}
+      annotations:
+        kubermatic/scrape: 'true'
+        kubermatic/scrape_port: '10902'
+    spec:
+      containers:
+      - name: thanos
+        image: '{{ .Values.prometheus.thanos.image.repository }}:{{ .Values.prometheus.thanos.image.tag }}'
+        args:
+        - query
+        - --query.replica-label=replica
+        - --store=dns+{{ template "name" . }}-thanos-store.{{ .Release.Namespace }}.svc.cluster.local.:10901
+        ports:
+        - name: http
+          containerPort: 10902
+        - name: grpc
+          containerPort: 10901
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: http
+        resources:
+{{ toYaml .Values.prometheus.containers.thanosQuery.resources | indent 10 }}
+      nodeSelector:
+{{ toYaml .Values.prometheus.thanos.query.nodeSelector | indent 8 }}
+      affinity:
+{{ (tpl (toYaml .Values.prometheus.thanos.query.affinity) .) | fromYaml | toYaml | indent 8 }}
+      tolerations:
+{{ toYaml .Values.prometheus.thanos.query.tolerations | indent 8 }}
+
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: '{{ template "name" . }}-thanos-query'
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos-query
+      app.kubernetes.io/instance: {{ template "name" . }}
+{{- end }}

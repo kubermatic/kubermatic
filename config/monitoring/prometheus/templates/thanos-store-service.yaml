@@ -1,0 +1,22 @@
+{{- if .Values.prometheus.thanos.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "name" . }}-thanos-store
+  labels:
+    app.kubernetes.io/name: thanos-store
+    app.kubernetes.io/instance: {{ template "name" . }}
+    app.kubernetes.io/version: '{{ .Values.prometheus.thanos.image.tag }}'
+    app.kubernetes.io/managed-by: helm
+spec:
+  type: ClusterIP
+  clusterIP: None # disable cluster IP so Thanos' DNS discovery can find all pods behind this service
+  ports:
+  - port: 10901
+    protocol: TCP
+    targetPort: grpc
+    name: grpc
+  selector:
+    app.kubernetes.io/instance: {{ template "name" . }}
+    thanos.io/store-api: 'true'
+{{- end }}
