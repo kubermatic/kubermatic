@@ -31,8 +31,10 @@ import (
 )
 
 type reconciler struct {
+	ctx context.Context
 	log *logrus.Entry
 	ctrlruntimeclient.Client
+	namespace string
 
 	envoySnapshotCache  envoycache.SnapshotCache
 	lastAppliedSnapshot envoycache.Snapshot
@@ -174,15 +176,13 @@ func (c *reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 	return reconcile.Result{}, err
 }
 
-func (c *reconciler) sync() error {
-	ctx := context.Background()
-
+func (r *reconciler) sync() error {
 	services := &corev1.ServiceList{}
-	if err := c.List(ctx, &ctrlruntimeclient.ListOptions{}, services); err != nil {
+	if err := r.List(r.ctx, &ctrlruntimeclient.ListOptions{Namespace: r.namespace}, services); err != nil {
 		return errors.Wrap(err, "failed to list service's")
 	}
 
-	listeners, clusters, err := c.getInitialResources()
+	listeners, clusters, err := r.getInitialResources()
 	if err != nil {
 		return errors.Wrap(err, "failed to get initial config")
 	}
@@ -192,24 +192,24 @@ func (c *reconciler) sync() error {
 
 		// Only cover services which have the annotation: true
 		if strings.ToLower(service.Annotations[exposeAnnotationKey]) != "true" {
-			c.log.Debugf("Skipping service '%s'. It does not have the annotation %s=true", serviceKey, exposeAnnotationKey)
+			r.log.Debugf("Skipping service '%s'. It does not have the annotation %s=true", serviceKey, exposeAnnotationKey)
 			continue
 		}
 
 		// We only manage NodePort services so Kubernetes takes care of allocating a unique port
 		if service.Spec.Type != corev1.ServiceTypeNodePort {
-			c.log.Warnf("Skipping service '%s'. It is not of type NodePort", serviceKey)
+			r.log.Warnf("Skipping service '%s'. It is not of type NodePort", serviceKey)
 			return nil
 		}
 
-		pods, err := c.getReadyServicePods(&service)
+		pods, err := r.getReadyServicePods(&service)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("failed to get pod's for service '%s'", serviceKey))
 		}
 
 		// If we have no pods, dont bother creating a cluster.
 		if len(pods) == 0 {
-			c.log.Debugf("skipping service %s/%s as it has no running pods", service.Namespace, service.Name)
+			r.log.Debugf("skipping service %s/%s as it has no running pods", service.Namespace, service.Name)
 			continue
 		}
 
@@ -222,11 +222,11 @@ func (c *reconciler) sync() error {
 				// Get the port on the pod, the NodePort Service port is pointing to
 				podPort := getMatchingPodPort(servicePort, pod)
 				if podPort == 0 {
-					c.log.Infof("Skipping pod %s/%s for service port %s/%s:%d. The service port does not match to any of the pods containers", pod.Namespace, pod.Name, service.Namespace, service.Name, servicePort.NodePort)
+					r.log.Infof("Skipping pod %s/%s for service port %s/%s:%d. The service port does not match to any of the pods containers", pod.Namespace, pod.Name, service.Namespace, service.Name, servicePort.NodePort)
 					continue
 				}
 
-				c.log.Debugf("Using pod %s/%s:%d as backend for %s/%s:%d", pod.Namespace, pod.Name, podPort, service.Namespace, service.Name, servicePort.NodePort)
+				r.log.Debugf("Using pod %s/%s:%d as backend for %s/%s:%d", pod.Namespace, pod.Name, podPort, service.Namespace, service.Name, servicePort.NodePort)
 
 				// Cluster endpoints
 				endpoints = append(endpoints, envoyendpointv2.LbEndpoint{
@@ -281,7 +281,7 @@ func (c *reconciler) sync() error {
 				return errors.Wrap(err, "failed to convert TCPProxy config to GRPC struct")
 			}
 
-			c.log.Debugf("Using a listener on port %d", servicePort.NodePort)
+			r.log.Debugf("Using a listener on port %d", servicePort.NodePort)
 
 			listener := &envoyv2.Listener{
 				Name: serviceNodePortName,
@@ -313,18 +313,18 @@ func (c *reconciler) sync() error {
 		}
 	}
 
-	lastUsedVersion, err := semver.NewVersion(c.lastAppliedSnapshot.GetVersion(envoycache.ClusterType))
+	lastUsedVersion, err := semver.NewVersion(r.lastAppliedSnapshot.GetVersion(envoycache.ClusterType))
 	if err != nil {
 		return errors.Wrap(err, "failed to parse version from last snapshot")
 	}
 
 	// Generate a new snapshot using the old version to be able to do a DeepEqual comparison
 	snapshot := envoycache.NewSnapshot(lastUsedVersion.String(), nil, clusters, nil, listeners)
-	if equality.Semantic.DeepEqual(c.lastAppliedSnapshot, snapshot) {
+	if equality.Semantic.DeepEqual(r.lastAppliedSnapshot, snapshot) {
 		return nil
 	}
 
-	c.log.Info("detected a change. Updating the Envoy config cache...")
+	r.log.Info("detected a change. Updating the Envoy config cache...")
 	newVersion := lastUsedVersion.IncMajor()
 	newSnapshot := envoycache.NewSnapshot(newVersion.String(), nil, clusters, nil, listeners)
 
@@ -332,12 +332,11 @@ func (c *reconciler) sync() error {
 		return errors.Wrap(err, "new Envoy config snapshot is not consistent")
 	}
 
-	err = c.envoySnapshotCache.SetSnapshot(envoyNodeName, newSnapshot)
-	if err != nil {
+	if err := r.envoySnapshotCache.SetSnapshot(envoyNodeName, newSnapshot); err != nil {
 		return errors.Wrap(err, "failed to set a new Envoy cache snapshot")
 	}
 
-	c.lastAppliedSnapshot = newSnapshot
+	r.lastAppliedSnapshot = newSnapshot
 
 	return nil
 }
