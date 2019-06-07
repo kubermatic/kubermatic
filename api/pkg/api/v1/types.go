@@ -355,6 +355,7 @@ const (
 type Cluster struct {
 	ObjectMeta `json:",inline"`
 	Type       string        `json:"type"`
+	Credential string        `json:"credential,omitempty"`
 	Spec       ClusterSpec   `json:"spec"`
 	Status     ClusterStatus `json:"status"`
 }

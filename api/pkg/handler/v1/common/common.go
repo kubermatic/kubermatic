@@ -40,6 +40,7 @@ type UpdateManager interface {
 // UpdateManager specifies a set of methods to handle credentials for specific provider
 type CredentialManager interface {
 	GetCredentials() *credentials.Credentials
+	SetCloudCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error)
 }
 
 // ServerMetrics defines metrics used by the API.

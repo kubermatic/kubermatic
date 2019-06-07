@@ -16,7 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func OpenstackSizeEndpoint(providers provider.CloudRegistry, datacenters map[string]provider.DatacenterMeta) endpoint.Endpoint {
+func OpenstackSizeEndpoint(providers provider.CloudRegistry, datacenters map[string]provider.DatacenterMeta, credentialManager common.CredentialManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
@@ -29,7 +29,9 @@ func OpenstackSizeEndpoint(providers provider.CloudRegistry, datacenters map[str
 			return nil, fmt.Errorf("incorrect datacenter name %s", datacenterName)
 		}
 
-		return getOpenstackSizes(providers, req.Username, req.Password, req.Tenant, req.Domain, datacenterName, datacenter)
+		username, password, domain, tenant := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, credentialManager)
+
+		return getOpenstackSizes(providers, username, password, tenant, domain, datacenterName, datacenter)
 	}
 }
 
@@ -121,14 +123,16 @@ func MeetsOpenstackNodeSizeRequirement(apiSize apiv1.OpenstackSize, requirements
 	return true
 }
 
-func OpenstackTenantEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackTenantEndpoint(providers provider.CloudRegistry, credentialManager common.CredentialManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackTenantReq)
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackTenantReq, got = %T", request)
 		}
 
-		return getOpenstackTenants(providers, req.Username, req.Password, req.Domain, req.DatacenterName)
+		username, password, domain, _ := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, "", credentialManager)
+
+		return getOpenstackTenants(providers, username, password, domain, req.DatacenterName)
 	}
 }
 
@@ -182,13 +186,16 @@ func getOpenstackTenants(providers provider.CloudRegistry, username, password, d
 	return apiTenants, nil
 }
 
-func OpenstackNetworkEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackNetworkEndpoint(providers provider.CloudRegistry, credentialManager common.CredentialManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
 		}
-		return getOpenstackNetworks(providers, req.Username, req.Password, req.Tenant, req.Domain, req.DatacenterName)
+
+		username, password, domain, tenant := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, credentialManager)
+
+		return getOpenstackNetworks(providers, username, password, tenant, domain, req.DatacenterName)
 	}
 }
 
@@ -244,13 +251,16 @@ func getOpenstackNetworks(providers provider.CloudRegistry, username, password, 
 	return apiNetworks, nil
 }
 
-func OpenstackSecurityGroupEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackSecurityGroupEndpoint(providers provider.CloudRegistry, credentialManager common.CredentialManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
 		}
-		return getOpenstackSecurityGroups(providers, req.Username, req.Password, req.Tenant, req.Domain, req.DatacenterName)
+
+		username, password, domain, tenant := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, credentialManager)
+
+		return getOpenstackSecurityGroups(providers, username, password, tenant, domain, req.DatacenterName)
 	}
 }
 
@@ -305,13 +315,16 @@ func getOpenstackSecurityGroups(providers provider.CloudRegistry, username, pass
 	return apiSecurityGroups, nil
 }
 
-func OpenstackSubnetsEndpoint(providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackSubnetsEndpoint(providers provider.CloudRegistry, credentialManager common.CredentialManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackSubnetReq)
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackSubnetReq, got = %T", request)
 		}
-		return getOpenstackSubnets(providers, req.Username, req.Password, req.Domain, req.Tenant, req.NetworkID, req.DatacenterName)
+
+		username, password, domain, tenant := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, credentialManager)
+
+		return getOpenstackSubnets(providers, username, password, domain, tenant, req.NetworkID, req.DatacenterName)
 	}
 }
 
@@ -388,6 +401,7 @@ type OpenstackReq struct {
 	Domain         string
 	Tenant         string
 	DatacenterName string
+	Credential     string
 }
 
 func DecodeOpenstackReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -398,7 +412,7 @@ func DecodeOpenstackReq(c context.Context, r *http.Request) (interface{}, error)
 	req.Tenant = r.Header.Get("Tenant")
 	req.Domain = r.Header.Get("Domain")
 	req.DatacenterName = r.Header.Get("DatacenterName")
-
+	req.Credential = r.Header.Get("Credential")
 	return req, nil
 }
 
@@ -439,6 +453,7 @@ func DecodeOpenstackSubnetReq(c context.Context, r *http.Request) (interface{}, 
 	if req.NetworkID == "" {
 		return nil, fmt.Errorf("get openstack subnets needs a parameter 'network_id'")
 	}
+	req.Credential = r.Header.Get("Credential")
 	return req, nil
 }
 
@@ -472,6 +487,7 @@ type OpenstackTenantReq struct {
 	Password       string
 	Domain         string
 	DatacenterName string
+	Credential     string
 }
 
 func DecodeOpenstackTenantReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -481,6 +497,24 @@ func DecodeOpenstackTenantReq(c context.Context, r *http.Request) (interface{}, 
 	req.Password = r.Header.Get("Password")
 	req.Domain = r.Header.Get("Domain")
 	req.DatacenterName = r.Header.Get("DatacenterName")
+	req.Credential = r.Header.Get("Credential")
 
 	return req, nil
+}
+
+func getOpenstackCredentials(credentialName, username, password, domain, tenant string, credentialManager common.CredentialManager) (string, string, string, string) {
+
+	if len(credentialName) > 0 && credentialManager.GetCredentials().Openstack != nil {
+		for _, credential := range credentialManager.GetCredentials().Openstack {
+			if credential.Name == credentialName {
+				username = credential.Username
+				password = credential.Password
+				tenant = credential.Tenant
+				domain = credential.Domain
+				break
+			}
+		}
+	}
+
+	return username, password, domain, tenant
 }

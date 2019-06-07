@@ -42,10 +42,19 @@ func DigitaloceanSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvi
 	}
 }
 
-func DigitaloceanSizeEndpoint() endpoint.Endpoint {
+func DigitaloceanSizeEndpoint(credentialManager common.CredentialManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(DoSizesReq)
-		return digitaloceanSize(ctx, req.DoToken)
+		token := req.DoToken
+		if len(req.Credential) > 0 && credentialManager.GetCredentials().Digitalocean != nil {
+			for _, credential := range credentialManager.GetCredentials().Digitalocean {
+				if credential.Name == req.Credential {
+					token = credential.Token
+					break
+				}
+			}
+		}
+		return digitaloceanSize(ctx, token)
 	}
 }
 
@@ -125,12 +134,14 @@ func DecodeDoSizesNoCredentialsReq(c context.Context, r *http.Request) (interfac
 
 // DoSizesReq represent a request for digitalocean sizes
 type DoSizesReq struct {
-	DoToken string
+	DoToken    string
+	Credential string
 }
 
 func DecodeDoSizesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req DoSizesReq
 
 	req.DoToken = r.Header.Get("DoToken")
+	req.Credential = r.Header.Get("Credential")
 	return req, nil
 }

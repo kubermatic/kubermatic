@@ -3216,6 +3216,11 @@
           },
           {
             "type": "string",
+            "name": "Credential",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "name": "NetworkID",
             "in": "query"
           }
@@ -3895,6 +3900,10 @@
           "type": "string",
           "format": "date-time",
           "x-go-name": "CreationTimestamp"
+        },
+        "credential": {
+          "type": "string",
+          "x-go-name": "Credential"
         },
         "deletionTimestamp": {
           "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
