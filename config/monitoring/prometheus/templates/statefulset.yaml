@@ -46,8 +46,16 @@ spec:
           {{- if .Values.prometheus.thanos.enabled }}
           config=/etc/prometheus-shared/prometheus.yaml
 
-          echo "Waiting for $config..."
-          until [ -f $config ]; do sleep 1; done
+          echo "Waiting up to 60 seconds for $config..."
+          for i in $(seq 60); do
+            [ -f $config ] && break
+            sleep 1
+          done
+
+          if [ ! -f $config ]; then
+            echo "File does not exist, giving up. Check the Thanos sidecar for possible errors."
+            exit 1
+          fi
 
           echo "Configuration found, starting Prometheus..."
           exec /bin/prometheus \
