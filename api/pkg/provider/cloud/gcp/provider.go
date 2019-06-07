@@ -13,6 +13,8 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -53,14 +55,14 @@ func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update prov
 		}
 	}
 
-	if cluster.Spec.Cloud.GCP.FirewallRuleName == "" {
-		firewallName, err := createFirewallRule(*cluster.Spec.Cloud.GCP, cluster.Name)
+	if cluster.Spec.Cloud.GCP.FirewallRuleNames == nil || len(cluster.Spec.Cloud.GCP.FirewallRuleNames) == 0 {
+		firewallRuleNames, err := createFirewallRules(*cluster.Spec.Cloud.GCP, cluster.Name)
 		if err != nil {
 			return nil, err
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.Cloud.GCP.FirewallRuleName = firewallName
+			cluster.Spec.Cloud.GCP.FirewallRuleNames = firewallRuleNames
 		})
 		if err != nil {
 			return nil, err
@@ -101,9 +103,23 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 		}
 
 		firewallService := compute.NewFirewallsService(svc)
-		_, err = firewallService.Delete(projectID, cluster.Spec.Cloud.GCP.FirewallRuleName).Do()
-		if err != nil {
-			return nil, fmt.Errorf("failed to delete firewall %s: %v", cluster.Spec.Cloud.GCP.FirewallRuleName, err)
+
+		// Iterate over each rule and remove them one by one, updating the cluster object each time.
+		set := sets.NewString(cluster.Spec.Cloud.GCP.FirewallRuleNames...)
+		for _, ruleName := range cluster.Spec.Cloud.GCP.FirewallRuleNames {
+			_, err = firewallService.Delete(projectID, ruleName).Do()
+			if err != nil {
+				return nil, fmt.Errorf("failed to delete firewall rule %s: %v", ruleName, err)
+			}
+
+			set.Delete(ruleName)
+
+			cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+				cluster.Spec.Cloud.GCP.FirewallRuleNames = set.List()
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to remove firewall rule %q from cluster: %v", ruleName, err)
+			}
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -145,18 +161,19 @@ func connectToComputeService(serviceAccount string) (*compute.Service, string, e
 	return svc, projectID, nil
 }
 
-func createFirewallRule(spec kubermaticv1.GCPCloudSpec, clusterName string) (string, error) {
+func createFirewallRules(spec kubermaticv1.GCPCloudSpec, clusterName string) ([]string, error) {
 	svc, projectID, err := connectToComputeService(spec.ServiceAccount)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	firewallService := compute.NewFirewallsService(svc)
 	tag := fmt.Sprintf("kubernetes-cluster-%s", clusterName)
-	firewallName := fmt.Sprintf("firewall-%s", clusterName)
+	selfRuleName := fmt.Sprintf("firewall-%s-self", clusterName)
+	icmpRuleName := fmt.Sprintf("firewall-%s-icmp", clusterName)
 
 	_, err = firewallService.Insert(projectID, &compute.Firewall{
-		Name:    firewallName,
+		Name:    selfRuleName,
 		Network: spec.Network,
 		Allowed: []*compute.FirewallAllowed{
 			{
@@ -185,8 +202,23 @@ func createFirewallRule(spec kubermaticv1.GCPCloudSpec, clusterName string) (str
 		SourceTags: []string{tag},
 	}).Do()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return firewallName, err
+	// allow ICMP from everywhere
+	_, err = firewallService.Insert(projectID, &compute.Firewall{
+		Name:    icmpRuleName,
+		Network: spec.Network,
+		Allowed: []*compute.FirewallAllowed{
+			{
+				IPProtocol: "icmp",
+			},
+		},
+		TargetTags: []string{tag},
+	}).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return []string{selfRuleName, icmpRuleName}, err
 }

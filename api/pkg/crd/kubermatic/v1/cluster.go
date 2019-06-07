@@ -354,10 +354,10 @@ type PacketCloudSpec struct {
 
 // GCPCloudSpec specifies access data to GCP.
 type GCPCloudSpec struct {
-	ServiceAccount   string `json:"serviceAccount"`
-	Network          string `json:"network"`
-	Subnetwork       string `json:"subnetwork"`
-	FirewallRuleName string `json:"firewallRuleName"`
+	ServiceAccount    string   `json:"serviceAccount"`
+	Network           string   `json:"network"`
+	Subnetwork        string   `json:"subnetwork"`
+	FirewallRuleNames []string `json:"firewallRuleNames"`
 }
 
 // ClusterHealthStatus stores health information of the components of a cluster.
