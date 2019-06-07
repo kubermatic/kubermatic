@@ -177,7 +177,6 @@ spec:
         - sidecar
         - --tsdb.path=/prometheus
         - --prometheus.url=http://localhost:9090
-        - --cluster.disable
         - --objstore.config-file=/etc/thanos/objstore.yaml
         - --reloader.config-file=/etc/prometheus/config/prometheus.yaml
         - --reloader.config-envsubst-file=/etc/prometheus-shared/prometheus.yaml
