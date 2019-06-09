@@ -2,6 +2,6 @@
 
 set -euo pipefail
 
-TAG=v2.1.0
+TAG=v2.1.1
 export TAG
 make docker

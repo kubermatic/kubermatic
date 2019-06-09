@@ -165,7 +165,8 @@ func (c *reconciler) getInitialResources() (listeners []envoycache.Resource, clu
 	return listeners, clusters, nil
 }
 
-func (c reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
+func (c *reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
+	c.log.Debug("Got reconcile request")
 	err := c.sync()
 	if err != nil {
 		c.log.WithError(err).Print("Failed to reconcile")
