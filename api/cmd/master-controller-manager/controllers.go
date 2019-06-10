@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/oklog/run"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
@@ -14,6 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-project-binding"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
+	"github.com/kubermatic/kubermatic/api/pkg/log"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -39,7 +39,8 @@ var allControllers = map[string]controllerCreator{
 func createAllControllers(ctrlCtx *controllerContext) (map[string]runnerFn, error) {
 	controllers := map[string]runnerFn{}
 	for name, create := range allControllers {
-		glog.V(2).Infof("Creating %s controller", name)
+		logger := log.Logger.With("controller", name)
+		logger.Info("Creating controller")
 		controller, err := create(ctrlCtx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create '%s' controller: %v", name, err)
@@ -61,14 +62,16 @@ func runAllControllersAndCtrlManager(workerCnt int,
 
 	wrapController := func(workerCnt int, done <-chan struct{}, cancel context.CancelFunc, name string, controller runnerFn) (func() error, func(err error)) {
 		startControllerWrapped := func() error {
-			glog.V(2).Infof("Starting %s controller...", name)
+			logger := log.Logger.With("controller", name)
+			logger.Info("Starting controller...")
 			err := controller(workerCnt, done)
-			glog.V(2).Infof("%s controller finished/died, err = %v", name, err)
+			logger.Infow("Controller finished/died", "error", err)
 			return err
 		}
 
 		cancelControllerFunc := func(err error) {
-			glog.V(2).Infof("Killing %s controller as group member finished/died: %v", name, err)
+			logger := log.Logger.With("controller", name)
+			logger.Infow("Killing controller as group member finished/died", "error", err)
 			cancel()
 		}
 		return startControllerWrapped, cancelControllerFunc
@@ -91,10 +94,11 @@ func createRBACContoller(ctrlCtx *controllerContext) (runnerFn, error) {
 	{
 		clientcmdConfig, err := clientcmd.LoadFromFile(ctrlCtx.runOptions.kubeconfig)
 		if err != nil {
-			glog.Fatal(err)
+			log.Logger.Fatal(err)
 		}
 
 		for ctxName := range clientcmdConfig.Contexts {
+			logger := log.Logger.With("ctxName", ctxName)
 			clientConfig := clientcmd.NewNonInteractiveClientConfig(
 				*clientcmdConfig,
 				ctxName,
@@ -103,20 +107,20 @@ func createRBACContoller(ctrlCtx *controllerContext) (runnerFn, error) {
 			)
 			cfg, err := clientConfig.ClientConfig()
 			if err != nil {
-				glog.Fatal(err)
+				logger.Fatal(err)
 			}
 
 			var clusterPrefix string
 			if ctxName == clientcmdConfig.CurrentContext {
-				glog.V(2).Infof("Adding %s as master cluster", ctxName)
+				logger.Info("Adding as master cluster")
 				clusterPrefix = rbac.MasterProviderPrefix
 			} else {
-				glog.V(2).Infof("Adding %s as seed cluster", ctxName)
+				logger.Info("Adding as seed cluster")
 				clusterPrefix = rbac.SeedProviderPrefix
 			}
 			kubeClient, err := kubernetes.NewForConfig(cfg)
 			if err != nil {
-				glog.Fatal(err)
+				logger.Fatal(err)
 			}
 
 			kubermaticClient := kubermaticclientset.NewForConfigOrDie(cfg)
@@ -127,7 +131,7 @@ func createRBACContoller(ctrlCtx *controllerContext) (runnerFn, error) {
 			// special case the current context/master is also a seed cluster
 			// we keep cluster resources also on master
 			if ctxName == clientcmdConfig.CurrentContext {
-				glog.V(2).Infof("Special case adding %s (current context) also as seed cluster", ctxName)
+				logger.Info("Special case adding current context also as seed cluster")
 				clusterPrefix = rbac.SeedProviderPrefix
 				allClusterProviders = append(allClusterProviders, rbac.NewClusterProvider(fmt.Sprintf("%s/%s", clusterPrefix, ctxName), kubeClient, kubeInformerProvider, kubermaticClient, kubermaticInformerFactory))
 			}
