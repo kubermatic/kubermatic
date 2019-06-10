@@ -49,6 +49,9 @@ spec:
         {{- if .Values.kubermatic.worker_name }}
         - -worker-name={{ .Values.kubermatic.worker_name }}
         {{- end }}
+        {{- if .Values.kubermatic.credentials }}
+        - -credentials=/opt/credentials/credentials.yaml
+        {{- end }}
         image: '{{ .Values.kubermatic.api.image.repository }}:{{ .Values.kubermatic.api.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.api.image.pullPolicy }}
         ports:
@@ -67,6 +70,11 @@ spec:
         - name: master-files
           mountPath: "/opt/master-files/"
           readOnly: true
+        {{- if .Values.kubermatic.credentials }}
+        - name: credentials
+          mountPath: "/opt/credentials/"
+          readOnly: true
+        {{- end }}
         resources:
 {{ toYaml .Values.kubermatic.api.resources | indent 10 }}
       imagePullSecrets:
@@ -81,6 +89,11 @@ spec:
       - name: master-files
         secret:
           secretName: master-files
+      {{- if .Values.kubermatic.credentials }}
+      - name: credentials
+        secret:
+          secretName: credentials
+      {{- end }}
       nodeSelector:
 {{ toYaml .Values.kubermatic.api.nodeSelector | indent 8 }}
       affinity:
