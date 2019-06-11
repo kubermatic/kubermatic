@@ -61,6 +61,8 @@ for the list openstack subnets operation typically these are written to a http.R
 */
 type ListOpenstackSubnetsParams struct {
 
+	/*Credential*/
+	Credential *string
 	/*DatacenterName*/
 	DatacenterName *string
 	/*Domain*/
@@ -110,6 +112,17 @@ func (o *ListOpenstackSubnetsParams) WithHTTPClient(client *http.Client) *ListOp
 // SetHTTPClient adds the HTTPClient to the list openstack subnets params
 func (o *ListOpenstackSubnetsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
+}
+
+// WithCredential adds the credential to the list openstack subnets params
+func (o *ListOpenstackSubnetsParams) WithCredential(credential *string) *ListOpenstackSubnetsParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list openstack subnets params
+func (o *ListOpenstackSubnetsParams) SetCredential(credential *string) {
+	o.Credential = credential
 }
 
 // WithDatacenterName adds the datacenterName to the list openstack subnets params
@@ -185,6 +198,22 @@ func (o *ListOpenstackSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg
 		return err
 	}
 	var res []error
+
+	if o.Credential != nil {
+
+		// query param Credential
+		var qrCredential string
+		if o.Credential != nil {
+			qrCredential = *o.Credential
+		}
+		qCredential := qrCredential
+		if qCredential != "" {
+			if err := r.SetQueryParam("Credential", qCredential); err != nil {
+				return err
+			}
+		}
+
+	}
 
 	if o.DatacenterName != nil {
 

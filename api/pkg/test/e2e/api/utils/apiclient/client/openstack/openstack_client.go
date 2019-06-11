@@ -25,6 +25,35 @@ type Client struct {
 }
 
 /*
+ListOpenstackCredentials Lists credential names for Openstack
+*/
+func (a *Client) ListOpenstackCredentials(params *ListOpenstackCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListOpenstackCredentialsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listOpenstackCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v1/providers/openstack/credentials",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &ListOpenstackCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListOpenstackCredentialsOK), nil
+
+}
+
+/*
 ListOpenstackNetworks Lists networks from openstack
 */
 func (a *Client) ListOpenstackNetworks(params *ListOpenstackNetworksParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackNetworksOK, error) {

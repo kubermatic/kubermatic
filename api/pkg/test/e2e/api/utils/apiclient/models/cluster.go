@@ -25,6 +25,9 @@ type Cluster struct {
 	// Format: date-time
 	CreationTimestamp strfmt.DateTime `json:"creationTimestamp,omitempty"`
 
+	// credential
+	Credential string `json:"credential,omitempty"`
+
 	// DeletionTimestamp is a timestamp representing the server time when this object was deleted.
 	// Format: date-time
 	DeletionTimestamp strfmt.DateTime `json:"deletionTimestamp,omitempty"`
