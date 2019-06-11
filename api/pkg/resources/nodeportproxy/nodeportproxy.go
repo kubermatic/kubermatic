@@ -31,7 +31,7 @@ const (
 )
 
 func EnsureResources(ctx context.Context, client ctrlruntimeclient.Client, nppd nodePortProxyData) error {
-	image := nppd.ImageRegistry("quay.io") + "/" + imageName + ":v2.2.0-dev2"
+	image := nppd.ImageRegistry("quay.io") + "/" + imageName + ":" + resources.KUBERMATICCOMMIT
 	namespace := nppd.Cluster().Status.NamespaceName
 	if namespace == "" {
 		return fmt.Errorf(".Status.NamespaceName is empty for cluster %q", nppd.Cluster().Name)

@@ -13,7 +13,6 @@ clean:
 
 docker: build
 	docker build -t quay.io/kubermatic/nodeport-proxy:$(TAG) .
-	docker push quay.io/kubermatic/nodeport-proxy:$(TAG)
 
 test:
 	go test ./...
