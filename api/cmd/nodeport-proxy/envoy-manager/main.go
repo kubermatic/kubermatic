@@ -86,7 +86,7 @@ func main() {
 		mainLog.Fatal(err)
 	}
 
-	r := reconciler{
+	r := &reconciler{
 		Client:              mgr.GetClient(),
 		envoySnapshotCache:  snapshotCache,
 		log:                 mainLog.WithField("annotation", exposeAnnotationKey),

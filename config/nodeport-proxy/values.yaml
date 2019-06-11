@@ -2,7 +2,7 @@ nodePortProxy:
   replicas: 3
   image:
     repository: "quay.io/kubermatic/nodeport-proxy"
-    tag: "v2.0.0"
+    tag: v2.1.1
   envoy:
     image:
       repository: "envoyproxy/envoy-alpine"
