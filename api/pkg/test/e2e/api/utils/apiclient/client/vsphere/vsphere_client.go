@@ -82,6 +82,35 @@ func (a *Client) ListVSphereNetworksNoCredentials(params *ListVSphereNetworksNoC
 
 }
 
+/*
+ListVsphereCredentials Lists credential names for Vsphere
+*/
+func (a *Client) ListVsphereCredentials(params *ListVsphereCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListVsphereCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListVsphereCredentialsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listVsphereCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v1/providers/vsphere/credentials",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &ListVsphereCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListVsphereCredentialsOK), nil
+
+}
+
 // SetTransport changes the transport on the client
 func (a *Client) SetTransport(transport runtime.ClientTransport) {
 	a.transport = transport
