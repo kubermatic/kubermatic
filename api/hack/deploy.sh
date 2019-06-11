@@ -22,6 +22,7 @@ else
 fi
 DEPLOY_NODEPORT_PROXY=${DEPLOY_NODEPORT_PROXY:-true}
 DEPLOY_ALERTMANAGER=${DEPLOY_ALERTMANAGER:-true}
+DEPLOY_MINIO=${DEPLOY_MINIO:-true}
 TILLER_NAMESPACE=${TILLER_NAMESPACE:-kubermatic}
 
 cd "$(dirname "$0")/../../"
@@ -59,8 +60,12 @@ if [[ "${1}" = "master" ]]; then
     deploy "iap" "iap" ./config/iap/ || true
 fi
 
-deploy "minio" "minio" ./config/minio/
-deploy "s3-exporter" "kube-system" ./config/s3-exporter/
+# CI has its own Minio deployment as a proxy for GCS, so we do not install the default Helm chart here.
+if [[ "${DEPLOY_MINIO}" = true ]]; then
+  deploy "minio" "minio" ./config/minio/
+  deploy "s3-exporter" "kube-system" ./config/s3-exporter/
+fi
+
 # The NodePort proxy is only relevant in cloud environments (Where LB services can be used)
 if [[ "${DEPLOY_NODEPORT_PROXY}" = true ]]; then
   deploy "nodeport-proxy" "nodeport-proxy" ./config/nodeport-proxy/
