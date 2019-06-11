@@ -1,18 +1,16 @@
 metadata:
-  annotations:
-    nodeport-proxy.k8s.io/expose-namespaced: "true"
   creationTimestamp: null
   labels:
     app: apiserver
   name: apiserver
 spec:
   ports:
-  - name: kube-apiserver
-    port: 30000
+  - name: insecure
+    port: 8080
     protocol: TCP
-    targetPort: 30000
+    targetPort: 8080
   selector:
     app: apiserver
-  type: NodePort
+  type: ClusterIP
 status:
   loadBalancer: {}

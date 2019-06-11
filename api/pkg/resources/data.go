@@ -64,8 +64,7 @@ func NewTemplateData(
 	oidcURL string,
 	oidcIssuerClientID string,
 	nodeLocalDNSCacheEnabled bool,
-	kubermaticImage string,
-	apiserverExposeStrategy corev1.ServiceType) *TemplateData {
+	kubermaticImage string) *TemplateData {
 	return &TemplateData{
 		ctx:                                    ctx,
 		client:                                 client,
@@ -86,7 +85,6 @@ func NewTemplateData(
 		oidcIssuerClientID:                               oidcIssuerClientID,
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
 		kubermaticImage:                                  kubermaticImage,
-		apiserverExposeStrategy:                          apiserverExposeStrategy,
 	}
 }
 

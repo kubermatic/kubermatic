@@ -45,6 +45,8 @@ func TestSyncClusterAddress(t *testing.T) {
 	testCases := []struct {
 		name                 string
 		apiserverService     corev1.ServiceSpec
+		frontproxyService    corev1.ServiceSpec
+		exposeStrategy       corev1.ServiceType
 		seedDNSOverwrite     string
 		expectedExternalName string
 		expectedIP           string
@@ -55,12 +57,14 @@ func TestSyncClusterAddress(t *testing.T) {
 		{
 			name: "Verify properties for service type LoadBalancer",
 			apiserverService: corev1.ServiceSpec{
-				Type:           corev1.ServiceTypeLoadBalancer,
-				LoadBalancerIP: "1.2.3.4",
 				Ports: []corev1.ServicePort{
-					{Port: int32(443)},
+					{NodePort: int32(443)},
 				},
 			},
+			frontproxyService: corev1.ServiceSpec{
+				LoadBalancerIP: "1.2.3.4",
+			},
+			exposeStrategy:       corev1.ServiceTypeLoadBalancer,
 			expectedExternalName: "1.2.3.4",
 			expectedIP:           "1.2.3.4",
 			expectedPort:         int32(443),
@@ -69,12 +73,14 @@ func TestSyncClusterAddress(t *testing.T) {
 		{
 			name: "Verify properties for service type LoadBalancer dont change when seedDNSOverwrite is set",
 			apiserverService: corev1.ServiceSpec{
-				Type:           corev1.ServiceTypeLoadBalancer,
-				LoadBalancerIP: "1.2.3.4",
 				Ports: []corev1.ServicePort{
-					{Port: int32(443)},
+					{NodePort: int32(443)},
 				},
 			},
+			frontproxyService: corev1.ServiceSpec{
+				LoadBalancerIP: "1.2.3.4",
+			},
+			exposeStrategy:       corev1.ServiceTypeLoadBalancer,
 			seedDNSOverwrite:     "alias-europe-west3-c",
 			expectedExternalName: "1.2.3.4",
 			expectedIP:           "1.2.3.4",
@@ -93,6 +99,7 @@ func TestSyncClusterAddress(t *testing.T) {
 					},
 				},
 			},
+			exposeStrategy:       corev1.ServiceTypeNodePort,
 			expectedExternalName: fmt.Sprintf("%s.%s.%s", fakeClusterName, fakeDCName, fakeExternalURL),
 			expectedIP:           externalIP,
 			expectedPort:         int32(32000),
@@ -110,24 +117,12 @@ func TestSyncClusterAddress(t *testing.T) {
 					},
 				},
 			},
+			exposeStrategy:       corev1.ServiceTypeNodePort,
 			seedDNSOverwrite:     "alias-europe-west3-c",
 			expectedExternalName: fmt.Sprintf("%s.alias-europe-west3-c.%s", fakeClusterName, fakeExternalURL),
 			expectedIP:           externalIP,
 			expectedPort:         int32(32000),
 			expectedURL:          fmt.Sprintf("https://%s.alias-europe-west3-c.%s:32000", fakeClusterName, fakeExternalURL),
-		},
-		{
-			name: "Verify error when service is not of type NodePort or LoadBalancer",
-			apiserverService: corev1.ServiceSpec{
-				Type: corev1.ServiceTypeClusterIP,
-				Ports: []corev1.ServicePort{
-					{
-						Port:       int32(32000),
-						TargetPort: intstr.FromInt(32000),
-					},
-				},
-			},
-			errExpected: true,
 		},
 		{
 			name: "Verify error when service has less than one ports",
@@ -148,20 +143,28 @@ func TestSyncClusterAddress(t *testing.T) {
 					Cloud: kubermaticv1.CloudSpec{
 						DatacenterName: fakeDCName,
 					},
+					ExposeStrategy: tc.exposeStrategy,
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: fakeClusterNamespaceName,
 				},
 			}
 
-			service := &corev1.Service{
+			apiserverService := &corev1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      resources.ApiserverExternalServiceName,
 					Namespace: fakeClusterNamespaceName,
 				},
 				Spec: tc.apiserverService,
 			}
-			client := fakectrlruntimeclient.NewFakeClient(service)
+			lbService := &corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      resources.FrontLoadBalancerServiceName,
+					Namespace: fakeClusterNamespaceName,
+				},
+				Spec: tc.frontproxyService,
+			}
+			client := fakectrlruntimeclient.NewFakeClient(apiserverService, lbService)
 
 			nodeDCs := map[string]provider.DatacenterMeta{
 				fakeDCName: {

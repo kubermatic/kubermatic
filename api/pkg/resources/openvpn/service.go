@@ -10,19 +10,21 @@ import (
 )
 
 // ServiceCreator returns the function to reconcile the external OpenVPN service
-func ServiceCreator() reconciling.NamedServiceCreatorGetter {
+func ServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.OpenVPNServerServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.OpenVPNServerServiceName
 			se.Labels = resources.BaseAppLabel(name, nil)
 
-			// Always set both annotations, we can't say for sure which expose strategy is being
-			// used here, because we don't change it for existing clusters
-			// Depending on what the configured expose strategy is, one of the two annotations will
-			// not have any effect
-			se.Annotations = map[string]string{
-				"nodeport-proxy.k8s.io/expose":                           "true",
-				nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey: "true",
+			if se.Annotations == nil {
+				se.Annotations = map[string]string{}
+			}
+			if exposeStrategy == corev1.ServiceTypeNodePort {
+				se.Annotations["nodeport-proxy.k8s.io/expose"] = "true"
+				delete(se.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
+			} else {
+				se.Annotations[nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey] = "true"
+				delete(se.Annotations, "nodeport-proxy.k8s.io/expose")
 			}
 			se.Spec.Selector = map[string]string{
 				resources.AppLabelKey: name,

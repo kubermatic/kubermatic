@@ -364,9 +364,7 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		"",
 		"",
 		true,
-		"",
-		corev1.ServiceTypeNodePort,
-	), nil
+		""), nil
 }
 
 func createNamedSecrets(secretNames []string) *corev1.SecretList {

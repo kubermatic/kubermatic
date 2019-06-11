@@ -31,7 +31,7 @@ const (
 )
 
 func EnsureResources(ctx context.Context, client ctrlruntimeclient.Client, nppd nodePortProxyData) error {
-	image := nppd.ImageRegistry("quay.io") + "/" + imageName + ":" + resources.KUBERMATICCOMMIT
+	image := nppd.ImageRegistry("quay.io") + "/" + imageName + ":v2.2.0-dev2"
 	namespace := nppd.Cluster().Status.NamespaceName
 	if namespace == "" {
 		return fmt.Errorf(".Status.NamespaceName is empty for cluster %q", nppd.Cluster().Name)
@@ -95,7 +95,7 @@ func role() reconciling.NamedRoleCreatorGetter {
 				{
 					APIGroups:     []string{""},
 					Resources:     []string{"services"},
-					ResourceNames: []string{resources.ApiserverExternalServiceName},
+					ResourceNames: []string{resources.FrontLoadBalancerServiceName},
 					Verbs:         []string{"update"},
 				},
 			}
@@ -110,7 +110,7 @@ func roleBinding(ns string) reconciling.NamedRoleBindingCreatorGetter {
 			r.Subjects = []rbacv1.Subject{
 				{
 					Kind:      "ServiceAccount",
-					Name:      "name",
+					Name:      name,
 					Namespace: ns,
 				},
 			}
@@ -133,6 +133,7 @@ func deploymentEnvoy(image string, nppd nodePortProxyData) reconciling.NamedDepl
 			d.Spec.Replicas = resources.Int32(2)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: resources.BaseAppLabel(name, nil)}
+			d.Spec.Template.Labels = resources.BaseAppLabel(name, nil)
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{Name: resources.ImagePullSecretName},
 			}
@@ -172,11 +173,11 @@ func deploymentEnvoy(image string, nppd nodePortProxyData) reconciling.NamedDepl
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("10m"),
-						corev1.ResourceMemory: resource.MustParse("32mi"),
+						corev1.ResourceMemory: resource.MustParse("32Mi"),
 					},
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("10m"),
-						corev1.ResourceMemory: resource.MustParse("32mi"),
+						corev1.ResourceMemory: resource.MustParse("32Mi"),
 					},
 				}}, {
 				Name:  "envoy",
@@ -204,11 +205,11 @@ func deploymentEnvoy(image string, nppd nodePortProxyData) reconciling.NamedDepl
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("10m"),
-						corev1.ResourceMemory: resource.MustParse("32mi"),
+						corev1.ResourceMemory: resource.MustParse("32Mi"),
 					},
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("10m"),
-						corev1.ResourceMemory: resource.MustParse("32mi"),
+						corev1.ResourceMemory: resource.MustParse("32Mi"),
 					},
 				},
 				ReadinessProbe: &corev1.Probe{
@@ -235,7 +236,7 @@ func deploymentEnvoy(image string, nppd nodePortProxyData) reconciling.NamedDepl
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			}}
-			d.Spec.Template.Spec.ServiceAccountName = name
+			d.Spec.Template.Spec.ServiceAccountName = "nodeport-proxy"
 			return d, nil
 		}
 	}
@@ -249,6 +250,7 @@ func deploymentLBUpdater(image string) reconciling.NamedDeploymentCreatorGetter 
 			d.Spec.Replicas = resources.Int32(1)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: resources.BaseAppLabel(name, nil)}
+			d.Spec.Template.Labels = resources.BaseAppLabel(name, nil)
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{Name: resources.ImagePullSecretName},
 			}
@@ -257,7 +259,7 @@ func deploymentLBUpdater(image string) reconciling.NamedDeploymentCreatorGetter 
 				Command: []string{
 					"/lb-updater",
 					"-lb-namespace=$(MY_NAMESPACE)",
-					"-lb-name=" + resources.ApiserverExternalServiceName,
+					"-lb-name=" + resources.FrontLoadBalancerServiceName,
 					"-expose-annotation-key=" + NodePortProxyExposeNamespacedAnnotationKey,
 					"-namespaced=true",
 				},
@@ -271,15 +273,15 @@ func deploymentLBUpdater(image string) reconciling.NamedDeploymentCreatorGetter 
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("10m"),
-						corev1.ResourceMemory: resource.MustParse("32mi"),
+						corev1.ResourceMemory: resource.MustParse("32Mi"),
 					},
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("10m"),
-						corev1.ResourceMemory: resource.MustParse("32mi"),
+						corev1.ResourceMemory: resource.MustParse("32Mi"),
 					},
 				},
 			}}
-			d.Spec.Template.Spec.ServiceAccountName = name
+			d.Spec.Template.Spec.ServiceAccountName = "nodeport-proxy"
 
 			return d, nil
 		}
@@ -295,6 +297,32 @@ func podDisruptionBudget() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 				MatchLabels: resources.BaseAppLabel(envoyAppLabelValue, nil),
 			}
 			return pdb, nil
+		}
+	}
+}
+
+// FrontLoadBalancerServiceCreator returns the creator for the LoadBalancer that fronts apiserver
+// and openVPN when using exposeStrategy=LoadBalancer
+func FrontLoadBalancerServiceCreator() reconciling.NamedServiceCreatorGetter {
+	return func() (string, reconciling.ServiceCreator) {
+		return resources.FrontLoadBalancerServiceName, func(s *corev1.Service) (*corev1.Service, error) {
+			// We don't actually manage this service, that is done by the nodeport proxy, we just
+			// must make sure that it exists
+			s.Spec.Type = corev1.ServiceTypeLoadBalancer
+			// Services need at least one port to be valid, so create it initially
+			if len(s.Spec.Ports) == 0 {
+				s.Spec.Ports = []corev1.ServicePort{
+					{
+						Name:       "secure",
+						Port:       443,
+						Protocol:   corev1.ProtocolTCP,
+						TargetPort: intstr.FromInt(443),
+					},
+				}
+			}
+
+			s.Spec.Selector = resources.BaseAppLabel(envoyAppLabelValue, nil)
+			return s, nil
 		}
 	}
 }

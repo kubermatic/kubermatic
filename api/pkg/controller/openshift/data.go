@@ -24,15 +24,14 @@ import (
 // openshiftData implements the openshiftData interface which is
 // passed into all creator funcs and contains all data they need
 type openshiftData struct {
-	cluster                 *kubermaticv1.Cluster
-	client                  client.Client
-	dc                      *provider.DatacenterMeta
-	overwriteRegistry       string
-	nodeAccessNetwork       string
-	oidc                    OIDCConfig
-	etcdDiskSize            resource.Quantity
-	apiServerExposeStrategy corev1.ServiceType
-	kubermaticImage         string
+	cluster           *kubermaticv1.Cluster
+	client            client.Client
+	dc                *provider.DatacenterMeta
+	overwriteRegistry string
+	nodeAccessNetwork string
+	oidc              OIDCConfig
+	etcdDiskSize      resource.Quantity
+	kubermaticImage   string
 }
 
 func (od *openshiftData) DC() *provider.DatacenterMeta {
@@ -268,8 +267,4 @@ func (od *openshiftData) KubermaticAPIImage() string {
 		imageWithoutRegistry = strings.Join(apiImageSplit[1:], "/")
 	}
 	return od.ImageRegistry(registry) + "/" + imageWithoutRegistry
-}
-
-func (od *openshiftData) APIServerExposeStrategy() corev1.ServiceType {
-	return od.apiServerExposeStrategy
 }

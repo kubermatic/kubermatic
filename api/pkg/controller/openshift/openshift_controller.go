@@ -21,6 +21,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/nodeportproxy"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/usercluster"
@@ -70,20 +71,19 @@ type Features struct {
 
 type Reconciler struct {
 	client.Client
-	scheme                  *runtime.Scheme
-	recorder                record.EventRecorder
-	dcs                     map[string]provider.DatacenterMeta
-	dc                      string
-	overwriteRegistry       string
-	nodeAccessNetwork       string
-	etcdDiskSize            resource.Quantity
-	dockerPullConfigJSON    []byte
-	workerName              string
-	externalURL             string
-	oidc                    OIDCConfig
-	apiServerExposeStrategy corev1.ServiceType
-	kubermaticImage         string
-	features                Features
+	scheme               *runtime.Scheme
+	recorder             record.EventRecorder
+	dcs                  map[string]provider.DatacenterMeta
+	dc                   string
+	overwriteRegistry    string
+	nodeAccessNetwork    string
+	etcdDiskSize         resource.Quantity
+	dockerPullConfigJSON []byte
+	workerName           string
+	externalURL          string
+	oidc                 OIDCConfig
+	kubermaticImage      string
+	features             Features
 }
 
 func Add(
@@ -98,26 +98,24 @@ func Add(
 	dockerPullConfigJSON []byte,
 	externalURL string,
 	oidcConfig OIDCConfig,
-	apiServerExposeStrategy corev1.ServiceType,
 	kubermaticImage string,
 	features Features,
 ) error {
 	reconciler := &Reconciler{
-		Client:                  mgr.GetClient(),
-		scheme:                  mgr.GetScheme(),
-		recorder:                mgr.GetRecorder(ControllerName),
-		dc:                      dc,
-		dcs:                     dcs,
-		overwriteRegistry:       overwriteRegistry,
-		nodeAccessNetwork:       nodeAccessNetwork,
-		etcdDiskSize:            etcdDiskSize,
-		dockerPullConfigJSON:    dockerPullConfigJSON,
-		workerName:              workerName,
-		externalURL:             externalURL,
-		oidc:                    oidcConfig,
-		apiServerExposeStrategy: apiServerExposeStrategy,
-		kubermaticImage:         kubermaticImage,
-		features:                features,
+		Client:               mgr.GetClient(),
+		scheme:               mgr.GetScheme(),
+		recorder:             mgr.GetRecorder(ControllerName),
+		dc:                   dc,
+		dcs:                  dcs,
+		overwriteRegistry:    overwriteRegistry,
+		nodeAccessNetwork:    nodeAccessNetwork,
+		etcdDiskSize:         etcdDiskSize,
+		dockerPullConfigJSON: dockerPullConfigJSON,
+		workerName:           workerName,
+		externalURL:          externalURL,
+		oidc:                 oidcConfig,
+		kubermaticImage:      kubermaticImage,
+		features:             features,
 	}
 
 	c, err := controller.New(ControllerName, mgr,
@@ -205,15 +203,14 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
 	}
 	osData := &openshiftData{
-		cluster:                 cluster,
-		client:                  r.Client,
-		dc:                      &dc,
-		overwriteRegistry:       r.overwriteRegistry,
-		nodeAccessNetwork:       r.nodeAccessNetwork,
-		oidc:                    r.oidc,
-		etcdDiskSize:            r.etcdDiskSize,
-		apiServerExposeStrategy: r.apiServerExposeStrategy,
-		kubermaticImage:         r.kubermaticImage,
+		cluster:           cluster,
+		client:            r.Client,
+		dc:                &dc,
+		overwriteRegistry: r.overwriteRegistry,
+		nodeAccessNetwork: r.nodeAccessNetwork,
+		oidc:              r.oidc,
+		etcdDiskSize:      r.etcdDiskSize,
+		kubermaticImage:   r.kubermaticImage,
 	}
 
 	if err := r.networkDefaults(ctx, cluster); err != nil {
@@ -251,6 +248,12 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	if err := r.deployments(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Deployments: %v", err)
+	}
+
+	if osData.Cluster().Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
+		if err := nodeportproxy.EnsureResources(ctx, r.Client, osData); err != nil {
+			return nil, fmt.Errorf("failed to ensure NodePortProxy resources: %v", err)
+		}
 	}
 
 	if err := r.cronJobs(ctx, osData); err != nil {
@@ -690,14 +693,20 @@ func (r *Reconciler) networkDefaults(ctx context.Context, cluster *kubermaticv1.
 
 // GetServiceCreators returns all service creators that are currently in use
 func getAllServiceCreators(osData *openshiftData) []reconciling.NamedServiceCreatorGetter {
-	return []reconciling.NamedServiceCreatorGetter{
-		apiserver.ExternalServiceCreator(osData.APIServerExposeStrategy()),
-		apiserver.InternalServiceCreator(osData.Cluster().Address.Port),
-		openvpn.ServiceCreator(),
+	creators := []reconciling.NamedServiceCreatorGetter{
+		apiserver.InternalServiceCreator(),
+		apiserver.ExternalServiceCreator(osData.Cluster().Spec.ExposeStrategy),
+		openvpn.ServiceCreator(osData.Cluster().Spec.ExposeStrategy),
 		etcd.ServiceCreator(osData),
 		dns.ServiceCreator(),
 		machinecontroller.ServiceCreator(),
 	}
+
+	if osData.Cluster().Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
+		creators = append(creators, nodeportproxy.FrontLoadBalancerServiceCreator())
+	}
+
+	return creators
 }
 
 func (r *Reconciler) services(ctx context.Context, osData *openshiftData) error {

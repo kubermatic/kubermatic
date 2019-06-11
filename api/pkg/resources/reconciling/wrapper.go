@@ -34,6 +34,14 @@ func DefaultContainer(c *corev1.Container, procMountType *corev1.ProcMountType) 
 		c.TerminationMessagePolicy = corev1.TerminationMessageReadFile
 	}
 
+	for idx := range c.Env {
+		if c.Env[idx].ValueFrom != nil && c.Env[idx].ValueFrom.FieldRef != nil {
+			if c.Env[idx].ValueFrom.FieldRef.APIVersion == "" {
+				c.Env[idx].ValueFrom.FieldRef.APIVersion = "v1"
+			}
+		}
+	}
+
 	// This attribut was added in 1.12
 	if c.SecurityContext != nil {
 		c.SecurityContext.ProcMount = procMountType
