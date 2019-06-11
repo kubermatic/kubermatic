@@ -49,10 +49,8 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go func() {
-		select {
-		case <-stopCh:
-			cancel()
-		}
+		<-stopCh
+		cancel()
 	}()
 
 	var namespace string

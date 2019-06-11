@@ -54,10 +54,8 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	stopCh := signals.SetupSignalHandler()
 	go func() {
-		select {
-		case <-stopCh:
-			cancel()
-		}
+		<-stopCh
+		cancel()
 	}()
 
 	mainLog := logrus.New()

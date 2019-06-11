@@ -40,7 +40,7 @@ type reconciler struct {
 	lastAppliedSnapshot envoycache.Snapshot
 }
 
-func (c *reconciler) getInitialResources() (listeners []envoycache.Resource, clusters []envoycache.Resource, err error) {
+func (r *reconciler) getInitialResources() (listeners []envoycache.Resource, clusters []envoycache.Resource, err error) {
 	adminCluster := &envoyv2.Cluster{
 		Name:           "service_stats",
 		ConnectTimeout: 50 * time.Millisecond,
@@ -167,11 +167,11 @@ func (c *reconciler) getInitialResources() (listeners []envoycache.Resource, clu
 	return listeners, clusters, nil
 }
 
-func (c *reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
-	c.log.Debug("Got reconcile request")
-	err := c.sync()
+func (r *reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
+	r.log.Debug("Got reconcile request")
+	err := r.sync()
 	if err != nil {
-		c.log.WithError(err).Print("Failed to reconcile")
+		r.log.WithError(err).Print("Failed to reconcile")
 	}
 	return reconcile.Result{}, err
 }
@@ -341,7 +341,7 @@ func (r *reconciler) sync() error {
 	return nil
 }
 
-func (c *reconciler) getReadyServicePods(service *corev1.Service) ([]*corev1.Pod, error) {
+func (r *reconciler) getReadyServicePods(service *corev1.Service) ([]*corev1.Pod, error) {
 	key := ServiceKey(service)
 	var readyPods []*corev1.Pod
 
@@ -351,7 +351,7 @@ func (c *reconciler) getReadyServicePods(service *corev1.Service) ([]*corev1.Pod
 		Namespace:     service.Namespace,
 	}
 	servicePods := &corev1.PodList{}
-	if err := c.List(context.Background(), opts, servicePods); err != nil {
+	if err := r.List(context.Background(), opts, servicePods); err != nil {
 		return readyPods, errors.Wrap(err, fmt.Sprintf("failed to list pod's for service '%s' via selector: '%s'", key, opts.LabelSelector.String()))
 	}
 
@@ -365,7 +365,7 @@ func (c *reconciler) getReadyServicePods(service *corev1.Service) ([]*corev1.Pod
 			readyPods = append(readyPods, &pod)
 		} else {
 			// Only log when we do not add pods as the caller is responsible for logging the final pods
-			c.log.Debugf("Skipping pod %s/%s for service %s/%s. The pod ist not ready", pod.Namespace, pod.Name, service.Namespace, service.Name)
+			r.log.Debugf("Skipping pod %s/%s for service %s/%s. The pod ist not ready", pod.Namespace, pod.Name, service.Namespace, service.Name)
 		}
 	}
 
