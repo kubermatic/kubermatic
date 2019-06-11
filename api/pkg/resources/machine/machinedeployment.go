@@ -37,6 +37,7 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 	}
 
 	md.Namespace = metav1.NamespaceSystem
+	md.Finalizers = []string{metav1.FinalizerDeleteDependents}
 
 	md.Spec.Selector.MatchLabels = map[string]string{
 		"machine": fmt.Sprintf("md-%s-%s", c.Name, rand.String(10)),
