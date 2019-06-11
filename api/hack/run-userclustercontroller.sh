@@ -14,7 +14,11 @@ kubectl get secret admin-kubeconfig -o go-template='{{ index .data "kubeconfig" 
   | base64 -d > ${KUBECONFIG_USERCLUSTER_CONTROLLER}
 
 CA_CERT_USERCLUSTER_CONTROLLER=$(mktemp)
+OPENVPN_CA_CERT=$(mktemp)
+OPENVPN_CA_KEY=$(mktemp)
 kubectl get secret ca -o json | jq -r '.data["ca.crt"]' | base64 -d > ${CA_CERT_USERCLUSTER_CONTROLLER}
+kubectl get secret openvpn-ca -o json|jq -r '.data["ca.crt"]'|base64 -d > ${OPENVPN_CA_CERT}
+kubectl get secret openvpn-ca -o json|jq -r '.data["ca.key"]'|base64 -d > ${OPENVPN_CA_KEY}
 
 CLUSTER_NAME=$(kubectl get secret admin-kubeconfig -o go-template='{{ .metadata.namespace }}'|sed 's/cluster-//g')
 ARGS=""
@@ -32,6 +36,8 @@ fi
     -v=4 \
     -namespace=$(kubectl get cluster ${CLUSTER_NAME} -o json | jq -r .status.namespaceName) \
     -openvpn-server-port=$(kubectl get service openvpn-server -o json | jq -r .spec.ports[0].nodePort) \
+    -openvpn-ca-cert-file=${OPENVPN_CA_CERT} \
+    -openvpn-ca-key-file=${OPENVPN_CA_KEY} \
     -cluster-url=$(kubectl get cluster ${CLUSTER_NAME} -o json | jq -r .address.url) \
     -ca-cert=${CA_CERT_USERCLUSTER_CONTROLLER} \
     ${ARGS}
