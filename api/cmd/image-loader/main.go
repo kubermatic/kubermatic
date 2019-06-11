@@ -327,6 +327,7 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		resources.MetricsServerKubeconfigSecretName,
 		resources.MachineControllerWebhookServingCertSecretName,
 		resources.InternalUserClusterAdminKubeconfigSecretName,
+		resources.ClusterAutoscalerKubeconfigSecretName,
 	})
 	objects := []runtime.Object{configMapList, secretList, serviceList}
 

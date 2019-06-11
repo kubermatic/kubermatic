@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/clusterautoscaler"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/controller-manager"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/dnat-controller"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/kube-state-metrics"
@@ -95,6 +96,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context) error {
 	// kube-system
 	creators := []reconciling.NamedRoleCreatorGetter{
 		machinecontroller.KubeSystemRoleCreator(),
+		clusterautoscaler.KubeSystemRoleCreator(),
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -114,6 +116,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context) error {
 	// default
 	creators = []reconciling.NamedRoleCreatorGetter{
 		machinecontroller.EndpointReaderRoleCreator(),
+		clusterautoscaler.DefaultRoleCreator(),
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespaceDefault, r.Client); err != nil {
@@ -142,6 +145,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 		metricsserver.RolebindingAuthReaderCreator(),
 		scheduler.RoleBindingAuthDelegator(),
 		controllermanager.RoleBindingAuthDelegator(),
+		clusterautoscaler.KubeSystemRoleBindingCreator(),
 	}
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings in kube-system Namespace: %v", err)
@@ -159,6 +163,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 	// Default
 	creators = []reconciling.NamedRoleBindingCreatorGetter{
 		machinecontroller.DefaultRoleBindingCreator(),
+		clusterautoscaler.DefaultRoleBindingCreator(),
 	}
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespaceDefault, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings in default Namespace: %v", err)
@@ -186,6 +191,7 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context) error {
 		machinecontroller.ClusterRoleCreator(),
 		dnatcontroller.ClusterRoleCreator(),
 		metricsserver.ClusterRoleCreator(),
+		clusterautoscaler.ClusterRoleCreator(),
 	}
 
 	if err := reconciling.ReconcileClusterRoles(ctx, creators, "", r.Client); err != nil {
@@ -207,6 +213,7 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context) error {
 		metricsserver.ClusterRoleBindingAuthDelegatorCreator(),
 		scheduler.ClusterRoleBindingAuthDelegatorCreator(),
 		controllermanager.ClusterRoleBindingAuthDelegator(),
+		clusterautoscaler.ClusterRoleBindingCreator(),
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
