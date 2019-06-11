@@ -8,6 +8,8 @@ import (
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 type serverRunOptions struct {
@@ -22,6 +24,7 @@ type serverRunOptions struct {
 	updatesFile     string
 	credentialFile  string
 	domain          string
+	exposeStrategy  corev1.ServiceType
 	log             kubermaticlog.Options
 
 	// OIDC configuration
@@ -44,6 +47,7 @@ type serverRunOptions struct {
 func newServerRunOptions() (serverRunOptions, error) {
 	s := serverRunOptions{}
 	var rawFeatureGates string
+	var rawExposeStrategy string
 
 	flag.StringVar(&s.listenAddress, "address", ":8080", "The address to listen on")
 	flag.StringVar(&s.kubeconfig, "kubeconfig", "", "Path to the kubeconfig.")
@@ -67,6 +71,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&rawFeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for various features.")
 	flag.StringVar(&s.domain, "domain", "localhost", "A domain name on which the server is deployed")
 	flag.StringVar(&s.serviceAccountSigningKey, "service-account-signing-key", "", "Signing key authenticates the service account's token value using HMAC. It is recommended to use a key with 32 bytes or longer.")
+	flag.StringVar(&rawExposeStrategy, "expose-strategy", "NodePort", "The strategy to expose the controlplane with, either \"NodePort\" which creates NodePorts with a \"nodeport-proxy.k8s.io/expose: true\" annotation or \"LoadBalancer\", which creates a LoadBalancer")
 	flag.BoolVar(&s.log.Debug, "log-debug", false, "Enables debug logging")
 	flag.StringVar(&s.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.Parse()
@@ -76,6 +81,15 @@ func newServerRunOptions() (serverRunOptions, error) {
 		return s, err
 	}
 	s.featureGates = featureGates
+
+	switch rawExposeStrategy {
+	case "NodePort":
+		s.exposeStrategy = corev1.ServiceTypeNodePort
+	case "LoadBalancer":
+		s.exposeStrategy = corev1.ServiceTypeLoadBalancer
+	default:
+		return s, fmt.Errorf("--expose-strategy must be either `NodePort` or `LoadBalancer`, got %q", rawExposeStrategy)
+	}
 	return s, nil
 }
 

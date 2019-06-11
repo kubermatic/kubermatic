@@ -13,6 +13,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 // UpdateManager specifies a set of methods to handle cluster versions & updates
@@ -47,6 +49,7 @@ type Routing struct {
 	saTokenGenerator            serviceaccount.TokenGenerator
 	eventRecorderProvider       provider.EventRecorderProvider
 	credentialManager           common.CredentialManager
+	exposeStrategy              corev1.ServiceType
 }
 
 // NewRouting creates a new Routing.
@@ -71,6 +74,7 @@ func NewRouting(
 	saTokenGenerator serviceaccount.TokenGenerator,
 	eventRecorderProvider provider.EventRecorderProvider,
 	credentialManager common.CredentialManager,
+	exposeStrategy corev1.ServiceType,
 ) Routing {
 	return Routing{
 		datacenters:                 datacenters,
@@ -94,6 +98,7 @@ func NewRouting(
 		saTokenGenerator:            saTokenGenerator,
 		eventRecorderProvider:       eventRecorderProvider,
 		credentialManager:           credentialManager,
+		exposeStrategy:              exposeStrategy,
 	}
 }
 

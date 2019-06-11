@@ -57,7 +57,6 @@ type controllerRunOptions struct {
 	dockerPullConfigJSONFile                         string
 	log                                              kubermaticlog.Options
 	kubermaticImage                                  string
-	apiServerExposeStrategy                          corev1.ServiceType
 
 	// OIDC configuration
 	oidcCAFile             string
@@ -72,7 +71,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	c := controllerRunOptions{}
 	var rawFeatureGates string
 	var rawEtcdDiskSize string
-	var rawAPIServerExposeStrategy string
 
 	flag.StringVar(&c.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&c.masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
@@ -100,7 +98,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.inClusterPrometheusRulesFile, "in-cluster-prometheus-rules-file", "", "The file containing the custom alerting rules for the prometheus running in the cluster-foo namespaces.")
 	flag.BoolVar(&c.inClusterPrometheusDisableDefaultRules, "in-cluster-prometheus-disable-default-rules", false, "A flag indicating whether the default rules for the prometheus running in the cluster-foo namespaces should be deployed.")
 	flag.StringVar(&c.dockerPullConfigJSONFile, "docker-pull-config-json-file", "config.json", "The file containing the docker auth config.")
-	flag.StringVar(&rawAPIServerExposeStrategy, "apiserver-expose-strategy", "NodePort", "The strategy to expose the apiserver with, either NodePort which creates a NodePort with a `nodeport-proxy.k8s.io/expose: true` annotation or LoadBalancer, which creates a LoadBalancer")
 	flag.BoolVar(&c.inClusterPrometheusDisableDefaultScrapingConfigs, "in-cluster-prometheus-disable-default-scraping-configs", false, "A flag indicating whether the default scraping configs for the prometheus running in the cluster-foo namespaces should be deployed.")
 	flag.StringVar(&c.inClusterPrometheusScrapingConfigsFile, "in-cluster-prometheus-scraping-configs-file", "", "The file containing the custom scraping configs for the prometheus running in the cluster-foo namespaces.")
 	flag.StringVar(&c.monitoringScrapeAnnotationPrefix, "monitoring-scrape-annotation-prefix", "monitoring.kubermatic.io", "The prefix for monitoring annotations in the user cluster. Default: monitoring.kubermatic.io -> monitoring.kubermatic.io/port, monitoring.kubermatic.io/path")
@@ -128,15 +125,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 
 	if c.overwriteRegistry != "" {
 		c.overwriteRegistry = path.Clean(strings.TrimSpace(c.overwriteRegistry))
-	}
-
-	switch rawAPIServerExposeStrategy {
-	case "NodePort":
-		c.apiServerExposeStrategy = corev1.ServiceTypeNodePort
-	case "LoadBalancer":
-		c.apiServerExposeStrategy = corev1.ServiceTypeLoadBalancer
-	default:
-		return c, fmt.Errorf("--apiserver-expose-strategy must be either `NodePort` or `LoadBalancer`, got %q", rawAPIServerExposeStrategy)
 	}
 
 	return c, nil

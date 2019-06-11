@@ -99,9 +99,6 @@ spec:
         {{- if .Values.kubermatic.kubermaticImage }}
         - -kubermatic-image={{ .Values.kubermatic.kubermaticImage }}
         {{- end }}
-        {{- if .Values.kubermatic.apiServerExposeStrategy }}
-        - -apiserver-expose-strategy={{ .Values.kubermatic.apiServerExposeStrategy }}
-        {{- end }}
         image: '{{ .Values.kubermatic.controller.image.repository }}:{{ .Values.kubermatic.controller.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.controller.image.pullPolicy }}
         ports:

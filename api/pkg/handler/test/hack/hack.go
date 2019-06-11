@@ -15,6 +15,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 // NewTestRouting is a hack that helps us avoid circular imports
@@ -63,6 +65,7 @@ func NewTestRouting(
 		saTokenGenerator,
 		eventRecorderProvider,
 		credentialManager,
+		corev1.ServiceTypeNodePort,
 	)
 
 	mainRouter := mux.NewRouter()
