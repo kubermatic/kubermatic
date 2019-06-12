@@ -1,17 +1,25 @@
 minio:
   image:
     repository: minio/minio
-    tag: RELEASE.2019-04-23T23-50-36Z
+    tag: RELEASE.2019-06-11T00-44-33Z
   storeSize: 100Gi
   credentials:
     accessKey: wtupllWfpMg414ZM5YkzZiUmgjh1vZdk
     secretKey: r89xkN9JvHJQppb5v7SEfkNkiC1vDcMySQFKxg6uDkE3gZfCeB7ZBfECyUOTywym
 
+  flags:
+    # Set to true to enable Minio's strict S3 compatibility mode.
+    # See https://github.com/minio/minio/pull/7609 for more information.
+    compat: false
+
+    # hide sensitive information from logging
+    anonymous: false
+
   backup:
     enabled: true
     image:
       repository: quay.io/kubermatic/util
-      tag: 1.0.0-2
+      tag: 1.0.0-3
 
   # If your cluster does not have a default storage class,
   # you can specify the class to use for Minio. Note that
