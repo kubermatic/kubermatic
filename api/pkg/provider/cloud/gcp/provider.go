@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/googleapi"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
@@ -189,7 +191,10 @@ func ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterU
 			SourceTags: []string{tag},
 		}).Do()
 		if err != nil {
-			return err
+			// we ignore a Google API "already exists" error
+			if ge, ok := err.(*googleapi.Error); !ok || ge.Code != http.StatusConflict {
+				return err
+			}
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -213,7 +218,10 @@ func ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterU
 			TargetTags: []string{tag},
 		}).Do()
 		if err != nil {
-			return err
+			// we ignore a Google API "already exists" error
+			if ge, ok := err.(*googleapi.Error); !ok || ge.Code != http.StatusConflict {
+				return err
+			}
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
