@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/googleapi"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
@@ -16,8 +18,9 @@ import (
 )
 
 const (
-	defaultNetwork           = "global/networks/default"
-	firewallCleanupFinalizer = "kubermatic.io/cleanup-gcp-firewall"
+	defaultNetwork               = "global/networks/default"
+	firewallSelfCleanupFinalizer = "kubermatic.io/cleanup-gcp-firewall-self"
+	firewallICMPCleanupFinalizer = "kubermatic.io/cleanup-gcp-firewall-icmp"
 )
 
 type gcp struct {
@@ -53,27 +56,9 @@ func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update prov
 		}
 	}
 
-	if cluster.Spec.Cloud.GCP.FirewallRuleName == "" {
-		firewallName, err := createFirewallRule(*cluster.Spec.Cloud.GCP, cluster.Name)
-		if err != nil {
-			return nil, err
-		}
-
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.Cloud.GCP.FirewallRuleName = firewallName
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if !kuberneteshelper.HasFinalizer(cluster, firewallCleanupFinalizer) {
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			kuberneteshelper.AddFinalizer(cluster, firewallCleanupFinalizer)
-		})
-		if err != nil {
-			return nil, err
-		}
+	err = ensureFirewallRules(cluster, update)
+	if err != nil {
+		return nil, err
 	}
 
 	return cluster, nil
@@ -94,23 +79,41 @@ func (g *gcp) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 
 // CleanUpCloudProvider removes firewall rules and related finalizer.
 func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	if kuberneteshelper.HasFinalizer(cluster, firewallCleanupFinalizer) {
-		svc, projectID, err := connectToComputeService(cluster.Spec.Cloud.GCP.ServiceAccount)
-		if err != nil {
-			return nil, err
-		}
+	svc, projectID, err := connectToComputeService(cluster.Spec.Cloud.GCP.ServiceAccount)
+	if err != nil {
+		return nil, err
+	}
 
-		firewallService := compute.NewFirewallsService(svc)
-		_, err = firewallService.Delete(projectID, cluster.Spec.Cloud.GCP.FirewallRuleName).Do()
+	firewallService := compute.NewFirewallsService(svc)
+
+	selfRuleName := fmt.Sprintf("firewall-%s-self", cluster.Name)
+	icmpRuleName := fmt.Sprintf("firewall-%s-icmp", cluster.Name)
+
+	if kuberneteshelper.HasFinalizer(cluster, firewallSelfCleanupFinalizer) {
+		_, err = firewallService.Delete(projectID, selfRuleName).Do()
 		if err != nil {
-			return nil, fmt.Errorf("failed to delete firewall %s: %v", cluster.Spec.Cloud.GCP.FirewallRuleName, err)
+			return nil, fmt.Errorf("failed to delete firewall rule %s: %v", selfRuleName, err)
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			kuberneteshelper.RemoveFinalizer(cluster, firewallCleanupFinalizer)
+			kuberneteshelper.RemoveFinalizer(cluster, firewallSelfCleanupFinalizer)
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to remove %s finalizer: %v", firewallCleanupFinalizer, err)
+			return nil, fmt.Errorf("failed to remove %s finalizer: %v", firewallSelfCleanupFinalizer, err)
+		}
+	}
+
+	if kuberneteshelper.HasFinalizer(cluster, firewallICMPCleanupFinalizer) {
+		_, err = firewallService.Delete(projectID, icmpRuleName).Do()
+		if err != nil {
+			return nil, fmt.Errorf("failed to delete firewall rule %s: %v", icmpRuleName, err)
+		}
+
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.RemoveFinalizer(cluster, firewallICMPCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to remove %s finalizer: %v", firewallICMPCleanupFinalizer, err)
 		}
 	}
 
@@ -145,48 +148,89 @@ func connectToComputeService(serviceAccount string) (*compute.Service, string, e
 	return svc, projectID, nil
 }
 
-func createFirewallRule(spec kubermaticv1.GCPCloudSpec, clusterName string) (string, error) {
-	svc, projectID, err := connectToComputeService(spec.ServiceAccount)
+func ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) error {
+	svc, projectID, err := connectToComputeService(cluster.Spec.Cloud.GCP.ServiceAccount)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	firewallService := compute.NewFirewallsService(svc)
-	tag := fmt.Sprintf("kubernetes-cluster-%s", clusterName)
-	firewallName := fmt.Sprintf("firewall-%s", clusterName)
+	tag := fmt.Sprintf("kubernetes-cluster-%s", cluster.Name)
+	selfRuleName := fmt.Sprintf("firewall-%s-self", cluster.Name)
+	icmpRuleName := fmt.Sprintf("firewall-%s-icmp", cluster.Name)
 
-	_, err = firewallService.Insert(projectID, &compute.Firewall{
-		Name:    firewallName,
-		Network: spec.Network,
-		Allowed: []*compute.FirewallAllowed{
-			{
-				IPProtocol: "tcp",
+	// allow traffic within the same cluster
+	if !kuberneteshelper.HasFinalizer(cluster, firewallSelfCleanupFinalizer) {
+		_, err = firewallService.Insert(projectID, &compute.Firewall{
+			Name:    selfRuleName,
+			Network: cluster.Spec.Cloud.GCP.Network,
+			Allowed: []*compute.FirewallAllowed{
+				{
+					IPProtocol: "tcp",
+				},
+				{
+					IPProtocol: "udp",
+				},
+				{
+					IPProtocol: "icmp",
+				},
+				{
+					IPProtocol: "esp",
+				},
+				{
+					IPProtocol: "ah",
+				},
+				{
+					IPProtocol: "sctp",
+				},
+				{
+					IPProtocol: "ipip",
+				},
 			},
-			{
-				IPProtocol: "udp",
-			},
-			{
-				IPProtocol: "icmp",
-			},
-			{
-				IPProtocol: "esp",
-			},
-			{
-				IPProtocol: "ah",
-			},
-			{
-				IPProtocol: "sctp",
-			},
-			{
-				IPProtocol: "ipip",
-			},
-		},
-		TargetTags: []string{tag},
-		SourceTags: []string{tag},
-	}).Do()
-	if err != nil {
-		return "", err
+			TargetTags: []string{tag},
+			SourceTags: []string{tag},
+		}).Do()
+		if err != nil {
+			// we ignore a Google API "already exists" error
+			if ge, ok := err.(*googleapi.Error); !ok || ge.Code != http.StatusConflict {
+				return err
+			}
+		}
+
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.AddFinalizer(cluster, firewallSelfCleanupFinalizer)
+		})
+		if err != nil {
+			return err
+		}
 	}
 
-	return firewallName, err
+	// allow ICMP from everywhere
+	if !kuberneteshelper.HasFinalizer(cluster, firewallICMPCleanupFinalizer) {
+		_, err = firewallService.Insert(projectID, &compute.Firewall{
+			Name:    icmpRuleName,
+			Network: cluster.Spec.Cloud.GCP.Network,
+			Allowed: []*compute.FirewallAllowed{
+				{
+					IPProtocol: "icmp",
+				},
+			},
+			TargetTags: []string{tag},
+		}).Do()
+		if err != nil {
+			// we ignore a Google API "already exists" error
+			if ge, ok := err.(*googleapi.Error); !ok || ge.Code != http.StatusConflict {
+				return err
+			}
+		}
+
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.AddFinalizer(cluster, firewallICMPCleanupFinalizer)
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return err
 }
