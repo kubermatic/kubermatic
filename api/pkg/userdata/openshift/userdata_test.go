@@ -7,6 +7,7 @@ import (
 	"net"
 	"testing"
 
+	"github.com/kubermatic/machine-controller/pkg/apis/plugin"
 	"github.com/pmezard/go-difflib/difflib"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -53,12 +54,21 @@ func TestUserdataGeneration(t *testing.T) {
 
 		t.Run(test.name, func(t *testing.T) {
 			p := Provider{}
-			userdata, err := p.UserData(test.spec,
-				kubeconfig,
-				"dummy-cloud-config",
-				test.cloudProviderName,
-				[]net.IP{net.ParseIP("8.8.8.8")},
-				false)
+
+			req := plugin.UserDataRequest{
+				MachineSpec:           test.spec,
+				Kubeconfig:            kubeconfig,
+				CloudConfig:           "dummy-cloud-config",
+				CloudProviderName:     test.cloudProviderName,
+				DNSIPs:                []net.IP{net.ParseIP("8.8.8.8")},
+				ExternalCloudProvider: false,
+				HTTPProxy:             "",
+				NoProxy:               "",
+				InsecureRegistries:    []string{},
+				PauseImage:            "",
+			}
+
+			userdata, err := p.UserData(req)
 			if err != nil {
 				t.Fatalf("failed to call p.Userdata: %v", err)
 			}

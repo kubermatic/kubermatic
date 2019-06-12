@@ -2026,6 +2026,7 @@
     "github.com/gorilla/securecookie",
     "github.com/heptiolabs/healthcheck",
     "github.com/hetznercloud/hcloud-go/hcloud",
+    "github.com/kubermatic/machine-controller/pkg/apis/plugin",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean",
