@@ -81,10 +81,6 @@ spec:
             {{- end }}
             --web.external-url=https://{{ .Values.prometheus.host | trim }}
           {{- end }}
-        env:
-        # prevent excessive memory usage until Prometheus 2.10
-        - name: GODEBUG
-          value: madvdontneed=1
         ports:
         - containerPort: 9090
           name: web
