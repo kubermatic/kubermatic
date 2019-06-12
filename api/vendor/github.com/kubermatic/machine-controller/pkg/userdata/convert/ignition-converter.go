@@ -19,14 +19,11 @@ package convert
 import (
 	"encoding/json"
 	"fmt"
-	"net"
 
 	ctconfig "github.com/coreos/container-linux-config-transpiler/config"
 
+	pluginapi "github.com/kubermatic/machine-controller/pkg/apis/plugin"
 	"github.com/kubermatic/machine-controller/pkg/userdata/plugin"
-
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 func NewIgnition(p plugin.Provider) *Ignition {
@@ -37,14 +34,8 @@ type Ignition struct {
 	p plugin.Provider
 }
 
-func (j *Ignition) UserData(
-	spec clusterv1alpha1.MachineSpec,
-	kubeconfig *clientcmdapi.Config,
-	cloudConfig, cloudProviderName string,
-	clusterDNSIPs []net.IP,
-	externalCloudProvider bool,
-) (string, error) {
-	before, err := j.p.UserData(spec, kubeconfig, cloudConfig, cloudProviderName, clusterDNSIPs, externalCloudProvider)
+func (j *Ignition) UserData(req pluginapi.UserDataRequest) (string, error) {
+	before, err := j.p.UserData(req)
 	if err != nil {
 		return "", err
 	}

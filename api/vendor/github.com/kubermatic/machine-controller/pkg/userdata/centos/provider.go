@@ -24,14 +24,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"net"
 	"text/template"
 
 	"github.com/Masterminds/semver"
 
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
-
+	"github.com/kubermatic/machine-controller/pkg/apis/plugin"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	userdatahelper "github.com/kubermatic/machine-controller/pkg/userdata/helper"
 )
@@ -40,31 +37,24 @@ import (
 type Provider struct{}
 
 // UserData renders user-data template to string.
-func (p Provider) UserData(
-	spec clusterv1alpha1.MachineSpec,
-	kubeconfig *clientcmdapi.Config,
-	cloudConfig string,
-	cloudProviderName string,
-	clusterDNSIPs []net.IP,
-	externalCloudProvider bool,
-) (string, error) {
+func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 	tmpl, err := template.New("user-data").Funcs(userdatahelper.TxtFuncMap()).Parse(userDataTemplate)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse user-data template: %v", err)
 	}
 
-	kubeletVersion, err := semver.NewVersion(spec.Versions.Kubelet)
+	kubeletVersion, err := semver.NewVersion(req.MachineSpec.Versions.Kubelet)
 	if err != nil {
 		return "", fmt.Errorf("invalid kubelet version: '%v'", err)
 	}
 
-	pconfig, err := providerconfig.GetConfig(spec.ProviderSpec)
+	pconfig, err := providerconfig.GetConfig(req.MachineSpec.ProviderSpec)
 	if err != nil {
 		return "", fmt.Errorf("failed to get provider config: %v", err)
 	}
 
 	if pconfig.OverwriteCloudConfig != nil {
-		cloudConfig = *pconfig.OverwriteCloudConfig
+		req.CloudConfig = *pconfig.OverwriteCloudConfig
 	}
 
 	if pconfig.Network != nil {
@@ -76,45 +66,37 @@ func (p Provider) UserData(
 		return "", fmt.Errorf("failed to parse OperatingSystemSpec: '%v'", err)
 	}
 
-	serverAddr, err := userdatahelper.GetServerAddressFromKubeconfig(kubeconfig)
+	serverAddr, err := userdatahelper.GetServerAddressFromKubeconfig(req.Kubeconfig)
 	if err != nil {
 		return "", fmt.Errorf("error extracting server address from kubeconfig: %v", err)
 	}
 
-	kubeconfigString, err := userdatahelper.StringifyKubeconfig(kubeconfig)
+	kubeconfigString, err := userdatahelper.StringifyKubeconfig(req.Kubeconfig)
 	if err != nil {
 		return "", err
 	}
 
-	kubernetesCACert, err := userdatahelper.GetCACert(kubeconfig)
+	kubernetesCACert, err := userdatahelper.GetCACert(req.Kubeconfig)
 	if err != nil {
 		return "", fmt.Errorf("error extracting cacert: %v", err)
 	}
 
 	data := struct {
-		MachineSpec      clusterv1alpha1.MachineSpec
+		plugin.UserDataRequest
 		ProviderSpec     *providerconfig.Config
 		OSConfig         *Config
-		CloudProvider    string
-		CloudConfig      string
 		KubeletVersion   string
-		ClusterDNSIPs    []net.IP
 		ServerAddr       string
 		Kubeconfig       string
 		KubernetesCACert string
-		IsExternal       bool
 	}{
-		MachineSpec:      spec,
+		UserDataRequest:  req,
 		ProviderSpec:     pconfig,
 		OSConfig:         centosConfig,
-		CloudProvider:    cloudProviderName,
-		CloudConfig:      cloudConfig,
 		KubeletVersion:   kubeletVersion.String(),
-		ClusterDNSIPs:    clusterDNSIPs,
 		ServerAddr:       serverAddr,
 		Kubeconfig:       kubeconfigString,
 		KubernetesCACert: kubernetesCACert,
-		IsExternal:       externalCloudProvider,
 	}
 	b := &bytes.Buffer{}
 	err = tmpl.Execute(b, data)
@@ -126,7 +108,7 @@ func (p Provider) UserData(
 
 // UserData template.
 const userDataTemplate = `#cloud-config
-{{ if ne .CloudProvider "aws" }}
+{{ if ne .CloudProviderName "aws" }}
 hostname: {{ .MachineSpec.Name }}
 {{- /* Never set the hostname on AWS nodes. Kubernetes(kube-proxy) requires the hostname to be the private dns name */}}
 {{ end }}
@@ -146,6 +128,12 @@ ssh_authorized_keys:
 {{- end }}
 
 write_files:
+{{- if .HTTPProxy }}
+- path: "/etc/environment"
+  content: |
+{{ proxyEnvironment .HTTPProxy .NoProxy | indent 4 }}
+{{- end }}
+
 - path: "/etc/systemd/journald.conf.d/max_disk_use.conf"
   content: |
 {{ journalDConfig | indent 4 }}
@@ -189,7 +177,7 @@ write_files:
     cat /etc/fstab.orig | awk '$3 ~ /^swap$/ && $1 !~ /^#/ {$0="# commented out by cloudinit\n#"$0} 1' > /etc/fstab.noswap
     mv /etc/fstab.noswap /etc/fstab
     swapoff -a
-    {{ if ne .CloudProvider "aws" }}
+    {{ if ne .CloudProviderName "aws" }}
 {{- /*  The normal way of setting it via cloud-init is broken, see */}}
 {{- /*  https://bugs.launchpad.net/cloud-init/+bug/1662542 */}}
     hostnamectl set-hostname {{ .MachineSpec.Name }}
@@ -204,12 +192,12 @@ write_files:
       socat \
       wget \
       curl \
-      ipvsadm{{ if eq .CloudProvider "vsphere" }} \
+      ipvsadm{{ if eq .CloudProviderName "vsphere" }} \
       open-vm-tools{{ end }}
 
 {{ downloadBinariesScript .KubeletVersion true | indent 4 }}
 
-    {{- if eq .CloudProvider "vsphere" }}
+    {{- if eq .CloudProviderName "vsphere" }}
     systemctl enable --now vmtoolsd.service
     {{ end -}}
     systemctl enable --now docker
@@ -228,7 +216,7 @@ write_files:
 
 - path: "/etc/systemd/system/kubelet.service"
   content: |
-{{ kubeletSystemdUnit .KubeletVersion .CloudProvider .MachineSpec.Name .ClusterDNSIPs .IsExternal | indent 4 }}
+{{ kubeletSystemdUnit .KubeletVersion .CloudProviderName .MachineSpec.Name .DNSIPs .ExternalCloudProvider .PauseImage | indent 4 }}
 
 - path: "/etc/systemd/system/kubelet.service.d/extras.conf"
   content: |
@@ -260,6 +248,7 @@ write_files:
     [Service]
     Type=oneshot
     RemainAfterExit=true
+    EnvironmentFile=-/etc/environment
     ExecStart=/opt/bin/supervise.sh /opt/bin/setup
 
 - path: "/etc/profile.d/opt-bin-path.sh"
@@ -276,6 +265,19 @@ write_files:
   permissions: "0644"
   content: |
 {{ containerRuntimeHealthCheckSystemdUnit | indent 4 }}
+
+{{- if .InsecureRegistries }}
+- path: /run/containers/registries.conf
+  permissions: "0644"
+  content: |
+    INSECURE_REGISTRY="--insecure-registry {{ .InsecureRegistries | join " --insecure-registry "}}"
+{{- end}}
+
+- path: /etc/systemd/system/docker.service.d/environment.conf
+  permissions: "0644"
+  content: |
+    [Service]
+    EnvironmentFile=-/etc/environment
 
 runcmd:
 - systemctl enable --now setup.service
