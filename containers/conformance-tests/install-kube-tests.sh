@@ -32,7 +32,7 @@ for VERSION in 1.{11..15}; do
         cd -
 
         # Delete all binaries for non amd64 architectures
-        # We keep the windows and darwin ones, in case someone want's to test locally
+        # We keep the windows and darwin ones, in case someone wants to test locally
         rm -rf ${DIRECTORY}/platforms/linux/arm
         rm -rf ${DIRECTORY}/platforms/linux/arm64
         rm -rf ${DIRECTORY}/platforms/linux/ppc64le
