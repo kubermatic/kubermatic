@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
       - name: prometheus
-        image: '{{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.version }}'
+        image: '{{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.version | default .Values.prometheus.image.tag }}'
         command: [/bin/sh]
         args:
         - -c

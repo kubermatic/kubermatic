@@ -1,7 +1,9 @@
 prometheus:
   image:
     repository: quay.io/prometheus/prometheus
-  version: v2.10.0
+    tag: v2.10.0
+    pullPolicy: IfNotPresent
+
   host: ''
   storageSize: 100Gi
 
