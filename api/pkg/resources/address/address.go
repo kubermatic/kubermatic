@@ -39,14 +39,13 @@ func SyncClusterAddress(ctx context.Context,
 		if err := client.Get(ctx, nn, frontProxyLoadBalancerService); err != nil {
 			return nil, fmt.Errorf("failed to get the front-loadbalancer service: %v", err)
 		}
+		// Use this as default in case the implementation doesn't populate the status
+		frontProxyLoadBalancerServiceIP = frontProxyLoadBalancerService.Spec.LoadBalancerIP
 		// Supposively there is only one if not..Good luck
 		for _, ingress := range frontProxyLoadBalancerService.Status.LoadBalancer.Ingress {
 			if ingress.IP != "" {
 				frontProxyLoadBalancerServiceIP = ingress.IP
 			}
-		}
-		if frontProxyLoadBalancerService.Spec.LoadBalancerIP != "" {
-			frontProxyLoadBalancerServiceIP = frontProxyLoadBalancerService.Spec.LoadBalancerIP
 		}
 	}
 
