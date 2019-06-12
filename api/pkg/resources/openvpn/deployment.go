@@ -162,7 +162,6 @@ iptables -A INPUT -i tun0 -j DROP
 				"--duplicate-cn",
 				"--client-config-dir", "/etc/openvpn/clients",
 				"--status", "/run/openvpn-status",
-				"--link-mtu", "1432",
 				"--cipher", "AES-256-GCM",
 				"--auth", "SHA1",
 				"--keysize", "256",
@@ -225,13 +224,18 @@ iptables -A INPUT -i tun0 -j DROP
 					},
 				},
 				{
-					Name:    "ip-forward",
+					Name:    "ip-fixup",
 					Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/openvpn:v0.5",
 					Command: []string{"/bin/bash"},
 					Args: []string{
 						"-c",
 						// Always set IP forwarding as a CNI plugin might reset this to 0 (Like Calico 3).
-						"while true; do sysctl -w net.ipv4.ip_forward=1; sleep 30; done",
+						`while true; do sysctl -w net.ipv4.ip_forward=1;
+  if ! iptables -t mangle -C POSTROUTING -p tcp --tcp-flags SYN,RST SYN --dport 1194 -j TCPMSS --set-mss 1300 &>/dev/null; then
+   iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN --dport 1194 -j TCPMSS --set-mss 1300
+  fi
+  sleep 30;
+done`,
 					},
 					SecurityContext: &corev1.SecurityContext{
 						Privileged: resources.Bool(true),
