@@ -17,6 +17,7 @@ limitations under the License.
 package helper
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -89,4 +90,32 @@ func JournalDConfig() string {
 	return `[Journal]
 SystemMaxUse=5G
 `
+}
+
+type dockerConfig struct {
+	StorageDriver      string   `json:"storage-driver"`
+	InsecureRegistries []string `json:"insecure-registries"`
+}
+
+// DockerConfig returns the docker daemon.json
+func DockerConfig(registries []string) (string, error) {
+	cfg := dockerConfig{
+		StorageDriver:      "overlay2",
+		InsecureRegistries: registries,
+	}
+	if registries == nil {
+		cfg.InsecureRegistries = []string{}
+	}
+
+	b, err := json.Marshal(cfg)
+	return string(b), err
+}
+
+func ProxyEnvironment(proxy, noProxy string) string {
+	return fmt.Sprintf(`HTTP_PROXY=%s
+http_proxy=%s
+HTTPS_PROXY=%s
+https_proxy=%s
+NO_PROXY=%s
+no_proxy=%s`, proxy, proxy, proxy, proxy, noProxy, noProxy)
 }

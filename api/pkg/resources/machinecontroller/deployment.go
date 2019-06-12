@@ -2,6 +2,7 @@ package machinecontroller
 
 import (
 	"fmt"
+	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -32,7 +33,7 @@ var (
 const (
 	Name = "machine-controller"
 
-	tag = "v1.1.10"
+	tag = "v1.2.0"
 
 	nodeLocalDNSCacheAddress = "169.254.20.10"
 )
@@ -100,18 +101,13 @@ func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCr
 					return nil, err
 				}
 			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:    Name,
-					Image:   data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
-					Command: []string{"/usr/local/bin/machine-controller"},
-					Args: []string{
-						"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-						"-logtostderr",
-						"-v", "4",
-						"-cluster-dns", clusterDNSIP,
-						"-internal-listen-address", "0.0.0.0:8085",
-					},
+					Name:      Name,
+					Image:     data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
+					Command:   []string{"/usr/local/bin/machine-controller"},
+					Args:      getFlags(clusterDNSIP, data.DC().Node),
 					Env:       getEnvVars(data),
 					Resources: controllerResourceRequirements,
 					LivenessProbe: &corev1.Probe{
@@ -189,4 +185,31 @@ func getEnvVars(data machinecontrollerData) []corev1.EnvVar {
 		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_SERVICE_ACCOUNT", Value: data.Cluster().Spec.Cloud.GCP.ServiceAccount})
 	}
 	return vars
+}
+
+func getFlags(clusterDNSIP string, nodeSettings provider.NodeSettings) []string {
+	flags := []string{
+		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+		"-logtostderr",
+		"-v", "4",
+		"-cluster-dns", clusterDNSIP,
+		"-internal-listen-address", "0.0.0.0:8085",
+	}
+	if len(nodeSettings.InsecureRegistries) > 0 {
+		flags = append(flags, "-node-insecure-registries", strings.Join(nodeSettings.InsecureRegistries, ","))
+	}
+	if nodeSettings.HTTPProxy != "" {
+		flags = append(flags, "-node-http-proxy", nodeSettings.HTTPProxy)
+	}
+	if nodeSettings.NoProxy != "" {
+		flags = append(flags, "-node-no-proxy", nodeSettings.NoProxy)
+	}
+	if nodeSettings.PauseImage != "" {
+		flags = append(flags, "-node-pause-image", nodeSettings.PauseImage)
+	}
+	if nodeSettings.HyperkubeImage != "" {
+		flags = append(flags, "-node-hyperkube-image", nodeSettings.HyperkubeImage)
+	}
+
+	return flags
 }

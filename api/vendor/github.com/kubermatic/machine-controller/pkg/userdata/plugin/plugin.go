@@ -26,11 +26,7 @@ package plugin
 import (
 	"encoding/json"
 	"fmt"
-	"net"
 	"os"
-
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 
 	"github.com/kubermatic/machine-controller/pkg/apis/plugin"
 )
@@ -38,14 +34,7 @@ import (
 // Provider defines the interface each plugin has to implement
 // for the retrieval of the userdata based on the given arguments.
 type Provider interface {
-	UserData(
-		spec clusterv1alpha1.MachineSpec,
-		kubeconfig *clientcmdapi.Config,
-		cloudConfig string,
-		cloudProviderName string,
-		clusterDNSIPs []net.IP,
-		externalCloudProvider bool,
-	) (string, error)
+	UserData(req plugin.UserDataRequest) (string, error)
 }
 
 // Plugin implements a convenient helper to map the request to the given
@@ -78,14 +67,7 @@ func (p *Plugin) Run() error {
 	if err != nil {
 		return err
 	}
-	userData, err := p.provider.UserData(
-		req.MachineSpec,
-		req.KubeConfig,
-		req.CloudConfig,
-		req.CloudProviderName,
-		req.DNSIPs,
-		req.ExternalCloudProvider,
-	)
+	userData, err := p.provider.UserData(req)
 	var resp plugin.UserDataResponse
 	if err != nil {
 		resp.Err = err.Error()
