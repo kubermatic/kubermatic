@@ -1,7 +1,7 @@
 logging:
   fluentbit:
     image:
-      repository: fluent/fluent-bit
+      repository: docker.io/fluent/fluent-bit
       tag: 1.1.2
       pullPolicy: IfNotPresent
     configuration:

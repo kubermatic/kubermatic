@@ -74,7 +74,7 @@ logging:
 
     exporter:
       image:
-        repository: justwatch/elasticsearch_exporter
+        repository: docker.io/justwatch/elasticsearch_exporter
         tag: "1.1.0rc1"
         pullPolicy: IfNotPresent
 
@@ -98,7 +98,7 @@ logging:
 
     cerebro:
       image:
-        repository: lmenezes/cerebro
+        repository: docker.io/lmenezes/cerebro
         tag: "0.8.3"
         pullPolicy: IfNotPresent
       deploy: false

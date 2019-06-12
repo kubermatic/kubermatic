@@ -18,7 +18,7 @@ spec:
     spec:
       {{ if .Values.grafana.provisioning.datasources.paths }}
       initContainers:
-      - image: quay.io/kubermatic/util:1.0.0-4
+      - image: '{{ .Values.grafana.utilImage.repository }}:{{ .Values.grafana.utilImage.tag }}'
         name: datasource-assembler
         command: [/bin/bash]
         args:

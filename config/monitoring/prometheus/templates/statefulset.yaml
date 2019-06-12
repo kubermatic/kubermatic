@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
       - name: prometheus
-        image: 'quay.io/prometheus/prometheus:{{ .Values.prometheus.version }}'
+        image: '{{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.version | default .Values.prometheus.image.tag }}'
         command: [/bin/sh]
         args:
         - -c
@@ -131,7 +131,8 @@ spec:
 
       {{- if not .Values.prometheus.thanos.enabled }}
       - name: reloader
-        image: jimmidyson/configmap-reload
+        image: '{{ .Values.prometheus.configReloaderImage.repository }}:{{ .Values.prometheus.configReloaderImage.tag }}'
+        imagePullPolicy: {{ .Values.prometheus.configReloaderImage.pullPolicy }}
         args:
         - --volume-dir=/etc/prometheus/config
         - --volume-dir=/etc/prometheus/rules

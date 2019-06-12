@@ -1,6 +1,6 @@
 blackboxExporter:
   image:
-    repository: prom/blackbox-exporter
+    repository: docker.io/prom/blackbox-exporter
     tag: v0.14.0
     pullPolicy: IfNotPresent
 
