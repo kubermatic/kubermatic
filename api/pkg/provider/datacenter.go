@@ -122,6 +122,20 @@ type DatacenterSpec struct {
 	GCP          *GCPSpec          `yaml:"gcp,omitempty"`
 }
 
+// NodeSettings are node specific which can be configured on datacenter level
+type NodeSettings struct {
+	// If set, this proxy will be configured on all nodes.
+	HTTPProxy string `yaml:"http_proxy,omitempty"`
+	// If set this will be set as NO_PROXY on the node
+	NoProxy string `yaml:"no_proxy,omitempty"`
+	// If set, this image registry will be configured as insecure on the container runtime.
+	InsecureRegistries []string `yaml:"insecure_registries,omitempty"`
+	// Translates to --pod-infra-container-image on the kubelet. If not set, the kubelet will default it
+	PauseImage string `yaml:"pause_image,omitempty"`
+	// The hyperkube image to use. Currently only Container Linux uses it
+	HyperkubeImage string `yaml:"hyperkube_image,omitempty"`
+}
+
 // DatacenterMeta describes a Kubermatic datacenter.
 type DatacenterMeta struct {
 	Location         string         `yaml:"location"`
@@ -131,6 +145,7 @@ type DatacenterMeta struct {
 	Private          bool           `yaml:"private"`
 	IsSeed           bool           `yaml:"is_seed"`
 	SeedDNSOverwrite *string        `yaml:"seed_dns_overwrite,omitempty"`
+	Node             NodeSettings   `yaml:"node,omitempty"`
 }
 
 // datacentersMeta describes a number of Kubermatic datacenters.

@@ -5,17 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net"
 	"text/template"
 
 	"github.com/Masterminds/semver"
 
+	"github.com/kubermatic/machine-controller/pkg/apis/plugin"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	userdatahelper "github.com/kubermatic/machine-controller/pkg/userdata/helper"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 func getConfig(r runtime.RawExtension) (*Config, error) {
@@ -38,31 +36,25 @@ type Config struct {
 type Provider struct{}
 
 // UserData renders user-data template
-func (p Provider) UserData(
-	spec clusterv1alpha1.MachineSpec,
-	kubeconfig *clientcmdapi.Config,
-	cloudConfig string,
-	cloudProviderName string,
-	clusterDNSIPs []net.IP,
-	_ bool) (string, error) {
+func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 
 	tmpl, err := template.New("user-data").Funcs(userdatahelper.TxtFuncMap()).Parse(userdataTemplate)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse user-data template: %v", err)
 	}
 
-	kubeletVersion, err := semver.NewVersion(spec.Versions.Kubelet)
+	kubeletVersion, err := semver.NewVersion(req.MachineSpec.Versions.Kubelet)
 	if err != nil {
 		return "", fmt.Errorf("invalid kubelet version: '%v'", err)
 	}
 
-	pconfig, err := providerconfig.GetConfig(spec.ProviderSpec)
+	pconfig, err := providerconfig.GetConfig(req.MachineSpec.ProviderSpec)
 	if err != nil {
 		return "", fmt.Errorf("failed to get provider config: %v", err)
 	}
 
 	if pconfig.OverwriteCloudConfig != nil {
-		cloudConfig = *pconfig.OverwriteCloudConfig
+		req.CloudConfig = *pconfig.OverwriteCloudConfig
 	}
 
 	if pconfig.Network != nil {
@@ -74,40 +66,34 @@ func (p Provider) UserData(
 		return "", fmt.Errorf("failed to parse OperatingSystemSpec: '%v'", err)
 	}
 
-	serverAddr, err := userdatahelper.GetServerAddressFromKubeconfig(kubeconfig)
+	serverAddr, err := userdatahelper.GetServerAddressFromKubeconfig(req.Kubeconfig)
 	if err != nil {
 		return "", fmt.Errorf("error extracting server address from kubeconfig: %v", err)
 	}
 
-	kubeconfigString, err := userdatahelper.StringifyKubeconfig(kubeconfig)
+	kubeconfigString, err := userdatahelper.StringifyKubeconfig(req.Kubeconfig)
 	if err != nil {
 		return "", err
 	}
 
-	kubernetesCACert, err := userdatahelper.GetCACert(kubeconfig)
+	kubernetesCACert, err := userdatahelper.GetCACert(req.Kubeconfig)
 	if err != nil {
 		return "", fmt.Errorf("error extracting cacert: %v", err)
 	}
 
 	data := struct {
-		MachineSpec      clusterv1alpha1.MachineSpec
+		plugin.UserDataRequest
 		ProviderSpec     *providerconfig.Config
 		OSConfig         *Config
-		CloudProvider    string
-		CloudConfig      string
 		KubeletVersion   string
-		ClusterDNSIPs    []net.IP
 		ServerAddr       string
 		Kubeconfig       string
 		KubernetesCACert string
 	}{
-		MachineSpec:      spec,
+		UserDataRequest:  req,
 		ProviderSpec:     pconfig,
 		OSConfig:         osConfig,
-		CloudProvider:    cloudProviderName,
-		CloudConfig:      cloudConfig,
 		KubeletVersion:   kubeletVersion.String(),
-		ClusterDNSIPs:    clusterDNSIPs,
 		ServerAddr:       serverAddr,
 		Kubeconfig:       kubeconfigString,
 		KubernetesCACert: kubernetesCACert,
@@ -121,7 +107,7 @@ func (p Provider) UserData(
 }
 
 const userdataTemplate = `#cloud-config
-{{ if ne .CloudProvider "aws" }}
+{{ if ne .CloudProviderName "aws" }}
 hostname: {{ .MachineSpec.Name }}
 # Never set the hostname on AWS nodes. Kubernetes(kube-proxy) requires the hostname to be the private dns name
 {{ end }}
@@ -310,7 +296,7 @@ write_files:
     sysctl --system
     # Create workdir for origin-node and load its unitfile
     mkdir -p /var/lib/origin && systemctl daemon-reload
-    {{ if ne .CloudProvider "aws" }}
+    {{ if ne .CloudProviderName "aws" }}
     # The normal way of setting it via cloud-init is broken:
     # https://bugs.launchpad.net/cloud-init/+bug/1662542
     hostnamectl set-hostname {{ .MachineSpec.Name }}
@@ -336,10 +322,10 @@ write_files:
       wget \
       curl \
       NetworkManager \
-      ipvsadm{{ if eq .CloudProvider "vsphere" }} \
+      ipvsadm{{ if eq .CloudProviderName "vsphere" }} \
       open-vm-tools{{ end }}
     mkdir -p /etc/origin/node/pods
-    {{- if eq .CloudProvider "vsphere" }}
+    {{- if eq .CloudProviderName "vsphere" }}
     systemctl enable --now vmtoolsd.service
     {{ end }}
     systemctl enable --now NetworkManager
