@@ -128,7 +128,7 @@ type NodeSettings struct {
 	HTTPProxy string `yaml:"http_proxy,omitempty"`
 	// If set this will be set as NO_PROXY on the node
 	NoProxy string `yaml:"no_proxy,omitempty"`
-	// If set, this image registry will be used for pulling all required images on the node
+	// If set, this image registry will be configured as insecure on the container runtime.
 	InsecureRegistries []string `yaml:"insecure_registries,omitempty"`
 	// Translates to --pod-infra-container-image on the kubelet. If not set, the kubelet will default it
 	PauseImage string `yaml:"pause_image,omitempty"`
