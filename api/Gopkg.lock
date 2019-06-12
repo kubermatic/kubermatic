@@ -2067,6 +2067,7 @@
     "golang.org/x/oauth2",
     "golang.org/x/oauth2/google",
     "google.golang.org/api/compute/v1",
+    "google.golang.org/api/googleapi",
     "google.golang.org/grpc",
     "gopkg.in/square/go-jose.v2",
     "gopkg.in/square/go-jose.v2/jwt",

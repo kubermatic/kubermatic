@@ -196,3 +196,7 @@ required = [
 [[constraint]]
   name = "github.com/heptiolabs/healthcheck"
   branch = "master"
+
+[[constraint]]
+  name = "google.golang.org/api"
+  version = "0.1.0"
