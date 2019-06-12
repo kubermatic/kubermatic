@@ -1,5 +1,5 @@
 prometheus:
-  version: v2.9.2
+  version: v2.10.0
   host: ''
   storageSize: 100Gi
 
