@@ -1,22 +1,19 @@
 package addon
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
-	"text/template"
 
-	"github.com/Masterminds/sprig"
 	"github.com/ghodss/yaml"
 	"go.uber.org/zap"
 
+	addonutils "github.com/kubermatic/kubermatic/api/pkg/addon"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -28,7 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
-	kyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -241,38 +237,10 @@ func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.Sugare
 	return nil
 }
 
-type templateData struct {
-	Addon        *kubermaticv1.Addon
-	Kubeconfig   string
-	Cluster      *kubermaticv1.Cluster
-	Variables    map[string]interface{}
-	DNSClusterIP string
-	ClusterCIDR  string
-}
-
-func (r *Reconciler) GetTemplateFuncs() template.FuncMap {
-	funcs := sprig.TxtFuncMap()
-	funcs["Registry"] = func(registry string) string {
-		if r.overwriteRegistry != "" {
-			return r.overwriteRegistry
-		}
-		return registry
-	}
-
-	return funcs
-}
-
 func (r *Reconciler) getAddonManifests(log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]runtime.RawExtension, error) {
-	var allManifests []runtime.RawExtension
-
 	addonDir := r.kubernetesAddonDir
 	if isOpenshift(cluster) {
 		addonDir = r.openshiftAddonDir
-	}
-	manifestPath := path.Join(addonDir, addon.Spec.Name)
-	infos, err := ioutil.ReadDir(manifestPath)
-	if err != nil {
-		return nil, err
 	}
 
 	clusterIP, err := resources.UserClusterDNSResolverIP(cluster)
@@ -285,9 +253,7 @@ func (r *Reconciler) getAddonManifests(log *zap.SugaredLogger, addon *kubermatic
 		return nil, err
 	}
 
-	templateFuncs := r.GetTemplateFuncs()
-
-	data := &templateData{
+	data := &addonutils.TemplateData{
 		Variables:    make(map[string]interface{}),
 		Cluster:      cluster,
 		Addon:        addon,
@@ -306,66 +272,9 @@ func (r *Reconciler) getAddonManifests(log *zap.SugaredLogger, addon *kubermatic
 			return nil, err
 		}
 	}
+	manifestPath := path.Join(addonDir, addon.Spec.Name)
 
-	for _, info := range infos {
-		filename := path.Join(manifestPath, info.Name())
-		infoLog := log.With("file", filename)
-
-		if info.IsDir() {
-			infoLog.Debug("Found directory in manifest path. Ignoring.")
-			continue
-		}
-
-		infoLog.Debug("Processing file")
-
-		fbytes, err := ioutil.ReadFile(filename)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read file %s: %v", filename, err)
-		}
-
-		tplName := fmt.Sprintf("%s-%s", addon.Name, info.Name())
-		tpl, err := template.New(tplName).Funcs(templateFuncs).Parse(string(fbytes))
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse file %s: %v", filename, err)
-		}
-
-		bufferAll := bytes.NewBuffer([]byte{})
-		if err := tpl.Execute(bufferAll, data); err != nil {
-			return nil, fmt.Errorf("failed to execute templating on file %s: %v", filename, err)
-		}
-
-		sd := strings.TrimSpace(bufferAll.String())
-		if len(sd) == 0 {
-			infoLog.Debug("Skipping file as its empty after parsing")
-			continue
-		}
-
-		reader := kyaml.NewYAMLReader(bufio.NewReader(bufferAll))
-		for {
-			b, err := reader.Read()
-			if err != nil {
-				if err == io.EOF {
-					break
-				}
-				return nil, fmt.Errorf("failed reading from YAML reader for file %s: %v", filename, err)
-			}
-			b = bytes.TrimSpace(b)
-			if len(b) == 0 {
-				continue
-			}
-			decoder := kyaml.NewYAMLToJSONDecoder(bytes.NewBuffer(b))
-			raw := runtime.RawExtension{}
-			if err := decoder.Decode(&raw); err != nil {
-				return nil, fmt.Errorf("decoding failed for file %s: %v", filename, err)
-			}
-			if len(raw.Raw) == 0 {
-				// This can happen if the manifest contains only comments, e.G. because it comes from Helm
-				// something like `# Source: istio/charts/galley/templates/validatingwebhookconfiguration.yaml.tpl`
-				continue
-			}
-			allManifests = append(allManifests, raw)
-		}
-	}
+	allManifests, err := addonutils.ParseFromFolder(log, r.overwriteRegistry, manifestPath, data)
 
 	return allManifests, nil
 }
