@@ -7,6 +7,14 @@ minio:
     accessKey: wtupllWfpMg414ZM5YkzZiUmgjh1vZdk
     secretKey: r89xkN9JvHJQppb5v7SEfkNkiC1vDcMySQFKxg6uDkE3gZfCeB7ZBfECyUOTywym
 
+  flags:
+    # Set to true to enable Minio's strict S3 compatibility mode.
+    # See https://github.com/minio/minio/pull/7609 for more information.
+    compat: false
+
+    # hide sensitive information from logging
+    anonymous: false
+
   backup:
     enabled: true
     image:

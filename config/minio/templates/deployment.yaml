@@ -21,6 +21,12 @@ spec:
       - name: minio
         image: '{{ .Values.minio.image.repository }}:{{ .Values.minio.image.tag }}'
         args:
+        {{- if .Values.minio.flags.compat }}
+        - --compat
+        {{- end }}
+        {{- if .Values.minio.flags.anonymous }}
+        - --anonymous
+        {{- end }}
         - server
         - /storage
         env:
