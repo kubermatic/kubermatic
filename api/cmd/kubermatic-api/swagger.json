@@ -4457,13 +4457,6 @@
       "type": "object",
       "title": "GCPCloudSpec specifies access data to GCP.",
       "properties": {
-        "firewallRuleNames": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "FirewallRuleNames"
-        },
         "network": {
           "type": "string",
           "x-go-name": "Network"
