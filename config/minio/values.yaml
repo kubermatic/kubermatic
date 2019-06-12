@@ -1,6 +1,6 @@
 minio:
   image:
-    repository: minio/minio
+    repository: docker.io/minio/minio
     tag: RELEASE.2019-06-11T00-44-33Z
   storeSize: 100Gi
   credentials:
