@@ -49,7 +49,7 @@ versions:
 #- version: "v1.14.2"
 #  default: false
 # TODO: Remove once there is an actual release
-- version: v1.15.0-beta.2
+- version: v1.15.0-rc.1
   default: false
 # OpenShift 3.11
 - version: "v3.11"
