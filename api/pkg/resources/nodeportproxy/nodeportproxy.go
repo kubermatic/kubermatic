@@ -30,11 +30,11 @@ const (
 	NodePortProxyExposeNamespacedAnnotationKey = "nodeport-proxy.k8s.io/expose-namespaced"
 )
 
-func EnsureResources(ctx context.Context, client ctrlruntimeclient.Client, nppd nodePortProxyData) error {
-	image := nppd.ImageRegistry("quay.io") + "/" + imageName + ":" + resources.KUBERMATICCOMMIT
-	namespace := nppd.Cluster().Status.NamespaceName
+func EnsureResources(ctx context.Context, client ctrlruntimeclient.Client, data nodePortProxyData) error {
+	image := data.ImageRegistry("quay.io") + "/" + imageName + ":" + resources.KUBERMATICCOMMIT
+	namespace := data.Cluster().Status.NamespaceName
 	if namespace == "" {
-		return fmt.Errorf(".Status.NamespaceName is empty for cluster %q", nppd.Cluster().Name)
+		return fmt.Errorf(".Status.NamespaceName is empty for cluster %q", data.Cluster().Name)
 	}
 
 	err := reconciling.ReconcileServiceAccounts(
@@ -55,7 +55,7 @@ func EnsureResources(ctx context.Context, client ctrlruntimeclient.Client, nppd 
 		return fmt.Errorf("failed to ensure RoleBinding: %v", err)
 	}
 
-	deployments := []reconciling.NamedDeploymentCreatorGetter{deploymentEnvoy(image, nppd),
+	deployments := []reconciling.NamedDeploymentCreatorGetter{deploymentEnvoy(image, data),
 		deploymentLBUpdater(image)}
 	err = reconciling.ReconcileDeployments(ctx, deployments, namespace, client)
 	if err != nil {
@@ -124,7 +124,7 @@ func roleBinding(ns string) reconciling.NamedRoleBindingCreatorGetter {
 	}
 }
 
-func deploymentEnvoy(image string, nppd nodePortProxyData) reconciling.NamedDeploymentCreatorGetter {
+func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDeploymentCreatorGetter {
 	volumeMountNameEnvoyConfig := "envoy-config"
 	name := envoyAppLabelValue
 	return func() (string, reconciling.DeploymentCreator) {
@@ -181,7 +181,7 @@ func deploymentEnvoy(image string, nppd nodePortProxyData) reconciling.NamedDepl
 					},
 				}}, {
 				Name:  "envoy",
-				Image: nppd.ImageRegistry("docker.io") + "/envoyproxy/envoy-alpine:v1.10.0",
+				Image: data.ImageRegistry("docker.io") + "/envoyproxy/envoy-alpine:v1.10.0",
 				Command: []string{
 					"/usr/local/bin/envoy",
 					"-c",
