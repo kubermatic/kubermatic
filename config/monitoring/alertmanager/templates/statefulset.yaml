@@ -77,8 +77,8 @@ spec:
           subPath: alertmanager-db
 
       - name: reloader
-        image: jimmidyson/configmap-reload
-        imagePullPolicy: IfNotPresent
+        image: '{{ .Values.alertmanager.configReloaderImage.repository }}:{{ .Values.alertmanager.configReloaderImage.tag }}'
+        imagePullPolicy: {{ .Values.alertmanager.configReloaderImage.pullPolicy }}
         args:
         - -webhook-url=http://localhost:9093/-/reload
         - -volume-dir=/etc/alertmanager/config

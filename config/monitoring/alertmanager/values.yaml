@@ -3,6 +3,10 @@ alertmanager:
     repository: quay.io/prometheus/alertmanager
     tag: v0.17.0
     pullPolicy: IfNotPresent
+  configReloaderImage:
+    repository: docker.io/jimmidyson/configmap-reload
+    tag: v0.2.2
+    pullPolicy: IfNotPresent
   host: ""
   replicas: 3
   storageSize: 100Mi

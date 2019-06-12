@@ -1,10 +1,17 @@
 prometheus:
+  image:
+    repository: quay.io/prometheus/prometheus
   version: v2.10.0
   host: ''
   storageSize: 100Gi
 
   tsdb:
     retentionTime: 15d
+
+  configReloaderImage:
+    repository: docker.io/jimmidyson/configmap-reload
+    tag: v0.2.2
+    pullPolicy: IfNotPresent
 
   # If you install Prometheus using a different Helm release name,
   # you can override the name used for the resources, e.g. to have

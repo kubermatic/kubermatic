@@ -37,6 +37,9 @@ kubermatic:
     crd:
       disable: false
       helmVersion: "v2.11.0"
+      image:
+        repository: "quay.io/kubermatic/util"
+        tag: "1.0.0-3"
 
   etcd:
     # PV size for the etcd StatefulSet of new clusters
@@ -301,7 +304,7 @@ kubermatic:
   vpa:
     updater:
       image:
-        repository: k8s.gcr.io/vpa-updater
+        repository: gcr.io/google_containers/vpa-updater
         tag: 0.5.0
       resources:
         requests:
@@ -316,7 +319,7 @@ kubermatic:
 
     recommender:
       image:
-        repository: k8s.gcr.io/vpa-recommender
+        repository: gcr.io/google_containers/vpa-recommender
         tag: 0.5.0
       resources:
         requests:
@@ -331,7 +334,7 @@ kubermatic:
 
     admissioncontroller:
       image:
-        repository: k8s.gcr.io/vpa-admission-controller
+        repository: gcr.io/google_containers/vpa-admission-controller
         tag: 0.5.0
       resources:
         requests:

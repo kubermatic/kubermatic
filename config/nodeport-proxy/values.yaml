@@ -1,3 +1,8 @@
+# Required to make the templating pass without a valid values.yaml
+# Unfortunately we reuse the kubermatic ImagePullSecret here - Changing it would be a breaking change
+# and would duplicate the ImagePullSecret in the "master" values.yaml.
+kubermatic:
+  imagePullSecretData: ""
 nodePortProxy:
   replicas: 3
   image:
@@ -5,7 +10,7 @@ nodePortProxy:
     tag: v2.1.1
   envoy:
     image:
-      repository: "envoyproxy/envoy-alpine"
+      repository: "docker.io/envoyproxy/envoy-alpine"
       tag: "v1.10.0"
 
   nodeSelector: {}

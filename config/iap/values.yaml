@@ -78,7 +78,7 @@ iap:
   port: 3000
 
   image:
-    repository: keycloak/keycloak-gatekeeper
+    repository: docker.io/keycloak/keycloak-gatekeeper
     tag: 6.0.1
     pullPolicy: IfNotPresent
 
