@@ -3,7 +3,7 @@ FROM alpine:3.9
 ENV MC_VERSION=RELEASE.2019-06-11T00-44-33Z \
     KUBECTL_VERSION=v1.14.1 \
     HELM_VERSION=v2.13.1 \
-    VAULT_VERSION=0.11.6
+    VAULT_VERSION=1.1.3
 
 RUN apk add --no-cache -U \
     bash \
