@@ -73,20 +73,22 @@ func (s *gcpScenario) Cluster(secrets secrets) *v1.Cluster {
 				DatacenterName: "gcp-westeurope",
 				GCP: &v1.GCPCloudSpec{
 					ServiceAccount: secrets.GCP.ServiceAccount,
+					Network:        secrets.GCP.Network,
+					Subnetwork:     secrets.GCP.Subnetwork,
 				},
 			},
 		},
 	}
 }
 
-func (s *gcpScenario) Nodes(num int) *kubermaticapiv1.NodeDeployment {
+func (s *gcpScenario) Nodes(num int, secrets secrets) *kubermaticapiv1.NodeDeployment {
 	return &kubermaticapiv1.NodeDeployment{
 		Spec: kubermaticapiv1.NodeDeploymentSpec{
 			Replicas: int32(num),
 			Template: kubermaticapiv1.NodeSpec{
 				Cloud: kubermaticapiv1.NodeCloudSpec{
 					GCP: &kubermaticapiv1.GCPNodeSpec{
-						Zone:        "europe-west3-c",
+						Zone:        secrets.GCP.Zone,
 						MachineType: "n1-standard-2",
 						DiskType:    "pd-standard",
 						DiskSize:    50,

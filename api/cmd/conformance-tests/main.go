@@ -103,6 +103,9 @@ type secrets struct {
 	}
 	GCP struct {
 		ServiceAccount string
+		Network        string
+		Subnetwork     string
+		Zone           string
 	}
 }
 
@@ -180,6 +183,9 @@ func main() {
 	flag.StringVar(&opts.secrets.Packet.APIKey, "packet-api-key", "", "Packet: APIKey")
 	flag.StringVar(&opts.secrets.Packet.ProjectID, "packet-project-id", "", "Packet: ProjectID")
 	flag.StringVar(&opts.secrets.GCP.ServiceAccount, "gcp-service-account", "", "GCP: Service Account")
+	flag.StringVar(&opts.secrets.GCP.Zone, "gcp-zone", "europe-west3-c", "GCP: Zone")
+	flag.StringVar(&opts.secrets.GCP.Network, "gcp-network", "", "GCP: Network")
+	flag.StringVar(&opts.secrets.GCP.Subnetwork, "gcp-subnetwork", "", "GCP: Subnetwork")
 
 	flag.Parse()
 
@@ -375,7 +381,7 @@ func getScenarios(opts Opts, log *logrus.Entry) []testScenario {
 
 	var filteredScenarios []testScenario
 	for _, scenario := range scenarios {
-		nd := scenario.Nodes(1)
+		nd := scenario.Nodes(1, secrets{})
 		if nd.Spec.Template.OperatingSystem.Ubuntu != nil {
 			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemUbuntu] {
 				filteredScenarios = append(filteredScenarios, scenario)

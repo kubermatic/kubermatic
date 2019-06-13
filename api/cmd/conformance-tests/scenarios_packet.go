@@ -79,7 +79,7 @@ func (s *packetScenario) Cluster(secrets secrets) *v1.Cluster {
 	}
 }
 
-func (s *packetScenario) Nodes(num int) *kubermaticapiv1.NodeDeployment {
+func (s *packetScenario) Nodes(num int, _ secrets) *kubermaticapiv1.NodeDeployment {
 	return &kubermaticapiv1.NodeDeployment{
 		Spec: kubermaticapiv1.NodeDeploymentSpec{
 			Replicas: int32(num),
