@@ -15,6 +15,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/nodeportproxy"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
@@ -92,6 +93,12 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return err
 	}
 
+	if cluster.Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
+		if err := nodeportproxy.EnsureResources(ctx, r.Client, data); err != nil {
+			return fmt.Errorf("failed to ensure NodePortProxy resources: %v", err)
+		}
+	}
+
 	return nil
 }
 
@@ -121,7 +128,6 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		r.oidcIssuerClientID,
 		r.nodeLocalDNSCacheEnabled,
 		r.kubermaticImage,
-		r.apiServerExposeStrategy,
 	), nil
 }
 
@@ -156,15 +162,21 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kuberma
 
 // GetServiceCreators returns all service creators that are currently in use
 func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedServiceCreatorGetter {
-	return []reconciling.NamedServiceCreatorGetter{
+	creators := []reconciling.NamedServiceCreatorGetter{
 		apiserver.InternalServiceCreator(),
-		apiserver.ExternalServiceCreator(data.APIServerExposeStrategy()),
-		openvpn.ServiceCreator(),
+		apiserver.ExternalServiceCreator(data.Cluster().Spec.ExposeStrategy),
+		openvpn.ServiceCreator(data.Cluster().Spec.ExposeStrategy),
 		etcd.ServiceCreator(data),
 		dns.ServiceCreator(),
 		machinecontroller.ServiceCreator(),
 		metricsserver.ServiceCreator(),
 	}
+
+	if data.Cluster().Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
+		creators = append(creators, nodeportproxy.FrontLoadBalancerServiceCreator())
+	}
+
+	return creators
 }
 
 func (r *Reconciler) ensureServices(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {

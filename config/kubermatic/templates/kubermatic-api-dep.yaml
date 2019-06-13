@@ -52,6 +52,9 @@ spec:
         {{- if .Values.kubermatic.credentials }}
         - -credentials=/opt/credentials/credentials.yaml
         {{- end }}
+        {{- if .Values.kubermatic.exposeStrategy }}
+        - -expose-strategy={{ .Values.kubermatic.exposeStrategy }}
+        {{- end }}
         image: '{{ .Values.kubermatic.api.image.repository }}:{{ .Values.kubermatic.api.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.api.image.pullPolicy }}
         ports:

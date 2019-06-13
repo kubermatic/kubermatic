@@ -230,6 +230,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 		cleanupMetricsServerAddon,
 		migrateClusterUserLabel,
 		cleanupKubeStateMetricsService,
+		setExposeStrategyIfEmpty,
 	}
 
 	w := sync.WaitGroup{}
@@ -525,5 +526,20 @@ func cleanupKubeStateMetricsService(cluster *kubermaticv1.Cluster, ctx *cleanupC
 		return err
 	}
 
+	return nil
+}
+
+// We started to offer the option to expose the cluster via a LoadBalancer. We need to track
+// the expose strategy that is being used for a cluster. If there is none set, we default to NodePort
+// as that was initially the only option
+func setExposeStrategyIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	if cluster.Spec.ExposeStrategy == "" {
+		cluster.Spec.ExposeStrategy = corev1.ServiceTypeNodePort
+		updatedCluster, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster)
+		if err != nil {
+			return fmt.Errorf("failed to default exposeStrategy to NodePort for cluster %q: %v", cluster.Name, err)
+		}
+		cluster = updatedCluster
+	}
 	return nil
 }

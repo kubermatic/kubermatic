@@ -529,9 +529,7 @@ func TestLoadFiles(t *testing.T) {
 					"https://dev.kubermatic.io/dex",
 					"kubermaticIssuer",
 					true,
-					"quay.io/kubermatic/api",
-					corev1.ServiceTypeNodePort,
-				)
+					"quay.io/kubermatic/api")
 
 				var deploymentCreators []reconciling.NamedDeploymentCreatorGetter
 				deploymentCreators = append(deploymentCreators, clustercontroller.GetDeploymentCreators(data, true)...)

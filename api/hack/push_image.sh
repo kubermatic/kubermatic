@@ -15,6 +15,7 @@ cd "$(dirname "$0")/../"
 
 make build
 docker build -t quay.io/kubermatic/api:${1} .
+cd cmd/nodeport-proxy && export TAG=${1} && make docker && unset TAG && cd -
 
 for TAG in "$@"
 do
@@ -24,5 +25,7 @@ do
 
     echo "Tagging ${TAG}"
     docker tag quay.io/kubermatic/api:${1} quay.io/kubermatic/api:${TAG}
+    docker tag quay.io/kubermatic/nodeport-proxy:${1} quay.io/kubermatic/nodeport-proxy:${TAG}
     docker push quay.io/kubermatic/api:${TAG}
+    docker push quay.io/kubermatic/nodeport-proxy:${TAG}
 done

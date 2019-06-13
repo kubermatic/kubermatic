@@ -73,7 +73,6 @@ type Reconciler struct {
 	dockerPullConfigJSON                             []byte
 	nodeLocalDNSCacheEnabled                         bool
 	kubermaticImage                                  string
-	apiServerExposeStrategy                          corev1.ServiceType
 
 	oidcCAFile         string
 	oidcIssuerURL      string
@@ -102,7 +101,6 @@ func Add(
 	inClusterPrometheusScrapingConfigsFile string,
 	dockerPullConfigJSON []byte,
 	nodeLocalDNSCacheEnabled bool,
-	apiServerExposeStrategy corev1.ServiceType,
 
 	oidcCAFile string,
 	oidcIssuerURL string,
@@ -133,7 +131,6 @@ func Add(
 		dockerPullConfigJSON:                             dockerPullConfigJSON,
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
 		kubermaticImage:                                  kubermaticImage,
-		apiServerExposeStrategy:                          apiServerExposeStrategy,
 
 		externalURL: externalURL,
 		dc:          dc,

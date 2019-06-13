@@ -76,6 +76,9 @@ const (
 	ApiserverExternalServiceName = "apiserver-external"
 	//ApiserverInternalServiceName is the name for the internal apiserver service
 	ApiserverInternalServiceName = "apiserver"
+	// FrontLoadBalancerServiceName is the name of the LoadBalancer service that fronts everything
+	// when using exposeStrategy "LoadBalancer"
+	FrontLoadBalancerServiceName = "front-loadbalancer"
 	// MetricsServerServiceName is the name for the metrics-server service
 	MetricsServerServiceName = "metrics-server"
 	// MetricsServerExternalNameServiceName is the name for the metrics-server service inside the user cluster

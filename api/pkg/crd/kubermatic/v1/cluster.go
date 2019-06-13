@@ -87,6 +87,10 @@ type ClusterSpec struct {
 	// HumanReadableName is the cluster name provided by the user
 	HumanReadableName string `json:"humanReadableName"`
 
+	// ExposeStrategy is the approach we use to expose this cluster, either via NodePort
+	// or via a dedicated LoadBalancer
+	ExposeStrategy corev1.ServiceType `json:"exposeStrategy"`
+
 	// Pause tells that this cluster is currently not managed by the controller.
 	// It indicates that the user needs to do some action to resolve the pause.
 	Pause bool `json:"pause"`

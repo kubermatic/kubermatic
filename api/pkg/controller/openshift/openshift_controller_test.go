@@ -63,8 +63,7 @@ func TestResources(t *testing.T) {
 		{
 			name: "Kubermatic API image is overwritten",
 			reconciler: Reconciler{
-				kubermaticImage:         "my.corp/kubermatic",
-				apiServerExposeStrategy: corev1.ServiceTypeLoadBalancer,
+				kubermaticImage: "my.corp/kubermatic",
 			},
 			object: &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{

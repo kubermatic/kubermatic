@@ -32,21 +32,27 @@ func SyncClusterAddress(ctx context.Context,
 		seedDCName = *nodeDc.SeedDNSOverwrite
 	}
 
-	service := &corev1.Service{}
-	serviceKey := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.ApiserverExternalServiceName}
-	if err := client.Get(ctx, serviceKey, service); err != nil {
-		return nil, err
-	}
-
-	// Something went terribly wrong
-	if service.Spec.Type != corev1.ServiceTypeLoadBalancer && service.Spec.Type != corev1.ServiceTypeNodePort {
-		return nil, fmt.Errorf("expected serviceType to be NodePort or LoadBalancer, was %q", service.Spec.Type)
+	frontProxyLoadBalancerServiceIP := ""
+	if cluster.Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
+		frontProxyLoadBalancerService := &corev1.Service{}
+		nn := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.FrontLoadBalancerServiceName}
+		if err := client.Get(ctx, nn, frontProxyLoadBalancerService); err != nil {
+			return nil, fmt.Errorf("failed to get the front-loadbalancer service: %v", err)
+		}
+		// Use this as default in case the implementation doesn't populate the status
+		frontProxyLoadBalancerServiceIP = frontProxyLoadBalancerService.Spec.LoadBalancerIP
+		// Supposively there is only one if not..Good luck
+		for _, ingress := range frontProxyLoadBalancerService.Status.LoadBalancer.Ingress {
+			if ingress.IP != "" {
+				frontProxyLoadBalancerServiceIP = ingress.IP
+			}
+		}
 	}
 
 	// External Name
 	externalName := ""
-	if service.Spec.Type == corev1.ServiceTypeLoadBalancer {
-		externalName = service.Spec.LoadBalancerIP
+	if cluster.Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
+		externalName = frontProxyLoadBalancerServiceIP
 	} else {
 		externalName = fmt.Sprintf("%s.%s.%s", cluster.Name, seedDCName, externalURL)
 	}
@@ -69,8 +75,8 @@ func SyncClusterAddress(ctx context.Context,
 
 	// IP
 	ip := ""
-	if service.Spec.Type == corev1.ServiceTypeLoadBalancer {
-		ip = service.Spec.LoadBalancerIP
+	if cluster.Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
+		ip = frontProxyLoadBalancerServiceIP
 	} else {
 		var err error
 		// Always lookup IP address, in case it changes (IP's on AWS LB's change)
@@ -79,7 +85,6 @@ func SyncClusterAddress(ctx context.Context,
 			return nil, err
 		}
 	}
-
 	if cluster.Address.IP != ip {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.IP = ip
@@ -87,15 +92,17 @@ func SyncClusterAddress(ctx context.Context,
 		glog.V(2).Infof("Set IP for cluster %s to '%s'", cluster.Name, ip)
 	}
 
+	service := &corev1.Service{}
+	serviceKey := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.ApiserverExternalServiceName}
+	if err := client.Get(ctx, serviceKey, service); err != nil {
+		return nil, err
+	}
 	if len(service.Spec.Ports) < 1 {
 		return nil, fmt.Errorf("service %q has no port configured", serviceKey.String())
 	}
 
 	// Port
-	port := service.Spec.Ports[0].Port
-	if service.Spec.Type == corev1.ServiceTypeNodePort {
-		port = service.Spec.Ports[0].NodePort
-	}
+	port := service.Spec.Ports[0].NodePort
 	if cluster.Address.Port != port {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.Port = port
