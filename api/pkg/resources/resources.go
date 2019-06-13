@@ -280,6 +280,9 @@ const (
 	InternalUserClusterAdminKubeconfigSecretName = "internal-admin-kubeconfig"
 	// InternalUserClusterAdminKubeconfigCertUsername is the name of the user coming from kubeconfig cert
 	InternalUserClusterAdminKubeconfigCertUsername = "kubermatic-controllers"
+
+	// DefaultKubermaticImage defines the default image which contains the Kubermatic applications
+	DefaultKubermaticImage = "quay.io/kubermatic/api"
 )
 
 const (
