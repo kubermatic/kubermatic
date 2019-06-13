@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	ctrltuntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -24,16 +24,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const exposeAnnotationKey = "nodeport-proxy.k8s.io/expose"
+const defaultExposeAnnotationKey = "nodeport-proxy.k8s.io/expose"
 
 var (
-	lbName      string
-	lbNamespace string
+	lbName              string
+	lbNamespace         string
+	namespaced          bool
+	exposeAnnotationKey string
 )
 
 func main() {
 	flag.StringVar(&lbName, "lb-name", "nodeport-lb", "name of the LoadBalancer service to manage.")
 	flag.StringVar(&lbNamespace, "lb-namespace", "nodeport-proxy", "namespace of the LoadBalancer service to manage. Needs to exist")
+	flag.BoolVar(&namespaced, "namespaced", false, "Whether this controller should only watch services in the lbNamespace")
+	flag.StringVar(&exposeAnnotationKey, "expose-annotation-key", defaultExposeAnnotationKey, "The annotation key used to determine if a Service should be exposed")
 	flag.Parse()
 
 	config, err := ctrlruntimeconfig.GetConfig()
@@ -42,19 +46,28 @@ func main() {
 	}
 
 	stopCh := signals.SetupSignalHandler()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go func() {
+		<-stopCh
+		cancel()
+	}()
 
-	mgr, err := manager.New(config, manager.Options{})
+	var namespace string
+	if namespaced {
+		namespace = lbNamespace
+	}
+	mgr, err := manager.New(config, manager.Options{Namespace: namespace})
 	if err != nil {
 		glog.Fatalf("failed to construct mgr: %v", err)
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	r := &LBUpdater{
 		ctx:         ctx,
 		client:      mgr.GetClient(),
 		lbNamespace: lbNamespace,
 		lbName:      lbName,
+		namespace:   namespace,
 	}
 
 	ctrl, err := controller.New("lb-updater", mgr,
@@ -73,21 +86,27 @@ func main() {
 // LBUpdater has all APIs to synchronize and updateLB the services and nodeports.
 type LBUpdater struct {
 	ctx    context.Context
-	client ctrltuntimeclient.Client
+	client ctrlruntimeclient.Client
 
 	lbNamespace string
 	lbName      string
+	namespace   string
 }
 
 func (u *LBUpdater) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	return reconcile.Result{}, u.syncLB(request.NamespacedName.String())
+	err := u.syncLB(request.NamespacedName.String())
+	if err != nil {
+		glog.Errorf("Error syncing lb: %v", err)
+	}
+	return reconcile.Result{}, err
 }
 
 func (u *LBUpdater) syncLB(s string) error {
 	glog.V(4).Infof("Syncing LB as Service %s got modified", s)
 
 	services := &corev1.ServiceList{}
-	if err := u.client.List(u.ctx, &ctrltuntimeclient.ListOptions{}, services); err != nil {
+	opts := &ctrlruntimeclient.ListOptions{Namespace: u.namespace}
+	if err := u.client.List(u.ctx, opts, services); err != nil {
 		return fmt.Errorf("failed to list services: %v", err)
 	}
 
@@ -103,9 +122,10 @@ func (u *LBUpdater) syncLB(s string) error {
 			continue
 		}
 
+		// We require a NodePort because we abuse it as allocation mechanism for a unique port
 		for _, servicePort := range service.Spec.Ports {
 			if servicePort.NodePort == 0 {
-				glog.V(4).Infof("skipping service port %s/%s/%d as it has no clusterIP set", service.Namespace, service.Name, servicePort.NodePort)
+				glog.V(4).Infof("skipping service port %s/%s/%d as it has no nodePort set", service.Namespace, service.Name, servicePort.NodePort)
 				continue
 			}
 			wantLBPorts = append(wantLBPorts, corev1.ServicePort{

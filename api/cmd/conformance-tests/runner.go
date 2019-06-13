@@ -651,6 +651,7 @@ func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*k
 	if r.namePrefix != "" {
 		cluster.Name = fmt.Sprintf("%s-%s", r.namePrefix, cluster.Name)
 	}
+	cluster.Spec.ExposeStrategy = corev1.ServiceTypeNodePort
 	log = logrus.WithFields(logrus.Fields{"cluster": cluster.Name})
 
 	if cluster.Labels == nil {

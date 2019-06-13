@@ -2,6 +2,7 @@ package openvpn
 
 import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/nodeportproxy"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -9,13 +10,21 @@ import (
 )
 
 // ServiceCreator returns the function to reconcile the external OpenVPN service
-func ServiceCreator() reconciling.NamedServiceCreatorGetter {
+func ServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.OpenVPNServerServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.OpenVPNServerServiceName
 			se.Labels = resources.BaseAppLabel(name, nil)
-			se.Annotations = map[string]string{
-				"nodeport-proxy.k8s.io/expose": "true",
+
+			if se.Annotations == nil {
+				se.Annotations = map[string]string{}
+			}
+			if exposeStrategy == corev1.ServiceTypeNodePort {
+				se.Annotations["nodeport-proxy.k8s.io/expose"] = "true"
+				delete(se.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
+			} else {
+				se.Annotations[nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey] = "true"
+				delete(se.Annotations, "nodeport-proxy.k8s.io/expose")
 			}
 			se.Spec.Selector = map[string]string{
 				resources.AppLabelKey: name,

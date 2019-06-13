@@ -299,6 +299,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		serviceAccountTokenGenerator,
 		prov.eventRecorderProvider,
 		credentialManager,
+		options.exposeStrategy,
 	)
 
 	registerMetrics()

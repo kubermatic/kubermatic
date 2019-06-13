@@ -1,9 +1,8 @@
 package apiserver
 
 import (
-	"fmt"
-
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/nodeportproxy"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -16,7 +15,6 @@ func InternalServiceCreator() reconciling.NamedServiceCreatorGetter {
 		return resources.ApiserverInternalServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.ApiserverInternalServiceName
 			se.Labels = resources.BaseAppLabel(name, nil)
-
 			se.Spec.Type = corev1.ServiceTypeClusterIP
 			se.Spec.Selector = map[string]string{
 				resources.AppLabelKey: name,
@@ -35,25 +33,18 @@ func InternalServiceCreator() reconciling.NamedServiceCreatorGetter {
 }
 
 // ExternalServiceCreator returns the function to reconcile the external API server service
-func ExternalServiceCreator(serviceType corev1.ServiceType) reconciling.NamedServiceCreatorGetter {
+func ExternalServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.ApiserverExternalServiceName, func(se *corev1.Service) (*corev1.Service, error) {
-			if serviceType != corev1.ServiceTypeNodePort && serviceType != corev1.ServiceTypeLoadBalancer {
-				return nil, fmt.Errorf("service.spec.type must be either NodePort or LoadBalanancer, was %q", serviceType)
-			}
-			se.Name = resources.ApiserverExternalServiceName
-			se.Annotations = map[string]string{
-				"nodeport-proxy.k8s.io/expose": "true",
-			}
-			if se.Spec.Type == "" {
-				se.Spec.Type = serviceType
-			}
+			se.Spec.Type = corev1.ServiceTypeNodePort
 			if se.Annotations == nil {
 				se.Annotations = map[string]string{}
 			}
-			if se.Spec.Type == corev1.ServiceTypeNodePort {
+			if exposeStrategy == corev1.ServiceTypeNodePort {
 				se.Annotations["nodeport-proxy.k8s.io/expose"] = "true"
+				delete(se.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
 			} else {
+				se.Annotations[nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey] = "true"
 				delete(se.Annotations, "nodeport-proxy.k8s.io/expose")
 			}
 

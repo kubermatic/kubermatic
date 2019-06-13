@@ -1,6 +1,6 @@
 metadata:
   annotations:
-    nodeport-proxy.k8s.io/expose: "true"
+    nodeport-proxy.k8s.io/expose-namespaced: "true"
   creationTimestamp: null
   labels:
     app: openvpn-server

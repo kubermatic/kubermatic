@@ -41,7 +41,7 @@ spec:
         - -ca-cert
         - /etc/kubernetes/pki/ca/ca.crt
         - -cluster-url
-        - https://1.2.3.4:443
+        - https://test-cluster.alias-europe-west3-c.dev.kubermatic.io:0
         - -openvpn-server-port
         - "0"
         - -overwrite-registry
@@ -96,7 +96,7 @@ spec:
       initContainers:
       - args:
         - -endpoint
-        - https://apiserver-external.test-cluster-ns.svc.cluster.local.:443/healthz
+        - https://apiserver-external.test-cluster-ns.svc.cluster.local.:0/healthz
         - -insecure
         - -retries
         - "100"

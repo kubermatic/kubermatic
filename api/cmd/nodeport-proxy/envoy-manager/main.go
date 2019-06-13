@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"net"
 	"time"
@@ -25,17 +26,19 @@ import (
 )
 
 var (
-	debug         bool
-	listenAddress string
-	envoyNodeName string
+	debug               bool
+	namespace           string
+	listenAddress       string
+	envoyNodeName       string
+	exposeAnnotationKey string
 
 	envoyStatsPort int
 	envoyAdminPort int
 )
 
 const (
-	exposeAnnotationKey   = "nodeport-proxy.k8s.io/expose"
-	clusterConnectTimeout = 1 * time.Second
+	defaultExposeAnnotationKey = "nodeport-proxy.k8s.io/expose"
+	clusterConnectTimeout      = 1 * time.Second
 )
 
 func main() {
@@ -44,9 +47,16 @@ func main() {
 	flag.StringVar(&envoyNodeName, "envoy-node-name", "kube", "Name of the envoy nodes to apply the config to via xds")
 	flag.IntVar(&envoyAdminPort, "envoy-admin-port", 9001, "Envoys admin port")
 	flag.IntVar(&envoyStatsPort, "envoy-stats-port", 8002, "Limited port which should be opened on envoy to expose metrics and the health check. Endpoints are: /healthz & /stats")
+	flag.StringVar(&namespace, "namespace", "", "The namespace we should use for pods and services. Leave empty for all namespaces.")
+	flag.StringVar(&exposeAnnotationKey, "expose-annotation-key", defaultExposeAnnotationKey, "The annotation key used to determine if a service should be exposed")
 	flag.Parse()
 
+	ctx, cancel := context.WithCancel(context.Background())
 	stopCh := signals.SetupSignalHandler()
+	go func() {
+		<-stopCh
+		cancel()
+	}()
 
 	mainLog := logrus.New()
 	mainLog.SetLevel(logrus.InfoLevel)
@@ -81,13 +91,15 @@ func main() {
 		mainLog.Fatal(err)
 	}
 
-	mgr, err := manager.New(config, manager.Options{})
+	mgr, err := manager.New(config, manager.Options{Namespace: namespace})
 	if err != nil {
 		mainLog.Fatal(err)
 	}
 
 	r := &reconciler{
+		ctx:                 ctx,
 		Client:              mgr.GetClient(),
+		namespace:           namespace,
 		envoySnapshotCache:  snapshotCache,
 		log:                 mainLog.WithField("annotation", exposeAnnotationKey),
 		lastAppliedSnapshot: envoycache.NewSnapshot("v0.0.0", nil, nil, nil, nil),
