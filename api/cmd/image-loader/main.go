@@ -12,6 +12,7 @@ import (
 	"github.com/golang/glog"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/monitoring"
@@ -62,6 +63,12 @@ func main() {
 	if requestedVersion == "" {
 		glog.Infof("No version passed, downloading images for all available versions...")
 		for _, v := range versions {
+			if v.Type == apiv1.OpenShiftClusterType {
+				// TODO: Implement. https://github.com/kubermatic/kubermatic/issues/3623
+				glog.Warningf("Skipping OpenShift images")
+				continue
+			}
+
 			glog.Infof("Collecting images for v%s", v.Version.String())
 			returnedImages, err := getImagesForVersion(versions, v.Version.String())
 			if err != nil {
@@ -126,6 +133,7 @@ func retagImages(registryName string, imageTagList []string) (retaggedImages []s
 		if out, err := execCommand("docker", "tag", image, retaggedImageName); err != nil {
 			return retaggedImages, fmt.Errorf("failed to retag image: Error: %v, Output: %s", err, out)
 		}
+		retaggedImages = append(retaggedImages, retaggedImageName)
 	}
 
 	return retaggedImages, nil
@@ -364,7 +372,9 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 		"",
 		"",
 		true,
-		""), nil
+		// Since this is the image-loader we take the default image when pulling it.
+		resources.DefaultKubermaticImage,
+	), nil
 }
 
 func createNamedSecrets(secretNames []string) *corev1.SecretList {
