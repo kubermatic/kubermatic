@@ -139,10 +139,15 @@ spec:
           - -c
           - |
             set -e
-            DEFAULT_INTERFACE_NAME=$(ip r s|grep default|cut -d ' ' -f5)
+            DEFAULT_INTERFACE_NAME=$(ip r s|grep ^default|cut -d ' ' -f5)
             DEFAULT_INTERFACE_MTU=$(cat /sys/class/net/$DEFAULT_INTERFACE_NAME/mtu)
             OUR_MTU=$((DEFAULT_INTERFACE_MTU - 50))
-            sed -i "s/__CALICO_MTU__/$OUR_MTU/g" /host/etc/cni/net.d/10-calico.conflist
+            if [[ "$OUR_MTU" -gt 0 ]]; then
+              sed -i "s/__CALICO_MTU__/$OUR_MTU/g" /host/etc/cni/net.d/10-calico.conflist
+            else
+              echo "MTU found on interface $DEFAULT_INTERFACE_MTU ($DEFAULT_INTERFACE_MTU) -50 was < 0"
+              exit 1
+            fi
           volumeMounts:
             - mountPath: /host/etc/cni/net.d
               name: cni-net-dir
