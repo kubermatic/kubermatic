@@ -29,6 +29,7 @@ data:
         "plugins": [
             {
                 "type": "calico",
+                "mtu": __CALICO_MTU__,
                 "log_level": "info",
                 "datastore_type": "kubernetes",
                 "nodename": "__KUBERNETES_NODE_NAME__",
@@ -78,6 +79,8 @@ spec:
   selector:
     matchLabels:
       k8s-app: canal
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -99,6 +102,55 @@ spec:
       # Minimize downtime during a rolling upgrade or deletion; tell Kubernetes to do a "force
       # deletion": https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods.
       terminationGracePeriodSeconds: 0
+      initContainers:
+        # This container installs the Calico CNI binaries
+        # and CNI network config file on each node.
+        - name: install-cni
+          image: '{{ Registry "quay.io" }}/calico/cni:v1.11.8'
+          command: ["/install-cni.sh"]
+          env:
+            - name: CNI_CONF_NAME
+              value: "10-calico.conflist"
+            # The CNI network config to install on each node.
+            - name: CNI_NETWORK_CONFIG
+              valueFrom:
+                configMapKeyRef:
+                  name: canal-config
+                  key: cni_network_config
+            - name: KUBERNETES_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+             # Do not sleep as we run this as an initcontainer
+            - name: SLEEP
+              value: "false"
+          volumeMounts:
+            - mountPath: /host/opt/cni/bin
+              name: cni-bin-dir
+            - mountPath: /host/etc/cni/net.d
+              name: cni-net-dir
+        - name: set-mtu
+          image: '{{Registry "docker.io" }}/alpine:3.9'
+          # We can not use the MTU of the flannel interface directly, because
+          # it may not exist yet. Running this in parallel to the other containers
+          # is a bad idea as well, as they may come up with a wrong configuration
+          command:
+          - /bin/sh
+          - -c
+          - |
+            set -e
+            DEFAULT_INTERFACE_NAME=$(cat /proc/net/route |awk '{ print $1 " " $2 }'|grep '00000000'|cut -d' ' -f1)
+            DEFAULT_INTERFACE_MTU=$(cat /sys/class/net/$DEFAULT_INTERFACE_NAME/mtu)
+            OUR_MTU=$((DEFAULT_INTERFACE_MTU - 50))
+            if [[ "$OUR_MTU" -gt 0 ]]; then
+              sed -i "s/__CALICO_MTU__/$OUR_MTU/g" /host/etc/cni/net.d/10-calico.conflist
+            else
+              echo "MTU found on interface $DEFAULT_INTERFACE_NAME ($DEFAULT_INTERFACE_MTU) -50 was <= 0"
+              exit 1
+            fi
+          volumeMounts:
+            - mountPath: /host/etc/cni/net.d
+              name: cni-net-dir
       containers:
         # Runs calico/node container on each Kubernetes node.  This
         # container programs network policy and routes on each
@@ -166,29 +218,6 @@ spec:
             - mountPath: /var/run/calico
               name: var-run-calico
               readOnly: false
-        # This container installs the Calico CNI binaries
-        # and CNI network config file on each node.
-        - name: install-cni
-          image: '{{ Registry "quay.io" }}/calico/cni:v1.11.8'
-          command: ["/install-cni.sh"]
-          env:
-            - name: CNI_CONF_NAME
-              value: "10-calico.conflist"
-            # The CNI network config to install on each node.
-            - name: CNI_NETWORK_CONFIG
-              valueFrom:
-                configMapKeyRef:
-                  name: canal-config
-                  key: cni_network_config
-            - name: KUBERNETES_NODE_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
-          volumeMounts:
-            - mountPath: /host/opt/cni/bin
-              name: cni-bin-dir
-            - mountPath: /host/etc/cni/net.d
-              name: cni-net-dir
         # This container runs flannel using the kube-subnet-mgr backend
         # for allocating subnets.
         - name: kube-flannel
