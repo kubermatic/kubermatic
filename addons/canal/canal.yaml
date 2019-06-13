@@ -139,7 +139,7 @@ spec:
           - -c
           - |
             set -e
-            DEFAULT_INTERFACE_NAME=$(cat /proc/net/route |awk '{ print $1 " " $2 }'|grep '00000000'|cut -d' ' -f1)
+            DEFAULT_INTERFACE_NAME=$(awk '($2 == 00000000) { print $1 }' /proc/net/route)
             DEFAULT_INTERFACE_MTU=$(cat /sys/class/net/$DEFAULT_INTERFACE_NAME/mtu)
             OUR_MTU=$((DEFAULT_INTERFACE_MTU - 50))
             if [[ "$OUR_MTU" -gt 0 ]]; then
