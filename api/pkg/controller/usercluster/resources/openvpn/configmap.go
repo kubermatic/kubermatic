@@ -34,7 +34,6 @@ cert '/etc/openvpn/certs/client.crt'
 key '/etc/openvpn/certs/client.key'
 remote-cert-tls server
 script-security 2
-link-mtu 1432
 cipher AES-256-GCM
 auth SHA1
 keysize 256
