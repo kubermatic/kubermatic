@@ -11,6 +11,9 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	oidc "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils"
 	apiclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/azure"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/digitalocean"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/openstack"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/project"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/serviceaccounts"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/tokens"
@@ -272,4 +275,49 @@ func convertServiceAccountToken(saToken *models.ServiceAccountToken) (*apiv1.Ser
 	apiServiceAccountToken.Expiry = apiv1.NewTime(expiry)
 
 	return apiServiceAccountToken, nil
+}
+
+// ListDigitaloceanCredentials returns list of credential names for DigitalOcean provider
+func (r *APIRunner) ListDigitaloceanCredentials() ([]string, error) {
+	params := &digitalocean.ListDigitaloceanCredentialsParams{}
+	params.WithTimeout(timeout)
+	credentialsResponse, err := r.client.Digitalocean.ListDigitaloceanCredentials(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	names := make([]string, 0)
+	names = append(names, credentialsResponse.Payload.Names...)
+
+	return names, nil
+}
+
+// ListAzureCredentials returns list of credential names for Azure provider
+func (r *APIRunner) ListAzureCredentials() ([]string, error) {
+	params := &azure.ListAzureCredentialsParams{}
+	params.WithTimeout(timeout)
+	credentialsResponse, err := r.client.Azure.ListAzureCredentials(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	names := make([]string, 0)
+	names = append(names, credentialsResponse.Payload.Names...)
+
+	return names, nil
+}
+
+// ListOpenStackCredentials returns list of credential names for OpenStack provider
+func (r *APIRunner) ListOpenStackCredentials() ([]string, error) {
+	params := &openstack.ListOpenstackCredentialsParams{}
+	params.WithTimeout(timeout)
+	credentialsResponse, err := r.client.Openstack.ListOpenstackCredentials(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	names := make([]string, 0)
+	names = append(names, credentialsResponse.Payload.Names...)
+
+	return names, nil
 }
