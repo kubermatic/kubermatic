@@ -21,6 +21,9 @@ type VSphereNodeSpec struct {
 	// memory
 	Memory int64 `json:"memory,omitempty"`
 
+	// disk size GB
+	DiskSizeGB int64 `json:"diskSizeGB,omitempty"`
+
 	// template
 	Template string `json:"template,omitempty"`
 

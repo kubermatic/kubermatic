@@ -128,6 +128,7 @@ func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 		VMNetName:       providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.VMNetName},
 		CPUs:            int32(nodeSpec.Cloud.VSphere.CPUs),
 		MemoryMB:        int64(nodeSpec.Cloud.VSphere.Memory),
+		DiskSizeGB:      nodeSpec.Cloud.VSphere.DiskSizeGB,
 		Datacenter:      providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Datacenter},
 		Datastore:       providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Datastore},
 		Cluster:         providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Cluster},

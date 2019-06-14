@@ -132,6 +132,7 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 		cloudSpec.VSphere = &apiv1.VSphereNodeSpec{
 			CPUs:            int(config.CPUs),
 			Memory:          int(config.MemoryMB),
+			DiskSizeGB:      config.DiskSizeGB,
 			Template:        config.TemplateVMName.Value,
 			TemplateNetName: config.TemplateNetName.Value,
 		}
