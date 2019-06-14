@@ -101,7 +101,79 @@ func (a *amazonEc2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 }
 
 func (a *amazonEc2) Migrate(cluster *kubermaticv1.Cluster) error {
-	return fmt.Errorf("not implemented")
+	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
+		glog.Infof("Not adding ICMP allow rules for cluster %q as it has no securityGroupID set",
+			cluster.Name)
+		return nil
+	}
+
+	client, err := a.getEC2client(cluster.Spec.Cloud)
+	if err != nil {
+		return fmt.Errorf("failed to get EC2 client: %v", err)
+	}
+	out, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+		GroupIds: aws.StringSlice([]string{cluster.Spec.Cloud.AWS.SecurityGroupID}),
+	})
+
+	// Should never happen
+	if len(out.SecurityGroups) > 1 {
+		return fmt.Errorf("got more than one(%d) security group for id %q",
+			(len(out.SecurityGroups)), cluster.Spec.Cloud.AWS.SecurityGroupID)
+	}
+	if len(out.SecurityGroups) == 0 {
+		return fmt.Errorf("did not find a security group for id %q",
+			cluster.Spec.Cloud.AWS.SecurityGroupID)
+	}
+
+	var hasIPV4ICMPRule, hasIPV6ICMPRule bool
+	for _, rule := range out.SecurityGroups[0].IpPermissions {
+		if *rule.FromPort == -1 && *rule.ToPort == -1 && len(rule.IpRanges) == 1 && *rule.IpRanges[0].CidrIp == "0.0.0.0/0" {
+
+			if *rule.IpProtocol == "icmp" {
+				hasIPV4ICMPRule = true
+			}
+			if *rule.IpProtocol == "icmpv6" {
+				hasIPV6ICMPRule = true
+			}
+		}
+	}
+
+	var secGroupRules []*ec2.IpPermission
+	if !hasIPV4ICMPRule {
+		glog.Infof("Adding allow rule for icmp to cluster %q", cluster.Name)
+		secGroupRules = append(secGroupRules,
+			(&ec2.IpPermission{}).
+				SetIpProtocol("icmp").
+				SetFromPort(-1).
+				SetToPort(-1).
+				SetIpRanges([]*ec2.IpRange{
+					{CidrIp: aws.String("0.0.0.0/0")},
+				}))
+	}
+	if !hasIPV6ICMPRule {
+		glog.Infof("Adding allow rule for icmpv6 to cluster %q", cluster.Name)
+		secGroupRules = append(secGroupRules,
+			(&ec2.IpPermission{}).
+				SetIpProtocol("icmpv6").
+				SetFromPort(-1).
+				SetToPort(-1).
+				SetIpRanges([]*ec2.IpRange{
+					{CidrIp: aws.String("0.0.0.0/0")},
+				}))
+	}
+
+	if len(secGroupRules) > 0 {
+		_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
+			GroupId:       aws.String(cluster.Spec.Cloud.AWS.SecurityGroupID),
+			IpPermissions: secGroupRules,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to add ICMP rules to security group %q: %v",
+				cluster.Spec.Cloud.AWS.SecurityGroupID, err)
+		}
+	}
+
+	return nil
 }
 
 // NewCloudProvider returns a new amazonEc2 provider.
