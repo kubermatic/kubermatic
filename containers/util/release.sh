@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-NUMBER=5
-VERSION=1.0.0
+SUFFIX=""
+VERSION=1.1.0
 
 set -euox pipefail
 
-docker build --no-cache --pull -t quay.io/kubermatic/util:${VERSION}-${NUMBER} .
-docker push quay.io/kubermatic/util:${VERSION}-${NUMBER}
+docker build --no-cache --pull -t quay.io/kubermatic/util:${VERSION}${SUFFIX} .
+docker push quay.io/kubermatic/util:${VERSION}${SUFFIX}

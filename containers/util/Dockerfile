@@ -9,8 +9,11 @@ RUN apk add --no-cache -U \
     bash \
     ca-certificates \
     curl \
+    iproute2 \
+    iptables \
     jq \
     rsync \
+    socat \
     unzip
 
 RUN curl -Lo /usr/bin/mc https://dl.minio.io/client/mc/release/linux-amd64/archive/mc.${MC_VERSION} && \
