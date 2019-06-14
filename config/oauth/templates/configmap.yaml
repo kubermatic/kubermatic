@@ -34,3 +34,10 @@ data:
     staticClients:
 {{ toYaml .Values.dex.clients | indent 7 }}
 {{- end }}
+{{ if .Values.dex.staticPasswordLogins }}
+{{ if not .Values.dex.grpc }}
+    enablePasswordDB: true
+{{- end }}
+    staticPasswords:
+{{ toYaml .Values.dex.staticPasswordLogins | indent 7 }}
+{{- end }}
