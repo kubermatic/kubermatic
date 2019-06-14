@@ -14,6 +14,8 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -126,6 +128,19 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kuber
 	}
 
 	if shouldDeletePVs {
+		pdbs := &policyv1beta1.PodDisruptionBudgetList{}
+		if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, pdbs); err != nil {
+			return fmt.Errorf("failed to list pdbs: %v", err)
+		}
+		for _, pdb := range pdbs.Items {
+			if err := d.userClusterClient.Delete(ctx, &pdb); err != nil {
+				return fmt.Errorf("failed to delete pdb '%s/%s': %v", pdb.Namespace, pdb.Name, err)
+			}
+		}
+		// Make sure we don't continue until all PDBs are actually gone
+		if len(pdbs.Items) > 0 {
+			return nil
+		}
 		// Delete all workloads that use PVs. We must do this before we clean up the node, otherwise
 		// we end up in a deadlock when CSI is used
 		cleanedSomethingUp, err := d.cleanupPVUsingWorkloads(ctx)
@@ -386,6 +401,10 @@ func (d *Deletion) resolveAndDeleteTopLevelUserClusterOwner(ctx context.Context,
 		return err
 	}
 	if err := d.userClusterClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, object); err != nil {
+		// With background deletion the owners will be gone before the dependants are gone
+		if kerrors.IsNotFound(err) {
+			return nil
+		}
 		return fmt.Errorf("failed to get object %q/%q of kind %q: %v", namespace, name, kind, err)
 	}
 	metav1Object, ok := object.(metav1.Object)
