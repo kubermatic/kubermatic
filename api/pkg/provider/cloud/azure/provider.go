@@ -662,6 +662,10 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	return cluster, nil
 }
 
+func (a *azure) Migrate(cluster *kubermaticv1.Cluster) error {
+	return fmt.Errorf("not implemented")
+}
+
 func ensureAvailabilitySet(name, location string, cloud kubermaticv1.CloudSpec) error {
 	client, err := getAvailabilitySetClient(cloud)
 	if err != nil {

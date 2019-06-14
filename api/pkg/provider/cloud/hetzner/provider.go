@@ -40,3 +40,7 @@ func (h *hetzner) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update 
 func (h *hetzner) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
+
+func (h *hetzner) Migrate(_ *kubermaticv1.Cluster) error {
+	return nil
+}

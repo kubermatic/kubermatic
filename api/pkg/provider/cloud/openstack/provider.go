@@ -41,7 +41,7 @@ type Provider struct {
 }
 
 // NewCloudProvider creates a new openstack provider.
-func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProvider {
+func NewCloudProvider(dcs map[string]provider.DatacenterMeta) *Provider {
 	return &Provider{
 		dcs: dcs,
 	}
@@ -462,4 +462,8 @@ func (os *Provider) GetSubnets(cloud kubermaticv1.CloudSpec, networkID string) (
 	}
 
 	return subnets, nil
+}
+
+func (os *Provider) Migrate(cluster *kubermaticv1.Cluster) error {
+	return fmt.Errorf("Not implemented")
 }

@@ -34,7 +34,7 @@ type cleanupContext struct {
 	kubermaticClient kubermaticclientset.Interface
 	config           *rest.Config
 	dcs              map[string]provider.DatacenterMeta
-	cloudProvider    map[string]CloudProvider
+	cloudProvider    map[string]provider.CloudProvider
 }
 
 // ClusterTask represents a cleanup action, taking the current cluster for which the cleanup should be executed and the current context.
@@ -551,8 +551,25 @@ func setExposeStrategyIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext
 }
 
 func migrateCloudProvider(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	if cluster.Spec.MigrationRevision > 0 {
+		glog.Infof("Not migrating cluster %q, because its .spec.migrationRevision is > 0(%d)",
+			cluster.Name, cluster.Spec.MigrationRevision)
+		return nil
+	}
 	_, cloudProvider, err := provider.ClusterCloudProvider(ctx.cloudProvider, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get cloud provider for cluster %q: %v", cluster.Name, err)
 	}
+
+	if err := cloudProvider.Migrate(cluster); err != nil {
+		return fmt.Errorf("failed to run cloudprovider migration for cluster %q: %v", cluster.Name, err)
+	}
+
+	cluster.Spec.MigrationRevision = 1
+	if cluster, err = ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
+		return fmt.Errorf("failed to update cluster %q after successfuly executing its cloudProvider migration: %v",
+			cluster.Name, err)
+	}
+
+	return nil
 }

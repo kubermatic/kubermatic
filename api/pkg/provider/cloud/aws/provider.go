@@ -100,9 +100,13 @@ func (a *amazonEc2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
+func (a *amazonEc2) Migrate(cluster *kubermaticv1.Cluster) error {
+	return fmt.Errorf("not implemented")
+}
+
 // NewCloudProvider returns a new amazonEc2 provider.
-func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) amazonEc2 {
-	return AmazonEc2{
+func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) *amazonEc2 {
+	return &amazonEc2{
 		dcs: datacenters,
 	}
 }

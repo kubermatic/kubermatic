@@ -32,3 +32,7 @@ func (p *fakeCloudProvider) InitializeCloudProvider(cluster *kubermaticv1.Cluste
 func (p *fakeCloudProvider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
+
+func (p *fakeCloudProvider) Migrate(_ *kubermaticv1.Cluster) error {
+	return nil
+}

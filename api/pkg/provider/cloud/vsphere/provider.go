@@ -32,7 +32,7 @@ type Network struct {
 }
 
 // NewCloudProvider creates a new vSphere provider.
-func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProvider {
+func NewCloudProvider(dcs map[string]provider.DatacenterMeta) *Provider {
 	return &Provider{
 		dcs: dcs,
 	}
@@ -208,6 +208,10 @@ func (v *Provider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 		}
 	}
 
+	return nil
+}
+
+func (v *Provider) Migrate(_ *kubermaticv1.Cluster) error {
 	return nil
 }
 

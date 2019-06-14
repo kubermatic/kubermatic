@@ -27,3 +27,7 @@ func (b *bringyourown) InitializeCloudProvider(cluster *kubermaticv1.Cluster, up
 func (b *bringyourown) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
+
+func (b *bringyourown) Migrate(_ *kubermaticv1.Cluster) error {
+	return nil
+}
