@@ -41,20 +41,15 @@ const (
 
 // CloudProvider declares a set of methods for interacting with a cloud provider
 type CloudProvider interface {
-	CloudSpecProvider
-}
-
-// ClusterUpdater defines a function to persist an update to a cluster
-type ClusterUpdater func(string, func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error)
-
-// CloudSpecProvider converts both a cloud spec and is able to create/retrieve nodes
-// on a cloud provider.
-type CloudSpecProvider interface {
 	InitializeCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
 	CleanUpCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
 	DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error
 	ValidateCloudSpec(spec kubermaticv1.CloudSpec) error
+	Migrate(*kubermaticv1.Cluster, ClusterUpdater) error
 }
+
+// ClusterUpdater defines a function to persist an update to a cluster
+type ClusterUpdater func(string, func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error)
 
 // ClusterListOptions allows to set filters that will be applied to filter the result.
 type ClusterListOptions struct {

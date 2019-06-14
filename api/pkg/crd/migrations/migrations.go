@@ -9,6 +9,8 @@ import (
 
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	kubermaticKubernetesProvider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
@@ -31,6 +33,8 @@ type cleanupContext struct {
 	kubeClient       kubernetes.Interface
 	kubermaticClient kubermaticclientset.Interface
 	config           *rest.Config
+	dcs              map[string]provider.DatacenterMeta
+	cloudProvider    map[string]CloudProvider
 }
 
 // ClusterTask represents a cleanup action, taking the current cluster for which the cleanup should be executed and the current context.
@@ -38,7 +42,7 @@ type cleanupContext struct {
 type ClusterTask func(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error
 
 // RunAll runs all migrations
-func RunAll(config *rest.Config, workerName string) error {
+func RunAll(config *rest.Config, workerName string, dcs map[string]provider.DatacenterMeta) error {
 	// required when performing calls against manually crafted URL's
 	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
 
@@ -55,6 +59,8 @@ func RunAll(config *rest.Config, workerName string) error {
 		kubeClient:       kubeClient,
 		kubermaticClient: kubermatiClient,
 		config:           config,
+		dcs:              dcs,
+		cloudProvider:    cloud.Providers(dcs),
 	}
 
 	if err := cleanupClusters(workerName, ctx); err != nil {
@@ -542,4 +548,11 @@ func setExposeStrategyIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext
 		cluster = updatedCluster
 	}
 	return nil
+}
+
+func migrateCloudProvider(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	_, cloudProvider, err := provider.ClusterCloudProvider(ctx.cloudProvider, cluster)
+	if err != nil {
+		return fmt.Errorf("failed to get cloud provider for cluster %q: %v", cluster.Name, err)
+	}
 }

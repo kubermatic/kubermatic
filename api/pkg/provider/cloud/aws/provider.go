@@ -101,8 +101,8 @@ func (a *amazonEc2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 }
 
 // NewCloudProvider returns a new amazonEc2 provider.
-func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) provider.CloudProvider {
-	return &amazonEc2{
+func NewCloudProvider(datacenters map[string]provider.DatacenterMeta) amazonEc2 {
+	return AmazonEc2{
 		dcs: datacenters,
 	}
 }
