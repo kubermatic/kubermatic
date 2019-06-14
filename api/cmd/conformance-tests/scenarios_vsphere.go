@@ -83,7 +83,7 @@ func (s *vSphereScenario) Cluster(secrets secrets) *kubermaticv1.Cluster {
 	}
 }
 
-func (s *vSphereScenario) Nodes(num int) *kubermaticapiv1.NodeDeployment {
+func (s *vSphereScenario) Nodes(num int, _ secrets) *kubermaticapiv1.NodeDeployment {
 	osName := getOSNameFromSpec(s.nodeOsSpec)
 	return &kubermaticapiv1.NodeDeployment{
 		Spec: kubermaticapiv1.NodeDeploymentSpec{
