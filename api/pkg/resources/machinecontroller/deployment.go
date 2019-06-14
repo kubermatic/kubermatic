@@ -33,7 +33,7 @@ var (
 const (
 	Name = "machine-controller"
 
-	tag = "v1.2.0"
+	tag = "v1.2.1"
 
 	nodeLocalDNSCacheAddress = "169.254.20.10"
 )
