@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-NUMBER=4
+NUMBER=5
 VERSION=1.0.0
 
 set -euox pipefail
