@@ -2916,52 +2916,6 @@
         }
       }
     },
-    "/api/v1/providers/aws/credentials": {
-      "get": {
-        "description": "Lists credential names for AWS",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "aws"
-        ],
-        "operationId": "listAWSCredentials",
-        "responses": {
-          "200": {
-            "description": "CredentialList",
-            "schema": {
-              "$ref": "#/definitions/CredentialList"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/providers/azure/credentials": {
-      "get": {
-        "description": "Lists credential names for Azure",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "azure"
-        ],
-        "operationId": "listAzureCredentials",
-        "responses": {
-          "200": {
-            "description": "CredentialList",
-            "schema": {
-              "$ref": "#/definitions/CredentialList"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
     "/api/v1/providers/azure/sizes": {
       "get": {
         "description": "Lists available VM sizes in an Azure region",
@@ -2985,29 +2939,6 @@
         }
       }
     },
-    "/api/v1/providers/digitalocean/credentials": {
-      "get": {
-        "description": "Lists credential names for DigitalOcean",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "digitalocean"
-        ],
-        "operationId": "listDigitaloceanCredentials",
-        "responses": {
-          "200": {
-            "description": "CredentialList",
-            "schema": {
-              "$ref": "#/definitions/CredentialList"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
     "/api/v1/providers/digitalocean/sizes": {
       "get": {
         "description": "Lists sizes from digitalocean",
@@ -3023,75 +2954,6 @@
             "description": "DigitaloceanSizeList",
             "schema": {
               "$ref": "#/definitions/DigitaloceanSizeList"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/providers/gcp/credentials": {
-      "get": {
-        "description": "Lists credential names for GCP",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "gcp"
-        ],
-        "operationId": "listGCPCredentials",
-        "responses": {
-          "200": {
-            "description": "CredentialList",
-            "schema": {
-              "$ref": "#/definitions/CredentialList"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/providers/hetzner/credentials": {
-      "get": {
-        "description": "Lists credential names for hetzner",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "hetzner"
-        ],
-        "operationId": "listHetznerCredentials",
-        "responses": {
-          "200": {
-            "description": "CredentialList",
-            "schema": {
-              "$ref": "#/definitions/CredentialList"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/providers/openstack/credentials": {
-      "get": {
-        "description": "Lists credential names for Openstack",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "openstack"
-        ],
-        "operationId": "listOpenstackCredentials",
-        "responses": {
-          "200": {
-            "description": "CredentialList",
-            "schema": {
-              "$ref": "#/definitions/CredentialList"
             }
           },
           "default": {
@@ -3267,52 +3129,6 @@
         }
       }
     },
-    "/api/v1/providers/packet/credentials": {
-      "get": {
-        "description": "Lists credential names for Packet",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "packet"
-        ],
-        "operationId": "listPacketCredentials",
-        "responses": {
-          "200": {
-            "description": "CredentialList",
-            "schema": {
-              "$ref": "#/definitions/CredentialList"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
-    "/api/v1/providers/vsphere/credentials": {
-      "get": {
-        "description": "Lists credential names for Vsphere",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "vsphere"
-        ],
-        "operationId": "listVsphereCredentials",
-        "responses": {
-          "200": {
-            "description": "CredentialList",
-            "schema": {
-              "$ref": "#/definitions/CredentialList"
-            }
-          },
-          "default": {
-            "$ref": "#/responses/errorResponse"
-          }
-        }
-      }
-    },
     "/api/v1/providers/vsphere/networks": {
       "get": {
         "description": "Lists networks from vsphere datacenter",
@@ -3331,6 +3147,38 @@
               "items": {
                 "$ref": "#/definitions/VSphereNetwork"
               }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
+    "/api/v1/providers/{provider_name}/credentials": {
+      "get": {
+        "description": "Lists credential names for the provider",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "credentials"
+        ],
+        "operationId": "listCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProviderName",
+            "name": "provider_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CredentialList",
+            "schema": {
+              "$ref": "#/definitions/CredentialList"
             }
           },
           "default": {

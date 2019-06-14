@@ -12,6 +12,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/credentials"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/node"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/project"
@@ -79,36 +80,8 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listVSphereNetworks())
 
 	mux.Methods(http.MethodGet).
-		Path("/providers/digitalocean/credentials").
-		Handler(r.listDigitaloceanCredentials())
-
-	mux.Methods(http.MethodGet).
-		Path("/providers/azure/credentials").
-		Handler(r.listAzureCredentials())
-
-	mux.Methods(http.MethodGet).
-		Path("/providers/vsphere/credentials").
-		Handler(r.listVsphereCredentials())
-
-	mux.Methods(http.MethodGet).
-		Path("/providers/openstack/credentials").
-		Handler(r.listOpenstackCredentials())
-
-	mux.Methods(http.MethodGet).
-		Path("/providers/hetzner/credentials").
-		Handler(r.listHetznerCredentials())
-
-	mux.Methods(http.MethodGet).
-		Path("/providers/aws/credentials").
-		Handler(r.listAWSCredentials())
-
-	mux.Methods(http.MethodGet).
-		Path("/providers/packet/credentials").
-		Handler(r.listPacketCredentials())
-
-	mux.Methods(http.MethodGet).
-		Path("/providers/gcp/credentials").
-		Handler(r.listGCPCredentials())
+		Path("/providers/{provider_name}/credentials").
+		Handler(r.listCredentials())
 
 	//
 	// Defines a set of HTTP endpoints for project resource
@@ -425,31 +398,9 @@ func (r Routing) deleteSSHKey() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/providers/digitalocean/credentials digitalocean listDigitaloceanCredentials
+// swagger:route GET /api/v1/providers/{provider_name}/credentials credentials listCredentials
 //
-// Lists credential names for DigitalOcean
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: CredentialList
-func (r Routing) listDigitaloceanCredentials() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
-			middleware.UserSaver(r.userProvider),
-		)(provider.DigitaloceanCredentialEndpoint(r.credentialManager)),
-		decodeEmptyReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v1/providers/azure/credentials azure listAzureCredentials
-//
-// Lists credential names for Azure
+// Lists credential names for the provider
 //
 //     Produces:
 //     - application/json
@@ -457,145 +408,13 @@ func (r Routing) listDigitaloceanCredentials() http.Handler {
 //     Responses:
 //       default: errorResponse
 //       200: CredentialList
-func (r Routing) listAzureCredentials() http.Handler {
+func (r Routing) listCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AzureCredentialEndpoint(r.credentialManager)),
-		decodeEmptyReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v1/providers/openstack/credentials openstack listOpenstackCredentials
-//
-// Lists credential names for Openstack
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: CredentialList
-func (r Routing) listOpenstackCredentials() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
-			middleware.UserSaver(r.userProvider),
-		)(provider.OpenstackCredentialEndpoint(r.credentialManager)),
-		decodeEmptyReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v1/providers/vsphere/credentials vsphere listVsphereCredentials
-//
-// Lists credential names for Vsphere
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: CredentialList
-func (r Routing) listVsphereCredentials() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
-			middleware.UserSaver(r.userProvider),
-		)(provider.VsphereCredentialEndpoint(r.credentialManager)),
-		decodeEmptyReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v1/providers/hetzner/credentials hetzner listHetznerCredentials
-//
-// Lists credential names for hetzner
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: CredentialList
-func (r Routing) listHetznerCredentials() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
-			middleware.UserSaver(r.userProvider),
-		)(provider.HetznerCredentialEndpoint(r.credentialManager)),
-		decodeEmptyReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v1/providers/packet/credentials packet listPacketCredentials
-//
-// Lists credential names for Packet
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: CredentialList
-func (r Routing) listPacketCredentials() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
-			middleware.UserSaver(r.userProvider),
-		)(provider.PacketCredentialEndpoint(r.credentialManager)),
-		decodeEmptyReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v1/providers/aws/credentials aws listAWSCredentials
-//
-// Lists credential names for AWS
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: CredentialList
-func (r Routing) listAWSCredentials() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
-			middleware.UserSaver(r.userProvider),
-		)(provider.AWSCredentialEndpoint(r.credentialManager)),
-		decodeEmptyReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v1/providers/gcp/credentials gcp listGCPCredentials
-//
-// Lists credential names for GCP
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: CredentialList
-func (r Routing) listGCPCredentials() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
-			middleware.UserSaver(r.userProvider),
-		)(provider.GCPCredentialEndpoint(r.credentialManager)),
-		decodeEmptyReq,
+		)(credentials.CredentialEndpoint(r.credentialManager)),
+		credentials.DecodeProviderReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

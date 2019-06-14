@@ -1,11 +1,8 @@
 package provider_test
 
 import (
-	"github.com/kubermatic/kubermatic/api/pkg/credentials"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -72,56 +69,6 @@ func TestVsphereNetworksEndpoint(t *testing.T) {
 	}
 
 	test.CompareWithResult(t, res, `[{"name":"VM Network"}]`)
-}
-
-func TestVsphereCredentialEndpoint(t *testing.T) {
-	t.Parallel()
-	testcases := []struct {
-		name             string
-		credentials      []credentials.VSphereCredentials
-		httpStatus       int
-		expectedResponse string
-	}{
-		{
-			name:             "test no credentials for VSphere",
-			httpStatus:       http.StatusOK,
-			expectedResponse: "{}",
-		},
-		{
-			name: "test list of credential names for VSphere",
-			credentials: []credentials.VSphereCredentials{
-				{Name: "first"},
-				{Name: "second"},
-			},
-			httpStatus:       http.StatusOK,
-			expectedResponse: `{"names":["first","second"]}`,
-		},
-	}
-
-	for _, tc := range testcases {
-		t.Run(tc.name, func(t *testing.T) {
-
-			req := httptest.NewRequest("GET", "/api/v1/providers/vsphere/credentials", strings.NewReader(""))
-
-			credentialsManager := credentials.New()
-			cred := credentialsManager.GetCredentials()
-			cred.VSphere = tc.credentials
-
-			res := httptest.NewRecorder()
-			router, err := test.CreateCredentialTestEndpoint(credentialsManager, hack.NewTestRouting)
-			if err != nil {
-				t.Fatalf("failed to create test endpoint due to %v\n", err)
-			}
-			router.ServeHTTP(res, req)
-
-			// validate
-			assert.Equal(t, tc.httpStatus, res.Code)
-
-			if res.Code == http.StatusOK {
-				compareJSON(t, res, tc.expectedResponse)
-			}
-		})
-	}
 }
 
 func (v *vSphereMock) buildVSphereDatacenterMeta() map[string]provider.DatacenterMeta {
