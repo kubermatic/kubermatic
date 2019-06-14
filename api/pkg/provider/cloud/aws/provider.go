@@ -334,6 +334,22 @@ func createSecurityGroup(client *ec2.EC2, vpcID, clusterName string) (string, er
 				SetIpRanges([]*ec2.IpRange{
 					{CidrIp: aws.String("0.0.0.0/0")},
 				}),
+			(&ec2.IpPermission{}).
+				// ICMP from/to everywhere
+				SetIpProtocol("icmp").
+				SetFromPort(-1). // any port
+				SetToPort(-1).   // any port
+				SetIpRanges([]*ec2.IpRange{
+					{CidrIp: aws.String("0.0.0.0/0")},
+				}),
+			(&ec2.IpPermission{}).
+				// ICMPv6 from/to everywhere
+				SetIpProtocol("icmpv6").
+				SetFromPort(-1). // any port
+				SetToPort(-1).   // any port
+				SetIpRanges([]*ec2.IpRange{
+					{CidrIp: aws.String("0.0.0.0/0")},
+				}),
 		},
 	})
 	if err != nil {

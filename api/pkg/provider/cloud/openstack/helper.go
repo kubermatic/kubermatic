@@ -199,6 +199,20 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, cluster
 			PortRangeMax: provider.DefaultKubeletPort,
 			Protocol:     osecruritygrouprules.ProtocolTCP,
 		},
+		{
+			// Allows ICMP traffic
+			Direction:  osecruritygrouprules.DirIngress,
+			EtherType:  osecruritygrouprules.EtherType4,
+			SecGroupID: g.ID,
+			Protocol:   osecruritygrouprules.ProtocolICMP,
+		},
+		{
+			// Allows ICMPv6 traffic
+			Direction:  osecruritygrouprules.DirIngress,
+			EtherType:  osecruritygrouprules.EtherType6,
+			SecGroupID: g.ID,
+			Protocol:   osecruritygrouprules.ProtocolIPv6ICMP,
+		},
 	}
 
 	for _, opts := range rules {
