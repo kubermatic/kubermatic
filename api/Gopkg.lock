@@ -813,7 +813,7 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:b20927cae605cb8e33021e9b69f4334e8e96f0ed246f4835e7c3e45094b40644"
+  digest = "1:9a267cfea2d5a3b82485882eeb154bc81730771bf05a2170c4975e9373db7d3c"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/apis/plugin",
@@ -841,8 +841,8 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "33efce2c39dbcdd2786ffc11b2ec3664c6638a98"
-  version = "v1.2.0"
+  revision = "d8a0229f780985460160559603253d27a1c49703"
+  version = "v1.2.1"
 
 [[projects]]
   digest = "1:0dbba7d4d4f3eeb01acd81af338ff4a3c4b0bb814d87368ea536e616f383240d"

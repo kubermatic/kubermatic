@@ -201,6 +201,7 @@ systemd:
         TimeoutStartSec=5min
         CPUAccounting=true
         MemoryAccounting=true
+        EnvironmentFile=-/etc/environment
 {{- if .HTTPProxy }}
         Environment=KUBELET_IMAGE=docker://{{ .HyperkubeImage }}:v{{ .KubeletVersion }}
 {{- else }}
