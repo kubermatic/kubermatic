@@ -54,8 +54,11 @@ func TestServiceAccountIssuer(t *testing.T) {
 				t.Fatalf("expected token %s got %s", tc.expectedToken, custom.TokenID)
 			}
 
-			if formatTime(public.Expiry.Time()) != formatTime(serviceaccount.Now().AddDate(3, 0, 0)) {
-				t.Fatalf("expected expire after 3 years from Now")
+			threeYearsString := formatTime(serviceaccount.Now().AddDate(3, 0, 0))
+			expiryString := formatTime(public.Expiry.Time())
+
+			if threeYearsString != expiryString {
+				t.Fatalf("expected expire after 3 years from Now. Expected %s got %s", threeYearsString, expiryString)
 			}
 
 		})
@@ -63,7 +66,6 @@ func TestServiceAccountIssuer(t *testing.T) {
 }
 
 func formatTime(t time.Time) string {
-	return fmt.Sprintf("%d-%02d-%02dT%02d:%02d:%02d",
-		t.Year(), t.Month(), t.Day(),
-		t.Hour(), t.Minute(), t.Second())
+	return fmt.Sprintf("%d-%02d-%02d",
+		t.Year(), t.Month(), t.Day())
 }
