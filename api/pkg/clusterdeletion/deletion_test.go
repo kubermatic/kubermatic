@@ -110,11 +110,15 @@ func TestCleanUpPVUsingWorkloads(t *testing.T) {
 			name:    "Dont delete pod without PV",
 			objects: []runtime.Object{getPod("", "", false)},
 		},
+		{
+			name:                "No error when owner doesn't exist",
+			objects:             []runtime.Object{getPod("ReplicaSet", "my-rs", true)},
+			objDeletionExpected: true,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
 			client := fake.NewFakeClient(tc.objects...)
 			d := &Deletion{userClusterClient: client}
 			ctx := context.Background()
