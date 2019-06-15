@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	protectedNamespaces = sets.NewString(metav1.NamespaceDefault, metav1.NamespaceSystem, metav1.NamespacePublic)
+	protectedNamespaces = sets.NewString(metav1.NamespaceDefault, metav1.NamespaceSystem, metav1.NamespacePublic, corev1.NamespaceNodeLease)
 )
 
 func deleteAllNonDefaultNamespaces(log *logrus.Entry, client ctrlruntimeclient.Client) error {
