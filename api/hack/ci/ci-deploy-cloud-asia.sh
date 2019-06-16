@@ -8,7 +8,7 @@ cd $(dirname $0)/../../..
 source ./api/hack/lib.sh
 
 if [[ "${DEPLOY_STACK}" == "kubermatic" ]]; then
-  ./ci-push-images.sh
+  ./api/hack/ci/ci-push-images.sh
 fi
 
 echodate "Getting secrets from Vault"
