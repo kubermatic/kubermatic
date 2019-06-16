@@ -23,6 +23,7 @@ fi
 DEPLOY_NODEPORT_PROXY=${DEPLOY_NODEPORT_PROXY:-true}
 DEPLOY_ALERTMANAGER=${DEPLOY_ALERTMANAGER:-true}
 DEPLOY_MINIO=${DEPLOY_MINIO:-true}
+DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 TILLER_NAMESPACE=${TILLER_NAMESPACE:-kubermatic}
 
 cd "$(dirname "$0")/../../"
@@ -33,9 +34,10 @@ function deploy {
   local name=$1
   local namespace=$2
   local path=$3
+  local timeout=${4:-300}
 
-  echo "Upgrading ${name}..."
-  retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} upgrade --install --atomic ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
+  echodate "Upgrading ${name}..."
+  retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} upgrade --install --atomic --timeout $timeout ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
 }
 
 sed -i "s/__KUBERMATIC_TAG__/$GIT_HEAD_HASH/g" ./config/kubermatic/Chart.yaml
@@ -48,43 +50,53 @@ kubectl create clusterrolebinding tiller-cluster-role --clusterrole=cluster-admi
 retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} init --service-account tiller-sa --replicas 3 --history-max 10 --force-upgrade --wait
 echodate "Tiller initialized successfully"
 
-echo "Deploying the CRD's..."
-retry 5 kubectl apply -f ./config/kubermatic/crd/
+echodate "Deploying ${DEPLOY_STACK} stack..."
+case "${DEPLOY_STACK}" in
+  monitoring)
+    deploy "node-exporter" "monitoring" ./config/monitoring/node-exporter/
+    deploy "kube-state-metrics" "monitoring" ./config/monitoring/kube-state-metrics/
+    deploy "grafana" "monitoring" ./config/monitoring/grafana/
+    deploy "helm-exporter" "monitoring" ./config/monitoring/helm-exporter/
+    if [[ "${DEPLOY_ALERTMANAGER}" = true ]]; then
+      deploy "alertmanager" "monitoring" ./config/monitoring/alertmanager/
+    fi
 
-if [[ "${1}" = "master" ]]; then
-    deploy "nginx-ingress-controller" "nginx-ingress-controller" ./config/nginx-ingress-controller/
-    deploy "cert-manager" "cert-manager" ./config/cert-manager/
-    deploy "certs" "default" ./config/certs/
-    deploy "oauth" "oauth" ./config/oauth/
-    # We might have not configured IAP which results in nothing being deployed. This triggers https://github.com/helm/helm/issues/4295 and marks this as failed
-    deploy "iap" "iap" ./config/iap/ || true
-fi
+    # Prometheus can take a long time to become ready, depending on the WAL size.
+    # We try to accomodate by waiting for 15 instead of 5 minutes.
+    deploy "prometheus" "monitoring" ./config/monitoring/prometheus/ 900
+    ;;
 
-# CI has its own Minio deployment as a proxy for GCS, so we do not install the default Helm chart here.
-if [[ "${DEPLOY_MINIO}" = true ]]; then
-  deploy "minio" "minio" ./config/minio/
-  deploy "s3-exporter" "kube-system" ./config/s3-exporter/
-fi
+  logging)
+    deploy "elasticsearch" "logging" ./config/logging/elasticsearch/
+    deploy "fluentbit" "logging" ./config/logging/fluentbit/
+    deploy "kibana" "logging" ./config/logging/kibana/
+    ;;
 
-# The NodePort proxy is only relevant in cloud environments (Where LB services can be used)
-if [[ "${DEPLOY_NODEPORT_PROXY}" = true ]]; then
-  deploy "nodeport-proxy" "nodeport-proxy" ./config/nodeport-proxy/
-fi
+  kubermatic)
+    echodate "Deploying the CRD's..."
+    retry 5 kubectl apply -f ./config/kubermatic/crd/
 
-#Monitoring
-deploy "prometheus" "monitoring" ./config/monitoring/prometheus/
-deploy "node-exporter" "monitoring" ./config/monitoring/node-exporter/
-deploy "kube-state-metrics" "monitoring" ./config/monitoring/kube-state-metrics/
-deploy "grafana" "monitoring" ./config/monitoring/grafana/
-deploy "helm-exporter" "monitoring" ./config/monitoring/helm-exporter/
-if [[ "${DEPLOY_ALERTMANAGER}" = true ]]; then
-  deploy "alertmanager" "monitoring" ./config/monitoring/alertmanager/
-fi
+    if [[ "${1}" = "master" ]]; then
+      deploy "nginx-ingress-controller" "nginx-ingress-controller" ./config/nginx-ingress-controller/
+      deploy "cert-manager" "cert-manager" ./config/cert-manager/
+      deploy "certs" "default" ./config/certs/
+      deploy "oauth" "oauth" ./config/oauth/
+      # We might have not configured IAP which results in nothing being deployed. This triggers https://github.com/helm/helm/issues/4295 and marks this as failed
+      deploy "iap" "iap" ./config/iap/ || true
+    fi
 
-#Logging
-deploy "elasticsearch" "logging" ./config/logging/elasticsearch/
-deploy "fluentbit" "logging" ./config/logging/fluentbit/
-deploy "kibana" "logging" ./config/logging/kibana/
+    # CI has its own Minio deployment as a proxy for GCS, so we do not install the default Helm chart here.
+    if [[ "${DEPLOY_MINIO}" = true ]]; then
+      deploy "minio" "minio" ./config/minio/
+      deploy "s3-exporter" "kube-system" ./config/s3-exporter/
+    fi
 
-#Kubermatic
-deploy "kubermatic" "kubermatic" ./config/kubermatic/
+    # The NodePort proxy is only relevant in cloud environments (Where LB services can be used)
+    if [[ "${DEPLOY_NODEPORT_PROXY}" = true ]]; then
+      deploy "nodeport-proxy" "nodeport-proxy" ./config/nodeport-proxy/
+    fi
+
+    # Kubermatic
+    deploy "kubermatic" "kubermatic" ./config/kubermatic/
+    ;;
+esac

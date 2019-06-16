@@ -1,23 +1,15 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
+export DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 cd $(dirname $0)/../../..
 
 source ./api/hack/lib.sh
 
-echodate "Logging into Quay"
-docker ps &>/dev/null || start-docker.sh
-retry 5 docker login -u ${QUAY_IO_USERNAME} -p ${QUAY_IO_PASSWORD} quay.io
-echodate "Successfully logged into Quay"
-
-echodate "Building binaries"
-time make -C api build
-echodate "Successfully finished building binaries"
-
-echodate "Building and pushing quay images"
-retry 5 ./api/hack/push_image.sh $GIT_HEAD_HASH $(git tag -l --points-at HEAD)
-echodate "Sucessfully finished building and pushing quay images"
+if [[ "${DEPLOY_STACK}" == "kubermatic" ]]; then
+  ./api/hack/ci/ci-push-images.sh
+fi
 
 echodate "Getting secrets from Vault"
 export VAULT_ADDR=https://vault.loodse.com/
@@ -36,6 +28,6 @@ vault kv get -field=kubeconfig dev/seed-clusters/run.kubermatic.io > ${KUBECONFI
 vault kv get -field=values.yaml dev/seed-clusters/run.kubermatic.io > ${VALUES_FILE}
 echodate "Successfully got secrets for run from Vault"
 
-echodate "Deploying Kubermatic to run.kubermatic.io"
+echodate "Deploying ${DEPLOY_STACK} stack to run.kubermatic.io"
 TILLER_NAMESPACE=kube-system ./api/hack/deploy.sh master ${VALUES_FILE} ${HELM_EXTRA_ARGS}
-echodate "Successfully deployed Kubermatic to run.kubermatic.io"
+echodate "Successfully deployed ${DEPLOY_STACK} stack to run.kubermatic.io"
