@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
-DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
-
 set -euo pipefail
+export DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 cd $(dirname $0)/../../..
 
