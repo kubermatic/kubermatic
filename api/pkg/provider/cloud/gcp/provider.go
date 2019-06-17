@@ -120,10 +120,6 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 	return cluster, nil
 }
 
-func (g *gcp) Migrate(_ *kubermaticv1.Cluster) error {
-	return nil
-}
-
 // connectToComputeService establishes a service connection to the Compute Engine.
 func connectToComputeService(serviceAccount string) (*compute.Service, string, error) {
 	b, err := base64.StdEncoding.DecodeString(serviceAccount)
