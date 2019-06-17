@@ -32,6 +32,10 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+// currentMigrationRevision describes the current migration revision. If this is set on the
+// cluster, certain migrations wont get executed. This must never be decremented.
+const currentMigrationRevision = 1
+
 type cleanupContext struct {
 	kubeClient       kubernetes.Interface
 	kubermaticClient kubermaticclientset.Interface
@@ -555,7 +559,7 @@ func setExposeStrategyIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext
 }
 
 func migrateCloudProvider(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
-	if cluster.Spec.MigrationRevision > 0 {
+	if cluster.Spec.MigrationRevision >= currentMigrationRevision {
 		glog.Infof("Not migrating cluster %q, because its .spec.migrationRevision is > 0(%d)",
 			cluster.Name, cluster.Spec.MigrationRevision)
 		return nil
@@ -583,7 +587,7 @@ func migrateCloudProvider(cluster *kubermaticv1.Cluster, ctx *cleanupContext) er
 		glog.Infof("Successfully ensured ICMP rules in security group of cluster %q", cluster.Name)
 	}
 
-	cluster.Spec.MigrationRevision = 1
+	cluster.Spec.MigrationRevision = currentMigrationRevision
 	if cluster, err = ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
 		return fmt.Errorf("failed to update cluster %q after successfuly executing its cloudProvider migration: %v",
 			cluster.Name, err)
