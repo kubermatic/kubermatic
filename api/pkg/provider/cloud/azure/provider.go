@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/golang/glog"
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -37,6 +38,10 @@ const (
 	FinalizerResourceGroup = "kubermatic.io/cleanup-azure-resource-group"
 	// FinalizerAvailabilitySet will instruct the deletion of the availability set
 	FinalizerAvailabilitySet = "kubermatic.io/cleanup-azure-availability-set"
+
+	denyAllTCPSecGroupRuleName   = "deny_all_tcp"
+	denyAllUDPSecGroupRuleName   = "deny_all_udp"
+	allowAllICMPSecGroupRuleName = "icmp_by_allow_all"
 )
 
 type Azure struct {
@@ -88,53 +93,53 @@ var faultDomainsPerRegion = map[string]int32{
 	"koreasouth":         2,
 }
 
-func deleteSubnet(cloud kubermaticv1.CloudSpec) error {
+func deleteSubnet(ctx context.Context, cloud kubermaticv1.CloudSpec) error {
 	subnetsClient, err := getSubnetsClient(cloud)
 	if err != nil {
 		return err
 	}
 
-	deleteSubnetFuture, err := subnetsClient.Delete(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName)
+	deleteSubnetFuture, err := subnetsClient.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName)
 	if err != nil {
 		return err
 	}
 
-	if err = deleteSubnetFuture.WaitForCompletion(context.TODO(), subnetsClient.Client); err != nil {
+	if err = deleteSubnetFuture.WaitForCompletion(ctx, subnetsClient.Client); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func deleteAvailabilitySet(cloud kubermaticv1.CloudSpec) error {
+func deleteAvailabilitySet(ctx context.Context, cloud kubermaticv1.CloudSpec) error {
 	asClient, err := getAvailabilitySetClient(cloud)
 	if err != nil {
 		return err
 	}
 
-	_, err = asClient.Delete(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.AvailabilitySet)
+	_, err = asClient.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.AvailabilitySet)
 	return err
 }
 
-func deleteVNet(cloud kubermaticv1.CloudSpec) error {
+func deleteVNet(ctx context.Context, cloud kubermaticv1.CloudSpec) error {
 	networksClient, err := getNetworksClient(cloud)
 	if err != nil {
 		return err
 	}
 
-	deleteVNetFuture, err := networksClient.Delete(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.VNetName)
+	deleteVNetFuture, err := networksClient.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.VNetName)
 	if err != nil {
 		return err
 	}
 
-	if err = deleteVNetFuture.WaitForCompletion(context.TODO(), networksClient.Client); err != nil {
+	if err = deleteVNetFuture.WaitForCompletion(ctx, networksClient.Client); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func deleteResourceGroup(cloud kubermaticv1.CloudSpec) error {
+func deleteResourceGroup(ctx context.Context, cloud kubermaticv1.CloudSpec) error {
 	groupsClient, err := getGroupsClient(cloud)
 	if err != nil {
 		return err
@@ -143,52 +148,52 @@ func deleteResourceGroup(cloud kubermaticv1.CloudSpec) error {
 	// We're doing a Get to see if its already gone or not.
 	// We could also directly call delete but the error response would need to be unpacked twice to get the correct error message.
 	// Doing a get is simpler.
-	if _, err := groupsClient.Get(context.TODO(), cloud.Azure.ResourceGroup); err != nil {
+	if _, err := groupsClient.Get(ctx, cloud.Azure.ResourceGroup); err != nil {
 		return err
 	}
 
-	future, err := groupsClient.Delete(context.TODO(), cloud.Azure.ResourceGroup)
+	future, err := groupsClient.Delete(ctx, cloud.Azure.ResourceGroup)
 	if err != nil {
 		return err
 	}
 
-	if err = future.WaitForCompletion(context.TODO(), groupsClient.Client); err != nil {
+	if err = future.WaitForCompletion(ctx, groupsClient.Client); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func deleteRouteTable(cloud kubermaticv1.CloudSpec) error {
+func deleteRouteTable(ctx context.Context, cloud kubermaticv1.CloudSpec) error {
 	routeTablesClient, err := getRouteTablesClient(cloud)
 	if err != nil {
 		return err
 	}
 
-	future, err := routeTablesClient.Delete(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName)
+	future, err := routeTablesClient.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName)
 	if err != nil {
 		return err
 	}
 
-	if err = future.WaitForCompletion(context.TODO(), routeTablesClient.Client); err != nil {
+	if err = future.WaitForCompletion(ctx, routeTablesClient.Client); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func deleteSecurityGroup(cloud kubermaticv1.CloudSpec) error {
+func deleteSecurityGroup(ctx context.Context, cloud kubermaticv1.CloudSpec) error {
 	securityGroupsClient, err := getSecurityGroupsClient(cloud)
 	if err != nil {
 		return err
 	}
 
-	future, err := securityGroupsClient.Delete(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup)
+	future, err := securityGroupsClient.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup)
 	if err != nil {
 		return err
 	}
 
-	if err = future.WaitForCompletion(context.TODO(), securityGroupsClient.Client); err != nil {
+	if err = future.WaitForCompletion(ctx, securityGroupsClient.Client); err != nil {
 		return err
 	}
 
@@ -200,7 +205,7 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 	logger := a.log.With("cluster", cluster.Name)
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerSecurityGroup) {
 		logger.Infow("deleting security group", "group", cluster.Spec.Cloud.Azure.SecurityGroup)
-		if err := deleteSecurityGroup(cluster.Spec.Cloud); err != nil {
+		if err := deleteSecurityGroup(a.ctx, cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
 				return cluster, fmt.Errorf("failed to delete security group %q: %v", cluster.Spec.Cloud.Azure.SecurityGroup, err)
 			}
@@ -215,7 +220,7 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerRouteTable) {
 		logger.Infow("deleting route table", "routeTableName", cluster.Spec.Cloud.Azure.RouteTableName)
-		if err := deleteRouteTable(cluster.Spec.Cloud); err != nil {
+		if err := deleteRouteTable(a.ctx, cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
 				return cluster, fmt.Errorf("failed to delete route table %q: %v", cluster.Spec.Cloud.Azure.RouteTableName, err)
 			}
@@ -230,7 +235,7 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerSubnet) {
 		logger.Infow("deleting subnet", "subnet", cluster.Spec.Cloud.Azure.SubnetName)
-		if err := deleteSubnet(cluster.Spec.Cloud); err != nil {
+		if err := deleteSubnet(a.ctx, cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
 				return cluster, fmt.Errorf("failed to delete sub-network %q: %v", cluster.Spec.Cloud.Azure.SubnetName, err)
 			}
@@ -245,7 +250,7 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerVNet) {
 		logger.Infow("deleting vnet", "vnet", cluster.Spec.Cloud.Azure.VNetName)
-		if err := deleteVNet(cluster.Spec.Cloud); err != nil {
+		if err := deleteVNet(a.ctx, cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
 				return cluster, fmt.Errorf("failed to delete virtual network %q: %v", cluster.Spec.Cloud.Azure.VNetName, err)
 			}
@@ -261,7 +266,7 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerResourceGroup) {
 		logger.Infow("deleting resource group", "resourceGroup", cluster.Spec.Cloud.Azure.ResourceGroup)
-		if err := deleteResourceGroup(cluster.Spec.Cloud); err != nil {
+		if err := deleteResourceGroup(a.ctx, cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
 				return cluster, fmt.Errorf("failed to delete resource group %q: %v", cluster.Spec.Cloud.Azure.ResourceGroup, err)
 			}
@@ -277,7 +282,7 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerAvailabilitySet) {
 		logger.Infow("deleting availability set", "availabilitySet", cluster.Spec.Cloud.Azure.AvailabilitySet)
-		if err := deleteAvailabilitySet(cluster.Spec.Cloud); err != nil {
+		if err := deleteAvailabilitySet(a.ctx, cluster.Spec.Cloud); err != nil {
 			if detErr, ok := err.(autorest.DetailedError); !ok || detErr.StatusCode != http.StatusNotFound {
 				return cluster, fmt.Errorf("failed to delete availability set %q: %v", cluster.Spec.Cloud.Azure.AvailabilitySet, err)
 			}
@@ -295,7 +300,7 @@ func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provi
 }
 
 // ensureResourceGroup will create or update an Azure resource group. The call is idempotent.
-func ensureResourceGroup(cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
+func ensureResourceGroup(ctx context.Context, cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
 	groupsClient, err := getGroupsClient(cloud)
 	if err != nil {
 		return err
@@ -308,7 +313,7 @@ func ensureResourceGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 			clusterTagKey: to.StringPtr(clusterName),
 		},
 	}
-	if _, err = groupsClient.CreateOrUpdate(context.TODO(), cloud.Azure.ResourceGroup, parameters); err != nil {
+	if _, err = groupsClient.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, parameters); err != nil {
 		return fmt.Errorf("failed to create or update resource group %q: %v", cloud.Azure.ResourceGroup, err)
 	}
 
@@ -418,7 +423,7 @@ func (a *Azure) ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location strin
 }
 
 // ensureVNet will create or update an Azure virtual network in the specified resource group. The call is idempotent.
-func ensureVNet(cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
+func ensureVNet(ctx context.Context, cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
 	networksClient, err := getNetworksClient(cloud)
 	if err != nil {
 		return err
@@ -435,12 +440,12 @@ func ensureVNet(cloud kubermaticv1.CloudSpec, location string, clusterName strin
 		},
 	}
 
-	future, err := networksClient.CreateOrUpdate(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.VNetName, parameters)
+	future, err := networksClient.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.VNetName, parameters)
 	if err != nil {
 		return fmt.Errorf("failed to create or update virtual network %q: %v", cloud.Azure.VNetName, err)
 	}
 
-	if err = future.WaitForCompletion(context.TODO(), networksClient.Client); err != nil {
+	if err = future.WaitForCompletion(ctx, networksClient.Client); err != nil {
 		return fmt.Errorf("failed to create or update virtual network %q: %v", cloud.Azure.VNetName, err)
 	}
 
@@ -448,7 +453,7 @@ func ensureVNet(cloud kubermaticv1.CloudSpec, location string, clusterName strin
 }
 
 // ensureSubnet will create or update an Azure subnetwork in the specified vnet. The call is idempotent.
-func ensureSubnet(cloud kubermaticv1.CloudSpec) error {
+func ensureSubnet(ctx context.Context, cloud kubermaticv1.CloudSpec) error {
 	subnetsClient, err := getSubnetsClient(cloud)
 	if err != nil {
 		return err
@@ -461,12 +466,12 @@ func ensureSubnet(cloud kubermaticv1.CloudSpec) error {
 		},
 	}
 
-	future, err := subnetsClient.CreateOrUpdate(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, parameters)
+	future, err := subnetsClient.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, parameters)
 	if err != nil {
 		return fmt.Errorf("failed to create or update subnetwork %q: %v", cloud.Azure.SubnetName, err)
 	}
 
-	if err = future.WaitForCompletion(context.TODO(), subnetsClient.Client); err != nil {
+	if err = future.WaitForCompletion(ctx, subnetsClient.Client); err != nil {
 		return fmt.Errorf("failed to create or update subnetwork %q: %v", cloud.Azure.SubnetName, err)
 	}
 
@@ -474,7 +479,7 @@ func ensureSubnet(cloud kubermaticv1.CloudSpec) error {
 }
 
 // ensureRouteTable will create or update an Azure route table attached to the specified subnet. The call is idempotent.
-func ensureRouteTable(cloud kubermaticv1.CloudSpec, location string) error {
+func ensureRouteTable(ctx context.Context, cloud kubermaticv1.CloudSpec, location string) error {
 	routeTablesClient, err := getRouteTablesClient(cloud)
 	if err != nil {
 		return err
@@ -493,12 +498,12 @@ func ensureRouteTable(cloud kubermaticv1.CloudSpec, location string) error {
 		},
 	}
 
-	future, err := routeTablesClient.CreateOrUpdate(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName, parameters)
+	future, err := routeTablesClient.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName, parameters)
 	if err != nil {
 		return fmt.Errorf("failed to create or update route table %q: %v", cloud.Azure.RouteTableName, err)
 	}
 
-	if err = future.WaitForCompletion(context.TODO(), routeTablesClient.Client); err != nil {
+	if err = future.WaitForCompletion(ctx, routeTablesClient.Client); err != nil {
 		return fmt.Errorf("failed to create or update route table %q: %v", cloud.Azure.RouteTableName, err)
 	}
 
@@ -523,7 +528,7 @@ func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		cluster.Spec.Cloud.Azure.ResourceGroup = resourceNamePrefix + cluster.Name
 
 		logger.Infow("ensuring resource group", "resourceGroup", cluster.Spec.Cloud.Azure.ResourceGroup)
-		if err = ensureResourceGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
+		if err = ensureResourceGroup(a.ctx, cluster.Spec.Cloud, location, cluster.Name); err != nil {
 			return cluster, err
 		}
 
@@ -540,7 +545,7 @@ func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		cluster.Spec.Cloud.Azure.VNetName = resourceNamePrefix + cluster.Name
 
 		logger.Infow("ensuring vnet", "vnet", cluster.Spec.Cloud.Azure.VNetName)
-		if err = ensureVNet(cluster.Spec.Cloud, location, cluster.Name); err != nil {
+		if err = ensureVNet(a.ctx, cluster.Spec.Cloud, location, cluster.Name); err != nil {
 			return cluster, err
 		}
 
@@ -557,7 +562,7 @@ func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		cluster.Spec.Cloud.Azure.SubnetName = resourceNamePrefix + cluster.Name
 
 		logger.Infow("ensuring subnet", "subnet", cluster.Spec.Cloud.Azure.SubnetName)
-		if err = ensureSubnet(cluster.Spec.Cloud); err != nil {
+		if err = ensureSubnet(a.ctx, cluster.Spec.Cloud); err != nil {
 			return cluster, err
 		}
 
@@ -574,7 +579,7 @@ func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		cluster.Spec.Cloud.Azure.RouteTableName = resourceNamePrefix + cluster.Name
 
 		logger.Infow("ensuring route table", "routeTableName", cluster.Spec.Cloud.Azure.RouteTableName)
-		if err = ensureRouteTable(cluster.Spec.Cloud, location); err != nil {
+		if err = ensureRouteTable(a.ctx, cluster.Spec.Cloud, location); err != nil {
 			return cluster, err
 		}
 
@@ -608,7 +613,7 @@ func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		asName := resourceNamePrefix + cluster.Name
 		logger.Infow("ensuring AvailabilitySet", "availabilitySet", asName)
 
-		if err := ensureAvailabilitySet(asName, location, cluster.Spec.Cloud); err != nil {
+		if err := ensureAvailabilitySet(a.ctx, asName, location, cluster.Spec.Cloud); err != nil {
 			return nil, fmt.Errorf("failed to ensure AvailabilitySet exists: %v", err)
 		}
 
@@ -624,7 +629,7 @@ func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	return cluster, nil
 }
 
-func ensureAvailabilitySet(name, location string, cloud kubermaticv1.CloudSpec) error {
+func ensureAvailabilitySet(ctx context.Context, name, location string, cloud kubermaticv1.CloudSpec) error {
 	client, err := getAvailabilitySetClient(cloud)
 	if err != nil {
 		return err
@@ -647,7 +652,7 @@ func ensureAvailabilitySet(name, location string, cloud kubermaticv1.CloudSpec) 
 		},
 	}
 
-	_, err = client.CreateOrUpdate(context.TODO(), cloud.Azure.ResourceGroup, name, as)
+	_, err = client.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, name, as)
 	return err
 }
 
@@ -662,7 +667,7 @@ func (a *Azure) ValidateCloudSpec(cloud kubermaticv1.CloudSpec) error {
 			return err
 		}
 
-		if _, err = rgClient.Get(context.TODO(), cloud.Azure.ResourceGroup); err != nil {
+		if _, err = rgClient.Get(a.ctx, cloud.Azure.ResourceGroup); err != nil {
 			return err
 		}
 	}
@@ -673,7 +678,7 @@ func (a *Azure) ValidateCloudSpec(cloud kubermaticv1.CloudSpec) error {
 			return err
 		}
 
-		if _, err = vnetClient.Get(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.VNetName, ""); err != nil {
+		if _, err = vnetClient.Get(a.ctx, cloud.Azure.ResourceGroup, cloud.Azure.VNetName, ""); err != nil {
 			return err
 		}
 	}
@@ -684,7 +689,7 @@ func (a *Azure) ValidateCloudSpec(cloud kubermaticv1.CloudSpec) error {
 			return err
 		}
 
-		if _, err = subnetClient.Get(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, ""); err != nil {
+		if _, err = subnetClient.Get(a.ctx, cloud.Azure.ResourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, ""); err != nil {
 			return err
 		}
 	}
@@ -695,7 +700,7 @@ func (a *Azure) ValidateCloudSpec(cloud kubermaticv1.CloudSpec) error {
 			return err
 		}
 
-		if _, err = routeTablesClient.Get(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName, ""); err != nil {
+		if _, err = routeTablesClient.Get(a.ctx, cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName, ""); err != nil {
 			return err
 		}
 	}
@@ -706,7 +711,7 @@ func (a *Azure) ValidateCloudSpec(cloud kubermaticv1.CloudSpec) error {
 			return err
 		}
 
-		if _, err = sgClient.Get(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, ""); err != nil {
+		if _, err = sgClient.Get(a.ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, ""); err != nil {
 			return err
 		}
 	}
@@ -729,23 +734,26 @@ func (a *Azure) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
 	for _, rule := range *sg.SecurityRules {
 		// We trust that no one will alter the content of the rules
 		switch *rule.Name {
-		case "deny_all_tcp":
+		case denyAllTCPSecGroupRuleName:
 			hasDenyAllTCPRule = true
-		case "deny_all_udp":
+		case denyAllUDPSecGroupRuleName:
 			hasDenyAllUDPRule = true
-		case "icmp_by_allow_all":
+		case allowAllICMPSecGroupRuleName:
 			hasICMPAllowAllRule = true
 		}
 	}
 
 	var newSecurityRules []network.SecurityRule
 	if !hasDenyAllTCPRule {
+		glog.Infof("Creating TCP deny all rule for cluster %q", cluster.Name)
 		newSecurityRules = append(newSecurityRules, tcpDenyAllRule())
 	}
 	if !hasDenyAllUDPRule {
+		glog.Infof("Creating UDP deny all rule for cluster %q", cluster.Name)
 		newSecurityRules = append(newSecurityRules, udpDenyAllRule())
 	}
 	if !hasICMPAllowAllRule {
+		glog.Infof("Creating ICMP allow all rule for cluster %q", cluster.Name)
 		newSecurityRules = append(newSecurityRules, icmpAllowAllRule())
 	}
 
@@ -828,7 +836,7 @@ func getAvailabilitySetClient(cloud kubermaticv1.CloudSpec) (*compute.Availabili
 
 func tcpDenyAllRule() network.SecurityRule {
 	return network.SecurityRule{
-		Name: to.StringPtr("deny_all_tcp"),
+		Name: to.StringPtr(denyAllTCPSecGroupRuleName),
 		SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 			Direction:                network.SecurityRuleDirectionInbound,
 			Protocol:                 "TCP",
@@ -844,7 +852,7 @@ func tcpDenyAllRule() network.SecurityRule {
 
 func udpDenyAllRule() network.SecurityRule {
 	return network.SecurityRule{
-		Name: to.StringPtr("deny_all_udp"),
+		Name: to.StringPtr(denyAllUDPSecGroupRuleName),
 		SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 			Direction:                network.SecurityRuleDirectionInbound,
 			Protocol:                 "UDP",
@@ -863,10 +871,9 @@ func udpDenyAllRule() network.SecurityRule {
 // Therefore we're hacking around it by first blocking all incoming TCP and UDP
 // and if these don't match, we have an "allow all" rule. Dirty, but the only way.
 // See also: https://tinyurl.com/azure-allow-icmp
-// outbound
 func icmpAllowAllRule() network.SecurityRule {
 	return network.SecurityRule{
-		Name: to.StringPtr("icmp_by_allow_all"),
+		Name: to.StringPtr(allowAllICMPSecGroupRuleName),
 		SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 			Direction:                network.SecurityRuleDirectionInbound,
 			Protocol:                 "*",
