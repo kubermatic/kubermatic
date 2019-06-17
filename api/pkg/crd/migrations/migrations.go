@@ -570,14 +570,17 @@ func migrateCloudProvider(cluster *kubermaticv1.Cluster, ctx *cleanupContext) er
 		if err := provider.AddICMPRulesIfRequired(cluster); err != nil {
 			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %v", cluster.Name, err)
 		}
+		glog.Infof("Successfully ensured ICMP rules in security group of cluster %q", cluster.Name)
 	case *openstack.Provider:
 		if err := provider.AddICMPRulesIfRequired(cluster); err != nil {
 			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %v", cluster.Name, err)
 		}
+		glog.Infof("Successfully ensured ICMP rules in security group of cluster %q", cluster.Name)
 	case *azure.Azure:
 		if err := provider.AddICMPRulesIfRequired(cluster); err != nil {
 			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %v", cluster.Name, err)
 		}
+		glog.Infof("Successfully ensured ICMP rules in security group of cluster %q", cluster.Name)
 	}
 
 	cluster.Spec.MigrationRevision = 1

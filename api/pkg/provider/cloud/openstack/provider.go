@@ -5,6 +5,7 @@ import (
 	"net"
 	"strings"
 
+	"github.com/golang/glog"
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
 	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
@@ -14,6 +15,7 @@ import (
 	osnetworks "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 	"github.com/gophercloud/gophercloud/pagination"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -484,7 +486,7 @@ func (os *Provider) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 
 	for _, sg := range securityGroups {
 		if sg.Name == sgNameOrID || sg.ID == sgNameOrID {
-			if err := addICMPRulesToSecurityGroupIfNecesary(sg, netClient); err != nil {
+			if err := addICMPRulesToSecurityGroupIfNecesary(cluster, sg, netClient); err != nil {
 				return fmt.Errorf("failed to add rules for ICMP to security group %q: %v", sg.ID, err)
 			}
 			break
@@ -494,14 +496,14 @@ func (os *Provider) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 	return nil
 }
 
-func addICMPRulesToSecurityGroupIfNecesary(secGroup ossecuritygroups.SecGroup, netClient *gophercloud.ServiceClient) error {
+func addICMPRulesToSecurityGroupIfNecesary(cluster *kubermaticv1.Cluster, secGroup ossecuritygroups.SecGroup, netClient *gophercloud.ServiceClient) error {
 	var hasIPV4Rule, hasIPV6Rule bool
 	for _, rule := range secGroup.Rules {
-		if rule.Direction == string(osecuritygrouprules.DirIngress) && rule.Protocol == string(osecuritygrouprules.ProtocolICMP) {
-			if rule.EtherType == string(osecuritygrouprules.EtherType4) {
+		if rule.Direction == string(osecuritygrouprules.DirIngress) {
+			if rule.EtherType == string(osecuritygrouprules.EtherType4) && rule.Protocol == string(osecuritygrouprules.ProtocolICMP) {
 				hasIPV4Rule = true
 			}
-			if rule.EtherType == string(osecuritygrouprules.EtherType6) {
+			if rule.EtherType == string(osecuritygrouprules.EtherType6) && rule.Protocol == string(osecuritygrouprules.ProtocolIPv6ICMP) {
 				hasIPV6Rule = true
 			}
 		}
@@ -515,14 +517,16 @@ func addICMPRulesToSecurityGroupIfNecesary(secGroup ossecuritygroups.SecGroup, n
 			SecGroupID: secGroup.ID,
 			Protocol:   osecuritygrouprules.ProtocolICMP,
 		})
+		glog.Infof("Adding ICMP allow rule to cluster %q", cluster.Name)
 	}
 	if !hasIPV6Rule {
 		rulesToCreate = append(rulesToCreate, osecuritygrouprules.CreateOpts{
 			Direction:  osecuritygrouprules.DirIngress,
 			EtherType:  osecuritygrouprules.EtherType6,
 			SecGroupID: secGroup.ID,
-			Protocol:   osecuritygrouprules.ProtocolICMP,
+			Protocol:   osecuritygrouprules.ProtocolIPv6ICMP,
 		})
+		glog.Infof("Adding ICMP6 allow rule to cluster %q", cluster.Name)
 	}
 
 	for _, rule := range rulesToCreate {
