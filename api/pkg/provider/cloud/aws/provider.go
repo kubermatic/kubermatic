@@ -127,12 +127,12 @@ func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 
 	var hasIPV4ICMPRule, hasIPV6ICMPRule bool
 	for _, rule := range out.SecurityGroups[0].IpPermissions {
-		if *rule.FromPort == -1 && *rule.ToPort == -1 && len(rule.IpRanges) == 1 && *rule.IpRanges[0].CidrIp == "0.0.0.0/0" {
+		if rule.FromPort != nil && *rule.FromPort == -1 && rule.ToPort != nil && *rule.ToPort == -1 {
 
-			if *rule.IpProtocol == "icmp" {
+			if *rule.IpProtocol == "icmp" && len(rule.IpRanges) == 1 && *rule.IpRanges[0].CidrIp == "0.0.0.0/0" {
 				hasIPV4ICMPRule = true
 			}
-			if *rule.IpProtocol == "icmpv6" {
+			if *rule.IpProtocol == "icmpv6" && len(rule.Ipv6Ranges) == 1 && *rule.Ipv6Ranges[0].CidrIpv6 == "::/0" {
 				hasIPV6ICMPRule = true
 			}
 		}
@@ -157,8 +157,8 @@ func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 				SetIpProtocol("icmpv6").
 				SetFromPort(-1).
 				SetToPort(-1).
-				SetIpRanges([]*ec2.IpRange{
-					{CidrIp: aws.String("0.0.0.0/0")},
+				SetIpv6Ranges([]*ec2.Ipv6Range{
+					{CidrIpv6: aws.String("::/0")},
 				}))
 	}
 
@@ -423,8 +423,8 @@ func createSecurityGroup(client *ec2.EC2, vpcID, clusterName string) (string, er
 				SetIpProtocol("icmpv6").
 				SetFromPort(-1). // any port
 				SetToPort(-1).   // any port
-				SetIpRanges([]*ec2.IpRange{
-					{CidrIp: aws.String("0.0.0.0/0")},
+				SetIpv6Ranges([]*ec2.Ipv6Range{
+					{CidrIpv6: aws.String("::/0")},
 				}),
 		},
 	})
