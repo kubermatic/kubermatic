@@ -39,17 +39,19 @@ const (
 	FinalizerAvailabilitySet = "kubermatic.io/cleanup-azure-availability-set"
 )
 
-type azure struct {
+type Azure struct {
 	dcs map[string]provider.DatacenterMeta
 	log *zap.SugaredLogger
+	ctx context.Context
 }
 
 // New returns a new Azure provider.
-func New(datacenters map[string]provider.DatacenterMeta) provider.CloudProvider {
+func New(datacenters map[string]provider.DatacenterMeta) *Azure {
 
-	return &azure{
+	return &Azure{
 		dcs: datacenters,
 		log: log.Logger,
+		ctx: context.TODO(),
 	}
 }
 
@@ -193,7 +195,7 @@ func deleteSecurityGroup(cloud kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (a *azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var err error
 	logger := a.log.With("cluster", cluster.Name)
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerSecurityGroup) {
@@ -314,7 +316,7 @@ func ensureResourceGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 }
 
 // ensureSecurityGroup will create or update an Azure security group. The call is idempotent.
-func ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
+func (a *Azure) ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
 	sgClient, err := getSecurityGroupsClient(cloud)
 	if err != nil {
 		return err
@@ -387,50 +389,6 @@ func ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 						Priority:                 to.Int32Ptr(300),
 					},
 				},
-				{
-					Name: to.StringPtr("deny_all_tcp"),
-					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
-						Direction:                network.SecurityRuleDirectionInbound,
-						Protocol:                 "TCP",
-						SourceAddressPrefix:      to.StringPtr("*"),
-						SourcePortRange:          to.StringPtr("*"),
-						DestinationPortRange:     to.StringPtr("*"),
-						DestinationAddressPrefix: to.StringPtr("*"),
-						Access:                   network.SecurityRuleAccessDeny,
-						Priority:                 to.Int32Ptr(800),
-					},
-				},
-				{
-					Name: to.StringPtr("deny_all_udp"),
-					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
-						Direction:                network.SecurityRuleDirectionInbound,
-						Protocol:                 "UDP",
-						SourceAddressPrefix:      to.StringPtr("*"),
-						SourcePortRange:          to.StringPtr("*"),
-						DestinationPortRange:     to.StringPtr("*"),
-						DestinationAddressPrefix: to.StringPtr("*"),
-						Access:                   network.SecurityRuleAccessDeny,
-						Priority:                 to.Int32Ptr(801),
-					},
-				},
-				// Alright, so here's the deal. We need to allow ICMP, but on Azure it is not possible
-				// to specify ICMP as a protocol in a rule - only TCP or UDP.
-				// Therefore we're hacking around it by first blocking all incoming TCP and UDP
-				// and if these don't match, we have an "allow all" rule. Dirty, but the only way.
-				// See also: https://tinyurl.com/azure-allow-icmp
-				{
-					Name: to.StringPtr("icmp_by_allow_all"),
-					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
-						Direction:                network.SecurityRuleDirectionInbound,
-						Protocol:                 "*",
-						SourceAddressPrefix:      to.StringPtr("*"),
-						SourcePortRange:          to.StringPtr("*"),
-						DestinationAddressPrefix: to.StringPtr("*"),
-						DestinationPortRange:     to.StringPtr("*"),
-						Access:                   network.SecurityRuleAccessAllow,
-						Priority:                 to.Int32Ptr(900),
-					},
-				},
 				// outbound
 				{
 					Name: to.StringPtr("outbound_allow_all"),
@@ -448,7 +406,11 @@ func ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 			},
 		},
 	}
-	if _, err = sgClient.CreateOrUpdate(context.TODO(), cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, parameters); err != nil {
+	updatedRules := append(*parameters.SecurityRules, tcpDenyAllRule())
+	updatedRules = append(*parameters.SecurityRules, udpDenyAllRule())
+	updatedRules = append(*parameters.SecurityRules, icmpAllowAllRule())
+	parameters.SecurityRules = &updatedRules
+	if _, err = sgClient.CreateOrUpdate(a.ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, parameters); err != nil {
 		return fmt.Errorf("failed to create or update resource group %q: %v", cloud.Azure.ResourceGroup, err)
 	}
 
@@ -543,7 +505,7 @@ func ensureRouteTable(cloud kubermaticv1.CloudSpec, location string) error {
 	return nil
 }
 
-func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var err error
 	logger := a.log.With("cluster", cluster.Name)
 	dc, ok := a.dcs[cluster.Spec.Cloud.DatacenterName]
@@ -629,7 +591,7 @@ func (a *azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		cluster.Spec.Cloud.Azure.SecurityGroup = resourceNamePrefix + cluster.Name
 
 		logger.Infow("ensuring security group", "securityGroup", cluster.Spec.Cloud.Azure.SecurityGroup)
-		if err = ensureSecurityGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
+		if err = a.ensureSecurityGroup(cluster.Spec.Cloud, location, cluster.Name); err != nil {
 			return cluster, err
 		}
 
@@ -689,11 +651,11 @@ func ensureAvailabilitySet(name, location string, cloud kubermaticv1.CloudSpec) 
 	return err
 }
 
-func (a *azure) DefaultCloudSpec(cloud *kubermaticv1.CloudSpec) error {
+func (a *Azure) DefaultCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (a *azure) ValidateCloudSpec(cloud kubermaticv1.CloudSpec) error {
+func (a *Azure) ValidateCloudSpec(cloud kubermaticv1.CloudSpec) error {
 	if cloud.Azure.ResourceGroup != "" {
 		rgClient, err := getGroupsClient(cloud)
 		if err != nil {
@@ -749,6 +711,52 @@ func (a *azure) ValidateCloudSpec(cloud kubermaticv1.CloudSpec) error {
 		}
 	}
 
+	return nil
+}
+
+func (a *Azure) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
+	cloud := cluster.Spec.Cloud
+	sgClient, err := getSecurityGroupsClient(cloud)
+	if err != nil {
+		return fmt.Errorf("failed to get security group client: %v", err)
+	}
+	sg, err := sgClient.Get(a.ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, "")
+	if err != nil {
+		return fmt.Errorf("failed to get security group %q: %v", cloud.Azure.SecurityGroup, err)
+	}
+
+	var hasDenyAllTCPRule, hasDenyAllUDPRule, hasICMPAllowAllRule bool
+	for _, rule := range *sg.SecurityRules {
+		// We trust that no one will alter the content of the rules
+		switch *rule.Name {
+		case "deny_all_tcp":
+			hasDenyAllTCPRule = true
+		case "deny_all_udp":
+			hasDenyAllUDPRule = true
+		case "icmp_by_allow_all":
+			hasICMPAllowAllRule = true
+		}
+	}
+
+	var newSecurityRules []network.SecurityRule
+	if !hasDenyAllTCPRule {
+		newSecurityRules = append(newSecurityRules, tcpDenyAllRule())
+	}
+	if !hasDenyAllUDPRule {
+		newSecurityRules = append(newSecurityRules, udpDenyAllRule())
+	}
+	if !hasICMPAllowAllRule {
+		newSecurityRules = append(newSecurityRules, icmpAllowAllRule())
+	}
+
+	if len(newSecurityRules) > 0 {
+		newSecurityGroupRules := append(*sg.SecurityRules, newSecurityRules...)
+		sg.SecurityRules = &newSecurityGroupRules
+		_, err := sgClient.CreateOrUpdate(a.ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, sg)
+		if err != nil {
+			return fmt.Errorf("failed to add new rules to security group %q: %v", sg.Name, err)
+		}
+	}
 	return nil
 }
 
@@ -816,4 +824,58 @@ func getAvailabilitySetClient(cloud kubermaticv1.CloudSpec) (*compute.Availabili
 	}
 
 	return &asClient, nil
+}
+
+func tcpDenyAllRule() network.SecurityRule {
+	return network.SecurityRule{
+		Name: to.StringPtr("deny_all_tcp"),
+		SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
+			Direction:                network.SecurityRuleDirectionInbound,
+			Protocol:                 "TCP",
+			SourceAddressPrefix:      to.StringPtr("*"),
+			SourcePortRange:          to.StringPtr("*"),
+			DestinationPortRange:     to.StringPtr("*"),
+			DestinationAddressPrefix: to.StringPtr("*"),
+			Access:                   network.SecurityRuleAccessDeny,
+			Priority:                 to.Int32Ptr(800),
+		},
+	}
+}
+
+func udpDenyAllRule() network.SecurityRule {
+	return network.SecurityRule{
+		Name: to.StringPtr("deny_all_udp"),
+		SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
+			Direction:                network.SecurityRuleDirectionInbound,
+			Protocol:                 "UDP",
+			SourceAddressPrefix:      to.StringPtr("*"),
+			SourcePortRange:          to.StringPtr("*"),
+			DestinationPortRange:     to.StringPtr("*"),
+			DestinationAddressPrefix: to.StringPtr("*"),
+			Access:                   network.SecurityRuleAccessDeny,
+			Priority:                 to.Int32Ptr(801),
+		},
+	}
+}
+
+// Alright, so here's the deal. We need to allow ICMP, but on Azure it is not possible
+// to specify ICMP as a protocol in a rule - only TCP or UDP.
+// Therefore we're hacking around it by first blocking all incoming TCP and UDP
+// and if these don't match, we have an "allow all" rule. Dirty, but the only way.
+// See also: https://tinyurl.com/azure-allow-icmp
+// outbound
+func icmpAllowAllRule() network.SecurityRule {
+	return network.SecurityRule{
+		Name: to.StringPtr("icmp_by_allow_all"),
+		SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
+			Direction:                network.SecurityRuleDirectionInbound,
+			Protocol:                 "*",
+			SourceAddressPrefix:      to.StringPtr("*"),
+			SourcePortRange:          to.StringPtr("*"),
+			DestinationAddressPrefix: to.StringPtr("*"),
+			DestinationPortRange:     to.StringPtr("*"),
+			Access:                   network.SecurityRuleAccessAllow,
+			Priority:                 to.Int32Ptr(900),
+		},
+	}
 }

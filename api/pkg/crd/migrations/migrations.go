@@ -12,6 +12,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/azure"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
 	kubermaticKubernetesProvider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -239,6 +240,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 		migrateClusterUserLabel,
 		cleanupKubeStateMetricsService,
 		setExposeStrategyIfEmpty,
+		migrateCloudProvider,
 	}
 
 	w := sync.WaitGroup{}
@@ -569,6 +571,10 @@ func migrateCloudProvider(cluster *kubermaticv1.Cluster, ctx *cleanupContext) er
 			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %v", cluster.Name, err)
 		}
 	case *openstack.Provider:
+		if err := provider.AddICMPRulesIfRequired(cluster); err != nil {
+			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %v", cluster.Name, err)
+		}
+	case *azure.Azure:
 		if err := provider.AddICMPRulesIfRequired(cluster); err != nil {
 			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %v", cluster.Name, err)
 		}
