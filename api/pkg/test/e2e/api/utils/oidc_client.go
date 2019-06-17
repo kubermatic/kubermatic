@@ -7,11 +7,18 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 )
 
 func GetOIDCClient() (string, string) {
+	user := os.Getenv("OIDC_USER")
+	password := os.Getenv("OIDC_PASSWORD")
+	if len(user) > 0 && len(password) > 0 {
+		return user, password
+	}
+
 	return "roxy@loodse.com", "password"
 }
 

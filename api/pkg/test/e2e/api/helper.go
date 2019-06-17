@@ -11,9 +11,7 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	oidc "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils"
 	apiclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client"
-	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/azure"
-	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/digitalocean"
-	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/openstack"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/credentials"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/project"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/serviceaccounts"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/tokens"
@@ -26,8 +24,8 @@ import (
 
 const (
 	defaultIssuerURL = "http://dex.oauth:5556"
-	host             = "localhost:8080"
-	scheme           = "http"
+	defaultHost      = "localhost:8080"
+	defaultScheme    = "http"
 	maxAttempts      = 8
 	timeout          = time.Second * 4
 )
@@ -60,11 +58,19 @@ func GetMasterToken() (string, error) {
 }
 
 func getHost() string {
-	return host
+	host := os.Getenv("KUBERMATIC_HOST")
+	if len(host) > 0 {
+		return host
+	}
+	return defaultHost
 }
 
 func getScheme() string {
-	return scheme
+	scheme := os.Getenv("KUBERMATIC_SCHEME")
+	if len(scheme) > 0 {
+		return scheme
+	}
+	return defaultScheme
 }
 
 func getIssuerURL() (url.URL, error) {
@@ -277,41 +283,11 @@ func convertServiceAccountToken(saToken *models.ServiceAccountToken) (*apiv1.Ser
 	return apiServiceAccountToken, nil
 }
 
-// ListDigitaloceanCredentials returns list of credential names for DigitalOcean provider
-func (r *APIRunner) ListDigitaloceanCredentials() ([]string, error) {
-	params := &digitalocean.ListDigitaloceanCredentialsParams{}
+// ListCredentials returns list of credential names for the provider
+func (r *APIRunner) ListCredentials(providerName string) ([]string, error) {
+	params := &credentials.ListCredentialsParams{ProviderName: providerName}
 	params.WithTimeout(timeout)
-	credentialsResponse, err := r.client.Digitalocean.ListDigitaloceanCredentials(params, r.bearerToken)
-	if err != nil {
-		return nil, err
-	}
-
-	names := make([]string, 0)
-	names = append(names, credentialsResponse.Payload.Names...)
-
-	return names, nil
-}
-
-// ListAzureCredentials returns list of credential names for Azure provider
-func (r *APIRunner) ListAzureCredentials() ([]string, error) {
-	params := &azure.ListAzureCredentialsParams{}
-	params.WithTimeout(timeout)
-	credentialsResponse, err := r.client.Azure.ListAzureCredentials(params, r.bearerToken)
-	if err != nil {
-		return nil, err
-	}
-
-	names := make([]string, 0)
-	names = append(names, credentialsResponse.Payload.Names...)
-
-	return names, nil
-}
-
-// ListOpenStackCredentials returns list of credential names for OpenStack provider
-func (r *APIRunner) ListOpenStackCredentials() ([]string, error) {
-	params := &openstack.ListOpenstackCredentialsParams{}
-	params.WithTimeout(timeout)
-	credentialsResponse, err := r.client.Openstack.ListOpenstackCredentials(params, r.bearerToken)
+	credentialsResponse, err := r.client.Credentials.ListCredentials(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}

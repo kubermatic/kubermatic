@@ -25,35 +25,6 @@ type Client struct {
 }
 
 /*
-ListAzureCredentials Lists credential names for Azure
-*/
-func (a *Client) ListAzureCredentials(params *ListAzureCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureCredentialsOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewListAzureCredentialsParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "listAzureCredentials",
-		Method:             "GET",
-		PathPattern:        "/api/v1/providers/azure/credentials",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
-		Params:             params,
-		Reader:             &ListAzureCredentialsReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*ListAzureCredentialsOK), nil
-
-}
-
-/*
 ListAzureSizes Lists available VM sizes in an Azure region
 */
 func (a *Client) ListAzureSizes(params *ListAzureSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSizesOK, error) {
