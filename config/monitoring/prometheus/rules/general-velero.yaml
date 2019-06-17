@@ -16,6 +16,6 @@ groups:
       message: There has not been a successful backup for schedule {{ $labels.schedule
         }} in the last 24 hours.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-veleronorecentbackup
-    expr: changes(velero_backup_success_total{schedule!=""}[25h]) < 1
+    expr: time() - velero_backup_last_successful_timestamp{schedule!=""} > 3600*25
     labels:
       severity: warning
