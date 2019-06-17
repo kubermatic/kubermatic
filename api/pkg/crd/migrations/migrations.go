@@ -32,9 +32,14 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-// currentMigrationRevision describes the current migration revision. If this is set on the
-// cluster, certain migrations wont get executed. This must never be decremented.
-const currentMigrationRevision = 1
+const (
+	// icmpMigrationRevision is the migration revision that will be set on the cluster after its
+	// security group was migrated to contain allow rules for ICMP
+	icmpMigrationRevision = 1
+	// currentMigrationRevision describes the current migration revision. If this is set on the
+	// cluster, certain migrations wont get executed. This must never be decremented.
+	currentMigrationRevision = icmpMigrationRevision
+)
 
 type cleanupContext struct {
 	kubeClient       kubernetes.Interface
@@ -244,7 +249,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 		migrateClusterUserLabel,
 		cleanupKubeStateMetricsService,
 		setExposeStrategyIfEmpty,
-		migrateCloudProvider,
+		addICMPToSecurityGroup,
 	}
 
 	w := sync.WaitGroup{}
@@ -558,10 +563,10 @@ func setExposeStrategyIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext
 	return nil
 }
 
-func migrateCloudProvider(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
-	if cluster.Spec.MigrationRevision >= currentMigrationRevision {
-		glog.Infof("Not migrating cluster %q, because its .spec.migrationRevision is > 0(%d)",
-			cluster.Name, cluster.Spec.MigrationRevision)
+func addICMPToSecurityGroup(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	if cluster.Status.MigrationRevision >= icmpMigrationRevision {
+		glog.Infof("Not running migration for ICMP rules in security group for cluster %q because its .status.migrationRevision is > 0(%d)",
+			cluster.Name, cluster.Status.MigrationRevision)
 		return nil
 	}
 	_, cloudProvider, err := provider.ClusterCloudProvider(ctx.cloudProvider, cluster)
@@ -587,7 +592,7 @@ func migrateCloudProvider(cluster *kubermaticv1.Cluster, ctx *cleanupContext) er
 		glog.Infof("Successfully ensured ICMP rules in security group of cluster %q", cluster.Name)
 	}
 
-	cluster.Spec.MigrationRevision = currentMigrationRevision
+	cluster.Status.MigrationRevision = icmpMigrationRevision
 	if cluster, err = ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
 		return fmt.Errorf("failed to update cluster %q after successfully executing its cloudProvider migration: %v",
 			cluster.Name, err)

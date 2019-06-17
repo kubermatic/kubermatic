@@ -75,10 +75,6 @@ type ClusterList struct {
 
 // ClusterSpec specifies the data for a new cluster.
 type ClusterSpec struct {
-	// MigrationRevision describes the latest version of the migration that has been done
-	// It is used to avoid redundant and potentially costly migrations
-	MigrationRevision int `json:"migrationRevision"`
-
 	Cloud           CloudSpec                 `json:"cloud"`
 	ClusterNetwork  ClusterNetworkingConfig   `json:"clusterNetwork"`
 	MachineNetworks []MachineNetworkingConfig `json:"machineNetworks,omitempty"`
@@ -218,6 +214,10 @@ type ClusterStatus struct {
 	// Conditions contains conditions the cluster is in, its primary use case is status signaling between controllers or between
 	// controllers and the API
 	Conditions []ClusterCondition `json:"conditions,omitempty"`
+
+	// MigrationRevision describes the latest version of the migration that has been done
+	// It is used to avoid redundant and potentially costly migrations
+	MigrationRevision int `json:"migrationRevision"`
 }
 
 type ClusterStatusError string
