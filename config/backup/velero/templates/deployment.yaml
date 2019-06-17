@@ -1,4 +1,4 @@
-apiVersion: apps/v1beta2
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: velero
@@ -27,7 +27,6 @@ spec:
       - name: velero
         image: '{{ .Values.velero.image.repository }}:{{ .Values.velero.image.tag }}'
         imagePullPolicy: {{ .Values.velero.image.pullPolicy }}
-
         command:
         - /velero
         args:
@@ -41,13 +40,11 @@ spec:
         {{- with .Values.velero.defaultVolumeSnapshotLocations }}
         - '--default-volume-snapshot-locations={{ . | join "," }}'
         {{- end }}
-
         {{- if .Values.velero.credentials.azure }}
         envFrom:
         - secretRef:
             name: azure-credentials
         {{- end }}
-
         env:
         - name: VELERO_SCRATCH_DIR
           value: /scratch
@@ -59,7 +56,6 @@ spec:
         - name: GOOGLE_APPLICATION_CREDENTIALS
           value: /credentials/gcp/creds
         {{- end }}
-
         volumeMounts:
         - name: plugins
           mountPath: /plugins
@@ -73,15 +69,12 @@ spec:
         - name: gcp-credentials
           mountPath: /credentials/gcp
         {{- end }}
-
         ports:
         - name: metrics
           containerPort: 8085
           protocol: TCP
-
         resources:
 {{ toYaml .Values.velero.resources | indent 10 }}
-
       volumes:
       - name: plugins
         emptyDir: {}
@@ -97,7 +90,6 @@ spec:
         secret:
           secretName: gcp-credentials
       {{- end }}
-
       serviceAccountName: velero
       nodeSelector:
 {{ toYaml .Values.velero.nodeSelector | indent 8 }}

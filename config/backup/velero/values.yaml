@@ -4,7 +4,7 @@ velero:
   # that also contains the restic binary
   image:
     repository: gcr.io/heptio-images/velero
-    tag: v0.11.0
+    tag: v1.0.0
     pullPolicy: IfNotPresent
 
   # CLI flags to pass to velero server; note that the two flags
