@@ -33,7 +33,7 @@ const (
 	PacketCloudProvider       = "packet"
 	HetznerCloudProvider      = "hetzner"
 	VSphereCloudProvider      = "vsphere"
-	GCPCloudProvider          = "google"
+	GCPCloudProvider          = "gcp"
 
 	DefaultSSHPort     = 22
 	DefaultKubeletPort = 10250
