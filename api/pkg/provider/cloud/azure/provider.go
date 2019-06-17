@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/golang/glog"
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -52,7 +51,6 @@ type Azure struct {
 
 // New returns a new Azure provider.
 func New(datacenters map[string]provider.DatacenterMeta) *Azure {
-
 	return &Azure{
 		dcs: datacenters,
 		log: log.Logger,
@@ -745,15 +743,15 @@ func (a *Azure) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
 
 	var newSecurityRules []network.SecurityRule
 	if !hasDenyAllTCPRule {
-		glog.Infof("Creating TCP deny all rule for cluster %q", cluster.Name)
+		a.log.With("cluster", cluster.Name).Info("Creating TCP deny all rule")
 		newSecurityRules = append(newSecurityRules, tcpDenyAllRule())
 	}
 	if !hasDenyAllUDPRule {
-		glog.Infof("Creating UDP deny all rule for cluster %q", cluster.Name)
+		a.log.With("cluster", cluster.Name).Info("Creating UDP deny all rule")
 		newSecurityRules = append(newSecurityRules, udpDenyAllRule())
 	}
 	if !hasICMPAllowAllRule {
-		glog.Infof("Creating ICMP allow all rule for cluster %q", cluster.Name)
+		a.log.With("cluster", cluster.Name).Info("Creating ICMP allow all rule")
 		newSecurityRules = append(newSecurityRules, icmpAllowAllRule())
 	}
 
