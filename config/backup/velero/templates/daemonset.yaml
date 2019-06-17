@@ -22,19 +22,16 @@ spec:
       - name: restic
         image: '{{ .Values.velero.image.repository }}:{{ .Values.velero.image.tag }}'
         imagePullPolicy: {{ .Values.velero.image.pullPolicy }}
-
         command:
         - /velero
         args:
         - restic
         - server
-
         {{- if .Values.velero.credentials.azure }}
         envFrom:
         - secretRef:
             name: azure-credentials
         {{- end }}
-
         env:
         - name: NODE_NAME
           valueFrom:
@@ -54,7 +51,6 @@ spec:
         - name: GOOGLE_APPLICATION_CREDENTIALS
           value: /credentials/gcp/creds
         {{- end }}
-
         volumeMounts:
         - name: host-pods
           mountPath: /host_pods
@@ -69,10 +65,8 @@ spec:
         - name: gcp-credentials
           mountPath: /credentials/gcp
         {{- end }}
-
         resources:
 {{ toYaml .Values.velero.restic.resources | indent 10 }}
-
       volumes:
       - name: host-pods
         hostPath:
@@ -89,7 +83,6 @@ spec:
         secret:
           secretName: gcp-credentials
       {{- end }}
-
       serviceAccountName: velero
       securityContext:
         runAsUser: 0
