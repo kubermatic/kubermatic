@@ -160,6 +160,12 @@ const (
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
+	//SchedulerConfigMapName is the name for the configmap containing the scheduler's general configuration and policy configuration
+	SchedulerConfigMapName = "scheduler-config"
+	//SchedulerConfigFileName is the name for the scheduler config file in the above configmap
+	SchedulerConfigFileName = "config.yaml"
+	//SchedulerPolicyFileName is the name scheduler policy config file inside the above configmap
+	SchedulerPolicyFileName = "policy.cfg"
 	//OpenVPNClientConfigsConfigMapName is the name for the ConfigMap containing the OpenVPN client config used within the user cluster
 	OpenVPNClientConfigsConfigMapName = "openvpn-client-configs"
 	//OpenVPNClientConfigConfigMapName is the name for the ConfigMap containing the OpenVPN client config used by the client inside the user cluster

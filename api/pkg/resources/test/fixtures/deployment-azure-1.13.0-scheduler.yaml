@@ -25,6 +25,7 @@ spec:
         ca-secret-revision: "123456"
         cluster: de-test-01
         openvpn-client-certificates-secret-revision: "123456"
+        scheduler-config-configmap-revision: "123456"
         scheduler-kubeconfig-secret-revision: "123456"
     spec:
       affinity:
@@ -100,8 +101,8 @@ spec:
           name: openvpn-client-certificates
           readOnly: true
       - args:
-        - --kubeconfig
-        - /etc/kubernetes/kubeconfig/kubeconfig
+        - --config
+        - /etc/kubernetes/scheduler/config.yaml
         - --authentication-kubeconfig
         - /etc/kubernetes/kubeconfig/kubeconfig
         - --authorization-kubeconfig
@@ -149,6 +150,9 @@ spec:
           readOnly: true
         - mountPath: /etc/kubernetes/pki/ca
           name: ca
+          readOnly: true
+        - mountPath: /etc/kubernetes/scheduler
+          name: scheduler-config
           readOnly: true
       dnsConfig:
         nameservers:
@@ -198,4 +202,8 @@ spec:
         secret:
           defaultMode: 256
           secretName: scheduler-kubeconfig
+      - configMap:
+          defaultMode: 256
+          name: scheduler-config
+        name: scheduler-config
 status: {}

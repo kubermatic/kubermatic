@@ -1,0 +1,82 @@
+data:
+  config.yaml: |
+    apiVersion: kubescheduler.config.k8s.io/v1alpha1
+    kind: KubeSchedulerConfiguration
+    algorithmSource:
+      policy:
+        file:
+          path: /etc/kubernetes/scheduler/policy.cfg
+    clientConnection:
+      kubeconfig: /etc/kubernetes/kubeconfig/kubeconfig
+  policy.cfg: |-
+    {
+        "apiVersion": "v1",
+        "kind": "Policy",
+        "predicates": [
+            {
+                "name": "MatchInterPodAffinity"
+            },
+            {
+                "name": "GeneralPredicates"
+            },
+            {
+                "name": "CheckVolumeBinding"
+            },
+            {
+                "name": "CheckNodeUnschedulable"
+            },
+            {
+                "name": "MaxEBSVolumeCount"
+            },
+            {
+                "name": "NoDiskConflict"
+            },
+            {
+                "name": "NoVolumeZoneConflict"
+            },
+            {
+                "name": "MaxCSIVolumeCountPred"
+            },
+            {
+                "name": "PodToleratesNodeTaints"
+            }
+        ],
+        "priorities": [
+            {
+                "name": "SelectorSpreadPriority",
+                "weight": 1
+            },
+            {
+                "name": "InterPodAffinityPriority",
+                "weight": 1
+            },
+            {
+                "name": "LeastRequestedPriority",
+                "weight": 1
+            },
+            {
+                "name": "BalancedResourceAllocation",
+                "weight": 1
+            },
+            {
+                "name": "ImageLocalityPriority",
+                "weight": 1
+            },
+            {
+                "name": "NodePreferAvoidPodsPriority",
+                "weight": 10000
+            },
+            {
+                "name": "NodeAffinityPriority",
+                "weight": 1
+            },
+            {
+                "name": "TaintTolerationPriority",
+                "weight": 1
+            }
+        ]
+    }
+metadata:
+  creationTimestamp: null
+  labels:
+    app: scheduler
