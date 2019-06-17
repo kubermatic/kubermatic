@@ -720,14 +720,14 @@ func (a *Azure) ValidateCloudSpec(cloud kubermaticv1.CloudSpec) error {
 }
 
 func (a *Azure) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
-	cloud := cluster.Spec.Cloud
-	sgClient, err := getSecurityGroupsClient(cloud)
+	azure := cluster.Spec.Cloud.Azure
+	sgClient, err := getSecurityGroupsClient(cluster.Spec.Cloud)
 	if err != nil {
 		return fmt.Errorf("failed to get security group client: %v", err)
 	}
-	sg, err := sgClient.Get(a.ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, "")
+	sg, err := sgClient.Get(a.ctx, azure.ResourceGroup, azure.SecurityGroup, "")
 	if err != nil {
-		return fmt.Errorf("failed to get security group %q: %v", cloud.Azure.SecurityGroup, err)
+		return fmt.Errorf("failed to get security group %q: %v", azure.SecurityGroup, err)
 	}
 
 	var hasDenyAllTCPRule, hasDenyAllUDPRule, hasICMPAllowAllRule bool
@@ -760,9 +760,9 @@ func (a *Azure) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
 	if len(newSecurityRules) > 0 {
 		newSecurityGroupRules := append(*sg.SecurityRules, newSecurityRules...)
 		sg.SecurityRules = &newSecurityGroupRules
-		_, err := sgClient.CreateOrUpdate(a.ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, sg)
+		_, err := sgClient.CreateOrUpdate(a.ctx, azure.ResourceGroup, azure.SecurityGroup, sg)
 		if err != nil {
-			return fmt.Errorf("failed to add new rules to security group %q: %v", sg.Name, err)
+			return fmt.Errorf("failed to add new rules to security group %q: %v", *sg.Name, err)
 		}
 	}
 	return nil

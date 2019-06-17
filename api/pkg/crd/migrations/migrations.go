@@ -589,7 +589,7 @@ func migrateCloudProvider(cluster *kubermaticv1.Cluster, ctx *cleanupContext) er
 
 	cluster.Spec.MigrationRevision = currentMigrationRevision
 	if cluster, err = ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
-		return fmt.Errorf("failed to update cluster %q after successfuly executing its cloudProvider migration: %v",
+		return fmt.Errorf("failed to update cluster %q after successfully executing its cloudProvider migration: %v",
 			cluster.Name, err)
 	}
 
