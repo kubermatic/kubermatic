@@ -11,6 +11,8 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
 	kubermaticKubernetesProvider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
@@ -561,8 +563,15 @@ func migrateCloudProvider(cluster *kubermaticv1.Cluster, ctx *cleanupContext) er
 		return fmt.Errorf("failed to get cloud provider for cluster %q: %v", cluster.Name, err)
 	}
 
-	if err := cloudProvider.Migrate(cluster); err != nil {
-		return fmt.Errorf("failed to run cloudprovider migration for cluster %q: %v", cluster.Name, err)
+	switch provider := cloudProvider.(type) {
+	case *aws.AmazonEC2:
+		if err := provider.AddICMPRulesIfRequired(cluster); err != nil {
+			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %v", cluster.Name, err)
+		}
+	case *openstack.Provider:
+		if err := provider.AddICMPRulesIfRequired(cluster); err != nil {
+			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %v", cluster.Name, err)
+		}
 	}
 
 	cluster.Spec.MigrationRevision = 1

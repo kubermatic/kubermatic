@@ -211,10 +211,6 @@ func (v *Provider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (v *Provider) Migrate(_ *kubermaticv1.Cluster) error {
-	return nil
-}
-
 // ValidateCloudSpec validates whether a vsphere client can be constructued for the passed cloudspec.
 func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	client, err := v.getClient(spec)

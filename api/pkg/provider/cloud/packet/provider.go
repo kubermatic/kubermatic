@@ -67,7 +67,3 @@ func (p *packet) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update p
 func (p *packet) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
-
-func (p *packet) Migrate(_ *kubermaticv1.Cluster) error {
-	return nil
-}

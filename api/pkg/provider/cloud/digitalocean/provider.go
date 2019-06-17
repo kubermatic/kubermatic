@@ -39,7 +39,3 @@ func (do *digitalocean) InitializeCloudProvider(cluster *kubermaticv1.Cluster, u
 func (do *digitalocean) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
-
-func (do *digitalocean) Migrate(_ *kubermaticv1.Cluster) error {
-	return nil
-}

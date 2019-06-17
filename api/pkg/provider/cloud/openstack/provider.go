@@ -465,7 +465,7 @@ func (os *Provider) GetSubnets(cloud kubermaticv1.CloudSpec, networkID string) (
 	return subnets, nil
 }
 
-func (os *Provider) Migrate(cluster *kubermaticv1.Cluster) error {
+func (os *Provider) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
 	if cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
 		return nil
 	}

@@ -45,7 +45,6 @@ type CloudProvider interface {
 	CleanUpCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
 	DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error
 	ValidateCloudSpec(spec kubermaticv1.CloudSpec) error
-	Migrate(*kubermaticv1.Cluster) error
 }
 
 // ClusterUpdater defines a function to persist an update to a cluster
