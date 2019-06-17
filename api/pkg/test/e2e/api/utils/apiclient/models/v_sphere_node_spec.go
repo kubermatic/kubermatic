@@ -18,11 +18,11 @@ type VSphereNodeSpec struct {
 	// cpus
 	Cpus int64 `json:"cpus,omitempty"`
 
+	// disk size g b
+	DiskSizeGB int64 `json:"diskSizeGB,omitempty"`
+
 	// memory
 	Memory int64 `json:"memory,omitempty"`
-
-	// disk size GB
-	DiskSizeGB int64 `json:"diskSizeGB,omitempty"`
 
 	// template
 	Template string `json:"template,omitempty"`

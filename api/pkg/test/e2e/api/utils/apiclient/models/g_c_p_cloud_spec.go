@@ -15,9 +15,6 @@ import (
 // swagger:model GCPCloudSpec
 type GCPCloudSpec struct {
 
-	// firewall rule name
-	FirewallRuleName string `json:"firewallRuleName,omitempty"`
-
 	// network
 	Network string `json:"network,omitempty"`
 
