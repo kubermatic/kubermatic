@@ -118,8 +118,12 @@ func New() *Manager {
 	return &Manager{credentials: credentials}
 }
 
-// NewFromFiles returns a instance of manager with the credentials loaded from the given paths
-func NewFromFiles(credentialsFilename string) (*Manager, error) {
+func NewWithCredentials(credentials *Credentials) *Manager {
+	return &Manager{credentials: credentials}
+}
+
+// NewFromFile returns a instance of manager with the credentials loaded from the given paths
+func NewFromFile(credentialsFilename string) (*Manager, error) {
 	var credentials *Credentials
 	var err error
 	if len(credentialsFilename) > 0 {

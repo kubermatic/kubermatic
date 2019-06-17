@@ -55,21 +55,6 @@ func OpenstackSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider
 	}
 }
 
-// OpenstackCredentialEndpoint returns custom credential list name for OpenStack provider
-func OpenstackCredentialEndpoint(credentialManager common.CredentialManager) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		credentials := apiv1.CredentialList{}
-		names := make([]string, 0)
-		if credentialManager.GetCredentials().Openstack != nil {
-			for _, do := range credentialManager.GetCredentials().Openstack {
-				names = append(names, do.Name)
-			}
-		}
-		credentials.Names = names
-		return credentials, nil
-	}
-}
-
 func getOpenstackSizes(providers provider.CloudRegistry, username, passowrd, tenant, domain, datacenterName string, datacenter provider.DatacenterMeta) ([]apiv1.OpenstackSize, error) {
 	osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
 	if !ok {
