@@ -15,68 +15,22 @@ import (
 func TestListDigitaloceanCredentials(t *testing.T) {
 	tests := []struct {
 		name         string
+		provider     string
 		expectedList []string
 	}{
 		{
 			name:         "test, get DigitalOcean credential names",
+			provider:     "digitalocean",
 			expectedList: []string{"digitalocean"},
 		},
-	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := GetMasterToken()
-			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
-			}
-
-			apiRunner := CreateAPIRunner(masterToken, t)
-			credentialList, err := apiRunner.ListDigitaloceanCredentials()
-			if err != nil {
-				t.Fatalf("can not get credential names for DigitalOcean: %v", err)
-			}
-			if !equality.Semantic.DeepEqual(tc.expectedList, credentialList) {
-				t.Fatalf("expected: %v, got %v", tc.expectedList, credentialList)
-			}
-		})
-	}
-}
-
-func TestListAzureCredentials(t *testing.T) {
-	tests := []struct {
-		name         string
-		expectedList []string
-	}{
 		{
 			name:         "test, get Azure credential names",
+			provider:     "azure",
 			expectedList: []string{"azure"},
 		},
-	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := GetMasterToken()
-			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
-			}
-
-			apiRunner := CreateAPIRunner(masterToken, t)
-			credentialList, err := apiRunner.ListAzureCredentials()
-			if err != nil {
-				t.Fatalf("can not get credential names for Azure: %v", err)
-			}
-			if !equality.Semantic.DeepEqual(tc.expectedList, credentialList) {
-				t.Fatalf("expected: %v, got %v", tc.expectedList, credentialList)
-			}
-		})
-	}
-}
-
-func TestListOpenstackCredentials(t *testing.T) {
-	tests := []struct {
-		name         string
-		expectedList []string
-	}{
 		{
 			name:         "test, get OpenStack credential names",
+			provider:     "openstack",
 			expectedList: []string{"openstack"},
 		},
 	}
@@ -88,9 +42,9 @@ func TestListOpenstackCredentials(t *testing.T) {
 			}
 
 			apiRunner := CreateAPIRunner(masterToken, t)
-			credentialList, err := apiRunner.ListOpenStackCredentials()
+			credentialList, err := apiRunner.ListCredentials(tc.provider)
 			if err != nil {
-				t.Fatalf("can not get credential names for OpenStack: %v", err)
+				t.Fatalf("can not get credential names for provider %s: %v", tc.provider, err)
 			}
 			if !equality.Semantic.DeepEqual(tc.expectedList, credentialList) {
 				t.Fatalf("expected: %v, got %v", tc.expectedList, credentialList)
