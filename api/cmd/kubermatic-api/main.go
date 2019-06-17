@@ -89,7 +89,7 @@ func main() {
 	if err != nil {
 		log.Fatalw("failed to create update manager", "error", err)
 	}
-	credentialManager, err := credentials.NewFromFiles(options.credentialFile)
+	credentialManager, err := credentials.NewFromFile(options.credentialFile)
 	if err != nil {
 		log.Fatalw("failed to create credential manager", "error", err)
 	}
