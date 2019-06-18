@@ -111,6 +111,12 @@ func (u *LBUpdater) syncLB(s string) error {
 	}
 
 	var wantLBPorts []corev1.ServicePort
+	wantLBPorts = append(wantLBPorts, corev1.ServicePort{
+		Name:       "healthz",
+		Port:       1337, // FIXME use constant
+		TargetPort: 8002, // FIXME use constant
+		Protocol:   corev1.ProtocolTCP,
+	})
 	for _, service := range services.Items {
 		if service.Annotations[exposeAnnotationKey] != "true" {
 			glog.V(4).Infof("skipping service %s/%s as the annotation %s is not set to 'true'", service.Namespace, service.Name, exposeAnnotationKey)
