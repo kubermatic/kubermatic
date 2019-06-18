@@ -159,6 +159,7 @@ func createMonitoringController(ctrlCtx *controllerContext) error {
 
 	return monitoring.Add(
 		ctrlCtx.mgr,
+		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.clientProvider,
