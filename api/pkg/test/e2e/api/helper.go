@@ -23,11 +23,12 @@ import (
 )
 
 const (
-	defaultIssuerURL = "http://dex.oauth:5556"
-	defaultHost      = "localhost:8080"
-	defaultScheme    = "http"
-	maxAttempts      = 8
-	timeout          = time.Second * 4
+	defaultIssuerURL       = "http://dex.oauth:5556"
+	defaultHost            = "localhost:8080"
+	defaultScheme          = "http"
+	defaultIssuerURLPrefix = ""
+	maxAttempts            = 8
+	timeout                = time.Second * 4
 )
 
 type APIRunner struct {
@@ -47,14 +48,16 @@ func GetMasterToken() (string, error) {
 		return "", err
 	}
 
-	requestToken, err := oidc.GetOIDCReqToken(hClient, u, "http://localhost:8000")
+	issuerURLPrefix := getIssuerURLPrefix()
+
+	requestToken, err := oidc.GetOIDCReqToken(hClient, u, issuerURLPrefix, "http://localhost:8000")
 	if err != nil {
 		return "", err
 	}
 
 	login, password := oidc.GetOIDCClient()
 
-	return oidc.GetOIDCAuthToken(hClient, requestToken, u, login, password)
+	return oidc.GetOIDCAuthToken(hClient, requestToken, u, issuerURLPrefix, login, password)
 }
 
 func getHost() string {
@@ -74,7 +77,7 @@ func getScheme() string {
 }
 
 func getIssuerURL() (url.URL, error) {
-	issuerURL := os.Getenv("KUBERMATIC_ISSUER")
+	issuerURL := os.Getenv("KUBERMATIC_OIDC_ISSUER")
 	if len(issuerURL) == 0 {
 		issuerURL = defaultIssuerURL
 	}
@@ -83,6 +86,14 @@ func getIssuerURL() (url.URL, error) {
 		return url.URL{}, err
 	}
 	return *u, nil
+}
+
+func getIssuerURLPrefix() string {
+	prefix := os.Getenv("KUBERMATIC_OIDC_ISSUER_URL_PREFIX")
+	if len(prefix) > 0 {
+		return prefix
+	}
+	return defaultIssuerURLPrefix
 }
 
 // CreateAPIRunner util method to create APIRunner
