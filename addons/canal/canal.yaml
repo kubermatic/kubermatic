@@ -130,7 +130,7 @@ spec:
             - mountPath: /host/etc/cni/net.d
               name: cni-net-dir
         - name: set-mtu
-          image: '{{Registry "docker.io" }}/alpine:3.9'
+          image: '{{Registry "docker.io" }}/library/alpine:3.9'
           # We can not use the MTU of the flannel interface directly, because
           # it may not exist yet. Running this in parallel to the other containers
           # is a bad idea as well, as they may come up with a wrong configuration
