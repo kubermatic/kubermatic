@@ -171,7 +171,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	log = log.With("cluster", cluster.Name)
 
 	if cluster.Spec.Pause {
-		log.Info("Skipping cluster reconciling because it was set to paused")
+		log.Debug("Skipping cluster reconciling because it was set to paused")
 		return reconcile.Result{}, nil
 	}
 
