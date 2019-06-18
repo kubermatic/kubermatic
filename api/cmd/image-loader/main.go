@@ -115,17 +115,17 @@ func main() {
 		imageSet.Insert(images...)
 	}
 
-	if err := processImages(ctx, log, o.dryRun, imageSet.List()); err != nil {
+	if err := processImages(ctx, log, o.dryRun, imageSet.List(), o.registry); err != nil {
 		log.Fatal("Failed to process images", zap.Error(err))
 	}
 }
 
-func processImages(ctx context.Context, log *zap.Logger, dryRun bool, images []string) error {
+func processImages(ctx context.Context, log *zap.Logger, dryRun bool, images []string, registry string) error {
 	if err := docker.DownloadImages(ctx, log, dryRun, images); err != nil {
 		return fmt.Errorf("failed to download all images: %v", err)
 	}
 
-	retaggedImages, err := docker.RetagImages(ctx, log, dryRun, images, "localhost:5000")
+	retaggedImages, err := docker.RetagImages(ctx, log, dryRun, images, registry)
 	if err != nil {
 		return fmt.Errorf("failed to re-tag images: %v", err)
 	}
@@ -498,7 +498,7 @@ func getImagesFromObject(obj runtime.Object) []string {
 	case *appsv1beta2.StatefulSet:
 		return getImagesFromPodSpec(obj.Spec.Template.Spec)
 
-		// DaemonSet
+	// DaemonSet
 	case *appsv1.DaemonSet:
 		return getImagesFromPodSpec(obj.Spec.Template.Spec)
 	case *appsv1beta2.DaemonSet:
@@ -506,17 +506,17 @@ func getImagesFromObject(obj runtime.Object) []string {
 	case *extensionv1beta1.DaemonSet:
 		return getImagesFromPodSpec(obj.Spec.Template.Spec)
 
-		// Pod
+	// Pod
 	case *corev1.Pod:
 		return getImagesFromPodSpec(obj.Spec)
 
-		// CronJob
+	// CronJob
 	case *batchv1beta1.CronJob:
 		return getImagesFromPodSpec(obj.Spec.JobTemplate.Spec.Template.Spec)
 	case *batchv2alpha1.CronJob:
 		return getImagesFromPodSpec(obj.Spec.JobTemplate.Spec.Template.Spec)
 
-		// Job
+	// Job
 	case *batchv1.Job:
 		return getImagesFromPodSpec(obj.Spec.Template.Spec)
 	}
