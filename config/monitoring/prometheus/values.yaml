@@ -6,6 +6,7 @@ prometheus:
 
   host: ''
   storageSize: 100Gi
+  storageClass: kubermatic-fast
 
   tsdb:
     retentionTime: 15d
@@ -182,11 +183,11 @@ prometheus:
     prometheus:
       resources:
         requests:
-          cpu: 1
-          memory: 2Gi
+          cpu: 150m
+          memory: 1Gi
         limits:
-          cpu: 2
-          memory: 10Gi
+          cpu: 500m
+          memory: 3Gi
     backup:
       resources:
         requests:

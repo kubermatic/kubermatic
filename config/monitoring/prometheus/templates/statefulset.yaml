@@ -267,7 +267,9 @@ spec:
       resources:
         requests:
           storage: {{ .Values.prometheus.storageSize }}
-      storageClassName: kubermatic-fast
+      {{- with .Values.prometheus.storageClass }}
+      storageClassName: {{ . }}
+      {{- end }}
 {{ end }}
 
 ---
