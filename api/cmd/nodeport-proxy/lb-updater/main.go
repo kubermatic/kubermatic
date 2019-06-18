@@ -24,7 +24,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const defaultExposeAnnotationKey = "nodeport-proxy.k8s.io/expose"
+const (
+	defaultExposeAnnotationKey = "nodeport-proxy.k8s.io/expose"
+	healthCheckPort            = 8002
+)
 
 var (
 	lbName              string
@@ -113,8 +116,8 @@ func (u *LBUpdater) syncLB(s string) error {
 	var wantLBPorts []corev1.ServicePort
 	wantLBPorts = append(wantLBPorts, corev1.ServicePort{
 		Name:       "healthz",
-		Port:       1337, // FIXME use constant
-		TargetPort: 8002, // FIXME use constant
+		Port:       healthCheckPort,
+		TargetPort: intstr.FromInt(healthCheckPort),
 		Protocol:   corev1.ProtocolTCP,
 	})
 	for _, service := range services.Items {

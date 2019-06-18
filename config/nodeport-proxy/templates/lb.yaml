@@ -10,7 +10,7 @@ spec:
     app: nodeport-proxy
   ports:
   - name: healthz
-    port: 1337
+    port: 8002
     targetPort: 8002
     protocol: TCP
   type: LoadBalancer
