@@ -156,7 +156,8 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	log := r.log.With("request", request.NamespacedName.String())
+	log := r.log.With("request", request)
+	log.Debug("Processing")
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
@@ -195,7 +196,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := r.reconcile(ctx, cluster)
+	result, err := r.reconcile(ctx, log, cluster)
 	if err != nil {
 		log.Errorw("Failed to reconcile cluster", zap.Error(err))
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
@@ -206,8 +207,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	return *result, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	log := r.log.With("cluster", cluster.Name)
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	log.Debug("Reconciling cluster now")
 
 	ctx, cancel := context.WithCancel(context.Background())
