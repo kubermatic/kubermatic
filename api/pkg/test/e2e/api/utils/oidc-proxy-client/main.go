@@ -148,9 +148,7 @@ func cmd() *cobra.Command {
 				if err == nil {
 					break
 				}
-				if err != nil {
-					fmt.Printf("Failed to query provider %q: %v, trying one more time", issuerURL, err)
-				}
+				fmt.Printf("Failed to query provider %q: %v, trying one more time", issuerURL, err)
 				provider = nil
 				time.Sleep(2 * time.Second)
 			}

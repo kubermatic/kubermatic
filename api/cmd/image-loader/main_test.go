@@ -1,31 +1,39 @@
 package main
 
 import (
+	"context"
 	"testing"
 
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func TestRetagImageForAllVersions(t *testing.T) {
+	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 	masterResources := "../../../config/kubermatic/static/master/versions.yaml"
+	addonPath := "../../../addons"
 
 	versions, err := version.LoadVersions(masterResources)
 	if err != nil {
 		t.Errorf("Error loading versions: %v", err)
 	}
 
-	test = true
+	// Cannot be set during go-test
+	resources.KUBERMATICCOMMIT = "latest"
 
-	var imageTagList []string
-	for _, masterVersion := range versions {
-		imageTagList, err = getImagesForVersion(versions, masterVersion.Version.String())
+	imageSet := sets.NewString()
+	for _, v := range versions {
+		images, err := getImagesForVersion(log.Desugar(), v, addonPath)
 		if err != nil {
 			t.Errorf("Error calling getImagesForVersion: %v", err)
 		}
+		imageSet.Insert(images...)
 	}
 
-	_, err = retagImages("test.registry", imageTagList)
-	if err != nil {
-		t.Errorf("Error calling retagImages: %v", err)
+	if err := processImages(context.Background(), log.Desugar(), true, imageSet.List()); err != nil {
+		t.Errorf("Error calling processImages: %v", err)
 	}
 }

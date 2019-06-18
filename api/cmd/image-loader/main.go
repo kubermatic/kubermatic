@@ -4,166 +4,159 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"os"
-	"os/exec"
-	"strings"
+	"io/ioutil"
+	"path"
 
 	"github.com/Masterminds/semver"
-	"github.com/golang/glog"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"go.uber.org/zap"
 
+	addonutil "github.com/kubermatic/kubermatic/api/pkg/addon"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/monitoring"
-	clusterv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/docker"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
-	"github.com/kubermatic/kubermatic/api/pkg/version"
+	kubermaticversion "github.com/kubermatic/kubermatic/api/pkg/version"
 
 	appsv1 "k8s.io/api/apps/v1"
+	appsv1beta1 "k8s.io/api/apps/v1beta1"
+	appsv1beta2 "k8s.io/api/apps/v1beta2"
+	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	batchv2alpha1 "k8s.io/api/batch/v2alpha1"
 	corev1 "k8s.io/api/core/v1"
+	extensionv1beta1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
 
 const mockNamespaceName = "mock-namespace"
 
 var (
-	test             bool
-	versionsFile     string
-	requestedVersion string
-	registryName     string
-	printOnly        bool
-	staticImages     = []string{
+	staticImages = []string{
 		backupcontroller.DefaultBackupContainerImage,
 	}
 )
 
+type opts struct {
+	versionsFile  string
+	versionFilter string
+	registry      string
+	dryRun        bool
+	addonsPath    string
+
+	debug     bool
+	logFormat string
+}
+
 func main() {
-	flag.StringVar(&versionsFile, "versions", "../config/kubermatic/static/master/versions.yaml", "The versions.yaml file path")
-	flag.StringVar(&requestedVersion, "version", "", "")
-	flag.StringVar(&registryName, "registry-name", "registry.corp.local", "Name of the registry to push to")
-	flag.BoolVar(&printOnly, "print-only", false, "Only print the names of found images")
+	o := opts{}
+	flag.StringVar(&o.versionsFile, "versions", "../config/kubermatic/static/master/versions.yaml", "The versions.yaml file path")
+	flag.StringVar(&o.versionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
+	flag.StringVar(&o.registry, "registry", "registry.corp.local", "Address of the registry to push to")
+	flag.BoolVar(&o.dryRun, "dry-run", false, "Only print the names of found images")
+	flag.StringVar(&o.addonsPath, "addons-path", "", "Path to the folder containing the addons")
+	flag.BoolVar(&o.debug, "log-debug", false, "Enables debug logging")
+	flag.StringVar(&o.logFormat, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.Parse()
 
-	if registryName == "" && !printOnly {
-		glog.Fatalf("Error: registry-name parameter must contain a valid registry address!")
-	}
-
-	versions, err := version.LoadVersions(versionsFile)
-	if err != nil {
-		glog.Fatalf("Error loading versions from %s: %v", versionsFile, err)
-	}
-
-	var imagesUnfiltered []string
-	if requestedVersion == "" {
-		glog.Infof("No version passed, downloading images for all available versions...")
-		for _, v := range versions {
-			if v.Type == apiv1.OpenShiftClusterType {
-				// TODO: Implement. https://github.com/kubermatic/kubermatic/issues/3623
-				glog.Warningf("Skipping OpenShift images")
-				continue
-			}
-
-			glog.Infof("Collecting images for v%s", v.Version.String())
-			returnedImages, err := getImagesForVersion(versions, v.Version.String())
-			if err != nil {
-				glog.Fatalf(err.Error())
-			}
-			imagesUnfiltered = append(imagesUnfiltered, returnedImages...)
+	log := kubermaticlog.New(o.debug, kubermaticlog.Format(o.logFormat))
+	defer func() {
+		if err := log.Sync(); err != nil {
+			fmt.Println(err)
 		}
-	} else {
-		imagesUnfiltered, err = getImagesForVersion(versions, requestedVersion)
+	}()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	signalCh := signals.SetupSignalHandler()
+	go func() {
+		<-signalCh
+		cancel()
+	}()
+
+	if o.registry == "" {
+		log.Fatal("Error: registry-name parameter must contain a valid registry address!")
+	}
+
+	versions, err := getVersions(log, o.versionsFile, o.versionFilter)
+	if err != nil {
+		log.Fatal("Error loading versions", zap.Error(err))
+	}
+
+	// Using a set here for deduplication
+	imageSet := sets.NewString(staticImages...)
+	for _, version := range versions {
+		versionLog := log.With(
+			zap.String("version", version.Version.String()),
+			zap.String("cluster-type", version.Type),
+		)
+		if version.Type != "" && version.Type != apiv1.KubernetesClusterType {
+			// TODO: Implement. https://github.com/kubermatic/kubermatic/issues/3623
+			versionLog.Warn("Skipping version because its not for Kubernetes. We only support Kubernetes at the moment")
+			continue
+		}
+		versionLog.Info("Collecting images...")
+		images, err := getImagesForVersion(log, version, o.addonsPath)
 		if err != nil {
-			glog.Fatalf(err.Error())
+			versionLog.Fatal("failed to get images", zap.Error(err))
 		}
-	}
-	imagesUnfiltered = append(imagesUnfiltered, staticImages...)
-
-	var images []string
-	for _, image := range imagesUnfiltered {
-		if !stringListContains(images, image) && len(strings.Split(image, ":")) == 2 {
-			images = append(images, image)
-		}
-
+		imageSet.Insert(images...)
 	}
 
-	if printOnly {
-		for _, image := range images {
-			glog.Infoln(image)
-		}
-		glog.Infoln("Exiting gracefully because -print-only was specified...")
-		os.Exit(0)
+	if err := processImages(ctx, log, o.dryRun, imageSet.List()); err != nil {
+		log.Fatal("Failed to process images", zap.Error(err))
+	}
+}
+
+func processImages(ctx context.Context, log *zap.Logger, dryRun bool, images []string) error {
+	if err := docker.DownloadImages(ctx, log, dryRun, images); err != nil {
+		return fmt.Errorf("failed to download all images: %v", err)
 	}
 
-	if err = downloadImages(images); err != nil {
-		glog.Fatalf(err.Error())
-	}
-	retaggedImages, err := retagImages(registryName, images)
+	retaggedImages, err := docker.RetagImages(ctx, log, dryRun, images, "localhost:5000")
 	if err != nil {
-		glog.Fatalf(err.Error())
+		return fmt.Errorf("failed to re-tag images: %v", err)
 	}
-	if err = pushImages(retaggedImages); err != nil {
-		glog.Fatalf(err.Error())
-	}
-}
 
-func pushImages(imageTagList []string) error {
-	for _, image := range imageTagList {
-		glog.Infof("Pushing image %s", image)
-		if out, err := execCommand("docker", "push", image); err != nil {
-			return fmt.Errorf("failed to push image: Error: %v Output: %s", err, out)
-		}
+	if err := docker.PushImages(ctx, log, dryRun, retaggedImages); err != nil {
+		return fmt.Errorf("failed to push images: %v", err)
 	}
 	return nil
 }
 
-func retagImages(registryName string, imageTagList []string) (retaggedImages []string, err error) {
-	for _, image := range imageTagList {
-		imageSplitted := strings.Split(image, "/")
-		if len(imageSplitted) < 2 {
-			return nil, fmt.Errorf("image %s does not contain a registry", image)
-		}
-		retaggedImageName := fmt.Sprintf("%s/%s", registryName, strings.Join(imageSplitted[1:], "/"))
-		glog.Infof("Tagging image %s as %s", image, retaggedImageName)
-		if out, err := execCommand("docker", "tag", image, retaggedImageName); err != nil {
-			return retaggedImages, fmt.Errorf("failed to retag image: Error: %v, Output: %s", err, out)
-		}
-		retaggedImages = append(retaggedImages, retaggedImageName)
-	}
-
-	return retaggedImages, nil
-}
-
-func downloadImages(images []string) error {
-	for _, image := range images {
-		glog.Infof("Downloading image '%s'...\n", image)
-		if out, err := execCommand("docker", "pull", image); err != nil {
-			return fmt.Errorf("error pulling image: %v\nOutput: %s", err, out)
-		}
-	}
-	return nil
-}
-
-func stringListContains(list []string, item string) bool {
-	for _, listItem := range list {
-		if listItem == item {
-			return true
-		}
-	}
-	return false
-}
-
-func getImagesForVersion(versions []*version.MasterVersion, requestedVersion string) ([]string, error) {
-	templateData, err := getTemplateData(versions, requestedVersion)
+func getImagesForVersion(log *zap.Logger, version *kubermaticversion.MasterVersion, addonsPath string) (images []string, err error) {
+	templateData, err := getTemplateData(version)
 	if err != nil {
 		return nil, err
 	}
-	return getImagesFromCreators(templateData)
+
+	creatorImages, err := getImagesFromCreators(templateData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get images from internal creator functions: %v", err)
+	}
+	images = append(images, creatorImages...)
+
+	if addonsPath != "" {
+		addonImages, err := getImagesFromAddons(log, addonsPath, templateData.Cluster())
+		if err != nil {
+			return nil, fmt.Errorf("failed to get images from addons: %v", err)
+		}
+		images = append(images, addonImages...)
+	}
+
+	return images, nil
 }
 
 func getImagesFromCreators(templateData *resources.TemplateData) (images []string, err error) {
@@ -181,7 +174,7 @@ func getImagesFromCreators(templateData *resources.TemplateData) (images []strin
 		if err != nil {
 			return nil, err
 		}
-		images = append(images, getImagesFromPodTemplateSpec(statefulset.Spec.Template)...)
+		images = append(images, getImagesFromPodSpec(statefulset.Spec.Template.Spec)...)
 	}
 
 	for _, createFunc := range deploymentCreators {
@@ -190,7 +183,7 @@ func getImagesFromCreators(templateData *resources.TemplateData) (images []strin
 		if err != nil {
 			return nil, err
 		}
-		images = append(images, getImagesFromPodTemplateSpec(deployment.Spec.Template)...)
+		images = append(images, getImagesFromPodSpec(deployment.Spec.Template.Spec)...)
 	}
 
 	for _, createFunc := range cronjobCreators {
@@ -199,43 +192,25 @@ func getImagesFromCreators(templateData *resources.TemplateData) (images []strin
 		if err != nil {
 			return nil, err
 		}
-		images = append(images, getImagesFromPodTemplateSpec(cronJob.Spec.JobTemplate.Spec.Template)...)
+		images = append(images, getImagesFromPodSpec(cronJob.Spec.JobTemplate.Spec.Template.Spec)...)
 	}
 
 	return images, nil
 }
 
-func getImagesFromPodTemplateSpec(template corev1.PodTemplateSpec) (images []string) {
-	for _, initContainer := range template.Spec.InitContainers {
+func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
+	for _, initContainer := range spec.InitContainers {
 		images = append(images, initContainer.Image)
 	}
 
-	for _, container := range template.Spec.Containers {
+	for _, container := range spec.Containers {
 		images = append(images, container.Image)
 	}
 
 	return images
 }
 
-func getVersion(versions []*version.MasterVersion, requestedVersion string) (*version.MasterVersion, error) {
-	semver, err := semver.NewVersion(requestedVersion)
-	if err != nil {
-		return nil, err
-	}
-	for _, v := range versions {
-		if v.Version.Equal(semver) {
-			return v, nil
-		}
-	}
-	return nil, fmt.Errorf("version not found")
-}
-
-func getTemplateData(versions []*version.MasterVersion, requestedVersion string) (*resources.TemplateData, error) {
-	masterVersion, err := getVersion(versions, requestedVersion)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get version %s", requestedVersion)
-	}
-
+func getTemplateData(version *kubermaticversion.MasterVersion) (*resources.TemplateData, error) {
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
 	cloudConfigConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -339,12 +314,12 @@ func getTemplateData(versions []*version.MasterVersion, requestedVersion string)
 	})
 	objects := []runtime.Object{configMapList, secretList, serviceList}
 
-	clusterVersion, err := ksemver.NewSemver(masterVersion.Version.String())
+	clusterVersion, err := ksemver.NewSemver(version.Version.String())
 	if err != nil {
 		return nil, err
 	}
-	fakeCluster := &clusterv1.Cluster{}
-	fakeCluster.Spec.Cloud = clusterv1.CloudSpec{}
+	fakeCluster := &kubermaticv1.Cluster{}
+	fakeCluster.Spec.Cloud = kubermaticv1.CloudSpec{}
 	fakeCluster.Spec.Version = *clusterVersion
 	fakeCluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
 	fakeCluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
@@ -391,16 +366,160 @@ func createNamedSecrets(secretNames []string) *corev1.SecretList {
 	return &secretList
 }
 
-func execCommand(command ...string) (string, error) {
-	glog.V(2).Infof("Executing command '%s'", strings.Join(command, " "))
-	var args []string
-	if len(command) > 1 {
-		args = command[1:]
+func getVersions(log *zap.Logger, versionsFile, versionFilter string) ([]*kubermaticversion.MasterVersion, error) {
+	log = log.With(
+		zap.String("versions-file", versionsFile),
+		zap.String("versions-filter", versionFilter),
+	)
+	log.Debug("Loading versions")
+	versions, err := kubermaticversion.LoadVersions(versionsFile)
+	if err != nil {
+		return nil, err
 	}
-	if test {
-		glog.Infof("Not executing command as testing is enabled")
-		return "", nil
+
+	if versionFilter == "" {
+		return versions, nil
 	}
-	out, err := exec.Command(command[0], args...).CombinedOutput()
-	return string(out), err
+
+	log.Debug("Filtering versions")
+	constraint, err := semver.NewConstraint(versionFilter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse version filter %q: %v", versionFilter, err)
+	}
+
+	var filteredVersions []*kubermaticversion.MasterVersion
+	for _, ver := range versions {
+		if constraint.Check(ver.Version) {
+			filteredVersions = append(filteredVersions, ver)
+		}
+	}
+	return filteredVersions, nil
+}
+
+func getImagesFromAddons(log *zap.Logger, addonsPath string, cluster *kubermaticv1.Cluster) ([]string, error) {
+	addonData := &addonutil.TemplateData{
+		Cluster:   cluster,
+		Addon:     &kubermaticv1.Addon{},
+		Variables: map[string]interface{}{},
+	}
+	infos, err := ioutil.ReadDir(addonsPath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to list addons: %v", err)
+	}
+
+	serializer := json.NewSerializer(&json.SimpleMetaFactory{}, scheme.Scheme, scheme.Scheme, false)
+	var images []string
+	for _, info := range infos {
+		if !info.IsDir() {
+			continue
+		}
+		addonName := info.Name()
+		addonImages, err := getImagesFromAddon(log, path.Join(addonsPath, addonName), serializer, addonData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get images for addon %s: %v", addonName, err)
+		}
+		images = append(images, addonImages...)
+	}
+
+	return images, nil
+}
+
+func getImagesFromAddon(log *zap.Logger, addonPath string, decoder runtime.Decoder, data *addonutil.TemplateData) ([]string, error) {
+	log = log.With(zap.String("addon", path.Base(addonPath)))
+	log.Debug("Processing manifests...")
+
+	allManifests, err := addonutil.ParseFromFolder(log.Sugar(), "", addonPath, data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse addon templates in %s: %v", addonPath, err)
+	}
+
+	var images []string
+	for _, manifest := range allManifests {
+		manifestImages, err := getImagesFromManifest(log, decoder, manifest.Raw)
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, manifestImages...)
+	}
+	return images, nil
+}
+
+func getImagesFromManifest(log *zap.Logger, decoder runtime.Decoder, b []byte) ([]string, error) {
+	obj, err := runtime.Decode(decoder, b)
+	if err != nil {
+		if runtime.IsNotRegisteredError(err) {
+			// We must skip custom objects. We try to look up the object info though to give a useful warning
+			metaFactory := &json.SimpleMetaFactory{}
+			if gvk, err := metaFactory.Interpret(b); err == nil {
+				log = log.With(zap.String("gvk", gvk.String()))
+			}
+
+			log.Debug("Skipping object because its not known")
+			return nil, nil
+		}
+		return nil, fmt.Errorf("unable to decode object: %v", err)
+	}
+
+	images := getImagesFromObject(obj)
+	if images == nil {
+		log.Debug("Object has no images or is not known to this application. If this object contains images, please manually push the image to the target registry")
+		return nil, nil
+	}
+
+	return images, nil
+}
+
+func getImagesFromObject(obj runtime.Object) []string {
+	// We don't have the conversion funcs available thus we must check all available Kubernetes types which can contain images
+	switch obj := obj.(type) {
+	// Deployment
+	case *appsv1.Deployment:
+		return getImagesFromPodSpec(obj.Spec.Template.Spec)
+	case *appsv1beta1.Deployment:
+		return getImagesFromPodSpec(obj.Spec.Template.Spec)
+	case *appsv1beta2.Deployment:
+		return getImagesFromPodSpec(obj.Spec.Template.Spec)
+	case *extensionv1beta1.Deployment:
+		return getImagesFromPodSpec(obj.Spec.Template.Spec)
+
+	// ReplicaSet
+	case *appsv1.ReplicaSet:
+		return getImagesFromPodSpec(obj.Spec.Template.Spec)
+	case *appsv1beta2.ReplicaSet:
+		return getImagesFromPodSpec(obj.Spec.Template.Spec)
+	case *extensionv1beta1.ReplicaSet:
+		return getImagesFromPodSpec(obj.Spec.Template.Spec)
+
+	// Statefulset
+	case *appsv1.StatefulSet:
+		return getImagesFromPodSpec(obj.Spec.Template.Spec)
+	case *appsv1beta1.StatefulSet:
+		return getImagesFromPodSpec(obj.Spec.Template.Spec)
+	case *appsv1beta2.StatefulSet:
+		return getImagesFromPodSpec(obj.Spec.Template.Spec)
+
+		// DaemonSet
+	case *appsv1.DaemonSet:
+		return getImagesFromPodSpec(obj.Spec.Template.Spec)
+	case *appsv1beta2.DaemonSet:
+		return getImagesFromPodSpec(obj.Spec.Template.Spec)
+	case *extensionv1beta1.DaemonSet:
+		return getImagesFromPodSpec(obj.Spec.Template.Spec)
+
+		// Pod
+	case *corev1.Pod:
+		return getImagesFromPodSpec(obj.Spec)
+
+		// CronJob
+	case *batchv1beta1.CronJob:
+		return getImagesFromPodSpec(obj.Spec.JobTemplate.Spec.Template.Spec)
+	case *batchv2alpha1.CronJob:
+		return getImagesFromPodSpec(obj.Spec.JobTemplate.Spec.Template.Spec)
+
+		// Job
+	case *batchv1.Job:
+		return getImagesFromPodSpec(obj.Spec.Template.Spec)
+	}
+
+	return nil
 }
