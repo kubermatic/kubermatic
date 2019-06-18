@@ -13,8 +13,8 @@ import (
 )
 
 func GetOIDCClient() (string, string) {
-	user := os.Getenv("OIDC_USER")
-	password := os.Getenv("OIDC_PASSWORD")
+	user := os.Getenv("KUBERMATIC_OIDC_USER")
+	password := os.Getenv("KUBERMATIC_OIDC_PASSWORD")
 	if len(user) > 0 && len(password) > 0 {
 		return user, password
 	}
@@ -22,8 +22,11 @@ func GetOIDCClient() (string, string) {
 	return "roxy@loodse.com", "password"
 }
 
-func GetOIDCReqToken(hClient *http.Client, u url.URL, redirectURI string) (string, error) {
+func GetOIDCReqToken(hClient *http.Client, u url.URL, issuerURLPrefix, redirectURI string) (string, error) {
 	u.Path = "auth"
+	if len(issuerURLPrefix) > 0 {
+		u.Path = fmt.Sprintf("%s/auth", issuerURLPrefix)
+	}
 	qp := u.Query()
 	qp.Set("client_id", "kubermatic")
 	qp.Set("redirect_uri", redirectURI)
@@ -49,7 +52,7 @@ func GetOIDCReqToken(hClient *http.Client, u url.URL, redirectURI string) (strin
 
 	body := string(bodyBytes)
 
-	tokenPrefix := `href=\"\/auth\/local\?req=(\w)*"`
+	tokenPrefix := `href=\"\/(dex\/)?auth\/local\?req=(\w)*"`
 	tokenCompiledRegExp := regexp.MustCompile(tokenPrefix)
 	potentialTokenLines := tokenCompiledRegExp.FindAllString(body, -1)
 	if len(potentialTokenLines) < 1 {
@@ -64,8 +67,11 @@ func GetOIDCReqToken(hClient *http.Client, u url.URL, redirectURI string) (strin
 	return strings.TrimSuffix(token, "\""), nil
 }
 
-func GetOIDCAuthToken(hClient *http.Client, reqToken string, u url.URL, login string, password string) (string, error) {
+func GetOIDCAuthToken(hClient *http.Client, reqToken string, u url.URL, issuerURLPrefix, login, password string) (string, error) {
 	u.Path = "auth/local"
+	if len(issuerURLPrefix) > 0 {
+		u.Path = fmt.Sprintf("%s/auth/local", issuerURLPrefix)
+	}
 	qp := u.Query()
 	qp.Set("req", reqToken)
 	u.RawQuery = qp.Encode()
