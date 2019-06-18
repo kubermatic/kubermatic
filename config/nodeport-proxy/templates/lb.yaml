@@ -11,5 +11,6 @@ spec:
   ports:
   - name: keepalive
     port: 1337
+    targetPort: 8002
     protocol: TCP
   type: LoadBalancer
