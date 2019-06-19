@@ -48,6 +48,7 @@ type UserDataRequest struct {
 	HTTPProxy             string
 	NoProxy               string
 	InsecureRegistries    []string
+	RegistryMirrors       []string
 	PauseImage            string
 	HyperkubeImage        string
 }

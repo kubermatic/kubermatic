@@ -24,7 +24,9 @@ import (
 
 // Config contains specific configuration for CoreOS.
 type Config struct {
-	DisableAutoUpdate bool `json:"disableAutoUpdate"`
+	DisableAutoUpdate   bool `json:"disableAutoUpdate"`
+	DisableLocksmithD   bool `json:"disableLocksmithD"`
+	DisableUpdateEngine bool `json:"disableUpdateEngine"`
 }
 
 // LoadConfig retrieves the CoreOS configuration from raw data.
