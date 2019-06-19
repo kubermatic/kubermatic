@@ -24,7 +24,7 @@ const (
 var (
 	defaultResourceRequirements = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
 			corev1.ResourceCPU:    resource.MustParse("50m"),
 		},
 		Limits: corev1.ResourceList{
