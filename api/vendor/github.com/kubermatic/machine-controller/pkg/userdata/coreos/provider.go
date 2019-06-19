@@ -81,6 +81,11 @@ func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 		}
 	}
 
+	if coreosConfig.DisableAutoUpdate {
+		coreosConfig.DisableLocksmithD = true
+		coreosConfig.DisableUpdateEngine = true
+	}
+
 	data := struct {
 		plugin.UserDataRequest
 		ProviderSpec           *providerconfig.Config
@@ -137,12 +142,14 @@ networkd:
 
 systemd:
   units:
-{{- if .CoreOSConfig.DisableAutoUpdate }}
+{{- if .CoreOSConfig.DisableUpdateEngine }}
     - name: update-engine.service
       mask: true
+{{- end }}
+{{- if .CoreOSConfig.DisableLocksmithD }}
     - name: locksmithd.service
       mask: true
-{{ end }}
+{{- end }}
     - name: docker.service
       enabled: true
 
@@ -348,7 +355,7 @@ storage:
       mode: 0644
       contents:
         inline: |
-{{ dockerConfig .InsecureRegistries | indent 10 }}
+{{ dockerConfig .InsecureRegistries .RegistryMirrors | indent 10 }}
 
     - path: /opt/bin/download.sh
       filesystem: root

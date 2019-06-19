@@ -57,6 +57,7 @@ type RawConfig struct {
 	ServerType providerconfig.ConfigVarString `json:"serverType"`
 	Datacenter providerconfig.ConfigVarString `json:"datacenter"`
 	Location   providerconfig.ConfigVarString `json:"location"`
+	Labels     map[string]string              `json:"labels,omitempty"`
 }
 
 type Config struct {
@@ -64,6 +65,7 @@ type Config struct {
 	ServerType string
 	Datacenter string
 	Location   string
+	Labels     map[string]string
 }
 
 func getNameForOS(os providerconfig.OperatingSystem) (string, error) {
@@ -112,6 +114,7 @@ func (p *provider) getConfig(s v1alpha1.ProviderSpec) (*Config, *providerconfig.
 	if err != nil {
 		return nil, nil, err
 	}
+	c.Labels = rawConfig.Labels
 	return &c, &pconfig, err
 }
 
@@ -176,12 +179,14 @@ func (p *provider) Create(machine *v1alpha1.Machine, _ *cloudprovidertypes.Provi
 		}
 	}
 
+	if c.Labels == nil {
+		c.Labels = map[string]string{}
+	}
+	c.Labels[machineUIDLabelKey] = string(machine.UID)
 	serverCreateOpts := hcloud.ServerCreateOpts{
 		Name:     machine.Spec.Name,
 		UserData: userdata,
-		Labels: map[string]string{
-			machineUIDLabelKey: string(machine.UID),
-		},
+		Labels:   c.Labels,
 	}
 
 	if c.Datacenter != "" {
