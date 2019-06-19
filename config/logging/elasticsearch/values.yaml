@@ -21,7 +21,7 @@ logging:
       resources:
         requests:
           cpu: 75m
-          memory: 350Mi
+          memory: 512Mi
       nodeSelector: {}
       affinity:
         podAntiAffinity:
@@ -34,7 +34,7 @@ logging:
                   role: master
               topologyKey: kubernetes.io/hostname
       tolerations: []
-      storageSize: 1Gi
+      storageSize: 5Gi
 
     data:
       replicas: 5
@@ -43,7 +43,7 @@ logging:
       resources:
         requests:
           cpu: 200m
-          memory: 1536Mi
+          memory: 2560Mi
       nodeSelector: {}
       affinity:
         podAntiAffinity:
@@ -56,7 +56,7 @@ logging:
                   role: data
               topologyKey: kubernetes.io/hostname
       tolerations: []
-      storageSize: 10Gi
+      storageSize: 50Gi
 
     curator:
       # Amount of days after which the indicies should be killed
