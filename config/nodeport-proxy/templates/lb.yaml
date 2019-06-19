@@ -9,7 +9,8 @@ spec:
   selector:
     app: nodeport-proxy
   ports:
-  - name: keepalive
-    port: 1337
+  - name: healthz
+    port: 8002
+    targetPort: 8002
     protocol: TCP
   type: LoadBalancer

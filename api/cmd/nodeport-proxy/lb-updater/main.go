@@ -24,7 +24,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const defaultExposeAnnotationKey = "nodeport-proxy.k8s.io/expose"
+const (
+	defaultExposeAnnotationKey = "nodeport-proxy.k8s.io/expose"
+	healthCheckPort            = 8002
+)
 
 var (
 	lbName              string
@@ -111,6 +114,12 @@ func (u *LBUpdater) syncLB(s string) error {
 	}
 
 	var wantLBPorts []corev1.ServicePort
+	wantLBPorts = append(wantLBPorts, corev1.ServicePort{
+		Name:       "healthz",
+		Port:       healthCheckPort,
+		TargetPort: intstr.FromInt(healthCheckPort),
+		Protocol:   corev1.ProtocolTCP,
+	})
 	for _, service := range services.Items {
 		if service.Annotations[exposeAnnotationKey] != "true" {
 			glog.V(4).Infof("skipping service %s/%s as the annotation %s is not set to 'true'", service.Namespace, service.Name, exposeAnnotationKey)
