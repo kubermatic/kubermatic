@@ -9,6 +9,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 // DigitaloceanSpec describes a DigitalOcean datacenter
@@ -190,6 +191,22 @@ func validateDatacenters(datacenters map[string]DatacenterMeta) error {
 			if err := validateImageList(dc.Spec.Openstack.Images); err != nil {
 				return fmt.Errorf("invalid datacenter defined '%s': %v", name, err)
 			}
+		}
+	}
+
+	for datacenterName, datacenter := range datacenters {
+		if !datacenter.IsSeed {
+			continue
+		}
+		if datacenter.SeedDNSOverwrite != nil && *datacenter.SeedDNSOverwrite != "" {
+			if errs := validation.IsDNS1123Subdomain(*datacenter.SeedDNSOverwrite); errs != nil {
+				return fmt.Errorf("SeedDNS overwrite %q of datacenter %q is not a valid DNS name: %v",
+					*datacenter.SeedDNSOverwrite, datacenterName, errs)
+			}
+			continue
+		}
+		if errs := validation.IsDNS1123Subdomain(datacenterName); errs != nil {
+			return fmt.Errorf("Datacentername %q is not a valid DNS name: %v", datacenterName, errs)
 		}
 	}
 
