@@ -33,7 +33,7 @@ func TestRetagImageForAllVersions(t *testing.T) {
 		imageSet.Insert(images...)
 	}
 
-	if err := processImages(context.Background(), log.Desugar(), true, imageSet.List()); err != nil {
+	if err := processImages(context.Background(), log.Desugar(), true, imageSet.List(), "test-registry:5000"); err != nil {
 		t.Errorf("Error calling processImages: %v", err)
 	}
 }
