@@ -1,4 +1,4 @@
-// +build e2e cloud
+// +build e2e
 
 package e2e
 

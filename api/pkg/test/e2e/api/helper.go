@@ -17,9 +17,11 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/tokens"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 
+	"github.com/Masterminds/semver"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 const (
@@ -307,4 +309,137 @@ func (r *APIRunner) ListCredentials(providerName string) ([]string, error) {
 	names = append(names, credentialsResponse.Payload.Names...)
 
 	return names, nil
+}
+
+// CreateAWSCluster creates cluster for Vsphere provider
+func (r *APIRunner) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKeyID, version, location string, replicas int32) (*apiv1.Cluster, error) {
+
+	vr, err := semver.NewVersion(version)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
+	}
+
+	instanceType := "t3.small"
+	volumeSize := int64(25)
+	volumeType := "standard"
+	clusterSpec := &models.CreateClusterSpec{}
+	clusterSpec.Cluster = &models.Cluster{
+		Type: "kubernetes",
+		Name: name,
+		Spec: &models.ClusterSpec{
+			Cloud: &models.CloudSpec{
+				DatacenterName: location,
+				Aws: &models.AWSCloudSpec{
+					SecretAccessKey: secretAccessKey,
+					AccessKeyID:     accessKeyID,
+				},
+			},
+			Version: vr,
+		},
+	}
+	clusterSpec.NodeDeployment = &models.NodeDeployment{
+		Spec: &models.NodeDeploymentSpec{
+			Replicas: &replicas,
+			Template: &models.NodeSpec{
+				Cloud: &models.NodeCloudSpec{
+					Aws: &models.AWSNodeSpec{
+						InstanceType: &instanceType,
+						VolumeSize:   &volumeSize,
+						VolumeType:   &volumeType,
+					},
+				},
+				OperatingSystem: &models.OperatingSystemSpec{
+					Ubuntu: &models.UbuntuSpec{
+						DistUpgradeOnBoot: false,
+					},
+				},
+			},
+		},
+	}
+
+	params := &project.CreateClusterParams{ProjectID: projectID, Dc: dc, Body: clusterSpec}
+	params.WithTimeout(timeout)
+	clusterResponse, err := r.client.Project.CreateCluster(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertCluster(clusterResponse.Payload)
+}
+
+// GetClusterHealthStatus gets the cluster status
+func (r *APIRunner) GetClusterHealthStatus(projectID, dc, clusterID string) (*apiv1.ClusterHealth, error) {
+	params := &project.GetClusterHealthParams{Dc: dc, ProjectID: projectID, ClusterID: clusterID}
+	params.WithTimeout(timeout)
+
+	var err error
+	var response *project.GetClusterHealthOK
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		response, err = r.client.Project.GetClusterHealth(params, r.bearerToken)
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	apiClusterHealth := &apiv1.ClusterHealth{}
+	apiClusterHealth.Apiserver = response.Payload.Apiserver
+	apiClusterHealth.Controller = response.Payload.Controller
+	apiClusterHealth.Etcd = response.Payload.Etcd
+	apiClusterHealth.MachineController = response.Payload.MachineController
+	apiClusterHealth.Scheduler = response.Payload.Scheduler
+	apiClusterHealth.UserClusterControllerManager = response.Payload.UserClusterControllerManager
+
+	return apiClusterHealth, nil
+}
+
+// GetClusterNodeDeployment returns the cluster node deployments
+func (r *APIRunner) GetClusterNodeDeployment(projectID, dc, clusterID string) ([]apiv1.NodeDeployment, error) {
+	params := &project.ListNodeDeploymentsParams{ClusterID: clusterID, ProjectID: projectID, Dc: dc}
+	params.WithTimeout(timeout * 2)
+
+	var err error
+	var response *project.ListNodeDeploymentsOK
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		response, err = r.client.Project.ListNodeDeployments(params, r.bearerToken)
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	list := make([]apiv1.NodeDeployment, 0)
+	for _, nd := range response.Payload {
+		apiNd := apiv1.NodeDeployment{}
+		apiNd.Name = nd.Name
+		apiNd.ID = nd.ID
+		apiNd.Status = v1alpha1.MachineDeploymentStatus{
+			Replicas:          nd.Status.Replicas,
+			AvailableReplicas: nd.Status.AvailableReplicas,
+		}
+		list = append(list, apiNd)
+	}
+
+	return list, nil
+}
+
+func convertCluster(cluster *models.Cluster) (*apiv1.Cluster, error) {
+	apiCluster := &apiv1.Cluster{}
+	apiCluster.ID = cluster.ID
+	apiCluster.Name = cluster.Name
+	apiCluster.Type = cluster.Type
+
+	creationTime, err := time.Parse(time.RFC3339, cluster.CreationTimestamp.String())
+	if err != nil {
+		return nil, err
+	}
+	apiCluster.CreationTimestamp = apiv1.NewTime(creationTime)
+
+	return apiCluster, nil
 }
