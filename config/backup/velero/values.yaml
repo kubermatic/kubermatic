@@ -28,7 +28,11 @@ velero:
 
     affinity: {}
     nodeSelector: {}
-    tolerations: []
+    tolerations:
+    - effect: NoExecute
+      operator: Exists
+    - effect: NoSchedule
+      operator: Exists
 
   # configure the credentials used to make snapshots (when using
   # persistentVolumeProvider) and to store backups; you can enable
