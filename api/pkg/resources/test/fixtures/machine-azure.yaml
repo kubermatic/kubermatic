@@ -23,11 +23,13 @@ spec:
           KubernetesCluster: azurecluster-1a2b3c4d5e
           foo: bar
         tenantID: 38w7giefb32fhifw3q
-        vmSizei: Standard_B1ms
+        vmSize: Standard_B1ms
         vnetName: cluster-azurecluster-1a2b3c4d5e
       operatingSystem: coreos
       operatingSystemSpec:
         disableAutoUpdate: true
+        disableLocksmithD: false
+        disableUpdateEngine: false
       sshPublicKeys:
       - ssh-rsa TEST123test
   versions:

@@ -72,7 +72,7 @@ type RawConfig struct {
 
 	Location          providerconfig.ConfigVarString `json:"location"`
 	ResourceGroup     providerconfig.ConfigVarString `json:"resourceGroup"`
-	VMSize            providerconfig.ConfigVarString `json:"vmSizei"`
+	VMSize            providerconfig.ConfigVarString `json:"vmSize"`
 	VNetName          providerconfig.ConfigVarString `json:"vnetName"`
 	SubnetName        providerconfig.ConfigVarString `json:"subnetName"`
 	RouteTableName    providerconfig.ConfigVarString `json:"routeTableName"`

@@ -95,16 +95,21 @@ SystemMaxUse=5G
 type dockerConfig struct {
 	StorageDriver      string   `json:"storage-driver"`
 	InsecureRegistries []string `json:"insecure-registries"`
+	RegistryMirrors    []string `json:"registry-mirrors"`
 }
 
-// DockerConfig returns the docker daemon.json
-func DockerConfig(registries []string) (string, error) {
+// DockerConfig returns the docker daemon.json.
+func DockerConfig(insecureRegistries, registryMirrors []string) (string, error) {
 	cfg := dockerConfig{
 		StorageDriver:      "overlay2",
-		InsecureRegistries: registries,
+		InsecureRegistries: insecureRegistries,
+		RegistryMirrors:    registryMirrors,
 	}
-	if registries == nil {
+	if insecureRegistries == nil {
 		cfg.InsecureRegistries = []string{}
+	}
+	if registryMirrors == nil {
+		cfg.RegistryMirrors = []string{}
 	}
 
 	b, err := json.Marshal(cfg)
