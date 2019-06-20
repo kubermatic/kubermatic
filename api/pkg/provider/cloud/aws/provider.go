@@ -770,3 +770,8 @@ func isEntityAlreadyExists(err error) bool {
 	}
 	return aerr.Code() == "EntityAlreadyExists"
 }
+
+// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
+func (a *AmazonEC2) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+	return nil
+}

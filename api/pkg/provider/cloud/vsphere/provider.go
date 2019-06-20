@@ -283,3 +283,8 @@ func logout(client *govmomi.Client) {
 		kruntime.HandleError(fmt.Errorf("Failed to logout from vsphere: %v", err))
 	}
 }
+
+// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
+func (v *Provider) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+	return nil
+}
