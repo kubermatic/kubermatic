@@ -78,14 +78,14 @@ spec:
         - name: NODE_DATA
           value: "true"
         - name: ES_JAVA_OPTS
-          value: "-Djava.net.preferIPv4Stack=true -Xms{{ .Values.logging.elasticsearch.data.heapSize }} -Xmx{{ .Values.logging.elasticsearch.data.heapSize }} {{ .Values.logging.elasticsearch.cluster.additionalJavaOpts }} {{ .Values.logging.elasticsearch.data.additionalJavaOpts }}"
+          value: "-Djava.net.preferIPv4Stack=true {{ .Values.logging.elasticsearch.cluster.additionalJavaOpts }} {{ .Values.logging.elasticsearch.data.additionalJavaOpts }}"
         - name: DISCOVERY_SERVICE
           value: es-master
         - name: PROCESSORS
           valueFrom:
             resourceFieldRef:
               resource: limits.cpu
-        {{- range $key, $value :=  .Values.logging.elasticsearch.cluster.env }}
+        {{- range $key, $value := .Values.logging.elasticsearch.cluster.env }}
         - name: {{ $key }}
           value: {{ $value | quote }}
         {{- end }}
