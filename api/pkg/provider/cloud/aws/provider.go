@@ -100,6 +100,8 @@ func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
+// AddICMPRulesIfRequired will create security rules that allow ICMP traffic if these do not yet exist.
+// It is a part of a migration for older clusers (migrationRevision < 1) that didn't have these rules.
 func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
 	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
 		glog.Infof("Not adding ICMP allow rules for cluster %q as it has no securityGroupID set",
