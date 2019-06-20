@@ -14,7 +14,7 @@ import (
 	osextnetwork "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/external"
 	osrouters "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/routers"
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
-	osecruritygrouprules "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
+	osecuritygrouprules "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
 	osnetworks "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	osports "github.com/gophercloud/gophercloud/openstack/networking/v2/ports"
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
@@ -166,57 +166,57 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, cluster
 		return nil, err
 	}
 
-	rules := []osecruritygrouprules.CreateOpts{
+	rules := []osecuritygrouprules.CreateOpts{
 		{
 			// Allows ipv4 traffic within this group
-			Direction:     osecruritygrouprules.DirIngress,
-			EtherType:     osecruritygrouprules.EtherType4,
+			Direction:     osecuritygrouprules.DirIngress,
+			EtherType:     osecuritygrouprules.EtherType4,
 			SecGroupID:    g.ID,
 			RemoteGroupID: g.ID,
 		},
 		{
 			// Allows ipv6 traffic within this group
-			Direction:     osecruritygrouprules.DirIngress,
-			EtherType:     osecruritygrouprules.EtherType6,
+			Direction:     osecuritygrouprules.DirIngress,
+			EtherType:     osecuritygrouprules.EtherType6,
 			SecGroupID:    g.ID,
 			RemoteGroupID: g.ID,
 		},
 		{
 			// Allows ssh from external
-			Direction:    osecruritygrouprules.DirIngress,
-			EtherType:    osecruritygrouprules.EtherType4,
+			Direction:    osecuritygrouprules.DirIngress,
+			EtherType:    osecuritygrouprules.EtherType4,
 			SecGroupID:   g.ID,
 			PortRangeMin: provider.DefaultSSHPort,
 			PortRangeMax: provider.DefaultSSHPort,
-			Protocol:     osecruritygrouprules.ProtocolTCP,
+			Protocol:     osecuritygrouprules.ProtocolTCP,
 		},
 		{
 			// Allows kubelet from external
-			Direction:    osecruritygrouprules.DirIngress,
-			EtherType:    osecruritygrouprules.EtherType4,
+			Direction:    osecuritygrouprules.DirIngress,
+			EtherType:    osecuritygrouprules.EtherType4,
 			SecGroupID:   g.ID,
 			PortRangeMin: provider.DefaultKubeletPort,
 			PortRangeMax: provider.DefaultKubeletPort,
-			Protocol:     osecruritygrouprules.ProtocolTCP,
+			Protocol:     osecuritygrouprules.ProtocolTCP,
 		},
 		{
 			// Allows ICMP traffic
-			Direction:  osecruritygrouprules.DirIngress,
-			EtherType:  osecruritygrouprules.EtherType4,
+			Direction:  osecuritygrouprules.DirIngress,
+			EtherType:  osecuritygrouprules.EtherType4,
 			SecGroupID: g.ID,
-			Protocol:   osecruritygrouprules.ProtocolICMP,
+			Protocol:   osecuritygrouprules.ProtocolICMP,
 		},
 		{
 			// Allows ICMPv6 traffic
-			Direction:  osecruritygrouprules.DirIngress,
-			EtherType:  osecruritygrouprules.EtherType6,
+			Direction:  osecuritygrouprules.DirIngress,
+			EtherType:  osecuritygrouprules.EtherType6,
 			SecGroupID: g.ID,
-			Protocol:   osecruritygrouprules.ProtocolIPv6ICMP,
+			Protocol:   osecuritygrouprules.ProtocolIPv6ICMP,
 		},
 	}
 
 	for _, opts := range rules {
-		rres := osecruritygrouprules.Create(netClient, opts)
+		rres := osecuritygrouprules.Create(netClient, opts)
 		if rres.Err != nil {
 			return nil, rres.Err
 		}

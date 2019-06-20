@@ -32,7 +32,7 @@ type Network struct {
 }
 
 // NewCloudProvider creates a new vSphere provider.
-func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProvider {
+func NewCloudProvider(dcs map[string]provider.DatacenterMeta) *Provider {
 	return &Provider{
 		dcs: dcs,
 	}
