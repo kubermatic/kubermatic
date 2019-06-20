@@ -257,7 +257,7 @@ func TestServiceAccountCanGetProject(t *testing.T) {
 				tokenRsp := &apiv1.ServiceAccountToken{}
 				err = json.Unmarshal(res.Body.Bytes(), tokenRsp)
 				if err != nil {
-					t.Fatalf("unable to read the token from the respone, err %v", err)
+					t.Fatalf("unable to read the token from the response, err %v", err)
 				}
 
 				token = tokenRsp.Token

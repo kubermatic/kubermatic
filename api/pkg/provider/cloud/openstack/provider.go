@@ -5,14 +5,17 @@ import (
 	"net"
 	"strings"
 
+	"github.com/golang/glog"
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
 	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	osprojects "github.com/gophercloud/gophercloud/openstack/identity/v3/projects"
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
+	osecuritygrouprules "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
 	osnetworks "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 	"github.com/gophercloud/gophercloud/pagination"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -41,7 +44,7 @@ type Provider struct {
 }
 
 // NewCloudProvider creates a new openstack provider.
-func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProvider {
+func NewCloudProvider(dcs map[string]provider.DatacenterMeta) *Provider {
 	return &Provider{
 		dcs: dcs,
 	}
@@ -462,4 +465,79 @@ func (os *Provider) GetSubnets(cloud kubermaticv1.CloudSpec, networkID string) (
 	}
 
 	return subnets, nil
+}
+
+func (os *Provider) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
+	if cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
+		return nil
+	}
+	sgNameOrID := cluster.Spec.Cloud.Openstack.SecurityGroups
+
+	netClient, err := os.getNetClient(cluster.Spec.Cloud)
+	if err != nil {
+		return fmt.Errorf("failed to create a authenticated openstack client: %v", err)
+	}
+
+	// We can only get security groups by ID and can't be sure that whats on the cluster
+	securityGroups, err := getAllSecurityGroups(netClient)
+	if err != nil {
+		return fmt.Errorf("failed to list security groups: %v", err)
+	}
+
+	for _, sg := range securityGroups {
+		if sg.Name == sgNameOrID || sg.ID == sgNameOrID {
+			if err := addICMPRulesToSecurityGroupIfNecesary(cluster, sg, netClient); err != nil {
+				return fmt.Errorf("failed to add rules for ICMP to security group %q: %v", sg.ID, err)
+			}
+			break
+		}
+	}
+
+	return nil
+}
+
+func addICMPRulesToSecurityGroupIfNecesary(cluster *kubermaticv1.Cluster, secGroup ossecuritygroups.SecGroup, netClient *gophercloud.ServiceClient) error {
+	var hasIPV4Rule, hasIPV6Rule bool
+	for _, rule := range secGroup.Rules {
+		if rule.Direction == string(osecuritygrouprules.DirIngress) {
+			if rule.EtherType == string(osecuritygrouprules.EtherType4) && rule.Protocol == string(osecuritygrouprules.ProtocolICMP) {
+				hasIPV4Rule = true
+			}
+			if rule.EtherType == string(osecuritygrouprules.EtherType6) && rule.Protocol == string(osecuritygrouprules.ProtocolIPv6ICMP) {
+				hasIPV6Rule = true
+			}
+		}
+	}
+
+	var rulesToCreate []osecuritygrouprules.CreateOpts
+	if !hasIPV4Rule {
+		rulesToCreate = append(rulesToCreate, osecuritygrouprules.CreateOpts{
+			Direction:  osecuritygrouprules.DirIngress,
+			EtherType:  osecuritygrouprules.EtherType4,
+			SecGroupID: secGroup.ID,
+			Protocol:   osecuritygrouprules.ProtocolICMP,
+		})
+		glog.Infof("Adding ICMP allow rule to cluster %q", cluster.Name)
+	}
+	if !hasIPV6Rule {
+		rulesToCreate = append(rulesToCreate, osecuritygrouprules.CreateOpts{
+			Direction:  osecuritygrouprules.DirIngress,
+			EtherType:  osecuritygrouprules.EtherType6,
+			SecGroupID: secGroup.ID,
+			Protocol:   osecuritygrouprules.ProtocolIPv6ICMP,
+		})
+		glog.Infof("Adding ICMP6 allow rule to cluster %q", cluster.Name)
+	}
+
+	for _, rule := range rulesToCreate {
+		res := osecuritygrouprules.Create(netClient, rule)
+		if res.Err != nil {
+			return fmt.Errorf("failed to create security group rule: %v", res.Err)
+		}
+		if _, err := res.Extract(); err != nil {
+			return fmt.Errorf("failed to extract result after security group creation: %v", err)
+		}
+	}
+
+	return nil
 }
