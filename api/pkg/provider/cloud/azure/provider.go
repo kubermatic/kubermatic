@@ -884,3 +884,8 @@ func icmpAllowAllRule() network.SecurityRule {
 		},
 	}
 }
+
+// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
+func (a *Azure) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+	return nil
+}

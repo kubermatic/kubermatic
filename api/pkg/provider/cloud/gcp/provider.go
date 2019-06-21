@@ -234,3 +234,8 @@ func ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterU
 
 	return err
 }
+
+// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
+func (g *gcp) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+	return nil
+}
