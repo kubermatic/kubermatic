@@ -40,3 +40,8 @@ func (h *hetzner) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update 
 func (h *hetzner) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
+
+// ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
+func (h *hetzner) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+	return nil
+}

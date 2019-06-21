@@ -173,9 +173,16 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudPr
 		return fmt.Errorf("invalid cloud spec: %v", err)
 	}
 
+	// We ignore the error, since we're here to check the new config, not the old one.
+	oldProviderName, _ := provider.ClusterCloudProviderName(oldCluster.Spec.Cloud)
+
 	providerName, err := provider.ClusterCloudProviderName(newCluster.Spec.Cloud)
 	if err != nil {
 		return fmt.Errorf("invalid cloud spec: %v", err)
+	}
+
+	if oldProviderName != providerName {
+		return fmt.Errorf("changing to a different provider is not allowed")
 	}
 
 	cloudProvider, exists := cloudProviders[providerName]
@@ -186,6 +193,11 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudPr
 	if err := cloudProvider.ValidateCloudSpec(newCluster.Spec.Cloud); err != nil {
 		return fmt.Errorf("invalid cloud spec: %v", err)
 	}
+
+	if err := cloudProvider.ValidateCloudSpecUpdate(oldCluster.Spec.Cloud, newCluster.Spec.Cloud); err != nil {
+		return fmt.Errorf("invalid cloud spec modification: %v", err)
+	}
+
 	return nil
 }
 
