@@ -6,7 +6,9 @@ logging:
       pullPolicy: IfNotPresent
 
     cluster:
-      additionalJavaOpts: "-XX:MaxRAMPercentage=80"
+      # make sure to always configure the JVM to have min=max heap size, or else
+      # Elasticsearch will refuse to start up.
+      additionalJavaOpts: "-XX:MaxRAMPercentage=80 -XX:InitialRAMPercentage=80"
       config: {}
       env:
         # IMPORTANT: https://www.elastic.co/guide/en/elasticsearch/reference/current/important-settings.html#minimum_master_nodes
