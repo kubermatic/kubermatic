@@ -230,8 +230,6 @@ spec:
           value: aws-secret-access-key
         - name: AWS_VPC_ID
           value: aws-vpn-id
-        - name: AWS_AVAILABILITY_ZONE
-          value: aws-availability-zone
         image: gcr.io/google_containers/hyperkube-amd64:v1.11.1
         livenessProbe:
           failureThreshold: 8
