@@ -60,7 +60,6 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *provider.DatacenterMeta) (cl
 				VPC:                         cloud.AWS.VPCID,
 				KubernetesClusterID:         cluster.Name,
 				DisableSecurityGroupIngress: false,
-				SubnetID:                    cloud.AWS.SubnetID,
 				RouteTableID:                cloud.AWS.RouteTableID,
 				DisableStrictZoneCheck:      true,
 			},
