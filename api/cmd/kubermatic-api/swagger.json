@@ -3346,10 +3346,6 @@
           "type": "string",
           "x-go-name": "AccessKeyID"
         },
-        "availabilityZone": {
-          "type": "string",
-          "x-go-name": "AvailabilityZone"
-        },
         "instanceProfileName": {
           "type": "string",
           "x-go-name": "InstanceProfileName"
