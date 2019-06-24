@@ -2,9 +2,10 @@ package v1_test
 
 import (
 	"encoding/json"
-	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"strings"
 	"testing"
+
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	. "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -107,7 +108,6 @@ func TestNewClusterSpec_MarshalJSON(t *testing.T) {
 						AccessKeyID:         valueToBeFiltered,
 						SecretAccessKey:     valueToBeFiltered,
 						SecurityGroupID:     "secuirtyGroupID",
-						AvailabilityZone:    "availablityZone",
 						InstanceProfileName: "instanceProfileName",
 						RoleName:            "roleName",
 						RouteTableID:        "routeTableID",

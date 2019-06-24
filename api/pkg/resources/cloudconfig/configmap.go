@@ -57,7 +57,6 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *provider.DatacenterMeta) (cl
 	if cloud.AWS != nil {
 		awsCloudConfig := &aws.CloudConfig{
 			Global: aws.GlobalOpts{
-				Zone:                        cloud.AWS.AvailabilityZone,
 				VPC:                         cloud.AWS.VPCID,
 				KubernetesClusterID:         cluster.Name,
 				DisableSecurityGroupIngress: false,

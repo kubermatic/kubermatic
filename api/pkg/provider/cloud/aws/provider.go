@@ -569,19 +569,6 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 	}
 
-	if cluster.Spec.Cloud.AWS.AvailabilityZone == "" {
-		subnet, err := getSubnetByID(cluster.Spec.Cloud.AWS.SubnetID, client)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get subnet %s: %v", cluster.Spec.Cloud.AWS.SubnetID, err)
-		}
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.Cloud.AWS.AvailabilityZone = *subnet.AvailabilityZone
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
 		securityGroupID, err := createSecurityGroup(client, cluster.Spec.Cloud.AWS.VPCID, cluster.Name)
 		if err != nil {

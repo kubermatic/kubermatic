@@ -134,7 +134,6 @@ func TestLoadFiles(t *testing.T) {
 			AWS: &kubermaticv1.AWSCloudSpec{
 				AccessKeyID:         "aws-access-key-id",
 				SecretAccessKey:     "aws-secret-access-key",
-				AvailabilityZone:    "aws-availability-zone",
 				InstanceProfileName: "aws-instance-profile-name",
 				RoleName:            "aws-role-name",
 				RouteTableID:        "aws-route-table-id",
@@ -768,7 +767,6 @@ func TestExecute(t *testing.T) {
 								RouteTableID:        "aws-route-table-id",
 								InstanceProfileName: "aws-instance-profile-name",
 								SecurityGroupID:     "aws-security-group-id",
-								AvailabilityZone:    "aws-availability-zone",
 							},
 						},
 					},
