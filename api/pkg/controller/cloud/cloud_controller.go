@@ -35,9 +35,12 @@ const (
 	// icmpMigrationRevision is the migration revision that will be set on the cluster after its
 	// security group was migrated to contain allow rules for ICMP
 	icmpMigrationRevision = 1
+	// awsHarcodedAZMigrationRevision is the migration revision for moving AWS clusters away from
+	// hardcoded AZs and Subnets towards multi-AZ support.
+	awsHarcodedAZMigrationRevision = 2
 	// currentMigrationRevision describes the current migration revision. If this is set on the
 	// cluster, certain migrations wont get executed. This must never be decremented.
-	currentMigrationRevision = icmpMigrationRevision
+	currentMigrationRevision = awsHarcodedAZMigrationRevision
 )
 
 // Check if the Reconciler fullfills the interface
@@ -122,8 +125,14 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	// We do the migration inside the controller because it has a decent potential to fail (e.G. due
 	// to invalid credentials) and may take some time and we do not want to block the startup just
 	// because one cluster can not be migrated
-	if cluster.Status.CloudMigrationRevision < currentMigrationRevision {
-		if err := r.migrate(ctx, cluster, prov); err != nil {
+	if cluster.Status.CloudMigrationRevision < icmpMigrationRevision {
+		if err := r.migrateICMP(ctx, cluster, prov); err != nil {
+			return nil, err
+		}
+	}
+
+	if cluster.Status.CloudMigrationRevision < awsHarcodedAZMigrationRevision {
+		if err := r.migrateAWSMultiAZ(ctx, cluster, prov); err != nil {
 			return nil, err
 		}
 	}
@@ -132,7 +141,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return nil, err
 }
 
-func (r *Reconciler) migrate(ctx context.Context, cluster *kubermaticv1.Cluster, cloudProvider provider.CloudProvider) error {
+func (r *Reconciler) migrateICMP(ctx context.Context, cluster *kubermaticv1.Cluster, cloudProvider provider.CloudProvider) error {
 	switch provider := cloudProvider.(type) {
 	case *aws.AmazonEC2:
 		if err := provider.AddICMPRulesIfRequired(cluster); err != nil {
@@ -151,8 +160,28 @@ func (r *Reconciler) migrate(ctx context.Context, cluster *kubermaticv1.Cluster,
 		glog.Infof("Successfully ensured ICMP rules in security group of cluster %q", cluster.Name)
 	}
 
-	if _, err := r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+	var err error
+	if cluster, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
 		c.Status.CloudMigrationRevision = icmpMigrationRevision
+	}); err != nil {
+		return fmt.Errorf("failed to update cluster %q after successfully executing its cloudProvider migration: %v",
+			cluster.Name, err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) migrateAWSMultiAZ(ctx context.Context, cluster *kubermaticv1.Cluster, cloudProvider provider.CloudProvider) error {
+	if awsprovider, ok := cloudProvider.(*aws.AmazonEC2); ok {
+
+		if err := awsprovider.MigrateToMultiAZ(cluster, r.updateCluster); err != nil {
+			return fmt.Errorf("failed to migrate AWS cluster %q to multi-AZ: %q", cluster.Name, err)
+		}
+	}
+
+	var err error
+	if cluster, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+		c.Status.CloudMigrationRevision = awsHarcodedAZMigrationRevision
 	}); err != nil {
 		return fmt.Errorf("failed to update cluster %q after successfully executing its cloudProvider migration: %v",
 			cluster.Name, err)
