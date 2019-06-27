@@ -3,7 +3,7 @@ data:
     [global]
     Zone=""
     VPC="aws-vpn-id"
-    SubnetID="aws-subnet-id"
+    SubnetID=""
     RouteTableID="aws-route-table-id"
     RoleARN=""
     KubernetesClusterID="de-test-01"
