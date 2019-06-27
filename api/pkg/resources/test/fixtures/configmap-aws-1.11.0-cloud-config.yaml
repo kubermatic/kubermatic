@@ -1,7 +1,7 @@
 data:
   config: |
     [global]
-    Zone="aws-availability-zone"
+    Zone=""
     VPC="aws-vpn-id"
     SubnetID="aws-subnet-id"
     RouteTableID="aws-route-table-id"
