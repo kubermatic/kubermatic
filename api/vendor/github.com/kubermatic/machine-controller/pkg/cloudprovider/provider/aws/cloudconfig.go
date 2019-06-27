@@ -28,9 +28,9 @@ import (
 
 const (
 	cloudConfigTpl = `[global]
-Zone={{ .Global.Zone | iniEscape }}
+{{- if .Cluster.Spec.Cloud.Openstack }}Zone={{ .Global.Zone | iniEscape }}{{end}}
 VPC={{ .Global.VPC | iniEscape }}
-SubnetID={{ .Global.SubnetID | iniEscape }}
+{{- if .Cluster.Spec.Cloud.Openstack }}SubnetID={{ .Global.SubnetID | iniEscape }}{{end}}
 RouteTableID={{ .Global.RouteTableID | iniEscape }}
 RoleARN={{ .Global.RoleARN | iniEscape }}
 KubernetesClusterID={{ .Global.KubernetesClusterID | iniEscape }}
