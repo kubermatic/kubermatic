@@ -26,7 +26,7 @@ metadata:
 provisioner: kubernetes.io/aws-ebs
 parameters:
   type: gp2
-  zone: {{ .Cluster.Spec.Cloud.AWS.AvailabilityZone }}
+volumeBindingMode: WaitForFirstConsumer
 {{ end }}
 
 {{ if .Cluster.Spec.Cloud.VSphere }}
