@@ -7,11 +7,6 @@ SDIR=$(dirname $0)
 
 function cleanup {
     cat ${SDIR}/../../pkg/test/e2e/api/utils/oidc-proxy-client/_build/oidc-proxy-client-errors
-
-    kubectl delete service -l "prow.k8s.io/id=$PROW_JOB_ID"
-
-	# Kill all descendant processes
-	pkill -P $$
 }
 trap cleanup EXIT
 
