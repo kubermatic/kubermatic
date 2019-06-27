@@ -215,9 +215,9 @@ type ClusterStatus struct {
 	// controllers and the API
 	Conditions []ClusterCondition `json:"conditions,omitempty"`
 
-	// MigrationRevision describes the latest version of the migration that has been done
+	// CloudMigrationRevision describes the latest version of the migration that has been done
 	// It is used to avoid redundant and potentially costly migrations
-	MigrationRevision int `json:"migrationRevision"`
+	CloudMigrationRevision int `json:"cloudMigrationRevision"`
 }
 
 type ClusterStatusError string

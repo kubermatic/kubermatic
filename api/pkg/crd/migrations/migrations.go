@@ -11,9 +11,6 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/azure"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
 	kubermaticKubernetesProvider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
@@ -30,15 +27,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-)
-
-const (
-	// icmpMigrationRevision is the migration revision that will be set on the cluster after its
-	// security group was migrated to contain allow rules for ICMP
-	icmpMigrationRevision = 1
-	// currentMigrationRevision describes the current migration revision. If this is set on the
-	// cluster, certain migrations wont get executed. This must never be decremented.
-	currentMigrationRevision = icmpMigrationRevision
 )
 
 type cleanupContext struct {
@@ -249,7 +237,6 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 		migrateClusterUserLabel,
 		cleanupKubeStateMetricsService,
 		setExposeStrategyIfEmpty,
-		addICMPToSecurityGroup,
 	}
 
 	w := sync.WaitGroup{}
@@ -560,43 +547,5 @@ func setExposeStrategyIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext
 		}
 		cluster = updatedCluster
 	}
-	return nil
-}
-
-func addICMPToSecurityGroup(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
-	if cluster.Status.MigrationRevision >= icmpMigrationRevision {
-		glog.Infof("Not running migration for ICMP rules in security group for cluster %q because its .status.migrationRevision is > 0(%d)",
-			cluster.Name, cluster.Status.MigrationRevision)
-		return nil
-	}
-	_, cloudProvider, err := provider.ClusterCloudProvider(ctx.cloudProvider, cluster)
-	if err != nil {
-		return fmt.Errorf("failed to get cloud provider for cluster %q: %v", cluster.Name, err)
-	}
-
-	switch provider := cloudProvider.(type) {
-	case *aws.AmazonEC2:
-		if err := provider.AddICMPRulesIfRequired(cluster); err != nil {
-			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %v", cluster.Name, err)
-		}
-		glog.Infof("Successfully ensured ICMP rules in security group of cluster %q", cluster.Name)
-	case *openstack.Provider:
-		if err := provider.AddICMPRulesIfRequired(cluster); err != nil {
-			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %v", cluster.Name, err)
-		}
-		glog.Infof("Successfully ensured ICMP rules in security group of cluster %q", cluster.Name)
-	case *azure.Azure:
-		if err := provider.AddICMPRulesIfRequired(cluster); err != nil {
-			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %v", cluster.Name, err)
-		}
-		glog.Infof("Successfully ensured ICMP rules in security group of cluster %q", cluster.Name)
-	}
-
-	cluster.Status.MigrationRevision = icmpMigrationRevision
-	if cluster, err = ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster); err != nil {
-		return fmt.Errorf("failed to update cluster %q after successfully executing its cloudProvider migration: %v",
-			cluster.Name, err)
-	}
-
 	return nil
 }
