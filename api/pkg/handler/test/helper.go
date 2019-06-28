@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kubermatic/kubermatic/api/pkg/credentials"
+	"github.com/kubermatic/kubermatic/api/pkg/presets"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 
@@ -130,9 +130,9 @@ type newRoutingFunc func(
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
 	saTokenGenerator serviceaccount.TokenGenerator,
 	eventRecorderProvider provider.EventRecorderProvider,
-	credentialManager common.CredentialManager) http.Handler
+	credentialManager common.PresetsManager) http.Handler
 
-func initTestEndpoint(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, credentialsManager common.CredentialManager, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
+func initTestEndpoint(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, credentialsManager common.PresetsManager, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
 	datacenters := dc
 	if datacenters == nil {
 		datacenters = buildDatacenterMeta()
@@ -252,17 +252,17 @@ func initTestEndpoint(user apiv1.User, dc map[string]provider.DatacenterMeta, ku
 
 // CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes  for the tests
 func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
-	credentialManager := credentials.New()
-	credentialManager.GetCredentials().Fake = []credentials.FakeCredentials{
+	credentialManager := presets.New()
+	credentialManager.GetPresets().Fake = presets.Fake{Credentials: []presets.FakeCredentials{
 		{Name: TestFakeCredential, Token: "dummy_pluton_token"},
-	}
-	credentialManager.GetCredentials().Openstack = []credentials.OpenstackCredentials{
+	}}
+	credentialManager.GetPresets().Openstack = presets.Openstack{Credentials: []presets.OpenstackCredentials{
 		{Name: TestOSCredential, Username: TestOSuserName, Password: TestOSuserPass, Domain: TestOSdomain},
-	}
+	}}
 	return initTestEndpoint(user, dc, kubeObjects, machineObjects, kubermaticObjects, versions, updates, credentialManager, routingFunc)
 }
 
-func CreateCredentialTestEndpoint(credentialsManager common.CredentialManager, routingFunc newRoutingFunc) (http.Handler, error) {
+func CreateCredentialTestEndpoint(credentialsManager common.PresetsManager, routingFunc newRoutingFunc) (http.Handler, error) {
 	apiUser := GenDefaultAPIUser()
 	router, _, err := initTestEndpoint(*apiUser, nil, nil, nil, nil, nil, nil, credentialsManager, routingFunc)
 	return router, err

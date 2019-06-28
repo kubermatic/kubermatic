@@ -1,4 +1,4 @@
-package credentials
+package presets
 
 import (
 	"bufio"
@@ -11,17 +11,53 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 )
 
-// Credentials specifies custom credentials for supported provider
-type Credentials struct {
-	Digitalocean []DigitaloceanCredentials `json:"digitalocean,omitempty"`
-	Hetzner      []HetznerCredentials      `json:"hetzner,omitempty"`
-	Azure        []AzureCredentials        `json:"azure,omitempty"`
-	VSphere      []VSphereCredentials      `json:"vsphere,omitempty"`
-	AWS          []AWSCredentials          `json:"aws,omitempty"`
-	Openstack    []OpenstackCredentials    `json:"openstack,omitempty"`
-	Packet       []PacketCredentials       `json:"packet,omitempty"`
-	GCP          []GCPCredentials          `json:"gcp,omitempty"`
-	Fake         []FakeCredentials         `json:"fake,omitempty"`
+// Presets specifies default presets for supported providers
+type Presets struct {
+	Digitalocean Digitalocean `json:"digitalocean,omitempty"`
+	Hetzner      Hetzner      `json:"hetzner,omitempty"`
+	Azure        Azure        `json:"azure,omitempty"`
+	VSphere      VSphere      `json:"vsphere,omitempty"`
+	AWS          AWS          `json:"aws,omitempty"`
+	Openstack    Openstack    `json:"openstack,omitempty"`
+	Packet       Packet       `json:"packet,omitempty"`
+	GCP          GCP          `json:"gcp,omitempty"`
+	Fake         Fake         `json:"fake,omitempty"`
+}
+
+type Digitalocean struct {
+	Credentials []DigitaloceanCredentials `json:"credentials,omitempty"`
+}
+
+type Hetzner struct {
+	Credentials []HetznerCredentials `json:"credentials,omitempty"`
+}
+
+type Azure struct {
+	Credentials []AzureCredentials `json:"credentials,omitempty"`
+}
+
+type VSphere struct {
+	Credentials []VSphereCredentials `json:"credentials,omitempty"`
+}
+
+type AWS struct {
+	Credentials []AWSCredentials `json:"credentials,omitempty"`
+}
+
+type Openstack struct {
+	Credentials []OpenstackCredentials `json:"credentials,omitempty"`
+}
+
+type Packet struct {
+	Credentials []PacketCredentials `json:"credentials,omitempty"`
+}
+
+type GCP struct {
+	Credentials []GCPCredentials `json:"credentials,omitempty"`
+}
+
+type Fake struct {
+	Credentials []FakeCredentials `json:"credentials,omitempty"`
 }
 
 // DigitaloceanCredential defines Digitalocean credential
@@ -84,8 +120,8 @@ type FakeCredentials struct {
 	Token string `json:"token"`
 }
 
-// loadCredentials loads the custom credentials for supported providers
-func loadCredentials(path string) (*Credentials, error) {
+// loadPresets loads the custom presets for supported providers
+func loadPresets(path string) (*Presets, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -97,7 +133,7 @@ func loadCredentials(path string) (*Credentials, error) {
 	}
 
 	s := struct {
-		Credentials *Credentials `json:"credentials"`
+		Presets *Presets `json:"presets"`
 	}{}
 
 	err = yaml.Unmarshal(bytes, &s)
@@ -105,41 +141,51 @@ func loadCredentials(path string) (*Credentials, error) {
 		return nil, err
 	}
 
-	return s.Credentials, nil
+	return s.Presets, nil
 }
 
-// Manager is a object to handle credentials from a predefined config
+// Manager is a object to handle presets from a predefined config
 type Manager struct {
-	credentials *Credentials
+	presets *Presets
 }
 
 func New() *Manager {
-	credentials := &Credentials{}
-	return &Manager{credentials: credentials}
+	presets := &Presets{}
+	return &Manager{presets: presets}
 }
 
-func NewWithCredentials(credentials *Credentials) *Manager {
-	return &Manager{credentials: credentials}
+func NewWithPresets(presets *Presets) *Manager {
+	return &Manager{presets: presets}
 }
 
 // NewFromFile returns a instance of manager with the credentials loaded from the given paths
 func NewFromFile(credentialsFilename string) (*Manager, error) {
-	var credentials *Credentials
+	var presets *Presets
 	var err error
 	if len(credentialsFilename) > 0 {
-		credentials, err = loadCredentials(credentialsFilename)
+		presets, err = loadPresets(credentialsFilename)
 		if err != nil {
-			return nil, fmt.Errorf("failed to load credentials from %s: %v", credentialsFilename, err)
+			return nil, fmt.Errorf("failed to load presets from %s: %v", credentialsFilename, err)
 		}
 	}
-	if credentials == nil {
-		credentials = &Credentials{}
+	if presets == nil {
+		presets = &Presets{
+			Digitalocean: Digitalocean{},
+			VSphere:      VSphere{},
+			Openstack:    Openstack{},
+			Hetzner:      Hetzner{},
+			GCP:          GCP{},
+			Azure:        Azure{},
+			AWS:          AWS{},
+			Packet:       Packet{},
+			Fake:         Fake{},
+		}
 	}
-	return &Manager{credentials: credentials}, nil
+	return &Manager{presets: presets}, nil
 }
 
-func (m *Manager) GetCredentials() *Credentials {
-	return m.credentials
+func (m *Manager) GetPresets() *Presets {
+	return m.presets
 }
 
 func (m *Manager) SetCloudCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
@@ -184,10 +230,10 @@ func noCredentialError(credentialName string) error {
 }
 
 func (m *Manager) setFakeCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
-	if m.credentials.Fake == nil {
+	if m.presets.Fake.Credentials == nil {
 		return nil, emptyCredentialListError("Fake")
 	}
-	for _, credential := range m.credentials.Fake {
+	for _, credential := range m.presets.Fake.Credentials {
 		if credentialName == credential.Name {
 			cloud.Fake.Token = credential.Token
 			return &cloud, nil
@@ -197,10 +243,10 @@ func (m *Manager) setFakeCredentials(credentialName string, cloud v1.CloudSpec) 
 }
 
 func (m *Manager) setGCPCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
-	if m.credentials.GCP == nil {
+	if m.presets.GCP.Credentials == nil {
 		return nil, emptyCredentialListError("GCP")
 	}
-	for _, credential := range m.credentials.GCP {
+	for _, credential := range m.presets.GCP.Credentials {
 		if credentialName == credential.Name {
 			cloud.GCP.ServiceAccount = credential.ServiceAccount
 			return &cloud, nil
@@ -210,10 +256,10 @@ func (m *Manager) setGCPCredentials(credentialName string, cloud v1.CloudSpec) (
 }
 
 func (m *Manager) setAWSCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
-	if m.credentials.AWS == nil {
+	if m.presets.AWS.Credentials == nil {
 		return nil, emptyCredentialListError("AWS")
 	}
-	for _, credential := range m.credentials.AWS {
+	for _, credential := range m.presets.AWS.Credentials {
 		if credentialName == credential.Name {
 			cloud.AWS.AccessKeyID = credential.AccessKeyID
 			cloud.AWS.SecretAccessKey = credential.SecretAccessKey
@@ -224,10 +270,10 @@ func (m *Manager) setAWSCredentials(credentialName string, cloud v1.CloudSpec) (
 }
 
 func (m *Manager) setHetznerCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
-	if m.credentials.Hetzner == nil {
+	if m.presets.Hetzner.Credentials == nil {
 		return nil, emptyCredentialListError("Hetzner")
 	}
-	for _, credential := range m.credentials.Hetzner {
+	for _, credential := range m.presets.Hetzner.Credentials {
 		if credentialName == credential.Name {
 			cloud.Hetzner.Token = credential.Token
 			return &cloud, nil
@@ -237,10 +283,10 @@ func (m *Manager) setHetznerCredentials(credentialName string, cloud v1.CloudSpe
 }
 
 func (m *Manager) setPacketCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
-	if m.credentials.Packet == nil {
+	if m.presets.Packet.Credentials == nil {
 		return nil, emptyCredentialListError("Packet")
 	}
-	for _, credential := range m.credentials.Packet {
+	for _, credential := range m.presets.Packet.Credentials {
 		if credentialName == credential.Name {
 			cloud.Packet.ProjectID = credential.ProjectID
 			cloud.Packet.APIKey = credential.APIKey
@@ -251,10 +297,10 @@ func (m *Manager) setPacketCredentials(credentialName string, cloud v1.CloudSpec
 }
 
 func (m *Manager) setDigitalOceanCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
-	if m.credentials.Digitalocean == nil {
+	if m.presets.Digitalocean.Credentials == nil {
 		return nil, emptyCredentialListError("Digitalocean")
 	}
-	for _, credential := range m.credentials.Digitalocean {
+	for _, credential := range m.presets.Digitalocean.Credentials {
 		if credentialName == credential.Name {
 			cloud.Digitalocean.Token = credential.Token
 			return &cloud, nil
@@ -264,10 +310,10 @@ func (m *Manager) setDigitalOceanCredentials(credentialName string, cloud v1.Clo
 }
 
 func (m *Manager) setAzureCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
-	if m.credentials.Azure == nil {
+	if m.presets.Azure.Credentials == nil {
 		return nil, emptyCredentialListError("Azure")
 	}
-	for _, credential := range m.credentials.Azure {
+	for _, credential := range m.presets.Azure.Credentials {
 		if credentialName == credential.Name {
 			cloud.Azure.TenantID = credential.TenantID
 			cloud.Azure.ClientSecret = credential.ClientSecret
@@ -280,10 +326,10 @@ func (m *Manager) setAzureCredentials(credentialName string, cloud v1.CloudSpec)
 }
 
 func (m *Manager) setOpenStackCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
-	if m.credentials.Openstack == nil {
+	if m.presets.Openstack.Credentials == nil {
 		return nil, emptyCredentialListError("Openstack")
 	}
-	for _, credential := range m.credentials.Openstack {
+	for _, credential := range m.presets.Openstack.Credentials {
 		if credentialName == credential.Name {
 			cloud.Openstack.Username = credential.Username
 			cloud.Openstack.Password = credential.Password
@@ -296,10 +342,10 @@ func (m *Manager) setOpenStackCredentials(credentialName string, cloud v1.CloudS
 }
 
 func (m *Manager) setVsphereCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
-	if m.credentials.VSphere == nil {
+	if m.presets.VSphere.Credentials == nil {
 		return nil, emptyCredentialListError("Vsphere")
 	}
-	for _, credential := range m.credentials.VSphere {
+	for _, credential := range m.presets.VSphere.Credentials {
 		if credentialName == credential.Name {
 			cloud.VSphere.Password = credential.Password
 			cloud.VSphere.Username = credential.Username

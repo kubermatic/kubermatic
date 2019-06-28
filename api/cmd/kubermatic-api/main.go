@@ -34,12 +34,12 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
-	"github.com/kubermatic/kubermatic/api/pkg/credentials"
 	"github.com/kubermatic/kubermatic/api/pkg/handler"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	metricspkg "github.com/kubermatic/kubermatic/api/pkg/metrics"
+	"github.com/kubermatic/kubermatic/api/pkg/presets"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
@@ -89,11 +89,11 @@ func main() {
 	if err != nil {
 		log.Fatalw("failed to create update manager", "error", err)
 	}
-	credentialManager, err := credentials.NewFromFile(options.credentialFile)
+	presetsManager, err := presets.NewFromFile(options.presetsFile)
 	if err != nil {
-		log.Fatalw("failed to create credential manager", "error", err)
+		log.Fatalw("failed to create presets manager", "error", err)
 	}
-	apiHandler, err := createAPIHandler(options, providers, oidcIssuerVerifier, tokenVerifiers, tokenExtractors, updateManager, credentialManager)
+	apiHandler, err := createAPIHandler(options, providers, oidcIssuerVerifier, tokenVerifiers, tokenExtractors, updateManager, presetsManager)
 	if err != nil {
 		log.Fatalw("failed to create API Handler", "error", err)
 	}
@@ -261,7 +261,7 @@ func createAuthClients(options serverRunOptions, prov providers) (auth.TokenVeri
 	return tokenVerifiers, tokenExtractors, nil
 }
 
-func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifier auth.OIDCIssuerVerifier, tokenVerifiers auth.TokenVerifier, tokenExtractors auth.TokenExtractor, updateManager common.UpdateManager, credentialManager common.CredentialManager) (http.HandlerFunc, error) {
+func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifier auth.OIDCIssuerVerifier, tokenVerifiers auth.TokenVerifier, tokenExtractors auth.TokenExtractor, updateManager common.UpdateManager, presetsManager common.PresetsManager) (http.HandlerFunc, error) {
 	var prometheusClient prometheusapi.Client
 	if options.featureGates.Enabled(PrometheusEndpoint) {
 		var err error
@@ -298,7 +298,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		serviceAccountTokenAuth,
 		serviceAccountTokenGenerator,
 		prov.eventRecorderProvider,
-		credentialManager,
+		presetsManager,
 		options.exposeStrategy,
 	)
 

@@ -1,4 +1,4 @@
-package credentials_test
+package presets_test
 
 import (
 	"encoding/json"
@@ -13,9 +13,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/util/diff"
 
-	"github.com/kubermatic/kubermatic/api/pkg/credentials"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
+	"github.com/kubermatic/kubermatic/api/pkg/presets"
 )
 
 func TestCredentialEndpoint(t *testing.T) {
@@ -23,7 +23,7 @@ func TestCredentialEndpoint(t *testing.T) {
 	testcases := []struct {
 		name             string
 		provider         string
-		credentials      *credentials.Credentials
+		credentials      *presets.Presets
 		httpStatus       int
 		expectedResponse string
 	}{
@@ -36,10 +36,10 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:     "test list of credential names for AWS",
 			provider: "aws",
-			credentials: &credentials.Credentials{AWS: []credentials.AWSCredentials{
+			credentials: &presets.Presets{AWS: presets.AWS{Credentials: []presets.AWSCredentials{
 				{Name: "first"},
 				{Name: "second"},
-			}},
+			}}},
 			httpStatus:       http.StatusOK,
 			expectedResponse: `{"names":["first","second"]}`,
 		},
@@ -52,10 +52,10 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:     "test list of credential names for Azure",
 			provider: "azure",
-			credentials: &credentials.Credentials{Azure: []credentials.AzureCredentials{
+			credentials: &presets.Presets{Azure: presets.Azure{Credentials: []presets.AzureCredentials{
 				{Name: "first", ClientID: "test-first", ClientSecret: "secret-first", SubscriptionID: "subscription-first", TenantID: "tenant-first"},
 				{Name: "second", ClientID: "test-second", ClientSecret: "secret-second", SubscriptionID: "subscription-second", TenantID: "tenant-second"},
-			}},
+			}}},
 			httpStatus:       http.StatusOK,
 			expectedResponse: `{"names":["first","second"]}`,
 		},
@@ -68,10 +68,10 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:     "test list of credential names for DigitalOcean",
 			provider: "digitalocean",
-			credentials: &credentials.Credentials{Digitalocean: []credentials.DigitaloceanCredentials{
+			credentials: &presets.Presets{Digitalocean: presets.Digitalocean{Credentials: []presets.DigitaloceanCredentials{
 				{Name: "digitalocean-first"},
 				{Name: "digitalocean-second"},
-			}},
+			}}},
 			httpStatus:       http.StatusOK,
 			expectedResponse: `{"names":["digitalocean-first","digitalocean-second"]}`,
 		},
@@ -84,10 +84,10 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:     "test list of credential names for GCP",
 			provider: "gcp",
-			credentials: &credentials.Credentials{GCP: []credentials.GCPCredentials{
+			credentials: &presets.Presets{GCP: presets.GCP{Credentials: []presets.GCPCredentials{
 				{Name: "first"},
 				{Name: "second"},
-			}},
+			}}},
 			httpStatus:       http.StatusOK,
 			expectedResponse: `{"names":["first","second"]}`,
 		},
@@ -100,10 +100,10 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:     "test list of credential names for Hetzner",
 			provider: "hetzner",
-			credentials: &credentials.Credentials{Hetzner: []credentials.HetznerCredentials{
+			credentials: &presets.Presets{Hetzner: presets.Hetzner{Credentials: []presets.HetznerCredentials{
 				{Name: "first"},
 				{Name: "second"},
-			}},
+			}}},
 			httpStatus:       http.StatusOK,
 			expectedResponse: `{"names":["first","second"]}`,
 		},
@@ -116,10 +116,10 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:     "test list of credential names for OpenStack",
 			provider: "openstack",
-			credentials: &credentials.Credentials{Openstack: []credentials.OpenstackCredentials{
+			credentials: &presets.Presets{Openstack: presets.Openstack{Credentials: []presets.OpenstackCredentials{
 				{Name: "first"},
 				{Name: "second"},
-			}},
+			}}},
 			httpStatus:       http.StatusOK,
 			expectedResponse: `{"names":["first","second"]}`,
 		},
@@ -132,10 +132,10 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:     "test list of credential names for Packet",
 			provider: "packet",
-			credentials: &credentials.Credentials{Packet: []credentials.PacketCredentials{
+			credentials: &presets.Presets{Packet: presets.Packet{Credentials: []presets.PacketCredentials{
 				{Name: "first"},
 				{Name: "second"},
-			}},
+			}}},
 			httpStatus:       http.StatusOK,
 			expectedResponse: `{"names":["first","second"]}`,
 		},
@@ -148,10 +148,10 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:     "test list of credential names for Vsphere",
 			provider: "vsphere",
-			credentials: &credentials.Credentials{VSphere: []credentials.VSphereCredentials{
+			credentials: &presets.Presets{VSphere: presets.VSphere{Credentials: []presets.VSphereCredentials{
 				{Name: "first"},
 				{Name: "second"},
-			}},
+			}}},
 			httpStatus:       http.StatusOK,
 			expectedResponse: `{"names":["first","second"]}`,
 		},
@@ -165,11 +165,11 @@ func TestCredentialEndpoint(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/providers/%s/credentials", tc.provider), strings.NewReader(""))
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/providers/%s/presets/credentials", tc.provider), strings.NewReader(""))
 
-			credentialsManager := credentials.New()
+			credentialsManager := presets.New()
 			if tc.credentials != nil {
-				credentialsManager = credentials.NewWithCredentials(tc.credentials)
+				credentialsManager = presets.NewWithPresets(tc.credentials)
 			}
 
 			res := httptest.NewRecorder()
