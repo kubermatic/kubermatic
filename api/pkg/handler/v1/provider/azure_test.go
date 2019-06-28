@@ -104,7 +104,6 @@ func buildAzureDatacenterMeta() map[string]provider.DatacenterMeta {
 		datacenterName: {
 			Location: "ap-northeast",
 			Country:  "JP",
-			Private:  false,
 			IsSeed:   true,
 			Spec: provider.DatacenterSpec{
 				Azure: &provider.AzureSpec{
