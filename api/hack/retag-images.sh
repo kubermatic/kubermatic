@@ -4,7 +4,7 @@ TARGET_REGISTRY=${TARGET_REGISTRY:-127.0.0.1:5000}
 function retag {
   local IMAGE=$1
 
-  ORG="$(echo ${IMAGE} | cut -d / -f 2-2)"
+  ORG="$(echo ${IMAGE} | cut -d / -f2)"
   NAME="$(echo ${IMAGE} | cut -d / -f 3-3 | cut -d : -f 1-1)"
   TAG="$(echo ${IMAGE} | cut -d / -f 3-3 | cut -d : -f 2-2)"
   TARGET_IMAGE="${TARGET_REGISTRY}/${ORG}/${NAME}:${TAG}"
