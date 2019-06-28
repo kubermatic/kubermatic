@@ -738,6 +738,10 @@ type AWSNodeSpec struct {
 	AMI string `json:"ami"`
 	// additional instance tags
 	Tags map[string]string `json:"tags"`
+	// Availiability zone in which to place the node. It is coupled with the subnet to which the node will belong.
+	AvailabilityZone string `json:"availabilityZone"`
+	// The VPC subnet to which the node shall be connected.
+	SubnetID string `json:"subnetID"`
 }
 
 // PacketNodeSpec specifies packet specific node settings

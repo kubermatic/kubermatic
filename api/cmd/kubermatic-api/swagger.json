@@ -3513,6 +3513,11 @@
           "type": "string",
           "x-go-name": "AMI"
         },
+        "availabilityZone": {
+          "description": "Availiability zone in which to place the node. It is coupled with the subnet to which the node will belong.",
+          "type": "string",
+          "x-go-name": "AvailabilityZone"
+        },
         "diskSize": {
           "description": "size of the volume in gb. Only one volume will be created",
           "type": "integer",
@@ -3523,6 +3528,11 @@
           "type": "string",
           "x-go-name": "InstanceType",
           "example": "t2.micro"
+        },
+        "subnetID": {
+          "description": "The VPC subnet to which the node shall be connected.",
+          "type": "string",
+          "x-go-name": "SubnetID"
         },
         "tags": {
           "description": "additional instance tags",
