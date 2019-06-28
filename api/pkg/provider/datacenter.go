@@ -143,7 +143,6 @@ type DatacenterMeta struct {
 	Seed             string         `yaml:"seed"`
 	Country          string         `yaml:"country"`
 	Spec             DatacenterSpec `yaml:"spec"`
-	Private          bool           `yaml:"private"`
 	IsSeed           bool           `yaml:"is_seed"`
 	SeedDNSOverwrite *string        `yaml:"seed_dns_overwrite,omitempty"`
 	Node             NodeSettings   `yaml:"node,omitempty"`
