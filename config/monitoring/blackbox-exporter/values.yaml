@@ -8,10 +8,10 @@ blackboxExporter:
     blackboxExporter:
       resources:
         requests:
-          cpu: 20m
+          cpu: 100m
           memory: 24Mi
         limits:
-          cpu: 100m
+          cpu: 250m
           memory: 32Mi
 
   nodeSelector: {}

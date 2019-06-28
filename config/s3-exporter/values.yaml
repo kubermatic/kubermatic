@@ -6,10 +6,10 @@ s3Exporter:
   bucket: kubermatic-etcd-backups
   resources:
     requests:
-      cpu: 10m
+      cpu: 50m
       memory: 24Mi
     limits:
-      cpu: 30m
+      cpu: 150m
       memory: 32Mi
   nodeSelector: {}
   affinity: {}

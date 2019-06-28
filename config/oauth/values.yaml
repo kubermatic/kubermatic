@@ -38,10 +38,10 @@ dex:
 #    userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"
   resources:
     requests:
-      cpu: 10m
+      cpu: 200m
       memory: 32Mi
     limits:
-      cpu: 50m
+      cpu: 300m
       memory: 128Mi
 
   nodeSelector: {}
