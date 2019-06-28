@@ -279,7 +279,6 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 		"us-central1": {
 			Location: "us-central",
 			Country:  "US",
-			Private:  false,
 			IsSeed:   true,
 			Spec: provider.DatacenterSpec{
 				Digitalocean: &provider.DigitaloceanSpec{
@@ -291,7 +290,6 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 			Location: "US ",
 			Seed:     "us-central1",
 			Country:  "NL",
-			Private:  true,
 			Spec: provider.DatacenterSpec{
 				Digitalocean: &provider.DigitaloceanSpec{
 					Region: "ams2",

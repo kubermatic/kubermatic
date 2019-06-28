@@ -137,7 +137,6 @@ func buildOpenstackDatacenterMeta() map[string]provider.DatacenterMeta {
 		datacenterName: {
 			Location: "ap-northeast",
 			Country:  "JP",
-			Private:  false,
 			IsSeed:   true,
 			Spec: provider.DatacenterSpec{
 				Openstack: &provider.OpenstackSpec{

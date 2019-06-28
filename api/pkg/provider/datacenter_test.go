@@ -65,7 +65,6 @@ datacenters:
 			Spec: DatacenterSpec{
 				BringYourOwn: &BringYourOwnSpec{},
 			},
-			Private:          false,
 			IsSeed:           true,
 			SeedDNSOverwrite: nil,
 		},
@@ -78,7 +77,6 @@ datacenters:
 					Region: "ams3",
 				},
 			},
-			Private:          false,
 			IsSeed:           false,
 			SeedDNSOverwrite: nil,
 		},
@@ -99,7 +97,6 @@ datacenters:
 					EnforceFloatingIP: true,
 				},
 			},
-			Private:          false,
 			IsSeed:           false,
 			SeedDNSOverwrite: nil,
 		},
