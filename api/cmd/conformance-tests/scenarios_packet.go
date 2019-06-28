@@ -5,6 +5,7 @@ import (
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	v1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -78,21 +79,27 @@ func (s *packetScenario) Cluster(secrets secrets) *v1.Cluster {
 	}
 }
 
-func (s *packetScenario) Nodes(num int, _ secrets) *kubermaticapiv1.NodeDeployment {
-	return &kubermaticapiv1.NodeDeployment{
-		Spec: kubermaticapiv1.NodeDeploymentSpec{
-			Replicas: int32(num),
-			Template: kubermaticapiv1.NodeSpec{
-				Cloud: kubermaticapiv1.NodeCloudSpec{
-					Packet: &kubermaticapiv1.PacketNodeSpec{
-						InstanceType: "t1.small.x86",
+func (s *packetScenario) Nodes(num int, _ provider.DatacenterSpec, _ secrets) []kubermaticapiv1.NodeDeployment {
+	return []kubermaticapiv1.NodeDeployment{
+		{
+			Spec: kubermaticapiv1.NodeDeploymentSpec{
+				Replicas: int32(num),
+				Template: kubermaticapiv1.NodeSpec{
+					Cloud: kubermaticapiv1.NodeCloudSpec{
+						Packet: &kubermaticapiv1.PacketNodeSpec{
+							InstanceType: "t1.small.x86",
+						},
 					},
+					Versions: kubermaticapiv1.NodeVersionInfo{
+						Kubelet: s.version.String(),
+					},
+					OperatingSystem: s.nodeOsSpec,
 				},
-				Versions: kubermaticapiv1.NodeVersionInfo{
-					Kubelet: s.version.String(),
-				},
-				OperatingSystem: s.nodeOsSpec,
 			},
 		},
 	}
+}
+
+func (s *packetScenario) OS() kubermaticapiv1.OperatingSystemSpec {
+	return s.nodeOsSpec
 }

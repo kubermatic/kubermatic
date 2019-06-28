@@ -383,18 +383,18 @@ func getScenarios(opts Opts, log *logrus.Entry) []testScenario {
 
 	var filteredScenarios []testScenario
 	for _, scenario := range scenarios {
-		nd := scenario.Nodes(1, secrets{})
-		if nd.Spec.Template.OperatingSystem.Ubuntu != nil {
+		osspec := scenario.OS()
+		if osspec.Ubuntu != nil {
 			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemUbuntu] {
 				filteredScenarios = append(filteredScenarios, scenario)
 			}
 		}
-		if nd.Spec.Template.OperatingSystem.ContainerLinux != nil {
+		if osspec.ContainerLinux != nil {
 			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemCoreos] {
 				filteredScenarios = append(filteredScenarios, scenario)
 			}
 		}
-		if nd.Spec.Template.OperatingSystem.CentOS != nil {
+		if osspec.CentOS != nil {
 			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemCentOS] {
 				filteredScenarios = append(filteredScenarios, scenario)
 			}

@@ -27,6 +27,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -53,7 +54,8 @@ var (
 type testScenario interface {
 	Name() string
 	Cluster(secrets secrets) *kubermaticv1.Cluster
-	Nodes(num int, secrets secrets) *kubermaticapiv1.NodeDeployment
+	Nodes(num int, dc provider.DatacenterSpec, secrets secrets) []kubermaticapiv1.NodeDeployment
+	OS() kubermaticapiv1.OperatingSystemSpec
 }
 
 func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
@@ -296,8 +298,8 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 		return nil, fmt.Errorf("failed to get the client for the cluster: %v", err)
 	}
 
-	nodeDeployment := scenario.Nodes(r.nodeCount, r.secrets)
-	if err := r.setupNodes(log, scenario.Name(), cluster, userClusterClient, nodeDeployment, dc); err != nil {
+	nodeDeployments := scenario.Nodes(r.nodeCount, dc.Spec, r.secrets)
+	if err := r.setupNodes(log, scenario.Name(), cluster, userClusterClient, nodeDeployments, dc); err != nil {
 		return nil, fmt.Errorf("failed to setup nodes: %v", err)
 	}
 
@@ -316,7 +318,7 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 		}, nil
 	}
 
-	report, err := r.testCluster(log, scenario.Name(), cluster, userClusterClient, nodeDeployment, dc, kubeconfigFilename, cloudConfigFilename)
+	report, err := r.testCluster(log, scenario.Name(), cluster, userClusterClient, nodeDeployments, dc, kubeconfigFilename, cloudConfigFilename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to test cluster: %v", err)
 	}
@@ -343,7 +345,7 @@ func (r *testRunner) testCluster(
 	scenarioName string,
 	cluster *kubermaticv1.Cluster,
 	userClusterClient ctrlruntimeclient.Client,
-	nd *kubermaticapiv1.NodeDeployment,
+	nd []kubermaticapiv1.NodeDeployment,
 	dc provider.DatacenterMeta,
 	kubeconfigFilename string,
 	cloudConfigFilename string,
@@ -506,10 +508,14 @@ func (r *testRunner) executeGinkgoRunWithRetries(log *logrus.Entry, run *ginkgoR
 	return ginkgoRes, err
 }
 
-func (r *testRunner) setupNodes(parentLog *logrus.Entry, scenarioName string, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, nodeDeployment *kubermaticapiv1.NodeDeployment, dc provider.DatacenterMeta) error {
+func (r *testRunner) setupNodes(parentLog *logrus.Entry, scenarioName string, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, nodeDeployments []kubermaticapiv1.NodeDeployment, dc provider.DatacenterMeta) error {
 	ctx := context.Background()
+	var ndNodeCount int32
+	for _, nd := range nodeDeployments {
+		ndNodeCount += nd.Spec.Replicas
+	}
 	log := parentLog.WithFields(logrus.Fields{
-		"nd-node-count": nodeDeployment.Spec.Replicas,
+		"nd-node-count": ndNodeCount,
 		"node-count":    r.nodeCount,
 	})
 
@@ -550,65 +556,84 @@ func (r *testRunner) setupNodes(parentLog *logrus.Entry, scenarioName string, cl
 		log.Infof(
 			"Reducing the number of replicas for the new MachineDeployment by %d so we end up with a total of %d Nodes, due to %d already existing Machines from a former test run",
 			machinesWithoutOwner,
-			nodeDeployment.Spec.Replicas,
+			ndNodeCount,
 			machinesWithoutOwner,
 		)
-		nodeDeployment.Spec.Replicas = nodeDeployment.Spec.Replicas - machinesWithoutOwner
+
+		// we try to subract the non-owned machines sort-of uniformly from all node deployments
+		for machinesWithoutOwner > 0 {
+			for i := range nodeDeployments {
+				if machinesWithoutOwner > 0 && nodeDeployments[i].Spec.Replicas > 0 {
+					nodeDeployments[i].Spec.Replicas--
+					machinesWithoutOwner--
+				}
+			}
+		}
 		return nil
 	}); err != nil {
 		return fmt.Errorf("failed to get existing machines in order to adjust NodeDeployment: %v", err)
 	}
-	// Explicitly set name. machine.MachineDeployment sets generateName if the name
-	// is unset but need a deterministic name because we retry creation and dont
-	// want to accidentally create multiple MachineDeployments
-	nodeDeployment.Name = fmt.Sprintf("md-%s", scenarioName)
-	machineDeployment, err := machine.Deployment(cluster, nodeDeployment, dc, keys)
-	if err != nil {
-		return fmt.Errorf("failed to get MachineDeployment from NodeDeployment: %v", err)
+
+	// first create each MD
+	machineDeployments := make([]*clusterv1alpha1.MachineDeployment, 0, len(nodeDeployments))
+	for ndIndex, nd := range nodeDeployments {
+		// Explicitly set name. machine.MachineDeployment sets generateName if the name
+		// is unset but need a deterministic name because we retry creation and dont
+		// want to accidentally create multiple MachineDeployments
+		nd.Name = fmt.Sprintf("md-%s-%d", scenarioName, ndIndex)
+		machineDeployment, err := machine.Deployment(cluster, &nd, dc, keys)
+		if err != nil {
+			return fmt.Errorf("failed to get MachineDeployment from NodeDeployment: %v", err)
+		}
+
+		log = log.WithField("machineDeployment", machineDeployment.Name)
+		if err := retryNAttempts(defaultAPIRetries, func(attempt int) error {
+			if err := client.Create(ctx, machineDeployment); err != nil {
+				if kerrors.IsAlreadyExists(err) {
+					return nil
+				}
+				log.Warnf("[Attempt %d/%d] Failed to create MachineDeployment: %v. Retrying", attempt, defaultAPIRetries, err)
+				time.Sleep(defaultUserClusterPollInterval)
+				return err
+			}
+			return nil
+		}); err != nil {
+			return fmt.Errorf("failed to create MachineDeployment %s after %d attempts: %v", machineDeployment.Name, defaultAPIRetries, err)
+		}
+
+		machineDeployments = append(machineDeployments, machineDeployment)
 	}
 
-	log = log.WithField("machineDeployment", machineDeployment.Name)
-	if err := retryNAttempts(defaultAPIRetries, func(attempt int) error {
-		if err := client.Create(ctx, machineDeployment); err != nil {
-			if kerrors.IsAlreadyExists(err) {
+	// Then make sure they're up.
+	for mdIndex, md := range machineDeployments {
+		// Make sure replicas matches nodeDeployment replicas, this may differ on the second run on upgrade tests
+		// We dont explicitly catch that, as we ignore kerrors.IsAlreadyExists when creating the machineDeployment
+		// This is a very poor persons replication of `EnsureResources`, the problem is we want to use the apis `machine.Deployment`
+		// func which always returns a new MachineDeployment
+		if err := retryNAttempts(defaultAPIRetries, func(_ int) error {
+			mdName := md.Name
+			if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: mdName}, md); err != nil {
+				return fmt.Errorf("failed to get MachineDeployment %q: %v", mdName, err)
+			}
+			if *md.Spec.Replicas == nodeDeployments[mdIndex].Spec.Replicas {
+				log.Debugf("Found an existing MachineDeployment with %d replicas. Not going to update the replicas", nodeDeployments[mdIndex].Spec.Replicas)
 				return nil
 			}
-			log.Warnf("[Attempt %d/%d] Failed to create MachineDeployment: %v. Retrying", attempt, defaultAPIRetries, err)
-			time.Sleep(defaultUserClusterPollInterval)
-			return err
-		}
-		return nil
-	}); err != nil {
-		return fmt.Errorf("failed to create MachineDeployment %s after %d attempts: %v", machineDeployment.Name, defaultAPIRetries, err)
-	}
 
-	// Make sure replicas matches nodeDeployment replicas, this may differ on the second run on upgrade tests
-	// We dont explicitly catch that, as we ignore kerrors.IsAlreadyExists when creating the machineDeployment
-	// This is a very poor persons replication of `EnsureResources`, the problem is we want to use the apis `machine.Deployment`
-	// func which always returns a new MachineDeployment
-	if err := retryNAttempts(defaultAPIRetries, func(_ int) error {
-		mdName := machineDeployment.Name
-		if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: mdName}, machineDeployment); err != nil {
-			return fmt.Errorf("failed to get MachineDeployment %q: %v", mdName, err)
+			// Create a copy to avoid changing the ND when changing the MD
+			replicas := nodeDeployments[mdIndex].Spec.Replicas
+			log.Infof(
+				"Found an existing MachineDeployment with %d replicas. Updating to %d replicas",
+				*md.Spec.Replicas,
+				replicas,
+			)
+			md.Spec.Replicas = &replicas
+			return client.Update(ctx, md)
+		}); err != nil {
+			return fmt.Errorf("failed to ensure machineDeployment has desired number of replicas: %v", err)
 		}
-		if *machineDeployment.Spec.Replicas == nodeDeployment.Spec.Replicas {
-			log.Debugf("Found an existing MachineDeployment with %d replicas. Not going to update the replicas", nodeDeployment.Spec.Replicas)
-			return nil
-		}
-
-		// Create a copy to avoid changing the ND when changing the MD
-		replicas := nodeDeployment.Spec.Replicas
-		log.Infof(
-			"Found an existing MachineDeployment with %d replicas. Updating to %d replicas",
-			*machineDeployment.Spec.Replicas,
-			replicas,
-		)
-		machineDeployment.Spec.Replicas = &replicas
-		return client.Update(ctx, machineDeployment)
-	}); err != nil {
-		return fmt.Errorf("failed to ensure machineDeployment has desired number of replicas: %v", err)
+		log.Infof("Successfully created %d machine(s)!", *md.Spec.Replicas)
 	}
-	log.Infof("Successfully created %d machine(s)!", *machineDeployment.Spec.Replicas)
 
 	if err := r.waitForReadyNodes(log, userClusterClient, r.nodeCount); err != nil {
 		return fmt.Errorf("failed waiting for nodes to become ready: %v", err)
@@ -835,12 +860,17 @@ func (r *testRunner) getGinkgoRuns(
 	kubeconfigFilename,
 	cloudConfigFilename string,
 	cluster *kubermaticv1.Cluster,
-	nd *kubermaticapiv1.NodeDeployment,
+	nd []kubermaticapiv1.NodeDeployment,
 	dc provider.DatacenterMeta,
 ) ([]*ginkgoRun, error) {
 	kubeconfigFilename = path.Clean(kubeconfigFilename)
 	repoRoot := path.Clean(r.repoRoot)
 	MajorMinor := fmt.Sprintf("%d.%d", cluster.Spec.Version.Major(), cluster.Spec.Version.Minor())
+
+	nodesTotal := int32(0)
+	for _, ndi := range nd {
+		nodesTotal += ndi.Spec.Replicas
+	}
 
 	runs := []struct {
 		name          string
@@ -852,7 +882,7 @@ func (r *testRunner) getGinkgoRuns(
 			name:          "parallel",
 			ginkgoFocus:   `\[Conformance\]`,
 			ginkgoSkip:    `\[Serial\]`,
-			parallelTests: int(nd.Spec.Replicas) * 10,
+			parallelTests: int(nodesTotal) * 10,
 		},
 		{
 			name:          "serial",
@@ -889,19 +919,31 @@ func (r *testRunner) getGinkgoRuns(
 			fmt.Sprintf("--report-prefix=%s", run.name),
 			fmt.Sprintf("--kubectl-path=%s", path.Join(binRoot, "kubectl")),
 			fmt.Sprintf("--kubeconfig=%s", kubeconfigFilename),
-			fmt.Sprintf("--num-nodes=%d", nd.Spec.Replicas),
+			fmt.Sprintf("--num-nodes=%d", nodesTotal),
 			fmt.Sprintf("--cloud-config-file=%s", cloudConfigFilename),
 		}
 
 		args = append(args, "--provider=local")
 
-		if nd.Spec.Template.OperatingSystem.Ubuntu != nil {
+		// verify that all operating system specs are identical
+		var osSpec *kubermaticapiv1.OperatingSystemSpec
+		for i, ndi := range nd {
+			if osSpec == nil {
+				osSpec = &ndi.Spec.Template.OperatingSystem
+			} else {
+				if !equality.Semantic.DeepEqual(*osSpec, ndi.Spec.Template.OperatingSystem) {
+					return nil, fmt.Errorf("node deployment #%d has OS specification different from node deployment #0: %+v != %+v", i, ndi.Spec.Template.OperatingSystem, osSpec)
+				}
+			}
+		}
+
+		if osSpec.Ubuntu != nil {
 			args = append(args, "--node-os-distro=ubuntu")
 			env = append(env, "KUBE_SSH_USER=ubuntu")
-		} else if nd.Spec.Template.OperatingSystem.CentOS != nil {
+		} else if osSpec.CentOS != nil {
 			args = append(args, "--node-os-distro=centos")
 			env = append(env, "KUBE_SSH_USER=centos")
-		} else if nd.Spec.Template.OperatingSystem.ContainerLinux != nil {
+		} else if osSpec.ContainerLinux != nil {
 			args = append(args, "--node-os-distro=coreos")
 			env = append(env, "KUBE_SSH_USER=core")
 		}
