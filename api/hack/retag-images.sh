@@ -5,8 +5,8 @@ function retag {
   local IMAGE=$1
 
   ORG="$(echo ${IMAGE} | cut -d / -f2)"
-  NAME="$(echo ${IMAGE} | cut -d / -f 3-3 | cut -d : -f 1-1)"
-  TAG="$(echo ${IMAGE} | cut -d / -f 3-3 | cut -d : -f 2-2)"
+  NAME="$(echo ${IMAGE} | cut -d / -f3 | cut -d : -f1)"
+  TAG="$(echo ${IMAGE} | cut -d / -f3 | cut -d : -f2)"
   TARGET_IMAGE="${TARGET_REGISTRY}/${ORG}/${NAME}:${TAG}"
   echo "Retagging ${IMAGE} to ${TARGET_IMAGE}"
 
