@@ -77,23 +77,23 @@ func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
 		existingClusterLabel:         opts.existingClusterLabel,
 		openshift:                    opts.openshift,
 		printGinkoLogs:               opts.printGinkoLogs,
-		fast:                         opts.fast,
+		onlyTestCreation:             opts.onlyTestCreation,
 	}
 }
 
 type testRunner struct {
-	scenarios      []testScenario
-	secrets        secrets
-	namePrefix     string
-	repoRoot       string
-	reportsRoot    string
-	PublicKeys     [][]byte
-	workerName     string
-	homeDir        string
-	log            *logrus.Entry
-	openshift      bool
-	printGinkoLogs bool
-	fast           bool
+	scenarios        []testScenario
+	secrets          secrets
+	namePrefix       string
+	repoRoot         string
+	reportsRoot      string
+	PublicKeys       [][]byte
+	workerName       string
+	homeDir          string
+	log              *logrus.Entry
+	openshift        bool
+	printGinkoLogs   bool
+	onlyTestCreation bool
 
 	controlPlaneReadyWaitTimeout time.Duration
 	deleteClusterAfterTests      bool
@@ -305,7 +305,7 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 		return nil, fmt.Errorf("failed to wait until all pods are running after creating the cluster: %v", err)
 	}
 
-	if r.fast {
+	if r.onlyTestCreation {
 		return &reporters.JUnitTestSuite{
 			Name: "cluster creation",
 			TestCases: []reporters.JUnitTestCase{

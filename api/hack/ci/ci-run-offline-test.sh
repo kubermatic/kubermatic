@@ -247,7 +247,7 @@ ssh ${SSH_OPTS} root@${PROXY_EXTERNAL_ADDR} << EOF
     -providers=gcp \
     -exclude-distributions="centos,ubuntu" \
     -kubermatic-delete-cluster=false \
-    -fast=true \
+    -only-test-creation=true \
     -gcp-service-account="${GOOGLE_SERVICE_ACCOUNT}" \
     -gcp-zone="europe-west3-a" \
     -gcp-network="global/networks/offline-network" \
