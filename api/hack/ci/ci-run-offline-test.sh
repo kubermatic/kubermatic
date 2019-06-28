@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Required for signal propagation to work so
+# the cleanup trap gets executed when the script
+# receives a SIGINT
+set -o monitor
 
 cd "$(dirname "$0")/"
 source ./../lib.sh

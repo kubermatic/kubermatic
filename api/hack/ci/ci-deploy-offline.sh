@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Required for signal propagation to work so
+# the cleanup trap gets executed when the script
+# receives a SIGINT
+set -o monitor
 
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 
