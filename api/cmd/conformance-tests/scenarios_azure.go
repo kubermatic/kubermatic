@@ -32,13 +32,12 @@ func getAzureScenarios(versions []*semver.Semver) []testScenario {
 			},
 		})
 		// CentOS
-		//TODO: Fix
-		//scenarios = append(scenarios, &azureScenario{
-		//	version: v,
-		//	nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
-		//		CentOS: &kubermaticapiv1.CentOSSpec{},
-		//	},
-		//})
+		scenarios = append(scenarios, &azureScenario{
+			version: v,
+			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
+				CentOS: &kubermaticapiv1.CentOSSpec{},
+			},
+		})
 	}
 	return scenarios
 }
