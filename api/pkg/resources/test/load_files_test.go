@@ -141,6 +141,7 @@ func TestLoadFiles(t *testing.T) {
 				SecurityGroupID:     "aws-security-group",
 				SubnetID:            "aws-subnet-id",
 				VPCID:               "aws-vpn-id",
+				RoleARN:             "aws-role-arn",
 			},
 		},
 		"openstack": {

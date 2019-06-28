@@ -3354,6 +3354,10 @@
           "type": "string",
           "x-go-name": "InstanceProfileName"
         },
+        "roleARN": {
+          "type": "string",
+          "x-go-name": "RoleARN"
+        },
         "roleName": {
           "type": "string",
           "x-go-name": "RoleName"

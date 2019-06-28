@@ -1,11 +1,11 @@
 data:
   config: |
     [global]
-    Zone="aws-availability-zone"
+    Zone="us-central1x"
     VPC="aws-vpn-id"
-    SubnetID="aws-subnet-id"
+    SubnetID=""
     RouteTableID="aws-route-table-id"
-    RoleARN=""
+    RoleARN="aws-role-arn"
     KubernetesClusterID="de-test-01"
     DisableSecurityGroupIngress=false
     ElbSecurityGroup=""

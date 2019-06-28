@@ -56,14 +56,17 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *provider.DatacenterMeta) (cl
 	cloud := cluster.Spec.Cloud
 	if cloud.AWS != nil {
 		awsCloudConfig := &aws.CloudConfig{
+			// Dummy AZ, so that K8S can extract the region from it.
+			// https://github.com/kubernetes/kubernetes/blob/v1.15.0/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go#L1199
+			// https://github.com/kubernetes/kubernetes/blob/v1.15.0/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go#L1174
 			Global: aws.GlobalOpts{
-				Zone:                        cloud.AWS.AvailabilityZone,
+				Zone:                        dc.Spec.AWS.Region + "x",
 				VPC:                         cloud.AWS.VPCID,
 				KubernetesClusterID:         cluster.Name,
 				DisableSecurityGroupIngress: false,
-				SubnetID:                    cloud.AWS.SubnetID,
 				RouteTableID:                cloud.AWS.RouteTableID,
 				DisableStrictZoneCheck:      true,
+				RoleARN:                     cloud.AWS.RoleARN,
 			},
 		}
 		cloudConfig, err = aws.CloudConfigToString(awsCloudConfig)
