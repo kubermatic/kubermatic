@@ -100,6 +100,39 @@ func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
+// MigrateToMultiAZ migrates an AWS cluster from the old AZ-hardcoded spec to multi-AZ spec
+func (a *AmazonEC2) MigrateToMultiAZ(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) error {
+	// If not even the role name is set, then the cluster is not fully
+	// initialized and we don't need to worry about this migration just yet.
+	if cluster.Spec.Cloud.AWS.RoleName == "" {
+		return nil
+	}
+
+	if cluster.Spec.Cloud.AWS.RoleARN == "" {
+		svcIAM, err := a.getIAMClient(cluster.Spec.Cloud)
+		if err != nil {
+			return fmt.Errorf("failed to get IAM client: %v", err)
+		}
+
+		paramsRoleGet := &iam.GetRoleInput{RoleName: aws.String(cluster.Spec.Cloud.AWS.RoleName)}
+		getRoleOut, err := svcIAM.GetRole(paramsRoleGet)
+		if err != nil {
+			return fmt.Errorf("failed to get already existing aws IAM role %s: %v", cluster.Spec.Cloud.AWS.RoleName, err)
+		}
+
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster.Spec.Cloud.AWS.RoleARN = *getRoleOut.Role.Arn
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// AddICMPRulesIfRequired will create security rules that allow ICMP traffic if these do not yet exist.
+// It is a part of a migration for older clusers (migrationRevision < 1) that didn't have these rules.
 func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
 	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
 		glog.Infof("Not adding ICMP allow rules for cluster %q as it has no securityGroupID set",
@@ -612,6 +645,7 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, instanceProfileCleanupFinalizer)
 			cluster.Spec.Cloud.AWS.RoleName = *role.RoleName
+			cluster.Spec.Cloud.AWS.RoleARN = *role.Arn
 			cluster.Spec.Cloud.AWS.InstanceProfileName = *instanceProfile.InstanceProfileName
 		})
 		if err != nil {
