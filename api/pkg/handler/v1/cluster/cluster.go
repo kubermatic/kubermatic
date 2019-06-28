@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/evanphx/json-patch"
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
@@ -544,6 +544,7 @@ func convertInternalClusterToExternal(internalCluster *kubermaticapiv1.Cluster) 
 			Cloud:           internalCluster.Spec.Cloud,
 			Version:         internalCluster.Spec.Version,
 			MachineNetworks: internalCluster.Spec.MachineNetworks,
+			OIDC:            internalCluster.Spec.OIDC,
 		},
 		Status: apiv1.ClusterStatus{
 			Version: internalCluster.Spec.Version,
