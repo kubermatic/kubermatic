@@ -1,4 +1,4 @@
-package credentials_test
+package presets_test
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/credentials"
+	"github.com/kubermatic/kubermatic/api/pkg/presets"
 )
 
 func TestAWSCredentialEndpoint(t *testing.T) {
@@ -17,14 +17,14 @@ func TestAWSCredentialEndpoint(t *testing.T) {
 		expectedError     string
 		cloudSpec         v1.CloudSpec
 		expectedCloudSpec *v1.CloudSpec
-		manager           *credentials.Manager
+		manager           *presets.Manager
 	}{
 		{
 			name:           "test 1: set credentials for Fake provider",
 			credentialName: "test",
-			manager: func() *credentials.Manager {
-				manager := credentials.New()
-				manager.GetCredentials().Fake = []credentials.FakeCredentials{
+			manager: func() *presets.Manager {
+				manager := presets.New()
+				manager.GetPresets().Fake.Credentials = []presets.FakeCredentials{
 					{Name: "test", Token: "abc"},
 					{Name: "pluto", Token: "def"},
 				}
@@ -36,9 +36,9 @@ func TestAWSCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 2: set credentials for GCP provider",
 			credentialName: "test",
-			manager: func() *credentials.Manager {
-				manager := credentials.New()
-				manager.GetCredentials().GCP = []credentials.GCPCredentials{
+			manager: func() *presets.Manager {
+				manager := presets.New()
+				manager.GetPresets().GCP.Credentials = []presets.GCPCredentials{
 					{Name: "test", ServiceAccount: "test_service_accouont"},
 				}
 				return manager
@@ -49,9 +49,9 @@ func TestAWSCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 3: set credentials for AWS provider",
 			credentialName: "test",
-			manager: func() *credentials.Manager {
-				manager := credentials.New()
-				manager.GetCredentials().AWS = []credentials.AWSCredentials{
+			manager: func() *presets.Manager {
+				manager := presets.New()
+				manager.GetPresets().AWS.Credentials = []presets.AWSCredentials{
 					{Name: "test", SecretAccessKey: "secret", AccessKeyID: "key"},
 				}
 				return manager
@@ -62,9 +62,9 @@ func TestAWSCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 4: set credentials for Hetzner provider",
 			credentialName: "test",
-			manager: func() *credentials.Manager {
-				manager := credentials.New()
-				manager.GetCredentials().Hetzner = []credentials.HetznerCredentials{
+			manager: func() *presets.Manager {
+				manager := presets.New()
+				manager.GetPresets().Hetzner.Credentials = []presets.HetznerCredentials{
 					{Name: "test", Token: "secret"},
 				}
 				return manager
@@ -75,9 +75,9 @@ func TestAWSCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 5: set credentials for Packet provider",
 			credentialName: "test",
-			manager: func() *credentials.Manager {
-				manager := credentials.New()
-				manager.GetCredentials().Packet = []credentials.PacketCredentials{
+			manager: func() *presets.Manager {
+				manager := presets.New()
+				manager.GetPresets().Packet.Credentials = []presets.PacketCredentials{
 					{Name: "test", APIKey: "secret", ProjectID: "project"},
 				}
 				return manager
@@ -88,9 +88,9 @@ func TestAWSCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 6: set credentials for DigitalOcean provider",
 			credentialName: "test",
-			manager: func() *credentials.Manager {
-				manager := credentials.New()
-				manager.GetCredentials().Digitalocean = []credentials.DigitaloceanCredentials{
+			manager: func() *presets.Manager {
+				manager := presets.New()
+				manager.GetPresets().Digitalocean.Credentials = []presets.DigitaloceanCredentials{
 					{Name: "test", Token: "abcd"},
 				}
 				return manager
@@ -101,9 +101,9 @@ func TestAWSCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 7: set credentials for OpenStack provider",
 			credentialName: "test",
-			manager: func() *credentials.Manager {
-				manager := credentials.New()
-				manager.GetCredentials().Openstack = []credentials.OpenstackCredentials{
+			manager: func() *presets.Manager {
+				manager := presets.New()
+				manager.GetPresets().Openstack.Credentials = []presets.OpenstackCredentials{
 					{Name: "test", Tenant: "a", Domain: "b", Password: "c", Username: "d"},
 				}
 				return manager
@@ -114,9 +114,9 @@ func TestAWSCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 8: set credentials for Vsphere provider",
 			credentialName: "test",
-			manager: func() *credentials.Manager {
-				manager := credentials.New()
-				manager.GetCredentials().VSphere = []credentials.VSphereCredentials{
+			manager: func() *presets.Manager {
+				manager := presets.New()
+				manager.GetPresets().VSphere.Credentials = []presets.VSphereCredentials{
 					{Name: "test", Username: "bob", Password: "secret"},
 				}
 				return manager
@@ -127,9 +127,9 @@ func TestAWSCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 9: set credentials for Azure provider",
 			credentialName: "test",
-			manager: func() *credentials.Manager {
-				manager := credentials.New()
-				manager.GetCredentials().Azure = []credentials.AzureCredentials{
+			manager: func() *presets.Manager {
+				manager := presets.New()
+				manager.GetPresets().Azure.Credentials = []presets.AzureCredentials{
 					{Name: "test", SubscriptionID: "a", ClientID: "b", ClientSecret: "c", TenantID: "d"},
 				}
 				return manager
@@ -140,8 +140,8 @@ func TestAWSCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 10: no credentials for Azure provider",
 			credentialName: "test",
-			manager: func() *credentials.Manager {
-				manager := credentials.New()
+			manager: func() *presets.Manager {
+				manager := presets.New()
 				return manager
 			}(),
 			cloudSpec:     v1.CloudSpec{Azure: &v1.AzureCloudSpec{}},
@@ -150,9 +150,9 @@ func TestAWSCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 11: cloud provider spec is empty",
 			credentialName: "test",
-			manager: func() *credentials.Manager {
-				manager := credentials.New()
-				manager.GetCredentials().Openstack = []credentials.OpenstackCredentials{
+			manager: func() *presets.Manager {
+				manager := presets.New()
+				manager.GetPresets().Openstack.Credentials = []presets.OpenstackCredentials{
 					{Name: "test", Tenant: "a", Domain: "b", Password: "c", Username: "d"},
 				}
 				return manager

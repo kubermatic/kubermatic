@@ -4,7 +4,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/credentials"
+	"github.com/kubermatic/kubermatic/api/pkg/presets"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 )
@@ -37,9 +37,9 @@ type UpdateManager interface {
 	GetPossibleUpdates(from, clusterType string) ([]*version.MasterVersion, error)
 }
 
-// UpdateManager specifies a set of methods to handle credentials for specific provider
-type CredentialManager interface {
-	GetCredentials() *credentials.Credentials
+// PresetsManager specifies a set of methods to handle presets for specific provider
+type PresetsManager interface {
+	GetPresets() *presets.Presets
 	SetCloudCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error)
 }
 

@@ -1,4 +1,4 @@
-package credentials
+package presets
 
 import (
 	"context"
@@ -34,7 +34,7 @@ type providerReq struct {
 }
 
 // CredentialEndpoint returns custom credential list name for the provider
-func CredentialEndpoint(credentialManager common.CredentialManager) endpoint.Endpoint {
+func CredentialEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(providerReq)
 		if !ok {
@@ -49,11 +49,12 @@ func CredentialEndpoint(credentialManager common.CredentialManager) endpoint.End
 		names := make([]string, 0)
 
 		providerN := parseProvider(req.ProviderName)
-		providers := reflect.ValueOf(credentialManager.GetCredentials()).Elem()
+		providers := reflect.ValueOf(credentialManager.GetPresets()).Elem()
 		providerItems := providers.Field(providerN)
-		if providerItems.Kind() == reflect.Slice {
-			for i := 0; i < providerItems.Len(); i++ {
-				item := providerItems.Index(i)
+		credentialItems := providerItems.FieldByName("Credentials")
+		if credentialItems.Kind() == reflect.Slice {
+			for i := 0; i < credentialItems.Len(); i++ {
+				item := credentialItems.Index(i)
 				if item.Kind() == reflect.Struct {
 					v := reflect.Indirect(item)
 					if _, ok := v.Type().FieldByName("Name"); ok {

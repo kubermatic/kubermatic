@@ -16,7 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func OpenstackSizeEndpoint(providers provider.CloudRegistry, datacenters map[string]provider.DatacenterMeta, credentialManager common.CredentialManager) endpoint.Endpoint {
+func OpenstackSizeEndpoint(providers provider.CloudRegistry, datacenters map[string]provider.DatacenterMeta, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
@@ -108,7 +108,7 @@ func MeetsOpenstackNodeSizeRequirement(apiSize apiv1.OpenstackSize, requirements
 	return true
 }
 
-func OpenstackTenantEndpoint(providers provider.CloudRegistry, credentialManager common.CredentialManager) endpoint.Endpoint {
+func OpenstackTenantEndpoint(providers provider.CloudRegistry, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackTenantReq)
 		if !ok {
@@ -171,7 +171,7 @@ func getOpenstackTenants(providers provider.CloudRegistry, username, password, d
 	return apiTenants, nil
 }
 
-func OpenstackNetworkEndpoint(providers provider.CloudRegistry, credentialManager common.CredentialManager) endpoint.Endpoint {
+func OpenstackNetworkEndpoint(providers provider.CloudRegistry, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
@@ -236,7 +236,7 @@ func getOpenstackNetworks(providers provider.CloudRegistry, username, password, 
 	return apiNetworks, nil
 }
 
-func OpenstackSecurityGroupEndpoint(providers provider.CloudRegistry, credentialManager common.CredentialManager) endpoint.Endpoint {
+func OpenstackSecurityGroupEndpoint(providers provider.CloudRegistry, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
@@ -300,7 +300,7 @@ func getOpenstackSecurityGroups(providers provider.CloudRegistry, username, pass
 	return apiSecurityGroups, nil
 }
 
-func OpenstackSubnetsEndpoint(providers provider.CloudRegistry, credentialManager common.CredentialManager) endpoint.Endpoint {
+func OpenstackSubnetsEndpoint(providers provider.CloudRegistry, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackSubnetReq)
 		if !ok {
@@ -487,10 +487,10 @@ func DecodeOpenstackTenantReq(c context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
-func getOpenstackCredentials(credentialName, username, password, domain, tenant string, credentialManager common.CredentialManager) (string, string, string, string) {
+func getOpenstackCredentials(credentialName, username, password, domain, tenant string, credentialManager common.PresetsManager) (string, string, string, string) {
 
-	if len(credentialName) > 0 && credentialManager.GetCredentials().Openstack != nil {
-		for _, credential := range credentialManager.GetCredentials().Openstack {
+	if len(credentialName) > 0 && credentialManager.GetPresets().Openstack.Credentials != nil {
+		for _, credential := range credentialManager.GetPresets().Openstack.Credentials {
 			if credential.Name == credentialName {
 				username = credential.Username
 				password = credential.Password
