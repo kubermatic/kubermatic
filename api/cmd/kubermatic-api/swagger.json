@@ -2962,6 +2962,26 @@
         }
       }
     },
+    "/api/v1/providers/gcp/sizes": {
+      "get": {
+        "description": "Lists machine types from GCP",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gcp"
+        ],
+        "operationId": "listGCPMachineTypes",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/GCPMachineTypesList"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/providers/openstack/networks": {
       "get": {
         "description": "Lists networks from openstack",
@@ -4343,6 +4363,34 @@
           },
           "x-go-name": "ZoneSuffixes"
         }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "GCPMachineType": {
+      "type": "object",
+      "title": "GCPMachineType represents a object of GCP machine type.",
+      "properties": {
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "memory": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Memory"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "GCPMachineTypeList": {
+      "type": "array",
+      "title": "GCPMachineTypeList represents an array of GCP machine types.",
+      "items": {
+        "$ref": "#/definitions/GCPMachineType"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
