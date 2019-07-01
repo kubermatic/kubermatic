@@ -443,7 +443,7 @@ func (r Routing) listGCPDiskTypes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.GetGCPDiskTypesEndpoint(r.credentialManager)),
+		)(provider.GCPDiskTypesEndpoint(r.credentialManager)),
 		provider.DecodeGCPTypesReqReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -465,7 +465,7 @@ func (r Routing) listGCPMachineTypes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.GetGCPMachineTypesEndpoint(r.credentialManager)),
+		)(provider.GCPSizeEndpoint(r.credentialManager)),
 		provider.DecodeGCPTypesReqReq,
 		encodeJSON,
 		r.defaultServerOptions()...,

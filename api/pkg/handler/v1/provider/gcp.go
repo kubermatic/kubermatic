@@ -29,7 +29,7 @@ func DecodeGCPTypesReqReq(c context.Context, r *http.Request) (interface{}, erro
 	return req, nil
 }
 
-func GetGCPDiskTypesEndpoint(credentialManager common.CredentialManager) endpoint.Endpoint {
+func GCPDiskTypesEndpoint(credentialManager common.CredentialManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPMachineTypesReq)
 
@@ -45,11 +45,11 @@ func GetGCPDiskTypesEndpoint(credentialManager common.CredentialManager) endpoin
 			}
 		}
 
-		return getGCPDiskTypes(ctx, sa, zone)
+		return listGCPDiskTypes(ctx, sa, zone)
 	}
 }
 
-func getGCPDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDiskTypeList, error) {
+func listGCPDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDiskTypeList, error) {
 	diskTypes := apiv1.GCPDiskTypeList{}
 
 	computeService, project, err := gcp.ConnectToComputeService(sa)
@@ -75,7 +75,7 @@ func getGCPDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDisk
 	return diskTypes, err
 }
 
-func GetGCPMachineTypesEndpoint(credentialManager common.CredentialManager) endpoint.Endpoint {
+func GCPSizeEndpoint(credentialManager common.CredentialManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPMachineTypesReq)
 
@@ -91,12 +91,12 @@ func GetGCPMachineTypesEndpoint(credentialManager common.CredentialManager) endp
 			}
 		}
 
-		return getGCPMachineTypes(ctx, sa, zone)
+		return listGCPSizes(ctx, sa, zone)
 	}
 }
 
-func getGCPMachineTypes(ctx context.Context, sa string, zone string) (apiv1.GCPMachineTypeList, error) {
-	machineTypes := apiv1.GCPMachineTypeList{}
+func listGCPSizes(ctx context.Context, sa string, zone string) (apiv1.GCPMachineSizeList, error) {
+	machineTypes := apiv1.GCPMachineSizeList{}
 
 	computeService, project, err := gcp.ConnectToComputeService(sa)
 	if err != nil {
@@ -109,7 +109,7 @@ func getGCPMachineTypes(ctx context.Context, sa string, zone string) (apiv1.GCPM
 			// TODO: Make the check below more generic, working for all the providers. It is needed as the pods
 			//  with memory under 2 GB will be full with required pods like kube-proxy, CNI etc.
 			if machineType.MemoryMb > 2048 {
-				mt := apiv1.GCPMachineType{
+				mt := apiv1.GCPMachineSize{
 					Name:        machineType.Name,
 					Description: machineType.Description,
 					Memory:      machineType.MemoryMb,
