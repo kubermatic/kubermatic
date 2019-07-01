@@ -75,7 +75,7 @@ datacenters:
 			Seed:     "europe-west3-c",
 			Country:  "NL",
 			Spec: kubermaticv1.DatacenterSpec{
-				Digitalocean: &kubermaticv1.DigitaloceanSpec{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "ams3",
 				},
 			},

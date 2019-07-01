@@ -38,15 +38,15 @@ type NodeLocation struct {
 
 // DatacenterSpec describes mutually points to provider datacenter spec
 type DatacenterSpec struct {
-	Digitalocean *DigitaloceanSpec `json:"digitalocean,omitempty"`
-	BringYourOwn *BringYourOwnSpec `json:"bringyourown,omitempty"`
-	AWS          *AWSSpec          `json:"aws,omitempty"`
-	Azure        *AzureSpec        `json:"azure,omitempty"`
-	Openstack    *OpenstackSpec    `json:"openstack,omitempty"`
-	Packet       *PacketSpec       `json:"packet,omitempty"`
-	Hetzner      *HetznerSpec      `json:"hetzner,omitempty"`
-	VSphere      *VSphereSpec      `json:"vsphere,omitempty"`
-	GCP          *GCPSpec          `json:"gcp,omitempty"`
+	Digitalocean *DatacenterSpecDigitalocean `json:"digitalocean,omitempty"`
+	BringYourOwn *BringYourOwnSpec           `json:"bringyourown,omitempty"`
+	AWS          *AWSSpec                    `json:"aws,omitempty"`
+	Azure        *AzureSpec                  `json:"azure,omitempty"`
+	Openstack    *OpenstackSpec              `json:"openstack,omitempty"`
+	Packet       *PacketSpec                 `json:"packet,omitempty"`
+	Hetzner      *HetznerSpec                `json:"hetzner,omitempty"`
+	VSphere      *VSphereSpec                `json:"vsphere,omitempty"`
+	GCP          *GCPSpec                    `json:"gcp,omitempty"`
 }
 
 // ImageList defines a map of operating system and the image to use
@@ -58,8 +58,8 @@ type HetznerSpec struct {
 	Location   string `yaml:"location"`
 }
 
-// DigitaloceanSpec describes a DigitalOcean datacenter
-type DigitaloceanSpec struct {
+// DatacenterSpecDigitalocean describes a DigitalOcean datacenter
+type DatacenterSpecDigitalocean struct {
 	Region string `yaml:"region"`
 }
 

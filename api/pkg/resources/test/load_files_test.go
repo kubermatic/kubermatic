@@ -184,7 +184,7 @@ func TestLoadFiles(t *testing.T) {
 				Region:        "us-central1",
 				ZoneCharacter: "a",
 			},
-			Digitalocean: &kubermaticv1.DigitaloceanSpec{
+			Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 				Region: "fra1",
 			},
 			Openstack: &kubermaticv1.OpenstackSpec{
@@ -726,7 +726,7 @@ func TestExecute(t *testing.T) {
 					Seed:     "europe-west3-c",
 					Country:  "DE",
 					Spec: kubermaticv1.DatacenterSpec{
-						Digitalocean: &kubermaticv1.DigitaloceanSpec{
+						Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 							Region: "fra1",
 						},
 					},

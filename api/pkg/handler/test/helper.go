@@ -282,7 +282,7 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 			Country:  "US",
 			IsSeed:   true,
 			Spec: kubermaticv1.DatacenterSpec{
-				Digitalocean: &kubermaticv1.DigitaloceanSpec{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "ams2",
 				},
 			},
@@ -292,7 +292,7 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 			Seed:     "us-central1",
 			Country:  "NL",
 			Spec: kubermaticv1.DatacenterSpec{
-				Digitalocean: &kubermaticv1.DigitaloceanSpec{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "ams2",
 				},
 			},
@@ -302,7 +302,7 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 			Seed:     "us-central1",
 			Country:  "NL",
 			Spec: kubermaticv1.DatacenterSpec{
-				Digitalocean: &kubermaticv1.DigitaloceanSpec{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "ams2",
 				},
 			},
