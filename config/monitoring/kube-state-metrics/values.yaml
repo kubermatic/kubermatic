@@ -7,7 +7,7 @@ kubeStateMetrics:
       cpu: 50m
       memory: 32Mi
     limits:
-      cpu: 200m
+      cpu: 250m
       memory: 128Mi
 
   resizer:

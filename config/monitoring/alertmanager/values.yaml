@@ -25,17 +25,17 @@ alertmanager:
   resources:
     alertmanager:
       requests:
-        cpu: 20m
+        cpu: 100m
         memory: 32Mi
       limits:
-        cpu: 100m
+        cpu: 200m
         memory: 48Mi
     reloader:
       requests:
-        cpu: 5m
+        cpu: 50m
         memory: 24Mi
       limits:
-        cpu: 5m
+        cpu: 150m
         memory: 32Mi
     migration:
       resources:

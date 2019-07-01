@@ -10,10 +10,10 @@ certManager:
 
     resources:
       requests:
-        cpu: 10m
+        cpu: 100m
         memory: 30Mi
       limits:
-        cpu: 30m
+        cpu: 300m
         memory: 50Mi
 
     affinity: {}
@@ -29,10 +29,10 @@ certManager:
 
     resources:
       requests:
-        cpu: 10m
+        cpu: 100m
         memory: 30Mi
       limits:
-        cpu: 30m
+        cpu: 250m
         memory: 30Mi
 
     affinity: {}

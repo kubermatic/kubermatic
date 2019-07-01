@@ -84,10 +84,10 @@ iap:
 
   resources:
     requests:
-      cpu: 10m
+      cpu: 50m
       memory: 25Mi
     limits:
-      cpu: 100m
+      cpu: 200m
       memory: 50Mi
 
   # You can use Go templating inside affinities and access

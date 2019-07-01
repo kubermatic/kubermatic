@@ -29,24 +29,24 @@ nodePortProxy:
   resources:
     envoy:
       requests:
-        cpu: 10m
+        cpu: 50m
         memory: 32Mi
       limits:
-        cpu: 20m
+        cpu: 200m
         memory: 64Mi
     envoyManager:
       requests:
-        cpu: 10m
+        cpu: 50m
         memory: 32Mi
       limits:
-        cpu: 20m
+        cpu: 150m
         memory: 48Mi
     lbUpdater:
       requests:
-        cpu: 10m
+        cpu: 50m
         memory: 32Mi
       limits:
-        cpu: 10m
+        cpu: 150m
         memory: 32Mi
 
   lbUpdater:
