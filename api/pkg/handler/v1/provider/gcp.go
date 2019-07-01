@@ -75,5 +75,5 @@ func getGCPMachineTypes(ctx context.Context, sa string, zone string) (apiv1.GCPM
 		return nil
 	})
 
-	return machineTypes, nil
+	return machineTypes, err
 }
