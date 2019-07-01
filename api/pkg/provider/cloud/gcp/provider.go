@@ -79,7 +79,7 @@ func (g *gcp) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 
 // CleanUpCloudProvider removes firewall rules and related finalizer.
 func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	svc, projectID, err := connectToComputeService(cluster.Spec.Cloud.GCP.ServiceAccount)
+	svc, projectID, err := ConnectToComputeService(cluster.Spec.Cloud.GCP.ServiceAccount)
 	if err != nil {
 		return nil, err
 	}
@@ -120,8 +120,8 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 	return cluster, nil
 }
 
-// connectToComputeService establishes a service connection to the Compute Engine.
-func connectToComputeService(serviceAccount string) (*compute.Service, string, error) {
+// ConnectToComputeService establishes a service connection to the Compute Engine.
+func ConnectToComputeService(serviceAccount string) (*compute.Service, string, error) {
 	b, err := base64.StdEncoding.DecodeString(serviceAccount)
 	if err != nil {
 		return nil, "", fmt.Errorf("error decoding service account: %v", err)
@@ -149,7 +149,7 @@ func connectToComputeService(serviceAccount string) (*compute.Service, string, e
 }
 
 func ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) error {
-	svc, projectID, err := connectToComputeService(cluster.Spec.Cloud.GCP.ServiceAccount)
+	svc, projectID, err := ConnectToComputeService(cluster.Spec.Cloud.GCP.ServiceAccount)
 	if err != nil {
 		return err
 	}

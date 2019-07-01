@@ -127,6 +127,18 @@ type Datacenter struct {
 	Seed     bool             `json:"seed,omitempty"`
 }
 
+// GCPMachineTypeList represents an array of GCP machine types.
+// swagger:model GCPMachineTypeList
+type GCPMachineTypeList []GCPMachineType
+
+// GCPMachineType represents a object of GCP machine type.
+// swagger:model GCPMachineType
+type GCPMachineType struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Memory      int64  `json:"memory"`
+}
+
 // DigitaloceanSizeList represents a object of digitalocean sizes.
 // swagger:model DigitaloceanSizeList
 type DigitaloceanSizeList struct {
