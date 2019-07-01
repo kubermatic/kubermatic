@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/diff"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
 	providerv1 "github.com/kubermatic/kubermatic/api/pkg/handler/v1/provider"
@@ -138,8 +139,8 @@ func buildOpenstackDatacenterMeta() map[string]provider.DatacenterMeta {
 			Location: "ap-northeast",
 			Country:  "JP",
 			IsSeed:   true,
-			Spec: provider.DatacenterSpec{
-				Openstack: &provider.OpenstackSpec{
+			Spec: kubermaticv1.DatacenterSpec{
+				Openstack: &kubermaticv1.OpenstackSpec{
 					Region:  region,
 					AuthURL: openstackServer.URL + "/v3/",
 				},
@@ -292,7 +293,7 @@ func TestMeetsOpentackNodeSizeRequirement(t *testing.T) {
 	tests := []struct {
 		name                string
 		apiSize             apiv1.OpenstackSize
-		nodeSizeRequirement provider.OpenstackNodeSizeRequirements
+		nodeSizeRequirement kubermaticv1.OpenstackNodeSizeRequirements
 		meetsRequirement    bool
 	}{
 		{
@@ -301,7 +302,7 @@ func TestMeetsOpentackNodeSizeRequirement(t *testing.T) {
 				Memory: 2048,
 				VCPUs:  2,
 			},
-			nodeSizeRequirement: provider.OpenstackNodeSizeRequirements{
+			nodeSizeRequirement: kubermaticv1.OpenstackNodeSizeRequirements{
 				MinimumMemory: 4096,
 				MinimumVCPUs:  1,
 			},
@@ -313,7 +314,7 @@ func TestMeetsOpentackNodeSizeRequirement(t *testing.T) {
 				Memory: 2048,
 				VCPUs:  2,
 			},
-			nodeSizeRequirement: provider.OpenstackNodeSizeRequirements{
+			nodeSizeRequirement: kubermaticv1.OpenstackNodeSizeRequirements{
 				MinimumMemory: 1024,
 				MinimumVCPUs:  4,
 			},
@@ -325,7 +326,7 @@ func TestMeetsOpentackNodeSizeRequirement(t *testing.T) {
 				Memory: 2048,
 				VCPUs:  2,
 			},
-			nodeSizeRequirement: provider.OpenstackNodeSizeRequirements{
+			nodeSizeRequirement: kubermaticv1.OpenstackNodeSizeRequirements{
 				MinimumMemory: 1024,
 				MinimumVCPUs:  1,
 			},
@@ -337,7 +338,7 @@ func TestMeetsOpentackNodeSizeRequirement(t *testing.T) {
 				Memory: 2048,
 				VCPUs:  2,
 			},
-			nodeSizeRequirement: provider.OpenstackNodeSizeRequirements{},
+			nodeSizeRequirement: kubermaticv1.OpenstackNodeSizeRequirements{},
 			meetsRequirement:    true,
 		},
 		{
@@ -345,7 +346,7 @@ func TestMeetsOpentackNodeSizeRequirement(t *testing.T) {
 			apiSize: apiv1.OpenstackSize{
 				VCPUs: 2,
 			},
-			nodeSizeRequirement: provider.OpenstackNodeSizeRequirements{
+			nodeSizeRequirement: kubermaticv1.OpenstackNodeSizeRequirements{
 				MinimumVCPUs: 2,
 			},
 			meetsRequirement: true,
@@ -355,7 +356,7 @@ func TestMeetsOpentackNodeSizeRequirement(t *testing.T) {
 			apiSize: apiv1.OpenstackSize{
 				Memory: 2,
 			},
-			nodeSizeRequirement: provider.OpenstackNodeSizeRequirements{
+			nodeSizeRequirement: kubermaticv1.OpenstackNodeSizeRequirements{
 				MinimumMemory: 2,
 			},
 			meetsRequirement: true,

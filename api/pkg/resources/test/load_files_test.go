@@ -163,11 +163,11 @@ func TestLoadFiles(t *testing.T) {
 	}
 
 	dc := provider.DatacenterMeta{
-		Spec: provider.DatacenterSpec{
-			Azure: &provider.AzureSpec{
+		Spec: kubermaticv1.DatacenterSpec{
+			Azure: &kubermaticv1.AzureSpec{
 				Location: "az-location",
 			},
-			VSphere: &provider.VSphereSpec{
+			VSphere: &kubermaticv1.VSphereSpec{
 				Endpoint:      "https://vs-endpoint.io",
 				AllowInsecure: false,
 				Datastore:     "vs-datastore",
@@ -175,8 +175,8 @@ func TestLoadFiles(t *testing.T) {
 				Cluster:       "vs-cluster",
 				RootPath:      "vs-cluster",
 			},
-			AWS: &provider.AWSSpec{
-				Images: provider.ImageList{
+			AWS: &kubermaticv1.AWSSpec{
+				Images: kubermaticv1.ImageList{
 					providerconfig.OperatingSystemUbuntu: "ubuntu-ami",
 					providerconfig.OperatingSystemCentOS: "centos-ami",
 					providerconfig.OperatingSystemCoreos: "coreos-ami",
@@ -184,10 +184,10 @@ func TestLoadFiles(t *testing.T) {
 				Region:        "us-central1",
 				ZoneCharacter: "a",
 			},
-			Digitalocean: &provider.DigitaloceanSpec{
+			Digitalocean: &kubermaticv1.DigitaloceanSpec{
 				Region: "fra1",
 			},
-			Openstack: &provider.OpenstackSpec{
+			Openstack: &kubermaticv1.OpenstackSpec{
 				AuthURL:          "https://example.com:8000/v3",
 				AvailabilityZone: "zone1",
 				DNSServers:       []string{"8.8.8.8", "8.8.4.4"},
@@ -725,8 +725,8 @@ func TestExecute(t *testing.T) {
 					Location: "Frankfurt",
 					Seed:     "europe-west3-c",
 					Country:  "DE",
-					Spec: provider.DatacenterSpec{
-						Digitalocean: &provider.DigitaloceanSpec{
+					Spec: kubermaticv1.DatacenterSpec{
+						Digitalocean: &kubermaticv1.DigitaloceanSpec{
 							Region: "fra1",
 						},
 					},
@@ -806,10 +806,10 @@ func TestExecute(t *testing.T) {
 					Location: "Frankfurt",
 					Seed:     "europe-west3-c",
 					Country:  "DE",
-					Spec: provider.DatacenterSpec{
-						AWS: &provider.AWSSpec{
+					Spec: kubermaticv1.DatacenterSpec{
+						AWS: &kubermaticv1.AWSSpec{
 							Region: "fra1",
-							Images: provider.ImageList{
+							Images: kubermaticv1.ImageList{
 								providerconfig.OperatingSystemUbuntu: "ubuntu-ami",
 								providerconfig.OperatingSystemCentOS: "centos-ami",
 								providerconfig.OperatingSystemCoreos: "coreos-ami",
@@ -902,8 +902,8 @@ func TestExecute(t *testing.T) {
 					Location: "Frankfurt",
 					Seed:     "europe-west3-c",
 					Country:  "DE",
-					Spec: provider.DatacenterSpec{
-						Openstack: &provider.OpenstackSpec{
+					Spec: kubermaticv1.DatacenterSpec{
+						Openstack: &kubermaticv1.OpenstackSpec{
 							AuthURL:          "os-auth-url",
 							AvailabilityZone: "os-availability-zone",
 							Region:           "os-region",
@@ -983,8 +983,8 @@ func TestExecute(t *testing.T) {
 					Location: "westeurope",
 					Seed:     "europe-west3-c",
 					Country:  "NL",
-					Spec: provider.DatacenterSpec{
-						Azure: &provider.AzureSpec{
+					Spec: kubermaticv1.DatacenterSpec{
+						Azure: &kubermaticv1.AzureSpec{
 							Location: "westeurope",
 						},
 					},
@@ -1049,8 +1049,8 @@ func TestExecute(t *testing.T) {
 					Location: "Frankfurt",
 					Seed:     "europe-west3-c",
 					Country:  "DE",
-					Spec: provider.DatacenterSpec{
-						Hetzner: &provider.HetznerSpec{
+					Spec: kubermaticv1.DatacenterSpec{
+						Hetzner: &kubermaticv1.HetznerSpec{
 							Datacenter: "hetzner-datacenter",
 							Location:   "hetzner-location",
 						},
@@ -1118,8 +1118,8 @@ func TestExecute(t *testing.T) {
 					Location: "Frankfurt",
 					Seed:     "europe-west3-c",
 					Country:  "DE",
-					Spec: provider.DatacenterSpec{
-						VSphere: &provider.VSphereSpec{
+					Spec: kubermaticv1.DatacenterSpec{
+						VSphere: &kubermaticv1.VSphereSpec{
 							Cluster:       "vsphere-cluster",
 							AllowInsecure: true,
 							Datastore:     "vsphere-datastore",

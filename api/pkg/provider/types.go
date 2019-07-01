@@ -11,7 +11,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
-
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -307,7 +306,7 @@ func ClusterCloudProvider(cps map[string]CloudProvider, c *kubermaticv1.Cluster)
 }
 
 // DatacenterCloudProviderName returns the provider name for the given Datacenter.
-func DatacenterCloudProviderName(spec *DatacenterSpec) (string, error) {
+func DatacenterCloudProviderName(spec *kubermaticv1.DatacenterSpec) (string, error) {
 	if spec == nil {
 		return "", nil
 	}
