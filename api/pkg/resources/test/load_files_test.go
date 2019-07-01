@@ -175,7 +175,7 @@ func TestLoadFiles(t *testing.T) {
 				Cluster:       "vs-cluster",
 				RootPath:      "vs-cluster",
 			},
-			AWS: &kubermaticv1.AWSSpec{
+			AWS: &kubermaticv1.DatacenterSpecAWS{
 				Images: kubermaticv1.ImageList{
 					providerconfig.OperatingSystemUbuntu: "ubuntu-ami",
 					providerconfig.OperatingSystemCentOS: "centos-ami",
@@ -807,7 +807,7 @@ func TestExecute(t *testing.T) {
 					Seed:     "europe-west3-c",
 					Country:  "DE",
 					Spec: kubermaticv1.DatacenterSpec{
-						AWS: &kubermaticv1.AWSSpec{
+						AWS: &kubermaticv1.DatacenterSpecAWS{
 							Region: "fra1",
 							Images: kubermaticv1.ImageList{
 								providerconfig.OperatingSystemUbuntu: "ubuntu-ami",

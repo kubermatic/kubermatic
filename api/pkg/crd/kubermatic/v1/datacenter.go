@@ -40,7 +40,7 @@ type NodeLocation struct {
 type DatacenterSpec struct {
 	Digitalocean *DatacenterSpecDigitalocean `json:"digitalocean,omitempty"`
 	BringYourOwn *DatacenterSpecBringYourOwn `json:"bringyourown,omitempty"`
-	AWS          *AWSSpec                    `json:"aws,omitempty"`
+	AWS          *DatacenterSpecAWS          `json:"aws,omitempty"`
 	Azure        *AzureSpec                  `json:"azure,omitempty"`
 	Openstack    *OpenstackSpec              `json:"openstack,omitempty"`
 	Packet       *PacketSpec                 `json:"packet,omitempty"`
@@ -112,8 +112,8 @@ type VSphereSpec struct {
 	InfraManagementUser *VSphereCredentials `json:"infra_management_user,omitempty"`
 }
 
-// AWSSpec describes a aws datacenter
-type AWSSpec struct {
+// DatacenterSpecAWS describes a aws datacenter
+type DatacenterSpecAWS struct {
 	Region        string    `json:"region"`
 	Images        ImageList `json:"images"`
 	ZoneCharacter string    `json:"zone_character"`
