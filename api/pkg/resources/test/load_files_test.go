@@ -164,7 +164,7 @@ func TestLoadFiles(t *testing.T) {
 
 	dc := provider.DatacenterMeta{
 		Spec: kubermaticv1.DatacenterSpec{
-			Azure: &kubermaticv1.AzureSpec{
+			Azure: &kubermaticv1.DatacenterSpecAzure{
 				Location: "az-location",
 			},
 			VSphere: &kubermaticv1.VSphereSpec{
@@ -984,7 +984,7 @@ func TestExecute(t *testing.T) {
 					Seed:     "europe-west3-c",
 					Country:  "NL",
 					Spec: kubermaticv1.DatacenterSpec{
-						Azure: &kubermaticv1.AzureSpec{
+						Azure: &kubermaticv1.DatacenterSpecAzure{
 							Location: "westeurope",
 						},
 					},

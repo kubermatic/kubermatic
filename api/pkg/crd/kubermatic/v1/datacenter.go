@@ -41,7 +41,7 @@ type DatacenterSpec struct {
 	Digitalocean *DatacenterSpecDigitalocean `json:"digitalocean,omitempty"`
 	BringYourOwn *DatacenterSpecBringYourOwn `json:"bringyourown,omitempty"`
 	AWS          *DatacenterSpecAWS          `json:"aws,omitempty"`
-	Azure        *AzureSpec                  `json:"azure,omitempty"`
+	Azure        *DatacenterSpecAzure        `json:"azure,omitempty"`
 	Openstack    *OpenstackSpec              `json:"openstack,omitempty"`
 	Packet       *PacketSpec                 `json:"packet,omitempty"`
 	Hetzner      *HetznerSpec                `json:"hetzner,omitempty"`
@@ -90,8 +90,8 @@ type OpenstackNodeSizeRequirements struct {
 	MinimumMemory int `json:"minimum_memory"`
 }
 
-// AzureSpec describes an Azure cloud datacenter
-type AzureSpec struct {
+// DatacenterSpecAzure describes an Azure cloud datacenter
+type DatacenterSpecAzure struct {
 	Location string `json:"location"`
 }
 
