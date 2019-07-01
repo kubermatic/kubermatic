@@ -54,13 +54,13 @@ type ImageList map[providerconfig.OperatingSystem]string
 
 // DatacenterSpecHetzner describes a Hetzner cloud datacenter
 type DatacenterSpecHetzner struct {
-	Datacenter string `yaml:"datacenter"`
-	Location   string `yaml:"location"`
+	Datacenter string `json:"datacenter"`
+	Location   string `json:"location"`
 }
 
 // DatacenterSpecDigitalocean describes a DigitalOcean datacenter
 type DatacenterSpecDigitalocean struct {
-	Region string `yaml:"region"`
+	Region string `json:"region"`
 }
 
 // DatacenterSpecOpenstack describes a open stack datacenter
