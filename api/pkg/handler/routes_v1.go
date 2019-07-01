@@ -433,7 +433,7 @@ func (r Routing) listCredentials() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: GCPMachineTypesList
+//       200: GCPMachineTypeList
 func (r Routing) listGCPMachineTypes() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
