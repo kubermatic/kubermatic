@@ -44,6 +44,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	// Defines a set of HTTP endpoint for interacting with
 	// various cloud providers
 	mux.Methods(http.MethodGet).
+		Path("/providers/gcp/machinetypes").
+		Handler(r.listGCPMachineTypes())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/digitalocean/sizes").
 		Handler(r.listDigitaloceanSizes())
 
@@ -415,6 +419,28 @@ func (r Routing) listCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(credentials.CredentialEndpoint(r.credentialManager)),
 		credentials.DecodeProviderReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/gcp/sizes gcp listGCPMachineTypes
+//
+// Lists machine types from GCP
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GCPMachineTypesList
+func (r Routing) listGCPMachineTypes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.GetGCPMachineTypesEndpoint(r.credentialManager)),
+		provider.DecodeGCPMachineTypesReqReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
