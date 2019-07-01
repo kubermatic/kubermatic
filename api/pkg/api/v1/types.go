@@ -127,6 +127,17 @@ type Datacenter struct {
 	Seed     bool             `json:"seed,omitempty"`
 }
 
+// GCPDiskTypeList represents an array of GCP disk types.
+// swagger:model GCPDiskTypeList
+type GCPDiskTypeList []GCPDiskType
+
+// GCPDiskType represents a object of GCP disk type.
+// swagger:model GCPDiskType
+type GCPDiskType struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
 // GCPMachineTypeList represents an array of GCP machine types.
 // swagger:model GCPMachineTypeList
 type GCPMachineTypeList []GCPMachineType
