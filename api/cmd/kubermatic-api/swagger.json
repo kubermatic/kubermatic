@@ -4431,6 +4431,11 @@
         "name": {
           "type": "string",
           "x-go-name": "Name"
+        },
+        "vcpus": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "VCPUs"
         }
       },
       "x-go-name": "GCPMachineSize",

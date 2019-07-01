@@ -113,6 +113,7 @@ func listGCPSizes(ctx context.Context, sa string, zone string) (apiv1.GCPMachine
 					Name:        machineType.Name,
 					Description: machineType.Description,
 					Memory:      machineType.MemoryMb,
+					VCPUs:       machineType.GuestCpus,
 				}
 
 				machineTypes = append(machineTypes, mt)

@@ -148,6 +148,7 @@ type GCPMachineSize struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Memory      int64  `json:"memory"`
+	VCPUs       int64  `json:"vcpus"`
 }
 
 // DigitaloceanSizeList represents a object of digitalocean sizes.
