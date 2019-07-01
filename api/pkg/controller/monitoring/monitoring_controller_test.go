@@ -54,7 +54,7 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 			Country:  "US",
 			Seed:     "us-central1",
 			Spec: kubermaticv1.DatacenterSpec{
-				BringYourOwn: &kubermaticv1.BringYourOwnSpec{},
+				BringYourOwn: &kubermaticv1.DatacenterSpecBringYourOwn{},
 			},
 		},
 		"private-do1": {

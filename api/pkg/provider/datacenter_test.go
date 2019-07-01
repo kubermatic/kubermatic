@@ -65,7 +65,7 @@ datacenters:
 			Seed:     "",
 			Country:  "DE",
 			Spec: kubermaticv1.DatacenterSpec{
-				BringYourOwn: &kubermaticv1.BringYourOwnSpec{},
+				BringYourOwn: &kubermaticv1.DatacenterSpecBringYourOwn{},
 			},
 			IsSeed:           true,
 			SeedDNSOverwrite: nil,

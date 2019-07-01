@@ -39,7 +39,7 @@ type NodeLocation struct {
 // DatacenterSpec describes mutually points to provider datacenter spec
 type DatacenterSpec struct {
 	Digitalocean *DatacenterSpecDigitalocean `json:"digitalocean,omitempty"`
-	BringYourOwn *BringYourOwnSpec           `json:"bringyourown,omitempty"`
+	BringYourOwn *DatacenterSpecBringYourOwn `json:"bringyourown,omitempty"`
 	AWS          *AWSSpec                    `json:"aws,omitempty"`
 	Azure        *AzureSpec                  `json:"azure,omitempty"`
 	Openstack    *OpenstackSpec              `json:"openstack,omitempty"`
@@ -119,8 +119,8 @@ type AWSSpec struct {
 	ZoneCharacter string    `json:"zone_character"`
 }
 
-// BringYourOwnSpec describes a datacenter our of bring your own nodes
-type BringYourOwnSpec struct {
+// DatacenterSpecBringYourOwn describes a datacenter our of bring your own nodes
+type DatacenterSpecBringYourOwn struct {
 }
 
 // PacketSpec describes a packet datacenter
