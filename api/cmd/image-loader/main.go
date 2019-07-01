@@ -14,6 +14,7 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
+	containerlinux "github.com/kubermatic/kubermatic/api/pkg/controller/container-linux"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/monitoring"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/docker"
@@ -165,8 +166,11 @@ func getImagesFromCreators(templateData *resources.TemplateData) (images []strin
 
 	deploymentCreators := cluster.GetDeploymentCreators(templateData, false)
 	deploymentCreators = append(deploymentCreators, monitoring.GetDeploymentCreators(templateData)...)
+	deploymentCreators = append(deploymentCreators, containerlinux.GetDeploymentCreators("")...)
 
 	cronjobCreators := cluster.GetCronJobCreators(templateData)
+
+	daemonSetCreators := containerlinux.GetDaemonSetCreators("")
 
 	for _, creatorGetter := range statefulsetCreators {
 		_, creator := creatorGetter()
@@ -193,6 +197,15 @@ func getImagesFromCreators(templateData *resources.TemplateData) (images []strin
 			return nil, err
 		}
 		images = append(images, getImagesFromPodSpec(cronJob.Spec.JobTemplate.Spec.Template.Spec)...)
+	}
+
+	for _, createFunc := range daemonSetCreators {
+		_, creator := createFunc()
+		daemonSet, err := creator(&appsv1.DaemonSet{})
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, getImagesFromPodSpec(daemonSet.Spec.Template.Spec)...)
 	}
 
 	return images, nil

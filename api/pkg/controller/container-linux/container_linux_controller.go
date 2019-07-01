@@ -140,16 +140,12 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		return fmt.Errorf("failed to reconcile the ClusterRoleBindings: %v", err)
 	}
 
-	depCreators := []reconciling.NamedDeploymentCreatorGetter{
-		resources.DeploymentCreator(r.DefaultRegistry),
-	}
+	depCreators := GetDeploymentCreators(r.overwriteRegistry)
 	if err := reconciling.ReconcileDeployments(ctx, depCreators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile the Deployments: %v", err)
 	}
 
-	dsCreators := []reconciling.NamedDaemonSetCreatorGetter{
-		resources.DaemonSetCreator(r.DefaultRegistry),
-	}
+	dsCreators := GetDaemonSetCreators(r.overwriteRegistry)
 	if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile the DaemonSet: %v", err)
 	}
@@ -157,11 +153,13 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 	return nil
 }
 
-func (r *Reconciler) DefaultRegistry(defaultRegistry string) string {
-	if r.overwriteRegistry != "" {
-		return r.overwriteRegistry
+func getRegistryDefaultFunc(overwriteRegistry string) func(defaultRegistry string) string {
+	return func(defaultRegistry string) string {
+		if overwriteRegistry != "" {
+			return overwriteRegistry
+		}
+		return defaultRegistry
 	}
-	return defaultRegistry
 }
 
 func isContainerLinuxNode(node *corev1.Node) bool {
@@ -171,4 +169,15 @@ func isContainerLinuxNode(node *corev1.Node) bool {
 
 func hasContainerLinuxLabel(node *corev1.Node) bool {
 	return node.Labels[resources.NodeSelectorLabelKey] == resources.NodeSelectorLabelValue
+}
+
+func GetDeploymentCreators(overwriteRegistry string) []reconciling.NamedDeploymentCreatorGetter {
+	return []reconciling.NamedDeploymentCreatorGetter{
+		resources.DeploymentCreator(getRegistryDefaultFunc(overwriteRegistry)),
+	}
+}
+func GetDaemonSetCreators(overwriteRegistry string) []reconciling.NamedDaemonSetCreatorGetter {
+	return []reconciling.NamedDaemonSetCreatorGetter{
+		resources.DaemonSetCreator(getRegistryDefaultFunc(overwriteRegistry)),
+	}
 }
