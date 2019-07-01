@@ -19,10 +19,10 @@ velero:
     deploy: true
     resources:
       requests:
-        cpu: 10m
+        cpu: 100m
         memory: 30Mi
       limits:
-        cpu: 200m
+        cpu: 300m
         # during backups memory usage can spike, see https://github.com/restic/restic/issues/979
         memory: 1Gi
 
@@ -88,10 +88,10 @@ velero:
 
   resources:
     requests:
-      cpu: 10m
+      cpu: 100m
       memory: 50Mi
     limits:
-      cpu: 100m
+      cpu: 200m
       memory: 100Mi
 
   affinity:
