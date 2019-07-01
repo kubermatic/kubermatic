@@ -140,6 +140,12 @@ type CredentialList struct {
 	Names []string `json:"names,omitempty"`
 }
 
+// ProviderNetwork represents a object for provider default network name.
+// swagger:model ProviderNetwork
+type ProviderNetwork struct {
+	Name string `json:"name,omitempty"`
+}
+
 // DigitaloceanSize is the object representing digitalocean sizes.
 // swagger:model DigitaloceanSize
 type DigitaloceanSize struct {

@@ -79,9 +79,15 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/providers/vsphere/networks").
 		Handler(r.listVSphereNetworks())
 
+	//
+	// Defines a set of HTTP endpoint for getting provider presets
 	mux.Methods(http.MethodGet).
 		Path("/providers/{provider_name}/presets/credentials").
 		Handler(r.listCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/{provider_name}/presets/network").
+		Handler(r.getProviderNetwork())
 
 	//
 	// Defines a set of HTTP endpoints for project resource
@@ -415,6 +421,28 @@ func (r Routing) listCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(presets.CredentialEndpoint(r.presetsManager)),
 		presets.DecodeProviderReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/{provider_name}/presets/network network getProviderNetwork
+//
+// Get provider default network
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ProviderNetwork
+func (r Routing) getProviderNetwork() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(presets.NetworkEndpoint(r.presetsManager)),
+		presets.DecodeProviderNetworkReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

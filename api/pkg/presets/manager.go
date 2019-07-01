@@ -34,18 +34,22 @@ type Hetzner struct {
 
 type Azure struct {
 	Credentials []AzureCredentials `json:"credentials,omitempty"`
+	Network     Network            `json:"network,omitempty"`
 }
 
 type VSphere struct {
 	Credentials []VSphereCredentials `json:"credentials,omitempty"`
+	Network     Network              `json:"network,omitempty"`
 }
 
 type AWS struct {
 	Credentials []AWSCredentials `json:"credentials,omitempty"`
+	Network     Network          `json:"network,omitempty"`
 }
 
 type Openstack struct {
 	Credentials []OpenstackCredentials `json:"credentials,omitempty"`
+	Network     Network                `json:"network,omitempty"`
 }
 
 type Packet struct {
@@ -54,6 +58,7 @@ type Packet struct {
 
 type GCP struct {
 	Credentials []GCPCredentials `json:"credentials,omitempty"`
+	Network     Network          `json:"network,omitempty"`
 }
 
 type Fake struct {
@@ -118,6 +123,11 @@ type GCPCredentials struct {
 type FakeCredentials struct {
 	Name  string `json:"name"`
 	Token string `json:"token"`
+}
+
+// Network specifies default network parameters
+type Network struct {
+	Name string `json:"name"`
 }
 
 // loadPresets loads the custom presets for supported providers

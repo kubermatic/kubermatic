@@ -3187,6 +3187,38 @@
         }
       }
     },
+    "/api/v1/providers/{provider_name}/presets/network": {
+      "get": {
+        "description": "Get provider default network",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "network"
+        ],
+        "operationId": "getProviderNetwork",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProviderName",
+            "name": "provider_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ProviderNetwork",
+            "schema": {
+              "$ref": "#/definitions/ProviderNetwork"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/upgrades/cluster": {
       "get": {
         "description": "Lists all versions which don't result in automatic updates",
@@ -5376,6 +5408,17 @@
         "id": {
           "type": "string",
           "x-go-name": "ID"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "ProviderNetwork": {
+      "type": "object",
+      "title": "ProviderNetwork represents a object for provider default network name.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
