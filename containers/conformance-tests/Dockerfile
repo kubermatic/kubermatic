@@ -12,7 +12,7 @@ FROM golang:1.11.4-stretch
 
 COPY --from=0 /opt/kube-test /opt/kube-test
 COPY start-docker.sh /usr/local/bin/start-docker.sh
-RUN apt update && apt install -y git-crypt curl apt-transport-https software-properties-common unzip jq && \
+RUN apt update && apt install -y git-crypt curl apt-transport-https software-properties-common unzip jq shellcheck && \
   curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add - && \
   curl -fsSL https://download.docker.com/linux/$(. /etc/os-release; echo "$ID")/gpg \
     | apt-key add - && \
