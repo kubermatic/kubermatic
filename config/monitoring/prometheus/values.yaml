@@ -231,7 +231,7 @@ prometheus:
     thanosQuery:
       resources:
         requests:
-          cpu: 500m
+          cpu: 50m
           memory: 64Mi
         limits:
           cpu: 1
