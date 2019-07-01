@@ -42,18 +42,18 @@ type DatacenterSpec struct {
 	BringYourOwn *DatacenterSpecBringYourOwn `json:"bringyourown,omitempty"`
 	AWS          *DatacenterSpecAWS          `json:"aws,omitempty"`
 	Azure        *DatacenterSpecAzure        `json:"azure,omitempty"`
-	Openstack    *OpenstackSpec              `json:"openstack,omitempty"`
-	Packet       *PacketSpec                 `json:"packet,omitempty"`
-	Hetzner      *HetznerSpec                `json:"hetzner,omitempty"`
-	VSphere      *VSphereSpec                `json:"vsphere,omitempty"`
-	GCP          *GCPSpec                    `json:"gcp,omitempty"`
+	Openstack    *DatacenterSpecOpenstack    `json:"openstack,omitempty"`
+	Packet       *DatacenterSpecPacket       `json:"packet,omitempty"`
+	Hetzner      *DatacenterSpecHetzner      `json:"hetzner,omitempty"`
+	VSphere      *DatacenterSpecVSphere      `json:"vsphere,omitempty"`
+	GCP          *DatacenterSpecGCP          `json:"gcp,omitempty"`
 }
 
 // ImageList defines a map of operating system and the image to use
 type ImageList map[providerconfig.OperatingSystem]string
 
-// HetznerSpec describes a Hetzner cloud datacenter
-type HetznerSpec struct {
+// DatacenterSpecHetzner describes a Hetzner cloud datacenter
+type DatacenterSpecHetzner struct {
 	Datacenter string `yaml:"datacenter"`
 	Location   string `yaml:"location"`
 }
@@ -63,8 +63,8 @@ type DatacenterSpecDigitalocean struct {
 	Region string `yaml:"region"`
 }
 
-// OpenstackSpec describes a open stack datacenter
-type OpenstackSpec struct {
+// DatacenterSpecOpenstack describes a open stack datacenter
+type DatacenterSpecOpenstack struct {
 	AuthURL           string `json:"auth_url"`
 	AvailabilityZone  string `json:"availability_zone"`
 	Region            string `json:"region"`
@@ -95,8 +95,8 @@ type DatacenterSpecAzure struct {
 	Location string `json:"location"`
 }
 
-// VSphereSpec describes a vsphere datacenter
-type VSphereSpec struct {
+// DatacenterSpecVSphere describes a vsphere datacenter
+type DatacenterSpecVSphere struct {
 	Endpoint      string `json:"endpoint"`
 	AllowInsecure bool   `json:"allow_insecure"`
 
@@ -123,13 +123,13 @@ type DatacenterSpecAWS struct {
 type DatacenterSpecBringYourOwn struct {
 }
 
-// PacketSpec describes a packet datacenter
-type PacketSpec struct {
+// DatacenterSpecPacket describes a packet datacenter
+type DatacenterSpecPacket struct {
 	Facilities []string `json:"facilities"`
 }
 
-// GCPSpec describes a GCP datacenter
-type GCPSpec struct {
+// DatacenterSpecGCP describes a GCP datacenter
+type DatacenterSpecGCP struct {
 	Region       string   `json:"region"`
 	ZoneSuffixes []string `json:"zone_suffixes"`
 	Regional     bool     `json:"regional,omitempty"`

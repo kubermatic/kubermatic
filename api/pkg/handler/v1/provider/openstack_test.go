@@ -140,7 +140,7 @@ func buildOpenstackDatacenterMeta() map[string]provider.DatacenterMeta {
 			Country:  "JP",
 			IsSeed:   true,
 			Spec: kubermaticv1.DatacenterSpec{
-				Openstack: &kubermaticv1.OpenstackSpec{
+				Openstack: &kubermaticv1.DatacenterSpecOpenstack{
 					Region:  region,
 					AuthURL: openstackServer.URL + "/v3/",
 				},

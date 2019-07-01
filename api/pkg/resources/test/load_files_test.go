@@ -167,7 +167,7 @@ func TestLoadFiles(t *testing.T) {
 			Azure: &kubermaticv1.DatacenterSpecAzure{
 				Location: "az-location",
 			},
-			VSphere: &kubermaticv1.VSphereSpec{
+			VSphere: &kubermaticv1.DatacenterSpecVSphere{
 				Endpoint:      "https://vs-endpoint.io",
 				AllowInsecure: false,
 				Datastore:     "vs-datastore",
@@ -187,7 +187,7 @@ func TestLoadFiles(t *testing.T) {
 			Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 				Region: "fra1",
 			},
-			Openstack: &kubermaticv1.OpenstackSpec{
+			Openstack: &kubermaticv1.DatacenterSpecOpenstack{
 				AuthURL:          "https://example.com:8000/v3",
 				AvailabilityZone: "zone1",
 				DNSServers:       []string{"8.8.8.8", "8.8.4.4"},
@@ -903,7 +903,7 @@ func TestExecute(t *testing.T) {
 					Seed:     "europe-west3-c",
 					Country:  "DE",
 					Spec: kubermaticv1.DatacenterSpec{
-						Openstack: &kubermaticv1.OpenstackSpec{
+						Openstack: &kubermaticv1.DatacenterSpecOpenstack{
 							AuthURL:          "os-auth-url",
 							AvailabilityZone: "os-availability-zone",
 							Region:           "os-region",
@@ -1050,7 +1050,7 @@ func TestExecute(t *testing.T) {
 					Seed:     "europe-west3-c",
 					Country:  "DE",
 					Spec: kubermaticv1.DatacenterSpec{
-						Hetzner: &kubermaticv1.HetznerSpec{
+						Hetzner: &kubermaticv1.DatacenterSpecHetzner{
 							Datacenter: "hetzner-datacenter",
 							Location:   "hetzner-location",
 						},
@@ -1119,7 +1119,7 @@ func TestExecute(t *testing.T) {
 					Seed:     "europe-west3-c",
 					Country:  "DE",
 					Spec: kubermaticv1.DatacenterSpec{
-						VSphere: &kubermaticv1.VSphereSpec{
+						VSphere: &kubermaticv1.DatacenterSpecVSphere{
 							Cluster:       "vsphere-cluster",
 							AllowInsecure: true,
 							Datastore:     "vsphere-datastore",

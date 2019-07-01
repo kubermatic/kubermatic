@@ -80,7 +80,7 @@ func (v *vSphereMock) buildVSphereDatacenterMeta() map[string]provider.Datacente
 			Seed:     "us-central1",
 			Country:  "Moon States",
 			Spec: kubermaticv1.DatacenterSpec{
-				VSphere: &kubermaticv1.VSphereSpec{
+				VSphere: &kubermaticv1.DatacenterSpecVSphere{
 					Endpoint:      v.server.Server.URL,
 					AllowInsecure: true,
 					Datastore:     "LocalDS_0",

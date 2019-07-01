@@ -87,7 +87,7 @@ datacenters:
 			Seed:     "sydney-1",
 			Country:  "AU",
 			Spec: kubermaticv1.DatacenterSpec{
-				Openstack: &kubermaticv1.OpenstackSpec{
+				Openstack: &kubermaticv1.DatacenterSpecOpenstack{
 					AvailabilityZone: "au1",
 					Region:           "au",
 					DNSServers:       []string{"8.8.8.8", "8.8.4.4"},
