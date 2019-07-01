@@ -33,6 +33,9 @@ spec:
         {{- with .Values.kubermatic.projects_migrator }}
         - -dry-run={{ .dry_run }}
         {{- end }}
+        {{- if .Values.kubermatic.worker_name }}
+        - -worker-name={{ .Values.kubermatic.worker_name }}
+        {{- end }}
         volumeMounts:
           - name: kubeconfig
             mountPath: "/opt/.kube/"
