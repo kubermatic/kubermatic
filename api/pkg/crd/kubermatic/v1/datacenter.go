@@ -32,8 +32,13 @@ type SeedDatacenterSpec struct {
 }
 
 type NodeLocation struct {
-	DatacenterSpec `json:",inline"`
+	// Country of the seed. For informational purposes only
+	Country string `json:"country,omitempty"`
+	// Detailed location of the cluster. For informational purposes only
+	Location string `json:"location,omitempty"`
+	// Node holds node-specific settings, like e.G. HTTP proxy, insecure registrys and the like
 	Node           NodeSettings `json:"node"`
+	DatacenterSpec `json:",inline"`
 }
 
 // DatacenterSpec describes mutually points to provider datacenter spec
