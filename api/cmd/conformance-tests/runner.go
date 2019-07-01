@@ -54,7 +54,7 @@ var (
 type testScenario interface {
 	Name() string
 	Cluster(secrets secrets) *kubermaticv1.Cluster
-	Nodes(num int, dc provider.DatacenterSpec, secrets secrets) []kubermaticapiv1.NodeDeployment
+	NodeDeployments(num int, dc provider.DatacenterSpec, secrets secrets) []kubermaticapiv1.NodeDeployment
 	OS() kubermaticapiv1.OperatingSystemSpec
 }
 
@@ -298,7 +298,7 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 		return nil, fmt.Errorf("failed to get the client for the cluster: %v", err)
 	}
 
-	nodeDeployments := scenario.Nodes(r.nodeCount, dc.Spec, r.secrets)
+	nodeDeployments := scenario.NodeDeployments(r.nodeCount, dc.Spec, r.secrets)
 	if err := r.setupNodes(log, scenario.Name(), cluster, userClusterClient, nodeDeployments, dc); err != nil {
 		return nil, fmt.Errorf("failed to setup nodes: %v", err)
 	}
@@ -532,46 +532,6 @@ func (r *testRunner) setupNodes(parentLog *logrus.Entry, scenarioName string, cl
 				PublicKey: string(data),
 			},
 		})
-	}
-
-	// When there are machines not owned by a MachineDeployment, we must decrement
-	// the nodeDeployments replicas by their count, this is needed in upgrade tests
-	if err := retryNAttempts(defaultAPIRetries, func(_ int) error {
-		if r.existingClusterLabel == "" {
-			return nil
-		}
-		machineList := &clusterv1alpha1.MachineList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineList); err != nil {
-			return fmt.Errorf("failed to list machines: %v", err)
-		}
-		log.Infof("Found %d already existing Machines from a former run", len(machineList.Items))
-		machinesWithoutOwner := int32(0)
-		for _, m := range machineList.Items {
-			if len(m.OwnerReferences) > 0 {
-				continue
-			}
-			log.WithFields(logrus.Fields{"machine": m.Name}).Infof("Found machine without OwnerReference.")
-			machinesWithoutOwner++
-		}
-		log.Infof(
-			"Reducing the number of replicas for the new MachineDeployment by %d so we end up with a total of %d Nodes, due to %d already existing Machines from a former test run",
-			machinesWithoutOwner,
-			ndNodeCount,
-			machinesWithoutOwner,
-		)
-
-		// we try to subract the non-owned machines sort-of uniformly from all node deployments
-		for machinesWithoutOwner > 0 {
-			for i := range nodeDeployments {
-				if machinesWithoutOwner > 0 && nodeDeployments[i].Spec.Replicas > 0 {
-					nodeDeployments[i].Spec.Replicas--
-					machinesWithoutOwner--
-				}
-			}
-		}
-		return nil
-	}); err != nil {
-		return fmt.Errorf("failed to get existing machines in order to adjust NodeDeployment: %v", err)
 	}
 
 	// first create each MD
@@ -867,9 +827,9 @@ func (r *testRunner) getGinkgoRuns(
 	repoRoot := path.Clean(r.repoRoot)
 	MajorMinor := fmt.Sprintf("%d.%d", cluster.Spec.Version.Major(), cluster.Spec.Version.Minor())
 
-	nodesTotal := int32(0)
+	nodeNumberTotal := int32(0)
 	for _, ndi := range nd {
-		nodesTotal += ndi.Spec.Replicas
+		nodeNumberTotal += ndi.Spec.Replicas
 	}
 
 	runs := []struct {
@@ -882,7 +842,7 @@ func (r *testRunner) getGinkgoRuns(
 			name:          "parallel",
 			ginkgoFocus:   `\[Conformance\]`,
 			ginkgoSkip:    `\[Serial\]`,
-			parallelTests: int(nodesTotal) * 10,
+			parallelTests: int(nodeNumberTotal) * 10,
 		},
 		{
 			name:          "serial",
@@ -919,7 +879,7 @@ func (r *testRunner) getGinkgoRuns(
 			fmt.Sprintf("--report-prefix=%s", run.name),
 			fmt.Sprintf("--kubectl-path=%s", path.Join(binRoot, "kubectl")),
 			fmt.Sprintf("--kubeconfig=%s", kubeconfigFilename),
-			fmt.Sprintf("--num-nodes=%d", nodesTotal),
+			fmt.Sprintf("--num-nodes=%d", nodeNumberTotal),
 			fmt.Sprintf("--cloud-config-file=%s", cloudConfigFilename),
 		}
 

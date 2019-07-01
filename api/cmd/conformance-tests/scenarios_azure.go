@@ -80,7 +80,7 @@ func (s *azureScenario) Cluster(secrets secrets) *v1.Cluster {
 	}
 }
 
-func (s *azureScenario) Nodes(num int, _ provider.DatacenterSpec, _ secrets) []kubermaticapiv1.NodeDeployment {
+func (s *azureScenario) NodeDeployments(num int, _ provider.DatacenterSpec, _ secrets) []kubermaticapiv1.NodeDeployment {
 	return []kubermaticapiv1.NodeDeployment{
 		{
 			Spec: kubermaticapiv1.NodeDeploymentSpec{
