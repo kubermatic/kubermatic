@@ -21,6 +21,7 @@ import (
 type migrationContext struct {
 	masterKubeClient       kubernetes.Interface
 	masterKubermaticClient kubermaticclientset.Interface
+	workerName             string
 	config                 *rest.Config
 	seedClusterProviders   []*clusterProvider
 	dryRun                 bool
@@ -40,6 +41,7 @@ func main() {
 
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&ctx.workerName, "worker-name", "", "Only migrate clusters that have a worker-name label with this value")
 	flag.BoolVar(&ctx.dryRun, "dry-run", true, "If true, only print the object that would be created, without creating them")
 	flag.BoolVar(&removeDupUsers, "rm-dup-users", false, "If true, only removes duplicated users and exits")
 	flag.Parse()
@@ -758,6 +760,10 @@ func getAllClusters(ctx migrationContext) (map[string]map[string]*clustersProvid
 			alreadyAdoptedOnSeed := []kubermaticv1.Cluster{}
 
 			for _, cluster := range seedClusters.Items {
+				if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != ctx.workerName {
+					glog.Infof("Skipping cluster %q because its worker-name label value (%q) does not match our configured value (%q)",
+						cluster.Name, cluster.Labels[kubermaticv1.WorkerNameLabelKey], ctx.workerName)
+				}
 				projectName := isOwnedByProject(cluster.GetOwnerReferences(), cluster.Labels)
 				if len(projectName) == 0 {
 					helper(cluster, seedClusterProvider)
