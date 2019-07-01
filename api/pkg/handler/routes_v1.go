@@ -44,6 +44,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	// Defines a set of HTTP endpoint for interacting with
 	// various cloud providers
 	mux.Methods(http.MethodGet).
+		Path("/providers/gcp/disktypes").
+		Handler(r.listGCPDiskTypes())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/gcp/machinetypes").
 		Handler(r.listGCPMachineTypes())
 
@@ -424,7 +428,29 @@ func (r Routing) listCredentials() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/providers/gcp/sizes gcp listGCPMachineTypes
+// swagger:route GET /api/v1/providers/gcp/diskTypes gcp listGCPDiskTypes
+//
+// Lists disk types from GCP
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GCPDiskTypeList
+func (r Routing) listGCPDiskTypes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.GetGCPDiskTypesEndpoint(r.credentialManager)),
+		provider.DecodeGCPTypesReqReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/gcp/machineTypes gcp listGCPMachineTypes
 //
 // Lists machine types from GCP
 //
@@ -440,7 +466,7 @@ func (r Routing) listGCPMachineTypes() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 		)(provider.GetGCPMachineTypesEndpoint(r.credentialManager)),
-		provider.DecodeGCPMachineTypesReqReq,
+		provider.DecodeGCPTypesReqReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

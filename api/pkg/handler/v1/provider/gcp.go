@@ -12,14 +12,14 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/gcp"
 )
 
-// GCPMachineTypesReq represent a request for GCP machine types.
+// GCPMachineTypesReq represent a request for GCP machine or disk types.
 type GCPMachineTypesReq struct {
 	ServiceAccount string
 	Zone           string
 	Credential     string
 }
 
-func DecodeGCPMachineTypesReqReq(c context.Context, r *http.Request) (interface{}, error) {
+func DecodeGCPTypesReqReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req GCPMachineTypesReq
 
 	req.ServiceAccount = r.Header.Get("ServiceAccount")
@@ -27,6 +27,52 @@ func DecodeGCPMachineTypesReqReq(c context.Context, r *http.Request) (interface{
 	req.Credential = r.Header.Get("Credential")
 
 	return req, nil
+}
+
+func GetGCPDiskTypesEndpoint(credentialManager common.CredentialManager) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GCPMachineTypesReq)
+
+		zone := req.Zone
+		sa := req.ServiceAccount
+
+		if len(req.Credential) > 0 && credentialManager.GetCredentials().GCP != nil {
+			for _, credential := range credentialManager.GetCredentials().GCP {
+				if credential.Name == req.Credential {
+					sa = credential.ServiceAccount
+					break
+				}
+			}
+		}
+
+		return getGCPDiskTypes(ctx, sa, zone)
+	}
+}
+
+func getGCPDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDiskTypeList, error) {
+	diskTypes := apiv1.GCPDiskTypeList{}
+
+	computeService, project, err := gcp.ConnectToComputeService(sa)
+	if err != nil {
+		return diskTypes, err
+	}
+
+	req := computeService.DiskTypes.List(project, zone)
+	err = req.Pages(ctx, func(page *compute.DiskTypeList) error {
+		for _, diskType := range page.Items {
+			if diskType.Name != "local-ssd" {
+				// TODO: There are some issues at the moment with local-ssd, that's why it is disabled at the moment.
+				dt := apiv1.GCPDiskType{
+					Name:        diskType.Name,
+					Description: diskType.Description,
+				}
+				diskTypes = append(diskTypes, dt)
+			}
+		}
+		return nil
+	})
+
+	return diskTypes, err
 }
 
 func GetGCPMachineTypesEndpoint(credentialManager common.CredentialManager) endpoint.Endpoint {
