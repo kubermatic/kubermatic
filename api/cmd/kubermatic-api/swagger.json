@@ -4433,6 +4433,7 @@
           "x-go-name": "Name"
         }
       },
+      "x-go-name": "GCPMachineSize",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "GCPMachineTypeList": {
@@ -4441,6 +4442,7 @@
       "items": {
         "$ref": "#/definitions/GCPMachineType"
       },
+      "x-go-name": "GCPMachineSizeList",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "GCPNodeSpec": {
