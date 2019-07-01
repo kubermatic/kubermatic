@@ -2974,7 +2974,10 @@
         "operationId": "listGCPMachineTypes",
         "responses": {
           "200": {
-            "$ref": "#/responses/GCPMachineTypesList"
+            "description": "GCPMachineTypeList",
+            "schema": {
+              "$ref": "#/definitions/GCPMachineTypeList"
+            }
           },
           "default": {
             "$ref": "#/responses/errorResponse"
