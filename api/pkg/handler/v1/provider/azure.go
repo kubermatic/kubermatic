@@ -146,7 +146,7 @@ func AzureSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, dc
 	}
 }
 
-func AzureSizeEndpoint(credentialManager common.CredentialManager) endpoint.Endpoint {
+func AzureSizeEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AzureSizeReq)
 
@@ -155,8 +155,8 @@ func AzureSizeEndpoint(credentialManager common.CredentialManager) endpoint.Endp
 		clientSecret := req.ClientSecret
 		tenantID := req.TenantID
 
-		if len(req.Credential) > 0 && credentialManager.GetCredentials().Azure != nil {
-			for _, credential := range credentialManager.GetCredentials().Azure {
+		if len(req.Credential) > 0 && credentialManager.GetPresets().Azure.Credentials != nil {
+			for _, credential := range credentialManager.GetPresets().Azure.Credentials {
 				if credential.Name == req.Credential {
 					subscriptionID = credential.SubscriptionID
 					clientID = credential.ClientID

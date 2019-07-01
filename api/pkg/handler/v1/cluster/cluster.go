@@ -54,7 +54,7 @@ var clusterTypes = []string{
 }
 
 func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider,
-	dcs map[string]provider.DatacenterMeta, initNodeDeploymentFailures *prometheus.CounterVec, eventRecorderProvider provider.EventRecorderProvider, credentialManager common.CredentialManager, exposeStrategy corev1.ServiceType) endpoint.Endpoint {
+	dcs map[string]provider.DatacenterMeta, initNodeDeploymentFailures *prometheus.CounterVec, eventRecorderProvider provider.EventRecorderProvider, credentialManager common.PresetsManager, exposeStrategy corev1.ServiceType) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateReq)
 		err := req.Validate()

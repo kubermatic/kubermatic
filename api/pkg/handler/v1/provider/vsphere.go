@@ -16,7 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func VsphereNetworksEndpoint(providers provider.CloudRegistry, credentialManager common.CredentialManager) endpoint.Endpoint {
+func VsphereNetworksEndpoint(providers provider.CloudRegistry, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(VSphereNetworksReq)
 		if !ok {
@@ -26,8 +26,8 @@ func VsphereNetworksEndpoint(providers provider.CloudRegistry, credentialManager
 		username := req.Username
 		password := req.Password
 
-		if len(req.Credential) > 0 && credentialManager.GetCredentials().VSphere != nil {
-			for _, credential := range credentialManager.GetCredentials().VSphere {
+		if len(req.Credential) > 0 && credentialManager.GetPresets().VSphere.Credentials != nil {
+			for _, credential := range credentialManager.GetPresets().VSphere.Credentials {
 				if credential.Name == req.Credential {
 					username = credential.Username
 					password = credential.Password

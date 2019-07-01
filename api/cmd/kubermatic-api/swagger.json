@@ -3155,7 +3155,7 @@
         }
       }
     },
-    "/api/v1/providers/{provider_name}/credentials": {
+    "/api/v1/providers/{provider_name}/presets/credentials": {
       "get": {
         "description": "Lists credential names for the provider",
         "produces": [
