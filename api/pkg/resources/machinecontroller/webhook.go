@@ -70,7 +70,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    Name,
-					Image:   data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
+					Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/machine-controller:" + tag,
 					Command: []string{"/usr/local/bin/webhook"},
 					Args: []string{
 						"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
