@@ -44,7 +44,7 @@ spec:
           value: openstack-domain
         - name: OS_TENANT_NAME
           value: openstack-tenant
-        image: docker.io/kubermatic/machine-controller:v1.3.0
+        image: docker.io/kubermatic/machine-controller:v1.4.0
         livenessProbe:
           failureThreshold: 8
           httpGet:
