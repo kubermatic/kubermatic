@@ -35,7 +35,6 @@ import (
 )
 
 const (
-	timeout                   = 60 * time.Second
 	SkipEvictionAnnotationKey = "kubermatic.io/skip-eviction"
 )
 
@@ -55,41 +54,40 @@ func New(nodeName string, nodeLister listerscorev1.NodeLister, client kubernetes
 }
 
 // Run excutes the eviction
-func (ne *NodeEviction) Run() error {
+func (ne *NodeEviction) Run() (bool, error) {
 	listerNode, err := ne.nodeLister.Get(ne.nodeName)
 	if err != nil {
-		return fmt.Errorf("failed to get node from lister: %v", err)
+		return false, fmt.Errorf("failed to get node from lister: %v", err)
 	}
 	node := listerNode.DeepCopy()
 	if _, exists := node.Annotations[SkipEvictionAnnotationKey]; exists {
 		glog.V(3).Infof("Skipping eviction for node %s as it has a %s annotation", ne.nodeName, SkipEvictionAnnotationKey)
-		return nil
+		return false, nil
 	}
 	glog.V(3).Infof("Starting to evict node %s", ne.nodeName)
 
 	if err := ne.cordonNode(node); err != nil {
-		return fmt.Errorf("failed to cordon node %s: %v", ne.nodeName, err)
+		return false, fmt.Errorf("failed to cordon node %s: %v", ne.nodeName, err)
 	}
 	glog.V(6).Infof("Successfully cordoned node %s", ne.nodeName)
 
 	podsToEvict, err := ne.getFilteredPods()
 	if err != nil {
-		return fmt.Errorf("failed to get Pods to evict for node %s: %v", ne.nodeName, err)
+		return false, fmt.Errorf("failed to get Pods to evict for node %s: %v", ne.nodeName, err)
 	}
 	glog.V(6).Infof("Found %v pods to evict for node %s", len(podsToEvict), ne.nodeName)
 
+	if len(podsToEvict) == 0 {
+		return false, nil
+	}
+
+	// If we arrived here we have pods to evict, so tell the controller to retry later
 	if errs := ne.evictPods(podsToEvict); len(errs) > 0 {
-		return fmt.Errorf("failed to evict pods, errors encountered: %v", errs)
+		return true, fmt.Errorf("failed to evict pods, errors encountered: %v", errs)
 	}
 	glog.V(6).Infof("Successfully created evictions for all pods on node %s!", ne.nodeName)
 
-	glog.V(6).Infof("Waiting for deletion of all pods for node %s", ne.nodeName)
-	if err := ne.waitForDeletion(podsToEvict); err != nil {
-		return fmt.Errorf("failed waiting for pods of node %s to be deleted: %v", ne.nodeName, err)
-	}
-	glog.V(3).Infof("All pods of node %s were successfully evicted", ne.nodeName)
-
-	return nil
+	return true, nil
 }
 
 func (ne *NodeEviction) cordonNode(node *corev1.Node) error {
@@ -108,7 +106,7 @@ func (ne *NodeEviction) cordonNode(node *corev1.Node) error {
 	// that is not the case, there is a small chance the scheduler schedules
 	// pods in between, those will then get deleted upon node deletion and
 	// not evicted
-	return wait.Poll(1*time.Second, timeout, func() (bool, error) {
+	return wait.Poll(1*time.Second, 10*time.Second, func() (bool, error) {
 		node, err := ne.nodeLister.Get(ne.nodeName)
 		if err != nil {
 			return false, err
@@ -146,9 +144,6 @@ func (ne *NodeEviction) getFilteredPods() ([]corev1.Pod, error) {
 }
 
 func (ne *NodeEviction) evictPods(pods []corev1.Pod) []error {
-	if len(pods) == 0 {
-		return nil
-	}
 
 	errCh := make(chan error, len(pods))
 	retErrs := []error{}
@@ -170,8 +165,8 @@ func (ne *NodeEviction) evictPods(pods []corev1.Pod) []error {
 					glog.V(6).Infof("Successfully evicted pod %s/%s on node %s", p.Namespace, p.Name, ne.nodeName)
 					return
 				} else if kerrors.IsTooManyRequests(err) {
-					glog.V(6).Infof("Will retry eviction for pod %s/%s on node %s", p.Namespace, p.Name, ne.nodeName)
-					time.Sleep(5 * time.Second)
+					// PDB prevents eviction, return and make the controller retry later
+					return
 				} else {
 					errCh <- fmt.Errorf("error evicting pod %s/%s on node %s: %v", p.Namespace, p.Name, ne.nodeName, err)
 					return
@@ -190,10 +185,6 @@ func (ne *NodeEviction) evictPods(pods []corev1.Pod) []error {
 	case err := <-errCh:
 		glog.V(6).Infof("Got an error from eviction goroutine for node %s: %v", ne.nodeName, err)
 		retErrs = append(retErrs, err)
-	case <-time.After(timeout):
-		retErrs = append(retErrs, fmt.Errorf("timed out waiting for evictions to complete"))
-		glog.V(6).Infof("Timed out waiting for all evition goroutiness for node %s to finish", ne.nodeName)
-		break
 	}
 
 	return retErrs
@@ -227,17 +218,4 @@ func (ne *NodeEviction) updateNode(modify func(*corev1.Node)) (*corev1.Node, err
 	})
 
 	return updatedNode, err
-}
-
-func (ne *NodeEviction) waitForDeletion(pods []corev1.Pod) error {
-	return wait.Poll(1*time.Second, timeout, func() (bool, error) {
-		for _, pod := range pods {
-			_, err := ne.client.CoreV1().Pods(pod.Namespace).Get(pod.Name, metav1.GetOptions{})
-			if err != nil && kerrors.IsNotFound(err) {
-				return true, nil
-			}
-			return false, err
-		}
-		return true, nil
-	})
 }
