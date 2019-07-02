@@ -72,7 +72,11 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 
 		credentialName := req.Body.Cluster.Credential
 		if len(credentialName) > 0 {
-			cloudSpec, err := credentialManager.SetCloudCredentials(credentialName, req.Body.Cluster.Spec.Cloud)
+			dc, found := dcs[req.Body.Cluster.Spec.Cloud.DatacenterName]
+			if !found {
+				return nil, errors.NewBadRequest("unknown cluster datacenter %s", req.Body.Cluster.Spec.Cloud.DatacenterName)
+			}
+			cloudSpec, err := credentialManager.SetCloudCredentials(credentialName, req.Body.Cluster.Spec.Cloud, dc)
 			if err != nil {
 				return nil, errors.NewBadRequest("invalid credentials: %v", err)
 			}

@@ -7,9 +7,10 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/presets"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
-func TestAWSCredentialEndpoint(t *testing.T) {
+func TestCredentialEndpoint(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		name              string
@@ -17,6 +18,7 @@ func TestAWSCredentialEndpoint(t *testing.T) {
 		expectedError     string
 		cloudSpec         v1.CloudSpec
 		expectedCloudSpec *v1.CloudSpec
+		dc                provider.DatacenterMeta
 		manager           *presets.Manager
 	}{
 		{
@@ -83,7 +85,7 @@ func TestAWSCredentialEndpoint(t *testing.T) {
 				return manager
 			}(),
 			cloudSpec:         v1.CloudSpec{Packet: &v1.PacketCloudSpec{}},
-			expectedCloudSpec: &v1.CloudSpec{Packet: &v1.PacketCloudSpec{APIKey: "secret", ProjectID: "project"}},
+			expectedCloudSpec: &v1.CloudSpec{Packet: &v1.PacketCloudSpec{APIKey: "secret", ProjectID: "project", BillingCycle: "hourly"}},
 		},
 		{
 			name:           "test 6: set credentials for DigitalOcean provider",
@@ -108,6 +110,7 @@ func TestAWSCredentialEndpoint(t *testing.T) {
 				}
 				return manager
 			}(),
+			dc:                provider.DatacenterMeta{Spec: provider.DatacenterSpec{Openstack: &provider.OpenstackSpec{EnforceFloatingIP: false}}},
 			cloudSpec:         v1.CloudSpec{Openstack: &v1.OpenstackCloudSpec{}},
 			expectedCloudSpec: &v1.CloudSpec{Openstack: &v1.OpenstackCloudSpec{Tenant: "a", Domain: "b", Password: "c", Username: "d"}},
 		},
@@ -165,7 +168,7 @@ func TestAWSCredentialEndpoint(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			cloudResult, err := tc.manager.SetCloudCredentials(tc.credentialName, tc.cloudSpec)
+			cloudResult, err := tc.manager.SetCloudCredentials(tc.credentialName, tc.cloudSpec, tc.dc)
 
 			if len(tc.expectedError) > 0 {
 				if err == nil {
