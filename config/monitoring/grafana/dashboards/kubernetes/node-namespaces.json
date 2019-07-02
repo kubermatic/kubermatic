@@ -76,7 +76,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (namespace) (container_memory_rss{kubernetes_io_hostname=\"$hostname\",namespace!=\"\",namespace!~\"^$exclude.*\"})",
+          "expr": "sum by (namespace) (container_memory_rss{kubernetes_io_hostname=\"$hostname\",container_name!=\"\",namespace!=\"\",namespace!~\"^$exclude.*\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{ namespace }}",
