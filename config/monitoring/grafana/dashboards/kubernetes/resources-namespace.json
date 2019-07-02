@@ -411,7 +411,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(container_memory_usage_bytes{namespace=\"$namespace\", container_name!=\"\"}) by (pod_name)",
+          "expr": "sum(container_memory_usage_bytes{job=\"cadvisor\",namespace=\"$namespace\", container_name!=\"\"}) by (pod_name)",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{pod_name}}",
@@ -668,7 +668,7 @@
       ],
       "targets": [
         {
-          "expr": "sum(label_replace(container_memory_usage_bytes{namespace=\"$namespace\",container_name!=\"\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod)",
+          "expr": "sum(label_replace(container_memory_usage_bytes{job=\"cadvisor\",namespace=\"$namespace\",container_name!=\"\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -686,7 +686,7 @@
           "step": 10
         },
         {
-          "expr": "sum(label_replace(container_memory_usage_bytes{namespace=\"$namespace\",container_name!=\"\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod) / sum(kube_pod_container_resource_requests_memory_bytes{namespace=\"$namespace\"}) by (pod)",
+          "expr": "sum(label_replace(container_memory_usage_bytes{job=\"cadvisor\",namespace=\"$namespace\",container_name!=\"\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod) / sum(kube_pod_container_resource_requests_memory_bytes{namespace=\"$namespace\"}) by (pod)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -704,7 +704,7 @@
           "step": 10
         },
         {
-          "expr": "sum(label_replace(container_memory_usage_bytes{namespace=\"$namespace\",container_name!=\"\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod) / sum(kube_pod_container_resource_limits_memory_bytes{namespace=\"$namespace\"}) by (pod)",
+          "expr": "sum(label_replace(container_memory_usage_bytes{job=\"cadvisor\",namespace=\"$namespace\",container_name!=\"\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod) / sum(kube_pod_container_resource_limits_memory_bytes{namespace=\"$namespace\"}) by (pod)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -713,7 +713,7 @@
           "step": 10
         },
         {
-          "expr": "sum(label_replace(container_memory_rss{namespace=\"$namespace\",container_name!=\"\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod)",
+          "expr": "sum(label_replace(container_memory_rss{job=\"cadvisor\",namespace=\"$namespace\",container_name!=\"\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -722,7 +722,7 @@
           "step": 10
         },
         {
-          "expr": "sum(label_replace(container_memory_cache{namespace=\"$namespace\",container_name!=\"\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod)",
+          "expr": "sum(label_replace(container_memory_cache{job=\"cadvisor\",namespace=\"$namespace\",container_name!=\"\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -731,7 +731,7 @@
           "step": 10
         },
         {
-          "expr": "sum(label_replace(container_memory_swap{namespace=\"$namespace\",container_name!=\"\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod)",
+          "expr": "sum(label_replace(container_memory_swap{job=\"cadvisor\",namespace=\"$namespace\",container_name!=\"\"}, \"pod\", \"$1\", \"pod_name\", \"(.*)\")) by (pod)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
