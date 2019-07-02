@@ -40,7 +40,7 @@ type UpdateManager interface {
 // PresetsManager specifies a set of methods to handle presets for specific provider
 type PresetsManager interface {
 	GetPresets() *presets.Presets
-	SetCloudCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error)
+	SetCloudCredentials(credentialName string, cloud v1.CloudSpec, dc provider.DatacenterMeta) (*v1.CloudSpec, error)
 }
 
 // ServerMetrics defines metrics used by the API.
