@@ -12,9 +12,9 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/credentials"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/node"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/presets"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/project"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/serviceaccount"
@@ -88,7 +88,7 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listVSphereNetworks())
 
 	mux.Methods(http.MethodGet).
-		Path("/providers/{provider_name}/credentials").
+		Path("/providers/{provider_name}/presets/credentials").
 		Handler(r.listCredentials())
 
 	//
@@ -406,7 +406,7 @@ func (r Routing) deleteSSHKey() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/providers/{provider_name}/credentials credentials listCredentials
+// swagger:route GET /api/v1/providers/{provider_name}/presets/credentials credentials listCredentials
 //
 // Lists credential names for the provider
 //
@@ -421,8 +421,8 @@ func (r Routing) listCredentials() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(credentials.CredentialEndpoint(r.credentialManager)),
-		credentials.DecodeProviderReq,
+		)(presets.CredentialEndpoint(r.presetsManager)),
+		presets.DecodeProviderReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -487,7 +487,7 @@ func (r Routing) listDigitaloceanSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.DigitaloceanSizeEndpoint(r.credentialManager)),
+		)(provider.DigitaloceanSizeEndpoint(r.presetsManager)),
 		provider.DecodeDoSizesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -509,7 +509,7 @@ func (r Routing) listAzureSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AzureSizeEndpoint(r.credentialManager)),
+		)(provider.AzureSizeEndpoint(r.presetsManager)),
 		provider.DecodeAzureSizesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -531,7 +531,7 @@ func (r Routing) listOpenstackSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.OpenstackSizeEndpoint(r.cloudProviders, r.datacenters, r.credentialManager)),
+		)(provider.OpenstackSizeEndpoint(r.cloudProviders, r.datacenters, r.presetsManager)),
 		provider.DecodeOpenstackReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -553,7 +553,7 @@ func (r Routing) listVSphereNetworks() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.VsphereNetworksEndpoint(r.cloudProviders, r.credentialManager)),
+		)(provider.VsphereNetworksEndpoint(r.cloudProviders, r.presetsManager)),
 		provider.DecodeVSphereNetworksReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -575,7 +575,7 @@ func (r Routing) listOpenstackTenants() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.OpenstackTenantEndpoint(r.cloudProviders, r.credentialManager)),
+		)(provider.OpenstackTenantEndpoint(r.cloudProviders, r.presetsManager)),
 		provider.DecodeOpenstackTenantReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -597,7 +597,7 @@ func (r Routing) listOpenstackNetworks() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.OpenstackNetworkEndpoint(r.cloudProviders, r.credentialManager)),
+		)(provider.OpenstackNetworkEndpoint(r.cloudProviders, r.presetsManager)),
 		provider.DecodeOpenstackReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -619,7 +619,7 @@ func (r Routing) listOpenstackSubnets() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.OpenstackSubnetsEndpoint(r.cloudProviders, r.credentialManager)),
+		)(provider.OpenstackSubnetsEndpoint(r.cloudProviders, r.presetsManager)),
 		provider.DecodeOpenstackSubnetReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -641,7 +641,7 @@ func (r Routing) listOpenstackSecurityGroups() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.OpenstackSecurityGroupEndpoint(r.cloudProviders, r.credentialManager)),
+		)(provider.OpenstackSecurityGroupEndpoint(r.cloudProviders, r.presetsManager)),
 		provider.DecodeOpenstackReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -890,7 +890,7 @@ func (r Routing) createCluster(initNodeDeploymentFailures *prometheus.CounterVec
 			middleware.SetClusterProvider(r.clusterProviders, r.datacenters),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviders, r.datacenters),
 			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.CreateEndpoint(r.sshKeyProvider, r.cloudProviders, r.projectProvider, r.datacenters, initNodeDeploymentFailures, r.eventRecorderProvider, r.credentialManager, r.exposeStrategy)),
+		)(cluster.CreateEndpoint(r.sshKeyProvider, r.cloudProviders, r.projectProvider, r.datacenters, initNodeDeploymentFailures, r.eventRecorderProvider, r.presetsManager, r.exposeStrategy)),
 		cluster.DecodeCreateReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,

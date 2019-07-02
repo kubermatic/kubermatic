@@ -30,10 +30,10 @@ minio:
   resources:
     minio:
       requests:
-        cpu: 10m
+        cpu: 100m
         memory: 32Mi
       limits:
-        cpu: 100m
+        cpu: 300m
         memory: 512Mi
     backup:
       requests:

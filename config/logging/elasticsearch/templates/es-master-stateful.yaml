@@ -86,6 +86,8 @@ spec:
           valueFrom:
             resourceFieldRef:
               resource: limits.cpu
+        - name: MINIMUM_MASTER_NODES
+          value: "{{ add (div .Values.logging.elasticsearch.master.replicas 2|int64) 1 }}"
         {{- range $key, $value := .Values.logging.elasticsearch.cluster.env }}
         - name: {{ $key }}
           value: {{ $value | quote }}

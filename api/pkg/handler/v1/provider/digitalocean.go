@@ -42,12 +42,12 @@ func DigitaloceanSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvi
 	}
 }
 
-func DigitaloceanSizeEndpoint(credentialManager common.CredentialManager) endpoint.Endpoint {
+func DigitaloceanSizeEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(DoSizesReq)
 		token := req.DoToken
-		if len(req.Credential) > 0 && credentialManager.GetCredentials().Digitalocean != nil {
-			for _, credential := range credentialManager.GetCredentials().Digitalocean {
+		if len(req.Credential) > 0 && credentialManager.GetPresets().Digitalocean.Credentials != nil {
+			for _, credential := range credentialManager.GetPresets().Digitalocean.Credentials {
 				if credential.Name == req.Credential {
 					token = credential.Token
 					break

@@ -213,13 +213,37 @@ prometheus:
           cpu: 5m
           memory: 32Mi
     thanosSidecar:
-      resources: {}
+      resources:
+        requests:
+          cpu: 100m
+          memory: 32Mi
+        limits:
+          cpu: 300m
+          memory: 1Gi
     thanosStore:
-      resources: {}
+      resources:
+        requests:
+          cpu: 100m
+          memory: 1536Mi
+        limits:
+          cpu: 250m
+          memory: 3Gi
     thanosQuery:
-      resources: {}
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 1
+          memory: 1Gi
     thanosCompact:
-      resources: {}
+      resources:
+        requests:
+          cpu: 250m
+          memory: 1Gi
+        limits:
+          cpu: 1
+          memory: 4Gi
 
   nodeSelector: {}
   affinity:

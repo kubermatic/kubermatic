@@ -77,21 +77,23 @@ func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
 		existingClusterLabel:         opts.existingClusterLabel,
 		openshift:                    opts.openshift,
 		printGinkoLogs:               opts.printGinkoLogs,
+		onlyTestCreation:             opts.onlyTestCreation,
 	}
 }
 
 type testRunner struct {
-	scenarios      []testScenario
-	secrets        secrets
-	namePrefix     string
-	repoRoot       string
-	reportsRoot    string
-	PublicKeys     [][]byte
-	workerName     string
-	homeDir        string
-	log            *logrus.Entry
-	openshift      bool
-	printGinkoLogs bool
+	scenarios        []testScenario
+	secrets          secrets
+	namePrefix       string
+	repoRoot         string
+	reportsRoot      string
+	PublicKeys       [][]byte
+	workerName       string
+	homeDir          string
+	log              *logrus.Entry
+	openshift        bool
+	printGinkoLogs   bool
+	onlyTestCreation bool
 
 	controlPlaneReadyWaitTimeout time.Duration
 	deleteClusterAfterTests      bool
@@ -301,6 +303,17 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 
 	if err := r.waitUntilAllPodsAreReady(log, userClusterClient); err != nil {
 		return nil, fmt.Errorf("failed to wait until all pods are running after creating the cluster: %v", err)
+	}
+
+	if r.onlyTestCreation {
+		return &reporters.JUnitTestSuite{
+			Name: "cluster creation",
+			TestCases: []reporters.JUnitTestCase{
+				{
+					Name: "cluster creation",
+				},
+			},
+		}, nil
 	}
 
 	report, err := r.testCluster(log, scenario.Name(), cluster, userClusterClient, nodeDeployment, dc, kubeconfigFilename, cloudConfigFilename)

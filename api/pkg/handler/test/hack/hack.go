@@ -41,7 +41,7 @@ func NewTestRouting(
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
 	saTokenGenerator serviceaccount.TokenGenerator,
 	eventRecorderProvider provider.EventRecorderProvider,
-	credentialManager common.CredentialManager) http.Handler {
+	credentialManager common.PresetsManager) http.Handler {
 
 	updateManager := version.New(versions, updates)
 	r := handler.NewRouting(

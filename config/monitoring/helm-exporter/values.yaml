@@ -7,7 +7,13 @@ helmExporter:
     pullPolicy: IfNotPresent
   nameOverride: ''
 
-  resources: {}
+  resources:
+    requests:
+      cpu: 50m
+      memory: 32Mi
+    limits:
+      cpu: 250m
+      memory: 64Mi
   nodeSelector: {}
   tolerations: []
   affinity: {}
