@@ -18,6 +18,7 @@ spec:
         network: os-network
         password: ""
         region: os-region
+        rootDiskSizeGB: null
         securityGroups:
         - os-security-groups
         subnet: os-subnet-id
