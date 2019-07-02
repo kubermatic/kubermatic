@@ -138,12 +138,12 @@ type GCPDiskType struct {
 	Description string `json:"description"`
 }
 
-// GCPMachineTypeList represents an array of GCP machine types.
-// swagger:model GCPMachineTypeList
+// GCPMachineSizeList represents an array of GCP machine sizes.
+// swagger:model GCPMachineSizeList
 type GCPMachineSizeList []GCPMachineSize
 
-// GCPMachineType represents a object of GCP machine type.
-// swagger:model GCPMachineType
+// GCPMachineSize represents a object of GCP machine size.
+// swagger:model GCPMachineSize
 type GCPMachineSize struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`

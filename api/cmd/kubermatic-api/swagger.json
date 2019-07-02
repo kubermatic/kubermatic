@@ -2985,7 +2985,7 @@
         }
       }
     },
-    "/api/v1/providers/gcp/machineTypes": {
+    "/api/v1/providers/gcp/sizes": {
       "get": {
         "description": "Lists machine types from GCP",
         "produces": [
@@ -2994,12 +2994,12 @@
         "tags": [
           "gcp"
         ],
-        "operationId": "listGCPMachineTypes",
+        "operationId": "listGCPSizes",
         "responses": {
           "200": {
-            "description": "GCPMachineTypeList",
+            "description": "GCPMachineSizeList",
             "schema": {
-              "$ref": "#/definitions/GCPMachineTypeList"
+              "$ref": "#/definitions/GCPMachineSizeList"
             }
           },
           "default": {
@@ -4415,9 +4415,9 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "GCPMachineType": {
+    "GCPMachineSize": {
       "type": "object",
-      "title": "GCPMachineType represents a object of GCP machine type.",
+      "title": "GCPMachineSize represents a object of GCP machine size.",
       "properties": {
         "description": {
           "type": "string",
@@ -4438,16 +4438,14 @@
           "x-go-name": "VCPUs"
         }
       },
-      "x-go-name": "GCPMachineSize",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "GCPMachineTypeList": {
+    "GCPMachineSizeList": {
       "type": "array",
-      "title": "GCPMachineTypeList represents an array of GCP machine types.",
+      "title": "GCPMachineSizeList represents an array of GCP machine sizes.",
       "items": {
-        "$ref": "#/definitions/GCPMachineType"
+        "$ref": "#/definitions/GCPMachineSize"
       },
-      "x-go-name": "GCPMachineSizeList",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "GCPNodeSpec": {
