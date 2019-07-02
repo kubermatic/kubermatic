@@ -9,6 +9,7 @@ import (
 	"github.com/ghodss/yaml"
 
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
 // Presets specifies default presets for supported providers
@@ -77,6 +78,12 @@ type AzureCredentials struct {
 	SubscriptionID string `json:"subscriptionId"`
 	ClientID       string `json:"clientId"`
 	ClientSecret   string `json:"clientSecret"`
+
+	ResourceGroup  string `json:"resourceGroup,omitempty"`
+	VNetName       string `json:"vnet,omitempty"`
+	SubnetName     string `json:"subnet,omitempty"`
+	RouteTableName string `json:"routeTable,omitempty"`
+	SecurityGroup  string `json:"securityGroup,omitempty"`
 }
 
 // VSphereCredentials credentials represents a credential for accessing vSphere
@@ -84,12 +91,20 @@ type VSphereCredentials struct {
 	Name     string `json:"name"`
 	Username string `json:"username"`
 	Password string `json:"password"`
+
+	VMNetName string `json:"vmNetName,omitempty"`
 }
 
 type AWSCredentials struct {
 	Name            string `json:"name"`
 	AccessKeyID     string `json:"accessKeyId"`
 	SecretAccessKey string `json:"secretAccessKey"`
+
+	VPCID               string `json:"vpcId,omitempty"`
+	SubnetID            string `json:"subnetId,omitempty"`
+	RouteTableID        string `json:"routeTableId,omitempty"`
+	InstanceProfileName string `json:"instanceProfileName,omitempty"`
+	SecurityGroupID     string `json:"securityGroupID,omitempty"`
 }
 
 // OpenstackCredentials specifies access data to an openstack cloud.
@@ -99,6 +114,12 @@ type OpenstackCredentials struct {
 	Password string `json:"password"`
 	Tenant   string `json:"tenant"`
 	Domain   string `json:"domain"`
+
+	Network        string `json:"network,,omitempty"`
+	SecurityGroups string `json:"securityGroups,omitempty"`
+	FloatingIPPool string `json:"floatingIpPool,omitempty"`
+	RouterID       string `json:"routerID,omitempty"`
+	SubnetID       string `json:"subnetID,omitempty"`
 }
 
 // PacketCredentials specifies access data to a Packet cloud.
@@ -106,12 +127,17 @@ type PacketCredentials struct {
 	Name      string `json:"name"`
 	APIKey    string `json:"apiKey"`
 	ProjectID string `json:"projectId"`
+
+	BillingCycle string `json:"billingCycle,omitempty"`
 }
 
 // GCPCredentials specifies access data to GCP.
 type GCPCredentials struct {
 	Name           string `json:"name"`
 	ServiceAccount string `json:"serviceAccount"`
+
+	Network    string `json:"network,omitempty"`
+	Subnetwork string `json:"subnetwork,omitempty"`
 }
 
 // FakeCredentials defines fake credential for tests
@@ -188,13 +214,13 @@ func (m *Manager) GetPresets() *Presets {
 	return m.presets
 }
 
-func (m *Manager) SetCloudCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
+func (m *Manager) SetCloudCredentials(credentialName string, cloud v1.CloudSpec, dc provider.DatacenterMeta) (*v1.CloudSpec, error) {
 
 	if cloud.VSphere != nil {
 		return m.setVsphereCredentials(credentialName, cloud)
 	}
 	if cloud.Openstack != nil {
-		return m.setOpenStackCredentials(credentialName, cloud)
+		return m.setOpenStackCredentials(credentialName, cloud, dc)
 	}
 	if cloud.Azure != nil {
 		return m.setAzureCredentials(credentialName, cloud)
@@ -249,6 +275,9 @@ func (m *Manager) setGCPCredentials(credentialName string, cloud v1.CloudSpec) (
 	for _, credential := range m.presets.GCP.Credentials {
 		if credentialName == credential.Name {
 			cloud.GCP.ServiceAccount = credential.ServiceAccount
+
+			cloud.GCP.Network = credential.Network
+			cloud.GCP.Subnetwork = credential.Subnetwork
 			return &cloud, nil
 		}
 	}
@@ -263,6 +292,12 @@ func (m *Manager) setAWSCredentials(credentialName string, cloud v1.CloudSpec) (
 		if credentialName == credential.Name {
 			cloud.AWS.AccessKeyID = credential.AccessKeyID
 			cloud.AWS.SecretAccessKey = credential.SecretAccessKey
+
+			cloud.AWS.InstanceProfileName = credential.InstanceProfileName
+			cloud.AWS.RouteTableID = credential.RouteTableID
+			cloud.AWS.SecurityGroupID = credential.SecurityGroupID
+			cloud.AWS.SubnetID = credential.SubnetID
+			cloud.AWS.VPCID = credential.VPCID
 			return &cloud, nil
 		}
 	}
@@ -290,6 +325,12 @@ func (m *Manager) setPacketCredentials(credentialName string, cloud v1.CloudSpec
 		if credentialName == credential.Name {
 			cloud.Packet.ProjectID = credential.ProjectID
 			cloud.Packet.APIKey = credential.APIKey
+
+			cloud.Packet.BillingCycle = credential.BillingCycle
+			if len(credential.BillingCycle) == 0 {
+				cloud.Packet.BillingCycle = "hourly"
+			}
+
 			return &cloud, nil
 		}
 	}
@@ -319,13 +360,19 @@ func (m *Manager) setAzureCredentials(credentialName string, cloud v1.CloudSpec)
 			cloud.Azure.ClientSecret = credential.ClientSecret
 			cloud.Azure.ClientID = credential.ClientID
 			cloud.Azure.SubscriptionID = credential.SubscriptionID
+
+			cloud.Azure.ResourceGroup = credential.ResourceGroup
+			cloud.Azure.RouteTableName = credential.RouteTableName
+			cloud.Azure.SecurityGroup = credential.SecurityGroup
+			cloud.Azure.SubnetName = credential.SubnetName
+			cloud.Azure.VNetName = credential.VNetName
 			return &cloud, nil
 		}
 	}
 	return nil, noCredentialError(credentialName)
 }
 
-func (m *Manager) setOpenStackCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
+func (m *Manager) setOpenStackCredentials(credentialName string, cloud v1.CloudSpec, dc provider.DatacenterMeta) (*v1.CloudSpec, error) {
 	if m.presets.Openstack.Credentials == nil {
 		return nil, emptyCredentialListError("Openstack")
 	}
@@ -335,6 +382,17 @@ func (m *Manager) setOpenStackCredentials(credentialName string, cloud v1.CloudS
 			cloud.Openstack.Password = credential.Password
 			cloud.Openstack.Domain = credential.Domain
 			cloud.Openstack.Tenant = credential.Tenant
+
+			cloud.Openstack.SubnetID = credential.SubnetID
+			cloud.Openstack.Network = credential.Network
+			cloud.Openstack.FloatingIPPool = credential.FloatingIPPool
+
+			if cloud.Openstack.FloatingIPPool == "" && dc.Spec.Openstack != nil && dc.Spec.Openstack.EnforceFloatingIP {
+				return nil, fmt.Errorf("preset error, no floating ip pool specified for OpenStack")
+			}
+
+			cloud.Openstack.RouterID = credential.RouterID
+			cloud.Openstack.SecurityGroups = credential.SecurityGroups
 			return &cloud, nil
 		}
 	}
@@ -349,6 +407,8 @@ func (m *Manager) setVsphereCredentials(credentialName string, cloud v1.CloudSpe
 		if credentialName == credential.Name {
 			cloud.VSphere.Password = credential.Password
 			cloud.VSphere.Username = credential.Username
+
+			cloud.VSphere.VMNetName = credential.VMNetName
 			return &cloud, nil
 		}
 	}
