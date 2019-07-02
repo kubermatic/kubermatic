@@ -428,7 +428,7 @@ func (r Routing) listCredentials() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/providers/gcp/diskTypes gcp listGCPDiskTypes
+// swagger:route GET /api/v1/providers/gcp/disktypes gcp listGCPDiskTypes
 //
 // Lists disk types from GCP
 //
