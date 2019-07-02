@@ -12,15 +12,15 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/gcp"
 )
 
-// GCPMachineTypesReq represent a request for GCP machine or disk types.
-type GCPMachineTypesReq struct {
+// GCPTypesReq represent a request for GCP machine or disk types.
+type GCPTypesReq struct {
 	ServiceAccount string
 	Zone           string
 	Credential     string
 }
 
-func DecodeGCPTypesReqReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req GCPMachineTypesReq
+func DecodeGCPTypesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GCPTypesReq
 
 	req.ServiceAccount = r.Header.Get("ServiceAccount")
 	req.Zone = r.Header.Get("Zone")
@@ -31,7 +31,7 @@ func DecodeGCPTypesReqReq(c context.Context, r *http.Request) (interface{}, erro
 
 func GCPDiskTypesEndpoint(credentialManager common.CredentialManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(GCPMachineTypesReq)
+		req := request.(GCPTypesReq)
 
 		zone := req.Zone
 		sa := req.ServiceAccount
@@ -77,7 +77,7 @@ func listGCPDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDis
 
 func GCPSizeEndpoint(credentialManager common.CredentialManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(GCPMachineTypesReq)
+		req := request.(GCPTypesReq)
 
 		zone := req.Zone
 		sa := req.ServiceAccount
@@ -96,11 +96,11 @@ func GCPSizeEndpoint(credentialManager common.CredentialManager) endpoint.Endpoi
 }
 
 func listGCPSizes(ctx context.Context, sa string, zone string) (apiv1.GCPMachineSizeList, error) {
-	machineTypes := apiv1.GCPMachineSizeList{}
+	sizes := apiv1.GCPMachineSizeList{}
 
 	computeService, project, err := gcp.ConnectToComputeService(sa)
 	if err != nil {
-		return machineTypes, err
+		return sizes, err
 	}
 
 	req := computeService.MachineTypes.List(project, zone)
@@ -116,11 +116,11 @@ func listGCPSizes(ctx context.Context, sa string, zone string) (apiv1.GCPMachine
 					VCPUs:       machineType.GuestCpus,
 				}
 
-				machineTypes = append(machineTypes, mt)
+				sizes = append(sizes, mt)
 			}
 		}
 		return nil
 	})
 
-	return machineTypes, err
+	return sizes, err
 }
