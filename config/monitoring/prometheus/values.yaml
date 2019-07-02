@@ -102,7 +102,9 @@ prometheus:
   #  secretName: initech-recording-rules-secret
 
   # Thanos can be used to handle long-term storage of metrics by
-  # shipping the data blocks into an object storage like Minio.
+  # shipping the data blocks into an object storage like Minio. Note that
+  # this is considered EXPERIMENTAL and can be removed or significantly
+  # altered in future Kubermatic releases.
   # When enabling Thanos it's advised to disable backups, as blocks
   # are already backed up, and to lower the retentionTime to something
   # short like 24 hours.
