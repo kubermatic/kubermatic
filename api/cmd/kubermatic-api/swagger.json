@@ -2962,7 +2962,7 @@
         }
       }
     },
-    "/api/v1/providers/gcp/diskTypes": {
+    "/api/v1/providers/gcp/disktypes": {
       "get": {
         "description": "Lists disk types from GCP",
         "produces": [
