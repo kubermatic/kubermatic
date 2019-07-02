@@ -619,15 +619,15 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:127238a6a9676a05e638b8d871890d206a2103b306dd53498a9a4634922a7a6f"
+  digest = "1:2e935442f280bdda393b1915007aaf81e9e526978c6190482d1c7616823bc8ae"
   name = "github.com/gophercloud/gophercloud"
   packages = [
     ".",
     "internal",
     "openstack",
     "openstack/compute/v2/extensions/availabilityzones",
+    "openstack/compute/v2/extensions/bootfromvolume",
     "openstack/compute/v2/extensions/extendedstatus",
-    "openstack/compute/v2/extensions/keypairs",
     "openstack/compute/v2/flavors",
     "openstack/compute/v2/images",
     "openstack/compute/v2/servers",
@@ -824,7 +824,7 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:ca2f25b0d4964ef5dbfb7fe81bb9703334f115a6b1b992fc81f7c1e05390c6ff"
+  digest = "1:8d526f806bf4d93f3a05663f5d1c26737899fa9d0c8fad7a9cdb69f3dccd9249"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/apis/plugin",
@@ -852,8 +852,8 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "4c66cdc2811cd49b92e37d71d2390bdf648eebec"
-  version = "v1.3.0"
+  revision = "9b8220748317f6f54c14e69daa1831b4e0871388"
+  version = "v1.4.0"
 
 [[projects]]
   digest = "1:0dbba7d4d4f3eeb01acd81af338ff4a3c4b0bb814d87368ea536e616f383240d"

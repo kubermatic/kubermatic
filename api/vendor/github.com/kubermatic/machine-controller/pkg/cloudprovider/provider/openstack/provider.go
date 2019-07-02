@@ -28,8 +28,8 @@ import (
 
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/bootfromvolume"
 	osextendedstatus "github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/extendedstatus"
-	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
 	osservers "github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
 	osfloatingips "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/floatingips"
 	osnetworks "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
@@ -83,6 +83,7 @@ type RawConfig struct {
 	FloatingIPPool   providerconfig.ConfigVarString   `json:"floatingIpPool,omitempty"`
 	AvailabilityZone providerconfig.ConfigVarString   `json:"availabilityZone,omitempty"`
 	TrustDevicePath  providerconfig.ConfigVarBool     `json:"trustDevicePath"`
+	RootDiskSizeGB   *int                             `json:"rootDiskSizeGB"`
 	// This tag is related to server metadata, not compute server's tag
 	Tags map[string]string `json:"tags,omitempty"`
 }
@@ -105,6 +106,7 @@ type Config struct {
 	FloatingIPPool   string
 	AvailabilityZone string
 	TrustDevicePath  bool
+	RootDiskSizeGB   *int
 
 	Tags map[string]string
 }
@@ -198,6 +200,7 @@ func (p *provider) getConfig(s v1alpha1.ProviderSpec) (*Config, *providerconfig.
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	c.RootDiskSizeGB = rawConfig.RootDiskSizeGB
 	c.Tags = rawConfig.Tags
 	if c.Tags == nil {
 		c.Tags = map[string]string{}
@@ -345,8 +348,15 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 		return fmt.Errorf("failed to get region %q: %v", c.Region, err)
 	}
 
-	if _, err := getImageByName(client, c.Region, c.Image); err != nil {
+	image, err := getImageByName(client, c.Region, c.Image)
+	if err != nil {
 		return fmt.Errorf("failed to get image %q: %v", c.Image, err)
+	}
+	if c.RootDiskSizeGB != nil {
+		if *c.RootDiskSizeGB < image.MinDisk {
+			return fmt.Errorf("rootDiskSize %d is smaller than minimum disk size for image %q(%d)",
+				*c.RootDiskSizeGB, image.Name, image.MinDisk)
+		}
 	}
 
 	if _, err := getFlavor(client, c.Region, c.Flavor); err != nil {
@@ -427,6 +437,11 @@ func (p *provider) Create(machine *v1alpha1.Machine, data *cloudprovidertypes.Pr
 		securityGroups = append(securityGroups, securityGroupName)
 	}
 
+	computeClient, err := goopenstack.NewComputeV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: c.Region})
+	if err != nil {
+		return nil, osErrorToTerminalError(err, "failed to get compute client")
+	}
+
 	// we check against reserved tags in Validation method
 	allTags := c.Tags
 	allTags[machineUIDMetaKey] = string(machine.UID)
@@ -441,18 +456,29 @@ func (p *provider) Create(machine *v1alpha1.Machine, data *cloudprovidertypes.Pr
 		Networks:         []osservers.Network{{UUID: network.ID}},
 		Metadata:         allTags,
 	}
-	computeClient, err := goopenstack.NewComputeV2(client, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: c.Region})
-	if err != nil {
-		return nil, osErrorToTerminalError(err, "failed to get compute client")
-	}
 
 	var server serverWithExt
-	err = osservers.Create(computeClient, keypairs.CreateOptsExt{
-		CreateOptsBuilder: serverOpts,
-		KeyName:           "",
-	}).ExtractInto(&server)
-	if err != nil {
-		return nil, osErrorToTerminalError(err, "failed to create server")
+	if c.RootDiskSizeGB != nil {
+		blockDevices := []bootfromvolume.BlockDevice{
+			{
+				DeleteOnTermination: true,
+				DestinationType:     bootfromvolume.DestinationVolume,
+				SourceType:          bootfromvolume.SourceImage,
+				UUID:                image.ID,
+				VolumeSize:          *c.RootDiskSizeGB,
+			},
+		}
+		createOpts := bootfromvolume.CreateOptsExt{
+			CreateOptsBuilder: serverOpts,
+			BlockDevice:       blockDevices,
+		}
+		if err := bootfromvolume.Create(computeClient, createOpts).ExtractInto(&server); err != nil {
+			return nil, osErrorToTerminalError(err, "failed to create server with volume")
+		}
+	} else {
+		if err := osservers.Create(computeClient, serverOpts).ExtractInto(&server); err != nil {
+			return nil, osErrorToTerminalError(err, "failed to create server")
+		}
 	}
 
 	if err := waitUntilInstanceIsActive(computeClient, server.ID); err != nil {
