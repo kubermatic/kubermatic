@@ -29,15 +29,15 @@ func DecodeGCPTypesReq(c context.Context, r *http.Request) (interface{}, error) 
 	return req, nil
 }
 
-func GCPDiskTypesEndpoint(credentialManager common.CredentialManager) endpoint.Endpoint {
+func GCPDiskTypesEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesReq)
 
 		zone := req.Zone
 		sa := req.ServiceAccount
 
-		if len(req.Credential) > 0 && credentialManager.GetCredentials().GCP != nil {
-			for _, credential := range credentialManager.GetCredentials().GCP {
+		if len(req.Credential) > 0 && credentialManager.GetPresets().GCP.Credentials != nil {
+			for _, credential := range credentialManager.GetPresets().GCP.Credentials {
 				if credential.Name == req.Credential {
 					sa = credential.ServiceAccount
 					break
@@ -75,15 +75,15 @@ func listGCPDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDis
 	return diskTypes, err
 }
 
-func GCPSizeEndpoint(credentialManager common.CredentialManager) endpoint.Endpoint {
+func GCPSizeEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesReq)
 
 		zone := req.Zone
 		sa := req.ServiceAccount
 
-		if len(req.Credential) > 0 && credentialManager.GetCredentials().GCP != nil {
-			for _, credential := range credentialManager.GetCredentials().GCP {
+		if len(req.Credential) > 0 && credentialManager.GetPresets().GCP.Credentials != nil {
+			for _, credential := range credentialManager.GetPresets().GCP.Credentials {
 				if credential.Name == req.Credential {
 					sa = credential.ServiceAccount
 					break
