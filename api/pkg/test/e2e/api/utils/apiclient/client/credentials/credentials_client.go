@@ -36,7 +36,7 @@ func (a *Client) ListCredentials(params *ListCredentialsParams, authInfo runtime
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "listCredentials",
 		Method:             "GET",
-		PathPattern:        "/api/v1/providers/{provider_name}/credentials",
+		PathPattern:        "/api/v1/providers/{provider_name}/presets/credentials",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},

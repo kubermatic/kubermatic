@@ -24,6 +24,9 @@ type AWSCloudSpec struct {
 	// instance profile name
 	InstanceProfileName string `json:"instanceProfileName,omitempty"`
 
+	// role a r n
+	RoleARN string `json:"roleARN,omitempty"`
+
 	// role name
 	RoleName string `json:"roleName,omitempty"`
 
