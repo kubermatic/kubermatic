@@ -4,8 +4,7 @@ import (
 	"fmt"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	v1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,24 +51,24 @@ func (s *azureScenario) Name() string {
 	return fmt.Sprintf("azure-%s-%s", getOSNameFromSpec(s.nodeOsSpec), s.version.String())
 }
 
-func (s *azureScenario) Cluster(secrets secrets) *v1.Cluster {
-	return &v1.Cluster{
+func (s *azureScenario) Cluster(secrets secrets) *kubermaticv1.Cluster {
+	return &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{},
-		Spec: v1.ClusterSpec{
+		Spec: kubermaticv1.ClusterSpec{
 			Version:           *s.version,
 			HumanReadableName: s.Name(),
-			ClusterNetwork: v1.ClusterNetworkingConfig{
-				Services: v1.NetworkRanges{
+			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+				Services: kubermaticv1.NetworkRanges{
 					CIDRBlocks: []string{"10.10.10.0/24"},
 				},
-				Pods: v1.NetworkRanges{
+				Pods: kubermaticv1.NetworkRanges{
 					CIDRBlocks: []string{"172.25.0.0/16"},
 				},
 				DNSDomain: "cluster.local",
 			},
-			Cloud: v1.CloudSpec{
+			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: "azure-westeurope",
-				Azure: &v1.AzureCloudSpec{
+				Azure: &kubermaticv1.AzureCloudSpec{
 					ClientID:       secrets.Azure.ClientID,
 					ClientSecret:   secrets.Azure.ClientSecret,
 					SubscriptionID: secrets.Azure.SubscriptionID,
@@ -80,7 +79,7 @@ func (s *azureScenario) Cluster(secrets secrets) *v1.Cluster {
 	}
 }
 
-func (s *azureScenario) NodeDeployments(num int, _ provider.DatacenterSpec, _ secrets) []kubermaticapiv1.NodeDeployment {
+func (s *azureScenario) NodeDeployments(num int, _ kubermaticv1.DatacenterSpec, _ secrets) []kubermaticapiv1.NodeDeployment {
 	return []kubermaticapiv1.NodeDeployment{
 		{
 			Spec: kubermaticapiv1.NodeDeploymentSpec{

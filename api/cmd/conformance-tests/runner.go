@@ -54,7 +54,7 @@ var (
 type testScenario interface {
 	Name() string
 	Cluster(secrets secrets) *kubermaticv1.Cluster
-	NodeDeployments(num int, dc provider.DatacenterSpec, secrets secrets) []kubermaticapiv1.NodeDeployment
+	NodeDeployments(num int, dc kubermaticv1.DatacenterSpec, secrets secrets) []kubermaticapiv1.NodeDeployment
 	OS() kubermaticapiv1.OperatingSystemSpec
 }
 
