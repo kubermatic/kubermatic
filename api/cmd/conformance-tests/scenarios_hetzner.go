@@ -67,7 +67,7 @@ func (s *hetznerScenario) Cluster(secrets secrets) *kubermaticv1.Cluster {
 	}
 }
 
-func (s *hetznerScenario) NodeDeployments(num int, _ kubermaticv1.DatacenterSpec, _ secrets) []kubermaticapiv1.NodeDeployment {
+func (s *hetznerScenario) NodeDeployments(num int, _ secrets) []kubermaticapiv1.NodeDeployment {
 	return []kubermaticapiv1.NodeDeployment{
 		{
 			Spec: kubermaticapiv1.NodeDeploymentSpec{

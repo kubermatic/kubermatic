@@ -80,7 +80,7 @@ func (s *openStackScenario) Cluster(secrets secrets) *kubermaticv1.Cluster {
 	}
 }
 
-func (s *openStackScenario) NodeDeployments(num int, _ kubermaticv1.DatacenterSpec, _ secrets) []kubermaticapiv1.NodeDeployment {
+func (s *openStackScenario) NodeDeployments(num int, _ secrets) []kubermaticapiv1.NodeDeployment {
 	osName := getOSNameFromSpec(s.nodeOsSpec)
 	return []kubermaticapiv1.NodeDeployment{
 		{

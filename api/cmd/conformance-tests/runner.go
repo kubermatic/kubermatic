@@ -54,7 +54,7 @@ var (
 type testScenario interface {
 	Name() string
 	Cluster(secrets secrets) *kubermaticv1.Cluster
-	NodeDeployments(num int, dc kubermaticv1.DatacenterSpec, secrets secrets) []kubermaticapiv1.NodeDeployment
+	NodeDeployments(num int, secrets secrets) []kubermaticapiv1.NodeDeployment
 	OS() kubermaticapiv1.OperatingSystemSpec
 }
 
@@ -298,7 +298,7 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 		return nil, fmt.Errorf("failed to get the client for the cluster: %v", err)
 	}
 
-	nodeDeployments := scenario.NodeDeployments(r.nodeCount, dc.Spec, r.secrets)
+	nodeDeployments := scenario.NodeDeployments(r.nodeCount, r.secrets)
 	if err := r.setupNodes(log, scenario.Name(), cluster, userClusterClient, nodeDeployments, dc); err != nil {
 		return nil, fmt.Errorf("failed to setup nodes: %v", err)
 	}
