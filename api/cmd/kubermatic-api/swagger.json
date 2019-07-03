@@ -913,17 +913,14 @@
     },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}": {
       "get": {
-        "description": "Patches a node deployment that is assigned to the given cluster. Please note that at the moment only\nnode deployment's spec can be updated by a patch, no other fields can be changed using this endpoint.",
-        "consumes": [
-          "application/json"
-        ],
         "produces": [
           "application/json"
         ],
         "tags": [
           "project"
         ],
-        "operationId": "patchNodeDeployment",
+        "summary": "Gets a node deployment that is assigned to the given cluster.",
+        "operationId": "getNodeDeployment",
         "parameters": [
           {
             "type": "string",
@@ -952,17 +949,6 @@
             "name": "nodedeployment_id",
             "in": "path",
             "required": true
-          },
-          {
-            "name": "Patch",
-            "in": "body",
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "integer",
-                "format": "uint8"
-              }
-            }
           }
         ],
         "responses": {
@@ -1025,6 +1011,77 @@
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      },
+      "patch": {
+        "description": "Patches a node deployment that is assigned to the given cluster. Please note that at the moment only\nnode deployment's spec can be updated by a patch, no other fields can be changed using this endpoint.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "patchNodeDeployment",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "NodeDeploymentID",
+            "name": "nodedeployment_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Patch",
+            "in": "body",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "uint8"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NodeDeployment",
+            "schema": {
+              "$ref": "#/definitions/NodeDeployment"
+            }
           },
           "401": {
             "$ref": "#/responses/empty"
