@@ -25,23 +25,23 @@ type Client struct {
 }
 
 /*
-ListGCPCredentials Lists credential names for GCP
+ListGCPDiskTypes Lists disk types from GCP
 */
-func (a *Client) ListGCPCredentials(params *ListGCPCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPCredentialsOK, error) {
+func (a *Client) ListGCPDiskTypes(params *ListGCPDiskTypesParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPDiskTypesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewListGCPCredentialsParams()
+		params = NewListGCPDiskTypesParams()
 	}
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "listGCPCredentials",
+		ID:                 "listGCPDiskTypes",
 		Method:             "GET",
-		PathPattern:        "/api/v1/providers/gcp/credentials",
+		PathPattern:        "/api/v1/providers/gcp/disktypes",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
-		Reader:             &ListGCPCredentialsReader{formats: a.formats},
+		Reader:             &ListGCPDiskTypesReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -49,7 +49,36 @@ func (a *Client) ListGCPCredentials(params *ListGCPCredentialsParams, authInfo r
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListGCPCredentialsOK), nil
+	return result.(*ListGCPDiskTypesOK), nil
+
+}
+
+/*
+ListGCPSizes Lists machine types from GCP
+*/
+func (a *Client) ListGCPSizes(params *ListGCPSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSizesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListGCPSizesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listGCPSizes",
+		Method:             "GET",
+		PathPattern:        "/api/v1/providers/gcp/sizes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &ListGCPSizesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListGCPSizesOK), nil
 
 }
 

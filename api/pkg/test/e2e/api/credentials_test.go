@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 )
 
-func TestListDigitaloceanCredentials(t *testing.T) {
+func TestListCredentials(t *testing.T) {
 	tests := []struct {
 		name         string
 		provider     string

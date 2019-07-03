@@ -15,6 +15,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/credentials"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/datacenter"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/digitalocean"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/gcp"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/openstack"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/operations"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/project"
@@ -75,6 +76,8 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Datacenter = datacenter.New(transport, formats)
 
 	cli.Digitalocean = digitalocean.New(transport, formats)
+
+	cli.Gcp = gcp.New(transport, formats)
 
 	cli.Openstack = openstack.New(transport, formats)
 
@@ -144,6 +147,8 @@ type Kubermatic struct {
 
 	Digitalocean *digitalocean.Client
 
+	Gcp *gcp.Client
+
 	Openstack *openstack.Client
 
 	Operations *operations.Client
@@ -174,6 +179,8 @@ func (c *Kubermatic) SetTransport(transport runtime.ClientTransport) {
 	c.Datacenter.SetTransport(transport)
 
 	c.Digitalocean.SetTransport(transport)
+
+	c.Gcp.SetTransport(transport)
 
 	c.Openstack.SetTransport(transport)
 
