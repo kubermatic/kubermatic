@@ -58,7 +58,7 @@ type ListCredentialsOK struct {
 }
 
 func (o *ListCredentialsOK) Error() string {
-	return fmt.Sprintf("[GET /api/v1/providers/{provider_name}/credentials][%d] listCredentialsOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v1/providers/{provider_name}/presets/credentials][%d] listCredentialsOK  %+v", 200, o.Payload)
 }
 
 func (o *ListCredentialsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -96,7 +96,7 @@ func (o *ListCredentialsDefault) Code() int {
 }
 
 func (o *ListCredentialsDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v1/providers/{provider_name}/credentials][%d] listCredentials default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v1/providers/{provider_name}/presets/credentials][%d] listCredentials default  %+v", o._statusCode, o.Payload)
 }
 
 func (o *ListCredentialsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
