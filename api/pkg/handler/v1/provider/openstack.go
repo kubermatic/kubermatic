@@ -98,7 +98,7 @@ func getOpenstackSizes(providers provider.CloudRegistry, username, passowrd, ten
 	return apiSizes, nil
 }
 
-func MeetsOpenstackNodeSizeRequirement(apiSize apiv1.OpenstackSize, requirements provider.OpenstackNodeSizeRequirements) bool {
+func MeetsOpenstackNodeSizeRequirement(apiSize apiv1.OpenstackSize, requirements kubermaticv1.OpenstackNodeSizeRequirements) bool {
 	if apiSize.VCPUs < requirements.MinimumVCPUs {
 		return false
 	}

@@ -29,6 +29,7 @@ import (
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -280,8 +281,8 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 			Location: "us-central",
 			Country:  "US",
 			IsSeed:   true,
-			Spec: provider.DatacenterSpec{
-				Digitalocean: &provider.DigitaloceanSpec{
+			Spec: kubermaticv1.DatacenterSpec{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "ams2",
 				},
 			},
@@ -290,8 +291,8 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 			Location: "US ",
 			Seed:     "us-central1",
 			Country:  "NL",
-			Spec: provider.DatacenterSpec{
-				Digitalocean: &provider.DigitaloceanSpec{
+			Spec: kubermaticv1.DatacenterSpec{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "ams2",
 				},
 			},
@@ -300,8 +301,8 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 			Location: "Amsterdam",
 			Seed:     "us-central1",
 			Country:  "NL",
-			Spec: provider.DatacenterSpec{
-				Digitalocean: &provider.DigitaloceanSpec{
+			Spec: kubermaticv1.DatacenterSpec{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "ams2",
 				},
 			},

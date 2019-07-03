@@ -4,8 +4,7 @@ import (
 	"fmt"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	v1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,24 +52,24 @@ func (s *packetScenario) Name() string {
 	return fmt.Sprintf("packet-%s-%s", getOSNameFromSpec(s.nodeOsSpec), s.version.String())
 }
 
-func (s *packetScenario) Cluster(secrets secrets) *v1.Cluster {
-	return &v1.Cluster{
+func (s *packetScenario) Cluster(secrets secrets) *kubermaticv1.Cluster {
+	return &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{},
-		Spec: v1.ClusterSpec{
+		Spec: kubermaticv1.ClusterSpec{
 			Version:           *s.version,
 			HumanReadableName: s.Name(),
-			ClusterNetwork: v1.ClusterNetworkingConfig{
-				Services: v1.NetworkRanges{
+			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+				Services: kubermaticv1.NetworkRanges{
 					CIDRBlocks: []string{"10.10.10.0/24"},
 				},
-				Pods: v1.NetworkRanges{
+				Pods: kubermaticv1.NetworkRanges{
 					CIDRBlocks: []string{"172.25.0.0/16"},
 				},
 				DNSDomain: "cluster.local",
 			},
-			Cloud: v1.CloudSpec{
+			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: "packet-ams1",
-				Packet: &v1.PacketCloudSpec{
+				Packet: &kubermaticv1.PacketCloudSpec{
 					APIKey:    secrets.Packet.APIKey,
 					ProjectID: secrets.Packet.ProjectID,
 				},
@@ -79,7 +78,7 @@ func (s *packetScenario) Cluster(secrets secrets) *v1.Cluster {
 	}
 }
 
-func (s *packetScenario) NodeDeployments(num int, _ provider.DatacenterSpec, _ secrets) []kubermaticapiv1.NodeDeployment {
+func (s *packetScenario) NodeDeployments(num int, _ secrets) []kubermaticapiv1.NodeDeployment {
 	return []kubermaticapiv1.NodeDeployment{
 		{
 			Spec: kubermaticapiv1.NodeDeploymentSpec{

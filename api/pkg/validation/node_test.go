@@ -50,8 +50,8 @@ func TestValidateCreateNodeSpec(t *testing.T) {
 				},
 			},
 			&provider.DatacenterMeta{
-				Spec: provider.DatacenterSpec{
-					Openstack: &provider.OpenstackSpec{EnforceFloatingIP: false},
+				Spec: kubermaticv1.DatacenterSpec{
+					Openstack: &kubermaticv1.DatacenterSpecOpenstack{EnforceFloatingIP: false},
 				},
 			},
 			nil,
@@ -73,8 +73,8 @@ func TestValidateCreateNodeSpec(t *testing.T) {
 				},
 			},
 			&provider.DatacenterMeta{
-				Spec: provider.DatacenterSpec{
-					Openstack: &provider.OpenstackSpec{EnforceFloatingIP: true},
+				Spec: kubermaticv1.DatacenterSpec{
+					Openstack: &kubermaticv1.DatacenterSpecOpenstack{EnforceFloatingIP: true},
 				},
 			},
 			errors.New("no floating ip pool specified"),
@@ -96,8 +96,8 @@ func TestValidateCreateNodeSpec(t *testing.T) {
 				},
 			},
 			&provider.DatacenterMeta{
-				Spec: provider.DatacenterSpec{
-					Openstack: &provider.OpenstackSpec{EnforceFloatingIP: false},
+				Spec: kubermaticv1.DatacenterSpec{
+					Openstack: &kubermaticv1.DatacenterSpecOpenstack{EnforceFloatingIP: false},
 				},
 			},
 			errors.New("no floating ip pool specified"),
@@ -119,8 +119,8 @@ func TestValidateCreateNodeSpec(t *testing.T) {
 				},
 			},
 			&provider.DatacenterMeta{
-				Spec: provider.DatacenterSpec{
-					Openstack: &provider.OpenstackSpec{EnforceFloatingIP: false},
+				Spec: kubermaticv1.DatacenterSpec{
+					Openstack: &kubermaticv1.DatacenterSpecOpenstack{EnforceFloatingIP: false},
 				},
 			},
 			nil,

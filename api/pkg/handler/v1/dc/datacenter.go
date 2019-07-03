@@ -13,6 +13,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 )
 
 // ListEndpoint an HTTP endpoint that returns a list of apiv1.Datacenter
@@ -79,7 +81,7 @@ func GetDatacenter(dcs map[string]provider.DatacenterMeta, datacenterToGet strin
 	}, nil
 }
 
-func imagesMap(images provider.ImageList) map[string]string {
+func imagesMap(images kubermaticv1.ImageList) map[string]string {
 	m := map[string]string{}
 	for os, image := range images {
 		m[string(os)] = image

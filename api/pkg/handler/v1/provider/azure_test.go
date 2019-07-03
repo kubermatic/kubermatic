@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
 	azure "github.com/kubermatic/kubermatic/api/pkg/handler/v1/provider"
@@ -105,8 +106,8 @@ func buildAzureDatacenterMeta() map[string]provider.DatacenterMeta {
 			Location: "ap-northeast",
 			Country:  "JP",
 			IsSeed:   true,
-			Spec: provider.DatacenterSpec{
-				Azure: &provider.AzureSpec{
+			Spec: kubermaticv1.DatacenterSpec{
+				Azure: &kubermaticv1.DatacenterSpecAzure{
 					Location: "ap-northeast",
 				},
 			},

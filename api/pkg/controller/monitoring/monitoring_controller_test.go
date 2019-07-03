@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	kubermaticscheme "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/scheme"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -42,8 +43,8 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 			Location: "us-central",
 			Country:  "US",
 			IsSeed:   true,
-			Spec: provider.DatacenterSpec{
-				Digitalocean: &provider.DigitaloceanSpec{
+			Spec: kubermaticv1.DatacenterSpec{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "ams2",
 				},
 			},
@@ -52,16 +53,16 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 			Location: "us-central",
 			Country:  "US",
 			Seed:     "us-central1",
-			Spec: provider.DatacenterSpec{
-				BringYourOwn: &provider.BringYourOwnSpec{},
+			Spec: kubermaticv1.DatacenterSpec{
+				BringYourOwn: &kubermaticv1.DatacenterSpecBringYourOwn{},
 			},
 		},
 		"private-do1": {
 			Location: "US ",
 			Seed:     "us-central1",
 			Country:  "NL",
-			Spec: provider.DatacenterSpec{
-				Digitalocean: &provider.DigitaloceanSpec{
+			Spec: kubermaticv1.DatacenterSpec{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "ams2",
 				},
 			},
@@ -70,8 +71,8 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 			Location: "Amsterdam",
 			Seed:     "us-central1",
 			Country:  "NL",
-			Spec: provider.DatacenterSpec{
-				Digitalocean: &provider.DigitaloceanSpec{
+			Spec: kubermaticv1.DatacenterSpec{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "ams2",
 				},
 			},
@@ -81,8 +82,8 @@ func buildDatacenterMeta() map[string]provider.DatacenterMeta {
 			Seed:             "us-central1",
 			Country:          "NL",
 			SeedDNSOverwrite: &seedAlias,
-			Spec: provider.DatacenterSpec{
-				Digitalocean: &provider.DigitaloceanSpec{
+			Spec: kubermaticv1.DatacenterSpec{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "ams3",
 				},
 			},

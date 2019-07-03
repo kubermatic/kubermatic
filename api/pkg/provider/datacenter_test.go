@@ -1,12 +1,14 @@
 package provider
 
 import (
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"io/ioutil"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	utilpointer "k8s.io/utils/pointer"
 )
@@ -62,8 +64,8 @@ datacenters:
 			Location: "Frankfurt",
 			Seed:     "",
 			Country:  "DE",
-			Spec: DatacenterSpec{
-				BringYourOwn: &BringYourOwnSpec{},
+			Spec: kubermaticv1.DatacenterSpec{
+				BringYourOwn: &kubermaticv1.DatacenterSpecBringYourOwn{},
 			},
 			IsSeed:           true,
 			SeedDNSOverwrite: nil,
@@ -72,8 +74,8 @@ datacenters:
 			Location: "Amsterdam",
 			Seed:     "europe-west3-c",
 			Country:  "NL",
-			Spec: DatacenterSpec{
-				Digitalocean: &DigitaloceanSpec{
+			Spec: kubermaticv1.DatacenterSpec{
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 					Region: "ams3",
 				},
 			},
@@ -84,12 +86,12 @@ datacenters:
 			Location: "Australia",
 			Seed:     "sydney-1",
 			Country:  "AU",
-			Spec: DatacenterSpec{
-				Openstack: &OpenstackSpec{
+			Spec: kubermaticv1.DatacenterSpec{
+				Openstack: &kubermaticv1.DatacenterSpecOpenstack{
 					AvailabilityZone: "au1",
 					Region:           "au",
 					DNSServers:       []string{"8.8.8.8", "8.8.4.4"},
-					Images: ImageList{
+					Images: kubermaticv1.ImageList{
 						providerconfig.OperatingSystemUbuntu: "Ubuntu 18.04 LTS - 2018-08-10",
 						providerconfig.OperatingSystemCentOS: "",
 						providerconfig.OperatingSystemCoreos: "",

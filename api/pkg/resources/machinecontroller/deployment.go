@@ -187,7 +187,7 @@ func getEnvVars(data machinecontrollerData) []corev1.EnvVar {
 	return vars
 }
 
-func getFlags(clusterDNSIP string, nodeSettings provider.NodeSettings) []string {
+func getFlags(clusterDNSIP string, nodeSettings kubermaticv1.NodeSettings) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-logtostderr",

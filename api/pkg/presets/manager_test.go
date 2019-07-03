@@ -110,7 +110,7 @@ func TestCredentialEndpoint(t *testing.T) {
 				}
 				return manager
 			}(),
-			dc:                provider.DatacenterMeta{Spec: provider.DatacenterSpec{Openstack: &provider.OpenstackSpec{EnforceFloatingIP: false}}},
+			dc:                provider.DatacenterMeta{Spec: v1.DatacenterSpec{Openstack: &v1.DatacenterSpecOpenstack{EnforceFloatingIP: false}}},
 			cloudSpec:         v1.CloudSpec{Openstack: &v1.OpenstackCloudSpec{}},
 			expectedCloudSpec: &v1.CloudSpec{Openstack: &v1.OpenstackCloudSpec{Tenant: "a", Domain: "b", Password: "c", Username: "d"}},
 		},
