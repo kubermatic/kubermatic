@@ -69,7 +69,6 @@ func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
 		secrets:                      opts.secrets,
 		namePrefix:                   opts.namePrefix,
 		clusterClientProvider:        opts.clusterClientProvider,
-		nodesReadyWaitTimeout:        opts.nodeReadyWaitTimeout,
 		dcs:                          opts.dcs,
 		nodeCount:                    opts.nodeCount,
 		repoRoot:                     opts.repoRoot,
@@ -99,7 +98,6 @@ type testRunner struct {
 
 	controlPlaneReadyWaitTimeout time.Duration
 	deleteClusterAfterTests      bool
-	nodesReadyWaitTimeout        time.Duration
 	nodeCount                    int
 	clusterParallelCount         int
 
@@ -658,7 +656,7 @@ func (r *testRunner) waitForReadyNodes(log *logrus.Entry, client kubernetes.Inte
 		return false
 	}
 
-	err := wait.Poll(nodesReadyPollPeriod, r.nodesReadyWaitTimeout, func() (done bool, err error) {
+	err := wait.Poll(nodesReadyPollPeriod, defaultTimeout, func() (done bool, err error) {
 		nodeList, err := client.CoreV1().Nodes().List(metav1.ListOptions{})
 		if err != nil {
 			log.Debugf("failed to list nodes while waiting for them to be ready. %v. Will retry", err)
