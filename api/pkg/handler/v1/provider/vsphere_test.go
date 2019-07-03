@@ -7,10 +7,12 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 
+	"github.com/vmware/govmomi/simulator"
+
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/vmware/govmomi/simulator"
 )
 
 const vSphereDatacenterName = "moon-1"
@@ -77,8 +79,8 @@ func (v *vSphereMock) buildVSphereDatacenterMeta() map[string]provider.Datacente
 			Location: "Dark Side",
 			Seed:     "us-central1",
 			Country:  "Moon States",
-			Spec: provider.DatacenterSpec{
-				VSphere: &provider.VSphereSpec{
+			Spec: kubermaticv1.DatacenterSpec{
+				VSphere: &kubermaticv1.DatacenterSpecVSphere{
 					Endpoint:      v.server.Server.URL,
 					AllowInsecure: true,
 					Datastore:     "LocalDS_0",
