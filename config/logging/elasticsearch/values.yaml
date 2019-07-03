@@ -8,7 +8,7 @@ logging:
     cluster:
       # make sure to always configure the JVM to have min=max heap size, or else
       # Elasticsearch will refuse to start up.
-      additionalJavaOpts: "-XX:MaxRAMPercentage=80 -XX:InitialRAMPercentage=80"
+      additionalJavaOpts: "-XX:MaxRAMPercentage=70 -XX:InitialRAMPercentage=70"
       config: {}
 
       # environment variables used on all data and master nodes;
@@ -21,10 +21,10 @@ logging:
       # additionalJavaOpts: ""
       resources:
         requests:
-          cpu: 75m
+          cpu: 200m
           memory: 512Mi
         limits:
-          cpu: 200m
+          cpu: 1
           memory: 1536Mi
       nodeSelector: {}
       affinity:
@@ -48,7 +48,7 @@ logging:
           cpu: 200m
           memory: 2560Mi
         limits:
-          cpu: 200m
+          cpu: 1
           memory: 4Gi
       nodeSelector: {}
       affinity:
