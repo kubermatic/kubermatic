@@ -49,8 +49,8 @@ spec:
         {{- if .Values.kubermatic.worker_name }}
         - -worker-name={{ .Values.kubermatic.worker_name }}
         {{- end }}
-        {{- if .Values.kubermatic.credentials }}
-        - -credentials=/opt/credentials/credentials.yaml
+        {{- if .Values.kubermatic.presets }}
+        - -presets=/opt/presets/presets.yaml
         {{- end }}
         {{- if .Values.kubermatic.exposeStrategy }}
         - -expose-strategy={{ .Values.kubermatic.exposeStrategy }}
@@ -73,9 +73,9 @@ spec:
         - name: master-files
           mountPath: "/opt/master-files/"
           readOnly: true
-        {{- if .Values.kubermatic.credentials }}
-        - name: credentials
-          mountPath: "/opt/credentials/"
+        {{- if .Values.kubermatic.presets }}
+        - name: presets
+          mountPath: "/opt/presets/"
           readOnly: true
         {{- end }}
         resources:
@@ -92,10 +92,10 @@ spec:
       - name: master-files
         secret:
           secretName: master-files
-      {{- if .Values.kubermatic.credentials }}
-      - name: credentials
+      {{- if .Values.kubermatic.presets }}
+      - name: presets
         secret:
-          secretName: credentials
+          secretName: presets
       {{- end }}
       nodeSelector:
 {{ toYaml .Values.kubermatic.api.nodeSelector | indent 8 }}
