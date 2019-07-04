@@ -71,6 +71,7 @@ type RawConfig struct {
 	Password         providerconfig.ConfigVarString `json:"password,omitempty"`
 	DomainName       providerconfig.ConfigVarString `json:"domainName,omitempty"`
 	TenantName       providerconfig.ConfigVarString `json:"tenantName,omitempty"`
+	TenantID         providerconfig.ConfigVarString `json:"tenantID,omitempty"`
 	TokenID          providerconfig.ConfigVarString `json:"tokenId,omitempty"`
 	Region           providerconfig.ConfigVarString `json:"region,omitempty"`
 
@@ -94,6 +95,7 @@ type Config struct {
 	Password         string
 	DomainName       string
 	TenantName       string
+	TenantID         string
 	TokenID          string
 	Region           string
 
@@ -160,6 +162,10 @@ func (p *provider) getConfig(s v1alpha1.ProviderSpec) (*Config, *providerconfig.
 	c.TenantName, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.TenantName, "OS_TENANT_NAME")
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to get the value of \"tenantName\" field, error = %v", err)
+	}
+	c.TenantID, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.TenantID, "OS_TENANT_ID")
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to get the value of \"tenantID\" field, error = %v", err)
 	}
 	c.TokenID, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.TokenID)
 	if err != nil {
@@ -238,6 +244,7 @@ func getClient(c *Config) (*gophercloud.ProviderClient, error) {
 		Password:         c.Password,
 		DomainName:       c.DomainName,
 		TenantName:       c.TenantName,
+		TenantID:         c.TenantID,
 		TokenID:          c.TokenID,
 	}
 
@@ -328,6 +335,22 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 	c, _, _, err := p.getConfig(spec.ProviderSpec)
 	if err != nil {
 		return fmt.Errorf("failed to parse config: %v", err)
+	}
+
+	if c.Username == "" {
+		return errors.New("username must be configured")
+	}
+
+	if c.Password == "" {
+		return errors.New("password must be configured")
+	}
+
+	if c.DomainName == "" {
+		return errors.New("domainName must be configured")
+	}
+
+	if c.TenantID == "" && c.TenantName == "" {
+		return errors.New("either tenantID or tenantName must be configured")
 	}
 
 	if c.Image == "" {
@@ -692,6 +715,7 @@ func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, nam
 			Password:   c.Password,
 			DomainName: c.DomainName,
 			TenantName: c.TenantName,
+			TenantID:   c.TenantID,
 			Region:     c.Region,
 		},
 		LoadBalancer: LoadBalancerOpts{
