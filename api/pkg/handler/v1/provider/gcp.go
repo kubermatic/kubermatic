@@ -2,28 +2,78 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/gorilla/mux"
 	"google.golang.org/api/compute/v1"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/gcp"
+	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
+
+// GCPZoneReq represent a request for GCP zones.
+// swagger:parameters listGCPZones
+type GCPZoneReq struct {
+	GCPCommonReq
+	// in: path
+	// required: true
+	DC string `json:"dc"`
+}
 
 // GCPTypesReq represent a request for GCP machine or disk types.
 type GCPTypesReq struct {
+	GCPCommonReq
+	Zone string
+}
+
+// GCPCommonReq represent a request with common parameters for GCP.
+type GCPCommonReq struct {
 	ServiceAccount string
-	Zone           string
 	Credential     string
 }
 
 func DecodeGCPTypesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req GCPTypesReq
 
-	req.ServiceAccount = r.Header.Get("ServiceAccount")
+	commonReq, err := DecodeGCPCommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GCPCommonReq = commonReq.(GCPCommonReq)
 	req.Zone = r.Header.Get("Zone")
+
+	return req, nil
+}
+
+func DecodeGCPZoneReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GCPZoneReq
+
+	commonReq, err := DecodeGCPCommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GCPCommonReq = commonReq.(GCPCommonReq)
+
+	dc, ok := mux.Vars(r)["dc"]
+	if !ok {
+		return req, fmt.Errorf("'dc' parameter is required")
+	}
+	req.DC = dc
+
+	return req, nil
+}
+
+func DecodeGCPCommonReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GCPCommonReq
+
+	req.ServiceAccount = r.Header.Get("ServiceAccount")
 	req.Credential = r.Header.Get("Credential")
 
 	return req, nil
@@ -123,4 +173,55 @@ func listGCPSizes(ctx context.Context, sa string, zone string) (apiv1.GCPMachine
 	})
 
 	return sizes, err
+}
+
+func GCPZoneEndpoint(credentialManager common.PresetsManager, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GCPZoneReq)
+
+		sa := req.ServiceAccount
+
+		if len(req.Credential) > 0 && credentialManager.GetPresets().GCP.Credentials != nil {
+			for _, credential := range credentialManager.GetPresets().GCP.Credentials {
+				if credential.Name == req.Credential {
+					sa = credential.ServiceAccount
+					break
+				}
+			}
+		}
+
+		return listGCPZones(ctx, sa, req.DC, dcs)
+	}
+}
+
+func listGCPZones(ctx context.Context, sa, datacenterName string, dcs map[string]provider.DatacenterMeta) (apiv1.GCPZoneList, error) {
+	zones := apiv1.GCPZoneList{}
+
+	datacenter, err := dc.GetDatacenter(dcs, datacenterName)
+	if err != nil {
+		return nil, errors.NewBadRequest("%v", err)
+	}
+
+	if datacenter.Spec.GCP == nil {
+		return nil, errors.NewBadRequest("the %s is not GCP datacenter", datacenterName)
+	}
+
+	computeService, project, err := gcp.ConnectToComputeService(sa)
+	if err != nil {
+		return nil, err
+	}
+
+	req := computeService.Zones.List(project)
+	err = req.Pages(ctx, func(page *compute.ZoneList) error {
+		for _, zone := range page.Items {
+
+			if strings.HasPrefix(zone.Name, datacenter.Spec.GCP.Region) {
+				apiZone := apiv1.GCPZone{Name: zone.Name}
+				zones = append(zones, apiZone)
+			}
+		}
+		return nil
+	})
+
+	return zones, err
 }

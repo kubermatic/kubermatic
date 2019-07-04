@@ -151,6 +151,16 @@ type GCPMachineSize struct {
 	VCPUs       int64  `json:"vcpus"`
 }
 
+// GCPZone represents a object of GCP zone.
+// swagger:model GCPZone
+type GCPZone struct {
+	Name string `json:"name"`
+}
+
+// GCPZoneList represents an array of GCP zones.
+// swagger:model GCPZoneList
+type GCPZoneList []GCPZone
+
 // DigitaloceanSizeList represents a object of digitalocean sizes.
 // swagger:model DigitaloceanSizeList
 type DigitaloceanSizeList struct {

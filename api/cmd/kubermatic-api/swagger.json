@@ -3065,6 +3065,48 @@
         }
       }
     },
+    "/api/v1/providers/gcp/{dc}/zones": {
+      "get": {
+        "description": "Lists available GCP zones",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gcp"
+        ],
+        "operationId": "listGCPZones",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "ServiceAccount",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GCPZoneList",
+            "schema": {
+              "$ref": "#/definitions/GCPZoneList"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/errorResponse"
+          }
+        }
+      }
+    },
     "/api/v1/providers/openstack/networks": {
       "get": {
         "description": "Lists networks from openstack",
@@ -4544,6 +4586,25 @@
           "type": "string",
           "x-go-name": "Zone"
         }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "GCPZone": {
+      "type": "object",
+      "title": "GCPZone represents a object of GCP zone.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "GCPZoneList": {
+      "type": "array",
+      "title": "GCPZoneList represents an array of GCP zones.",
+      "items": {
+        "$ref": "#/definitions/GCPZone"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
