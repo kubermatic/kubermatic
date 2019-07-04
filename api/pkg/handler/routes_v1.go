@@ -52,6 +52,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listGCPSizes())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/gcp/{dc}/zones").
+		Handler(r.listGCPZones())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/digitalocean/sizes").
 		Handler(r.listDigitaloceanSizes())
 
@@ -467,6 +471,28 @@ func (r Routing) listGCPSizes() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.GCPSizeEndpoint(r.presetsManager)),
 		provider.DecodeGCPTypesReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/gcp/{dc}/zones gcp listGCPZones
+//
+// Lists available GCP zones
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GCPZoneList
+func (r Routing) listGCPZones() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.GCPZoneEndpoint(r.presetsManager, r.datacenters)),
+		provider.DecodeGCPZoneReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
