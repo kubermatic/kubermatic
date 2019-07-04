@@ -56,7 +56,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				MatchLabels: resources.BaseAppLabel(name, nil),
 			}
 
-			volumes := getVolumes()
+			volumes := getVolumes(data.Cluster())
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create pod labels: %v", err)
@@ -103,31 +103,36 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			if data.Cluster().Spec.ComponentsOverride.Scheduler.Resources != nil {
 				resourceRequirements = *data.Cluster().Spec.ComponentsOverride.Scheduler.Resources
 			}
+
+			volumeMounts := []corev1.VolumeMount{
+				{
+					Name:      resources.SchedulerKubeconfigSecretName,
+					MountPath: "/etc/kubernetes/kubeconfig",
+					ReadOnly:  true,
+				},
+				{
+					Name:      resources.CASecretName,
+					MountPath: "/etc/kubernetes/pki/ca",
+					ReadOnly:  true,
+				},
+			}
+			if data.Cluster().Spec.Version.Semver().Minor() >= 12 {
+				volumeMounts = append(volumeMounts, corev1.VolumeMount{
+					Name:      resources.SchedulerConfigMapName,
+					MountPath: "/etc/kubernetes/scheduler",
+					ReadOnly:  true,
+				})
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
-					Name:    name,
-					Image:   data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
-					Command: []string{"/hyperkube", "kube-scheduler"},
-					Args:    flags,
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      resources.SchedulerKubeconfigSecretName,
-							MountPath: "/etc/kubernetes/kubeconfig",
-							ReadOnly:  true,
-						},
-						{
-							Name:      resources.CASecretName,
-							MountPath: "/etc/kubernetes/pki/ca",
-							ReadOnly:  true,
-						},
-						{
-							Name:      resources.SchedulerConfigMapName,
-							MountPath: "/etc/kubernetes/scheduler",
-							ReadOnly:  true,
-						},
-					},
-					Resources: resourceRequirements,
+					Name:         name,
+					Image:        data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
+					Command:      []string{"/hyperkube", "kube-scheduler"},
+					Args:         flags,
+					VolumeMounts: volumeMounts,
+					Resources:    resourceRequirements,
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: getHealthGetAction(data),
@@ -157,8 +162,8 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 	}
 }
 
-func getVolumes() []corev1.Volume {
-	return []corev1.Volume{
+func getVolumes(cluster *kubermaticv1.Cluster) []corev1.Volume {
+	volumes := []corev1.Volume{
 		{
 			Name: resources.OpenVPNClientCertificatesSecretName,
 			VolumeSource: corev1.VolumeSource{
@@ -192,7 +197,10 @@ func getVolumes() []corev1.Volume {
 				},
 			},
 		},
-		{
+	}
+
+	if cluster.Spec.Version.Semver().Minor() >= 12 {
+		volumes = append(volumes, corev1.Volume{
 			Name: resources.SchedulerConfigMapName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
@@ -202,13 +210,19 @@ func getVolumes() []corev1.Volume {
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
-		},
+		})
 	}
+
+	return volumes
 }
 
 func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
-	flags := []string{
-		"--config", "/etc/kubernetes/scheduler/" + resources.SchedulerConfigFileName,
+	flags := []string{}
+
+	if cluster.Spec.Version.Semver().Minor() < 12 {
+		flags = append(flags, "--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
+	} else {
+		flags = append(flags, "--config", "/etc/kubernetes/scheduler/"+resources.SchedulerConfigFileName)
 	}
 
 	// With 1.13 we're using the secure port for scraping metrics as the insecure port got marked deprecated
