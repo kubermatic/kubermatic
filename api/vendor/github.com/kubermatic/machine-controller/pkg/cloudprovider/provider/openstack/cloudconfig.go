@@ -32,6 +32,7 @@ auth-url    = {{ .Global.AuthURL | iniEscape }}
 username    = {{ .Global.Username | iniEscape }}
 password    = {{ .Global.Password | iniEscape }}
 tenant-name = {{ .Global.TenantName | iniEscape }}
+tenant-id   = {{ .Global.TenantID | iniEscape }}
 domain-name = {{ .Global.DomainName | iniEscape }}
 region      = {{ .Global.Region | iniEscape }}
 
@@ -85,6 +86,7 @@ type GlobalOpts struct {
 	Username   string
 	Password   string
 	TenantName string `gcfg:"tenant-name"`
+	TenantID   string `gcfg:"tenant-id"`
 	DomainName string `gcfg:"domain-name"`
 	Region     string
 }
