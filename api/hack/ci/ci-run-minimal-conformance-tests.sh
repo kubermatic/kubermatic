@@ -89,24 +89,28 @@ vault kv get -field=datacenters.yaml \
 echodate "Successfully got secrets from Vault"
 
 
-# Build kubermatic binaries and push the image
-if ! curl -Ss --fail "http://registry.registry.svc.cluster.local.:5000/v2/kubermatic/api/tags/list"|grep -q ${GIT_HEAD_HASH}; then
-  mkdir -p /etc/docker
-  echo '{"insecure-registries": ["registry.registry.svc.cluster.local:5000"]}' \
-    >/etc/docker/daemon.json
-  docker ps &>/dev/null || start-docker.sh || { cat /var/log/docker.log; exit 1; }
-  echodate "Building binaries"
-  time make -C api build
-  cd api
-  echodate "Building docker image"
-  time docker build -t registry.registry.svc.cluster.local:5000/kubermatic/api:${GIT_HEAD_HASH} .
-  echodate "Pushing docker image"
-  time retry 5 docker push registry.registry.svc.cluster.local:5000/kubermatic/api:${GIT_HEAD_HASH}
-  echodate "Finished building and pushing docker image"
-  cd -
-else
-  echodate "Omitting building of binaries and docker image, as tag ${GIT_HEAD_HASH} already exists in local registry"
-fi
+build_tag_if_not_exists() {
+  # Build kubermatic binaries and push the image
+  if ! curl -Ss --fail "http://registry.registry.svc.cluster.local.:5000/v2/kubermatic/api/tags/list"|grep -q "$1"; then
+    mkdir -p /etc/docker
+    echo '{"insecure-registries": ["registry.registry.svc.cluster.local:5000"]}' \
+      >/etc/docker/daemon.json
+    docker ps &>/dev/null || start-docker.sh || { cat /var/log/docker.log; exit 1; }
+    echodate "Building binaries"
+    time make -C api build
+    cd api
+    echodate "Building docker image"
+    time docker build -t "registry.registry.svc.cluster.local:5000/kubermatic/api:$1" .
+    echodate "Pushing docker image"
+    time retry 5 docker push "registry.registry.svc.cluster.local:5000/kubermatic/api:$1"
+    echodate "Finished building and pushing docker image"
+    cd -
+  else
+    echodate "Omitting building of binaries and docker image, as tag $1 already exists in local registry"
+  fi
+}
+
+build_tag_if_not_exists "$GIT_HEAD_HASH"
 
 INITIAL_MANIFESTS=$(cat <<EOF
 apiVersion: v1
@@ -164,6 +168,7 @@ echodate "Installing Kubermatic via Helm"
 if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
   echodate "Upgradetest, checking out revision ${UPGRADE_TEST_BASE_HASH}"
   git checkout $UPGRADE_TEST_BASE_HASH
+  build_tag_if_not_exists "$UPGRADE_TEST_BASE_HASH"
 fi
 # We must delete all templates for cluster-scoped resources
 # because those already exist because of the main Kubermatic installation
