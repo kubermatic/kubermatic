@@ -16,5 +16,5 @@ time make -C api build
 echodate "Successfully finished building binaries"
 
 echodate "Building and pushing quay images"
-retry 5 ./api/hack/push_image.sh $GIT_HEAD_HASH $(git tag -l --points-at HEAD)
+retry 5 ./api/hack/push_image.sh $GIT_HEAD_HASH $(git tag -l --points-at HEAD) "latest"
 echodate "Sucessfully finished building and pushing quay images"
