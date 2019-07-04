@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
@@ -194,7 +195,6 @@ func GCPZoneEndpoint(credentialManager common.PresetsManager, dcs map[string]pro
 }
 
 func listGCPZones(ctx context.Context, sa, datacenterName string, dcs map[string]provider.DatacenterMeta) (apiv1.GCPZoneList, error) {
-	supportedZones := make(map[string]struct{})
 	zones := apiv1.GCPZoneList{}
 
 	datacenter, err := dc.GetDatacenter(dcs, datacenterName)
@@ -206,10 +206,6 @@ func listGCPZones(ctx context.Context, sa, datacenterName string, dcs map[string
 		return nil, errors.NewBadRequest("the %s is not GCP datacenter", datacenterName)
 	}
 
-	for _, suffix := range datacenter.Spec.GCP.ZoneSuffixes {
-		supportedZones[fmt.Sprintf("%s-%s", datacenter.Spec.GCP.Region, suffix)] = struct{}{}
-	}
-
 	computeService, project, err := gcp.ConnectToComputeService(sa)
 	if err != nil {
 		return nil, err
@@ -219,8 +215,7 @@ func listGCPZones(ctx context.Context, sa, datacenterName string, dcs map[string
 	err = req.Pages(ctx, func(page *compute.ZoneList) error {
 		for _, zone := range page.Items {
 
-			_, ok := supportedZones[zone.Name]
-			if ok {
+			if strings.HasPrefix(zone.Name, datacenter.Spec.GCP.Region) {
 				apiZone := apiv1.GCPZone{Name: zone.Name}
 				zones = append(zones, apiZone)
 			}
