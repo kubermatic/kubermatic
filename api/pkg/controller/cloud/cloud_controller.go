@@ -40,7 +40,7 @@ const (
 	awsHarcodedAZMigrationRevision = 2
 	// currentMigrationRevision describes the current migration revision. If this is set on the
 	// cluster, certain migrations wont get executed. This must never be decremented.
-	currentMigrationRevision = awsHarcodedAZMigrationRevision
+	CurrentMigrationRevision = awsHarcodedAZMigrationRevision
 )
 
 // Check if the Reconciler fullfills the interface
