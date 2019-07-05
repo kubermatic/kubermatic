@@ -3218,6 +3218,11 @@
           },
           {
             "type": "string",
+            "name": "TenantID",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "name": "DatacenterName",
             "in": "query"
           },
