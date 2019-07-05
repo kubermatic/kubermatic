@@ -6,11 +6,6 @@ data:
   elasticsearch.yml: |-
     cluster.name: log-data
 
-    node.data: ${NODE_DATA:true}
-    node.master: ${NODE_MASTER:true}
-    node.ingest: ${NODE_INGEST:true}
-    node.name: ${HOSTNAME}
-
     # bind to both interfaces so Kubernetes port-forwardings work as expected
     network.bind_host: [_site_, _local_]
 
@@ -20,11 +15,27 @@ data:
     # see https://github.com/kubernetes/kubernetes/issues/3595
     bootstrap.memory_lock: ${BOOTSTRAP_MEMORY_LOCK:false}
 
-    discovery.zen.ping.unicast.hosts: ${DISCOVERY_SERVICE:}
-    discovery.zen.minimum_master_nodes: ${MINIMUM_MASTER_NODES:2}
-
     # see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
     processors: ${PROCESSORS:}
+
+    {{ with .Values.logging.elasticsearch }}
+    {{- if eq (add .master.replicas .data.replicas) 1 }}
+    # configure a single-node deployment where one pod is both master and data node
+    node.data: true
+    node.master: true
+    node.ingest: true
+    node.name: ${HOSTNAME}
+
+    discovery.type: single-node
+    {{- else }}
+    # configure a dedicated master or data node inside a cluster
+    node.data: ${NODE_DATA:true}
+    node.master: ${NODE_MASTER:true}
+    node.ingest: ${NODE_INGEST:true}
+    node.name: ${HOSTNAME}
+
+    discovery.zen.ping.unicast.hosts: ${DISCOVERY_SERVICE:}
+    discovery.zen.minimum_master_nodes: ${MINIMUM_MASTER_NODES:2}
 
     # avoid split-brain w/ a minimum consensus of two masters plus a data node
     gateway.expected_master_nodes: ${EXPECTED_MASTER_NODES:2}
@@ -32,6 +43,9 @@ data:
     gateway.recover_after_time: ${RECOVER_AFTER_TIME:5m}
     gateway.recover_after_master_nodes: ${RECOVER_AFTER_MASTER_NODES:2}
     gateway.recover_after_data_nodes: ${RECOVER_AFTER_DATA_NODES:1}
+    {{- end }}
+    {{ end }}
+
 {{- with .Values.logging.elasticsearch.cluster.config }}
 {{ toYaml . | indent 4 }}
 {{- end }}
