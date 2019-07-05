@@ -1,0 +1,58 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: component-override-controller
+  name: component-override-controller
+  namespace: kubermatic
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: component-override-controller
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: component-override-controller
+    spec:
+      serviceAccountName: kubermatic
+      containers:
+      - image: quay.io/kubermatic/util:1.0.0-2
+        name: util
+        command:
+        - bash
+        - -c
+        - |
+          ltmp=$(mktemp -d) ; trap "rm -rv $ltmp" EXIT
+
+          # syncrun INSTANCE_PROFILE_NAME [PROJECT_LIST]
+          syncrun() {
+            count="$1"; shift
+            projects="$1"; shift
+            [ -n "$projects" ] && label_selector="project-id in ( $projects )"
+            kubectl get -o json clusters -l "$label_selector" \
+              | jq -r '.items[]|select(.spec.componentsOverride.apiserver.replicas==null) .metadata.name' \
+              > $ltmp/clusters
+
+            for cluster in $(< $ltmp/clusters ); do
+              echo "Found cluster $cluster without empty apiserver replicas spec. Setting $count replicas."
+
+              kubectl patch cluster $cluster \
+                --type=json \
+                -p='[{"op": "replace", "path": "/spec/componentsOverride/apiserver/replicas", "value":"'"$count"'"}]'
+            done
+          }
+
+          while true; do
+            syncrun "${DESIRED_REPLICAS:-3}" "$PROJECT_LIST"
+            sleep 5
+          done
+        envFrom:
+          - configMapRef:
+              name: component-override-controller-config
+        resources:
+          requests:
+            cpu: 10m
+            memory: 200M
