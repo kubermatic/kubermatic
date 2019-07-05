@@ -128,9 +128,12 @@ spec:
         - name: config
           mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
           subPath: elasticsearch.yml
-        - mountPath: /usr/share/elasticsearch/config/log4j2.properties
-          name: config
+        - name: config
+          mountPath: /usr/share/elasticsearch/config/log4j2.properties
           subPath: log4j2.properties
+        - name: config
+          mountPath: /usr/share/elasticsearch/config/jvm.options
+          subPath: jvm.options
         - name: config
           mountPath: /post-start-hook.sh
           subPath: post-start-hook.sh

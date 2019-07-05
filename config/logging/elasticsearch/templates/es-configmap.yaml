@@ -6,11 +6,6 @@ data:
   elasticsearch.yml: |-
     cluster.name: log-data
 
-    node.data: ${NODE_DATA:true}
-    node.master: ${NODE_MASTER:true}
-    node.ingest: ${NODE_INGEST:true}
-    node.name: ${HOSTNAME}
-
     # bind to both interfaces so Kubernetes port-forwardings work as expected
     network.bind_host: [_site_, _local_]
 
@@ -20,11 +15,27 @@ data:
     # see https://github.com/kubernetes/kubernetes/issues/3595
     bootstrap.memory_lock: ${BOOTSTRAP_MEMORY_LOCK:false}
 
-    discovery.zen.ping.unicast.hosts: ${DISCOVERY_SERVICE:}
-    discovery.zen.minimum_master_nodes: ${MINIMUM_MASTER_NODES:2}
-
     # see https://github.com/elastic/elasticsearch-definitive-guide/pull/679
     processors: ${PROCESSORS:}
+
+    {{ with .Values.logging.elasticsearch }}
+    {{- if eq (add .master.replicas .data.replicas) 1 }}
+    # configure a single-node deployment where one pod is both master and data node
+    node.data: true
+    node.master: true
+    node.ingest: true
+    node.name: ${HOSTNAME}
+
+    discovery.type: single-node
+    {{- else }}
+    # configure a dedicated master or data node inside a cluster
+    node.data: ${NODE_DATA:true}
+    node.master: ${NODE_MASTER:true}
+    node.ingest: ${NODE_INGEST:true}
+    node.name: ${HOSTNAME}
+
+    discovery.zen.ping.unicast.hosts: ${DISCOVERY_SERVICE:}
+    discovery.zen.minimum_master_nodes: ${MINIMUM_MASTER_NODES:2}
 
     # avoid split-brain w/ a minimum consensus of two masters plus a data node
     gateway.expected_master_nodes: ${EXPECTED_MASTER_NODES:2}
@@ -32,6 +43,9 @@ data:
     gateway.recover_after_time: ${RECOVER_AFTER_TIME:5m}
     gateway.recover_after_master_nodes: ${RECOVER_AFTER_MASTER_NODES:2}
     gateway.recover_after_data_nodes: ${RECOVER_AFTER_DATA_NODES:1}
+    {{- end }}
+    {{ end }}
+
 {{- with .Values.logging.elasticsearch.cluster.config }}
 {{ toYaml . | indent 4 }}
 {{- end }}
@@ -46,6 +60,137 @@ data:
     rootLogger.appenderRef.console.ref = console
     logger.searchguard.name = com.floragunn
     logger.searchguard.level = info
+
+  # Overwrite JVM options to get rid of explicit heap sizes (-Xms and -Xmx)
+  # and tweak some other settings, like disabling heap dumps
+  jvm.options: |-
+    ## JVM configuration
+
+    ################################################################
+    ## IMPORTANT: JVM heap size
+    ################################################################
+    ##
+    ## You should always set the min and max JVM heap
+    ## size to the same value. For example, to set
+    ## the heap to 4 GB, set:
+    ##
+    ## -Xms4g
+    ## -Xmx4g
+    ##
+    ## See https://www.elastic.co/guide/en/elasticsearch/reference/current/heap-size.html
+    ## for more information
+    ##
+    ################################################################
+
+    # Xms represents the initial size of total heap space
+    # Xmx represents the maximum size of total heap space
+
+    # disabled for Kubermatic
+    #-Xms1g
+    #-Xmx1g
+
+    ################################################################
+    ## Expert settings
+    ################################################################
+    ##
+    ## All settings below this section are considered
+    ## expert settings. Don't tamper with them unless
+    ## you understand what you are doing
+    ##
+    ################################################################
+
+    # Kubermatic switched the default GC to G1GC.
+
+    ## GC configuration
+    # -XX:+UseConcMarkSweepGC
+    # -XX:CMSInitiatingOccupancyFraction=75
+    # -XX:+UseCMSInitiatingOccupancyOnly
+
+    ## G1GC Configuration
+    # NOTE: G1GC is only supported on JDK version 10 or later.
+    # To use G1GC uncomment the lines below.
+    10-:-XX:-UseConcMarkSweepGC
+    10-:-XX:-UseCMSInitiatingOccupancyOnly
+    10-:-XX:+UseG1GC
+    10-:-XX:InitiatingHeapOccupancyPercent=75
+
+    ## DNS cache policy
+    # cache ttl in seconds for positive DNS lookups noting that this overrides the
+    # JDK security property networkaddress.cache.ttl; set to -1 to cache forever
+    # changed for Kubermatic
+    #-Des.networkaddress.cache.ttl=60
+    -Des.networkaddress.cache.ttl=10
+    # cache ttl in seconds for negative DNS lookups noting that this overrides the
+    # JDK security property networkaddress.cache.negative ttl; set to -1 to cache
+    # forever
+    -Des.networkaddress.cache.negative.ttl=10
+
+    ## optimizations
+
+    # pre-touch memory pages used by the JVM during initialization
+    -XX:+AlwaysPreTouch
+
+    ## basic
+
+    # explicitly set the stack size
+    -Xss1m
+
+    # set to headless, just in case
+    -Djava.awt.headless=true
+
+    # ensure UTF-8 encoding by default (e.g. filenames)
+    -Dfile.encoding=UTF-8
+
+    # use our provided JNA always versus the system one
+    -Djna.nosys=true
+
+    # turn off a JDK optimization that throws away stack traces for common
+    # exceptions because stack traces are important for debugging
+    # disabled for Kubermatic
+    #-XX:-OmitStackTraceInFastThrow
+
+    # flags to configure Netty
+    -Dio.netty.noUnsafe=true
+    -Dio.netty.noKeySetOptimization=true
+    -Dio.netty.recycler.maxCapacityPerThread=0
+
+    # log4j 2
+    -Dlog4j.shutdownHookEnabled=false
+    -Dlog4j2.disable.jmx=true
+
+    -Djava.io.tmpdir=${ES_TMPDIR}
+
+    # generate a heap dump when an allocation from the Java heap fails
+    # heap dumps are created in the working directory of the JVM
+    # disabled for Kubermatic
+    #-XX:+HeapDumpOnOutOfMemoryError
+
+    # specify an alternative path for heap dumps; ensure the directory exists and
+    # has sufficient space
+    -XX:HeapDumpPath=data
+
+    # specify an alternative path for JVM fatal error logs
+    -XX:ErrorFile=logs/hs_err_pid%p.log
+
+    ## JDK 8 GC logging
+
+    8:-XX:+PrintGCDetails
+    8:-XX:+PrintGCDateStamps
+    8:-XX:+PrintTenuringDistribution
+    8:-XX:+PrintGCApplicationStoppedTime
+    8:-Xloggc:logs/gc.log
+    8:-XX:+UseGCLogFileRotation
+    8:-XX:NumberOfGCLogFiles=32
+    8:-XX:GCLogFileSize=64m
+
+    # JDK 9+ GC logging
+    9-:-Xlog:gc*,gc+age=trace,safepoint:file=logs/gc.log:utctime,pid,tags:filecount=32,filesize=64m
+    # due to internationalization enhancements in JDK 9 Elasticsearch need to set the provider to COMPAT otherwise
+    # time/date parsing will break in an incompatible way for some date patterns and locals
+    9-:-Djava.locale.providers=COMPAT
+
+    # temporary workaround for C2 bug with JDK 10 on hardware with AVX-512
+    10-:-XX:UseAVX=2
 
   pre-stop-hook.sh: |-
     #!/usr/bin/env bash
