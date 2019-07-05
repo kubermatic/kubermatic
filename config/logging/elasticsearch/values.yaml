@@ -16,6 +16,15 @@ logging:
       # to be set here
       env: {}
 
+    # When the sum of master and data nodes is 1, the chart will deploy a cluster
+    # with single-node mode enabled. In this mode there is no discovery and no
+    # separation between masters and data nodes anymore. You also lose any redundancy
+    # and should not use this for production workloads.
+    # Note that you should set data=1 and master=0 if you need a single-node cluster.
+    # Scaling the StatefulSets via kubectl will *not change the mode*, so to scale
+    # up you need to re-deploy the chart with updated replica counts. Once the
+    # regular cluster mode is enabled, using kubectl to scale up and down is fine.
+
     master:
       replicas: 3
       # additionalJavaOpts: ""
@@ -41,7 +50,7 @@ logging:
       storageSize: 5Gi
 
     data:
-      replicas: 5
+      replicas: 3
       # additionalJavaOpts: ""
       resources:
         requests:
