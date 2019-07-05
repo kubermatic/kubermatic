@@ -82,6 +82,35 @@ func (a *Client) ListGCPSizes(params *ListGCPSizesParams, authInfo runtime.Clien
 
 }
 
+/*
+ListGCPZones Lists available GCP zones
+*/
+func (a *Client) ListGCPZones(params *ListGCPZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPZonesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListGCPZonesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listGCPZones",
+		Method:             "GET",
+		PathPattern:        "/api/v1/providers/gcp/{dc}/zones",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &ListGCPZonesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListGCPZonesOK), nil
+
+}
+
 // SetTransport changes the transport on the client
 func (a *Client) SetTransport(transport runtime.ClientTransport) {
 	a.transport = transport

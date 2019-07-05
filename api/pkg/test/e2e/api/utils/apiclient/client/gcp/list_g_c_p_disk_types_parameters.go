@@ -20,7 +20,7 @@ import (
 // NewListGCPDiskTypesParams creates a new ListGCPDiskTypesParams object
 // with the default values initialized.
 func NewListGCPDiskTypesParams() *ListGCPDiskTypesParams {
-
+	var ()
 	return &ListGCPDiskTypesParams{
 
 		timeout: cr.DefaultTimeout,
@@ -30,7 +30,7 @@ func NewListGCPDiskTypesParams() *ListGCPDiskTypesParams {
 // NewListGCPDiskTypesParamsWithTimeout creates a new ListGCPDiskTypesParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewListGCPDiskTypesParamsWithTimeout(timeout time.Duration) *ListGCPDiskTypesParams {
-
+	var ()
 	return &ListGCPDiskTypesParams{
 
 		timeout: timeout,
@@ -40,7 +40,7 @@ func NewListGCPDiskTypesParamsWithTimeout(timeout time.Duration) *ListGCPDiskTyp
 // NewListGCPDiskTypesParamsWithContext creates a new ListGCPDiskTypesParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewListGCPDiskTypesParamsWithContext(ctx context.Context) *ListGCPDiskTypesParams {
-
+	var ()
 	return &ListGCPDiskTypesParams{
 
 		Context: ctx,
@@ -50,7 +50,7 @@ func NewListGCPDiskTypesParamsWithContext(ctx context.Context) *ListGCPDiskTypes
 // NewListGCPDiskTypesParamsWithHTTPClient creates a new ListGCPDiskTypesParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewListGCPDiskTypesParamsWithHTTPClient(client *http.Client) *ListGCPDiskTypesParams {
-
+	var ()
 	return &ListGCPDiskTypesParams{
 		HTTPClient: client,
 	}
@@ -60,6 +60,14 @@ func NewListGCPDiskTypesParamsWithHTTPClient(client *http.Client) *ListGCPDiskTy
 for the list g c p disk types operation typically these are written to a http.Request
 */
 type ListGCPDiskTypesParams struct {
+
+	/*Credential*/
+	Credential *string
+	/*ServiceAccount*/
+	ServiceAccount *string
+	/*Zone*/
+	Zone *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -98,6 +106,39 @@ func (o *ListGCPDiskTypesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithCredential adds the credential to the list g c p disk types params
+func (o *ListGCPDiskTypesParams) WithCredential(credential *string) *ListGCPDiskTypesParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list g c p disk types params
+func (o *ListGCPDiskTypesParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithServiceAccount adds the serviceAccount to the list g c p disk types params
+func (o *ListGCPDiskTypesParams) WithServiceAccount(serviceAccount *string) *ListGCPDiskTypesParams {
+	o.SetServiceAccount(serviceAccount)
+	return o
+}
+
+// SetServiceAccount adds the serviceAccount to the list g c p disk types params
+func (o *ListGCPDiskTypesParams) SetServiceAccount(serviceAccount *string) {
+	o.ServiceAccount = serviceAccount
+}
+
+// WithZone adds the zone to the list g c p disk types params
+func (o *ListGCPDiskTypesParams) WithZone(zone *string) *ListGCPDiskTypesParams {
+	o.SetZone(zone)
+	return o
+}
+
+// SetZone adds the zone to the list g c p disk types params
+func (o *ListGCPDiskTypesParams) SetZone(zone *string) {
+	o.Zone = zone
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListGCPDiskTypesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -105,6 +146,33 @@ func (o *ListGCPDiskTypesParams) WriteToRequest(r runtime.ClientRequest, reg str
 		return err
 	}
 	var res []error
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+
+	}
+
+	if o.ServiceAccount != nil {
+
+		// header param ServiceAccount
+		if err := r.SetHeaderParam("ServiceAccount", *o.ServiceAccount); err != nil {
+			return err
+		}
+
+	}
+
+	if o.Zone != nil {
+
+		// header param Zone
+		if err := r.SetHeaderParam("Zone", *o.Zone); err != nil {
+			return err
+		}
+
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
