@@ -135,6 +135,7 @@ kubermatic:
 
   api:
     replicas: 2
+    accessibleAddons: []
     image:
       repository: "quay.io/kubermatic/api"
       tag: "__KUBERMATIC_TAG__"

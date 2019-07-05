@@ -47,6 +47,9 @@ const (
 
 	// noTokenFoundKey key under which an error is kept when no suitable token has been found in a request
 	noTokenFoundKey contextKey = "no-token-found"
+
+	// AddonProviderContextKey key under which the current AddonProvider is kept in the ctx
+	AddonProviderContextKey contextKey = "addon-provider"
 )
 
 //DCGetter defines functionality to retrieve a datacenter name
@@ -219,6 +222,21 @@ func TokenVerifier(tokenVerifier auth.TokenVerifier) endpoint.Middleware {
 			}
 
 			return next(context.WithValue(ctx, AuthenticatedUserContextKey, user), request)
+		}
+	}
+}
+
+// Addons is a middleware that injects the current AddonProvider into the ctx
+func Addons(addonProviderGetter provider.AddonProviderGetter) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			getter := request.(dCGetter)
+			addonProvider, err := addonProviderGetter(getter.GetDC())
+			if err != nil {
+				return nil, err
+			}
+			ctx = context.WithValue(ctx, AddonProviderContextKey, addonProvider)
+			return next(ctx, request)
 		}
 	}
 }

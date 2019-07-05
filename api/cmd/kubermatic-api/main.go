@@ -196,6 +196,8 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 
 	eventRecorderProvider := kubernetesprovider.NewEventRecorder()
 
+	addonProviderGetter := kubernetesprovider.AddonProviderFactory(seedKubeconfigGetter, options.accessibleAddons)
+
 	return providers{
 		sshKey:                                sshKeyProvider,
 		user:                                  userProvider,
@@ -209,7 +211,8 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		eventRecorderProvider:                 eventRecorderProvider,
 		clusterProviderGetter:                 clusterProviderGetter,
 		seedsGetter:                           seedsGetter,
-		credentialsProvider:                   credentialsProvider}, nil
+		credentialsProvider:                   credentialsProvider,
+		addons:                                addonProviderGetter}, nil
 }
 
 func createOIDCClients(options serverRunOptions) (auth.OIDCIssuerVerifier, error) {
@@ -274,6 +277,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 	r := handler.NewRouting(
 		prov.seedsGetter,
 		prov.clusterProviderGetter,
+		prov.addons,
 		prov.sshKey,
 		prov.user,
 		prov.serviceAccountProvider,

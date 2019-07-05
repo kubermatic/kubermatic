@@ -36,7 +36,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 		// scenario 1
 		{
 			name:            "scenario 1: a proper set of RBAC Role/Binding is generated for a cluster",
-			expectedActions: []string{"create", "create", "create", "create", "create", "create"},
+			expectedActions: []string{"create", "create", "create", "create", "create", "create", "get", "create", "get", "create", "get", "create", "get", "create", "get", "create", "get", "create"},
 
 			dependantToSync: &resourceToProcess{
 				gvr: schema.GroupVersionResource{
@@ -576,7 +576,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 				}
 			}
 
-			clusterRoleBindingActions := allActions[offset:]
+			clusterRoleBindingActions := allActions[offset:(2 * offset)]
 			for index, action := range clusterRoleBindingActions {
 				if !action.Matches(test.expectedActions[index+offset], "clusterrolebindings") {
 					t.Fatalf("unexpected action %#v", action)

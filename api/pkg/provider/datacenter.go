@@ -42,6 +42,9 @@ type SeedKubeconfigGetter = func(seedName string) (*rest.Config, error)
 // ClusterProviderGetter is used to get a clusterProvider
 type ClusterProviderGetter = func(seedName string) (ClusterProvider, error)
 
+// AddonProviderGetterr is used to get an AddonProvider
+type AddonProviderGetter = func(seedName string) (AddonProvider, error)
+
 // DatacenterMeta describes a Kubermatic datacenter.
 type DatacenterMeta struct {
 	Location         string                      `json:"location"`
