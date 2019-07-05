@@ -113,6 +113,7 @@ type OpenstackCredentials struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Tenant   string `json:"tenant"`
+	TenantID string `json:"tenantID"`
 	Domain   string `json:"domain"`
 
 	Network        string `json:"network,,omitempty"`
@@ -382,6 +383,7 @@ func (m *Manager) setOpenStackCredentials(credentialName string, cloud v1.CloudS
 			cloud.Openstack.Password = credential.Password
 			cloud.Openstack.Domain = credential.Domain
 			cloud.Openstack.Tenant = credential.Tenant
+			cloud.Openstack.TenantID = credential.TenantID
 
 			cloud.Openstack.SubnetID = credential.SubnetID
 			cloud.Openstack.Network = credential.Network

@@ -8,6 +8,7 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
 	"k8s.io/apimachinery/pkg/api/equality"
 )
 
@@ -128,6 +129,9 @@ func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 	if newSpec.GCP == nil && oldSpec.GCP != nil {
 		return ErrCloudChangeNotAllowed
 	}
+	if newSpec.Azure == nil && oldSpec.Azure != nil {
+		return ErrCloudChangeNotAllowed
+	}
 	if newSpec.DatacenterName != oldSpec.DatacenterName {
 		return errors.New("changing the datacenter is not allowed")
 	}
@@ -207,103 +211,125 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc provider.DatacenterMeta) 
 		return errors.New("no node datacenter specified")
 	}
 
-	if spec.Fake != nil {
-		if spec.Fake.Token == "" {
-			return errors.New("no token specified")
-		}
-		return nil
+	switch true {
+	case spec.Fake != nil:
+		return validateFakeCloudSpec(spec.Fake)
+	case spec.AWS != nil:
+		return validateAWSCloudSpec(spec.AWS)
+	case spec.Digitalocean != nil:
+		return validateDigitaloceanCloudSpec(spec.Digitalocean)
+	case spec.Openstack != nil:
+		return validateOpenStackCloudSpec(spec.Openstack, dc)
+	case spec.Azure != nil:
+		return validateAzureCloudSpec(spec.Azure)
+	case spec.VSphere != nil:
+		return validateVSphereCloudSpec(spec.VSphere)
+	case spec.GCP != nil:
+		return validateGCPCloudSpec(spec.GCP)
+	case spec.Packet != nil:
+		return validatePacketCloudSpec(spec.Packet)
+	case spec.Hetzner != nil:
+		return validateHetznerCloudSpec(spec.Hetzner)
+	default:
+		return errors.New("no cloud provider specified")
+	}
+}
+
+func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc provider.DatacenterMeta) error {
+	if spec.Domain == "" {
+		return errors.New("no domain specified")
+	}
+	if spec.Username == "" {
+		return errors.New("no username specified")
+	}
+	if spec.Password == "" {
+		return errors.New("no password specified")
+	}
+	if spec.Tenant == "" && spec.TenantID == "" {
+		return errors.New("no tenant name or ID specified")
+	}
+	if spec.FloatingIPPool == "" && dc.Spec.Openstack != nil && dc.Spec.Openstack.EnforceFloatingIP {
+		return errors.New("no floating ip pool specified")
+	}
+	return nil
+}
+
+func validateAWSCloudSpec(spec *kubermaticv1.AWSCloudSpec) error {
+	if spec.SecretAccessKey == "" {
+		return errors.New("no secret access key specified")
+	}
+	if spec.AccessKeyID == "" {
+		return errors.New("no access key ID specified")
+	}
+	return nil
+}
+
+func validateGCPCloudSpec(spec *kubermaticv1.GCPCloudSpec) error {
+	if spec.ServiceAccount == "" {
+		return errors.New("no serviceaccount specified")
+	}
+	return nil
+}
+
+func validateHetznerCloudSpec(spec *kubermaticv1.HetznerCloudSpec) error {
+	if spec.Token == "" {
+		return errors.New("no token specified")
 	}
 
-	if spec.Digitalocean != nil {
-		if spec.Digitalocean.Token == "" {
-			return errors.New("no token specified")
-		}
-		return nil
+	return nil
+}
+
+func validatePacketCloudSpec(spec *kubermaticv1.PacketCloudSpec) error {
+	if spec.APIKey == "" {
+		return errors.New("no API key specified")
+	}
+	if spec.ProjectID == "" {
+		return errors.New("no project ID specified")
 	}
 
-	if spec.BringYourOwn != nil {
-		return nil
+	return nil
+}
+
+func validateVSphereCloudSpec(spec *kubermaticv1.VSphereCloudSpec) error {
+	if spec.Username == "" {
+		return errors.New("no username specified")
+	}
+	if spec.Password == "" {
+		return errors.New("no password specified")
 	}
 
-	if spec.AWS != nil {
-		if spec.AWS.SecretAccessKey == "" {
-			return errors.New("no secret access key specified")
-		}
-		if spec.AWS.AccessKeyID == "" {
-			return errors.New("no access key ID specified")
-		}
-		return nil
+	return nil
+}
+
+func validateAzureCloudSpec(spec *kubermaticv1.AzureCloudSpec) error {
+	if spec.TenantID == "" {
+		return errors.New("no tenant ID specified")
+	}
+	if spec.SubscriptionID == "" {
+		return errors.New("no subscription ID specified")
+	}
+	if spec.ClientID == "" {
+		return errors.New("no client ID specified")
+	}
+	if spec.ClientSecret == "" {
+		return errors.New("no client secret specified")
 	}
 
-	if spec.Azure != nil {
-		if spec.Azure.TenantID == "" {
-			return errors.New("no tenant ID specified")
-		}
-		if spec.Azure.SubscriptionID == "" {
-			return errors.New("no subscription ID specified")
-		}
-		if spec.Azure.ClientID == "" {
-			return errors.New("no client ID specified")
-		}
-		if spec.Azure.ClientSecret == "" {
-			return errors.New("no client secret specified")
-		}
-		return nil
+	return nil
+}
+
+func validateDigitaloceanCloudSpec(spec *kubermaticv1.DigitaloceanCloudSpec) error {
+	if spec.Token == "" {
+		return errors.New("no token specified")
 	}
 
-	if spec.Openstack != nil {
-		if spec.Openstack.Domain == "" {
-			return errors.New("no domain specified")
-		}
-		if spec.Openstack.Username == "" {
-			return errors.New("no username specified")
-		}
-		if spec.Openstack.Password == "" {
-			return errors.New("no password specified")
-		}
-		if spec.Openstack.Tenant == "" {
-			return errors.New("no tenant specified")
-		}
-		if spec.Openstack.FloatingIPPool == "" && dc.Spec.Openstack != nil && dc.Spec.Openstack.EnforceFloatingIP {
-			return errors.New("no floating ip pool specified")
-		}
-		return nil
+	return nil
+}
+
+func validateFakeCloudSpec(spec *kubermaticv1.FakeCloudSpec) error {
+	if spec.Token == "" {
+		return errors.New("no token specified")
 	}
 
-	if spec.Hetzner != nil {
-		if spec.Hetzner.Token == "" {
-			return errors.New("no token specified")
-		}
-		return nil
-	}
-
-	if spec.VSphere != nil {
-		if spec.VSphere.Username == "" {
-			return errors.New("no username specified")
-		}
-
-		if spec.VSphere.Password == "" {
-			return errors.New("no password specified")
-		}
-		return nil
-	}
-
-	if spec.Packet != nil {
-		if spec.Packet.APIKey == "" {
-			return errors.New("no API key specified")
-		}
-		if spec.Packet.ProjectID == "" {
-			return errors.New("no project ID specified")
-		}
-		return nil
-	}
-
-	if spec.GCP != nil {
-		if spec.GCP.ServiceAccount == "" {
-			return errors.New("no serviceAccount specified")
-		}
-		return nil
-	}
-
-	return errors.New("no cloud provider specified")
+	return nil
 }
