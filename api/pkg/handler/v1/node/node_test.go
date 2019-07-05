@@ -194,8 +194,10 @@ func TestListNodesForCluster(t *testing.T) {
 					Spec: apiv1.NodeSpec{
 						Cloud: apiv1.NodeCloudSpec{
 							AWS: &apiv1.AWSNodeSpec{
-								InstanceType: "t2.micro",
-								VolumeSize:   50,
+								InstanceType:     "t2.micro",
+								VolumeSize:       50,
+								AvailabilityZone: "eu-central-1a",
+								SubnetID:         "subnet-2bff4f43",
 							},
 						},
 						OperatingSystem: apiv1.OperatingSystemSpec{
@@ -246,8 +248,10 @@ func TestListNodesForCluster(t *testing.T) {
 					Spec: apiv1.NodeSpec{
 						Cloud: apiv1.NodeCloudSpec{
 							AWS: &apiv1.AWSNodeSpec{
-								InstanceType: "t2.micro",
-								VolumeSize:   50,
+								InstanceType:     "t2.micro",
+								VolumeSize:       50,
+								AvailabilityZone: "eu-central-1a",
+								SubnetID:         "subnet-2bff4f43",
 							},
 						},
 						OperatingSystem: apiv1.OperatingSystemSpec{
@@ -636,8 +640,10 @@ func TestListNodeDeployments(t *testing.T) {
 						Template: apiv1.NodeSpec{
 							Cloud: apiv1.NodeCloudSpec{
 								AWS: &apiv1.AWSNodeSpec{
-									InstanceType: "t2.micro",
-									VolumeSize:   50,
+									InstanceType:     "t2.micro",
+									VolumeSize:       50,
+									AvailabilityZone: "eu-central-1a",
+									SubnetID:         "subnet-2bff4f43",
 								},
 							},
 							OperatingSystem: apiv1.OperatingSystemSpec{

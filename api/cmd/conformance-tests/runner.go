@@ -510,13 +510,8 @@ func (r *testRunner) executeGinkgoRunWithRetries(log *logrus.Entry, run *ginkgoR
 
 func (r *testRunner) setupNodes(parentLog *logrus.Entry, scenarioName string, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, nodeDeployments []kubermaticapiv1.NodeDeployment, dc provider.DatacenterMeta) error {
 	ctx := context.Background()
-	var ndNodeCount int32
-	for _, nd := range nodeDeployments {
-		ndNodeCount += nd.Spec.Replicas
-	}
 	log := parentLog.WithFields(logrus.Fields{
-		"nd-node-count": ndNodeCount,
-		"node-count":    r.nodeCount,
+		"node-count": r.nodeCount,
 	})
 
 	log.Info("Creating machineDeployment...")
@@ -546,13 +541,16 @@ func (r *testRunner) setupNodes(parentLog *logrus.Entry, scenarioName string, cl
 			return fmt.Errorf("failed to get MachineDeployment from NodeDeployment: %v", err)
 		}
 
-		log = log.WithField("machineDeployment", machineDeployment.Name)
+		mdLog := log.WithFields(logrus.Fields{
+			"machineDeployment": machineDeployment.Name,
+			"nd-node-count":     nd.Spec.Replicas,
+		})
 		if err := retryNAttempts(defaultAPIRetries, func(attempt int) error {
 			if err := client.Create(ctx, machineDeployment); err != nil {
 				if kerrors.IsAlreadyExists(err) {
 					return nil
 				}
-				log.Warnf("[Attempt %d/%d] Failed to create MachineDeployment: %v. Retrying", attempt, defaultAPIRetries, err)
+				mdLog.Warnf("[Attempt %d/%d] Failed to create MachineDeployment: %v. Retrying", attempt, defaultAPIRetries, err)
 				time.Sleep(defaultUserClusterPollInterval)
 				return err
 			}
@@ -566,6 +564,11 @@ func (r *testRunner) setupNodes(parentLog *logrus.Entry, scenarioName string, cl
 
 	// Then make sure they're up.
 	for mdIndex, md := range machineDeployments {
+		mdLog := log.WithFields(logrus.Fields{
+			"machineDeployment": md.Name,
+			"nd-node-count":     md.Spec.Replicas,
+		})
+
 		// Make sure replicas matches nodeDeployment replicas, this may differ on the second run on upgrade tests
 		// We dont explicitly catch that, as we ignore kerrors.IsAlreadyExists when creating the machineDeployment
 		// This is a very poor persons replication of `EnsureResources`, the problem is we want to use the apis `machine.Deployment`
@@ -576,13 +579,13 @@ func (r *testRunner) setupNodes(parentLog *logrus.Entry, scenarioName string, cl
 				return fmt.Errorf("failed to get MachineDeployment %q: %v", mdName, err)
 			}
 			if *md.Spec.Replicas == nodeDeployments[mdIndex].Spec.Replicas {
-				log.Debugf("Found an existing MachineDeployment with %d replicas. Not going to update the replicas", nodeDeployments[mdIndex].Spec.Replicas)
+				mdLog.Debugf("Found an existing MachineDeployment with %d replicas. Not going to update the replicas", nodeDeployments[mdIndex].Spec.Replicas)
 				return nil
 			}
 
 			// Create a copy to avoid changing the ND when changing the MD
 			replicas := nodeDeployments[mdIndex].Spec.Replicas
-			log.Infof(
+			mdLog.Infof(
 				"Found an existing MachineDeployment with %d replicas. Updating to %d replicas",
 				*md.Spec.Replicas,
 				replicas,
@@ -592,7 +595,7 @@ func (r *testRunner) setupNodes(parentLog *logrus.Entry, scenarioName string, cl
 		}); err != nil {
 			return fmt.Errorf("failed to ensure machineDeployment has desired number of replicas: %v", err)
 		}
-		log.Infof("Successfully created %d machine(s)!", *md.Spec.Replicas)
+		mdLog.Infof("Successfully created %d machine(s)!", *md.Spec.Replicas)
 	}
 
 	if err := r.waitForReadyNodes(log, userClusterClient, r.nodeCount); err != nil {
