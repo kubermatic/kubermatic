@@ -51,12 +51,23 @@ func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc pro
 		ami = nodeSpec.Cloud.AWS.AMI
 	}
 
+	// TODO fallback to cluster-hardcoded AZ and subnet for interim compatibility.
+	// Shall be removed after the transition to multi-AZ is complete.
+	subnetID := nodeSpec.Cloud.AWS.SubnetID
+	if subnetID == "" {
+		subnetID = c.Spec.Cloud.AWS.SubnetID
+	}
+	availabilityZone := nodeSpec.Cloud.AWS.AvailabilityZone
+	if availabilityZone == "" {
+		availabilityZone = dc.Spec.AWS.Region + dc.Spec.AWS.ZoneCharacter
+	}
+
 	config := aws.RawConfig{
-		SubnetID:         providerconfig.ConfigVarString{Value: c.Spec.Cloud.AWS.SubnetID},
+		SubnetID:         providerconfig.ConfigVarString{Value: subnetID},
 		VpcID:            providerconfig.ConfigVarString{Value: c.Spec.Cloud.AWS.VPCID},
 		SecurityGroupIDs: []providerconfig.ConfigVarString{{Value: c.Spec.Cloud.AWS.SecurityGroupID}},
 		Region:           providerconfig.ConfigVarString{Value: dc.Spec.AWS.Region},
-		AvailabilityZone: providerconfig.ConfigVarString{Value: dc.Spec.AWS.Region + dc.Spec.AWS.ZoneCharacter},
+		AvailabilityZone: providerconfig.ConfigVarString{Value: availabilityZone},
 		InstanceProfile:  providerconfig.ConfigVarString{Value: c.Spec.Cloud.AWS.InstanceProfileName},
 		InstanceType:     providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.InstanceType},
 		DiskType:         providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.VolumeType},

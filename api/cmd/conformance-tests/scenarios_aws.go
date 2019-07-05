@@ -78,16 +78,55 @@ func (s *awsScenario) Cluster(secrets secrets) *kubermaticv1.Cluster {
 }
 
 func (s *awsScenario) NodeDeployments(num int, _ secrets) []kubermaticapiv1.NodeDeployment {
-	return []kubermaticapiv1.NodeDeployment{
+	nds := []kubermaticapiv1.NodeDeployment{
 		{
 			Spec: kubermaticapiv1.NodeDeploymentSpec{
-				Replicas: int32(num),
 				Template: kubermaticapiv1.NodeSpec{
 					Cloud: kubermaticapiv1.NodeCloudSpec{
 						AWS: &kubermaticapiv1.AWSNodeSpec{
-							InstanceType: "t2.medium",
-							VolumeType:   "gp2",
-							VolumeSize:   100,
+							InstanceType:     "t2.medium",
+							VolumeType:       "gp2",
+							VolumeSize:       100,
+							AvailabilityZone: "eu-central-1a",
+							SubnetID:         "subnet-2bff4f43",
+						},
+					},
+					Versions: kubermaticapiv1.NodeVersionInfo{
+						Kubelet: s.version.String(),
+					},
+					OperatingSystem: s.nodeOsSpec,
+				},
+			},
+		},
+		{
+			Spec: kubermaticapiv1.NodeDeploymentSpec{
+				Template: kubermaticapiv1.NodeSpec{
+					Cloud: kubermaticapiv1.NodeCloudSpec{
+						AWS: &kubermaticapiv1.AWSNodeSpec{
+							InstanceType:     "t2.medium",
+							VolumeType:       "gp2",
+							VolumeSize:       100,
+							AvailabilityZone: "eu-central-1b",
+							SubnetID:         "subnet-06d1167c",
+						},
+					},
+					Versions: kubermaticapiv1.NodeVersionInfo{
+						Kubelet: s.version.String(),
+					},
+					OperatingSystem: s.nodeOsSpec,
+				},
+			},
+		},
+		{
+			Spec: kubermaticapiv1.NodeDeploymentSpec{
+				Template: kubermaticapiv1.NodeSpec{
+					Cloud: kubermaticapiv1.NodeCloudSpec{
+						AWS: &kubermaticapiv1.AWSNodeSpec{
+							InstanceType:     "t2.medium",
+							VolumeType:       "gp2",
+							VolumeSize:       100,
+							AvailabilityZone: "eu-central-1c",
+							SubnetID:         "subnet-f3427db9",
 						},
 					},
 					Versions: kubermaticapiv1.NodeVersionInfo{
@@ -98,6 +137,20 @@ func (s *awsScenario) NodeDeployments(num int, _ secrets) []kubermaticapiv1.Node
 			},
 		},
 	}
+
+	// evenly distribute the nodes among deployments
+	nodesInEachAZ := num / 3
+	azsWithExtraNode := num % 3
+
+	for i := range nds {
+		if i < azsWithExtraNode {
+			nds[i].Spec.Replicas = int32(nodesInEachAZ + 1)
+		} else {
+			nds[i].Spec.Replicas = int32(nodesInEachAZ)
+		}
+	}
+
+	return nds
 }
 
 func (s *awsScenario) OS() kubermaticapiv1.OperatingSystemSpec {

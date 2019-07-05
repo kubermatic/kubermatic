@@ -76,11 +76,13 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			return nil, fmt.Errorf("failed to parse aws config: %v", err)
 		}
 		cloudSpec.AWS = &apiv1.AWSNodeSpec{
-			Tags:         config.Tags,
-			VolumeSize:   config.DiskSize,
-			VolumeType:   config.DiskType.Value,
-			InstanceType: config.InstanceType.Value,
-			AMI:          config.AMI.Value,
+			Tags:             config.Tags,
+			VolumeSize:       config.DiskSize,
+			VolumeType:       config.DiskType.Value,
+			InstanceType:     config.InstanceType.Value,
+			AMI:              config.AMI.Value,
+			AvailabilityZone: config.AvailabilityZone.Value,
+			SubnetID:         config.SubnetID.Value,
 		}
 	case providerconfig.CloudProviderAzure:
 		config := &azure.RawConfig{}
