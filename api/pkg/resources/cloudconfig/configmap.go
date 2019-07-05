@@ -105,6 +105,7 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *provider.DatacenterMeta) (cl
 				Password:   cloud.Openstack.Password,
 				DomainName: cloud.Openstack.Domain,
 				TenantName: cloud.Openstack.Tenant,
+				TenantID:   cloud.Openstack.TenantID,
 				Region:     dc.Spec.Openstack.Region,
 			},
 			BlockStorage: openstack.BlockStorageOpts{
