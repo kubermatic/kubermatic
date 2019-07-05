@@ -8,7 +8,7 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	v1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 )
 
 // Presets specifies default presets for supported providers
@@ -98,6 +98,7 @@ type OpenstackCredentials struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Tenant   string `json:"tenant"`
+	TenantID string `json:"tenantID"`
 	Domain   string `json:"domain"`
 }
 
@@ -335,6 +336,7 @@ func (m *Manager) setOpenStackCredentials(credentialName string, cloud v1.CloudS
 			cloud.Openstack.Password = credential.Password
 			cloud.Openstack.Domain = credential.Domain
 			cloud.Openstack.Tenant = credential.Tenant
+			cloud.Openstack.TenantID = credential.TenantID
 			return &cloud, nil
 		}
 	}

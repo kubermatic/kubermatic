@@ -3119,6 +3119,11 @@
           },
           {
             "type": "string",
+            "name": "TenantID",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "name": "DatacenterName",
             "in": "query"
           },
@@ -5113,7 +5118,7 @@
     },
     "OpenstackCloudSpec": {
       "type": "object",
-      "title": "OpenstackCloudSpec specifies access data to an openstack cloud.",
+      "title": "OpenstackCloudSpec specifies access data to an OpenStack cloud.",
       "properties": {
         "domain": {
           "type": "string",
@@ -5148,6 +5153,10 @@
         "tenant": {
           "type": "string",
           "x-go-name": "Tenant"
+        },
+        "tenantID": {
+          "type": "string",
+          "x-go-name": "TenantID"
         },
         "username": {
           "type": "string",
