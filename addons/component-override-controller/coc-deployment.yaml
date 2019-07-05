@@ -37,7 +37,7 @@ spec:
               > $ltmp/clusters
 
             for cluster in $(< $ltmp/clusters ); do
-              echo "Found cluster $cluster without empty apiserver replicas spec. Setting $count replicas."
+              echo "Found cluster $cluster with empty apiserver replicas spec. Setting $count replicas."
 
               kubectl patch cluster $cluster \
                 --type=json \
