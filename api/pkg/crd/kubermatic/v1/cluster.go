@@ -330,11 +330,12 @@ type AWSCloudSpec struct {
 	AvailabilityZone string `json:"availabilityZone"`
 }
 
-// OpenstackCloudSpec specifies access data to an openstack cloud.
+// OpenstackCloudSpec specifies access data to an OpenStack cloud.
 type OpenstackCloudSpec struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Tenant   string `json:"tenant"`
+	TenantID string `json:"tenantID"`
 	Domain   string `json:"domain"`
 	// Network holds the name of the internal network
 	// When specified, all worker nodes will be attached to this network. If not specified, a network, subnet & router will be created
