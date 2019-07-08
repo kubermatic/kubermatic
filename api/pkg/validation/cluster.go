@@ -230,6 +230,8 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc provider.DatacenterMeta) 
 		return validatePacketCloudSpec(spec.Packet)
 	case spec.Hetzner != nil:
 		return validateHetznerCloudSpec(spec.Hetzner)
+	case spec.BringYourOwn != nil:
+		return nil
 	default:
 		return errors.New("no cloud provider specified")
 	}
