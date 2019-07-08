@@ -20,9 +20,15 @@ type AWSNodeSpec struct {
 	// ami to use. Will be defaulted to a ami for your selected operating system and region. Only set this when you know what you do.
 	AMI string `json:"ami,omitempty"`
 
+	// Availiability zone in which to place the node. It is coupled with the subnet to which the node will belong.
+	AvailabilityZone string `json:"availabilityZone,omitempty"`
+
 	// instance type
 	// Required: true
 	InstanceType *string `json:"instanceType"`
+
+	// The VPC subnet to which the node shall be connected.
+	SubnetID string `json:"subnetID,omitempty"`
 
 	// additional instance tags
 	Tags map[string]string `json:"tags,omitempty"`

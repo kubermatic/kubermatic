@@ -33,6 +33,11 @@ func TestListCredentials(t *testing.T) {
 			provider:     "openstack",
 			expectedList: []string{"openstack"},
 		},
+		{
+			name:         "test, get GCP credential names",
+			provider:     "gcp",
+			expectedList: []string{"gcp"},
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {

@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/gcp"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	oidc "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils"
 	apiclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client"
@@ -442,4 +444,58 @@ func convertCluster(cluster *models.Cluster) (*apiv1.Cluster, error) {
 	apiCluster.CreationTimestamp = apiv1.NewTime(creationTime)
 
 	return apiCluster, nil
+}
+
+// ListGCPZones returns list of GCP zones
+func (r *APIRunner) ListGCPZones(credential, dc string) ([]string, error) {
+	params := &gcp.ListGCPZonesParams{Credential: &credential, Dc: dc}
+	params.WithTimeout(timeout)
+	zonesResponse, err := r.client.Gcp.ListGCPZones(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+	names := make([]string, 0)
+	for _, name := range zonesResponse.Payload {
+		names = append(names, name.Name)
+	}
+
+	return names, nil
+}
+
+// ListGCPDiskTypes returns list of GCP disk types
+func (r *APIRunner) ListGCPDiskTypes(credential, zone string) ([]string, error) {
+	params := &gcp.ListGCPDiskTypesParams{Credential: &credential, Zone: &zone}
+	params.WithTimeout(timeout)
+	typesResponse, err := r.client.Gcp.ListGCPDiskTypes(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+	names := make([]string, 0)
+	for _, name := range typesResponse.Payload {
+		names = append(names, name.Name)
+	}
+
+	return names, nil
+}
+
+// ListGCPSizes returns list of GCP sizes
+func (r *APIRunner) ListGCPSizes(credential, zone string) ([]apiv1.GCPMachineSize, error) {
+	params := &gcp.ListGCPSizesParams{Credential: &credential, Zone: &zone}
+	params.WithTimeout(timeout)
+	sizesResponse, err := r.client.Gcp.ListGCPSizes(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+	sizes := make([]apiv1.GCPMachineSize, 0)
+	for _, machineType := range sizesResponse.Payload {
+		mt := apiv1.GCPMachineSize{
+			Name:        machineType.Name,
+			Description: machineType.Description,
+			Memory:      machineType.Memory,
+			VCPUs:       machineType.VCpus,
+		}
+		sizes = append(sizes, mt)
+	}
+
+	return sizes, nil
 }

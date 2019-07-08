@@ -72,7 +72,7 @@ type PatchNodeDeploymentOK struct {
 }
 
 func (o *PatchNodeDeploymentOK) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] patchNodeDeploymentOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] patchNodeDeploymentOK  %+v", 200, o.Payload)
 }
 
 func (o *PatchNodeDeploymentOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -100,7 +100,7 @@ type PatchNodeDeploymentUnauthorized struct {
 }
 
 func (o *PatchNodeDeploymentUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] patchNodeDeploymentUnauthorized ", 401)
+	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] patchNodeDeploymentUnauthorized ", 401)
 }
 
 func (o *PatchNodeDeploymentUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -121,7 +121,7 @@ type PatchNodeDeploymentForbidden struct {
 }
 
 func (o *PatchNodeDeploymentForbidden) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] patchNodeDeploymentForbidden ", 403)
+	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] patchNodeDeploymentForbidden ", 403)
 }
 
 func (o *PatchNodeDeploymentForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -152,7 +152,7 @@ func (o *PatchNodeDeploymentDefault) Code() int {
 }
 
 func (o *PatchNodeDeploymentDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] patchNodeDeployment default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] patchNodeDeployment default  %+v", o._statusCode, o.Payload)
 }
 
 func (o *PatchNodeDeploymentDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

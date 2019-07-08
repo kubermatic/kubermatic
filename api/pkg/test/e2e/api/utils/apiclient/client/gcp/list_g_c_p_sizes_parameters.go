@@ -20,7 +20,7 @@ import (
 // NewListGCPSizesParams creates a new ListGCPSizesParams object
 // with the default values initialized.
 func NewListGCPSizesParams() *ListGCPSizesParams {
-
+	var ()
 	return &ListGCPSizesParams{
 
 		timeout: cr.DefaultTimeout,
@@ -30,7 +30,7 @@ func NewListGCPSizesParams() *ListGCPSizesParams {
 // NewListGCPSizesParamsWithTimeout creates a new ListGCPSizesParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewListGCPSizesParamsWithTimeout(timeout time.Duration) *ListGCPSizesParams {
-
+	var ()
 	return &ListGCPSizesParams{
 
 		timeout: timeout,
@@ -40,7 +40,7 @@ func NewListGCPSizesParamsWithTimeout(timeout time.Duration) *ListGCPSizesParams
 // NewListGCPSizesParamsWithContext creates a new ListGCPSizesParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewListGCPSizesParamsWithContext(ctx context.Context) *ListGCPSizesParams {
-
+	var ()
 	return &ListGCPSizesParams{
 
 		Context: ctx,
@@ -50,7 +50,7 @@ func NewListGCPSizesParamsWithContext(ctx context.Context) *ListGCPSizesParams {
 // NewListGCPSizesParamsWithHTTPClient creates a new ListGCPSizesParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewListGCPSizesParamsWithHTTPClient(client *http.Client) *ListGCPSizesParams {
-
+	var ()
 	return &ListGCPSizesParams{
 		HTTPClient: client,
 	}
@@ -60,6 +60,14 @@ func NewListGCPSizesParamsWithHTTPClient(client *http.Client) *ListGCPSizesParam
 for the list g c p sizes operation typically these are written to a http.Request
 */
 type ListGCPSizesParams struct {
+
+	/*Credential*/
+	Credential *string
+	/*ServiceAccount*/
+	ServiceAccount *string
+	/*Zone*/
+	Zone *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -98,6 +106,39 @@ func (o *ListGCPSizesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithCredential adds the credential to the list g c p sizes params
+func (o *ListGCPSizesParams) WithCredential(credential *string) *ListGCPSizesParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list g c p sizes params
+func (o *ListGCPSizesParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithServiceAccount adds the serviceAccount to the list g c p sizes params
+func (o *ListGCPSizesParams) WithServiceAccount(serviceAccount *string) *ListGCPSizesParams {
+	o.SetServiceAccount(serviceAccount)
+	return o
+}
+
+// SetServiceAccount adds the serviceAccount to the list g c p sizes params
+func (o *ListGCPSizesParams) SetServiceAccount(serviceAccount *string) {
+	o.ServiceAccount = serviceAccount
+}
+
+// WithZone adds the zone to the list g c p sizes params
+func (o *ListGCPSizesParams) WithZone(zone *string) *ListGCPSizesParams {
+	o.SetZone(zone)
+	return o
+}
+
+// SetZone adds the zone to the list g c p sizes params
+func (o *ListGCPSizesParams) SetZone(zone *string) {
+	o.Zone = zone
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListGCPSizesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -105,6 +146,33 @@ func (o *ListGCPSizesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		return err
 	}
 	var res []error
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+
+	}
+
+	if o.ServiceAccount != nil {
+
+		// header param ServiceAccount
+		if err := r.SetHeaderParam("ServiceAccount", *o.ServiceAccount); err != nil {
+			return err
+		}
+
+	}
+
+	if o.Zone != nil {
+
+		// header param Zone
+		if err := r.SetHeaderParam("Zone", *o.Zone); err != nil {
+			return err
+		}
+
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
