@@ -25,6 +25,10 @@ versions:
   default: false
 - version: "1.12.8"
   default: false
+- version: "1.12.9"
+  default: false
+- version: "1.12.10"
+  default: false
 # Kubernetes 1.13
 - version: "1.13.0"
   default: false
@@ -41,6 +45,8 @@ versions:
 # Insecure https://github.com/kubernetes/kubernetes/issues/78308
 #- version: "1.13.6"
 #  default: false
+- version: "1.13.7"
+  default: false
 # Kubernetes 1.14
 - version: "v1.14.0"
   default: false
@@ -50,6 +56,8 @@ versions:
 #- version: "v1.14.2"
 #  default: false
 - version: "v1.14.3"
+  default: false
+- version: "v1.14.4"
   default: true
 # Kubernetes 1.15
 - version: "v1.15.0"
