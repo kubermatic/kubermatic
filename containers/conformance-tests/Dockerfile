@@ -8,26 +8,28 @@ ENV KUBECTL_VERSION="1.14.4"
 RUN dnf install -y curl bash unzip jq buildah which findutils make git
 
 ADD registries.conf /etc/containers/registries.conf
+# metacopy is only available on Kernels 4.18+. Ubuntu 18.04 ships with 4.15
+RUN sed -i "s/mountopt = \"nodev,metacopy=on\"/mountopt = \"nodev\"/g" /etc/containers/storage.conf
 
 # Install vault
-RUN cd /tmp && curl -LO https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip && \
+RUN cd /tmp && curl -fLO https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip && \
     unzip vault_*.zip && \
     mv vault /usr/local/bin && \
     rm /tmp/vault_*.zip
 
 # Install Helm
-RUN curl -L https://storage.googleapis.com/kubernetes-helm/helm-v${HELM_VERSION}-linux-amd64.tar.gz | tar -xvz && \
+RUN curl -fL https://storage.googleapis.com/kubernetes-helm/helm-v${HELM_VERSION}-linux-amd64.tar.gz | tar -xvz && \
     mv linux-amd64/helm /usr/local/bin
 
 # Install kubectl
-RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
+RUN curl -fLO https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
     chmod +x kubectl && \
     mv kubectl /usr/local/bin
 
 # Install Golang
 ENV PATH=$PATH:/usr/local/go/bin
 ENV GOPATH /go
-RUN curl -L -o /tmp/golang.tag.gz https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz && \
+RUN curl -fL -o /tmp/golang.tag.gz https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz && \
     tar -C /usr/local -xzf /tmp/golang.tag.gz && \
     rm /tmp/golang.tag.gz
 
