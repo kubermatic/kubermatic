@@ -41,7 +41,6 @@ type TemplateData struct {
 	oidcIssuerClientID                               string
 	nodeLocalDNSCacheEnabled                         bool
 	kubermaticImage                                  string
-	apiserverExposeStrategy                          corev1.ServiceType
 }
 
 // NewTemplateData returns an instance of TemplateData
@@ -268,8 +267,4 @@ func (d *TemplateData) KubermaticAPIImage() string {
 		imageWithoutRegistry = strings.Join(apiImageSplit[1:], "/")
 	}
 	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
-}
-
-func (d *TemplateData) APIServerExposeStrategy() corev1.ServiceType {
-	return d.apiserverExposeStrategy
 }

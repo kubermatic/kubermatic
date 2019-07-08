@@ -206,8 +206,9 @@ func TestLoadFiles(t *testing.T) {
 						UID:  types.UID("1234567890"),
 					},
 					Spec: kubermaticv1.ClusterSpec{
-						Cloud:   cloudspec,
-						Version: *ksemver.NewSemverOrDie(ver.Version.String()),
+						ExposeStrategy: corev1.ServiceTypeLoadBalancer,
+						Cloud:          cloudspec,
+						Version:        *ksemver.NewSemverOrDie(ver.Version.String()),
 						ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 							Services: kubermaticv1.NetworkRanges{
 								CIDRBlocks: []string{"10.10.10.0/24"},
@@ -567,16 +568,15 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				var serviceCreators []reconciling.NamedServiceCreatorGetter
-				serviceCreators = append(serviceCreators, clustercontroller.GetServiceCreators(data)...)
+				serviceCreators := clustercontroller.GetServiceCreators(data)
 				for _, creatorGetter := range serviceCreators {
-					_, create := creatorGetter()
+					name, create := creatorGetter()
 					res, err := create(&corev1.Service{})
 					if err != nil {
 						t.Fatalf("failed to create Service: %v", err)
 					}
 
-					fixturePath := fmt.Sprintf("service-%s-%s-%s", prov, ver.Version.String(), res.Name)
+					fixturePath := fmt.Sprintf("service-%s-%s-%s", prov, ver.Version.String(), name)
 					checkTestResult(t, fixturePath, res)
 				}
 
