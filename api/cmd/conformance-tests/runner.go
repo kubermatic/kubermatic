@@ -21,6 +21,7 @@ import (
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cloud"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -652,6 +653,7 @@ func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*k
 	if r.namePrefix != "" {
 		cluster.Name = fmt.Sprintf("%s-%s", r.namePrefix, cluster.Name)
 	}
+	cluster.Status.CloudMigrationRevision = cloud.CurrentMigrationRevision
 	cluster.Spec.ExposeStrategy = corev1.ServiceTypeNodePort
 	log = logrus.WithFields(logrus.Fields{"cluster": cluster.Name})
 
