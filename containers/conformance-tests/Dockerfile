@@ -8,7 +8,7 @@ RUN /opt/install-kube-tests.sh
 RUN rm -rf /opt/kube-test/*/platforms/darwin
 RUN rm -rf /opt/kube-test/*/platforms/windows
 
-FROM golang:1.11.4-stretch
+FROM golang:1.12.6-stretch
 
 COPY --from=0 /opt/kube-test /opt/kube-test
 COPY start-docker.sh /usr/local/bin/start-docker.sh
