@@ -554,6 +554,35 @@ func (a *Client) GetClusterUpgrades(params *GetClusterUpgradesParams, authInfo r
 }
 
 /*
+GetNodeDeployment gets a node deployment that is assigned to the given cluster
+*/
+func (a *Client) GetNodeDeployment(params *GetNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*GetNodeDeploymentOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetNodeDeploymentParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getNodeDeployment",
+		Method:             "GET",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &GetNodeDeploymentReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetNodeDeploymentOK), nil
+
+}
+
+/*
 GetNodeForClusterLegacy deprecateds gets a node that is assigned to the given cluster
 
 This endpoint is deprecated, please create a Node Deployment instead.
@@ -922,7 +951,7 @@ func (a *Client) PatchNodeDeployment(params *PatchNodeDeploymentParams, authInfo
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "patchNodeDeployment",
-		Method:             "GET",
+		Method:             "PATCH",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},

@@ -73,6 +73,8 @@ type ListOpenstackSubnetsParams struct {
 	Password *string
 	/*Tenant*/
 	Tenant *string
+	/*TenantID*/
+	TenantID *string
 	/*Username*/
 	Username *string
 
@@ -178,6 +180,17 @@ func (o *ListOpenstackSubnetsParams) WithTenant(tenant *string) *ListOpenstackSu
 // SetTenant adds the tenant to the list openstack subnets params
 func (o *ListOpenstackSubnetsParams) SetTenant(tenant *string) {
 	o.Tenant = tenant
+}
+
+// WithTenantID adds the tenantID to the list openstack subnets params
+func (o *ListOpenstackSubnetsParams) WithTenantID(tenantID *string) *ListOpenstackSubnetsParams {
+	o.SetTenantID(tenantID)
+	return o
+}
+
+// SetTenantID adds the tenantId to the list openstack subnets params
+func (o *ListOpenstackSubnetsParams) SetTenantID(tenantID *string) {
+	o.TenantID = tenantID
 }
 
 // WithUsername adds the username to the list openstack subnets params
@@ -289,6 +302,22 @@ func (o *ListOpenstackSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg
 		qTenant := qrTenant
 		if qTenant != "" {
 			if err := r.SetQueryParam("Tenant", qTenant); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	if o.TenantID != nil {
+
+		// query param TenantID
+		var qrTenantID string
+		if o.TenantID != nil {
+			qrTenantID = *o.TenantID
+		}
+		qTenantID := qrTenantID
+		if qTenantID != "" {
+			if err := r.SetQueryParam("TenantID", qTenantID); err != nil {
 				return err
 			}
 		}

@@ -11,7 +11,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// OpenstackCloudSpec OpenstackCloudSpec specifies access data to an openstack cloud.
+// OpenstackCloudSpec OpenstackCloudSpec specifies access data to an OpenStack cloud.
 // swagger:model OpenstackCloudSpec
 type OpenstackCloudSpec struct {
 
@@ -47,6 +47,9 @@ type OpenstackCloudSpec struct {
 
 	// tenant
 	Tenant string `json:"tenant,omitempty"`
+
+	// tenant ID
+	TenantID string `json:"tenantID,omitempty"`
 
 	// username
 	Username string `json:"username,omitempty"`

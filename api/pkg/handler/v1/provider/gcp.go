@@ -28,15 +28,22 @@ type GCPZoneReq struct {
 }
 
 // GCPTypesReq represent a request for GCP machine or disk types.
+// swagger:parameters listGCPDiskTypes listGCPSizes
 type GCPTypesReq struct {
 	GCPCommonReq
+	// in: header
+	// name: Zone
 	Zone string
 }
 
 // GCPCommonReq represent a request with common parameters for GCP.
 type GCPCommonReq struct {
+	// in: header
+	// name: ServiceAccount
 	ServiceAccount string
-	Credential     string
+	// in: header
+	// name: Credential
+	Credential string
 }
 
 func DecodeGCPTypesReq(c context.Context, r *http.Request) (interface{}, error) {
