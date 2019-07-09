@@ -112,6 +112,9 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	cluster.Status.Health.Apiserver = false
 	cluster.Status.Health.Controller = false
 	cluster.Status.Health.Scheduler = false
+	cluster.Status.ExtendedHealth.Apiserver = kubermaticv1.DOWN
+	cluster.Status.ExtendedHealth.Controller = kubermaticv1.DOWN
+	cluster.Status.ExtendedHealth.Scheduler = kubermaticv1.DOWN
 	if err := r.Update(ctx, cluster); err != nil {
 		return fmt.Errorf("failed to update cluster: %v", err)
 	}

@@ -810,7 +810,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 1: get existing cluster health status",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":true,"scheduler":false,"controller":true,"machineController":false,"etcd":true,"cloudProviderInfrastructure":true,"userClusterControllerManager":true}`,
+			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,

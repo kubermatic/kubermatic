@@ -187,6 +187,9 @@ type ClusterStatus struct {
 	Phase ClusterPhase `json:"phase,omitempty"`
 	// Health exposes information about the current health state of the individual control plane components
 	Health ClusterHealth `json:"health,omitempty"`
+	// ExtendedHealth exposes information about the current health state.
+	// Extends standard health status for new states.
+	ExtendedHealth ExtendedClusterHealth `json:"extendedHealth,omitempty"`
 
 	// Deprecated
 	RootCA *KeyCert `json:"rootCA,omitempty"`
@@ -379,6 +382,26 @@ type ClusterHealthStatus struct {
 	OpenVPN                      bool `json:"openvpn"`
 	CloudProviderInfrastructure  bool `json:"cloudProviderInfrastructure"`
 	UserClusterControllerManager bool `json:"userClusterControllerManager"`
+}
+
+type HealthStatus int
+
+const (
+	DOWN         HealthStatus = iota
+	UP           HealthStatus = iota
+	PROVISIONING HealthStatus = iota
+)
+
+// ExtendedClusterHealth stores health information of a cluster.
+type ExtendedClusterHealth struct {
+	Apiserver                    HealthStatus `json:"apiserver"`
+	Scheduler                    HealthStatus `json:"scheduler"`
+	Controller                   HealthStatus `json:"controller"`
+	MachineController            HealthStatus `json:"machineController"`
+	Etcd                         HealthStatus `json:"etcd"`
+	OpenVPN                      HealthStatus `json:"openvpn"`
+	CloudProviderInfrastructure  HealthStatus `json:"cloudProviderInfrastructure"`
+	UserClusterControllerManager HealthStatus `json:"userClusterControllerManager"`
 }
 
 // AllHealthy returns if all components are healthy

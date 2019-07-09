@@ -8,12 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/gcp"
-
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	oidc "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils"
 	apiclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/credentials"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/gcp"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/project"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/serviceaccounts"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/tokens"
@@ -388,14 +388,25 @@ func (r *APIRunner) GetClusterHealthStatus(projectID, dc, clusterID string) (*ap
 	}
 
 	apiClusterHealth := &apiv1.ClusterHealth{}
-	apiClusterHealth.Apiserver = response.Payload.Apiserver
-	apiClusterHealth.Controller = response.Payload.Controller
-	apiClusterHealth.Etcd = response.Payload.Etcd
-	apiClusterHealth.MachineController = response.Payload.MachineController
-	apiClusterHealth.Scheduler = response.Payload.Scheduler
-	apiClusterHealth.UserClusterControllerManager = response.Payload.UserClusterControllerManager
+	apiClusterHealth.Apiserver = convertHealthStatus(response.Payload.Apiserver)
+	apiClusterHealth.Controller = convertHealthStatus(response.Payload.Controller)
+	apiClusterHealth.Etcd = convertHealthStatus(response.Payload.Etcd)
+	apiClusterHealth.MachineController = convertHealthStatus(response.Payload.MachineController)
+	apiClusterHealth.Scheduler = convertHealthStatus(response.Payload.Scheduler)
+	apiClusterHealth.UserClusterControllerManager = convertHealthStatus(response.Payload.UserClusterControllerManager)
 
 	return apiClusterHealth, nil
+}
+
+func convertHealthStatus(status models.HealthStatus) kubermaticv1.HealthStatus {
+	switch int64(status) {
+	case int64(kubermaticv1.PROVISIONING):
+		return kubermaticv1.PROVISIONING
+	case int64(kubermaticv1.UP):
+		return kubermaticv1.UP
+	default:
+		return kubermaticv1.DOWN
+	}
 }
 
 // GetClusterNodeDeployment returns the cluster node deployments

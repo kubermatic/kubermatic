@@ -297,43 +297,54 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error {
 	currentHealth := osData.Cluster().Status.Health.DeepCopy()
+	extendedHealth := osData.Cluster().Status.ExtendedHealth.DeepCopy()
 	type depInfo struct {
-		healthy  *bool
-		minReady int32
+		healthy      *bool
+		healthStatus *kubermaticv1.HealthStatus
+		minReady     int32
 	}
 
 	healthMapping := map[string]*depInfo{
-		openshiftresources.ApiserverDeploymentName:         {healthy: &currentHealth.Apiserver, minReady: 1},
-		openshiftresources.ControllerManagerDeploymentName: {healthy: &currentHealth.Controller, minReady: 1},
-		resources.MachineControllerDeploymentName:          {healthy: &currentHealth.MachineController, minReady: 1},
-		resources.OpenVPNServerDeploymentName:              {healthy: &currentHealth.OpenVPN, minReady: 1},
-		resources.UserClusterControllerDeploymentName:      {healthy: &currentHealth.UserClusterControllerManager, minReady: 1},
+		openshiftresources.ApiserverDeploymentName:         {healthy: &currentHealth.Apiserver, healthStatus: &extendedHealth.Apiserver, minReady: 1},
+		openshiftresources.ControllerManagerDeploymentName: {healthy: &currentHealth.Controller, healthStatus: &extendedHealth.Controller, minReady: 1},
+		resources.MachineControllerDeploymentName:          {healthy: &currentHealth.MachineController, healthStatus: &extendedHealth.MachineController, minReady: 1},
+		resources.OpenVPNServerDeploymentName:              {healthy: &currentHealth.OpenVPN, healthStatus: &extendedHealth.OpenVPN, minReady: 1},
+		resources.UserClusterControllerDeploymentName:      {healthy: &currentHealth.UserClusterControllerManager, healthStatus: &extendedHealth.UserClusterControllerManager, minReady: 1},
 	}
 
-	var err error
 	for name := range healthMapping {
-		*healthMapping[name].healthy, err = resources.HealthyDeployment(ctx, r.Client, nn(osData.Cluster().Status.NamespaceName, name), healthMapping[name].minReady)
+		status, err := resources.HealthyDeployment(ctx, r.Client, nn(osData.Cluster().Status.NamespaceName, name), healthMapping[name].minReady)
 		if err != nil {
 			return fmt.Errorf("failed to get dep health %q: %v", name, err)
 		}
+		*healthMapping[name].healthy = isRunning(status)
+		*healthMapping[name].healthStatus = status
 	}
 
-	currentHealth.Etcd, err = resources.HealthyStatefulSet(ctx, r.Client, nn(osData.Cluster().Status.NamespaceName, resources.EtcdStatefulSetName), 2)
+	status, err := resources.HealthyStatefulSet(ctx, r.Client, nn(osData.Cluster().Status.NamespaceName, resources.EtcdStatefulSetName), 2)
 	if err != nil {
 		return fmt.Errorf("failed to get etcd health: %v", err)
 	}
+	currentHealth.Etcd = isRunning(status)
+	extendedHealth.Etcd = status
 
 	//TODO: Revisit this. This is a tiny bit ugly, but Openshift doesn't have a distinct scheduler
 	// and introducing a distinct health struct for Openshift means we have to change the API as well
 	currentHealth.Scheduler = currentHealth.Controller
+	extendedHealth.Scheduler = extendedHealth.Controller
 
 	if osData.Cluster().Status.Health != *currentHealth {
 		return r.updateCluster(ctx, osData.Cluster(), func(c *kubermaticv1.Cluster) {
 			c.Status.Health = *currentHealth
+			c.Status.ExtendedHealth = *extendedHealth
 		})
 	}
 
 	return nil
+}
+
+func isRunning(status kubermaticv1.HealthStatus) bool {
+	return status == kubermaticv1.UP
 }
 
 func (r *Reconciler) updateCluster(ctx context.Context, c *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {
