@@ -71,19 +71,21 @@ type RawConfig struct {
 	Password         providerconfig.ConfigVarString `json:"password,omitempty"`
 	DomainName       providerconfig.ConfigVarString `json:"domainName,omitempty"`
 	TenantName       providerconfig.ConfigVarString `json:"tenantName,omitempty"`
+	TenantID         providerconfig.ConfigVarString `json:"tenantID,omitempty"`
 	TokenID          providerconfig.ConfigVarString `json:"tokenId,omitempty"`
 	Region           providerconfig.ConfigVarString `json:"region,omitempty"`
 
 	// Machine details
-	Image            providerconfig.ConfigVarString   `json:"image"`
-	Flavor           providerconfig.ConfigVarString   `json:"flavor"`
-	SecurityGroups   []providerconfig.ConfigVarString `json:"securityGroups,omitempty"`
-	Network          providerconfig.ConfigVarString   `json:"network,omitempty"`
-	Subnet           providerconfig.ConfigVarString   `json:"subnet,omitempty"`
-	FloatingIPPool   providerconfig.ConfigVarString   `json:"floatingIpPool,omitempty"`
-	AvailabilityZone providerconfig.ConfigVarString   `json:"availabilityZone,omitempty"`
-	TrustDevicePath  providerconfig.ConfigVarBool     `json:"trustDevicePath"`
-	RootDiskSizeGB   *int                             `json:"rootDiskSizeGB"`
+	Image                 providerconfig.ConfigVarString   `json:"image"`
+	Flavor                providerconfig.ConfigVarString   `json:"flavor"`
+	SecurityGroups        []providerconfig.ConfigVarString `json:"securityGroups,omitempty"`
+	Network               providerconfig.ConfigVarString   `json:"network,omitempty"`
+	Subnet                providerconfig.ConfigVarString   `json:"subnet,omitempty"`
+	FloatingIPPool        providerconfig.ConfigVarString   `json:"floatingIpPool,omitempty"`
+	AvailabilityZone      providerconfig.ConfigVarString   `json:"availabilityZone,omitempty"`
+	TrustDevicePath       providerconfig.ConfigVarBool     `json:"trustDevicePath"`
+	RootDiskSizeGB        *int                             `json:"rootDiskSizeGB"`
+	NodeVolumeAttachLimit *uint                            `json:"nodeVolumeAttachLimit"`
 	// This tag is related to server metadata, not compute server's tag
 	Tags map[string]string `json:"tags,omitempty"`
 }
@@ -94,19 +96,21 @@ type Config struct {
 	Password         string
 	DomainName       string
 	TenantName       string
+	TenantID         string
 	TokenID          string
 	Region           string
 
 	// Machine details
-	Image            string
-	Flavor           string
-	SecurityGroups   []string
-	Network          string
-	Subnet           string
-	FloatingIPPool   string
-	AvailabilityZone string
-	TrustDevicePath  bool
-	RootDiskSizeGB   *int
+	Image                 string
+	Flavor                string
+	SecurityGroups        []string
+	Network               string
+	Subnet                string
+	FloatingIPPool        string
+	AvailabilityZone      string
+	TrustDevicePath       bool
+	RootDiskSizeGB        *int
+	NodeVolumeAttachLimit *uint
 
 	Tags map[string]string
 }
@@ -161,6 +165,10 @@ func (p *provider) getConfig(s v1alpha1.ProviderSpec) (*Config, *providerconfig.
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to get the value of \"tenantName\" field, error = %v", err)
 	}
+	c.TenantID, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.TenantID, "OS_TENANT_ID")
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to get the value of \"tenantID\" field, error = %v", err)
+	}
 	c.TokenID, err = p.configVarResolver.GetConfigVarStringValue(rawConfig.TokenID)
 	if err != nil {
 		return nil, nil, nil, err
@@ -201,6 +209,7 @@ func (p *provider) getConfig(s v1alpha1.ProviderSpec) (*Config, *providerconfig.
 		return nil, nil, nil, err
 	}
 	c.RootDiskSizeGB = rawConfig.RootDiskSizeGB
+	c.NodeVolumeAttachLimit = rawConfig.NodeVolumeAttachLimit
 	c.Tags = rawConfig.Tags
 	if c.Tags == nil {
 		c.Tags = map[string]string{}
@@ -238,6 +247,7 @@ func getClient(c *Config) (*gophercloud.ProviderClient, error) {
 		Password:         c.Password,
 		DomainName:       c.DomainName,
 		TenantName:       c.TenantName,
+		TenantID:         c.TenantID,
 		TokenID:          c.TokenID,
 	}
 
@@ -328,6 +338,22 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 	c, _, _, err := p.getConfig(spec.ProviderSpec)
 	if err != nil {
 		return fmt.Errorf("failed to parse config: %v", err)
+	}
+
+	if c.Username == "" {
+		return errors.New("username must be configured")
+	}
+
+	if c.Password == "" {
+		return errors.New("password must be configured")
+	}
+
+	if c.DomainName == "" {
+		return errors.New("domainName must be configured")
+	}
+
+	if c.TenantID == "" && c.TenantName == "" {
+		return errors.New("either tenantID or tenantName must be configured")
 	}
 
 	if c.Image == "" {
@@ -692,6 +718,7 @@ func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, nam
 			Password:   c.Password,
 			DomainName: c.DomainName,
 			TenantName: c.TenantName,
+			TenantID:   c.TenantID,
 			Region:     c.Region,
 		},
 		LoadBalancer: LoadBalancerOpts{
@@ -703,6 +730,9 @@ func (p *provider) GetCloudConfig(spec v1alpha1.MachineSpec) (config string, nam
 			IgnoreVolumeAZ:  true,
 		},
 		Version: spec.Versions.Kubelet,
+	}
+	if c.NodeVolumeAttachLimit != nil {
+		cc.BlockStorage.NodeVolumeAttachLimit = *c.NodeVolumeAttachLimit
 	}
 
 	s, err := CloudConfigToString(cc)

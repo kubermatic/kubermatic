@@ -93,6 +93,7 @@ SystemMaxUse=5G
 }
 
 type dockerConfig struct {
+	ExecOpts           []string `json:"exec-opts"`
 	StorageDriver      string   `json:"storage-driver"`
 	InsecureRegistries []string `json:"insecure-registries"`
 	RegistryMirrors    []string `json:"registry-mirrors"`
@@ -101,6 +102,7 @@ type dockerConfig struct {
 // DockerConfig returns the docker daemon.json.
 func DockerConfig(insecureRegistries, registryMirrors []string) (string, error) {
 	cfg := dockerConfig{
+		ExecOpts:           []string{"native.cgroupdriver=systemd"},
 		StorageDriver:      "overlay2",
 		InsecureRegistries: insecureRegistries,
 		RegistryMirrors:    registryMirrors,

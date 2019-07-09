@@ -22,6 +22,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-04-01/compute"
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-04-01/network"
+	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/golang/glog"
 	"k8s.io/apimachinery/pkg/types"
@@ -256,15 +257,15 @@ func getVirtualNetwork(ctx context.Context, c *config) (network.VirtualNetwork, 
 	return virtualNetworksClient.Get(ctx, c.ResourceGroup, c.VNetName, "")
 }
 
-func createOrUpdateNetworkInterface(ctx context.Context, ifName string, machineUID types.UID, config *config, publicIP *network.PublicIPAddress) (network.Interface, error) {
+func createOrUpdateNetworkInterface(ctx context.Context, ifName string, machineUID types.UID, config *config, publicIP *network.PublicIPAddress) (*network.Interface, error) {
 	ifClient, err := getInterfacesClient(config)
 	if err != nil {
-		return network.Interface{}, fmt.Errorf("failed to create interfaces client: %v", err)
+		return nil, fmt.Errorf("failed to create interfaces client: %v", err)
 	}
 
 	subnet, err := getSubnet(ctx, config)
 	if err != nil {
-		return network.Interface{}, fmt.Errorf("failed to fetch subnet: %v", err)
+		return nil, fmt.Errorf("failed to fetch subnet: %v", err)
 	}
 
 	ifSpec := network.Interface{
@@ -284,27 +285,40 @@ func createOrUpdateNetworkInterface(ctx context.Context, ifName string, machineU
 		},
 		Tags: map[string]*string{machineUIDTag: to.StringPtr(string(machineUID))},
 	}
+	if config.SecurityGroupName != "" {
+		authorizer, err := auth.NewClientCredentialsConfig(config.ClientID, config.ClientSecret, config.TenantID).Authorizer()
+		if err != nil {
+			return nil, fmt.Errorf("failed to create authorizer for security groups: %v", err)
+		}
+		secGroupClient := network.NewSecurityGroupsClient(config.SubscriptionID)
+		secGroupClient.Authorizer = authorizer
+		secGroup, err := secGroupClient.Get(ctx, config.ResourceGroup, config.SecurityGroupName, "")
+		if err != nil {
+			return nil, fmt.Errorf("failed to get securityGroup %q: %v", config.SecurityGroupName, err)
+		}
+		ifSpec.NetworkSecurityGroup = &secGroup
+	}
 	glog.Infof("Creating/Updating public network interface %q", ifName)
 	future, err := ifClient.CreateOrUpdate(ctx, config.ResourceGroup, ifName, ifSpec)
 	if err != nil {
-		return network.Interface{}, fmt.Errorf("failed to create interface: %v", err)
+		return nil, fmt.Errorf("failed to create interface: %v", err)
 	}
 
 	err = future.WaitForCompletion(ctx, ifClient.Client)
 	if err != nil {
-		return network.Interface{}, fmt.Errorf("failed to get interface creation response: %v", err)
+		return nil, fmt.Errorf("failed to get interface creation response: %v", err)
 	}
 
 	_, err = future.Result(*ifClient)
 	if err != nil {
-		return network.Interface{}, fmt.Errorf("failed to get interface creation result: %v", err)
+		return nil, fmt.Errorf("failed to get interface creation result: %v", err)
 	}
 
 	glog.Infof("Fetching info about network interface %q", ifName)
 	iface, err := ifClient.Get(ctx, config.ResourceGroup, ifName, "")
 	if err != nil {
-		return network.Interface{}, fmt.Errorf("failed to fetch info about interface %q: %v", ifName, err)
+		return nil, fmt.Errorf("failed to fetch info about interface %q: %v", ifName, err)
 	}
 
-	return iface, nil
+	return &iface, nil
 }
