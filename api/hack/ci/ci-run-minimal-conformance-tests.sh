@@ -92,17 +92,20 @@ echodate "Successfully got secrets from Vault"
 build_tag_if_not_exists() {
   # Build kubermatic binaries and push the image
   if ! curl -Ss --fail "http://registry.registry.svc.cluster.local.:5000/v2/kubermatic/api/tags/list"|grep -q "$1"; then
-    mkdir -p /etc/docker
-    echo '{"insecure-registries": ["registry.registry.svc.cluster.local:5000"]}' \
-      >/etc/docker/daemon.json
-    docker ps &>/dev/null || start-docker.sh || { cat /var/log/docker.log; exit 1; }
+    mkdir -p /etc/containers
+		cat <<EOF > /etc/containers/registries.conf
+[registries.search]
+registries = ['docker.io']
+[registries.insecure]
+registries = ["registry.registry.svc.cluster.local:5000"]
+EOF
     echodate "Building binaries"
     time make -C api build
     cd api
     echodate "Building docker image"
-    time docker build -t "registry.registry.svc.cluster.local:5000/kubermatic/api:$1" .
+    time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/api:$1" .
     echodate "Pushing docker image"
-    time retry 5 docker push "registry.registry.svc.cluster.local:5000/kubermatic/api:$1"
+    time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/api:$1"
     echodate "Finished building and pushing docker image"
     cd -
   else
