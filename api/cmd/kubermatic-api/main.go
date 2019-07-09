@@ -89,7 +89,7 @@ func main() {
 	if err != nil {
 		log.Fatalw("failed to create update manager", "error", err)
 	}
-	presetsManager, err := presets.NewFromFile(options.presetsFile)
+	presetsManager, err := presets.NewFromFile("")
 	if err != nil {
 		log.Fatalw("failed to create presets manager", "error", err)
 	}
