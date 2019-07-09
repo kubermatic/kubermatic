@@ -48,7 +48,7 @@ type GCPCommonReq struct {
 }
 
 // GCPTypesNoCredentialReq represent a request for GCP machine or disk types.
-// swagger:parameters listGCPSizesNoCredentials
+// swagger:parameters listGCPSizesNoCredentials listGCPDiskTypesNoCredentials
 type GCPTypesNoCredentialReq struct {
 	common.GetClusterReq
 	// in: header
