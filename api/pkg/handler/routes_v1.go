@@ -237,7 +237,7 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listGCPSizesNoCredentials())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/{dc}/zones").
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/zones").
 		Handler(r.listGCPZonesNoCredentials())
 
 	mux.Methods(http.MethodGet).
@@ -1760,7 +1760,7 @@ func (r Routing) listGCPDiskTypesNoCredentials() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/{dc}/zones gcp listGCPZonesNoCredentials
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/zones gcp listGCPZonesNoCredentials
 //
 // Lists available GCP zones
 //

@@ -1728,7 +1728,7 @@
         }
       }
     },
-    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/{dc}/zones": {
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/zones": {
       "get": {
         "description": "Lists available GCP zones",
         "produces": [
