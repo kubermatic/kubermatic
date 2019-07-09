@@ -1,3 +1,18 @@
+### [v2.10.2]()
+
+
+**Misc:**
+
+- Updated Dashboard to `v1.2.2` [#3553](https://github.com/kubermatic/kubermatic/issues/3553) ([kubermatic-bot](https://github.com/kubermatic-bot))
+    - Missing parameters for OIDC providers have been added. [#1273](https://github.com/kubermatic/dashboard-v2/issues/1273) ([maciaszczykm](https://github.com/maciaszczykm))
+    - `containerRuntimeVersion` and `kernelVersion` are now displayed on NodeDeployment detail page [#1217](https://github.com/kubermatic/dashboard-v2/issues/1217) ([kubermatic-bot](https://github.com/kubermatic-bot))
+    - Fixed changing default OpenStack image on Operating System change [#1218](https://github.com/kubermatic/dashboard-v2/issues/1218) ([kubermatic-bot](https://github.com/kubermatic-bot))
+    - The OIDC provider URL is now configurable via &#34;oidc_provider_url&#34; variable. [#1224](https://github.com/kubermatic/dashboard-v2/issues/1224) ([kubermatic-bot](https://github.com/kubermatic-bot))
+- Insecure Kubernetes versions v1.13.6 and v1.14.2 have been disabled. [#3554](https://github.com/kubermatic/kubermatic/issues/3554) ([mrIncompetent](https://github.com/mrIncompetent))
+
+
+
+
 ### [v2.10.1]()
 
 **Bugfix:**
