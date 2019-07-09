@@ -134,7 +134,7 @@ EOF
     time make -C api build
     cd api
     echodate "Building docker image"
-    time buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/api:$1" .
+    time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/api:$1" .
     echodate "Pushing docker image"
     time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/api:$1"
     echodate "Finished building and pushing docker image"
