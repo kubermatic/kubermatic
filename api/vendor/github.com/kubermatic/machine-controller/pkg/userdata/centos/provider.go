@@ -220,11 +220,6 @@ write_files:
   content: |
 {{ kubeletSystemdUnit .KubeletVersion .CloudProviderName .MachineSpec.Name .DNSIPs .ExternalCloudProvider .PauseImage | indent 4 }}
 
-- path: "/etc/systemd/system/kubelet.service.d/extras.conf"
-  content: |
-    [Service]
-    Environment="KUBELET_EXTRA_ARGS=--cgroup-driver=systemd"
-
 - path: "/etc/kubernetes/cloud-config"
   content: |
 {{ .CloudConfig | indent 4 }}

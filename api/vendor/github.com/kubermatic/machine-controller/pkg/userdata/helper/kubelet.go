@@ -58,7 +58,8 @@ const (
 --pod-infra-container-image={{ .PauseImage }} \
 {{- end }}
 --kube-reserved=cpu=100m,memory=100Mi,ephemeral-storage=1Gi \
---system-reserved=cpu=100m,memory=100Mi,ephemeral-storage=1Gi`
+--system-reserved=cpu=100m,memory=100Mi,ephemeral-storage=1Gi \
+--cgroup-driver=systemd`
 
 	kubeletSystemdUnitTpl = `[Unit]
 After=docker.service
