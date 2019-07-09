@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"net/http"
 	"strings"
 
@@ -46,6 +47,15 @@ type GCPCommonReq struct {
 	Credential string
 }
 
+// GCPTypesNoCredentialReq represent a request for GCP machine or disk types.
+// swagger:parameters listGCPSizesNoCredentials
+type GCPTypesNoCredentialReq struct {
+	common.GetClusterReq
+	// in: header
+	// name: Zone
+	Zone string
+}
+
 func DecodeGCPTypesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req GCPTypesReq
 
@@ -86,6 +96,19 @@ func DecodeGCPCommonReq(c context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
+func DecodeGCPTypesNoCredentialReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GCPTypesNoCredentialReq
+
+	commonReq, err := common.DecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GetClusterReq = commonReq.(common.GetClusterReq)
+	req.Zone = r.Header.Get("Zone")
+
+	return req, nil
+}
+
 func GCPDiskTypesEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesReq)
@@ -103,6 +126,28 @@ func GCPDiskTypesEndpoint(credentialManager common.PresetsManager) endpoint.Endp
 		}
 
 		return listGCPDiskTypes(ctx, sa, zone)
+	}
+}
+
+func GCPDiskTypesNoCredentialsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GCPTypesNoCredentialReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if cluster.Spec.Cloud.GCP == nil {
+			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
+		}
+
+		sa := cluster.Spec.Cloud.GCP.ServiceAccount
+		return listGCPDiskTypes(ctx, sa, req.Zone)
 	}
 }
 
@@ -152,6 +197,28 @@ func GCPSizeEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint 
 	}
 }
 
+func GCPSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GCPTypesNoCredentialReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if cluster.Spec.Cloud.GCP == nil {
+			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
+		}
+
+		sa := cluster.Spec.Cloud.GCP.ServiceAccount
+		return listGCPSizes(ctx, sa, req.Zone)
+	}
+}
+
 func listGCPSizes(ctx context.Context, sa string, zone string) (apiv1.GCPMachineSizeList, error) {
 	sizes := apiv1.GCPMachineSizeList{}
 
@@ -197,6 +264,28 @@ func GCPZoneEndpoint(credentialManager common.PresetsManager, dcs map[string]pro
 			}
 		}
 
+		return listGCPZones(ctx, sa, req.DC, dcs)
+	}
+}
+
+func GCPZoneNoCredentialsEndpoint(projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GCPTypesNoCredentialReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if cluster.Spec.Cloud.GCP == nil {
+			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
+		}
+
+		sa := cluster.Spec.Cloud.GCP.ServiceAccount
 		return listGCPZones(ctx, sa, req.DC, dcs)
 	}
 }
