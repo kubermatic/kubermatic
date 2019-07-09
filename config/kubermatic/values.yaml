@@ -27,8 +27,6 @@ kubermatic:
   # clusters on one central Service of type LoadBalancer via the NodePort proxy or "LoadBalancer" to create a LoadBalancer service per cluster
   # **Note:** The `seed_dns_overwrite` setting of the `datacenters.yaml` doesn't have any effect if this is set to `LoadBalancer`
   exposeStrategy: "NodePort"
-  # base64 encoded credentials.yaml. Predefined credentials for all supported providers.
-  credentials: ""
 
   # helm hooks/checks
   checks:
