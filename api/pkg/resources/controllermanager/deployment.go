@@ -242,6 +242,11 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 		flags = append(flags, "--cloud-provider", "azure")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 		flags = append(flags, "--configure-cloud-routes=false")
+		if cluster.Spec.Version.Semver().Minor() >= 15 {
+			// Required so multiple clusters using the same resource group can
+			// allocate public IPs. Ref: https://github.com/kubernetes/kubernetes/pull/77630
+			flags = append(flags, "--cluster-name", cluster.Name)
+		}
 	}
 	if cluster.Spec.Cloud.GCP != nil {
 		flags = append(flags, "--cloud-provider", "gce")
