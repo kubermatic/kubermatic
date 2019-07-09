@@ -270,7 +270,7 @@ func GCPZoneEndpoint(credentialManager common.PresetsManager, dcs map[string]pro
 
 func GCPZoneNoCredentialsEndpoint(projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(GCPTypesNoCredentialReq)
+		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
@@ -286,7 +286,7 @@ func GCPZoneNoCredentialsEndpoint(projectProvider provider.ProjectProvider, dcs 
 		}
 
 		sa := cluster.Spec.Cloud.GCP.ServiceAccount
-		return listGCPZones(ctx, sa, req.DC, dcs)
+		return listGCPZones(ctx, sa, cluster.Spec.Cloud.DatacenterName, dcs)
 	}
 }
 
