@@ -65,6 +65,7 @@ spec:
             --storage.tsdb.retention.time={{ .Values.prometheus.tsdb.retentionTime | default "24h" }} \
             --storage.tsdb.min-block-duration=2h \
             --storage.tsdb.max-block-duration=2h \
+            --storage.tsdb.wal-compression={{ .Values.prometheus.tsdb.compressWAL }} \
             --web.enable-lifecycle \
             --web.external-url=https://{{ .Values.prometheus.host | trim }} \
             --web.enable-admin-api
@@ -75,6 +76,7 @@ spec:
             --storage.tsdb.no-lockfile \
             --storage.tsdb.path=/var/prometheus/data \
             --storage.tsdb.retention.time={{ .Values.prometheus.tsdb.retentionTime | default "24h" }} \
+            --storage.tsdb.wal-compression={{ .Values.prometheus.tsdb.compressWAL }} \
             --web.enable-lifecycle \
             {{- if .Values.prometheus.backup.enabled }}
             --web.enable-admin-api \
