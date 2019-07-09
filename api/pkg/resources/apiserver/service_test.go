@@ -7,6 +7,37 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+func TestExternalServiceCreatorRequiresExposeStrategy(t *testing.T) {
+	testCases := []struct {
+		name           string
+		exposeStrategy corev1.ServiceType
+		errExpected    bool
+	}{
+		{
+			name:           "NodePort is accepted as exposeStrategy",
+			exposeStrategy: corev1.ServiceTypeNodePort,
+		},
+		{
+			name:           "LoadBalancer is accepted as exposeStrategy",
+			exposeStrategy: corev1.ServiceTypeLoadBalancer,
+		},
+		{
+			name:        "Empty is not accepted as exposeStrategy",
+			errExpected: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, creator := ExternalServiceCreator(tc.exposeStrategy)()
+			_, err := creator(&corev1.Service{})
+			if (err != nil) != tc.errExpected {
+				t.Errorf("Expected err: %t, but got err %v", tc.errExpected, err)
+			}
+		})
+	}
+}
+
 func TestExternalServiceCreatorSetsPort(t *testing.T) {
 	testCases := []struct {
 		name               string
@@ -15,8 +46,12 @@ func TestExternalServiceCreatorSetsPort(t *testing.T) {
 		expectedTargetPort intstr.IntOrString
 	}{
 		{
-			name:               "Empty LoadBalancer service, port 443",
-			inService:          &corev1.Service{},
+			name: "Empty LoadBalancer service, port 443",
+			inService: &corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Type: corev1.ServiceTypeNodePort,
+				},
+			},
 			expectedPort:       int32(443),
 			expectedTargetPort: intstr.FromInt(443),
 		},
