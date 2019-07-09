@@ -16,7 +16,7 @@ logging:
     setupContainer:
       image:
         repository: quay.io/kubermatic/util
-        tag: 1.0.0-5
+        tag: 1.1.1
         pullPolicy: IfNotPresent
       resources:
         requests:
