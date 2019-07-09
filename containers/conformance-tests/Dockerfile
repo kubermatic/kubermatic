@@ -1,35 +1,45 @@
-FROM alpine:latest
+FROM fedora:30
 
-RUN apk --no-cache add ca-certificates curl bash
-COPY ./install-kube-tests.sh /opt/install-kube-tests.sh
-RUN /opt/install-kube-tests.sh
+ENV GO_VERSION="1.12.6"
+ENV VAULT_VERSION="1.1.3"
+ENV HELM_VERSION="2.13.1"
+ENV KUBECTL_VERSION="1.14.4"
 
-# This is linux only, thus we can remove the windows and darwin files
-RUN rm -rf /opt/kube-test/*/platforms/darwin
-RUN rm -rf /opt/kube-test/*/platforms/windows
+RUN dnf install -y curl bash unzip jq buildah which findutils make git
 
-FROM golang:1.11.4-stretch
+ADD registries.conf /etc/containers/registries.conf
+# metacopy is only available on Kernels 4.18+. Ubuntu 18.04 ships with 4.15
+RUN sed -i "s/mountopt = \"nodev,metacopy=on\"/mountopt = \"nodev\"/g" /etc/containers/storage.conf
 
-COPY --from=0 /opt/kube-test /opt/kube-test
-COPY start-docker.sh /usr/local/bin/start-docker.sh
-RUN apt update && apt install -y git-crypt curl apt-transport-https software-properties-common unzip jq && \
-  curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add - && \
-  curl -fsSL https://download.docker.com/linux/$(. /etc/os-release; echo "$ID")/gpg \
-    | apt-key add - && \
-  add-apt-repository \
-   "deb [arch=amd64] https://download.docker.com/linux/$(. /etc/os-release; echo "$ID") \
-   $(lsb_release -cs) stable" && \
-  apt-get update && \
-  apt-get install -y --no-install-recommends docker-ce=18.06.0* && \
-  sed -i 's/cgroupfs_mount$/#cgroupfs_mount\n/' /etc/init.d/docker && \
-  echo 'DOCKER_OPTS="${DOCKER_OPTS} --data-root=/docker-graph"' | \
-    tee --append /etc/default/docker && \
-  cd /tmp && curl -LO https://releases.hashicorp.com/vault/1.1.3/vault_1.1.3_linux_amd64.zip && unzip vault_*.zip && mv vault /usr/local/bin && \
-  curl -L https://storage.googleapis.com/kubernetes-helm/helm-v2.13.1-linux-amd64.tar.gz|tar -xvz && mv linux-amd64/helm /usr/local/bin && \
-  curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && \
+# Install vault
+RUN cd /tmp && curl -fLO https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip && \
+    unzip vault_*.zip && \
+    mv vault /usr/local/bin && \
+    rm /tmp/vault_*.zip
+
+# Install Helm
+RUN curl -fL https://storage.googleapis.com/kubernetes-helm/helm-v${HELM_VERSION}-linux-amd64.tar.gz | tar -xvz && \
+    mv linux-amd64/helm /usr/local/bin
+
+# Install kubectl
+RUN curl -fLO https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
     chmod +x kubectl && \
     mv kubectl /usr/local/bin
 
+# Install Golang
+ENV PATH=$PATH:/usr/local/go/bin
+ENV GOPATH /go
+RUN curl -fL -o /tmp/golang.tag.gz https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf /tmp/golang.tag.gz && \
+    rm /tmp/golang.tag.gz
+
+# Install the kubernetes conformance test binaries
+COPY ./install-kube-tests.sh /opt/install-kube-tests.sh
+RUN /opt/install-kube-tests.sh
+# This is linux only, thus we can remove the windows and darwin files
+RUN rm -rf /opt/kube-test/*/platforms/darwin && rm -rf /opt/kube-test/*/platforms/windows
+
+# Install the machine-controller pubkey
 RUN mkdir $HOME/.ssh && \
     echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCo3amVmCkIZo4cgj2kjU2arZKlzzOhaOuveH9aJbL4mlVHVsEcVk+RSty4AMK1GQL3+Ii7iGicKWwge4yefc75aOtUncfF01rnBsNvi3lOqJR/6POHy4OnPXJElvEn7jii/pAUeyr8halBezQTUkvRiUtlJo6oEb2dRN5ujyFm5TuIxgM0UFVGBRoD0agGr87GaQsUahf+PE1zHEid+qQPz7EdMo8/eRNtgikhBG1/ae6xRstAi0QU8EgjKvK1ROXOYTlpTBFElApOXZacH91WvG0xgPnyxIXoKtiCCNGeu/0EqDAgiXfmD2HK/WAXwJNwcmRvBaedQUS4H0lNmvj5' > $HOME/.ssh/id_rsa.pub && \
     chmod 0700 $HOME/.ssh
