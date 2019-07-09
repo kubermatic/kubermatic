@@ -6,3 +6,15 @@ data:
   {{- range $key, $val := .Values.nginx.config }}
   {{ $key }}: {{ $val }}
   {{- end }}
+
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: tcp-services
+
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: udp-services
