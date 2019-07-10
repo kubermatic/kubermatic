@@ -25,9 +25,9 @@ Let us create a Kubermatic Operator that takes care of setting up the various co
 required for running Kubermatic in production. It should be configured via one or multiple
 CRDs and over time replace Helm entirely.
 
-In this first iteration we would focus on installing *Kubermatic*. The logging and monitoring
+In this first iteration we will focus on installing *Kubermatic*. The logging and monitoring
 stacks are out-of-scope for now, as we need to decide if and how to migrate the existing
-configuration flexibility to a 3rd party operator or something we would write ourselves.
+configuration flexibility to a 3rd party operator or something we write ourselves.
 
 An example for a minimal starter configuration could look like this:
 
