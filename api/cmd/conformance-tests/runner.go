@@ -105,7 +105,7 @@ type testRunner struct {
 
 	seedClusterClient     ctrlruntimeclient.Client
 	clusterClientProvider clusterclient.UserClusterConnectionProvider
-	dcs                   map[string]provider.DatacenterMeta
+	dcs                   map[string]*kubermaticv1.SeedDatacenter
 
 	// The label to use to select an existing cluster to test against instead of
 	// creating a new one
@@ -269,9 +269,16 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 		"version":        cluster.Spec.Version,
 	})
 
-	dc, found := r.dcs[cluster.Spec.Cloud.DatacenterName]
-	if !found {
-		return nil, fmt.Errorf("invalid cloud datacenter specified '%s'. Not found in datacenters list", cluster.Spec.Cloud.DatacenterName)
+	var nodeDC *kubermaticv1.NodeLocation
+	for _, seed := range r.dcs {
+		for name, nodeLocation := range seed.Spec.NodeLocations {
+			if name == cluster.Spec.Cloud.DatacenterName {
+				nodeDC = &nodeLocation
+			}
+		}
+	}
+	if nodeDC == nil {
+		return nil, fmt.Errorf("cant find nodeDC %q", cluster.Spec.Cloud.DatacenterName)
 	}
 
 	if r.deleteClusterAfterTests {
@@ -300,7 +307,7 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 	}
 
 	nodeDeployments := scenario.NodeDeployments(r.nodeCount, r.secrets)
-	if err := r.setupNodes(log, scenario.Name(), cluster, userClusterClient, nodeDeployments, dc); err != nil {
+	if err := r.setupNodes(log, scenario.Name(), cluster, userClusterClient, nodeDeployments, nodeDC); err != nil {
 		return nil, fmt.Errorf("failed to setup nodes: %v", err)
 	}
 
@@ -319,7 +326,7 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 		}, nil
 	}
 
-	report, err := r.testCluster(log, scenario.Name(), cluster, userClusterClient, nodeDeployments, dc, kubeconfigFilename, cloudConfigFilename)
+	report, err := r.testCluster(log, scenario.Name(), cluster, userClusterClient, nodeDeployments, kubeconfigFilename, cloudConfigFilename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to test cluster: %v", err)
 	}
@@ -347,7 +354,6 @@ func (r *testRunner) testCluster(
 	cluster *kubermaticv1.Cluster,
 	userClusterClient ctrlruntimeclient.Client,
 	nd []kubermaticapiv1.NodeDeployment,
-	dc provider.DatacenterMeta,
 	kubeconfigFilename string,
 	cloudConfigFilename string,
 ) (*reporters.JUnitTestSuite, error) {
@@ -379,7 +385,7 @@ func (r *testRunner) testCluster(
 		return report, nil
 	}
 
-	ginkgoRuns, err := r.getGinkgoRuns(log, scenarioName, kubeconfigFilename, cloudConfigFilename, cluster, nd, dc)
+	ginkgoRuns, err := r.getGinkgoRuns(log, scenarioName, kubeconfigFilename, cloudConfigFilename, cluster, nd)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Ginkgo runs: %v", err)
 	}
@@ -509,7 +515,12 @@ func (r *testRunner) executeGinkgoRunWithRetries(log *logrus.Entry, run *ginkgoR
 	return ginkgoRes, err
 }
 
-func (r *testRunner) setupNodes(parentLog *logrus.Entry, scenarioName string, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, nodeDeployments []kubermaticapiv1.NodeDeployment, dc provider.DatacenterMeta) error {
+func (r *testRunner) setupNodes(parentLog *logrus.Entry,
+	scenarioName string,
+	cluster *kubermaticv1.Cluster,
+	userClusterClient ctrlruntimeclient.Client,
+	nodeDeployments []kubermaticapiv1.NodeDeployment,
+	nodeDC *kubermaticv1.NodeLocation) error {
 	ctx := context.Background()
 	log := parentLog.WithFields(logrus.Fields{
 		"node-count": r.nodeCount,
@@ -537,7 +548,7 @@ func (r *testRunner) setupNodes(parentLog *logrus.Entry, scenarioName string, cl
 		// is unset but need a deterministic name because we retry creation and dont
 		// want to accidentally create multiple MachineDeployments
 		nd.Name = fmt.Sprintf("md-%s-%d", scenarioName, ndIndex)
-		machineDeployment, err := machine.Deployment(cluster, &nd, dc, keys)
+		machineDeployment, err := machine.Deployment(cluster, &nd, nodeDC, keys)
 		if err != nil {
 			return fmt.Errorf("failed to get MachineDeployment from NodeDeployment: %v", err)
 		}
@@ -826,7 +837,6 @@ func (r *testRunner) getGinkgoRuns(
 	cloudConfigFilename string,
 	cluster *kubermaticv1.Cluster,
 	nd []kubermaticapiv1.NodeDeployment,
-	dc provider.DatacenterMeta,
 ) ([]*ginkgoRun, error) {
 	kubeconfigFilename = path.Clean(kubeconfigFilename)
 	repoRoot := path.Clean(r.repoRoot)

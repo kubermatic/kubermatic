@@ -54,7 +54,7 @@ type Opts struct {
 	clusterClientProvider        clusterclient.UserClusterConnectionProvider
 	dcFile                       string
 	repoRoot                     string
-	dcs                          map[string]provider.DatacenterMeta
+	dcs                          map[string]*kubermaticv1.SeedDatacenter
 	cleanupOnStart               bool
 	clusterParallelCount         int
 	workerName                   string
@@ -264,7 +264,7 @@ func main() {
 		}
 	}()
 
-	dcs, err := provider.LoadDatacentersMeta(opts.dcFile)
+	dcs, err := provider.LoadDatacenters(opts.dcFile)
 	if err != nil {
 		log.Fatalf("failed to load datacenter yaml %q: %v", opts.dcFile, err)
 	}
