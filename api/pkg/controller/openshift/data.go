@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kubernetesresources "github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 
@@ -26,7 +25,7 @@ import (
 type openshiftData struct {
 	cluster           *kubermaticv1.Cluster
 	client            client.Client
-	dc                *provider.DatacenterMeta
+	dc                *kubermaticv1.NodeLocation
 	overwriteRegistry string
 	nodeAccessNetwork string
 	oidc              OIDCConfig
@@ -34,7 +33,7 @@ type openshiftData struct {
 	kubermaticImage   string
 }
 
-func (od *openshiftData) DC() *provider.DatacenterMeta {
+func (od *openshiftData) DC() *kubermaticv1.NodeLocation {
 	return od.dc
 }
 

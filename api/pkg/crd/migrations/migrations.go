@@ -33,7 +33,7 @@ type cleanupContext struct {
 	kubeClient       kubernetes.Interface
 	kubermaticClient kubermaticclientset.Interface
 	config           *rest.Config
-	dcs              map[string]provider.DatacenterMeta
+	dc               *kubermaticv1.SeedDatacenter
 	cloudProvider    map[string]provider.CloudProvider
 }
 
@@ -42,7 +42,7 @@ type cleanupContext struct {
 type ClusterTask func(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error
 
 // RunAll runs all migrations
-func RunAll(config *rest.Config, workerName string, dcs map[string]provider.DatacenterMeta) error {
+func RunAll(config *rest.Config, workerName string, dc *kubermaticv1.SeedDatacenter) error {
 	// required when performing calls against manually crafted URL's
 	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
 
@@ -59,8 +59,8 @@ func RunAll(config *rest.Config, workerName string, dcs map[string]provider.Data
 		kubeClient:       kubeClient,
 		kubermaticClient: kubermatiClient,
 		config:           config,
-		dcs:              dcs,
-		cloudProvider:    cloud.Providers(dcs),
+		dc:               dc,
+		cloudProvider:    cloud.Providers(dc),
 	}
 
 	if err := cleanupClusters(workerName, ctx); err != nil {

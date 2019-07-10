@@ -24,13 +24,13 @@ const (
 )
 
 type gcp struct {
-	dcs map[string]provider.DatacenterMeta
+	dc *kubermaticv1.SeedDatacenter
 }
 
 // NewCloudProvider creates a new gcp provider.
-func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProvider {
+func NewCloudProvider(dc *kubermaticv1.SeedDatacenter) provider.CloudProvider {
 	return &gcp{
-		dcs: dcs,
+		dc: dc,
 	}
 }
 
@@ -38,12 +38,12 @@ func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProv
 // InitializeCloudProvider initializes a cluster.
 func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var err error
-	dc, ok := g.dcs[cluster.Spec.Cloud.DatacenterName]
+	nodeDC, ok := g.dc.Spec.NodeLocations[cluster.Spec.Cloud.DatacenterName]
 	if !ok {
 		return nil, fmt.Errorf("could not find datacenter %s", cluster.Spec.Cloud.DatacenterName)
 	}
 
-	if dc.Spec.GCP == nil {
+	if nodeDC.GCP == nil {
 		return nil, fmt.Errorf("datacenter %q is not a valid GCP datacenter", cluster.Spec.Cloud.DatacenterName)
 	}
 

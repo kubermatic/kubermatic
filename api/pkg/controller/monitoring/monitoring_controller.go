@@ -10,7 +10,6 @@ import (
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -55,8 +54,7 @@ type Reconciler struct {
 
 	recorder record.EventRecorder
 
-	dcs                                              map[string]provider.DatacenterMeta
-	dc                                               string
+	dc                                               *kubermaticv1.SeedDatacenter
 	overwriteRegistry                                string
 	nodePortRange                                    string
 	nodeAccessNetwork                                string
@@ -82,8 +80,7 @@ func Add(
 	workerName string,
 
 	userClusterConnProvider userClusterConnectionProvider,
-	dc string,
-	dcs map[string]provider.DatacenterMeta,
+	dc *kubermaticv1.SeedDatacenter,
 	overwriteRegistry string,
 	nodePortRange string,
 	nodeAccessNetwork string,
@@ -119,8 +116,7 @@ func Add(
 		dockerPullConfigJSON:                             dockerPullConfigJSON,
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
 
-		dc:  dc,
-		dcs: dcs,
+		dc: dc,
 
 		features: features,
 	}

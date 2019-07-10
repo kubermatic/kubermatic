@@ -11,7 +11,6 @@ import (
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/address"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
@@ -73,8 +72,7 @@ type Reconciler struct {
 	client.Client
 	scheme               *runtime.Scheme
 	recorder             record.EventRecorder
-	dcs                  map[string]provider.DatacenterMeta
-	dc                   string
+	dc                   *kubermaticv1.SeedDatacenter
 	overwriteRegistry    string
 	nodeAccessNetwork    string
 	etcdDiskSize         resource.Quantity
@@ -90,8 +88,7 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	workerName string,
-	dc string,
-	dcs map[string]provider.DatacenterMeta,
+	dc *kubermaticv1.SeedDatacenter,
 	overwriteRegistry,
 	nodeAccessNetwork string,
 	etcdDiskSize resource.Quantity,
@@ -106,7 +103,6 @@ func Add(
 		scheme:               mgr.GetScheme(),
 		recorder:             mgr.GetRecorder(ControllerName),
 		dc:                   dc,
-		dcs:                  dcs,
 		overwriteRegistry:    overwriteRegistry,
 		nodeAccessNetwork:    nodeAccessNetwork,
 		etcdDiskSize:         etcdDiskSize,
@@ -198,14 +194,14 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("failed to ensure Namespace: %v", err)
 	}
 
-	dc, found := r.dcs[cluster.Spec.Cloud.DatacenterName]
+	nodeDC, found := r.dc.Spec.NodeLocations[cluster.Spec.Cloud.DatacenterName]
 	if !found {
 		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
 	}
 	osData := &openshiftData{
 		cluster:           cluster,
 		client:            r.Client,
-		dc:                &dc,
+		dc:                &nodeDC,
 		overwriteRegistry: r.overwriteRegistry,
 		nodeAccessNetwork: r.nodeAccessNetwork,
 		oidc:              r.oidc,
@@ -644,7 +640,7 @@ func (r *Reconciler) ensureNamespace(ctx context.Context, c *kubermaticv1.Cluste
 }
 
 func (r *Reconciler) address(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	modifiers, err := address.SyncClusterAddress(ctx, cluster, r.Client, r.externalURL, r.dc, r.dcs)
+	modifiers, err := address.SyncClusterAddress(ctx, cluster, r.Client, r.externalURL, r.dc)
 	if err != nil {
 		return err
 	}
