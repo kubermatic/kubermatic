@@ -8,9 +8,8 @@ import (
 	"github.com/oklog/run"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
-	seedproxy "github.com/kubermatic/kubermatic/api/pkg/controller/seed-proxy"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/service-account"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/user-project-binding"
+	serviceaccount "github.com/kubermatic/kubermatic/api/pkg/controller/service-account"
+	userprojectbinding "github.com/kubermatic/kubermatic/api/pkg/controller/user-project-binding"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/log"
@@ -173,8 +172,8 @@ func createServiceAccountsController(ctrlCtx *controllerContext) (runnerFn, erro
 }
 
 func createSeedProxyController(ctrlCtx *controllerContext) (runnerFn, error) {
-	if err := seedproxy.Add(ctrlCtx.mgr, 1, ctrlCtx.kubeconfig, ctrlCtx.datacenters); err != nil {
-		return nil, err
-	}
+	// if err := seedproxy.Add(ctrlCtx.mgr, 1, ctrlCtx.kubeconfig, ctrlCtx.datacenters); err != nil {
+	// 	return nil, err
+	// }
 	return noop, nil
 }
