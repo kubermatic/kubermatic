@@ -9,8 +9,8 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	seedproxy "github.com/kubermatic/kubermatic/api/pkg/controller/seed-proxy"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/service-account"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/user-project-binding"
+	serviceaccount "github.com/kubermatic/kubermatic/api/pkg/controller/service-account"
+	userprojectbinding "github.com/kubermatic/kubermatic/api/pkg/controller/user-project-binding"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	"github.com/kubermatic/kubermatic/api/pkg/log"
@@ -33,7 +33,7 @@ var allControllers = map[string]controllerCreator{
 	"RBAC":               createRBACContoller,
 	"UserProjectBinding": createUserProjectBindingController,
 	"ServiceAccounts":    createServiceAccountsController,
-	"SeedProxy":          createSeedProxyController,
+	// "SeedProxy":          createSeedProxyController,
 }
 
 func createAllControllers(ctrlCtx *controllerContext) (map[string]runnerFn, error) {
