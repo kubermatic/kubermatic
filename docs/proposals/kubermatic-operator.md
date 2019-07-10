@@ -123,8 +123,6 @@ created by the cluster admin.
   flag for clusters).
 * We want to put the easy-configuration-experience into a (future) CLI that asks simple
   questions and generates one or more CRD manifests.
-* The operator is solely responsible for managing Kubermatic installations. It’s not a
-  toolset for consulting jobs to setup pretty monitoring stacks.
 
 ## Non-Goals
 
@@ -135,3 +133,5 @@ created by the cluster admin.
 * There is no need for a Big Bang release where we replace all charts with the operator
   at one point in time. Instead we will have a migration phase where both the operator and
   the charts are used.
+* The operator is solely responsible for managing Kubermatic installations. It’s not a
+  toolset for consulting jobs to setup pretty monitoring stacks.
