@@ -5,6 +5,7 @@ data:
     username    = "openstack-username"
     password    = "openstack-password"
     tenant-name = "openstack-tenant"
+    tenant-id   = ""
     domain-name = "openstack-domain"
     region      = "cbk"
 
