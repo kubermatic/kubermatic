@@ -1,3 +1,89 @@
+### [v2.11.0]()
+
+
+Supported Kubernetes versions:
+- `1.11.5-10`
+- `1.12.3-10`
+- `1.13.0-5`
+- `1.13.7`
+- `1.14.0-1`
+- `1.14.3-4`
+- `1.15.0`
+
+
+**Cloud providers:**
+- It is now possible to create Kubermatic-managed clusters on Packet. [#3419](https://github.com/kubermatic/kubermatic/issues/3419) ([nikhita](https://github.com/nikhita))
+- It is now possible to create Kubermatic-managed clusters on GCP. [#3350](https://github.com/kubermatic/kubermatic/issues/3350) ([nikhita](https://github.com/nikhita))
+- the API stops creating an initial node deployment for new cluster for KubeAdm providers. [#3346](https://github.com/kubermatic/kubermatic/issues/3346) ([p0lyn0mial](https://github.com/p0lyn0mial))
+- Openstack: datacenter can be configured with minimum required CPU and memory for nodes [#3487](https://github.com/kubermatic/kubermatic/issues/3487) ([bashofmann](https://github.com/bashofmann))
+- vsphere: root disk size is now configurable [#3629](https://github.com/kubermatic/kubermatic/issues/3629) ([kgroschoff](https://github.com/kgroschoff))
+- Azure: fixed failure to provision on new regions due to lower number of fault domains [#3584](https://github.com/kubermatic/kubermatic/issues/3584) ([kdomanski](https://github.com/kdomanski))
+
+
+**Monitoring:**
+- [ACTION REQUIRED] refactored Alertmanager Helm chart for master-cluster monitoring, see documentation for migration notes  [#3448](https://github.com/kubermatic/kubermatic/issues/3448) ([xrstf](https://github.com/xrstf))
+- cAdvisor metrics are now being scraped for user clusters [#3390](https://github.com/kubermatic/kubermatic/issues/3390) ([mrIncompetent](https://github.com/mrIncompetent))
+- fixed kube-state-metrics in user-clusters not being scraped [#3427](https://github.com/kubermatic/kubermatic/issues/3427) ([xrstf](https://github.com/xrstf))
+- Added Grafana dashboards for Go applications [#3459](https://github.com/kubermatic/kubermatic/issues/3459) ([xrstf](https://github.com/xrstf))
+- Added Helm-Exporter to fire alarms if a chart is stuck/failed [#3473](https://github.com/kubermatic/kubermatic/issues/3473) ([xrstf](https://github.com/xrstf))
+- Improved debugging of resource leftovers through new etcd Object Count dashboard [#3508](https://github.com/kubermatic/kubermatic/issues/3508) ([xrstf](https://github.com/xrstf))
+- New Grafana dashboards for monitoring Elasticsearch [#3516](https://github.com/kubermatic/kubermatic/issues/3516) ([xrstf](https://github.com/xrstf))
+- Added optional Thanos integration to Prometheus for better long-term metrics storage [#3531](https://github.com/kubermatic/kubermatic/issues/3531) ([xrstf](https://github.com/xrstf))
+
+
+**Misc:**
+- [ACTION REQUIRED] nodePortPoxy Helm values has been renamed to nodePortProxy, old root key is now deprecated; please update your Helm values [#3418](https://github.com/kubermatic/kubermatic/issues/3418) ([xrstf](https://github.com/xrstf))
+- Service accounts have been implemented.
+- Support for Kubernetes 1.15 was added [#3579](https://github.com/kubermatic/kubermatic/issues/3579) ([alvaroaleman](https://github.com/alvaroaleman))
+- More details are shown when using `kubectl get machine/machineset/machinedeployment` [#3364](https://github.com/kubermatic/kubermatic/issues/3364) ([alvaroaleman](https://github.com/alvaroaleman))
+- The resiliency of in-cluster DNS was greatly improved by adding the nodelocal-dns-cache addon, which runs a DNS cache on each node, avoiding the need to use NAT for DNS queries [#3369](https://github.com/kubermatic/kubermatic/issues/3369) ([alvaroaleman](https://github.com/alvaroaleman))
+- Added containerRuntimeVersion and kernelVersion to NodeInfo [#3381](https://github.com/kubermatic/kubermatic/issues/3381) ([bashofmann](https://github.com/bashofmann))
+- It is now possible to configure Kubermatic to create one service of type LoadBalancer per user cluster instead of exposing all of them via the nodeport-proxy on one central LoadBalancer service [#3387](https://github.com/kubermatic/kubermatic/issues/3387) ([alvaroaleman](https://github.com/alvaroaleman))
+- Pod AntiAffinity and PDBs were added to the Kubermatic control plane components and the monitoring stack to spread them out if possible and reduce the chance of unavailability [#3393](https://github.com/kubermatic/kubermatic/issues/3393) ([alvaroaleman](https://github.com/alvaroaleman))
+- Reduced API latency for loading Nodes & NodeDeployments [#3405](https://github.com/kubermatic/kubermatic/issues/3405) ([mrIncompetent](https://github.com/mrIncompetent))
+- replace gambol99/keycloak-proxy 2.3.0 with official keycloak-gatekeeper 6.0.1 [#3411](https://github.com/kubermatic/kubermatic/issues/3411) ([xrstf](https://github.com/xrstf))
+- More additional printer columns for kubermatic crds [#3542](https://github.com/kubermatic/kubermatic/issues/3542) ([bashofmann](https://github.com/bashofmann))
+- Insecure Kubernetes versions v1.13.6 and v1.14.2 have been disabled. [#3554](https://github.com/kubermatic/kubermatic/issues/3554) ([mrIncompetent](https://github.com/mrIncompetent))
+- Workers can have a http proxy configured at datacenter level [#3615](https://github.com/kubermatic/kubermatic/issues/3615) ([mrIncompetent](https://github.com/mrIncompetent))
+- ICMP traffic to clusters is now always permitted to allow MTU discovery [#3618](https://github.com/kubermatic/kubermatic/issues/3618) ([kdomanski](https://github.com/kdomanski))
+- A bug that caused errors on very big addon manifests was fixed [#3366](https://github.com/kubermatic/kubermatic/issues/3366) ([alvaroaleman](https://github.com/alvaroaleman))
+- Updated Prometheus to 2.10.0 [#3612](https://github.com/kubermatic/kubermatic/issues/3612) ([xrstf](https://github.com/xrstf))
+- Updated cert-manager to 0.8.0 [#3525](https://github.com/kubermatic/kubermatic/issues/3525) ([xrstf](https://github.com/xrstf))
+- Updated Elastic stack to 7.0.0 [#3358](https://github.com/kubermatic/kubermatic/issues/3358) ([xrstf](https://github.com/xrstf))
+- Updated Minio to RELEASE.2019-06-11T00-44-33Z [#3614](https://github.com/kubermatic/kubermatic/issues/3614) ([xrstf](https://github.com/xrstf))
+- Updated Grafana to 6.2.1 [#3528](https://github.com/kubermatic/kubermatic/issues/3528) ([xrstf](https://github.com/xrstf))
+- Updated kube-state-metrics to 1.6.0 [#3420](https://github.com/kubermatic/kubermatic/issues/3420) ([xrstf](https://github.com/xrstf))
+- Updated Dex to 2.16.0 [#3361](https://github.com/kubermatic/kubermatic/issues/3361) ([xrstf](https://github.com/xrstf))
+- Updated Alertmanager to 0.17.0, deprecate version field in favor of image.tag in Helm values.yaml [#3410](https://github.com/kubermatic/kubermatic/issues/3410) ([xrstf](https://github.com/xrstf))
+- Updated `machine-controller` to `v1.4.2`. [#3778](https://github.com/kubermatic/kubermatic/issues/3778) ([alvaroaleman](https://github.com/alvaroaleman))
+- Updated node-exporter to 0.18.1 [#3613](https://github.com/kubermatic/kubermatic/issues/3613) ([xrstf](https://github.com/xrstf))
+- Updated fluent-bit to 1.1.2 [#3561](https://github.com/kubermatic/kubermatic/issues/3561) ([xrstf](https://github.com/xrstf))
+- Updated Velero to 1.0 [#3527](https://github.com/kubermatic/kubermatic/issues/3527) ([xrstf](https://github.com/xrstf))
+
+
+**Dashboard:**
+- The project menu has been redesigned. [#1195](https://github.com/kubermatic/dashboard-v2/issues/1195) ([maciaszczykm](https://github.com/maciaszczykm))
+- Fixed changing default OpenStack image on operating system change [#1215](https://github.com/kubermatic/dashboard-v2/issues/1215) ([bashofmann](https://github.com/bashofmann))
+- `containerRuntimeVersion` and `kernelVersion` are now displayed on NodeDeployment detail page [#1216](https://github.com/kubermatic/dashboard-v2/issues/1216) ([bashofmann](https://github.com/bashofmann))
+- Custom links can now be added to the footer. [#1220](https://github.com/kubermatic/dashboard-v2/issues/1220) ([maciaszczykm](https://github.com/maciaszczykm))
+- The OIDC provider URL is now configurable via &#34;oidc_provider_url&#34; variable. [#1222](https://github.com/kubermatic/dashboard-v2/issues/1222) ([maciaszczykm](https://github.com/maciaszczykm))
+- The application logo has been changed. [#1232](https://github.com/kubermatic/dashboard-v2/issues/1232) ([maciaszczykm](https://github.com/maciaszczykm))
+- The breadcrumbs component has been removed. The dialogs and buttons have been redesigned. [#1233](https://github.com/kubermatic/dashboard-v2/issues/1233) ([maciaszczykm](https://github.com/maciaszczykm))
+- Packet cloud provider is now supported. [#1238](https://github.com/kubermatic/dashboard-v2/issues/1238) ([maciaszczykm](https://github.com/maciaszczykm))
+- Tables have been redesigned. [#1240](https://github.com/kubermatic/dashboard-v2/issues/1240) ([kgroschoff](https://github.com/kgroschoff))
+- Added option to specify taints when creating/updating NodeDeployments [#1244](https://github.com/kubermatic/dashboard-v2/issues/1244) ([bashofmann](https://github.com/bashofmann))
+- Styling of the cluster details view has been improved. [#1270](https://github.com/kubermatic/dashboard-v2/issues/1270) ([maciaszczykm](https://github.com/maciaszczykm))
+- Missing parameters for OIDC providers have been added. [#1273](https://github.com/kubermatic/dashboard-v2/issues/1273) ([maciaszczykm](https://github.com/maciaszczykm))
+- Dates are now displayed using relative format, i.e. 3 days ago. [#1303](https://github.com/kubermatic/dashboard-v2/issues/1303) ([maciaszczykm](https://github.com/maciaszczykm))
+- Redesigned dialogs and cluster details page. [#1305](https://github.com/kubermatic/dashboard-v2/issues/1305) ([maciaszczykm](https://github.com/maciaszczykm))
+- Add provider GCP to UI [#1307](https://github.com/kubermatic/dashboard-v2/issues/1307) ([kgroschoff](https://github.com/kgroschoff))
+- Redesigned notifications. [#1315](https://github.com/kubermatic/dashboard-v2/issues/1315) ([maciaszczykm](https://github.com/maciaszczykm))
+- The Instance Profile Name for AWS could be specified in UI. [#1317](https://github.com/kubermatic/dashboard-v2/issues/1317) ([kgroschoff](https://github.com/kgroschoff))
+- Redesigned node deployment view. [#1320](https://github.com/kubermatic/dashboard-v2/issues/1320) ([maciaszczykm](https://github.com/maciaszczykm))
+- Redesigned cluster details page. [#1345](https://github.com/kubermatic/dashboard-v2/issues/1345) ([kubermatic-bot](https://github.com/kubermatic-bot))
+
+
+
 ### [v2.10.2]()
 
 
