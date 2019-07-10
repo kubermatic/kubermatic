@@ -21,10 +21,18 @@ func HealthyDeployment(ctx context.Context, client client.Client, nn types.Names
 		return kubermaticv1.DOWN, err
 	}
 
-	if deployment.Status.ReadyReplicas >= minReady {
+	// component creation
+	if deployment.Status.UnavailableReplicas >= minReady {
+		return kubermaticv1.PROVISIONING, nil
+	}
+	// update scenario
+	if deployment.Status.UpdatedReplicas != *deployment.Spec.Replicas || deployment.Status.Replicas != *deployment.Spec.Replicas {
+		return kubermaticv1.PROVISIONING, nil
+	}
+	if deployment.Status.UpdatedReplicas == *deployment.Spec.Replicas && deployment.Status.Replicas == *deployment.Spec.Replicas {
 		return kubermaticv1.UP, nil
 	}
-	return kubermaticv1.PROVISIONING, nil
+	return kubermaticv1.DOWN, nil
 }
 
 // HealthyStatefulSe tells if the deployment has a minimum of minReady replicas in Ready status
@@ -37,8 +45,14 @@ func HealthyStatefulSet(ctx context.Context, client client.Client, nn types.Name
 		return kubermaticv1.DOWN, nil
 	}
 
-	if statefulSet.Status.ReadyReplicas >= minReady {
+	if statefulSet.Status.ReadyReplicas < minReady {
+		return kubermaticv1.PROVISIONING, nil
+	}
+	if statefulSet.Status.UpdatedReplicas != *statefulSet.Spec.Replicas || statefulSet.Status.Replicas != *statefulSet.Spec.Replicas {
+		return kubermaticv1.PROVISIONING, nil
+	}
+	if statefulSet.Status.UpdatedReplicas == *statefulSet.Spec.Replicas && statefulSet.Status.Replicas == *statefulSet.Spec.Replicas {
 		return kubermaticv1.UP, nil
 	}
-	return kubermaticv1.PROVISIONING, nil
+	return kubermaticv1.DOWN, nil
 }
