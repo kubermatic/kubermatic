@@ -5,6 +5,9 @@ set -euo pipefail
 # receives a SIGINT
 set -o monitor
 
+cd "$(dirname "$0")/"
+source ./../lib.sh
+
 echodate "Getting secrets from Vault"
 export VAULT_ADDR=https://vault.loodse.com/
 export VAULT_TOKEN=$(vault write \
@@ -13,8 +16,6 @@ export VAULT_TOKEN=$(vault write \
   | jq .auth.client_token -r)
 
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
-
-cd "$(dirname "$0")/"
 
 rm -f /tmp/id_rsa
 vault kv get -field=key dev/e2e-machine-controller-ssh-key > /tmp/id_rsa
