@@ -1289,18 +1289,20 @@ func genTestMachineDeployment(name, rawProviderSpec string, selector map[string]
 }
 
 func genTestCluster(isControllerReady bool) *kubermaticv1.Cluster {
+	controllerStatus := kubermaticv1.HealthStatusDown
+	if isControllerReady {
+		controllerStatus = kubermaticv1.HealthStatusUp
+	}
 	cluster := test.GenDefaultCluster()
 	cluster.Status = kubermaticv1.ClusterStatus{
-		Health: kubermaticv1.ClusterHealth{
-			ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
-				Apiserver:                    true,
-				Scheduler:                    true,
-				Controller:                   isControllerReady,
-				MachineController:            true,
-				Etcd:                         true,
-				CloudProviderInfrastructure:  true,
-				UserClusterControllerManager: true,
-			},
+		ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
+			Apiserver:                    kubermaticv1.HealthStatusUp,
+			Scheduler:                    kubermaticv1.HealthStatusUp,
+			Controller:                   controllerStatus,
+			MachineController:            kubermaticv1.HealthStatusUp,
+			Etcd:                         kubermaticv1.HealthStatusUp,
+			CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
+			UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 		},
 	}
 	cluster.Spec.Cloud = kubermaticv1.CloudSpec{

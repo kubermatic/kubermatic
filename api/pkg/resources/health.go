@@ -16,23 +16,23 @@ func HealthyDeployment(ctx context.Context, client client.Client, nn types.Names
 	deployment := &appsv1.Deployment{}
 	if err := client.Get(ctx, nn, deployment); err != nil {
 		if kerrors.IsNotFound(err) {
-			return kubermaticv1.DOWN, nil
+			return kubermaticv1.HealthStatusDown, nil
 		}
-		return kubermaticv1.DOWN, err
+		return kubermaticv1.HealthStatusDown, err
 	}
 
 	// component creation
 	if deployment.Status.UnavailableReplicas >= minReady {
-		return kubermaticv1.PROVISIONING, nil
+		return kubermaticv1.HealthStatusProvisioning, nil
 	}
 	// update scenario
 	if deployment.Status.UpdatedReplicas != *deployment.Spec.Replicas || deployment.Status.Replicas != *deployment.Spec.Replicas {
-		return kubermaticv1.PROVISIONING, nil
+		return kubermaticv1.HealthStatusProvisioning, nil
 	}
 	if deployment.Status.UpdatedReplicas == *deployment.Spec.Replicas && deployment.Status.Replicas == *deployment.Spec.Replicas {
-		return kubermaticv1.UP, nil
+		return kubermaticv1.HealthStatusUp, nil
 	}
-	return kubermaticv1.DOWN, nil
+	return kubermaticv1.HealthStatusDown, nil
 }
 
 // HealthyStatefulSe tells if the deployment has a minimum of minReady replicas in Ready status
@@ -40,19 +40,19 @@ func HealthyStatefulSet(ctx context.Context, client client.Client, nn types.Name
 	statefulSet := &appsv1.StatefulSet{}
 	if err := client.Get(ctx, nn, statefulSet); err != nil {
 		if kerrors.IsNotFound(err) {
-			return kubermaticv1.DOWN, nil
+			return kubermaticv1.HealthStatusDown, nil
 		}
-		return kubermaticv1.DOWN, nil
+		return kubermaticv1.HealthStatusDown, nil
 	}
 
 	if statefulSet.Status.ReadyReplicas < minReady {
-		return kubermaticv1.PROVISIONING, nil
+		return kubermaticv1.HealthStatusProvisioning, nil
 	}
 	if statefulSet.Status.UpdatedReplicas != *statefulSet.Spec.Replicas || statefulSet.Status.Replicas != *statefulSet.Spec.Replicas {
-		return kubermaticv1.PROVISIONING, nil
+		return kubermaticv1.HealthStatusProvisioning, nil
 	}
 	if statefulSet.Status.UpdatedReplicas == *statefulSet.Spec.Replicas && statefulSet.Status.Replicas == *statefulSet.Spec.Replicas {
-		return kubermaticv1.UP, nil
+		return kubermaticv1.HealthStatusUp, nil
 	}
-	return kubermaticv1.DOWN, nil
+	return kubermaticv1.HealthStatusDown, nil
 }

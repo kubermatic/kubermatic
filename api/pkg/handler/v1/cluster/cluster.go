@@ -422,27 +422,15 @@ func HealthEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint 
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		return apiv1.ClusterHealth{
-			Apiserver:                    convertHealthStatus(existingCluster.Status.Health.Apiserver, existingCluster.Status.ExtendedHealth.Apiserver),
-			Scheduler:                    convertHealthStatus(existingCluster.Status.Health.Scheduler, existingCluster.Status.ExtendedHealth.Scheduler),
-			Controller:                   convertHealthStatus(existingCluster.Status.Health.Controller, existingCluster.Status.ExtendedHealth.Controller),
-			MachineController:            convertHealthStatus(existingCluster.Status.Health.MachineController, existingCluster.Status.ExtendedHealth.MachineController),
-			Etcd:                         convertHealthStatus(existingCluster.Status.Health.Etcd, existingCluster.Status.ExtendedHealth.Etcd),
-			CloudProviderInfrastructure:  convertHealthStatus(existingCluster.Status.Health.CloudProviderInfrastructure, existingCluster.Status.ExtendedHealth.CloudProviderInfrastructure),
-			UserClusterControllerManager: convertHealthStatus(existingCluster.Status.Health.UserClusterControllerManager, existingCluster.Status.ExtendedHealth.UserClusterControllerManager),
+			Apiserver:                    existingCluster.Status.ExtendedHealth.Apiserver,
+			Scheduler:                    existingCluster.Status.ExtendedHealth.Scheduler,
+			Controller:                   existingCluster.Status.ExtendedHealth.Controller,
+			MachineController:            existingCluster.Status.ExtendedHealth.MachineController,
+			Etcd:                         existingCluster.Status.ExtendedHealth.Etcd,
+			CloudProviderInfrastructure:  existingCluster.Status.ExtendedHealth.CloudProviderInfrastructure,
+			UserClusterControllerManager: existingCluster.Status.ExtendedHealth.UserClusterControllerManager,
 		}, nil
 	}
-}
-
-// convertHealthStatus this method merge healthy state with health status and return HealthStatus as a final result.
-// It prevents situation when cluster doesn't have extended health statuses fields and final result can be inconsistent.
-func convertHealthStatus(healthy bool, healthStatus kubermaticapiv1.HealthStatus) kubermaticapiv1.HealthStatus {
-	if healthStatus == kubermaticapiv1.PROVISIONING {
-		return healthStatus
-	}
-	if healthy {
-		return kubermaticapiv1.UP
-	}
-	return kubermaticapiv1.DOWN
 }
 
 func AssignSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {

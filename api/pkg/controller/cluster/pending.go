@@ -37,7 +37,7 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 		return nil, err
 	}
 
-	if cluster.Status.Health.Apiserver {
+	if cluster.Status.ExtendedHealth.Apiserver == kubermaticv1.HealthStatusUp {
 		// Controlling of user-cluster resources
 		reachable, err := r.clusterIsReachable(ctx, cluster)
 		if err != nil {
@@ -61,8 +61,8 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 
 	}
 
-	if !cluster.Status.Health.AllHealthy() {
-		glog.V(4).Infof("Cluster %q not yet healthy: %+v", cluster.Name, cluster.Status.Health)
+	if !cluster.Status.ExtendedHealth.AllHealthy() {
+		glog.V(4).Infof("Cluster %q not yet healthy: %+v", cluster.Name, cluster.Status.ExtendedHealth)
 		return &reconcile.Result{RequeueAfter: reachableCheckPeriod}, nil
 	}
 

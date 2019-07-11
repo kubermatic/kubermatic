@@ -239,7 +239,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	// like this combined with tribal knowledge and "someone is noticing this
 	// isn't working correctly"
 	// https://github.com/kubermatic/kubermatic/issues/2948
-	if !cluster.Status.Health.CloudProviderInfrastructure {
+	if kubermaticv1.HealthStatusUp != cluster.Status.ExtendedHealth.CloudProviderInfrastructure {
 		return &reconcile.Result{RequeueAfter: 1 * time.Second}, nil
 	}
 	if err := r.configMaps(ctx, osData); err != nil {
@@ -272,7 +272,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("failed to sync health: %v", err)
 	}
 
-	if !osData.Cluster().Status.Health.Apiserver {
+	if kubermaticv1.HealthStatusUp != osData.Cluster().Status.ExtendedHealth.Apiserver {
 		return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
@@ -296,20 +296,18 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 }
 
 func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error {
-	currentHealth := osData.Cluster().Status.Health.DeepCopy()
-	extendedHealth := osData.Cluster().Status.ExtendedHealth.DeepCopy()
+	currentHealth := osData.Cluster().Status.ExtendedHealth.DeepCopy()
 	type depInfo struct {
-		healthy      *bool
 		healthStatus *kubermaticv1.HealthStatus
 		minReady     int32
 	}
 
 	healthMapping := map[string]*depInfo{
-		openshiftresources.ApiserverDeploymentName:         {healthy: &currentHealth.Apiserver, healthStatus: &extendedHealth.Apiserver, minReady: 1},
-		openshiftresources.ControllerManagerDeploymentName: {healthy: &currentHealth.Controller, healthStatus: &extendedHealth.Controller, minReady: 1},
-		resources.MachineControllerDeploymentName:          {healthy: &currentHealth.MachineController, healthStatus: &extendedHealth.MachineController, minReady: 1},
-		resources.OpenVPNServerDeploymentName:              {healthy: &currentHealth.OpenVPN, healthStatus: &extendedHealth.OpenVPN, minReady: 1},
-		resources.UserClusterControllerDeploymentName:      {healthy: &currentHealth.UserClusterControllerManager, healthStatus: &extendedHealth.UserClusterControllerManager, minReady: 1},
+		openshiftresources.ApiserverDeploymentName:         {healthStatus: &currentHealth.Apiserver, minReady: 1},
+		openshiftresources.ControllerManagerDeploymentName: {healthStatus: &currentHealth.Controller, minReady: 1},
+		resources.MachineControllerDeploymentName:          {healthStatus: &currentHealth.MachineController, minReady: 1},
+		resources.OpenVPNServerDeploymentName:              {healthStatus: &currentHealth.OpenVPN, minReady: 1},
+		resources.UserClusterControllerDeploymentName:      {healthStatus: &currentHealth.UserClusterControllerManager, minReady: 1},
 	}
 
 	for name := range healthMapping {
@@ -317,7 +315,6 @@ func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error
 		if err != nil {
 			return fmt.Errorf("failed to get dep health %q: %v", name, err)
 		}
-		*healthMapping[name].healthy = isRunning(status)
 		*healthMapping[name].healthStatus = status
 	}
 
@@ -325,26 +322,19 @@ func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error
 	if err != nil {
 		return fmt.Errorf("failed to get etcd health: %v", err)
 	}
-	currentHealth.Etcd = isRunning(status)
-	extendedHealth.Etcd = status
+	currentHealth.Etcd = status
 
 	//TODO: Revisit this. This is a tiny bit ugly, but Openshift doesn't have a distinct scheduler
 	// and introducing a distinct health struct for Openshift means we have to change the API as well
 	currentHealth.Scheduler = currentHealth.Controller
-	extendedHealth.Scheduler = extendedHealth.Controller
 
-	if osData.Cluster().Status.Health != *currentHealth {
+	if osData.Cluster().Status.ExtendedHealth != *currentHealth {
 		return r.updateCluster(ctx, osData.Cluster(), func(c *kubermaticv1.Cluster) {
-			c.Status.Health = *currentHealth
-			c.Status.ExtendedHealth = *extendedHealth
+			c.Status.ExtendedHealth = *currentHealth
 		})
 	}
 
 	return nil
-}
-
-func isRunning(status kubermaticv1.HealthStatus) bool {
-	return status == kubermaticv1.UP
 }
 
 func (r *Reconciler) updateCluster(ctx context.Context, c *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {

@@ -64,7 +64,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	// like this combined with tribal knowledge and "someone is noticing this
 	// isn't working correctly"
 	// https://github.com/kubermatic/kubermatic/issues/2948
-	if !cluster.Status.Health.CloudProviderInfrastructure {
+	if kubermaticv1.HealthStatusUp != cluster.Status.ExtendedHealth.CloudProviderInfrastructure {
 		return nil
 	}
 

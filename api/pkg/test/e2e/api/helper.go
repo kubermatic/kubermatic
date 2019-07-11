@@ -400,12 +400,12 @@ func (r *APIRunner) GetClusterHealthStatus(projectID, dc, clusterID string) (*ap
 
 func convertHealthStatus(status models.HealthStatus) kubermaticv1.HealthStatus {
 	switch int64(status) {
-	case int64(kubermaticv1.PROVISIONING):
-		return kubermaticv1.PROVISIONING
-	case int64(kubermaticv1.UP):
-		return kubermaticv1.UP
+	case int64(kubermaticv1.HealthStatusProvisioning):
+		return kubermaticv1.HealthStatusProvisioning
+	case int64(kubermaticv1.HealthStatusUp):
+		return kubermaticv1.HealthStatusUp
 	default:
-		return kubermaticv1.DOWN
+		return kubermaticv1.HealthStatusDown
 	}
 }
 

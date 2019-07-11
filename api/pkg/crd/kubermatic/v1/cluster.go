@@ -185,8 +185,6 @@ type ClusterStatus struct {
 	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`
 	// Phase is Deprecated.
 	Phase ClusterPhase `json:"phase,omitempty"`
-	// Health exposes information about the current health state of the individual control plane components
-	Health ClusterHealth `json:"health,omitempty"`
 	// ExtendedHealth exposes information about the current health state.
 	// Extends standard health status for new states.
 	ExtendedHealth ExtendedClusterHealth `json:"extendedHealth,omitempty"`
@@ -246,12 +244,6 @@ type CloudSpec struct {
 	Hetzner      *HetznerCloudSpec      `json:"hetzner,omitempty"`
 	VSphere      *VSphereCloudSpec      `json:"vsphere,omitempty"`
 	GCP          *GCPCloudSpec          `json:"gcp,omitempty"`
-}
-
-// ClusterHealth stores health information of a cluster and the timestamp of the last change.
-type ClusterHealth struct {
-	ClusterHealthStatus `json:",inline"`
-	LastTransitionTime  metav1.Time `json:"lastTransitionTime,omitempty"`
 }
 
 // KeyCert is a pair of key and cert.
@@ -372,24 +364,12 @@ type GCPCloudSpec struct {
 	Subnetwork     string `json:"subnetwork"`
 }
 
-// ClusterHealthStatus stores health information of the components of a cluster.
-type ClusterHealthStatus struct {
-	Apiserver                    bool `json:"apiserver"`
-	Scheduler                    bool `json:"scheduler"`
-	Controller                   bool `json:"controller"`
-	MachineController            bool `json:"machineController"`
-	Etcd                         bool `json:"etcd"`
-	OpenVPN                      bool `json:"openvpn"`
-	CloudProviderInfrastructure  bool `json:"cloudProviderInfrastructure"`
-	UserClusterControllerManager bool `json:"userClusterControllerManager"`
-}
-
 type HealthStatus int
 
 const (
-	DOWN         HealthStatus = iota
-	UP           HealthStatus = iota
-	PROVISIONING HealthStatus = iota
+	HealthStatusDown         HealthStatus = iota
+	HealthStatusUp           HealthStatus = iota
+	HealthStatusProvisioning HealthStatus = iota
 )
 
 // ExtendedClusterHealth stores health information of a cluster.
@@ -405,14 +385,14 @@ type ExtendedClusterHealth struct {
 }
 
 // AllHealthy returns if all components are healthy
-func (h *ClusterHealthStatus) AllHealthy() bool {
-	return h.Etcd &&
-		h.MachineController &&
-		h.Controller &&
-		h.Apiserver &&
-		h.Scheduler &&
-		h.CloudProviderInfrastructure &&
-		h.UserClusterControllerManager
+func (h *ExtendedClusterHealth) AllHealthy() bool {
+	return h.Etcd == HealthStatusUp &&
+		h.MachineController == HealthStatusUp &&
+		h.Controller == HealthStatusUp &&
+		h.Apiserver == HealthStatusUp &&
+		h.Scheduler == HealthStatusUp &&
+		h.CloudProviderInfrastructure == HealthStatusUp &&
+		h.UserClusterControllerManager == HealthStatusUp
 }
 
 // MarshalJSON adds base64 json encoding to the Bytes type.

@@ -85,10 +85,9 @@ func TestCreateAddon(t *testing.T) {
 				Spec:    kubermaticv1.ClusterSpec{},
 				Address: kubermaticv1.ClusterAddress{},
 				Status: kubermaticv1.ClusterStatus{
-					Health: kubermaticv1.ClusterHealth{
-						ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
-							Apiserver: true,
-						},
+					ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
+
+						Apiserver: kubermaticv1.HealthStatusUp,
 					},
 					NamespaceName: "cluster-" + name,
 				},
