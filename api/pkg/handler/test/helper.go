@@ -568,14 +568,12 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 			URL:          "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
 		},
 		Status: kubermaticapiv1.ClusterStatus{
-			Health: kubermaticapiv1.ClusterHealth{
-				ClusterHealthStatus: kubermaticapiv1.ClusterHealthStatus{
-					Apiserver:         true,
-					Scheduler:         true,
-					Controller:        true,
-					MachineController: true,
-					Etcd:              true,
-				},
+			ExtendedHealth: kubermaticapiv1.ExtendedClusterHealth{
+				Apiserver:         kubermaticapiv1.HealthStatusUp,
+				Scheduler:         kubermaticapiv1.HealthStatusUp,
+				Controller:        kubermaticapiv1.HealthStatusUp,
+				MachineController: kubermaticapiv1.HealthStatusUp,
+				Etcd:              kubermaticapiv1.HealthStatusUp,
 			},
 		},
 	}

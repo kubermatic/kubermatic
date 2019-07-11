@@ -738,7 +738,7 @@ func (r *testRunner) waitForControlPlane(log *logrus.Entry, clusterName string) 
 		}
 		// Check for this first, because otherwise we instantly return as the cluster-controller did not
 		// create any pods yet
-		if !newCluster.Status.Health.AllHealthy() {
+		if !newCluster.Status.ExtendedHealth.AllHealthy() {
 			return false, nil
 		}
 
@@ -1057,7 +1057,7 @@ func (r *testRunner) logNotReadyControlPlaneComponents(clusterName string) error
 		return err
 	}
 
-	clusterHealthStatus, err := json.Marshal(cluster.Status.Health.ClusterHealthStatus)
+	clusterHealthStatus, err := json.Marshal(cluster.Status.ExtendedHealth)
 	if err != nil {
 		return fmt.Errorf("failed to marshal cluster health status: %v", err)
 	}

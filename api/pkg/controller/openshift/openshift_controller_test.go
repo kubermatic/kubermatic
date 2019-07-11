@@ -109,10 +109,8 @@ func TestResources(t *testing.T) {
 					},
 					Status: kubermaticv1.ClusterStatus{
 						NamespaceName: "test-cluster-ns",
-						Health: kubermaticv1.ClusterHealth{
-							ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
-								CloudProviderInfrastructure: true,
-							},
+						ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
+							CloudProviderInfrastructure: kubermaticv1.HealthStatusUp,
 						},
 					},
 				},

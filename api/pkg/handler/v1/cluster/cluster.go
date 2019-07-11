@@ -422,13 +422,13 @@ func HealthEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint 
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		return apiv1.ClusterHealth{
-			Apiserver:                    existingCluster.Status.Health.Apiserver,
-			Scheduler:                    existingCluster.Status.Health.Scheduler,
-			Controller:                   existingCluster.Status.Health.Controller,
-			MachineController:            existingCluster.Status.Health.MachineController,
-			Etcd:                         existingCluster.Status.Health.Etcd,
-			CloudProviderInfrastructure:  existingCluster.Status.Health.CloudProviderInfrastructure,
-			UserClusterControllerManager: existingCluster.Status.Health.UserClusterControllerManager,
+			Apiserver:                    existingCluster.Status.ExtendedHealth.Apiserver,
+			Scheduler:                    existingCluster.Status.ExtendedHealth.Scheduler,
+			Controller:                   existingCluster.Status.ExtendedHealth.Controller,
+			MachineController:            existingCluster.Status.ExtendedHealth.MachineController,
+			Etcd:                         existingCluster.Status.ExtendedHealth.Etcd,
+			CloudProviderInfrastructure:  existingCluster.Status.ExtendedHealth.CloudProviderInfrastructure,
+			UserClusterControllerManager: existingCluster.Status.ExtendedHealth.UserClusterControllerManager,
 		}, nil
 	}
 }

@@ -4133,32 +4133,25 @@
       "title": "ClusterHealth stores health information about the cluster's components.",
       "properties": {
         "apiserver": {
-          "type": "boolean",
-          "x-go-name": "Apiserver"
+          "$ref": "#/definitions/HealthStatus"
         },
         "cloudProviderInfrastructure": {
-          "type": "boolean",
-          "x-go-name": "CloudProviderInfrastructure"
+          "$ref": "#/definitions/HealthStatus"
         },
         "controller": {
-          "type": "boolean",
-          "x-go-name": "Controller"
+          "$ref": "#/definitions/HealthStatus"
         },
         "etcd": {
-          "type": "boolean",
-          "x-go-name": "Etcd"
+          "$ref": "#/definitions/HealthStatus"
         },
         "machineController": {
-          "type": "boolean",
-          "x-go-name": "MachineController"
+          "$ref": "#/definitions/HealthStatus"
         },
         "scheduler": {
-          "type": "boolean",
-          "x-go-name": "Scheduler"
+          "$ref": "#/definitions/HealthStatus"
         },
         "userClusterControllerManager": {
-          "type": "boolean",
-          "x-go-name": "UserClusterControllerManager"
+          "$ref": "#/definitions/HealthStatus"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -4804,6 +4797,11 @@
         "$ref": "#/definitions/GCPZone"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "HealthStatus": {
+      "type": "integer",
+      "format": "int64",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "HetznerCloudSpec": {
       "type": "object",

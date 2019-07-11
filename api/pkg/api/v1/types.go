@@ -575,13 +575,13 @@ type ClusterStatus struct {
 // ClusterHealth stores health information about the cluster's components.
 // swagger:model ClusterHealth
 type ClusterHealth struct {
-	Apiserver                    bool `json:"apiserver"`
-	Scheduler                    bool `json:"scheduler"`
-	Controller                   bool `json:"controller"`
-	MachineController            bool `json:"machineController"`
-	Etcd                         bool `json:"etcd"`
-	CloudProviderInfrastructure  bool `json:"cloudProviderInfrastructure"`
-	UserClusterControllerManager bool `json:"userClusterControllerManager"`
+	Apiserver                    kubermaticv1.HealthStatus `json:"apiserver"`
+	Scheduler                    kubermaticv1.HealthStatus `json:"scheduler"`
+	Controller                   kubermaticv1.HealthStatus `json:"controller"`
+	MachineController            kubermaticv1.HealthStatus `json:"machineController"`
+	Etcd                         kubermaticv1.HealthStatus `json:"etcd"`
+	CloudProviderInfrastructure  kubermaticv1.HealthStatus `json:"cloudProviderInfrastructure"`
+	UserClusterControllerManager kubermaticv1.HealthStatus `json:"userClusterControllerManager"`
 }
 
 // ClusterList represents a list of clusters

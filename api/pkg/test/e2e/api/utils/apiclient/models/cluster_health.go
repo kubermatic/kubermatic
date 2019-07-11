@@ -8,6 +8,7 @@ package models
 import (
 	strfmt "github.com/go-openapi/strfmt"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/swag"
 )
 
@@ -16,29 +17,174 @@ import (
 type ClusterHealth struct {
 
 	// apiserver
-	Apiserver bool `json:"apiserver,omitempty"`
+	Apiserver HealthStatus `json:"apiserver,omitempty"`
 
 	// cloud provider infrastructure
-	CloudProviderInfrastructure bool `json:"cloudProviderInfrastructure,omitempty"`
+	CloudProviderInfrastructure HealthStatus `json:"cloudProviderInfrastructure,omitempty"`
 
 	// controller
-	Controller bool `json:"controller,omitempty"`
+	Controller HealthStatus `json:"controller,omitempty"`
 
 	// etcd
-	Etcd bool `json:"etcd,omitempty"`
+	Etcd HealthStatus `json:"etcd,omitempty"`
 
 	// machine controller
-	MachineController bool `json:"machineController,omitempty"`
+	MachineController HealthStatus `json:"machineController,omitempty"`
 
 	// scheduler
-	Scheduler bool `json:"scheduler,omitempty"`
+	Scheduler HealthStatus `json:"scheduler,omitempty"`
 
 	// user cluster controller manager
-	UserClusterControllerManager bool `json:"userClusterControllerManager,omitempty"`
+	UserClusterControllerManager HealthStatus `json:"userClusterControllerManager,omitempty"`
 }
 
 // Validate validates this cluster health
 func (m *ClusterHealth) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateApiserver(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCloudProviderInfrastructure(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateController(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateEtcd(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateMachineController(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateScheduler(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateUserClusterControllerManager(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ClusterHealth) validateApiserver(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Apiserver) { // not required
+		return nil
+	}
+
+	if err := m.Apiserver.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("apiserver")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) validateCloudProviderInfrastructure(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.CloudProviderInfrastructure) { // not required
+		return nil
+	}
+
+	if err := m.CloudProviderInfrastructure.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("cloudProviderInfrastructure")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) validateController(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Controller) { // not required
+		return nil
+	}
+
+	if err := m.Controller.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("controller")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) validateEtcd(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Etcd) { // not required
+		return nil
+	}
+
+	if err := m.Etcd.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("etcd")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) validateMachineController(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.MachineController) { // not required
+		return nil
+	}
+
+	if err := m.MachineController.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("machineController")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) validateScheduler(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Scheduler) { // not required
+		return nil
+	}
+
+	if err := m.Scheduler.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("scheduler")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) validateUserClusterControllerManager(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.UserClusterControllerManager) { // not required
+		return nil
+	}
+
+	if err := m.UserClusterControllerManager.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("userClusterControllerManager")
+		}
+		return err
+	}
+
 	return nil
 }
 

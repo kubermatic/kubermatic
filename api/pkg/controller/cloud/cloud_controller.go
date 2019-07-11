@@ -91,7 +91,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return *result, err
 	}
 	_, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
-		c.Status.Health.CloudProviderInfrastructure = true
+		c.Status.ExtendedHealth.CloudProviderInfrastructure = kubermaticv1.HealthStatusUp
 	})
 	return *result, err
 }
