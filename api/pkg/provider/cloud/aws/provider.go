@@ -34,7 +34,7 @@ const (
 var roleARNS = []string{policyRoute53FullAccess, policyEC2FullAccess}
 
 type AmazonEC2 struct {
-	dc *kubermaticv1.SeedDatacenter
+	dcs *kubermaticv1.SeedDatacenter
 }
 
 func (a *AmazonEC2) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
@@ -86,9 +86,9 @@ func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 			return fmt.Errorf("failed to get default vpc: %v", err)
 		}
 
-		nodeDC, ok := a.dc.Spec.NodeLocations[spec.DatacenterName]
-		if !ok {
-			return fmt.Errorf("could not find datacenter %s", spec.DatacenterName)
+		nodeDC, err := provider.NodeLocationFromSeedMap(a.dcs, spec.DatacenterName)
+		if err != nil {
+			return err
 		}
 
 		_, err = getDefaultSubnet(client, *vpc.VpcId, nodeDC.AWS.Region+nodeDC.AWS.ZoneCharacter)
@@ -213,9 +213,9 @@ func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 }
 
 // NewCloudProvider returns a new AmazonEC2 provider.
-func NewCloudProvider(dc *kubermaticv1.SeedDatacenter) *AmazonEC2 {
+func NewCloudProvider(dcs map[string]*kubermaticv1.SeedDatacenter) *AmazonEC2 {
 	return &AmazonEC2{
-		dc: dc,
+		dcs: dcs,
 	}
 }
 
@@ -582,9 +582,9 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 	}
 
-	nodeDC, ok := a.dc.Spec.NodeLocations[cluster.Spec.Cloud.DatacenterName]
-	if !ok {
-		return nil, fmt.Errorf("could not find datacenter %s", cluster.Spec.Cloud.DatacenterName)
+	nodeDC, err := provider.NodeLocationFromSeedMap(a.dcs, spec.DatacenterName)
+	if err != nil {
+		return err
 	}
 
 	if cluster.Spec.Cloud.AWS.SubnetID == "" {
@@ -683,9 +683,12 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 
 func (a *AmazonEC2) getSession(cloud kubermaticv1.CloudSpec) (*session.Session, error) {
 	config := aws.NewConfig()
-	nodeDC, found := a.dc.Spec.NodeLocations[cloud.DatacenterName]
-	if !found || nodeDC.AWS == nil {
-		return nil, fmt.Errorf("can't find datacenter %s", cloud.DatacenterName)
+	nodeDC, err := provider.NodeLocationFromSeedMap(a.dcs, spec.DatacenterName)
+	if err != nil {
+		return nil, err
+	}
+	if nodeDC.AWS == nil {
+		return nil, fmt.Errorf("datacenter %s is not an AWS datacenter", cloud.DatacenterName)
 	}
 	config = config.WithRegion(nodeDC.AWS.Region)
 	config = config.WithCredentials(credentials.NewStaticCredentials(cloud.AWS.AccessKeyID, cloud.AWS.SecretAccessKey, ""))

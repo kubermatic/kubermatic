@@ -40,13 +40,13 @@ const (
 
 // Provider is a struct that implements CloudProvider interface
 type Provider struct {
-	dc *kubermaticv1.SeedDatacenter
+	dcs map[string]*kubermaticv1.SeedDatacenter
 }
 
 // NewCloudProvider creates a new openstack provider.
-func NewCloudProvider(dc *kubermaticv1.SeedDatacenter) *Provider {
+func NewCloudProvider(dcs map[string]*kubermaticv1.SeedDatacenter) *Provider {
 	return &Provider{
-		dc: dc,
+		dcs: dcs,
 	}
 }
 
@@ -126,9 +126,12 @@ func validateExistingSubnetOverlap(networkID string, netClient *gophercloud.Serv
 // InitializeCloudProvider initializes a cluster, in particular
 // creates security group and network configuration
 func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	nodeDC, found := os.dc.Spec.NodeLocations[cluster.Spec.Cloud.DatacenterName]
-	if !found || nodeDC.Openstack == nil {
-		return nil, fmt.Errorf("invalid datacenter %q", cluster.Spec.Cloud.DatacenterName)
+	nodeDC, err := provider.NodeLocationFromSeedMap(os.dcs, cluster.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return nil, err
+	}
+	if nodeDC.Openstack == nil {
+		return nil, fmt.Errorf("datacenter %q is not an openstack datacenter", cluster.Spec.Cloud.DatacenterName)
 	}
 
 	netClient, err := os.getNetClient(cluster.Spec.Cloud)
@@ -344,9 +347,12 @@ func (os *Provider) GetFlavors(cloud kubermaticv1.CloudSpec) ([]osflavors.Flavor
 	if err != nil {
 		return nil, kubermaticv1.NodeLocation{}, err
 	}
-	nodeDC, found := os.dc.Spec.NodeLocations[cloud.DatacenterName]
-	if !found || nodeDC.Openstack == nil {
-		return nil, kubermaticv1.NodeLocation{}, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+	nodeDC, err := provider.NodeLocationFromSeedMap(os.dcs, cluster.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return nil, err
+	}
+	if nodeDC.Openstack == nil {
+		return nil, fmt.Errorf("datacenter %q is not an openstack datacenter", cluster.Spec.Cloud.DatacenterName)
 	}
 	flavors, err := getFlavors(authClient, nodeDC.Openstack.Region)
 	if err != nil {
@@ -363,9 +369,12 @@ func (os *Provider) GetTenants(cloud kubermaticv1.CloudSpec) ([]osprojects.Proje
 		return nil, fmt.Errorf("couldn't get auth client: %v", err)
 	}
 
-	nodeDC, found := os.dc.Spec.NodeLocations[cloud.DatacenterName]
-	if !found || nodeDC.Openstack == nil {
-		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+	nodeDC, err := provider.NodeLocationFromSeedMap(os.dcs, cluster.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return nil, err
+	}
+	if nodeDC.Openstack == nil {
+		return nil, fmt.Errorf("datacenter %q is not an openstack datacenter", cluster.Spec.Cloud.DatacenterName)
 	}
 
 	region := nodeDC.Openstack.Region
@@ -384,9 +393,12 @@ func (os *Provider) GetNetworks(cloud kubermaticv1.CloudSpec) ([]NetworkWithExte
 		return nil, fmt.Errorf("couldn't get auth client: %v", err)
 	}
 
-	nodeDC, found := os.dc.Spec.NodeLocations[cloud.DatacenterName]
-	if !found || nodeDC.Openstack == nil {
-		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+	nodeDC, err := provider.NodeLocationFromSeedMap(os.dcs, cluster.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return nil, err
+	}
+	if nodeDC.Openstack == nil {
+		return nil, fmt.Errorf("datacenter %q is not an openstack datacenter", cluster.Spec.Cloud.DatacenterName)
 	}
 
 	networks, err := getAllNetworks(authClient, osnetworks.ListOpts{})

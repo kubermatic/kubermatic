@@ -12,13 +12,13 @@ const (
 )
 
 type packet struct {
-	dc *kubermaticv1.SeedDatacenter
+	dcs map[string]*kubermaticv1.SeedDatacenter
 }
 
 // NewCloudProvider creates a new packet provider.
-func NewCloudProvider(dc *kubermaticv1.SeedDatacenter) provider.CloudProvider {
+func NewCloudProvider(dcs map[string]*kubermaticv1.SeedDatacenter) provider.CloudProvider {
 	return &packet{
-		dc: dc,
+		dcs: dcs,
 	}
 }
 
@@ -41,10 +41,9 @@ func (p *packet) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 // InitializeCloudProvider initializes a cluster, in particular
 // updates BillingCycle to the defaultBillingCycle, if it is not set.
 func (p *packet) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	var err error
-	nodeDC, ok := p.dc.Spec.NodeLocations[cluster.Spec.Cloud.DatacenterName]
-	if !ok {
-		return nil, fmt.Errorf("could not find datacenter %s", cluster.Spec.Cloud.DatacenterName)
+	nodeDC, err := provider.NodeLocationFromSeedMap(p.dcs, cluster.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return nil, err
 	}
 
 	if nodeDC.Packet == nil {

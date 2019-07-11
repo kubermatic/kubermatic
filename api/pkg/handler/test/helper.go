@@ -112,7 +112,7 @@ func GetUser(email, id, name string, admin bool) apiv1.User {
 // this function is temporal until all types end up in their own packages.
 // it is meant to be used by legacy handler.createTestEndpointAndGetClients function
 type newRoutingFunc func(
-	datacenters map[string]provider.DatacenterMeta,
+	dc *kubermaticv1.SeedDatacenter,
 	newClusterProviders map[string]provider.ClusterProvider,
 	cloudProviders map[string]provider.CloudProvider,
 	newSSHKeyProvider provider.SSHKeyProvider,
@@ -133,12 +133,11 @@ type newRoutingFunc func(
 	eventRecorderProvider provider.EventRecorderProvider,
 	credentialManager common.PresetsManager) http.Handler
 
-func initTestEndpoint(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, credentialsManager common.PresetsManager, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
-	datacenters := dc
-	if datacenters == nil {
-		datacenters = buildDatacenterMeta()
+func initTestEndpoint(user apiv1.User, dc *kubermaticv1.SeedDatacenter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, credentialsManager common.PresetsManager, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
+	if dc == nil {
+		dc = buildDatacenter()
 	}
-	cloudProviders := cloud.Providers(datacenters)
+	cloudProviders := cloud.Providers(dc)
 
 	fakeClient := fakectrlruntimeclient.NewFakeClient(append(kubeObjects, machineObjects...)...)
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
@@ -226,7 +225,7 @@ func initTestEndpoint(user apiv1.User, dc map[string]provider.DatacenterMeta, ku
 	var prometheusClient prometheusapi.Client
 
 	mainRouter := routingFunc(
-		datacenters,
+		dc,
 		clusterProviders,
 		cloudProviders,
 		sshKeyProvider,
@@ -252,7 +251,7 @@ func initTestEndpoint(user apiv1.User, dc map[string]provider.DatacenterMeta, ku
 }
 
 // CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes  for the tests
-func CreateTestEndpointAndGetClients(user apiv1.User, dc map[string]provider.DatacenterMeta, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
+func CreateTestEndpointAndGetClients(user apiv1.User, dc *kubermaticv1.SeedDatacenter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
 	credentialManager := presets.New()
 	credentialManager.GetPresets().Fake = presets.Fake{Credentials: []presets.FakeCredentials{
 		{Name: TestFakeCredential, Token: "dummy_pluton_token"},
@@ -275,35 +274,32 @@ func CreateTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 	return router, err
 }
 
-func buildDatacenterMeta() map[string]provider.DatacenterMeta {
-	return map[string]provider.DatacenterMeta{
-		"us-central1": {
-			Location: "us-central",
+func buildDatacenter() *kubermaticv1.SeedDatacenter {
+	return &kubermaticv1.SeedDatacenter{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "us-central1",
+		},
+		Spec: kubermaticv1.SeedDatacenterSpec{
 			Country:  "US",
-			IsSeed:   true,
-			Spec: kubermaticv1.DatacenterSpec{
-				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
-					Region: "ams2",
+			Location: "us-central",
+			NodeLocations: map[string]kubermaticv1.NodeLocation{
+				"private-do1": kubermaticv1.NodeLocation{
+					Country:  "NL",
+					Location: "US ",
+					DatacenterSpec: kubermaticv1.DatacenterSpec{
+						Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
+							Region: "ams2",
+						},
+					},
 				},
-			},
-		},
-		"private-do1": {
-			Location: "US ",
-			Seed:     "us-central1",
-			Country:  "NL",
-			Spec: kubermaticv1.DatacenterSpec{
-				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
-					Region: "ams2",
-				},
-			},
-		},
-		"regular-do1": {
-			Location: "Amsterdam",
-			Seed:     "us-central1",
-			Country:  "NL",
-			Spec: kubermaticv1.DatacenterSpec{
-				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
-					Region: "ams2",
+				"regular-do1": kubermaticv1.NodeLocation{
+					Country:  "NL",
+					Location: "Amsterdam",
+					DatacenterSpec: kubermaticv1.DatacenterSpec{
+						Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
+							Region: "ams2",
+						},
+					},
 				},
 			},
 		},

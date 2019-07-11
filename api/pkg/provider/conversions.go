@@ -71,3 +71,28 @@ func DatacenterMetasToSeedDatacenterSpecs(dm map[string]DatacenterMeta) (map[str
 
 	return seedDatacenters, nil
 }
+
+// Needed because the cloud providers are initialized once during startup and get all
+// DCs.
+// We need to change the cloud providers to by dynamically initialized when needed instead
+// once we support datacenters as CRDs.
+// TODO: Find a way to lift the current requirement of unique nodeDatacenter names. It is needed
+// only because we put the nodeDatacenter name on the cluster but not the seed
+func NodeLocationFromSeedMap(seeds map[string]*kubermaticv1.SeedDatacenter, nodeLocationName string) (*kubermaticv1.NodeLocation, error) {
+
+	var results []kubermaticv1.NodeLocation
+	for _, seed := range seeds {
+		nodeLocation, exists := seed.Spec.NodeLocations[nodeLocationName]
+		if !exists {
+			continue
+		}
+
+		results = append(results, nodeLocation)
+	}
+
+	if n := len(results); n != 1 {
+		return nil, fmt.Errorf("expected to find exactly one datacenter with name %q, to %d", nodeLocationName, n)
+	}
+
+	return results[0], nil
+}

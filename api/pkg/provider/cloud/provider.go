@@ -16,17 +16,17 @@ import (
 )
 
 // Providers returns a map from cloud provider id to the actual provider.
-func Providers(dc *kubermaticv1.SeedDatacenter) provider.CloudRegistry {
+func Providers(dcs map[string]*kubermaticv1.SeedDatacenter) provider.CloudRegistry {
 	return map[string]provider.CloudProvider{
 		provider.DigitaloceanCloudProvider: digitalocean.NewCloudProvider(),
 		provider.BringYourOwnCloudProvider: bringyourown.NewCloudProvider(),
-		provider.AWSCloudProvider:          aws.NewCloudProvider(dc),
-		provider.AzureCloudProvider:        azure.New(dc),
-		provider.OpenstackCloudProvider:    openstack.NewCloudProvider(dc),
-		provider.PacketCloudProvider:       packet.NewCloudProvider(dc),
+		provider.AWSCloudProvider:          aws.NewCloudProvider(dcs),
+		provider.AzureCloudProvider:        azure.New(dcs),
+		provider.OpenstackCloudProvider:    openstack.NewCloudProvider(dcs),
+		provider.PacketCloudProvider:       packet.NewCloudProvider(dcs),
 		provider.HetznerCloudProvider:      hetzner.NewCloudProvider(),
-		provider.VSphereCloudProvider:      vsphere.NewCloudProvider(dc),
+		provider.VSphereCloudProvider:      vsphere.NewCloudProvider(dcs),
 		provider.FakeCloudProvider:         fake.NewCloudProvider(),
-		provider.GCPCloudProvider:          gcp.NewCloudProvider(dc),
+		provider.GCPCloudProvider:          gcp.NewCloudProvider(dcs),
 	}
 }

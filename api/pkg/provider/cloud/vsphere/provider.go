@@ -23,7 +23,7 @@ const (
 
 // Provider represents the vsphere provider.
 type Provider struct {
-	dc *kubermaticv1.SeedDatacenter
+	dcs map[string]*kubermaticv1.SeedDatacenter
 }
 
 // Network represents a vsphere network backing.
@@ -32,16 +32,19 @@ type Network struct {
 }
 
 // NewCloudProvider creates a new vSphere provider.
-func NewCloudProvider(dc *kubermaticv1.SeedDatacenter) *Provider {
+func NewCloudProvider(dcs map[string]*kubermaticv1.SeedDatacenter) *Provider {
 	return &Provider{
-		dc: dc,
+		dcs: dcs,
 	}
 }
 
 func (v *Provider) getClient(cloud kubermaticv1.CloudSpec) (*govmomi.Client, error) {
-	nodeDC, found := v.dc.Spec.NodeLocations[cloud.DatacenterName]
-	if !found || nodeDC.VSphere == nil {
-		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
+	nodeDC, err := provider.NodeLocationFromSeedMap(v.dcs, cloud.DatacenterName)
+	if err != nil {
+		return nil, err
+	}
+	if nodeDC.VSphere == nil {
+		return nil, fmt.Errorf("datacentere %q is not a vsphere datacenter", cloud.DatacenterName)
 	}
 
 	u, err := url.Parse(fmt.Sprintf("%s/sdk", nodeDC.VSphere.Endpoint))
@@ -66,9 +69,12 @@ func (v *Provider) getClient(cloud kubermaticv1.CloudSpec) (*govmomi.Client, err
 }
 
 func (v *Provider) getVsphereRootPath(spec kubermaticv1.CloudSpec) (string, error) {
-	nodeDC, found := v.dc.Spec.NodeLocations[spec.DatacenterName]
-	if !found || nodeDC.VSphere == nil {
-		return "", fmt.Errorf("invalid datacenter %q", spec.DatacenterName)
+	nodeDC, err := provider.NodeLocationFromSeedMap(v.dcs, cloud.DatacenterName)
+	if err != nil {
+		return nil, err
+	}
+	if nodeDC.VSphere == nil {
+		return nil, fmt.Errorf("datacentere %q is not a vsphere datacenter", cloud.DatacenterName)
 	}
 
 	if nodeDC.VSphere.RootPath == "" {
@@ -134,9 +140,12 @@ func (v *Provider) GetNetworks(spec kubermaticv1.CloudSpec) ([]Network, error) {
 	// if set because that is the user which will ultimatively configure
 	// the networks - But it means users in the UI can see vsphere
 	// networks without entering credentials
-	nodeDC, found := v.dc.Spec.NodeLocations[spec.DatacenterName]
-	if !found || nodeDC.VSphere == nil {
-		return nil, fmt.Errorf("invalid datacenter %q", spec.DatacenterName)
+	nodeDC, err := provider.NodeLocationFromSeedMap(v.dcs, cloud.DatacenterName)
+	if err != nil {
+		return nil, err
+	}
+	if nodeDC.VSphere == nil {
+		return nil, fmt.Errorf("datacentere %q is not a vsphere datacenter", cloud.DatacenterName)
 	}
 	if nodeDC.VSphere.InfraManagementUser != nil {
 		spec.VSphere.InfraManagementUser.Username = nodeDC.VSphere.InfraManagementUser.Username
@@ -192,9 +201,12 @@ func (v *Provider) GetNetworks(spec kubermaticv1.CloudSpec) ([]Network, error) {
 
 // DefaultCloudSpec adds defaults to the cloud spec
 func (v *Provider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
-	nodeDC, found := v.dc.Spec.NodeLocations[spec.DatacenterName]
-	if !found || nodeDC.VSphere == nil {
-		return fmt.Errorf("invalid datacenter %q", spec.DatacenterName)
+	nodeDC, err := provider.NodeLocationFromSeedMap(v.dcs, cloud.DatacenterName)
+	if err != nil {
+		return nil, err
+	}
+	if nodeDC.VSphere == nil {
+		return nil, fmt.Errorf("datacentere %q is not a vsphere datacenter", cloud.DatacenterName)
 	}
 	if nodeDC.VSphere.InfraManagementUser != nil {
 		spec.VSphere.InfraManagementUser = kubermaticv1.VSphereCredentials{

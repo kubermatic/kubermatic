@@ -44,15 +44,15 @@ const (
 )
 
 type Azure struct {
-	dc  *kubermaticv1.SeedDatacenter
+	dcs map[string]*kubermaticv1.SeedDatacenter
 	log *zap.SugaredLogger
 	ctx context.Context
 }
 
 // New returns a new Azure provider.
-func New(dc *kubermaticv1.SeedDatacenter) *Azure {
+func New(dcs map[string]*kubermaticv1.SeedDatacenter) *Azure {
 	return &Azure{
-		dc:  dc,
+		dcs: dcs,
 		log: log.Logger,
 		ctx: context.TODO(),
 	}
@@ -511,9 +511,9 @@ func ensureRouteTable(ctx context.Context, cloud kubermaticv1.CloudSpec, locatio
 func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var err error
 	logger := a.log.With("cluster", cluster.Name)
-	nodeDC, ok := a.dc.Spec.NodeLocations[cluster.Spec.Cloud.DatacenterName]
-	if !ok {
-		return nil, fmt.Errorf("could not find datacenter %s", cluster.Spec.Cloud.DatacenterName)
+	nodeDC, err := provider.NodeLocationFromSeedMap(a.dcs, cluster.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return nil, err
 	}
 
 	if nodeDC.Azure == nil {
