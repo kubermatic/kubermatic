@@ -221,18 +221,39 @@ func GetEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
+
+			// Request came from the specified user. Instead `Not found` error status the `Forbidden` is returned.
+			// Next request with privileged user checks if the cluster doesn't exist or some other error occurred.
+			if !isStatus(err, http.StatusForbidden) {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			// Check if cluster really doesn't exist or some other error occurred.
+			if _, errGetUnsecured := privilegedClusterProvider.GetUnsecured(project, req.ClusterID); errGetUnsecured != nil {
+				return nil, common.KubernetesErrorToHTTPError(errGetUnsecured)
+			}
+			// Cluster is not ready yet, return original error
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		return convertInternalClusterToExternal(cluster), nil
 	}
+}
+
+func isStatus(err error, status int32) bool {
+	if kubernetesError, ok := err.(*kerrors.StatusError); ok {
+		if status == kubernetesError.Status().Code {
+			return true
+		}
+	}
+	return false
 }
 
 func PatchEndpoint(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
