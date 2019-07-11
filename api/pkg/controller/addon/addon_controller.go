@@ -199,7 +199,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 	}
 
 	// When the apiserver is not healthy, we must skip it
-	if kubermaticv1.HealthStatusUp != cluster.Status.ExtendedHealth.Apiserver {
+	if kubermaticv1.HealthStatusDown == cluster.Status.ExtendedHealth.Apiserver {
 		log.Debug("Skipping because the API server is not running")
 		return nil
 	}
