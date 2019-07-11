@@ -42,7 +42,7 @@ func LoadDatacentersMeta(path string) (map[string]DatacenterMeta, error) {
 	}
 
 	dcs := datacentersMeta{}
-	if err := yaml.Unmarshal(bytes, &dcs); err != nil {
+	if err := yaml.UnmarshalStrict(bytes, &dcs); err != nil {
 		return nil, err
 	}
 
