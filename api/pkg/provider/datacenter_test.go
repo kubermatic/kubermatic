@@ -83,6 +83,8 @@ datacenters:
 								DNSServers:       []string{"8.8.8.8", "8.8.4.4"},
 								Images: kubermaticv1.ImageList{
 									providerconfig.OperatingSystemUbuntu: "Ubuntu 18.04 LTS - 2018-08-10",
+									providerconfig.OperatingSystemCentOS: "",
+									providerconfig.OperatingSystemCoreos: "",
 								},
 								EnforceFloatingIP: true,
 							},
