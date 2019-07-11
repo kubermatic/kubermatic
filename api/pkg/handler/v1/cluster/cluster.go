@@ -20,7 +20,6 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/cloud"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
@@ -103,7 +102,6 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 				"kubermatic.io/openshift": "true",
 			}
 		}
-		partialCluster.Status.CloudMigrationRevision = cloud.CurrentMigrationRevision
 
 		newCluster, err := clusterProvider.New(project, userInfo, partialCluster)
 		if err != nil {
