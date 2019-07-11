@@ -137,7 +137,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 	// Wait until the Apiserver is running to ensure the namespace exists at least.
 	// Just checking for cluster.status.namespaceName is not enough as it gets set before the namespace exists
-	if kubermaticv1.HealthStatusUp != cluster.Status.ExtendedHealth.Apiserver {
+	if kubermaticv1.HealthStatusDown == cluster.Status.ExtendedHealth.Apiserver {
 		log.Debug("Skipping because the API server is not running")
 		return &reconcile.Result{RequeueAfter: 1 * time.Second}, nil
 	}

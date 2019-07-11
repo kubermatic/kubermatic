@@ -272,7 +272,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("failed to sync health: %v", err)
 	}
 
-	if kubermaticv1.HealthStatusUp != osData.Cluster().Status.ExtendedHealth.Apiserver {
+	if kubermaticv1.HealthStatusDown == osData.Cluster().Status.ExtendedHealth.Apiserver {
 		return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
