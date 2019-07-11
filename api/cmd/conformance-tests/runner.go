@@ -672,7 +672,7 @@ func (r *testRunner) createClusterViaKubermaticAPI(log *logrus.Entry, cluster *a
 	cluster.Cluster.Name = name
 	params := &projectclient.CreateClusterParams{ProjectID: projectID, Dc: "prow-build-cluster", Body: cluster}
 	params.SetTimeout(15 * time.Second)
-	host := fmt.Sprintf("kubermatic-api.kubermatic-%s.svc.cluster.local.:80", r.workerName)
+	host := fmt.Sprintf("kubermatic-api.prow-kubermatic-%s.svc.cluster.local.:80", r.workerName)
 	// pragma: no security
 	token := "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InNlcnZpY2VhY2NvdW50LTJ6cW02Y2ZnaHpAY2kua3ViZXJtYXRpYy5pbyIsImV4cCI6MTY1NzU2NjE0NSwiaWF0IjoxNTYyODcxNzQ1LCJuYmYiOjE1NjI4NzE3NDUsInByb2plY3RfaWQiOiJ0dmp4Zjd3NDhiIiwidG9rZW5faWQiOiJwejY4cnNwOXh2In0.aRwn2dKeZe7sEIhgHfzhO1erMQeuhKn_XZ8_KlruTzc"
 	client := apiclient.New(httptransport.New(host, "", []string{"http"}), nil)
