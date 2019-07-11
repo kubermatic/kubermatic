@@ -10,6 +10,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilpointer "k8s.io/utils/pointer"
 )
 
@@ -24,11 +25,6 @@ datacenters:
     country: DE
     provider: Loodse
     is_seed: true
-    spec:
-      bringyourown:
-        region: DE
-      seed:
-        bringyourown:
 #==================================
 #===========Digitalocean===========
 #==================================
@@ -44,7 +40,7 @@ datacenters:
 #==================================
   auos-1:
     location: Australia
-    seed: sydney-1
+    seed: europe-west3-c
     country: AU
     provider: openstack
     spec:
@@ -59,48 +55,41 @@ datacenters:
           centos: ""
           coreos: ""
         enforce_floating_ip: true`
-	expectedDatacenters := map[string]DatacenterMeta{
-		"europe-west3-c": {
-			Location: "Frankfurt",
-			Seed:     "",
-			Country:  "DE",
-			Spec: kubermaticv1.DatacenterSpec{
-				BringYourOwn: &kubermaticv1.DatacenterSpecBringYourOwn{},
+	expectedDatacenters := map[string]*kubermaticv1.SeedDatacenter{
+		"europe-west3-c": &kubermaticv1.SeedDatacenter{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "europe-west3-c",
 			},
-			IsSeed:           true,
-			SeedDNSOverwrite: nil,
-		},
-		"do-ams3": {
-			Location: "Amsterdam",
-			Seed:     "europe-west3-c",
-			Country:  "NL",
-			Spec: kubermaticv1.DatacenterSpec{
-				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
-					Region: "ams3",
-				},
-			},
-			IsSeed:           false,
-			SeedDNSOverwrite: nil,
-		},
-		"auos-1": {
-			Location: "Australia",
-			Seed:     "sydney-1",
-			Country:  "AU",
-			Spec: kubermaticv1.DatacenterSpec{
-				Openstack: &kubermaticv1.DatacenterSpecOpenstack{
-					AvailabilityZone: "au1",
-					Region:           "au",
-					DNSServers:       []string{"8.8.8.8", "8.8.4.4"},
-					Images: kubermaticv1.ImageList{
-						providerconfig.OperatingSystemUbuntu: "Ubuntu 18.04 LTS - 2018-08-10",
-						providerconfig.OperatingSystemCentOS: "",
-						providerconfig.OperatingSystemCoreos: "",
+			Spec: kubermaticv1.SeedDatacenterSpec{
+				Location: "Frankfurt",
+				Country:  "DE",
+				NodeLocations: map[string]kubermaticv1.NodeLocation{
+					"do-ams3": kubermaticv1.NodeLocation{
+						Location: "Amsterdam",
+						Country:  "NL",
+						DatacenterSpec: kubermaticv1.DatacenterSpec{
+							Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
+								Region: "ams3",
+							},
+						},
 					},
-					EnforceFloatingIP: true,
+					"auos-1": kubermaticv1.NodeLocation{
+						Location: "Australia",
+						Country:  "AU",
+						DatacenterSpec: kubermaticv1.DatacenterSpec{
+							Openstack: &kubermaticv1.DatacenterSpecOpenstack{
+								AvailabilityZone: "au1",
+								Region:           "au",
+								DNSServers:       []string{"8.8.8.8", "8.8.4.4"},
+								Images: kubermaticv1.ImageList{
+									providerconfig.OperatingSystemUbuntu: "Ubuntu 18.04 LTS - 2018-08-10",
+								},
+								EnforceFloatingIP: true,
+							},
+						},
+					},
 				},
 			},
-			IsSeed:           false,
-			SeedDNSOverwrite: nil,
 		},
 	}
 
@@ -117,8 +106,10 @@ datacenters:
 	err = file.Sync()
 	assert.NoError(t, err)
 
-	resultDatacenters, err := LoadDatacentersMeta(file.Name())
-	assert.NoError(t, err)
+	resultDatacenters, err := LoadDatacenters(file.Name())
+	if err != nil {
+		t.Fatalf("failed to load datacenters: %v", err)
+	}
 
 	assert.Equal(t, expectedDatacenters, resultDatacenters)
 }

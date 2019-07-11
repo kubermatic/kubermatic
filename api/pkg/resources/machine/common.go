@@ -8,7 +8,6 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean"
@@ -41,12 +40,12 @@ func getOsName(nodeSpec apiv1.NodeSpec) (providerconfig.OperatingSystem, error) 
 	return "", errors.New("unknown operating system")
 }
 
-func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.NodeLocation) (*runtime.RawExtension, error) {
 	osName, err := getOsName(nodeSpec)
 	if err != nil {
 		return nil, err
 	}
-	ami := dc.Spec.AWS.Images[osName]
+	ami := dc.AWS.Images[osName]
 	if nodeSpec.Cloud.AWS.AMI != "" {
 		ami = nodeSpec.Cloud.AWS.AMI
 	}
@@ -59,14 +58,14 @@ func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc pro
 	}
 	availabilityZone := nodeSpec.Cloud.AWS.AvailabilityZone
 	if availabilityZone == "" {
-		availabilityZone = dc.Spec.AWS.Region + dc.Spec.AWS.ZoneCharacter
+		availabilityZone = dc.AWS.Region + dc.AWS.ZoneCharacter
 	}
 
 	config := aws.RawConfig{
 		SubnetID:         providerconfig.ConfigVarString{Value: subnetID},
 		VpcID:            providerconfig.ConfigVarString{Value: c.Spec.Cloud.AWS.VPCID},
 		SecurityGroupIDs: []providerconfig.ConfigVarString{{Value: c.Spec.Cloud.AWS.SecurityGroupID}},
-		Region:           providerconfig.ConfigVarString{Value: dc.Spec.AWS.Region},
+		Region:           providerconfig.ConfigVarString{Value: dc.AWS.Region},
 		AvailabilityZone: providerconfig.ConfigVarString{Value: availabilityZone},
 		InstanceProfile:  providerconfig.ConfigVarString{Value: c.Spec.Cloud.AWS.InstanceProfileName},
 		InstanceType:     providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.InstanceType},
@@ -97,14 +96,14 @@ func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc pro
 	return ext, nil
 }
 
-func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.NodeLocation) (*runtime.RawExtension, error) {
 	config := azure.RawConfig{
 		SubscriptionID: providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.SubscriptionID},
 		TenantID:       providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.TenantID},
 		ClientID:       providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.ClientID},
 		ClientSecret:   providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.ClientSecret},
 
-		Location:        providerconfig.ConfigVarString{Value: dc.Spec.Azure.Location},
+		Location:        providerconfig.ConfigVarString{Value: dc.Azure.Location},
 		ResourceGroup:   providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.ResourceGroup},
 		VMSize:          providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Azure.Size},
 		VNetName:        providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.VNetName},
@@ -131,7 +130,7 @@ func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc p
 	return ext, nil
 }
 
-func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.NodeLocation) (*runtime.RawExtension, error) {
 
 	config := vsphere.RawConfig{
 		TemplateVMName:  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.VSphere.Template},
@@ -140,11 +139,11 @@ func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 		CPUs:            int32(nodeSpec.Cloud.VSphere.CPUs),
 		MemoryMB:        int64(nodeSpec.Cloud.VSphere.Memory),
 		DiskSizeGB:      nodeSpec.Cloud.VSphere.DiskSizeGB,
-		Datacenter:      providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Datacenter},
-		Datastore:       providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Datastore},
-		Cluster:         providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Cluster},
+		Datacenter:      providerconfig.ConfigVarString{Value: dc.VSphere.Datacenter},
+		Datastore:       providerconfig.ConfigVarString{Value: dc.VSphere.Datastore},
+		Cluster:         providerconfig.ConfigVarString{Value: dc.VSphere.Cluster},
 		Folder:          providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.Folder},
-		AllowInsecure:   providerconfig.ConfigVarBool{Value: dc.Spec.VSphere.AllowInsecure},
+		AllowInsecure:   providerconfig.ConfigVarBool{Value: dc.VSphere.AllowInsecure},
 	}
 
 	ext := &runtime.RawExtension{}
@@ -157,24 +156,24 @@ func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 	return ext, nil
 }
 
-func getOpenstackProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+func getOpenstackProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.NodeLocation) (*runtime.RawExtension, error) {
 	config := openstack.RawConfig{
 		Image:            providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Openstack.Image},
 		Flavor:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Openstack.Flavor},
-		AvailabilityZone: providerconfig.ConfigVarString{Value: dc.Spec.Openstack.AvailabilityZone},
-		Region:           providerconfig.ConfigVarString{Value: dc.Spec.Openstack.Region},
-		IdentityEndpoint: providerconfig.ConfigVarString{Value: dc.Spec.Openstack.AuthURL},
+		AvailabilityZone: providerconfig.ConfigVarString{Value: dc.Openstack.AvailabilityZone},
+		Region:           providerconfig.ConfigVarString{Value: dc.Openstack.Region},
+		IdentityEndpoint: providerconfig.ConfigVarString{Value: dc.Openstack.AuthURL},
 		Network:          providerconfig.ConfigVarString{Value: c.Spec.Cloud.Openstack.Network},
 		Subnet:           providerconfig.ConfigVarString{Value: c.Spec.Cloud.Openstack.SubnetID},
 		SecurityGroups:   []providerconfig.ConfigVarString{{Value: c.Spec.Cloud.Openstack.SecurityGroups}},
 	}
 
-	if nodeSpec.Cloud.Openstack.UseFloatingIP || dc.Spec.Openstack.EnforceFloatingIP {
+	if nodeSpec.Cloud.Openstack.UseFloatingIP || dc.Openstack.EnforceFloatingIP {
 		config.FloatingIPPool = providerconfig.ConfigVarString{Value: c.Spec.Cloud.Openstack.FloatingIPPool}
 	}
 
-	if dc.Spec.Openstack.TrustDevicePath != nil {
-		config.TrustDevicePath = providerconfig.ConfigVarBool{Value: *dc.Spec.Openstack.TrustDevicePath}
+	if dc.Openstack.TrustDevicePath != nil {
+		config.TrustDevicePath = providerconfig.ConfigVarBool{Value: *dc.Openstack.TrustDevicePath}
 	}
 
 	config.Tags = map[string]string{}
@@ -193,10 +192,10 @@ func getOpenstackProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, 
 	return ext, nil
 }
 
-func getHetznerProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+func getHetznerProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.NodeLocation) (*runtime.RawExtension, error) {
 	config := hetzner.RawConfig{
-		Datacenter: providerconfig.ConfigVarString{Value: dc.Spec.Hetzner.Datacenter},
-		Location:   providerconfig.ConfigVarString{Value: dc.Spec.Hetzner.Location},
+		Datacenter: providerconfig.ConfigVarString{Value: dc.Hetzner.Datacenter},
+		Location:   providerconfig.ConfigVarString{Value: dc.Hetzner.Location},
 		ServerType: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Hetzner.Type},
 	}
 
@@ -210,9 +209,9 @@ func getHetznerProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 	return ext, nil
 }
 
-func getDigitaloceanProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+func getDigitaloceanProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.NodeLocation) (*runtime.RawExtension, error) {
 	config := digitalocean.RawConfig{
-		Region:            providerconfig.ConfigVarString{Value: dc.Spec.Digitalocean.Region},
+		Region:            providerconfig.ConfigVarString{Value: dc.Digitalocean.Region},
 		Backups:           providerconfig.ConfigVarBool{Value: nodeSpec.Cloud.Digitalocean.Backups},
 		IPv6:              providerconfig.ConfigVarBool{Value: nodeSpec.Cloud.Digitalocean.IPv6},
 		Monitoring:        providerconfig.ConfigVarBool{Value: nodeSpec.Cloud.Digitalocean.Monitoring},
@@ -237,7 +236,7 @@ func getDigitaloceanProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpe
 	return ext, nil
 }
 
-func getPacketProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+func getPacketProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.NodeLocation) (*runtime.RawExtension, error) {
 	config := packet.RawConfig{
 		InstanceType: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Packet.InstanceType},
 	}
@@ -249,7 +248,7 @@ func getPacketProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc 
 		config.Tags[i].Value = tag
 	}
 
-	facilities := sets.NewString(dc.Spec.Packet.Facilities...)
+	facilities := sets.NewString(dc.Packet.Facilities...)
 	config.Facilities = make([]providerconfig.ConfigVarString, len(facilities.List()))
 	for i, facility := range facilities.List() {
 		config.Facilities[i].Value = facility
@@ -265,7 +264,7 @@ func getPacketProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc 
 	return ext, nil
 }
 
-func getGCPProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc provider.DatacenterMeta) (*runtime.RawExtension, error) {
+func getGCPProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.NodeLocation) (*runtime.RawExtension, error) {
 	config := gce.CloudProviderSpec{
 		Zone:                  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.GCP.Zone},
 		MachineType:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.GCP.MachineType},

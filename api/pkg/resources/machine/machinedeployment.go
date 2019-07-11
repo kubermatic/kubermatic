@@ -11,7 +11,6 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
@@ -25,7 +24,7 @@ import (
 )
 
 // Deployment returns a Machine Deployment object for the given Node Deployment spec.
-func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.MachineDeployment, error) {
+func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermaticv1.NodeLocation, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.MachineDeployment, error) {
 	md := &clusterv1alpha1.MachineDeployment{}
 
 	if nd.Name != "" {
@@ -87,7 +86,7 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.D
 	return md, nil
 }
 
-func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc provider.DatacenterMeta, keys []*kubermaticv1.UserSSHKey) (*providerconfig.Config, error) {
+func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermaticv1.NodeLocation, keys []*kubermaticv1.UserSSHKey) (*providerconfig.Config, error) {
 	config := providerconfig.Config{}
 	config.SSHPublicKeys = make([]string, len(keys))
 	for i, key := range keys {
@@ -115,7 +114,7 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc pro
 
 		// We use OverwriteCloudConfig for VSphere to ensure we always use the credentials
 		// passed in via frontend for the cloud-provider functionality.
-		overwriteCloudConfig, err := cloudconfig.CloudConfig(c, &dc)
+		overwriteCloudConfig, err := cloudconfig.CloudConfig(c, dc)
 		if err != nil {
 			return nil, err
 		}
@@ -127,7 +126,7 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc pro
 		}
 	case nd.Spec.Template.Cloud.Openstack != nil:
 		config.CloudProvider = providerconfig.CloudProviderOpenstack
-		if err := validation.ValidateCreateNodeSpec(c, &nd.Spec.Template, &dc); err != nil {
+		if err := validation.ValidateCreateNodeSpec(c, &nd.Spec.Template, dc); err != nil {
 			return nil, err
 		}
 
