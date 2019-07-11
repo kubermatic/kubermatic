@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/sirupsen/logrus"
 
@@ -26,6 +27,9 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machine"
+	apiclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client"
+	projectclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/project"
+	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -55,6 +59,7 @@ var (
 type testScenario interface {
 	Name() string
 	Cluster(secrets secrets) *kubermaticv1.Cluster
+	APICluster(secrets secrets) *apimodels.CreateClusterSpec
 	NodeDeployments(num int, secrets secrets) []kubermaticapiv1.NodeDeployment
 	OS() kubermaticapiv1.OperatingSystemSpec
 }
@@ -85,6 +90,7 @@ func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
 }
 
 type testRunner struct {
+	ctx              context.Context
 	scenarios        []testScenario
 	secrets          secrets
 	namePrefix       string
@@ -648,8 +654,49 @@ func (r *testRunner) getCloudConfig(log *logrus.Entry, cluster *kubermaticv1.Clu
 
 func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*kubermaticv1.Cluster, error) {
 	// Always generate a random name
+	name := rand.String(8)
+
+	// We currently transition from creating clusters via the Kubernetes API to creating them via the Kubermatic
+	// api, so check if the scenario already supports Kubermatic api and fall back to Kubernetes api if not
+	if apiCluster := scenario.APICluster(r.secrets); apiCluster != nil {
+		return r.createClusterViaKubermaticAPI(log, apiCluster, name)
+	}
+	return r.createClusterViaKubernetesAPI(log, scenario, name)
+}
+
+func (r *testRunner) createClusterViaKubermaticAPI(log *logrus.Entry, cluster *apimodels.CreateClusterSpec, name string) (*kubermaticv1.Cluster, error) {
+	log = log.WithField("cluster", name)
+	log.Info("Creating cluster via kubermatic API")
+	projectID := "tvjxf7w48b"
+	cluster.Cluster.ID = name
+	cluster.Cluster.Name = name
+	params := &projectclient.CreateClusterParams{ProjectID: projectID, Dc: "prow-build-cluster", Body: cluster}
+	params.SetTimeout(15 * time.Second)
+	host := fmt.Sprintf("kubermatic-api.kubermatic-%s.svc.cluster.local.:80", r.workerName)
+	// pragma: no security
+	token := "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InNlcnZpY2VhY2NvdW50LTJ6cW02Y2ZnaHpAY2kua3ViZXJtYXRpYy5pbyIsImV4cCI6MTY1NzU2NjE0NSwiaWF0IjoxNTYyODcxNzQ1LCJuYmYiOjE1NjI4NzE3NDUsInByb2plY3RfaWQiOiJ0dmp4Zjd3NDhiIiwidG9rZW5faWQiOiJwejY4cnNwOXh2In0.aRwn2dKeZe7sEIhgHfzhO1erMQeuhKn_XZ8_KlruTzc"
+	client := apiclient.New(httptransport.New(host, "", []string{"http"}), nil)
+	if _, err := client.Project.CreateCluster(params, httptransport.BearerToken(token)); err != nil {
+		return nil, fmt.Errorf("failed to create cluster via kubermatic api: %v", err)
+	}
+	crCluster := &kubermaticv1.Cluster{}
+	if err := wait.Poll(time.Second, 15*time.Second, func() (bool, error) {
+		err := r.seedClusterClient.Get(r.ctx, types.NamespacedName{Name: name}, crCluster)
+		if kerrors.IsNotFound(err) {
+			return false, nil
+		}
+		return true, err
+	}); err != nil {
+		return nil, fmt.Errorf("failed to get cluster %q after creating it: %v", name, err)
+	}
+
+	log.Info("Successfully created cluster via Kubermatic API")
+	return crCluster, nil
+}
+
+func (r *testRunner) createClusterViaKubernetesAPI(log *logrus.Entry, scenario testScenario, name string) (*kubermaticv1.Cluster, error) {
 	cluster := scenario.Cluster(r.secrets)
-	cluster.Name = rand.String(8)
+	cluster.Name = name
 	if r.namePrefix != "" {
 		cluster.Name = fmt.Sprintf("%s-%s", r.namePrefix, cluster.Name)
 	}
