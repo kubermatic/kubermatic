@@ -667,6 +667,7 @@ func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*k
 func (r *testRunner) createClusterViaKubermaticAPI(log *logrus.Entry, cluster *apimodels.CreateClusterSpec, name string) (*kubermaticv1.Cluster, error) {
 	log = log.WithField("cluster", name)
 	log.Info("Creating cluster via kubermatic API")
+
 	projectID := "tvjxf7w48b"
 	cluster.Cluster.ID = name
 	cluster.Cluster.Name = name
@@ -679,12 +680,23 @@ func (r *testRunner) createClusterViaKubermaticAPI(log *logrus.Entry, cluster *a
 	if _, err := client.Project.CreateCluster(params, httptransport.BearerToken(token)); err != nil {
 		return nil, fmt.Errorf("failed to create cluster via kubermatic api: %v", err)
 	}
+
 	crCluster := &kubermaticv1.Cluster{}
+	selector, err := labels.Parse(fmt.Sprintf("worker-name=%s", r.workerName))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse selector: %v", err)
+	}
 	if err := wait.Poll(time.Second, 15*time.Second, func() (bool, error) {
-		err := r.seedClusterClient.Get(r.ctx, types.NamespacedName{Name: name}, crCluster)
-		if kerrors.IsNotFound(err) {
+		// For some reason the cluster doesn't have the name we set via ID on creation
+		clusterList := &kubermaticv1.ClusterList{}
+		opts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
+		if err := r.seedClusterClient.List(r.ctx, opts, clusterList); err != nil {
+			return false, err
+		}
+		if len(clusterList.Items) != 1 {
 			return false, nil
 		}
+		crCluster = &clusterList.Items[0]
 		return true, err
 	}); err != nil {
 		return nil, fmt.Errorf("failed to get cluster %q after creating it: %v", name, err)
