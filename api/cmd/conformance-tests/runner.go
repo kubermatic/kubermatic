@@ -672,7 +672,18 @@ func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*k
 func (r *testRunner) createClusterViaKubermaticAPI(log *logrus.Entry, cluster *apimodels.CreateClusterSpec, scenario testScenario) (*kubermaticv1.Cluster, error) {
 	log.Info("Creating cluster via kubermatic API")
 
-	cluster.Cluster.Name = scenario.Name()
+	// The cluster name must be unique per project.
+	// We build up a understandable name with the various cli parameters & add a random string in the end to ensure
+	// we really have a unique name
+	if r.namePrefix != "" {
+		cluster.Cluster.Name = r.namePrefix + "-"
+	}
+	if r.workerName != "" {
+		cluster.Cluster.Name += r.workerName + "-"
+	}
+	cluster.Cluster.Name += scenario.Name() + "-"
+	cluster.Cluster.Name += rand.String(8)
+
 	params := &projectclient.CreateClusterParams{
 		ProjectID: r.kubermatcProjectID,
 		Dc:        "prow-build-cluster",
