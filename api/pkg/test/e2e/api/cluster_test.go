@@ -8,6 +8,7 @@ import (
 	"time"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/util/rand"
 )
@@ -135,8 +136,9 @@ func TestCreateAWSCluster(t *testing.T) {
 }
 
 func isHealthyCluster(healthStatus *apiv1.ClusterHealth) bool {
-	if healthStatus.UserClusterControllerManager && healthStatus.Scheduler && healthStatus.MachineController &&
-		healthStatus.Etcd && healthStatus.Controller && healthStatus.Apiserver {
+	if healthStatus.UserClusterControllerManager == kubermaticv1.HealthStatusUp && healthStatus.Scheduler == kubermaticv1.HealthStatusUp &&
+		healthStatus.MachineController == kubermaticv1.HealthStatusUp && healthStatus.Etcd == kubermaticv1.HealthStatusUp &&
+		healthStatus.Controller == kubermaticv1.HealthStatusUp && healthStatus.Apiserver == kubermaticv1.HealthStatusUp {
 		return true
 	}
 	return false
