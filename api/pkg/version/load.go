@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 )
 
 // LoadUpdates loads the update definition file and returns the defined MasterUpdate
@@ -24,7 +24,7 @@ func LoadUpdates(path string) ([]*MasterUpdate, error) {
 		Updates []*MasterUpdate `json:"updates"`
 	}{}
 
-	err = yaml.Unmarshal(bytes, &s)
+	err = yaml.UnmarshalStrict(bytes, &s)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func LoadVersions(path string) ([]*MasterVersion, error) {
 		Versions []*MasterVersion `json:"versions"`
 	}{}
 
-	err = yaml.Unmarshal(bytes, &s)
+	err = yaml.UnmarshalStrict(bytes, &s)
 	if err != nil {
 		return nil, err
 	}
