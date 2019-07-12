@@ -351,6 +351,14 @@ groups:
     labels:
       severity: critical
 
+  - alert: DNSResolverDown
+    annotations:
+      message: DNS resolver has disappeared from Prometheus target discovery.
+    expr: absent(up{job="dns-resolver"} == 1)
+    for: 15m
+    labels:
+      severity: warning
+
 - name: kubernetes-nodes
   rules:
   - alert: KubernetesNodeNotReady

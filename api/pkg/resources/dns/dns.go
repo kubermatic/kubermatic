@@ -85,7 +85,15 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 				return nil, fmt.Errorf("failed to get podlabels: %v", err)
 			}
 
-			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{Labels: podLabels}
+			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
+				Labels: podLabels,
+				Annotations: map[string]string{
+					"prometheus.io/scrape": "true",
+					"prometheus.io/path":   "/metrics",
+					"prometheus.io/port":   "9253",
+				},
+			}
+
 			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
 			if err != nil {
 				return nil, fmt.Errorf("failed to get openvpn sidecar for dns resolver: %v", err)
@@ -202,6 +210,7 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
   forward . /etc/resolv.conf
   errors
   health
+  prometheus 0.0.0.0:9253
 }
 `, seedClusterNamespaceDNS, data.Cluster().Spec.ClusterNetwork.DNSDomain, dnsIP)
 
