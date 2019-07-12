@@ -111,12 +111,19 @@ export VAULT_TOKEN=$(vault write \
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
 export DATACENTERS_FILE=/tmp/datacenters.yaml
-vault kv get -field=kubeconfig \
+retry 5 vault kv get -field=kubeconfig \
   dev/seed-clusters/ci.kubermatic.io > $KUBECONFIG
-vault kv get -field=values.yaml \
+retry 5 vault kv get -field=values.yaml \
   dev/seed-clusters/ci.kubermatic.io > $VALUES_FILE
-vault kv get -field=datacenters.yaml \
+retry 5 vault kv get -field=datacenters.yaml \
   dev/seed-clusters/ci.kubermatic.io > $DATACENTERS_FILE
+retry 5 KUBERMATIC_PROJECT_ID="$(vault kv get -field=project_id \
+	dev/seed-clusters/ci.kubermatic.io)"
+retry 5 KUBERMATIC_SERVICEACCOUNT_TOKEN="$(vault kv get -field=project_id \
+	dev/seed-clusters/ci.kubermatic.io)"
+# Export sets the rc to 0, so export later on and not when retrying
+export KUBERMATIC_PROJECT_ID
+export KUBERMATIC_SERVICEACCOUNT_TOKEN
 echodate "Successfully got secrets from Vault"
 
 
@@ -243,7 +250,7 @@ if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
 fi
 
 echodate "Starting conformance tests"
-
+export KUBERMATIC_APISERVER_ADDRESS="kubermatic-api.prow-kubermatic-${BUILD_ID}.svc.cluster.local.:80"
 if [[ $provider == "aws" ]]; then
   EXTRA_ARGS="-aws-access-key-id=${AWS_E2E_TESTS_KEY_ID}
      -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}"

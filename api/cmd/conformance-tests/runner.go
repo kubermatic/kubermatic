@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	httptransport "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/runtime"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/sirupsen/logrus"
 
@@ -86,6 +86,9 @@ func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
 		openshift:                    opts.openshift,
 		printGinkoLogs:               opts.printGinkoLogs,
 		onlyTestCreation:             opts.onlyTestCreation,
+		kubermatcProjectID:           opts.kubermatcProjectID,
+		kubermaticClient:             opts.kubermaticClient,
+		kubermaticAuthenticator:      opts.kubermaticAuthenticator,
 	}
 }
 
@@ -116,6 +119,10 @@ type testRunner struct {
 	// The label to use to select an existing cluster to test against instead of
 	// creating a new one
 	existingClusterLabel string
+
+	kubermatcProjectID      string
+	kubermaticClient        *apiclient.Kubermatic
+	kubermaticAuthenticator runtime.ClientAuthInfoWriter
 }
 
 type testResult struct {
@@ -653,31 +660,27 @@ func (r *testRunner) getCloudConfig(log *logrus.Entry, cluster *kubermaticv1.Clu
 }
 
 func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*kubermaticv1.Cluster, error) {
-	// Always generate a random name
-	name := rand.String(8)
 
 	// We currently transition from creating clusters via the Kubernetes API to creating them via the Kubermatic
 	// api, so check if the scenario already supports Kubermatic api and fall back to Kubernetes api if not
 	if apiCluster := scenario.APICluster(r.secrets); apiCluster != nil {
-		return r.createClusterViaKubermaticAPI(log, apiCluster, name)
+		return r.createClusterViaKubermaticAPI(log, apiCluster, scenario)
 	}
-	return r.createClusterViaKubernetesAPI(log, scenario, name)
+	return r.createClusterViaKubernetesAPI(log, scenario)
 }
 
-func (r *testRunner) createClusterViaKubermaticAPI(log *logrus.Entry, cluster *apimodels.CreateClusterSpec, name string) (*kubermaticv1.Cluster, error) {
-	log = log.WithField("cluster", name)
+func (r *testRunner) createClusterViaKubermaticAPI(log *logrus.Entry, cluster *apimodels.CreateClusterSpec, scenario testScenario) (*kubermaticv1.Cluster, error) {
 	log.Info("Creating cluster via kubermatic API")
 
-	projectID := "tvjxf7w48b"
-	cluster.Cluster.ID = name
-	cluster.Cluster.Name = name
-	params := &projectclient.CreateClusterParams{ProjectID: projectID, Dc: "prow-build-cluster", Body: cluster}
+	cluster.Cluster.Name = scenario.Name()
+	params := &projectclient.CreateClusterParams{
+		ProjectID: r.kubermatcProjectID,
+		Dc:        "prow-build-cluster",
+		Body:      cluster,
+	}
 	params.SetTimeout(15 * time.Second)
-	host := fmt.Sprintf("kubermatic-api.prow-kubermatic-%s.svc.cluster.local.:80", r.workerName)
-	// pragma: no security
-	token := "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InNlcnZpY2VhY2NvdW50LTJ6cW02Y2ZnaHpAY2kua3ViZXJtYXRpYy5pbyIsImV4cCI6MTY1NzU2NjE0NSwiaWF0IjoxNTYyODcxNzQ1LCJuYmYiOjE1NjI4NzE3NDUsInByb2plY3RfaWQiOiJ0dmp4Zjd3NDhiIiwidG9rZW5faWQiOiJwejY4cnNwOXh2In0.aRwn2dKeZe7sEIhgHfzhO1erMQeuhKn_XZ8_KlruTzc"
-	client := apiclient.New(httptransport.New(host, "", []string{"http"}), nil)
-	if _, err := client.Project.CreateCluster(params, httptransport.BearerToken(token)); err != nil {
+
+	if _, err := r.kubermaticClient.Project.CreateCluster(params, r.kubermaticAuthenticator); err != nil {
 		return nil, fmt.Errorf("failed to create cluster via kubermatic api: %v", err)
 	}
 
@@ -699,16 +702,17 @@ func (r *testRunner) createClusterViaKubermaticAPI(log *logrus.Entry, cluster *a
 		crCluster = &clusterList.Items[0]
 		return true, err
 	}); err != nil {
-		return nil, fmt.Errorf("failed to get cluster %q after creating it: %v", name, err)
+		return nil, fmt.Errorf("failed to get cluster after creating it: %v", err)
 	}
 
 	log.Info("Successfully created cluster via Kubermatic API")
 	return crCluster, nil
 }
 
-func (r *testRunner) createClusterViaKubernetesAPI(log *logrus.Entry, scenario testScenario, name string) (*kubermaticv1.Cluster, error) {
+func (r *testRunner) createClusterViaKubernetesAPI(log *logrus.Entry, scenario testScenario) (*kubermaticv1.Cluster, error) {
 	cluster := scenario.Cluster(r.secrets)
-	cluster.Name = name
+	// Always generate a random name
+	cluster.Name = rand.String(8)
 	if r.namePrefix != "" {
 		cluster.Name = fmt.Sprintf("%s-%s", r.namePrefix, cluster.Name)
 	}
