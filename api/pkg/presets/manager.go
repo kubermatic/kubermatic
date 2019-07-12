@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -163,7 +163,7 @@ func loadPresets(path string) (*Presets, error) {
 		Presets *Presets `json:"presets"`
 	}{}
 
-	err = yaml.Unmarshal(bytes, &s)
+	err = yaml.UnmarshalStrict(bytes, &s)
 	if err != nil {
 		return nil, err
 	}
