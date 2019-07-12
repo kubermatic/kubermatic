@@ -7,8 +7,6 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Returns a matrix of (version x operating system)
@@ -54,32 +52,9 @@ func (s *packetScenario) Name() string {
 }
 
 func (s *packetScenario) Cluster(secrets secrets) *kubermaticv1.Cluster {
-	return &kubermaticv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{},
-		Spec: kubermaticv1.ClusterSpec{
-			Version:           *s.version,
-			HumanReadableName: s.Name(),
-			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
-				Services: kubermaticv1.NetworkRanges{
-					CIDRBlocks: []string{"10.10.10.0/24"},
-				},
-				Pods: kubermaticv1.NetworkRanges{
-					CIDRBlocks: []string{"172.25.0.0/16"},
-				},
-				DNSDomain: "cluster.local",
-			},
-			Cloud: kubermaticv1.CloudSpec{
-				DatacenterName: "packet-ams1",
-				Packet: &kubermaticv1.PacketCloudSpec{
-					APIKey:    secrets.Packet.APIKey,
-					ProjectID: secrets.Packet.ProjectID,
-				},
-			},
-		},
-	}
+	return nil
 }
 
-// TODO: Implement
 func (s *packetScenario) APICluster(secrets secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
