@@ -6,6 +6,7 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
+	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -75,6 +76,10 @@ func (s *digitaloceanScenario) Cluster(secrets secrets) *v1.Cluster {
 			},
 		},
 	}
+}
+
+func (s *digitaloceanScenario) APICluster(secrets secrets) *apimodels.CreateClusterSpec {
+	return nil
 }
 
 func (s *digitaloceanScenario) Nodes(num int, _ secrets) *kubermaticapiv1.NodeDeployment {
