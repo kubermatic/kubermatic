@@ -81,7 +81,20 @@ func (s *packetScenario) Cluster(secrets secrets) *kubermaticv1.Cluster {
 
 // TODO: Implement
 func (s *packetScenario) APICluster(secrets secrets) *apimodels.CreateClusterSpec {
-	return nil
+	return &apimodels.CreateClusterSpec{
+		Cluster: &apimodels.Cluster{
+			Type: "kubernetes",
+			Spec: &apimodels.ClusterSpec{
+				Cloud: &apimodels.CloudSpec{
+					DatacenterName: "packet-ams1",
+					Packet: &apimodels.PacketCloudSpec{
+						APIKey:    secrets.Packet.APIKey,
+						ProjectID: secrets.Packet.ProjectID,
+					},
+				},
+			},
+		},
+	}
 }
 
 func (s *packetScenario) NodeDeployments(num int, _ secrets) []kubermaticapiv1.NodeDeployment {
