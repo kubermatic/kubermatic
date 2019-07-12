@@ -42,6 +42,15 @@ groups:
       - Check the Prometheus Service Discovery page to find out why the target is unreachable.
       - Ensure that the controller-manager pod's logs and that it is not crashlooping.
 
+  - alert: OpenVPNServerDown
+    annotations:
+      message: There is no healthy OpenVPN server in cluster {{ $labels.cluster }}.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-openvpnserverdown
+    expr: absent(kube_deployment_status_replicas_available{deployment="openvpn-client",cluster!=""} > 0)
+    for: 15m
+    labels:
+      severity: critical
+
   # This is a dummy alert that is triggered for paused clusters to inhibit all other alerts from such clusters.
   # The label_replace() is used to create a new "cluster" label that will be used for the inhibitions as well.
   - alert: KubermaticClusterPaused
