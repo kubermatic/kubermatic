@@ -120,7 +120,7 @@ retry 5 vault kv get -field=datacenters.yaml \
 retry 5 vault kv get -field=project_id \
 	dev/seed-clusters/ci.kubermatic.io > /tmp/kubermatic_project_id
 export KUBERMATIC_PROJECT_ID="$(cat /tmp/kubermatic_project_id)"
-retry 5 vault kv get -field=project_id \
+retry 5 vault kv get -field=serviceaccount_token \
 	dev/seed-clusters/ci.kubermatic.io > /tmp/kubermatic_serviceaccount_token
 export KUBERMATIC_SERVICEACCOUNT_TOKEN="$(cat /tmp/kubermatic_serviceaccount_token)"
 echodate "Successfully got secrets from Vault"
