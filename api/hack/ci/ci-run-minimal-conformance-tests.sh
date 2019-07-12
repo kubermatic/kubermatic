@@ -117,13 +117,12 @@ retry 5 vault kv get -field=values.yaml \
   dev/seed-clusters/ci.kubermatic.io > $VALUES_FILE
 retry 5 vault kv get -field=datacenters.yaml \
   dev/seed-clusters/ci.kubermatic.io > $DATACENTERS_FILE
-retry 5 KUBERMATIC_PROJECT_ID="$(vault kv get -field=project_id \
-	dev/seed-clusters/ci.kubermatic.io)"
-retry 5 KUBERMATIC_SERVICEACCOUNT_TOKEN="$(vault kv get -field=project_id \
-	dev/seed-clusters/ci.kubermatic.io)"
-# Export sets the rc to 0, so export later on and not when retrying
-export KUBERMATIC_PROJECT_ID
-export KUBERMATIC_SERVICEACCOUNT_TOKEN
+retry 5 vault kv get -field=project_id \
+	dev/seed-clusters/ci.kubermatic.io > /tmp/kubermatic_project_id
+export KUBERMATIC_PROJECT_ID="$(cat /tmp/kubermatic_project_id)"
+retry 5 vault kv get -field=project_id \
+	dev/seed-clusters/ci.kubermatic.io > /tmp/kubermatic_serviceaccount_token
+export KUBERMATIC_SERVICEACCOUNT_TOKEN="$(cat /tmp/kubermatic_serviceaccount_token)"
 echodate "Successfully got secrets from Vault"
 
 
