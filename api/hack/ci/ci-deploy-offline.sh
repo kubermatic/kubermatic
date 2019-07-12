@@ -10,6 +10,7 @@ source ./../lib.sh
 
 # Start docker if its not running yet
 docker ps &>/dev/null || start-docker.sh
+retry 5 docker login -u ${QUAY_IO_USERNAME} -p ${QUAY_IO_PASSWORD} quay.io
 
 echodate "Getting secrets from Vault"
 export VAULT_ADDR=https://vault.loodse.com/
