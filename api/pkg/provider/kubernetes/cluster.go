@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cloud"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -94,8 +95,9 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 		},
 		Spec: cluster.Spec,
 		Status: kubermaticv1.ClusterStatus{
-			UserEmail:     userInfo.Email,
-			NamespaceName: NamespaceName(name),
+			UserEmail:              userInfo.Email,
+			NamespaceName:          NamespaceName(name),
+			CloudMigrationRevision: cloud.CurrentMigrationRevision,
 		},
 		Address: kubermaticv1.ClusterAddress{},
 	}
