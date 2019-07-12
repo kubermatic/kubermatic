@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-openapi/runtime"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/sirupsen/logrus"
 
@@ -26,6 +27,9 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machine"
+	apiclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client"
+	projectclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/project"
+	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -55,6 +59,7 @@ type testScenario interface {
 	Name() string
 	Cluster(secrets secrets) *kubermaticv1.Cluster
 	Nodes(num int, secrets secrets) *kubermaticapiv1.NodeDeployment
+	APICluster(secrets secrets) *apimodels.CreateClusterSpec
 }
 
 func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
@@ -79,10 +84,14 @@ func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
 		openshift:                    opts.openshift,
 		printGinkoLogs:               opts.printGinkoLogs,
 		onlyTestCreation:             opts.onlyTestCreation,
+		kubermatcProjectID:           opts.kubermatcProjectID,
+		kubermaticClient:             opts.kubermaticClient,
+		kubermaticAuthenticator:      opts.kubermaticAuthenticator,
 	}
 }
 
 type testRunner struct {
+	ctx              context.Context
 	scenarios        []testScenario
 	secrets          secrets
 	namePrefix       string
@@ -108,6 +117,10 @@ type testRunner struct {
 	// The label to use to select an existing cluster to test against instead of
 	// creating a new one
 	existingClusterLabel string
+
+	kubermatcProjectID      string
+	kubermaticClient        *apiclient.Kubermatic
+	kubermaticAuthenticator runtime.ClientAuthInfoWriter
 }
 
 type testResult struct {
@@ -659,8 +672,58 @@ func (r *testRunner) getCloudConfig(log *logrus.Entry, cluster *kubermaticv1.Clu
 }
 
 func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*kubermaticv1.Cluster, error) {
-	// Always generate a random name
+
+	// We currently transition from creating clusters via the Kubernetes API to creating them via the Kubermatic
+	// api, so check if the scenario already supports Kubermatic api and fall back to Kubernetes api if not
+	if apiCluster := scenario.APICluster(r.secrets); apiCluster != nil {
+		return r.createClusterViaKubermaticAPI(log, apiCluster, scenario)
+	}
+	return r.createClusterViaKubernetesAPI(log, scenario)
+}
+
+func (r *testRunner) createClusterViaKubermaticAPI(log *logrus.Entry, cluster *apimodels.CreateClusterSpec, scenario testScenario) (*kubermaticv1.Cluster, error) {
+	log.Info("Creating cluster via kubermatic API")
+
+	cluster.Cluster.Name = scenario.Name()
+	params := &projectclient.CreateClusterParams{
+		ProjectID: r.kubermatcProjectID,
+		Dc:        "prow-build-cluster",
+		Body:      cluster,
+	}
+	params.SetTimeout(15 * time.Second)
+
+	if _, err := r.kubermaticClient.Project.CreateCluster(params, r.kubermaticAuthenticator); err != nil {
+		return nil, fmt.Errorf("failed to create cluster via kubermatic api: %v", err)
+	}
+
+	crCluster := &kubermaticv1.Cluster{}
+	selector, err := labels.Parse(fmt.Sprintf("worker-name=%s", r.workerName))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse selector: %v", err)
+	}
+	if err := wait.Poll(time.Second, 15*time.Second, func() (bool, error) {
+		// For some reason the cluster doesn't have the name we set via ID on creation
+		clusterList := &kubermaticv1.ClusterList{}
+		opts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
+		if err := r.seedClusterClient.List(r.ctx, opts, clusterList); err != nil {
+			return false, err
+		}
+		if len(clusterList.Items) != 1 {
+			return false, nil
+		}
+		crCluster = &clusterList.Items[0]
+		return true, err
+	}); err != nil {
+		return nil, fmt.Errorf("failed to get cluster after creating it: %v", err)
+	}
+
+	log.Info("Successfully created cluster via Kubermatic API")
+	return crCluster, nil
+}
+
+func (r *testRunner) createClusterViaKubernetesAPI(log *logrus.Entry, scenario testScenario) (*kubermaticv1.Cluster, error) {
 	cluster := scenario.Cluster(r.secrets)
+	// Always generate a random name
 	cluster.Name = rand.String(8)
 	if r.namePrefix != "" {
 		cluster.Name = fmt.Sprintf("%s-%s", r.namePrefix, cluster.Name)

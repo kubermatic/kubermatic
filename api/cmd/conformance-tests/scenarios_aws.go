@@ -4,10 +4,9 @@ import (
 	"fmt"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // Returns a matrix of (version x operating system)
@@ -51,27 +50,23 @@ func (s *awsScenario) Name() string {
 	return fmt.Sprintf("aws-%s-%s", getOSNameFromSpec(s.nodeOsSpec), s.version.String())
 }
 
-func (s *awsScenario) Cluster(secrets secrets) *v1.Cluster {
-	return &v1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{},
-		Spec: v1.ClusterSpec{
-			Version:           *s.version,
-			HumanReadableName: s.Name(),
-			ClusterNetwork: v1.ClusterNetworkingConfig{
-				Services: v1.NetworkRanges{
-					CIDRBlocks: []string{"10.10.10.0/24"},
+func (s *awsScenario) Cluster(secrets secrets) *kubermaticv1.Cluster {
+	return nil
+}
+
+func (s *awsScenario) APICluster(secrets secrets) *apimodels.CreateClusterSpec {
+	return &apimodels.CreateClusterSpec{
+		Cluster: &apimodels.Cluster{
+			Type: "kubernetes",
+			Spec: &apimodels.ClusterSpec{
+				Cloud: &apimodels.CloudSpec{
+					DatacenterName: "aws-eu-central-1a",
+					Aws: &apimodels.AWSCloudSpec{
+						SecretAccessKey: secrets.AWS.SecretAccessKey,
+						AccessKeyID:     secrets.AWS.AccessKeyID,
+					},
 				},
-				Pods: v1.NetworkRanges{
-					CIDRBlocks: []string{"172.25.0.0/16"},
-				},
-				DNSDomain: "cluster.local",
-			},
-			Cloud: v1.CloudSpec{
-				DatacenterName: "aws-eu-central-1a",
-				AWS: &v1.AWSCloudSpec{
-					SecretAccessKey: secrets.AWS.SecretAccessKey,
-					AccessKeyID:     secrets.AWS.AccessKeyID,
-				},
+				Version: s.version,
 			},
 		},
 	}
