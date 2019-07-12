@@ -1,5 +1,9 @@
 package prometheus
 
+// prometheusRules contains the prerecoding and alerting rules for
+// Prometheus. Be careful when changing alert names, as some of them
+// are used for alert inhibitions and configured inside the
+// seed-cluster's Alertmanager.
 const prometheusRules = `
 groups:
 - name: kubermatic.goprocess
