@@ -224,7 +224,7 @@ func Reconcile{{ .ResourceName }}s(ctx context.Context, namedGetters []Named{{ .
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &{{ .ImportAlias }}.{{ .ResourceName }}{}, {{ .RequiresRecreate}}); err != nil {
-			return fmt.Errorf("failed to ensure {{ .ResourceName }}: %v", err)
+			return fmt.Errorf("failed to ensure {{ .ResourceName }} %s/%s: %v", namespace, name, err)
 		}
 	}
 

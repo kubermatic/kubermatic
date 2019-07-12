@@ -47,7 +47,7 @@ func ReconcileServices(ctx context.Context, namedGetters []NamedServiceCreatorGe
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &corev1.Service{}, false); err != nil {
-			return fmt.Errorf("failed to ensure Service: %v", err)
+			return fmt.Errorf("failed to ensure Service %s/%s: %v", namespace, name, err)
 		}
 	}
 
@@ -81,7 +81,7 @@ func ReconcileSecrets(ctx context.Context, namedGetters []NamedSecretCreatorGett
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &corev1.Secret{}, false); err != nil {
-			return fmt.Errorf("failed to ensure Secret: %v", err)
+			return fmt.Errorf("failed to ensure Secret %s/%s: %v", namespace, name, err)
 		}
 	}
 
@@ -115,7 +115,7 @@ func ReconcileConfigMaps(ctx context.Context, namedGetters []NamedConfigMapCreat
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &corev1.ConfigMap{}, false); err != nil {
-			return fmt.Errorf("failed to ensure ConfigMap: %v", err)
+			return fmt.Errorf("failed to ensure ConfigMap %s/%s: %v", namespace, name, err)
 		}
 	}
 
@@ -149,7 +149,7 @@ func ReconcileServiceAccounts(ctx context.Context, namedGetters []NamedServiceAc
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &corev1.ServiceAccount{}, false); err != nil {
-			return fmt.Errorf("failed to ensure ServiceAccount: %v", err)
+			return fmt.Errorf("failed to ensure ServiceAccount %s/%s: %v", namespace, name, err)
 		}
 	}
 
@@ -183,7 +183,7 @@ func ReconcileStatefulSets(ctx context.Context, namedGetters []NamedStatefulSetC
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &appsv1.StatefulSet{}, false); err != nil {
-			return fmt.Errorf("failed to ensure StatefulSet: %v", err)
+			return fmt.Errorf("failed to ensure StatefulSet %s/%s: %v", namespace, name, err)
 		}
 	}
 
@@ -218,7 +218,7 @@ func ReconcileDeployments(ctx context.Context, namedGetters []NamedDeploymentCre
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &appsv1.Deployment{}, false); err != nil {
-			return fmt.Errorf("failed to ensure Deployment: %v", err)
+			return fmt.Errorf("failed to ensure Deployment %s/%s: %v", namespace, name, err)
 		}
 	}
 
@@ -252,7 +252,7 @@ func ReconcileDaemonSets(ctx context.Context, namedGetters []NamedDaemonSetCreat
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &appsv1.DaemonSet{}, false); err != nil {
-			return fmt.Errorf("failed to ensure DaemonSet: %v", err)
+			return fmt.Errorf("failed to ensure DaemonSet %s/%s: %v", namespace, name, err)
 		}
 	}
 
@@ -286,7 +286,7 @@ func ReconcilePodDisruptionBudgets(ctx context.Context, namedGetters []NamedPodD
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &policyv1beta1.PodDisruptionBudget{}, true); err != nil {
-			return fmt.Errorf("failed to ensure PodDisruptionBudget: %v", err)
+			return fmt.Errorf("failed to ensure PodDisruptionBudget %s/%s: %v", namespace, name, err)
 		}
 	}
 
@@ -320,7 +320,7 @@ func ReconcileVerticalPodAutoscalers(ctx context.Context, namedGetters []NamedVe
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &autoscalingv1beta2.VerticalPodAutoscaler{}, false); err != nil {
-			return fmt.Errorf("failed to ensure VerticalPodAutoscaler: %v", err)
+			return fmt.Errorf("failed to ensure VerticalPodAutoscaler %s/%s: %v", namespace, name, err)
 		}
 	}
 
@@ -354,7 +354,7 @@ func ReconcileClusterRoleBindings(ctx context.Context, namedGetters []NamedClust
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &rbacv1.ClusterRoleBinding{}, false); err != nil {
-			return fmt.Errorf("failed to ensure ClusterRoleBinding: %v", err)
+			return fmt.Errorf("failed to ensure ClusterRoleBinding %s/%s: %v", namespace, name, err)
 		}
 	}
 
@@ -388,7 +388,7 @@ func ReconcileClusterRoles(ctx context.Context, namedGetters []NamedClusterRoleC
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &rbacv1.ClusterRole{}, false); err != nil {
-			return fmt.Errorf("failed to ensure ClusterRole: %v", err)
+			return fmt.Errorf("failed to ensure ClusterRole %s/%s: %v", namespace, name, err)
 		}
 	}
 
@@ -422,7 +422,7 @@ func ReconcileRoles(ctx context.Context, namedGetters []NamedRoleCreatorGetter, 
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &rbacv1.Role{}, false); err != nil {
-			return fmt.Errorf("failed to ensure Role: %v", err)
+			return fmt.Errorf("failed to ensure Role %s/%s: %v", namespace, name, err)
 		}
 	}
 
@@ -456,7 +456,7 @@ func ReconcileRoleBindings(ctx context.Context, namedGetters []NamedRoleBindingC
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &rbacv1.RoleBinding{}, false); err != nil {
-			return fmt.Errorf("failed to ensure RoleBinding: %v", err)
+			return fmt.Errorf("failed to ensure RoleBinding %s/%s: %v", namespace, name, err)
 		}
 	}
 
@@ -490,7 +490,7 @@ func ReconcileCustomResourceDefinitions(ctx context.Context, namedGetters []Name
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &apiextensionsv1beta1.CustomResourceDefinition{}, false); err != nil {
-			return fmt.Errorf("failed to ensure CustomResourceDefinition: %v", err)
+			return fmt.Errorf("failed to ensure CustomResourceDefinition %s/%s: %v", namespace, name, err)
 		}
 	}
 
@@ -524,7 +524,7 @@ func ReconcileCronJobs(ctx context.Context, namedGetters []NamedCronJobCreatorGe
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &batchv1beta1.CronJob{}, false); err != nil {
-			return fmt.Errorf("failed to ensure CronJob: %v", err)
+			return fmt.Errorf("failed to ensure CronJob %s/%s: %v", namespace, name, err)
 		}
 	}
 
@@ -558,7 +558,7 @@ func ReconcileMutatingWebhookConfigurations(ctx context.Context, namedGetters []
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &admissionregistrationv1beta1.MutatingWebhookConfiguration{}, false); err != nil {
-			return fmt.Errorf("failed to ensure MutatingWebhookConfiguration: %v", err)
+			return fmt.Errorf("failed to ensure MutatingWebhookConfiguration %s/%s: %v", namespace, name, err)
 		}
 	}
 
@@ -592,7 +592,7 @@ func ReconcileAPIServices(ctx context.Context, namedGetters []NamedAPIServiceCre
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &apiregistrationv1beta1.APIService{}, false); err != nil {
-			return fmt.Errorf("failed to ensure APIService: %v", err)
+			return fmt.Errorf("failed to ensure APIService %s/%s: %v", namespace, name, err)
 		}
 	}
 
