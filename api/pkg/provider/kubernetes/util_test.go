@@ -12,6 +12,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"k8s.io/apimachinery/pkg/types"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/cloud"
 	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -289,8 +290,9 @@ func genCluster(name, clusterType, projectID, workerName, userEmail string) *kub
 	cluster.Labels = labels
 	cluster.Name = name
 	cluster.Status = kubermaticapiv1.ClusterStatus{
-		UserEmail:     userEmail,
-		NamespaceName: fmt.Sprintf("cluster-%s", name),
+		UserEmail:              userEmail,
+		NamespaceName:          fmt.Sprintf("cluster-%s", name),
+		CloudMigrationRevision: cloud.CurrentMigrationRevision,
 	}
 	cluster.Address = kubermaticapiv1.ClusterAddress{}
 
