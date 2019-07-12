@@ -248,12 +248,8 @@ func GetEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 }
 
 func isStatus(err error, status int32) bool {
-	if kubernetesError, ok := err.(*kerrors.StatusError); ok {
-		if status == kubernetesError.Status().Code {
-			return true
-		}
-	}
-	return false
+	kubernetesError, ok := err.(*kerrors.StatusError)
+	return ok && status == kubernetesError.Status().Code
 }
 
 func PatchEndpoint(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
