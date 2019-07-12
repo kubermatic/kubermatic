@@ -351,6 +351,27 @@ groups:
     labels:
       severity: critical
 
+  # This is triggered if the cluster does have nodes, but the cadvisor could
+  # not successfully be scraped for whatever reason. An absent() on cadvisor
+  # metrics is not a good alert because clusters could simply have no nodes
+  # and hence no cadvisors.
+  - alert: CAdvisorDown
+    annotations:
+      message: cAdvisor on {{ $labels.kubernetes_io_hostname }} could not be scraped.
+    expr: up{job="cadvisor"} == 0
+    for: 15m
+    labels:
+      severity: warning
+
+  # This functions similarly to the cadvisor alert above.
+  - alert: KubernetesNodeDown
+    annotations:
+      message: The kubelet on {{ $labels.kubernetes_io_hostname }} could not be scraped.
+    expr: up{job="kubernetes-nodes"} == 0
+    for: 15m
+    labels:
+      severity: warning
+
   - alert: DNSResolverDown
     annotations:
       message: DNS resolver has disappeared from Prometheus target discovery.
