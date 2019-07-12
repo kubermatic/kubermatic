@@ -680,6 +680,31 @@ func (r *testRunner) createClusterViaKubermaticAPI(log *logrus.Entry, cluster *a
 	}
 	params.SetTimeout(15 * time.Second)
 
+	projectParams := &projectclient.GetProjectParams{
+		ProjectID: r.kubermatcProjectID,
+	}
+	projectParams.SetTimeout(4 * time.Second)
+
+	project, err := r.kubermaticClient.Project.GetProject(projectParams, r.kubermaticAuthenticator)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get projecti: %v", err)
+	}
+	fmt.Print(project)
+
+	fmt.Print(cluster)
+
+	cp := &projectclient.ListClustersParams{
+		ProjectID: r.kubermatcProjectID,
+		Dc:        "prow-build-cluster",
+	}
+	cp.SetTimeout(4 * time.Second)
+
+	clusters, err := r.kubermaticClient.Project.ListClusters(cp, r.kubermaticAuthenticator)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get clusters: %v", err)
+	}
+	fmt.Print(clusters)
+
 	if _, err := r.kubermaticClient.Project.CreateCluster(params, r.kubermaticAuthenticator); err != nil {
 		return nil, fmt.Errorf("failed to create cluster via kubermatic api: %v", err)
 	}
