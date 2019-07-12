@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
@@ -52,11 +51,7 @@ func (s *gcpScenario) Name() string {
 	return fmt.Sprintf("gcp-%s-%s", getOSNameFromSpec(s.nodeOsSpec), version)
 }
 
-func (s *gcpScenario) Cluster(secrets secrets) *kubermaticv1.Cluster {
-	return nil
-}
-
-func (s *gcpScenario) APICluster(secrets secrets) *apimodels.CreateClusterSpec {
+func (s *gcpScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Type: "kubernetes",

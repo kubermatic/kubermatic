@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
@@ -50,11 +49,7 @@ func (s *azureScenario) Name() string {
 	return fmt.Sprintf("azure-%s-%s", getOSNameFromSpec(s.nodeOsSpec), s.version.String())
 }
 
-func (s *azureScenario) Cluster(secrets secrets) *kubermaticv1.Cluster {
-	return nil
-}
-
-func (s *azureScenario) APICluster(secrets secrets) *apimodels.CreateClusterSpec {
+func (s *azureScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 	return &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Type: "kubernetes",
