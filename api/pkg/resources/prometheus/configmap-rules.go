@@ -323,13 +323,21 @@ groups:
     labels:
       severity: critical
 
+  - alert: UserClusterControllerDown
+    annotations:
+      message: User Cluster Controller has disappeared from Prometheus target discovery.
+    expr: absent(up{job="usercluster-controller"} == 1)
+    for: 15m
+    labels:
+      severity: critical
+
   - alert: KubeStateMetricsDown
     annotations:
       message: Kube-state-metrics has disappeared from Prometheus target discovery.
     expr: absent(up{job="kube-state-metrics"} == 1)
     for: 15m
     labels:
-      severity: critical
+      severity: warning
 
   - alert: EtcdDown
     annotations:
