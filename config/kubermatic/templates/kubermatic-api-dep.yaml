@@ -62,7 +62,11 @@ spec:
           containerPort: 8085
         - name: http
           containerPort: 8080
-          protocol: TCP
+        readinessProbe:
+          httpGet:
+            port: 8080
+            path: /api/v1/healthz
+            scheme: HTTP
         volumeMounts:
         - name: kubeconfig
           mountPath: "/opt/.kube/"
