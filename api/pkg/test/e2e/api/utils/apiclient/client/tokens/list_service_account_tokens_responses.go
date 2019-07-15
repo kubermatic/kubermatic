@@ -136,12 +136,12 @@ func NewListServiceAccountTokensDefault(code int) *ListServiceAccountTokensDefau
 
 /*ListServiceAccountTokensDefault handles this case with default header values.
 
-ErrorResponse is the default representation of an error
+errorResponse
 */
 type ListServiceAccountTokensDefault struct {
 	_statusCode int
 
-	Payload *models.ErrorDetails
+	Payload *models.ErrorResponse
 }
 
 // Code gets the status code for the list service account tokens default response
@@ -155,7 +155,7 @@ func (o *ListServiceAccountTokensDefault) Error() string {
 
 func (o *ListServiceAccountTokensDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.ErrorDetails)
+	o.Payload = new(models.ErrorResponse)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

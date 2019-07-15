@@ -80,12 +80,12 @@ func NewListOpenstackSizesDefault(code int) *ListOpenstackSizesDefault {
 
 /*ListOpenstackSizesDefault handles this case with default header values.
 
-ErrorResponse is the default representation of an error
+errorResponse
 */
 type ListOpenstackSizesDefault struct {
 	_statusCode int
 
-	Payload *models.ErrorDetails
+	Payload *models.ErrorResponse
 }
 
 // Code gets the status code for the list openstack sizes default response
@@ -99,7 +99,7 @@ func (o *ListOpenstackSizesDefault) Error() string {
 
 func (o *ListOpenstackSizesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.ErrorDetails)
+	o.Payload = new(models.ErrorResponse)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

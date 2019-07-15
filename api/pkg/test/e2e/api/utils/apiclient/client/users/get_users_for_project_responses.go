@@ -136,12 +136,12 @@ func NewGetUsersForProjectDefault(code int) *GetUsersForProjectDefault {
 
 /*GetUsersForProjectDefault handles this case with default header values.
 
-ErrorResponse is the default representation of an error
+errorResponse
 */
 type GetUsersForProjectDefault struct {
 	_statusCode int
 
-	Payload *models.ErrorDetails
+	Payload *models.ErrorResponse
 }
 
 // Code gets the status code for the get users for project default response
@@ -155,7 +155,7 @@ func (o *GetUsersForProjectDefault) Error() string {
 
 func (o *GetUsersForProjectDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.ErrorDetails)
+	o.Payload = new(models.ErrorResponse)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
