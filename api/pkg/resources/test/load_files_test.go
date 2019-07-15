@@ -19,7 +19,6 @@ import (
 	clustercontroller "github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
 	monitoringcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/monitoring"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -162,8 +161,8 @@ func TestLoadFiles(t *testing.T) {
 		},
 	}
 
-	dc := provider.DatacenterMeta{
-		Spec: kubermaticv1.DatacenterSpec{
+	dc := &kubermaticv1.NodeLocation{
+		DatacenterSpec: kubermaticv1.DatacenterSpec{
 			Azure: &kubermaticv1.DatacenterSpecAzure{
 				Location: "az-location",
 			},
@@ -516,7 +515,7 @@ func TestLoadFiles(t *testing.T) {
 					ctx,
 					dynamicClient,
 					cluster,
-					&dc,
+					dc,
 					"testdc",
 					"",
 					"",
@@ -664,7 +663,7 @@ func verifyContainerResources(owner string, podTemplateSpec corev1.PodTemplateSp
 type Data struct {
 	Cluster    *kubermaticv1.Cluster
 	Node       *apiv1.Node
-	Datacenter provider.DatacenterMeta
+	Datacenter *kubermaticv1.NodeLocation
 	Name       string
 	Keys       []*kubermaticv1.UserSSHKey
 }
@@ -721,16 +720,14 @@ func TestExecute(t *testing.T) {
 					},
 					Status: apiv1.NodeStatus{},
 				},
-				Datacenter: provider.DatacenterMeta{
+				Datacenter: &kubermaticv1.NodeLocation{
 					Location: "Frankfurt",
-					Seed:     "europe-west3-c",
 					Country:  "DE",
-					Spec: kubermaticv1.DatacenterSpec{
+					DatacenterSpec: kubermaticv1.DatacenterSpec{
 						Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 							Region: "fra1",
 						},
 					},
-					IsSeed: false,
 				},
 				Keys: []*kubermaticv1.UserSSHKey{
 					{
@@ -802,11 +799,10 @@ func TestExecute(t *testing.T) {
 					},
 					Status: apiv1.NodeStatus{},
 				},
-				Datacenter: provider.DatacenterMeta{
+				Datacenter: &kubermaticv1.NodeLocation{
 					Location: "Frankfurt",
-					Seed:     "europe-west3-c",
 					Country:  "DE",
-					Spec: kubermaticv1.DatacenterSpec{
+					DatacenterSpec: kubermaticv1.DatacenterSpec{
 						AWS: &kubermaticv1.DatacenterSpecAWS{
 							Region: "fra1",
 							Images: kubermaticv1.ImageList{
@@ -817,7 +813,6 @@ func TestExecute(t *testing.T) {
 							ZoneCharacter: "aws-zone-character",
 						},
 					},
-					IsSeed: false,
 				},
 				Keys: []*kubermaticv1.UserSSHKey{
 					{
@@ -898,11 +893,10 @@ func TestExecute(t *testing.T) {
 					},
 					Status: apiv1.NodeStatus{},
 				},
-				Datacenter: provider.DatacenterMeta{
+				Datacenter: &kubermaticv1.NodeLocation{
 					Location: "Frankfurt",
-					Seed:     "europe-west3-c",
 					Country:  "DE",
-					Spec: kubermaticv1.DatacenterSpec{
+					DatacenterSpec: kubermaticv1.DatacenterSpec{
 						Openstack: &kubermaticv1.DatacenterSpecOpenstack{
 							AuthURL:          "os-auth-url",
 							AvailabilityZone: "os-availability-zone",
@@ -911,7 +905,6 @@ func TestExecute(t *testing.T) {
 							DNSServers:       []string{},
 						},
 					},
-					IsSeed: false,
 				},
 				Keys: []*kubermaticv1.UserSSHKey{
 					{
@@ -979,16 +972,14 @@ func TestExecute(t *testing.T) {
 					},
 					Status: apiv1.NodeStatus{},
 				},
-				Datacenter: provider.DatacenterMeta{
+				Datacenter: &kubermaticv1.NodeLocation{
 					Location: "westeurope",
-					Seed:     "europe-west3-c",
 					Country:  "NL",
-					Spec: kubermaticv1.DatacenterSpec{
+					DatacenterSpec: kubermaticv1.DatacenterSpec{
 						Azure: &kubermaticv1.DatacenterSpecAzure{
 							Location: "westeurope",
 						},
 					},
-					IsSeed: false,
 				},
 				Keys: []*kubermaticv1.UserSSHKey{
 					{
@@ -1045,17 +1036,15 @@ func TestExecute(t *testing.T) {
 					},
 					Status: apiv1.NodeStatus{},
 				},
-				Datacenter: provider.DatacenterMeta{
+				Datacenter: &kubermaticv1.NodeLocation{
 					Location: "Frankfurt",
-					Seed:     "europe-west3-c",
 					Country:  "DE",
-					Spec: kubermaticv1.DatacenterSpec{
+					DatacenterSpec: kubermaticv1.DatacenterSpec{
 						Hetzner: &kubermaticv1.DatacenterSpecHetzner{
 							Datacenter: "hetzner-datacenter",
 							Location:   "hetzner-location",
 						},
 					},
-					IsSeed: false,
 				},
 				Keys: []*kubermaticv1.UserSSHKey{
 					{
@@ -1114,11 +1103,10 @@ func TestExecute(t *testing.T) {
 					},
 					Status: apiv1.NodeStatus{},
 				},
-				Datacenter: provider.DatacenterMeta{
+				Datacenter: &kubermaticv1.NodeLocation{
 					Location: "Frankfurt",
-					Seed:     "europe-west3-c",
 					Country:  "DE",
-					Spec: kubermaticv1.DatacenterSpec{
+					DatacenterSpec: kubermaticv1.DatacenterSpec{
 						VSphere: &kubermaticv1.DatacenterSpecVSphere{
 							Cluster:       "vsphere-cluster",
 							AllowInsecure: true,
@@ -1127,7 +1115,6 @@ func TestExecute(t *testing.T) {
 							Datacenter:    "vsphere-datacenter",
 						},
 					},
-					IsSeed: false,
 				},
 				Keys: []*kubermaticv1.UserSSHKey{
 					{
