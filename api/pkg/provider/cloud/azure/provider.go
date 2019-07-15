@@ -516,11 +516,11 @@ func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		return nil, err
 	}
 
-	if nodeDC.Azure == nil {
+	if nodeDC.Spec.Azure == nil {
 		return nil, fmt.Errorf("datacenter %q is not a valid Azure datacenter", cluster.Spec.Cloud.DatacenterName)
 	}
 
-	location := nodeDC.Azure.Location
+	location := nodeDC.Spec.Azure.Location
 
 	if cluster.Spec.Cloud.Azure.ResourceGroup == "" {
 		cluster.Spec.Cloud.Azure.ResourceGroup = resourceNamePrefix + cluster.Name

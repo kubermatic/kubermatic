@@ -37,8 +37,8 @@ type NodeLocation struct {
 	// Detailed location of the cluster. For informational purposes only
 	Location string `json:"location,omitempty"`
 	// Node holds node-specific settings, like e.G. HTTP proxy, insecure registrys and the like
-	Node           NodeSettings `json:"node"`
-	DatacenterSpec `json:",inline"`
+	Node NodeSettings   `json:"node"`
+	Spec DatacenterSpec `json:"spec"`
 }
 
 // DatacenterSpec describes mutually points to provider datacenter spec

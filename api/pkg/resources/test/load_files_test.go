@@ -162,7 +162,7 @@ func TestLoadFiles(t *testing.T) {
 	}
 
 	dc := &kubermaticv1.NodeLocation{
-		DatacenterSpec: kubermaticv1.DatacenterSpec{
+		Spec: kubermaticv1.DatacenterSpec{
 			Azure: &kubermaticv1.DatacenterSpecAzure{
 				Location: "az-location",
 			},
@@ -723,7 +723,7 @@ func TestExecute(t *testing.T) {
 				Datacenter: &kubermaticv1.NodeLocation{
 					Location: "Frankfurt",
 					Country:  "DE",
-					DatacenterSpec: kubermaticv1.DatacenterSpec{
+					Spec: kubermaticv1.DatacenterSpec{
 						Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 							Region: "fra1",
 						},
@@ -802,7 +802,7 @@ func TestExecute(t *testing.T) {
 				Datacenter: &kubermaticv1.NodeLocation{
 					Location: "Frankfurt",
 					Country:  "DE",
-					DatacenterSpec: kubermaticv1.DatacenterSpec{
+					Spec: kubermaticv1.DatacenterSpec{
 						AWS: &kubermaticv1.DatacenterSpecAWS{
 							Region: "fra1",
 							Images: kubermaticv1.ImageList{
@@ -896,7 +896,7 @@ func TestExecute(t *testing.T) {
 				Datacenter: &kubermaticv1.NodeLocation{
 					Location: "Frankfurt",
 					Country:  "DE",
-					DatacenterSpec: kubermaticv1.DatacenterSpec{
+					Spec: kubermaticv1.DatacenterSpec{
 						Openstack: &kubermaticv1.DatacenterSpecOpenstack{
 							AuthURL:          "os-auth-url",
 							AvailabilityZone: "os-availability-zone",
@@ -975,7 +975,7 @@ func TestExecute(t *testing.T) {
 				Datacenter: &kubermaticv1.NodeLocation{
 					Location: "westeurope",
 					Country:  "NL",
-					DatacenterSpec: kubermaticv1.DatacenterSpec{
+					Spec: kubermaticv1.DatacenterSpec{
 						Azure: &kubermaticv1.DatacenterSpecAzure{
 							Location: "westeurope",
 						},
@@ -1039,7 +1039,7 @@ func TestExecute(t *testing.T) {
 				Datacenter: &kubermaticv1.NodeLocation{
 					Location: "Frankfurt",
 					Country:  "DE",
-					DatacenterSpec: kubermaticv1.DatacenterSpec{
+					Spec: kubermaticv1.DatacenterSpec{
 						Hetzner: &kubermaticv1.DatacenterSpecHetzner{
 							Datacenter: "hetzner-datacenter",
 							Location:   "hetzner-location",
@@ -1106,7 +1106,7 @@ func TestExecute(t *testing.T) {
 				Datacenter: &kubermaticv1.NodeLocation{
 					Location: "Frankfurt",
 					Country:  "DE",
-					DatacenterSpec: kubermaticv1.DatacenterSpec{
+					Spec: kubermaticv1.DatacenterSpec{
 						VSphere: &kubermaticv1.DatacenterSpecVSphere{
 							Cluster:       "vsphere-cluster",
 							AllowInsecure: true,

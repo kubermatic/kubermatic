@@ -59,7 +59,7 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.NodeLocation) (
 			// https://github.com/kubernetes/kubernetes/blob/v1.15.0/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go#L1199
 			// https://github.com/kubernetes/kubernetes/blob/v1.15.0/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go#L1174
 			Global: aws.GlobalOpts{
-				Zone:                        dc.AWS.Region + "x",
+				Zone:                        dc.Spec.AWS.Region + "x",
 				VPC:                         cloud.AWS.VPCID,
 				KubernetesClusterID:         cluster.Name,
 				DisableSecurityGroupIngress: false,
@@ -81,7 +81,7 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.NodeLocation) (
 			AADClientID:                cloud.Azure.ClientID,
 			AADClientSecret:            cloud.Azure.ClientSecret,
 			ResourceGroup:              cloud.Azure.ResourceGroup,
-			Location:                   dc.Azure.Location,
+			Location:                   dc.Spec.Azure.Location,
 			VNetName:                   cloud.Azure.VNetName,
 			SubnetName:                 cloud.Azure.SubnetName,
 			RouteTableName:             cloud.Azure.RouteTableName,
@@ -95,22 +95,22 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.NodeLocation) (
 			return cloudConfig, err
 		}
 	} else if cloud.Openstack != nil {
-		manageSecurityGroups := dc.Openstack.ManageSecurityGroups
-		trustDevicePath := dc.Openstack.TrustDevicePath
+		manageSecurityGroups := dc.Spec.Openstack.ManageSecurityGroups
+		trustDevicePath := dc.Spec.Openstack.TrustDevicePath
 		openstackCloudConfig := &openstack.CloudConfig{
 			Global: openstack.GlobalOpts{
-				AuthURL:    dc.Openstack.AuthURL,
+				AuthURL:    dc.Spec.Openstack.AuthURL,
 				Username:   cloud.Openstack.Username,
 				Password:   cloud.Openstack.Password,
 				DomainName: cloud.Openstack.Domain,
 				TenantName: cloud.Openstack.Tenant,
 				TenantID:   cloud.Openstack.TenantID,
-				Region:     dc.Openstack.Region,
+				Region:     dc.Spec.Openstack.Region,
 			},
 			BlockStorage: openstack.BlockStorageOpts{
 				BSVersion:       "auto",
 				TrustDevicePath: trustDevicePath != nil && *trustDevicePath,
-				IgnoreVolumeAZ:  dc.Openstack.IgnoreVolumeAZ,
+				IgnoreVolumeAZ:  dc.Spec.Openstack.IgnoreVolumeAZ,
 			},
 			LoadBalancer: openstack.LoadBalancerOpts{
 				ManageSecurityGroups: manageSecurityGroups == nil || *manageSecurityGroups,
@@ -126,11 +126,11 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.NodeLocation) (
 			Global: vsphere.GlobalOpts{
 				User:             cloud.VSphere.Username,
 				Password:         cloud.VSphere.Password,
-				VCenterIP:        strings.Replace(dc.VSphere.Endpoint, "https://", "", -1),
+				VCenterIP:        strings.Replace(dc.Spec.VSphere.Endpoint, "https://", "", -1),
 				VCenterPort:      "443",
-				InsecureFlag:     dc.VSphere.AllowInsecure,
-				Datacenter:       dc.VSphere.Datacenter,
-				DefaultDatastore: dc.VSphere.Datastore,
+				InsecureFlag:     dc.Spec.VSphere.AllowInsecure,
+				Datacenter:       dc.Spec.VSphere.Datacenter,
+				DefaultDatastore: dc.Spec.VSphere.Datastore,
 				WorkingDir:       cluster.Name,
 			},
 			Workspace: vsphere.WorkspaceOpts{
@@ -140,10 +140,10 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.NodeLocation) (
 				// are marked as deprecated even thought the code checks
 				// if they are set and will make the controller-manager crash
 				// if they are not - But maybe that will change at some point
-				VCenterIP:        strings.Replace(dc.VSphere.Endpoint, "https://", "", -1),
-				Datacenter:       dc.VSphere.Datacenter,
+				VCenterIP:        strings.Replace(dc.Spec.VSphere.Endpoint, "https://", "", -1),
+				Datacenter:       dc.Spec.VSphere.Datacenter,
 				Folder:           cluster.Name,
-				DefaultDatastore: dc.VSphere.Datastore,
+				DefaultDatastore: dc.Spec.VSphere.Datastore,
 			},
 			Disk: vsphere.DiskOpts{
 				SCSIControllerType: "pvscsi",
@@ -169,9 +169,9 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.NodeLocation) (
 		}
 
 		tag := fmt.Sprintf("kubernetes-cluster-%s", cluster.Name)
-		localZone := dc.GCP.Region + "-" + dc.GCP.ZoneSuffixes[0]
+		localZone := dc.Spec.GCP.Region + "-" + dc.Spec.GCP.ZoneSuffixes[0]
 		var multizone bool
-		if len(dc.GCP.ZoneSuffixes) > 1 {
+		if len(dc.Spec.GCP.ZoneSuffixes) > 1 {
 			multizone = true
 		}
 		if cloud.GCP.Network == "" {
@@ -183,7 +183,7 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.NodeLocation) (
 				ProjectID:      projectID,
 				LocalZone:      localZone,
 				MultiZone:      multizone,
-				Regional:       dc.GCP.Regional,
+				Regional:       dc.Spec.GCP.Regional,
 				NetworkName:    cloud.GCP.Network,
 				SubnetworkName: cloud.GCP.Subnetwork,
 				TokenURL:       "nil",

@@ -42,7 +42,7 @@ func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update prov
 		return nil, err
 	}
 
-	if nodeDC.GCP == nil {
+	if nodeDC.Spec.GCP == nil {
 		return nil, fmt.Errorf("datacenter %q is not a valid GCP datacenter", cluster.Spec.Cloud.DatacenterName)
 	}
 

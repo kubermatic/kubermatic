@@ -84,7 +84,7 @@ func (v *vSphereMock) buildVSphereDatacenter() map[string]*kubermaticv1.SeedData
 					vSphereDatacenterName: {
 						Location: "Dark Side",
 						Country:  "Moon States",
-						DatacenterSpec: kubermaticv1.DatacenterSpec{
+						Spec: kubermaticv1.DatacenterSpec{
 							VSphere: &kubermaticv1.DatacenterSpecVSphere{
 								Endpoint:      v.server.Server.URL,
 								AllowInsecure: true,

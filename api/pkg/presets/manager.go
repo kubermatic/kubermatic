@@ -388,7 +388,7 @@ func (m *Manager) setOpenStackCredentials(credentialName string, cloud kubermati
 			cloud.Openstack.Network = credential.Network
 			cloud.Openstack.FloatingIPPool = credential.FloatingIPPool
 
-			if cloud.Openstack.FloatingIPPool == "" && dc.Openstack != nil && dc.Openstack.EnforceFloatingIP {
+			if cloud.Openstack.FloatingIPPool == "" && dc.Spec.Openstack != nil && dc.Spec.Openstack.EnforceFloatingIP {
 				return nil, fmt.Errorf("preset error, no floating ip pool specified for OpenStack")
 			}
 

@@ -23,7 +23,7 @@ func Providers(dcs map[string]*kubermaticv1.SeedDatacenter) provider.CloudRegist
 		provider.AWSCloudProvider:          aws.NewCloudProvider(dcs),
 		provider.AzureCloudProvider:        azure.New(dcs),
 		provider.OpenstackCloudProvider:    openstack.NewCloudProvider(dcs),
-		provider.PacketCloudProvider:       packet.NewCloudProvider(dcs),
+		provider.PacketCloudProvider:       packet.NewCloudProvider(),
 		provider.HetznerCloudProvider:      hetzner.NewCloudProvider(),
 		provider.VSphereCloudProvider:      vsphere.NewCloudProvider(dcs),
 		provider.FakeCloudProvider:         fake.NewCloudProvider(),

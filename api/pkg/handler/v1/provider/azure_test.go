@@ -112,7 +112,7 @@ func buildAzureDatacenterMeta() map[string]*kubermaticv1.SeedDatacenter {
 					datacenterName: kubermaticv1.NodeLocation{
 						Location: "ap-northeast",
 						Country:  "JP",
-						DatacenterSpec: kubermaticv1.DatacenterSpec{
+						Spec: kubermaticv1.DatacenterSpec{
 							Azure: &kubermaticv1.DatacenterSpecAzure{
 								Location: "ap-northeast",
 							},

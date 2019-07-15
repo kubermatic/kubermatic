@@ -900,7 +900,7 @@ func (in *NetworkRanges) DeepCopy() *NetworkRanges {
 func (in *NodeLocation) DeepCopyInto(out *NodeLocation) {
 	*out = *in
 	in.Node.DeepCopyInto(&out.Node)
-	in.DatacenterSpec.DeepCopyInto(&out.DatacenterSpec)
+	in.Spec.DeepCopyInto(&out.Spec)
 	return
 }
 

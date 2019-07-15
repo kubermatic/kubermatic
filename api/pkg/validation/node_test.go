@@ -49,7 +49,7 @@ func TestValidateCreateNodeSpec(t *testing.T) {
 				},
 			},
 			&kubermaticv1.NodeLocation{
-				DatacenterSpec: kubermaticv1.DatacenterSpec{
+				Spec: kubermaticv1.DatacenterSpec{
 					Openstack: &kubermaticv1.DatacenterSpecOpenstack{EnforceFloatingIP: false},
 				},
 			},
@@ -72,7 +72,7 @@ func TestValidateCreateNodeSpec(t *testing.T) {
 				},
 			},
 			&kubermaticv1.NodeLocation{
-				DatacenterSpec: kubermaticv1.DatacenterSpec{
+				Spec: kubermaticv1.DatacenterSpec{
 					Openstack: &kubermaticv1.DatacenterSpecOpenstack{EnforceFloatingIP: true},
 				},
 			},
@@ -95,7 +95,7 @@ func TestValidateCreateNodeSpec(t *testing.T) {
 				},
 			},
 			&kubermaticv1.NodeLocation{
-				DatacenterSpec: kubermaticv1.DatacenterSpec{
+				Spec: kubermaticv1.DatacenterSpec{
 					Openstack: &kubermaticv1.DatacenterSpecOpenstack{EnforceFloatingIP: false},
 				},
 			},
@@ -118,7 +118,7 @@ func TestValidateCreateNodeSpec(t *testing.T) {
 				},
 			},
 			&kubermaticv1.NodeLocation{
-				DatacenterSpec: kubermaticv1.DatacenterSpec{
+				Spec: kubermaticv1.DatacenterSpec{
 					Openstack: &kubermaticv1.DatacenterSpecOpenstack{EnforceFloatingIP: false},
 				},
 			},

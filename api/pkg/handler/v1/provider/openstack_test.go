@@ -145,7 +145,7 @@ func buildOpenstackDatacenter() map[string]*kubermaticv1.SeedDatacenter {
 					datacenterName: {
 						Location: "ap-northeast",
 						Country:  "JP",
-						DatacenterSpec: kubermaticv1.DatacenterSpec{
+						Spec: kubermaticv1.DatacenterSpec{
 							Openstack: &kubermaticv1.DatacenterSpecOpenstack{
 								Region:  region,
 								AuthURL: openstackServer.URL + "/v3/",

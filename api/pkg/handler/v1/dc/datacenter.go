@@ -90,7 +90,7 @@ func imagesMap(images kubermaticv1.ImageList) map[string]string {
 }
 
 func apiSpec(dc *kubermaticv1.NodeLocation) (*apiv1.DatacenterSpec, error) {
-	p, err := provider.DatacenterCloudProviderName(dc.DatacenterSpec.DeepCopy())
+	p, err := provider.DatacenterCloudProviderName(dc.Spec.DeepCopy())
 	if err != nil {
 		return nil, err
 	}
@@ -101,50 +101,50 @@ func apiSpec(dc *kubermaticv1.NodeLocation) (*apiv1.DatacenterSpec, error) {
 	}
 
 	switch {
-	case dc.Digitalocean != nil:
+	case dc.Spec.Digitalocean != nil:
 		spec.Digitalocean = &apiv1.DigitialoceanDatacenterSpec{
-			Region: dc.Digitalocean.Region,
+			Region: dc.Spec.Digitalocean.Region,
 		}
-	case dc.AWS != nil:
+	case dc.Spec.AWS != nil:
 		spec.AWS = &apiv1.AWSDatacenterSpec{
-			Region: dc.AWS.Region,
+			Region: dc.Spec.AWS.Region,
 		}
-	case dc.BringYourOwn != nil:
+	case dc.Spec.BringYourOwn != nil:
 		spec.BringYourOwn = &apiv1.BringYourOwnDatacenterSpec{}
-	case dc.Openstack != nil:
+	case dc.Spec.Openstack != nil:
 		spec.Openstack = &apiv1.OpenstackDatacenterSpec{
-			AuthURL:           dc.Openstack.AuthURL,
-			AvailabilityZone:  dc.Openstack.AvailabilityZone,
-			Region:            dc.Openstack.Region,
-			Images:            imagesMap(dc.Openstack.Images),
-			EnforceFloatingIP: dc.Openstack.EnforceFloatingIP,
+			AuthURL:           dc.Spec.Openstack.AuthURL,
+			AvailabilityZone:  dc.Spec.Openstack.AvailabilityZone,
+			Region:            dc.Spec.Openstack.Region,
+			Images:            imagesMap(dc.Spec.Openstack.Images),
+			EnforceFloatingIP: dc.Spec.Openstack.EnforceFloatingIP,
 		}
-	case dc.Hetzner != nil:
+	case dc.Spec.Hetzner != nil:
 		spec.Hetzner = &apiv1.HetznerDatacenterSpec{
-			Datacenter: dc.Hetzner.Datacenter,
-			Location:   dc.Hetzner.Location,
+			Datacenter: dc.Spec.Hetzner.Datacenter,
+			Location:   dc.Spec.Hetzner.Location,
 		}
-	case dc.VSphere != nil:
+	case dc.Spec.VSphere != nil:
 		spec.VSphere = &apiv1.VSphereDatacenterSpec{
-			Endpoint:   dc.VSphere.Endpoint,
-			Datacenter: dc.VSphere.Datacenter,
-			Datastore:  dc.VSphere.Datastore,
-			Cluster:    dc.VSphere.Cluster,
-			Templates:  imagesMap(dc.VSphere.Templates),
+			Endpoint:   dc.Spec.VSphere.Endpoint,
+			Datacenter: dc.Spec.VSphere.Datacenter,
+			Datastore:  dc.Spec.VSphere.Datastore,
+			Cluster:    dc.Spec.VSphere.Cluster,
+			Templates:  imagesMap(dc.Spec.VSphere.Templates),
 		}
-	case dc.Azure != nil:
+	case dc.Spec.Azure != nil:
 		spec.Azure = &apiv1.AzureDatacenterSpec{
-			Location: dc.Azure.Location,
+			Location: dc.Spec.Azure.Location,
 		}
-	case dc.Packet != nil:
+	case dc.Spec.Packet != nil:
 		spec.Packet = &apiv1.PacketDatacenterSpec{
-			Facilities: dc.Packet.Facilities,
+			Facilities: dc.Spec.Packet.Facilities,
 		}
-	case dc.GCP != nil:
+	case dc.Spec.GCP != nil:
 		spec.GCP = &apiv1.GCPDatacenterSpec{
-			Region:       dc.GCP.Region,
-			ZoneSuffixes: dc.GCP.ZoneSuffixes,
-			Regional:     dc.GCP.Regional,
+			Region:       dc.Spec.GCP.Region,
+			ZoneSuffixes: dc.Spec.GCP.ZoneSuffixes,
+			Regional:     dc.Spec.GCP.Regional,
 		}
 	}
 

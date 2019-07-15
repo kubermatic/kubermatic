@@ -287,7 +287,7 @@ func buildDatacenters() map[string]*kubermaticv1.SeedDatacenter {
 					"private-do1": kubermaticv1.NodeLocation{
 						Country:  "NL",
 						Location: "US ",
-						DatacenterSpec: kubermaticv1.DatacenterSpec{
+						Spec: kubermaticv1.DatacenterSpec{
 							Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 								Region: "ams2",
 							},
@@ -296,7 +296,7 @@ func buildDatacenters() map[string]*kubermaticv1.SeedDatacenter {
 					"regular-do1": kubermaticv1.NodeLocation{
 						Country:  "NL",
 						Location: "Amsterdam",
-						DatacenterSpec: kubermaticv1.DatacenterSpec{
+						Spec: kubermaticv1.DatacenterSpec{
 							Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 								Region: "ams2",
 							},
@@ -305,7 +305,7 @@ func buildDatacenters() map[string]*kubermaticv1.SeedDatacenter {
 					"us-central1": kubermaticv1.NodeLocation{
 						Location: "us-central",
 						Country:  "US",
-						DatacenterSpec: kubermaticv1.DatacenterSpec{
+						Spec: kubermaticv1.DatacenterSpec{
 							Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 								Region: "ams2",
 							},

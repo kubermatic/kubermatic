@@ -250,7 +250,7 @@ func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kuber
 	if spec.Tenant == "" && spec.TenantID == "" {
 		return errors.New("no tenant name or ID specified")
 	}
-	if spec.FloatingIPPool == "" && dc.Openstack != nil && dc.Openstack.EnforceFloatingIP {
+	if spec.FloatingIPPool == "" && dc.Spec.Openstack != nil && dc.Spec.Openstack.EnforceFloatingIP {
 		return errors.New("no floating ip pool specified")
 	}
 	return nil

@@ -60,10 +60,10 @@ func DatacenterMetasToSeedDatacenterSpecs(dm map[string]DatacenterMeta) (map[str
 
 			}
 			seedDatacenters[datacenterSpec.Seed].Spec.NodeLocations[dcName] = kubermaticv1.NodeLocation{
-				Country:        datacenterSpec.Country,
-				Location:       datacenterSpec.Location,
-				Node:           datacenterSpec.Node,
-				DatacenterSpec: datacenterSpec.Spec,
+				Country:  datacenterSpec.Country,
+				Location: datacenterSpec.Location,
+				Node:     datacenterSpec.Node,
+				Spec:     datacenterSpec.Spec,
 			}
 
 		}

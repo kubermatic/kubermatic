@@ -91,7 +91,7 @@ func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 			return err
 		}
 
-		_, err = getDefaultSubnet(client, *vpc.VpcId, nodeDC.AWS.Region+nodeDC.AWS.ZoneCharacter)
+		_, err = getDefaultSubnet(client, *vpc.VpcId, nodeDC.Spec.AWS.Region+nodeDC.Spec.AWS.ZoneCharacter)
 		if err != nil {
 			return fmt.Errorf("failed to get default subnet: %v", err)
 		}
@@ -586,13 +586,13 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	if err != nil {
 		return nil, err
 	}
-	if nodeDC.AWS == nil {
+	if nodeDC.Spec.AWS == nil {
 		return nil, fmt.Errorf("datacenter %q is not an AWS datacenter", cluster.Spec.Cloud.DatacenterName)
 	}
 
 	if cluster.Spec.Cloud.AWS.SubnetID == "" {
 		glog.V(4).Infof("No Subnet specified on cluster %s", cluster.Name)
-		subnet, err := getDefaultSubnet(client, cluster.Spec.Cloud.AWS.VPCID, nodeDC.AWS.Region+nodeDC.AWS.ZoneCharacter)
+		subnet, err := getDefaultSubnet(client, cluster.Spec.Cloud.AWS.VPCID, nodeDC.Spec.AWS.Region+nodeDC.Spec.AWS.ZoneCharacter)
 		if err != nil {
 
 			return nil, fmt.Errorf("failed to get default subnet for vpc %s: %v", cluster.Spec.Cloud.AWS.VPCID, err)
@@ -690,10 +690,10 @@ func (a *AmazonEC2) getSession(cloud kubermaticv1.CloudSpec) (*session.Session, 
 	if err != nil {
 		return nil, err
 	}
-	if nodeDC.AWS == nil {
+	if nodeDC.Spec.AWS == nil {
 		return nil, fmt.Errorf("datacenter %s is not an AWS datacenter", cloud.DatacenterName)
 	}
-	config = config.WithRegion(nodeDC.AWS.Region)
+	config = config.WithRegion(nodeDC.Spec.AWS.Region)
 	config = config.WithCredentials(credentials.NewStaticCredentials(cloud.AWS.AccessKeyID, cloud.AWS.SecretAccessKey, ""))
 	config = config.WithMaxRetries(3)
 	return session.NewSession(config)

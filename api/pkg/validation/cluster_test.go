@@ -10,7 +10,7 @@ import (
 
 var (
 	dc = &kubermaticv1.NodeLocation{
-		DatacenterSpec: kubermaticv1.DatacenterSpec{
+		Spec: kubermaticv1.DatacenterSpec{
 			Openstack: &kubermaticv1.DatacenterSpecOpenstack{
 				// Used for a test case
 				EnforceFloatingIP: true,

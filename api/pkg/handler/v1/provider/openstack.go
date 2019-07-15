@@ -88,10 +88,10 @@ func getOpenstackSizes(providers provider.CloudRegistry, username, passowrd, ten
 			VCPUs:    flavor.VCPUs,
 			Disk:     flavor.Disk,
 			Swap:     flavor.Swap,
-			Region:   dc.Openstack.Region,
+			Region:   dc.Spec.Openstack.Region,
 			IsPublic: flavor.IsPublic,
 		}
-		if MeetsOpenstackNodeSizeRequirement(apiSize, datacenter.Openstack.NodeSizeRequirements) {
+		if MeetsOpenstackNodeSizeRequirement(apiSize, datacenter.Spec.Openstack.NodeSizeRequirements) {
 			apiSizes = append(apiSizes, apiSize)
 		}
 	}

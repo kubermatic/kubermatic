@@ -67,7 +67,7 @@ datacenters:
 					"do-ams3": kubermaticv1.NodeLocation{
 						Location: "Amsterdam",
 						Country:  "NL",
-						DatacenterSpec: kubermaticv1.DatacenterSpec{
+						Spec: kubermaticv1.DatacenterSpec{
 							Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 								Region: "ams3",
 							},
@@ -76,7 +76,7 @@ datacenters:
 					"auos-1": kubermaticv1.NodeLocation{
 						Location: "Australia",
 						Country:  "AU",
-						DatacenterSpec: kubermaticv1.DatacenterSpec{
+						Spec: kubermaticv1.DatacenterSpec{
 							Openstack: &kubermaticv1.DatacenterSpecOpenstack{
 								AvailabilityZone: "au1",
 								Region:           "au",
