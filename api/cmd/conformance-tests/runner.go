@@ -577,8 +577,8 @@ func (r *testRunner) setupNodes(parentLog *logrus.Entry, scenarioName string, cl
 	// Then make sure they're up.
 	for mdIndex, md := range machineDeployments {
 		mdLog := log.WithFields(logrus.Fields{
-			"machineDeployment": md.Name,
-			"nd-node-count":     md.Spec.Replicas,
+			"machineDeployment":            md.Name,
+			"machineDeployment-node-count": *md.Spec.Replicas,
 		})
 
 		// Make sure replicas matches nodeDeployment replicas, this may differ on the second run on upgrade tests
