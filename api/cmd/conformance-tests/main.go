@@ -17,6 +17,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-openapi/runtime"
+	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 
@@ -25,6 +27,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	kubermaticsignals "github.com/kubermatic/kubermatic/api/pkg/signals"
+	apiclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -67,6 +70,9 @@ type Opts struct {
 	openshift                    bool
 	printGinkoLogs               bool
 	onlyTestCreation             bool
+	kubermatcProjectID           string
+	kubermaticClient             *apiclient.Kubermatic
+	kubermaticAuthenticator      runtime.ClientAuthInfoWriter
 
 	secrets secrets
 }
@@ -226,6 +232,21 @@ func main() {
 	}
 	log := mainLog.WithFields(fields)
 	opts.log = log
+
+	opts.kubermatcProjectID = os.Getenv("KUBERMATIC_PROJECT_ID")
+	if opts.kubermatcProjectID == "" {
+		log.Fatalf("Kubermatic project id must be set via KUBERMATIC_PROJECT_ID env var")
+	}
+	kubermaticServiceaAccountToken := os.Getenv("KUBERMATIC_SERVICEACCOUNT_TOKEN")
+	if kubermaticServiceaAccountToken == "" {
+		log.Fatalf("A Kubermatic serviceAccountToken must be set via KUBERMATIC_SERVICEACCOUNT_TOKEN env var")
+	}
+	kubermaticAPIServerAddress := os.Getenv("KUBERMATIC_APISERVER_ADDRESS")
+	if kubermaticAPIServerAddress == "" {
+		log.Fatalf("Kubermatic apiserver addres must be set via KUBERMATIC_APISERVER_ADDRESS env var")
+	}
+	opts.kubermaticClient = apiclient.New(httptransport.New(kubermaticAPIServerAddress, "", []string{"http"}), nil)
+	opts.kubermaticAuthenticator = httptransport.BearerToken(kubermaticServiceaAccountToken)
 
 	if opts.existingClusterLabel != "" && opts.clusterParallelCount != 1 {
 		log.Fatalf("-cluster-parallel-count must be 1 when testing an existing cluster")

@@ -105,13 +105,12 @@ func TestResources(t *testing.T) {
 						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "alias-europe-west3-c",
 						},
+						ExposeStrategy: corev1.ServiceTypeNodePort,
 					},
 					Status: kubermaticv1.ClusterStatus{
 						NamespaceName: "test-cluster-ns",
-						Health: kubermaticv1.ClusterHealth{
-							ClusterHealthStatus: kubermaticv1.ClusterHealthStatus{
-								CloudProviderInfrastructure: true,
-							},
+						ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
+							CloudProviderInfrastructure: kubermaticv1.HealthStatusUp,
 						},
 					},
 				},

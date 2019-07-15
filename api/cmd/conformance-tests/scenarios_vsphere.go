@@ -6,6 +6,7 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
+	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -80,6 +81,11 @@ func (s *vSphereScenario) Cluster(secrets secrets) *kubermaticv1.Cluster {
 			},
 		},
 	}
+}
+
+// TODO: Implement
+func (s *vSphereScenario) APICluster(secrets secrets) *apimodels.CreateClusterSpec {
+	return nil
 }
 
 func (s *vSphereScenario) NodeDeployments(num int, _ secrets) []kubermaticapiv1.NodeDeployment {

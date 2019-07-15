@@ -729,15 +729,20 @@ func (a *Azure) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
 	}
 
 	var hasDenyAllTCPRule, hasDenyAllUDPRule, hasICMPAllowAllRule bool
-	for _, rule := range *sg.SecurityRules {
-		// We trust that no one will alter the content of the rules
-		switch *rule.Name {
-		case denyAllTCPSecGroupRuleName:
-			hasDenyAllTCPRule = true
-		case denyAllUDPSecGroupRuleName:
-			hasDenyAllUDPRule = true
-		case allowAllICMPSecGroupRuleName:
-			hasICMPAllowAllRule = true
+	if sg.SecurityRules != nil {
+		for _, rule := range *sg.SecurityRules {
+			if rule.Name == nil {
+				continue
+			}
+			// We trust that no one will alter the content of the rules
+			switch *rule.Name {
+			case denyAllTCPSecGroupRuleName:
+				hasDenyAllTCPRule = true
+			case denyAllUDPSecGroupRuleName:
+				hasDenyAllUDPRule = true
+			case allowAllICMPSecGroupRuleName:
+				hasICMPAllowAllRule = true
+			}
 		}
 	}
 

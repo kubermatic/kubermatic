@@ -103,7 +103,7 @@ func (ctl *clusterCreator) create(ctx context.Context) error {
 		ctl.runOpts.ClusterTimeout,
 		ctl.healthyClusterCond(ctx, crdCluster.Name))
 	if err != nil {
-		log.Infow("cluster failed to come up", "status", crdCluster.Status.Health.ClusterHealthStatus)
+		log.Infow("cluster failed to come up", "status", crdCluster.Status.ExtendedHealth)
 		return err
 	}
 	log.Info("cluster control plane is up")
@@ -291,7 +291,7 @@ func (ctl *clusterCreator) healthyClusterCond(ctx context.Context, name string) 
 			return false, err
 		}
 
-		return cluster.Status.Health.ClusterHealthStatus.AllHealthy(), ctx.Err()
+		return cluster.Status.ExtendedHealth.AllHealthy(), ctx.Err()
 	}
 }
 

@@ -23,8 +23,9 @@ datacenters:
   europe-west3-c: #Master
     location: Frankfurt
     country: DE
-    provider: Loodse
     is_seed: true
+    spec:
+      bringyourown: {}
 #==================================
 #===========Digitalocean===========
 #==================================
@@ -42,7 +43,6 @@ datacenters:
     location: Australia
     seed: europe-west3-c
     country: AU
-    provider: openstack
     spec:
       openstack:
         availability_zone: au1

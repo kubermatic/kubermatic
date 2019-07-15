@@ -229,6 +229,18 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	// Defines a set of HTTP endpoints for various cloud providers
 	// Note that these endpoints don't require credentials as opposed to the ones defined under /providers/*
 	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/disktypes").
+		Handler(r.listGCPDiskTypesNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/sizes").
+		Handler(r.listGCPSizesNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/zones").
+		Handler(r.listGCPZonesNoCredentials())
+
+	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/digitalocean/sizes").
 		Handler(r.listDigitaloceanSizesNoCredentials())
 
@@ -456,7 +468,7 @@ func (r Routing) listGCPDiskTypes() http.Handler {
 
 // swagger:route GET /api/v1/providers/gcp/sizes gcp listGCPSizes
 //
-// Lists machine types from GCP
+// Lists machine sizes from GCP
 //
 //     Produces:
 //     - application/json
@@ -1695,6 +1707,78 @@ func (r Routing) deleteServiceAccountToken() http.Handler {
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(serviceaccount.DeleteTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider)),
 		serviceaccount.DecodeDeleteTokenReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/sizes gcp listGCPSizesNoCredentials
+//
+// Lists machine sizes from GCP
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GCPMachineSizeList
+func (r Routing) listGCPSizesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviders, r.datacenters),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(provider.GCPSizeNoCredentialsEndpoint(r.projectProvider)),
+		provider.DecodeGCPTypesNoCredentialReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/disktypes gcp listGCPDiskTypesNoCredentials
+//
+// Lists disk types from GCP
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GCPDiskTypeList
+func (r Routing) listGCPDiskTypesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviders, r.datacenters),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(provider.GCPDiskTypesNoCredentialsEndpoint(r.projectProvider)),
+		provider.DecodeGCPTypesNoCredentialReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/zones gcp listGCPZonesNoCredentials
+//
+// Lists available GCP zones
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GCPZoneList
+func (r Routing) listGCPZonesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviders, r.datacenters),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(provider.GCPZoneNoCredentialsEndpoint(r.projectProvider, r.datacenters)),
+		common.DecodeGetClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
