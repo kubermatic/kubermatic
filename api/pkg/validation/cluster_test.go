@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"testing"
 
-	v1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 )
 
 var (
-	dc = provider.DatacenterMeta{
-		Spec: v1.DatacenterSpec{
-			Openstack: &v1.DatacenterSpecOpenstack{
+	dc = &kubermaticv1.NodeLocation{
+		DatacenterSpec: kubermaticv1.DatacenterSpec{
+			Openstack: &kubermaticv1.DatacenterSpecOpenstack{
 				// Used for a test case
 				EnforceFloatingIP: true,
 			},
@@ -23,15 +22,15 @@ var (
 func TestValidateCloudSpec(t *testing.T) {
 	tests := []struct {
 		name string
-		spec v1.CloudSpec
+		spec kubermaticv1.CloudSpec
 		err  error
 	}{
 		{
 			name: "valid openstack spec",
 			err:  nil,
-			spec: v1.CloudSpec{
+			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
-				Openstack: &v1.OpenstackCloudSpec{
+				Openstack: &kubermaticv1.OpenstackCloudSpec{
 					Tenant:   "some-tenant",
 					Username: "some-user",
 					Password: "some-password",
@@ -44,9 +43,9 @@ func TestValidateCloudSpec(t *testing.T) {
 		{
 			name: "valid openstack spec - only tenantID specified",
 			err:  nil,
-			spec: v1.CloudSpec{
+			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
-				Openstack: &v1.OpenstackCloudSpec{
+				Openstack: &kubermaticv1.OpenstackCloudSpec{
 					TenantID: "some-tenant",
 					Username: "some-user",
 					Password: "some-password",
@@ -59,9 +58,9 @@ func TestValidateCloudSpec(t *testing.T) {
 		{
 			name: "invalid openstack spec - no datacenter specified",
 			err:  errors.New("no node datacenter specified"),
-			spec: v1.CloudSpec{
+			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "",
-				Openstack: &v1.OpenstackCloudSpec{
+				Openstack: &kubermaticv1.OpenstackCloudSpec{
 					Tenant:   "some-tenant",
 					Username: "some-user",
 					Password: "some-password",
@@ -74,9 +73,9 @@ func TestValidateCloudSpec(t *testing.T) {
 		{
 			name: "invalid openstack spec - no floating ip pool defined but required by dc",
 			err:  errors.New("no floating ip pool specified"),
-			spec: v1.CloudSpec{
+			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
-				Openstack: &v1.OpenstackCloudSpec{
+				Openstack: &kubermaticv1.OpenstackCloudSpec{
 					Tenant:         "some-tenant",
 					Username:       "some-user",
 					Password:       "some-password",
