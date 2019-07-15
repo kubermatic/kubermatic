@@ -15,6 +15,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/monitoring"
 	openshiftcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/openshift"
 	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/update"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
@@ -49,7 +50,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 }
 
 func createCloudController(ctrlCtx *controllerContext) error {
-	cloudProvider := cloud.Providers(ctrlCtx.dc)
+	cloudProvider := cloud.Providers(map[string]*kubermaticv1.SeedDatacenter{ctrlCtx.dc.Name: ctrlCtx.dc})
 	predicates := workerlabel.Predicates(ctrlCtx.runOptions.workerName)
 	if err := cloudcontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, cloudProvider, predicates); err != nil {
 		return fmt.Errorf("failed to add cloud controller to mgr: %v", err)

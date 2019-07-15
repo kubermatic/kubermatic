@@ -60,7 +60,7 @@ func RunAll(config *rest.Config, workerName string, dc *kubermaticv1.SeedDatacen
 		kubermaticClient: kubermatiClient,
 		config:           config,
 		dc:               dc,
-		cloudProvider:    cloud.Providers(dc),
+		cloudProvider:    cloud.Providers(map[string]*kubermaticv1.SeedDatacenter{dc.Name: dc}),
 	}
 
 	if err := cleanupClusters(workerName, ctx); err != nil {
