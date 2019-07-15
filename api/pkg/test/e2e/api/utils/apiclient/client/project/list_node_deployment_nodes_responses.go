@@ -136,12 +136,12 @@ func NewListNodeDeploymentNodesDefault(code int) *ListNodeDeploymentNodesDefault
 
 /*ListNodeDeploymentNodesDefault handles this case with default header values.
 
-ErrorResponse is the default representation of an error
+errorResponse
 */
 type ListNodeDeploymentNodesDefault struct {
 	_statusCode int
 
-	Payload *models.ErrorDetails
+	Payload *models.ErrorResponse
 }
 
 // Code gets the status code for the list node deployment nodes default response
@@ -155,7 +155,7 @@ func (o *ListNodeDeploymentNodesDefault) Error() string {
 
 func (o *ListNodeDeploymentNodesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.ErrorDetails)
+	o.Payload = new(models.ErrorResponse)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

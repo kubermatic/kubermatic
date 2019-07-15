@@ -34,7 +34,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -65,7 +68,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -107,7 +113,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -133,7 +142,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -165,7 +177,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -211,7 +226,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -249,7 +267,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -298,7 +319,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -331,7 +355,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -369,7 +396,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -414,7 +444,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -467,7 +500,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -519,7 +555,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -566,7 +605,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -627,7 +669,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -687,7 +732,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -739,7 +787,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -791,7 +842,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -846,7 +900,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -906,7 +963,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -965,7 +1025,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -1019,7 +1082,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -1090,7 +1156,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -1158,7 +1227,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -1226,7 +1298,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -1288,7 +1363,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -1349,7 +1427,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -1405,7 +1486,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -1474,7 +1558,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -1529,7 +1616,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -1575,7 +1665,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -1621,7 +1714,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -1672,7 +1768,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -1723,7 +1822,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -1769,7 +1871,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -1818,7 +1923,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -1867,7 +1975,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -1916,7 +2027,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -1970,7 +2084,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -2019,7 +2136,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -2068,7 +2188,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -2126,7 +2249,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -2185,7 +2311,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -2242,7 +2371,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -2291,7 +2423,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -2346,7 +2481,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -2387,7 +2525,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -2433,7 +2574,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -2488,7 +2632,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -2528,7 +2675,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -2576,7 +2726,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -2629,7 +2782,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -2691,7 +2847,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -2738,7 +2897,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -2802,7 +2964,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -2844,7 +3009,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -2883,7 +3051,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -2925,7 +3096,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -2969,7 +3143,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -3015,7 +3192,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -3070,7 +3250,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       },
@@ -3116,7 +3299,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -3139,7 +3325,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -3162,7 +3351,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -3202,7 +3394,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -3242,7 +3437,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -3284,7 +3482,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -3310,7 +3511,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -3336,7 +3540,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -3362,7 +3569,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -3430,7 +3640,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -3456,7 +3669,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -3482,7 +3698,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -3514,7 +3733,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -3540,7 +3762,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -3585,7 +3810,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -3608,7 +3836,10 @@
             }
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -3663,7 +3894,10 @@
             "$ref": "#/responses/empty"
           },
           "default": {
-            "$ref": "#/responses/errorResponse"
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
           }
         }
       }
@@ -4495,6 +4729,11 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "EmptyResponse": {
+      "description": "EmptyResponse is a empty response",
+      "type": "object",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
     },
     "ErrorDetails": {
       "description": "ErrorDetails contains details about the error",
@@ -6269,17 +6508,22 @@
       "type": "object",
       "title": "Version represents a single semantic version.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/Masterminds/semver"
+    },
+    "errorResponse": {
+      "description": "ErrorResponse is the default representation of an error",
+      "type": "object",
+      "properties": {
+        "error": {
+          "$ref": "#/definitions/ErrorDetails"
+        }
+      },
+      "x-go-name": "ErrorResponse",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
     }
   },
   "responses": {
     "empty": {
       "description": "EmptyResponse is a empty response"
-    },
-    "errorResponse": {
-      "description": "ErrorResponse is the default representation of an error",
-      "schema": {
-        "$ref": "#/definitions/ErrorDetails"
-      }
     }
   }
 }

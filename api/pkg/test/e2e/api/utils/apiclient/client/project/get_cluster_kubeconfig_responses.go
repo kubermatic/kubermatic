@@ -138,12 +138,12 @@ func NewGetClusterKubeconfigDefault(code int) *GetClusterKubeconfigDefault {
 
 /*GetClusterKubeconfigDefault handles this case with default header values.
 
-ErrorResponse is the default representation of an error
+errorResponse
 */
 type GetClusterKubeconfigDefault struct {
 	_statusCode int
 
-	Payload *models.ErrorDetails
+	Payload *models.ErrorResponse
 }
 
 // Code gets the status code for the get cluster kubeconfig default response
@@ -157,7 +157,7 @@ func (o *GetClusterKubeconfigDefault) Error() string {
 
 func (o *GetClusterKubeconfigDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.ErrorDetails)
+	o.Payload = new(models.ErrorResponse)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

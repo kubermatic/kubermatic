@@ -82,12 +82,12 @@ func NewGetDatacenterDefault(code int) *GetDatacenterDefault {
 
 /*GetDatacenterDefault handles this case with default header values.
 
-ErrorResponse is the default representation of an error
+errorResponse
 */
 type GetDatacenterDefault struct {
 	_statusCode int
 
-	Payload *models.ErrorDetails
+	Payload *models.ErrorResponse
 }
 
 // Code gets the status code for the get datacenter default response
@@ -101,7 +101,7 @@ func (o *GetDatacenterDefault) Error() string {
 
 func (o *GetDatacenterDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.ErrorDetails)
+	o.Payload = new(models.ErrorResponse)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

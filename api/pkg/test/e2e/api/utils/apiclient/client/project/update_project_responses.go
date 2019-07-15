@@ -194,12 +194,12 @@ func NewUpdateProjectDefault(code int) *UpdateProjectDefault {
 
 /*UpdateProjectDefault handles this case with default header values.
 
-ErrorResponse is the default representation of an error
+errorResponse
 */
 type UpdateProjectDefault struct {
 	_statusCode int
 
-	Payload *models.ErrorDetails
+	Payload *models.ErrorResponse
 }
 
 // Code gets the status code for the update project default response
@@ -213,7 +213,7 @@ func (o *UpdateProjectDefault) Error() string {
 
 func (o *UpdateProjectDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.ErrorDetails)
+	o.Payload = new(models.ErrorResponse)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

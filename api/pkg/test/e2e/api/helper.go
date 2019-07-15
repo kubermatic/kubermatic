@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -509,4 +510,13 @@ func (r *APIRunner) ListGCPSizes(credential, zone string) ([]apiv1.GCPMachineSiz
 	}
 
 	return sizes, nil
+}
+
+// GetErrorResponse converts the client error response to string
+func GetErrorResponse(err error) string {
+	rawData, newErr := json.Marshal(err)
+	if newErr != nil {
+		return err.Error()
+	}
+	return string(rawData)
 }

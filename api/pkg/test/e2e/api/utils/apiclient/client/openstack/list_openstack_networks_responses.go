@@ -80,12 +80,12 @@ func NewListOpenstackNetworksDefault(code int) *ListOpenstackNetworksDefault {
 
 /*ListOpenstackNetworksDefault handles this case with default header values.
 
-ErrorResponse is the default representation of an error
+errorResponse
 */
 type ListOpenstackNetworksDefault struct {
 	_statusCode int
 
-	Payload *models.ErrorDetails
+	Payload *models.ErrorResponse
 }
 
 // Code gets the status code for the list openstack networks default response
@@ -99,7 +99,7 @@ func (o *ListOpenstackNetworksDefault) Error() string {
 
 func (o *ListOpenstackNetworksDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.ErrorDetails)
+	o.Payload = new(models.ErrorResponse)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
