@@ -6,8 +6,10 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -25,7 +27,7 @@ type Reconciler struct {
 	ctrlruntimeclient.Client
 
 	kubeconfig  *clientcmdapi.Config
-	datacenters map[string]provider.DatacenterMeta
+	datacenters map[string]*kubermaticv1.SeedDatacenter
 
 	recorder record.EventRecorder
 }
