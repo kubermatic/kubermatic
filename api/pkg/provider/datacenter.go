@@ -42,7 +42,7 @@ func LoadDatacenters(path string) (map[string]*kubermaticv1.SeedDatacenter, erro
 	}
 
 	dcMetas := datacentersMeta{}
-	if err := yaml.UnmarshalStrict(bytes, &dcs); err != nil {
+	if err := yaml.UnmarshalStrict(bytes, &dcMetas); err != nil {
 		return nil, err
 	}
 
