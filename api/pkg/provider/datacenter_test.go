@@ -56,7 +56,7 @@ datacenters:
           coreos: ""
         enforce_floating_ip: true`
 	expectedDatacenters := map[string]*kubermaticv1.SeedDatacenter{
-		"europe-west3-c": &kubermaticv1.SeedDatacenter{
+		"europe-west3-c": {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "europe-west3-c",
 			},
@@ -64,7 +64,7 @@ datacenters:
 				Location: "Frankfurt",
 				Country:  "DE",
 				NodeLocations: map[string]kubermaticv1.NodeLocation{
-					"do-ams3": kubermaticv1.NodeLocation{
+					"do-ams3": {
 						Location: "Amsterdam",
 						Country:  "NL",
 						Spec: kubermaticv1.DatacenterSpec{
@@ -73,7 +73,7 @@ datacenters:
 							},
 						},
 					},
-					"auos-1": kubermaticv1.NodeLocation{
+					"auos-1": {
 						Location: "Australia",
 						Country:  "AU",
 						Spec: kubermaticv1.DatacenterSpec{

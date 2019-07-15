@@ -136,7 +136,7 @@ func TeardownOpenstackServer() {
 
 func buildOpenstackDatacenter() map[string]*kubermaticv1.SeedDatacenter {
 	return map[string]*kubermaticv1.SeedDatacenter{
-		"my-seed": &kubermaticv1.SeedDatacenter{
+		"my-seed": {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-seed",
 			},

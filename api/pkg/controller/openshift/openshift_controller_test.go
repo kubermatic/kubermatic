@@ -132,7 +132,7 @@ func TestResources(t *testing.T) {
 				},
 				Spec: kubermaticv1.SeedDatacenterSpec{
 					NodeLocations: map[string]kubermaticv1.NodeLocation{
-						"alias-europe-west3-c": kubermaticv1.NodeLocation{},
+						"alias-europe-west3-c": {},
 					},
 				},
 			}

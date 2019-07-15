@@ -103,13 +103,13 @@ func TestAzureSizeEndpoint(t *testing.T) {
 
 func buildAzureDatacenterMeta() map[string]*kubermaticv1.SeedDatacenter {
 	return map[string]*kubermaticv1.SeedDatacenter{
-		"my-seed": &kubermaticv1.SeedDatacenter{
+		"my-seed": {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-seed",
 			},
 			Spec: kubermaticv1.SeedDatacenterSpec{
 				NodeLocations: map[string]kubermaticv1.NodeLocation{
-					datacenterName: kubermaticv1.NodeLocation{
+					datacenterName: {
 						Location: "ap-northeast",
 						Country:  "JP",
 						Spec: kubermaticv1.DatacenterSpec{

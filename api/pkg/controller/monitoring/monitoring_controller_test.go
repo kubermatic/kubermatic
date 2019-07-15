@@ -40,14 +40,14 @@ func buildDatacenter() *kubermaticv1.SeedDatacenter {
 		},
 		Spec: kubermaticv1.SeedDatacenterSpec{
 			NodeLocations: map[string]kubermaticv1.NodeLocation{
-				"us-central1-byo": kubermaticv1.NodeLocation{
+				"us-central1-byo": {
 					Location: "us-central",
 					Country:  "US",
 					Spec: kubermaticv1.DatacenterSpec{
 						BringYourOwn: &kubermaticv1.DatacenterSpecBringYourOwn{},
 					},
 				},
-				"private-do1": kubermaticv1.NodeLocation{
+				"private-do1": {
 					Location: "US ",
 					Country:  "NL",
 					Spec: kubermaticv1.DatacenterSpec{
@@ -56,7 +56,7 @@ func buildDatacenter() *kubermaticv1.SeedDatacenter {
 						},
 					},
 				},
-				"regular-do1": kubermaticv1.NodeLocation{
+				"regular-do1": {
 					Location: "Amsterdam",
 					Country:  "NL",
 					Spec: kubermaticv1.DatacenterSpec{

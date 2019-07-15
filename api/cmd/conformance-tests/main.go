@@ -243,7 +243,7 @@ func main() {
 	}
 	kubermaticAPIServerAddress := os.Getenv("KUBERMATIC_APISERVER_ADDRESS")
 	if kubermaticAPIServerAddress == "" {
-		log.Fatalf("Kubermatic apiserver addres must be set via KUBERMATIC_APISERVER_ADDRESS env var")
+		log.Fatalf("Kubermatic apiserver address must be set via KUBERMATIC_APISERVER_ADDRESS env var")
 	}
 	opts.kubermaticClient = apiclient.New(httptransport.New(kubermaticAPIServerAddress, "", []string{"http"}), nil)
 	opts.kubermaticAuthenticator = httptransport.BearerToken(kubermaticServiceaAccountToken)

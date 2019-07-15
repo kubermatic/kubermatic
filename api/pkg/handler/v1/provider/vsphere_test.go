@@ -75,7 +75,7 @@ func TestVsphereNetworksEndpoint(t *testing.T) {
 
 func (v *vSphereMock) buildVSphereDatacenter() map[string]*kubermaticv1.SeedDatacenter {
 	return map[string]*kubermaticv1.SeedDatacenter{
-		"my-seed": &kubermaticv1.SeedDatacenter{
+		"my-seed": {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-seed",
 			},
