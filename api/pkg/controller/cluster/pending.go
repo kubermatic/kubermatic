@@ -66,15 +66,6 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 		return &reconcile.Result{RequeueAfter: reachableCheckPeriod}, nil
 	}
 
-	if cluster.Status.Phase == kubermaticv1.LaunchingClusterStatusPhase {
-		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-			c.Status.Phase = kubermaticv1.RunningClusterStatusPhase
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return &reconcile.Result{}, nil
 }
 
