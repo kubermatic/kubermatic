@@ -16,7 +16,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
 	azure "github.com/kubermatic/kubermatic/api/pkg/handler/v1/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -100,15 +101,23 @@ func TestAzureSizeEndpoint(t *testing.T) {
 	}
 }
 
-func buildAzureDatacenterMeta() map[string]provider.DatacenterMeta {
-	return map[string]provider.DatacenterMeta{
-		datacenterName: {
-			Location: "ap-northeast",
-			Country:  "JP",
-			IsSeed:   true,
-			Spec: kubermaticv1.DatacenterSpec{
-				Azure: &kubermaticv1.DatacenterSpecAzure{
-					Location: "ap-northeast",
+func buildAzureDatacenterMeta() map[string]*kubermaticv1.SeedDatacenter {
+	return map[string]*kubermaticv1.SeedDatacenter{
+		"my-seed": &kubermaticv1.SeedDatacenter{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "my-seed",
+			},
+			Spec: kubermaticv1.SeedDatacenterSpec{
+				NodeLocations: map[string]kubermaticv1.NodeLocation{
+					datacenterName: kubermaticv1.NodeLocation{
+						Location: "ap-northeast",
+						Country:  "JP",
+						DatacenterSpec: kubermaticv1.DatacenterSpec{
+							Azure: &kubermaticv1.DatacenterSpecAzure{
+								Location: "ap-northeast",
+							},
+						},
+					},
 				},
 			},
 		},

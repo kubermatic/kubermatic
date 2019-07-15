@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/vmware/govmomi/simulator"
@@ -12,7 +13,6 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
 const vSphereDatacenterName = "moon-1"
@@ -60,7 +60,7 @@ func TestVsphereNetworksEndpoint(t *testing.T) {
 	apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName, false)
 
 	res := httptest.NewRecorder()
-	ep, _, err := test.CreateTestEndpointAndGetClients(apiUser, mock.buildVSphereDatacenterMeta(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{test.APIUserToKubermaticUser(apiUser)}, nil, nil, hack.NewTestRouting)
+	ep, _, err := test.CreateTestEndpointAndGetClients(apiUser, mock.buildVSphereDatacenter(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{test.APIUserToKubermaticUser(apiUser)}, nil, nil, hack.NewTestRouting)
 	if err != nil {
 		t.Fatalf("failed to create test endpoint due to %v", err)
 	}
@@ -73,20 +73,28 @@ func TestVsphereNetworksEndpoint(t *testing.T) {
 	test.CompareWithResult(t, res, `[{"name":"VM Network"}]`)
 }
 
-func (v *vSphereMock) buildVSphereDatacenterMeta() map[string]provider.DatacenterMeta {
-	return map[string]provider.DatacenterMeta{
-		vSphereDatacenterName: {
-			Location: "Dark Side",
-			Seed:     "us-central1",
-			Country:  "Moon States",
-			Spec: kubermaticv1.DatacenterSpec{
-				VSphere: &kubermaticv1.DatacenterSpecVSphere{
-					Endpoint:      v.server.Server.URL,
-					AllowInsecure: true,
-					Datastore:     "LocalDS_0",
-					Datacenter:    "ha-datacenter",
-					Cluster:       "localhost.localdomain",
-					RootPath:      "/ha-datacenter/vm/",
+func (v *vSphereMock) buildVSphereDatacenter() map[string]*kubermaticv1.SeedDatacenter {
+	return map[string]*kubermaticv1.SeedDatacenter{
+		"my-seed": &kubermaticv1.SeedDatacenter{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "my-seed",
+			},
+			Spec: kubermaticv1.SeedDatacenterSpec{
+				NodeLocations: map[string]kubermaticv1.NodeLocation{
+					vSphereDatacenterName: {
+						Location: "Dark Side",
+						Country:  "Moon States",
+						DatacenterSpec: kubermaticv1.DatacenterSpec{
+							VSphere: &kubermaticv1.DatacenterSpecVSphere{
+								Endpoint:      v.server.Server.URL,
+								AllowInsecure: true,
+								Datastore:     "LocalDS_0",
+								Datacenter:    "ha-datacenter",
+								Cluster:       "localhost.localdomain",
+								RootPath:      "/ha-datacenter/vm/",
+							},
+						},
+					},
 				},
 			},
 		},
