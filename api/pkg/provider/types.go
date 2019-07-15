@@ -128,6 +128,11 @@ type PrivilegedClusterProvider interface {
 	//
 	// Note that the client you will get has admin privileges in the seed cluster
 	GetSeedClusterAdminClient() kubernetes.Interface
+
+	// GetUnsecured returns a cluster for the project and given name.
+	//
+	// Note that the admin privileges are used to get cluster
+	GetUnsecured(project *kubermaticv1.Project, clusterName string) (*kubermaticv1.Cluster, error)
 }
 
 // SSHKeyListOptions allows to set filters that will be applied to filter the result.
