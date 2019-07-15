@@ -168,9 +168,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	// Add a wrapping here so we can emit an event on error
 	result, err := r.reconcile(ctx, cluster)
+	recorderCluster := cluster.DeepCopy()
 	if err != nil {
 		glog.Errorf("failed reconciling cluster %s: %v", cluster.Name, err)
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
+		r.recorder.Eventf(recorderCluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
 	}
 	if result == nil {
 		result = &reconcile.Result{}
