@@ -3,7 +3,7 @@ package common
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/presets"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
@@ -40,7 +40,7 @@ type UpdateManager interface {
 // PresetsManager specifies a set of methods to handle presets for specific provider
 type PresetsManager interface {
 	GetPresets() *presets.Presets
-	SetCloudCredentials(credentialName string, cloud v1.CloudSpec, dc provider.DatacenterMeta) (*v1.CloudSpec, error)
+	SetCloudCredentials(credentialName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.NodeLocation) (*kubermaticv1.CloudSpec, error)
 }
 
 // ServerMetrics defines metrics used by the API.
@@ -51,7 +51,7 @@ type ServerMetrics struct {
 }
 
 // IsBringYourOwnProvider determines whether the spec holds BringYourOwn provider
-func IsBringYourOwnProvider(spec v1.CloudSpec) (bool, error) {
+func IsBringYourOwnProvider(spec kubermaticv1.CloudSpec) (bool, error) {
 	providerName, err := provider.ClusterCloudProviderName(spec)
 	if err != nil {
 		return false, err

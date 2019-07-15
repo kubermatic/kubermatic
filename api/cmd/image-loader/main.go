@@ -19,7 +19,6 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/docker"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	kubermaticversion "github.com/kubermatic/kubermatic/api/pkg/version"
@@ -345,7 +344,7 @@ func getTemplateData(version *kubermaticversion.MasterVersion) (*resources.Templ
 		context.Background(),
 		fakeDynamicClient,
 		fakeCluster,
-		&provider.DatacenterMeta{},
+		&kubermaticv1.NodeLocation{},
 		"",
 		"",
 		"",

@@ -68,17 +68,17 @@ func (v *Provider) getClient(cloud kubermaticv1.CloudSpec) (*govmomi.Client, err
 	return c, nil
 }
 
-func (v *Provider) getVsphereRootPath(spec kubermaticv1.CloudSpec) (string, error) {
+func (v *Provider) getVsphereRootPath(cloud kubermaticv1.CloudSpec) (string, error) {
 	nodeDC, err := provider.NodeLocationFromSeedMap(v.dcs, cloud.DatacenterName)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	if nodeDC.VSphere == nil {
-		return nil, fmt.Errorf("datacentere %q is not a vsphere datacenter", cloud.DatacenterName)
+		return "", fmt.Errorf("datacentere %q is not a vsphere datacenter", cloud.DatacenterName)
 	}
 
 	if nodeDC.VSphere.RootPath == "" {
-		return "", fmt.Errorf("missing property 'root_path' for datacenter %s", spec.DatacenterName)
+		return "", fmt.Errorf("missing property 'root_path' for datacenter %s", cloud.DatacenterName)
 	}
 
 	return nodeDC.VSphere.RootPath, nil
@@ -134,7 +134,7 @@ func (v *Provider) createVMFolderForCluster(cluster *kubermaticv1.Cluster, updat
 }
 
 // GetNetworks returns a slice of VSphereNetworks of the datacenter from the passed cloudspec.
-func (v *Provider) GetNetworks(spec kubermaticv1.CloudSpec) ([]Network, error) {
+func (v *Provider) GetNetworks(cloud kubermaticv1.CloudSpec) ([]Network, error) {
 
 	// For the GetNetworks request we use dc.Spec.VSphere.InfraManagementUser
 	// if set because that is the user which will ultimatively configure
@@ -148,11 +148,11 @@ func (v *Provider) GetNetworks(spec kubermaticv1.CloudSpec) ([]Network, error) {
 		return nil, fmt.Errorf("datacentere %q is not a vsphere datacenter", cloud.DatacenterName)
 	}
 	if nodeDC.VSphere.InfraManagementUser != nil {
-		spec.VSphere.InfraManagementUser.Username = nodeDC.VSphere.InfraManagementUser.Username
-		spec.VSphere.InfraManagementUser.Password = nodeDC.VSphere.InfraManagementUser.Password
+		cloud.VSphere.InfraManagementUser.Username = nodeDC.VSphere.InfraManagementUser.Username
+		cloud.VSphere.InfraManagementUser.Password = nodeDC.VSphere.InfraManagementUser.Password
 	}
 
-	client, err := v.getClient(spec)
+	client, err := v.getClient(cloud)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialize vsphere client: %v", err)
 	}
@@ -200,23 +200,23 @@ func (v *Provider) GetNetworks(spec kubermaticv1.CloudSpec) ([]Network, error) {
 }
 
 // DefaultCloudSpec adds defaults to the cloud spec
-func (v *Provider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (v *Provider) DefaultCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 	nodeDC, err := provider.NodeLocationFromSeedMap(v.dcs, cloud.DatacenterName)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if nodeDC.VSphere == nil {
-		return nil, fmt.Errorf("datacentere %q is not a vsphere datacenter", cloud.DatacenterName)
+		return fmt.Errorf("datacentere %q is not a vsphere datacenter", cloud.DatacenterName)
 	}
 	if nodeDC.VSphere.InfraManagementUser != nil {
-		spec.VSphere.InfraManagementUser = kubermaticv1.VSphereCredentials{
+		cloud.VSphere.InfraManagementUser = kubermaticv1.VSphereCredentials{
 			Username: nodeDC.VSphere.InfraManagementUser.Username,
 			Password: nodeDC.VSphere.InfraManagementUser.Password,
 		}
 	} else {
-		spec.VSphere.InfraManagementUser = kubermaticv1.VSphereCredentials{
-			Username: spec.VSphere.Username,
-			Password: spec.VSphere.Password,
+		cloud.VSphere.InfraManagementUser = kubermaticv1.VSphereCredentials{
+			Username: cloud.VSphere.Username,
+			Password: cloud.VSphere.Password,
 		}
 	}
 

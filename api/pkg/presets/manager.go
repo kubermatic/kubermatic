@@ -8,8 +8,7 @@ import (
 
 	"sigs.k8s.io/yaml"
 
-	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 )
 
 // Presets specifies default presets for supported providers
@@ -215,7 +214,7 @@ func (m *Manager) GetPresets() *Presets {
 	return m.presets
 }
 
-func (m *Manager) SetCloudCredentials(credentialName string, cloud v1.CloudSpec, dc provider.DatacenterMeta) (*v1.CloudSpec, error) {
+func (m *Manager) SetCloudCredentials(credentialName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.NodeLocation) (*kubermaticv1.CloudSpec, error) {
 
 	if cloud.VSphere != nil {
 		return m.setVsphereCredentials(credentialName, cloud)
@@ -256,7 +255,7 @@ func noCredentialError(credentialName string) error {
 	return fmt.Errorf("can not find %s credential", credentialName)
 }
 
-func (m *Manager) setFakeCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
+func (m *Manager) setFakeCredentials(credentialName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
 	if m.presets.Fake.Credentials == nil {
 		return nil, emptyCredentialListError("Fake")
 	}
@@ -269,7 +268,7 @@ func (m *Manager) setFakeCredentials(credentialName string, cloud v1.CloudSpec) 
 	return nil, noCredentialError(credentialName)
 }
 
-func (m *Manager) setGCPCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
+func (m *Manager) setGCPCredentials(credentialName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
 	if m.presets.GCP.Credentials == nil {
 		return nil, emptyCredentialListError("GCP")
 	}
@@ -285,7 +284,7 @@ func (m *Manager) setGCPCredentials(credentialName string, cloud v1.CloudSpec) (
 	return nil, noCredentialError(credentialName)
 }
 
-func (m *Manager) setAWSCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
+func (m *Manager) setAWSCredentials(credentialName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
 	if m.presets.AWS.Credentials == nil {
 		return nil, emptyCredentialListError("AWS")
 	}
@@ -305,7 +304,7 @@ func (m *Manager) setAWSCredentials(credentialName string, cloud v1.CloudSpec) (
 	return nil, noCredentialError(credentialName)
 }
 
-func (m *Manager) setHetznerCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
+func (m *Manager) setHetznerCredentials(credentialName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
 	if m.presets.Hetzner.Credentials == nil {
 		return nil, emptyCredentialListError("Hetzner")
 	}
@@ -318,7 +317,7 @@ func (m *Manager) setHetznerCredentials(credentialName string, cloud v1.CloudSpe
 	return nil, noCredentialError(credentialName)
 }
 
-func (m *Manager) setPacketCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
+func (m *Manager) setPacketCredentials(credentialName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
 	if m.presets.Packet.Credentials == nil {
 		return nil, emptyCredentialListError("Packet")
 	}
@@ -338,7 +337,7 @@ func (m *Manager) setPacketCredentials(credentialName string, cloud v1.CloudSpec
 	return nil, noCredentialError(credentialName)
 }
 
-func (m *Manager) setDigitalOceanCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
+func (m *Manager) setDigitalOceanCredentials(credentialName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
 	if m.presets.Digitalocean.Credentials == nil {
 		return nil, emptyCredentialListError("Digitalocean")
 	}
@@ -351,7 +350,7 @@ func (m *Manager) setDigitalOceanCredentials(credentialName string, cloud v1.Clo
 	return nil, noCredentialError(credentialName)
 }
 
-func (m *Manager) setAzureCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
+func (m *Manager) setAzureCredentials(credentialName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
 	if m.presets.Azure.Credentials == nil {
 		return nil, emptyCredentialListError("Azure")
 	}
@@ -373,7 +372,7 @@ func (m *Manager) setAzureCredentials(credentialName string, cloud v1.CloudSpec)
 	return nil, noCredentialError(credentialName)
 }
 
-func (m *Manager) setOpenStackCredentials(credentialName string, cloud v1.CloudSpec, dc provider.DatacenterMeta) (*v1.CloudSpec, error) {
+func (m *Manager) setOpenStackCredentials(credentialName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.NodeLocation) (*kubermaticv1.CloudSpec, error) {
 	if m.presets.Openstack.Credentials == nil {
 		return nil, emptyCredentialListError("Openstack")
 	}
@@ -389,7 +388,7 @@ func (m *Manager) setOpenStackCredentials(credentialName string, cloud v1.CloudS
 			cloud.Openstack.Network = credential.Network
 			cloud.Openstack.FloatingIPPool = credential.FloatingIPPool
 
-			if cloud.Openstack.FloatingIPPool == "" && dc.Spec.Openstack != nil && dc.Spec.Openstack.EnforceFloatingIP {
+			if cloud.Openstack.FloatingIPPool == "" && dc.Openstack != nil && dc.Openstack.EnforceFloatingIP {
 				return nil, fmt.Errorf("preset error, no floating ip pool specified for OpenStack")
 			}
 
@@ -401,7 +400,7 @@ func (m *Manager) setOpenStackCredentials(credentialName string, cloud v1.CloudS
 	return nil, noCredentialError(credentialName)
 }
 
-func (m *Manager) setVsphereCredentials(credentialName string, cloud v1.CloudSpec) (*v1.CloudSpec, error) {
+func (m *Manager) setVsphereCredentials(credentialName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
 	if m.presets.VSphere.Credentials == nil {
 		return nil, emptyCredentialListError("Vsphere")
 	}

@@ -169,7 +169,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	defaultKubermaticImpersonationClient := kubernetesprovider.NewKubermaticImpersonationClient(masterCfg)
 	defaultKubernetesImpersonationClient := kubernetesprovider.NewKubernetesImpersonationClient(masterCfg)
 
-	datacenters, err := provider.LoadDatacentersMeta(options.dcFile)
+	datacenters, err := provider.LoadDatacenters(options.dcFile)
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to load datacenter yaml %q: %v", options.dcFile, err)
 	}

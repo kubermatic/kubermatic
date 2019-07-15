@@ -7,6 +7,7 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 	prometheusapi "github.com/prometheus/client_golang/api"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
@@ -28,7 +29,7 @@ type UpdateManager interface {
 
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {
-	datacenters                 map[string]provider.DatacenterMeta
+	datacenters                 map[string]*kubermaticv1.SeedDatacenter
 	cloudProviders              provider.CloudRegistry
 	sshKeyProvider              provider.SSHKeyProvider
 	userProvider                provider.UserProvider
@@ -54,7 +55,7 @@ type Routing struct {
 
 // NewRouting creates a new Routing.
 func NewRouting(
-	datacenters map[string]provider.DatacenterMeta,
+	datacenters map[string]*kubermaticv1.SeedDatacenter,
 	newClusterProviders map[string]provider.ClusterProvider,
 	cloudProviders map[string]provider.CloudProvider,
 	newSSHKeyProvider provider.SSHKeyProvider,

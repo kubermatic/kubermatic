@@ -91,7 +91,7 @@ func NodeLocationFromSeedMap(seeds map[string]*kubermaticv1.SeedDatacenter, node
 	}
 
 	if n := len(results); n != 1 {
-		return nil, fmt.Errorf("expected to find exactly one datacenter with name %q, to %d", nodeLocationName, n)
+		return nil, fmt.Errorf("expected to find exactly one datacenter with name %q, got %d", nodeLocationName, n)
 	}
 
 	return &results[0], nil
