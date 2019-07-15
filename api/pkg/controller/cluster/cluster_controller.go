@@ -211,38 +211,11 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	glog.V(4).Infof("Reconciling cluster %s", cluster.Name)
 
 	if cluster.DeletionTimestamp != nil {
-		if cluster.Status.Phase != kubermaticv1.DeletingClusterStatusPhase {
-			err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-				c.Status.Phase = kubermaticv1.DeletingClusterStatusPhase
-			})
-			if err != nil {
-				return nil, err
-			}
-		}
-
 		userClusterClient, err := r.userClusterConnProvider.GetClient(cluster)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user cluster client: %v", err)
 		}
 		return clusterdeletion.New(r.Client, userClusterClient).CleanupCluster(ctx, cluster)
-	}
-
-	if cluster.Status.Phase == kubermaticv1.NoneClusterStatusPhase {
-		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-			c.Status.Phase = kubermaticv1.ValidatingClusterStatusPhase
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if cluster.Status.Phase == kubermaticv1.ValidatingClusterStatusPhase {
-		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-			c.Status.Phase = kubermaticv1.LaunchingClusterStatusPhase
-		})
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	res, err := r.reconcileCluster(ctx, cluster)

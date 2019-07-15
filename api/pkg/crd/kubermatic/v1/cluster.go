@@ -24,26 +24,6 @@ const (
 	AnnotationNameClusterAutoscalerEnabled = "kubermatic.io/cluster-autoscaler-enabled"
 )
 
-// ClusterPhase is the life cycle phase of a cluster.
-type ClusterPhase string
-
-const (
-	// NoneClusterStatusPhase is an not assigned cluster phase, the controller will assign a default.
-	NoneClusterStatusPhase ClusterPhase = ""
-
-	// ValidatingClusterStatusPhase means that the cluster will be verified.
-	ValidatingClusterStatusPhase ClusterPhase = "Validating"
-
-	// LaunchingClusterStatusPhase means that the cluster controller starts up the cluster.
-	LaunchingClusterStatusPhase ClusterPhase = "Launching"
-
-	// RunningClusterStatusPhase means that the cluster is cluster is up and running.
-	RunningClusterStatusPhase ClusterPhase = "Running"
-
-	// DeletingClusterStatusPhase means that the cluster controller is deleting the cluster.
-	DeletingClusterStatusPhase ClusterPhase = "Deleting"
-)
-
 const (
 	WorkerNameLabelKey = "worker-name"
 	ProjectIDLabelKey  = "project-id"
@@ -183,8 +163,6 @@ type ClusterCondition struct {
 // ClusterStatus stores status information about a cluster.
 type ClusterStatus struct {
 	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`
-	// Phase is Deprecated.
-	Phase ClusterPhase `json:"phase,omitempty"`
 	// ExtendedHealth exposes information about the current health state.
 	// Extends standard health status for new states.
 	ExtendedHealth ExtendedClusterHealth `json:"extendedHealth,omitempty"`
