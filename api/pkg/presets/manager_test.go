@@ -5,9 +5,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/equality"
 
-	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/presets"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
 func TestCredentialEndpoint(t *testing.T) {
@@ -16,9 +15,9 @@ func TestCredentialEndpoint(t *testing.T) {
 		name              string
 		credentialName    string
 		expectedError     string
-		cloudSpec         v1.CloudSpec
-		expectedCloudSpec *v1.CloudSpec
-		dc                provider.DatacenterMeta
+		cloudSpec         kubermaticv1.CloudSpec
+		expectedCloudSpec *kubermaticv1.CloudSpec
+		dc                *kubermaticv1.NodeLocation
 		manager           *presets.Manager
 	}{
 		{
@@ -32,8 +31,8 @@ func TestCredentialEndpoint(t *testing.T) {
 				}
 				return manager
 			}(),
-			cloudSpec:         v1.CloudSpec{Fake: &v1.FakeCloudSpec{}},
-			expectedCloudSpec: &v1.CloudSpec{Fake: &v1.FakeCloudSpec{Token: "abc"}},
+			cloudSpec:         kubermaticv1.CloudSpec{Fake: &kubermaticv1.FakeCloudSpec{}},
+			expectedCloudSpec: &kubermaticv1.CloudSpec{Fake: &kubermaticv1.FakeCloudSpec{Token: "abc"}},
 		},
 		{
 			name:           "test 2: set credentials for GCP provider",
@@ -45,8 +44,8 @@ func TestCredentialEndpoint(t *testing.T) {
 				}
 				return manager
 			}(),
-			cloudSpec:         v1.CloudSpec{GCP: &v1.GCPCloudSpec{}},
-			expectedCloudSpec: &v1.CloudSpec{GCP: &v1.GCPCloudSpec{ServiceAccount: "test_service_accouont"}},
+			cloudSpec:         kubermaticv1.CloudSpec{GCP: &kubermaticv1.GCPCloudSpec{}},
+			expectedCloudSpec: &kubermaticv1.CloudSpec{GCP: &kubermaticv1.GCPCloudSpec{ServiceAccount: "test_service_accouont"}},
 		},
 		{
 			name:           "test 3: set credentials for AWS provider",
@@ -58,8 +57,8 @@ func TestCredentialEndpoint(t *testing.T) {
 				}
 				return manager
 			}(),
-			cloudSpec:         v1.CloudSpec{AWS: &v1.AWSCloudSpec{}},
-			expectedCloudSpec: &v1.CloudSpec{AWS: &v1.AWSCloudSpec{AccessKeyID: "key", SecretAccessKey: "secret"}},
+			cloudSpec:         kubermaticv1.CloudSpec{AWS: &kubermaticv1.AWSCloudSpec{}},
+			expectedCloudSpec: &kubermaticv1.CloudSpec{AWS: &kubermaticv1.AWSCloudSpec{AccessKeyID: "key", SecretAccessKey: "secret"}},
 		},
 		{
 			name:           "test 4: set credentials for Hetzner provider",
@@ -71,8 +70,8 @@ func TestCredentialEndpoint(t *testing.T) {
 				}
 				return manager
 			}(),
-			cloudSpec:         v1.CloudSpec{Hetzner: &v1.HetznerCloudSpec{}},
-			expectedCloudSpec: &v1.CloudSpec{Hetzner: &v1.HetznerCloudSpec{Token: "secret"}},
+			cloudSpec:         kubermaticv1.CloudSpec{Hetzner: &kubermaticv1.HetznerCloudSpec{}},
+			expectedCloudSpec: &kubermaticv1.CloudSpec{Hetzner: &kubermaticv1.HetznerCloudSpec{Token: "secret"}},
 		},
 		{
 			name:           "test 5: set credentials for Packet provider",
@@ -84,8 +83,8 @@ func TestCredentialEndpoint(t *testing.T) {
 				}
 				return manager
 			}(),
-			cloudSpec:         v1.CloudSpec{Packet: &v1.PacketCloudSpec{}},
-			expectedCloudSpec: &v1.CloudSpec{Packet: &v1.PacketCloudSpec{APIKey: "secret", ProjectID: "project", BillingCycle: "hourly"}},
+			cloudSpec:         kubermaticv1.CloudSpec{Packet: &kubermaticv1.PacketCloudSpec{}},
+			expectedCloudSpec: &kubermaticv1.CloudSpec{Packet: &kubermaticv1.PacketCloudSpec{APIKey: "secret", ProjectID: "project", BillingCycle: "hourly"}},
 		},
 		{
 			name:           "test 6: set credentials for DigitalOcean provider",
@@ -97,8 +96,8 @@ func TestCredentialEndpoint(t *testing.T) {
 				}
 				return manager
 			}(),
-			cloudSpec:         v1.CloudSpec{Digitalocean: &v1.DigitaloceanCloudSpec{}},
-			expectedCloudSpec: &v1.CloudSpec{Digitalocean: &v1.DigitaloceanCloudSpec{Token: "abcd"}},
+			cloudSpec:         kubermaticv1.CloudSpec{Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{}},
+			expectedCloudSpec: &kubermaticv1.CloudSpec{Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{Token: "abcd"}},
 		},
 		{
 			name:           "test 7: set credentials for OpenStack provider",
@@ -110,9 +109,9 @@ func TestCredentialEndpoint(t *testing.T) {
 				}
 				return manager
 			}(),
-			dc:                provider.DatacenterMeta{Spec: v1.DatacenterSpec{Openstack: &v1.DatacenterSpecOpenstack{EnforceFloatingIP: false}}},
-			cloudSpec:         v1.CloudSpec{Openstack: &v1.OpenstackCloudSpec{}},
-			expectedCloudSpec: &v1.CloudSpec{Openstack: &v1.OpenstackCloudSpec{Tenant: "a", Domain: "b", Password: "c", Username: "d"}},
+			dc:                &kubermaticv1.NodeLocation{DatacenterSpec: kubermaticv1.DatacenterSpec{Openstack: &kubermaticv1.DatacenterSpecOpenstack{EnforceFloatingIP: false}}},
+			cloudSpec:         kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+			expectedCloudSpec: &kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{Tenant: "a", Domain: "b", Password: "c", Username: "d"}},
 		},
 		{
 			name:           "test 8: set credentials for Vsphere provider",
@@ -124,8 +123,8 @@ func TestCredentialEndpoint(t *testing.T) {
 				}
 				return manager
 			}(),
-			cloudSpec:         v1.CloudSpec{VSphere: &v1.VSphereCloudSpec{}},
-			expectedCloudSpec: &v1.CloudSpec{VSphere: &v1.VSphereCloudSpec{Password: "secret", Username: "bob"}},
+			cloudSpec:         kubermaticv1.CloudSpec{VSphere: &kubermaticv1.VSphereCloudSpec{}},
+			expectedCloudSpec: &kubermaticv1.CloudSpec{VSphere: &kubermaticv1.VSphereCloudSpec{Password: "secret", Username: "bob"}},
 		},
 		{
 			name:           "test 9: set credentials for Azure provider",
@@ -137,8 +136,8 @@ func TestCredentialEndpoint(t *testing.T) {
 				}
 				return manager
 			}(),
-			cloudSpec:         v1.CloudSpec{Azure: &v1.AzureCloudSpec{}},
-			expectedCloudSpec: &v1.CloudSpec{Azure: &v1.AzureCloudSpec{SubscriptionID: "a", ClientID: "b", ClientSecret: "c", TenantID: "d"}},
+			cloudSpec:         kubermaticv1.CloudSpec{Azure: &kubermaticv1.AzureCloudSpec{}},
+			expectedCloudSpec: &kubermaticv1.CloudSpec{Azure: &kubermaticv1.AzureCloudSpec{SubscriptionID: "a", ClientID: "b", ClientSecret: "c", TenantID: "d"}},
 		},
 		{
 			name:           "test 10: no credentials for Azure provider",
@@ -147,7 +146,7 @@ func TestCredentialEndpoint(t *testing.T) {
 				manager := presets.New()
 				return manager
 			}(),
-			cloudSpec:     v1.CloudSpec{Azure: &v1.AzureCloudSpec{}},
+			cloudSpec:     kubermaticv1.CloudSpec{Azure: &kubermaticv1.AzureCloudSpec{}},
 			expectedError: "can not find any credential for Azure provider",
 		},
 		{
@@ -160,7 +159,7 @@ func TestCredentialEndpoint(t *testing.T) {
 				}
 				return manager
 			}(),
-			cloudSpec:     v1.CloudSpec{},
+			cloudSpec:     kubermaticv1.CloudSpec{},
 			expectedError: "can not find provider to set credentials",
 		},
 	}
