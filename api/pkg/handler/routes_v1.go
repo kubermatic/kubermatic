@@ -1004,6 +1004,7 @@ func (r Routing) getCluster() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviders, r.datacenters),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviders, r.datacenters),
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.GetEndpoint(r.projectProvider)),
 		common.DecodeGetClusterReq,
