@@ -46,7 +46,7 @@ func (s *hetznerScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 			Type: "kubernetes",
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: "hetzner-fsn1",
+					DatacenterName: "hetzner-nbg1",
 					Hetzner: &apimodels.HetznerCloudSpec{
 						Token: secrets.Hetzner.Token,
 					},
