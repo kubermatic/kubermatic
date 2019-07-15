@@ -34,7 +34,7 @@ const (
 var roleARNS = []string{policyRoute53FullAccess, policyEC2FullAccess}
 
 type AmazonEC2 struct {
-	dcs *kubermaticv1.SeedDatacenter
+	dcs map[string]*kubermaticv1.SeedDatacenter
 }
 
 func (a *AmazonEC2) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
@@ -582,9 +582,12 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 	}
 
-	nodeDC, err := provider.NodeLocationFromSeedMap(a.dcs, spec.DatacenterName)
+	nodeDC, err := provider.NodeLocationFromSeedMap(a.dcs, cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	if nodeDC.AWS == nil {
+		return nil, fmt.Errorf("datacenter %q is not an AWS datacenter", cluster.Spec.Cloud.DatacenterName)
 	}
 
 	if cluster.Spec.Cloud.AWS.SubnetID == "" {
@@ -683,7 +686,7 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 
 func (a *AmazonEC2) getSession(cloud kubermaticv1.CloudSpec) (*session.Session, error) {
 	config := aws.NewConfig()
-	nodeDC, err := provider.NodeLocationFromSeedMap(a.dcs, spec.DatacenterName)
+	nodeDC, err := provider.NodeLocationFromSeedMap(a.dcs, cloud.DatacenterName)
 	if err != nil {
 		return nil, err
 	}
