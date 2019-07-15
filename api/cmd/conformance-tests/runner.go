@@ -697,7 +697,7 @@ func (r *testRunner) createClusterViaKubermaticAPI(log *logrus.Entry, cluster *a
 
 	params := &projectclient.CreateClusterParams{
 		ProjectID: r.kubermatcProjectID,
-		Dc:        "prow-build-cluster",
+		Dc:        cluster.Cluster.Spec.Cloud.DatacenterName,
 		Body:      cluster,
 	}
 	params.SetTimeout(15 * time.Second)
