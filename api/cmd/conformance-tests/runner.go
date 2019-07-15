@@ -36,6 +36,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
@@ -663,7 +664,18 @@ func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*k
 	if r.openshift {
 		cluster.Cluster.Type = "openshift"
 	}
-	cluster.Cluster.Name = scenario.Name()
+	// The cluster name must be unique per project.
+	// We build up a understandable name with the various cli parameters & add a random string in the end to ensure
+	// we really have a unique name
+	if r.namePrefix != "" {
+		cluster.Cluster.Name = r.namePrefix + "-"
+	}
+	if r.workerName != "" {
+		cluster.Cluster.Name += r.workerName + "-"
+	}
+	cluster.Cluster.Name += scenario.Name() + "-"
+	cluster.Cluster.Name += rand.String(8)
+
 	params := &projectclient.CreateClusterParams{
 		ProjectID: r.kubermatcProjectID,
 		Dc:        "prow-build-cluster",
