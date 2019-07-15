@@ -276,13 +276,13 @@ func CreateTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 
 func buildDatacenters() map[string]*kubermaticv1.SeedDatacenter {
 	return map[string]*kubermaticv1.SeedDatacenter{
-		"us-central1": &kubermaticv1.SeedDatacenter{
+		"my-seed": &kubermaticv1.SeedDatacenter{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "us-central1",
+				Name: "my-seed",
 			},
 			Spec: kubermaticv1.SeedDatacenterSpec{
-				Country:  "US",
-				Location: "us-central",
+				Country:  "Jamaica",
+				Location: "some-field",
 				NodeLocations: map[string]kubermaticv1.NodeLocation{
 					"private-do1": kubermaticv1.NodeLocation{
 						Country:  "NL",
@@ -296,6 +296,15 @@ func buildDatacenters() map[string]*kubermaticv1.SeedDatacenter {
 					"regular-do1": kubermaticv1.NodeLocation{
 						Country:  "NL",
 						Location: "Amsterdam",
+						DatacenterSpec: kubermaticv1.DatacenterSpec{
+							Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
+								Region: "ams2",
+							},
+						},
+					},
+					"us-central1": kubermaticv1.NodeLocation{
+						Location: "us-central",
+						Country:  "US",
 						DatacenterSpec: kubermaticv1.DatacenterSpec{
 							Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 								Region: "ams2",
