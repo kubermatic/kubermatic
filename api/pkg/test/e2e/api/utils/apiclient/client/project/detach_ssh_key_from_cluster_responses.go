@@ -130,12 +130,12 @@ func NewDetachSSHKeyFromClusterDefault(code int) *DetachSSHKeyFromClusterDefault
 
 /*DetachSSHKeyFromClusterDefault handles this case with default header values.
 
-ErrorResponse is the default representation of an error
+errorResponse
 */
 type DetachSSHKeyFromClusterDefault struct {
 	_statusCode int
 
-	Payload *models.ErrorDetails
+	Payload *models.ErrorResponse
 }
 
 // Code gets the status code for the detach SSH key from cluster default response
@@ -149,7 +149,7 @@ func (o *DetachSSHKeyFromClusterDefault) Error() string {
 
 func (o *DetachSSHKeyFromClusterDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.ErrorDetails)
+	o.Payload = new(models.ErrorResponse)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

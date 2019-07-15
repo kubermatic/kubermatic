@@ -17,7 +17,7 @@ const (
 )
 
 // ErrorResponse is the default representation of an error
-// swagger:response errorResponse
+// swagger:model errorResponse
 type ErrorResponse struct {
 	// The error details
 	// in: body

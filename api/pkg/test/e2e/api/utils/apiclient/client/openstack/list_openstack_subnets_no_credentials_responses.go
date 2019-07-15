@@ -80,12 +80,12 @@ func NewListOpenstackSubnetsNoCredentialsDefault(code int) *ListOpenstackSubnets
 
 /*ListOpenstackSubnetsNoCredentialsDefault handles this case with default header values.
 
-ErrorResponse is the default representation of an error
+errorResponse
 */
 type ListOpenstackSubnetsNoCredentialsDefault struct {
 	_statusCode int
 
-	Payload *models.ErrorDetails
+	Payload *models.ErrorResponse
 }
 
 // Code gets the status code for the list openstack subnets no credentials default response
@@ -99,7 +99,7 @@ func (o *ListOpenstackSubnetsNoCredentialsDefault) Error() string {
 
 func (o *ListOpenstackSubnetsNoCredentialsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.ErrorDetails)
+	o.Payload = new(models.ErrorResponse)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
