@@ -2,7 +2,10 @@ package kubernetes
 
 import (
 	"errors"
+	"fmt"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cloud"
@@ -243,4 +246,31 @@ func (p *ClusterProvider) withImpersonation(userInfo *provider.UserInfo) k8cuser
 		}
 		return cfg
 	}
+}
+
+// GetUnsecured returns a cluster for the project and given name.
+//
+// Note that the admin privileges are used to get cluster
+func (p *ClusterProvider) GetUnsecured(project *kubermaticv1.Project, clusterName string) (*kubermaticv1.Cluster, error) {
+	if project == nil {
+		return nil, errors.New("project is missing but required")
+	}
+
+	labelSelector, err := labels.Parse(fmt.Sprintf("%s=%s", kubermaticv1.ProjectIDLabelKey, project.Name))
+	if err != nil {
+		return nil, err
+	}
+
+	clusters, err := p.clusterLister.List(labelSelector)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, cluster := range clusters {
+		if cluster.Name == clusterName {
+			return cluster.DeepCopy(), nil
+		}
+	}
+
+	return nil, kerrors.NewNotFound(schema.GroupResource{}, clusterName)
 }
