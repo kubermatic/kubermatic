@@ -69,21 +69,21 @@ func TestCreateAWSCluster(t *testing.T) {
 			apiRunner := CreateAPIRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project %v", err)
+				t.Fatalf("can not create project %v", GetErrorResponse(err))
 			}
 			teardown := cleanUpProject(project.ID)
 			defer teardown(t)
 
 			cluster, err := apiRunner.CreateAWSCluster(project.ID, tc.dc, rand.String(10), getSecretAccessKey(), getAccessKeyID(), getKubernetesVersion(), tc.location, tc.replicas)
 			if err != nil {
-				t.Fatalf("can not create cluster due to error: %v", err)
+				t.Fatalf("can not create cluster due to error: %v", GetErrorResponse(err))
 			}
 
 			var clusterReady bool
 			for attempt := 1; attempt <= getAWSMaxAttempts; attempt++ {
 				healthStatus, err := apiRunner.GetClusterHealthStatus(project.ID, tc.dc, cluster.ID)
 				if err != nil {
-					t.Fatalf("can not get health status %v", err)
+					t.Fatalf("can not get health status %v", GetErrorResponse(err))
 				}
 
 				if isHealthyCluster(healthStatus) {
@@ -101,7 +101,7 @@ func TestCreateAWSCluster(t *testing.T) {
 			for attempt := 1; attempt <= getAWSMaxAttempts; attempt++ {
 				ndList, err := apiRunner.GetClusterNodeDeployment(project.ID, tc.dc, cluster.ID)
 				if err != nil {
-					t.Fatalf("can not get node deployments %v", err)
+					t.Fatalf("can not get node deployments %v", GetErrorResponse(err))
 				}
 
 				if len(ndList) == 1 {
@@ -118,7 +118,7 @@ func TestCreateAWSCluster(t *testing.T) {
 			for attempt := 1; attempt <= getAWSMaxAttempts; attempt++ {
 				ndList, err := apiRunner.GetClusterNodeDeployment(project.ID, tc.dc, cluster.ID)
 				if err != nil {
-					t.Fatalf("can not get node deployments %v", err)
+					t.Fatalf("can not get node deployments %v", GetErrorResponse(err))
 				}
 
 				if ndList[0].Status.AvailableReplicas == tc.replicas {
