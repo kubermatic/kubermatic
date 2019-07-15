@@ -64,6 +64,7 @@ func (s *openStackScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpe
 						Password: secrets.OpenStack.Password,
 					},
 				},
+				Version: s.version.String(),
 			},
 		},
 	}

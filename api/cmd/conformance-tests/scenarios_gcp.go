@@ -64,6 +64,7 @@ func (s *gcpScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 						Subnetwork:     secrets.GCP.Subnetwork,
 					},
 				},
+				Version: s.version.String(),
 			},
 		},
 	}

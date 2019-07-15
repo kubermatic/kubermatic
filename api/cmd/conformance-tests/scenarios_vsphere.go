@@ -62,6 +62,7 @@ func (s *vSphereScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 						Password: secrets.VSphere.Password,
 					},
 				},
+				Version: s.version.String(),
 			},
 		},
 	}

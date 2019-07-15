@@ -61,6 +61,7 @@ func (s *digitaloceanScenario) Cluster(secrets secrets) *apimodels.CreateCluster
 						Token: secrets.Digitalocean.Token,
 					},
 				},
+				Version: s.version.String(),
 			},
 		},
 	}
