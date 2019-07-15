@@ -77,7 +77,7 @@ func (s *azureScenario) NodeDeployments(num int, _ secrets) []kubermaticapiv1.No
 				Template: kubermaticapiv1.NodeSpec{
 					Cloud: kubermaticapiv1.NodeCloudSpec{
 						Azure: &kubermaticapiv1.AzureNodeSpec{
-							Size: "Standard_F1",
+							Size: "Standard_F2",
 						},
 					},
 					Versions: kubermaticapiv1.NodeVersionInfo{
