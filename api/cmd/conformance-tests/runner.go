@@ -280,16 +280,9 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 		"version":        cluster.Spec.Version,
 	})
 
-	var nodeDC *kubermaticv1.NodeLocation
-	for _, seed := range r.dcs {
-		for name, nodeLocation := range seed.Spec.NodeLocations {
-			if name == cluster.Spec.Cloud.DatacenterName {
-				nodeDC = &nodeLocation
-			}
-		}
-	}
-	if nodeDC == nil {
-		return nil, fmt.Errorf("cant find nodeDC %q", cluster.Spec.Cloud.DatacenterName)
+	nodeDC, err := provider.NodeLocationFromSeedMap(r.dcs, cluster.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get nodeLocation %q: %v", cluster.Spec.Cloud.DatacenterName, err)
 	}
 
 	if r.deleteClusterAfterTests {
