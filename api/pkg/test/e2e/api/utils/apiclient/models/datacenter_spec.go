@@ -25,6 +25,9 @@ type DatacenterSpec struct {
 	// provider
 	Provider string `json:"provider,omitempty"`
 
+	// seed
+	Seed string `json:"seed,omitempty"`
+
 	// aws
 	Aws *AWSDatacenterSpec `json:"aws,omitempty"`
 
