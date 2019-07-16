@@ -22,7 +22,6 @@ import (
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/cloud"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -58,8 +57,7 @@ var (
 
 type testScenario interface {
 	Name() string
-	Cluster(secrets secrets) *kubermaticv1.Cluster
-	APICluster(secrets secrets) *apimodels.CreateClusterSpec
+	Cluster(secrets secrets) *apimodels.CreateClusterSpec
 	NodeDeployments(num int, secrets secrets) []kubermaticapiv1.NodeDeployment
 	OS() kubermaticapiv1.OperatingSystemSpec
 }
@@ -590,8 +588,8 @@ func (r *testRunner) setupNodes(parentLog *logrus.Entry,
 	// Then make sure they're up.
 	for mdIndex, md := range machineDeployments {
 		mdLog := log.WithFields(logrus.Fields{
-			"machineDeployment": md.Name,
-			"nd-node-count":     md.Spec.Replicas,
+			"machineDeployment":            md.Name,
+			"machineDeployment-node-count": *md.Spec.Replicas,
 		})
 
 		// Make sure replicas matches nodeDeployment replicas, this may differ on the second run on upgrade tests
@@ -671,18 +669,12 @@ func (r *testRunner) getCloudConfig(log *logrus.Entry, cluster *kubermaticv1.Clu
 }
 
 func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*kubermaticv1.Cluster, error) {
-
-	// We currently transition from creating clusters via the Kubernetes API to creating them via the Kubermatic
-	// api, so check if the scenario already supports Kubermatic api and fall back to Kubernetes api if not
-	if apiCluster := scenario.APICluster(r.secrets); apiCluster != nil {
-		return r.createClusterViaKubermaticAPI(log, apiCluster, scenario)
-	}
-	return r.createClusterViaKubernetesAPI(log, scenario)
-}
-
-func (r *testRunner) createClusterViaKubermaticAPI(log *logrus.Entry, cluster *apimodels.CreateClusterSpec, scenario testScenario) (*kubermaticv1.Cluster, error) {
 	log.Info("Creating cluster via kubermatic API")
 
+	cluster := scenario.Cluster(r.secrets)
+	if r.openshift {
+		cluster.Cluster.Type = "openshift"
+	}
 	// The cluster name must be unique per project.
 	// We build up a understandable name with the various cli parameters & add a random string in the end to ensure
 	// we really have a unique name
@@ -729,39 +721,6 @@ func (r *testRunner) createClusterViaKubermaticAPI(log *logrus.Entry, cluster *a
 
 	log.Info("Successfully created cluster via Kubermatic API")
 	return crCluster, nil
-}
-
-func (r *testRunner) createClusterViaKubernetesAPI(log *logrus.Entry, scenario testScenario) (*kubermaticv1.Cluster, error) {
-	cluster := scenario.Cluster(r.secrets)
-	// Always generate a random name
-	cluster.Name = rand.String(8)
-	if r.namePrefix != "" {
-		cluster.Name = fmt.Sprintf("%s-%s", r.namePrefix, cluster.Name)
-	}
-	cluster.Status.CloudMigrationRevision = cloud.CurrentMigrationRevision
-	cluster.Spec.ExposeStrategy = corev1.ServiceTypeNodePort
-	log = logrus.WithFields(logrus.Fields{"cluster": cluster.Name})
-
-	if cluster.Labels == nil {
-		cluster.Labels = map[string]string{}
-	}
-	if r.workerName != "" {
-		cluster.Labels[kubermaticv1.WorkerNameLabelKey] = r.workerName
-	}
-
-	if r.openshift {
-		if cluster.Annotations == nil {
-			cluster.Annotations = map[string]string{}
-		}
-		cluster.Annotations["kubermatic.io/openshift"] = "true"
-	}
-
-	log.Info("Creating cluster...")
-	if err := r.seedClusterClient.Create(context.Background(), cluster); err != nil {
-		return nil, fmt.Errorf("failed to create the cluster resource: %v", err)
-	}
-	log.Debug("Successfully created cluster!")
-	return cluster, nil
 }
 
 func (r *testRunner) waitForReadyNodes(log *logrus.Entry, client ctrlruntimeclient.Client, num int) error {

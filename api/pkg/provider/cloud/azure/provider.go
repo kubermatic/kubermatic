@@ -719,6 +719,9 @@ func (a *Azure) ValidateCloudSpec(cloud kubermaticv1.CloudSpec) error {
 
 func (a *Azure) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
 	azure := cluster.Spec.Cloud.Azure
+	if azure.SecurityGroup == "" {
+		return nil
+	}
 	sgClient, err := getSecurityGroupsClient(cluster.Spec.Cloud)
 	if err != nil {
 		return fmt.Errorf("failed to get security group client: %v", err)

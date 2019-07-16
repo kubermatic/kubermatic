@@ -4,11 +4,8 @@ import (
 	"fmt"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Returns a matrix of (version x operating system)
@@ -52,37 +49,24 @@ func (s *azureScenario) Name() string {
 	return fmt.Sprintf("azure-%s-%s", getOSNameFromSpec(s.nodeOsSpec), s.version.String())
 }
 
-func (s *azureScenario) Cluster(secrets secrets) *kubermaticv1.Cluster {
-	return &kubermaticv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{},
-		Spec: kubermaticv1.ClusterSpec{
-			Version:           *s.version,
-			HumanReadableName: s.Name(),
-			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
-				Services: kubermaticv1.NetworkRanges{
-					CIDRBlocks: []string{"10.10.10.0/24"},
+func (s *azureScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
+	return &apimodels.CreateClusterSpec{
+		Cluster: &apimodels.Cluster{
+			Type: "kubernetes",
+			Spec: &apimodels.ClusterSpec{
+				Cloud: &apimodels.CloudSpec{
+					DatacenterName: "azure-westeurope",
+					Azure: &apimodels.AzureCloudSpec{
+						ClientID:       secrets.Azure.ClientID,
+						ClientSecret:   secrets.Azure.ClientSecret,
+						SubscriptionID: secrets.Azure.SubscriptionID,
+						TenantID:       secrets.Azure.TenantID,
+					},
 				},
-				Pods: kubermaticv1.NetworkRanges{
-					CIDRBlocks: []string{"172.25.0.0/16"},
-				},
-				DNSDomain: "cluster.local",
-			},
-			Cloud: kubermaticv1.CloudSpec{
-				DatacenterName: "azure-westeurope",
-				Azure: &kubermaticv1.AzureCloudSpec{
-					ClientID:       secrets.Azure.ClientID,
-					ClientSecret:   secrets.Azure.ClientSecret,
-					SubscriptionID: secrets.Azure.SubscriptionID,
-					TenantID:       secrets.Azure.TenantID,
-				},
+				Version: s.version.String(),
 			},
 		},
 	}
-}
-
-// TODO: Implement
-func (s *azureScenario) APICluster(secrets secrets) *apimodels.CreateClusterSpec {
-	return nil
 }
 
 func (s *azureScenario) NodeDeployments(num int, _ secrets) []kubermaticapiv1.NodeDeployment {
@@ -93,7 +77,7 @@ func (s *azureScenario) NodeDeployments(num int, _ secrets) []kubermaticapiv1.No
 				Template: kubermaticapiv1.NodeSpec{
 					Cloud: kubermaticapiv1.NodeCloudSpec{
 						Azure: &kubermaticapiv1.AzureNodeSpec{
-							Size: "Standard_F1",
+							Size: "Standard_F2",
 						},
 					},
 					Versions: kubermaticapiv1.NodeVersionInfo{
