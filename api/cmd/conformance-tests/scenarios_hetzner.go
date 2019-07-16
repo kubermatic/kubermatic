@@ -4,11 +4,8 @@ import (
 	"fmt"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Returns a matrix of (version x operating system)
@@ -43,33 +40,21 @@ func (s *hetznerScenario) Name() string {
 	return fmt.Sprintf("hetzner-%s-%s", getOSNameFromSpec(s.nodeOsSpec), s.version.String())
 }
 
-func (s *hetznerScenario) Cluster(secrets secrets) *v1.Cluster {
-	return &v1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{},
-		Spec: v1.ClusterSpec{
-			Version:           *s.version,
-			HumanReadableName: s.Name(),
-			ClusterNetwork: v1.ClusterNetworkingConfig{
-				Services: v1.NetworkRanges{
-					CIDRBlocks: []string{"10.10.10.0/24"},
+func (s *hetznerScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
+	return &apimodels.CreateClusterSpec{
+		Cluster: &apimodels.Cluster{
+			Type: "kubernetes",
+			Spec: &apimodels.ClusterSpec{
+				Cloud: &apimodels.CloudSpec{
+					DatacenterName: "hetzner-nbg1",
+					Hetzner: &apimodels.HetznerCloudSpec{
+						Token: secrets.Hetzner.Token,
+					},
 				},
-				Pods: v1.NetworkRanges{
-					CIDRBlocks: []string{"172.25.0.0/16"},
-				},
-				DNSDomain: "cluster.local",
-			},
-			Cloud: v1.CloudSpec{
-				DatacenterName: "hetzner-fsn1",
-				Hetzner: &v1.HetznerCloudSpec{
-					Token: secrets.Hetzner.Token,
-				},
+				Version: s.version.String(),
 			},
 		},
 	}
-}
-
-func (s *hetznerScenario) APICluster(secrets secrets) *apimodels.CreateClusterSpec {
-	return nil
 }
 
 func (s *hetznerScenario) Nodes(num int, _ secrets) *kubermaticapiv1.NodeDeployment {

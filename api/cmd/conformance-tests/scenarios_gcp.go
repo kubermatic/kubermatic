@@ -5,11 +5,8 @@ import (
 	"strings"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	v1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Returns a matrix of (version x operating system)
@@ -54,36 +51,23 @@ func (s *gcpScenario) Name() string {
 	return fmt.Sprintf("gcp-%s-%s", getOSNameFromSpec(s.nodeOsSpec), version)
 }
 
-func (s *gcpScenario) Cluster(secrets secrets) *v1.Cluster {
-	return &v1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{},
-		Spec: v1.ClusterSpec{
-			Version:           *s.version,
-			HumanReadableName: s.Name(),
-			ClusterNetwork: v1.ClusterNetworkingConfig{
-				Services: v1.NetworkRanges{
-					CIDRBlocks: []string{"10.10.10.0/24"},
+func (s *gcpScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
+	return &apimodels.CreateClusterSpec{
+		Cluster: &apimodels.Cluster{
+			Type: "kubernetes",
+			Spec: &apimodels.ClusterSpec{
+				Cloud: &apimodels.CloudSpec{
+					DatacenterName: "gcp-westeurope",
+					Gcp: &apimodels.GCPCloudSpec{
+						ServiceAccount: secrets.GCP.ServiceAccount,
+						Network:        secrets.GCP.Network,
+						Subnetwork:     secrets.GCP.Subnetwork,
+					},
 				},
-				Pods: v1.NetworkRanges{
-					CIDRBlocks: []string{"172.25.0.0/16"},
-				},
-				DNSDomain: "cluster.local",
-			},
-			Cloud: v1.CloudSpec{
-				DatacenterName: "gcp-westeurope",
-				GCP: &v1.GCPCloudSpec{
-					ServiceAccount: secrets.GCP.ServiceAccount,
-					Network:        secrets.GCP.Network,
-					Subnetwork:     secrets.GCP.Subnetwork,
-				},
+				Version: s.version.String(),
 			},
 		},
 	}
-}
-
-// TODO: Implement
-func (s *gcpScenario) APICluster(secrets secrets) *apimodels.CreateClusterSpec {
-	return nil
 }
 
 func (s *gcpScenario) Nodes(num int, secrets secrets) *kubermaticapiv1.NodeDeployment {

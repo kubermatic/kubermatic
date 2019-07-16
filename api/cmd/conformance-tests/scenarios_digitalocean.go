@@ -4,11 +4,8 @@ import (
 	"fmt"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Returns a matrix of (version x operating system)
@@ -53,33 +50,20 @@ func (s *digitaloceanScenario) Name() string {
 	return fmt.Sprintf("digitalocean-%s-%s", getOSNameFromSpec(s.nodeOsSpec), s.version.String())
 }
 
-func (s *digitaloceanScenario) Cluster(secrets secrets) *v1.Cluster {
-	return &v1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{},
-		Spec: v1.ClusterSpec{
-			Version:           *s.version,
-			HumanReadableName: s.Name(),
-			ClusterNetwork: v1.ClusterNetworkingConfig{
-				Services: v1.NetworkRanges{
-					CIDRBlocks: []string{"10.10.10.0/24"},
-				},
-				Pods: v1.NetworkRanges{
-					CIDRBlocks: []string{"172.25.0.0/16"},
-				},
-				DNSDomain: "cluster.local",
-			},
-			Cloud: v1.CloudSpec{
-				DatacenterName: "do-ams3",
-				Digitalocean: &v1.DigitaloceanCloudSpec{
-					Token: secrets.Digitalocean.Token,
+func (s *digitaloceanScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
+	return &apimodels.CreateClusterSpec{
+		Cluster: &apimodels.Cluster{
+			Type: "kubernetes",
+			Spec: &apimodels.ClusterSpec{
+				Cloud: &apimodels.CloudSpec{
+					DatacenterName: "do-ams3",
+					Digitalocean: &apimodels.DigitaloceanCloudSpec{
+						Token: secrets.Digitalocean.Token,
+					},
 				},
 			},
 		},
 	}
-}
-
-func (s *digitaloceanScenario) APICluster(secrets secrets) *apimodels.CreateClusterSpec {
-	return nil
 }
 
 func (s *digitaloceanScenario) Nodes(num int, _ secrets) *kubermaticapiv1.NodeDeployment {
