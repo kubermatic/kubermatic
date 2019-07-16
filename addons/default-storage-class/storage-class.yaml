@@ -274,7 +274,7 @@ spec:
           securityContext:
             privileged: true
         - name: hcloud-csi-driver
-          image: '{{ Registry "docker.io" }}hetznercloud/hcloud-csi-driver:1.0.0'
+          image: '{{ Registry "docker.io" }}/hetznercloud/hcloud-csi-driver:1.0.0'
           imagePullPolicy: Always
           env:
             - name: CSI_ENDPOINT
