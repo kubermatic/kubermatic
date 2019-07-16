@@ -682,7 +682,7 @@ func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*k
 
 	params := &projectclient.CreateClusterParams{
 		ProjectID: r.kubermatcProjectID,
-		Dc:        cluster.Cluster.Spec.Cloud.DatacenterName,
+		Dc:        "prow-build-cluster",
 		Body:      cluster,
 	}
 	params.SetTimeout(15 * time.Second)
