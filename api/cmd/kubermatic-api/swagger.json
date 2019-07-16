@@ -4587,6 +4587,10 @@
           "type": "string",
           "x-go-name": "Provider"
         },
+        "seed": {
+          "type": "string",
+          "x-go-name": "Seed"
+        },
         "vsphere": {
           "$ref": "#/definitions/VSphereDatacenterSpec"
         }
