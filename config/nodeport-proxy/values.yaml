@@ -6,15 +6,10 @@ nodePortProxy:
   envoy:
     image:
       repository: "docker.io/envoyproxy/envoy-alpine"
-      tag: "v1.10.0"
+      tag: v1.10.0
 
   nodeSelector: {}
-
-  # The only reason all these fields are defined explicitly is so that
-  # we can properly merge any potential overwrites.
   affinity:
-    nodeAffinity: {}
-    podAffinity: {}
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
       - podAffinityTerm:
@@ -23,7 +18,6 @@ nodePortProxy:
               app: envoy
           topologyKey: kubernetes.io/hostname
         weight: 100
-      requiredDuringSchedulingIgnoredDuringExecution: []
   tolerations: []
 
   resources:
@@ -49,30 +43,6 @@ nodePortProxy:
         cpu: 150m
         memory: 32Mi
 
-  lbUpdater:
-    nodeSelector: {}
-    affinity: {}
-    tolerations: []
-
-# stub to make templating easier
-nodePortPoxy:
-  image: {}
-  envoy:
-    image: {}
-  nodeSelector: {}
-  affinity:
-    podAntiAffinity: {}
-  tolerations: []
-  resources:
-    envoy:
-      requests: {}
-      limits: {}
-    envoyManager:
-      requests: {}
-      limits: {}
-    lbUpdater:
-      requests: {}
-      limits: {}
   lbUpdater:
     nodeSelector: {}
     affinity: {}
