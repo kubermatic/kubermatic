@@ -286,7 +286,7 @@ groups:
 
   - alert: FdExhaustionClose
     annotations:
-      description: '{{ $labels.job }} instance {{ $labels.instance }} will exhaust its file descriptors soon'
+      message: '{{ $labels.job }} instance {{ $labels.instance }} will exhaust its file descriptors soon'
     expr: |
       predict_linear(instance:fd_utilization[10m], 3600) > 1
     for: 10m
