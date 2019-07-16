@@ -1,7 +1,7 @@
 prometheus:
   image:
     repository: quay.io/prometheus/prometheus
-    tag: v2.10.0
+    tag: v2.11.0
     pullPolicy: IfNotPresent
 
   host: ''
@@ -10,6 +10,11 @@ prometheus:
 
   tsdb:
     retentionTime: 15d
+
+    # This is not yet considered a truly stable
+    # feature by the Prometheus developers, see
+    # https://github.com/prometheus/tsdb/pull/609
+    compressWAL: false
 
   configReloaderImage:
     repository: docker.io/jimmidyson/configmap-reload
