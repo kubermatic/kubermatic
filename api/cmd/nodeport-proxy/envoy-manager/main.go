@@ -65,8 +65,12 @@ func main() {
 		mainLog.ReportCaller = true
 	}
 
+	envoyLog := &envoyLogProxy{
+		upstream: mainLog.WithField("component", "envoycache"),
+	}
+
 	mainLog.Infof("Starting the server on '%s'...", listenAddress)
-	snapshotCache := envoycache.NewSnapshotCache(true, hasher{}, mainLog)
+	snapshotCache := envoycache.NewSnapshotCache(true, hasher{}, envoyLog)
 	srv := xds.NewServer(snapshotCache, nil)
 	grpcServer := grpc.NewServer()
 	listener, err := net.Listen("tcp", listenAddress)
