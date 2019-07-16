@@ -87,7 +87,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			ProjectID:           test.GenDefaultProject().Name,
 			UserID:              "0000",
 			ExistingAPIUser:     test.GenDefaultAPIUser(),
-			Datacenter:          test.TestDatacenter,
+			Datacenter:          test.TestSeedDatacenter,
 			HTTPStatusInitPhase: http.StatusNotFound,
 		},
 		{
@@ -95,7 +95,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			ClusterID:                 test.ClusterID,
 			ProjectID:                 test.GenDefaultProject().Name,
 			UserID:                    test.GenDefaultUser().Name,
-			Datacenter:                test.TestDatacenter,
+			Datacenter:                test.TestSeedDatacenter,
 			Nonce:                     "abc", // incorrect length
 			HTTPStatusInitPhase:       http.StatusSeeOther,
 			ExistingKubermaticObjects: genTestKubeconfigKubermaticObjects(),
@@ -111,7 +111,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			ClusterID:                 test.ClusterID,
 			ProjectID:                 test.GenDefaultProject().Name,
 			UserID:                    test.GenDefaultUser().Name,
-			Datacenter:                test.TestDatacenter,
+			Datacenter:                test.TestSeedDatacenter,
 			HTTPStatusInitPhase:       http.StatusSeeOther,
 			ExistingKubermaticObjects: genTestKubeconfigKubermaticObjects(),
 			ExpectedRedirectURI:       testExpectedRedirectURI,

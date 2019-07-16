@@ -250,8 +250,8 @@ func createUserInfo(user *kubermaticapiv1.User, projectID string, userProjectMap
 
 func getClusterProvider(ctx context.Context, request interface{}, datacenters map[string]*kubermaticv1.SeedDatacenter, clusterProviders map[string]provider.ClusterProvider) (provider.ClusterProvider, context.Context, error) {
 	getter := request.(dCGetter)
-	dc, err := provider.NodeLocationFromSeedMap(datacenters, getter.GetDC())
-	if err != nil {
+	dc, exists := datacenters[getter.GetDC()]
+	if !exists {
 		return nil, ctx, errors.NewNotFound("datacenter", getter.GetDC())
 	}
 	ctx = context.WithValue(ctx, datacenterContextKey, dc)

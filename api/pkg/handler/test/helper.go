@@ -79,7 +79,7 @@ const (
 	// ProjectName holds the test project ID
 	ProjectName = "my-first-project-ID"
 	// TestDatacenter holds datacenter name
-	TestDatacenter = "us-central1"
+	TestSeedDatacenter = "us-central1"
 	// TestServiceAccountHashKey authenticates the service account's token value using HMAC
 	TestServiceAccountHashKey = "eyJhbGciOiJIUzI1NeyJhbGciOiJIUzI1N"
 	// TestFakeToken signed JWT token with fake data
@@ -276,13 +276,13 @@ func CreateTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 
 func buildDatacenters() map[string]*kubermaticv1.SeedDatacenter {
 	return map[string]*kubermaticv1.SeedDatacenter{
-		"my-seed": {
+		"us-central1": {
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "my-seed",
+				Name: "us-central1",
 			},
 			Spec: kubermaticv1.SeedDatacenterSpec{
-				Country:  "Jamaica",
-				Location: "some-field",
+				Location: "us-central",
+				Country:  "US",
 				NodeLocations: map[string]kubermaticv1.NodeLocation{
 					"private-do1": {
 						Country:  "NL",
