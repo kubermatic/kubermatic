@@ -216,6 +216,7 @@ func getOpenstackNetworks(providers provider.CloudRegistry, username, password, 
 			Username: username,
 			Password: password,
 			Tenant:   tenant,
+			TenantID: tenantID,
 			Domain:   domain,
 		},
 	})
@@ -399,6 +400,7 @@ func DecodeOpenstackReq(c context.Context, r *http.Request) (interface{}, error)
 	req.Username = r.Header.Get("Username")
 	req.Password = r.Header.Get("Password")
 	req.Tenant = r.Header.Get("Tenant")
+	req.TenantID = r.Header.Get("TenantID")
 	req.Domain = r.Header.Get("Domain")
 	req.DatacenterName = r.Header.Get("DatacenterName")
 	req.Credential = r.Header.Get("Credential")
