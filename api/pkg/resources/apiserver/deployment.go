@@ -255,7 +255,19 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
 
-	if enableDexCA {
+	if data.Cluster().Spec.OIDC.IssuerURL != "" && data.Cluster().Spec.OIDC.ClientID != "" {
+		flags = append(flags, "--oidc-issuer-url", data.Cluster().Spec.OIDC.IssuerURL)
+		flags = append(flags, "--oidc-client-id", data.Cluster().Spec.OIDC.ClientID)
+		if data.Cluster().Spec.OIDC.UsernameClaim != "" {
+			flags = append(flags, "--oidc-username-claim", data.Cluster().Spec.OIDC.UsernameClaim)
+		}
+		if data.Cluster().Spec.OIDC.GroupsClaim != "" {
+			flags = append(flags, "--oidc-groups-claim", data.Cluster().Spec.OIDC.GroupsClaim)
+		}
+		if data.Cluster().Spec.OIDC.RequiredClaim != "" {
+			flags = append(flags, "--oidc-required-claim", data.Cluster().Spec.OIDC.RequiredClaim)
+		}
+	} else if enableDexCA {
 		flags = append(flags, "--oidc-issuer-url", data.OIDCIssuerURL())
 		flags = append(flags, "--oidc-client-id", data.OIDCIssuerClientID())
 		flags = append(flags, "--oidc-username-claim", "email")

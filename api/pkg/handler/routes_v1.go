@@ -161,6 +161,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig").
 		Handler(r.getClusterKubeconfig())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/oidckubeconfig").
+		Handler(r.getOidcClusterKubeconfig())
+
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}").
 		Handler(r.deleteCluster())
@@ -1088,6 +1092,33 @@ func (r Routing) getClusterKubeconfig() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviders, r.datacenters),
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.GetAdminKubeconfigEndpoint(r.projectProvider)),
+		cluster.DecodeGetAdminKubeconfig,
+		cluster.EncodeKubeconfig,
+		r.defaultServerOptions()...,
+	)
+}
+
+// getOidcClusterKubeconfig returns the oidc kubeconfig for the cluster.
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/oidckubeconfig project getOidcClusterKubeconfig
+//
+//     Gets the kubeconfig for the specified cluster with oidc authentication.
+//
+//     Produces:
+//     - application/yaml
+//
+//     Responses:
+//       default: errorResponse
+//       200: Kubeconfig
+//       401: empty
+//       403: empty
+func (r Routing) getOidcClusterKubeconfig() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviders, r.datacenters),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(cluster.GetOidcKubeconfigEndpoint(r.projectProvider)),
 		cluster.DecodeGetAdminKubeconfig,
 		cluster.EncodeKubeconfig,
 		r.defaultServerOptions()...,
