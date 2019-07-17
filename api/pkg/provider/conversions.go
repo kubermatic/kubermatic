@@ -47,7 +47,7 @@ func DatacenterMetasToSeedDatacenterSpecs(dm map[string]DatacenterMeta) (map[str
 			}
 			if !dm[datacenterSpec.Seed].IsSeed {
 				return nil, fmt.Errorf("datacenter %q referenced by nodeDatacenter %q as its seed is not configured to be a seed",
-					dcName, datacenterSpec.Seed)
+					datacenterSpec.Seed, dcName)
 
 			}
 			// Create entry for SeedDC if not already present
