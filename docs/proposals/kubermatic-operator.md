@@ -50,7 +50,7 @@ spec:
   # You must configure credentials for quay.io and docker.io at the
   # very least.
   secrets:
-    dockerAuth: |
+    imagePullSecret: |
       {
         "auths": {
           "https://index.docker.io/v1/": {
