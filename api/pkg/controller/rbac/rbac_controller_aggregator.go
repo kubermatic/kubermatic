@@ -95,8 +95,8 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider) (*ControllerA
 			kind:      "Secret",
 			namespace: "kubermatic",
 			shouldEnqueue: func(obj metav1.Object) bool {
-				// do not reconcile secrets without "sa-token" prefix
-				return strings.HasPrefix(obj.GetName(), "sa-token")
+				// do not reconcile secrets without "sa-token" and "credential" prefix
+				return shouldEnqueueSecret(obj.GetName())
 			},
 		},
 
@@ -142,4 +142,15 @@ func (a *ControllerAggregator) Run(workerCount int, stopCh <-chan struct{}) {
 
 	glog.Info("RBAC generator aggregator controller started")
 	<-stopCh
+}
+
+func shouldEnqueueSecret(name string) bool {
+
+	supportedPrefixes := []string{"sa-token", "credential"}
+	for _, prefix := range supportedPrefixes {
+		if strings.HasPrefix(name, prefix) {
+			return true
+		}
+	}
+	return false
 }
