@@ -79,6 +79,18 @@ type ClusterSpec struct {
 
 	// Optional component specific overrides
 	ComponentsOverride ComponentSettings `json:"componentsOverride"`
+
+	OIDC OIDCSettings `json:"oidc,omitempty"`
+}
+
+type OIDCSettings struct {
+	IssuerURL     string `json:"issuerUrl,omitempty"`
+	ClientID      string `json:"clientId,omitempty"`
+	ClientSecret  string `json:"clientSecret,omitempty"`
+	UsernameClaim string `json:"usernameClaim,omitempty"`
+	GroupsClaim   string `json:"groupsClaim,omitempty"`
+	RequiredClaim string `json:"requiredClaim,omitempty"`
+	ExtraScopes   string `json:"extraScopes,omitempty"`
 }
 
 type ComponentSettings struct {

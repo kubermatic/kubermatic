@@ -404,6 +404,9 @@ type ClusterSpec struct {
 
 	// Version desired version of the kubernetes master components
 	Version ksemver.Semver `json:"version"`
+
+	// OIDC settings
+	OIDC kubermaticv1.OIDCSettings `json:"oidc,omitempty"`
 }
 
 // MarshalJSON marshals ClusterSpec object into JSON. It is overwritten to control data
@@ -413,6 +416,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		Cloud           PublicCloudSpec                        `json:"cloud"`
 		MachineNetworks []kubermaticv1.MachineNetworkingConfig `json:"machineNetworks,omitempty"`
 		Version         ksemver.Semver                         `json:"version"`
+		OIDC            kubermaticv1.OIDCSettings              `json:"oidc"`
 	}{
 		Cloud: PublicCloudSpec{
 			DatacenterName: cs.Cloud.DatacenterName,
@@ -429,6 +433,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		},
 		Version:         cs.Version,
 		MachineNetworks: cs.MachineNetworks,
+		OIDC:            cs.OIDC,
 	})
 
 	return ret, err
