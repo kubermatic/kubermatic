@@ -80,17 +80,13 @@ spec:
 
   # Feature gates are structs instead of simple booleans to make
   # extending individual features with additional fields easier.
-  api:
-    featureGates:
-      OIDCKubeCfgEndpoint:
-        enabled: true
-
-  controller:
-    featureGates:
-      OpenIDAuthPlugin:
-        enabled: true
-      VerticalPodAutoscaler:
-        enabled: true
+  featureGates:
+    OIDCKubeCfgEndpoint:
+      enabled: true
+    OpenIDAuthPlugin:
+      enabled: true
+    VerticalPodAutoscaler:
+      enabled: true
 
   ui:
     config: |
