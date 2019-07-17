@@ -104,7 +104,7 @@ func main() {
 
 	ctrlCtx.datacenters, err = provider.LoadDatacenters(ctrlCtx.runOptions.dcFile)
 	if err != nil {
-		sugarLog.Fatalw("Failed toparse the datacenters definition", "error", err)
+		sugarLog.Fatalw("Failed to parse the datacenters definition", "error", err)
 	}
 
 	ctrlCtx.kubeconfig, err = clientcmd.LoadFromFile(ctrlCtx.runOptions.kubeconfig)
