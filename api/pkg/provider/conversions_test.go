@@ -59,14 +59,14 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 			},
 		},
 		{
-			name: "Referencing a nodeLocation as seed causes error",
+			name: "Referencing a Datacenter as seed causes error",
 			datacenterMeta: map[string]DatacenterMeta{
-				"my-seed":                 {IsSeed: true},
-				"my-valid-nodelocation":   {Seed: "my-seed"},
-				"my-invalid-nodelocation": {Seed: "my-valid-nodelocation"},
+				"my-seed":               {IsSeed: true},
+				"my-valid-datacenter":   {Seed: "my-seed"},
+				"my-invalid-datacenter": {Seed: "my-valid-datacenter"},
 			},
 			verify: func(_ map[string]*kubermaticv1.Seed, err error) error {
-				expectedErr := `datacenter "my-valid-nodelocation" referenced by nodeDatacenter "my-invalid-nodelocation" as its seed is not configured to be a seed`
+				expectedErr := `datacenter "my-valid-datacenter" referenced by nodeDatacenter "my-invalid-datacenter" as its seed is not configured to be a seed`
 				if err == nil || err.Error() != expectedErr {
 					return fmt.Errorf("expected error to be %q, was %v", expectedErr, err)
 				}
@@ -109,7 +109,7 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 			name: "All datacenter properties get copied over",
 			datacenterMeta: map[string]DatacenterMeta{
 				"my-seed": {IsSeed: true},
-				"my-nodelocation": {
+				"my-datacenter": {
 					Seed:     "my-seed",
 					Location: "Hamburg",
 					Country:  "Germany",
@@ -133,9 +133,9 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 				if seeds["my-seed"].Spec.Datacenters == nil {
 					return errors.New(".Spec.Datacenters is nil")
 				}
-				datacenter, exists := seeds["my-seed"].Spec.Datacenters["my-nodelocation"]
+				datacenter, exists := seeds["my-seed"].Spec.Datacenters["my-datacenter"]
 				if !exists {
-					return errors.New(`.Spec.Datacenters["my-nodelocation"] doesnt exist`)
+					return errors.New(`.Spec.Datacenters["my-datacenter"] doesnt exist`)
 				}
 				if datacenter.Country != "Germany" {
 					return fmt.Errorf("Expected datacenter.Country to be 'Germany', was %q", datacenter.Country)
@@ -155,8 +155,8 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 		{
 			name: "One seed, one datacenter",
 			datacenterMeta: map[string]DatacenterMeta{
-				"my-seed":         {IsSeed: true},
-				"my-nodelocation": {Seed: "my-seed"},
+				"my-seed":       {IsSeed: true},
+				"my-datacenter": {Seed: "my-seed"},
 			},
 			verify: func(seeds map[string]*kubermaticv1.Seed, err error) error {
 				if err != nil {
@@ -165,8 +165,8 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 				if seeds["my-seed"] == nil {
 					return errors.New("Couldnt find seed")
 				}
-				if _, exists := seeds["my-seed"].Spec.Datacenters["my-nodelocation"]; !exists {
-					return errors.New("Nodelocation 'my-nodelocation' doesnt exist")
+				if _, exists := seeds["my-seed"].Spec.Datacenters["my-datacenter"]; !exists {
+					return errors.New("Datacenter 'my-datacenter' doesnt exist")
 				}
 				return nil
 			},
@@ -174,9 +174,9 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 		{
 			name: "One seed, multiple datacenters",
 			datacenterMeta: map[string]DatacenterMeta{
-				"my-seed":                {IsSeed: true},
-				"my-nodelocation":        {Seed: "my-seed"},
-				"my-second-nodelocation": {Seed: "my-seed"},
+				"my-seed":              {IsSeed: true},
+				"my-datacenter":        {Seed: "my-seed"},
+				"my-second-datacenter": {Seed: "my-seed"},
 			},
 			verify: func(seeds map[string]*kubermaticv1.Seed, err error) error {
 				if err != nil {
@@ -185,11 +185,11 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 				if seeds["my-seed"] == nil {
 					return errors.New("Couldnt find seed")
 				}
-				if _, exists := seeds["my-seed"].Spec.Datacenters["my-nodelocation"]; !exists {
-					return errors.New("Nodelocation 'my-nodelocation' doesnt exist")
+				if _, exists := seeds["my-seed"].Spec.Datacenters["my-datacenter"]; !exists {
+					return errors.New("Datacenter 'my-datacenter' doesnt exist")
 				}
-				if _, exists := seeds["my-seed"].Spec.Datacenters["my-second-nodelocation"]; !exists {
-					return errors.New("Nodelocation 'my-second-nodelocation' doesnt exist")
+				if _, exists := seeds["my-seed"].Spec.Datacenters["my-second-datacenter"]; !exists {
+					return errors.New("Datacenter 'my-second-datacenter' doesnt exist")
 				}
 				return nil
 			},
@@ -197,10 +197,10 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 		{
 			name: "Multiple seed with one datacenter each",
 			datacenterMeta: map[string]DatacenterMeta{
-				"my-seed":                {IsSeed: true},
-				"my-nodelocation":        {Seed: "my-seed"},
-				"my-second-seed":         {IsSeed: true},
-				"my-second-nodelocation": {Seed: "my-second-seed"},
+				"my-seed":              {IsSeed: true},
+				"my-datacenter":        {Seed: "my-seed"},
+				"my-second-seed":       {IsSeed: true},
+				"my-second-datacenter": {Seed: "my-second-seed"},
 			},
 			verify: func(seeds map[string]*kubermaticv1.Seed, err error) error {
 				if err != nil {
@@ -212,11 +212,11 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 				if seeds["my-second-seed"] == nil {
 					return errors.New("Couldnt find seed 'my-second-seed'")
 				}
-				if _, exists := seeds["my-seed"].Spec.Datacenters["my-nodelocation"]; !exists {
-					return errors.New("Nodelocation 'my-nodelocation' doesnt exist")
+				if _, exists := seeds["my-seed"].Spec.Datacenters["my-datacenter"]; !exists {
+					return errors.New("Datacenter 'my-datacenter' doesnt exist")
 				}
-				if _, exists := seeds["my-second-seed"].Spec.Datacenters["my-second-nodelocation"]; !exists {
-					return errors.New("Nodelocation 'my-second-nodelocation' doesnt exist")
+				if _, exists := seeds["my-second-seed"].Spec.Datacenters["my-second-datacenter"]; !exists {
+					return errors.New("Datacenter 'my-second-datacenter' doesnt exist")
 				}
 				return nil
 			},
@@ -224,12 +224,12 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 		{
 			name: "Multiple seeds with multiple datacenters each",
 			datacenterMeta: map[string]DatacenterMeta{
-				"my-seed":                {IsSeed: true},
-				"my-nodelocation":        {Seed: "my-seed"},
-				"my-third-nodelocation":  {Seed: "my-seed"},
-				"my-second-seed":         {IsSeed: true},
-				"my-second-nodelocation": {Seed: "my-second-seed"},
-				"my-fourth-nodelocation": {Seed: "my-second-seed"},
+				"my-seed":              {IsSeed: true},
+				"my-datacenter":        {Seed: "my-seed"},
+				"my-third-datacenter":  {Seed: "my-seed"},
+				"my-second-seed":       {IsSeed: true},
+				"my-second-datacenter": {Seed: "my-second-seed"},
+				"my-fourth-datacenter": {Seed: "my-second-seed"},
 			},
 			verify: func(seeds map[string]*kubermaticv1.Seed, err error) error {
 				if err != nil {
@@ -241,17 +241,17 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 				if seeds["my-second-seed"] == nil {
 					return errors.New("Couldnt find seed 'my-second-seed'")
 				}
-				if _, exists := seeds["my-seed"].Spec.Datacenters["my-nodelocation"]; !exists {
-					return errors.New("Nodelocation 'my-nodelocation' doesnt exist")
+				if _, exists := seeds["my-seed"].Spec.Datacenters["my-datacenter"]; !exists {
+					return errors.New("Datacenter 'my-datacenter' doesnt exist")
 				}
-				if _, exists := seeds["my-seed"].Spec.Datacenters["my-third-nodelocation"]; !exists {
-					return errors.New("Nodelocation 'my-third-nodelocation' doesnt exist")
+				if _, exists := seeds["my-seed"].Spec.Datacenters["my-third-datacenter"]; !exists {
+					return errors.New("Datacenter 'my-third-datacenter' doesnt exist")
 				}
-				if _, exists := seeds["my-second-seed"].Spec.Datacenters["my-second-nodelocation"]; !exists {
-					return errors.New("Nodelocation 'my-second-nodelocation' doesnt exist")
+				if _, exists := seeds["my-second-seed"].Spec.Datacenters["my-second-datacenter"]; !exists {
+					return errors.New("Datacenter 'my-second-datacenter' doesnt exist")
 				}
-				if _, exists := seeds["my-second-seed"].Spec.Datacenters["my-fourth-nodelocation"]; !exists {
-					return errors.New("Nodelocation 'my-fourth-nodelocation' doesnt exist")
+				if _, exists := seeds["my-second-seed"].Spec.Datacenters["my-fourth-datacenter"]; !exists {
+					return errors.New("Datacenter 'my-fourth-datacenter' doesnt exist")
 				}
 				return nil
 			},

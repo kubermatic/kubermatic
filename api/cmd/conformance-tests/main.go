@@ -247,6 +247,10 @@ func main() {
 	}
 	opts.kubermaticClient = apiclient.New(httptransport.New(kubermaticAPIServerAddress, "", []string{"http"}), nil)
 	opts.kubermaticAuthenticator = httptransport.BearerToken(kubermaticServiceaAccountToken)
+
+	// We use environment variables instead of flags for compatibility reasons, because during upgrade tests we
+	// run two versions of the conformance tester with the same set of flags, which breaks if the older version
+	// doesn't have all flags
 	seedName := os.Getenv("SEED_NAME")
 	if seedName == "" {
 		log.Fatalf("The name of the seed dc must be configured via the SEED_NAME env var")

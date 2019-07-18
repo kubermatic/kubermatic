@@ -282,7 +282,7 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 
 	datacenter, exists := r.seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
 	if !exists {
-		return nil, fmt.Errorf("NodeLocation %q doesn't exist", cluster.Spec.Cloud.DatacenterName)
+		return nil, fmt.Errorf("Datacenter %q doesn't exist", cluster.Spec.Cloud.DatacenterName)
 	}
 
 	if r.deleteClusterAfterTests {
