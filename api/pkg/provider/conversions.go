@@ -11,9 +11,9 @@ import (
 // We can not convert a single DatacenterMeta as the SeedDatacenter contains its NodeDatacenter
 // which is also represented as a DatacenterMeta, hence we have to do it all at once
 // TODO: Get rid of this once we don't support datacenters.yaml anymore
-func DatacenterMetasToSeedDatacenterSpecs(dm map[string]DatacenterMeta) (map[string]*kubermaticv1.SeedDatacenter, error) {
+func DatacenterMetasToSeeds(dm map[string]DatacenterMeta) (map[string]*kubermaticv1.Seed, error) {
 
-	seedDatacenters := map[string]*kubermaticv1.SeedDatacenter{}
+	seeds := map[string]*kubermaticv1.Seed{}
 
 	for dcName, datacenterSpec := range dm {
 		if datacenterSpec.IsSeed && datacenterSpec.Seed != "" {
@@ -26,20 +26,20 @@ func DatacenterMetasToSeedDatacenterSpecs(dm map[string]DatacenterMeta) (map[str
 		if datacenterSpec.IsSeed {
 			// Keep existing map entries, because its possible that a NodeDC that uses this SeedDC
 			// came before the SeedDC in the loop
-			if seedDatacenters[dcName] == nil {
-				seedDatacenters[dcName] = &kubermaticv1.SeedDatacenter{
-					Spec: kubermaticv1.SeedDatacenterSpec{
-						NodeLocations: map[string]kubermaticv1.NodeLocation{},
+			if seeds[dcName] == nil {
+				seeds[dcName] = &kubermaticv1.Seed{
+					Spec: kubermaticv1.SeedSpec{
+						Datacenters: map[string]kubermaticv1.Datacenter{},
 					},
 				}
 			}
 
-			seedDatacenters[dcName].Name = dcName
-			seedDatacenters[dcName].Spec.Country = datacenterSpec.Country
-			seedDatacenters[dcName].Spec.Location = datacenterSpec.Location
+			seeds[dcName].Name = dcName
+			seeds[dcName].Spec.Country = datacenterSpec.Country
+			seeds[dcName].Spec.Location = datacenterSpec.Location
 			// TODO: What to do about the kubeconfig?
-			seedDatacenters[dcName].Spec.Kubeconfig = corev1.ObjectReference{}
-			seedDatacenters[dcName].Spec.SeedDNSOverwrite = datacenterSpec.SeedDNSOverwrite
+			seeds[dcName].Spec.Kubeconfig = corev1.ObjectReference{}
+			seeds[dcName].Spec.SeedDNSOverwrite = datacenterSpec.SeedDNSOverwrite
 
 		} else {
 			if _, exists := dm[datacenterSpec.Seed]; !exists {
@@ -51,15 +51,15 @@ func DatacenterMetasToSeedDatacenterSpecs(dm map[string]DatacenterMeta) (map[str
 
 			}
 			// Create entry for SeedDC if not already present
-			if seedDatacenters[datacenterSpec.Seed] == nil {
-				seedDatacenters[datacenterSpec.Seed] = &kubermaticv1.SeedDatacenter{
-					Spec: kubermaticv1.SeedDatacenterSpec{
-						NodeLocations: map[string]kubermaticv1.NodeLocation{},
+			if seeds[datacenterSpec.Seed] == nil {
+				seeds[datacenterSpec.Seed] = &kubermaticv1.Seed{
+					Spec: kubermaticv1.SeedSpec{
+						Datacenters: map[string]kubermaticv1.Datacenter{},
 					},
 				}
 
 			}
-			seedDatacenters[datacenterSpec.Seed].Spec.NodeLocations[dcName] = kubermaticv1.NodeLocation{
+			seeds[datacenterSpec.Seed].Spec.Datacenters[dcName] = kubermaticv1.Datacenter{
 				Country:  datacenterSpec.Country,
 				Location: datacenterSpec.Location,
 				Node:     datacenterSpec.Node,
@@ -69,7 +69,7 @@ func DatacenterMetasToSeedDatacenterSpecs(dm map[string]DatacenterMeta) (map[str
 		}
 	}
 
-	return seedDatacenters, nil
+	return seeds, nil
 }
 
 // Needed because the cloud providers are initialized once during startup and get all
@@ -78,20 +78,20 @@ func DatacenterMetasToSeedDatacenterSpecs(dm map[string]DatacenterMeta) (map[str
 // once we support datacenters as CRDs.
 // TODO: Find a way to lift the current requirement of unique nodeDatacenter names. It is needed
 // only because we put the nodeDatacenter name on the cluster but not the seed
-func NodeLocationFromSeedMap(seeds map[string]*kubermaticv1.SeedDatacenter, nodeLocationName string) (*kubermaticv1.NodeLocation, error) {
+func DatacenterFromSeedMap(seeds map[string]*kubermaticv1.Seed, datacenterName string) (*kubermaticv1.Datacenter, error) {
 
-	var results []kubermaticv1.NodeLocation
+	var results []kubermaticv1.Datacenter
 	for _, seed := range seeds {
-		nodeLocation, exists := seed.Spec.NodeLocations[nodeLocationName]
+		datacenter, exists := seed.Spec.Datacenters[datacenterName]
 		if !exists {
 			continue
 		}
 
-		results = append(results, nodeLocation)
+		results = append(results, datacenter)
 	}
 
 	if n := len(results); n != 1 {
-		return nil, fmt.Errorf("expected to find exactly one datacenter with name %q, got %d", nodeLocationName, n)
+		return nil, fmt.Errorf("expected to find exactly one datacenter with name %q, got %d", datacenterName, n)
 	}
 
 	return &results[0], nil

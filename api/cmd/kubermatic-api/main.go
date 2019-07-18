@@ -169,11 +169,11 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	defaultKubermaticImpersonationClient := kubernetesprovider.NewKubermaticImpersonationClient(masterCfg)
 	defaultKubernetesImpersonationClient := kubernetesprovider.NewKubernetesImpersonationClient(masterCfg)
 
-	datacenters, err := provider.LoadDatacenters(options.dcFile)
+	seeds, err := provider.LoadSeeds(options.dcFile)
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to load datacenter yaml %q: %v", options.dcFile, err)
 	}
-	cloudProviders := cloud.Providers(datacenters)
+	cloudProviders := cloud.Providers(seeds)
 	userMasterLister := kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister()
 	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
 	userProvider := kubernetesprovider.NewUserProvider(kubermaticMasterClient, userMasterLister, kubernetesprovider.IsServiceAccount)
@@ -215,7 +215,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 			cloud:                                 cloudProviders,
 			eventRecorderProvider:                 eventRecorderProvider,
 			clusters:                              clusterProviders,
-			datacenters:                           datacenters},
+			seeds:                                 seeds},
 		nil
 }
 
@@ -279,7 +279,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 	serviceAccountTokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(options.serviceAccountSigningKey))
 
 	r := handler.NewRouting(
-		prov.datacenters,
+		prov.seeds,
 		prov.clusters,
 		prov.cloud,
 		prov.sshKey,

@@ -26,8 +26,8 @@ import (
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
-	kubeconfig  *clientcmdapi.Config
-	datacenters map[string]*kubermaticv1.SeedDatacenter
+	kubeconfig *clientcmdapi.Config
+	seeds      map[string]*kubermaticv1.Seed
 
 	recorder record.EventRecorder
 }
@@ -292,7 +292,7 @@ func (r *Reconciler) ensureMasterServices(ctx context.Context, contextName strin
 
 func (r *Reconciler) ensureMasterGrafanaProvisioning(ctx context.Context) error {
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		masterGrafanaConfigmapCreator(r.datacenters, r.kubeconfig),
+		masterGrafanaConfigmapCreator(r.seeds, r.kubeconfig),
 	}
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, MasterGrafanaNamespace, r.Client); err != nil {

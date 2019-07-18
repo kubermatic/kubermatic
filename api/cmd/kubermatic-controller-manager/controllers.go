@@ -50,7 +50,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 }
 
 func createCloudController(ctrlCtx *controllerContext) error {
-	cloudProvider := cloud.Providers(map[string]*kubermaticv1.SeedDatacenter{ctrlCtx.dc.Name: ctrlCtx.dc})
+	cloudProvider := cloud.Providers(map[string]*kubermaticv1.Seed{ctrlCtx.seed.Name: ctrlCtx.seed})
 	predicates := workerlabel.Predicates(ctrlCtx.runOptions.workerName)
 	if err := cloudcontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, cloudProvider, predicates); err != nil {
 		return fmt.Errorf("failed to add cloud controller to mgr: %v", err)
@@ -63,7 +63,7 @@ func createOpenshiftController(ctrlCtx *controllerContext) error {
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
-		ctrlCtx.dc.Spec.NodeLocations,
+		ctrlCtx.seed,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodeAccessNetwork,
 		ctrlCtx.runOptions.etcdDiskSize,
@@ -91,7 +91,7 @@ func createClusterController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.externalURL,
-		ctrlCtx.dc,
+		ctrlCtx.seed,
 		ctrlCtx.clientProvider,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodePortRange,
@@ -153,7 +153,7 @@ func createMonitoringController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.clientProvider,
 
-		ctrlCtx.dc,
+		ctrlCtx.seed,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodePortRange,
 		ctrlCtx.runOptions.nodeAccessNetwork,

@@ -216,7 +216,7 @@ type controllerContext struct {
 	runOptions           controllerRunOptions
 	mgr                  manager.Manager
 	clientProvider       client.UserClusterConnectionProvider
-	dc                   *kubermaticv1.SeedDatacenter
+	seed                 *kubermaticv1.Seed
 	dockerPullConfigJSON []byte
 	log                  *zap.SugaredLogger
 }

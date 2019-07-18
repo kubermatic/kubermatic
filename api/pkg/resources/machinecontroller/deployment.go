@@ -42,7 +42,7 @@ type machinecontrollerData interface {
 	ImageRegistry(string) string
 	Cluster() *kubermaticv1.Cluster
 	ClusterIPByServiceName(string) (string, error)
-	DC() *kubermaticv1.NodeLocation
+	DC() *kubermaticv1.Datacenter
 	NodeLocalDNSCacheEnabled() bool
 }
 

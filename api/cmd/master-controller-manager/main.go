@@ -49,7 +49,7 @@ type controllerContext struct {
 
 	mgr               manager.Manager
 	kubeconfig        *clientcmdapi.Config
-	datacenters       map[string]*kubermaticv1.SeedDatacenter
+	seeds             map[string]*kubermaticv1.Seed
 	labelSelectorFunc func(*metav1.ListOptions)
 }
 
@@ -102,7 +102,7 @@ func main() {
 	ctrlCtx.kubeMasterInformerFactory = kuberinformers.NewSharedInformerFactory(ctrlCtx.kubeMasterClient, informer.DefaultInformerResyncPeriod)
 	ctrlCtx.labelSelectorFunc = selector
 
-	ctrlCtx.datacenters, err = provider.LoadDatacenters(ctrlCtx.runOptions.dcFile)
+	ctrlCtx.seeds, err = provider.LoadSeeds(ctrlCtx.runOptions.dcFile)
 	if err != nil {
 		sugarLog.Fatalw("Failed to parse the datacenters definition", "error", err)
 	}

@@ -134,5 +134,5 @@ type providers struct {
 	cloud                                 provider.CloudRegistry
 	eventRecorderProvider                 provider.EventRecorderProvider
 	clusters                              map[string]provider.ClusterProvider
-	datacenters                           map[string]*kubermaticv1.SeedDatacenter
+	seeds                                 map[string]*kubermaticv1.Seed
 }

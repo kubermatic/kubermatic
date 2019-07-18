@@ -16,7 +16,7 @@ import (
 )
 
 // Machine returns a machine object for the given spec
-func Machine(c *kubermaticv1.Cluster, node *apiv1.Node, dc *kubermaticv1.NodeLocation, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.Machine, error) {
+func Machine(c *kubermaticv1.Cluster, node *apiv1.Node, dc *kubermaticv1.Datacenter, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.Machine, error) {
 	m := clusterv1alpha1.Machine{}
 
 	m.Namespace = metav1.NamespaceSystem

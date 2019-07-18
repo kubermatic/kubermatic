@@ -25,7 +25,7 @@ func (r *Reconciler) syncAddress(ctx context.Context, cluster *kubermaticv1.Clus
 		glog.V(2).Infof("Created admin token for cluster %s", cluster.Name)
 	}
 
-	modifiers, err := address.SyncClusterAddress(ctx, cluster, r.Client, r.externalURL, r.dc)
+	modifiers, err := address.SyncClusterAddress(ctx, cluster, r.Client, r.externalURL, r.seed)
 	if err != nil {
 		return err
 	}

@@ -17,10 +17,10 @@ import (
 )
 
 // ListEndpoint an HTTP endpoint that returns a list of apiv1.Datacenter
-func ListEndpoint(dcs map[string]*kubermaticv1.SeedDatacenter) endpoint.Endpoint {
+func ListEndpoint(seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		// Maintain a stable order. We do not check for duplicate names here
-		dcs := getAPIDCsFromSeedDatacenterMap(dcs)
+		dcs := getAPIDCsFromSeedMap(seeds)
 		sort.SliceStable(dcs, func(i, j int) bool {
 			return dcs[i].Metadata.Name < dcs[j].Metadata.Name
 		})
@@ -30,19 +30,19 @@ func ListEndpoint(dcs map[string]*kubermaticv1.SeedDatacenter) endpoint.Endpoint
 }
 
 // GetEndpoint an HTTP endpoint that returns a single apiv1.Datacenter object
-func GetEndpoint(dcs map[string]*kubermaticv1.SeedDatacenter) endpoint.Endpoint {
+func GetEndpoint(seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(LegacyDCReq)
-		return GetDatacenter(dcs, req.DC)
+		return GetDatacenter(seeds, req.DC)
 	}
 }
 
 // GetDatacenter a function that gives you a single apiv1.Datacenter object
-func GetDatacenter(dcs map[string]*kubermaticv1.SeedDatacenter, datacenterToGet string) (apiv1.Datacenter, error) {
+func GetDatacenter(seeds map[string]*kubermaticv1.Seed, datacenterToGet string) (apiv1.Datacenter, error) {
 	// The datacenter endpoints return both node and seed dcs, so we have to iterate through
 	// everything
 	var foundDCs []apiv1.Datacenter
-	for _, unfilteredDC := range getAPIDCsFromSeedDatacenterMap(dcs) {
+	for _, unfilteredDC := range getAPIDCsFromSeedMap(seeds) {
 		if unfilteredDC.Metadata.Name == datacenterToGet {
 			foundDCs = append(foundDCs, unfilteredDC)
 		}
@@ -58,9 +58,9 @@ func GetDatacenter(dcs map[string]*kubermaticv1.SeedDatacenter, datacenterToGet 
 	return foundDCs[0], nil
 }
 
-func getAPIDCsFromSeedDatacenterMap(dcs map[string]*kubermaticv1.SeedDatacenter) []apiv1.Datacenter {
+func getAPIDCsFromSeedMap(seeds map[string]*kubermaticv1.Seed) []apiv1.Datacenter {
 	var foundDCs []apiv1.Datacenter
-	for _, seed := range dcs {
+	for _, seed := range seeds {
 		foundDCs = append(foundDCs, apiv1.Datacenter{
 			Metadata: apiv1.LegacyObjectMeta{
 				Name:            seed.Name,
@@ -69,16 +69,16 @@ func getAPIDCsFromSeedDatacenterMap(dcs map[string]*kubermaticv1.SeedDatacenter)
 			Seed: true,
 		})
 
-		for nodeLocationName, nodeLocation := range seed.Spec.NodeLocations {
-			spec, err := apiSpec(nodeLocation.DeepCopy())
+		for datacenterName, datacenter := range seed.Spec.Datacenters {
+			spec, err := apiSpec(datacenter.DeepCopy())
 			if err != nil {
-				log.Logger.Errorf("api spec error in dc %q: %v", nodeLocationName, err)
+				log.Logger.Errorf("api spec error in dc %q: %v", datacenterName, err)
 				continue
 			}
 			spec.Seed = seed.Name
 			foundDCs = append(foundDCs, apiv1.Datacenter{
 				Metadata: apiv1.LegacyObjectMeta{
-					Name:            nodeLocationName,
+					Name:            datacenterName,
 					ResourceVersion: "1",
 				},
 				Spec: *spec,
@@ -97,7 +97,7 @@ func imagesMap(images kubermaticv1.ImageList) map[string]string {
 	return m
 }
 
-func apiSpec(dc *kubermaticv1.NodeLocation) (*apiv1.DatacenterSpec, error) {
+func apiSpec(dc *kubermaticv1.Datacenter) (*apiv1.DatacenterSpec, error) {
 	p, err := provider.DatacenterCloudProviderName(dc.Spec.DeepCopy())
 	if err != nil {
 		return nil, err

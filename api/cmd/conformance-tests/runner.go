@@ -70,8 +70,7 @@ func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
 		secrets:                      opts.secrets,
 		namePrefix:                   opts.namePrefix,
 		clusterClientProvider:        opts.clusterClientProvider,
-		nodeLocations:                opts.nodeLocations,
-		seedDCName:                   opts.seedDCName,
+		seed:                         opts.seed,
 		nodeCount:                    opts.nodeCount,
 		repoRoot:                     opts.repoRoot,
 		reportsRoot:                  opts.reportsRoot,
@@ -113,7 +112,7 @@ type testRunner struct {
 
 	seedClusterClient     ctrlruntimeclient.Client
 	clusterClientProvider clusterclient.UserClusterConnectionProvider
-	nodeLocations         map[string]kubermaticv1.NodeLocation
+	seed                  *kubermaticv1.Seed
 	seedDCName            string
 
 	// The label to use to select an existing cluster to test against instead of
@@ -282,7 +281,7 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 		"version":        cluster.Spec.Version,
 	})
 
-	nodeLocation, exists := r.nodeLocations[cluster.Spec.Cloud.DatacenterName]
+	datacenter, exists := r.seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
 	if !exists {
 		return nil, fmt.Errorf("NodeLocation %q doesn't exist", cluster.Spec.Cloud.DatacenterName)
 	}
@@ -313,7 +312,7 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 	}
 
 	nodeDeployments := scenario.NodeDeployments(r.nodeCount, r.secrets)
-	if err := r.setupNodes(log, scenario.Name(), cluster, userClusterClient, nodeDeployments, nodeLocation); err != nil {
+	if err := r.setupNodes(log, scenario.Name(), cluster, userClusterClient, nodeDeployments, datacenter); err != nil {
 		return nil, fmt.Errorf("failed to setup nodes: %v", err)
 	}
 
@@ -526,7 +525,7 @@ func (r *testRunner) setupNodes(parentLog *logrus.Entry,
 	cluster *kubermaticv1.Cluster,
 	userClusterClient ctrlruntimeclient.Client,
 	nodeDeployments []kubermaticapiv1.NodeDeployment,
-	nodeLocation kubermaticv1.NodeLocation) error {
+	dc kubermaticv1.Datacenter) error {
 	ctx := context.Background()
 	log := parentLog.WithFields(logrus.Fields{
 		"node-count": r.nodeCount,
@@ -554,7 +553,7 @@ func (r *testRunner) setupNodes(parentLog *logrus.Entry,
 		// is unset but need a deterministic name because we retry creation and dont
 		// want to accidentally create multiple MachineDeployments
 		nd.Name = fmt.Sprintf("md-%s-%d", scenarioName, ndIndex)
-		machineDeployment, err := machine.Deployment(cluster, &nd, nodeLocation, keys)
+		machineDeployment, err := machine.Deployment(cluster, &nd, dc.DeepCopy(), keys)
 		if err != nil {
 			return fmt.Errorf("failed to get MachineDeployment from NodeDeployment: %v", err)
 		}

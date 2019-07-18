@@ -20,7 +20,7 @@ func SyncClusterAddress(ctx context.Context,
 	cluster *kubermaticv1.Cluster,
 	client ctrlruntimeclient.Client,
 	externalURL string,
-	seed *kubermaticv1.SeedDatacenter) ([]func(*kubermaticv1.Cluster), error) {
+	seed *kubermaticv1.Seed) ([]func(*kubermaticv1.Cluster), error) {
 	var modifiers []func(*kubermaticv1.Cluster)
 
 	subdomain := seed.Name

@@ -35,7 +35,7 @@ type datacentersMeta struct {
 }
 
 // LoadDatacenters loads all Datacenters from the given path.
-func LoadDatacenters(path string) (map[string]*kubermaticv1.SeedDatacenter, error) {
+func LoadSeeds(path string) (map[string]*kubermaticv1.Seed, error) {
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func LoadDatacenters(path string) (map[string]*kubermaticv1.SeedDatacenter, erro
 		return nil, err
 	}
 
-	dcs, err := DatacenterMetasToSeedDatacenterSpecs(dcMetas.Datacenters)
+	dcs, err := DatacenterMetasToSeeds(dcMetas.Datacenters)
 	if err != nil {
 		return nil, err
 	}
@@ -58,18 +58,18 @@ func LoadDatacenters(path string) (map[string]*kubermaticv1.SeedDatacenter, erro
 	return dcs, nil
 }
 
-func LoadDatacenter(path, datacenterName string) (*kubermaticv1.SeedDatacenter, error) {
-	datacenters, err := LoadDatacenters(path)
+func LoadSeed(path, datacenterName string) (*kubermaticv1.Seed, error) {
+	seeds, err := LoadSeeds(path)
 	if err != nil {
 		return nil, err
 	}
 
-	dc, exists := datacenters[datacenterName]
+	datacenter, exists := seeds[datacenterName]
 	if !exists {
 		return nil, fmt.Errorf("Datacenter %q is not in datacenters.yaml", datacenterName)
 	}
 
-	return dc, nil
+	return datacenter, nil
 }
 
 func validateImageList(images kubermaticv1.ImageList) error {

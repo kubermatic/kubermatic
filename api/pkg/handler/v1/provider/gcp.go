@@ -250,7 +250,7 @@ func listGCPSizes(ctx context.Context, sa string, zone string) (apiv1.GCPMachine
 	return sizes, err
 }
 
-func GCPZoneEndpoint(credentialManager common.PresetsManager, dcs map[string]*kubermaticv1.SeedDatacenter) endpoint.Endpoint {
+func GCPZoneEndpoint(credentialManager common.PresetsManager, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPZoneReq)
 
@@ -265,11 +265,11 @@ func GCPZoneEndpoint(credentialManager common.PresetsManager, dcs map[string]*ku
 			}
 		}
 
-		return listGCPZones(ctx, sa, req.DC, dcs)
+		return listGCPZones(ctx, sa, req.DC, seeds)
 	}
 }
 
-func GCPZoneNoCredentialsEndpoint(projectProvider provider.ProjectProvider, dcs map[string]*kubermaticv1.SeedDatacenter) endpoint.Endpoint {
+func GCPZoneNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -287,14 +287,14 @@ func GCPZoneNoCredentialsEndpoint(projectProvider provider.ProjectProvider, dcs 
 		}
 
 		sa := cluster.Spec.Cloud.GCP.ServiceAccount
-		return listGCPZones(ctx, sa, cluster.Spec.Cloud.DatacenterName, dcs)
+		return listGCPZones(ctx, sa, cluster.Spec.Cloud.DatacenterName, seeds)
 	}
 }
 
-func listGCPZones(ctx context.Context, sa, datacenterName string, dcs map[string]*kubermaticv1.SeedDatacenter) (apiv1.GCPZoneList, error) {
+func listGCPZones(ctx context.Context, sa, datacenterName string, seeds map[string]*kubermaticv1.Seed) (apiv1.GCPZoneList, error) {
 	zones := apiv1.GCPZoneList{}
 
-	datacenter, err := dc.GetDatacenter(dcs, datacenterName)
+	datacenter, err := dc.GetDatacenter(seeds, datacenterName)
 	if err != nil {
 		return nil, errors.NewBadRequest("%v", err)
 	}

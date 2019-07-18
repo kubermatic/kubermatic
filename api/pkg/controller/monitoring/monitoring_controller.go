@@ -54,7 +54,7 @@ type Reconciler struct {
 
 	recorder record.EventRecorder
 
-	dc                                               *kubermaticv1.SeedDatacenter
+	seed                                             *kubermaticv1.Seed
 	overwriteRegistry                                string
 	nodePortRange                                    string
 	nodeAccessNetwork                                string
@@ -80,7 +80,7 @@ func Add(
 	workerName string,
 
 	userClusterConnProvider userClusterConnectionProvider,
-	dc *kubermaticv1.SeedDatacenter,
+	seed *kubermaticv1.Seed,
 	overwriteRegistry string,
 	nodePortRange string,
 	nodeAccessNetwork string,
@@ -116,7 +116,7 @@ func Add(
 		dockerPullConfigJSON:                             dockerPullConfigJSON,
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
 
-		dc: dc,
+		seed: seed,
 
 		features: features,
 	}

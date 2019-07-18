@@ -34,7 +34,7 @@ const (
 var roleARNS = []string{policyRoute53FullAccess, policyEC2FullAccess}
 
 type AmazonEC2 struct {
-	dcs map[string]*kubermaticv1.SeedDatacenter
+	seeds map[string]*kubermaticv1.Seed
 }
 
 func (a *AmazonEC2) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
@@ -86,12 +86,12 @@ func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 			return fmt.Errorf("failed to get default vpc: %v", err)
 		}
 
-		nodeDC, err := provider.NodeLocationFromSeedMap(a.dcs, spec.DatacenterName)
+		datacenter, err := provider.DatacenterFromSeedMap(a.seeds, spec.DatacenterName)
 		if err != nil {
 			return err
 		}
 
-		_, err = getDefaultSubnet(client, *vpc.VpcId, nodeDC.Spec.AWS.Region+nodeDC.Spec.AWS.ZoneCharacter)
+		_, err = getDefaultSubnet(client, *vpc.VpcId, datacenter.Spec.AWS.Region+datacenter.Spec.AWS.ZoneCharacter)
 		if err != nil {
 			return fmt.Errorf("failed to get default subnet: %v", err)
 		}
@@ -213,9 +213,9 @@ func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 }
 
 // NewCloudProvider returns a new AmazonEC2 provider.
-func NewCloudProvider(dcs map[string]*kubermaticv1.SeedDatacenter) *AmazonEC2 {
+func NewCloudProvider(seeds map[string]*kubermaticv1.Seed) *AmazonEC2 {
 	return &AmazonEC2{
-		dcs: dcs,
+		seeds: seeds,
 	}
 }
 
@@ -582,17 +582,17 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 	}
 
-	nodeDC, err := provider.NodeLocationFromSeedMap(a.dcs, cluster.Spec.Cloud.DatacenterName)
+	datacenter, err := provider.DatacenterFromSeedMap(a.seeds, cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
 		return nil, err
 	}
-	if nodeDC.Spec.AWS == nil {
+	if datacenter.Spec.AWS == nil {
 		return nil, fmt.Errorf("datacenter %q is not an AWS datacenter", cluster.Spec.Cloud.DatacenterName)
 	}
 
 	if cluster.Spec.Cloud.AWS.SubnetID == "" {
 		glog.V(4).Infof("No Subnet specified on cluster %s", cluster.Name)
-		subnet, err := getDefaultSubnet(client, cluster.Spec.Cloud.AWS.VPCID, nodeDC.Spec.AWS.Region+nodeDC.Spec.AWS.ZoneCharacter)
+		subnet, err := getDefaultSubnet(client, cluster.Spec.Cloud.AWS.VPCID, datacenter.Spec.AWS.Region+datacenter.Spec.AWS.ZoneCharacter)
 		if err != nil {
 
 			return nil, fmt.Errorf("failed to get default subnet for vpc %s: %v", cluster.Spec.Cloud.AWS.VPCID, err)
@@ -686,14 +686,14 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 
 func (a *AmazonEC2) getSession(cloud kubermaticv1.CloudSpec) (*session.Session, error) {
 	config := aws.NewConfig()
-	nodeDC, err := provider.NodeLocationFromSeedMap(a.dcs, cloud.DatacenterName)
+	datacenter, err := provider.DatacenterFromSeedMap(a.seeds, cloud.DatacenterName)
 	if err != nil {
 		return nil, err
 	}
-	if nodeDC.Spec.AWS == nil {
+	if datacenter.Spec.AWS == nil {
 		return nil, fmt.Errorf("datacenter %s is not an AWS datacenter", cloud.DatacenterName)
 	}
-	config = config.WithRegion(nodeDC.Spec.AWS.Region)
+	config = config.WithRegion(datacenter.Spec.AWS.Region)
 	config = config.WithCredentials(credentials.NewStaticCredentials(cloud.AWS.AccessKeyID, cloud.AWS.SecretAccessKey, ""))
 	config = config.WithMaxRetries(3)
 	return session.NewSession(config)

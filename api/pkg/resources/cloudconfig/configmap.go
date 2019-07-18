@@ -24,7 +24,7 @@ const (
 )
 
 type configMapCreatorData interface {
-	DC() *kubermaticv1.NodeLocation
+	DC() *kubermaticv1.Datacenter
 	Cluster() *kubermaticv1.Cluster
 }
 
@@ -51,7 +51,7 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 }
 
 // CloudConfig returns the cloud-config for the supplied data
-func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.NodeLocation) (cloudConfig string, err error) {
+func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter) (cloudConfig string, err error) {
 	cloud := cluster.Spec.Cloud
 	if cloud.AWS != nil {
 		awsCloudConfig := &aws.CloudConfig{

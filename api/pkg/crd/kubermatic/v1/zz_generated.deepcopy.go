@@ -1187,8 +1187,8 @@ func (in *Seed) DeepCopyObject() runtime.Object {
 func (in *SeedSpec) DeepCopyInto(out *SeedSpec) {
 	*out = *in
 	out.Kubeconfig = in.Kubeconfig
-	if in.Datacenter != nil {
-		in, out := &in.Datacenter, &out.Datacenter
+	if in.Datacenters != nil {
+		in, out := &in.Datacenters, &out.Datacenters
 		*out = make(map[string]Datacenter, len(*in))
 		for key, val := range *in {
 			(*out)[key] = *val.DeepCopy()

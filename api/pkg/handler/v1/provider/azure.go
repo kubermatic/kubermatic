@@ -115,7 +115,7 @@ func isValidVM(sku compute.ResourceSku, location string) bool {
 	return true
 }
 
-func AzureSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, dcs map[string]*kubermaticv1.SeedDatacenter) endpoint.Endpoint {
+func AzureSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AzureSizeNoCredentialsReq)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
@@ -132,7 +132,7 @@ func AzureSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, dc
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
 		}
 
-		dc, err := dc.GetDatacenter(dcs, cluster.Spec.Cloud.DatacenterName)
+		dc, err := dc.GetDatacenter(seeds, cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}

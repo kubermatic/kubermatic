@@ -40,13 +40,13 @@ const (
 
 // Provider is a struct that implements CloudProvider interface
 type Provider struct {
-	dcs map[string]*kubermaticv1.SeedDatacenter
+	seeds map[string]*kubermaticv1.Seed
 }
 
 // NewCloudProvider creates a new openstack provider.
-func NewCloudProvider(dcs map[string]*kubermaticv1.SeedDatacenter) *Provider {
+func NewCloudProvider(seeds map[string]*kubermaticv1.Seed) *Provider {
 	return &Provider{
-		dcs: dcs,
+		seeds: seeds,
 	}
 }
 
@@ -126,11 +126,11 @@ func validateExistingSubnetOverlap(networkID string, netClient *gophercloud.Serv
 // InitializeCloudProvider initializes a cluster, in particular
 // creates security group and network configuration
 func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	nodeDC, err := provider.NodeLocationFromSeedMap(os.dcs, cluster.Spec.Cloud.DatacenterName)
+	datacenter, err := provider.DatacenterFromSeedMap(os.seeds, cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
 		return nil, err
 	}
-	if nodeDC.Spec.Openstack == nil {
+	if datacenter.Spec.Openstack == nil {
 		return nil, fmt.Errorf("datacenter %q is not an openstack datacenter", cluster.Spec.Cloud.DatacenterName)
 	}
 
@@ -187,7 +187,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	}
 
 	if cluster.Spec.Cloud.Openstack.SubnetID == "" {
-		subnet, err := createKubermaticSubnet(netClient, cluster.Name, network.ID, nodeDC.Spec.Openstack.DNSServers)
+		subnet, err := createKubermaticSubnet(netClient, cluster.Name, network.ID, datacenter.Spec.Openstack.DNSServers)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic subnet: %v", err)
 		}
@@ -342,24 +342,24 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 }
 
 // GetFlavors lists available flavors for the given CloudSpec.DatacenterName and OpenstackSpec.Region
-func (os *Provider) GetFlavors(cloud kubermaticv1.CloudSpec) ([]osflavors.Flavor, kubermaticv1.NodeLocation, error) {
+func (os *Provider) GetFlavors(cloud kubermaticv1.CloudSpec) ([]osflavors.Flavor, kubermaticv1.Datacenter, error) {
 	authClient, err := os.getAuthClient(cloud)
 	if err != nil {
-		return nil, kubermaticv1.NodeLocation{}, err
+		return nil, kubermaticv1.Datacenter{}, err
 	}
-	nodeDC, err := provider.NodeLocationFromSeedMap(os.dcs, cloud.DatacenterName)
+	datacenter, err := provider.DatacenterFromSeedMap(os.seeds, cloud.DatacenterName)
 	if err != nil {
-		return nil, kubermaticv1.NodeLocation{}, err
+		return nil, kubermaticv1.Datacenter{}, err
 	}
-	if nodeDC.Spec.Openstack == nil {
-		return nil, kubermaticv1.NodeLocation{}, fmt.Errorf("datacenter %q is not an openstack datacenter", cloud.DatacenterName)
+	if datacenter.Spec.Openstack == nil {
+		return nil, kubermaticv1.Datacenter{}, fmt.Errorf("datacenter %q is not an openstack datacenter", cloud.DatacenterName)
 	}
-	flavors, err := getFlavors(authClient, nodeDC.Spec.Openstack.Region)
+	flavors, err := getFlavors(authClient, datacenter.Spec.Openstack.Region)
 	if err != nil {
-		return nil, kubermaticv1.NodeLocation{}, err
+		return nil, kubermaticv1.Datacenter{}, err
 	}
 
-	return flavors, *nodeDC, nil
+	return flavors, *datacenter, nil
 }
 
 // GetTenants lists all available tenents for the given CloudSpec.DatacenterName
@@ -369,15 +369,15 @@ func (os *Provider) GetTenants(cloud kubermaticv1.CloudSpec) ([]osprojects.Proje
 		return nil, fmt.Errorf("couldn't get auth client: %v", err)
 	}
 
-	nodeDC, err := provider.NodeLocationFromSeedMap(os.dcs, cloud.DatacenterName)
+	datacenter, err := provider.DatacenterFromSeedMap(os.seeds, cloud.DatacenterName)
 	if err != nil {
 		return nil, err
 	}
-	if nodeDC.Spec.Openstack == nil {
+	if datacenter.Spec.Openstack == nil {
 		return nil, fmt.Errorf("datacenter %q is not an openstack datacenter", cloud.DatacenterName)
 	}
 
-	region := nodeDC.Spec.Openstack.Region
+	region := datacenter.Spec.Openstack.Region
 	tenants, err := getTenants(authClient, region)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get tenants for region %s: %v", region, err)
@@ -391,14 +391,6 @@ func (os *Provider) GetNetworks(cloud kubermaticv1.CloudSpec) ([]NetworkWithExte
 	authClient, err := os.getNetClient(cloud)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get auth client: %v", err)
-	}
-
-	nodeDC, err := provider.NodeLocationFromSeedMap(os.dcs, cloud.DatacenterName)
-	if err != nil {
-		return nil, err
-	}
-	if nodeDC.Spec.Openstack == nil {
-		return nil, fmt.Errorf("datacenter %q is not an openstack datacenter", cloud.DatacenterName)
 	}
 
 	networks, err := getAllNetworks(authClient, osnetworks.ListOpts{})
@@ -425,16 +417,16 @@ func (os *Provider) GetSecurityGroups(cloud kubermaticv1.CloudSpec) ([]ossecurit
 }
 
 func (os *Provider) getAuthClient(cloud kubermaticv1.CloudSpec) (*gophercloud.ProviderClient, error) {
-	nodeDC, err := provider.NodeLocationFromSeedMap(os.dcs, cloud.DatacenterName)
+	datacenter, err := provider.DatacenterFromSeedMap(os.seeds, cloud.DatacenterName)
 	if err != nil {
 		return nil, err
 	}
-	if nodeDC.Spec.Openstack == nil {
+	if datacenter.Spec.Openstack == nil {
 		return nil, fmt.Errorf("datacenter %q is not an openstack datacenter", cloud.DatacenterName)
 	}
 
 	opts := gophercloud.AuthOptions{
-		IdentityEndpoint: nodeDC.Spec.Openstack.AuthURL,
+		IdentityEndpoint: datacenter.Spec.Openstack.AuthURL,
 		Username:         cloud.Openstack.Username,
 		Password:         cloud.Openstack.Password,
 		DomainName:       cloud.Openstack.Domain,
@@ -455,14 +447,14 @@ func (os *Provider) getNetClient(cloud kubermaticv1.CloudSpec) (*gophercloud.Ser
 		return nil, err
 	}
 
-	nodeDC, err := provider.NodeLocationFromSeedMap(os.dcs, cloud.DatacenterName)
+	datacenter, err := provider.DatacenterFromSeedMap(os.seeds, cloud.DatacenterName)
 	if err != nil {
 		return nil, err
 	}
-	if nodeDC.Spec.Openstack == nil {
+	if datacenter.Spec.Openstack == nil {
 		return nil, fmt.Errorf("datacenter %q is not an openstack datacenter", cloud.DatacenterName)
 	}
-	return goopenstack.NewNetworkV2(authClient, gophercloud.EndpointOpts{Region: nodeDC.Spec.Openstack.Region})
+	return goopenstack.NewNetworkV2(authClient, gophercloud.EndpointOpts{Region: datacenter.Spec.Openstack.Region})
 }
 
 // GetSubnets list all available subnet ids fot a given CloudSpec

@@ -26,7 +26,7 @@ type SeedSpec struct {
 	// A reference to the Kubeconfig of this cluster
 	Kubeconfig corev1.ObjectReference `json:"kubeconfig"`
 	// The possible datacenters for the nodes
-	Datacenter map[string]Datacenter `json:"node_location,omitempty"`
+	Datacenters map[string]Datacenter `json:"node_location,omitempty"`
 	// Optional: Overwrite the DNS domain for this seed
 	SeedDNSOverwrite *string `json:"seed_dns_overwrite,omitempty"`
 }

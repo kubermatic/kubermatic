@@ -100,13 +100,13 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	kubeconfig *clientcmdapi.Config,
-	datacenters map[string]*kubermaticv1.SeedDatacenter,
+	seeds map[string]*kubermaticv1.Seed,
 ) error {
 	reconciler := &Reconciler{
-		Client:      mgr.GetClient(),
-		recorder:    mgr.GetRecorder(ControllerName),
-		kubeconfig:  kubeconfig,
-		datacenters: datacenters,
+		Client:     mgr.GetClient(),
+		recorder:   mgr.GetRecorder(ControllerName),
+		kubeconfig: kubeconfig,
+		seeds:      seeds,
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}

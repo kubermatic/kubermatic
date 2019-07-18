@@ -161,7 +161,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 					log.Info("Acquired the leader lease")
 
 					log.Info("Executing migrations...")
-					if err := migrations.RunAll(ctrlCtx.mgr.GetConfig(), ctrlCtx.runOptions.workerName, ctrlCtx.dc); err != nil {
+					if err := migrations.RunAll(ctrlCtx.mgr.GetConfig(), ctrlCtx.runOptions.workerName, ctrlCtx.seed); err != nil {
 						log.Errorf("failed to run migrations: %v", err)
 						stopLeaderElection()
 						return
@@ -214,7 +214,7 @@ func newControllerContext(
 	}
 
 	var err error
-	ctrlCtx.dc, err = provider.LoadDatacenter(ctrlCtx.runOptions.dcFile, ctrlCtx.runOptions.dc)
+	ctrlCtx.seed, err = provider.LoadSeed(ctrlCtx.runOptions.dcFile, ctrlCtx.runOptions.dc)
 	if err != nil {
 		return nil, err
 	}

@@ -29,7 +29,7 @@ func ValidateKubernetesToken(token string) error {
 }
 
 // ValidateCreateClusterSpec validates the given cluster spec
-func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, cloudProviders map[string]provider.CloudProvider, dc *kubermaticv1.NodeLocation) error {
+func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, cloudProviders map[string]provider.CloudProvider, dc *kubermaticv1.Datacenter) error {
 	if spec.HumanReadableName == "" {
 		return errors.New("no name specified")
 	}
@@ -140,7 +140,7 @@ func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 }
 
 // ValidateUpdateCluster validates if the cluster update is allowed
-func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudProviders map[string]provider.CloudProvider, dc *kubermaticv1.NodeLocation) error {
+func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudProviders map[string]provider.CloudProvider, dc *kubermaticv1.Datacenter) error {
 	if err := ValidateCloudChange(newCluster.Spec.Cloud, oldCluster.Spec.Cloud); err != nil {
 		return err
 	}
@@ -206,7 +206,7 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudPr
 }
 
 // ValidateCloudSpec validates if the cloud spec is valid
-func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.NodeLocation) error {
+func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) error {
 	if spec.DatacenterName == "" {
 		return errors.New("no node datacenter specified")
 	}
@@ -237,7 +237,7 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.NodeLocatio
 	}
 }
 
-func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kubermaticv1.NodeLocation) error {
+func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kubermaticv1.Datacenter) error {
 	if spec.Domain == "" {
 		return errors.New("no domain specified")
 	}

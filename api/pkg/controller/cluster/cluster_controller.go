@@ -55,7 +55,7 @@ type Reconciler struct {
 	workerName              string
 
 	externalURL string
-	dc          *kubermaticv1.SeedDatacenter
+	seed        *kubermaticv1.Seed
 
 	recorder record.EventRecorder
 
@@ -85,7 +85,7 @@ func Add(
 	numWorkers int,
 	workerName string,
 	externalURL string,
-	dc *kubermaticv1.SeedDatacenter,
+	seed *kubermaticv1.Seed,
 	userClusterConnProvider userClusterConnectionProvider,
 	overwriteRegistry string,
 	nodePortRange string,
@@ -130,7 +130,7 @@ func Add(
 		kubermaticImage:                                  kubermaticImage,
 
 		externalURL: externalURL,
-		dc:          dc,
+		seed:        seed,
 
 		oidcCAFile:         oidcCAFile,
 		oidcIssuerURL:      oidcIssuerURL,

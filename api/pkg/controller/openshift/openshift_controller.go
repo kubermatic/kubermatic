@@ -72,7 +72,7 @@ type Reconciler struct {
 	client.Client
 	scheme               *runtime.Scheme
 	recorder             record.EventRecorder
-	nodeLocations        map[string]kubermaticv1.NodeLocation
+	seed                 *kubermaticv1.Seed
 	overwriteRegistry    string
 	nodeAccessNetwork    string
 	etcdDiskSize         resource.Quantity
@@ -88,7 +88,7 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	workerName string,
-	nodeLocations map[string]kubermaticv1.NodeLocation,
+	seed *kubermaticv1.Seed,
 	overwriteRegistry,
 	nodeAccessNetwork string,
 	etcdDiskSize resource.Quantity,
@@ -102,7 +102,7 @@ func Add(
 		Client:               mgr.GetClient(),
 		scheme:               mgr.GetScheme(),
 		recorder:             mgr.GetRecorder(ControllerName),
-		nodeLocations:        nodeLocations,
+		seed:                 seed,
 		overwriteRegistry:    overwriteRegistry,
 		nodeAccessNetwork:    nodeAccessNetwork,
 		etcdDiskSize:         etcdDiskSize,
@@ -195,14 +195,14 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("failed to ensure Namespace: %v", err)
 	}
 
-	nodeLocation, found := r.nodeLocations[cluster.Spec.Cloud.DatacenterName]
+	datacenter, found := r.seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
 	if !found {
 		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
 	}
 	osData := &openshiftData{
 		cluster:           cluster,
 		client:            r.Client,
-		dc:                &nodeLocation,
+		dc:                &datacenter,
 		overwriteRegistry: r.overwriteRegistry,
 		nodeAccessNetwork: r.nodeAccessNetwork,
 		oidc:              r.oidc,
@@ -642,7 +642,7 @@ func (r *Reconciler) ensureNamespace(ctx context.Context, c *kubermaticv1.Cluste
 }
 
 func (r *Reconciler) address(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	modifiers, err := address.SyncClusterAddress(ctx, cluster, r.Client, r.externalURL, r.dc)
+	modifiers, err := address.SyncClusterAddress(ctx, cluster, r.Client, r.externalURL, r.seed)
 	if err != nil {
 		return err
 	}

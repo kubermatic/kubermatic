@@ -54,7 +54,7 @@ var clusterTypes = []string{
 }
 
 func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider,
-	dcs map[string]*kubermaticv1.SeedDatacenter, initNodeDeploymentFailures *prometheus.CounterVec, eventRecorderProvider provider.EventRecorderProvider, credentialManager common.PresetsManager, exposeStrategy corev1.ServiceType) endpoint.Endpoint {
+	seeds map[string]*kubermaticv1.Seed, initNodeDeploymentFailures *prometheus.CounterVec, eventRecorderProvider provider.EventRecorderProvider, credentialManager common.PresetsManager, exposeStrategy corev1.ServiceType) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateReq)
 		err := req.Validate()
@@ -70,7 +70,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		dc, err := provider.NodeLocationFromSeedMap(dcs, req.Body.Cluster.Spec.Cloud.DatacenterName)
+		dc, err := provider.DatacenterFromSeedMap(seeds, req.Body.Cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
@@ -129,7 +129,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 				defer utilruntime.HandleCrash()
 				ndName := getNodeDeploymentDisplayName(req.Body.NodeDeployment)
 				eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationStart), "started creation of initial node deployment%s", ndName)
-				err := createInitialNodeDeploymentWithRetries(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, dcs, clusterProvider, userInfo, eventRecorderProvider.ClusterRecorderFor(k8sClient))
+				err := createInitialNodeDeploymentWithRetries(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, seeds, clusterProvider, userInfo, eventRecorderProvider.ClusterRecorderFor(k8sClient))
 				if err != nil {
 					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeWarning, string(nodeDeploymentCreationFail), "failed to create initial node deployment%s: %v", ndName, err)
 					glog.Errorf("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
@@ -146,10 +146,10 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 }
 
 func createInitialNodeDeploymentWithRetries(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticv1.Cluster,
-	project *kubermaticv1.Project, sshKeyProvider provider.SSHKeyProvider, dcs map[string]*kubermaticv1.SeedDatacenter,
+	project *kubermaticv1.Project, sshKeyProvider provider.SSHKeyProvider, seeds map[string]*kubermaticv1.Seed,
 	clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, eventRecorder record.EventRecorder) error {
 	return wait.Poll(5*time.Second, 30*time.Minute, func() (bool, error) {
-		err := createInitialNodeDeployment(nodeDeployment, cluster, project, sshKeyProvider, dcs, clusterProvider, userInfo)
+		err := createInitialNodeDeployment(nodeDeployment, cluster, project, sshKeyProvider, seeds, clusterProvider, userInfo)
 		switch {
 		case err == nil:
 			return true, nil
@@ -172,7 +172,7 @@ func createInitialNodeDeploymentWithRetries(nodeDeployment *apiv1.NodeDeployment
 }
 
 func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticv1.Cluster,
-	project *kubermaticv1.Project, sshKeyProvider provider.SSHKeyProvider, dcs map[string]*kubermaticv1.SeedDatacenter,
+	project *kubermaticv1.Project, sshKeyProvider provider.SSHKeyProvider, seeds map[string]*kubermaticv1.Seed,
 	clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo) error {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	defer cancelCtx()
@@ -197,7 +197,7 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 		return err
 	}
 
-	dc, err := provider.NodeLocationFromSeedMap(dcs, cluster.Spec.Cloud.DatacenterName)
+	dc, err := provider.DatacenterFromSeedMap(seeds, cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
 		return fmt.Errorf("error getting dc: %v", err)
 	}
@@ -253,7 +253,7 @@ func isStatus(err error, status int32) bool {
 	return ok && status == kubernetesError.Status().Code
 }
 
-func PatchEndpoint(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider, dcs map[string]*kubermaticv1.SeedDatacenter) endpoint.Endpoint {
+func PatchEndpoint(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -292,7 +292,7 @@ func PatchEndpoint(cloudProviders map[string]provider.CloudProvider, projectProv
 			return nil, errors.NewBadRequest("Cluster contains nodes running the following incompatible kubelet versions: %v. Upgrade your nodes before you upgrade the cluster.", incompatibleKubelets)
 		}
 
-		dc, err := provider.NodeLocationFromSeedMap(dcs, patchedCluster.Spec.Cloud.DatacenterName)
+		dc, err := provider.DatacenterFromSeedMap(seeds, patchedCluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}

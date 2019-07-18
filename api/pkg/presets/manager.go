@@ -214,7 +214,7 @@ func (m *Manager) GetPresets() *Presets {
 	return m.presets
 }
 
-func (m *Manager) SetCloudCredentials(credentialName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.NodeLocation) (*kubermaticv1.CloudSpec, error) {
+func (m *Manager) SetCloudCredentials(credentialName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {
 
 	if cloud.VSphere != nil {
 		return m.setVsphereCredentials(credentialName, cloud)
@@ -372,7 +372,7 @@ func (m *Manager) setAzureCredentials(credentialName string, cloud kubermaticv1.
 	return nil, noCredentialError(credentialName)
 }
 
-func (m *Manager) setOpenStackCredentials(credentialName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.NodeLocation) (*kubermaticv1.CloudSpec, error) {
+func (m *Manager) setOpenStackCredentials(credentialName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {
 	if m.presets.Openstack.Credentials == nil {
 		return nil, emptyCredentialListError("Openstack")
 	}

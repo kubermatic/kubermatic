@@ -9,7 +9,7 @@ import (
 )
 
 // Spec builds ClusterSpec kubermatic Custom Resource from API Cluster
-func Spec(apiCluster apiv1.Cluster, cloudProviders map[string]provider.CloudProvider, dc *kubermaticv1.NodeLocation) (*kubermaticv1.ClusterSpec, error) {
+func Spec(apiCluster apiv1.Cluster, cloudProviders map[string]provider.CloudProvider, dc *kubermaticv1.Datacenter) (*kubermaticv1.ClusterSpec, error) {
 	spec := &kubermaticv1.ClusterSpec{
 		HumanReadableName: apiCluster.Name,
 		Cloud:             apiCluster.Spec.Cloud,
