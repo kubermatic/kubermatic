@@ -57,7 +57,8 @@ type Opts struct {
 	clusterClientProvider        clusterclient.UserClusterConnectionProvider
 	dcFile                       string
 	repoRoot                     string
-	dcs                          map[string]*kubermaticv1.SeedDatacenter
+	nodeLocations                map[string]kubermaticv1.NodeLocation
+	seedDCName                   string
 	cleanupOnStart               bool
 	clusterParallelCount         int
 	workerName                   string
@@ -247,6 +248,10 @@ func main() {
 	}
 	opts.kubermaticClient = apiclient.New(httptransport.New(kubermaticAPIServerAddress, "", []string{"http"}), nil)
 	opts.kubermaticAuthenticator = httptransport.BearerToken(kubermaticServiceaAccountToken)
+	opts.seedDCName = os.Getenv("SEED_DC_NAME")
+	if opts.seedDCName == "" {
+		log.Fatalf("The name of the seed dc must be configured via the SEED_DC_NAME env var")
+	}
 
 	if opts.existingClusterLabel != "" && opts.clusterParallelCount != 1 {
 		log.Fatalf("-cluster-parallel-count must be 1 when testing an existing cluster")
@@ -289,7 +294,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to load datacenter yaml %q: %v", opts.dcFile, err)
 	}
-	opts.dcs = dcs
+	if dcs[opts.seedDCName] == nil {
+		log.Fatalf("Couldn't find seedDC %q", opts.seedDCName)
+	}
+	opts.nodeLocations = dcs[opts.seedDCName].Spec.NodeLocations
 
 	config, err := clientcmd.BuildConfigFromFlags("", opts.kubeconfigPath)
 	if err != nil {

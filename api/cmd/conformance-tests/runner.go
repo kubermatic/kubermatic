@@ -70,7 +70,8 @@ func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
 		secrets:                      opts.secrets,
 		namePrefix:                   opts.namePrefix,
 		clusterClientProvider:        opts.clusterClientProvider,
-		dcs:                          opts.dcs,
+		nodeLocations:                opts.nodeLocations,
+		seedDCName:                   opts.seedDCName,
 		nodeCount:                    opts.nodeCount,
 		repoRoot:                     opts.repoRoot,
 		reportsRoot:                  opts.reportsRoot,
@@ -112,7 +113,8 @@ type testRunner struct {
 
 	seedClusterClient     ctrlruntimeclient.Client
 	clusterClientProvider clusterclient.UserClusterConnectionProvider
-	dcs                   map[string]*kubermaticv1.SeedDatacenter
+	nodeLocations         map[string]kubermaticv1.NodeLocation
+	seedDCName            string
 
 	// The label to use to select an existing cluster to test against instead of
 	// creating a new one
@@ -280,9 +282,9 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 		"version":        cluster.Spec.Version,
 	})
 
-	nodeDC, err := provider.NodeLocationFromSeedMap(r.dcs, cluster.Spec.Cloud.DatacenterName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get nodeLocation %q: %v", cluster.Spec.Cloud.DatacenterName, err)
+	nodeLocation, exists := r.nodeLocations[cluster.Spec.Cloud.DatacenterName]
+	if !exists {
+		return nil, fmt.Errorf("NodeLocation %q doesn't exist", cluster.Spec.Cloud.DatacenterName)
 	}
 
 	if r.deleteClusterAfterTests {
@@ -311,7 +313,7 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 	}
 
 	nodeDeployments := scenario.NodeDeployments(r.nodeCount, r.secrets)
-	if err := r.setupNodes(log, scenario.Name(), cluster, userClusterClient, nodeDeployments, nodeDC); err != nil {
+	if err := r.setupNodes(log, scenario.Name(), cluster, userClusterClient, nodeDeployments, nodeLocation); err != nil {
 		return nil, fmt.Errorf("failed to setup nodes: %v", err)
 	}
 
@@ -524,7 +526,7 @@ func (r *testRunner) setupNodes(parentLog *logrus.Entry,
 	cluster *kubermaticv1.Cluster,
 	userClusterClient ctrlruntimeclient.Client,
 	nodeDeployments []kubermaticapiv1.NodeDeployment,
-	nodeDC *kubermaticv1.NodeLocation) error {
+	nodeLocation kubermaticv1.NodeLocation) error {
 	ctx := context.Background()
 	log := parentLog.WithFields(logrus.Fields{
 		"node-count": r.nodeCount,
@@ -552,7 +554,7 @@ func (r *testRunner) setupNodes(parentLog *logrus.Entry,
 		// is unset but need a deterministic name because we retry creation and dont
 		// want to accidentally create multiple MachineDeployments
 		nd.Name = fmt.Sprintf("md-%s-%d", scenarioName, ndIndex)
-		machineDeployment, err := machine.Deployment(cluster, &nd, nodeDC, keys)
+		machineDeployment, err := machine.Deployment(cluster, &nd, nodeLocation, keys)
 		if err != nil {
 			return fmt.Errorf("failed to get MachineDeployment from NodeDeployment: %v", err)
 		}
@@ -682,7 +684,7 @@ func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*k
 
 	params := &projectclient.CreateClusterParams{
 		ProjectID: r.kubermatcProjectID,
-		Dc:        "prow-build-cluster",
+		Dc:        r.seedDCName,
 		Body:      cluster,
 	}
 	params.SetTimeout(15 * time.Second)

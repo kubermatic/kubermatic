@@ -24,7 +24,7 @@ import (
 )
 
 // Deployment returns a Machine Deployment object for the given Node Deployment spec.
-func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermaticv1.NodeLocation, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.MachineDeployment, error) {
+func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, nodeLocation kubermaticv1.NodeLocation, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.MachineDeployment, error) {
 	md := &clusterv1alpha1.MachineDeployment{}
 
 	if nd.Name != "" {
@@ -71,7 +71,7 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermati
 		md.Spec.Paused = *nd.Spec.Paused
 	}
 
-	config, err := getProviderConfig(c, nd, dc, keys)
+	config, err := getProviderConfig(c, nd, &nodeLocation, keys)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermati
 	return md, nil
 }
 
-func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermaticv1.NodeLocation, keys []*kubermaticv1.UserSSHKey) (*providerconfig.Config, error) {
+func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, nodeLocation *kubermaticv1.NodeLocation, keys []*kubermaticv1.UserSSHKey) (*providerconfig.Config, error) {
 	config := providerconfig.Config{}
 	config.SSHPublicKeys = make([]string, len(keys))
 	for i, key := range keys {
@@ -99,13 +99,13 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 	switch {
 	case nd.Spec.Template.Cloud.AWS != nil:
 		config.CloudProvider = providerconfig.CloudProviderAWS
-		cloudExt, err = getAWSProviderSpec(c, nd.Spec.Template, dc)
+		cloudExt, err = getAWSProviderSpec(c, nd.Spec.Template, nodeLocation)
 		if err != nil {
 			return nil, err
 		}
 	case nd.Spec.Template.Cloud.Azure != nil:
 		config.CloudProvider = providerconfig.CloudProviderAzure
-		cloudExt, err = getAzureProviderSpec(c, nd.Spec.Template, dc)
+		cloudExt, err = getAzureProviderSpec(c, nd.Spec.Template, nodeLocation)
 		if err != nil {
 			return nil, err
 		}
@@ -114,47 +114,47 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 
 		// We use OverwriteCloudConfig for VSphere to ensure we always use the credentials
 		// passed in via frontend for the cloud-provider functionality.
-		overwriteCloudConfig, err := cloudconfig.CloudConfig(c, dc)
+		overwriteCloudConfig, err := cloudconfig.CloudConfig(c, nodeLocation)
 		if err != nil {
 			return nil, err
 		}
 		config.OverwriteCloudConfig = &overwriteCloudConfig
 
-		cloudExt, err = getVSphereProviderSpec(c, nd.Spec.Template, dc)
+		cloudExt, err = getVSphereProviderSpec(c, nd.Spec.Template, nodeLocation)
 		if err != nil {
 			return nil, err
 		}
 	case nd.Spec.Template.Cloud.Openstack != nil:
 		config.CloudProvider = providerconfig.CloudProviderOpenstack
-		if err := validation.ValidateCreateNodeSpec(c, &nd.Spec.Template, dc); err != nil {
+		if err := validation.ValidateCreateNodeSpec(c, &nd.Spec.Template, nodeLocation); err != nil {
 			return nil, err
 		}
 
-		cloudExt, err = getOpenstackProviderSpec(c, nd.Spec.Template, dc)
+		cloudExt, err = getOpenstackProviderSpec(c, nd.Spec.Template, nodeLocation)
 		if err != nil {
 			return nil, err
 		}
 	case nd.Spec.Template.Cloud.Hetzner != nil:
 		config.CloudProvider = providerconfig.CloudProviderHetzner
-		cloudExt, err = getHetznerProviderSpec(c, nd.Spec.Template, dc)
+		cloudExt, err = getHetznerProviderSpec(c, nd.Spec.Template, nodeLocation)
 		if err != nil {
 			return nil, err
 		}
 	case nd.Spec.Template.Cloud.Digitalocean != nil:
 		config.CloudProvider = providerconfig.CloudProviderDigitalocean
-		cloudExt, err = getDigitaloceanProviderSpec(c, nd.Spec.Template, dc)
+		cloudExt, err = getDigitaloceanProviderSpec(c, nd.Spec.Template, nodeLocation)
 		if err != nil {
 			return nil, err
 		}
 	case nd.Spec.Template.Cloud.Packet != nil:
 		config.CloudProvider = providerconfig.CloudProviderPacket
-		cloudExt, err = getPacketProviderSpec(c, nd.Spec.Template, dc)
+		cloudExt, err = getPacketProviderSpec(c, nd.Spec.Template, nodeLocation)
 		if err != nil {
 			return nil, err
 		}
 	case nd.Spec.Template.Cloud.GCP != nil:
 		config.CloudProvider = providerconfig.CloudProviderGoogle
-		cloudExt, err = getGCPProviderSpec(c, nd.Spec.Template, dc)
+		cloudExt, err = getGCPProviderSpec(c, nd.Spec.Template, nodeLocation)
 		if err != nil {
 			return nil, err
 		}
