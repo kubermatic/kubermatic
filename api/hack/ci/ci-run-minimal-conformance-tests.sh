@@ -7,7 +7,7 @@ set -euo pipefail
 set -o monitor
 
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
-export SEED_DC_NAME=prow-build-cluster
+export SEED_NAME=prow-build-cluster
 
 source ./api/hack/lib.sh
 
